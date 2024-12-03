@@ -18,7 +18,7 @@ loop = asyncio.get_event_loop()
 class RedApi(BaseGazelleApi):
     def __init__(self):
         self.site_code = 'RED'
-        self.base_url = 'https://redacted.ch'
+        self.base_url = 'https://redacted.sh'
         self.tracker_url = 'https://flacsfor.me'
         self.site_string = 'RED'
         self.cookie = config.RED_SESSION

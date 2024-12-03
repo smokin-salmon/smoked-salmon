@@ -6,7 +6,7 @@ import click
 
 # hard coded as it needs to reflect the imports anyway.
 tracker_classes = {'RED': red.RedApi, 'OPS': ops.OpsApi}
-tracker_url_code_map = {'redacted.ch': 'RED', 'orpheus.network': 'OPS'}
+tracker_url_code_map = {'redacted.sh': 'RED', 'orpheus.network': 'OPS'}
 
 # tracker_list is used to offer the user choices. Generated if not specified in the config.
 if hasattr(config, 'TRACKER_LIST'):
