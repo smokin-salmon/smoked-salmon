@@ -11,6 +11,7 @@ from salmon.tagger.sources import (
     itunes,
     junodownload,
     musicbrainz,
+    qobuz,
 #    tidal,
 )
 
@@ -18,10 +19,11 @@ METASOURCES = {
     "MusicBrainz": musicbrainz,
     "iTunes": itunes,
     "Junodownload": junodownload,
-#    "Tidal": tidal,
     "Deezer": deezer,
     "Discogs": discogs,
     "Beatport": beatport,
+    "Qobuz": qobuz,
+#    "Tidal": tidal,
     "Bandcamp": bandcamp,  # Must be last due to the catch-all nature of its URLs.
 }
 
