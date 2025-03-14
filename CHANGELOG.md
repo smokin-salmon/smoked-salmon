@@ -1,7 +1,17 @@
 # Changelog
 
 Made a new file because there have been a few changes recently.
-   
+
+# Changes 13/03/2025
+
+##Qobuz Integration
+- Added Qobuz BaseScraper
+- Implemented Qobuz search functionality
+- Prepared for Qobuz tagger optimization and implementation
+
+##Infrastructure Improvements
+- Added support for Python uv package manager
+
 # Changes 26/07/2020
 
 ## Multi tracker support
