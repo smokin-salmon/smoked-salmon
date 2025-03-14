@@ -4,6 +4,7 @@ __pycache__
 .vscode/
 .venv/
 
+test.py
 smoked.db*
 config.py
 accounts.json

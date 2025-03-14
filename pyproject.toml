@@ -1,41 +1,54 @@
-[tool.poetry]
+[project]
 name = "salmon"
 version = "0.9.0"
 description = "An uploading script for Gazelle-based music trackers."
-authors = ["azuline <azuline@riseup.net>"]
-license = "Apache-2.0"
+authors = [ { name="azuline", email="azuline@riseup.net" } ]
+requires-python = ">=3.9,<=3.11.11"
+dependencies = [
+    "requests>=2.31.0",
+    "click>=8.1.7",
+    "bs4>=0.0.1",
+    "colorama>=0.4.3",
+    "dottorrent>=1.10.1",
+    "musicbrainzngs>=0.7.1",
+    "mutagen>=1.47.0",
+    "pyperclip>=1.8.2",
+    "pycryptodome>=3.19.0",
+    "aiohttp>=3.8.5",
+    "aiohttp-jinja2>=1.5.1",
+    "jinja2>=3.1.2",
+    "pyimgurapi>=0.4.3",
+    "bitstring>=4.1.2",
+    "heybrochecklog>=1.3.2",
+    "yaspin>=3.0.1",
+    "ratelimit>=2.2.1",
+    "rich>=13.5.3",
+    "unidecode>=1.3.8",
+]
 
-[tool.poetry.dependencies]
-python = "^3.9"
-requests = "^2.31.0"
-click = "^8.1.7"
-bs4 = "^0.0.1"
-colorama = "^0.4.3"
-dottorrent = "^1.10.1"
-musicbrainzngs = "^0.7.1"
-mutagen = "^1.47.0"
-pyperclip = "^1.8.2"
-pycryptodome = "^3.19.0"
-aiohttp = "^3.8.5"
-aiohttp-jinja2 = "^1.5.1"
-jinja2 = "^3.1.2"
-pyimgurapi = "^0.4.3"
-bitstring = "^4.1.2"
-heybrochecklog = "^1.3.2"
-yaspin = "^3.0.1"
-ratelimit = "^2.2.1"
-rich = "^13.5.3"
+[project.license]
+text = "Apache-2.0"
 
-[tool.poetry.dev-dependencies]
-black = "^23.9.1"
-isort = "^5.12.0"
-flake8 = "^6.1.0"
+[project.optional-dependencies]
+dev = [
+    "black==23.9.1",
+    "isort==6.0.1",
+    "flake8==7.1.2"
+]
 
 [tool.black]
 line-length = 88
 target-version = ['py39']
 skip-string-normalization = true
 
+[project.scripts]
+salmon = "run:main"
+
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["salmon"]
+py-modules = ["run", "config"]
+
