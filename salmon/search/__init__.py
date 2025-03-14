@@ -20,6 +20,7 @@ from salmon.search import (
     itunes,
     junodownload,
     musicbrainz,
+    qobuz,
 #    tidal,
 )
 
@@ -30,6 +31,7 @@ SEARCHSOURCES = {
     "Junodownload": junodownload,
     "Discogs": discogs,
     "Beatport": beatport,
+    "Qobuz": qobuz,
 #    "Tidal": tidal,
     "Deezer": deezer,
 }
