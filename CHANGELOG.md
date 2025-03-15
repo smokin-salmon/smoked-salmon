@@ -2,14 +2,27 @@
 
 Made a new file because there have been a few changes recently.
 
+# Changes 15/03/2025
+
+## WebUI Improvements
+- Added dark mode with toggle functionality
+- Fixed the IP for the webserver to use 0.0.0.0
+- Made the WebUI link clickable when generating spectrals and improved on the formatting
+- Changed some html/css/javascript formatting
+
+## Qobuz Integration (finished)
+- Finalized Qobuz tagger implementation
+- Added Qobuz credentials parameters to config
+- Added description logo for Qobuz
+
 # Changes 13/03/2025
 
-##Qobuz Integration
+## Qobuz Integration
 - Added Qobuz BaseScraper
 - Implemented Qobuz search functionality
 - Implemented Qobuz tagger functionality
 
-##Infrastructure Improvements
+## Infrastructure Improvements
 - Added support for Python uv package manager
 
 # Changes 26/07/2020
