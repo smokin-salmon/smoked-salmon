@@ -16,6 +16,7 @@ PREFERENCES = [
     "Junodownload",
     "Discogs",
     "Beatport",
+    "Qobuz",
 ]
 
 
