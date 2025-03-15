@@ -7,7 +7,7 @@ Made a new file because there have been a few changes recently.
 ##Qobuz Integration
 - Added Qobuz BaseScraper
 - Implemented Qobuz search functionality
-- Prepared for Qobuz tagger optimization and implementation
+- Implemented Qobuz tagger functionality
 
 ##Infrastructure Improvements
 - Added support for Python uv package manager
