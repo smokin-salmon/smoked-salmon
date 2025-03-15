@@ -33,30 +33,30 @@ cp config.py.txt config.py
 ```
 Edit `config.py` with your preferred text editor to add your API keys and preferences.
 <details>
-   <summary> #### Alternative: Using pip </summary>
+<summary>Alternative: Using pip </summary>
 
-    1. Clone the repository:
-    ```bash
-    git clone https://github.com/ligh7s/smoked-salmon.git
-    cd smoked-salmon
-    ```
+1. Clone the repository:
+```bash
+git clone https://github.com/ligh7s/smoked-salmon.git
+cd smoked-salmon
+```
 
-    2. Create and activate a virtual environment:
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows use: venv\Scripts\activate
-    ```
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows use: venv\Scripts\activate
+```
 
-    3. Install dependencies:
-    ```bash
-    pip install -r requirements.txt
-    ```
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-    4. Configure salmon:
-    ```bash
-    cp config.py.txt config.py
-    ```
-    Edit `config.py` with your preferred text editor to add your API keys and preferences.
+4. Configure salmon:
+```bash
+cp config.py.txt config.py
+```
+Edit `config.py` with your preferred text editor to add your API keys and preferences.
 </details>
 
 ### Usage
