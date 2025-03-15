@@ -1,3 +1,31 @@
+:root {
+  /* Color variables */
+  --rich-black: #04080f;
+  --cyan-azure: #507dbc;
+  --baby-blue: #a1c6ea;
+  --pale-aqua: #bbd1ea;
+  --platinum: #dae3e5;
+  
+  /* Light theme (default) */
+  --bg-color: var(--platinum);
+  --text-color: var(--rich-black);
+  --header-bg: var(--pale-aqua);
+  --footer-border: var(--cyan-azure);
+  --lightbox-bg: rgba(4, 8, 15, 0.8);
+}
+
+[data-theme="dark"] {
+  --bg-color: var(--rich-black);
+  --text-color: var(--platinum);
+  --header-bg: #1a1a1a;
+  --footer-border: var(--baby-blue);
+  --lightbox-bg: rgba(218, 227, 229, 0.8);
+}
+[data-theme="dark"] #lightbox {
+  background: rgba(255, 255, 255, 0.2) !important; /* Lighter semi-transparent background for dark mode */
+  backdrop-filter: blur(8px) !important; /* Same blur effect for dark mode */
+}
+
 /* rich black #04080f
  * cyan azure #507dbc
  * baby blue eyes #a1c6ea
@@ -8,41 +36,67 @@
 * {
   margin: 0;
   padding: 0;
-  color: #04080f;
+  color: var(--text-color);
   font-family: "Lucida Console", Monaco, monospace;
 }
 
 body {
-  background-color: #dae3e5;
+  background-color: var(--bg-color);
   font-family: "Lucida Console", Monaco, monospace;
+  color: var(--text-color);
 }
 
+/* Header and logo styles */
 header {
-  height: 50px;
-  width: calc(100% - 40px);
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 20px;
-  font-family: "Lucida Console", Monaco, monospace;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 1rem;
+}
+
+.logo img {
+  height: 64px;
+  width: auto;
+}
+
+.ascii-art {
+  font-family: monospace;
+  white-space: pre;
+  color: var(--text-color);
+  opacity: 0.7;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.tagline {
+  font-style: italic;
+  color: var(--text-color);
+  opacity: 0.8;
+  font-size: 0.9rem;
 }
 
 .headerbg {
-  background-color: #bbd1ea;
+  background-color: var(--header-bg);
   height: 50px;
   width: 100%;
   position: absolute;
   top: 0;
   left: 0;
   z-index: -1;
-}
-
-header .logo {
-  height: 100%;
-  width: auto;
-}
-
-header .logo img {
-  max-height: 100%;
 }
 
 div.body {
@@ -57,7 +111,7 @@ footer {
   max-width: 1340px;
   padding: 10px 0;
   margin: 0 auto;
-  border-top: 1px solid #507dbc;
+  border-top: 1px solid var(--footer-border);
   font-size: 11px;
   font-family: "Lucida Console", Monaco, monospace;
 }
@@ -104,7 +158,8 @@ p {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(4, 8, 15, 0.8);
+  background: rgba(0, 0, 0, 0.5) !important; /* Semi-transparent background */
+  backdrop-filter: blur(8px) !important; /* Stronger blur effect */
   transition: all 0.2s linear;
 }
 
@@ -114,3 +169,20 @@ p {
   max-width: 90%;
   margin: 5vh auto;
 }
+
+/* Theme toggle button */
+.theme-toggle {
+  padding: 0.5rem 1rem;
+  background: var(--cyan-azure);
+  color: var(--platinum);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: center;
+}
+
+.theme-toggle:hover {
+  opacity: 0.9;
+}
+

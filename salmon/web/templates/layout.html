@@ -4,8 +4,9 @@
         {% block head %}
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width">
-        <title>{% block title %}{% endblock %} :: Salmon</title>
+        <title>{% block title %}{% endblock %} - Smoked Salmon</title>
         <link rel="stylesheet" href="{{ static('/css/main.css') }}">
+        <script src="{{ static('/scripts/theme.js') }}" defer></script>
         <link rel="apple-touch-icon-precomposed" sizes="57x57" href="{{ static('/images/apple-touch-icon-57x57.png') }}">
         <link rel="apple-touch-icon-precomposed" sizes="114x114" href="{{ static('/images/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon-precomposed" sizes="72x72" href="{{ static('/images/apple-touch-icon-72x72.png') }}">
@@ -20,24 +21,32 @@
         <link rel="icon" type="image/png" sizes="16x16" href="{{ static('/images/favicon-16x16.png') }}">
         <link rel="icon" type="image/png" sizes="128x128" href="{{ static('/images/favicon-128.png') }}">
         <meta name="application-name" content="&nbsp;"/>
-        <meta name="msapplication-TileColor" content="#FFFFFF') }}">
+        <meta name="msapplication-TileColor" content="#FFFFFF">
         <meta name="msapplication-TileImage" content="{{ static('/images/mstile-144x144.png') }}">
         <meta name="msapplication-square70x70logo" content="{{ static('/images/mstile-70x70.png') }}">
         <meta name="msapplication-square150x150logo" content="{{ static('/images/mstile-150x150.png') }}">
         <meta name="msapplication-wide310x150logo" content="{{ static('/images/mstile-310x150.png') }}">
         <meta name="msapplication-square310x310logo" content="{{ static('/images/mstile-310x310.png') }}">
-        </style>
         {% endblock %}
     </head>
 
     <body>
         <header>
-            <div class="logo">
-                <img src="{{ static('/images/logo.png') }}">
+            <div class="logo-container">
+                <a href="/" class="logo">
+                    <img src="{{ static('/images/logo.png') }}" alt="Salmon">
+                    <div>
+                        <div class="ascii-art">
+                            ><(((º>  ~  ><(((º>  ~  ><(((º>
+                        </div>
+                        <div class="tagline">
+                            Swimming upstream, one upload at a time
+                        </div>
+                    </div>
+                </a>
             </div>
+            <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
         </header>
-        <div class="headerbg"></div>
-
         <div style="display: none">
             <span id="static_dir">{{ static('') }}</span>
         </div>
@@ -48,13 +57,15 @@
         </div>
 
         <footer>
-            smoked salmon~~ upload away</br>
+            {% block footer %}
+            smoked salmon~~ upload away<br>
             <div>
                 Salmon logo made by <a href="http://www.freepik.com" title="Freepik">Freepik</a>
                 from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
                 is licensed by <a href="http://creativecommons.org/licenses/by/3.0/"
-                                  title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
+                                title="Creative Commons BY 3.0" target="_blank">CC 3.0 BY</a>
             </div>
+            {% endblock %}
         </footer>
     </body>
 </html>
