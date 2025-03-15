@@ -17,6 +17,6 @@ SOURCE_ICONS = {
     "iTunes": "https://ptpimg.me/5d47fv.png",
     "Junodownload": "https://ptpimg.me/2852h1.png",
     "MusicBrainz": "https://ptpimg.me/y87lp2.png",
-    "Qobuz": "https://ptpimg.me/dhyvs6.png",
-#    "Tidal": "https://ptpimg.me/dhyvs6.png",
+    "Qobuz": "https://ptpimg.me/372nn7.png",
+    #"Tidal": "https://ptpimg.me/dhyvs6.png",
 }
