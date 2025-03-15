@@ -297,11 +297,11 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
             runner = await create_app_async()
         except WebServerIsAlreadyRunning:
             shutdown = False
-        url = f"{config.WEB_HOST}/spectrals"
+        url = f"http://{config.WEB_HOST}:{config.WEB_PORT}/spectrals"
         await prompt_async(
             click.style(
-                f"Spectrals are available at {url} . Press enter once you are finished "
-                "viewing to continue the uploading process:",
+                f"Spectrals are available at {click.style(url, fg='blue', underline=True)}\n"
+                f"{click.style('Press enter once you are finished viewing to continue the uploading process', fg='magenta', bold=True)}",
                 fg="magenta",
                 bold=True,
             ),
