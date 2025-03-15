@@ -63,7 +63,6 @@ Edit `config.py` with your preferred text editor to add your API keys and prefer
 
 Basic usage:
 ```bash
-cd ~/smoked-salmon
 uv run salmon
 ```
 Alernatively:
