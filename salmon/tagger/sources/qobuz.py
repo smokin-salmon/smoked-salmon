@@ -510,6 +510,7 @@ class Scraper(QobuzBase, MetadataMixin):
     def parse_comment(self, soup):
         """Parse any comments from the API response."""
         return None
+        #return soup.get("description") # This will return release notes in html format (better to keep disabled)
         
     # Override base.py's determine_rls_type to respect Qobuz's explicit release type.
     def determine_rls_type(self, data):
