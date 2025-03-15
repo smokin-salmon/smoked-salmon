@@ -14,7 +14,7 @@ async def handle_spectrals(request, **kwargs):
     if active_spectrals:
         active_spectrals['now'] = datetime.datetime.now()
         return render_template("spectrals.html", request, active_spectrals)
-    return aiohttp.web.HTTPNrtFound()
+    return aiohttp.web.HTTPNotFound()
 
 
 def set_active_spectrals(spectrals):

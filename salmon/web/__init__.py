@@ -30,7 +30,7 @@ def create_app():
         app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates"))
     )
     return loop.run_until_complete(
-        loop.create_server(app.make_handler(), host=config.WEB_HOST, port=config.WEB_PORT)
+        loop.create_server(app.make_handler(), host='0.0.0.0', port=config.WEB_PORT)
     )
 
 
@@ -42,7 +42,7 @@ async def create_app_async():
     )
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
-    site = aiohttp.web.TCPSite(runner, config.WEB_HOST, config.WEB_PORT)
+    site = aiohttp.web.TCPSite(runner, '0.0.0.0', config.WEB_PORT)
     try:
         await site.start()
     except OSError:
