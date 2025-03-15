@@ -7,6 +7,14 @@ DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
 DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
 PTPIMG_KEY = 'ptpimg-key'
 DISCOGS_TOKEN = 'discogs-token'
+
+QOBUZ_APP_ID = 'app_id'
+QOBUZ_USER_AUTH_TOKEN = 'user_auth_token'
+
+IMAGE_UPLOADER = "ptpimg"
+COVER_UPLOADER = "ptpimg"
+SPECS_UPLOADER = "ptpimg"
+
 IMGUR_CLIENT_ID = 'imgur-client-id'
 IMGUR_CLIENT_SECRET = 'imgur-client-secret'
 IMGUR_REFRESH_TOKEN = 'imgur-client-refresh-token'
