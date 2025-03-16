@@ -77,10 +77,9 @@ uv run salmon --help
 ```
 
 Common commands:
-- Search for music: `uv run salmon search "artist name" "album name"`
-- Upload music: `uv run salmon upload /path/to/album`
-- Generate spectrals: `uv run salmon spectral /path/to/album`
-- Check for requests: `uv run salmon request "artist name" "album name"`
+- Search for music: `uv run salmon metas "artist name" "album name"`
+- Upload music: `uv run salmon up /path/to/album`
+- Generate spectrals: `uv run salmon specs /path/to/album`
 - Browse WebUI: Start the WebUI with `uv run salmon web` and navigate to http://127.0.0.1:55110 in your browser
 
 ### Updating
@@ -89,12 +88,6 @@ With uv:
 ```bash
 git pull
 uv sync
-```
-
-With pip:
-```bash
-git pull
-pip install -r requirements.txt
 ```
 
 <details>
