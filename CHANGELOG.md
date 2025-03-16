@@ -2,6 +2,13 @@
 
 Made a new file because there have been a few changes recently.
 
+# Changes 16/03/2025
+- Fixed bandcamp?? I did not really change that much, it's working though :D
+- Added proper exception handling to Qobuz search
+- Disabled a debug message to avoid confusion for the end user
+- Made sure that necessary apt packages are included in the README.md install guide!
+- Disabled beatport scraper until i decide to work on it.
+
 # Changes 15/03/2025
 
 ## WebUI Improvements

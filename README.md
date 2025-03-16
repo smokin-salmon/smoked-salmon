@@ -10,8 +10,9 @@ A tool to assist with finding music and uploading it to RED.
 
 **HIGHLY RECOMMEND** using [uv](https://github.com/astral-sh/uv) for setting up salmon. uv is significantly faster than pip and provides better dependency resolution.
 
-1. Install uv:
+1. Install system packages and uv:
 ```bash
+sudo apt install sox flac mp3val optipng git wget curl
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
@@ -21,7 +22,7 @@ git clone https://github.com/miandru/smoked-salmon.git
 cd smoked-salmon
 ```
 
-3. Install dependencies and create virtual environment:
+3. Install python dependencies and create virtual environment:
 
 ```bash
 uv sync
@@ -33,7 +34,7 @@ cp config.py.txt config.py
 ```
 Edit `config.py` with your preferred text editor to add your API keys and preferences.
 <details>
-<summary>Alternative: Using pip </summary>
+<summary>Alternative: Using pip (no clue if this works or not im not testing it) </summary>
 
 1. Clone the repository:
 ```bash
