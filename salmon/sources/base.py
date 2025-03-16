@@ -66,7 +66,7 @@ class BaseScraper:
             )
             if result.status_code != 200:
                 class_hierarchy = ' -> '.join([cls.__name__ for cls in self.__class__.mro()[:-1]])
-                traceback.print_stack()
+                # traceback.print_stack()  # Removed to avoid confusion. ScrapeError already prints the stack trace.
                 raise ScrapeError(f"{self.__class__.__name__}({class_hierarchy}): Status code {result.status_code}.", result.json())
             return result.json()
         except json.decoder.JSONDecodeError as e:
