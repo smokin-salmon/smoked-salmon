@@ -65,7 +65,11 @@ def handle_spectrals_upload_and_deletion(
 ):
     spectral_urls = upload_spectrals(spectrals_path, spectral_ids)
     if delete_spectrals and os.path.isdir(spectrals_path):
-        shutil.rmtree(spectrals_path)
+        shutil.rmtree(spectrals_path, ignore_errors=True)
+        time.sleep(0.5)
+        if os.path.isdir(spectrals_path):
+            shutil.rmtree(spectrals_path)
+            time.sleep(0.5)
     return spectral_urls
 
 
