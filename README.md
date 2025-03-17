@@ -2,6 +2,10 @@
 
 A tool to assist with finding music and uploading it to RED.
 
+## Please use the [**wiki**](https://github.com/miandru/smoked-salmon/wiki) everything you need to know here is there.
+
+<details>
+<summary>Old setup guide</summary>
 ## Setup Guide
 
 ### Installation
@@ -90,7 +94,7 @@ With uv:
 git pull
 uv sync
 ```
-
+</details>
 <details>
 <summary>Old description</summary>
     All information pertaining to its use can be found in the wiki.
