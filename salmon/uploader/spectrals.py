@@ -351,7 +351,7 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma):
         ids = "*" if config.YES_ALL else click.prompt(
             click.style(
                 f"What spectral IDs would you like to upload to "
-                f"{config.SPECS_UPLOADER}? (\" * \" for all, \"0\" for none)",
+                f"{config.SPECS_UPLOADER}? (space-separated list of IDs, \"0\" for none, \"*\" for all)",
                 fg="magenta",
                 bold=True,
             ),
