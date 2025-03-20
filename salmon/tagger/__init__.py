@@ -149,7 +149,7 @@ def metadata_validator_base(metadata):
         len(metadata["label"]) < 2 or len(metadata["label"]) > 80
     ):
         raise InvalidMetadataError("Label must be over 2 and under 80 characters.")
-    if "records dk" in metadata["label"].lower():
+    if metadata["label"] is not None and "records dk" in metadata["label"].lower():
         raise InvalidMetadataError("Records DK is not a label. It's a platform for releasing albums. Please change the label (e.g Self Released)")
     if metadata["catno"] and (
         len(metadata["catno"]) < 2 or len(metadata["catno"]) > 80
