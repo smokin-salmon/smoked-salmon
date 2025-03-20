@@ -52,13 +52,13 @@ def _check_flac_integrity(path):
 
 def _check_mp3_integrity(path):
     try:
-	    resp = subprocess.check_output(["mp3val", path])
-	    important_lines = []
-	    for line in resp.decode("utf-8").split("\n"):
-	        for important_line_re in MP3_IMPORTANT_REGEXES:
-	            if important_line_re.match(line):
-	                important_lines.append(line)
-	    return (True, "\n".join(important_lines))
+        resp = subprocess.check_output(["mp3val", path])
+        important_lines = []
+        for line in resp.decode("utf-8").split("\n"):
+            for important_line_re in MP3_IMPORTANT_REGEXES:
+                if important_line_re.match(line):
+                    important_lines.append(line)
+        return (True, "\n".join(important_lines))
     except:
         return (False, "Failed integrity")
 
