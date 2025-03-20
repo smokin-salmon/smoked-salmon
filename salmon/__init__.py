@@ -58,6 +58,7 @@ DEFAULT_VALUES = {
     "OPS_DOTTORRENTS_DIR": False,
     "TRACKER_LIST": [],
     "YES_ALL": False,
+    "EMPTY_TRACK_COMMENT_TAG": False,
 }
 
 

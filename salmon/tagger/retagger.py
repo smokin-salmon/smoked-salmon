@@ -107,6 +107,9 @@ def create_track_changes(tags, metadata):
         if config.GUESTS_IN_TRACK_TITLE:
             trackmeta["title"] = append_guests_to_track_titles(trackmeta)
 
+        if config.EMPTY_TRACK_COMMENT_TAG and getattr(tagset, "comment", False):
+            changes[filename].append(Change("comment", getattr(tagset, "comment"), ""))
+
         for tagfield, metafield in [
             ("title", "title"),
             ("isrc", "isrc"),
