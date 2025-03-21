@@ -21,7 +21,7 @@ from salmon.search import (
     junodownload,
     musicbrainz,
     qobuz,
-#    tidal,
+    tidal,
 )
 
 SEARCHSOURCES = {
@@ -32,7 +32,7 @@ SEARCHSOURCES = {
     "Discogs": discogs,
     #"Beatport": beatport,
     "Qobuz": qobuz,
-#    "Tidal": tidal,
+    "Tidal": tidal,
     "Deezer": deezer,
 }
 
