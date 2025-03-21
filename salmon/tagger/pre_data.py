@@ -122,7 +122,10 @@ def create_track_list(tags, overwrite):
         trackindex += 1
         discnumber = track.discnumber or "1"
         tracknumber = (
-            track.tracknumber.split("/")[0] if track.tracknumber and track.tracknumber.split("/")[0].isdigit() and int(track.tracknumber.split("/")[0]) > 0 else str(trackindex)
+            str(track.tracknumber).split("/")[0] 
+                if track.tracknumber and str(track.tracknumber).split("/")[0].isdigit() and int(str(track.tracknumber).split("/")[0]) > 0 
+                else str(trackindex)
+
         )
         tracks[discnumber][tracknumber] = {
             "track#": tracknumber,
