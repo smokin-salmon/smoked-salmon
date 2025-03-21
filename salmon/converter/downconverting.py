@@ -62,34 +62,31 @@ def _convert_files(old_path, new_path, files_convert, files_copy):
         copyfile(file_, output)
         click.secho(f"Copied {os.path.basename(file_)}")
 
-    converting = True
-    while converting:
-        converting = False
+    while True:
         for i, thread in enumerate(THREADS):
-            if thread and thread.poll() is not None:
-                if thread.poll() != 0:
-                    click.secho(
-                        f"Error downconverting a file, error {thread.poll()}:", fg="red"
-                    )
-                    click.secho(thread.communicate()[1].decode("utf-8", "ignore"))
-                    raise click.Abort
-                try:
-                    thread.kill()
-                except:  # noqa: E722
-                    pass
+            if thread and thread.poll() is not None:  # Process finished
+                exit_code = thread.returncode
+                if exit_code != 0:  # Error handling
+                    stderr_output = thread.communicate()[1].decode("utf-8", "ignore")
+                    click.secho(f"Error downconverting a file, error {exit_code}:", fg="red")
+                    click.secho(stderr_output)
+                    raise click.Abort  # Consider collecting errors instead of aborting
 
-            if not thread or thread.poll() is not None:
+                # Process is finished, and there was no error
+                THREADS[i] = None  # Mark the slot as free
+
+            if THREADS[i] is None:  # If thread is free, assign new file
                 try:
                     file_, sample_rate = next(files)
                 except StopIteration:
-                    break
+                    THREADS[i] = None
+                else:
+                    output = file_.replace(old_path, new_path)
+                    THREADS[i] = _convert_single_file(file_, output, sample_rate, files_left)
+                    files_left -= 1
 
-                output = file_.replace(old_path, new_path)
-                THREADS[i] = _convert_single_file(
-                    file_, output, sample_rate, files_left
-                )
-                files_left -= 1
-            converting = True
+        if all(t is None for t in THREADS):     # No active threads and no more files
+            break
         time.sleep(0.1)
 
 
