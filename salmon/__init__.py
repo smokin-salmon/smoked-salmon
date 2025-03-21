@@ -41,7 +41,7 @@ DEFAULT_VALUES = {
     "WEB_HOST": "127.0.0.1",
     "WEB_PORT": 55110,
     "WEB_STATIC_ROOT_URL": "/static",
-    "COMPRESS_SPECTRALS": False,
+    "COMPRESS_SPECTRALS": True,
     "LMA_COMMENT_IN_T_DESC": False,
     "USE_UPC_AS_CATNO": True,
     "DEFAULT_TRACKER": False,

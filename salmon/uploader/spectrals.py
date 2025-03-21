@@ -190,6 +190,19 @@ def _compress_spectrals(spectrals_path):
     files_iter = iter(files)
     cur_file = 1
     broken = False
+
+    # Check if optipng is installed
+    if shutil.which("optipng") is None:
+        click.secho(
+            "Error: optipng is not installed.\n"
+            "It typically provides ~30% file size reduction, making it nicer for image hosting providers like ptpimg.\n"
+            "You can install it with (on ubuntu): sudo apt-get install optipng\n"
+            "Or modify your config.py file with: COMPRESS_SPECTRALS = False",
+            fg="red",
+            bold=True,
+        )
+        exit(1)
+
     while True:
         with open(os.devnull, "rb") as devnull:
             for i in range(len(THREADS)):
