@@ -99,6 +99,21 @@ def _edit_artists(metadata):
                 role = re.search(r"\((.+)\)", role)[1].lower()
                 tuples_artists_list.append((name, role))
             metadata["artists"] = tuples_artists_list
+
+            # Now update the track-level artists
+            for disc_number, disc_data in metadata["tracks"].items():
+                for track_number, track_info in disc_data.items():
+                    track_artists = track_info["artists"]
+                    updated_track_artists = []
+                    for artist_name, artist_role in track_artists:
+                        # Update role for each artist from the album-level metadata
+                        updated_role = next(
+                            (role for name, role in tuples_artists_list if name == artist_name),
+                            artist_role
+                        )
+                        updated_track_artists.append((artist_name, updated_role))
+                    track_info["artists"] = updated_track_artists
+
             return
         except (ValueError, KeyError, TypeError) as e:
             click.confirm(

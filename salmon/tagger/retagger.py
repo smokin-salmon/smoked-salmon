@@ -166,7 +166,7 @@ def _compare_tag(tagfield, metafield, tagset, trackmeta):
 
 
 def create_artist_str(artists):
-    """Create the artist string from the metadata. It contains main, guest, and remixers."""
+    """Create the artist string from the metadata. It can contain main and guests."""
     main_artists = [a for a, i in artists if i == "main"]
     c = ", " if len(main_artists) > 2 and "&" not in "".join(main_artists) else " & "
     artist_str = c.join(sorted(main_artists))
