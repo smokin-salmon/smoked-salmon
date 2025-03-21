@@ -39,21 +39,21 @@ def _check_path_lengths(path):
     root_len = len(config.DOWNLOAD_DIRECTORY) + 1
     for root, _, files in os.walk(path):
         if len(os.path.abspath(root)) - root_len > 180:
-            click.secho("A subfolder has a path length of >180 characters.", fg="red")
+            click.secho("A subfolder has a path length >180 characters.", fg="red")
             raise NoncompliantFolderStructure
         for f in files:
             filepath = os.path.abspath(os.path.join(root, f))
             filepathlen = len(filepath) - root_len
             if filepathlen > 180:
-                if filepathlen < 200:
-                    really_offending_files.append(filepath)
-                else:
+                if filepathlen < 250:
                     offending_files.append(filepath)
-
+                else:
+                    really_offending_files.append(filepath)
+                    
     if really_offending_files:
         click.secho(
             "The following files exceed 180 characters in length, but cannot "
-            "be safely truncated:",
+            "be safely truncated (more than 70 characters above the limit):",
             fg="red",
             bold=True,
         )
@@ -69,7 +69,7 @@ def _check_path_lengths(path):
     )
     for filepath in sorted(offending_files):
         filename, ext = os.path.splitext(filepath)
-        newpath = filepath[: 178 - len(filename) - len(ext) + root_len] + ".." + ext
+        newpath = filepath[: 178 - len(filename) - len(ext)*2 + root_len] + ".." + ext
         os.rename(filepath, newpath)
         click.echo(f" >> {newpath}")
 
