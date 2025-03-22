@@ -309,7 +309,11 @@ class Scraper(QobuzBase, MetadataMixin):
             return edition_text
             
         return None
-        
+    
+    def parse_release_date(self, soup):
+        """Parse the release date from the API response."""
+        return soup.get("release_date_original")
+    
     def parse_release_catno(self, soup):
         """Parse the catalog number from the API response."""
         return str(soup.get("id")).upper() if soup.get("id") else None
