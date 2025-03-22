@@ -116,59 +116,6 @@ def safe_get(d, keys, default=None):
     # Return default for None/empty values
     return result if result else default
 
-def extract_years_from_copyright(copyright_text):
-    """
-    Extract release years from copyright text.
-    Returns a tuple of (release_year, phonogram_year, earliest_year)
-    
-    The copyright symbol © often indicates the release year
-    The phonogram symbol ℗ often indicates the recording year
-    """
-    if not copyright_text:
-        return None, None, None
-        
-    # Extract years with copyright symbol ©
-    c_years = [int(y) for y in RE_COPYRIGHT_C.findall(copyright_text)]
-    
-    # Extract years with phonogram symbol ℗
-    p_years = [int(y) for y in RE_COPYRIGHT_P.findall(copyright_text)]
-    
-    # If no specific symbols found, try any year
-    if not c_years and not p_years:
-        all_years = [int(y) for y in RE_YEAR.findall(copyright_text)]
-        if all_years:
-            # Use the earliest year as the release_group_year
-            earliest_year = min(all_years)
-            # Use the latest year as the release_year
-            latest_year = max(all_years)
-            return latest_year, latest_year, earliest_year
-        return None, None, None
-        
-    # Get the earliest copyright year for release_group_year
-    c_year = min(c_years) if c_years else None
-    p_year = min(p_years) if p_years else None
-    
-    # Determine the earliest year between copyright and phonogram
-    all_years = c_years + p_years
-    earliest_year = min(all_years) if all_years else None
-    
-    return c_year, p_year, earliest_year
-
-def extract_year_from_date(date_str):
-    """
-    Extract year from a date string like "2009-11-18"
-    """
-    if not date_str:
-        return None
-    
-    match = RE_YEAR.search(date_str)
-    if match:
-        try:
-            return int(match.group(1))
-        except (ValueError, TypeError):
-            return None
-    return None
-
 def normalize_for_comparison(text):
     """
     Normalize text for case-insensitive, accent-insensitive comparison.
@@ -236,46 +183,18 @@ class Scraper(QobuzBase, MetadataMixin):
     def parse_release_title(self, soup):
         """Parse the release title from the API response."""
         return RE_FEAT.sub("", soup["title"])
-        
-    def parse_release_year(self, soup):
-        """
-        Parse the release year from the API response.
-        For reissues, this returns the CURRENT release year (from copyright).
-        """
-        # First check copyright information - this is most likely to be the current release date
-        copyright_text = soup.get("copyright", "")
-        c_year, p_year, _ = extract_years_from_copyright(copyright_text)
-        
-        # Prefer copyright year (©), then phonogram year (℗)
-        if c_year:
-            return c_year
-        if p_year:
-            return p_year
-        
-        # If there's no copyright info, check the release date
-        # This fallback is needed for albums without copyright information
-        release_date = soup.get("release_date_original")
-        return extract_year_from_date(release_date)
     
     def parse_release_group_year(self, soup):
-        """
-        Parse the original release year (release group year) from the API response.
-        This should be the ORIGINAL release date.
-        """
-        # For finding original release date, Qobuz's release_date_original field is most reliable
-        release_date = soup.get("release_date_original")
-        original_year = extract_year_from_date(release_date)
-        
-        # If we have a valid year from release_date_original, use it
-        if original_year:
-            return original_year
-        
-        # If no release_date_original, fall back to copyright information
-        copyright_text = soup.get("copyright", "")
-        _, _, earliest_year = extract_years_from_copyright(copyright_text)
-        
-        # If we still don't have a year, use parse_release_year as absolute fallback
-        return earliest_year or self.parse_release_year(soup)
+        return RE_YEAR.search(safe_get(soup, ["release_date_original"])).group(1)
+    
+    def parse_release_year(self, soup):
+        if self.parse_edition_title(soup):
+            if any(keyword in self.parse_edition_title(soup) for keyword in EDITION_KEYWORDS):
+                return RE_YEAR.search(safe_get(soup, ["copyright"])).group(1)
+            else:
+                return None
+        else:
+            return self.parse_release_group_year(soup)
             
     def parse_release_label(self, soup):
         """
@@ -362,10 +281,6 @@ class Scraper(QobuzBase, MetadataMixin):
         Qobuz already compresses their images, so using the large image is best.
         """
         return safe_get(soup, ["image", "large"])
-        
-    def parse_release_date(self, soup):
-        """Parse the release date from the API response."""
-        return soup.get("release_date_original")
         
     def parse_edition_title(self, soup):
         """
