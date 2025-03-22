@@ -227,7 +227,7 @@ def generate_description(track_data, metadata):
     """Generate the group description with the tracklist and metadata source links."""
     description = "[b][size=4]Tracklist[/b]\n"
     multi_disc = any(
-        t["t"].discnumber and (t["t"].discnumber.startswith('1/') or int(t["t"].discnumber) > 1) for t in track_data.values()
+        t["t"].discnumber and t["t"].discnumber != '1/1' and (t["t"].discnumber.startswith('1/') or int(t["t"].discnumber) > 1) for t in track_data.values()
     )
     total_duration = 0
     for track in track_data.values():

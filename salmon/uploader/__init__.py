@@ -412,12 +412,12 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             default=True,
             ):
             (integrity, integrity_output) = check_integrity(path)
-            if not integrity and True if config.YES_ALL else click.confirm(
+            if not integrity and (config.YES_ALL or click.confirm(
                 click.style(
                     "Do you want to sanitize this upload?",
                     fg="magenta"),
                 default=True,
-                ):
+                )):
                 sanitize_integrity(path)
 
         if config.YES_ALL or click.confirm(

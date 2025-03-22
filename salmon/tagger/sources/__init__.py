@@ -12,7 +12,7 @@ from salmon.tagger.sources import (
     junodownload,
     musicbrainz,
     qobuz,
-#    tidal,
+    tidal,
 )
 
 METASOURCES = {
@@ -23,7 +23,7 @@ METASOURCES = {
     "Discogs": discogs,
     #"Beatport": beatport,
     "Qobuz": qobuz,
-#    "Tidal": tidal,
+    "Tidal": tidal,
     "Bandcamp": bandcamp,  # Must be last due to the catch-all nature of its URLs.
 }
 
