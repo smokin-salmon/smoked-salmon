@@ -318,7 +318,10 @@ def generate_t_description(
 
 def generate_source_links(metadata_urls):
     links = []
+    unmatched_urls = []
+
     for url in metadata_urls:
+        matched = False
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(url):
                 if config.ICONS_IN_DESCRIPTIONS:
@@ -328,7 +331,23 @@ def generate_source_links(metadata_urls):
                     )
                 else:
                     links.append(f"[url={url}]{name}[/url]")
+                matched = True
                 break
+
+        if not matched:
+            # Extract hostname without TLD for unmatched URLs
+            hostname = re.match(r'https?://(?:www\.)?([^/]+)', url)
+            if hostname:
+                unmatched_urls.append(f"[url={url}]{hostname.group(1)}[/url]")
+
     if config.ICONS_IN_DESCRIPTIONS:
-        return " ".join(links)
-    return " | ".join(links)
+        result = " ".join(links)
+    else:
+        result = " | ".join(links)
+
+    if unmatched_urls:
+        if links:
+            result += " | "
+        result += " | ".join(unmatched_urls)
+
+    return result
