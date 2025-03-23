@@ -9,6 +9,7 @@ Made a new file because there have been a few changes recently.
 - Fixed genre normalization to properly handle accented characters (e.g., "Électronique" → "electronique") (2025-03-23, @miandru)
 - Enabled Tidal source integration for metadata (2025-03-21, @redusys)
 - Added requirement to provide your own Tidal token in config.py (2025-03-22, @miandru)
+- Prevent Tidal/Qobuz metadata search if tokens are not set in config.py (2025-03-21, @redusys)
 
 ## Bug Fixes
 - Fixed year being parsed incorrectly; only parse alternative release year when matching edition keywords (2025-03-22, @miandru)
