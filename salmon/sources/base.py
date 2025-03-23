@@ -81,7 +81,7 @@ class BaseScraper:
         r = await loop.run_in_executor(
             None,
             lambda: requests.get(
-                url, params=params, headers=HEADERS, timeout=7, **kwargs
+                url, params=params, headers=headers or HEADERS, timeout=7, **kwargs
             ),
         )
         if r.status_code != 200:
