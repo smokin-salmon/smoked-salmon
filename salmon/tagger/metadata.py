@@ -44,6 +44,9 @@ def _print_search_results(results, rls_data=None):
     choices = {}
     choice_id = 1
     not_found = list(SEARCHSOURCES.keys())
+    inactive_sources = []
+    source_errors = SEARCHSOURCES.keys() - [r for r in results]
+
     for source, releases in results.items():
         if releases:
             click.secho(f"\nResults for {source}:", fg="yellow", bold=True)
@@ -54,11 +57,21 @@ def _print_search_results(results, rls_data=None):
                 url = SEARCHSOURCES[source].Searcher.format_url(rls_id)
                 click.secho(f"> {choice_id:02d} {release[1]} | {url}")
                 choice_id += 1
+        if releases is None:
+            inactive_sources.append(source)
+            not_found.remove(source)
 
     if not_found:
         click.echo()
         for source in not_found:
             click.echo(f"No results found from {source}.")
+
+    if inactive_sources:
+        for source in inactive_sources:
+            click.echo(f"{source} is inactive. Update your config.py with the necessary tokens if you want to enable it.")
+    if source_errors:
+        click.echo()
+        click.secho(f'Failed to scrape {", ".join(source_errors)}.', fg="red")
 
     return choices
 

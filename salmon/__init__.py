@@ -14,9 +14,11 @@ DEFAULT_VALUES = {
     "SEARCH_EXCLUDED_LABELS": {"edm comps"},
     "BLACKLISTED_GENRES": {"Soundtrack", "Asian Music"},
     "FLAC_COMPRESSION_LEVEL": 8,
-    "TIDAL_TOKEN": "token",
+    "TIDAL_TOKEN": None,    # Override in config.py
     "TIDAL_SEARCH_REGIONS": ["DE", "NZ", "US", "GB"],
     "TIDAL_FETCH_REGIONS": ["DE", "NZ", "US", "GB"],
+    "QOBUZ_APP_ID": None,   # Override in config.py
+    "QOBUZ_USER_AUTH_TOKEN": None,  # Override in config.py
     "LOWERCASE_COVER": False,
     "VARIOUS_ARTIST_THRESHOLD": 4,
     "BLACKLISTED_SUBSTITUTION": "_",

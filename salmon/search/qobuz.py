@@ -1,6 +1,7 @@
 import asyncio
 import re
 
+from salmon import config
 from salmon.errors import ScrapeError
 from salmon.sources.qobuz import QobuzBase
 from salmon.search.base import (
@@ -11,6 +12,9 @@ from salmon.search.base import (
 
 class Searcher(QobuzBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
+        if (not config.QOBUZ_USER_AUTH_TOKEN or not config.QOBUZ_APP_ID):
+            return "Qobuz", None
+
         releases = {}
         try:
             resp = await self.get_json(
