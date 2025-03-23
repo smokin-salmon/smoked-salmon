@@ -1,7 +1,6 @@
 import re
 from collections import defaultdict
 from html import unescape
-from unicodedata import normalize
 from salmon.errors import ScrapeError
 from salmon.common import RE_FEAT, re_split, parse_copyright
 from salmon.sources import QobuzBase
@@ -17,9 +16,6 @@ RE_EDITION = re.compile(r"\((.*?)\)(?:\s*-\s*(?:Single|EP))?$")
 RE_EP = re.compile(r" ?-? *E\.?P\.?$", re.IGNORECASE)
 RE_SINGLE = re.compile(r"-? *Single$", re.IGNORECASE)
 RE_SOUNDTRACK = re.compile(r"original.*soundtrack", re.IGNORECASE)
-RE_COPYRIGHT = re.compile(r"(?:℗|©)\s*(\d{4})")
-RE_COPYRIGHT_P = re.compile(r"℗\s*(\d{4})")
-RE_COPYRIGHT_C = re.compile(r"©\s*(\d{4})")
 
 # Release type mappings
 RECORD_TYPES = {
@@ -32,6 +28,7 @@ RECORD_TYPES = {
 SPLIT_GENRES = {
     "Pop Rock": {"Pop", "Rock"},
     "Pop/Rock": {"Pop", "Rock"},
+    "Pop/Rock→Pop": {"Pop", "Rock"},
     "Rock & Pop": {"Rock", "Pop"},
     "Rock/Pop": {"Rock", "Pop"},
     "Hip-Hop/Rap": {"Hip Hop", "Rap"},
@@ -54,38 +51,6 @@ SPLIT_GENRES = {
     "Ambient/Experimental": {"Ambient", "Experimental"},
     "Trip Hop": {"Trip Hop"},  # Keep this one as is
     "Music": {},  # Skip generic 'Music' genre
-}
-
-# Common non-English genre translations to English
-GENRE_TRANSLATIONS = {
-    # French to English
-    "musique électronique": "Electronic",
-    "électronique": "Electronic",
-    "musique classique": "Classical",
-    "hip-hop/rap": "Hip Hop",
-    "rap français": "French Rap",
-    "musique du monde": "World",
-    "variété française": "French Pop",
-    "jazz vocal": "Vocal Jazz",
-    # German to English
-    "elektronische musik": "Electronic",
-    "klassische musik": "Classical",
-    "zeitgenössische musik": "Contemporary",
-    # Spanish to English
-    "música electrónica": "Electronic",
-    "música clásica": "Classical",
-    # Common mistranslations or variants
-    "electronica": "Electronic",
-    "indie & alternative": "Indie",
-    "alternative & indie": "Alternative",
-    "r&b/soul": "R&B"
-}
-
-# Set of known English genres for checking
-ENGLISH_GENRES = {
-    "Alternative", "Ambient", "Blues", "Classical", "Country", "Dance", 
-    "Electronic", "Folk", "Funk", "Hip Hop", "Jazz", "Metal", "Pop", "Punk", 
-    "R&B", "Rap", "Reggae", "Rock", "Soul", "Techno", "World"
 }
 
 # Common edition keywords to look for
@@ -115,18 +80,6 @@ def safe_get(d, keys, default=None):
     
     # Return default for None/empty values
     return result if result else default
-
-def normalize_for_comparison(text):
-    """
-    Normalize text for case-insensitive, accent-insensitive comparison.
-    Converts to lowercase and removes accents.
-    """
-    if not text:
-        return ""
-    # NFD normalization decomposes characters into base character + diacritics
-    # We then remove all diacritics (category Mn: nonspacing marks)
-    text = normalize('NFD', text).encode('ascii', 'ignore').decode('ascii')
-    return text.lower().strip()
 
 #------------------------------------------------------------------------------
 # Qobuz Metadata Scraper Class
@@ -352,75 +305,9 @@ class Scraper(QobuzBase, MetadataMixin):
         return "Album"
     
     def parse_genres(self, soup):
-        """
-        Parse genres from the API response, prioritizing English genres and
-        translating non-English ones when possible. Also splits combined genres.
-        """
-        result_genres = set()
-        
-        # Collect all genres from the API response
-        genres_to_process = set()
-        
-        # Add main genre if available
-        if main_genre := safe_get(soup, ["genre", "name"]):
-            genres_to_process.add(main_genre)
-            
-        # Add genres from the list if available
-        genre_list = soup.get("genres_list", [])
-        if isinstance(genre_list, list):
-            for g in genre_list:
-                if not isinstance(g, str):
-                    continue
-                # Get the most specific genre from hierarchical genres
-                specific_genre = g.split("→")[-1].strip()
-                genres_to_process.add(specific_genre)
-        
-        # Process each genre
-        for genre in genres_to_process:
-            # Skip empty genres
-            if not genre:
-                continue
-                
-            # Normalize the genre for comparison (remove accents, lowercase)
-            genre_normalized = genre.strip()
-            genre_norm_key = normalize_for_comparison(genre)
-                
-            # Check if this is a combined genre that needs splitting (case-insensitive)
-            split_match = None
-            for split_key, split_value in SPLIT_GENRES.items():
-                if normalize_for_comparison(split_key) == genre_norm_key:
-                    split_match = split_value
-                    break
-                    
-            if split_match:
-                # If the split result is empty, skip this genre
-                if not split_match:
-                    continue
-                # Add each split genre to the result
-                for split_genre in split_match:
-                    result_genres.add(split_genre)
-            # Otherwise, handle translation
-            else:
-                # Try to translate non-English genre (case-insensitive)
-                translation_match = None
-                for trans_key, trans_value in GENRE_TRANSLATIONS.items():
-                    if normalize_for_comparison(trans_key) == genre_norm_key:
-                        translation_match = trans_value
-                        break
-                        
-                if translation_match:
-                    if translation_match not in result_genres:  # Avoid duplicates
-                        result_genres.add(translation_match)
-                # If no translation found, check if it's already in English
-                elif genre_normalized in ENGLISH_GENRES or any(
-                    normalize_for_comparison(eng) == genre_norm_key for eng in ENGLISH_GENRES
-                ):
-                    result_genres.add(genre_normalized)
-                else:
-                    # Keep original if no translation available
-                    result_genres.add(genre_normalized)
-                    
-        return result_genres
+        """Parse the genres from the API response."""
+        genres = {g for gs in soup.get("genres_list") for g in SPLIT_GENRES.get(gs, [gs])}
+        return genres
         
     def parse_upc(self, soup):
         """Parse the UPC from the API response."""

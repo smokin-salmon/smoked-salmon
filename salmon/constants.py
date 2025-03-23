@@ -356,6 +356,27 @@ GENRE_LIST = {
     "videogame": {"Video Game"},
     "vocal": {"Vocal"},
     "worldmusic": {"World Music"},
+    # French to English
+    "musique electronique": {"Electronic"},
+    "electronique": {"Electronic"},
+    "musique classique": {"Classical"},
+    "hip-hop/rap": {"Hip Hop"},
+    "rap francais": {"French Rap"},
+    "musique du monde": {"World Music"},
+    "variete francaise": {"French Pop"},
+    "jazz vocal": {"Vocal Jazz"},
+    # German to English
+    "elektronische musik": {"Electronic"},
+    "klassische musik": {"Classical"},
+    "zeitgenossische musik": {"Contemporary"},
+    # Spanish to English
+    "musica electronica": {"Electronic"},
+    "musica clasica": {"Classical"},
+    # Common mistranslations or variants
+    "electronica": {"Electronic"},
+    "indie & alternative": {"Indie"},
+    "alternative & indie": {"Alternative"},
+    "r&b/soul": {"R&B"}
 }
 
 ALLOWED_EXTENSIONS = {

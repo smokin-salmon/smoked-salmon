@@ -48,7 +48,8 @@ def strip_template_keys(template, key):
 
 
 def fetch_genre(genre):
-    key_search = re.sub(r"[^a-z]", "", genre.lower().replace("&", "and"))
+    normalized = normalize_accents(genre)
+    key_search = re.sub(r"[^a-z]", "", normalized.lower().replace("&", "and"))
     try:
         return GENRE_LIST[key_search]
     except KeyError:
