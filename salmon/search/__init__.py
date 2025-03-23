@@ -49,6 +49,7 @@ def metas(searchstr, track_count, limit):
     click.secho(f'Searching {", ".join(SEARCHSOURCES)}', fg="cyan", bold=True)
     results = run_metasearch([searchstr], limit=limit, track_count=track_count)
     not_found = []
+    inactive_sources = []
     source_errors = SEARCHSOURCES.keys() - [r for r in results]
     for source, releases in results.items():
         if releases:
@@ -58,11 +59,16 @@ def metas(searchstr, track_count, limit):
                 url = SEARCHSOURCES[source].Searcher.format_url(rls_id, rls_name)
                 click.echo(f"> {release[1]} {url}")
         elif source:
-            not_found.append(source)
+            if releases is None:
+                inactive_sources.append(source)
+            else:
+                not_found.append(source)
 
     click.echo()
     for source in not_found:
         click.secho(f"No results found from {source}.", fg="red")
+    for source in inactive_sources:
+        click.secho(f"{source} is inactive. Update your config.py with the necessary tokens if you want to enable it.", fg="red")
     if source_errors:
         click.secho(f'Failed to scrape {", ".join(source_errors)}.', fg="red")
 
@@ -98,7 +104,8 @@ def run_metasearch(
                 result = filter_results(result, artists, album)
             if track_count:
                 result = filter_by_track_count(result, track_count)
-        results[source] = result
+        if source:
+            results[source] = result
     return results
 
 

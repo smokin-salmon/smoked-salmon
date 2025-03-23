@@ -18,7 +18,11 @@ class Searcher(TidalBase, SearchMixin):
         Run a search of Tidal albums.
         Warnings are for stream quality/streambility.
         """
+        if (not config.TIDAL_TOKEN):
+            return "Tidal", None
+
         releases, tasks = {}, []
+
         found_ids, identifiers = set(), set()
         for cc in COUNTRIES:
             tasks.append(self._search_releases_country(searchstr, cc, limit))

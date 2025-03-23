@@ -8,8 +8,10 @@ DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
 PTPIMG_KEY = 'ptpimg-key'
 DISCOGS_TOKEN = 'discogs-token'
 
+# Remove if you don't want to use Tidal for metadata
 TIDAL_TOKEN = 'your-token'
 
+# Remove if you don't want to use Qobuz for metadata
 QOBUZ_APP_ID = 'app_id'
 QOBUZ_USER_AUTH_TOKEN = 'user_auth_token'
 
