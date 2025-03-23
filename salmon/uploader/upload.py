@@ -323,7 +323,7 @@ def generate_source_links(metadata_urls):
             if source.Scraper.regex.match(url):
                 if config.ICONS_IN_DESCRIPTIONS:
                     links.append(
-                        f"[pad=0|3][url={url}][img=18]{SOURCE_ICONS[name]}[/img] "
+                        f"[pad=0|3][url={url}][img]{SOURCE_ICONS[name]}[/img] "
                         f"{name}[/url][/pad]"
                     )
                 else:

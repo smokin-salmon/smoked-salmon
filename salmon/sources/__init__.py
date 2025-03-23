@@ -10,13 +10,13 @@ from salmon.sources.qobuz import QobuzBase
 from salmon.sources.tidal import TidalBase
 
 SOURCE_ICONS = {
-    "Bandcamp": "https://ptpimg.me/1b382r.png",
-    #"Beatport": "https://ptpimg.me/26k503.png",
-    "Deezer": "https://ptpimg.me/6pm93g.png",
-    "Discogs": "https://ptpimg.me/nj126r.png",
-    "iTunes": "https://ptpimg.me/5d47fv.png",
-    "Junodownload": "https://ptpimg.me/2852h1.png",
-    "MusicBrainz": "https://ptpimg.me/y87lp2.png",
-    "Qobuz": "https://ptpimg.me/372nn7.png",
-    "Tidal": "https://ptpimg.me/dhyvs6.png",
+    "Bandcamp": "https://ptpimg.me/91oo89.png",
+    #"Beatport": "https://ptpimg.me/5hwjpv.png",
+    "Deezer": "https://ptpimg.me/m265v2.png",
+    "Discogs": "https://ptpimg.me/13y32k.png",
+    "iTunes": "https://ptpimg.me/kc00st.png",
+    "Junodownload": "https://ptpimg.me/u1rpx9.png",
+    "MusicBrainz": "https://ptpimg.me/56plwd.png",
+    "Qobuz": "https://ptpimg.me/yh81w2.png",
+    "Tidal": "https://ptpimg.me/5vxo23.png",
 }
