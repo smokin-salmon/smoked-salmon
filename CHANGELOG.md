@@ -2,6 +2,39 @@
 
 Made a new file because there have been a few changes recently.
 
+# Changes 17/03/2025 - 23/03/2025
+
+## Source Integration Improvements
+- Improved genre handling for Qobuz, now uses built-in standardization for genres (2025-03-23, @miandru)
+- Fixed genre normalization to properly handle accented characters (e.g., "Électronique" → "electronique") (2025-03-23, @miandru)
+- Enabled Tidal source integration for metadata (2025-03-21, @redusys)
+- Added requirement to provide your own Tidal token in config.py (2025-03-22, @miandru)
+
+## Bug Fixes
+- Fixed year being parsed incorrectly; only parse alternative release year when matching edition keywords (2025-03-22, @miandru)
+- Fixed handling of tracknumbers in x/y format (2025-03-21, @redusys)
+- Fixed partial downconversion for last file due to race condition (2025-03-21, @redusys)
+- Fixed truncating to real 180 characters (2025-03-21, @redusys)
+- Fixed discnumber condition to exclude '1/1' in track description generation (2025-03-21, @redusys)
+- Fixed "NoneType" error when label is None and metadata validator is called (2025-03-20, @miandru)
+- Added delay before deciding that a folder being deleted is still there (2025-03-17, @miandru)
+
+## General Improvements
+- Included links not related to sources in description (2025-03-23, @redusys)
+- Made all images 18px by default (OPS doesn't support img resizing in bbcode) (2025-03-23, @redusys)
+- Updated artists roles in tracks metadata (2025-03-21, @redusys)
+- Updated prompt message for spectral IDs upload to clarify input format (2025-03-21, @redusys)
+- Fixed lossy master approval request (2025-03-21, @redusys)
+
+## Configuration Changes
+- Added EMPTY_TRACK_COMMENT_TAG configuration to empty comment tag before upload (2025-03-21, @redusys)
+- Enabled spectral compression by default (2025-03-21, @redusys)
+- Changed file permissions for run.py from executable to read/write (2025-03-21, @redusys)
+
+## Other Improvements
+- Propose sanitization only if integrity check failed (2025-03-21, @redusys)
+- Code formatting and indentation fixes (2025-03-20, @miandru)
+
 # Changes 16/03/2025
 - Fixed bandcamp?? I did not really change that much, it's working though :D
 - Added proper exception handling to Qobuz search
