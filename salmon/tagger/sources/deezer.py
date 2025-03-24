@@ -89,11 +89,11 @@ class Scraper(DeezerBase, MetadataMixin):
                 result.append((unescape(artist), "guest"))
 
         if artists:
-            for a in artists.get("mainartist") or artists.get("main_artist", []):
+            for a in artists.get("mainartist", []) + artists.get("main_artist", []):
                 for b in re_split(a):
                     if (b, "main") not in result:
                         result.append((b, "main"))
-            for a in artists.get("featuredartist", []):
+            for a in artists.get("featuredartist", []) + artists.get("featuring", []):
                 for b in re_split(a):
                     if (b, "guest") not in result:
                         result.append((b, "guest"))
