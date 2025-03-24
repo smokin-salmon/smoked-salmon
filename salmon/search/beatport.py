@@ -9,7 +9,7 @@ from salmon.sources import BeatportBase
 class Searcher(BeatportBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
         releases = {}
-        soup = await self.create_soup(self.search_url, params={"q": searchstr})
+        soup = await self.create_soup(self.search_url, params={"q": searchstr}, follow_redirects=True)
         for meta in soup.select(".bucket-items.ec-bucket li .release-meta"):
             try:
                 rls_id = int(

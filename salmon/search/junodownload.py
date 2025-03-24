@@ -16,7 +16,7 @@ class Searcher(JunodownloadBase, SearchMixin):
                 "solrorder": "relevancy",
                 "q[all][]": [searchstr],
             },
-            allow_redirects=False,
+            follow_redirects=False,
         )
         for meta in soup.find_all(
             'div',

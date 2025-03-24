@@ -6,6 +6,7 @@ from collections import namedtuple
 from random import choice
 from string import Formatter
 
+import httpx
 import requests
 from bs4 import BeautifulSoup
 
@@ -80,8 +81,8 @@ class BaseScraper:
         params = params or {}
         r = await loop.run_in_executor(
             None,
-            lambda: requests.get(
-                url, params=params, headers=headers or HEADERS, timeout=7, **kwargs
+            lambda: httpx.get(
+                url, params=params, headers=headers or HEADERS, timeout=7, follow_redirects=kwargs.pop('follow_redirects', True), **kwargs
             ),
         )
         if r.status_code != 200:

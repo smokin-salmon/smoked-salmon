@@ -48,6 +48,7 @@ class MetadataMixin(ABC):
             "source": None,
             "url": url,
         }
+
         if rls_id:
             data["url"] = self.format_url(rls_id=rls_id, rls_name=data["title"])
         data["urls"] = [data["url"]]
@@ -110,11 +111,11 @@ class MetadataMixin(ABC):
             )
         elif re.search(r"original.*soundtrack", data["title"], flags=re.IGNORECASE):
             return data["title"], "Soundtrack"
-        elif len([a for a in data["artists"] if a[1] == "main"]) > 4:
+        elif len([a for a in data["artists"] if a[1] == "main"]) > 6:
             return data["title"], "Compilation"
-        #elif num_tracks < 3:
-        #    return data["title"], "Single"
-        elif num_tracks < 5:
+        elif num_tracks < 3:
+            return data["title"], "Single"
+        elif num_tracks < 6:
             return data["title"], "EP"
         return data["title"], data["rls_type"]
 

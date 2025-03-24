@@ -12,6 +12,11 @@ ROLES = {
     "FEATURED": "guest",
 }
 
+RECORD_TYPES = {
+    "ALBUM": "Album",
+    "EP": "EP",
+    "SINGLE": "Single",
+}
 
 class Scraper(TidalBase, MetadataMixin):
 
@@ -36,6 +41,12 @@ class Scraper(TidalBase, MetadataMixin):
         if not date or date.endswith("01-01") and int(date[:4]) < 2013:
             return None
         return date
+
+    def parse_release_type(self, soup):
+        try:
+            return RECORD_TYPES[soup["type"]]
+        except KeyError:
+            return None
 
     def parse_release_label(self, soup):
         return parse_copyright(soup["copyright"])
