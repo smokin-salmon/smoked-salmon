@@ -27,6 +27,7 @@ dependencies = [
     "setuptools>=68.0.0",
     "wheel>=0.45.1",
     "httpx>=0.28.1",
+    "tqdm>=4.67.1",
 ]
 
 [project.license]
