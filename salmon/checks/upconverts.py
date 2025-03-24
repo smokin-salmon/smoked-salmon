@@ -5,7 +5,7 @@ import subprocess
 
 import click
 import mutagen
-
+from salmon.checks.integrity import process_files
 from salmon.errors import NotAValidInputFile
 
 
@@ -31,39 +31,26 @@ def upload_upconvert_test(path):
 
 def test_upconverted(path):
     if os.path.isfile(path):
-        return _upconvert_check_handler(path)
+        result = _upconvert_check_handler(path)
+        _display_results([result])
+        return result[0]
     elif os.path.isdir(path):
-        any_upconverts = False
-        for root, _, figles in os.walk(path):
-            for f in figles:
+        flac_files = []
+        for root, _, files in os.walk(path):
+            for f in files:
                 if f.lower().endswith(".flac"):
-                    filepath = os.path.join(root, f)
-                    click.secho(f"\nChecking {filepath}...", fg="cyan")
-                    if _upconvert_check_handler(filepath):
-                        any_upconverts = True
-        return any_upconverts
+                    flac_files.append(os.path.join(root, f))       
+        results = process_files(flac_files, _upconvert_check_handler, "Checking FLAC files for upconverts")
+        _display_results(results)
+        return any(r[0] for r in results if r[0] is not None)
 
 
 def _upconvert_check_handler(filepath):
     try:
         upconv, wasted_bits, bitdepth = check_upconvert(filepath)
+        return upconv, wasted_bits, bitdepth, filepath
     except NotAValidInputFile as e:
-        click.secho(str(e), fg="yellow")
-    else:
-        if upconv:
-            click.secho(
-                "This file is likely upconverted from a file of a lesser bitdepth. "
-                f"Wasted bits: {wasted_bits}/{bitdepth}",
-                fg="red",
-                bold=True,
-            )
-        else:
-            click.secho(
-                f"This file does not have a high number of wasted bits. "
-                f"Wasted bits: {wasted_bits}/{bitdepth}",
-                fg="green",
-            )
-        return upconv
+        return None, None, None, filepath
 
 
 def check_upconvert(filepath):
@@ -92,3 +79,19 @@ def check_upconvert(filepath):
         return True, wasted_bits, bitdepth
     else:
         return False, wasted_bits, bitdepth
+
+
+def _display_results(results):
+    sorted_results = sorted(results, key=lambda x: os.path.basename(x[3]))
+    
+    for upconv, wasted_bits, bitdepth, filepath in sorted_results:
+        if upconv is None:
+            click.secho(f"{os.path.basename(filepath)}: Not a valid FLAC file", fg="yellow")
+        else:
+            status = "likely upconverted" if upconv else "does not have a high number of wasted bits"
+            color = "red" if upconv else "green"
+            click.secho(
+                f"{os.path.basename(filepath)}: {status} (Wasted bits: {wasted_bits}/{bitdepth})",
+                fg=color,
+                bold=upconv
+            )
