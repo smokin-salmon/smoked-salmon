@@ -272,7 +272,10 @@ def upload(
             lossy_master, spectral_ids = check_spectrals(
                 path, audio_info, lossy, spectrals
             )
-        metadata = get_metadata(path, tags, rls_data)
+        metadata, new_source_url = get_metadata(path, tags, rls_data)
+        if new_source_url is not None:
+            source_url = new_source_url
+            click.secho(f"New Source URL: {source_url}", fg="green")
         download_cover_if_nonexistent(path, metadata["cover"])
         path, metadata, tags, audio_info = edit_metadata(
             path, tags, metadata, source, rls_data, recompress, auto_rename

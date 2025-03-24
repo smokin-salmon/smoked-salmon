@@ -307,16 +307,30 @@ def generate_t_description(
         description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
 
     if source_url is not None:
-        description += f"[b]Source:[/b]\n[url]{source_url}[/url]\n\n"
+        for name, source in METASOURCES.items():
+            if source.Scraper.regex.match(source_url):
+                if config.ICONS_IN_DESCRIPTIONS:
+                    description += f"[b]Source:[/b] [pad=0|3][url={source_url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n\n"
+                else:
+                    description += f"[b]Source:[/b] [url={source_url}]{name}[/url]\n\n"
+                matched = True
+                break
+
+        if not matched:
+            # Extract hostname without TLD for unmatched URLs
+            hostname = re.match(r'https?://(?:www\.)?([^/]+)', source_url)
+            if hostname:
+                description += f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n\n"
+        
 
     if metadata_urls:
-        description += "[b]More info:[/b] " + generate_source_links(metadata_urls)
+        description += "[b]More info:[/b] " + generate_source_links(metadata_urls, source_url)
         description += "\n"
 
     return description
 
 
-def generate_source_links(metadata_urls):
+def generate_source_links(metadata_urls, source_url=None):
     links = []
     unmatched_urls = []
 
