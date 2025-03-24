@@ -10,7 +10,7 @@ class Searcher(BandcampBase, SearchMixin):
         releases = {}
         try:
             soup = await self.create_soup(
-                self.search_url, params={"q": searchstr}, allow_redirects=False
+                self.search_url, params={"q": searchstr}, follow_redirects=False
             )
             for meta in soup.select(".result-items .searchresult.data-search .result-info"):
                 try:
