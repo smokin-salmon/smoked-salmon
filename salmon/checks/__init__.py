@@ -6,7 +6,7 @@ from heybrochecklog import format_score, format_translation
 from heybrochecklog.score import score_log
 from heybrochecklog.translate import translate_log
 
-from salmon.checks.integrity import check_integrity, format_integrity
+from salmon.checks.integrity import handle_integrity_check
 from salmon.checks.mqa import check_mqa
 from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
@@ -67,16 +67,8 @@ def upconv(path):
 @check.command()
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
 def integrity(path):
-    """Check the integrity of audio files... WIP"""
-    if os.path.isfile(path):
-        click.echo(format_integrity(check_integrity(path)))
-    elif os.path.isdir(path):
-        for root, _, figles in os.walk(path):
-            for f in figles:
-                if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
-                    filepath = os.path.join(root, f)
-                    click.secho(f"\nVerifying {filepath}...", fg="cyan")
-                    click.echo(format_integrity(check_integrity(filepath)))
+    """Check the integrity of audio files"""
+    handle_integrity_check(path)
 
 
 @check.command()

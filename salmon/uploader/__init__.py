@@ -55,7 +55,7 @@ from salmon.rutorrent.rutorrent import (
     add_torrent_to_rutorrent
 )
 from salmon.checks.upconverts import upload_upconvert_test
-from salmon.checks.integrity import (check_integrity, sanitize_integrity)
+from salmon.checks.integrity import (check_integrity, sanitize_integrity, format_integrity)
 
 loop = asyncio.get_event_loop()
 
@@ -408,17 +408,25 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
         if config.YES_ALL or click.confirm(
             click.style(
                 "Do you want to check for integrity of this upload?",
-                fg="magenta"),
+                fg="magenta",
+                bold=True),
             default=True,
             ):
-            (integrity, integrity_output) = check_integrity(path)
-            if not integrity and (config.YES_ALL or click.confirm(
+            result = check_integrity(path)
+            click.echo(format_integrity(result))
+            
+            if not result[0] and (config.YES_ALL or click.confirm(
                 click.style(
                     "Do you want to sanitize this upload?",
-                    fg="magenta"),
+                    fg="magenta",
+                    bold=True),
                 default=True,
                 )):
-                sanitize_integrity(path)
+                click.secho(f"\nSanitizing files...", fg="cyan", bold=True)
+                if sanitize_integrity(path):
+                    click.secho("Sanitization complete", fg="green", bold=True)
+                else:
+                    click.secho("Some files failed sanitization", fg="red", bold=True)
 
         if config.YES_ALL or click.confirm(
             click.style(
