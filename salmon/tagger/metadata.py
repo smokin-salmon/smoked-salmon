@@ -77,6 +77,7 @@ def _print_search_results(results, rls_data=None):
 
 
 def _select_choice(choices, rls_data):
+    source_url = None
     """
     Allow the user to select a metadata choice. Then, if the metadata came from a scraper,
     run the scrape(s) and return combined metadata.
