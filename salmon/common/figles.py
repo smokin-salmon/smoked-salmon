@@ -1,4 +1,4 @@
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import subprocess
 
@@ -76,6 +76,6 @@ def process_files(files, process_func, desc):
     with ThreadPoolExecutor(max_workers=config.SIMULTANEOUS_THREADS) as executor:
         futures = [executor.submit(process_func, file) for file in files]
         results = []
-        for future in tqdm(futures, total=len(files), desc=desc, colour="cyan"):
+        for future in tqdm(as_completed(futures), total=len(files), desc=desc, colour="cyan"):
             results.append(future.result())
     return results
