@@ -6,6 +6,7 @@ from tqdm import tqdm
 
 import click
 
+from salmon import config
 from salmon.common.figles import process_files
 
 FLAC_IMPORTANT_REGEXES = [
@@ -39,7 +40,7 @@ def handle_integrity_check(path):
         click.echo(format_integrity(result))
         
         if not result[0] and path.lower().endswith('.flac'):
-            if click.confirm("\nWould you like to sanitize the file?", fg="magenta", bold=True):
+            if click.confirm(click.style("\nWould you like to sanitize the file?", fg="magenta", bold=True)):
                 click.secho(f"\nSanitizing file...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
                     click.secho("Sanitization complete", fg="green", bold=True)
@@ -49,7 +50,7 @@ def handle_integrity_check(path):
         result = check_integrity(path)
         click.echo(format_integrity(result))
         
-        if not result[0] and click.confirm("\nWould you like to sanitize the failed FLAC files?", fg="magenta", bold=True):
+        if not result[0] and click.confirm(click.style("\nWould you like to sanitize the failed FLAC files?", fg="magenta", bold=True)):
             click.secho(f"\nSanitizing FLAC files...", fg="cyan", bold=True)
             if sanitize_integrity(path):
                 click.secho("Sanitization complete", fg="green", bold=True)
@@ -130,12 +131,19 @@ def sanitize_integrity(path):
 def _sanitize_flac(path):
     try:
         os.rename(path, path + ".corrupted")
-        subprocess.run(["flac", path + ".corrupted", "-o", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(["flac", f"-{config.FLAC_COMPRESSION_LEVEL}", path + ".corrupted", "-o", path], capture_output=True, text=True)
+        if result.returncode != 0:
+            raise Exception(f"FLAC encoding failed:\n{result.stdout}\n{result.stderr}")
         os.remove(path + ".corrupted")
-        subprocess.run(["metaflac", "--dont-use-padding", "--remove", "--block-type=PADDING,PICTURE", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["metaflac", "--add-padding=8192", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(["metaflac", "--dont-use-padding", "--remove", "--block-type=PADDING,PICTURE", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if result.returncode != 0:
+            raise Exception("Failed to remove FLAC metadata blocks")
+        result = subprocess.run(["metaflac", "--add-padding=8192", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if result.returncode != 0:
+            raise Exception("Failed to add FLAC padding")
         return True
-    except Exception:
+    except Exception as e:
+        click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
         return False
     
 def _sanitize_mp3(path):
