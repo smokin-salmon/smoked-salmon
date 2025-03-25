@@ -10,7 +10,7 @@ import mutagen
 
 from salmon import config
 
-THREADS = [None] * config.SIMULTANEOUS_CONVERSIONS
+THREADS = [None] * config.SIMULTANEOUS_THREADS
 COMMANDS = {
     "320": "ffmpeg -i {input_} -acodec libmp3lame -ab 320k {output}",
     "V0": "flac --decode --stdout {input_} | lame -V 0 -q --add-id3v2 "

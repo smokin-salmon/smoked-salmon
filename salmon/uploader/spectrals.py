@@ -23,7 +23,7 @@ from salmon.images import upload_spectrals as upload_spectral_imgs
 from salmon.web import create_app_async, spectrals
 
 loop = asyncio.get_event_loop()
-THREADS = [None] * config.SIMULTANEOUS_SPECTRALS
+THREADS = [None] * config.SIMULTANEOUS_THREADS
 
 
 def check_spectrals(

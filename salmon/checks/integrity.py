@@ -6,6 +6,8 @@ from tqdm import tqdm
 
 import click
 
+import config
+
 FLAC_IMPORTANT_REGEXES = [
     re.compile(".+\\.flac: testing,.*\x08ok"),
 ]
@@ -140,7 +142,7 @@ def _sanitize_mp3(path):
     return True
 
 def process_files(files, process_func, desc):
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=config.SIMULTANEOUS_THREADS) as executor:
         futures = [executor.submit(process_func, file) for file in files]
         results = []
         for future in tqdm(futures, total=len(files), desc=desc, colour="cyan"):

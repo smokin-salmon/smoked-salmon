@@ -78,7 +78,7 @@ as well.
 ## September 5th, 2018
 
 Added a `SIMULTANEOUS_CONVERSIONS` option for the converter. This affects how many
-transcodes and downconverts can run simultaneously.
+transcodes and downconverts can run simultaneously. (edit in 2025-03-25: replaced by `SIMULTANEOUS_THREADS`)
 
 ## September 3rd, 2018
 
