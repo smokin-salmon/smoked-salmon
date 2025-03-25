@@ -5,7 +5,7 @@ import subprocess
 
 import click
 import mutagen
-from salmon.checks.integrity import process_files
+from salmon.common.figles import process_files
 from salmon.errors import NotAValidInputFile
 
 
@@ -47,10 +47,10 @@ def test_upconverted(path):
 
 def _upconvert_check_handler(filepath):
     try:
-        upconv, wasted_bits, bitdepth = check_upconvert(filepath)
-        return upconv, wasted_bits, bitdepth, filepath
+        upconv, wasted_bits, bitdepth, error = check_upconvert(filepath)
+        return upconv, wasted_bits, bitdepth, filepath, error
     except NotAValidInputFile as e:
-        return None, None, None, filepath
+        return None, None, None, filepath, "Unable to check file: " + str(e)
 
 
 def check_upconvert(filepath):
@@ -58,10 +58,10 @@ def check_upconvert(filepath):
         mut = mutagen.File(filepath)
         bitdepth = mut.info.bits_per_sample
     except AttributeError:
-        raise NotAValidInputFile("This is not a FLAC file.")
+        return None, None, None, "This is not a FLAC file."
 
     if bitdepth == 16:
-        raise NotAValidInputFile("This is a 16bit FLAC file.")
+        return None, None, bitdepth, "This is a 16bit FLAC file."
 
     with open(os.devnull, "w") as devnull:
         response = subprocess.check_output(
@@ -76,17 +76,17 @@ def check_upconvert(filepath):
 
     wasted_bits = math.ceil(sum(wasted_bits_list) / len(wasted_bits_list))
     if wasted_bits >= 8:
-        return True, wasted_bits, bitdepth
+        return True, wasted_bits, bitdepth, None
     else:
-        return False, wasted_bits, bitdepth
+        return False, wasted_bits, bitdepth, None
 
 
 def _display_results(results):
     sorted_results = sorted(results, key=lambda x: os.path.basename(x[3]))
     
-    for upconv, wasted_bits, bitdepth, filepath in sorted_results:
+    for upconv, wasted_bits, bitdepth, filepath, error in sorted_results:
         if upconv is None:
-            click.secho(f"{os.path.basename(filepath)}: Not a valid FLAC file", fg="yellow")
+            click.secho(f"{os.path.basename(filepath)}: {error}", fg="yellow")
         else:
             status = "likely upconverted" if upconv else "does not have a high number of wasted bits"
             color = "red" if upconv else "green"
