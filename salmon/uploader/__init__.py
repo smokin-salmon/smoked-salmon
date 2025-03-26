@@ -412,7 +412,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
 
         if config.YES_ALL or click.confirm(
             click.style(
-                "Do you want to check for integrity of this upload?",
+                "\nDo you want to check for integrity of this upload?",
                 fg="magenta",
                 bold=True),
             default=True,
@@ -422,7 +422,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             
             if not result[0] and (config.YES_ALL or click.confirm(
                 click.style(
-                    "Do you want to sanitize this upload?",
+                    "\nDo you want to sanitize this upload?",
                     fg="magenta",
                     bold=True),
                 default=True,
