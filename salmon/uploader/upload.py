@@ -280,16 +280,21 @@ def generate_t_description(
     if not hybrid:
         track = next(iter(track_data.values()))
         if track["precision"]:
-            description += "Encode Specifics: {} bit {:.01f} kHz\n".format(
+            if config.ICONS_IN_DESCRIPTIONS:
+                description += "[img]https://ptpimg.me/pu93q2.png[/img]"
+            else:
+                description += "Encode Specifics:"
+            description += " [b]{} bit [color=#2E86C1]{:.01f}[/color] kHz[/b]".format(
                 track["precision"], track["sample rate"] / 1000
             )
+            description += "\n"
         else:
             description += "Encode Specifics: {:.01f} kHz\n".format(
                 track["sample rate"] / 1000
             )
 
     if metadata["date"]:
-        description += f'Released on {metadata["date"]}\n'
+        description += f'Released on [b]{metadata["date"]}[/b]\n'
 
     if config.INCLUDE_TRACKLIST_IN_T_DESC or hybrid:
         for filename, track in track_data.items():
