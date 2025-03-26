@@ -89,32 +89,41 @@ class Scraper(iTunesBase, MetadataMixin):
         tracks = defaultdict(dict)
         cur_disc = 1
 
-        for track in soup.select(".web-preview"):
+        # Find and parse JSON data from <script> tag
+        script_tag = soup.find("script", {"type": "application/ld+json"})
+        if not script_tag:
+            raise ScrapeError("JSON-LD script not found. Scraping needs to be updated")
+        
+        try:
+            data = json.loads(script_tag.string)
+        except json.JSONDecodeError as e:
+            raise ScrapeError("Failed to decode JSON data.") from e
+
+        if "tracks" not in data:
+            raise ScrapeError("Tracks data not found in JSON.")
+
+        for index, track in enumerate(data["tracks"], start=1):
             try:
-                try:
-                    num = (
-                        track.select(".song-index")[0]
-                        .select(".column-data")[0]
-                        .string.strip()
-                    )
-                except IndexError:
-                    continue
-                raw_title = track.select(".song-name")[0].text.strip()
+                num = index
+                raw_title = track.get("name", "").strip()
                 title = RE_FEAT.sub("", raw_title)
-                explicit = bool(track.select(".badge.explicit.default"))
-                # Itunes silently increments disc number.
-                if int(num) == 1 and num in tracks[str(cur_disc)]:
-                    cur_disc += 1
+
+                # TODO: handle explicit + discnumber + artists (if available, will have to modify num too)
+                # explicit = track.get("isExplicit", False)
+
+                # Increment disc number if necessary
+                # if int(num) == 1 and num in tracks[str(cur_disc)]:
+                #    cur_disc += 1
 
                 tracks[str(cur_disc)][num] = self.generate_track(
-                    trackno=int(num),
+                    trackno=num,
                     discno=cur_disc,
-                    artists=parse_artists(soup, track, raw_title),
+                    artists=[],
+                    #artists=parse_artists(soup, track, raw_title),
                     title=title,
-                    explicit=explicit,
+                    #explicit=explicit,
                 )
-            except (ValueError, IndexError) as e:
-                raise e
+            except (ValueError, KeyError) as e:
                 raise ScrapeError("Could not parse tracks.") from e
 
         return dict(tracks)
