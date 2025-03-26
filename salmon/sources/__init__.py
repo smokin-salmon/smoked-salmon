@@ -14,9 +14,9 @@ SOURCE_ICONS = {
     #"Beatport": "https://ptpimg.me/5hwjpv.png",
     "Deezer": "https://ptpimg.me/m265v2.png",
     "Discogs": "https://ptpimg.me/13y32k.png",
-    "iTunes": "https://ptpimg.me/kc00st.png",
+    "iTunes": "https://ptpimg.me/0z2x90.png",
     "Junodownload": "https://ptpimg.me/u1rpx9.png",
     "MusicBrainz": "https://ptpimg.me/56plwd.png",
-    "Qobuz": "https://ptpimg.me/yh81w2.png",
+    "Qobuz": "https://ptpimg.me/e4d045.png",
     "Tidal": "https://ptpimg.me/5vxo23.png",
 }
