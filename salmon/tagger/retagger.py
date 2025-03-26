@@ -227,7 +227,7 @@ def retag_files(path, album_changes, track_changes):
     click.secho("Retagged files.", fg="green")
 
 
-def rename_files(path, tags, metadata, auto_rename, source=None):
+def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     """
     Call functions that generate the proposed changes, then print and prompt
     for confirmation. Apply the changes if user agrees.
@@ -285,9 +285,17 @@ def rename_files(path, tags, metadata, auto_rename, source=None):
                     )
                 )
                 new_path, new_path_ext = os.path.splitext(os.path.join(path, new_name))
-               # new_path = new_path[: 200 - len(new_path_ext) + len(os.path.dirname(path))] + new_path_ext
+                # new_path = new_path[: 200 - len(new_path_ext) + len(os.path.dirname(path))] + new_path_ext
                 new_path = new_path + new_path_ext
                 os.rename(os.path.join(path, filename), new_path)
+
+                # Update spectral_ids with new filenames, if spectrals were generated
+                if spectral_ids:
+                    for old_name, new_name in to_rename:
+                        for key, value in spectral_ids.items():
+                            if value == old_name:
+                                spectral_ids[key] = new_name
+
             move_non_audio_files(directory_move_pairs)
             delete_empty_folders(path)
     else:

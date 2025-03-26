@@ -265,6 +265,7 @@ def upload(
             if len(searchstrs) > 0:
                 group_id = check_existing_group(gazelle_site, searchstrs)
 
+        spectral_ids = None
         if spectrals_after:
             lossy_master = False
             # We tell the uploader not to worry about it being lossy until later.
@@ -278,7 +279,7 @@ def upload(
             click.secho(f"New Source URL: {source_url}", fg="green")
         download_cover_if_nonexistent(path, metadata["cover"])
         path, metadata, tags, audio_info = edit_metadata(
-            path, tags, metadata, source, rls_data, recompress, auto_rename
+            path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids
         )
         if not group_id:
             group_id = recheck_dupe(gazelle_site, searchstrs, metadata)
@@ -353,6 +354,7 @@ def upload(
             hybrid,
             lossy_master,
             spectral_urls,
+            spectral_ids,
             lossy_comment,
             request_id,
             source_url
@@ -362,7 +364,7 @@ def upload(
                 gazelle_site,
                 torrent_id,
                 spectral_urls,
-                track_data,
+                spectral_ids,
                 source,
                 lossy_comment,
                 source_url=source_url,
@@ -389,7 +391,7 @@ def upload(
             return click.secho("\nDone uploading this release.", fg="green")
 
 
-def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_rename):
+def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids):
     """
     The metadata editing portion of the uploading process. This sticks the user
     into an infinite loop where the metadata process is repeated until the user
@@ -405,12 +407,12 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             recompress_path(path)
         path = rename_folder(path, metadata, auto_rename)
         if not metadata['scene']:
-            rename_files(path, tags, metadata, auto_rename, source)
+            rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
             check_folder_structure(path)
 
         if config.YES_ALL or click.confirm(
             click.style(
-                "Do you want to check for integrity of this upload?",
+                "\nDo you want to check for integrity of this upload?",
                 fg="magenta",
                 bold=True),
             default=True,
@@ -420,7 +422,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             
             if not result[0] and (config.YES_ALL or click.confirm(
                 click.style(
-                    "Do you want to sanitize this upload?",
+                    "\nDo you want to sanitize this upload?",
                     fg="magenta",
                     bold=True),
                 default=True,

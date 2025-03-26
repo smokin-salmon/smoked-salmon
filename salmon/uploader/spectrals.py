@@ -75,7 +75,7 @@ def handle_spectrals_upload_and_deletion(
 
 def generate_spectrals_all(path, spectrals_path, audio_info):
     """Wrapper function to generate all spectrals."""
-    files_li = get_audio_files(path)
+    files_li = get_audio_files(path, True)
     return _generate_spectrals(path, files_li, spectrals_path, audio_info)
 
 
@@ -343,7 +343,7 @@ def upload_spectrals(spectrals_path, spectral_ids):
     for sid, filename in spectral_ids.items():
         spectrals.append(
             (
-                sid - 1,
+                sid,
                 filename,
                 (
                     os.path.join(spectrals_path, f"{sid:02d} Full.png"),
@@ -419,7 +419,7 @@ def report_lossy_master(
     gazelle_site,
     torrent_id,
     spectral_urls,
-    track_data,
+    spectral_ids,
     source,
     comment,
     source_url=None,
@@ -429,9 +429,8 @@ def report_lossy_master(
     for lossy WEB/master approval.
     """
 
-    filenames = list(track_data.keys())
     comment = _add_spectral_links_to_lossy_comment(
-        comment, source_url, spectral_urls, filenames
+        comment, source_url, spectral_urls, spectral_ids
     )
     loop.run_until_complete(
         gazelle_site.report_lossy_master(torrent_id, comment, source)
@@ -460,20 +459,20 @@ def generate_lossy_approval_comment(source_url, filenames):
     return comment
 
 
-def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, filenames):
+def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids):
     if comment:
         comment += "\n\n"
     if source_url:
         comment += f"Sourced from: {source_url}\n\n"
-    comment += make_spectral_bbcode(filenames, spectral_urls)
+    comment += make_spectral_bbcode(spectral_ids, spectral_urls)
     return comment
 
 
-def make_spectral_bbcode(filenames, spectral_urls):
+def make_spectral_bbcode(spectral_ids, spectral_urls):
     "Generates the bbcode for spectrals in descriptions and reports."
     bbcode = "[hide=Spectrals]"
     for spec_id, urls in spectral_urls.items():
-        filename = re.sub(r"[\[\]]", "_", filenames[spec_id])
+        filename = re.sub(r"[\[\]]", "_", spectral_ids[spec_id])
         bbcode += f'[b]{filename} Full[/b]\n[img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n'
     bbcode += '[/hide]\n'
     return bbcode
@@ -495,7 +494,7 @@ def post_upload_spectral_check(
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
     # need to refactor bbcode to not be repeated.
     if spectral_urls:
-        spectrals_bbcode = make_spectral_bbcode(list(track_data.keys()), spectral_urls)
+        spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)
         loop.run_until_complete(
             gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
         )
@@ -505,7 +504,7 @@ def post_upload_spectral_check(
             gazelle_site,
             torrent_id,
             spectral_urls,
-            track_data,
+            spectral_ids,
             source,
             lossy_comment,
             source_url,
