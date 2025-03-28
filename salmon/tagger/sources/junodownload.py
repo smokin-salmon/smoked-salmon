@@ -18,7 +18,7 @@ class Scraper(JunodownloadBase, MetadataMixin):
     def parse_cover_url(self, soup):
         try:
             return (
-                soup.select(".img-release img")[0]["src"][::-1]
+                soup.select("img.img-release")[0]["src"][::-1]
                 .replace("MED"[::-1], "BIG"[::-1], 1)[::-1]
                 .replace("/300/", "/full/")
             )
@@ -55,7 +55,7 @@ class Scraper(JunodownloadBase, MetadataMixin):
 
     def parse_release_catno(self, soup):
         try:
-            catblob = soup.find_all('div', attrs={'class': 'mb-3'})[1]
+            catblob = soup.find_all('div', attrs={'class': 'mb-2'})[10]
             return (
                 catblob.find('strong', text='Cat:')
                 .next_sibling.strip()
