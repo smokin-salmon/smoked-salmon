@@ -95,7 +95,7 @@ def get_wanted_filenames(filenames, track_ids):
     try:
         return {filenames[i - 1] for i in track_ids}
     except IndexError:
-        raise UploadError("Spectral IDs out of range.")
+        raise UploadError("Spectral IDs out of range.") from None
 
 
 def _generate_spectrals(path, files_li, spectrals_path, audio_info):
@@ -318,7 +318,8 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
         await prompt_async(
             click.style(
                 f"Spectrals are available at {click.style(url, fg='blue', underline=True)}\n"
-                f"{click.style('Press enter once you are finished viewing to continue the uploading process', fg='magenta', bold=True)}",
+                f"{click.style('Press enter once you are finished viewing to continue the uploading '
+                             'process', fg='magenta', bold=True)}",
                 fg="magenta",
                 bold=True,
             ),

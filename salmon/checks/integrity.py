@@ -37,8 +37,8 @@ def handle_integrity_check(path):
         result = check_integrity(path)
         click.echo(format_integrity(result))
         
-        if not result[0] and path.lower().endswith('.flac'):
-            if click.confirm(click.style("\nWould you like to sanitize the file?", fg="magenta", bold=True)):
+        if (not result[0] and path.lower().endswith('.flac') and
+                click.confirm(click.style("\nWould you like to sanitize the file?", fg="magenta", bold=True))):
                 click.secho("\nSanitizing file...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
                     click.secho("Sanitization complete", fg="green", bold=True)
@@ -48,7 +48,9 @@ def handle_integrity_check(path):
         result = check_integrity(path)
         click.echo(format_integrity(result))
         
-        if not result[0] and click.confirm(click.style("\nWould you like to sanitize the failed FLAC files?", fg="magenta", bold=True)):
+        if not result[0] and click.confirm(
+            click.style("\nWould you like to sanitize the failed FLAC files?", fg="magenta", bold=True)
+        ):
             click.secho("\nSanitizing FLAC files...", fg="cyan", bold=True)
             if sanitize_integrity(path):
                 click.secho("Sanitization complete", fg="green", bold=True)
@@ -111,7 +113,6 @@ def sanitize_integrity(path):
     elif path.lower().endswith(".mp3"):
         return _sanitize_mp3(path)
     elif os.path.isdir(path):
-        integrities_out = []
         integrities = True
         audio_files = []
         for root, _, files in os.walk(path):
@@ -129,14 +130,26 @@ def sanitize_integrity(path):
 def _sanitize_flac(path):
     try:
         os.rename(path, path + ".corrupted")
-        result = subprocess.run(["flac", f"-{config.FLAC_COMPRESSION_LEVEL}", path + ".corrupted", "-o", path], capture_output=True, text=True)
+        result = subprocess.run(
+            ["flac", f"-{config.FLAC_COMPRESSION_LEVEL}", path + ".corrupted", "-o", path],
+            capture_output=True,
+            text=True
+        )
         if result.returncode != 0:
             raise Exception(f"FLAC encoding failed:\n{result.stdout}\n{result.stderr}")
         os.remove(path + ".corrupted")
-        result = subprocess.run(["metaflac", "--dont-use-padding", "--remove", "--block-type=PADDING,PICTURE", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(
+            ["metaflac", "--dont-use-padding", "--remove", "--block-type=PADDING,PICTURE", path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
         if result.returncode != 0:
             raise Exception("Failed to remove FLAC metadata blocks")
-        result = subprocess.run(["metaflac", "--add-padding=8192", path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        result = subprocess.run(
+            ["metaflac", "--add-padding=8192", path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
         if result.returncode != 0:
             raise Exception("Failed to add FLAC padding")
         return True

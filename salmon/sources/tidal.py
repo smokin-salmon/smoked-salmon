@@ -55,6 +55,7 @@ def get_tidal_regions_to_fetch():
         return config.TIDAL_FETCH_REGIONS
     else:
         try:
+            raise ImportError
             from plugins.downloader.accounts import ACCOUNTS
 
             if "Tidal" in ACCOUNTS:

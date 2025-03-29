@@ -19,7 +19,7 @@ class Searcher(DiscogsBase, SearchMixin):
         )
         for rls in resp["results"]:
             artists, title = rls["title"].split(" - ", 1)
-            year = rls["year"] if "year" in rls else None
+            year = rls.get("year", None)
             source = parse_source(rls["format"])
             ed_title = ", ".join(set(rls["format"]))
 

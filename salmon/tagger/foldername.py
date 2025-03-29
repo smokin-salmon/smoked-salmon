@@ -5,7 +5,6 @@ from copy import copy
 from string import Formatter
 
 import click
-from distutils.dir_util import copy_tree
 
 from salmon import config
 from salmon.common import strip_template_keys
@@ -35,16 +34,15 @@ def rename_folder(path, metadata, auto_rename, check=True):
         click.secho("\nRenaming folder...", fg="cyan", bold=True)
         click.echo(f"Old folder name        : {old_base}")
         click.echo(f"New pending folder name: {new_base}")
-        if not auto_rename:
-            if not click.confirm(
-                click.style(
-                    "\nWould you like to replace the original folder name?",
-                    fg="magenta",
-                    bold=True,
-                ),
-                default=True,
-            ):
-                return path
+        if not auto_rename and not click.confirm(
+            click.style(
+                "\nWould you like to replace the original folder name?",
+                fg="magenta",
+                bold=True,
+            ),
+            default=True,
+        ):
+            return path
 
         new_base = _edit_folder_interactive(new_base, auto_rename)
 
@@ -65,7 +63,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
     new_path_dirname = os.path.dirname(new_path)
     if not os.path.exists(new_path_dirname):
         os.makedirs(new_path_dirname)
-    copy_tree(path, new_path)
+    shutil.copytree(path, new_path, dirs_exist_ok=True)
     click.secho(f"Copied folder to {new_base}.", fg="yellow")
     return new_path
 

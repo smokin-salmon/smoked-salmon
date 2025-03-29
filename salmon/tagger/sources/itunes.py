@@ -67,7 +67,7 @@ class Scraper(iTunesBase, MetadataMixin):
 
     def parse_release_label(self, soup):
         try:
-            info = json.loads(soup.find("script", {"id": "serialized-server-data"}).text)
+            json.loads(soup.find("script", {"id": "serialized-server-data"}).text)
             copyright = soup.find("p", {"data-testid":"tracklist-footer-description"}).text
             return parse_copyright(
                 copyright

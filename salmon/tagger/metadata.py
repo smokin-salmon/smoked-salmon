@@ -69,7 +69,7 @@ def _print_search_results(results, rls_data=None):
 
     if inactive_sources:
         for source in inactive_sources:
-            click.echo(f"{source} is inactive. Update your config.py with the necessary tokens if you want to enable it.")
+            click.echo(f"{source} is inactive. Update your config.py with the necessary tokens to enable it.")
     if source_errors:
         click.echo()
         click.secho(f'Failed to scrape {", ".join(source_errors)}.', fg="red")
@@ -192,8 +192,8 @@ def _print_metadata(metadata, metadata_name="Pending"):
 
 
 def remove_various_artists(tracks):
-    for dnum, disc in tracks.items():
-        for tnum, track in disc.items():
+    for _dnum, disc in tracks.items():
+        for _tnum, track in disc.items():
             artists = []
             for artist, importance in track["artists"]:
                 if (

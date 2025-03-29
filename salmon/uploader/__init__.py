@@ -309,11 +309,8 @@ def upload(
     if config.LAST_MINUTE_DUPE_CHECK:
         last_min_dupe_check(gazelle_site, searchstrs)
 
-    if not group_id:
-        # This prevents the cover being uploaded more than once for multiple sites.
-        cover_url = upload_cover(path, scene)
-    else:
-        cover_url = None
+    # This prevents the cover being uploaded more than once for multiple sites.
+    cover_url = upload_cover(path, scene) if not group_id else None
 
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
@@ -379,11 +376,17 @@ def upload(
         )
         if rutorrent:
             click.secho(
-            f"\nAdding torrent to client {config.RUTORRENT_URL} {config.TRACKER_DIRS[tracker]} {config.TRACKER_LABELS[tracker]}",
+            (f"\nAdding torrent to client {config.RUTORRENT_URL} "
+             f"{config.TRACKER_DIRS[tracker]} {config.TRACKER_LABELS[tracker]}"),
             fg="green",
             bold=True
             )
-            add_torrent_to_rutorrent(config.RUTORRENT_URL, torrent_path, config.TRACKER_DIRS[tracker], config.TRACKER_LABELS[tracker])
+            add_torrent_to_rutorrent(
+                config.RUTORRENT_URL,
+                torrent_path,
+                config.TRACKER_DIRS[tracker],
+                config.TRACKER_LABELS[tracker]
+            )
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
         tracker = None
@@ -524,5 +527,5 @@ def _prompt_source():
             return SOURCES[sauce.lower()]
         except KeyError:
             if sauce.lower().startswith("a"):
-                raise click.Abort
+                raise click.Abort from None
             click.secho(f"{sauce} is not a valid source.", fg="red")

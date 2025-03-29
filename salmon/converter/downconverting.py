@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import shlex
@@ -106,10 +107,8 @@ def _convert_single_file(file_, output, sample_rate, files_left):
 def _create_path(filepath):
     p = os.path.dirname(filepath)
     if not os.path.isdir(p):
-        try:
+        with contextlib.suppress(FileExistsError):
             os.makedirs(p)
-        except FileExistsError:
-            pass
 
 
 def _get_final_sample_rate(sample_rate):

@@ -77,8 +77,8 @@ class BaseGazelleApi:
         self.session.cookies["session"] = self.cookie
         try:
             acctinfo = loop.run_until_complete(self.request("index"))
-        except RequestError:
-            raise LoginError
+        except RequestError as err:
+            raise LoginError from err
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
 
@@ -106,7 +106,7 @@ class BaseGazelleApi:
             # print(url,params,resp)  debug
             resp = resp.json()
         except JSONDecodeError:
-            raise RateLimitError
+            raise RateLimitError from None
         except (ConnectTimeout, ReadTimeout):
             click.secho(
                 "Connection to API timed out, try script again later. Gomen!",
@@ -138,11 +138,10 @@ class BaseGazelleApi:
             # We do not put compilations or guest appearances in this list.
             if not group["artists"]:
                 continue
-            if group["releaseType"] == 7:
-                if not group["extendedArtists"]["6"] or artist.lower() not in {
-                    a["name"].lower() for a in group["extendedArtists"]["6"]
-                }:
-                    continue
+            if group["releaseType"] == 7 and (not group["extendedArtists"]["6"] or artist.lower() not in {
+                a["name"].lower() for a in group["extendedArtists"]["6"]
+            }):
+                continue
             if group["releaseType"] in {1023, 1021, 1022, 1024}:
                 continue
 
@@ -176,7 +175,7 @@ class BaseGazelleApi:
         if year:
             params['year'] = year
         first_request = await self.request("browse", **params)
-        if 'pages' in first_request.keys():
+        if 'pages' in first_request:
             pages = first_request['pages']
         else:
             return []
@@ -194,7 +193,7 @@ class BaseGazelleApi:
         releases = []
         for group in all_results:
             if not group["artist"]:
-                if 'artists' in group.keys():
+                if 'artists' in group:
                     artist = html.unescape(
                         compile_artists(group["artists"], group["releaseType"])
                     )
@@ -245,7 +244,6 @@ class BaseGazelleApi:
 
     def get_uploads_from_log(self, max_pages=10):
         'Crawls some pages of the log and returns uploads'
-        url = f'{self.base_url}/log.php'
         recent_uploads = []
         tasks = [self.fetch_log(i) for i in range(1, max_pages)]
         for page in loop.run_until_complete(asyncio.gather(*tasks)):
@@ -272,7 +270,7 @@ class BaseGazelleApi:
                 raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
                 if (
-                    'requestid' in resp['response'].keys()
+                    'requestid' in resp['response']
                     and resp['response']['requestid']
                 ):
                     if resp['response']['requestid'] == -1:
@@ -291,8 +289,8 @@ class BaseGazelleApi:
                 elif "torrentId" in resp["response"]:
                     torrent_id = resp["response"]["torrentId"]
                 return torrent_id
-        except TypeError:
-            raise RequestError(f"API upload failed, response text: {resp.text}")
+        except TypeError as err:
+            raise RequestError(f"API upload failed, response text: {resp.text}") from err
 
     async def site_page_upload(self, data, files):
         """Attempt to upload a torrent to the site.
@@ -319,18 +317,18 @@ class BaseGazelleApi:
                 torrent_id = self.parse_torrent_id_from_filled_request_page(resp.text)
                 click.secho(f"Filled request: {resp.url}", fg="green")
                 return torrent_id
-            except (TypeError, ValueError):
+            except (TypeError, ValueError) as err:
                 soup = BeautifulSoup(resp.text, "html.parser")
                 error = soup.find('h2', text='Error')
                 if error:
                     error_message = error.parent.parent.find('p').text
-                raise RequestError(f"Request fill failed: {error_message}")
+                raise RequestError(f"Request fill failed: {error_message}") from err
         try:
             return self.parse_most_recent_torrent_and_group_id_from_group_page(
                 resp.text
             )
-        except TypeError:
-            raise RequestError(f"Site upload failed, response text: {resp.text}")
+        except TypeError as err:
+            raise RequestError(f"Site upload failed, response text: {resp.text}") from err
 
     async def upload(self, data, files):
         """Upload a torrent using upload.php

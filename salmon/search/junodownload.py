@@ -43,10 +43,7 @@ class Searcher(JunodownloadBase, SearchMixin):
                 date = right_blob.find('br').next.strip()
                 year = int(date[-2:])
 
-                if 40 <= year <= 99:
-                    year = 1900 + year
-                else:
-                    year = 2000 + year
+                year = 1900 + year if 40 <= year <= 99 else 2000 + year
 
                 catno = right_blob.find('br').previous_sibling.strip().replace(' ', '')
 

@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 from collections import defaultdict
@@ -49,10 +50,8 @@ def construct_rls_data(
         metadata["title"] = tag_track.album or "None"
         if not overwrite:
             metadata["artists"] = construct_artists_li(tags)
-            try:
+            with contextlib.suppress(ValueError, IndexError, TypeError):
                 metadata["year"] = re.search(r"(\d{4})", str(tag_track.date))[1]
-            except (ValueError, IndexError, TypeError):
-                pass
             metadata["group_year"] = metadata["year"]
             metadata["upc"] = tag_track.upc
             metadata["label"] = tag_track.label
@@ -117,15 +116,14 @@ def parse_encoding(format_, track, supplied_encoding, prompt_encoding):
 def create_track_list(tags, overwrite):
     """Generate the track data from each track tag."""
     tracks = defaultdict(dict)
-    trackindex = 0
-    for _, track in sorted(tags.items(), key=lambda k: k):
-        trackindex += 1
+    for trackindex, (_, track) in enumerate(sorted(tags.items(), key=lambda k: k), 1):
         discnumber = track.discnumber or "1"
         tracknumber = (
-            str(track.tracknumber).split("/")[0] 
-                if track.tracknumber and str(track.tracknumber).split("/")[0].isdigit() and int(str(track.tracknumber).split("/")[0]) > 0 
+            str(track.tracknumber).split("/")[0]
+                if (track.tracknumber
+                    and str(track.tracknumber).split("/")[0].isdigit()
+                    and int(str(track.tracknumber).split("/")[0]) > 0)
                 else str(trackindex)
-
         )
         tracks[discnumber][tracknumber] = {
             "track#": tracknumber,
@@ -187,5 +185,5 @@ def _prompt_encoding():
             return TAG_ENCODINGS[enc.upper()]
         except KeyError:
             if enc.lower().startswith("a"):
-                raise click.Abort
+                raise click.Abort from None
             click.secho(f"{enc} is not a valid encoding.", fg="red")

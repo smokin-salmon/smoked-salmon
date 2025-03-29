@@ -46,11 +46,11 @@ class DeezerBase(BaseScraper):
 
         self._session = requests.Session()
         try:
+            raise ImportError
             from plugins.downloader.accounts import ACCOUNTS
         except ImportError:
             return self._session
 
-        self.api_token  # Create login csrf token
         try:
             data = {
                 "type": "login",

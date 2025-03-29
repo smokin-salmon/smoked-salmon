@@ -43,10 +43,10 @@ def gather_tags(path):
 def check_required_tags(tags):
     """Verify that every track has the required tag fields."""
     offending_files = []
-    for fln, tags in tags.items():
+    for fln, tag_item in tags.items():
         for t in ["title", "artist", "album", "tracknumber"]:
             missing = []
-            if not getattr(tags, t, False):
+            if not getattr(tag_item, t, False):
                 missing.append(t)
             if missing:
                 offending_files.append(f'{fln} ({", ".join(missing)})')
