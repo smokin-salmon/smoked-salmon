@@ -233,7 +233,8 @@ def upload(
         source = _prompt_source()
     audio_info = gather_audio_info(path)
     hybrid = check_hybrid(audio_info)
-    standardize_tags(path)
+    if not scene:
+        standardize_tags(path)
     tags = gather_tags(path)
     rls_data = construct_rls_data(
         tags,
