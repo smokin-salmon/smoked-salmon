@@ -76,7 +76,7 @@ def validate_encoding(ctx, param, value):
     "--auto-rename",
     "-n",
     is_flag=True,
-    help=f'Rename files and folders automatically',
+    help='Rename files and folders automatically',
 )
 def tag(path, source, encoding, overwrite, auto_rename):
     """Interactively tag an album"""

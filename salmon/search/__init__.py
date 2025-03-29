@@ -121,9 +121,7 @@ def filter_results(results, artists, album):
             if "Various" in result[0].artist:
                 if len(artists) == 1:
                     continue
-            elif not any(a in stripped_rls_artist for a in split_artists):
-                continue
-            elif not any(
+            elif not any(a in stripped_rls_artist for a in split_artists) or not any(
                 a in stripped_rls_artist.split()
                 for a in chain.from_iterable([a.split() for a in split_artists])
             ):
@@ -145,9 +143,7 @@ def filter_by_track_count(results, track_count):
 
 def _compare_albums(one, two):
     one, two = normalize_accents(one, two)
-    if re_strip(one) == re_strip(two):
-        return True
-    elif re_strip(
+    if re_strip(one) == re_strip(two) or re_strip(
         re.sub(r" \(?(mix|feat|with|incl|prod).+", "", one, flags=re.IGNORECASE)
     ) == re_strip(
         re.sub(r" \(?(mix|feat|with|incl|prod).+", "", two, flags=re.IGNORECASE)

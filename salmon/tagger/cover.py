@@ -1,6 +1,6 @@
+import imghdr
 import os
 import re
-import imghdr
 
 import click
 import requests
@@ -32,6 +32,6 @@ def _download_cover(path, cover_url):
         img_type = imghdr.what(cover_path)
         if img_type not in ["jpeg", "png"]:
             os.remove(cover_path)
-            click.secho(f"\nFailed to download cover image (ERROR downloaded file is not an image [JPEG, PNG])", fg="red")
+            click.secho("\nFailed to download cover image (ERROR downloaded file is not an image [JPEG, PNG])", fg="red")
     else:
         click.secho(f"\nFailed to download cover image (ERROR {stream.status_code})", fg="red")

@@ -1,5 +1,6 @@
 from collections import defaultdict
 from itertools import chain
+
 from unidecode import unidecode
 
 from salmon.common import re_strip

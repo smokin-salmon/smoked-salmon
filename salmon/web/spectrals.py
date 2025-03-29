@@ -1,10 +1,9 @@
+import datetime
 import sqlite3
 from itertools import chain
 
 import aiohttp
 from aiohttp_jinja2 import render_template
-
-import datetime
 
 from salmon.database import DB_PATH
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import xmlrpc.client
 
+
 def add_torrent_to_rutorrent(server_url, torrent_path, directory, label):
     client = xmlrpc.client.Server(server_url)
     with open(torrent_path, 'rb') as torrent_file:

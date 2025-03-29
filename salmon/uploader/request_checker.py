@@ -1,13 +1,12 @@
 import asyncio
-import re
 from urllib import parse
 
 import click
 import rich
 
 from salmon import config
-from salmon.common import RE_FEAT, format_size, make_searchstrs
-from salmon.errors import AbortAndDeleteFolder, RequestError
+from salmon.common import format_size
+from salmon.errors import RequestError
 
 loop = asyncio.get_event_loop()
 
@@ -153,10 +152,7 @@ def _prompt_for_request_id(gazelle_site, results):
         ):
             request_id = parse.parse_qs(parse.urlparse(request_id).query)['id'][0]
             return request_id
-        elif request_id.lower().startswith("n"):
-            click.echo("Not filling a request")
-            return None
-        elif not request_id.strip():
+        elif request_id.lower().startswith("n") or not request_id.strip():
             click.echo("Not filling a request")
             return None
 

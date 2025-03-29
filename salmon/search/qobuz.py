@@ -1,13 +1,12 @@
-import asyncio
 import re
 
 from salmon import config
 from salmon.errors import ScrapeError
-from salmon.sources.qobuz import QobuzBase
 from salmon.search.base import (
     IdentData,
     SearchMixin,
 )
+from salmon.sources.qobuz import QobuzBase
 
 
 class Searcher(QobuzBase, SearchMixin):
@@ -67,7 +66,7 @@ class Searcher(QobuzBase, SearchMixin):
                             explicit=rls.get("parental_warning", False)
                         ),
                     )
-                except (KeyError, TypeError, AttributeError) as e:
+                except (KeyError, TypeError, AttributeError):
                     # Skip individual release if it has missing/malformed data
                     continue
                     

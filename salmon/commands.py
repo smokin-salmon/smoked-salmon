@@ -17,9 +17,8 @@ import salmon.tagger
 import salmon.uploader
 import salmon.web  # noqa F401
 from salmon import config
-from salmon.common import commandgroup
+from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress
-from salmon.common import str_to_int_if_int
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists

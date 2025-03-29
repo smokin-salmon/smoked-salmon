@@ -2,15 +2,12 @@ import asyncio
 import html
 import re
 import sys
-import time
-from ratelimit import limits, sleep_and_retry
 from collections import namedtuple
 from json.decoder import JSONDecodeError
 
 import click
 import requests
 from bs4 import BeautifulSoup
-from heybrochecklog import score
 from ratelimit import limits, sleep_and_retry
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
@@ -22,7 +19,6 @@ from salmon.errors import (
     RequestError,
     RequestFailedError,
 )
-
 
 loop = asyncio.get_event_loop()
 
@@ -37,7 +33,7 @@ ARTIST_TYPES = [
 ]
 
 INVERTED_RELEASE_TYPES = {
-    **dict(zip(RELEASE_TYPES.values(), RELEASE_TYPES.keys())),
+    **dict(zip(RELEASE_TYPES.values(), RELEASE_TYPES.keys(), strict=False)),
     1024: "Guest Appearance",
     1023: "Remixed By",
     1022: "Composition",

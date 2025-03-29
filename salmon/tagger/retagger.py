@@ -92,7 +92,7 @@ def create_track_changes(tags, metadata):
     """
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
-    for (filename, tagset), trackmeta in zip(tags.items(), tracks):
+    for (filename, tagset), trackmeta in zip(tags.items(), tracks, strict=False):
         changes[filename] = []
 
         try:
@@ -102,13 +102,13 @@ def create_track_changes(tags, metadata):
 
         new_artist_str = create_artist_str(trackmeta['artists'])
         if old_artist_str != new_artist_str:
-            changes[filename].append((Change("artist", old_artist_str, new_artist_str)))
+            changes[filename].append(Change("artist", old_artist_str, new_artist_str))
 
         if config.GUESTS_IN_TRACK_TITLE:
             trackmeta["title"] = append_guests_to_track_titles(trackmeta)
 
         if config.EMPTY_TRACK_COMMENT_TAG and getattr(tagset, "comment", False):
-            changes[filename].append(Change("comment", getattr(tagset, "comment"), ""))
+            changes[filename].append(Change("comment", tagset.comment, ""))
 
         for tagfield, metafield in [
             ("title", "title"),

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-import traceback
 from collections import namedtuple
 from random import choice
 from string import Formatter
