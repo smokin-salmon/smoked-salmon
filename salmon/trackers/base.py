@@ -449,7 +449,7 @@ class BaseGazelleApi:
             try:
                 # it having class log_upload is no guarantee that is what it is. Nice one log.
                 torrent_string = re.findall(
-                    "\((.*?)\) \(", entry.find("a").next_sibling
+                    r"\((.*?)\) \(", entry.find("a").next_sibling
                 )[0].split(" - ")
             except BaseException:
                 continue

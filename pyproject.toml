@@ -1,9 +1,11 @@
 [project]
 name = "salmon"
-version = "0.9.0"
+version = "0.9.1"
 description = "An uploading script for Gazelle-based music trackers."
+license = "Apache-2.0"
+readme = "README.md"
 authors = [ { name="azuline", email="azuline@riseup.net" } ]
-requires-python = ">=3.9,<=3.11.11"
+requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31.0",
     "click>=8.1.7",
@@ -30,21 +32,6 @@ dependencies = [
     "tqdm>=4.67.1",
 ]
 
-[project.license]
-text = "Apache-2.0"
-
-[project.optional-dependencies]
-dev = [
-    "black==23.9.1",
-    "isort==6.0.1",
-    "flake8==7.1.2"
-]
-
-[tool.black]
-line-length = 88
-target-version = ['py39']
-skip-string-normalization = true
-
 [project.scripts]
 salmon = "run:main"
 
@@ -55,4 +42,3 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 packages = ["salmon"]
 py-modules = ["run", "config"]
-
