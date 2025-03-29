@@ -1,7 +1,6 @@
 # Use an official Python runtime as a base image
 FROM python:3.12
 
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sox flac mp3val curl nano vim-tiny \
@@ -23,7 +22,7 @@ WORKDIR /app
 COPY . /app
 
 # Install the required Python packages
-RUN uv sync
+RUN uv sync --no-dev
 
 # Set the entrypoint to run the 'salmon' script
 ENTRYPOINT ["uv", "run", "salmon"]
