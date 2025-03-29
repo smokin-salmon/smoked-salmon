@@ -1,47 +1,29 @@
-# Dockerfile created by Bendall and @kieraneglin
-# 
-# Step by step:
-#
-# 1. Create docker image:
-# $ docker image build -t salmon .
-#   - You can pass in `uid` and `gid` as `--build-arg`s if you need to change the user and group IDs.
-#
-# 2. Alias docker command and replace /path/to with your desired path. (Add to .bashrc or whatever):
-# alias salmon='docker run --rm -it -v /path/to/config.py:/salmon/config.py -v /path/to/accounts.json:/salmon/accounts.json -v /path/to/downloads:/downloads -v /path/to/queue:/queue -v /path/to/torrents:/torrents -p 55110:55110/tcp salmon'
-#
-# Done
+# Use an official Python runtime as a base image
+FROM python:3.12
 
-FROM python:3.11-slim-buster
 
-ARG uid=1000
-ARG gid=1000
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sox flac mp3val curl nano vim-tiny \
+    optipng ca-certificates && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /salmon
+# Download the latest installer
+ADD https://astral.sh/uv/install.sh /uv-installer.sh
 
-COPY ./ /salmon
+# Run the installer then remove it
+RUN sh /uv-installer.sh && rm /uv-installer.sh
 
-RUN apt-get update \
-    && echo "----- Installing dependencies" \
-    && apt-get install -y gcc sox flac mp3val \
-    && echo "----- Installing python requirements" \
-    && pip install --trusted-host pypi.python.org -r requirements.txt \
-    && echo "----- Initializing salmon" \
-    # If `WEB_HOST` exists in config.py.txt, leave it alone. Otherwise append `WEB_HOST = '0.0.0.0'`
-    && grep -q "WEB_HOST" config.py.txt || echo "\nWEB_HOST = '0.0.0.0'" >> config.py.txt \
-    && cp config.py.txt config.py \
-    && python run.py migrate \
-    && echo "----- Adding salmon user and group and chown" \
-    && groupadd -r salmon -g ${gid} \
-    && useradd --no-log-init -MNr -g ${gid} -u ${uid} salmon \
-    && chown salmon:salmon -R /salmon \
-    && apt-get remove -y gcc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# Ensure the installed binary is on the `PATH`
+ENV PATH="/root/.local/bin/:$PATH"
 
-USER salmon:salmon
+# Set the working directory in the container
+WORKDIR /app
 
-EXPOSE 55110
+# Copy the project files into the container
+COPY . /app
 
-VOLUME ["/downloads", "/torrents", "/queue"]
+# Install the required Python packages
+RUN uv sync
 
-ENTRYPOINT ["python", "run.py"]
+# Set the entrypoint to run the 'salmon' script
+ENTRYPOINT ["uv", "run", "salmon"]

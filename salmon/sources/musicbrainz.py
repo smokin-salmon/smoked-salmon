@@ -11,7 +11,7 @@ class MusicBrainzBase(BaseScraper):
 
     url = site_url = "https://musicbrainz.org"
     release_format = "/release/{rls_id}"
-    regex = re.compile("^https?://(?:www\.)?musicbrainz.org/release/([a-z0-9\-]+)$")
+    regex = re.compile(r"^https?://(?:www\.)?musicbrainz.org/release/([a-z0-9\-]+)$")
 
     async def create_soup(self, url):
         rls_id = re.search(r"/release/([a-f0-9\-]+)$", url)[1]
