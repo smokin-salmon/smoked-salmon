@@ -1,7 +1,6 @@
 import json
 import re
 from collections import defaultdict
-from datetime import datetime
 
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError

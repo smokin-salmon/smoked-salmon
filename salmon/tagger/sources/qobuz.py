@@ -1,8 +1,9 @@
 import re
 from collections import defaultdict
 from html import unescape
+
+from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
-from salmon.common import RE_FEAT, re_split, parse_copyright
 from salmon.sources import QobuzBase
 from salmon.tagger.sources.base import MetadataMixin
 

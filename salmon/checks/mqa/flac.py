@@ -266,7 +266,7 @@ def restore_linear_prediction(result, coefs, shift):
         )
 
 
-class BitInputStream(object):
+class BitInputStream:
     def __init__(self, inp):
         self.inp = inp
         self.bitbuffer = 0

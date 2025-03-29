@@ -1,7 +1,5 @@
 import asyncio
 import os
-import shutil
-import tempfile
 import re
 
 import click
@@ -11,14 +9,11 @@ from salmon import config
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.errors import RequestError
-
 from salmon.images import upload_cover
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
 from salmon.uploader.spectrals import (
-    generate_lossy_approval_comment,
     make_spectral_bbcode,
-    report_lossy_master,
 )
 
 loop = asyncio.get_event_loop()
@@ -253,9 +248,7 @@ def generate_description(track_data, metadata):
         )
 
     if len(track_data.values()) > 1:
-        description += "\n[b]Total length: [/b]{}:{:02d}\n".format(
-            total_duration // 60, total_duration % 60
-        )
+        description += f"\n[b]Total length: [/b]{total_duration // 60}:{total_duration % 60:02d}\n"
 
     if metadata["comment"]:
         description += f"\n{metadata['comment']}\n"

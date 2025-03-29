@@ -1,8 +1,6 @@
+import os
 import re
 import subprocess
-import os
-from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm
 
 import click
 
@@ -41,7 +39,7 @@ def handle_integrity_check(path):
         
         if not result[0] and path.lower().endswith('.flac'):
             if click.confirm(click.style("\nWould you like to sanitize the file?", fg="magenta", bold=True)):
-                click.secho(f"\nSanitizing file...", fg="cyan", bold=True)
+                click.secho("\nSanitizing file...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
                     click.secho("Sanitization complete", fg="green", bold=True)
                 else:
@@ -51,7 +49,7 @@ def handle_integrity_check(path):
         click.echo(format_integrity(result))
         
         if not result[0] and click.confirm(click.style("\nWould you like to sanitize the failed FLAC files?", fg="magenta", bold=True)):
-            click.secho(f"\nSanitizing FLAC files...", fg="cyan", bold=True)
+            click.secho("\nSanitizing FLAC files...", fg="cyan", bold=True)
             if sanitize_integrity(path):
                 click.secho("Sanitization complete", fg="green", bold=True)
             else:

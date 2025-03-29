@@ -137,7 +137,7 @@ def _select_choice(choices, rls_data):
 
         metadatas = loop.run_until_complete(asyncio.gather(*tasks))
         meta = combine_metadatas(
-            *((s, m) for s, m in zip(sources, metadatas) if m), base=rls_data
+            *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data
         )
         meta = clean_metadata(meta)
         meta["artists"], meta["tracks"] = generate_artists(meta["tracks"])

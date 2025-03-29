@@ -1,7 +1,7 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 import re
 import subprocess
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
 

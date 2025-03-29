@@ -65,7 +65,6 @@ ENCODINGS = {
     "320",
     "V0 (VBR)",
     "V2 (VBR)",
-    "V2 (VBR)",
 }  # Fuck the esoteric and Other, no support found here.
 
 TAG_ENCODINGS = {

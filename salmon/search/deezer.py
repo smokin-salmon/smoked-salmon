@@ -2,8 +2,6 @@ import asyncio
 import re
 from itertools import chain
 
-from ratelimit import limits, sleep_and_retry
-
 from salmon.search.base import (
     ArtistRlsData,
     IdentData,

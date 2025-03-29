@@ -1,13 +1,9 @@
 import re
 
-from salmon.trackers.base import BaseGazelleApi
+from bs4 import BeautifulSoup
 
 from salmon import config
-import click
-import requests
-from requests.exceptions import ConnectTimeout, ReadTimeout
-
-from bs4 import BeautifulSoup
+from salmon.trackers.base import BaseGazelleApi
 
 
 class OpsApi(BaseGazelleApi):

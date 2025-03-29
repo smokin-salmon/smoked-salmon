@@ -6,13 +6,19 @@ import shutil
 import click
 import pyperclip
 
+import salmon.trackers
 from salmon import config
+from salmon.checks.integrity import (
+    check_integrity,
+    format_integrity,
+    sanitize_integrity,
+)
+from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
-
-import salmon.trackers
-
+from salmon.images import upload_cover
+from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -33,29 +39,23 @@ from salmon.tagger.review import review_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.uploader.dupe_checker import (
     check_existing_group,
-    generate_dupe_check_searchstrs,
     dupe_check_recent_torrents,
+    generate_dupe_check_searchstrs,
     print_recent_upload_results,
 )
-from salmon.images import upload_cover
-from salmon.uploader.request_checker import check_requests
 from salmon.uploader.preassumptions import print_preassumptions
+from salmon.uploader.request_checker import check_requests
 from salmon.uploader.spectrals import (
     check_spectrals,
+    generate_lossy_approval_comment,
     handle_spectrals_upload_and_deletion,
     post_upload_spectral_check,
     report_lossy_master,
-    generate_lossy_approval_comment,
 )
 from salmon.uploader.upload import (
     concat_track_data,
     prepare_and_upload,
 )
-from salmon.rutorrent.rutorrent import (
-    add_torrent_to_rutorrent
-)
-from salmon.checks.upconverts import upload_upconvert_test
-from salmon.checks.integrity import (check_integrity, sanitize_integrity, format_integrity)
 
 loop = asyncio.get_event_loop()
 
@@ -122,31 +122,31 @@ loop = asyncio.get_event_loop()
     "--auto-rename",
     "-n",
     is_flag=True,
-    help=f'Rename files and folders automatically',
+    help='Rename files and folders automatically',
 )
 @click.option(
     "--skip-up",
     is_flag=True,
-    help=f'Skip check for 24 bit upconversion',
+    help='Skip check for 24 bit upconversion',
 )
 @click.option(
     "--scene",
     is_flag=True,
-    help=f'Is this a scene release (default: False)'
+    help='Is this a scene release (default: False)'
 )
 @click.option(
     "--rutorrent",
     is_flag=True,
-    help=f'Adds torrent to Rutorrent tracker after torrent upload (default: False)'
+    help='Adds torrent to Rutorrent tracker after torrent upload (default: False)'
 )
 @click.option("--source-url", "-su", 
     default=None, 
-    help=f'For WEB uploads provide the source of the album to be added in release description'
+    help='For WEB uploads provide the source of the album to be added in release description'
 )
 @click.option(
     "-yyy",
     is_flag=True,
-    help=f'Automatically pick the default answer for prompt'
+    help='Automatically pick the default answer for prompt'
 )
 def up(
     path,
@@ -371,7 +371,7 @@ def upload(
                 source_url=source_url,
             )
 
-        url = "{}/torrents.php?torrentid={}".format(gazelle_site.base_url, torrent_id)
+        url = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
         click.secho(
             f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
             fg="green",
@@ -428,7 +428,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
                     bold=True),
                 default=True,
                 )):
-                click.secho(f"\nSanitizing files...", fg="cyan", bold=True)
+                click.secho("\nSanitizing files...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
                     click.secho("Sanitization complete", fg="green", bold=True)
                 else:

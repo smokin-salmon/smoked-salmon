@@ -1,16 +1,10 @@
-import click
-import requests
 import asyncio
-from requests.exceptions import ConnectTimeout, ReadTimeout
 
-from salmon.trackers.base import BaseGazelleApi
 from salmon import config
 from salmon.errors import (
-    LoginError,
-    RateLimitError,
     RequestError,
-    RequestFailedError,
 )
+from salmon.trackers.base import BaseGazelleApi
 
 loop = asyncio.get_event_loop()
 

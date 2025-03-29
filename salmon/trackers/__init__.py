@@ -1,8 +1,9 @@
 from urllib import parse
 
-from salmon import ConfigError, config
-from salmon.trackers import red, ops
 import click
+
+from salmon import ConfigError, config
+from salmon.trackers import ops, red
 
 # hard coded as it needs to reflect the imports anyway.
 tracker_classes = {'RED': red.RedApi, 'OPS': ops.OpsApi}

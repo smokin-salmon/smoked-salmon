@@ -5,6 +5,7 @@ import subprocess
 
 import click
 import mutagen
+
 from salmon.common.figles import process_files
 from salmon.errors import NotAValidInputFile
 

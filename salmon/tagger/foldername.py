@@ -1,11 +1,11 @@
 import os
 import re
 import shutil
-from distutils.dir_util import copy_tree
 from copy import copy
 from string import Formatter
 
 import click
+from distutils.dir_util import copy_tree
 
 from salmon import config
 from salmon.common import strip_template_keys

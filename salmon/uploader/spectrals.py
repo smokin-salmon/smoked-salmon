@@ -1,6 +1,7 @@
 import asyncio
 import os
 import platform
+
 # used by post upload stuff might move.
 import re
 import shutil
@@ -9,7 +10,6 @@ import time
 from os.path import dirname, join
 
 import click
-from bs4 import BeautifulSoup
 
 from salmon import config
 from salmon.common import flush_stdin, get_audio_files, prompt_async

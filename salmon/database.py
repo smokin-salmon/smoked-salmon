@@ -37,7 +37,7 @@ def migrate(list):
                 ran_once = True
                 click.secho(f"Running {migration}...")
                 cursor = conn.cursor()
-                with open(path.join(MIG_DIR, migration), "r") as mig_file:
+                with open(path.join(MIG_DIR, migration)) as mig_file:
                     cursor.executescript(mig_file.read())
                     cursor.execute(
                         "INSERT INTO version (id) VALUES (?)", (mig_version,)
