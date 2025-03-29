@@ -14,7 +14,7 @@ def get_audio_files(path, sort_by_tracknumber=False):
     audio file extensions.
     """
     files = []
-    for root, folders, files_ in os.walk(path):
+    for root, _folders, files_ in os.walk(path):
         files += [
             create_relative_path(root, path, f)
             for f in files_

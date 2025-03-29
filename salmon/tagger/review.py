@@ -101,8 +101,8 @@ def _edit_artists(metadata):
             metadata["artists"] = tuples_artists_list
 
             # Now update the track-level artists
-            for disc_number, disc_data in metadata["tracks"].items():
-                for track_number, track_info in disc_data.items():
+            for _disc_number, disc_data in metadata["tracks"].items():
+                for _track_number, track_info in disc_data.items():
                     track_artists = track_info["artists"]
                     updated_track_artists = []
                     for artist_name, artist_role in track_artists:
@@ -162,7 +162,7 @@ def _alias_artists(metadata):  # noqa: C901
             for artist_name in artist_aliases[artist.lower()]:
                 if artist_name:
                     metadata["artists"].append((artist_name, importa))
-    for i, (artist, importa) in enumerate(metadata["artists"]):
+    for i, (artist, _) in enumerate(metadata["artists"]):
         if artist.lower() in artists_to_delete:
             metadata["artists"].pop(i)
 
@@ -178,7 +178,7 @@ def _alias_artists(metadata):  # noqa: C901
                             )
     for dnum, disc in metadata["tracks"].items():
         for tnum, track in disc.items():
-            for i, (artist, importa) in enumerate(track["artists"]):
+            for i, (artist, _) in enumerate(track["artists"]):
                 if artist.lower() in artists_to_delete:
                     metadata["tracks"][dnum][tnum]["artists"].pop(i)
 
@@ -237,7 +237,7 @@ def _edit_years(metadata):
         text = click.edit(text)
         try:
             year_line, group_year_line = (
-                l.strip() for l in text.strip().split("\n", 1)
+                line.strip() for line in text.strip().split("\n", 1)
             )
             metadata["year"] = re.match(r"Year *: *(\d{4})", year_line)[1]
             metadata["group_year"] = re.match(
@@ -285,7 +285,7 @@ def _edit_edition_info(metadata):
         text = click.edit(text)
         try:
             label_line, cat_line, title_line = (
-                l.strip() for l in text.strip().split("\n", 2)
+                line.strip() for line in text.strip().split("\n", 2)
             )
             metadata["label"] = re.match(r"Label *: *(.*)", label_line)[1] or None
             metadata["catno"] = (

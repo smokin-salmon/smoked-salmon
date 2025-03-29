@@ -92,18 +92,17 @@ class Scraper(DiscogsBase, MetadataMixin):
             return soup["labels"][0]["catno"]
 
     def parse_release_type(self, soup):
-        if "formats" in soup and soup["formats"]:
-            if "descriptions" in soup["formats"][0]:
-                try:
-                    return next(
-                        iter(
-                            RELEASE_TYPES[f]
-                            for f in soup["formats"][0]["descriptions"]
-                            if f in RELEASE_TYPES
-                        )
+        if "formats" in soup and soup["formats"] and "descriptions" in soup["formats"][0]:
+            try:
+                return next(
+                    iter(
+                        RELEASE_TYPES[f]
+                        for f in soup["formats"][0]["descriptions"]
+                        if f in RELEASE_TYPES
                     )
-                except StopIteration:
-                    return
+                )
+            except StopIteration:
+                return
 
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)

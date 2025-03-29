@@ -89,9 +89,9 @@ def _print_request_details(gazelle_site, req):
     click.secho(f"({req['year']})", fg="yellow")
     click.secho(f" - {req['requestorName']} ", fg="cyan", nl=False)
 
-    if 'totalBounty' in req.keys():
+    if 'totalBounty' in req:
         bounty = req['totalBounty']
-    elif 'bounty' in req.keys():
+    elif 'bounty' in req:
         bounty = req['bounty']
 
     bounty = format_size(bounty)
@@ -169,7 +169,7 @@ def _confirm_request_id(gazelle_site, request_id):
                 req['artist'] += a['name'] + " "
     except RequestError:
         click.secho(f"{request_id} does not exist.", fg="red")
-        raise click.Abort
+        raise click.Abort from None
     _print_request_details(gazelle_site, req)
     while True:
         resp = click.prompt(

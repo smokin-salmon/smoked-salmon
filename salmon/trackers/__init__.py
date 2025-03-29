@@ -86,7 +86,7 @@ def validate_tracker(ctx, param, value):
         raise click.BadParameter(
             "This flag requires a tracker. Possible sources are: "
             + ", ".join(tracker_list)
-        )
+        ) from None
 
 
 def validate_request(gazelle_site, request):
@@ -108,4 +108,4 @@ def validate_request(gazelle_site, request):
         )
         return request
     except (KeyError, AttributeError):
-        raise click.BadParameter("This flag requires a request, either as a url or ID")
+        raise click.BadParameter("This flag requires a request, either as a url or ID") from None

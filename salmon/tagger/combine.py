@@ -1,3 +1,4 @@
+import contextlib
 from collections import defaultdict
 from itertools import chain
 
@@ -52,10 +53,8 @@ def combine_metadatas(*metadatas, base=None):  # noqa: C901
 
             base["genres"] += metadata["genres"]
 
-            try:
+            with contextlib.suppress(TrackCombineError):
                 base["tracks"] = combine_tracks(base["tracks"], metadata["tracks"])
-            except TrackCombineError:
-                pass
 
             if (
                 (not base["catno"] or not base["label"])
@@ -130,14 +129,17 @@ def combine_tracks(base, meta):
             try:
                 btrack = next(btracks)
             except StopIteration:
-                raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
+                raise TrackCombineError(f"Disc {disc} track {num} does not exist.") from None
             # Use unidecode comparison when there are accents in the title
-            if re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"])) and btrack["title"] is not None:
+            if (re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"]))
+                    and btrack["title"] is not None):
                 continue
             if btrack["title"] is None:
                 btrack["title"] = track["title"]
-            # Scraped title is the same than title when ignoring metadatas, and it contains accents and special characters, prefer that one.
-            if re_strip(track["title"]) != re_strip(unidecode(track["title"])) and re_strip(unidecode(track["title"])) == re_strip(unidecode(btrack["title"])):
+            # Scraped title is the same than title when ignoring metadatas, and it contains accents and special
+            # characters, prefer that one.
+            if (re_strip(track["title"]) != re_strip(unidecode(track["title"]))
+                    and re_strip(unidecode(track["title"])) == re_strip(unidecode(btrack["title"]))):
                 btrack["title"] = track["title"]
             base_artists = {(re_strip(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])

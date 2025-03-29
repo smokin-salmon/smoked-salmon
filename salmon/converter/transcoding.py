@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 import shlex
@@ -39,7 +40,7 @@ def transcode_folder(path, bitrate):
 
 
 def _validate_folder_is_lossless(path):
-    for root, _, files in os.walk(path):
+    for _root, _, files in os.walk(path):
         for f in files:
             ext = os.path.splitext(f)[1].lower()
             if ext in LOSSY_EXTENSION_LIST:
@@ -89,10 +90,8 @@ def _transcode_files(old_path, new_path, bitrate):
                     )
                     click.secho(thread.communicate()[1].decode("utf-8", "ignore"))
                     raise click.Abort
-                try:
+                with contextlib.suppress(Exception):
                     thread.kill()
-                except:  # noqa: E722
-                    pass
 
             if not thread or thread.poll() is not None:
                 try:
@@ -136,10 +135,8 @@ def _transcode_single_file(file_, output, bitrate, files_left):
 def _create_path(filepath):
     p = os.path.dirname(filepath)
     if not os.path.isdir(p):
-        try:
+        with contextlib.suppress(FileExistsError):
             os.makedirs(p)
-        except FileExistsError:
-            pass
 
 
 def _get_tags(file_):

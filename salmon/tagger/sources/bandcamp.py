@@ -1,3 +1,4 @@
+import contextlib
 import re
 from collections import defaultdict
 from datetime import datetime
@@ -25,10 +26,8 @@ class Scraper(BandcampBase, MetadataMixin):
         genres = set()
         try:
             for a in soup.select(".tralbumData.tralbum-tags a"):
-                try:
+                with contextlib.suppress(GenreNotInWhitelist):
                     genres |= fetch_genre(a.string)
-                except GenreNotInWhitelist:
-                    pass
             return genres
         except TypeError as e:
             raise ScrapeError("Could not parse genres.") from e

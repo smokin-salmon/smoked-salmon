@@ -45,8 +45,8 @@ async def create_app_async():
     site = aiohttp.web.TCPSite(runner, '0.0.0.0', config.WEB_PORT)
     try:
         await site.start()
-    except OSError:
-        raise WebServerIsAlreadyRunning
+    except OSError as err:
+        raise WebServerIsAlreadyRunning from err
     return runner
 
 

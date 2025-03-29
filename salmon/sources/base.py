@@ -67,7 +67,8 @@ class BaseScraper:
             if result.status_code != 200:
                 class_hierarchy = ' -> '.join([cls.__name__ for cls in self.__class__.mro()[:-1]])
                 # traceback.print_stack()  # Removed to avoid confusion. ScrapeError already prints the stack trace.
-                raise ScrapeError(f"{self.__class__.__name__}({class_hierarchy}): Status code {result.status_code}.", result.json())
+                error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {result.status_code}."
+                raise ScrapeError(error_msg, result.json())
             return result.json()
         except json.decoder.JSONDecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
@@ -81,7 +82,12 @@ class BaseScraper:
         r = await loop.run_in_executor(
             None,
             lambda: httpx.get(
-                url, params=params, headers=headers or HEADERS, timeout=7, follow_redirects=kwargs.pop('follow_redirects', True), **kwargs
+                url,
+                params=params,
+                headers=headers or HEADERS,
+                timeout=7,
+                follow_redirects=kwargs.pop('follow_redirects', True),
+                **kwargs
             ),
         )
         if r.status_code != 200:

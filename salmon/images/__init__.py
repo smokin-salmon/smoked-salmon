@@ -26,7 +26,7 @@ def validate_image_host(ctx, param, value):
     try:
         return HOSTS[value]
     except KeyError:
-        raise click.BadParameter(f"{value} is not a valid image host")
+        raise click.BadParameter(f"{value} is not a valid image host") from None
 
 
 @commandgroup.group(cls=AliasedCommands)
@@ -116,7 +116,8 @@ def upload_cover(path, scene=False):
     The image url is returned, otherwise None.
     """
     for filename in os.listdir(path):
-        if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE) or (scene and re.match(r"^.*\.(jpe?g|png)$", filename, flags=re.IGNORECASE)):
+        if (re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE)
+                or (scene and re.match(r"^.*\.(jpe?g|png)$", filename, flags=re.IGNORECASE))):
             click.secho(
                 f"Uploading cover to {config.COVER_UPLOADER}...", fg="yellow", nl=False
             )
@@ -126,9 +127,9 @@ def upload_cover(path, scene=False):
                     url = loop.run_until_complete(
                         loop.run_in_executor(
                             None,
-                            lambda: HOSTS[config.COVER_UPLOADER]
+                            lambda f=fpath: HOSTS[config.COVER_UPLOADER]
                             .ImageUploader()
-                            .upload_file(fpath)[0],
+                            .upload_file(f)[0],
                         )
                     )
                 except (ImageUploadFailed, ValueError) as error:

@@ -30,9 +30,8 @@ python3 = sys.version_info.major >= 3
 def main(argv):
     if len(argv) != 3:
         sys.exit("Usage: python " + argv[0] + " InFile.flac OutFile.wav")
-    with BitInputStream(open(argv[1], "rb")) as inp:
-        with open(argv[2], "wb") as out:
-            decode_file(inp, out)
+    with BitInputStream(open(argv[1], "rb")) as inp, open(argv[2], "wb") as out:
+        decode_file(inp, out)
 
 
 def decode_file(inp, out, numsamples=None, seconds=None):
@@ -59,7 +58,7 @@ def decode_file(inp, out, numsamples=None, seconds=None):
             numsamples = numsamples or x
             inp.read_uint(128)
         else:
-            for i in range(length):
+            for _i in range(length):
                 inp.read_uint(8)
     if samplerate is None:
         raise ValueError("Stream info metadata block absent")

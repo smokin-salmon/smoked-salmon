@@ -31,7 +31,7 @@ def migrate(list):
                     "a four digit integer.",
                     fg="red",
                 )
-                raise click.Abort
+                raise click.Abort from None
 
             if mig_version > current_version:
                 ran_once = True
@@ -61,7 +61,7 @@ def list_migrations():
                 "four digit integer.",
                 fg="red",
             )
-            raise click.Abort
+            raise click.Abort from None
 
         if mig_version == current_version:
             click.secho(f"{migration} (CURRENT)", fg="cyan", bold=True)
@@ -100,7 +100,7 @@ def check_if_migration_is_needed():
             "four digit integer.",
             fg="red",
         )
-        raise click.Abort
+        raise click.Abort from None
     if mig_version > current_version:
         click.secho(
             "The database needs updating. Please run `salmon migrate`.\n",

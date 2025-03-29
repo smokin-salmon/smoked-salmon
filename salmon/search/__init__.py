@@ -68,7 +68,10 @@ def metas(searchstr, track_count, limit):
     for source in not_found:
         click.secho(f"No results found from {source}.", fg="red")
     for source in inactive_sources:
-        click.secho(f"{source} is inactive. Update your config.py with the necessary tokens if you want to enable it.", fg="red")
+        click.secho(
+            f"{source} is inactive. Update your config.py with the necessary tokens if you want to enable it.",
+            fg="red",
+        )
     if source_errors:
         click.secho(f'Failed to scrape {", ".join(source_errors)}.', fg="red")
 
@@ -126,9 +129,8 @@ def filter_results(results, artists, album):
                 for a in chain.from_iterable([a.split() for a in split_artists])
             ):
                 continue
-        if album:
-            if not _compare_albums(album, result[0].album):
-                continue
+        if album and not _compare_albums(album, result[0].album):
+            continue
         filtered[rls_id] = result
     return filtered
 
@@ -143,10 +145,9 @@ def filter_by_track_count(results, track_count):
 
 def _compare_albums(one, two):
     one, two = normalize_accents(one, two)
-    if re_strip(one) == re_strip(two) or re_strip(
-        re.sub(r" \(?(mix|feat|with|incl|prod).+", "", one, flags=re.IGNORECASE)
-    ) == re_strip(
-        re.sub(r" \(?(mix|feat|with|incl|prod).+", "", two, flags=re.IGNORECASE)
-    ):
-        return True
-    return False
+    regex_pattern = r" \(?(mix|feat|with|incl|prod).+"
+    return bool(
+        re_strip(one) == re_strip(two)
+        or re_strip(re.sub(regex_pattern, "", one, flags=re.IGNORECASE))
+        == re_strip(re.sub(regex_pattern, "", two, flags=re.IGNORECASE))
+    )

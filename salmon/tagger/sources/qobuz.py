@@ -106,16 +106,16 @@ class Scraper(QobuzBase, MetadataMixin):
         """
         try:
             rls_id = self.regex.match(url)[1]
-        except (TypeError, IndexError):
-            raise ScrapeError(f"Failed to extract release ID from URL: {url}")
+        except (TypeError, IndexError) as err:
+            raise ScrapeError(f"Failed to extract release ID from URL: {url}") from err
             
         try:
             response = await self.get_json(
                 self.release_format.format(rls_id=rls_id),
                 headers=self.headers
             )
-        except Exception as e:
-            raise ScrapeError(f"Failed to fetch data from Qobuz API: {str(e)}")
+        except Exception as err:
+            raise ScrapeError(f"Failed to fetch data from Qobuz API: {str(err)}") from err
         
         if "error" in response:
             raise ScrapeError(f"Qobuz API error: {response['error']}")

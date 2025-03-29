@@ -254,7 +254,7 @@ def _confirm_group_id(gazelle_site, group_id, results):
             rset['groupYear'] = rset['group']['year']
         except RequestError:
             click.secho(f"{group_id} does not exist.", fg="red")
-            raise click.Abort
+            raise click.Abort from None
     _print_torrents(gazelle_site, group_id, rset)
     while True:
         resp = click.prompt(

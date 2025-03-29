@@ -169,11 +169,10 @@ class MetadataMixin(ABC):
             label, artist = label.lower(), artist.lower()
             return label == artist or re.sub(r" music$", "", label) == artist
 
-        if isinstance(data["label"], str):
-            if any(
-                _compare(data["label"], a) and i == "main" for a, i in data["artists"]
-            ):
-                return "Self-Released"
+        if isinstance(data["label"], str) and any(
+            _compare(data["label"], a) and i == "main" for a, i in data["artists"]
+        ):
+            return "Self-Released"
         return data["label"]
 
     @staticmethod
@@ -214,7 +213,7 @@ class MetadataMixin(ABC):
 def _generate_artist_pool_lower_case(tracks):
     artist_pool = {}
     for track in chain.from_iterable([d.values() for d in tracks.values()]):
-        for name, import_ in track["artists"]:
+        for name, _ in track["artists"]:
             strip_name = normalize_accents(name.lower())
             if strip_name not in artist_pool:
                 artist_pool[strip_name] = name
@@ -254,8 +253,8 @@ def filter_artists(artists, tracks=None):
     artists = fix_artists_list(artists, to_replace)
     if tracks:
         artist_pool = _generate_artist_pool_lower_case(tracks)
-        for dnum, disc in tracks.items():
-            for tnum, track in disc.items():
+        for _dnum, disc in tracks.items():
+            for _tnum, track in disc.items():
                 track["artists"] = fix_artists_list(
                     [
                         (artist_pool[normalize_accents(art.lower())], imp)
@@ -341,7 +340,7 @@ def append_remixers_to_track_titles(data):
 
 def assign_track_totals(data):
     for dnum, disc in data.items():
-        for tnum, track in disc.items():
+        for tnum, _track in disc.items():
             data[dnum][tnum]["tracktotal"] = len(disc)
             data[dnum][tnum]["disctotal"] = len(data)
     return data

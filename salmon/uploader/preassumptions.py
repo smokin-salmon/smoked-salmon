@@ -64,8 +64,8 @@ def print_group_info(gazelle_site, group_id, source):
     """
     try:
         group = loop.run_until_complete(gazelle_site.torrentgroup(group_id))
-    except RequestError:
-        raise UploadError("Could not get information about torrent group from RED.")
+    except RequestError as err:
+        raise UploadError("Could not get information about torrent group from RED.") from err
 
     artists = [a["name"] for a in group["group"]["musicInfo"]["artists"]]
     artists = ", ".join(artists) if len(artists) < 4 else config.VARIOUS_ARTIST_WORD

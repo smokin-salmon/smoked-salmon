@@ -39,8 +39,8 @@ def twos_complement(n, bits):
 
 
 def iter_i24_as_i32(data):
-    for l, h in struct.iter_unpack("<BH", data):
-        yield twos_complement(h << 8 | l, 24) << 8
+    for low_byte, h in struct.iter_unpack("<BH", data):
+        yield twos_complement(h << 8 | low_byte, 24) << 8
 
 
 def iter_i16_as_i32(data):
@@ -86,6 +86,4 @@ def check_mqa(path):
         for p in range(16, 24)
     )
 
-    if any(s.find(MAGIC) for s in streams):
-        return True
-    return False
+    return bool(any(s.find(MAGIC) for s in streams))

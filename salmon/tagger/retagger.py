@@ -126,22 +126,21 @@ def create_track_changes(tags, metadata):
 
 def append_guests_to_track_titles(track):
     guest_artists = [a for a, i in track["artists"] if i == "guest"]
-    if "feat" not in track["title"]:
-        if guest_artists and len(guest_artists) <= config.VARIOUS_ARTIST_THRESHOLD:
-            c = (
-                ", "
-                if len(guest_artists) > 2 or "&" in "".join(guest_artists)
-                else " & "
-            )
-            # If we find a remix parenthetical, remove it and re-add it after the guest artists.
-            remix = re.search(
-                r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE
-            )
-            if remix:
-                track["title"] = track["title"].replace(remix[1], "")
-            track["title"] += f" (feat. {c.join(sorted(guest_artists))})"
-            if remix:
-                track["title"] += remix[1]
+    if "feat" not in track["title"] and guest_artists and len(guest_artists) <= config.VARIOUS_ARTIST_THRESHOLD:
+        c = (
+            ", "
+            if len(guest_artists) > 2 or "&" in "".join(guest_artists)
+            else " & "
+        )
+        # If we find a remix parenthetical, remove it and re-add it after the guest artists.
+        remix = re.search(
+            r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE
+        )
+        if remix:
+            track["title"] = track["title"].replace(remix[1], "")
+        track["title"] += f" (feat. {c.join(sorted(guest_artists))})"
+        if remix:
+            track["title"] += remix[1]
     return track["title"]
 
 
@@ -313,10 +312,9 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
     """Generate the template keys and format the template with the tags."""
     template = config.FILE_TEMPLATE
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
-    if "artist" in keys and config.NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST:
-        if not multiple_artists:
-            keys.remove("artist")
-            template = config.ONE_ALBUM_ARTIST_FILE_TEMPLATE
+    if "artist" in keys and config.NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST and not multiple_artists:
+        keys.remove("artist")
+        template = config.ONE_ALBUM_ARTIST_FILE_TEMPLATE
     if isinstance(tags, dict):
         template_keys = {k: _parse_integer(tags[k][0]) for k in keys}
     else:

@@ -53,7 +53,7 @@ def fetch_genre(genre):
     try:
         return GENRE_LIST[key_search]
     except KeyError:
-        raise GenreNotInWhitelist
+        raise GenreNotInWhitelist from None
 
 
 def truncate(string, length):
@@ -65,6 +65,6 @@ def truncate(string, length):
 def format_size(num, suffix='B'):
     for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:
-            return "%3.1f %s%s" % (num, unit, suffix)
+            return f"{num:3.1f} {unit}{suffix}"
         num /= 1024.0
-    return "%.1f %s%s" % (num, 'Yi', suffix)
+    return "{:.1f} {}{}".format(num, 'Yi', suffix)

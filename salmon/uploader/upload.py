@@ -1,6 +1,7 @@
 import asyncio
 import os
 import re
+from functools import partial
 
 import click
 from dottorrent import Torrent
@@ -190,7 +191,7 @@ def attach_logfiles(path):
             if filename.lower().endswith(".log"):
                 filepath = os.path.abspath(os.path.join(root, filename))
                 logfiles.append(
-                    (filename, open(filepath, "rb"), "application/octet-stream")
+                    ("logfiles[]", (filename, partial(open, filepath, "rb"), "application/octet-stream"))
                 )
     return [("logfiles[]", lf) for lf in logfiles]
 
@@ -227,7 +228,12 @@ def generate_description(track_data, metadata):
     """Generate the group description with the tracklist and metadata source links."""
     description = "[b][size=4]Tracklist[/b]\n"
     multi_disc = any(
-        t["t"].discnumber and t["t"].discnumber != '1/1' and (t["t"].discnumber.startswith('1/') or int(t["t"].discnumber) > 1) for t in track_data.values()
+        (
+            t["t"].discnumber
+            and t["t"].discnumber != '1/1'
+            and (t["t"].discnumber.startswith('1/') or int(t["t"].discnumber) > 1)
+        )
+        for t in track_data.values()
     )
     total_duration = 0
     for track in track_data.values():
@@ -313,7 +319,10 @@ def generate_t_description(
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(source_url):
                 if config.ICONS_IN_DESCRIPTIONS:
-                    description += f"[b]Source:[/b] [pad=0|3][url={source_url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n\n"
+                    description += (
+                        f"[b]Source:[/b] [pad=0|3][url={source_url}][img]"
+                        f"{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n\n"
+                    )
                 else:
                     description += f"[b]Source:[/b] [url={source_url}]{name}[/url]\n\n"
                 matched = True
@@ -357,10 +366,7 @@ def generate_source_links(metadata_urls, source_url=None):
             if hostname:
                 unmatched_urls.append(f"[url={url}]{hostname.group(1)}[/url]")
 
-    if config.ICONS_IN_DESCRIPTIONS:
-        result = " ".join(links)
-    else:
-        result = " | ".join(links)
+    result = " ".join(links) if config.ICONS_IN_DESCRIPTIONS else " | ".join(links)
 
     if unmatched_urls:
         if links:

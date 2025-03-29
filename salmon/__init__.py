@@ -76,7 +76,7 @@ class Config:
             except KeyError:
                 raise ConfigError(
                     f"You are missing {name} in your config. Read UPGRADING.md."
-                )
+                ) from None
 
 
 config = Config()

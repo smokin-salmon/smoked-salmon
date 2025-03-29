@@ -30,19 +30,19 @@ def validate_source(ctx, param, value):
     try:
         return SOURCES[value.lower()]
     except KeyError:
-        raise click.BadParameter(f"{value} is not a valid source.")
+        raise click.BadParameter(f"{value} is not a valid source.") from None
     except AttributeError:
         raise click.BadParameter(
             "You must provide a source. Possible sources are: "
             + ", ".join(SOURCES.values())
-        )
+        ) from None
 
 
 def validate_encoding(ctx, param, value):
     try:
         return TAG_ENCODINGS[value.upper()]
     except KeyError:
-        raise click.BadParameter(f"{value} is not a valid encoding.")
+        raise click.BadParameter(f"{value} is not a valid encoding.") from None
     except AttributeError:
         return None, None
 
@@ -136,7 +136,7 @@ def metadata_validator_base(metadata):
     try:
         metadata["year"] = int(metadata["year"])
     except (ValueError, TypeError):
-        raise InvalidMetadataError("Year is not an integer.")
+        raise InvalidMetadataError("Year is not an integer.") from None
     if metadata["rls_type"] not in RELEASE_TYPES:
         raise InvalidMetadataError("Invalid release type.")
     if not metadata["genres"]:
@@ -150,7 +150,10 @@ def metadata_validator_base(metadata):
     ):
         raise InvalidMetadataError("Label must be over 2 and under 80 characters.")
     if metadata["label"] is not None and "records dk" in metadata["label"].lower():
-        raise InvalidMetadataError("Records DK is not a label. It's a platform for releasing albums. Please change the label (e.g Self Released)")
+        raise InvalidMetadataError(
+            "Records DK is not a label. It's a platform for releasing albums. "
+            "Please change the label (e.g Self Released)"
+        )
     if metadata["catno"] and (
         len(metadata["catno"]) < 2 or len(metadata["catno"]) > 80
     ):
