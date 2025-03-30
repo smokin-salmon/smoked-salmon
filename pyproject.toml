@@ -4,7 +4,6 @@ version = "0.9.1"
 description = "An uploading script for Gazelle-based music trackers."
 license = "Apache-2.0"
 readme = "README.md"
-authors = [ { name="azuline", email="azuline@riseup.net" } ]
 requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31.0",
