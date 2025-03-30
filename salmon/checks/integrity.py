@@ -20,7 +20,7 @@ def format_integrity(result):
     """Format the integrity check result for display"""
     integrities, integrities_out = result
     if integrities:
-        return click.style("Passed integrity check", fg="green", bold=True)
+        return click.style("Passed integrity check", fg="green")
     else:
         output = click.style("Failed integrity check", fg="red", bold=True)
         if integrities_out:

@@ -25,7 +25,7 @@ def print_preassumptions(
     if lossy is not None:
         second.append(f"with lossy master status as {lossy}")
     if second:
-        click.secho(f'Uploading {" ".join(second)}.', fg="cyan")
+        click.secho(f'Uploading {" ".join(second)}.', fg="yellow")
     if spectrals:
         if spectrals == (0,):
             click.secho("Uploading no spectrals.", fg="yellow")

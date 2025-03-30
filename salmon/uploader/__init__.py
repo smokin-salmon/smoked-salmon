@@ -249,7 +249,7 @@ def upload(
     )
 
     try:
-        click.secho("Checking for MQA release (first file only)", fg="cyan")
+        click.secho("Checking for MQA release (first file only)", fg="yellow", bold=True)
         mqa_test(path)
         click.secho("No MQA release detected", fg="green")
 
@@ -282,7 +282,7 @@ def upload(
         metadata, new_source_url = get_metadata(path, tags, rls_data)
         if new_source_url is not None:
             source_url = new_source_url
-            click.secho(f"New Source URL: {source_url}", fg="green")
+            click.secho(f"New Source URL: {source_url}", fg="yellow")
         download_cover_if_nonexistent(path, metadata["cover"])
         path, metadata, tags, audio_info = edit_metadata(
             path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids
@@ -332,12 +332,12 @@ def upload(
                 )
                 spectrals_after = False
             click.secho(
-                "Would you like to upload to another tracker? ", fg="magenta", nl=False
+                "\nWould you like to upload to another tracker? ", fg="magenta", nl=False
             )
             tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
             gazelle_site = salmon.trackers.get_class(tracker)()
 
-            click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
+            click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
             searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
             )
