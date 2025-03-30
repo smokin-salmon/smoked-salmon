@@ -8,6 +8,7 @@ import pyperclip
 
 import salmon.trackers
 from salmon import config
+from salmon.checks import mqa_test
 from salmon.checks.integrity import (
     check_integrity,
     format_integrity,
@@ -248,11 +249,15 @@ def upload(
     )
 
     try:
+        click.secho("Checking for MQA release (first file only)", fg="cyan")
+        mqa_test(path)
+        click.secho("No MQA release detected", fg="green")
+
         if rls_data["encoding"] == "24bit Lossless" and not skip_up:
             if not config.YES_ALL:
                 if click.confirm(
                         click.style(
-                            "24bit detected. Do you want to check whether might be upconverted?",
+                            "\n24bit detected. Do you want to check whether might be upconverted?",
                             fg="magenta",),
                         default=True,):
                     upload_upconvert_test(path)
