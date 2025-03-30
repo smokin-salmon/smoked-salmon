@@ -90,3 +90,20 @@ def mqa(path):
                         click.secho("MQA syncword present", fg="red")
                     else:
                         click.secho("Did not find MQA syncword", fg="green")
+
+
+def mqa_test(path):
+    """Check if a FLAC file is MQA"""
+    if os.path.isfile(path):
+        if check_mqa(path):
+            click.secho("MQA syncword present in '{path}'", fg="red", bold=True)
+            raise click.Abort
+        else:
+            return False
+    elif os.path.isdir(path):
+        for root, _, figles in os.walk(path):
+            for f in figles:
+                if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
+                    filepath = os.path.join(root, f)
+                    """ Only check the first file """
+                    return bool(check_mqa(filepath))
