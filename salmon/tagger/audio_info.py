@@ -7,12 +7,12 @@ from salmon.common import compress, get_audio_files
 from salmon.errors import UploadError
 
 
-def gather_audio_info(path):
+def gather_audio_info(path, sort_by_tracknumber=False):
     """
     Iterate over all audio files in the directory and parse the technical
     information about the files into a dictionary.
     """
-    files = get_audio_files(path)
+    files = get_audio_files(path, sort_by_tracknumber)
     if not files:
         raise UploadError("No audio files found.")
 

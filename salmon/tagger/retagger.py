@@ -32,8 +32,7 @@ def tag_files(path, tags, metadata, auto_rename):
     if auto_rename or click.confirm(
         click.style(
             "\nWould you like to auto-tag the files with the updated metadata?",
-            fg="magenta",
-            bold=True,
+            fg="magenta"
         ),
         default=True,
     ):
@@ -267,7 +266,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
         print_filenames(to_rename)
         if auto_rename or click.confirm(
             click.style(
-                "\nWould you like to rename the files?", fg="magenta", bold=True
+                "\nWould you like to rename the files?", fg="magenta"
             ),
             default=True,
         ):

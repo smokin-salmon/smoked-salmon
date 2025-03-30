@@ -37,8 +37,7 @@ def review_metadata(metadata, validator):
                 "\nAre there any metadata fields you would like to edit? [a]rtists, "
                 "artist a[l]iases, [t]itle, [g]enres, [r]elease type, [y]ears, "
                 "[e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             )
         )
         r_let = r[0].lower()
@@ -55,7 +54,7 @@ def review_metadata(metadata, validator):
         except InvalidMetadataError as e:
             click.confirm(
                 click.style(
-                    str(e) + " Revisit metadata step?", fg="magenta", bold=True
+                    str(e) + " Revisit metadata step?", fg="magenta"
                 ),
                 default=True,
                 abort=True,
@@ -77,8 +76,7 @@ def _check_for_empty_genre_list(metadata):
             click.style(
                 "\nNo genres were found for this release, but one must be added. "
                 "Press enter to open the genre editor.",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default="",
         )
@@ -191,8 +189,7 @@ def _edit_release_type(metadata):
             click.prompt(
                 click.style(
                     "\nWhich release type corresponds to this release? (case insensitive)",
-                    fg="magenta",
-                    bold=True,
+                    fg="magenta"
                 ),
                 type=click.STRING,
             )
@@ -224,8 +221,7 @@ def _edit_title(metadata):
             return
         click.confirm(
             click.style("The release must have a title. Retry?", fg="magenta"),
-            default=True,
-            abort=True,
+            default=True
         )
 
 

@@ -57,7 +57,7 @@ loop = asyncio.get_event_loop()
 @click.option("--format-output", "-f", is_flag=True)
 def specs(path, no_delete_specs, format_output):
     """Generate and open spectrals for a folder"""
-    audio_info = gather_audio_info(path)
+    audio_info = gather_audio_info(path, True)
     _, sids = check_spectrals(path, audio_info, check_lma=False)
     spath = os.path.join(path, "Spectrals")
     spectral_urls = handle_spectrals_upload_and_deletion(
@@ -70,10 +70,10 @@ def specs(path, no_delete_specs, format_output):
         for spec_id, urls in spectral_urls.items():
             if format_output:
                 output.append(
-                    f'[hide={filenames[spec_id]}][img={"][img=".join(urls)}][/hide]'
+                    f'[hide={filenames[spec_id-1]}][img={"][img=".join(urls)}][/hide]'
                 )
             else:
-                output.append(f'{filenames[spec_id]}: {" ".join(urls)}')
+                output.append(f'{filenames[spec_id-1]}: {" ".join(urls)}')
         output = "\n".join(output)
         click.secho(output)
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:

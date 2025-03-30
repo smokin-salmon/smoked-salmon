@@ -88,7 +88,7 @@ def tag(path, source, encoding, overwrite, auto_rename):
         tags, audio_info, source, encoding, overwrite=overwrite
     )
 
-    metadata = get_metadata(path, tags, rls_data)
+    metadata, _ = get_metadata(path, tags, rls_data)
     metadata = review_metadata(metadata, metadata_validator_base)
     tag_files(path, tags, metadata, auto_rename)
 

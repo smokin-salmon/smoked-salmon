@@ -73,8 +73,7 @@ def prompt_editor(path):
     if not click.confirm(
         click.style(
             "\nAre the above tags acceptable? ([n] to open in tag editor)",
-            fg="magenta",
-            bold=True,
+            fg="magenta"
         ),
         default=True,
     ):

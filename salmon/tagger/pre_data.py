@@ -176,8 +176,7 @@ def _prompt_encoding():
         enc = click.prompt(
             click.style(
                 "What is the encoding of this release? [a]bort",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default="",
         )

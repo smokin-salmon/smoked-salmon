@@ -249,7 +249,7 @@ def upload(
     )
 
     try:
-        click.secho("Checking for MQA release (first file only)", fg="cyan")
+        click.secho("Checking for MQA release (first file only)", fg="yellow", bold=True)
         mqa_test(path)
         click.secho("No MQA release detected", fg="green")
 
@@ -258,7 +258,7 @@ def upload(
                 if click.confirm(
                         click.style(
                             "\n24bit detected. Do you want to check whether might be upconverted?",
-                            fg="magenta",),
+                            fg="magenta"),
                         default=True,):
                     upload_upconvert_test(path)
             else:
@@ -282,7 +282,7 @@ def upload(
         metadata, new_source_url = get_metadata(path, tags, rls_data)
         if new_source_url is not None:
             source_url = new_source_url
-            click.secho(f"New Source URL: {source_url}", fg="green")
+            click.secho(f"New Source URL: {source_url}", fg="yellow")
         download_cover_if_nonexistent(path, metadata["cover"])
         path, metadata, tags, audio_info = edit_metadata(
             path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids
@@ -332,12 +332,12 @@ def upload(
                 )
                 spectrals_after = False
             click.secho(
-                "Would you like to upload to another tracker? ", fg="magenta", nl=False
+                "\nWould you like to upload to another tracker? ", fg="magenta", nl=False
             )
             tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
             gazelle_site = salmon.trackers.get_class(tracker)()
 
-            click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan")
+            click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
             searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
             )
@@ -422,8 +422,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
         if config.YES_ALL or click.confirm(
             click.style(
                 "\nDo you want to check for integrity of this upload?",
-                fg="magenta",
-                bold=True),
+                fg="magenta"),
             default=True,
             ):
             result = check_integrity(path)
@@ -432,13 +431,12 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             if not result[0] and (config.YES_ALL or click.confirm(
                 click.style(
                     "\nDo you want to sanitize this upload?",
-                    fg="magenta",
-                    bold=True),
+                    fg="magenta"),
                 default=True,
                 )):
                 click.secho("\nSanitizing files...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
-                    click.secho("Sanitization complete", fg="green", bold=True)
+                    click.secho("Sanitization complete", fg="green")
                 else:
                     click.secho("Some files failed sanitization", fg="red", bold=True)
 
@@ -446,8 +444,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             click.style(
                 "\nWould you like to upload the torrent? (No to re-run metadata "
                 "section)",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default=True,
         ):
@@ -524,7 +521,7 @@ def _prompt_source():
     while True:
         sauce = click.prompt(
             click.style(
-                "What is the source of this release? [a]bort", fg="magenta", bold=True
+                "What is the source of this release? [a]bort", fg="magenta"
             ),
             default="",
         )

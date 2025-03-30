@@ -22,7 +22,7 @@ def get_metadata(path, tags, rls_data=None):
     """
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
-    click.secho(f"Searching for '{searchstrs}' releases...", fg="cyan", bold=True)
+    click.secho(f"Searching for '{searchstrs}' releases...", fg="yellow")
     kwargs = (
         dict(artists=[a for a, _ in rls_data["artists"]], album=rls_data["title"])
         if rls_data
@@ -89,8 +89,7 @@ def _select_choice(choices, rls_data):
                 click.style(
                     "\nWhich metadata results would you like to use? Other "
                     "options: paste URLs, [m]anual, [a], prefix choice or URL with \"*\" to indicate source (WEB)",
-                    fg="magenta",
-                    bold=True,
+                    fg="magenta"
                 ),
                 type=click.STRING,
             )
@@ -99,8 +98,7 @@ def _select_choice(choices, rls_data):
                 click.style(
                     "\nNo metadata results were found. Options: paste URLs, "
                     "[m]anual, [a]bort, prefix URL with \"*\" to indicate source (WEB)",
-                    fg="magenta",
-                    bold=True,
+                    fg="magenta"
                 ),
                 type=click.STRING,
             )

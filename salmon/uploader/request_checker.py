@@ -128,8 +128,7 @@ def _prompt_for_request_id(gazelle_site, results):
         request_id = click.prompt(
             click.style(
                 "Fill a request? " "Choose from results, paste a url, or do[n]t.",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default="N",
         )
@@ -175,8 +174,7 @@ def _confirm_request_id(gazelle_site, request_id):
         resp = click.prompt(
             click.style(
                 "\nAre you sure you would you like to fill this request [Y]es, " "[n]o",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default="Y",
         )[0].lower()
