@@ -38,10 +38,10 @@ def handle_integrity_check(path):
         click.echo(format_integrity(result))
         
         if (not result[0] and path.lower().endswith('.flac') and
-                click.confirm(click.style("\nWould you like to sanitize the file?", fg="magenta", bold=True))):
+                click.confirm(click.style("\nWould you like to sanitize the file?", fg="magenta"))):
                 click.secho("\nSanitizing file...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
-                    click.secho("Sanitization complete", fg="green", bold=True)
+                    click.secho("Sanitization complete", fg="green")
                 else:
                     click.secho("Sanitization failed", fg="red", bold=True)
     elif os.path.isdir(path):
@@ -49,7 +49,7 @@ def handle_integrity_check(path):
         click.echo(format_integrity(result))
         
         if not result[0] and click.confirm(
-            click.style("\nWould you like to sanitize the failed FLAC files?", fg="magenta", bold=True)
+            click.style("\nWould you like to sanitize the failed FLAC files?", fg="magenta")
         ):
             click.secho("\nSanitizing FLAC files...", fg="cyan", bold=True)
             if sanitize_integrity(path):

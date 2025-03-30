@@ -34,8 +34,7 @@ def choose_tracker(choices):
         tracker_input = click.prompt(
             click.style(
                 f'Your choices are {" , ".join(choices)} ' 'or [a]bort.',
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default=choices[0],
         )
@@ -64,7 +63,7 @@ def choose_tracker_first_time(question="Which tracker would you like to upload t
     if config.DEFAULT_TRACKER:
         click.secho(f"Using tracker: {config.DEFAULT_TRACKER}", fg="green")
         return config.DEFAULT_TRACKER
-    click.secho(question, fg="magenta", bold=True)
+    click.secho(question, fg="magenta")
     tracker = choose_tracker(choices)
     return tracker
 

@@ -49,8 +49,7 @@ def print_preassumptions(
         click.confirm(
             click.style(
                 "\nWould you like to continue to upload to this group?",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default=True,
             abort=True,

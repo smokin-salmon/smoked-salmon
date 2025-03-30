@@ -89,8 +89,7 @@ def _select_choice(choices, rls_data):
                 click.style(
                     "\nWhich metadata results would you like to use? Other "
                     "options: paste URLs, [m]anual, [a], prefix choice or URL with \"*\" to indicate source (WEB)",
-                    fg="magenta",
-                    bold=True,
+                    fg="magenta"
                 ),
                 type=click.STRING,
             )
@@ -99,8 +98,7 @@ def _select_choice(choices, rls_data):
                 click.style(
                     "\nNo metadata results were found. Options: paste URLs, "
                     "[m]anual, [a]bort, prefix URL with \"*\" to indicate source (WEB)",
-                    fg="magenta",
-                    bold=True,
+                    fg="magenta"
                 ),
                 type=click.STRING,
             )

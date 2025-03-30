@@ -320,8 +320,7 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
                 f"Spectrals are available at {click.style(url, fg='blue', underline=True)}\n"
                 f"{click.style('Press enter once you are finished viewing to continue the uploading '
                              'process', fg='magenta', bold=True)}",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             end=" ",
             flush=True,
@@ -366,8 +365,7 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma):
             click.style(
                 f"What spectral IDs would you like to upload to "
                 f"{config.SPECS_UPLOADER}? (space-separated list of IDs, \"0\" for none, \"*\" for all)",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default="*",
         )
@@ -398,8 +396,7 @@ def prompt_lossy_master():
             click.style(
                 "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, "
                 "[a]bort, [d]elete folder",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             type=click.STRING,
             default="n",

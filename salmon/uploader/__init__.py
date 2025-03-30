@@ -258,7 +258,7 @@ def upload(
                 if click.confirm(
                         click.style(
                             "\n24bit detected. Do you want to check whether might be upconverted?",
-                            fg="magenta",),
+                            fg="magenta"),
                         default=True,):
                     upload_upconvert_test(path)
             else:
@@ -422,8 +422,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
         if config.YES_ALL or click.confirm(
             click.style(
                 "\nDo you want to check for integrity of this upload?",
-                fg="magenta",
-                bold=True),
+                fg="magenta"),
             default=True,
             ):
             result = check_integrity(path)
@@ -432,13 +431,12 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             if not result[0] and (config.YES_ALL or click.confirm(
                 click.style(
                     "\nDo you want to sanitize this upload?",
-                    fg="magenta",
-                    bold=True),
+                    fg="magenta"),
                 default=True,
                 )):
                 click.secho("\nSanitizing files...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
-                    click.secho("Sanitization complete", fg="green", bold=True)
+                    click.secho("Sanitization complete", fg="green")
                 else:
                     click.secho("Some files failed sanitization", fg="red", bold=True)
 
@@ -446,8 +444,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             click.style(
                 "\nWould you like to upload the torrent? (No to re-run metadata "
                 "section)",
-                fg="magenta",
-                bold=True,
+                fg="magenta"
             ),
             default=True,
         ):
@@ -524,7 +521,7 @@ def _prompt_source():
     while True:
         sauce = click.prompt(
             click.style(
-                "What is the source of this release? [a]bort", fg="magenta", bold=True
+                "What is the source of this release? [a]bort", fg="magenta"
             ),
             default="",
         )

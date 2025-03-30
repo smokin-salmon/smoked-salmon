@@ -37,8 +37,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
         if not auto_rename and not click.confirm(
             click.style(
                 "\nWould you like to replace the original folder name?",
-                fg="magenta",
-                bold=True,
+                fg="magenta"                
             ),
             default=True,
         ):
@@ -132,7 +131,7 @@ def _edit_folder_interactive(foldername, auto_rename):
         return foldername
     if not click.confirm(
         click.style(
-            "Is the new folder name acceptable? ([n] to edit)", fg="magenta", bold=True
+            "Is the new folder name acceptable? ([n] to edit)", fg="magenta"
         ),
         default=True,
     ):
