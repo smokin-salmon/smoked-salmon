@@ -1,3 +1,14 @@
+__version__ = "0.9.2.2"
+
+"""
+Changelog for version 0.9.2.2 (2025-03-31):
+
+## What's Changed
+* Fix special characters handling in github actions (like `this is a string` or `this`)
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.1...0.9.2.2
+"""
+
 __version__ = "0.9.2.1"
 
 """
