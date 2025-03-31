@@ -15,7 +15,6 @@ from salmon import config
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
     LoginError,
-    RateLimitError,
     RequestError,
     RequestFailedError,
 )
@@ -103,10 +102,22 @@ class BaseGazelleApi:
                 ),
             )
 
-            # print(url,params,resp)  debug
+            if config.DEBUG_TRACKER_CONNECTION:
+                click.secho("URL: ", fg="cyan", nl=False)
+                click.secho(url, fg="yellow")
+                
+                click.secho("Params: ", fg="cyan", nl=False)
+                click.secho(str(params), fg="yellow")
+                
+                click.secho("Response: ", fg="cyan", nl=False)
+                click.secho(str(resp), fg="yellow")
+
+                click.secho("Response Text: ", fg="cyan", nl=False)
+                click.secho(resp.text, fg="green")
+                
             resp = resp.json()
-        except JSONDecodeError:
-            raise RateLimitError from None
+        except JSONDecodeError as err:
+            raise LoginError from err
         except (ConnectTimeout, ReadTimeout):
             click.secho(
                 "Connection to API timed out, try script again later. Gomen!",

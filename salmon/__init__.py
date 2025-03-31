@@ -59,6 +59,7 @@ DEFAULT_VALUES = {
     "TRACKER_LIST": [],
     "YES_ALL": False,
     "EMPTY_TRACK_COMMENT_TAG": False,
+    "DEBUG_TRACKER_CONNECTION": False,
 }
 
 
@@ -75,7 +76,7 @@ class Config:
                 return DEFAULT_VALUES[name]
             except KeyError:
                 raise ConfigError(
-                    f"You are missing {name} in your config. Read UPGRADING.md."
+                    f"You are missing {name} in your config. Check the wiki."
                 ) from None
 
 
