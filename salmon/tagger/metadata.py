@@ -22,7 +22,7 @@ def get_metadata(path, tags, rls_data=None):
     """
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
-    click.secho(f"Searching for '{searchstrs}' releases...", fg="yellow")
+    click.secho(f"Searching for '{searchstrs}' releases...")
     kwargs = (
         dict(artists=[a for a, _ in rls_data["artists"]], album=rls_data["title"])
         if rls_data
