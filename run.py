@@ -7,9 +7,13 @@ import click
 import salmon.commands
 from salmon.common import commandgroup
 from salmon.errors import FilterError, LoginError, UploadError
+from salmon.release_notification import show_release_notification
 
 def main():
     try:
+        show_release_notification()
+        click.echo()
+
         commandgroup(obj={})
     except (UploadError, FilterError) as e:
         click.secho(f"There was an error: {e}", fg="red", bold=True)

@@ -127,7 +127,7 @@ def _prompt_for_request_id(gazelle_site, results):
     while True:
         request_id = click.prompt(
             click.style(
-                "Fill a request? " "Choose from results, paste a url, or do[n]t.",
+                "\nFill a request? " "Choose from results, paste a url, or do[n]t.",
                 fg="magenta"
             ),
             default="N",
