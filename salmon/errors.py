@@ -60,10 +60,6 @@ class RequestError(Exception):
     pass
 
 
-class RateLimitError(RequestError):
-    pass
-
-
 class RequestFailedError(RequestError):
     pass
 

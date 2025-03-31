@@ -150,7 +150,8 @@ def compress(path):
     default=".",
 )
 def checkspecs(tracker, torrent_id, path):
-    """Will check the spectrals of a given torrent based on local files.\n
+    """Will check and upload the spectrals of a given torrent\n
+    Based on local files, not the ones on the tracker.
     By default checks the folder the script is run from.
     Can add spectrals to a torrent description and report a torrent as lossy web.
     """
@@ -191,3 +192,29 @@ def checkspecs(tracker, torrent_id, path):
     post_upload_spectral_check(
         gazelle_site, path, torrent_id, None, track_data, source, source_url
     )
+
+
+@commandgroup.command()
+@click.option(
+    "--tracker",
+    "-t",
+    type=click.Choice(salmon.trackers.tracker_list, case_sensitive=False),
+    help=f'Choices: ({"/".join(salmon.trackers.tracker_list)})',
+)
+def checkconf(tracker):
+    """Check the config and the connection to the trackers.\n
+    Will output debug information if the connection fails."""
+    config.DEBUG_TRACKER_CONNECTION = True
+
+    trackers = [tracker] if tracker else salmon.trackers.tracker_list
+
+    for t in trackers:
+        click.secho(f"\n[ Testing Tracker: {t} ]", fg="cyan", bold=True)
+
+        try:
+            salmon.trackers.get_class(t)()
+            click.secho(f"\n✔ Successfully checked {t}", fg="green", bold=True)
+        except Exception as e:
+            click.secho(f"\n✖ Error testing {t}: {e}", fg="red", bold=True)
+
+        click.secho("-" * 50, fg="yellow")  # Separator for readability
