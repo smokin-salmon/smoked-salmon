@@ -75,9 +75,11 @@ jobs:
           # Correct way to store multi-line release notes in GITHUB_ENV
           {
             echo "RELEASE_NOTES<<EOF"
-            echo "${{ github.event.release.body }}"
+            echo "$RELEASE_NOTES"
             echo "EOF"
           } >> $GITHUB_ENV
+        env:
+          RELEASE_NOTES: ${{ github.event.release.body }}
 
       - name: Update version.py (only on release)
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
@@ -99,7 +101,7 @@ jobs:
           echo "\"\"\"" >> "$TEMP_FILE"
           echo "Changelog for version ${{ env.VERSION }} ($TIMESTAMP):" >> "$TEMP_FILE"
           echo "" >> "$TEMP_FILE"
-          echo "${{ env.RELEASE_NOTES }}" >> "$TEMP_FILE"
+          echo "$RELEASE_NOTES" >> "$TEMP_FILE"
           echo "\"\"\"" >> "$TEMP_FILE"
           echo "" >> "$TEMP_FILE"
           cat "$VERSION_FILE" >> "$TEMP_FILE"
@@ -107,6 +109,8 @@ jobs:
 
           # Update version in pyproject.toml
           sed -i "s/^version = \".*\"/version = \"${{ env.VERSION }}\"/" "$PYPROJECT_FILE"
+        env:
+          RELEASE_NOTES: ${{ env.RELEASE_NOTES }}
 
       - name: Commit and push version update (only on release)
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
