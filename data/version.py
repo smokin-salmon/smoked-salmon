@@ -1,3 +1,20 @@
+__version__ = "0.9.2.1"
+
+"""
+Changelog for version 0.9.2.1 (2025-03-31):
+
+##New config options
+* DEBUG_TRACKER_CONNECTION : Automatically set to True when using the  subcommand. It shouldn't be needed to override this option manually in your config.py
+* UPDATE_NOTIFICATION : when set to True (default value), will show a notice message when a new version is available on this repository
+* UPDATE_NOTIFICATION_VERBOSE : when set to True (default value), will show the changelog between the local version and the latest version available on this repository
+
+## What's Changed
+* Add checkconf command (check configuration/connection to trackers)
+* Add update notification feature (heavily inspired by https://github.com/Audionut/Upload-Assistant <3)
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2...0.9.2.1
+"""
+
 __version__ = "0.9.2"
 
 """
