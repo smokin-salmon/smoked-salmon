@@ -6,7 +6,7 @@ import click
 from salmon.common import commandgroup
 
 DB_PATH = path.abspath(path.join(path.dirname(path.dirname(__file__)), "smoked.db"))
-MIG_DIR = path.abspath(path.join(path.dirname(path.dirname(__file__)), "migrations"))
+MIG_DIR = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "migrations"))
 
 
 @commandgroup.command()
