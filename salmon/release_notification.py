@@ -7,7 +7,7 @@ import requests
 from salmon import config
 
 LOCAL_VERSION_FILE = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "version.py"))
-REMOTE_VERSION_URL = 'https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/data/version.py?token=GHSAT0AAAAAADA35ZE4VAF7VKYXCBOLNU7EZ7KVCDA'
+REMOTE_VERSION_URL = 'https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/data/version.py'
 
 def _extract_changelog(content, from_version, to_version):
     """Extracts the changelog entries between the specified versions."""
