@@ -191,12 +191,14 @@ def _compress_spectrals(spectrals_path):
     cur_file = 1
     broken = False
 
-    # Check if optipng is installed
-    if shutil.which("optipng") is None:
+    # Check if oxipng is installed
+    if shutil.which("oxipng") is None:
         click.secho(
-            "Error: optipng is not installed.\n"
+            "Error: oxipng is not installed.\n"
             "It typically provides ~30% file size reduction, making it nicer for image hosting providers like ptpimg.\n"
-            "You can install it with (on ubuntu): sudo apt-get install optipng\n"
+            "Check if a package is available for your system (https://github.com/shssoichiro/oxipng).\n"
+            "On Debian, you can typically install it with:"
+            "  wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudodpkg -i oxipng_9.1.4-1_amd64.deb\n"  # noqa: E501
             "Or modify your config.py file with: COMPRESS_SPECTRALS = False",
             fg="red",
             bold=True,
@@ -220,9 +222,9 @@ def _compress_spectrals(spectrals_path):
                     cur_file += 1
                     THREADS[i] = subprocess.Popen(
                         [
-                            "optipng",
+                            "oxipng",
                             "-o2",
-                            "-strip",
+                            "--strip",
                             "all",
                             os.path.join(spectrals_path, filename),
                         ],
