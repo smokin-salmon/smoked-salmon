@@ -57,12 +57,12 @@ A Docker image is generated per release.
 
 1. Pull the latest image:
     ```bash
-    docker pull smokin-salmon/smoked-salmon:latest
+    docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
     ```
 
 2. Run the container:
     ```bash
-   docker run -v /path/to/music:/data -v /path/to/config.py:/app/config.py smokin-salmon/smoked-salmon
+    docker run -v /path/to/music:/data -v /path/to/config.py:/app/config.py ghcr.io/smokin-salmon/smoked-salmon:latest
     ```
 
 ## 🚀 Usage

@@ -476,4 +476,4 @@ def post_upload_spectral_check(
             lossy_comment,
             source_url,
         )
-    return lossy_master, lossy_comment, spectral_urls
+    return lossy_master, lossy_comment, spectral_urls, spectral_ids
