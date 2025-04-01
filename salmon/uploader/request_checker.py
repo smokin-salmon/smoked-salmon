@@ -170,7 +170,10 @@ def _confirm_request_id(gazelle_site, request_id):
         click.secho(f"{request_id} does not exist.", fg="red")
         raise click.Abort from None
     _print_request_details(gazelle_site, req)
-    while True:
+    if config.YES_ALL:
+        return True
+
+    while True:      
         resp = click.prompt(
             click.style(
                 "\nAre you sure you would you like to fill this request [Y]es, " "[n]o",
