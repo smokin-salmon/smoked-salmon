@@ -1,3 +1,14 @@
+__version__ = "0.9.2.4"
+
+"""
+Changelog for version 0.9.2.4 (2025-04-01):
+
+## What's Changed
+* Add `--skip-mqa` option to skip the MQA check during upload
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.3...0.9.2.4
+"""
+
 __version__ = "0.9.2.3"
 
 """
