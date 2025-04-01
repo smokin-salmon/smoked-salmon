@@ -147,7 +147,7 @@ def upload_cover(path, scene=False):
 def upload_spectrals(spectrals, uploader=HOSTS[config.SPECS_UPLOADER], successful=None):
     """
     Given the spectrals list of (filename, [spectral_url, ..]), send them
-    to the coroutine upload handller and return a dictionary of filenames
+    to the coroutine upload handler and return a dictionary of filenames
     and spectral urls.
     """
     response = {}

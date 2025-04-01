@@ -59,7 +59,7 @@ def handle_integrity_check(path):
     else:
         raise click.Abort
 
-def check_integrity(path):
+def check_integrity(path, _ = None):
     if path.lower().endswith(".flac"):
         return _check_flac_integrity(path)
     elif path.lower().endswith(".mp3"):
@@ -107,7 +107,7 @@ def _check_mp3_integrity(path):
     except Exception:
         return False, click.style(f"{os.path.basename(path)}: Failed integrity", fg="red", bold=True)
     
-def sanitize_integrity(path):
+def sanitize_integrity(path, _=None):
     if path.lower().endswith(".flac"):
         return _sanitize_flac(path)
     elif path.lower().endswith(".mp3"):

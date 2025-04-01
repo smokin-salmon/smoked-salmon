@@ -46,7 +46,7 @@ def test_upconverted(path):
         return any(r[0] for r in results if r[0] is not None)
 
 
-def _upconvert_check_handler(filepath):
+def _upconvert_check_handler(filepath, _):
     try:
         upconv, wasted_bits, bitdepth, error = check_upconvert(filepath)
         return upconv, wasted_bits, bitdepth, filepath, error
@@ -82,8 +82,22 @@ def check_upconvert(filepath):
         return False, wasted_bits, bitdepth, None
 
 
+def _tracknumber_sort_key(file_path):
+    """
+    Extract a sort key from the filename. If the filename starts with a number,
+    sort numerically by that number. Otherwise, sort lexicographically.
+    """
+    filename = os.path.basename(file_path)  # Extract just the filename
+    match = re.match(r"^(\d+)", filename)  # Match leading numbers
+
+    if match:
+        return (0, int(match.group(1)))  # Numeric sort priority
+    else:
+        return (1, filename.lower())  # Lexicographic sort for non-numbered files
+
+
 def _display_results(results):
-    sorted_results = sorted(results, key=lambda x: os.path.basename(x[3]))
+    sorted_results = sorted(results, key=lambda x: _tracknumber_sort_key(x[3]))
     
     for upconv, wasted_bits, bitdepth, filepath, error in sorted_results:
         if upconv is None:
