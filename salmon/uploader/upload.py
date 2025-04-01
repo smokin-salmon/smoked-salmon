@@ -1,7 +1,6 @@
 import asyncio
 import os
 import re
-from functools import partial
 
 import click
 from dottorrent import Torrent
@@ -191,7 +190,7 @@ def attach_logfiles(path):
             if filename.lower().endswith(".log"):
                 filepath = os.path.abspath(os.path.join(root, filename))
                 logfiles.append(
-                    ("logfiles[]", (filename, partial(open, filepath, "rb"), "application/octet-stream"))
+                    (filename, open(filepath, "rb"), "application/octet-stream")  # noqa: SIM115
                 )
     return [("logfiles[]", lf) for lf in logfiles]
 
