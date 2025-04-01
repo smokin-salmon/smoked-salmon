@@ -13,6 +13,7 @@ import click
 
 from salmon import config
 from salmon.common import flush_stdin, get_audio_files, prompt_async
+from salmon.common.figles import process_files
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
@@ -98,87 +99,53 @@ def get_wanted_filenames(filenames, track_ids):
         raise UploadError("Spectral IDs out of range.") from None
 
 
+def _generate_spectral_for_file(path, filename, spectrals_path, audio_info, idx):
+    """
+    Function to generate spectrals for a single file.
+    """
+    zoom_startpoint = calculate_zoom_startpoint(audio_info[filename])
+       
+    full_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Full.png")
+    zoom_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Zoom.png")
+    
+    # Run the subprocess for generating the spectrals
+    subprocess.run(
+        [
+            "sox",
+            "--multi-threaded",
+            os.path.join(path, filename),
+            "--buffer", "128000",
+            "-n", "remix", "1", "spectrogram", "-x", "2000", "-y", "513", "-z", "120",
+            "-w", "Kaiser", "-o", full_spectral_path,
+            "remix", "1", "spectrogram", "-x", "500", "-y", "1025", "-z", "120", "-w", "Kaiser",
+            "-S", str(zoom_startpoint), "-d", "0:02", "-o", zoom_spectral_path,
+        ],
+        check=True  # Raise error if subprocess fails
+    )
+
+    return (idx+1, filename)  # Return the filename to track progress
+
+
 def _generate_spectrals(path, files_li, spectrals_path, audio_info):
     """
-    Iterate over the filenames and generate the spectrals. Abuse async nature of
-    subprocess.Popen to spawn multiple processes and generate multiple spectrals
-    at the same time.
+    Iterate over the filenames and generate the spectrals.
     """
-    cur_track = 1
     spectral_ids = {}
-    files = iter(files_li)
-    broken = False
-    while True:
-        for i in range(len(THREADS)):
-            if THREADS[i] is None or THREADS[i].poll() is not None:
-                try:
-                    filename = next(files)
-                except StopIteration:
-                    broken = True
-                    break
 
-                zoom_startpoint = calculate_zoom_startpoint(audio_info[filename])
-
-                click.secho(
-                    f"Generating spectrals for track {cur_track:02d}/"
-                    f"{len(files_li):02d}\r",
-                    nl=False,
-                )
-                cur_track += 1
-                THREADS[i] = subprocess.Popen(
-                    [
-                        "sox",
-                        "--multi-threaded",
-                        os.path.join(path, filename),
-                        "--buffer",
-                        "128000",
-                        "-n",
-                        "remix",
-                        "1",
-                        "spectrogram",
-                        "-x",
-                        "2000",
-                        "-y",
-                        "513",
-                        "-z",
-                        "120",
-                        "-w",
-                        "Kaiser",
-                        "-o",
-                        os.path.join(spectrals_path, f"{cur_track - 1:02d} Full.png"),
-                        "remix",
-                        "1",
-                        "spectrogram",
-                        "-x",
-                        "500",
-                        "-y",
-                        "1025",
-                        "-z",
-                        "120",
-                        "-w",
-                        "Kaiser",
-                        "-S",
-                        str(zoom_startpoint),
-                        "-d",
-                        "0:02",
-                        "-o",
-                        os.path.join(spectrals_path, f"{cur_track - 1:02d} Zoom.png"),
-                    ]
-                )
-
-                spectral_ids[cur_track - 1] = filename
-
-        if broken and all(
-            THREADS[i] is None or THREADS[i].poll() is not None
-            for i in range(len(THREADS))
-        ):
-            break
-        time.sleep(0.05)
-
-    click.secho("Finished generating spectrals.               ", fg="green")
+    results = process_files(files_li, 
+                            lambda file, idx: _generate_spectral_for_file(path, file, spectrals_path, audio_info, idx),
+                            "Generating Spectrals")
+    
+    click.secho("Finished generating spectrals.", fg="green")
     if config.COMPRESS_SPECTRALS:
         _compress_spectrals(spectrals_path)
-    return spectral_ids
+
+    for track_num, filename in results:
+        spectral_ids[track_num] = filename
+
+    sorted_spectrals = dict(sorted(spectral_ids.items()))
+
+    return sorted_spectrals
 
 
 def _compress_spectrals(spectrals_path):
@@ -191,12 +158,14 @@ def _compress_spectrals(spectrals_path):
     cur_file = 1
     broken = False
 
-    # Check if optipng is installed
-    if shutil.which("optipng") is None:
+    # Check if oxipng is installed
+    if shutil.which("oxipng") is None:
         click.secho(
-            "Error: optipng is not installed.\n"
+            "Error: oxipng is not installed.\n"
             "It typically provides ~30% file size reduction, making it nicer for image hosting providers like ptpimg.\n"
-            "You can install it with (on ubuntu): sudo apt-get install optipng\n"
+            "Check if a package is available for your system (https://github.com/shssoichiro/oxipng).\n"
+            "On Debian, you can typically install it with:"
+            "  wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudodpkg -i oxipng_9.1.4-1_amd64.deb\n"  # noqa: E501
             "Or modify your config.py file with: COMPRESS_SPECTRALS = False",
             fg="red",
             bold=True,
@@ -220,9 +189,9 @@ def _compress_spectrals(spectrals_path):
                     cur_file += 1
                     THREADS[i] = subprocess.Popen(
                         [
-                            "optipng",
+                            "oxipng",
                             "-o2",
-                            "-strip",
+                            "--strip",
                             "all",
                             os.path.join(spectrals_path, filename),
                         ],

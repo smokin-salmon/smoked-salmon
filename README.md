@@ -16,7 +16,7 @@ A tool to assist with finding music and uploading it to RED.
 
 1. Install system packages and uv:
 ```bash
-sudo apt install sox flac mp3val optipng git wget curl
+sudo apt install sox flac mp3val git wget curl
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 

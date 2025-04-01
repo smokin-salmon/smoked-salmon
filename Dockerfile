@@ -4,7 +4,9 @@ FROM python:3.12
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sox flac mp3val curl nano vim-tiny \
-    optipng ca-certificates && rm -rf /var/lib/apt/lists/*
+    ca-certificates && rm -rf /var/lib/apt/lists/* && \
+    wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
+    dpkg -i oxipng_9.1.4-1_amd64.deb
 
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
