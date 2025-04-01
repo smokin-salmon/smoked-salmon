@@ -1,135 +1,130 @@
-# smoked-salmon
+[![Build and Publish Docker Image](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml/badge.svg?branch=master)](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml)
 
-A tool to assist with finding music and uploading it to RED.
+# 🐟 smoked-salmon  
 
-## Please use the [**wiki**](https://github.com/miandru/smoked-salmon/wiki) everything you need to know here is there.
+A simple tool to take the work out of uploading on Gazelle-based trackers. It generates spectrals, gathers metadata, allows re-tagging/renaming files, and automates the upload process.
 
-<details>
-<summary>Old setup guide</summary>
-## Setup Guide
+## 🌟 Features  
 
-### Installation
+- **Interactive Uploading** – Supports **multiple trackers** (RED / OPS).
+- **Upconvert Detection** – Checks 24-bit flac files for potential upconverts.
+- **MQA Detection** – Checks files for common MQA markers.
+- **Duplicate Upload Detection** – Prevents redundant uploads.  
+- **Spectral Analysis** – Generates, compresses, and verifies spectrals, exposed via a web interface.  
+- **Spectral Upload** – Can generate spectrals for an existing upload (based on local files), and update the release description.  
+- **Lossy Master Report Generation** – Supports lossy master reports during upload.
+- **Metadata Retrieval** – Fetches metadata from:
+  - Bandcamp, Beatport, Deezer, Discogs, iTunes, JunoDownload, MusicBrainz, Qobuz, Tidal.
+- **File Management** –  
+  - Retags and renames files to standard formats (based on metadata).
+  - Checks file integrity and sanitizes if needed.  
+- **Request Filling** – Scans for matching requests on trackers.
+- **Description generation** – Edition description generation (tracklist, sources, available streaming platforms, encoding details...).
+- **Down-convert and Transcode** – Can downconvert 24-bit flac files to 16-bit, and transcode to mp3.
+- **Update Notifications** – Informs users when a new version is available.
 
-#### Recommended: Using uv (Python Package Manager)
+## 📥 Installation  
 
-**HIGHLY RECOMMEND** using [uv](https://github.com/astral-sh/uv) for setting up salmon. uv is significantly faster than pip and provides better dependency resolution.
+### 🔹 Manual Installation  
+Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
 
 1. Install system packages and uv:
-```bash
-sudo apt install sox flac mp3val git wget curl
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+    ```bash
+    sudo apt install sox flac mp3val git wget curl
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
 
 2. Clone the repository:
-```bash
-git clone https://github.com/miandru/smoked-salmon.git
-cd smoked-salmon
-```
+    ```bash
+    git clone https://github.com/smokin-salmon/smoked-salmon.git
+    cd smoked-salmon
+    ```
 
 3. Install python dependencies and create virtual environment:
-
-```bash
-uv sync
-```
+    ```bash
+    uv sync
+    ```
 
 5. Configure salmon:
-```bash
-cp config.py.txt config.py
-```
-Edit `config.py` with your preferred text editor to add your API keys and preferences.
-<details>
-<summary>Alternative: Using pip (no clue if this works or not im not testing it) </summary>
+    ```bash
+    cp config.py.txt config.py
+    ```
 
-1. Clone the repository:
+Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences.
+
+### 🐳 Docker Installation
+A Docker image is generated per release.
+
+1. Pull the latest image:
+    ```bash
+    docker pull smokin-salmon/smoked-salmon:latest
+    ```
+
+2. Run the container:
+    ```bash
+   docker run -v /path/to/music:/data -v /path/to/config.py:/app/config.py smokin-salmon/smoked-salmon
+    ```
+
+## 🚀 Usage
+
+### 🔧 CLI Mode
+smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server.
+
+For ease of use, add an alias to your .bashrc (or adapt for your favorite shell):
 ```bash
-git clone https://github.com/ligh7s/smoked-salmon.git
+echo "alias salmon='/path/to/smoked-salmon/.venv/bin/salmon'" >> ~/.bashrc
+source ~/.bashrc
+```
+
+To see the available commands, just type:
+```bash
+salmon
+```
+
+To start an upload (with the WEB source):
+```bash
+salmon up /data/path/to/album -s WEB
+```
+
+You can get help directly from the CLI by appending --help to any command.
+
+### 🌐 Spectral Web Interface
+Spectrals are viewable via a built-in web server. By default, access it at: http://localhost:55110/spectrals
+
+## 🔄 Updating
+
+For **manual installs**:
+```bash
 cd smoked-salmon
-```
-
-2. Create and activate a virtual environment:
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-4. Configure salmon:
-```bash
-cp config.py.txt config.py
-```
-Edit `config.py` with your preferred text editor to add your API keys and preferences.
-</details>
-
-### Usage
-
-Basic usage:
-```bash
-uv run salmon
-```
-Alernatively:
-```bash
-source ~/smoked-salmon/bin/activate
-salmon --help
-```
-
-For help with available commands:
-```bash
-uv run salmon --help
-```
-
-Common commands:
-- Search for music: `uv run salmon metas "artist name" "album name"`
-- Upload music: `uv run salmon up /path/to/album`
-- Generate spectrals: `uv run salmon specs /path/to/album`
-- Browse WebUI: Start the WebUI with `uv run salmon web` and navigate to http://127.0.0.1:55110 in your browser
-
-### Updating
-
-With uv:
-```bash
 git pull
 uv sync
 ```
-</details>
-<details>
-<summary>Old description</summary>
-    All information pertaining to its use can be found in the wiki.
 
-    Wiki: https://github.com/ligh7s/smoked-salmon/wiki
-
-    ### Plugin Installation
-
-    Clone plugins into the plugins/ folder. Salmon will automatically detect
-    and import them. Their CLI commands should appear when salmon is next ran.
-
-    ### Colors
-
-    The different terminal colors used throughout salmon will generally stick to the
-    following pattern of use.
-
-    - **Default** - Information on what salmon is doing
-    - **Red** - Failure, urgent, requires attention
-    - **Green** - Success, no problems found
-    - **Yellow** - Information block headers
-    - **Cyan** - Section headers
-    - **Magenta** - User prompts, attention please!
-</details>
-
-### Testimonials
-
-```
-Salmon filled the void in my heart. I no longer chase after girls. ~boot
-With the help of salmon, I overcame my addition to kpop thots. ~b
-I warn 5 people every day on the forums using salmon! ~jon
+For **Docker users**:
+```bash
+docker pull smokin-salmon/smoked-salmon:latest
 ```
 
----
+## 📞 Support
+For bug reports and feature requests, use GitHub Issues. Or ping me on the forums.
 
-The Salmon Icon made by <a href="http://www.freepik.com" title="Freepik">Freepik</a> from
-<a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a> is licensed by
-<a href="http://creativecommons.org/licenses/by/3.0/" title="Creative Commons BY 3.0"
-target="_blank">CC 3.0 BY</a>.
+## 🎨 Terminal Colors
+smoked-salmon uses distinct terminal colors for different types of messages:
+
+* Default – General information
+* Red – Errors or critical failures
+* Green – Success messages
+* Yellow – Information headers
+* Cyan – Section headers
+* Magenta – User prompts
+
+## 🎭 Testimonials
+```
+"Salmon filled the void in my heart. I no longer chase after girls." ~boot
+"With the help of salmon, I overcame my addiction to kpop thots." ~b
+"I warn 5 people every day on the forums using salmon!" ~jon
+```
+
+## 🎩 Credits
+* Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon)
+* Further development & maintenance by elghoto, xmoforf, miandru and others.
