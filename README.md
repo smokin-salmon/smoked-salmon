@@ -1,4 +1,4 @@
-[![Build and Publish Docker Image](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml/badge.svg?branch=master)](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml)
+[![Build and Publish Docker Image](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml/badge.svg)](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml) [![Linting](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/lint.yml)
 
 # 🐟 smoked-salmon  
 
@@ -67,8 +67,20 @@ A Docker image is generated per release.
 
 ## 🚀 Usage
 
+### 🎨 Terminal Colors
+smoked-salmon uses distinct terminal colors for different types of messages:
+
+* Default – General information
+* Red – Errors or critical failures
+* Green – Success messages
+* Yellow – Information headers
+* Cyan – Section headers
+* Magenta – User prompts
+
 ### 🔧 CLI Mode
 smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server.
+
+The examples below show how to run smoked-salmon directly. If you're using Docker, you'll need to adjust them accordingly, but the underlying principles remain the same.
 
 For ease of use, add an alias to your .bashrc (or adapt for your favorite shell):
 ```bash
@@ -76,9 +88,19 @@ echo "alias salmon='/path/to/smoked-salmon/.venv/bin/salmon'" >> ~/.bashrc
 source ~/.bashrc
 ```
 
+On the first run, you will need to create the database:
+```bash
+salmon migrate
+```
+
 To see the available commands, just type:
 ```bash
 salmon
+```
+
+To test the connection to the trackers, run:
+```bash
+salmon checkconf
 ```
 
 To start an upload (with the WEB source):
@@ -86,7 +108,7 @@ To start an upload (with the WEB source):
 salmon up /data/path/to/album -s WEB
 ```
 
-You can get help directly from the CLI by appending --help to any command.
+You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
 ### 🌐 Spectral Web Interface
 Spectrals are viewable via a built-in web server. By default, access it at: http://localhost:55110/spectrals
@@ -106,17 +128,8 @@ docker pull smokin-salmon/smoked-salmon:latest
 ```
 
 ## 📞 Support
-For bug reports and feature requests, use GitHub Issues. Or ping me on the forums.
+For bug reports and feature requests, use GitHub Issues. Or use the forums.
 
-## 🎨 Terminal Colors
-smoked-salmon uses distinct terminal colors for different types of messages:
-
-* Default – General information
-* Red – Errors or critical failures
-* Green – Success messages
-* Yellow – Information headers
-* Cyan – Section headers
-* Magenta – User prompts
 
 ## 🎭 Testimonials
 ```
@@ -126,5 +139,5 @@ smoked-salmon uses distinct terminal colors for different types of messages:
 ```
 
 ## 🎩 Credits
-* Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon)
-* Further development & maintenance by elghoto, xmoforf, miandru and others.
+* Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon). Huge thanks!
+* Further development & maintenance by elghoto, xmoforf, miandru, redusys and others. Keeping the dream alive.
