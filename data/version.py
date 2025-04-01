@@ -1,3 +1,27 @@
+__version__ = "0.9.2.3"
+
+"""
+Changelog for version 0.9.2.3 (2025-04-01):
+
+## New dependency
+Oxipng is a modern replacement for OptiPNG, written in Rust and optimized for multi-core processors. It offers faster processing and better compression than OptiPNG. Smoked-salmon now utilizes Oxipng for PNG compression, achieving around a 30% reduction in file size, making it more efficient for image hosting.
+
+You'll need to install Oxipng on your system (it's already included in the Docker image). Installation instructions can be found on the official repository: https://github.com/shssoichiro/oxipng.
+
+Ubuntu/Debian users can simply run the following command (make sure to check the latest Oxipng release first, and replace the link accordingly):
+```
+wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudo dpkg -i oxipng_9.1.4-1_amd64.deb
+```
+Alternatively, you can still disable compression by setting `COMPRESS_SPECTRALS = False` in your `config.py` file.
+
+## What's Changed
+* Replace `optipng` by `oxipng`
+* Use `process_files` (better multithreaded processing) for spectrals generation
+* Fix broken log upload for CDs (broken during ruff fixes)
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.2...0.9.2.3
+"""
+
 __version__ = "0.9.2.2"
 
 """
