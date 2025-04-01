@@ -149,6 +149,11 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help='Automatically pick the default answer for prompt'
 )
+@click.option(
+    "--skip-mqa",
+    is_flag=True,
+    help='Skip check for MQA marker (on first file only)',
+)
 def up(
     path,
     group_id,
@@ -166,7 +171,8 @@ def up(
     scene,
     rutorrent,
     source_url,
-    yyy
+    yyy,
+    skip_mqa,
 ):
     """Command to upload an album folder to a Gazelle Site."""
     if yyy:
@@ -204,6 +210,7 @@ def up(
         spectrals_after=spectrals_after,
         auto_rename=auto_rename,
         skip_up=skip_up,
+        skip_mqa=skip_mqa,
     )
 
 
@@ -226,6 +233,7 @@ def upload(
     spectrals_after=False,
     auto_rename=False,
     skip_up=False,
+    skip_mqa=False,
 ):
     """Upload an album folder to Gazelle Site
     Offer the choice to upload to another tracker after completion."""
@@ -249,9 +257,10 @@ def upload(
     )
 
     try:
-        click.secho("Checking for MQA release (first file only)", fg="yellow", bold=True)
-        mqa_test(path)
-        click.secho("No MQA release detected", fg="green")
+        if not skip_mqa:
+            click.secho("Checking for MQA release (first file only)", fg="yellow", bold=True)
+            mqa_test(path)
+            click.secho("No MQA release detected", fg="green")
 
         if rls_data["encoding"] == "24bit Lossless" and not skip_up:
             if not config.YES_ALL:
