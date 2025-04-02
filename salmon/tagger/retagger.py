@@ -250,10 +250,10 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
         if multi_disc:
             if isinstance(tracktags, dict):
                 disc_number = (
-                    int(tracktags["discnumber"][0]) if "discnumber" in tracktags else 1
+                    int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
                 )
             else:
-                disc_number = int(tracktags.discnumber) or 1
+                disc_number = int(tracktags.discnumber.split("/")[0]) or 1
             new_name = os.path.join(f"{md_word} {disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
