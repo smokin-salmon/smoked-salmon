@@ -7,6 +7,7 @@ from copy import deepcopy
 import click
 
 from salmon.common import RE_FEAT, re_split
+from salmon.common.figles import _tracknumber_sort_key
 from salmon.constants import FORMATS, TAG_ENCODINGS
 
 EMPTY_METADATA = {
@@ -116,7 +117,7 @@ def parse_encoding(format_, track, supplied_encoding, prompt_encoding):
 def create_track_list(tags, overwrite):
     """Generate the track data from each track tag."""
     tracks = defaultdict(dict)
-    for trackindex, (_, track) in enumerate(sorted(tags.items(), key=lambda k: k), 1):
+    for trackindex, (_, track) in enumerate(sorted(tags.items(), key=lambda k: _tracknumber_sort_key(k[0])), 1):
         discnumber = track.discnumber or "1"
         tracknumber = (
             str(track.tracknumber).split("/")[0]

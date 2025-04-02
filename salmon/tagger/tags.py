@@ -35,7 +35,7 @@ def check_tags(path):
 def gather_tags(path):
     """Get the tags of each file."""
     tags = {}
-    for filename in get_audio_files(path):
+    for filename in get_audio_files(path, sort_by_tracknumber=True):
         tags[filename] = TagFile(os.path.join(path, filename))
     return tags
 

@@ -233,7 +233,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     to_rename = []
     folders_to_create = set()
     multi_disc = len(metadata["tracks"]) > 1
-    md_word = "Disc" if source == "CD" else "Part"
+    md_word = "CD"# "Disc" if source == "CD" else "Part"
 
     track_list = list(
         chain.from_iterable([d.values() for d in metadata["tracks"].values()])
@@ -254,12 +254,12 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                 )
             else:
                 disc_number = int(tracktags.discnumber.split("/")[0]) or 1
-            new_name = os.path.join(f"{md_word} {disc_number:02d}", new_name)
+            new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
             if multi_disc:
                 folders_to_create.add(
-                    os.path.join(path, f"{md_word} {disc_number:02d}")
+                    os.path.join(path, f"{md_word}{disc_number:02d}")
                 )
 
     if to_rename:
@@ -275,13 +275,15 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                     os.mkdir(folder)
             directory_move_pairs = set()
             for filename, new_name in to_rename:
-                directory_move_pairs.add(
-                    (
-                        os.path.splitext(filename)[1],
-                        os.path.dirname(os.path.join(path, filename)),
-                        os.path.dirname(os.path.join(path, new_name)),
+                old_dir = os.path.dirname(os.path.join(path, filename))
+                new_dir = os.path.dirname(os.path.join(path, new_name))
+
+                if old_dir != path:
+                    directory_move_pairs.add(
+                        (
+                            os.path.splitext(filename)[1], old_dir, new_dir
+                        )
                     )
-                )
                 new_path, new_path_ext = os.path.splitext(os.path.join(path, new_name))
                 # new_path = new_path[: 200 - len(new_path_ext) + len(os.path.dirname(path))] + new_path_ext
                 new_path = new_path + new_path_ext
