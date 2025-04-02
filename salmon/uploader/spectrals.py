@@ -28,7 +28,7 @@ THREADS = [None] * config.SIMULTANEOUS_THREADS
 
 
 def check_spectrals(
-    path, audio_info, lossy_master=None, spectral_ids=None, check_lma=True
+    path, audio_info, lossy_master=None, spectral_ids=None, check_lma=True, force_prompt_lossy_master=False
 ):
     """
     Run the spectral checker functions. Generate the spectrals and ask whether or
@@ -42,14 +42,14 @@ def check_spectrals(
         while True:
             view_spectrals(spectrals_path, all_spectral_ids)
             if lossy_master is None and check_lma:
-                lossy_master = prompt_lossy_master()
+                lossy_master = prompt_lossy_master(force_prompt_lossy_master)
                 if lossy_master is not None:
                     break
             else:
                 break
     else:
         if lossy_master is None:
-            lossy_master = prompt_lossy_master()
+            lossy_master = prompt_lossy_master(force_prompt_lossy_master)
 
     if not spectral_ids:
         spectral_ids = prompt_spectrals(all_spectral_ids, lossy_master, check_lma)
@@ -358,10 +358,10 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma):
         )
 
 
-def prompt_lossy_master():
+def prompt_lossy_master(force_prompt_lossy_master=False):
     while True:
         flush_stdin()
-        r = "n" if config.YES_ALL else click.prompt(
+        r = "n" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
             click.style(
                 "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, "
                 "[a]bort, [d]elete folder",
@@ -449,7 +449,8 @@ def post_upload_spectral_check(
     gazelle_site, path, torrent_id, spectral_ids, track_data, source, source_url
 ):
     "Offers generation and adition of spectrals after upload"
-    lossy_master, spectral_ids = check_spectrals(path, track_data, None, spectral_ids)
+    "As this is post upload, we have time to ask if this is a lossy master, so force prompt."
+    lossy_master, spectral_ids = check_spectrals(path, track_data, None, spectral_ids, force_prompt_lossy_master=True)
     lossy_comment = None
     if lossy_master:
         lossy_comment = generate_lossy_approval_comment(
@@ -476,4 +477,4 @@ def post_upload_spectral_check(
             lossy_comment,
             source_url,
         )
-    return lossy_master, lossy_comment, spectral_urls
+    return lossy_master, lossy_comment, spectral_urls, spectral_ids
