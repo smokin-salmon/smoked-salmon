@@ -50,7 +50,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
     if os.path.isdir(new_path) and old_base != new_base:
         if not check or click.confirm(
             click.style(
-                "A folder already exists with the new folder name, would you like to replace it?",
+                f"A folder already exists with the new folder name '{new_path}', would you like to replace it?",
                 fg="magenta",
                 bold=True,
             ),

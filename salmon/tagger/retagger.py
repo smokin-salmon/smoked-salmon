@@ -275,13 +275,15 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                     os.mkdir(folder)
             directory_move_pairs = set()
             for filename, new_name in to_rename:
-                directory_move_pairs.add(
-                    (
-                        os.path.splitext(filename)[1],
-                        os.path.dirname(os.path.join(path, filename)),
-                        os.path.dirname(os.path.join(path, new_name)),
+                old_dir = os.path.dirname(os.path.join(path, filename))
+                new_dir = os.path.dirname(os.path.join(path, new_name))
+
+                if old_dir != path:
+                    directory_move_pairs.add(
+                        (
+                            os.path.splitext(filename)[1], old_dir, new_dir
+                        )
                     )
-                )
                 new_path, new_path_ext = os.path.splitext(os.path.join(path, new_name))
                 # new_path = new_path[: 200 - len(new_path_ext) + len(os.path.dirname(path))] + new_path_ext
                 new_path = new_path + new_path_ext
