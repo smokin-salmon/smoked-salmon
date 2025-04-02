@@ -1,3 +1,16 @@
+__version__ = "0.9.2.5"
+
+"""
+Changelog for version 0.9.2.5 (2025-04-02):
+
+## What's Changed
+* Fix spectrals upload in multi trackers scenario and post-upload spectrals check
+* Force lossy master prompt if checking spectrals post upload (upload is done, we have time)
+* Skip request confirmation in YES_ALL mode
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.4...0.9.2.5
+"""
+
 __version__ = "0.9.2.4"
 
 """
