@@ -1,3 +1,16 @@
+__version__ = "0.9.2.6"
+
+"""
+Changelog for version 0.9.2.6 (2025-04-02):
+
+## What's Changed
+* Improve Multi-Discs releases ! It should be working fine, feedback appreciated.
+* For post-upload lma checks, ask if this is a lma and which spectrals to upload (even if YES_ALL is active)
+* Add `checkconf --reset` option, to reset or generate a config.py file
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.5...0.9.2.6
+"""
+
 __version__ = "0.9.2.5"
 
 """
