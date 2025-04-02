@@ -52,7 +52,12 @@ def check_spectrals(
             lossy_master = prompt_lossy_master(force_prompt_lossy_master)
 
     if not spectral_ids:
-        spectral_ids = prompt_spectrals(all_spectral_ids, lossy_master, check_lma)
+        spectral_ids = prompt_spectrals(
+            all_spectral_ids,
+            lossy_master,
+            check_lma,
+            force_prompt_lossy_master=force_prompt_lossy_master,
+        )
     else:
         spectral_ids = generate_spectrals_ids(
             path, spectral_ids, spectrals_path, audio_info
@@ -327,10 +332,10 @@ def upload_spectrals(spectrals_path, spectral_ids):
         return click.secho(f"Failed to upload spectral: {e}", fg="red")
 
 
-def prompt_spectrals(spectral_ids, lossy_master, check_lma):
+def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
     """Ask which spectral IDs the user wants to upload."""
     while True:
-        ids = "*" if config.YES_ALL else click.prompt(
+        ids = "*" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
             click.style(
                 f"What spectral IDs would you like to upload to "
                 f"{config.SPECS_UPLOADER}? (space-separated list of IDs, \"0\" for none, \"*\" for all)",
@@ -405,8 +410,8 @@ def report_lossy_master(
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
-def generate_lossy_approval_comment(source_url, filenames):
-    comment = "" if config.YES_ALL else click.prompt(
+def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
+    comment = "" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
         click.style(
             "Do you have a comment for the lossy approval report? It is appropriate to "
             "make a note about the source here. Source information from go, gos, and the "
@@ -454,7 +459,7 @@ def post_upload_spectral_check(
     lossy_comment = None
     if lossy_master:
         lossy_comment = generate_lossy_approval_comment(
-            source_url, list(track_data.keys())
+            source_url, list(track_data.keys()), force_prompt_lossy_master=True
         )
         click.echo()
 
