@@ -233,7 +233,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     to_rename = []
     folders_to_create = set()
     multi_disc = len(metadata["tracks"]) > 1
-    md_word = "Disc" if source == "CD" else "Part"
+    md_word = "CD"# "Disc" if source == "CD" else "Part"
 
     track_list = list(
         chain.from_iterable([d.values() for d in metadata["tracks"].values()])
@@ -254,12 +254,12 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                 )
             else:
                 disc_number = int(tracktags.discnumber.split("/")[0]) or 1
-            new_name = os.path.join(f"{md_word} {disc_number:02d}", new_name)
+            new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
             if multi_disc:
                 folders_to_create.add(
-                    os.path.join(path, f"{md_word} {disc_number:02d}")
+                    os.path.join(path, f"{md_word}{disc_number:02d}")
                 )
 
     if to_rename:
