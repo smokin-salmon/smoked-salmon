@@ -54,16 +54,19 @@ Edit the `config.py` file with your preferred text editor to add your API keys, 
 
 ### 🐳 Docker Installation
 A Docker image is generated per release.
+**Disclaimer**: I am not using the docker image myself, feedback is appreciated regarding that guide.
 
 1. Pull the latest image:
     ```bash
     docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
     ```
 
-2. Run the container:
+2. Run the container to create a default config file:
     ```bash
-    docker run -v /path/to/music:/data -v /path/to/config.py:/app/config.py ghcr.io/smokin-salmon/smoked-salmon:latest
+    docker run -v /path/to/music:/data -v /path/to/config.py:/app/config.py ghcr.io/smokin-salmon/smoked-salmon:latest checkconf --reset
     ```
+
+Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences.
 
 ## 🚀 Usage
 

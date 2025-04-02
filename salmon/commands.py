@@ -2,6 +2,7 @@ import asyncio
 import html
 import importlib
 import os
+import shutil
 from urllib import parse
 
 import click
@@ -194,6 +195,13 @@ def checkspecs(tracker, torrent_id, path):
     )
 
 
+def _backup_config(config_path):
+    backup_index = 1
+    while os.path.exists(f"{config_path}.bak.{backup_index}"):
+        backup_index += 1
+    shutil.move(config_path, f"{config_path}.bak.{backup_index}")
+    click.secho(f"Existing config file renamed to config.py.bak.{backup_index}", fg="yellow")
+
 @commandgroup.command()
 @click.option(
     "--tracker",
@@ -201,9 +209,34 @@ def checkspecs(tracker, torrent_id, path):
     type=click.Choice(salmon.trackers.tracker_list, case_sensitive=False),
     help=f'Choices: ({"/".join(salmon.trackers.tracker_list)})',
 )
-def checkconf(tracker):
+@click.option("--reset", "-r", is_flag=True,
+              help='Reset the config file to the default template. Will create a backup of the current config file.')
+def checkconf(tracker, reset):
     """Check the config and the connection to the trackers.\n
-    Will output debug information if the connection fails."""
+    Will output debug information if the connection fails.
+    Use the -r flag to reset/create the whole config file.
+    """
+    if reset:
+        click.secho("Resetting new config.py file", fg="cyan", bold=True)
+        
+        config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.py")
+        config_template = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.py.txt")
+
+
+        if os.path.exists(config_path):
+            _backup_config(config_path)
+        
+        if not os.path.exists(config_template):
+            click.secho("Error: config.py.txt template not found.", fg="red")
+            return
+
+        shutil.copy(config_template, config_path)
+        click.secho(
+            "A new config.py file has been created from the template. Please update it with your custom settings.",
+            fg="green",
+        )
+        return
+        
     config.DEBUG_TRACKER_CONNECTION = True
 
     trackers = [tracker] if tracker else salmon.trackers.tracker_list
