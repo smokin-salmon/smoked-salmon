@@ -214,15 +214,9 @@ def _print_release_types():
 
 
 def _edit_title(metadata):
-    while True:
-        title = click.edit(metadata["title"])
-        if title:
-            metadata["title"] = title.strip()
-            return
-        click.confirm(
-            click.style("The release must have a title. Retry?", fg="magenta"),
-            default=True
-        )
+    title = click.edit(metadata["title"])
+    if title:
+        metadata["title"] = title.strip()
 
 
 def _edit_years(metadata):
@@ -232,6 +226,8 @@ def _edit_years(metadata):
         )
         text = click.edit(text)
         try:
+            if not text:
+                return
             year_line, group_year_line = (
                 line.strip() for line in text.strip().split("\n", 1)
             )
@@ -252,23 +248,16 @@ def _edit_years(metadata):
 
 
 def _edit_genres(metadata):
-    while True:
-        genres = click.edit("\n".join(metadata["genres"]))
-        if genres:
-            metadata["genres"] = [g for g in genres.split("\n") if g.strip()]
-            return
-        click.confirm(
-            click.style("You must input at least one genre. Retry?", fg="magenta"),
-            default=True,
-            abort=True,
-        )
+    genres = click.edit("\n".join(metadata["genres"]))
+    if genres:
+        metadata["genres"] = [g for g in genres.split("\n") if g.strip()]
+
 
 
 def _edit_urls(metadata):
-    while True:
-        urls = click.edit("\n".join(metadata["urls"]))
+    urls = click.edit("\n".join(metadata["urls"]))
+    if urls:
         metadata["urls"] = [g for g in urls.split("\n") if g.strip()]
-        return
 
 
 def _edit_edition_info(metadata):
@@ -280,6 +269,8 @@ def _edit_edition_info(metadata):
         )
         text = click.edit(text)
         try:
+            if not text:
+                return
             label_line, cat_line, title_line = (
                 line.strip() for line in text.strip().split("\n", 2)
             )
