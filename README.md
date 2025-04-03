@@ -52,21 +52,31 @@ Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency
 
 Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences.
 
+6. Use the `checkconf` command to verify that the connection to the trackers is working:
+    ```bash
+    .venv/bin/salmon checkconf
+    ```
+
 ### 🐳 Docker Installation
 A Docker image is generated per release.
-**Disclaimer**: I am not using the docker image myself, feedback is appreciated regarding that guide.
+**Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
 
 1. Pull the latest image:
     ```bash
     docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
     ```
 
-2. Run the container to create a default config file:
+Copy the content of the file [`config.py`](https://github.com/smokin-salmon/smoked-salmon/blob/master/config.py.txt) to a location on your host server.
+Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences.
+
+2. Run the container with the `checkconf` command to verify that the connection to the trackers is workin:
     ```bash
-    docker run -v /path/to/music:/data -v /path/to/config.py:/app/config.py ghcr.io/smokin-salmon/smoked-salmon:latest checkconf --reset
+    docker run --rm -it  --network=host \
+    -v /path/to/your/music:/data \
+    -v /path/to/yor/config.py:/app/config.py \
+    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
     ```
 
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences.
 
 ## 🚀 Usage
 
