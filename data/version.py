@@ -1,3 +1,17 @@
+__version__ = "0.9.2.7"
+
+"""
+Changelog for version 0.9.2.7 (2025-04-03):
+
+## What's Changed
+* Fix crash when folder doesn't need to be renamed (shutil related crash)
+* Fix crash when exiting editor without saving during metadata edition
+* USE_UPC_AS_CATNO will now use UPC as catno only if catno is empty.
+* Improve README instructions for docker users
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.6...0.9.2.7
+"""
+
 __version__ = "0.9.2.6"
 
 """
