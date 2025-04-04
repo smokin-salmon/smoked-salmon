@@ -1,3 +1,18 @@
+__version__ = "0.9.2.13"
+
+"""
+Changelog for version 0.9.2.13 (2025-04-04):
+
+The file `config.py.txt` has been updated to include all possible configuration options along with their default values. If any options are unclear or insufficiently detailed on the wiki, feel free to open issues or submit PRs to enhance the documentation.
+
+## What's Changed
+* Update and organize default configuration file
+* Remove imghdr dependency (deprecated and removed in python 3.13). Fixes #18 
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.12...0.9.2.13
+"""
+
 __version__ = "0.9.2.12"
 
 """
