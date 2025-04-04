@@ -274,7 +274,13 @@ class BaseGazelleApi:
                 url, data=data, files=files, headers=api_key_headers
             ),
         )
-        resp = resp.json()
+        try:
+            resp = resp.json()
+        except requests.exceptions.JSONDecodeError as e:
+            click.echo("❌ Failed to decode JSON response", fg="red", err=True)
+            click.echo(f"Status code: {resp.status_code}", fg="red", err=True)
+            click.echo(f"Response text: {repr(resp.text)}", fg="red", err=True)
+            raise click.Abort from e
         # print(resp) debug
 
         try:
