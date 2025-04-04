@@ -1,8 +1,8 @@
-import imghdr
 import os
 import re
 
 import click
+import filetype
 import requests
 
 from salmon import config
@@ -22,6 +22,7 @@ def _download_cover(path, cover_url):
     c = "c" if config.LOWERCASE_COVER else "C"
     headers = {'User-Agent': 'smoked-salmon-v1'}
     stream = requests.get(cover_url, stream=True, headers=headers)
+
     if stream.status_code < 400:
         cover_path = os.path.join(path, f"{c}over{ext}")
         with open(cover_path, "wb") as f:
@@ -29,8 +30,8 @@ def _download_cover(path, cover_url):
                 if chunk:
                     f.write(chunk)
 
-        img_type = imghdr.what(cover_path)
-        if img_type not in ["jpeg", "png"]:
+        kind = filetype.guess(cover_path)
+        if not kind or kind.mime not in ["image/jpeg", "image/png"]:
             os.remove(cover_path)
             click.secho("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])", fg="red")
     else:

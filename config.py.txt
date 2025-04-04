@@ -1,42 +1,132 @@
-# Read what each of these settings do here:
-# https://github.com/ligh7s/smoked-salmon/wiki/configuration
-# There are many optional settings you can also set.
+# Smoked Salmon Configuration File
+# Read details about each setting here:
+# https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration
 
+# ===============================
+# DIRECTORY SETTINGS
+# ===============================
+# Where to copy files (usually the download/seeding folder for your torrent client)
 DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
+
+# Can be a watch folder for your torrent client
 DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
-DOWNLOAD_QUEUE_FOLDER = '/path/to/folder/for/the/queue'
-PTPIMG_KEY = 'ptpimg-key'
-DISCOGS_TOKEN = 'discogs-token'
 
-# Remove if you don't want to use Tidal for metadata
-TIDAL_TOKEN = 'your-token'
+# In case you want separate output folders for .torrents files
+RED_DOTTORRENTS_DIR = None
+OPS_DOTTORRENTS_DIR = None
 
-# Remove if you don't want to use Qobuz for metadata
-QOBUZ_APP_ID = 'app_id'
-QOBUZ_USER_AUTH_TOKEN = 'user_auth_token'
-
+# ===============================
+# IMAGE UPLOAD SETTINGS
+# ===============================
 IMAGE_UPLOADER = "ptpimg"
 COVER_UPLOADER = "ptpimg"
 SPECS_UPLOADER = "ptpimg"
 
+# ptpimg API key (log into ptpimg, developpers tools, go to the Elements tab, and search for 'api_key')
+PTPIMG_KEY = 'api_key'
+
+# IMGUR Credentials (only needed if using Imgur for uploads)
 IMGUR_CLIENT_ID = 'imgur-client-id'
 IMGUR_CLIENT_SECRET = 'imgur-client-secret'
 IMGUR_REFRESH_TOKEN = 'imgur-client-refresh-token'
 
-'''If a default tracker is not set and you have more than one tracker in TRACKER_LIST
-then you will be prompted to choose each time you use the script.'''
-DEFAULT_TRACKER = 'RED'
-RED_SESSION = 'get-from-site-cookie' #Required for now. (waiting on reports api support)
-OPS_SESSION = 'get-from-site-cookie'
-RED_API_KEY = 'red-api-key' #Needs uploading privileges. Optional for now. Some things still use session.
-OPS_API_KEY = 'ops-api-key' #Needs uploading privileges. Optional for now. Some things still use session.
-TRACKER_LIST=['RED','OPS'] #Remove one of these if you don't want multi-tracker support.
+# ===============================
+# METADATA SERVICES
+# ===============================
+# Remove if not using Tidal (read wiki to see how to get your Tidal token)
+TIDAL_TOKEN = 'your-token'
+TIDAL_SEARCH_REGIONS = ["DE", "NZ", "US", "GB"]
+TIDAL_FETCH_REGIONS = ["DE", "NZ", "US", "GB"]
 
-#RUTORRENT UPLOAD, works with xmlrpc
-OPS_LABEL = 'ops'
-RED_LABEL = 'red'
-OPS_DIR = '/downloads/complete/orpheus'
-RED_DIR = '/downloads/complete/redacted'
-TRACKER_DIRS = {'OPS': OPS_DIR, 'RED': RED_DIR}
-TRACKER_LABELS = {'OPS': OPS_LABEL, 'RED': RED_LABEL}
-RUTORRENT_URL = "http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php"
+# Remove if not using Qobuz (read wiki to see how to get your Tidal token)
+QOBUZ_APP_ID = 'app_id'
+QOBUZ_USER_AUTH_TOKEN = 'user_auth_token'
+
+# Discogs API Token (from https://www.discogs.com/settings/developers)
+DISCOGS_TOKEN = 'discogs-token'
+
+# ===============================
+# TRACKER SETTINGS
+# ===============================
+DEFAULT_TRACKER = 'RED'  # If not set, you'll be prompted to choose when using multiple trackers
+TRACKER_LIST = ['RED', 'OPS']  # Remove unwanted trackers
+
+# Authentication (Replace with valid session keys or API keys)
+RED_SESSION = 'get-from-site-cookie'  # Required for now (waiting on API support)
+OPS_SESSION = 'get-from-site-cookie'
+RED_API_KEY = 'red-api-key'  # Needs uploading privileges (optional for now)
+OPS_API_KEY = 'ops-api-key'  # Needs uploading privileges (optional for now)
+
+# ===============================
+# UPLOADING & PROCESSING SETTINGS
+# Most settings in this section should be allright already
+# ===============================
+SIMULTANEOUS_THREADS = 3
+USER_AGENT = "salmon uploading tools"
+
+# Search settings
+SEARCH_LIMIT = 3
+SEARCH_EXCLUDED_LABELS = {"edm comps"}
+BLACKLISTED_GENRES = {"Soundtrack", "Asian Music"}
+
+# Encoding settings (8 is the best)
+FLAC_COMPRESSION_LEVEL = 8
+
+# Templates for folder and file naming
+FOLDER_TEMPLATE = "{artists} - {title} ({year}) [{source} {format}]"
+FILE_TEMPLATE = "{tracknumber}. {artist} - {title}"
+
+# Formatting options
+NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST = True
+ONE_ALBUM_ARTIST_FILE_TEMPLATE = "{tracknumber}. {title}"
+LOWERCASE_COVER = True
+VARIOUS_ARTIST_THRESHOLD = 4
+BLACKLISTED_SUBSTITUTION = "_"
+GUESTS_IN_TRACK_TITLE = False
+VARIOUS_ARTIST_WORD = "VA"
+
+# Torrent description settings
+BITRATES_IN_T_DESC = False
+INCLUDE_TRACKLIST_IN_T_DESC = False
+COPY_UPLOADED_URL_TO_CLIPBOARD = False
+REVIEW_AS_COMMENT_TAG = True
+ICONS_IN_DESCRIPTIONS = True
+FULLWIDTH_REPLACEMENTS = False
+EMPTY_TRACK_COMMENT_TAG = True
+
+# Miscellaneous settings
+NATIVE_SPECTRALS_VIEWER = False
+FEH_FULLSCREEN = True
+STRIP_USELESS_VERSIONS = True
+PROMPT_PUDDLETAG = False
+ADD_EDITION_TITLE_TO_ALBUM_TAG = True
+LOG_DUPE_TOLERANCE = 0.5
+
+# Web interface settings
+WEB_HOST = "127.0.0.1"
+WEB_PORT = 55110
+WEB_STATIC_ROOT_URL = "/static"
+
+# Compression settings
+COMPRESS_SPECTRALS = True
+LMA_COMMENT_IN_T_DESC = False
+USE_UPC_AS_CATNO = True
+
+# Multi-tracker support
+MULTI_TRACKER_UPLOAD = True
+
+# Debugging & Logging
+DEBUG_TRACKER_CONNECTION = False
+
+# Update notifications
+UPDATE_NOTIFICATION = True
+UPDATE_NOTIFICATION_VERBOSE = True
+
+# Request handling
+ALWAYS_ASK_FOR_REQUEST_FILL = False
+CHECK_RECENT_UPLOADS = True
+CHECK_REQUESTS = True
+LAST_MINUTE_DUPE_CHECK = False
+
+# Answers Yes to all questions during upload. Risky!
+YES_ALL = False
