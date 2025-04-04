@@ -276,22 +276,31 @@ class BaseGazelleApi:
         )
         resp = resp.json()
         # print(resp) debug
+
         try:
             if resp["status"] != "success":
                 raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
                 if (
-                    'requestid' in resp['response']
-                    and resp['response']['requestid']
+                    ('requestid' in resp['response']            #RED
+                    and resp['response']['requestid']) or
+                    ('fillRequest' in resp['response']          # OPS
+                     and resp['response']['fillRequest']
+                     and resp['response']['fillRequest']['requestId'])
                 ):
-                    if resp['response']['requestid'] == -1:
+                    requestId = (
+                        resp['response']['requestid']
+                        if 'requestid' in resp['response']
+                        else resp['response']['fillRequest']['requestId']
+                    )
+                    if requestId == -1:
                         click.secho(
                             "Request fill failed!", fg="red",
                         )
                     else:
                         click.secho(
                             "Filled request: "
-                            + self.request_url(resp['response']['requestid']),
+                            + self.request_url(requestId),
                             fg="green",
                         )
                 torrent_id = 0
