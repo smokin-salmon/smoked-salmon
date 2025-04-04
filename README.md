@@ -25,6 +25,8 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 
 ## 📥 Installation  
 
+Installation instructions can be found on the [Wiki](https://github.com/miandru/smoked-salmon/wiki/Installation).
+
 ### 🔹 Manual Installation  
 Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
 
@@ -33,6 +35,10 @@ Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency
     sudo apt install sox flac mp3val git wget curl
     curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
+
+If you want to enable spectrals compression (~30% gain in size), you also need to install [oxipng](https://github.com/shssoichiro/oxipng). Follow the installation instructions on their repository. On Debian/Ubuntu systems, you can typically install it with (check if this is the latest version):
+
+    ```wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudodpkg -i oxipng_9.1.4-1_amd64.deb\n``` 
 
 2. Clone the repository:
     ```bash
@@ -50,7 +56,7 @@ Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency
     cp config.py.txt config.py
     ```
 
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences.
+Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
 6. Use the `checkconf` command to verify that the connection to the trackers is working:
     ```bash
@@ -67,7 +73,7 @@ A Docker image is generated per release.
     ```
 
 Copy the content of the file [`config.py`](https://github.com/smokin-salmon/smoked-salmon/blob/master/config.py.txt) to a location on your host server.
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences.
+Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
 2. Run the container with the `checkconf` command to verify that the connection to the trackers is workin:
     ```bash
@@ -92,7 +98,7 @@ smoked-salmon uses distinct terminal colors for different types of messages:
 * Magenta – User prompts
 
 ### 🔧 CLI Mode
-smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server.
+smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server. Quick start usage instructions can be found on the [Wiki Usage page](https://github.com/smokin-salmon/smoked-salmon/wiki#usage).
 
 The examples below show how to run smoked-salmon directly. If you're using Docker, you'll need to adjust them accordingly, but the underlying principles remain the same.
 
