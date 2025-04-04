@@ -1,3 +1,15 @@
+__version__ = "0.9.2.9"
+
+"""
+Changelog for version 0.9.2.9 (2025-04-04):
+
+## What's Changed
+* Fix github action rights to bump versions
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.8...0.9.2.9
+"""
+
 __version__ = "0.9.2.7"
 
 """
