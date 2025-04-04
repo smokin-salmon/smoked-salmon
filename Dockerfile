@@ -35,4 +35,4 @@ COPY . /app
 RUN uv sync --no-dev
 
 # Set the entrypoint to run the 'salmon' script
-ENTRYPOINT ["uv", "run", "salmon"]
+ENTRYPOINT ["uv", "run", "--no-sync", "salmon"]

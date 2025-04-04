@@ -73,7 +73,8 @@ Edit the `config.py` file with your preferred text editor to add your API keys, 
     ```bash
     docker run --rm -it  --network=host \
     -v /path/to/your/music:/data \
-    -v /path/to/yor/config.py:/app/config.py \
+    -v /path/to/your/config.py:/app/config.py \
+    -v /path/to/your/smoked.db:/app/smoked.db \
     ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
     ```
 
