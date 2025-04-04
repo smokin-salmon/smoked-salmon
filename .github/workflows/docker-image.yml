@@ -113,6 +113,8 @@ jobs:
           RELEASE_NOTES: ${{ env.RELEASE_NOTES }}
 
       - name: Commit and push version update (only on release)
+        env:
+          PAT_TOKEN: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: |
           git checkout master  # Ensure we're on master branch
@@ -120,6 +122,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add data/version.py pyproject.toml
           git commit -m "Update version.py/pyproject.toml to ${{ env.VERSION }} with changelog"
+          git remote set-url origin https://$PAT_TOKEN@github.com/smokin-salmon/smoked-salmon.git
           git push origin master
 
       - name: Debug VERSION and UPDATE_VERSION
