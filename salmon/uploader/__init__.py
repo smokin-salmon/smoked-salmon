@@ -252,6 +252,7 @@ def upload(
         scene=scene,
         overwrite=overwrite_meta,
         prompt_encoding=True,
+        hybrid=hybrid,
     )
 
     try:

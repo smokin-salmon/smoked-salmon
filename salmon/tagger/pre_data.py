@@ -42,6 +42,7 @@ def construct_rls_data(
     scene=False,
     overwrite=False,
     prompt_encoding=False,
+    hybrid=False,
 ):
     """Create the default release metadata from the tags."""
     metadata = deepcopy(EMPTY_METADATA)
@@ -62,9 +63,8 @@ def construct_rls_data(
     metadata["scene"] = scene
     metadata["format"] = parse_format(next(iter(tags.keys())))
 
-    audio_track = next(iter(audio_info.values()))
     metadata["encoding"], metadata["encoding_vbr"] = parse_encoding(
-        metadata["format"], audio_track, encoding, prompt_encoding
+        metadata["format"], audio_info, encoding, prompt_encoding, hybrid
     )
     return metadata
 
@@ -92,13 +92,20 @@ def parse_format(filename):
     return FORMATS[os.path.splitext(filename)[1].lower()]
 
 
-def parse_encoding(format_, track, supplied_encoding, prompt_encoding):
+def parse_encoding(format_, audio_info, supplied_encoding, prompt_encoding, hybrid=False):
     """Get the encoding from the FLAC files, otherwise require the user to specify it."""
     if format_ == "FLAC":
-        if track["precision"] == 16:
+        if hybrid:
+            is_24bit = any(trackinfo["precision"] == 24 for trackinfo in audio_info.values())
+            if is_24bit:
+                return "24bit Lossless", False
             return "Lossless", False
-        elif track["precision"] == 24:
-            return "24bit Lossless", False
+        else:
+            audio_track = next(iter(audio_info.values()))
+            if (audio_track["precision"] == 16):
+                return "Lossless", False
+            if (audio_track["precision"] == 24):
+                return "24bit Lossless", False
     if supplied_encoding and list(supplied_encoding) != [None, None]:
         return supplied_encoding
     if prompt_encoding:
