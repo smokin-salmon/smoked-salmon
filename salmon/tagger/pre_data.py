@@ -40,29 +40,24 @@ def construct_rls_data(
     source,
     encoding,
     scene=False,
-    existing=None,
     overwrite=False,
     prompt_encoding=False,
 ):
     """Create the default release metadata from the tags."""
-    if not existing:
-        metadata = deepcopy(EMPTY_METADATA)
-        tag_track = next(iter(tags.values()))
-        metadata["title"] = tag_track.album or "None"
-        if not overwrite:
-            metadata["artists"] = construct_artists_li(tags)
-            with contextlib.suppress(ValueError, IndexError, TypeError):
-                metadata["year"] = re.search(r"(\d{4})", str(tag_track.date))[1]
-            metadata["group_year"] = metadata["year"]
-            metadata["upc"] = tag_track.upc
-            metadata["label"] = tag_track.label
-            metadata["catno"] = tag_track.catno
-            metadata["genres"] = split_genres(tag_track.genre)
-        metadata["tracks"] = create_track_list(tags, overwrite)
-    else:
-        metadata = {"artists": existing["artists"]}
-        del existing["artists"]
-        metadata = {**metadata, **existing}
+    metadata = deepcopy(EMPTY_METADATA)
+    tag_track = next(iter(tags.values()))
+    metadata["title"] = tag_track.album or "None"
+    if not overwrite:
+        metadata["artists"] = construct_artists_li(tags)
+        with contextlib.suppress(ValueError, IndexError, TypeError):
+            metadata["year"] = re.search(r"(\d{4})", str(tag_track.date))[1]
+        metadata["group_year"] = metadata["year"]
+        metadata["upc"] = tag_track.upc
+        metadata["label"] = tag_track.label
+        metadata["catno"] = tag_track.catno
+        metadata["genres"] = split_genres(tag_track.genre)
+    metadata["tracks"] = create_track_list(tags, overwrite)
+
     metadata["source"] = source
     metadata["scene"] = scene
     metadata["format"] = parse_format(next(iter(tags.keys())))
