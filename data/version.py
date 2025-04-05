@@ -1,3 +1,16 @@
+__version__ = "0.9.2.14"
+
+"""
+Changelog for version 0.9.2.14 (2025-04-05):
+
+## What's Changed
+* Fix request filling output for OPS (cosmetics only, requests were being filled correctly)
+* Fix salmon upconv for single files, fixes #20 
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.13...0.9.2.14
+"""
+
 __version__ = "0.9.2.13"
 
 """
