@@ -46,7 +46,7 @@ def test_upconverted(path):
         return any(r[0] for r in results if r[0] is not None)
 
 
-def _upconvert_check_handler(filepath, _):
+def _upconvert_check_handler(filepath, _ = None):
     try:
         upconv, wasted_bits, bitdepth, error = check_upconvert(filepath)
         return upconv, wasted_bits, bitdepth, filepath, error
