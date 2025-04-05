@@ -276,7 +276,7 @@ class BaseGazelleApi:
         )
         try:
             resp = resp.json()
-        except requests.exceptions.JSONDecodeError as e:
+        except (requests.exceptions.JSONDecodeError, ValueError) as e:
             click.echo("❌ Failed to decode JSON response", fg="red", err=True)
             click.echo(f"Status code: {resp.status_code}", fg="red", err=True)
             click.echo(f"Response text: {repr(resp.text)}", fg="red", err=True)
