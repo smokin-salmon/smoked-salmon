@@ -274,24 +274,39 @@ class BaseGazelleApi:
                 url, data=data, files=files, headers=api_key_headers
             ),
         )
-        resp = resp.json()
+        try:
+            resp = resp.json()
+        except (requests.exceptions.JSONDecodeError, ValueError) as e:
+            click.echo("❌ Failed to decode JSON response", fg="red", err=True)
+            click.echo(f"Status code: {resp.status_code}", fg="red", err=True)
+            click.echo(f"Response text: {repr(resp.text)}", fg="red", err=True)
+            raise click.Abort from e
         # print(resp) debug
+
         try:
             if resp["status"] != "success":
                 raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
                 if (
-                    'requestid' in resp['response']
-                    and resp['response']['requestid']
+                    ('requestid' in resp['response']            #RED
+                    and resp['response']['requestid']) or
+                    ('fillRequest' in resp['response']          # OPS
+                     and resp['response']['fillRequest']
+                     and resp['response']['fillRequest']['requestId'])
                 ):
-                    if resp['response']['requestid'] == -1:
+                    requestId = (
+                        resp['response']['requestid']
+                        if 'requestid' in resp['response']
+                        else resp['response']['fillRequest']['requestId']
+                    )
+                    if requestId == -1:
                         click.secho(
                             "Request fill failed!", fg="red",
                         )
                     else:
                         click.secho(
                             "Filled request: "
-                            + self.request_url(resp['response']['requestid']),
+                            + self.request_url(requestId),
                             fg="green",
                         )
                 torrent_id = 0
