@@ -115,7 +115,7 @@ class MetadataMixin(ABC):
             return data["title"], "Compilation"
         elif num_tracks < 3:
             return data["title"], "Single"
-        elif num_tracks < 6:
+        elif num_tracks < 6 or (num_tracks == 6 and not data["rls_type"]):
             return data["title"], "EP"
         return data["title"], data["rls_type"]
 
