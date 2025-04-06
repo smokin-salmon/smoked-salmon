@@ -38,7 +38,7 @@ Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency
 
 If you want to enable spectrals compression (~30% gain in size), you also need to install [oxipng](https://github.com/shssoichiro/oxipng). Follow the installation instructions on their repository. On Debian/Ubuntu systems, you can typically install it with (check if this is the latest version):
 
-    ```wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudodpkg -i oxipng_9.1.4-1_amd64.deb\n``` 
+    ```wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudo dpkg -i oxipng_9.1.4-1_amd64.deb\n``` 
 
 2. Clone the repository:
     ```bash
