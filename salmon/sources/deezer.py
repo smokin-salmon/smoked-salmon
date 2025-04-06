@@ -18,7 +18,7 @@ HEADERS = {
     "Cache-Control": "max-age=0",
     "Accept": "*/*",
     "Accept-Charset": "utf-8,ISO-8859-1;q=0.7,*;q=0.3",
-    "Accept-Language": "de-DE,de;q=0.8,en-US;q=0.6,en;q=0.4",
+    "Accept-Language": "en",
 }
 
 
@@ -106,7 +106,7 @@ class DeezerBase(BaseScraper):
         params = params or {}
         album_id = self.parse_release_id(url)
         try:
-            data = await self.get_json(f"/album/{album_id}", params=params)
+            data = await self.get_json(f"/album/{album_id}", params=params, headers=HEADERS)
             internal_data = await self.get_internal_api_data(
                 f"/album/{album_id}", params
             )
