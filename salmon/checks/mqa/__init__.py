@@ -64,6 +64,8 @@ def check_mqa(path):
                 f = io.BytesIO()
                 flac.decode_file(bf, f, seconds=1)
                 f.seek(0)
+        else:
+            return False
 
         with wave.open(f) as wf:
             nchannels, sampwidth, framerate, *_ = wf.getparams()
