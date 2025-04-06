@@ -361,16 +361,17 @@ class Scraper(QobuzBase, MetadataMixin):
         artists = []
         seen_artists = set()  
         # Track artists we've already processed
-        
-        # 1. Add track's performer as main artist if available
-        if performer := safe_get(track, ["performer", "name"]):
-            artists.append((performer, "main"))
+
+        # 1. Add release's main artist if available
+        artists.append((main_artist, "main"))
+        seen_artists.add(main_artist)
+
+        # 2. Add track's performer as guest artist if different from main artist
+        performer = safe_get(track, ["performer", "name"])
+        if performer and performer != main_artist:
+            artists.append((performer, "guest"))
             seen_artists.add(performer)
-        # 2. Otherwise use the release's main artist
-        elif main_artist:
-            artists.append((main_artist, "main"))
-            seen_artists.add(main_artist)
-                
+
         # 3. Parse the performers string for additional artists
         if "performers" in track:
             performers_str = track["performers"]
@@ -387,10 +388,12 @@ class Scraper(QobuzBase, MetadataMixin):
                         continue
                         
                     # Check roles: prioritize FeaturedArtist over other roles
-                    if "FeaturedArtist" in roles:
+                    # MainArtists here are actually guests ones (real mains are release ones, or
+                    # if none, performers ones)
+                    if any(role in roles for role in ["FeaturedArtist", "MainArtist"]):
                         artists.append((artist_name, "guest"))
                         seen_artists.add(artist_name)
-                
+
         # 4. Add any release-level featured artists not already added
         for guest in featured_artists:
             if guest not in seen_artists:
