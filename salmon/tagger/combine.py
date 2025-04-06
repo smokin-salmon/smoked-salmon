@@ -28,7 +28,7 @@ def get_source_from_link(url):
             return name
 
 
-def combine_metadatas(*metadatas, base=None):  # noqa: C901
+def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     """
     This function takes a bunch of chosen metadata and splices
     together values to form one unified metadata dictionary.
@@ -43,7 +43,14 @@ def combine_metadatas(*metadatas, base=None):  # noqa: C901
         url_sources.add(get_source_from_link(base["url"]))
 
     sources = sort_metadatas(metadatas)
-    for pref in PREFERENCES:
+
+    source = get_source_from_link(source_url)
+    ordered_preferences = (
+        [source] if source in PREFERENCES else []
+    ) + [p for p in PREFERENCES if p != source]
+
+
+    for pref in ordered_preferences:
         for metadata in sources[pref]:
             if not base:
                 base = metadata
