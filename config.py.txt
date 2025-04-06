@@ -41,6 +41,7 @@ TIDAL_FETCH_REGIONS = ["DE", "NZ", "US", "GB"]
 # Remove if not using Qobuz (read wiki to see how to get your Tidal token)
 QOBUZ_APP_ID = 'app_id'
 QOBUZ_USER_AUTH_TOKEN = 'user_auth_token'
+NO_GENRES_FROM_QOBUZ = False    # if you have a non-english Qobuz account, set this to True to avoid retrieving non-english genres
 
 # Discogs API Token (from https://www.discogs.com/settings/developers)
 DISCOGS_TOKEN = 'discogs-token'
