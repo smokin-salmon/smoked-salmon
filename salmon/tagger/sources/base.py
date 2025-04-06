@@ -99,9 +99,9 @@ class MetadataMixin(ABC):
         num_tracks = len(
             list(chain.from_iterable([d.values() for d in data["tracks"].values()]))
         )
-        if re.search(r"E\.?P\.?$", data["title"], re.IGNORECASE):
+        if re.search(r"\bE\.?P\.?\b", data["title"], re.IGNORECASE):
             return (
-                re.sub(r" ?-? *E\.?P\.?$", "", data["title"], flags=re.IGNORECASE),
+                re.sub(r"\bE\.?P\.?\b", "", data["title"], flags=re.IGNORECASE),
                 "EP",
             )
         elif re.search(r"Single$", data["title"]):
@@ -115,9 +115,11 @@ class MetadataMixin(ABC):
             return data["title"], "Compilation"
         elif num_tracks < 3:
             return data["title"], "Single"
-        elif num_tracks < 6:
+        elif num_tracks < 6 or (num_tracks == 6 and not data["rls_type"]):
             return data["title"], "EP"
-        return data["title"], data["rls_type"]
+        if (data["rls_type"]):
+            return data["title"], data["rls_type"]
+        return data["title"], "Album"
 
     @abstractmethod
     def parse_release_title(self, soup):
@@ -169,10 +171,16 @@ class MetadataMixin(ABC):
             label, artist = label.lower(), artist.lower()
             return label == artist or re.sub(r" music$", "", label) == artist
 
-        if isinstance(data["label"], str) and any(
-            _compare(data["label"], a) and i == "main" for a, i in data["artists"]
-        ):
-            return "Self-Released"
+        label = data.get("label", "")
+
+        if isinstance(label, str):
+            # Check for "Not On Label" or "Self-Released" in the label
+            if re.search(r"(not on label|self[- ]?released)", label, re.IGNORECASE):
+                return "Self-Released"
+
+            # Compare label to artist name
+            if any(_compare(label, a) and i == "main" for a, i in data["artists"]):
+                return "Self-Released"
         return data["label"]
 
     @staticmethod
@@ -255,10 +263,20 @@ def filter_artists(artists, tracks=None):
         artist_pool = _generate_artist_pool_lower_case(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
+                # Deduplicate the artists before passing them to fix_artists_list
+                deduplicated_artists = []
+                seen_normalized = set()
+
+                for art, imp in track["artists"]:
+                    normalized_art = normalize_accents(art.lower())  # Normalize and make lowercase
+                    if normalized_art not in seen_normalized:
+                        deduplicated_artists.append((art, imp))  # Add the original artist with the importance
+                        seen_normalized.add(normalized_art)
+
                 track["artists"] = fix_artists_list(
                     [
                         (artist_pool[normalize_accents(art.lower())], imp)
-                        for art, imp in track["artists"]
+                        for art, imp in deduplicated_artists
                     ],
                     to_replace,
                 )

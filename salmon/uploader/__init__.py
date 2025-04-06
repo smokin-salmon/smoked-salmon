@@ -224,7 +224,6 @@ def upload(
     encoding,
     scene=False,
     rutorrent=False,
-    existing=None,
     overwrite_meta=False,
     recompress=False,
     source_url=None,
@@ -251,9 +250,9 @@ def upload(
         source,
         encoding,
         scene=scene,
-        existing=existing,
         overwrite=overwrite_meta,
         prompt_encoding=True,
+        hybrid=hybrid,
     )
 
     try:

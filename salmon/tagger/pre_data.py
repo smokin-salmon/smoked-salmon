@@ -40,36 +40,31 @@ def construct_rls_data(
     source,
     encoding,
     scene=False,
-    existing=None,
     overwrite=False,
     prompt_encoding=False,
+    hybrid=False,
 ):
     """Create the default release metadata from the tags."""
-    if not existing:
-        metadata = deepcopy(EMPTY_METADATA)
-        tag_track = next(iter(tags.values()))
-        metadata["title"] = tag_track.album or "None"
-        if not overwrite:
-            metadata["artists"] = construct_artists_li(tags)
-            with contextlib.suppress(ValueError, IndexError, TypeError):
-                metadata["year"] = re.search(r"(\d{4})", str(tag_track.date))[1]
-            metadata["group_year"] = metadata["year"]
-            metadata["upc"] = tag_track.upc
-            metadata["label"] = tag_track.label
-            metadata["catno"] = tag_track.catno
-            metadata["genres"] = split_genres(tag_track.genre)
-        metadata["tracks"] = create_track_list(tags, overwrite)
-    else:
-        metadata = {"artists": existing["artists"]}
-        del existing["artists"]
-        metadata = {**metadata, **existing}
+    metadata = deepcopy(EMPTY_METADATA)
+    tag_track = next(iter(tags.values()))
+    metadata["title"] = tag_track.album or "None"
+    if not overwrite:
+        metadata["artists"] = construct_artists_li(tags)
+        with contextlib.suppress(ValueError, IndexError, TypeError):
+            metadata["year"] = re.search(r"(\d{4})", str(tag_track.date))[1]
+        metadata["group_year"] = metadata["year"]
+        metadata["upc"] = tag_track.upc
+        metadata["label"] = tag_track.label
+        metadata["catno"] = tag_track.catno
+        metadata["genres"] = split_genres(tag_track.genre)
+    metadata["tracks"] = create_track_list(tags, overwrite)
+
     metadata["source"] = source
     metadata["scene"] = scene
     metadata["format"] = parse_format(next(iter(tags.keys())))
 
-    audio_track = next(iter(audio_info.values()))
     metadata["encoding"], metadata["encoding_vbr"] = parse_encoding(
-        metadata["format"], audio_track, encoding, prompt_encoding
+        metadata["format"], audio_info, encoding, prompt_encoding, hybrid
     )
     return metadata
 
@@ -97,13 +92,20 @@ def parse_format(filename):
     return FORMATS[os.path.splitext(filename)[1].lower()]
 
 
-def parse_encoding(format_, track, supplied_encoding, prompt_encoding):
+def parse_encoding(format_, audio_info, supplied_encoding, prompt_encoding, hybrid=False):
     """Get the encoding from the FLAC files, otherwise require the user to specify it."""
     if format_ == "FLAC":
-        if track["precision"] == 16:
+        if hybrid:
+            is_24bit = any(trackinfo["precision"] == 24 for trackinfo in audio_info.values())
+            if is_24bit:
+                return "24bit Lossless", False
             return "Lossless", False
-        elif track["precision"] == 24:
-            return "24bit Lossless", False
+        else:
+            audio_track = next(iter(audio_info.values()))
+            if (audio_track["precision"] == 16):
+                return "Lossless", False
+            if (audio_track["precision"] == 24):
+                return "24bit Lossless", False
     if supplied_encoding and list(supplied_encoding) != [None, None]:
         return supplied_encoding
     if prompt_encoding:

@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 from html import unescape
 
+from salmon import config
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
@@ -271,10 +272,6 @@ class Scraper(QobuzBase, MetadataMixin):
         """Parse the release date from the API response."""
         return soup.get("release_date_original")
     
-    def parse_release_catno(self, soup):
-        """Parse the catalog number from the API response."""
-        return str(soup.get("id")).upper() if soup.get("id") else None
-        
     def parse_release_type(self, soup):
         """
         Parse the release type from the API response.
@@ -310,6 +307,8 @@ class Scraper(QobuzBase, MetadataMixin):
     
     def parse_genres(self, soup):
         """Parse the genres from the API response."""
+        if (config.NO_GENRES_FROM_QOBUZ):
+            return set()
         genres = {g for gs in soup.get("genres_list") for g in SPLIT_GENRES.get(gs, [gs])}
         return genres
         
@@ -361,16 +360,17 @@ class Scraper(QobuzBase, MetadataMixin):
         artists = []
         seen_artists = set()  
         # Track artists we've already processed
-        
-        # 1. Add track's performer as main artist if available
-        if performer := safe_get(track, ["performer", "name"]):
-            artists.append((performer, "main"))
+
+        # 1. Add release's main artist if available
+        artists.append((main_artist, "main"))
+        seen_artists.add(main_artist)
+
+        # 2. Add track's performer as guest artist if different from main artist
+        performer = safe_get(track, ["performer", "name"])
+        if performer and performer != main_artist:
+            artists.append((performer, "guest"))
             seen_artists.add(performer)
-        # 2. Otherwise use the release's main artist
-        elif main_artist:
-            artists.append((main_artist, "main"))
-            seen_artists.add(main_artist)
-                
+
         # 3. Parse the performers string for additional artists
         if "performers" in track:
             performers_str = track["performers"]
@@ -387,10 +387,12 @@ class Scraper(QobuzBase, MetadataMixin):
                         continue
                         
                     # Check roles: prioritize FeaturedArtist over other roles
-                    if "FeaturedArtist" in roles:
+                    # MainArtists here are actually guests ones (real mains are release ones, or
+                    # if none, performers ones)
+                    if any(role in roles for role in ["FeaturedArtist", "MainArtist"]):
                         artists.append((artist_name, "guest"))
                         seen_artists.add(artist_name)
-                
+
         # 4. Add any release-level featured artists not already added
         for guest in featured_artists:
             if guest not in seen_artists:
