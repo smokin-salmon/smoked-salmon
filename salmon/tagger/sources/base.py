@@ -99,9 +99,9 @@ class MetadataMixin(ABC):
         num_tracks = len(
             list(chain.from_iterable([d.values() for d in data["tracks"].values()]))
         )
-        if re.search(r"E\.?P\.?$", data["title"], re.IGNORECASE):
+        if re.search(r"\bE\.?P\.?\b", data["title"], re.IGNORECASE):
             return (
-                re.sub(r" ?-? *E\.?P\.?$", "", data["title"], flags=re.IGNORECASE),
+                re.sub(r"\bE\.?P\.?\b", "", data["title"], flags=re.IGNORECASE),
                 "EP",
             )
         elif re.search(r"Single$", data["title"]):
@@ -117,7 +117,9 @@ class MetadataMixin(ABC):
             return data["title"], "Single"
         elif num_tracks < 6 or (num_tracks == 6 and not data["rls_type"]):
             return data["title"], "EP"
-        return data["title"], data["rls_type"]
+        if (data["rls_type"]):
+            return data["title"], data["rls_type"]
+        return data["title"], "Album"
 
     @abstractmethod
     def parse_release_title(self, soup):
