@@ -420,7 +420,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             tag_files(path, tags, metadata, auto_rename)
 
         tags = check_tags(path)
-        if recompress:
+        if not metadata['scene'] and recompress:
             recompress_path(path)
         path = rename_folder(path, metadata, auto_rename)
         if not metadata['scene']:
@@ -436,6 +436,14 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             result = check_integrity(path)
             click.echo(format_integrity(result))
             
+            if not result[0] and metadata['scene']:
+                click.secho(
+                    "Some files failed sanitization, and this a scene release. "
+                    "You need to sanitize and de-scene before uploading. Aborting.",
+                    fg="red",
+                    bold=True,
+                )
+                raise click.Abort()
             if not result[0] and (config.YES_ALL or click.confirm(
                 click.style(
                     "\nDo you want to sanitize this upload?",
