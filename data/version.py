@@ -1,3 +1,38 @@
+__version__ = "0.9.2.15"
+
+"""
+Changelog for version 0.9.2.15 (2025-04-06):
+
+## Metadata Parsing Improvements
+
+Numerous small changes were made to improve metadata parsing accuracy.  
+If you encounter any strange metadata behavior, please share feedback — and if possible, include metadata links so we can reproduce the issue.
+
+## What's Changed
+- Update wiki installation link in `README.md` by [@digeratimt](https://github.com/digeratimt) ([#23](https://github.com/smokin-salmon/smoked-salmon/pull/23))
+- Update `oxipng` install command in `README.md` by [@digeratimt](https://github.com/digeratimt) ([#25](https://github.com/smokin-salmon/smoked-salmon/pull/25))
+- Release is now marked as 24bit if **any** file is 24bit (previously only the first file was checked)
+- Improved Qobuz artist parsing (better detection of guest artists)
+- More accurate Album/EP/Single classification:
+  - Less than 3 tracks → **Single**
+  - Less than 5 tracks → **EP**
+  - 6 tracks with no release type → **EP**
+  - Otherwise uses metadata release type, or defaults to **Album**
+- Deezer API responses now use English (mainly affects genres)
+- If a source is specified for a WEB release, it takes top priority for metadata
+- Removed usage of Qobuz ID as catalog number (CatNo)
+- Improved regex detection of "Self-released" label
+- Added `NO_GENRES_FROM_QOBUZ` option:
+  - Prevents fetching localized genres from Qobuz
+  - Useful for non-English accounts
+  - Default: `false`
+
+## New Contributors
+* @digeratimt made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/23
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.14...0.9.2.15
+"""
+
 __version__ = "0.9.2.14"
 
 """
