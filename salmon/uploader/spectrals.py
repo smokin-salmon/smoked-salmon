@@ -28,13 +28,25 @@ THREADS = [None] * config.SIMULTANEOUS_THREADS
 
 
 def check_spectrals(
-    path, audio_info, lossy_master=None, spectral_ids=None, check_lma=True, force_prompt_lossy_master=False
+    path,
+    audio_info,
+    lossy_master=None,
+    spectral_ids=None,
+    check_lma=True,
+    force_prompt_lossy_master=False,
+    format="FLAC",
 ):
     """
     Run the spectral checker functions. Generate the spectrals and ask whether or
     not the files are lossy. If the IDs were not all provided, prompt for spectrals
     to upload.
     """
+    if format != "FLAC":
+        click.secho(
+            "Spectrals are only generated for FLAC files. Skipping...",
+            fg="cyan",
+        )
+        return None, None
     click.secho("\nChecking lossy master / spectrals...", fg="cyan", bold=True)
     spectrals_path = create_specs_folder(path)
     if not spectral_ids:
@@ -451,11 +463,17 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
 
 
 def post_upload_spectral_check(
-    gazelle_site, path, torrent_id, spectral_ids, track_data, source, source_url
+    gazelle_site, path, torrent_id, spectral_ids, track_data, source, source_url, format="FLAC"
 ):
     "Offers generation and adition of spectrals after upload"
     "As this is post upload, we have time to ask if this is a lossy master, so force prompt."
-    lossy_master, spectral_ids = check_spectrals(path, track_data, None, spectral_ids, force_prompt_lossy_master=True)
+    lossy_master, spectral_ids = check_spectrals(
+        path, track_data, None, spectral_ids,
+        force_prompt_lossy_master=True, format=format
+    )
+    if (not lossy_master and not spectral_ids):
+        return None, None, None, None
+
     lossy_comment = None
     if lossy_master:
         lossy_comment = generate_lossy_approval_comment(
