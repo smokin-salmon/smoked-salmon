@@ -171,10 +171,16 @@ class MetadataMixin(ABC):
             label, artist = label.lower(), artist.lower()
             return label == artist or re.sub(r" music$", "", label) == artist
 
-        if isinstance(data["label"], str) and any(
-            _compare(data["label"], a) and i == "main" for a, i in data["artists"]
-        ):
-            return "Self-Released"
+        label = data.get("label", "")
+
+        if isinstance(label, str):
+            # Check for "Not On Label" or "Self-Released" in the label
+            if re.search(r"(not on label|self[- ]?released)", label, re.IGNORECASE):
+                return "Self-Released"
+
+            # Compare label to artist name
+            if any(_compare(label, a) and i == "main" for a, i in data["artists"]):
+                return "Self-Released"
         return data["label"]
 
     @staticmethod
