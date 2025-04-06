@@ -1,3 +1,14 @@
+__version__ = "0.9.2.16"
+
+"""
+Changelog for version 0.9.2.16 (2025-04-06):
+
+## What's Changed
+* Remove leftover debug statement
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.15...0.9.2.16
+"""
+
 __version__ = "0.9.2.15"
 
 """
