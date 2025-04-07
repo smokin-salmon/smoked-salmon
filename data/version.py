@@ -1,3 +1,17 @@
+__version__ = "0.9.2.17"
+
+"""
+Changelog for version 0.9.2.17 (2025-04-07):
+
+## What's Changed
+* Fix mp3 upload (fix crash)
+* Fix scene uploads: they should now work properly!
+* Fix metadata combine (fix crash when metadata choices selection did not include a source)
+* Improve track titles updates from metadata
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.16...0.9.2.17
+"""
+
 __version__ = "0.9.2.16"
 
 """
