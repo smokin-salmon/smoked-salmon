@@ -285,7 +285,7 @@ def upload(
             # We tell the uploader not to worry about it being lossy until later.
         else:
             lossy_master, spectral_ids = check_spectrals(
-                path, audio_info, lossy, spectrals
+                path, audio_info, lossy, spectrals, format=rls_data["format"]
             )
         metadata, new_source_url = get_metadata(path, tags, rls_data)
         if new_source_url is not None:
@@ -336,7 +336,7 @@ def upload(
                 # Here we are checking the spectrals after uploading to the first site
                 # if they were not done before.
                 lossy_master, lossy_comment, spectral_urls, spectral_ids = post_upload_spectral_check(
-                    gazelle_site, path, torrent_id, None, track_data, source, source_url
+                    gazelle_site, path, torrent_id, None, track_data, source, source_url, format=rls_data["format"]
                 )
                 spectrals_after = False
             click.secho(
@@ -420,7 +420,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             tag_files(path, tags, metadata, auto_rename)
 
         tags = check_tags(path)
-        if recompress:
+        if not metadata['scene'] and recompress:
             recompress_path(path)
         path = rename_folder(path, metadata, auto_rename)
         if not metadata['scene']:
@@ -436,6 +436,14 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             result = check_integrity(path)
             click.echo(format_integrity(result))
             
+            if not result[0] and metadata['scene']:
+                click.secho(
+                    "Some files failed sanitization, and this a scene release. "
+                    "You need to sanitize and de-scene before uploading. Aborting.",
+                    fg="red",
+                    bold=True,
+                )
+                raise click.Abort()
             if not result[0] and (config.YES_ALL or click.confirm(
                 click.style(
                     "\nDo you want to sanitize this upload?",

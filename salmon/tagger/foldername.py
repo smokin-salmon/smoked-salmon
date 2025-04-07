@@ -62,9 +62,11 @@ def rename_folder(path, metadata, auto_rename, check=True):
     new_path_dirname = os.path.dirname(new_path)
     if not os.path.exists(new_path_dirname):
         os.makedirs(new_path_dirname)
-    if os.path.abspath(path) != os.path.abspath(new_path):
+    if os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path):
+        click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
+    else:
         shutil.copytree(path, new_path, dirs_exist_ok=True)
-    click.secho(f"Copied folder to {new_base}.", fg="yellow")
+        click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
     return new_path
 
 
