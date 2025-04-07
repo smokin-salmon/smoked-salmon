@@ -23,6 +23,8 @@ PREFERENCES = [
 
 
 def get_source_from_link(url):
+    if not url:
+        return None
     for name, source in METASOURCES.items():
         if source.Scraper.regex.match(url):
             return name
