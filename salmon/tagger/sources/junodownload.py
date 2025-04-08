@@ -120,9 +120,9 @@ def parse_artists(soup, track, title):
     Parse the per-track artists from the tracks or the header."""
     raw_rls_arts = [
         s.string
-        for s in soup.select("#topbar_bread h1 a")
+        for s in soup.select("#topbar_bread a")
         if "/artists/" in s["href"] and s.string
-    ] or [s.string.title() for s in soup.select("#product_heading_artist a")]
+    ] or [s.string.title() for s in soup.select(".product-artist a")]
 
     artists = []
     for art in raw_rls_arts:
