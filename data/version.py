@@ -1,3 +1,17 @@
+__version__ = "0.9.2.18"
+
+"""
+Changelog for version 0.9.2.18 (2025-04-08):
+
+## What's Changed
+* Update Juno Source Artist Selectors by @digerati-red in https://github.com/smokin-salmon/smoked-salmon/pull/29
+
+## New Contributors
+* @digerati-red made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/29
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.17...0.9.2.18
+"""
+
 __version__ = "0.9.2.17"
 
 """
