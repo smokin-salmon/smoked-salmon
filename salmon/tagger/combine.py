@@ -140,17 +140,16 @@ def combine_tracks(base, meta):
             except StopIteration:
                 raise TrackCombineError(f"Disc {disc} track {num} does not exist.") from None
 
-            # Use unidecode comparison when there are accents in the title
             if (
-                    re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"]))
-                    and btrack["title"] is not None
+                # Use unidecode comparison when there are accents in the title
+                re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"]))
+                and btrack["title"] is not None
             ) and (
-                    btrack["title"]
-                    and track["title"]
-                    and re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))
+                btrack["title"]
+                and track["title"]
+                # Allow replacement if the base title is part of the meta title (e.g., remix scenario)
+                and re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))
             ):
-
-            # Allow replacement if the base title is part of the meta title (e.g., remix scenario)
                 btrack["title"] = track["title"]
 
             if btrack["title"] is None:
