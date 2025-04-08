@@ -1,4 +1,5 @@
 import contextlib
+import re
 from collections import defaultdict
 from itertools import chain
 
@@ -130,6 +131,15 @@ def sort_metadatas(metadatas):
     return sources
 
 
+def _extract_remixers_from_title(title):
+    # Match patterns like (Remixer Remix), (Remixer Mix), (Remixer Radio Mix), etc.
+    match = re.search(r"\((.*?)\s+(Club Mix|Radio Mix|Remix|Mix)\)", title, re.IGNORECASE)
+    if match:
+        remixer = match.group(1).strip()
+        return [(remixer, "remixer")]
+    return []
+
+
 def combine_tracks(base, meta):
     """Combine the metadata for the tracks of two different sources."""
     btracks = iter(chain.from_iterable([d.values() for d in base.values()]))
@@ -166,6 +176,10 @@ def combine_tracks(base, meta):
             for a in track["artists"]:
                 if (re_strip(a[0]), a[1]) not in base_artists:
                     btrack["artists"].append(a)
+            remixers = _extract_remixers_from_title(track["title"])
+            for remixer in remixers:
+                if (re_strip(remixer[0]), remixer[1]) not in base_artists:
+                    btrack["artists"].append(remixer)
             btrack["artists"] = check_for_artist_fragments(btrack["artists"])
 
             if track["explicit"]:
