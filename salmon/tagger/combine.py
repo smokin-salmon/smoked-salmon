@@ -7,7 +7,7 @@ from unidecode import unidecode
 from salmon.common import re_strip
 from salmon.errors import TrackCombineError
 from salmon.tagger.sources import METASOURCES
-from salmon.tagger.sources.base import generate_artists
+from salmon.tagger.sources.base import generate_artists, standardize_genres
 
 PREFERENCES = [
     "Tidal",
@@ -118,7 +118,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
         del base["url"]
 
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
-    base["genres"] = list(set(base["genres"]))
+    base["genres"] = standardize_genres(set(base["genres"]))
     return base
 
 

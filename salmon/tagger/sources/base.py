@@ -16,7 +16,7 @@ class MetadataMixin(ABC):
 
     async def scrape_release(self, url, rls_id=None):
         """
-        Scrape the meatadata of a release and return a dictionary of scraped data.
+        Scrape the metadata of a release and return a dictionary of scraped data.
         Data may vary depending on the source; unavailable keys will be left
         as None.
         """
@@ -364,6 +364,13 @@ def assign_track_totals(data):
     return data
 
 
+def _is_separate_word_in_combination(generic, combined):
+    # Normalize to lowercase
+    generic = generic.lower()
+    combined_parts = re.split(r'\s*/\s*|\s*&\s*|\s+and\s+', combined.lower())
+    return generic in combined_parts
+
+
 def standardize_genres(genre_set):
     new_set = set()
     for g in genre_set:
@@ -371,4 +378,13 @@ def standardize_genres(genre_set):
             new_set |= fetch_genre(g)
         except GenreNotInWhitelist:
             new_set.add(g)
-    return list(new_set)
+
+    # Filter out generic genres if more specific combos exist
+    filtered = set(new_set)
+    for genre in new_set:
+        for other in new_set:
+            if genre != other and _is_separate_word_in_combination(genre, other):
+                filtered.discard(genre)
+                break
+
+    return list(filtered)
