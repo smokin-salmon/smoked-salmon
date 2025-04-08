@@ -140,29 +140,34 @@ def combine_tracks(base, meta):
             except StopIteration:
                 raise TrackCombineError(f"Disc {disc} track {num} does not exist.") from None
 
-            # Use unidecode comparison when there are accents in the title
-            if (re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"]))
-                    and btrack["title"] is not None):
+            if (
+                # Use unidecode comparison when there are accents in the title
+                re_strip(unidecode(track["title"])) != re_strip(unidecode(btrack["title"]))
+                and btrack["title"] is not None
+            ) and (
+                btrack["title"]
+                and track["title"]
                 # Allow replacement if the base title is part of the meta title (e.g., remix scenario)
-                if (btrack["title"] and track["title"]
-                        and re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))):
-                    btrack["title"] = track["title"]
-                else:
-                    continue
+                and re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))
+            ):
+                btrack["title"] = track["title"]
 
             if btrack["title"] is None:
                 btrack["title"] = track["title"]
+
             # Scraped title is the same than title when ignoring metadatas, and it contains accents and special
             # characters, prefer that one.
             if (re_strip(track["title"]) != re_strip(unidecode(track["title"]))
                     and re_strip(unidecode(track["title"])) == re_strip(unidecode(btrack["title"]))):
                 btrack["title"] = track["title"]
+
             base_artists = {(re_strip(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
             for a in track["artists"]:
                 if (re_strip(a[0]), a[1]) not in base_artists:
                     btrack["artists"].append(a)
             btrack["artists"] = check_for_artist_fragments(btrack["artists"])
+
             if track["explicit"]:
                 btrack["explicit"] = True
             if not btrack["format"]:
