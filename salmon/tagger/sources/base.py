@@ -95,31 +95,63 @@ class MetadataMixin(ABC):
             **kwargs,
         }
 
+
     def determine_rls_type(self, data):
-        num_tracks = len(
-            list(chain.from_iterable([d.values() for d in data["tracks"].values()]))
-        )
-        if re.search(r"\bE\.?P\.?\b", data["title"], re.IGNORECASE):
-            return (
-                re.sub(r"\bE\.?P\.?\b", "", data["title"], flags=re.IGNORECASE),
-                "EP",
-            )
-        elif re.search(r"Single$", data["title"]):
-            return (
-                re.sub(r"-? *Single$", "", data["title"], flags=re.IGNORECASE),
-                "Single",
-            )
+        def strip_base_title(title):
+            return re.sub(r"\s*\(.*?\)", "", title).strip().lower()
+
+        tracks = [
+            track
+            for disc in data["tracks"].values()
+            for track in disc.values()
+        ]
+
+        num_tracks = len(tracks)
+        base_titles = {strip_base_title(track["title"]) for track in tracks}
+        main_artists = {artist[0] for artist in data.get("artists", []) if artist[1] == "main"}
+
+        title = data["title"]
+        rls_type = data.get("rls_type").lower() if data.get("rls_type") else ""
+
+        # --- Title-based overrides ---
+        if re.search(r"\bE\.?P\.?\b", title, re.IGNORECASE):
+            return re.sub(r"\bE\.?P\.?\b", "", title, flags=re.IGNORECASE).strip(), "EP"
+        if re.search(r"-? *Single$", title, re.IGNORECASE):
+            return re.sub(r"-? *Single$", "", title, flags=re.IGNORECASE).strip(), "Single"
         elif re.search(r"original.*soundtrack", data["title"], flags=re.IGNORECASE):
             return data["title"], "Soundtrack"
-        elif len([a for a in data["artists"] if a[1] == "main"]) > 6:
-            return data["title"], "Compilation"
-        elif num_tracks < 3:
-            return data["title"], "Single"
-        elif num_tracks < 6 or (num_tracks == 6 and not data["rls_type"]):
-            return data["title"], "EP"
-        if (data["rls_type"]):
-            return data["title"], data["rls_type"]
-        return data["title"], "Album"
+
+
+        # --- Explicit rls_type ---
+        if rls_type == "soundtrack":
+            return title, "Soundtrack"
+        if rls_type == "compilation" and len(main_artists) <= 2:
+            return title, "Anthology"
+
+        # --- Track-based inference ---
+        if num_tracks <= 3 or len(base_titles) <= 3:
+            return title, "Single"
+        if num_tracks <= 7 and not data["rls_type"]:
+            return title, "EP"
+
+        # At that point, it should be a kind of album, but which one
+        remix_count = sum(1 for t in tracks if re.search(r"(mix|remix)", t["title"], re.IGNORECASE))
+        if remix_count / max(1, num_tracks) >= 0.5:
+            return title, "Remix"
+        # If rls_type was actually passed (but not album, we have other possibilities), let's try to return that
+        if rls_type and rls_type != "album":
+            return title, rls_type.title()
+
+        # An album with 6+ main artists is surely a compilation
+        if len(main_artists) >= 6:
+            return title, "Compilation"
+
+        # If the title contains "live", it's a live album?
+        if "live" in title.lower():
+            return title, "Live album"
+
+        # No choice left I guess
+        return title, "Album"
 
     @abstractmethod
     def parse_release_title(self, soup):
