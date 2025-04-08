@@ -13,13 +13,13 @@ from salmon.tagger.sources.base import generate_artists, standardize_genres
 PREFERENCES = [
     "Tidal",
     "Deezer",
+    "Qobuz",
     "Bandcamp",
     "MusicBrainz",
-    "iTunes",
     "Junodownload",
     "Discogs",
     "Beatport",
-    "Qobuz",
+    "iTunes",   # scraping half-broken, might want to put it back higher when fixed
 ]
 
 
@@ -52,6 +52,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
         [source] if source in PREFERENCES else []
     ) + [p for p in PREFERENCES if p != source]
 
+    from_preferred_source = True
 
     for pref in ordered_preferences:
         for metadata in sources[pref]:
@@ -64,7 +65,13 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
             base["genres"] += metadata["genres"]
 
             with contextlib.suppress(TrackCombineError):
-                base["tracks"] = combine_tracks(base["tracks"], metadata["tracks"])
+                base["tracks"] = combine_tracks(
+                    base["tracks"],
+                    metadata["tracks"],
+                    from_preferred_source
+                )
+
+            from_preferred_source = False
 
             if (
                 (not base["catno"] or not base["label"])
@@ -140,9 +147,9 @@ def _extract_remixers_from_title(title):
     return []
 
 
-def combine_tracks(base, meta):
+def combine_tracks(base, meta, update_track_numbers):
     """Combine the metadata for the tracks of two different sources."""
-    btracks = iter(chain.from_iterable([d.values() for d in base.values()]))
+    btracks = iter(chain.from_iterable([list(d.values()) for d in base.values()]))
     for disc, tracks in meta.items():
         for num, track in tracks.items():
             try:
@@ -191,9 +198,13 @@ def combine_tracks(base, meta):
             if not btrack["replay_gain"]:
                 btrack["replay_gain"] = track["replay_gain"]
                 btrack["title"] = track["title"]
-            if track["tracktotal"] and track["disctotal"]:
+            if not btrack["tracktotal"]:
                 btrack["tracktotal"] = track["tracktotal"]
+            if not btrack["disctotal"]:
                 btrack["disctotal"] = track["disctotal"]
+            if update_track_numbers and track["track#"]:
+                del base[btrack["disc#"]][btrack["track#"]]
+                btrack["track#"] = track["track#"]
             base[btrack["disc#"]][btrack["track#"]] = btrack
     return base
 
