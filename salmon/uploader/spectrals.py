@@ -3,6 +3,7 @@ import os
 import platform
 
 # used by post upload stuff might move.
+import random
 import re
 import shutil
 import subprocess
@@ -349,12 +350,17 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_m
     while True:
         ids = "*" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
             click.style(
-                f"What spectral IDs would you like to upload to "
-                f"{config.SPECS_UPLOADER}? (space-separated list of IDs, \"0\" for none, \"*\" for all)",
+                f"What spectral IDs would you like to upload to {config.SPECS_UPLOADER}? "
+                "(space-separated list of IDs, \"0\" for none, \"*\" for all, or \"+\" for a randomized selection)",
                 fg="magenta"
             ),
-            default="*",
+            default="+",
         )
+        if ids.strip() == "+":
+            all_ids = list(spectral_ids.keys())
+            subset_size = max(1, len(all_ids) // 3)  # Ensure at least one ID is selected
+            ids = sorted([str(i) for i in random.sample(all_ids, subset_size)], key=int)
+            return {int(id_): spectral_ids[int(id_)] for id_ in ids}
         if ids.strip() == "*":
             return spectral_ids
         elif ids.strip() == "0":
