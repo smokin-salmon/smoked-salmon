@@ -67,6 +67,8 @@ def rename_folder(path, metadata, auto_rename, check=True):
     else:
         shutil.copytree(path, new_path, dirs_exist_ok=True)
         click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
+        if config.REMOVE_SOURCE_DIR:
+            shutil.rmtree(path)
     return new_path
 
 
