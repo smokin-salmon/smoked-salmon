@@ -60,6 +60,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                 base = metadata
                 if base.get("url", False):
                     url_sources.add(get_source_from_link(base["url"]))
+                from_preferred_source = False
                 continue
 
             base["genres"] += metadata["genres"]
@@ -71,8 +72,6 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                     from_preferred_source
                 )
 
-            from_preferred_source = False
-
             if (
                 (not base["catno"] or not base["label"])
                 and metadata["label"]
@@ -81,7 +80,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                     not base["label"]
                     or any(w in metadata["label"] for w in base["label"].split())
                 )
-            ):
+            ) and (base["source"] != "WEB" or (base["source"] == "WEB" and from_preferred_source)):
                 base["label"] = metadata["label"]
                 base["catno"] = metadata["catno"]
 
@@ -115,6 +114,8 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                 base["rls_type"] = metadata["rls_type"]
             if not base["upc"]:
                 base["upc"] = metadata["upc"]
+
+            from_preferred_source = False
 
         if sources[pref] and "url" in sources[pref][0]:
             link_source = get_source_from_link(sources[pref][0]["url"])
