@@ -1,4 +1,5 @@
 import contextlib
+import re
 from collections import defaultdict
 from itertools import chain
 
@@ -7,18 +8,18 @@ from unidecode import unidecode
 from salmon.common import re_strip
 from salmon.errors import TrackCombineError
 from salmon.tagger.sources import METASOURCES
-from salmon.tagger.sources.base import generate_artists
+from salmon.tagger.sources.base import generate_artists, standardize_genres
 
 PREFERENCES = [
     "Tidal",
     "Deezer",
+    "Qobuz",
     "Bandcamp",
     "MusicBrainz",
-    "iTunes",
     "Junodownload",
     "Discogs",
     "Beatport",
-    "Qobuz",
+    "iTunes",   # scraping half-broken, might want to put it back higher when fixed
 ]
 
 
@@ -51,6 +52,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
         [source] if source in PREFERENCES else []
     ) + [p for p in PREFERENCES if p != source]
 
+    from_preferred_source = True
 
     for pref in ordered_preferences:
         for metadata in sources[pref]:
@@ -58,12 +60,17 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                 base = metadata
                 if base.get("url", False):
                     url_sources.add(get_source_from_link(base["url"]))
+                from_preferred_source = False
                 continue
 
             base["genres"] += metadata["genres"]
 
             with contextlib.suppress(TrackCombineError):
-                base["tracks"] = combine_tracks(base["tracks"], metadata["tracks"])
+                base["tracks"] = combine_tracks(
+                    base["tracks"],
+                    metadata["tracks"],
+                    from_preferred_source
+                )
 
             if (
                 (not base["catno"] or not base["label"])
@@ -73,7 +80,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                     not base["label"]
                     or any(w in metadata["label"] for w in base["label"].split())
                 )
-            ):
+            ) and (base["source"] != "WEB" or (base["source"] == "WEB" and from_preferred_source)):
                 base["label"] = metadata["label"]
                 base["catno"] = metadata["catno"]
 
@@ -108,6 +115,8 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
             if not base["upc"]:
                 base["upc"] = metadata["upc"]
 
+            from_preferred_source = False
+
         if sources[pref] and "url" in sources[pref][0]:
             link_source = get_source_from_link(sources[pref][0]["url"])
             if link_source not in url_sources:
@@ -118,7 +127,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
         del base["url"]
 
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
-    base["genres"] = list(set(base["genres"]))
+    base["genres"] = standardize_genres(set(base["genres"]))
     return base
 
 
@@ -130,9 +139,18 @@ def sort_metadatas(metadatas):
     return sources
 
 
-def combine_tracks(base, meta):
+def _extract_remixers_from_title(title):
+    # Match patterns like (Remixer Remix), (Remixer Mix), (Remixer Radio Mix), etc.
+    match = re.search(r"\((.*?)\s+(Club Mix|Radio Mix|Remix|Mix)\)", title, re.IGNORECASE)
+    if match:
+        remixer = match.group(1).strip()
+        return [(remixer, "remixer")]
+    return []
+
+
+def combine_tracks(base, meta, update_track_numbers):
     """Combine the metadata for the tracks of two different sources."""
-    btracks = iter(chain.from_iterable([d.values() for d in base.values()]))
+    btracks = iter(chain.from_iterable([list(d.values()) for d in base.values()]))
     for disc, tracks in meta.items():
         for num, track in tracks.items():
             try:
@@ -166,6 +184,10 @@ def combine_tracks(base, meta):
             for a in track["artists"]:
                 if (re_strip(a[0]), a[1]) not in base_artists:
                     btrack["artists"].append(a)
+            remixers = _extract_remixers_from_title(track["title"])
+            for remixer in remixers:
+                if (re_strip(remixer[0]), remixer[1]) not in base_artists:
+                    btrack["artists"].append(remixer)
             btrack["artists"] = check_for_artist_fragments(btrack["artists"])
 
             if track["explicit"]:
@@ -177,9 +199,13 @@ def combine_tracks(base, meta):
             if not btrack["replay_gain"]:
                 btrack["replay_gain"] = track["replay_gain"]
                 btrack["title"] = track["title"]
-            if track["tracktotal"] and track["disctotal"]:
+            if not btrack["tracktotal"]:
                 btrack["tracktotal"] = track["tracktotal"]
+            if not btrack["disctotal"]:
                 btrack["disctotal"] = track["disctotal"]
+            if update_track_numbers and track["track#"]:
+                del base[btrack["disc#"]][btrack["track#"]]
+                btrack["track#"] = track["track#"]
             base[btrack["disc#"]][btrack["track#"]] = btrack
     return base
 

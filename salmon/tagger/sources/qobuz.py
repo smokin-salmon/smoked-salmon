@@ -328,7 +328,8 @@ class Scraper(QobuzBase, MetadataMixin):
         the release type that was explicitly provided by Qobuz.
         """
         # If Qobuz provided an explicit release type, respect it and keep it
-        if data["rls_type"] in ["Album", "EP", "Single", "Soundtrack", "Compilation"]:
+        # Might have to check which other rls_types from Qobuz are trustworthy
+        if data["rls_type"] in ["EP", "Single", "Soundtrack"]:
             return data["title"], data["rls_type"]
             
         # Otherwise, fall back to the base class's heuristics

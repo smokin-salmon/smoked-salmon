@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import click
 
+from salmon import config
 from salmon.common import RE_FEAT, re_split
 from salmon.common.figles import _tracknumber_sort_key
 from salmon.constants import FORMATS, TAG_ENCODINGS
@@ -47,7 +48,7 @@ def construct_rls_data(
     """Create the default release metadata from the tags."""
     metadata = deepcopy(EMPTY_METADATA)
     tag_track = next(iter(tags.values()))
-    metadata["title"] = tag_track.album or "None"
+    metadata["title"], metadata["edition_title"] = parse_title(tag_track.album) if tag_track.album else (None, None)
     if not overwrite:
         metadata["artists"] = construct_artists_li(tags)
         with contextlib.suppress(ValueError, IndexError, TypeError):
@@ -67,6 +68,34 @@ def construct_rls_data(
         metadata["format"], audio_info, encoding, prompt_encoding, hybrid
     )
     return metadata
+
+
+def parse_title(title):
+    """
+    Returns a tuple: (cleaned title, edition/version string)
+    - Removes known 'junk' parentheticals like 'Remastered', 'Expanded Edition'
+    - Detects version/edition from the title only
+    """
+    edition = None
+    base = title.strip()
+
+    if config.STRIP_USELESS_VERSIONS:
+        # Define patterns to strip and capture
+        junk_pattern = re.compile(
+            r"\s*\(*\b("
+            r"Original( Mix)?|Remastered|Clean|"
+            r"(Expanded|Deluxe|Anniversary|Limited|Collector'?s|Ultimate|Reissue|Bonus|Special)\s+Edition|"
+            r"Album.+(edition|mix)|feat[^\)]+"
+            r")\b\)*\s*$",
+            flags=re.IGNORECASE,
+        )
+
+        match = junk_pattern.search(base)
+        if match:
+            edition = match.group(1).strip()
+            base = base[:match.start()].strip()
+
+    return base, edition
 
 
 def construct_artists_li(tags):

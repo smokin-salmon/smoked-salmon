@@ -356,26 +356,25 @@ GENRE_LIST = {
     "vocal": {"Vocal"},
     "worldmusic": {"World Music"},
     # French to English
-    "musique electronique": {"Electronic"},
+    "musiqueelectronique": {"Electronic"},
     "electronique": {"Electronic"},
-    "musique classique": {"Classical"},
-    "hip-hop/rap": {"Hip Hop"},
-    "rap francais": {"French Rap"},
-    "musique du monde": {"World Music"},
-    "variete francaise": {"French Pop"},
-    "jazz vocal": {"Vocal Jazz"},
+    "musiqueclassique": {"Classical"},
+    "rapfrancais": {"French Rap"},
+    "musiquedumonde": {"World Music"},
+    "varietefrancaise": {"French Pop"},
+    "jazzvocal": {"Vocal Jazz"},
     # German to English
-    "elektronische musik": {"Electronic"},
-    "klassische musik": {"Classical"},
-    "zeitgenossische musik": {"Contemporary"},
+    "elektronischemusik": {"Electronic"},
+    "klassischemusik": {"Classical"},
+    "zeitgenossischemusik": {"Contemporary"},
     # Spanish to English
-    "musica electronica": {"Electronic"},
-    "musica clasica": {"Classical"},
+    "musicaelectronica": {"Electronic"},
+    "musicaclasica": {"Classical"},
     # Common mistranslations or variants
     "electronica": {"Electronic"},
-    "indie & alternative": {"Indie"},
-    "alternative & indie": {"Alternative"},
-    "r&b/soul": {"R&B"}
+    "indieandalternative": {"Indie"},
+    "alternativeandindie": {"Alternative"},
+    "randbsoul": {"R&B"}
 }
 
 ALLOWED_EXTENSIONS = {
