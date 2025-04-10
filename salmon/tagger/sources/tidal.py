@@ -105,13 +105,14 @@ class Scraper(TidalBase, MetadataMixin):
 
         all_guests = all(a["type"] == "FEATURED" for a in artists)
         for artist in artists:
-            for a in re_split(artist["name"]):
-                feat = RE_FEAT.search(a)
-                if feat:
-                    for artist_ in re_split(feat[1]):
-                        result.append((unescape(artist_), "guest"))
-                        artist_set.add(unescape(artist_).lower())
-                    a = re.sub(feat[0] + "$", "", a).rstrip()
+            artist_without_feat = artist["name"]
+            feat = RE_FEAT.search(artist["name"])
+            if feat:
+                for artist_ in re_split(feat[1]):
+                    result.append((unescape(artist_), "guest"))
+                    artist_set.add(unescape(artist_).lower())
+                artist_without_feat = re.sub(re.escape(feat[0]) + "$", "", artist_without_feat).rstrip()
+            for a in re_split(artist_without_feat):
                 if artist["type"] in ROLES and unescape(a).lower() not in artist_set:
                     if unescape(a).lower() in remix_str:
                         result.append((unescape(a), "remixer"))
