@@ -1,3 +1,29 @@
+__version__ = "0.9.2.19"
+
+"""
+Changelog for version 0.9.2.19 (2025-04-10):
+
+There is a new option available for use in config.py: `REMOVE_SOURCE_DIR ` (default value: `False`)
+When set to `True`, the source folder will be deleted after it has been copied to the target location.
+
+## What's Changed
+* Add option to upload a randomized subset of spectrals (use `+` during spectrals selection, this is the default choice now) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/34
+* Add option to remove old folder after moving to new location by @frwny in https://github.com/smokin-salmon/smoked-salmon/pull/36
+* Allow more track data to update if base title does not match meta title by @digerati-red in https://github.com/smokin-salmon/smoked-salmon/pull/30
+* Improve metadata combine from sources by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/32
+  * Standardize / deduplicate genres (no more genres with "Funk, Soul, Funk & Soul".
+  * Detect remixes from track titles during combine, and add the remixers as artists
+  * Improve the whole release type heuristics - Singles/EPs/Albums/Live Albums/Compilations/Anthologies should be better detected now
+  * Update trackumbers from preferred metadata source (the one with highest priority, or the one marked as rip source)
+  * Update catno only from preferred metadata source (the one with highest priority, or the one marked as rip source) for WEB
+  * Detect edition_title from title (and remove it from the actual title). It does impact metadata search, holding on using the edition_title in the searchstr of metadata search for now, until further testing.
+
+## New Contributors
+* @frwny made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/36
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.18...0.9.2.19
+"""
+
 __version__ = "0.9.2.18"
 
 """
