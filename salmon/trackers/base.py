@@ -1,9 +1,9 @@
 import asyncio
 import html
 import re
-import sys
 from collections import namedtuple
 from json.decoder import JSONDecodeError
+from urllib.parse import parse_qs, urlparse
 
 import click
 import requests
@@ -123,7 +123,7 @@ class BaseGazelleApi:
                 "Connection to API timed out, try script again later. Gomen!",
                 fg="red",
             )
-            sys.exit(1)
+            raise click.Abort() from None
 
         if resp["status"] != "success":
             raise RequestFailedError(resp["error"])
@@ -132,6 +132,36 @@ class BaseGazelleApi:
     async def torrentgroup(self, group_id):
         """Get information about a torrent group."""
         return await self.request("torrentgroup", id=group_id)
+
+    async def get_redirect_torrentgroupid(self, torrentid):
+        url = self.base_url + "/torrents.php"
+        params = {"torrentid": torrentid}
+
+        try:
+            resp = await loop.run_in_executor(
+                None,
+                lambda: self.session.get(
+                    url, params=params, timeout=5, allow_redirects=False
+                ),
+            )
+            location = resp.headers.get("Location")
+            if location:
+                parsed = urlparse(location)
+                query = parse_qs(parsed.query)
+                torrent_group_id = query.get("id", [None])[0]
+                return torrent_group_id
+            else:
+                click.secho(
+                    "Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!",
+                    fg="red",
+                )
+                raise click.Abort()
+        except (ConnectTimeout, ReadTimeout):
+            click.secho(
+                "Connection to API timed out, try script again later. Gomen!",
+                fg="red",
+            )
+            raise click.Abort() from None
 
     async def get_request(self, id):
         """Get information about a request."""
