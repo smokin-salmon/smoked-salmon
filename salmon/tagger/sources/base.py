@@ -201,13 +201,13 @@ class MetadataMixin(ABC):
     def process_label(self, data):
         def _compare(label, artist):
             label, artist = label.lower(), artist.lower()
-            return label == artist or re.sub(r" music$", "", label) == artist
+            return label == artist or label.startswith(artist)
 
         label = data.get("label", "")
 
         if isinstance(label, str):
             # Check for "Not On Label" or "Self-Released" in the label
-            if re.search(r"(not on label|self[- ]?released)", label, re.IGNORECASE):
+            if re.search(r"(not on label|no label|self[- ]?released)", label, re.IGNORECASE):
                 return "Self-Released"
 
             # Compare label to artist name
