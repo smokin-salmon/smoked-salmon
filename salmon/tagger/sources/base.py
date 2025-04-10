@@ -129,9 +129,9 @@ class MetadataMixin(ABC):
             return title, "Anthology"
 
         # --- Track-based inference ---
-        if num_tracks <= 3 or len(base_titles) <= 3:
+        if num_tracks <= 3 or len(base_titles) <= 2:
             return title, "Single"
-        if num_tracks <= 7 and not data["rls_type"]:
+        if num_tracks <= 7 and (not data["rls_type"] or data["rls_type"] == "EP"):
             return title, "EP"
 
         # At that point, it should be a kind of album, but which one
@@ -140,7 +140,7 @@ class MetadataMixin(ABC):
             return title, "Remix"
         # If rls_type was actually passed (but not album, we have other possibilities), let's try to return that
         if rls_type and rls_type != "album":
-            return title, rls_type.title()
+            return title, data.get("rls_type")
 
         # An album with 6+ main artists is surely a compilation
         if len(main_artists) >= 6:
