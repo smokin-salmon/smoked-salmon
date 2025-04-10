@@ -363,6 +363,7 @@ GENRE_LIST = {
     "musiquedumonde": {"World Music"},
     "varietefrancaise": {"French Pop"},
     "jazzvocal": {"Vocal Jazz"},
+    "alternatifetinde": {"Alternative"},
     # German to English
     "elektronischemusik": {"Electronic"},
     "klassischemusik": {"Classical"},
