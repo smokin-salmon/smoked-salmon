@@ -76,6 +76,7 @@ FLAC_COMPRESSION_LEVEL = 8
 # Templates for folder and file naming
 FOLDER_TEMPLATE = "{artists} - {title} ({year}) [{source} {format}]"
 FILE_TEMPLATE = "{tracknumber}. {artist} - {title}"
+REMOVE_SOURCE_DIR = False
 
 # Formatting options
 NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST = True
