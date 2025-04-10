@@ -199,7 +199,18 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
         elif (
             group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php")
         ):
-            group_id = parse.parse_qs(parse.urlparse(group_id).query)['id'][0]
+            parsed_query = parse.parse_qs(parse.urlparse(group_id).query)
+            if 'id' in parsed_query:
+                group_id = parsed_query['id'][0]
+            elif 'torrentid' in parsed_query:
+                group_id = parsed_query['torrentid'][0]
+                group_id = loop.run_until_complete(
+                    gazelle_site.get_redirect_torrentgroupid(group_id)
+                )
+                return group_id
+            else:
+                click.echo("Could not find group ID in URL.")
+                continue
             return int(group_id)
         elif group_id.lower().startswith("a"):
             raise click.Abort
