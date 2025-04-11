@@ -354,7 +354,7 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_m
                 "(space-separated list of IDs, \"0\" for none, \"*\" for all, or \"+\" for a randomized selection)",
                 fg="magenta"
             ),
-            default="+",
+            default="*" if lossy_master else "+",
         )
         if ids.strip() == "+":
             all_ids = list(spectral_ids.keys())
