@@ -62,7 +62,7 @@ class BaseScraper:
         headers = {**(headers or {}), **HEADERS}
         try:
             result = requests.get(
-                self.url + url, params=params, headers=headers, timeout=7
+                self.url + url, params=params, headers=headers, timeout=10
             )
             if result.status_code != 200:
                 class_hierarchy = ' -> '.join([cls.__name__ for cls in self.__class__.mro()[:-1]])
