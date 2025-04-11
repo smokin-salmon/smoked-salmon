@@ -1,3 +1,19 @@
+__version__ = "0.9.2.20"
+
+"""
+Changelog for version 0.9.2.20 (2025-04-11):
+
+## What's Changed
+* Fix crash when pasting recent log url from RED by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/38
+* Improve metadata scraping by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/39
+  * Fix Tidal guest parsing for edge cases (Like Artist [guest1 & guest2] which was causing a parsing crash)
+  * Improve Self-released detection ("no label", labels starting with the main artist name...)
+  * Improve (or try to) release_type heuristics (Singles / EP should be better recognized)
+  * Upload all spectrals by default (`*`) when lossy master is selected. Keep sample of spectrals (`+`) when not lossy master
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.19...0.9.2.20
+"""
+
 __version__ = "0.9.2.19"
 
 """
