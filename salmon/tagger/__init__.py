@@ -96,7 +96,7 @@ def tag(path, source, encoding, overwrite, auto_rename):
     tags = check_tags(path)
     path = rename_folder(path, metadata, auto_rename)
     rename_files(path, tags, metadata, auto_rename)
-    check_folder_structure(path)
+    check_folder_structure(path, scene=False)
     click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
 
 

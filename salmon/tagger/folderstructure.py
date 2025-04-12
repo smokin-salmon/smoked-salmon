@@ -7,7 +7,7 @@ from salmon.constants import ALLOWED_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
 
 
-def check_folder_structure(path):
+def check_folder_structure(path, scene):
     """
     Run through every filesystem check that causes uploads to violate the rules
     or be rejected on the upload form. Verify that path lengths <180, that there
@@ -16,11 +16,19 @@ def check_folder_structure(path):
     while True:
         click.secho("\nChecking folder structure...", fg="cyan", bold=True)
         try:
-            _check_path_lengths(path)
+            _check_path_lengths(path, scene)
             _check_zero_len_folder(path)
-            _check_extensions(path)
+            _check_extensions(path, scene)
             return
         except NoncompliantFolderStructure:
+            if scene:
+                click.secho(
+                    "The folder structure is not compliant with the upload rules. "
+                    "As this is a scene release, you need to manually descene it before upload.",
+                    fg="red",
+                    bold=True,
+                )
+                raise click.Abort() from None
             click.confirm(
                 click.style(
                     "You need to manually fix the issues present in the upload's folder? "
@@ -33,8 +41,8 @@ def check_folder_structure(path):
             )
 
 
-def _check_path_lengths(path):
-    """Verify that all path lenghts are <=180 characters."""
+def _check_path_lengths(path, scene):
+    """Verify that all path lengths are <=180 characters."""
     offending_files, really_offending_files = [], []
     root_len = len(config.DOWNLOAD_DIRECTORY) + 1
     for root, _, files in os.walk(path):
@@ -49,7 +57,13 @@ def _check_path_lengths(path):
                     offending_files.append(filepath)
                 else:
                     really_offending_files.append(filepath)
-                    
+
+    if scene and (offending_files or really_offending_files):
+        click.secho("The following files exceed 180 characters in length.", fg="red",bold=True)
+        for f in offending_files + really_offending_files:
+            click.echo(f" >> {f}")
+        raise NoncompliantFolderStructure
+
     if really_offending_files:
         click.secho(
             "The following files exceed 180 characters in length, but cannot "
@@ -85,9 +99,10 @@ def _check_zero_len_folder(path):
     click.secho("No zero length folders were found.", fg="green")
 
 
-def _check_extensions(path):
+def _check_extensions(path, scene):
     """Validate that all file extensions are valid."""
     mp3, aac, flac = [], [], []
+    offending_files = []  # Collect offending files for scene releases
     for root, _, files in os.walk(path):
         for fln in files:
             _, ext = os.path.splitext(fln.lower())
@@ -98,7 +113,16 @@ def _check_extensions(path):
             elif ext == ".m4a":
                 aac.append(fln)
             elif ext not in ALLOWED_EXTENSIONS:
-                _handle_bad_extension(os.path.join(root, fln))
+                if scene:
+                    offending_files.append(os.path.join(root, fln))
+                else:
+                    _handle_bad_extension(os.path.join(root, fln), scene)
+
+    if scene and offending_files:
+        click.secho("The following files have invalid extensions:", fg="red", bold=True)
+        for filepath in offending_files:
+            click.echo(f" >> {filepath}")
+        raise NoncompliantFolderStructure
 
     if len([li for li in [mp3, flac, aac] if li]) > 1:
         _handle_multiple_audio_exts()
@@ -106,7 +130,7 @@ def _check_extensions(path):
         click.secho("File extensions have been validated.", fg="green")
 
 
-def _handle_bad_extension(filepath):
+def _handle_bad_extension(filepath, scene):
     while True:
         resp = click.prompt(
             f"{filepath} does not have an approved file extension. "
