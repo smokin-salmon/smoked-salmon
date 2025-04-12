@@ -91,15 +91,23 @@ def parse_artists(artist, title):
     feat_artists = RE_FEAT.search(title)
     artists = []
     if feat_artists:
-        artists = [(a, "guest") for a in re_split(feat_artists[1])]
+        feat_part = feat_artists[1].split(" - ", 1)[0]  # Match only until ' - '
+        artists = [(a, "guest") for a in re_split(feat_part)]
     try:
         if " - " not in title:
             raise IndexError
         track_artists = title.split(" - ", 1)[0]
+        if feat_artists:
+            # Remove featuring artists from track artists
+            track_artists = track_artists.replace(feat_artists[0].split(" - ", 1)[0], "").strip()
         artists += [(a, "main") for a in re_split(track_artists)]
     except (IndexError, TypeError):
-        if "various" not in artist.lower():
-            artists += [(a, "main") for a in re_split(artist)]
+        pass
+    if "various" not in artist.lower():
+        for a in re_split(artist):
+            if (a, "main") not in artists:
+                artists.append((a, "main"))
+
     return artists
 
 
