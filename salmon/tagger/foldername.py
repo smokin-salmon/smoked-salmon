@@ -62,11 +62,21 @@ def rename_folder(path, metadata, auto_rename, check=True):
     new_path_dirname = os.path.dirname(new_path)
     if not os.path.exists(new_path_dirname):
         os.makedirs(new_path_dirname)
+
+    # Check if hardlinks can be used
+    same_volume = os.stat(path).st_dev == os.stat(config.DOWNLOAD_DIRECTORY).st_dev
+    use_hardlinks = same_volume and not config.DISABLE_HARDLINKS
+
     if os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path):
         click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
     else:
-        shutil.copytree(path, new_path, dirs_exist_ok=True)
-        click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
+        if use_hardlinks:
+            shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
+            click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
+        else:
+            shutil.copytree(path, new_path, dirs_exist_ok=True)
+            click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
+
         if config.REMOVE_SOURCE_DIR:
             shutil.rmtree(path)
     return new_path
