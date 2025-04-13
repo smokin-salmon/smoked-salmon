@@ -1,6 +1,4 @@
 import asyncio
-import os
-import re
 import sqlite3
 
 import click
@@ -110,38 +108,30 @@ def chunker(seq, size=4):
         yield seq[pos : pos + size]
 
 
-def upload_cover(path, scene=False):
+def upload_cover(cover_path):
     """
-    Search a folder for a cover image, and if found, upload it.
+    If filepath to cover image is provided, upload it
     The image url is returned, otherwise None.
     """
-    for filename in os.listdir(path):
-        if (re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE)
-                or (scene and re.match(r"^.*\.(jpe?g|png)$", filename, flags=re.IGNORECASE))):
-            click.secho(
-                f"Uploading cover to {config.COVER_UPLOADER}...", fg="yellow", nl=False
+    if not cover_path:
+        click.secho("\nNo Cover Image Path was provided to upload...", fg="red", nl=False)
+        return None
+    click.secho(f"Uploading cover to {config.COVER_UPLOADER}...", fg="yellow", nl=False)
+    try:
+        try:
+            url = loop.run_until_complete(
+                loop.run_in_executor(
+                    None,
+                    lambda f=cover_path: HOSTS[config.COVER_UPLOADER].ImageUploader().upload_file(f)[0],
+                )
             )
-            try:
-                fpath = os.path.join(path, filename)
-                try:
-                    url = loop.run_until_complete(
-                        loop.run_in_executor(
-                            None,
-                            lambda f=fpath: HOSTS[config.COVER_UPLOADER]
-                            .ImageUploader()
-                            .upload_file(f)[0],
-                        )
-                    )
-                except (ImageUploadFailed, ValueError) as error:
-                    click.secho(f"Image Upload Failed. {error}", fg="red")
-                    raise ImageUploadFailed("Failed to upload image") from error
-            except ImageUploadFailed:
-                return click.secho(" failed :(", fg="red")
-            click.secho(f" done! {url}", fg="yellow")
-            return url
-    click.secho(
-        f"Did not find a cover to upload to {config.IMAGE_UPLOADER}...", fg="red"
-    )
+        except (ImageUploadFailed, ValueError) as error:
+            click.secho(f"Image Upload Failed. {error}", fg="red")
+            raise ImageUploadFailed("Failed to upload image") from error
+    except ImageUploadFailed:
+        return click.secho(" failed :(", fg="red")
+    click.secho(f" done! {url}", fg="yellow")
+    return url
 
 
 def upload_spectrals(spectrals, uploader=HOSTS[config.SPECS_UPLOADER], successful=None):
