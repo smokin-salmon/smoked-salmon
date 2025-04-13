@@ -361,6 +361,7 @@ GENRE_LIST = {
     "musiqueclassique": {"Classical"},
     "rapfrancais": {"French Rap"},
     "musiquedumonde": {"World Music"},
+    "musiquesdumonde": {"World Music"},
     "varietefrancaise": {"French Pop"},
     "jazzvocal": {"Vocal Jazz"},
     "alternatifetinde": {"Alternative"},
