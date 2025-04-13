@@ -425,7 +425,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
         path = rename_folder(path, metadata, auto_rename)
         if not metadata['scene']:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
-            check_folder_structure(path)
+        check_folder_structure(path, metadata['scene'])
 
         if config.YES_ALL or click.confirm(
             click.style(
