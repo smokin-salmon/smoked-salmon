@@ -144,7 +144,7 @@ uv sync
 
 For **Docker users**:
 ```bash
-docker pull smokin-salmon/smoked-salmon:latest
+docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
 ```
 
 ## 📞 Support
@@ -161,3 +161,4 @@ For bug reports and feature requests, use GitHub Issues. Or use the forums.
 ## 🎩 Credits
 * Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon). Huge thanks!
 * Further development & maintenance by elghoto, xmoforf, miandru, redusys and others. Keeping the dream alive.
+* Docker image build workflow and update notification mechanisms heavily inspired from the awesome work of Audionut on his [Upload Assistant tool](https://github.com/Audionut/Upload-Assistant) !
