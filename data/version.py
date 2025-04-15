@@ -1,3 +1,26 @@
+__version__ = "0.9.3"
+
+"""
+Changelog for version 0.9.3 (2025-04-15):
+
+Hardlinks are now used by default when copying files (if source and destination are on the same volume), unless the `DISABLE_HARDLINKS` config is set to `True` (default: `False`).
+New `REMOVE_AUTO_DOWNLOADED_COVER_IMAGE` config option (default: `False`).
+
+## What's Changed
+* Copy files using hardlinks when possible by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/48
+  * If source and destination are on the same volume, smoked-salmon will now default to using hardlinks. That should make copying a lot faster for most setups.
+  * Added `DISABLE_HARDLINKS` to force disabling hardlinks usage if set to `True`
+* Remove auto generated cover images for scene and improve cover upload  by @digerati-red in https://github.com/smokin-salmon/smoked-salmon/pull/49
+  * Cover image will now be included in torrent if missing from source folder, even for existing groups
+  * Added `REMOVE_AUTO_DOWNLOADED_COVER_IMAGE` to force delete any downloaded cover image before upload if set to `True`
+* Check path length for scene releases before upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/45
+* Fix metadata timeout by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/44
+* Fix docker image run with non privileged user by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/51
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.20...0.9.3
+"""
+
 __version__ = "0.9.2.20"
 
 """
