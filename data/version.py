@@ -1,3 +1,17 @@
+__version__ = "0.9.3.1"
+
+"""
+Changelog for version 0.9.3.1 (2025-04-15):
+
+## What's Changed
+* Fix crashes by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/52
+  * Fix crash when uploading to an existing group
+  * Fix crash when passing -g argument
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3...0.9.3.1
+"""
+
 __version__ = "0.9.3"
 
 """
