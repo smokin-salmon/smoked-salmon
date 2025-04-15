@@ -341,6 +341,11 @@ def upload(
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
     tracker = gazelle_site.site_code
     torrent_id = None
+    # Regenerate searchstrs (will be used to search for requests)
+    searchstrs = generate_dupe_check_searchstrs(
+                rls_data["artists"], rls_data["title"], rls_data["catno"]
+            )
+
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
