@@ -237,6 +237,7 @@ def upload(
     """Upload an album folder to Gazelle Site
     Offer the choice to upload to another tracker after completion."""
     path = os.path.abspath(path)
+    remove_downloaded_cover_image = scene or config.REMOVE_AUTO_DOWNLOADED_COVER_IMAGE
     if not source:
         source = _prompt_source()
     audio_info = gather_audio_info(path)
@@ -287,14 +288,15 @@ def upload(
             lossy_master, spectral_ids = check_spectrals(
                 path, audio_info, lossy, spectrals, format=rls_data["format"]
             )
+
         metadata, new_source_url = get_metadata(path, tags, rls_data)
         if new_source_url is not None:
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
-        download_cover_if_nonexistent(path, metadata["cover"])
         path, metadata, tags, audio_info = edit_metadata(
             path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids
         )
+
         if not group_id:
             group_id = recheck_dupe(gazelle_site, searchstrs, metadata)
             click.echo()
@@ -322,8 +324,17 @@ def upload(
     if config.LAST_MINUTE_DUPE_CHECK:
         last_min_dupe_check(gazelle_site, searchstrs)
 
-    # This prevents the cover being uploaded more than once for multiple sites.
-    cover_url = upload_cover(path, scene) if not group_id else None
+    # existing torrent group, only download cover image when it won't be removed
+    if group_id:
+        if not remove_downloaded_cover_image:
+            download_cover_if_nonexistent(path, metadata["cover"])
+    # new torrent group, download cover image and upload to third party host
+    else:
+        cover_path, is_downloaded = download_cover_if_nonexistent(path, metadata["cover"])
+        cover_url = upload_cover(cover_path)
+        if is_downloaded and remove_downloaded_cover_image:
+            click.secho("Removing downloaded Cover Image File", fg="yellow")
+            os.remove(cover_path)
 
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)

@@ -29,6 +29,8 @@ PTPIMG_KEY = 'api_key'
 IMGUR_CLIENT_ID = 'imgur-client-id'
 IMGUR_CLIENT_SECRET = 'imgur-client-secret'
 IMGUR_REFRESH_TOKEN = 'imgur-client-refresh-token'
+# Remove downloaded cover images that are created in source folder, when one does not exist
+REMOVE_AUTO_DOWNLOADED_COVER_IMAGE = False
 
 # ===============================
 # METADATA SERVICES

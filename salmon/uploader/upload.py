@@ -9,7 +9,6 @@ from salmon import config
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.errors import RequestError
-from salmon.images import upload_cover
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
 from salmon.uploader.spectrals import (
@@ -36,8 +35,6 @@ def prepare_and_upload(
 ):
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
-        if not cover_url:
-            cover_url = upload_cover(path, scene=metadata['scene'])
         data = compile_data_new_group(
             path,
             metadata,
