@@ -325,6 +325,7 @@ def upload(
         last_min_dupe_check(gazelle_site, searchstrs)
 
     # existing torrent group, only download cover image when it won't be removed
+    cover_url = None
     if group_id:
         if not remove_downloaded_cover_image:
             download_cover_if_nonexistent(path, metadata["cover"])
