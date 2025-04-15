@@ -7,6 +7,7 @@
 # ===============================
 # Where to copy files (usually the download/seeding folder for your torrent client)
 DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
+DISABLE_HARDLINKS = False
 
 # Can be a watch folder for your torrent client
 DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
