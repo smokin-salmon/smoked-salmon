@@ -51,10 +51,17 @@ class Prompt:
 
     async def __call__(self, msg, end="\n", flush=False):
         if not self.reader_added:
-            loop.add_reader(sys.stdin, self.got_input)
-            self.reader_added = True
-        print(msg, end=end, flush=flush)
-        return (await self.q.get()).rstrip("\n")
+            try:
+                loop.add_reader(sys.stdin, self.got_input)
+                self.reader_added = True
+            except NotImplementedError:
+                print(msg, end=end, flush=flush)
+                return input()
+
+        if self.reader_added:
+            print(msg, end=end, flush=flush)
+            return (await self.q.get()).rstrip("\n")
+        return ""
 
 
 prompt_async = Prompt()
