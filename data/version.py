@@ -1,3 +1,21 @@
+__version__ = "0.9.3.3"
+
+"""
+Changelog for version 0.9.3.3 (2025-04-16):
+
+We welcome @Audionut to the list of contributors 💯 
+He actually already contributed, unknowingly, a good part of the docker image build and the update changelog mechanism ! 💘 
+
+## What's Changed
+* Open spectrals in native windows viewer by @Audionut in https://github.com/smokin-salmon/smoked-salmon/pull/55
+* Fix docker permissions when ran with non-root user by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/56
+
+## New Contributors
+* @Audionut made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/55
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.2...0.9.3.3
+"""
+
 __version__ = "0.9.3.2"
 
 """
