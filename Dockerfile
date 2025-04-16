@@ -19,8 +19,8 @@ RUN ARCH=$(dpkg --print-architecture) && \
         echo "Unsupported architecture: $ARCH" && exit 1; \
     fi
 
-# Ensure the cache directory and /app directory are writable by any user
-RUN mkdir -p /.cache/uv && chmod -R 777 /.cache/uv /app
+# Ensure the cache directory is writable by any user
+RUN mkdir -p /.cache/uv && chmod -R 777 /.cache/uv
 
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
@@ -33,6 +33,9 @@ ENV PATH="/root/.local/bin/:$PATH"
 
 # Copy the project files into the container
 COPY . /app
+
+# Ensure the /app directory is writable by any user
+RUN chmod -R 777 /app
 
 # Install the required Python packages
 RUN uv sync --no-dev
