@@ -254,6 +254,8 @@ def view_spectrals(spectrals_path, all_spectral_ids):
         )
     elif platform.system() == "Darwin":
         _open_specs_in_preview(spectrals_path)
+    elif platform.system() == "Windows":
+        _open_specs_in_windows(spectrals_path)
     else:
         _open_specs_in_feh(spectrals_path)
 
@@ -284,6 +286,17 @@ def _open_specs_in_feh(spectrals_path):
         args.insert(4, "--fullscreen")
     with open(os.devnull, "w") as devnull:
         subprocess.Popen(args, stdout=devnull, stderr=devnull)
+
+
+def _open_specs_in_windows(spectrals_path):
+    png_files = [os.path.join(spectrals_path, f) for f in os.listdir(spectrals_path)
+                 if f.lower().endswith(".png")]
+
+    if not png_files:
+        click.secho("No PNG files found to display.", fg="yellow")
+        return
+    png_files.sort()
+    os.startfile(png_files[0])
 
 
 async def _open_specs_in_web_server(specs_path, all_spectral_ids):
