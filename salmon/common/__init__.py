@@ -1,4 +1,5 @@
 import asyncio
+import platform
 import sys
 
 import click
@@ -45,16 +46,25 @@ class Prompt:
     def __init__(self):
         self.q = asyncio.Queue()
         self.reader_added = False
+        self.is_windows = platform.system() == "Windows"
 
     def got_input(self):
         asyncio.create_task(self.q.put(sys.stdin.readline()))
 
     async def __call__(self, msg, end="\n", flush=False):
         if not self.reader_added:
-            loop.add_reader(sys.stdin, self.got_input)
+            if not self.is_windows:
+                loop.add_reader(sys.stdin, self.got_input)
+            else:
+                asyncio.create_task(self._windows_input_reader())
             self.reader_added = True
         print(msg, end=end, flush=flush)
         return (await self.q.get()).rstrip("\n")
+
+    async def _windows_input_reader(self):
+        while True:
+            line = await asyncio.to_thread(sys.stdin.readline)
+            await self.q.put(line)
 
 
 prompt_async = Prompt()
