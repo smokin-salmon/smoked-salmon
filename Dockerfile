@@ -19,8 +19,8 @@ RUN ARCH=$(dpkg --print-architecture) && \
         echo "Unsupported architecture: $ARCH" && exit 1; \
     fi
 
-# Ensure the cache directory is writable by any user
-RUN mkdir -p /.cache/uv && chmod -R 777 /.cache/uv
+# Ensure the cache directory and /app directory are writable by any user
+RUN mkdir -p /.cache/uv && chmod -R 777 /.cache/uv /app
 
 # Download the latest installer
 ADD https://astral.sh/uv/install.sh /uv-installer.sh
