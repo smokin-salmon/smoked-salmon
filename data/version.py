@@ -1,3 +1,15 @@
+__version__ = "0.9.3.2"
+
+"""
+Changelog for version 0.9.3.2 (2025-04-16):
+
+## What's Changed
+* Fix /app permission when running docker as non-root by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/53
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.1...0.9.3.2
+"""
+
 __version__ = "0.9.3.1"
 
 """
