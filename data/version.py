@@ -1,3 +1,16 @@
+__version__ = "0.9.3.4"
+
+"""
+Changelog for version 0.9.3.4 (2025-04-17):
+
+## What's Changed
+* Identify Self-Released label correctly when retrieved from base tags by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/57
+* Fix crash when folder already exists by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/58
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.3...0.9.3.4
+"""
+
 __version__ = "0.9.3.3"
 
 """
