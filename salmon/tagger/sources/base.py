@@ -199,21 +199,11 @@ class MetadataMixin(ABC):
         return
 
     def process_label(self, data):
-        def _compare(label, artist):
-            label, artist = label.lower(), artist.lower()
-            return label == artist or label.startswith(artist)
-
+        """
+        Process the label field in the metadata.
+        """
         label = data.get("label", "")
-
-        if isinstance(label, str):
-            # Check for "Not On Label" or "Self-Released" in the label
-            if re.search(r"(not on label|no label|self[- ]?released)", label, re.IGNORECASE):
-                return "Self-Released"
-
-            # Compare label to artist name
-            if any(_compare(label, a) and i == "main" for a, i in data["artists"]):
-                return "Self-Released"
-        return data["label"]
+        return determine_label_type(label, data["artists"])
 
     @staticmethod
     def parse_title(title, version):
@@ -248,6 +238,26 @@ class MetadataMixin(ABC):
             if version.lower() not in strip_set and version.lower() not in base.lower():
                 base += f" ({version})"
         return base
+
+
+def determine_label_type(label, artists):
+    """
+    Determine the type of label based on the label and artists.
+    Return "Self-Released" if self-released, otherwise return the original label.
+    """
+    def _compare(label, artist):
+        label, artist = label.lower(), artist.lower()
+        return label == artist or label.startswith(artist)
+
+    if isinstance(label, str):
+        # Check for "Not On Label" or "Self-Released" in the label
+        if re.search(r"(not on label|no label|self[- ]?released)", label, re.IGNORECASE):
+            return "Self-Released"
+
+        # Compare label to artist name
+        if any(_compare(label, a) and i == "main" for a, i in artists):
+            return "Self-Released"
+    return label
 
 
 def _generate_artist_pool_lower_case(tracks):
