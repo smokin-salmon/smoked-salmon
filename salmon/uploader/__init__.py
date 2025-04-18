@@ -19,7 +19,7 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 from salmon.images import upload_cover
-from salmon.qbittorrent.qbittorrent import add_torrent_to_qbittorrent
+from salmon.qbittorrent.qbittorrentapi import add_torrent_to_qbittorrent
 from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
 from salmon.tagger import (
     metadata_validator_base,
