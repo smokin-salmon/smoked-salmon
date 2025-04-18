@@ -19,8 +19,8 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 from salmon.images import upload_cover
-from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
 from salmon.qbittorrent.qbittorrent import add_torrent_to_qbittorrent
+from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -429,7 +429,7 @@ def upload(
         if qbittorrent:
             click.secho(
             (f"\nAdding torrent to client {config.QBITTORRENT_HOST} "
-             f"{config.TRACKER_DIRS[tracker]} {config.TRACKER_LABELS[tracker]}"),
+             f"Save Path: {config.QBITTORRENT_SAVE_PATH}, Category: {config.QBITTORRENT_CATEGORY}"),
             fg="green",
             bold=True
             )

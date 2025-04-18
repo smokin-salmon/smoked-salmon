@@ -2,7 +2,17 @@
 import qbittorrentapi
 
 
-def add_torrent_to_qbittorrent(host, port, username, password, torrent_path, save_path=None, category=None, paused=False, skip_checking=False):
+def add_torrent_to_qbittorrent(
+    host,
+    port,
+    username,
+    password,
+    torrent_path,
+    save_path=None,
+    category=None,
+    paused=False,
+    skip_checking=False
+):
     try:
         conn_info = {
             "host": host,
