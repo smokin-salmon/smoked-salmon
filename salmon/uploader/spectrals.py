@@ -400,7 +400,7 @@ def prompt_lossy_master(force_prompt_lossy_master=False):
         r = "n" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
             click.style(
                 "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, "
-                "[a]bort, [d]elete folder",
+                "[a]bort, [d]elete music folder",
                 fg="magenta"
             ),
             type=click.STRING,

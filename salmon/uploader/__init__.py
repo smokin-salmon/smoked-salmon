@@ -1,5 +1,6 @@
 import asyncio
 import os
+import platform
 import re
 import shutil
 
@@ -304,8 +305,17 @@ def upload(
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
-        shutil.rmtree(path)
-        return click.secho("\nDeleted folder, aborting upload...", fg="red")
+        if platform.system() == "Windows" and config.WINDOWS_USE_RECYCLE_BIN:
+            try:
+                import send2trash
+                send2trash.send2trash(path)
+                return click.secho("\nMoved folder to recycle bin, aborting upload...", fg="red")
+            except Exception as e:
+                click.secho(f"\nError moving folder to recycle bin: {e}", fg="red")
+                return click.secho("\nAborting upload...", fg="red")
+        else:
+            shutil.rmtree(path)
+            return click.secho("\nDeleted folder, aborting upload...", fg="red")
 
     lossy_comment = None
     if spectrals_after:
