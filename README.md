@@ -81,6 +81,7 @@ Edit the `config.py` file with your preferred text editor to add your API keys, 
     -v /path/to/your/music:/data \
     -v /path/to/your/config.py:/app/config.py \
     -v /path/to/your/smoked.db:/app/smoked.db \
+    -v /path/to/your/generated/dottorrents:/app/.torrents
     ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
     ```
 

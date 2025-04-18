@@ -20,6 +20,7 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 from salmon.images import upload_cover
+from salmon.qbittorrent.qbittorrentapi import add_torrent_to_qbittorrent
 from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
 from salmon.tagger import (
     metadata_validator_base,
@@ -139,7 +140,13 @@ loop = asyncio.get_event_loop()
 @click.option(
     "--rutorrent",
     is_flag=True,
-    help='Adds torrent to Rutorrent tracker after torrent upload (default: False)'
+    help='Adds torrent to Rutorrent client after torrent upload (default: False)'
+)
+@click.option(
+    "--qbittorrent",
+    is_flag=True,
+    default=config.ENABLE_QBITTORRENT_INJECTION,
+    help='Adds torrent to qBitTorrent client after torrent upload (default: False)'
 )
 @click.option("--source-url", "-su", 
     default=None, 
@@ -171,6 +178,7 @@ def up(
     skip_up,
     scene,
     rutorrent,
+    qbittorrent,
     source_url,
     yyy,
     skip_mqa,
@@ -205,6 +213,7 @@ def up(
         source_url=source_url,
         scene=scene,
         rutorrent=rutorrent,
+        qbittorrent=qbittorrent,
         overwrite_meta=overwrite,
         recompress=compress,
         request_id=request,
@@ -225,6 +234,7 @@ def upload(
     encoding,
     scene=False,
     rutorrent=False,
+    qbittorrent=False,
     overwrite_meta=False,
     recompress=False,
     source_url=None,
@@ -427,6 +437,36 @@ def upload(
                 config.TRACKER_DIRS[tracker],
                 config.TRACKER_LABELS[tracker]
             )
+        if qbittorrent:
+            click.secho(
+            (f"\nAdding torrent to client {config.QBITTORRENT_HOST} "
+             f"Save Path: {config.DOWNLOAD_DIRECTORY}, Category: {config.QBITTORRENT_CATEGORY}"),
+            fg="green",
+            bold=True
+            )
+            qbit_success = add_torrent_to_qbittorrent(
+                config.QBITTORRENT_HOST,
+                config.QBITTORRENT_PORT,
+                config.QBITTORRENT_USERNAME,
+                config.QBITTORRENT_PASSWORD,
+                torrent_path,
+                save_path=config.DOWNLOAD_DIRECTORY,
+                category=config.QBITTORRENT_CATEGORY,
+                skip_checking=config.QBITTORRENT_SKIP_HASH_CHECK
+            )
+            # Remove the torrent file after successful qBittorrent upload
+            if qbit_success:
+                try:
+                    os.remove(torrent_path)
+                except OSError as e:
+                    click.secho(f"Warning: Could not remove torrent file: {e}", fg="yellow")
+            else:
+                click.secho(
+                    f"Warning: Failed to add torrent to qBittorrent. "
+                    f"You can manually add the torrent file from: {torrent_path}",
+                    fg="yellow"
+                )
+
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
         tracker = None
