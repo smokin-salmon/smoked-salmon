@@ -179,7 +179,7 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
             click.style(
                 "\nWould you like to upload to an existing group?\n"
                 f"Paste a URL{', pick from groups found 'if results is not None else ''}"
-                f'or [N]ew group / [a]bort {"/ [d]elete folder " if offer_deletion else ""}',
+                f'or [N]ew group / [a]bort {"/ [d]elete music folder " if offer_deletion else ""}',
                 fg="magenta"
             ),
             default="",
@@ -270,7 +270,7 @@ def _confirm_group_id(gazelle_site, group_id, results):
         resp = click.prompt(
             click.style(
                 "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
-                "[n]ew group, [a]bort, [d]elete folder",
+                "[n]ew group, [a]bort, [d]elete music folder",
                 fg="magenta"
             ),
             default="Y",
