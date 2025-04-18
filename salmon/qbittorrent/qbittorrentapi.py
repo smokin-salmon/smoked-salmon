@@ -10,7 +10,6 @@ def add_torrent_to_qbittorrent(
     torrent_path,
     save_path=None,
     category=None,
-    paused=False,
     skip_checking=False
 ):
     try:
@@ -29,8 +28,6 @@ def add_torrent_to_qbittorrent(
             options["savepath"] = save_path
         if category:
             options["category"] = category
-        if paused:
-            options["paused"] = "true"
         if skip_checking:
             options["skip_checking"] = "true"
 

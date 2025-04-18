@@ -70,6 +70,7 @@ QBITTORRENT_USERNAME = 'admin'
 QBITTORRENT_PASSWORD = 'adminadmin'
 QBITTORRENT_SAVE_PATH = '/path/to/downloads'
 QBITTORRENT_CATEGORY = 'salmon'  # Optional
+QBITTORRENT_SKIP_HASH_CHECK = False  # Set to True if you want to skip hash check when adding torrents
 
 # ===============================
 # UPLOADING & PROCESSING SETTINGS

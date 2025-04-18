@@ -139,12 +139,12 @@ loop = asyncio.get_event_loop()
 @click.option(
     "--rutorrent",
     is_flag=True,
-    help='Adds torrent to Rutorrent tracker after torrent upload (default: False)'
+    help='Adds torrent to Rutorrent client after torrent upload (default: False)'
 )
 @click.option(
     "--qbittorrent",
     is_flag=True,
-    help='Adds torrent to qBitTorrent tracker after torrent upload (default: False)'
+    help='Adds torrent to qBitTorrent client after torrent upload (default: False)'
 )
 @click.option("--source-url", "-su", 
     default=None, 
@@ -440,7 +440,8 @@ def upload(
                 config.QBITTORRENT_PASSWORD,
                 torrent_path,
                 save_path=config.QBITTORRENT_SAVE_PATH,
-                category=config.QBITTORRENT_CATEGORY
+                category=config.QBITTORRENT_CATEGORY,
+                skip_checking=config.QBITTORRENT_SKIP_HASH_CHECK
             )
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
