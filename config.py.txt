@@ -62,6 +62,16 @@ RED_API_KEY = 'red-api-key'  # Needs uploading privileges (optional for now)
 OPS_API_KEY = 'ops-api-key'  # Needs uploading privileges (optional for now)
 
 # ===============================
+# QBITTORRENT SETTINGS
+# ===============================
+QBITTORRENT_HOST = '127.0.0.1'
+QBITTORRENT_PORT = 8080
+QBITTORRENT_USERNAME = 'admin'
+QBITTORRENT_PASSWORD = 'adminadmin'
+QBITTORRENT_SAVE_PATH = '/path/to/downloads'
+QBITTORRENT_CATEGORY = 'salmon'  # Optional
+
+# ===============================
 # UPLOADING & PROCESSING SETTINGS
 # Most settings in this section should be allright already
 # ===============================

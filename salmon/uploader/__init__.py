@@ -20,6 +20,7 @@ from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 from salmon.images import upload_cover
 from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
+from salmon.qbittorrent.qbittorrent import add_torrent_to_qbittorrent
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -140,6 +141,11 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help='Adds torrent to Rutorrent tracker after torrent upload (default: False)'
 )
+@click.option(
+    "--qbittorrent",
+    is_flag=True,
+    help='Adds torrent to qBitTorrent tracker after torrent upload (default: False)'
+)
 @click.option("--source-url", "-su", 
     default=None, 
     help='For WEB uploads provide the source of the album to be added in release description'
@@ -170,6 +176,7 @@ def up(
     skip_up,
     scene,
     rutorrent,
+    qbittorrent,
     source_url,
     yyy,
     skip_mqa,
@@ -204,6 +211,7 @@ def up(
         source_url=source_url,
         scene=scene,
         rutorrent=rutorrent,
+        qbittorrent=qbittorrent,
         overwrite_meta=overwrite,
         recompress=compress,
         request_id=request,
@@ -224,6 +232,7 @@ def upload(
     encoding,
     scene=False,
     rutorrent=False,
+    qbittorrent=False,
     overwrite_meta=False,
     recompress=False,
     source_url=None,
@@ -416,6 +425,22 @@ def upload(
                 torrent_path,
                 config.TRACKER_DIRS[tracker],
                 config.TRACKER_LABELS[tracker]
+            )
+        if qbittorrent:
+            click.secho(
+            (f"\nAdding torrent to client {config.QBITTORRENT_HOST} "
+             f"{config.TRACKER_DIRS[tracker]} {config.TRACKER_LABELS[tracker]}"),
+            fg="green",
+            bold=True
+            )
+            add_torrent_to_qbittorrent(
+                config.QBITTORRENT_HOST,
+                config.QBITTORRENT_PORT,
+                config.QBITTORRENT_USERNAME,
+                config.QBITTORRENT_PASSWORD,
+                torrent_path,
+                save_path=config.QBITTORRENT_SAVE_PATH,
+                category=config.QBITTORRENT_CATEGORY
             )
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
