@@ -34,8 +34,8 @@ ENV PATH="/root/.local/bin/:$PATH"
 # Copy the project files into the container
 COPY . /app
 
-# Ensure the /app directory is writable by any user
-RUN chmod -R 777 /app
+# Ensure app directory and its contents are writable by any user
+RUN mkdir -p /app/.torrents && chmod -R 777 /app
 
 # Install the required Python packages
 RUN uv sync --no-dev

@@ -3,6 +3,7 @@ __pycache__
 *.egg-info
 .vscode/
 .venv/
+.torrents/
 dist/
 
 test.py

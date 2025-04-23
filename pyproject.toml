@@ -27,7 +27,8 @@ dependencies = [
     "httpx>=0.28.1",
     "tqdm>=4.67.1",
     "filetype>=1.2.0",
-    "qbittorrent-api>=2025.2.0"
+    "qbittorrent-api>=2025.2.0",
+    "send2trash>=1.8.3",
 ]
 
 [project.scripts]

@@ -1,5 +1,6 @@
 import asyncio
 import os
+import platform
 import re
 import shutil
 
@@ -144,6 +145,7 @@ loop = asyncio.get_event_loop()
 @click.option(
     "--qbittorrent",
     is_flag=True,
+    default=config.ENABLE_QBITTORRENT_INJECTION,
     help='Adds torrent to qBitTorrent client after torrent upload (default: False)'
 )
 @click.option("--source-url", "-su", 
@@ -313,8 +315,17 @@ def upload(
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
-        shutil.rmtree(path)
-        return click.secho("\nDeleted folder, aborting upload...", fg="red")
+        if platform.system() == "Windows" and config.WINDOWS_USE_RECYCLE_BIN:
+            try:
+                import send2trash
+                send2trash.send2trash(path)
+                return click.secho("\nMoved folder to recycle bin, aborting upload...", fg="red")
+            except Exception as e:
+                click.secho(f"\nError moving folder to recycle bin: {e}", fg="red")
+                return click.secho("\nAborting upload...", fg="red")
+        else:
+            shutil.rmtree(path)
+            return click.secho("\nDeleted folder, aborting upload...", fg="red")
 
     lossy_comment = None
     if spectrals_after:
@@ -429,20 +440,33 @@ def upload(
         if qbittorrent:
             click.secho(
             (f"\nAdding torrent to client {config.QBITTORRENT_HOST} "
-             f"Save Path: {config.QBITTORRENT_SAVE_PATH}, Category: {config.QBITTORRENT_CATEGORY}"),
+             f"Save Path: {config.DOWNLOAD_DIRECTORY}, Category: {config.QBITTORRENT_CATEGORY}"),
             fg="green",
             bold=True
             )
-            add_torrent_to_qbittorrent(
+            qbit_success = add_torrent_to_qbittorrent(
                 config.QBITTORRENT_HOST,
                 config.QBITTORRENT_PORT,
                 config.QBITTORRENT_USERNAME,
                 config.QBITTORRENT_PASSWORD,
                 torrent_path,
-                save_path=config.QBITTORRENT_SAVE_PATH,
+                save_path=config.DOWNLOAD_DIRECTORY,
                 category=config.QBITTORRENT_CATEGORY,
                 skip_checking=config.QBITTORRENT_SKIP_HASH_CHECK
             )
+            # Remove the torrent file after successful qBittorrent upload
+            if qbit_success:
+                try:
+                    os.remove(torrent_path)
+                except OSError as e:
+                    click.secho(f"Warning: Could not remove torrent file: {e}", fg="yellow")
+            else:
+                click.secho(
+                    f"Warning: Failed to add torrent to qBittorrent. "
+                    f"You can manually add the torrent file from: {torrent_path}",
+                    fg="yellow"
+                )
+
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
         tracker = None

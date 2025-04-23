@@ -68,9 +68,11 @@ QBITTORRENT_HOST = '127.0.0.1'
 QBITTORRENT_PORT = 8080
 QBITTORRENT_USERNAME = 'admin'
 QBITTORRENT_PASSWORD = 'adminadmin'
-QBITTORRENT_SAVE_PATH = '/path/to/downloads'
 QBITTORRENT_CATEGORY = 'salmon'  # Optional
 QBITTORRENT_SKIP_HASH_CHECK = False  # Set to True if you want to skip hash check when adding torrents
+
+# Add a configuration option to enable qbittorrent injection by default
+ENABLE_QBITTORRENT_INJECTION = False
 
 # ===============================
 # UPLOADING & PROCESSING SETTINGS
@@ -117,6 +119,7 @@ STRIP_USELESS_VERSIONS = True
 PROMPT_PUDDLETAG = False
 ADD_EDITION_TITLE_TO_ALBUM_TAG = True
 LOG_DUPE_TOLERANCE = 0.5
+WINDOWS_USE_RECYCLE_BIN = True
 
 # Web interface settings
 WEB_HOST = "127.0.0.1"

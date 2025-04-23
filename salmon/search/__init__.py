@@ -46,7 +46,8 @@ loop = asyncio.get_event_loop()
 def metas(searchstr, track_count, limit):
     """Search for releases from metadata providers"""
     searchstr = " ".join(searchstr)
-    click.secho(f'Searching {", ".join(SEARCHSOURCES)}', fg="cyan", bold=True)
+    click.secho(f'Searching {", ".join(SEARCHSOURCES)} (searchstrs: {searchstr})', fg="cyan", bold=True)
+
     results = run_metasearch([searchstr], limit=limit, track_count=track_count)
     not_found = []
     inactive_sources = []
