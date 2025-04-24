@@ -1,3 +1,21 @@
+__version__ = "0.9.3.5"
+
+"""
+Changelog for version 0.9.3.5 (2025-04-24):
+
+Big update from Audionut! The coolest part: you can now send torrents straight to qBittorrent using its API. No more messing with watched folders or adding them by hand.
+
+Check `config.py.txt` for the new `QBITTORRENT_XXX` settings. With that option, if you’re using Docker, you might not need to map the `.torrents` folder anymore, just use `/app/.torrents` inside the container: torrents will be generated there and injected into qbittorrent. Additional configuration, specific to docker, might be necessary to be able to call the `qbittorrent` API from smoked-salmon container.
+
+## What's Changed
+* Add qBitTorrent support by @Audionut in https://github.com/smokin-salmon/smoked-salmon/pull/62
+* Add async input compatibility for Windows by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/63
+* Allow use recycle bin on Windows by @Audionut in https://github.com/smokin-salmon/smoked-salmon/pull/61
+* Update README for docker users by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/66
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.4...0.9.3.5
+"""
+
 __version__ = "0.9.3.4"
 
 """
