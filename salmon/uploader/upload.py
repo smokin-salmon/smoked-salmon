@@ -313,6 +313,7 @@ def generate_t_description(
         description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
 
     if source_url is not None:
+        matched =  False
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(source_url):
                 if config.ICONS_IN_DESCRIPTIONS:
