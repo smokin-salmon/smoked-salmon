@@ -1,3 +1,22 @@
+__version__ = "0.9.3.6"
+
+"""
+Changelog for version 0.9.3.6 (2025-05-09):
+
+Transcoding should now work on docker, thanks to @milkers69 !
+
+## What's Changed
+* fix UnboundLocalError for unmatched urls by @asuna42 in https://github.com/smokin-salmon/smoked-salmon/pull/69
+* Set python minimum version to 3.11 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/72
+* Fix Transcoding in Docker by @milkers69 in https://github.com/smokin-salmon/smoked-salmon/pull/70
+
+## New Contributors
+* @asuna42 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/69
+* @milkers69 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/70
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.5...0.9.3.6
+"""
+
 __version__ = "0.9.3.5"
 
 """
