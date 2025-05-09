@@ -8,7 +8,7 @@ WORKDIR /app
 RUN ARCH=$(dpkg --print-architecture) && \
     apt-get update && apt-get install -y --no-install-recommends \
     sox flac mp3val curl nano vim-tiny \
-    ca-certificates && rm -rf /var/lib/apt/lists/* && \
+    ca-certificates lame ffmpeg && rm -rf /var/lib/apt/lists/* && \
     if [ "$ARCH" = "amd64" ]; then \
         wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
         dpkg -i oxipng_9.1.4-1_amd64.deb; \
