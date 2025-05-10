@@ -9,7 +9,6 @@ from requests import RequestException
 from salmon.common.aliases import AliasedCommands  # noqa: F401
 from salmon.common.constants import RE_FEAT  # noqa: F401
 from salmon.common.figles import (  # noqa: F401
-    alac_to_flac,
     compress,
     create_relative_path,
     get_audio_files,

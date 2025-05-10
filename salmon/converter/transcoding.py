@@ -13,11 +13,12 @@ from salmon import config
 
 THREADS = [None] * config.SIMULTANEOUS_THREADS
 COMMANDS = {
-    "320": "ffmpeg -i {input_} -acodec libmp3lame -ab 320k {output}",
-    "V0": "flac --decode --stdout {input_} | lame -V 0 -q --add-id3v2 "
-    "--tt {tt} --ta {ta} --ty {ty} --tn {tn} --tl {tl} --tc {tc} --tg {tg} "
-    "--tv TPUB={label} "
-    "- {output}",
+    "320": "flac --decode --stdout {input_} | lame -b 320 -q 0 --add-id3v2 "
+        "--tt {tt} --ta {ta} --ty {ty} --tn {tn} --tl {tl} --tc {tc} --tg {tg} "
+        "--tv TPUB={label} - {output}",
+    "V0": "flac --decode --stdout {input_} | lame -V 0 -q 0 --add-id3v2 "
+        "--tt {tt} --ta {ta} --ty {ty} --tn {tn} --tl {tl} --tc {tc} --tg {tg} "
+        "--tv TPUB={label} - {output}",
 }
 FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 LOSSLESS_FOLDER_REGEX = re.compile(r"Lossless", flags=re.IGNORECASE)

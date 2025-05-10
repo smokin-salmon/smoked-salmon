@@ -71,25 +71,6 @@ def compress(filepath):
     os.rename(f"{filepath}.new", filepath)
 
 
-def alac_to_flac(filepath):
-    """Convert alac to flac"""
-    with open(os.devnull, "w") as devnull:
-        subprocess.call(
-            [
-                "ffmpeg",
-                # "-y",
-                "-i",
-                filepath,
-                "-acodec",
-                "flac",
-                f"{filepath}.flac",
-                # "--delete-input-file",
-            ],
-            stdout=devnull,
-            stderr=devnull,
-        )
-    os.rename(f"{filepath}.flac", filepath)
-
 def process_files(files, process_func, desc):
     with ThreadPoolExecutor(max_workers=config.SIMULTANEOUS_THREADS) as executor:
         futures = [executor.submit(process_func, file, idx) for idx, file in enumerate(files)]
