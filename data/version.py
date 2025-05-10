@@ -1,3 +1,17 @@
+__version__ = "0.9.3.6.1"
+
+"""
+Changelog for version 0.9.3.6.1 (2025-05-10):
+
+Technical fix for python 3.11
+
+## What's Changed
+* Fix multiline message for python 3.11 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/73
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.6...0.9.3.6.1
+"""
+
 __version__ = "0.9.3.6"
 
 """
