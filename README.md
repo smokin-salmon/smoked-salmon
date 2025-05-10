@@ -32,7 +32,7 @@ Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency
 
 1. Install system packages and uv:
     ```bash
-    sudo apt install sox flac mp3val git wget curl
+    sudo apt install sox flac mp3val git wget curl lame
     curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
 
