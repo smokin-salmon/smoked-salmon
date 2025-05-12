@@ -1,3 +1,16 @@
+__version__ = "0.9.3.7"
+
+"""
+Changelog for version 0.9.3.7 (2025-05-12):
+
+## What's Changed
+* Use only lame for transcoding by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/74
+* Allow using workdir with docker (-w) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/75
+* Fix strict python version (3.11) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/76
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.6.1...0.9.3.7
+"""
+
 __version__ = "0.9.3.6.1"
 
 """
