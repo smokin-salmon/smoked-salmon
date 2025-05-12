@@ -41,4 +41,4 @@ RUN mkdir -p /app/.torrents && chmod -R 777 /app
 RUN uv sync --no-dev
 
 # Set the entrypoint to run the 'salmon' script
-ENTRYPOINT ["uv", "run", "--no-sync", "salmon"]
+ENTRYPOINT ["uv", "run", "--project", "/app", "--no-sync", "salmon"]
