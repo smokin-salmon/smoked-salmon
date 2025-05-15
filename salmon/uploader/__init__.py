@@ -1,27 +1,27 @@
 import asyncio
 import os
-import platform
 import re
 import shutil
 
 import click
 import pyperclip
-
-import salmon.trackers
+import time
 from salmon import config
 from salmon.checks import mqa_test
-from salmon.checks.integrity import (
-    check_integrity,
-    format_integrity,
-    sanitize_integrity,
-)
-from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
-from salmon.images import upload_cover
-from salmon.qbittorrent.qbittorrentapi import add_torrent_to_qbittorrent
-from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
+from salmon.converter.downconverting import (
+    convert_folder,
+    generate_conversion_description,
+)
+from salmon.converter.transcoding import (
+    transcode_folder,
+    generate_transcode_description,
+)
+import json
+import salmon.trackers
+
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -39,26 +39,34 @@ from salmon.tagger.metadata import get_metadata
 from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import rename_files, tag_files
 from salmon.tagger.review import review_metadata
-from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
+from salmon.tagger.tags import (
+    check_tags,
+    gather_tags,
+    standardize_tags,
+    compress_pictures,
+)
 from salmon.uploader.dupe_checker import (
     check_existing_group,
-    dupe_check_recent_torrents,
     generate_dupe_check_searchstrs,
+    dupe_check_recent_torrents,
     print_recent_upload_results,
 )
-from salmon.uploader.preassumptions import print_preassumptions
+from salmon.images import upload_cover
 from salmon.uploader.request_checker import check_requests
+from salmon.uploader.preassumptions import print_preassumptions
 from salmon.uploader.spectrals import (
     check_spectrals,
-    generate_lossy_approval_comment,
     handle_spectrals_upload_and_deletion,
     post_upload_spectral_check,
     report_lossy_master,
+    add_spectral_links_to_lossy_comment,
+    generate_lossy_approval_comment,
 )
-from salmon.uploader.upload import (
-    concat_track_data,
-    prepare_and_upload,
-)
+from salmon.uploader.upload import concat_track_data, prepare_and_upload
+from salmon.uploader.seedbox import UploadManager
+from salmon.checks.upconverts import upload_upconvert_test
+from salmon.checks import check_log_cambia
+from salmon.checks.integrity import check_integrity, format_integrity, sanitize_integrity
 
 loop = asyncio.get_event_loop()
 
@@ -137,17 +145,6 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help='Is this a scene release (default: False)'
 )
-@click.option(
-    "--rutorrent",
-    is_flag=True,
-    help='Adds torrent to Rutorrent client after torrent upload (default: False)'
-)
-@click.option(
-    "--qbittorrent",
-    is_flag=True,
-    default=config.ENABLE_QBITTORRENT_INJECTION,
-    help='Adds torrent to qBitTorrent client after torrent upload (default: False)'
-)
 @click.option("--source-url", "-su", 
     default=None, 
     help='For WEB uploads provide the source of the album to be added in release description'
@@ -177,8 +174,6 @@ def up(
     auto_rename,
     skip_up,
     scene,
-    rutorrent,
-    qbittorrent,
     source_url,
     yyy,
     skip_mqa,
@@ -212,8 +207,6 @@ def up(
         encoding,
         source_url=source_url,
         scene=scene,
-        rutorrent=rutorrent,
-        qbittorrent=qbittorrent,
         overwrite_meta=overwrite,
         recompress=compress,
         request_id=request,
@@ -233,8 +226,6 @@ def upload(
     spectrals,
     encoding,
     scene=False,
-    rutorrent=False,
-    qbittorrent=False,
     overwrite_meta=False,
     recompress=False,
     source_url=None,
@@ -266,6 +257,10 @@ def upload(
         prompt_encoding=True,
         hybrid=hybrid,
     )
+    seedbox_uploader = UploadManager(config.SEEDBOX_CONFIG_DIRECTORY)
+
+    if source_url:
+        rls_data['urls'].append(source_url)
 
     try:
         if not skip_mqa:
@@ -274,15 +269,40 @@ def upload(
             click.secho("No MQA release detected", fg="green")
 
         if rls_data["encoding"] == "24bit Lossless" and not skip_up:
-            if not config.YES_ALL:
-                if click.confirm(
+            if config.YES_ALL or click.confirm(
+                click.style(
+                    "24bit detected. Do you want to check whether might be upconverted?",
+                    fg="magenta",
+                ),
+                default=True,
+            ):
+                if not upload_upconvert_test(path):
+                    if config.YES_ALL or click.confirm(
                         click.style(
-                            "\n24bit detected. Do you want to check whether might be upconverted?",
-                            fg="magenta"),
-                        default=True,):
-                    upload_upconvert_test(path)
-            else:
-                upload_upconvert_test(path)
+                            "Do you want to downconverting it to 16bit and upload it?",
+                            fg="magenta",
+                        ),
+                        default=True,
+                    ):
+                        click.secho(f"\nDownconverting to 16bit.", fg="green")
+
+                        sample_rate, new_path = convert_folder(path)
+                        time.sleep(10)
+                        path = new_path
+                        tracker = gazelle_site.site_code
+                        rls_data["encoding"] = "Lossless"
+                    else:
+                        raise click.Abort
+
+        if source == "CD":
+            click.secho(f"\nChecking logs", fg="green")
+            for root, _, files in os.walk(path):
+                for f in files:
+                    if f.lower().endswith(".log"):
+                        filepath = os.path.join(root, f)
+                        click.secho(f"\nScoring {filepath}...", fg="cyan")
+                        check_log_cambia(filepath, path)
+            print
 
         if group_id is None:
             searchstrs = generate_dupe_check_searchstrs(
@@ -315,17 +335,8 @@ def upload(
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
-        if platform.system() == "Windows" and config.WINDOWS_USE_RECYCLE_BIN:
-            try:
-                import send2trash
-                send2trash.send2trash(path)
-                return click.secho("\nMoved folder to recycle bin, aborting upload...", fg="red")
-            except Exception as e:
-                click.secho(f"\nError moving folder to recycle bin: {e}", fg="red")
-                return click.secho("\nAborting upload...", fg="red")
-        else:
-            shutil.rmtree(path)
-            return click.secho("\nDeleted folder, aborting upload...", fg="red")
+        shutil.rmtree(path)
+        return click.secho("\nDeleted folder, aborting upload...", fg="red")
 
     lossy_comment = None
     if spectrals_after:
@@ -356,6 +367,8 @@ def upload(
         if is_downloaded and remove_downloaded_cover_image:
             click.secho("Removing downloaded Cover Image File", fg="yellow")
             os.remove(cover_path)
+        
+    compress_pictures(path)
 
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
@@ -392,7 +405,7 @@ def upload(
         if not request_id and config.CHECK_REQUESTS:
             request_id = check_requests(gazelle_site, searchstrs)
 
-        torrent_id, torrent_path, torrent_file = prepare_and_upload(
+        torrent_id, group_id, torrent_path = prepare_and_upload(
             gazelle_site,
             path,
             group_id,
@@ -408,13 +421,14 @@ def upload(
             source_url
         )
         if lossy_master:
-            report_lossy_master(
+            comment = add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids)
+            original_lossy_comment = report_lossy_master(
                 gazelle_site,
                 torrent_id,
                 spectral_urls,
                 spectral_ids,
                 source,
-                lossy_comment,
+                comment,
                 source_url=source_url,
             )
 
@@ -424,55 +438,220 @@ def upload(
             fg="green",
             bold=True,
         )
-        if rutorrent:
-            click.secho(
-            (f"\nAdding torrent to client {config.RUTORRENT_URL} "
-             f"{config.TRACKER_DIRS[tracker]} {config.TRACKER_LABELS[tracker]}"),
-            fg="green",
-            bold=True
+        if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
+            pyperclip.copy(url)
+
+        tracker = None
+        request_id = None
+
+        if config.UPLOAD_TO_SEEDBOX:
+            click.secho(f"\nAdd uploading task.", fg="green")
+            seedbox_uploader.add_upload_task(path, task_type="folder")
+
+            if config.SEND_TO_DOWNLOADER:
+                seedbox_uploader.add_upload_task(torrent_path, task_type="seed")
+
+        if not remaining_gazelle_sites or not config.MULTI_TRACKER_UPLOAD:
+            break
+
+    if rls_data["encoding"] == "24bit Lossless" and click.confirm(
+        click.style(
+            "Do you want to downconverting it?",
+            fg="magenta",
+        ),
+        default=True,
+    ):
+        click.secho(f"\nDownconverting.", fg="green")
+
+        if next(iter(track_data.values()))["sample rate"] >= 176400:
+
+            override_sample_rate = 96000 if next(iter(track_data.values()))["sample rate"] % 48000 == 0 else 88200
+            
+            sample_rate, new_path = convert_folder(path,override_sample_rate = override_sample_rate)
+            time.sleep(10)
+            compress_pictures(new_path)
+            tracker = gazelle_site.site_code
+
+            description = generate_conversion_description(source_url, sample_rate)
+            check_folder_structure(new_path, metadata['scene'])
+
+            torrent_id, group_id, torrent_path = prepare_and_upload(
+                gazelle_site,
+                new_path,
+                group_id,
+                metadata,
+                cover_url,
+                track_data,
+                hybrid,
+                lossy_master,
+                spectral_urls,
+                spectral_ids,
+                lossy_comment,
+                request_id,
+                override_description=description,
             )
-            add_torrent_to_rutorrent(
-                config.RUTORRENT_URL,
-                torrent_path,
-                config.TRACKER_DIRS[tracker],
-                config.TRACKER_LABELS[tracker]
-            )
-        if qbittorrent:
-            click.secho(
-            (f"\nAdding torrent to client {config.QBITTORRENT_HOST} "
-             f"Save Path: {config.DOWNLOAD_DIRECTORY}, Category: {config.QBITTORRENT_CATEGORY}"),
-            fg="green",
-            bold=True
-            )
-            qbit_success = add_torrent_to_qbittorrent(
-                config.QBITTORRENT_HOST,
-                config.QBITTORRENT_PORT,
-                config.QBITTORRENT_USERNAME,
-                config.QBITTORRENT_PASSWORD,
-                torrent_path,
-                save_path=config.DOWNLOAD_DIRECTORY,
-                category=config.QBITTORRENT_CATEGORY,
-                skip_checking=config.QBITTORRENT_SKIP_HASH_CHECK
-            )
-            # Remove the torrent file after successful qBittorrent upload
-            if qbit_success:
-                try:
-                    os.remove(torrent_path)
-                except OSError as e:
-                    click.secho(f"Warning: Could not remove torrent file: {e}", fg="yellow")
-            else:
-                click.secho(
-                    f"Warning: Failed to add torrent to qBittorrent. "
-                    f"You can manually add the torrent file from: {torrent_path}",
-                    fg="yellow"
+            if lossy_master:
+                lossy_comment_for_downsampled = f"Transcode of {source_url}\n[hide=Lossy comment of original torrent]{original_lossy_comment}[/hide]\n"
+                report_lossy_master(
+                    gazelle_site,
+                    torrent_id,
+                    spectral_urls,
+                    track_data,
+                    source,
+                    lossy_comment_for_downsampled,
+                    source_url=source_url,
                 )
 
+            new_url = "{}/torrents.php?torrentid={}".format(gazelle_site.base_url, torrent_id)
+            click.secho(
+                f"\nSuccessfully uploaded {new_url} ({os.path.basename(new_path)}).",
+                fg="green",
+                bold=True,
+            )
+            if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
+                pyperclip.copy(new_url)
+            tracker = None
+            request_id = None
+
+            if config.UPLOAD_TO_SEEDBOX:
+                click.secho(f"\nAdd uploading task.", fg="green")
+                seedbox_uploader.add_upload_task(new_path, task_type="folder")
+
+                if config.SEND_TO_DOWNLOADER:
+                    seedbox_uploader.add_upload_task(torrent_path, task_type="seed")
+
+
+        sample_rate, path = convert_folder(path)
+        time.sleep(10)
+        compress_pictures(path)
+        tracker = gazelle_site.site_code
+        metadata["encoding"] = "Lossless"
+
+        description = generate_conversion_description(source_url, sample_rate)
+        check_folder_structure(path, metadata['scene'])
+
+        torrent_id, group_id, torrent_path = prepare_and_upload(
+            gazelle_site,
+            path,
+            group_id,
+            metadata,
+            cover_url,
+            track_data,
+            hybrid,
+            lossy_master,
+            spectral_urls,
+            spectral_ids,
+            lossy_comment,
+            request_id,
+            override_description=description,
+        )
+        if lossy_master:
+            lossy_comment_for_downsampled = f"Transcode of {source_url}\n[hide=Lossy comment of original torrent]{original_lossy_comment}[/hide]\n"
+            report_lossy_master(
+                gazelle_site,
+                torrent_id,
+                spectral_urls,
+                track_data,
+                source,
+                lossy_comment_for_downsampled,
+                source_url=source_url,
+            )
+
+        url = "{}/torrents.php?torrentid={}".format(gazelle_site.base_url, torrent_id)
+        click.secho(
+            f"\nSuccessfully uploaded {source_url} ({os.path.basename(path)}).",
+            fg="green",
+            bold=True,
+        )
         if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
             pyperclip.copy(url)
         tracker = None
         request_id = None
-        if not remaining_gazelle_sites or not config.MULTI_TRACKER_UPLOAD:
-            return click.secho("\nDone uploading this release.", fg="green")
+
+        if config.UPLOAD_TO_SEEDBOX:
+            click.secho(f"\nAdd uploading task.", fg="green")
+            seedbox_uploader.add_upload_task(path, task_type="folder")
+
+            if config.SEND_TO_DOWNLOADER:
+                seedbox_uploader.add_upload_task(torrent_path, task_type="seed")
+
+    if click.confirm(
+        click.style(
+            "Do you want to transcode it to mp3 and upload it?",
+            fg="magenta",
+        ),
+        default=True,
+    ):
+        click.secho(f"\nTranscoding to mp3.", fg="green")
+
+        basepath = path
+        baseurl = url
+
+        for bitrate in ["320", "V0"]:
+            path = transcode_folder(basepath, bitrate)
+            time.sleep(10)
+            tracker = gazelle_site.site_code
+            metadata["format"] = "MP3"
+            metadata["encoding"] = {"320": "320", "V0": "V0 (VBR)"}[bitrate]
+            metadata["encoding_vbr"] = {"320": False, "V0": True}[bitrate]
+
+            description = generate_transcode_description(baseurl, bitrate)
+            check_folder_structure(path, metadata['scene'])
+
+            torrent_id, group_id, torrent_path = prepare_and_upload(
+                gazelle_site,
+                path,
+                group_id,
+                metadata,
+                cover_url,
+                track_data,
+                hybrid,
+                lossy_master,
+                spectral_urls,
+                spectral_ids,
+                lossy_comment,
+                request_id,
+                override_description=description,
+            )
+            if lossy_master:
+                lossy_comment_for_downsampled = f"Transcode of {source_url}\n[hide=Lossy comment of original torrent]{original_lossy_comment}[/hide]\n"
+                report_lossy_master(
+                    gazelle_site,
+                    torrent_id,
+                    spectral_urls,
+                    track_data,
+                    source,
+                    lossy_comment_for_downsampled,
+                    source_url=source_url,
+                )
+
+            source_url = "{}/torrents.php?torrentid={}".format(
+                gazelle_site.base_url, torrent_id
+            )
+            click.secho(
+                f"\nSuccessfully uploaded {source_url} ({os.path.basename(path)}).",
+                fg="green",
+                bold=True,
+            )
+            if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
+                pyperclip.copy(source_url)
+            tracker = None
+            request_id = None
+
+            if config.UPLOAD_TO_SEEDBOX:
+                click.secho(f"\nAdd uploading task.", fg="green")
+                seedbox_uploader.add_upload_task(
+                    path, task_type="folder", is_flac=False
+                )
+
+                if config.SEND_TO_DOWNLOADER:
+                    seedbox_uploader.add_upload_task(
+                        torrent_path, task_type="seed", is_flac=False
+                    )
+
+    seedbox_uploader.execute_upload()
+
+    return click.secho(f"\nDone uploading this release.", fg="green")
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids):

@@ -147,7 +147,7 @@ def _get_manual_metadata(rls_data):
     Use the metadata built from the file tags as a base, then allow the user to edit
     that dictionary.
     """
-    metadata = json.dumps(rls_data, indent=2)
+    metadata = json.dumps(rls_data, indent=2, ensure_ascii=False)
     while True:
         try:
             metadata = click.edit(metadata, extension=".json") or metadata

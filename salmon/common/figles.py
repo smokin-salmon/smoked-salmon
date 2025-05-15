@@ -1,6 +1,8 @@
 import os
 import re
 import subprocess
+import shutil
+import stat
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
@@ -78,3 +80,38 @@ def process_files(files, process_func, desc):
         for future in tqdm(as_completed(futures), total=len(files), desc=desc, colour="cyan"):
             results.append(future.result())
     return results
+
+
+def clear_folder(folder):
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path, onexc=remove_readonly)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+def remove_readonly(func, path, exc_info):
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+def alac_to_flac(filepath):
+    """Convert alac to flac"""
+    with open(os.devnull, "w") as devnull:
+        subprocess.call(
+            [
+                "ffmpeg",
+                # "-y",
+                "-i",
+                filepath,
+                "-acodec",
+                "flac",
+                f"{filepath}.flac",
+                # "--delete-input-file",
+            ],
+            stdout=devnull,
+            stderr=devnull,
+        )
+    os.rename(f"{filepath}.flac", filepath)

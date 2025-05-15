@@ -3,15 +3,16 @@ __pycache__
 *.egg-info
 .vscode/
 .venv/
-.torrents/
-dist/
 
-test.py
 smoked.db*
-config.py
+config/
 accounts.json
+seedbox.json
 salmon/web/static/specs
 !.gitkeep
 plugins/
-.python-version
-.venv
+torrents/
+temp/
+downloads/
+download_queue/
+Spectrals/

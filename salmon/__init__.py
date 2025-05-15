@@ -1,10 +1,11 @@
-import config as user_config
+import config.config as user_config
+import os
 
 DEFAULT_VALUES = {
     "IMGUR_CLIENT_ID": None,
     "IMGUR_CLIENT_SECRET": None,
     "IMGUR_REFRESH_TOKEN": None,
-    "SIMULTANEOUS_THREADS": 3,
+    "SIMULTANEOUS_THREADS": os.cpu_count(),
     "USER_AGENT": "salmon uploading tools",
     "FOLDER_TEMPLATE": "{artists} - {title} ({year}) [{source} {format}] {{{label}}}",
     "FILE_TEMPLATE": "{tracknumber}. {artist} - {title}",
@@ -39,7 +40,7 @@ DEFAULT_VALUES = {
     "NATIVE_SPECTRALS_VIEWER": False,
     "PROMPT_PUDDLETAG": False,
     "ADD_EDITION_TITLE_TO_ALBUM_TAG": True,
-    "WEB_HOST": "127.0.0.1",
+    "WEB_HOST": "0.0.0.0",
     "WEB_PORT": 55110,
     "WEB_STATIC_ROOT_URL": "/static",
     "COMPRESS_SPECTRALS": True,
@@ -68,6 +69,9 @@ DEFAULT_VALUES = {
     "REMOVE_AUTO_DOWNLOADED_COVER_IMAGE": False,
     "WINDOWS_USE_RECYCLE_BIN": True,
     "ENABLE_QBITTORRENT_INJECTION": False,
+    "SEEDBOX_CONFIG_DIRECTORY": "config/seedbox.json",
+    "UPLOAD_TO_SEEDBOX": False,
+    "SEND_TO_DOWNLOADER": False,
 }
 
 
