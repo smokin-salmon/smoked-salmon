@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import click
 
@@ -19,6 +20,7 @@ def check_folder_structure(path, scene):
             _check_path_lengths(path, scene)
             _check_zero_len_folder(path)
             _check_extensions(path, scene)
+            _check_illegal_folders(path)
             return
         except NoncompliantFolderStructure:
             if scene:
@@ -44,7 +46,7 @@ def check_folder_structure(path, scene):
 def _check_path_lengths(path, scene):
     """Verify that all path lengths are <=180 characters."""
     offending_files, really_offending_files = [], []
-    root_len = len(config.DOWNLOAD_DIRECTORY) + 1
+    root_len = len(os.path.dirname(path)) + 1
     for root, _, files in os.walk(path):
         if len(os.path.abspath(root)) - root_len > 180:
             click.secho("A subfolder has a path length >180 characters.", fg="red")
@@ -97,6 +99,26 @@ def _check_zero_len_folder(path):
                 click.secho("A zero length folder exists in this directory.", fg="red")
                 raise NoncompliantFolderStructure
     click.secho("No zero length folders were found.", fg="green")
+
+def _check_illegal_folders(path):
+    """Verify illegal folders."""
+    for root, dirs, files in os.walk(path, topdown=False):
+        for dirname in dirs:
+            if dirname == "@eaDir":
+                target_dir = os.path.join(root, dirname)
+                while True:
+                    resp = click.prompt(
+                        f"Dirname {target_dir} is illegal. "
+                        "[D]elete, [A]bort, or [C]ontinue?",
+                        default="D",
+                    ).lower()
+                    if resp[0].lower() == "d":
+                        shutil.rmtree(target_dir, onexc=remove_readonly)
+                        break
+                    elif resp[0].lower() == "a":
+                        raise click.Abort
+                    elif resp[0].lower() == "c":
+                        break
 
 
 def _check_extensions(path, scene):

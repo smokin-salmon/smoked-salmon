@@ -45,25 +45,16 @@ class Prompt:
     def __init__(self):
         self.q = asyncio.Queue()
         self.reader_added = False
-        self.is_windows = platform.system() == "Windows"
 
     def got_input(self):
         asyncio.create_task(self.q.put(sys.stdin.readline()))
 
     async def __call__(self, msg, end="\n", flush=False):
         if not self.reader_added:
-            if not self.is_windows:
-                loop.add_reader(sys.stdin, self.got_input)
-            else:
-                asyncio.create_task(self._windows_input_reader())
+            loop.add_reader(sys.stdin, self.got_input)
             self.reader_added = True
         print(msg, end=end, flush=flush)
         return (await self.q.get()).rstrip("\n")
-
-    async def _windows_input_reader(self):
-        while True:
-            line = await asyncio.to_thread(sys.stdin.readline)
-            await self.q.put(line)
 
 
 prompt_async = Prompt()
@@ -95,10 +86,6 @@ def str_to_int_if_int(string, zpad=False):
 async def handle_scrape_errors(task, mute=False):
     try:
         return await task
-    except (ScrapeError, httpx.RequestError, httpx.TimeoutException, KeyError, RequestException) as e:
+    except (ScrapeError, RequestException, KeyError) as e:
         if not mute:
             click.secho(f"Error message: {e}", fg="red", bold=True)
-    except Exception as e:
-        # Catch any unexpected errors too
-        if not mute:
-            click.secho(f"Unexpected scrape error: {e}", fg="red", bold=True)

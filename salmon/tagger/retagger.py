@@ -353,7 +353,7 @@ def _parse_integer(value):
 def move_non_audio_files(directory_move_pairs):
     for ext, old_dir, new_dir in directory_move_pairs:
         for figle in os.listdir(old_dir):
-            if not figle.endswith(ext) or os.path.isdir(os.path.join(old_dir, figle)):
+            if not figle.endswith(ext) and os.path.isfile(os.path.join(old_dir, figle)):
                 shutil.move(os.path.join(old_dir, figle), os.path.join(new_dir, figle))
 
 

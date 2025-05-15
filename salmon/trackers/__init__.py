@@ -3,11 +3,11 @@ from urllib import parse
 import click
 
 from salmon import ConfigError, config
-from salmon.trackers import ops, red
+from salmon.trackers import red, ops, dic, sm
 
 # hard coded as it needs to reflect the imports anyway.
-tracker_classes = {'RED': red.RedApi, 'OPS': ops.OpsApi}
-tracker_url_code_map = {'redacted.sh': 'RED', 'orpheus.network': 'OPS'}
+tracker_classes = {'RED': red.RedApi, 'OPS': ops.OpsApi, 'DIC': dic.DICApi, 'SM': sm.SMApi}
+tracker_url_code_map = {'redacted.sh': 'RED', 'orpheus.network': 'OPS', 'dicmusic.com': 'DIC', 'sugoimusic.me':'SM'}
 
 # tracker_list is used to offer the user choices. Generated if not specified in the config.
 if hasattr(config, 'TRACKER_LIST'):
@@ -18,6 +18,10 @@ else:
         tracker_list.append('RED')
     if hasattr(config, 'OPS_SESSION'):
         tracker_list.append('OPS')
+    if hasattr(config, 'DIC_SESSION'):
+        tracker_list.append('DIC')
+    if hasattr(config, 'SM_SESSION'):
+        tracker_list.append('SM')
     if len(tracker_list) == 0:
         raise ConfigError("You need a tracker session cookie in your config!")
 

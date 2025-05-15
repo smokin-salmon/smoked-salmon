@@ -15,12 +15,12 @@ def upload_upconvert_test(path):
     if any_upconverts:
         if click.confirm(
             click.style(
-                "Possible upconverts detected. Would you like to quit uploading?",
+                "Possible upconverts detected.",
                 fg="red",
             ),
             default=True,
         ):
-            raise click.Abort
+            return False
     else:
         click.secho(
             click.style(
@@ -28,6 +28,7 @@ def upload_upconvert_test(path):
                 fg="green",
             ),
         )
+        return True
 
 
 def test_upconverted(path):
@@ -66,8 +67,8 @@ def check_upconvert(filepath):
 
     with open(os.devnull, "w") as devnull:
         response = subprocess.check_output(
-            ["flac", "-ac", filepath], stderr=devnull
-        ).decode("utf-8")
+            ["flac", "-ac", filepath], text=True, encoding="utf-8", stderr=devnull
+        )
 
     wasted_bits_list = []
     for line in response.split("\n"):

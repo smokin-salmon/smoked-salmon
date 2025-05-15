@@ -1,44 +1,44 @@
-# Use an official Python runtime as a base image
-FROM python:3.11
+# Dockerfile created by Bendall and @kieraneglin
+# 
+# Step by step:
+#
+# 1. Create docker image:
+# $ docker image build -t salmon .
+#   - You can pass in `uid` and `gid` as `--build-arg`s if you need to change the user and group IDs.
+#
+# 2. Alias docker command and replace /path/to with your desired path. (Add to .bashrc or whatever):
+# alias salmon='docker run --rm -it -v /path/to/config.py:/salmon/config.py -v /path/to/accounts.json:/salmon/accounts.json -v /path/to/downloads:/downloads -v /path/to/queue:/queue -v /path/to/torrents:/torrents -p 55110:55110/tcp salmon'
+#
+# Done
 
-# Set the working directory in the container
-WORKDIR /app
+FROM python:3.13-slim
 
-# Install system dependencies
-RUN ARCH=$(dpkg --print-architecture) && \
-    apt-get update && apt-get install -y --no-install-recommends \
-    sox flac mp3val curl nano vim-tiny \
-    ca-certificates lame && rm -rf /var/lib/apt/lists/* && \
-    if [ "$ARCH" = "amd64" ]; then \
-        wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
-        dpkg -i oxipng_9.1.4-1_amd64.deb; \
-    elif [ "$ARCH" = "arm64" ]; then \
-        wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_arm64.deb && \
-        dpkg -i oxipng_9.1.4-1_arm64.deb; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi
+WORKDIR /salmon
 
-# Ensure the cache directory is writable by any user
-RUN mkdir -p /.cache/uv && chmod -R 777 /.cache/uv
+COPY ./ /salmon
 
-# Download the latest installer
-ADD https://astral.sh/uv/install.sh /uv-installer.sh
+ENV LANGUAGE="en_US.UTF-8" \
+    LANG="en_US.UTF-8"
 
-# Run the installer then remove it
-RUN sh /uv-installer.sh && rm /uv-installer.sh
+RUN apt-get update \
+    && echo "----- Installing dependencies" \
+    && apt-get install -y gcc sox flac mp3val vim nano ffmpeg libsox-fmt-mp3 lame rclone curl locales \
+    && curl -L "https://github.com/KyokoMiki/cambia/releases/latest/download/cambia-ubuntu-latest" -o "/usr/local/bin/cambia" \
+    && chmod +x "/usr/local/bin/cambia" \
+    && echo "----- Generate locale" \
+    && locale-gen en_US.UTF-8 \
+    && echo "----- Installing python requirements" \
+    && pip install -r requirements.txt \
+    && echo "----- Initializing salmon" \
+    && mkdir config \
+    && cp config.py.txt config/config.py \
+    && cp seedbox.json.txt config/seedbox.json \
+    && python run.py migrate \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Ensure the installed binary is on the `PATH`
-ENV PATH="/root/.local/bin/:$PATH"
+EXPOSE 55110
 
-# Copy the project files into the container
-COPY . /app
+VOLUME ["/torrents", "/queue", "/salmon/config"]
 
-# Ensure app directory and its contents are writable by any user
-RUN mkdir -p /app/.torrents && chmod -R 777 /app
-
-# Install the required Python packages
-RUN uv sync --no-dev
-
-# Set the entrypoint to run the 'salmon' script
-ENTRYPOINT ["uv", "run", "--project", "/app", "--no-sync", "salmon"]
+ENTRYPOINT ["python", "run.py"]

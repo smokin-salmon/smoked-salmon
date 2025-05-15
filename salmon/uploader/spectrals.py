@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import asyncio
 import os
 import platform
@@ -11,10 +13,14 @@ import time
 from os.path import dirname, join
 
 import click
+import unicodedata
+import webbrowser
+import gradio
+from PIL import Image
 
 from salmon import config
 from salmon.common import flush_stdin, get_audio_files, prompt_async
-from salmon.common.figles import process_files
+from salmon.common.figles import clear_folder, remove_readonly, process_files
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
@@ -22,7 +28,11 @@ from salmon.errors import (
     WebServerIsAlreadyRunning,
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
-from salmon.web import create_app_async, spectrals
+
+# used by post upload stuff might move.
+import re
+from bs4 import BeautifulSoup
+
 
 loop = asyncio.get_event_loop()
 THREADS = [None] * config.SIMULTANEOUS_THREADS
@@ -84,11 +94,7 @@ def handle_spectrals_upload_and_deletion(
 ):
     spectral_urls = upload_spectrals(spectrals_path, spectral_ids)
     if delete_spectrals and os.path.isdir(spectrals_path):
-        shutil.rmtree(spectrals_path, ignore_errors=True)
-        time.sleep(0.5)
-        if os.path.isdir(spectrals_path):
-            shutil.rmtree(spectrals_path)
-            time.sleep(0.5)
+        shutil.rmtree(spectrals_path, onexc=remove_readonly)
     return spectral_urls
 
 
@@ -231,7 +237,7 @@ def create_specs_folder(path):
     """Create the spectrals folder."""
     spectrals_path = os.path.join(path, "Spectrals")
     if os.path.isdir(spectrals_path):
-        shutil.rmtree(spectrals_path)
+        shutil.rmtree(spectrals_path, onexc=remove_readonly)
     os.mkdir(spectrals_path)
     return spectrals_path
 
@@ -287,48 +293,42 @@ def _open_specs_in_feh(spectrals_path):
     with open(os.devnull, "w") as devnull:
         subprocess.Popen(args, stdout=devnull, stderr=devnull)
 
-
 def _open_specs_in_windows(spectrals_path):
-    png_files = [os.path.join(spectrals_path, f) for f in os.listdir(spectrals_path)
-                 if f.lower().endswith(".png")]
-
-    if not png_files:
-        click.secho("No PNG files found to display.", fg="yellow")
-        return
-    png_files.sort()
-    os.startfile(png_files[0])
-
+    for root, dirs, files in os.walk(spectrals_path):
+        for file in files:
+            spectral_file = os.path.join(spectrals_path, file)
+            try:
+                os.startfile(spectral_file)
+            except Exception:
+                continue
 
 async def _open_specs_in_web_server(specs_path, all_spectral_ids):
-    spectrals.set_active_spectrals(all_spectral_ids)
-    symlink_path = join(dirname(dirname(__file__)), "web", "static", "specs")
 
-    shutdown = True
-    try:
-        try:
-            os.symlink(specs_path, symlink_path)
-        except FileExistsError:
-            os.unlink(symlink_path)
-            os.symlink(specs_path, symlink_path)
-        try:
-            runner = await create_app_async()
-        except WebServerIsAlreadyRunning:
-            shutdown = False
-        url = f"http://{config.WEB_HOST}:{config.WEB_PORT}/spectrals"
-        await prompt_async(
-            click.style(
-                f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"
-                f"""{click.style('Press enter once you are finished viewing to continue the uploading '
-                             'process', fg='magenta', bold=True)}""",
-                fg="magenta"
-            ),
-            end=" ",
-            flush=True,
+    images = []
+    for filename in os.listdir(specs_path):
+        if filename.endswith('.png'):
+            images.append((os.path.join(specs_path, filename), filename))
+
+    with gradio.Blocks(
+        css=".preview {width:100vw; height:100vh; left:0; top:0; position:fixed;}"
+    ) as specviewer:
+        gallery = gradio.Gallery(
+            value=images,
+            label="PNG Images",
+            show_label=False,
+            columns=8,
+            elem_id="gallery",
+            preview=True
         )
-        if shutdown:
-            await runner.cleanup()
-    finally:
-        os.unlink(symlink_path)
+    try:
+        specviewer.launch(
+            server_name=config.WEB_HOST,
+            server_port=config.WEB_PORT,
+            share=False,
+            inbrowser=True
+        )
+    except:
+        pass
 
 
 def upload_spectrals(spectrals_path, spectral_ids):
@@ -431,14 +431,11 @@ def report_lossy_master(
     Generate the report description and call the function to report the torrent
     for lossy WEB/master approval.
     """
-
-    comment = _add_spectral_links_to_lossy_comment(
-        comment, source_url, spectral_urls, spectral_ids
-    )
     loop.run_until_complete(
         gazelle_site.report_lossy_master(torrent_id, comment, source)
     )
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
+    return comment
 
 
 def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
@@ -462,7 +459,7 @@ def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_ma
     return comment
 
 
-def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids):
+def add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids):
     if comment:
         comment += "\n\n"
     if source_url:

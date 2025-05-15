@@ -1,151 +1,25 @@
-# Smoked Salmon Configuration File
-# Read details about each setting here:
-# https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration
+# Read what each of these settings do here:
+# https://github.com/ligh7s/smoked-salmon/wiki/configuration
+# There are many optional settings you can also set.
 
-# ===============================
-# DIRECTORY SETTINGS
-# ===============================
-# Where to copy files (usually the download/seeding folder for your torrent client)
 DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
-DISABLE_HARDLINKS = False
-
-# Can be a watch folder for your torrent client
-DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
-
-# In case you want separate output folders for .torrents files
-RED_DOTTORRENTS_DIR = None
-OPS_DOTTORRENTS_DIR = None
-
-# ===============================
-# IMAGE UPLOAD SETTINGS
-# ===============================
-IMAGE_UPLOADER = "ptpimg"
-COVER_UPLOADER = "ptpimg"
-SPECS_UPLOADER = "ptpimg"
-
-# ptpimg API key (log into ptpimg, developpers tools, go to the Elements tab, and search for 'api_key')
-PTPIMG_KEY = 'api_key'
-
-# IMGUR Credentials (only needed if using Imgur for uploads)
+DOTTORRENTS_DIR = '/torrents'
+DOWNLOAD_QUEUE_FOLDER = '/queue'
+PTPIMG_KEY = 'ptpimg-key'
+DISCOGS_TOKEN = 'discogs-token'
 IMGUR_CLIENT_ID = 'imgur-client-id'
 IMGUR_CLIENT_SECRET = 'imgur-client-secret'
 IMGUR_REFRESH_TOKEN = 'imgur-client-refresh-token'
-# Remove downloaded cover images that are created in source folder, when one does not exist
-REMOVE_AUTO_DOWNLOADED_COVER_IMAGE = False
 
-# ===============================
-# METADATA SERVICES
-# ===============================
-# Remove if not using Tidal (read wiki to see how to get your Tidal token)
-TIDAL_TOKEN = 'your-token'
-TIDAL_SEARCH_REGIONS = ["DE", "NZ", "US", "GB"]
-TIDAL_FETCH_REGIONS = ["DE", "NZ", "US", "GB"]
-
-# Remove if not using Qobuz (read wiki to see how to get your Tidal token)
-QOBUZ_APP_ID = 'app_id'
-QOBUZ_USER_AUTH_TOKEN = 'user_auth_token'
-NO_GENRES_FROM_QOBUZ = False    # if you have a non-english Qobuz account, set this to True to avoid retrieving non-english genres
-
-# Discogs API Token (from https://www.discogs.com/settings/developers)
-DISCOGS_TOKEN = 'discogs-token'
-
-# ===============================
-# TRACKER SETTINGS
-# ===============================
-DEFAULT_TRACKER = 'RED'  # If not set, you'll be prompted to choose when using multiple trackers
-TRACKER_LIST = ['RED', 'OPS']  # Remove unwanted trackers
-
-# Authentication (Replace with valid session keys or API keys)
-RED_SESSION = 'get-from-site-cookie'  # Required for now (waiting on API support)
+'''If a default tracker is not set and you have more than one tracker in TRACKER_LIST
+then you will be prompted to choose each time you use the script.'''
+DEFAULT_TRACKER = 'RED'
+RED_SESSION = 'get-from-site-cookie' #Required for now. (waiting on reports api support)
 OPS_SESSION = 'get-from-site-cookie'
-RED_API_KEY = 'red-api-key'  # Needs uploading privileges (optional for now)
-OPS_API_KEY = 'ops-api-key'  # Needs uploading privileges (optional for now)
+DIC_SESSION = 'get-from-site-cookie'
+RED_API_KEY = 'red-api-key' #Needs uploading privileges. Optional for now. Some things still use session.
+OPS_API_KEY = 'ops-api-key'
+TRACKER_LIST = ['RED','OPS','DIC'] #Remove one of these if you don't want multi-tracker support.
 
-# ===============================
-# QBITTORRENT SETTINGS
-# ===============================
-QBITTORRENT_HOST = '127.0.0.1'
-QBITTORRENT_PORT = 8080
-QBITTORRENT_USERNAME = 'admin'
-QBITTORRENT_PASSWORD = 'adminadmin'
-QBITTORRENT_CATEGORY = 'salmon'  # Optional
-QBITTORRENT_SKIP_HASH_CHECK = False  # Set to True if you want to skip hash check when adding torrents
-
-# Add a configuration option to enable qbittorrent injection by default
-ENABLE_QBITTORRENT_INJECTION = False
-
-# ===============================
-# UPLOADING & PROCESSING SETTINGS
-# Most settings in this section should be allright already
-# ===============================
-SIMULTANEOUS_THREADS = 3
-USER_AGENT = "salmon uploading tools"
-
-# Search settings
-SEARCH_LIMIT = 3
-SEARCH_EXCLUDED_LABELS = {"edm comps"}
-BLACKLISTED_GENRES = {"Soundtrack", "Asian Music"}
-
-# Encoding settings (8 is the best)
-FLAC_COMPRESSION_LEVEL = 8
-
-# Templates for folder and file naming
-FOLDER_TEMPLATE = "{artists} - {title} ({year}) [{source} {format}]"
-FILE_TEMPLATE = "{tracknumber}. {artist} - {title}"
-REMOVE_SOURCE_DIR = False
-
-# Formatting options
-NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST = True
-ONE_ALBUM_ARTIST_FILE_TEMPLATE = "{tracknumber}. {title}"
-LOWERCASE_COVER = True
-VARIOUS_ARTIST_THRESHOLD = 4
-BLACKLISTED_SUBSTITUTION = "_"
-GUESTS_IN_TRACK_TITLE = False
-VARIOUS_ARTIST_WORD = "VA"
-
-# Torrent description settings
-BITRATES_IN_T_DESC = False
-INCLUDE_TRACKLIST_IN_T_DESC = False
-COPY_UPLOADED_URL_TO_CLIPBOARD = False
-REVIEW_AS_COMMENT_TAG = True
-ICONS_IN_DESCRIPTIONS = True
-FULLWIDTH_REPLACEMENTS = False
-EMPTY_TRACK_COMMENT_TAG = True
-
-# Miscellaneous settings
-NATIVE_SPECTRALS_VIEWER = False
-FEH_FULLSCREEN = True
-STRIP_USELESS_VERSIONS = True
-PROMPT_PUDDLETAG = False
-ADD_EDITION_TITLE_TO_ALBUM_TAG = True
-LOG_DUPE_TOLERANCE = 0.5
-WINDOWS_USE_RECYCLE_BIN = True
-
-# Web interface settings
-WEB_HOST = "127.0.0.1"
-WEB_PORT = 55110
-WEB_STATIC_ROOT_URL = "/static"
-
-# Compression settings
-COMPRESS_SPECTRALS = True
-LMA_COMMENT_IN_T_DESC = False
-USE_UPC_AS_CATNO = True
-
-# Multi-tracker support
-MULTI_TRACKER_UPLOAD = True
-
-# Debugging & Logging
-DEBUG_TRACKER_CONNECTION = False
-
-# Update notifications
-UPDATE_NOTIFICATION = True
-UPDATE_NOTIFICATION_VERBOSE = True
-
-# Request handling
-ALWAYS_ASK_FOR_REQUEST_FILL = False
-CHECK_RECENT_UPLOADS = True
-CHECK_REQUESTS = True
-LAST_MINUTE_DUPE_CHECK = False
-
-# Answers Yes to all questions during upload. Risky!
-YES_ALL = False
+UPLOAD_TO_SEEDBOX = True
+SEND_TO_DOWNLOADER = True #Feature SEND_TO_DOWNLOADER needs UPLOAD_TO_SEEDBOX to be true.

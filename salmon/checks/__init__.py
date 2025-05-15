@@ -1,7 +1,9 @@
 import os
 from pathlib import Path
-
+import subprocess
 import click
+import json
+from more_itertools import windowed
 from heybrochecklog import format_score, format_translation
 from heybrochecklog.score import score_log
 from heybrochecklog.translate import translate_log
@@ -37,6 +39,10 @@ def log(path, score_only, translate):
                     _check_log(filepath, score_only, translate)
 
 
+def is_sublist(sub, main):
+    return any(tuple(sub) == window for window in windowed(main, len(sub)))
+
+
 def _check_log(path, score_only, translate):
     figle = Path(path)
     scored_log = score_log(figle, markup=False)
@@ -55,6 +61,61 @@ def _check_log(path, score_only, translate):
             )
     except UnicodeEncodeError as e:
         click.secho(f"Could not encode logpath: {e}")
+
+
+def check_log_cambia(logpath, basepath):
+    figle = Path(logpath)
+    try:
+        cambia_output = json.loads(
+            subprocess.check_output(
+                ["cambia", "-p", logpath],
+                stderr=subprocess.DEVNULL,
+                text=True,
+                encoding="utf-8",
+            )
+        )
+        click.echo(
+            f"Log Score: {cambia_output['evaluation_combined'][0]['combined_score']}"
+        )
+    except Exception as e:
+        click.secho(f"Error checking log {logpath}: {e}")
+
+    if cambia_output['parsed']['parsed_logs'][0]['checksum']['integrity'] == "Mismatch":
+        raise ValueError("Edited logs!")
+    elif cambia_output['parsed']['parsed_logs'][0]['checksum']['integrity'] == 'Unknown':
+        click.secho(f"Lacking a valid checksum. The torrent will be marked as trumpable.", fg="cyan")
+
+    copy_crc_list = [
+        track['test_and_copy']['copy_hash']
+        for track in cambia_output['parsed']['parsed_logs'][0]['tracks']
+    ]
+
+    crc_list = []
+    for root, folders, files_ in os.walk(basepath):
+        for f in files_:
+            if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}:
+                output = subprocess.check_output(
+                    [
+                        "ffmpeg",
+                        "-i",
+                        os.path.join(root, f),
+                        "-map",
+                        "0:0",
+                        "-f",
+                        "hash",
+                        "-hash",
+                        "crc32",
+                        "-",
+                    ],
+                    stderr=subprocess.DEVNULL,
+                    text=True,
+                    encoding="utf-8",
+                )
+                crc_list.append(output.strip().removeprefix("CRC32=").upper())
+
+    if not is_sublist(sub=copy_crc_list, main=crc_list):
+        raise ValueError("CRC Mismatch!")
+        print
 
 
 @check.command()

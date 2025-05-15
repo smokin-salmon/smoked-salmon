@@ -1,4 +1,6 @@
 import asyncio
+import os
+import re
 import sqlite3
 
 import click
@@ -107,27 +109,39 @@ def chunker(seq, size=4):
     for pos in range(0, len(seq), size):
         yield seq[pos : pos + size]
 
-
-def upload_cover(cover_path):
+def get_cover_from_path(path):
     """
-    If filepath to cover image is provided, upload it
+    Search a folder for a cover image, return its path.
+    """
+    for filename in os.listdir(path):
+        if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE):
+            fpath = os.path.join(path, filename)
+            return fpath
+    click.secho(
+        f"Did not find a cover in path {path}", fg="red"
+    )
+
+
+def upload_cover(path):
+    """
+    Search a folder for a cover image, and if found, upload it.
     The image url is returned, otherwise None.
     """
-    if not cover_path:
-        click.secho("\nNo Cover Image Path was provided to upload...", fg="red", nl=False)
-        return None
-    click.secho(f"Uploading cover to {config.COVER_UPLOADER}...", fg="yellow", nl=False)
     try:
-        try:
-            url = loop.run_until_complete(
-                loop.run_in_executor(
-                    None,
-                    lambda f=cover_path: HOSTS[config.COVER_UPLOADER].ImageUploader().upload_file(f)[0],
+        fpath = get_cover_from_path(path)
+        if fpath:
+            try:
+                url = loop.run_until_complete(
+                    loop.run_in_executor(
+                        None,
+                        lambda: HOSTS[config.COVER_UPLOADER]
+                        .ImageUploader()
+                        .upload_file(fpath)[0],
+                    )
                 )
-            )
-        except (ImageUploadFailed, ValueError) as error:
-            click.secho(f"Image Upload Failed. {error}", fg="red")
-            raise ImageUploadFailed("Failed to upload image") from error
+            except (ImageUploadFailed, ValueError) as error:
+                click.secho(f"Image Upload Failed. {error}", fg="red")
+                raise ImageUploadFailed("Failed to upload image") from error
     except ImageUploadFailed:
         return click.secho(" failed :(", fg="red")
     click.secho(f" done! {url}", fg="yellow")

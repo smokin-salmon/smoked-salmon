@@ -339,12 +339,10 @@ class BaseGazelleApi:
                             + self.request_url(requestId),
                             fg="green",
                         )
-                torrent_id = 0
                 if "torrentid" in resp["response"]:
-                    torrent_id = resp["response"]["torrentid"]
+                    return resp["response"]["torrentid"], resp["response"]["groupid"]
                 elif "torrentId" in resp["response"]:
-                    torrent_id = resp["response"]["torrentId"]
-                return torrent_id
+                    return resp["response"]["torrentId"], resp["response"]["groupId"]
         except TypeError as err:
             raise RequestError(f"API upload failed, response text: {resp.text}") from err
 
@@ -469,12 +467,18 @@ class BaseGazelleApi:
         recently uploaded torrent (it better be ours).
         """
         torrent_ids = []
+        group_ids = []
         soup = BeautifulSoup(text, "html.parser")
         for pl in soup.find_all("a", class_="tooltip"):
             torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
             if torrent_url:
                 torrent_ids.append(int(torrent_url[1]))
-        return max(torrent_ids)
+        for pl in soup.find_all("a", class_="brackets"):
+            group_url = re.search(r"upload.php\?groupid=(\d+)", pl["href"])
+            if group_url:
+                group_ids.append(int(group_url[1]))
+                
+        return max(torrent_ids), max(group_ids)
 
     def parse_torrent_id_from_filled_request_page(self, text):
         """

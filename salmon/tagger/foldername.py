@@ -8,6 +8,7 @@ import click
 
 from salmon import config
 from salmon.common import strip_template_keys
+from salmon.common.figles import remove_readonly
 from salmon.constants import (
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
@@ -56,7 +57,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
             ),
             default=True,
         ):
-            shutil.rmtree(new_path)
+            shutil.rmtree(new_path, onexc=remove_readonly)
         else:
             raise UploadError("New folder name already exists.")
     new_path_dirname = os.path.dirname(new_path)
@@ -77,7 +78,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
 
         if config.REMOVE_SOURCE_DIR:
-            shutil.rmtree(path)
+            shutil.rmtree(path, onexc=remove_readonly)
     return new_path
 
 
