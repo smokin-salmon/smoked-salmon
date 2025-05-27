@@ -67,7 +67,22 @@ class Scraper(MusicBrainzBase, MetadataMixin):
 
     def parse_release_catno(self, soup):
         try:
-            return soup["label-info-list"][0]["catalog-number"]
+            catno = soup["label-info-list"][0]["catalog-number"]
+            if not catno:
+                return None
+
+            # Convert to string and clean whitespace
+            catno = str(catno).strip()
+
+            # Check for exact matches of none variants (case insensitive)
+            none_variants = ['none', '[none]', '(none)', 'n/a', '[n/a]', '(n/a)']
+            if catno.lower() in none_variants:
+                return None
+
+            # Don't match "non" or "NON" as they're often part of valid catalog numbers
+            # Don't match if "none" is part of a longer string (e.g. "none33", "ONONE", "None Audio")
+            return catno
+
         except (KeyError, IndexError):
             return None
 
