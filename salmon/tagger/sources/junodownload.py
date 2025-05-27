@@ -139,9 +139,18 @@ def parse_artists(soup, track, title):
     guests = re.search(r"[Ff]eat\.? ([^\)]+)", title)
     if guests:
         artists += [
-            (re.sub(r"( -)? .+? (mix|edit)", "", a, flags=re.IGNORECASE), "guest")
+            (
+                re.sub(
+                    r"(?:(?:\s*-)?\s+.+?\s+(?:mix|remix|edit)|(?:\s*-\s*.+))",
+                    "",
+                    a,
+                    flags=re.IGNORECASE
+                ).strip(),
+                "guest"
+            )
             for a in re_split(guests[1])
         ]
+
     return artists
 
 

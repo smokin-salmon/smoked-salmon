@@ -112,6 +112,8 @@ def generate_dupe_check_searchstrs(artists, album, catno=None):
 
 
 def _sanitize_album_for_dupe_check(album):
+    if not album:  # Handle None or empty string
+        return ""
     album = RE_FEAT.sub("", album)
     album = re.sub(
         r"[\(\[][^\)\]]*(Edition|Version|Deluxe|Original|Reissue|Remaster|Vol|Mix|Edit)"
