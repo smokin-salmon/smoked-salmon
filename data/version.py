@@ -1,3 +1,19 @@
+__version__ = "0.9.4"
+
+"""
+Changelog for version 0.9.4 (2025-05-27):
+
+Big news: beatport scraping is back! Please report any strangeness (if possible with the associated link) that you may encounter.
+
+## What's Changed
+* Beatport is back! by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/82
+* Improve musicbrainz None catalog numbers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/83
+* Fix transcoding race conditions by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/84
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.7...0.9.4
+"""
+
 __version__ = "0.9.3.7"
 
 """
