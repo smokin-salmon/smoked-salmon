@@ -82,7 +82,7 @@ class Scraper(BeatportBase, MetadataMixin):
         try:
             track_list = sorted(
                 soup["state"]["data"]["results"],
-                key=lambda x: int(x["label_track_identifier"]) if x["label_track_identifier"] is not None else 0
+                key=lambda x: int(x["id"]) if x["id"] is not None else 0
             )
             for i, track in enumerate(track_list, 1):
                 track_num = str(i)
