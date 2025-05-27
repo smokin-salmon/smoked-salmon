@@ -23,27 +23,30 @@ SPLIT_GENRES = {
 
 class Scraper(BeatportBase, MetadataMixin):
     def parse_release_title(self, soup):
-        return soup.h1.string
+        try:
+            return soup["state"]["data"]["results"][0]["release"]["name"]
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse release title") from e
 
     def parse_cover_url(self, soup):
-        res = soup.select("img.interior-release-chart-artwork")
         try:
-            return res[0]["src"]
-        except IndexError as e:
-            raise ScrapeError("Could not parse cover self.url.") from e
+            return soup["state"]["data"]["results"][0]["release"]["image"]["uri"]
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse cover URL") from e
 
     def parse_genres(self, soup):
         genres = {"Electronic"}
-        tracks_sc = soup.select(
-            ".bucket.tracks.interior-release-tracks .bucket-item.ec-item.track"
-        )
-        for track in tracks_sc:
-            for a in track.select(".buk-track-genre a"):
+        try:
+            tracks = soup["state"]["data"]["results"]
+            for track in tracks:
+                genre_name = track["genre"]["name"]
                 try:
-                    genres |= SPLIT_GENRES[a.string]
+                    genres |= SPLIT_GENRES[genre_name]
                 except KeyError:
-                    genres.add(a.string)
-        return genres
+                    genres.add(genre_name)
+            return genres
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse genres") from e
 
     def parse_release_year(self, soup):
         date = self.parse_release_date(soup)
@@ -53,76 +56,58 @@ class Scraper(BeatportBase, MetadataMixin):
             raise ScrapeError("Could not parse release year.") from e
 
     def parse_release_date(self, soup):
-        ul = soup.select(".interior-release-chart-content-item--desktop li")
         try:
-            return ul[0].select("span.value")[0].string
-        except IndexError as e:
-            raise ScrapeError("Could not parse release date.") from e
+            return soup["state"]["data"]["results"][0]["new_release_date"]
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse release date") from e
 
     def parse_release_label(self, soup):
-        ul = soup.select(".interior-release-chart-content-item--desktop li")
         try:
-            return ul[1].select("a")[0].string
-        except IndexError as e:
-            raise ScrapeError("Could not parse record label.") from e
+            return soup["state"]["data"]["results"][0]["release"]["label"]["name"]
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse release label") from e
 
     def parse_release_catno(self, soup):
-        ul = soup.select(".interior-release-chart-content-item--desktop li")
         try:
-            return ul[2].select("span.value")[0].string
-        except IndexError as e:
-            raise ScrapeError("Could not parse catalog number.") from e
+            return soup["state"]["data"]["results"][0]["catalog_number"]
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse catalog number") from e
 
     def parse_comment(self, soup):
-        try:
-            return soup.select(".interior-expandable-wrapper .interior-expandable")[
-                0
-            ].text.strip()
-        except IndexError:
-            return None  # Comment does not exist.
-
+        return None
+    
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
-        tracks_sc = soup.select(
-            ".bucket.tracks.interior-release-tracks " ".bucket-item.ec-item.track"
-        )
-        for track in tracks_sc:
-            try:
-                track_num = track.select(".buk-track-num")[0].string
+        try:
+            track_list = sorted(
+                soup["state"]["data"]["results"],
+                key=lambda x: int(x["label_track_identifier"]) if x["label_track_identifier"] is not None else 0
+            )
+            for i, track in enumerate(track_list, 1):
+                track_num = str(i)
+                # Get artists and remixers
+                artists = []
+                for artist in track["artists"]:
+                    for split in re.split(" & |; | / ", artist["name"]):
+                        artists.append((split, "main"))
+                for remixer in track["remixers"]:
+                    for split in re.split(" & |; | / ", remixer["name"]):
+                        artists.append((split, "remixer"))
+                
+                # Get title with mix name if not Original Mix
+                title = track["name"]
+                if track["mix_name"] and track["mix_name"] != "Original Mix":
+                    title += f" ({track['mix_name']})"
+
                 tracks[str(cur_disc)][track_num] = self.generate_track(
                     trackno=track_num,
                     discno=cur_disc,
-                    artists=parse_artists(track),
-                    title=parse_title(track),
+                    artists=artists,
+                    title=title,
+                    streamable=track['is_available_for_streaming'],
+                    isrc=track['isrc'],
                 )
-            except (ValueError, IndexError) as e:
-                raise ScrapeError("Could not parse tracks.") from e
-        return dict(tracks)
-
-
-def parse_title(track):
-    """Add the remix string to the track title, as long as it's not OM."""
-    title = track.select(".buk-track-primary-title")[0].string
-    remix = track.select(".buk-track-remixed")
-    if remix and remix[0].string != "Original Mix":  # yw pootsu
-        title += (
-            f" ({remix[0].string})"  # TODO: Move this into base class along with Tidal
-        )
-    return title
-
-
-def parse_artists(track):
-    """Parse remixers and main artists; return a list of them."""
-    artists, remixers = [], []
-    for artist in [e.string for e in track.select(".buk-track-artists a")]:
-        for split in re.split(" & |; | / ", artist):
-            artists.append(split)
-    for remixer in [e.string for e in track.select(".buk-track-remixers a")]:
-        for split in re.split(" & |; | / ", remixer):
-            remixers.append(split)
-
-    return [
-        *((name, "main") for name in artists),
-        *((name, "remixer") for name in remixers),
-    ]
+            return dict(tracks)
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse tracks") from e

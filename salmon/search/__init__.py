@@ -14,7 +14,7 @@ from salmon.common import (
 )
 from salmon.search import (
     bandcamp,
-    #beatport,
+    beatport,
     deezer,
     discogs,
     itunes,
@@ -30,7 +30,7 @@ SEARCHSOURCES = {
     "iTunes": itunes,
     "Junodownload": junodownload,
     "Discogs": discogs,
-    #"Beatport": beatport,
+    "Beatport": beatport,
     "Qobuz": qobuz,
     "Tidal": tidal,
     "Deezer": deezer,

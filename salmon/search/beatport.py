@@ -1,37 +1,52 @@
-import re
+import json
 
 from salmon import config
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BeatportBase
+from salmon.sources.base import BaseScraper
 
 
 class Searcher(BeatportBase, SearchMixin):
+    async def create_soup(self, url, params=None):
+        """Override to use BaseScraper's create_soup directly for search."""
+        return await BaseScraper.create_soup(self, url, params)
+
     async def search_releases(self, searchstr, limit):
         releases = {}
-        soup = await self.create_soup(self.search_url, params={"q": searchstr}, follow_redirects=True)
-        for meta in soup.select(".bucket-items.ec-bucket li .release-meta"):
-            try:
-                rls_id = int(
-                    re.search(r"/release/.+?/(\d+)$", meta.find("a")["href"])[1]
-                )
-                ar_li = [
-                    a.string for a in meta.select(".release-artists a") if a.string
-                ]
-                title = next(
-                    t.string for t in meta.select(".release-title a") if t.string
-                )
-                artists = (
-                    ", ".join(ar_li) if len(ar_li) < 4 else config.VARIOUS_ARTIST_WORD
-                )
-                label = meta.select(".release-label a")[0].string
-                if label.lower() not in config.SEARCH_EXCLUDED_LABELS:
-                    releases[rls_id] = (
-                        IdentData(artists, title, None, None, "WEB"),
-                        self.format_result(artists, title, label),
-                    )
-            except (TypeError, IndexError) as e:
-                raise ScrapeError("Failed to parse scraped search results.") from e
-            if len(releases) == limit:
-                break
+        soup = await self.create_soup(self.search_url, params={"q": searchstr})
+        try:
+            script_tag = soup.find("script", id="__NEXT_DATA__")
+            if not script_tag:
+                raise ScrapeError("Could not find Next.js data script tag")
+            
+            data = json.loads(script_tag.string)
+            search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]
+            for result in search_results:
+                try:
+                    rls_id = result["release_id"]
+                    
+                    # Filter artists to get only main artists (not remixers)
+                    main_artists = [a["artist_name"] for a in result["artists"] 
+                                if a["artist_type_name"] == "Artist"]
+                    
+                    title = result["release_name"]
+                    artists = (", ".join(main_artists) if len(main_artists) < 4 
+                             else config.VARIOUS_ARTIST_WORD)
+                    label = result["label"]["label_name"]
+                    
+                    if label.lower() not in config.SEARCH_EXCLUDED_LABELS:
+                        releases[rls_id] = (
+                            IdentData(artists, title, None, None, "WEB"),
+                            self.format_result(artists, title, label),
+                        )
+                except (KeyError, IndexError) as e:
+                    raise ScrapeError("Failed to parse search result item") from e
+                
+                if len(releases) == limit:
+                    break
+                    
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Failed to parse scraped search results") from e
+            
         return "Beatport", releases

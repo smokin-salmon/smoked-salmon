@@ -5,7 +5,7 @@ import click
 from salmon.errors import ScrapeError
 from salmon.tagger.sources import (
     bandcamp,
-    #beatport,
+    beatport,
     deezer,
     discogs,
     itunes,
@@ -21,7 +21,7 @@ METASOURCES = {
     "Junodownload": junodownload,
     "Deezer": deezer,
     "Discogs": discogs,
-    #"Beatport": beatport,
+    "Beatport": beatport,
     "Qobuz": qobuz,
     "Tidal": tidal,
     "Bandcamp": bandcamp,  # Must be last due to the catch-all nature of its URLs.
