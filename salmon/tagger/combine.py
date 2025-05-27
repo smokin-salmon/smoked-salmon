@@ -141,11 +141,21 @@ def sort_metadatas(metadatas):
 
 
 def _extract_remixers_from_title(title):
+    # Mix types that don't indicate a remixer when alone
+    common_mix_types = {
+        "original", "extended", "radio", "club", "instrumental",
+        "acoustic", "album", "vocal", "main", "dub", "edit"
+    }
+    
     # Match patterns like (Remixer Remix), (Remixer Mix), (Remixer Radio Mix), etc.
-    match = re.search(r"\((.*?)\s+(Club Mix|Radio Mix|Remix|Mix)\)", title, re.IGNORECASE)
+    # Also matches compound mix types like "Vocal Mix", "Club Mix", etc.
+    match = re.search(r"\((.*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*(?:Remix|Mix|Edit)\)", title, re.IGNORECASE)
     if match:
-        remixer = match.group(1).strip()
-        return [(remixer, "remixer")]
+        remixers = match.group(1).strip()
+        # Split on common delimiters and strip each name
+        remixer_list = [r.strip() for r in re.split(r'\s*(?:&|,|/|;|\+)\s*', remixers)]
+        # Filter out common mix types and return remaining as remixers
+        return [(r, "remixer") for r in remixer_list if r.lower() not in common_mix_types]
     return []
 
 
