@@ -1,3 +1,16 @@
+__version__ = "0.9.4.2"
+
+"""
+Changelog for version 0.9.4.2 (2025-05-27):
+
+## What's Changed
+* Fix Juno feat artists parsing by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/86
+* Fix uploading tracks with no album tags (crash)
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.1...0.9.4.2
+"""
+
 __version__ = "0.9.4.1"
 
 """
