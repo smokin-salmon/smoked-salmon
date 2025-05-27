@@ -389,7 +389,7 @@ def append_remixers_to_track_titles(data):
     for dnum, disc in data.items():
         for tnum, track in disc.items():
             remix_artists = [a for a, i in track["artists"] if i == "remixer"]
-            if "Remix" not in track["title"]:
+            if not any(x in track["title"] for x in ("Remix", "Mix")):
                 if len(remix_artists) >= config.VARIOUS_ARTIST_THRESHOLD:
                     data[dnum][tnum]["title"] += " (Remixed)"
                 elif remix_artists:
