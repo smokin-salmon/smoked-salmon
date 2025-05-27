@@ -1,6 +1,6 @@
 # flake8: noqa
 from salmon.sources.bandcamp import BandcampBase
-#from salmon.sources.beatport import BeatportBase
+from salmon.sources.beatport import BeatportBase
 from salmon.sources.deezer import DeezerBase
 from salmon.sources.discogs import DiscogsBase
 from salmon.sources.itunes import iTunesBase
@@ -11,7 +11,7 @@ from salmon.sources.tidal import TidalBase
 
 SOURCE_ICONS = {
     "Bandcamp": "https://ptpimg.me/91oo89.png",
-    #"Beatport": "https://ptpimg.me/5hwjpv.png",
+    "Beatport": "https://ptpimg.me/5hwjpv.png",
     "Deezer": "https://ptpimg.me/m265v2.png",
     "Discogs": "https://ptpimg.me/13y32k.png",
     "iTunes": "https://ptpimg.me/0z2x90.png",
