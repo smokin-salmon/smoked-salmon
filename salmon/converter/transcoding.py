@@ -79,10 +79,10 @@ def _transcode_files(old_path, new_path, bitrate):
     files = _get_files_to_handle(old_path)
     files_left = len([f for f in files if f.lower().endswith(".flac")]) - 1
     files = iter(sorted(files))
-
-    transcoding = True
-    while transcoding:
-        transcoding = False
+    
+    has_pending_files = True
+    while has_pending_files or any(t is not None for t in THREADS):
+        # Process completed threads
         for i, thread in enumerate(THREADS):
             if thread and thread.poll() is not None:
                 if thread.poll() != 0:
@@ -93,12 +93,15 @@ def _transcode_files(old_path, new_path, bitrate):
                     raise click.Abort
                 with contextlib.suppress(Exception):
                     thread.kill()
+                THREADS[i] = None
 
-            if not thread or thread.poll() is not None:
+            # Start new transcoding if this thread slot is free and we have files
+            if (not thread or thread.poll() is not None) and has_pending_files:
                 try:
                     file_ = next(files)
                 except StopIteration:
-                    break
+                    has_pending_files = False
+                    continue
 
                 output = file_.replace(old_path, new_path)
                 if file_.lower().endswith(".flac"):
@@ -111,7 +114,6 @@ def _transcode_files(old_path, new_path, bitrate):
                     _create_path(output)
                     copyfile(file_, output)
                     click.secho(f"Copied {os.path.basename(file_)}")
-            transcoding = True
         time.sleep(0.1)
 
 
