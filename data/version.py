@@ -1,3 +1,15 @@
+__version__ = "0.9.4.1"
+
+"""
+Changelog for version 0.9.4.1 (2025-05-27):
+
+## What's Changed
+* Use beatport track_id instead of label_track_identifier by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/85
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4...0.9.4.1
+"""
+
 __version__ = "0.9.4"
 
 """
