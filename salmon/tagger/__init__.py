@@ -95,7 +95,7 @@ def tag(path, source, encoding, overwrite, auto_rename):
     download_cover_if_nonexistent(path, metadata["cover"])
     tags = check_tags(path)
     path = rename_folder(path, metadata, auto_rename)
-    rename_files(path, tags, metadata, auto_rename)
+    rename_files(path, tags, metadata, auto_rename, None)
     check_folder_structure(path, scene=False)
     click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
 
