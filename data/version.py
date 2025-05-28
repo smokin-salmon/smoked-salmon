@@ -1,3 +1,18 @@
+__version__ = "0.9.4.3"
+
+"""
+Changelog for version 0.9.4.3 (2025-05-28):
+
+Added two new image hosters: oeimg and ptscreens. You will need to register on their site, and provide your API Key in your `config.py` file (`OEIMG_KEY` and `PTSCREENS_KEY`).
+Also removed imgur as an option, due to its autoremoval policy making it unsuitable for this use case.
+
+## What's Changed
+* Add new image providers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/87
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.2...0.9.4.3
+"""
+
 __version__ = "0.9.4.2"
 
 """
