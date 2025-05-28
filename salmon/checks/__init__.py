@@ -1,12 +1,9 @@
 import os
-from pathlib import Path
 
 import click
-from heybrochecklog import format_score, format_translation
-from heybrochecklog.score import score_log
-from heybrochecklog.translate import translate_log
 
 from salmon.checks.integrity import handle_integrity_check
+from salmon.checks.logs import check_log_cambia
 from salmon.checks.mqa import check_mqa
 from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
@@ -20,41 +17,29 @@ def check():
 
 @check.command()
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
-@click.option("--score-only", "-s", is_flag=True, help="Print only the score")
-@click.option(
-    "--translate", "-t", is_flag=True, help="Translate and print log alongside score"
-)
-def log(path, score_only, translate):
-    """Check the score of (and translate) log file(s)"""
+def log(path):
+    """Check the score of log file(s)"""
     if os.path.isfile(path):
-        _check_log(path, score_only, translate)
+        _check_log(path)
     elif os.path.isdir(path):
         for root, _, figles in os.walk(path):
             for f in figles:
                 if f.lower().endswith(".log"):
                     filepath = os.path.join(root, f)
-                    click.secho(f"\nScoring {path}...", fg="cyan")
-                    _check_log(filepath, score_only, translate)
+                    click.secho(f"\nScoring {filepath}...", fg="cyan")
+                    _check_log(filepath)
 
 
-def _check_log(path, score_only, translate):
-    figle = Path(path)
-    scored_log = score_log(figle, markup=False)
-    if score_only:
-        if scored_log["unrecognized"]:
-            return click.secho("Unrecognized")
-        return click.echo(scored_log["score"])
-
+def _check_log(path):
     try:
-        click.echo(format_score(path, scored_log, markup=False))
-        if translate:
-            translated_log = translate_log(figle)
-            click.secho(
-                "\n---------------------------------------------------\n"
-                + format_translation(path, translated_log)
-            )
-    except UnicodeEncodeError as e:
-        click.secho(f"Could not encode logpath: {e}")
+        check_log_cambia(path, os.path.dirname(path))
+    except Exception as e:
+        if "Edited logs!" in str(e):
+            click.secho("Error: Edited logs detected!", fg="red", bold=True)
+        elif "CRC Mismatch!" in str(e):
+            click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+        else:
+            click.secho(f"Error checking log: {e}", fg="red")
 
 
 @check.command()

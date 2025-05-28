@@ -15,6 +15,7 @@ from salmon.checks.integrity import (
     format_integrity,
     sanitize_integrity,
 )
+from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
@@ -162,6 +163,11 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help='Skip check for MQA marker (on first file only)',
 )
+@click.option(
+    "--skip-log-check",
+    is_flag=True,
+    help='Skip checking CD logs',
+)
 def up(
     path,
     group_id,
@@ -182,6 +188,7 @@ def up(
     source_url,
     yyy,
     skip_mqa,
+    skip_log_check,
 ):
     """Command to upload an album folder to a Gazelle Site."""
     if yyy:
@@ -221,6 +228,7 @@ def up(
         auto_rename=auto_rename,
         skip_up=skip_up,
         skip_mqa=skip_mqa,
+        skip_log_check=skip_log_check,
     )
 
 
@@ -244,6 +252,7 @@ def upload(
     auto_rename=False,
     skip_up=False,
     skip_mqa=False,
+    skip_log_check=False,
 ):
     """Upload an album folder to Gazelle Site
     Offer the choice to upload to another tracker after completion."""
@@ -269,7 +278,7 @@ def upload(
 
     try:
         if not skip_mqa:
-            click.secho("Checking for MQA release (first file only)", fg="yellow", bold=True)
+            click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
             mqa_test(path)
             click.secho("No MQA release detected", fg="green")
 
@@ -279,10 +288,19 @@ def upload(
                         click.style(
                             "\n24bit detected. Do you want to check whether might be upconverted?",
                             fg="magenta"),
-                        default=True,):
+                        default=True):
                     upload_upconvert_test(path)
             else:
                 upload_upconvert_test(path)
+                
+        if source == "CD" and not skip_log_check:
+            click.secho("\nChecking logs", fg="green")
+            for root, _, files in os.walk(path):
+                for f in files:
+                    if f.lower().endswith(".log"):
+                        filepath = os.path.join(root, f)
+                        click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
+                        check_log_cambia(filepath, path)
 
         if group_id is None:
             searchstrs = generate_dupe_check_searchstrs(

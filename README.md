@@ -28,12 +28,19 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 Installation instructions can be found on the [Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Installation).
 
 ### 🔹 Manual Installation  
-Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
+Requires Python 3.11+ and <3.12 and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
 
-1. Install system packages and uv:
-    ```bash
-    sudo apt install sox flac mp3val git wget curl lame
+1. Install system packages and uv:    ```bash
+    sudo apt install sox flac mp3val curl unzip lame
     curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+Install Cambia (for log checking):
+    ```bash
+    # Currently only x86_64/amd64 systems are supported:
+    mkdir -p ~/.local/bin && \
+    wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest && \
+    chmod +x ~/.local/bin/cambia
     ```
 
 If you want to enable spectrals compression (~30% gain in size), you also need to install [oxipng](https://github.com/shssoichiro/oxipng). Follow the installation instructions on their repository. On Debian/Ubuntu systems, you can typically install it with (check if this is the latest version):
