@@ -1,3 +1,13 @@
+__version__ = "0.9.4.5"
+
+"""
+Changelog for version 0.9.4.5 (2025-05-28):
+
+Fix docker build
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.4...0.9.4.5
+"""
+
 __version__ = "0.9.4.4"
 
 """
