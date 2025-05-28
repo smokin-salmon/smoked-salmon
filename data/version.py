@@ -1,3 +1,15 @@
+__version__ = "0.9.4.6"
+
+"""
+Changelog for version 0.9.4.6 (2025-05-28):
+
+## What's Changed
+* Fix tag crash due to rename_files refactoring by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/91
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.5...0.9.4.6
+"""
+
 __version__ = "0.9.4.5"
 
 """
