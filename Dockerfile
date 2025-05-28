@@ -8,20 +8,19 @@ WORKDIR /app
 RUN ARCH=$(dpkg --print-architecture) && \
     apt-get update && apt-get install -y --no-install-recommends \
     sox flac mp3val curl nano vim-tiny \
-    ca-certificates lame && \
+    ca-certificates lame && rm -rf /var/lib/apt/lists/* && \
     if [ "$ARCH" = "amd64" ]; then \
         wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
-        dpkg -i oxipng_9.1.4-1_amd64.deb && \
+        dpkg -i oxipng_9.1.4-1_amd64.deb; \
         wget -O /usr/local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest; \
+        chmod +x /usr/local/bin/cambia; \
     elif [ "$ARCH" = "arm64" ]; then \
         wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_arm64.deb && \
-        dpkg -i oxipng_9.1.4-1_arm64.deb && \
+        dpkg -i oxipng_9.1.4-1_arm64.deb; \
         echo "No arm64 build of cambia available yet"; \
     else \
         echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi && \
-    chmod +x /usr/local/bin/cambia && \
-    rm -rf /var/lib/apt/lists/*
+    fi
 
 # Ensure the cache directory is writable by any user
 RUN mkdir -p /.cache/uv && chmod -R 777 /.cache/uv
