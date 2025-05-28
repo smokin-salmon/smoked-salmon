@@ -1,3 +1,18 @@
+__version__ = "0.9.4.4"
+
+"""
+Changelog for version 0.9.4.4 (2025-05-28):
+
+CD uploads will now automatically check for logs (score, edited logs, matching CRC with files).
+You can pass `--skip-log-check` to bypass that check.
+
+## What's Changed
+* Change logchecker to more recent Cambia by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/89
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.3...0.9.4.4
+"""
+
 __version__ = "0.9.4.3"
 
 """
