@@ -1,9 +1,6 @@
 import config as user_config
 
 DEFAULT_VALUES = {
-    "IMGUR_CLIENT_ID": None,
-    "IMGUR_CLIENT_SECRET": None,
-    "IMGUR_REFRESH_TOKEN": None,
     "SIMULTANEOUS_THREADS": 3,
     "USER_AGENT": "salmon uploading tools",
     "FOLDER_TEMPLATE": "{artists} - {title} ({year}) [{source} {format}] {{{label}}}",
@@ -34,6 +31,8 @@ DEFAULT_VALUES = {
     "COVER_UPLOADER": "ptpimg",
     "SPECS_UPLOADER": "ptpimg",
     "PTPIMG_KEY": None,
+    "PTSCREENS_KEY": None,
+    "OEIMG_KEY": None,
     "ICONS_IN_DESCRIPTIONS": False,
     "FULLWIDTH_REPLACEMENTS": False,
     "NATIVE_SPECTRALS_VIEWER": False,
