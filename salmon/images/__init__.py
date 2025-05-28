@@ -14,9 +14,9 @@ loop = asyncio.get_event_loop()
 
 HOSTS = {
     "ptpimg": ptpimg,
-    "imgur": imgur,
     "emp": emp,
     "catbox": catbox,
+    "ptscreens": ptscreens,
 }
 
 

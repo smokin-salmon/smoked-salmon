@@ -1,9 +1,6 @@
 import config as user_config
 
 DEFAULT_VALUES = {
-    "IMGUR_CLIENT_ID": None,
-    "IMGUR_CLIENT_SECRET": None,
-    "IMGUR_REFRESH_TOKEN": None,
     "SIMULTANEOUS_THREADS": 3,
     "USER_AGENT": "salmon uploading tools",
     "FOLDER_TEMPLATE": "{artists} - {title} ({year}) [{source} {format}] {{{label}}}",
