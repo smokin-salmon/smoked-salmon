@@ -19,7 +19,7 @@ OPS_DOTTORRENTS_DIR = None
 # ===============================
 # IMAGE UPLOAD SETTINGS
 # ===============================
-# Image hosters: ptpimg, ptscreens, catbox, emp (not tested recently)
+# Image hosters: ptpimg, ptscreens, oeimg, catbox, emp (not tested recently)
 IMAGE_UPLOADER = "ptpimg"
 COVER_UPLOADER = "ptpimg"
 SPECS_UPLOADER = "ptpimg"
@@ -28,6 +28,8 @@ SPECS_UPLOADER = "ptpimg"
 PTPIMG_KEY = 'api_key'
 # ptscreens API key (log into ptscreens, settings, API)
 PTSCREENS_KEY = 'api_key'
+# oeimg API key (log into imgoe, settings, API)
+OEIMG_KEY = 'api_key'
 
 # Remove downloaded cover images that are created in source folder, when one does not exist
 REMOVE_AUTO_DOWNLOADED_COVER_IMAGE = False

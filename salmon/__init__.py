@@ -32,6 +32,7 @@ DEFAULT_VALUES = {
     "SPECS_UPLOADER": "ptpimg",
     "PTPIMG_KEY": None,
     "PTSCREENS_KEY": None,
+    "OEIMG_KEY": None,
     "ICONS_IN_DESCRIPTIONS": False,
     "FULLWIDTH_REPLACEMENTS": False,
     "NATIVE_SPECTRALS_VIEWER": False,
