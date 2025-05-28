@@ -13,6 +13,7 @@ RUN ARCH=$(dpkg --print-architecture) && \
         wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
         dpkg -i oxipng_9.1.4-1_amd64.deb && \
         wget -O /usr/local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest; \
+        chmod +x /usr/local/bin/cambia && \
     elif [ "$ARCH" = "arm64" ]; then \
         wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_arm64.deb && \
         dpkg -i oxipng_9.1.4-1_arm64.deb && \
@@ -20,7 +21,6 @@ RUN ARCH=$(dpkg --print-architecture) && \
     else \
         echo "Unsupported architecture: $ARCH" && exit 1; \
     fi && \
-    chmod +x /usr/local/bin/cambia && \
     rm -rf /var/lib/apt/lists/*
 
 # Ensure the cache directory is writable by any user
