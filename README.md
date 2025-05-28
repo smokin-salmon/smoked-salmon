@@ -28,7 +28,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 Installation instructions can be found on the [Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Installation).
 
 ### 🔹 Manual Installation  
-Requires Python 3.12+ and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
+Requires Python 3.11+ and <3.12 and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
 
 1. Install system packages and uv:    ```bash
     sudo apt install sox flac mp3val curl unzip lame
