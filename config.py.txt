@@ -19,12 +19,15 @@ OPS_DOTTORRENTS_DIR = None
 # ===============================
 # IMAGE UPLOAD SETTINGS
 # ===============================
+# Image hosters: ptpimg, ptscreens, catbox, emp (not tested recently)
 IMAGE_UPLOADER = "ptpimg"
 COVER_UPLOADER = "ptpimg"
 SPECS_UPLOADER = "ptpimg"
 
 # ptpimg API key (log into ptpimg, developpers tools, go to the Elements tab, and search for 'api_key')
 PTPIMG_KEY = 'api_key'
+# ptscreens API key (log into ptscreens, settings, API)
+PTSCREENS_KEY = 'api_key'
 
 # Remove downloaded cover images that are created in source folder, when one does not exist
 REMOVE_AUTO_DOWNLOADED_COVER_IMAGE = False
