@@ -3,6 +3,7 @@ import config as user_config
 DEFAULT_VALUES = {
     "SIMULTANEOUS_THREADS": 3,
     "USER_AGENT": "salmon uploading tools",
+    "TMP_DIR": None,
     "FOLDER_TEMPLATE": "{artists} - {title} ({year}) [{source} {format}] {{{label}}}",
     "FILE_TEMPLATE": "{tracknumber}. {artist} - {title}",
     "SEARCH_LIMIT": 3,

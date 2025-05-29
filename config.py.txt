@@ -9,6 +9,9 @@
 DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
 DISABLE_HARDLINKS = False
 
+# Directory for temporary files (spectral images, etc). If None or empty, files will be created in the album folder
+TMP_DIR = None
+
 # Can be a watch folder for your torrent client
 DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
 
