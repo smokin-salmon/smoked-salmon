@@ -267,7 +267,7 @@ def generate_t_description(
 ):
     """
     Generate the torrent description. Add information about each file, and
-    add the specrals URLs if any were specified.
+    add the spectrals URLs if any were specified.
     """
     description = ""
     if spectral_urls:
