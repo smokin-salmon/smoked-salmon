@@ -10,7 +10,14 @@ DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
 DISABLE_HARDLINKS = False
 
 # Directory for temporary files (spectral images, etc). If None or empty, files will be created in the album folder
+# This should be a dedicated directory used only for Salmon's temporary files
+# Example: '/path/to/salmon/tmp'
 TMP_DIR = None
+
+# If True, clean the temporary directory at startup to prevent leftover files from accumulating
+# Only files in subdirectories will be cleaned, preserving the TMP_DIR itself
+# WARNING: use this feature with caution, as it will delete all files in the TMP_DIR
+CLEAN_TMP_DIR = False
 
 # Can be a watch folder for your torrent client
 DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
