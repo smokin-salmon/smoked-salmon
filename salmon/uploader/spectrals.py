@@ -229,7 +229,14 @@ def _compress_spectrals(spectrals_path):
 
 def create_specs_folder(path):
     """Create the spectrals folder."""
-    spectrals_path = os.path.join(path, "Spectrals")
+    # Use TMP_DIR if configured, otherwise use the album folder
+    if config.TMP_DIR and os.path.isdir(config.TMP_DIR):
+        # Create a unique subfolder for this album
+        base_name = os.path.basename(path.rstrip('/'))
+        spectrals_path = os.path.join(config.TMP_DIR, f"spectrals_{base_name}")
+    else:
+        spectrals_path = os.path.join(path, "Spectrals")
+        
     if os.path.isdir(spectrals_path):
         shutil.rmtree(spectrals_path)
     os.mkdir(spectrals_path)
