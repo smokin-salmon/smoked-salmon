@@ -55,6 +55,7 @@ def _validate_folder_is_lossless(path):
                 raise click.Abort
 
 def _warn_for_scene(path): # See https://github.com/smokin-salmon/smoked-salmon/issues/59 
+    show_scene_warning = False
     for _root, _, files in os.walk(path):
         for f in files:
             ext = os.path.splitext(f)[1].lower()
