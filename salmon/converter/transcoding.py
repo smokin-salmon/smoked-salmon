@@ -10,6 +10,7 @@ import click
 import mutagen
 
 from salmon import config
+from salmon.common.constants import *
 
 THREADS = [None] * config.SIMULTANEOUS_THREADS
 COMMANDS = {
@@ -19,20 +20,6 @@ COMMANDS = {
     "V0": "flac --decode --stdout {input_} | lame -V 0 -q 0 --add-id3v2 "
         "--tt {tt} --ta {ta} --ty {ty} --tn {tn} --tl {tl} --tc {tc} --tg {tg} "
         "--tv TPUB={label} - {output}",
-}
-FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
-LOSSLESS_FOLDER_REGEX = re.compile(r"Lossless", flags=re.IGNORECASE)
-LOSSY_EXTENSION_LIST = {
-    ".mp3",
-    ".m4a",  # Fuck ALAC.
-    ".ogg",
-    ".opus",
-}
-FILES_THAT_SHOULD_NOT_BE_SKIPPED_REGEX = re.compile(r"^(cover|folder)\.(jpe?g|png)$", flags=re.IGNORECASE)
-SCENE_EXTENSION_LIST = {
-    ".nfo",
-    ".sfv",
-    ".md5"
 }
 
 def transcode_folder(path, bitrate, skip_unneeded_files):

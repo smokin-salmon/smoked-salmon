@@ -31,8 +31,9 @@ def validate_bitrate(ctx, param, value):
 )
 @click.option(
     "--skip-unneeded-files",
+    "-suf",
     is_flag=True,
-    help='Extraneous files (for example scans, cues, logs) will be skipped when copying, leaving only music and cover art.' # If it's nfo / scene files, alert user
+    help='Extraneous files (for example scans, cues, logs) will be skipped when copying, leaving only music and cover art.'
 )
 def transcode(path, bitrate,skip_unneeded_files):
     """Transcode a dir of FLACs into "perfect" MP3"""
@@ -43,6 +44,12 @@ def transcode(path, bitrate,skip_unneeded_files):
 @click.argument(
     "path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1
 )
-def downconv(path):
+@click.option(
+    "--skip-unneeded-files",
+    "-suf",
+    is_flag=True,
+    help='Extraneous files (for example scans, cues, logs) will be skipped when copying, leaving only music and cover art.'
+)
+def downconv(path, skip_unneeded_files):
     """Downconvert a dir of 24bit FLACs to 16bit"""
-    convert_folder(path)
+    convert_folder(path, skip_unneeded_files)
