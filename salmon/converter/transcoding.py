@@ -37,12 +37,12 @@ SCENE_EXTENSION_LIST = {
 
 def transcode_folder(path, bitrate, skip_unneeded_files):
     _validate_folder_is_lossless(path)
-    _warn_for_scene(path)
     new_path = _generate_transcode_path_name(path, bitrate)
     if os.path.isdir(new_path):
         return click.secho(
             f"{new_path} already exists, please delete it to re-transcode.", fg="red"
         )
+    _warn_for_scene(path)
     _transcode_files(path, new_path, bitrate, skip_unneeded_files)
 
 
