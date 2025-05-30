@@ -99,6 +99,10 @@ def _convert_single_file(file_, output, sample_rate, files_left):
         output=shlex.quote(output),
         rate=_get_final_sample_rate(sample_rate),
     )
+
+    if os.name == "nt" : 
+        command = command.replace("\'", "\"") # Thanks Bill, very cool.
+
     return subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
     )

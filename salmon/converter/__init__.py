@@ -29,9 +29,14 @@ def validate_bitrate(ctx, param, value):
     required=True,
     help=f'Bitrate to transcode to ({", ".join(VALID_TRANSCODE_BITRATES)})',
 )
-def transcode(path, bitrate):
+@click.option(
+    "--skip-unneeded-files",
+    is_flag=True,
+    help='Extraneous files (for example scans, cues, logs) will be skipped when copying, leaving only music and cover art.' # If it's nfo / scene files, alert user
+)
+def transcode(path, bitrate,skip_unneeded_files):
     """Transcode a dir of FLACs into "perfect" MP3"""
-    transcode_folder(path, bitrate)
+    transcode_folder(path, bitrate,skip_unneeded_files)
 
 
 @commandgroup.command()

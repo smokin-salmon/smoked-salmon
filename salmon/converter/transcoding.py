@@ -28,16 +28,22 @@ LOSSY_EXTENSION_LIST = {
     ".ogg",
     ".opus",
 }
+FILES_THAT_SHOULD_NOT_BE_SKIPPED_REGEX = re.compile(r"^(cover|folder)\.(jpe?g|png)$", flags=re.IGNORECASE)
+SCENE_EXTENSION_LIST = {
+    ".nfo",
+    ".sfv",
+    ".md5"
+}
 
-
-def transcode_folder(path, bitrate):
+def transcode_folder(path, bitrate, skip_unneeded_files):
     _validate_folder_is_lossless(path)
+    _warn_for_scene(path)
     new_path = _generate_transcode_path_name(path, bitrate)
     if os.path.isdir(new_path):
         return click.secho(
             f"{new_path} already exists, please delete it to re-transcode.", fg="red"
         )
-    _transcode_files(path, new_path, bitrate)
+    _transcode_files(path, new_path, bitrate, skip_unneeded_files)
 
 
 def _validate_folder_is_lossless(path):
@@ -48,6 +54,15 @@ def _validate_folder_is_lossless(path):
                 click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
                 raise click.Abort
 
+def _warn_for_scene(path): # See https://github.com/smokin-salmon/smoked-salmon/issues/59 
+    for _root, _, files in os.walk(path):
+        for f in files:
+            ext = os.path.splitext(f)[1].lower()
+            if ext in SCENE_EXTENSION_LIST:
+                click.secho(f"A scene-like file was found in the folder ({f}).", fg="yellow")
+                show_scene_warning = True
+    if show_scene_warning:
+        click.secho("Warning: this may be a scene release. Manual work may be required after transcoding.", fg="yellow")
 
 def _get_files_to_handle(path):
     files_to_handle = []
@@ -75,7 +90,7 @@ def _generate_transcode_path_name(path, bitrate):
     return os.path.join(os.path.dirname(path), foldername)
 
 
-def _transcode_files(old_path, new_path, bitrate):
+def _transcode_files(old_path, new_path, bitrate, skip_unneeded_files):
     files = _get_files_to_handle(old_path)
     files_left = len([f for f in files if f.lower().endswith(".flac")]) - 1
     files = iter(sorted(files))
@@ -104,16 +119,20 @@ def _transcode_files(old_path, new_path, bitrate):
                     continue
 
                 output = file_.replace(old_path, new_path)
+                filename = os.path.basename(file_)
+
                 if file_.lower().endswith(".flac"):
                     output = re.sub(r".flac$", ".mp3", output, flags=re.IGNORECASE)
                     THREADS[i] = _transcode_single_file(
                         file_, output, bitrate, files_left
                     )
                     files_left -= 1
-                else:
+                elif not skip_unneeded_files or FILES_THAT_SHOULD_NOT_BE_SKIPPED_REGEX.match(filename):
                     _create_path(output)
                     copyfile(file_, output)
-                    click.secho(f"Copied {os.path.basename(file_)}")
+                    click.secho(f"Copied {filename}")
+                else:
+                    click.secho(f"Skipped {filename}")
         time.sleep(0.1)
 
 
@@ -130,6 +149,10 @@ def _transcode_single_file(file_, output, bitrate, files_left):
         command = COMMANDS[bitrate].format(
             input_=shlex.quote(file_), output=shlex.quote(output), **_get_tags(file_)
         )
+
+    if os.name == "nt" : 
+        command = command.replace("\'", "\"") # Thanks Bill, very cool.
+
     return subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
     )
