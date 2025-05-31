@@ -1,4 +1,33 @@
-import config as user_config
+import os
+import tomllib
+
+from platformdirs import user_config_dir
+
+# import config as user_config
+
+APPNAME = "smoked-salmon"
+APPAUTHOR = "ligh7s"
+
+
+def setup_default_config():
+    config_dir_path = os.path.join(user_config_dir(APPNAME, APPAUTHOR), "config.toml")
+    root_config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.toml")
+    # TODO: should this copy over config.default.toml to the config directory?
+    if os.path.exists(config_dir_path):
+        config_path = config_dir_path
+    elif os.path.exists(root_config_path):
+        config_path = root_config_path
+    else:
+        raise ConfigError("Could not find config") from None
+
+    with open(config_path, "rb") as f:
+        cfg_toml = tomllib.load(f)
+
+    return cfg_toml
+
+
+user_config_toml = setup_default_config()
+
 
 DEFAULT_VALUES = {
     "SIMULTANEOUS_THREADS": 3,
@@ -9,10 +38,10 @@ DEFAULT_VALUES = {
     "SEARCH_EXCLUDED_LABELS": {"edm comps"},
     "BLACKLISTED_GENRES": {"Soundtrack", "Asian Music"},
     "FLAC_COMPRESSION_LEVEL": 8,
-    "TIDAL_TOKEN": None,    # Override in config.py
+    "TIDAL_TOKEN": None,  # Override in config.py
     "TIDAL_SEARCH_REGIONS": ["DE", "NZ", "US", "GB"],
     "TIDAL_FETCH_REGIONS": ["DE", "NZ", "US", "GB"],
-    "QOBUZ_APP_ID": None,   # Override in config.py
+    "QOBUZ_APP_ID": None,  # Override in config.py
     "QOBUZ_USER_AUTH_TOKEN": None,  # Override in config.py
     "LOWERCASE_COVER": False,
     "VARIOUS_ARTIST_THRESHOLD": 4,
@@ -77,14 +106,12 @@ class ConfigError(Exception):
 class Config:
     def __getattr__(self, name):
         try:
-            return getattr(user_config, name)
-        except AttributeError:
+            return user_config_toml[name]
+        except KeyError:
             try:
                 return DEFAULT_VALUES[name]
             except KeyError:
-                raise ConfigError(
-                    f"You are missing {name} in your config. Check the wiki."
-                ) from None
+                raise ConfigError(f"You are missing {name} in your config. Check the wiki.") from None
 
 
 config = Config()
