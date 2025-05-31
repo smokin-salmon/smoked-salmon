@@ -1,5 +1,5 @@
 import time
-from random import choice
+from random import randint
 
 import click
 
@@ -12,10 +12,12 @@ Ay
 Fonsi
 DY
 Oh
-Oh no, oh no
-Oh yeah
+Oh no
+Oh no
+Oh
+¡Hey yeah!
 Diridiri, dirididi Daddy
-Go
+¡Go!
 
 Sí, sabes que ya llevo un rato mirándote
 Tengo que bailar contigo hoy (DY)
@@ -118,8 +120,12 @@ def play():
 @play.command()
 def despacito():
     """This is so sad Alexa play Despacito"""
+    color_index = randint(0,5)
+
     for line in DESPACITO.split("\n"):
         for word in line.split():
-            click.secho(f"{word} ", fg=choice(COLORS), nl=False)
+            click.secho(f"{word} ", fg=COLORS[color_index], nl=False)
+            color_index = (color_index + randint(1,5)) % 6 # Colors cannot repeat
             time.sleep(0.2)
         click.echo()
+        time.sleep(0.4)

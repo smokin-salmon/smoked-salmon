@@ -31,7 +31,8 @@ def prepare_and_upload(
     spectral_ids,
     lossy_comment,
     request_id,
-    source_url
+    source_url,
+    exclude=None
 ):
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
@@ -62,7 +63,7 @@ def prepare_and_upload(
         )
     if not data['scene']:
         del data['scene']
-    torrent_path, torrent_file = generate_torrent(gazelle_site, path)
+    torrent_path, torrent_file = generate_torrent(gazelle_site, path, exclude)
     files = compile_files(path, torrent_file, metadata)
 
     click.secho("Uploading torrent...", fg="yellow")
@@ -200,7 +201,7 @@ def generate_catno(metadata):
     return ""
 
 
-def generate_torrent(gazelle_site, path):
+def generate_torrent(gazelle_site, path, exclude=None):
     """Call the dottorrent function to generate a torrent."""
     click.secho("Generating torrent file...", fg="yellow", nl=False)
     t = Torrent(
@@ -208,6 +209,7 @@ def generate_torrent(gazelle_site, path):
         trackers=[gazelle_site.announce],
         private=True,
         source=gazelle_site.site_string,
+        exclude=exclude,
     )
     t.generate()
     tpath = os.path.join(
@@ -267,7 +269,7 @@ def generate_t_description(
 ):
     """
     Generate the torrent description. Add information about each file, and
-    add the specrals URLs if any were specified.
+    add the spectrals URLs if any were specified.
     """
     description = ""
     if spectral_urls:
