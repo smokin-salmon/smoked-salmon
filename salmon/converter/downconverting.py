@@ -10,9 +10,9 @@ from shutil import copyfile
 import click
 
 from salmon import config
+from salmon.common.constants import FILES_THAT_SHOULD_NOT_BE_SKIPPED_REGEX, LOSSY_EXTENSION_LIST, SCENE_EXTENSION_LIST
 from salmon.errors import InvalidSampleRate
 from salmon.tagger.audio_info import gather_audio_info
-from salmon.common.constants import *
 
 THREADS = [None] * config.SIMULTANEOUS_THREADS
 COMMAND = "sox {input_} -G -b 16 {output} rate -v -L {rate} dither"

@@ -10,7 +10,13 @@ import click
 import mutagen
 
 from salmon import config
-from salmon.common.constants import *
+from salmon.common.constants import (
+    FILES_THAT_SHOULD_NOT_BE_SKIPPED_REGEX,
+    FLAC_FOLDER_REGEX,
+    LOSSLESS_FOLDER_REGEX,
+    LOSSY_EXTENSION_LIST,
+    SCENE_EXTENSION_LIST,
+)
 
 THREADS = [None] * config.SIMULTANEOUS_THREADS
 COMMANDS = {
