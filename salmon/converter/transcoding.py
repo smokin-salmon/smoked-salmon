@@ -1,13 +1,13 @@
 import contextlib
 import os
 import re
-import shlex
 import subprocess
 import time
 from shutil import copyfile
 
 import click
 import mutagen
+import oslex
 
 from salmon import config
 from salmon.common.constants import (
@@ -137,16 +137,12 @@ def _transcode_single_file(file_, output, bitrate, files_left):
     _create_path(output)
     try:
         command = COMMANDS[bitrate].format(
-            input_=shlex.quote(file_), output=shlex.quote(output)
-        )
+        input_=oslex.quote(file_), output=oslex.quote(output)
+    )
     except KeyError:
         command = COMMANDS[bitrate].format(
-            input_=shlex.quote(file_), output=shlex.quote(output), **_get_tags(file_)
-        )
-
-    if os.name == "nt" : 
-        command = command.replace("\'", "\"") # Thanks Bill, very cool.
-
+        input_=oslex.quote(file_), output=oslex.quote(output), **_get_tags(file_)
+    )
     return subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
     )
@@ -176,8 +172,8 @@ def _get_tags(file_):
     for key, tag_keys in tag_assignments.items():
         for tag_key in tag_keys:
             try:
-                tags[key] = shlex.quote(track.tags[tag_key][0])
+                tags[key] = oslex.quote(track.tags[tag_key][0])
             except (KeyError, IndexError):
                 if key not in tags or tags[key] != "''":
-                    tags[key] = "''"
+                    tags[key] = oslex.quote("")
     return tags

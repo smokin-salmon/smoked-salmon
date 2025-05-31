@@ -1,13 +1,13 @@
 import contextlib
 import os
 import re
-import shlex
 import subprocess
 import time
 from copy import copy
 from shutil import copyfile
 
 import click
+import oslex
 
 from salmon import config
 from salmon.common.constants import FILES_THAT_SHOULD_NOT_BE_SKIPPED_REGEX, LOSSY_EXTENSION_LIST, SCENE_EXTENSION_LIST
@@ -124,13 +124,10 @@ def _convert_single_file(file_, output, sample_rate, files_left):
     click.echo(f"Converting {os.path.basename(file_)} [{files_left} left to convert]")
     _create_path(output)
     command = COMMAND.format(
-        input_=shlex.quote(file_),
-        output=shlex.quote(output),
+        input_=oslex.quote(file_),
+        output=oslex.quote(output),
         rate=_get_final_sample_rate(sample_rate),
     )
-
-    if os.name == "nt" : 
-        command = command.replace("\'", "\"") # Thanks Bill, very cool.
 
     return subprocess.Popen(
         command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
