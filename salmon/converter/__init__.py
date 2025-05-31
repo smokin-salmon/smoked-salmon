@@ -33,7 +33,7 @@ def validate_bitrate(ctx, param, value):
     "--skip-unneeded-files",
     "-suf",
     is_flag=True,
-    help='Extraneous files (for example scans, cues, logs) will be skipped when copying, leaving only music and cover art.'
+    help='Extraneous files will be skipped when copying, leaving only music and cover art.'
 )
 def transcode(path, bitrate,skip_unneeded_files):
     """Transcode a dir of FLACs into "perfect" MP3"""
@@ -48,7 +48,7 @@ def transcode(path, bitrate,skip_unneeded_files):
     "--skip-unneeded-files",
     "-suf",
     is_flag=True,
-    help='Extraneous files (for example scans, cues, logs) will be skipped when copying, leaving only music and cover art.'
+    help='Extraneous files will be skipped when copying, leaving only music and cover art.'
 )
 def downconv(path, skip_unneeded_files):
     """Downconvert a dir of 24bit FLACs to 16bit"""

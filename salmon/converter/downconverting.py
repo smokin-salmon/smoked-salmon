@@ -59,7 +59,11 @@ def _generate_conversion_path_name(path):
 
     return os.path.join(os.path.dirname(path), foldername)
 
-def _validate_folder_is_lossless(path): # Duplicating a lot from transcoding.py, didn't want to create an ouroborous monstrosity by attempting to import from a file that imports from this file.
+# Duplicating a lot from transcoding.py, didn't want to create a monstrosity 
+# by attempting to import from a file that imports from this file.
+def _validate_folder_is_lossless(path): 
+ 
+    
     for _root, _, files in os.walk(path):
         for f in files:
             ext = os.path.splitext(f)[1].lower()
