@@ -1,11 +1,16 @@
+import shutil
 import sqlite3
-from os import listdir, path
+from os import listdir, makedirs, path
 
 import click
+from platformdirs import user_data_dir
 
 from salmon.common import commandgroup
+from salmon.config import APPNAME
 
-DB_PATH = path.abspath(path.join(path.dirname(path.dirname(__file__)), "smoked.db"))
+DB_DIR = user_data_dir(appname=APPNAME)
+DB_PATH = path.join(DB_DIR, "smoked.db")
+OLD_DB_PATH = path.abspath(path.join(path.dirname(path.dirname(__file__)), "smoked.db"))
 MIG_DIR = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "migrations"))
 
 
@@ -21,6 +26,12 @@ def migrate(list):
 
     current_version = get_current_version()
     ran_once = False
+    makedirs(DB_DIR, exist_ok=True)
+    if path.exists(OLD_DB_PATH):
+        click.secho(f"Moving existing smoked.db to {DB_PATH}...", fg="yellow")
+        shutil.move(OLD_DB_PATH, DB_PATH)
+    else:
+        click.secho(f"Connecting to database at {DB_PATH}...", fg="yellow")
     with sqlite3.connect(DB_PATH) as conn:
         for migration in sorted(f for f in listdir(MIG_DIR) if f.endswith(".sql")):
             try:
@@ -78,9 +89,13 @@ def list_migrations():
 
 
 def get_current_version():
-    if not path.isfile(DB_PATH):
-        return 0
-    with sqlite3.connect(DB_PATH) as conn:
+    current_path = DB_PATH
+    if not path.isfile(current_path):
+        if path.isfile(OLD_DB_PATH):
+            current_path = OLD_DB_PATH
+        else:
+            return 0
+    with sqlite3.connect(current_path) as conn:
         cursor = conn.cursor()
         try:
             cursor.execute("SELECT MAX(id) from version")

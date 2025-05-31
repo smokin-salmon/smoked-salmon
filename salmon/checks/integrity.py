@@ -4,7 +4,7 @@ import subprocess
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.common.figles import process_files
 
 FLAC_IMPORTANT_REGEXES = [
@@ -131,7 +131,7 @@ def _sanitize_flac(path):
     try:
         os.rename(path, path + ".corrupted")
         result = subprocess.run(
-            ["flac", f"-{config.FLAC_COMPRESSION_LEVEL}", path + ".corrupted", "-o", path],
+            ["flac", f"-{cfg.upload.compression.flac_compression_level}", path + ".corrupted", "-o", path],
             capture_output=True,
             text=True
         )

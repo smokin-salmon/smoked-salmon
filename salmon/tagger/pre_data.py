@@ -6,7 +6,7 @@ from copy import deepcopy
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.common import RE_FEAT, re_split
 from salmon.common.figles import _tracknumber_sort_key
 from salmon.constants import FORMATS, TAG_ENCODINGS
@@ -79,7 +79,7 @@ def parse_title(title):
     edition = None
     base = title.strip()
 
-    if config.STRIP_USELESS_VERSIONS:
+    if cfg.upload.formatting.strip_useless_versions:
         # Define patterns to strip and capture
         junk_pattern = re.compile(
             r"\s*\(*\b("

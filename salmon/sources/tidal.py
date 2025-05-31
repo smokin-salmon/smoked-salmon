@@ -1,7 +1,7 @@
 import json
 import re
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.sources.base import BaseScraper
 
@@ -15,7 +15,7 @@ class TidalBase(BaseScraper):
         r"^https*:\/\/.*?(?:tidal|wimpmusic)\.com.*?\/(album|track|playlist)\/([0-9a-z\-]+)"
     )
     release_format = "/album/{rls_id}"
-    get_params = {"token": config.TIDAL_TOKEN}
+    get_params = {"token": cfg.metadata.tidal.token}
 
     def __init__(self):
         self.country_code = None
@@ -51,8 +51,8 @@ class TidalBase(BaseScraper):
 
 
 def get_tidal_regions_to_fetch():
-    if config.TIDAL_FETCH_REGIONS:
-        return config.TIDAL_FETCH_REGIONS
+    if cfg.metadata.tidal.fetch_regions:
+        return cfg.metadata.tidal.fetch_regions
     else:
         try:
             raise ImportError

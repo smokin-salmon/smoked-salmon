@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
 
-from salmon import config
+from salmon import cfg
 
 
 def get_audio_files(path, sort_by_tracknumber=False):
@@ -59,7 +59,7 @@ def compress(filepath):
         subprocess.call(
             [
                 "flac",
-                f"-{config.FLAC_COMPRESSION_LEVEL}",
+                f"-{cfg.upload.compression.flac_compression_level}",
                 filepath,
                 "-o",
                 f"{filepath}.new",
@@ -72,7 +72,7 @@ def compress(filepath):
 
 
 def process_files(files, process_func, desc):
-    with ThreadPoolExecutor(max_workers=config.SIMULTANEOUS_THREADS) as executor:
+    with ThreadPoolExecutor(max_workers=cfg.upload.simultaneous_threads) as executor:
         futures = [executor.submit(process_func, file, idx) for idx, file in enumerate(files)]
         results = []
         for future in tqdm(as_completed(futures), total=len(files), desc=desc, colour="cyan"):

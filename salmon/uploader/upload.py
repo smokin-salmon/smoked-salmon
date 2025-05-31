@@ -5,7 +5,7 @@ import re
 import click
 from dottorrent import Torrent
 
-from salmon import config
+from salmon import cfg
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
 from salmon.errors import RequestError
@@ -195,7 +195,7 @@ def attach_logfiles(path):
 def generate_catno(metadata):
     if metadata.get("catno"):
         return metadata["catno"]
-    elif config.USE_UPC_AS_CATNO:
+    elif cfg.upload.compression.use_upc_as_catno:
         return metadata.get("upc", "")
     return ""
 
@@ -276,7 +276,7 @@ def generate_t_description(
     if not hybrid:
         track = next(iter(track_data.values()))
         if track["precision"]:
-            if config.ICONS_IN_DESCRIPTIONS:
+            if cfg.upload.description.icons_in_descriptions:
                 description += "[img]https://ptpimg.me/pu93q2.png[/img]"
             else:
                 description += "Encode Specifics:"
@@ -292,13 +292,13 @@ def generate_t_description(
     if metadata["date"]:
         description += f'Released on [b]{metadata["date"]}[/b]\n'
 
-    if config.INCLUDE_TRACKLIST_IN_T_DESC or hybrid:
+    if cfg.upload.description.include_tracklist_in_t_desc or hybrid:
         for filename, track in track_data.items():
             description += os.path.splitext(filename)[0]
             description += " [i]({})[/i]".format(
                 f'{track["duration"] // 60}:{track["duration"] % 60:02d}'
             )
-            if config.BITRATES_IN_T_DESC:
+            if cfg.upload.description.bitrates_in_t_desc:
                 description += " [{:.01f}kbps]".format(track["bit rate"] / 1000)
 
             if hybrid:
@@ -309,14 +309,14 @@ def generate_t_description(
             description += "\n"
         description += "\n"
 
-    if lossy_comment and config.LMA_COMMENT_IN_T_DESC:
+    if lossy_comment and cfg.upload.compression.lma_comment_in_t_desc:
         description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
 
     if source_url is not None:
         matched =  False
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(source_url):
-                if config.ICONS_IN_DESCRIPTIONS:
+                if cfg.upload.description.icons_in_descriptions:
                     description += (
                         f"[b]Source:[/b] [pad=0|3][url={source_url}][img]"
                         f"{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n\n"
@@ -348,7 +348,7 @@ def generate_source_links(metadata_urls, source_url=None):
         matched = False
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(url):
-                if config.ICONS_IN_DESCRIPTIONS:
+                if cfg.upload.description.icons_in_descriptions:
                     links.append(
                         f"[pad=0|3][url={url}][img]{SOURCE_ICONS[name]}[/img] "
                         f"{name}[/url][/pad]"
@@ -364,7 +364,7 @@ def generate_source_links(metadata_urls, source_url=None):
             if hostname:
                 unmatched_urls.append(f"[url={url}]{hostname.group(1)}[/url]")
 
-    result = " ".join(links) if config.ICONS_IN_DESCRIPTIONS else " | ".join(links)
+    result = " ".join(links) if cfg.upload.description.icons_in_description else " | ".join(links)
 
     if unmatched_urls:
         if links:

@@ -12,7 +12,7 @@ from os.path import dirname, join
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.common import flush_stdin, get_audio_files, prompt_async
 from salmon.common.figles import process_files
 from salmon.errors import (
@@ -25,7 +25,7 @@ from salmon.images import upload_spectrals as upload_spectral_imgs
 from salmon.web import create_app_async, spectrals
 
 loop = asyncio.get_event_loop()
-THREADS = [None] * config.SIMULTANEOUS_THREADS
+THREADS = [None] * cfg.upload.simultaneous_threads
 
 
 def check_spectrals(
@@ -155,7 +155,7 @@ def _generate_spectrals(path, files_li, spectrals_path, audio_info):
                             "Generating Spectrals")
     
     click.secho("Finished generating spectrals.", fg="green")
-    if config.COMPRESS_SPECTRALS:
+    if cfg.upload.compression.compress_spectrals:
         _compress_spectrals(spectrals_path)
 
     for track_num, filename in results:
@@ -229,10 +229,10 @@ def _compress_spectrals(spectrals_path):
 
 def get_spectrals_path(path):
     """Get the path to the spectrals folder for an album."""
-    if config.TMP_DIR and os.path.isdir(config.TMP_DIR):
+    if cfg.directory.tmp_dir and os.path.isdir(cfg.directory.tmp_dir):
         # Create a unique subfolder for this album
         base_name = os.path.basename(path.rstrip('/'))
-        return os.path.join(config.TMP_DIR, f"spectrals_{base_name}")
+        return os.path.join(cfg.directory.tmp_dir, f"spectrals_{base_name}")
     return os.path.join(path, "Spectrals")
 
 
@@ -257,7 +257,7 @@ def calculate_zoom_startpoint(track_data):
 
 def view_spectrals(spectrals_path, all_spectral_ids):
     """Open the generated spectrals in an image viewer."""
-    if not config.NATIVE_SPECTRALS_VIEWER:
+    if not cfg.upload.native_spectrals_viewer:
         loop.run_until_complete(
             _open_specs_in_web_server(spectrals_path, all_spectral_ids)
         )
@@ -291,7 +291,7 @@ def _open_specs_in_feh(spectrals_path):
         "-.",
         spectrals_path,
     ]
-    if config.FEH_FULLSCREEN:
+    if cfg.upload.feh_fullscreen:
         args.insert(4, "--fullscreen")
     with open(os.devnull, "w") as devnull:
         subprocess.Popen(args, stdout=devnull, stderr=devnull)
@@ -323,7 +323,7 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
             runner = await create_app_async()
         except WebServerIsAlreadyRunning:
             shutdown = False
-        url = f"http://{config.WEB_HOST}:{config.WEB_PORT}/spectrals"
+        url = f"http://{cfg.upload.web_interface.host}:{cfg.upload.web_interface.port}/spectrals"
         await prompt_async(
             click.style(
                 f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"
@@ -370,9 +370,9 @@ def upload_spectrals(spectrals_path, spectral_ids):
 def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
     """Ask which spectral IDs the user wants to upload."""
     while True:
-        ids = "*" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
+        ids = "*" if cfg.upload.yes_all and not force_prompt_lossy_master else click.prompt(
             click.style(
-                f"What spectral IDs would you like to upload to {config.SPECS_UPLOADER}? "
+                f"What spectral IDs would you like to upload to {cfg.image.specs_uploader}? "
                 "(space-separated list of IDs, \"0\" for none, \"*\" for all, or \"+\" for a randomized selection)",
                 fg="magenta"
             ),
@@ -406,7 +406,7 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_m
 def prompt_lossy_master(force_prompt_lossy_master=False):
     while True:
         flush_stdin()
-        r = "n" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
+        r = "n" if cfg.upload.yes_all and not force_prompt_lossy_master else click.prompt(
             click.style(
                 "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, "
                 "[a]bort, [d]elete music folder",
@@ -451,7 +451,7 @@ def report_lossy_master(
 
 
 def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
-    comment = "" if config.YES_ALL and not force_prompt_lossy_master else click.prompt(
+    comment = "" if cfg.upload.yes_all and not force_prompt_lossy_master else click.prompt(
         click.style(
             "Do you have a comment for the lossy approval report? It is appropriate to "
             "make a note about the source here. Source information from go, gos, and the "

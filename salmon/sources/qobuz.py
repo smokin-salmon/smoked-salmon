@@ -1,7 +1,7 @@
 import json
 import re
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.sources.base import BaseScraper
 
@@ -12,8 +12,8 @@ class QobuzBase(BaseScraper):
     regex = re.compile(r"^https?://(?:www\.|play\.)?qobuz\.com/(?:(?:.+?/)?album/(?:.+?/)?|album/(?:-/)?)([a-zA-Z0-9]+)/?$")
     release_format = "/album/get?album_id={rls_id}"
     headers = {
-        "X-App-Id": config.QOBUZ_APP_ID,
-        "X-User-Auth-Token": config.QOBUZ_USER_AUTH_TOKEN,
+        "X-App-Id": cfg.metadata.qobuz.app_id,
+        "X-User-Auth-Token": cfg.metadata.qobuz.user_auth_token,
     }
     get_params = {}
 

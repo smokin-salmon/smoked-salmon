@@ -7,7 +7,7 @@ from string import Formatter
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
@@ -56,7 +56,7 @@ def check_whether_to_tag(tags, metadata):
 
 def collect_album_data(metadata):
     """Create a dictionary of the proposed album tags (consistent across every track)."""
-    if config.ADD_EDITION_TITLE_TO_ALBUM_TAG and metadata["edition_title"]:
+    if cfg.upload.formatting.add_edition_title_to_album_tag and metadata["edition_title"]:
         title = f'{metadata["title"]} ({metadata["edition_title"]})'
     else:
         title = metadata["title"]
@@ -70,7 +70,7 @@ def collect_album_data(metadata):
             "catno": metadata["catno"],
             "albumartist": _generate_album_artist(metadata["artists"]),
             "upc": metadata["upc"],
-            "comment": metadata["comment"] if config.REVIEW_AS_COMMENT_TAG else None,
+            "comment": metadata["comment"] if cfg.upload.description.review_as_comment_tag else None,
         }.items()
         if v
     }
@@ -78,8 +78,8 @@ def collect_album_data(metadata):
 
 def _generate_album_artist(artists):
     main_artists = [a for a, i in artists if i == "main"]
-    if len(main_artists) >= config.VARIOUS_ARTIST_THRESHOLD:
-        return config.VARIOUS_ARTIST_WORD
+    if len(main_artists) >= cfg.upload.formatting.various_artist_threshold:
+        return cfg.upload.formatting.various_artist_word
     c = ", " if len(main_artists) > 2 or "&" in "".join(main_artists) else " & "
     return c.join(sorted(main_artists))
 
@@ -103,10 +103,10 @@ def create_track_changes(tags, metadata):
         if old_artist_str != new_artist_str:
             changes[filename].append(Change("artist", old_artist_str, new_artist_str))
 
-        if config.GUESTS_IN_TRACK_TITLE:
+        if cfg.upload.formatting.guests_in_track_title:
             trackmeta["title"] = append_guests_to_track_titles(trackmeta)
 
-        if config.EMPTY_TRACK_COMMENT_TAG and getattr(tagset, "comment", False):
+        if cfg.upload.description.empty_track_comment_tag and getattr(tagset, "comment", False):
             changes[filename].append(Change("comment", tagset.comment, ""))
 
         for tagfield, metafield in [
@@ -125,7 +125,9 @@ def create_track_changes(tags, metadata):
 
 def append_guests_to_track_titles(track):
     guest_artists = [a for a, i in track["artists"] if i == "guest"]
-    if "feat" not in track["title"] and guest_artists and len(guest_artists) <= config.VARIOUS_ARTIST_THRESHOLD:
+    if ("feat" not in track["title"]
+            and guest_artists
+            and len(guest_artists) <= cfg.upload.formatting.various_artist_threshold):
         c = (
             ", "
             if len(guest_artists) > 2 or "&" in "".join(guest_artists)
@@ -169,10 +171,10 @@ def create_artist_str(artists):
     c = ", " if len(main_artists) > 2 and "&" not in "".join(main_artists) else " & "
     artist_str = c.join(sorted(main_artists))
 
-    if not config.GUESTS_IN_TRACK_TITLE:
+    if not cfg.upload.formatting.guests_in_track_title:
         guest_artists = [a for a, i in artists if i == "guest"]
-        if len(guest_artists) >= config.VARIOUS_ARTIST_THRESHOLD:
-            artist_str += f" (feat. {config.VARIOUS_ARTIST_WORD})"
+        if len(guest_artists) >= cfg.upload.formatting.various_artist_threshold:
+            artist_str += f" (feat. {cfg.upload.formatting.various_artist_word})"
         elif guest_artists:
             c = (
                 ", "
@@ -311,11 +313,13 @@ def print_filenames(to_rename):
 
 def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
     """Generate the template keys and format the template with the tags."""
-    template = config.FILE_TEMPLATE
+    template = cfg.upload.formatting.file_template
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
-    if "artist" in keys and config.NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST and not multiple_artists:
+    if ("artist" in keys
+            and cfg.upload.formatting.no_artist_in_filename_if_only_one_album_artist
+            and not multiple_artists):
         keys.remove("artist")
-        template = config.ONE_ALBUM_ARTIST_FILE_TEMPLATE
+        template = cfg.upload.formatting.one_album_artist_file_template
     if isinstance(tags, dict):
         template_keys = {k: _parse_integer(tags[k][0]) for k in keys}
     else:
@@ -333,15 +337,15 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
             )
         else:
             artist_count = str(tags.artist).count(",") + str(tags.artist).count("&")
-        if artist_count > config.VARIOUS_ARTIST_THRESHOLD:
-            template_keys["artist"] = config.VARIOUS_ARTIST_WORD
+        if artist_count > cfg.upload.formatting.various_artist_threshold:
+            template_keys["artist"] = cfg.upload.formatting.various_artist_word
     if "tracknumber" in keys and trackno_or is not None:
         template_keys["tracknumber"] = trackno_or
     new_base = template.format(**template_keys) + ext
-    if config.FULLWIDTH_REPLACEMENTS:
+    if cfg.upload.description.fullwidth_replacements:
         for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
             new_base = new_base.replace(char, sub)
-    return re.sub(BLACKLISTED_CHARS, config.BLACKLISTED_SUBSTITUTION, new_base)
+    return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, new_base)
 
 
 def _parse_integer(value):

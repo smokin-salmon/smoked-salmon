@@ -2,7 +2,7 @@ from urllib import parse
 
 import click
 
-from salmon import ConfigError, config
+from salmon import cfg
 from salmon.trackers import ops, red
 
 # hard coded as it needs to reflect the imports anyway.
@@ -10,16 +10,12 @@ tracker_classes = {'RED': red.RedApi, 'OPS': ops.OpsApi}
 tracker_url_code_map = {'redacted.sh': 'RED', 'orpheus.network': 'OPS'}
 
 # tracker_list is used to offer the user choices. Generated if not specified in the config.
-if hasattr(config, 'TRACKER_LIST'):
-    tracker_list = config.TRACKER_LIST
-else:
-    tracker_list = []
-    if hasattr(config, 'RED_SESSION'):
-        tracker_list.append('RED')
-    if hasattr(config, 'OPS_SESSION'):
-        tracker_list.append('OPS')
-    if len(tracker_list) == 0:
-        raise ConfigError("You need a tracker session cookie in your config!")
+tracker_cfg = cfg.tracker
+tracker_list = []
+if tracker_cfg.red:
+    tracker_list.append('RED')
+if tracker_cfg.ops:
+    tracker_list.append('OPS')
 
 
 def get_class(site_code):
@@ -60,9 +56,9 @@ def choose_tracker_first_time(question="Which tracker would you like to upload t
     if len(choices) == 1:
         click.secho(f"Using tracker: {choices[0]}")
         return choices[0]
-    if config.DEFAULT_TRACKER:
-        click.secho(f"Using tracker: {config.DEFAULT_TRACKER}", fg="green")
-        return config.DEFAULT_TRACKER
+    if tracker_cfg.default_tracker:
+        click.secho(f"Using tracker: {tracker_cfg.default_tracker}", fg="green")
+        return tracker_cfg.default_tracker
     click.secho(question, fg="magenta")
     tracker = choose_tracker(choices)
     return tracker

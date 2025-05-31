@@ -1,6 +1,6 @@
 import json
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BeatportBase
@@ -32,10 +32,10 @@ class Searcher(BeatportBase, SearchMixin):
                     
                     title = result["release_name"]
                     artists = (", ".join(main_artists) if len(main_artists) < 4 
-                             else config.VARIOUS_ARTIST_WORD)
+                             else cfg.upload.formatting.various_artist_word)
                     label = result["label"]["label_name"]
                     
-                    if label.lower() not in config.SEARCH_EXCLUDED_LABELS:
+                    if label.lower() not in cfg.upload.search.excluded_labels:
                         releases[rls_id] = (
                             IdentData(artists, title, None, None, "WEB"),
                             self.format_result(artists, title, label),
