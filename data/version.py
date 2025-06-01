@@ -1,3 +1,21 @@
+__version__ = "0.9.4.7"
+
+"""
+Changelog for version 0.9.4.7 (2025-06-01):
+
+New options:
+`TMP_DIR`: spectrals will be generated in this folder, instead of the album folder. Leave empty to keep the old behavior.
+`CLEAN_TMP_DIR`: cleanup the temp folder on each startup. Careful though, this option removes all files from the temp folder, so make sure it's only used by smoked salmon. This option has no effect if `TMP_DIR` is undefined.
+
+## What's Changed
+* Add option to use a specific TMP folder for spectrals by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/92
+* Add ffmpeg dependency for cambia log checker (docker fix) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/96
+* Fix per-tracker paths being overriden with the default DOTTORRENTS_DIR by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/97
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.6...0.9.4.7
+"""
+
 __version__ = "0.9.4.6"
 
 """
