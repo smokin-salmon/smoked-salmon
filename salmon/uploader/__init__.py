@@ -363,23 +363,12 @@ def upload(
     if config.LAST_MINUTE_DUPE_CHECK:
         last_min_dupe_check(gazelle_site, searchstrs)
 
-    # existing torrent group, only download cover image when it won't be removed
-    cover_url = None
-    if group_id:
-        if not remove_downloaded_cover_image:
-            download_cover_if_nonexistent(path, metadata["cover"])
-    # new torrent group, download cover image and upload to third party host
-    else:
-        cover_path, is_downloaded = download_cover_if_nonexistent(path, metadata["cover"])
-        cover_url = upload_cover(cover_path)
-        if is_downloaded and remove_downloaded_cover_image:
-            click.secho("Removing downloaded Cover Image File", fg="yellow")
-            os.remove(cover_path)
-
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
     tracker = gazelle_site.site_code
     torrent_id = None
+    cover_url = None
+    stored_cover_url = None  # Store the cover URL for reuse across trackers
     # Regenerate searchstrs (will be used to search for requests)
     searchstrs = generate_dupe_check_searchstrs(
                 rls_data["artists"], rls_data["title"], rls_data["catno"]
@@ -408,6 +397,24 @@ def upload(
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
+
+        # Handle cover image for this tracker
+        if group_id:
+            if not remove_downloaded_cover_image:
+                download_cover_if_nonexistent(path, metadata["cover"])
+            # Don't need cover URL for existing groups
+            cover_url = None
+        else:
+            # For new groups, we need a cover URL
+            # If we already uploaded it for a previous tracker, reuse that URL
+            if not stored_cover_url:
+                cover_path, is_downloaded = download_cover_if_nonexistent(path, metadata["cover"])
+                stored_cover_url = upload_cover(cover_path)
+                if is_downloaded and remove_downloaded_cover_image:
+                    click.secho("Removing downloaded Cover Image File", fg="yellow")
+                    os.remove(cover_path)
+            cover_url = stored_cover_url
+
         if not request_id and config.CHECK_REQUESTS:
             request_id = check_requests(gazelle_site, searchstrs)
 
