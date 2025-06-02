@@ -83,6 +83,11 @@ def _select_choice(choices, rls_data):
     Allow the user to select a metadata choice. Then, if the metadata came from a scraper,
     run the scrape(s) and return combined metadata.
     """
+    # Initialize rls_data if needed
+    rls_data = rls_data or {}
+    if "urls" not in rls_data:
+        rls_data["urls"] = []
+
     while True:
         if choices:
             res = click.prompt(
@@ -110,27 +115,49 @@ def _select_choice(choices, rls_data):
 
         sources, tasks = [], []
         for r in res.split():
-            if r.startswith("*"):
-                r = r[1:]
-                if r.lower().startswith("http"):
-                    source_url = r
-                elif r.strip().isdigit() and int(r) in choices:
-                    source_url = SEARCHSOURCES[choices[int(r)][0]].Searcher.format_url(choices[int(r)][1])
-            if r.lower().startswith("http"):
+            # Handle starred items first
+            stripped = r[1:] if r.startswith("*") else r
+
+            # Handle URLs (both starred and unstarred)
+            if stripped.lower().startswith("http"):
+                # Add any URL to rls_data urls if not already there
+                if stripped not in rls_data["urls"]:
+                    rls_data["urls"].append(stripped)
+
+                # Set source_url if this is a starred URL
+                if r.startswith("*"):
+                    source_url = stripped
+
+                # Try to scrape if it matches a metadata source
                 for name, source in METASOURCES.items():
-                    if source.Scraper.regex.match(r.strip()):
+                    if source.Scraper.regex.match(stripped):
                         sources.append(name)
-                        tasks.append(source.Scraper().scrape_release(r.strip()))
+                        tasks.append(source.Scraper().scrape_release(stripped))
                         break
-            elif r.strip().isdigit() and int(r) in choices:
-                scraper = METASOURCES[choices[int(r)][0]].Scraper()
-                sources.append(choices[int(r)][0])
+            # Handle numeric choices
+            elif stripped.strip().isdigit() and int(stripped) in choices:
+                scraper = METASOURCES[choices[int(stripped)][0]].Scraper()
+                sources.append(choices[int(stripped)][0])
                 tasks.append(
                     handle_scrape_errors(
-                        scraper.scrape_release_from_id(choices[int(r)][1])
+                        scraper.scrape_release_from_id(choices[int(stripped)][1])
                     )
                 )
+                # Set source_url if this is a starred choice
+                if r.startswith("*"):
+                    source_url = SEARCHSOURCES[choices[int(stripped)][0]].Searcher.format_url(
+                        choices[int(stripped)][1]
+                    )
+
         if not tasks:
+            # Go to manual mode only if we have any URLs
+            if rls_data["urls"]:
+                meta = _get_manual_metadata(rls_data)
+                meta["urls"] = meta.get("urls", [])
+                # If we have a source_url (from a starred URL), make sure it's included
+                if source_url and source_url not in meta["urls"]:
+                    meta["urls"].append(source_url)
+                return meta, source_url
             continue
 
         metadatas = loop.run_until_complete(asyncio.gather(*tasks))
