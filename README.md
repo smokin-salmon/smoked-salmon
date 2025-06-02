@@ -30,7 +30,8 @@ Installation instructions can be found on the [Wiki](https://github.com/smokin-s
 ### 🔹 Manual Installation  
 Requires Python 3.11+ and <3.12 and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
 
-1. Install system packages and uv:    ```bash
+1. Install system packages and uv:
+   ```bash
     sudo apt install sox flac ffmpeg mp3val curl unzip lame
     curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
