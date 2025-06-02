@@ -117,11 +117,14 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
 
             from_preferred_source = False
 
-        if sources[pref] and "url" in sources[pref][0]:
-            link_source = get_source_from_link(sources[pref][0]["url"])
-            if link_source not in url_sources:
-                base["urls"].append(sources[pref][0]["url"])
-                url_sources.add(link_source)
+        if sources[pref]:
+            # Process URLs from all metadata entries from this source
+            for metadata in sources[pref]:
+                if "url" in metadata:
+                    link_source = get_source_from_link(metadata["url"])
+                    if link_source and metadata["url"] not in base["urls"]:
+                        base["urls"].append(metadata["url"])
+                        url_sources.add(link_source)
 
     if "url" in base:
         del base["url"]
