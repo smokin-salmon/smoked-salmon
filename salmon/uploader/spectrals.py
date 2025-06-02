@@ -227,16 +227,18 @@ def _compress_spectrals(spectrals_path):
     click.secho("Finished compressing spectrals.               ", fg="green")
 
 
-def create_specs_folder(path):
-    """Create the spectrals folder."""
-    # Use TMP_DIR if configured, otherwise use the album folder
+def get_spectrals_path(path):
+    """Get the path to the spectrals folder for an album."""
     if config.TMP_DIR and os.path.isdir(config.TMP_DIR):
         # Create a unique subfolder for this album
         base_name = os.path.basename(path.rstrip('/'))
-        spectrals_path = os.path.join(config.TMP_DIR, f"spectrals_{base_name}")
-    else:
-        spectrals_path = os.path.join(path, "Spectrals")
-        
+        return os.path.join(config.TMP_DIR, f"spectrals_{base_name}")
+    return os.path.join(path, "Spectrals")
+
+
+def create_specs_folder(path):
+    """Create the spectrals folder."""
+    spectrals_path = get_spectrals_path(path)
     if os.path.isdir(spectrals_path):
         shutil.rmtree(spectrals_path)
     os.mkdir(spectrals_path)
@@ -491,8 +493,10 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
 def post_upload_spectral_check(
     gazelle_site, path, torrent_id, spectral_ids, track_data, source, source_url, format="FLAC"
 ):
-    "Offers generation and adition of spectrals after upload"
-    "As this is post upload, we have time to ask if this is a lossy master, so force prompt."
+    """
+    Offers generation and addition of spectrals after upload.
+    As this is post upload, we have time to ask if this is a lossy master, so force prompt.
+    """
     lossy_master, spectral_ids = check_spectrals(
         path, track_data, None, spectral_ids,
         force_prompt_lossy_master=True, format=format
@@ -507,9 +511,9 @@ def post_upload_spectral_check(
         )
         click.echo()
 
-    spectrals_path = os.path.join(path, "Spectrals")
+    spectrals_path = get_spectrals_path(path)
     spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
-    # need to refactor bbcode to not be repeated.
+
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)
         loop.run_until_complete(

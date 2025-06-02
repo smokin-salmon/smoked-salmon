@@ -66,20 +66,32 @@ class Scraper(BandcampBase, MetadataMixin):
             artist = div.find("span").text.strip()
         various = artist
         tracklist_scrape = soup.select("#track_table tr.track_row_view")
-        for track in tracklist_scrape:
+        if tracklist_scrape:
+            for track in tracklist_scrape:
+                try:
+                    num = track.select(".track-number-col .track_number")[0].text.rstrip(
+                        "."
+                    )
+                    title = track.select('.title-col span[class="track-title"]')[0].string
+                    tracks["1"][num] = self.generate_track(
+                        trackno=int(num),
+                        discno=1,
+                        artists=parse_artists(artist, title),
+                        title=parse_title(title, various=various),
+                    )
+                except (ValueError, IndexError, TypeError) as e:
+                    raise ScrapeError("Could not parse tracks.") from e
+        else:
             try:
-                num = track.select(".track-number-col .track_number")[0].text.rstrip(
-                    "."
-                )
-                title = track.select('.title-col span[class="track-title"]')[0].string
-                tracks["1"][num] = self.generate_track(
-                    trackno=int(num),
+                title = self.parse_release_title(soup)
+                tracks["1"]["1"] = self.generate_track(
+                    trackno=1,
                     discno=1,
                     artists=parse_artists(artist, title),
                     title=parse_title(title, various=various),
                 )
-            except (ValueError, IndexError, TypeError) as e:
-                raise ScrapeError("Could not parse tracks.") from e
+            except (ValueError, TypeError) as e:
+                raise ScrapeError("Could not parse single track.") from e
         return dict(tracks)
 
 

@@ -52,6 +52,7 @@ from salmon.uploader.request_checker import check_requests
 from salmon.uploader.spectrals import (
     check_spectrals,
     generate_lossy_approval_comment,
+    get_spectrals_path,
     handle_spectrals_upload_and_deletion,
     post_upload_spectral_check,
     report_lossy_master,
@@ -355,7 +356,7 @@ def upload(
             )
             click.echo()
 
-        spectrals_path = os.path.join(path, "Spectrals")
+        spectrals_path = get_spectrals_path(path)
         spectral_urls = handle_spectrals_upload_and_deletion(
             spectrals_path, spectral_ids
         )
