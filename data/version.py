@@ -1,3 +1,15 @@
+__version__ = "0.9.4.9"
+
+"""
+Changelog for version 0.9.4.9 (2025-06-02):
+
+## What's Changed
+* Fix spectrals folder rename when using TMP_DIR by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/101
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.8...0.9.4.9
+"""
+
 __version__ = "0.9.4.8"
 
 """
