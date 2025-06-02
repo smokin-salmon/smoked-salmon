@@ -1,3 +1,21 @@
+__version__ = "0.9.4.8"
+
+"""
+Changelog for version 0.9.4.8 (2025-06-02):
+
+Please report if you encounter crashes or strange behavior when using `TMP_DIR`. All known issues related to that seem to be fixed for now.
+
+## What's Changed
+* Fix spectrals upload when using `TMP_DIR`
+* Improve metadata source selections by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/98
+  * Fix bandcamp single tracks parsing
+  * Allow passing multiple release choices from same metadata provider (useful to provide multiple discogs links)
+  * Allow passing custom URLs during metadata selection (will be linked in release description)
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.7...0.9.4.8
+"""
+
 __version__ = "0.9.4.7"
 
 """
