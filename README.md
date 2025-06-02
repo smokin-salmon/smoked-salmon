@@ -31,23 +31,24 @@ Installation instructions can be found on the [Wiki](https://github.com/smokin-s
 Requires Python 3.11+ and <3.12 and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
 
 1. Install system packages and uv:
-   ```bash
-    sudo apt install sox flac ffmpeg mp3val curl unzip lame
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    ```
+ ```bash
+  sudo apt install sox flac ffmpeg mp3val curl unzip lame
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  ```
 
 Install Cambia (for log checking):
-    ```bash
-    # Currently only x86_64/amd64 systems are supported:
-    mkdir -p ~/.local/bin && \
-    wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest && \
-    chmod +x ~/.local/bin/cambia
-    ```
+  ```bash
+  # Currently only x86_64/amd64 systems are supported:
+  mkdir -p ~/.local/bin && \
+  wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest && \
+  chmod +x ~/.local/bin/cambia
+  ```
 
 If you want to enable spectrals compression (~30% gain in size), you also need to install [oxipng](https://github.com/shssoichiro/oxipng). Follow the installation instructions on their repository. On Debian/Ubuntu systems, you can typically install it with (check if this is the latest version):
-
-    ```wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudo dpkg -i oxipng_9.1.4-1_amd64.deb\n``` 
-
+  ```bash
+  wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudo dpkg -i oxipng_9.1.4-1_amd64.deb
+  ``` 
+    
 2. Clone the repository:
     ```bash
     git clone https://github.com/smokin-salmon/smoked-salmon.git
