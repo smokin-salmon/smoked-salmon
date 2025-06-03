@@ -29,15 +29,27 @@ def validate_bitrate(ctx, param, value):
     required=True,
     help=f'Bitrate to transcode to ({", ".join(VALID_TRANSCODE_BITRATES)})',
 )
-def transcode(path, bitrate):
+@click.option(
+    "--skip-unneeded-files",
+    "-suf",
+    is_flag=True,
+    help='Extraneous files will be skipped when copying, leaving only music and cover art.'
+)
+def transcode(path, bitrate,skip_unneeded_files):
     """Transcode a dir of FLACs into "perfect" MP3"""
-    transcode_folder(path, bitrate)
+    transcode_folder(path, bitrate,skip_unneeded_files)
 
 
 @commandgroup.command()
 @click.argument(
     "path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1
 )
-def downconv(path):
+@click.option(
+    "--skip-unneeded-files",
+    "-suf",
+    is_flag=True,
+    help='Extraneous files will be skipped when copying, leaving only music and cover art.'
+)
+def downconv(path, skip_unneeded_files):
     """Downconvert a dir of 24bit FLACs to 16bit"""
-    convert_folder(path)
+    convert_folder(path, skip_unneeded_files)

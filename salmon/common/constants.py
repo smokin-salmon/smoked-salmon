@@ -40,3 +40,28 @@ RE_FEAT = re.compile(
     flags=re.IGNORECASE,
 )
 _RE_SPLIT = re.compile("|".join(re.escape(s) for s in SPLIT_CHARS))
+
+# Transcoding & downconverting constants
+
+FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
+LOSSLESS_FOLDER_REGEX = re.compile(r"Lossless", flags=re.IGNORECASE)
+FILES_THAT_SHOULD_NOT_BE_SKIPPED_REGEX = re.compile(r"^(cover|folder)\.(jpe?g|png)$", flags=re.IGNORECASE)
+
+LOSSY_EXTENSION_LIST = {
+    ".mp3",
+    ".m4a",  # Fuck ALAC.
+    ".ogg",
+    ".opus",
+}
+
+SCENE_EXTENSION_LIST = {
+    ".nfo",
+    ".sfv",
+    ".md5"
+}
+
+ALLOWED_EXTENSION_LIST = {
+    ".flac",
+    ".mp3",
+    ".m4a" # Technically speaking an incomplete list - DTS and AC3 come to mind - but that's too much work :(
+} 
