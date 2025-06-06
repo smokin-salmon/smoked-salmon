@@ -1,3 +1,51 @@
+__version__ = "0.9.4.9"
+
+"""
+Changelog for version 0.9.4.9 (2025-06-02):
+
+## What's Changed
+* Fix spectrals folder rename when using TMP_DIR by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/101
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.8...0.9.4.9
+"""
+
+__version__ = "0.9.4.8"
+
+"""
+Changelog for version 0.9.4.8 (2025-06-02):
+
+Please report if you encounter crashes or strange behavior when using `TMP_DIR`. All known issues related to that seem to be fixed for now.
+
+## What's Changed
+* Fix spectrals upload when using `TMP_DIR`
+* Improve metadata source selections by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/98
+  * Fix bandcamp single tracks parsing
+  * Allow passing multiple release choices from same metadata provider (useful to provide multiple discogs links)
+  * Allow passing custom URLs during metadata selection (will be linked in release description)
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.7...0.9.4.8
+"""
+
+__version__ = "0.9.4.7"
+
+"""
+Changelog for version 0.9.4.7 (2025-06-01):
+
+New options:
+`TMP_DIR`: spectrals will be generated in this folder, instead of the album folder. Leave empty to keep the old behavior.
+`CLEAN_TMP_DIR`: cleanup the temp folder on each startup. Careful though, this option removes all files from the temp folder, so make sure it's only used by smoked salmon. This option has no effect if `TMP_DIR` is undefined.
+
+## What's Changed
+* Add option to use a specific TMP folder for spectrals by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/92
+* Add ffmpeg dependency for cambia log checker (docker fix) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/96
+* Fix per-tracker paths being overriden with the default DOTTORRENTS_DIR by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/97
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.6...0.9.4.7
+"""
+
 __version__ = "0.9.4.6"
 
 """

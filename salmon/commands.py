@@ -27,6 +27,7 @@ from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources import run_metadata
 from salmon.uploader.spectrals import (
     check_spectrals,
+    get_spectrals_path,
     handle_spectrals_upload_and_deletion,
     post_upload_spectral_check,
 )
@@ -60,7 +61,7 @@ def specs(path, no_delete_specs, format_output):
     """Generate and open spectrals for a folder"""
     audio_info = gather_audio_info(path, True)
     _, sids = check_spectrals(path, audio_info, check_lma=False)
-    spath = os.path.join(path, "Spectrals")
+    spath = get_spectrals_path(path)
     spectral_urls = handle_spectrals_upload_and_deletion(
         spath, sids, delete_spectrals=not no_delete_specs
     )
@@ -81,7 +82,7 @@ def specs(path, no_delete_specs, format_output):
             pyperclip.copy(output)
 
     if no_delete_specs:
-        click.secho(f'Spectrals saved to {os.path.join(path, "Spectrals")}', fg="green")
+        click.secho(f'Spectrals saved to {spath}', fg="green")
 
 
 @commandgroup.command()

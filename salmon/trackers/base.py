@@ -54,7 +54,8 @@ class BaseGazelleApi:
             "Cache-Control": "max-age=0",
             "User-Agent": config.USER_AGENT,
         }
-        self.dot_torrents_dir = config.DOTTORRENTS_DIR
+        if not hasattr(self, 'dot_torrents_dir'):
+            self.dot_torrents_dir = config.DOTTORRENTS_DIR
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 

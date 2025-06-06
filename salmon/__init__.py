@@ -32,6 +32,8 @@ user_config_toml = setup_default_config()
 DEFAULT_VALUES = {
     "SIMULTANEOUS_THREADS": 3,
     "USER_AGENT": "salmon uploading tools",
+    "TMP_DIR": None,
+    "CLEAN_TMP_DIR": False,
     "FOLDER_TEMPLATE": "{artists} - {title} ({year}) [{source} {format}] {{{label}}}",
     "FILE_TEMPLATE": "{tracknumber}. {artist} - {title}",
     "SEARCH_LIMIT": 3,

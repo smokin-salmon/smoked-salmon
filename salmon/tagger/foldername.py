@@ -45,7 +45,6 @@ def rename_folder(path, metadata, auto_rename, check=True):
 
         new_base = _edit_folder_interactive(new_base, auto_rename)
 
-    #new_path = os.path.join(os.path.dirname(path), new_base)
     new_path = os.path.join(config.DOWNLOAD_DIRECTORY, new_base)
     if os.path.isdir(new_path) and not os.path.samefile(path, new_path):
         if not check or click.confirm(
@@ -78,6 +77,26 @@ def rename_folder(path, metadata, auto_rename, check=True):
 
         if config.REMOVE_SOURCE_DIR:
             shutil.rmtree(path)
+
+    # Also rename spectrals folder in TMP_DIR if it exists
+    if config.TMP_DIR and os.path.exists(config.TMP_DIR):
+        tmp_old_specs_path = os.path.join(config.TMP_DIR, f"spectrals_{old_base}")
+        tmp_new_specs_path = os.path.join(config.TMP_DIR, f"spectrals_{new_base}")
+        
+        if os.path.exists(tmp_old_specs_path):
+            if os.path.exists(tmp_new_specs_path) and not os.path.samefile(tmp_old_specs_path, tmp_new_specs_path):
+                shutil.rmtree(tmp_new_specs_path)
+            
+            if use_hardlinks:
+                shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, copy_function=os.link, dirs_exist_ok=True)
+                click.secho(f"Hardlinked temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
+            else:
+                shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, dirs_exist_ok=True)
+                click.secho(f"Copied temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
+            
+            if config.REMOVE_SOURCE_DIR:
+                shutil.rmtree(tmp_old_specs_path)
+
     return new_path
 
 
