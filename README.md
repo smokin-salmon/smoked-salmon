@@ -71,30 +71,121 @@ Edit the `config.py` file with your preferred text editor to add your API keys, 
     ```bash
     .venv/bin/salmon checkconf
     ```
-
 ### 🐳 Docker Installation
-A Docker image is generated per release.
+
+A Docker image is generated per release.  
 **Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
 
 1. Pull the latest image:
-    ```bash
-    docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
-    ```
 
-Copy the content of the file [`config.py`](https://github.com/smokin-salmon/smoked-salmon/blob/master/config.py.txt) to a location on your host server.
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+   ```bash
+   docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
+   ```
 
-2. Run the container with the `checkconf` command to verify that the connection to the trackers is workin:
-    ```bash
-    docker run --rm -it  --network=host \
-    -v /path/to/your/music:/data \
-    -v /path/to/your/config.py:/app/config.py \
-    -v /path/to/your/smoked.db:/app/smoked.db \
-    -v /path/to/your/generated/dottorrents:/app/.torrents
-    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
-    ```
+2. Copy the content of the file [`config.py`](https://github.com/smokin-salmon/smoked-salmon/blob/master/config.py.txt) to a location on your host server.  
+   Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
-Depending on how you've set the `DOTTORRENTS_DIR` in your `config.py`, you may need to add an additional volume to your Docker command to map the directory where `.torrent` files will be saved on the host system.
+---
+
+### 🔁 Recommended Docker Operation Order
+
+1. **Check Configuration**  
+   Run the container with the `checkconf` command to verify that the connection to the trackers is working:
+
+   ```bash
+   docker run --rm -it --network=host \
+   -v /path/to/your/music:/data \
+   -v /path/to/your/config.py:/app/config.py \
+   -v /path/to/your/smoked.db:/app/smoked.db \
+   -v /path/to/your/generated/dottorrents:/app/.torrents \
+   ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
+   ```
+
+2. **Run Migration**  
+   If the configuration is valid, use the `migrate` command to initialize or upgrade the database schema:
+
+   ```bash
+   docker run --rm -it --network=host \
+   -v /path/to/your/music:/data \
+   -v /path/to/your/config.py:/app/config.py \
+   -v /path/to/your/smoked.db:/app/smoked.db \
+   ghcr.io/smokin-salmon/smoked-salmon:latest migrate
+   ```
+
+3. **Run the Web UI**  
+   Once migration is complete, launch the persistent web UI with:
+
+   ```bash
+   docker run -d --network=host \
+   -v /path/to/your/music:/data \
+   -v /path/to/your/config.py:/app/config.py \
+   -v /path/to/your/smoked.db:/app/smoked.db \
+   -v /path/to/your/generated/dottorrents:/app/.torrents \
+   --name smoked-salmon \
+   ghcr.io/smokin-salmon/smoked-salmon:latest web
+   ```
+4. **Connect to the Running Container**  
+   To manually execute operations inside the container, connect via SSH and run:
+
+   ```bash
+   docker exec -it smoked-salmon /bin/sh
+   ```
+
+   Then, inside the container, you can run the commands like this:
+
+   ```bash
+   .venv/bin/salmon up "/path/to/your/music" -s WEB
+   ```
+
+---
+
+### ⚠️ Notes
+
+- **Database Requirement**  
+  The `migrate` and general operation **require** a valid mapped SQLite DB file.  
+  If you don’t have one yet, you can create an empty `smoked.db` file with:
+
+  ```bash
+  python -c "import sqlite3; sqlite3.connect('smoked.db').close()"
+  ```
+
+  Then move this file to your mounted destination (`/path/to/your/smoked.db`).
+
+- **Permission Issues**  
+  The container currently **does not handle permissions** properly.  
+  If your torrent client is not run as root, or if new uploads are inaccessible, you may need to:
+  - Manually adjust file/folder ownership (`chown`) or permissions (`chmod`)
+  - Ensure the container and torrent client users are compatible
+  - Optionally run containers with matching `--user` flags or add `umask` logic
+
+- **.torrent Directory Mapping**  
+  Depending on how you've set the `DOTTORRENTS_DIR` in your `config.py`, you may need to map an additional directory for `.torrent` file output. Add:
+
+  ```bash
+  -v /your/host/torrent/output:/app/.torrents
+  ```
+
+---
+
+### 📦 Portainer Stack Alternative
+
+If using Portainer or Docker Compose, here's an example stack for persistent usage:
+
+```yaml
+version: "3"
+services:
+  smoked-salmon:
+    image: ghcr.io/smokin-salmon/smoked-salmon:latest
+    container_name: smoked-salmon
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - /path/to/your/music:/data
+      - /path/to/your/config.py:/app/config.py
+      - /path/to/your/smoked.db:/app/smoked.db
+      - /path/to/your/generated/dottorrents:/app/.torrents
+    command: web
+```
 
 ## 🚀 Usage
 
