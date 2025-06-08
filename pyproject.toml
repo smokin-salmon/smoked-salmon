@@ -9,7 +9,6 @@ dependencies = [
     "requests>=2.31.0",
     "click>=8.1.7",
     "bs4>=0.0.1",
-    "dottorrent>=1.10.1",
     "musicbrainzngs>=0.7.1",
     "mutagen>=1.47.0",
     "pyperclip>=1.8.2",
@@ -29,6 +28,7 @@ dependencies = [
     "send2trash>=1.8.3",
     "platformdirs>=4.3.8",
     "msgspec>=0.19.0",
+    "torf>=4.3.0",
 ]
 
 [project.scripts]

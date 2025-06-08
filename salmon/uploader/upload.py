@@ -3,7 +3,7 @@ import os
 import re
 
 import click
-from dottorrent import Torrent
+from torf import Torrent
 
 from salmon import cfg
 from salmon.common import str_to_int_if_int
