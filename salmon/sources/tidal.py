@@ -51,17 +51,9 @@ class TidalBase(BaseScraper):
 
 
 def get_tidal_regions_to_fetch():
+    # TODO: maybe make this a validation
     if cfg.metadata.tidal.fetch_regions:
         return cfg.metadata.tidal.fetch_regions
     else:
-        try:
-            raise ImportError
-            from plugins.downloader.accounts import ACCOUNTS
-
-            if "Tidal" in ACCOUNTS:
-                return [k for k, v in ACCOUNTS["Tidal"].items() if v]
-        except ImportError:
-            pass
-
-    raise ScrapeError("No regions defined for Tidal to grab from")
+        raise ScrapeError("No regions defined for Tidal to grab from")
 

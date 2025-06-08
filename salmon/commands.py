@@ -1,6 +1,5 @@
 import asyncio
 import html
-import importlib
 import os
 import shutil
 from urllib import parse
@@ -33,17 +32,6 @@ from salmon.uploader.spectrals import (
     post_upload_spectral_check,
 )
 from salmon.uploader.upload import generate_source_links
-
-for name in os.listdir(os.path.join(os.path.dirname(os.path.dirname(__file__)), "plugins")):
-    if not name.startswith(".") and not name.startswith("_"):
-        if name.endswith(".py"):
-            name = name[:-3]
-        try:
-            importlib.import_module(f"plugins.{name}")
-        except ImportError as e:
-            click.secho(f"The plugin {name} could not be imported.", fg="red", bold=True)
-            raise e
-
 
 loop = asyncio.get_event_loop()
 

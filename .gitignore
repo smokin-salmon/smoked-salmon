@@ -14,6 +14,5 @@ config.toml
 accounts.json
 salmon/web/static/specs
 !.gitkeep
-plugins/
 .python-version
 .venv
