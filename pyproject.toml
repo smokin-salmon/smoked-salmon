@@ -29,18 +29,19 @@ dependencies = [
     "platformdirs>=4.3.8",
     "msgspec>=0.19.0",
     "torf>=4.3.0",
+    "setuptools-scm>=8.3.1",
 ]
 
 [project.scripts]
 salmon = "run:main"
 
 [build-system]
-requires = ["setuptools >= 61.0"]
+requires = ["setuptools >= 61.0", "setuptools-scm >= 8"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["salmon"]
-py-modules = ["run", "config"]
+packages = ["salmon", "data"]
+py-modules = ["run"]
 
 [dependency-groups]
 dev = [

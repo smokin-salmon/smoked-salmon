@@ -5,6 +5,7 @@ __pycache__
 .venv/
 .torrents/
 dist/
+build/
 
 test.py
 smoked.db*
