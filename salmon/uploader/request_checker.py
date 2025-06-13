@@ -4,7 +4,7 @@ from urllib import parse
 import click
 import rich
 
-from salmon import config
+from salmon import cfg
 from salmon.common import format_size
 from salmon.errors import RequestError
 
@@ -18,7 +18,7 @@ def check_requests(gazelle_site, searchstrs):
     results = get_request_results(gazelle_site, searchstrs)
     print_request_results(gazelle_site, results, " / ".join(searchstrs))
     # Should add an option to still prompt if there are no results.
-    if results or config.ALWAYS_ASK_FOR_REQUEST_FILL:
+    if results or cfg.upload.requests.always_ask_for_request_fill:
         request_id = _prompt_for_request_id(gazelle_site, results)
         if request_id:
             confirmation = _confirm_request_id(gazelle_site, request_id)
@@ -170,7 +170,7 @@ def _confirm_request_id(gazelle_site, request_id):
         click.secho(f"{request_id} does not exist.", fg="red")
         raise click.Abort from None
     _print_request_details(gazelle_site, req)
-    if config.YES_ALL:
+    if cfg.upload.yes_all:
         return True
 
     while True:      

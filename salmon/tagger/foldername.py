@@ -6,7 +6,7 @@ from string import Formatter
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.common import strip_template_keys
 from salmon.constants import (
     BLACKLISTED_CHARS,
@@ -45,7 +45,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
 
         new_base = _edit_folder_interactive(new_base, auto_rename)
 
-    new_path = os.path.join(config.DOWNLOAD_DIRECTORY, new_base)
+    new_path = os.path.join(cfg.directory.download_directory, new_base)
     if os.path.isdir(new_path) and not os.path.samefile(path, new_path):
         if not check or click.confirm(
             click.style(
@@ -66,8 +66,8 @@ def rename_folder(path, metadata, auto_rename, check=True):
         click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
     else:
         # Check if hardlinks can be used
-        same_volume = os.stat(path).st_dev == os.stat(config.DOWNLOAD_DIRECTORY).st_dev
-        use_hardlinks = same_volume and not config.DISABLE_HARDLINKS
+        same_volume = os.stat(path).st_dev == os.stat(cfg.directory.download_directory).st_dev
+        use_hardlinks = same_volume and not cfg.directory.hardlinks
         if use_hardlinks:
             shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
             click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
@@ -75,13 +75,13 @@ def rename_folder(path, metadata, auto_rename, check=True):
             shutil.copytree(path, new_path, dirs_exist_ok=True)
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
 
-        if config.REMOVE_SOURCE_DIR:
+        if cfg.upload.formatting.remove_source_dir:
             shutil.rmtree(path)
 
     # Also rename spectrals folder in TMP_DIR if it exists
-    if config.TMP_DIR and os.path.exists(config.TMP_DIR):
-        tmp_old_specs_path = os.path.join(config.TMP_DIR, f"spectrals_{old_base}")
-        tmp_new_specs_path = os.path.join(config.TMP_DIR, f"spectrals_{new_base}")
+    if cfg.directory.tmp_dir and os.path.exists(cfg.directory.tmp_dir):
+        tmp_old_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{old_base}")
+        tmp_new_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{new_base}")
         
         if os.path.exists(tmp_old_specs_path):
             if os.path.exists(tmp_new_specs_path) and not os.path.samefile(tmp_old_specs_path, tmp_new_specs_path):
@@ -94,7 +94,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
                 shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, dirs_exist_ok=True)
                 click.secho(f"Copied temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
             
-            if config.REMOVE_SOURCE_DIR:
+            if cfg.upload.formatting.remove_source_dir:
                 shutil.rmtree(tmp_old_specs_path)
 
     return new_path
@@ -106,7 +106,7 @@ def generate_folder_name(metadata):
     away the unnecessary keys.
     """
     metadata = {**metadata, **{"artists": _compile_artist_str(metadata["artists"])}}
-    template = config.FOLDER_TEMPLATE
+    template = cfg.upload.formatting.folder_template
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
     for k in keys.copy():
         if not metadata.get(k):
@@ -121,17 +121,17 @@ def generate_folder_name(metadata):
 def _compile_artist_str(artist_data):
     """Create a string to represent the main artists of the release."""
     artists = [a[0] for a in artist_data if a[1] == "main"]
-    if len(artists) > config.VARIOUS_ARTIST_THRESHOLD:
-        return config.VARIOUS_ARTIST_WORD
+    if len(artists) > cfg.upload.formatting.various_artist_threshold:
+        return cfg.upload.formatting.various_artist_word
     c = ", " if len(artists) > 2 or "&" in "".join(artists) else " & "
     return c.join(sorted(artists))
 
 
 def _sub_illegal_characters(stri):
-    if config.FULLWIDTH_REPLACEMENTS:
+    if cfg.upload.description.fullwidth_replacements:
         for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
             stri = str(stri).replace(char, sub)
-    return re.sub(BLACKLISTED_CHARS, config.BLACKLISTED_SUBSTITUTION, str(stri))
+    return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, str(stri))
 
 
 def _fix_format(metadata, keys):

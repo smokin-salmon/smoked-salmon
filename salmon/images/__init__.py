@@ -4,7 +4,7 @@ import sqlite3
 import click
 import pyperclip
 
-from salmon import config
+from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
 from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
@@ -44,7 +44,7 @@ def images():
     "--image-host",
     "-i",
     help="The name of the image host to upload to",
-    default=config.IMAGE_UPLOADER,
+    default=cfg.image.image_uploader,
     callback=validate_image_host,
 )
 def up(filepaths, image_host):
@@ -67,7 +67,7 @@ def up(filepaths, image_host):
                 click.secho(url)
                 urls.append(url)
             conn.commit()
-            if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
+            if cfg.upload.description.copy_uploaded_url_to_clipboard:
                 pyperclip.copy("\n".join(urls))
         except (ImageUploadFailed, ValueError) as error:
             click.secho(f"Image Upload Failed. {error}", fg="red")
@@ -117,13 +117,13 @@ def upload_cover(cover_path):
     if not cover_path:
         click.secho("\nNo Cover Image Path was provided to upload...", fg="red", nl=False)
         return None
-    click.secho(f"Uploading cover to {config.COVER_UPLOADER}...", fg="yellow", nl=False)
+    click.secho(f"Uploading cover to {cfg.image.cover_uploader}...", fg="yellow", nl=False)
     try:
         try:
             url = loop.run_until_complete(
                 loop.run_in_executor(
                     None,
-                    lambda f=cover_path: HOSTS[config.COVER_UPLOADER].ImageUploader().upload_file(f)[0],
+                    lambda f=cover_path: HOSTS[cfg.image.cover_uploader].ImageUploader().upload_file(f)[0],
                 )
             )
         except (ImageUploadFailed, ValueError) as error:
@@ -135,7 +135,7 @@ def upload_cover(cover_path):
     return url
 
 
-def upload_spectrals(spectrals, uploader=HOSTS[config.SPECS_UPLOADER], successful=None):
+def upload_spectrals(spectrals, uploader=HOSTS[cfg.image.specs_uploader], successful=None):
     """
     Given the spectrals list of (filename, [spectral_url, ..]), send them
     to the coroutine upload handler and return a dictionary of filenames

@@ -2,7 +2,7 @@ import asyncio
 
 import musicbrainzngs
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import MusicBrainzBase
@@ -45,7 +45,7 @@ class Searcher(MusicBrainzBase, SearchMixin):
                 if catno:
                     edition += " " + catno
 
-                if label.lower() not in config.SEARCH_EXCLUDED_LABELS:
+                if label.lower() not in cfg.upload.search.excluded_labels:
                     releases[rls["id"]] = (
                         IdentData(artists, rls["title"], None, track_count, source),
                         self.format_result(

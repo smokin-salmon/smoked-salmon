@@ -5,7 +5,7 @@ import click
 import filetype
 import requests
 
-from salmon import config
+from salmon import cfg
 
 
 def download_cover_if_nonexistent(path, cover_url):
@@ -33,7 +33,7 @@ def download_cover_if_nonexistent(path, cover_url):
 
 def _download_cover(path, cover_url):
     ext = os.path.splitext(cover_url)[1]
-    c = "c" if config.LOWERCASE_COVER else "C"
+    c = "c" if cfg.upload.formatting.lowercase_cover else "C"
     headers = {'User-Agent': 'smoked-salmon-v1'}
     stream = requests.get(cover_url, stream=True, headers=headers)
 

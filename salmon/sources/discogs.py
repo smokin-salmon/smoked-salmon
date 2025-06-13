@@ -1,7 +1,7 @@
 import json
 import re
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.sources.base import BaseScraper
 
@@ -12,7 +12,7 @@ class DiscogsBase(BaseScraper):
     site_url = "https://www.discogs.com"
     regex = re.compile(r"^https?://(?:www\.)?discogs\.com/(?:.+?/)?release/(\d+)/?$")
     release_format = "/release/{rls_id}"
-    get_params = {"token": config.DISCOGS_TOKEN}
+    get_params = {"token": cfg.metadata.discogs_token}
 
     async def create_soup(self, url, params=None):
         try:

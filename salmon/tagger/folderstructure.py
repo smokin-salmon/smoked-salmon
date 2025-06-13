@@ -2,7 +2,7 @@ import os
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.constants import ALLOWED_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
 
@@ -44,7 +44,7 @@ def check_folder_structure(path, scene):
 def _check_path_lengths(path, scene):
     """Verify that all path lengths are <=180 characters."""
     offending_files, really_offending_files = [], []
-    root_len = len(config.DOWNLOAD_DIRECTORY) + 1
+    root_len = len(cfg.directory.download_directory) + 1
     for root, _, files in os.walk(path):
         if len(os.path.abspath(root)) - root_len > 180:
             click.secho("A subfolder has a path length >180 characters.", fg="red")

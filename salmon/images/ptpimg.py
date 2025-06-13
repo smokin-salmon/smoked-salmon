@@ -1,15 +1,15 @@
 import requests
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 
-HEADERS = {"referer": "https://ptpimg.me/index.php", "User-Agent": config.USER_AGENT}
+HEADERS = {"referer": "https://ptpimg.me/index.php", "User-Agent": cfg.upload.user_agent}
 
 
 class ImageUploader(BaseImageUploader):
     def _perform(self, file_, ext):
-        data = {"api_key": config.PTPIMG_KEY}
+        data = {"api_key": cfg.image.ptpimg_key}
         url = "https://ptpimg.me/upload.php"
         files = {"file-upload[0]": file_}
         resp = requests.post(url, headers=HEADERS, data=data, files=files)

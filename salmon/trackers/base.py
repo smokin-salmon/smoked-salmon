@@ -11,7 +11,7 @@ from bs4 import BeautifulSoup
 from ratelimit import limits, sleep_and_retry
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
-from salmon import config
+from salmon import cfg
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
     LoginError,
@@ -52,10 +52,10 @@ class BaseGazelleApi:
         self.headers = {
             "Connection": "keep-alive",
             "Cache-Control": "max-age=0",
-            "User-Agent": config.USER_AGENT,
+            "User-Agent": cfg.upload.user_agent,
         }
         if not hasattr(self, 'dot_torrents_dir'):
-            self.dot_torrents_dir = config.DOTTORRENTS_DIR
+            self.dot_torrents_dir = cfg.directory.dottorrents_dir
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 
@@ -103,7 +103,7 @@ class BaseGazelleApi:
                 ),
             )
 
-            if config.DEBUG_TRACKER_CONNECTION:
+            if cfg.upload.debug_tracker_connection:
                 click.secho("URL: ", fg="cyan", nl=False)
                 click.secho(url, fg="yellow")
                 
@@ -517,5 +517,5 @@ class BaseGazelleApi:
 def compile_artists(artists, release_type):
     """Generate a string to represent the artists."""
     if release_type == 7 or len(artists) > 3:
-        return config.VARIOUS_ARTIST_WORD
+        return cfg.upload.formatting.various_artist_word
     return " & ".join([a["name"] for a in artists])

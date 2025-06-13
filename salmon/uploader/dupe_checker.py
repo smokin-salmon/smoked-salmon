@@ -5,7 +5,7 @@ from urllib import parse
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder, RequestError
 
@@ -36,7 +36,7 @@ def dupe_check_recent_torrents(gazelle_site, searchstrs):
             new_ratio = SM(None, searchstr, comparison_string).ratio()
             ratio = max(ratio, new_ratio)
         # Default tolerance is 0.5
-        if ratio > config.LOG_DUPE_TOLERANCE:
+        if ratio > cfg.upload.log_dupe_tolerance:
             hits.append(upload)
     return hits
 
@@ -67,7 +67,7 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     anything on site.
     """
     results = get_search_results(gazelle_site, searchstrs)
-    if not results and config.CHECK_RECENT_UPLOADS:
+    if not results and cfg.upload.requests.check_recent_uploads:
         recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
         print_recent_upload_results(
             gazelle_site, recent_uploads, " / ".join(searchstrs)

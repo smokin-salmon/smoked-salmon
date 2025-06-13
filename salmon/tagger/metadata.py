@@ -5,7 +5,7 @@ from itertools import islice
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.search import SEARCHSOURCES, run_metasearch
 from salmon.tagger.combine import combine_metadatas
@@ -52,7 +52,7 @@ def _print_search_results(results, rls_data=None):
         if releases:
             click.secho(f"\nResults for {source}:", fg="yellow", bold=True)
             not_found.remove(source)
-            results = dict(islice(releases.items(), config.SEARCH_LIMIT))
+            results = dict(islice(releases.items(), cfg.upload.search.limit))
             for rls_id, release in results.items():
                 choices[choice_id] = (source, rls_id)
                 url = SEARCHSOURCES[source].Searcher.format_url(rls_id)

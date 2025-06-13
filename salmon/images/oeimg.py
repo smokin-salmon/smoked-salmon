@@ -1,11 +1,11 @@
 import requests
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 
 HEADERS = {
-    "X-API-Key": config.OEIMG_KEY
+    "X-API-Key": cfg.image.oeimg_key
 }
 
 

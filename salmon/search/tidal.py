@@ -3,13 +3,13 @@ import html
 import re
 from itertools import chain, zip_longest
 
-from salmon import config
+from salmon import cfg
 from salmon.common import parse_copyright
 from salmon.errors import ScrapeError
 from salmon.search.base import ArtistRlsData, IdentData, SearchMixin
 from salmon.sources import TidalBase
 
-COUNTRIES = config.TIDAL_SEARCH_REGIONS
+COUNTRIES = cfg.metadata.tidal.search_regions
 
 
 class Searcher(TidalBase, SearchMixin):
@@ -18,7 +18,7 @@ class Searcher(TidalBase, SearchMixin):
         Run a search of Tidal albums.
         Warnings are for stream quality/streambility.
         """
-        if (not config.TIDAL_TOKEN):
+        if (not cfg.metadata.tidal.token):
             return "Tidal", None
 
         releases, tasks = {}, []

@@ -5,13 +5,14 @@ __pycache__
 .venv/
 .torrents/
 dist/
+build/
 
 test.py
 smoked.db*
 config.py
+config.toml
 accounts.json
 salmon/web/static/specs
 !.gitkeep
-plugins/
 .python-version
 .venv

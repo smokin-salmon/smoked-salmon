@@ -1,6 +1,6 @@
 import asyncio
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import (
     RequestError,
 )
@@ -15,14 +15,17 @@ class RedApi(BaseGazelleApi):
         self.base_url = 'https://redacted.sh'
         self.tracker_url = 'https://flacsfor.me'
         self.site_string = 'RED'
-        self.cookie = config.RED_SESSION
-        if config.RED_API_KEY:
-            self.api_key = config.RED_API_KEY
+        if cfg.tracker.red:
+            red_cfg = cfg.tracker.red
 
-        if config.RED_DOTTORRENTS_DIR:
-            self.dot_torrents_dir = config.RED_DOTTORRENTS_DIR
-        else:
-            self.dot_torrents_dir = config.DOTTORRENTS_DIR
+            self.cookie = red_cfg.session
+            if red_cfg.api_key:
+                self.api_key = red_cfg.api_key
+
+            if red_cfg.dottorrents_dir:
+                self.dot_torrents_dir = red_cfg.dottorrents_dir
+            else:
+                self.dot_torrents_dir = cfg.directory.dottorrents_dir
 
         super().__init__()
 

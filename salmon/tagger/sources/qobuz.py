@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from html import unescape
 
-from salmon import config
+from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
@@ -307,7 +307,7 @@ class Scraper(QobuzBase, MetadataMixin):
     
     def parse_genres(self, soup):
         """Parse the genres from the API response."""
-        if (config.NO_GENRES_FROM_QOBUZ):
+        if (cfg.metadata.qobuz.no_genres_from_qobuz):
             return set()
         genres = {g for gs in soup.get("genres_list") for g in SPLIT_GENRES.get(gs, [gs])}
         return genres

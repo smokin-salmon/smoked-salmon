@@ -1,6 +1,6 @@
 import re
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import JunodownloadBase
@@ -53,13 +53,13 @@ class Searcher(JunodownloadBase, SearchMixin):
                 artists = (
                     ", ".join(ar_li)
                     if ar_li and len(ar_li) < 5
-                    else config.VARIOUS_ARTIST_WORD
+                    else cfg.upload.formatting.various_artist_word
                 )
 
                 label_blob = meta.find('a', attrs={'class': 'juno-label'})
                 label = label_blob.text.strip()
 
-                if label.lower() not in config.SEARCH_EXCLUDED_LABELS:
+                if label.lower() not in cfg.upload.search.excluded_labels:
                     releases[rls_id] = (
                         IdentData(artists, title, year, None, "WEB"),
                         self.format_result(artists, title, f"{year} {label} {catno}"),

@@ -4,7 +4,7 @@ from os import path
 import click
 import requests
 
-from salmon import config
+from salmon import cfg
 
 LOCAL_VERSION_FILE = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "version.py"))
 REMOTE_VERSION_URL = 'https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/data/version.py'
@@ -67,8 +67,8 @@ def _get_remote_version(url):
 
 def show_release_notification():
     """Checks for updates and notifies the user."""
-    notify = config.UPDATE_NOTIFICATION
-    verbose = config.UPDATE_NOTIFICATION_VERBOSE
+    notify = cfg.upload.update_notification
+    verbose = cfg.upload.update_notification_verbose
 
     if not notify:
         return

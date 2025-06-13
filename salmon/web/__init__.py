@@ -7,19 +7,21 @@ import click
 import jinja2
 from aiohttp_jinja2 import render_template
 
-from salmon import config
+from salmon import cfg
 from salmon.common import commandgroup
 from salmon.errors import WebServerIsAlreadyRunning
 from salmon.web import spectrals
 
 loop = asyncio.get_event_loop()
 
+web_cfg = cfg.upload.web_interface
+
 
 @commandgroup.command()
 def web():
     """Start the salmon web server"""
     app = create_app()  # noqa: F841
-    click.secho(f"Running webserver on http://{config.WEB_HOST}:{config.WEB_PORT}", fg="cyan")
+    click.secho(f"Running webserver on http://{web_cfg.host}:{web_cfg.port}", fg="cyan")
     loop.run_forever()
 
 
@@ -30,7 +32,7 @@ def create_app():
         app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates"))
     )
     return loop.run_until_complete(
-        loop.create_server(app.make_handler(), host='0.0.0.0', port=config.WEB_PORT)
+        loop.create_server(app.make_handler(), host='0.0.0.0', port=web_cfg.port)
     )
 
 
@@ -42,7 +44,7 @@ async def create_app_async():
     )
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
-    site = aiohttp.web.TCPSite(runner, '0.0.0.0', config.WEB_PORT)
+    site = aiohttp.web.TCPSite(runner, '0.0.0.0', web_cfg.port)
     try:
         await site.start()
     except OSError as err:
@@ -56,7 +58,7 @@ def add_routes(app):
     )
     app.router.add_route("GET", "/", handle_index)
     app.router.add_route("GET", "/spectrals", spectrals.handle_spectrals)
-    app["static_root_url"] = config.WEB_STATIC_ROOT_URL
+    app["static_root_url"] = web_cfg.static_root_url
 
 
 def handle_index(request, **kwargs):

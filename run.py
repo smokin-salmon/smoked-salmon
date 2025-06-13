@@ -11,14 +11,14 @@ import salmon.commands
 from salmon.common import commandgroup
 from salmon.errors import FilterError, LoginError, UploadError
 from salmon.release_notification import show_release_notification
-from salmon import config
+from salmon import cfg
 
 def cleanup_tmp_dir():
     """Clean up the temporary directory if configured."""
-    if config.TMP_DIR and os.path.isdir(config.TMP_DIR) and config.CLEAN_TMP_DIR:
+    if cfg.directory.tmp_dir and cfg.directory.clean_tmp_dir:
         try:
-            for item in os.listdir(config.TMP_DIR):
-                item_path = os.path.join(config.TMP_DIR, item)
+            for item in os.listdir(cfg.directory.tmp_dir):
+                item_path = os.path.join(cfg.directory.tmp_dir, item)
                 try:
                     if os.path.isfile(item_path) or os.path.islink(item_path):
                         os.unlink(item_path)
@@ -26,7 +26,7 @@ def cleanup_tmp_dir():
                         shutil.rmtree(item_path)
                 except Exception as e:
                     click.secho(f"Failed to remove {item_path}: {e}", fg="yellow")
-            click.secho(f"Cleaned temporary directory: {config.TMP_DIR}", fg="green")
+            click.secho(f"Cleaned temporary directory: {cfg.directory.tmp_dir}", fg="green")
         except Exception as e:
             click.secho(f"Failed to clean temporary directory: {e}", fg="yellow")
 
@@ -47,4 +47,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -4,7 +4,7 @@ from collections import defaultdict
 from copy import copy
 from itertools import chain
 
-from salmon import config
+from salmon import cfg
 from salmon.common import fetch_genre, less_uppers, normalize_accents
 from salmon.errors import GenreNotInWhitelist
 
@@ -28,7 +28,7 @@ class MetadataMixin(ABC):
                 [
                     g
                     for g in self.parse_genres(soup)
-                    if g.lower() not in [c.lower() for c in config.BLACKLISTED_GENRES]
+                    if g.lower() not in [c.lower() for c in cfg.upload.search.blacklisted_genres]
                 ]
             ),
             "year": self.parse_release_year(soup),
@@ -212,7 +212,7 @@ class MetadataMixin(ABC):
         in album info. We also filter out featured artists, since those are
         parsed with the artists.
         """
-        if config.STRIP_USELESS_VERSIONS:
+        if cfg.upload.formatting.strip_useless_versions:
             base = re.sub(
                 r" \(*(Original( Mix)?|Remastered|Clean|"
                 r"Album.+edition|Album.+mix|feat[^\)]+)\)*$",
@@ -390,7 +390,7 @@ def append_remixers_to_track_titles(data):
         for tnum, track in disc.items():
             remix_artists = [a for a, i in track["artists"] if i == "remixer"]
             if not any(x in track["title"] for x in ("Remix", "Mix")):
-                if len(remix_artists) >= config.VARIOUS_ARTIST_THRESHOLD:
+                if len(remix_artists) >= cfg.upload.formatting.various_artist_threshold:
                     data[dnum][tnum]["title"] += " (Remixed)"
                 elif remix_artists:
                     data[dnum][tnum]["title"] += f' ({" & ".join(remix_artists)} Remix)'

@@ -25,52 +25,60 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 
 ## 📥 Installation  
 
-Installation instructions can be found on the [Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Installation).
+Manual installation instructions can be found on the [Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Installation).
 
-### 🔹 Manual Installation  
-Requires Python 3.11+ and <3.12 and [`uv`](https://github.com/astral-sh/uv) for dependency management.  
+### 🔹  Install smoked-salmon 
+These steps use [`uv`](https://github.com/astral-sh/uv) for installing the *smoked-salmon* package. [`pipx`](https://github.com/pypa/pipx) also works.
+Installing with pip is not recommended because uv (and pipx) manage python versions and isolate the *smoked-salmon* installation from the system python installation.
 
 1. Install system packages and uv:
- ```bash
-  sudo apt install sox flac ffmpeg mp3val curl unzip lame
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
 
-Install Cambia (for log checking):
-  ```bash
-  # Currently only x86_64/amd64 systems are supported:
-  mkdir -p ~/.local/bin && \
-  wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest && \
-  chmod +x ~/.local/bin/cambia
-  ```
-
-If you want to enable spectrals compression (~30% gain in size), you also need to install [oxipng](https://github.com/shssoichiro/oxipng). Follow the installation instructions on their repository. On Debian/Ubuntu systems, you can typically install it with (check if this is the latest version):
-  ```bash
-  wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudo dpkg -i oxipng_9.1.4-1_amd64.deb
-  ``` 
-    
-2. Clone the repository:
     ```bash
-    git clone https://github.com/smokin-salmon/smoked-salmon.git
-    cd smoked-salmon
+    sudo apt install sox flac ffmpeg mp3val curl unzip lame
+    curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
 
-3. Install python dependencies and create virtual environment:
-    ```bash
-    uv sync
-    ```
+2. Install Cambia (for log checking):
 
-5. Configure salmon:
-    ```bash
-    cp config.py.txt config.py
-    ```
+	```bash
+	# Currently only x86_64/amd64 systems are supported:
+	mkdir -p ~/.local/bin && \
+	wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest && \
+	chmod +x ~/.local/bin/cambia
+	```
 
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+3. If you want to enable spectrals compression (~30% gain in size), you also need to install [oxipng](https://github.com/shssoichiro/oxipng). Follow the installation instructions on their repository. On Debian/Ubuntu systems, you can typically install it with (check if this is the latest version):
 
-6. Use the `checkconf` command to verify that the connection to the trackers is working:
-    ```bash
-    .venv/bin/salmon checkconf
-    ```
+	```bash
+	wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
+	sudo dpkg -i oxipng_9.1.4-1_amd64.deb
+	``` 
+
+4. Install smoked-salmon package from github:
+	```bash
+	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	```
+
+### 🔹  Initial Setup
+1. Run salmon for the first time and follow the instructions to create a default configuration:
+	```
+	salmon-user@salmon:~$ salmon
+	Could not find configuration path at /home/salmon-user/.config/smoked-salmon/config.toml.
+	Do you want smoked-salmon to create a default config file at /home/salmon-user/.config/smoked-salmon/config.default.toml? [y/N]:
+	```
+
+2. Copy the default config to `~/.config/smoked-salmon/config.toml`.
+	```
+	cp ~/.config/smoked-salmon/config.default.toml/ ~/.config/smoked-salmon/config.toml
+	```
+
+3. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+
+4. Use the `checkconf` command to verify that the connection to the trackers is working:
+
+	```
+	salmon checkconf
+	```
 
 ### 🐳 Docker Installation
 A Docker image is generated per release.
@@ -81,20 +89,21 @@ A Docker image is generated per release.
     docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
     ```
 
-Copy the content of the file [`config.py`](https://github.com/smokin-salmon/smoked-salmon/blob/master/config.py.txt) to a location on your host server.
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server. Alternatively, run smoked-salmon and let it generate a `config.default.toml`.
 
-2. Run the container with the `checkconf` command to verify that the connection to the trackers is workin:
+3. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+
+4. Run the container with the `checkconf` command to verify that the connection to the trackers is working:
     ```bash
     docker run --rm -it  --network=host \
     -v /path/to/your/music:/data \
-    -v /path/to/your/config.py:/app/config.py \
-    -v /path/to/your/smoked.db:/app/smoked.db \
+    -v /path/to/your/config/directory:/root/.config/smoked-salmon/ \
+    -v /path/to/your/smoked.db/directory:/root/.local/share/smoked-salmon/ \
     -v /path/to/your/generated/dottorrents:/app/.torrents
     ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
     ```
 
-Depending on how you've set the `DOTTORRENTS_DIR` in your `config.py`, you may need to add an additional volume to your Docker command to map the directory where `.torrent` files will be saved on the host system.
+Depending on how you've set the `DOTTORRENTS_DIR` in your `config.toml`, you may need to add an additional volume to your Docker command to map the directory where `.torrent` files will be saved on the host system.
 
 ## 🚀 Usage
 
@@ -112,12 +121,6 @@ smoked-salmon uses distinct terminal colors for different types of messages:
 smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server. Quick start usage instructions can be found on the [Wiki Usage page](https://github.com/smokin-salmon/smoked-salmon/wiki#usage).
 
 The examples below show how to run smoked-salmon directly. If you're using Docker, you'll need to adjust them accordingly, but the underlying principles remain the same.
-
-For ease of use, add an alias to your .bashrc (or adapt for your favorite shell):
-```bash
-echo "alias salmon='/path/to/smoked-salmon/.venv/bin/salmon'" >> ~/.bashrc
-source ~/.bashrc
-```
 
 On the first run, you will need to create the database:
 ```bash
@@ -145,6 +148,11 @@ You can get help directly from the CLI by appending --help to any command. This 
 Spectrals are viewable via a built-in web server. By default, access it at: http://localhost:55110/spectrals
 
 ## 🔄 Updating
+
+For **normal installs**:
+```bash
+uv tool update salmon
+```
 
 For **manual installs**:
 ```bash

@@ -3,7 +3,7 @@ from html import unescape
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import RequestError, UploadError
 
 loop = asyncio.get_event_loop()
@@ -67,7 +67,7 @@ def print_group_info(gazelle_site, group_id, source):
         raise UploadError("Could not get information about torrent group from RED.") from err
 
     artists = [a["name"] for a in group["group"]["musicInfo"]["artists"]]
-    artists = ", ".join(artists) if len(artists) < 4 else config.VARIOUS_ARTIST_WORD
+    artists = ", ".join(artists) if len(artists) < 4 else cfg.upload.formatting.various_artist_word
     click.secho(
         f"\nTorrents matching source {source} in (Group {group_id}) "
         f'{artists} - {group["group"]["name"]}:',
