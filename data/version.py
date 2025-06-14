@@ -1,3 +1,39 @@
+__version__ = "0.9.5"
+
+"""
+Changelog for version 0.9.5 (2025-06-14):
+
+## ⚠️ Breaking Change: Configuration File Format
+
+This release introduces a **major breaking change**: we are transitioning away from the legacy `config.py` configuration file.
+
+### 🔁 New Configuration System
+
+Settings are now stored in a **TOML** file located at: `~/.config/smoked-salmon/config.toml`
+There is **no automatic migration** from the old `config.py`, so you will need to manually migrate your settings.
+
+#### ✅ Recommended Migration Path
+
+Start from the [default configuration file](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml).  
+This ensures you're aligned with the latest structure and includes all newly introduced options.
+
+### 📖 Documentation
+
+- The **README** has been updated to reflect this change.
+- The **Wiki** is currently outdated and will be updated in a future release.
+
+We understand this requires extra effort and appreciate your patience as we make configuration cleaner and more maintainable moving forward.
+
+## What's Changed
+* Fix rare case of lost cover when uploading on multiple trackers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/102
+* Move to toml configuration by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/95
+
+## New Contributors
+* @resu-detcader made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/95
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.9...0.9.5
+"""
+
 __version__ = "0.9.4.9"
 
 """
