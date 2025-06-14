@@ -3,7 +3,7 @@ import os
 import re
 
 import click
-from dottorrent import Torrent
+from torf import Torrent
 
 from salmon import config
 from salmon.common import str_to_int_if_int
@@ -201,7 +201,7 @@ def generate_catno(metadata):
 
 
 def generate_torrent(gazelle_site, path):
-    """Call the dottorrent function to generate a torrent."""
+    """Call the torf function to generate a torrent."""
     click.secho("Generating torrent file...", fg="yellow", nl=False)
     t = Torrent(
         path,
