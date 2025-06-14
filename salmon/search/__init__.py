@@ -4,7 +4,7 @@ from itertools import chain
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.common import (
     commandgroup,
     handle_scrape_errors,
@@ -42,7 +42,7 @@ loop = asyncio.get_event_loop()
 @commandgroup.command()
 @click.argument("searchstr", nargs=-1, required=True)
 @click.option("--track-count", "-t", type=click.INT)
-@click.option("--limit", "-l", type=click.INT, default=config.SEARCH_LIMIT)
+@click.option("--limit", "-l", type=click.INT, default=cfg.upload.search.limit)
 def metas(searchstr, track_count, limit):
     """Search for releases from metadata providers"""
     searchstr = " ".join(searchstr)
@@ -79,7 +79,7 @@ def metas(searchstr, track_count, limit):
 
 def run_metasearch(
     searchstrs,
-    limit=config.SEARCH_LIMIT,
+    limit=cfg.upload.search.limit,
     sources=None,
     track_count=None,
     artists=None,

@@ -1,0 +1,187 @@
+# Smoked Salmon Configuration File
+# Read details about each setting here:
+# https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration
+
+# ===============================
+# DIRECTORY SETTINGS
+# ===============================
+[directory]
+# Where to copy files (usually the download/seeding folder for your torrent client)
+download_directory = '/path/to/folder/for/the/releases'
+
+# Hardlinks are enabled by default, set the option below to true to DISABLE hardlinks (and use standard copy files)
+# hardlinks = false
+
+# Can be a watch folder for your torrent client, or a folder somewhere else where the .torrent files will be generated
+# You still need to have it set even if using direct torrent injection with qbittorrent
+dottorrents_dir = '/path/to/folder/for/these.torrents'
+
+# Set the TMP dir where spectrals will be generated. If unset, the spectrals will be generated in the albums folders
+# and be cleaned up up before upload. Useful if you want to generate the spectral on a fast disk for instance.
+# tmp_dir = 'path to tmp dir'
+
+# If True, clean the temporary directory at startup to prevent leftover files from accumulating
+# Only files inside the TMP_DIR (and subdirectories) will be cleaned, preserving the TMP_DIR itself
+# WARNING: use this feature with caution, as it will delete all files in the TMP_DIR
+# clean_tmp_dir = true
+
+# ===============================
+# IMAGE UPLOAD SETTINGS
+# ===============================
+# Image hosters: ptpimg, ptscreens, oeimg, catbox, emp (not tested recently)
+[image]
+image_uploader = "ptpimg"
+cover_uploader = "ptpimg"
+specs_uploader = "ptpimg"
+
+# ptpimg API key (log into ptpimg, developpers tools, go to the Elements tab, and search for 'api_key')
+ptpimg_key = 'api_key'
+# ptscreens API key (log into ptscreens, settings, API)
+ptscreens_key = 'api_key'
+# oeimg API key (log into imgoe, settings, API)
+oeimg_key = 'api_key'
+
+# Set to true to remove downloaded cover images that are created in source folder, when one does not exist
+# remove_auto_downloaded_cover_image = false
+
+# ===============================
+# METADATA SERVICES
+# ===============================
+[metadata]
+# Discogs API Token (from https://www.discogs.com/settings/developers)
+discogs_token = 'discogs-token'
+
+# remove if not using tidal (see wiki to see how to get your tidal token)
+[metadata.tidal]
+token = 'your-token'
+# search_regions = ["de", "nz", "us", "gb"]
+# fetch_regions = ["de", "nz", "us", "gb"]
+
+# remove if not using qobuz (see wiki to see how to get your tidal token)
+[metadata.qobuz]
+app_id = 'app-id'
+user_auth_token = 'user_auth_token'
+# if you are using salmon from a non-english country, set this to true to avoid retrieving non-english genres
+# no_genres_from_qobuz = False
+
+
+# ===============================
+# TRACKER SETTINGS
+# ===============================
+[tracker]
+default_tracker = 'RED'       # If not set, you'll be prompted to choose when using multiple trackers
+
+# Authentication (Replace with valid session keys or API keys)
+[tracker.red]
+session = 'get-from-site-cookie' # Required for now (waiting on API support)
+# api_key = 'red-api-key'          # Needs uploading privileges (optional for now)
+# In case you want separate output folders for .torrent files
+# dottorrents_dir = 'path to dir'
+
+[tracker.ops]
+session = 'get-from-site-cookie'
+# api_key = 'ops-api-key'          # Needs uploading privileges (optional for now)
+# In case you want separate output folders for .torrent files
+# dottorrents_dir = 'path to ops dir'
+
+# ===============================
+# QBITTORRENT SETTINGS
+# ===============================
+# [qbittorrent]
+# # Add a configuration option to enable qbittorrent injection by default
+# enable_injection = false
+# category = 'salmon'     # Optional
+# skip_hash_check = false # Set to true if you want to skip hash check when adding torrents
+
+# [qbittorrent.credentials]
+# host = '127.0.0.1'
+# port = 8080
+# username = 'admin'
+# password = 'adminadmin'
+
+# ===============================
+# RUTORRENT SETTINGS
+# ===============================
+# [rutorrent]
+# enable_injection = false
+# url = "http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php"
+
+# ===============================
+# UPLOADING & PROCESSING SETTINGS
+# Most settings in this section should be allright already
+# ===============================
+# [upload]
+# simultaneous_threads = 3
+# user_agent = "salmon uploading tools"
+
+# # miscellaneous settings
+# native_spectrals_viewer = false
+# feh_fullscreen = true
+# prompt_puddletag = false
+# log_dupe_tolerance = 0.5
+# windows_use_recycle_bin = true
+
+# # multi_tracker support
+# multi_tracker_upload = true
+
+# # debugging & logging
+# debug_tracker_connection = false
+
+# # update notifications
+# update_notification = true
+# update_notification_verbose = true
+
+# # answers yes to all questions during upload. risky!
+# yes_all = false
+
+# [upload.search]
+# limit = 3
+# excluded_labels = ["edm comps"]
+# blacklisted_genres = ["Soundtrack", "Asian Music"]
+
+# [upload.formatting]
+# # templates for folder and file naming
+# folder_template = "{artists} - {title} ({year}) [{source} {format}]"
+# file_template = "{tracknumber}. {artist} - {title}"
+# remove_source_dir = false
+
+# # formatting options
+# no_artist_in_filename_if_only_one_album_artist = true
+# one_album_artist_file_template = "{tracknumber}. {title}"
+# lowercase_cover = true
+# various_artist_threshold = 4
+# blacklisted_substitution = "_"
+# guests_in_track_title = false
+# various_artist_word = "Various"
+# strip_useless_versions = true
+# add_edition_title_to_album_tag = true
+
+# # torrent description settings
+# [upload.description]
+# bitrates_in_t_desc = false
+# include_tracklist_in_t_desc = false
+# copy_uploaded_url_to_clipboard = false
+# review_as_comment_tag = true
+# icons_in_descriptions = true
+# fullwidth_replacements = false
+# empty_track_comment_tag = true
+
+# [upload.web_interface]
+# # web interface settings
+# web_host = "127.0.0.1"
+# web_port = 55110
+# web_static_root_url = "/static"
+
+# [upload.requests]
+# # request handling
+# always_ask_for_request_fill = false
+# check_recent_uploads = true
+# check_requests = true
+# last_minute_dupe_check = false
+
+# [upload.compression]
+# # compression settings
+# flac_compression_level = 8
+# compress_spectrals = true
+# lma_comment_in_t_desc = false
+# use_upc_as_catno = true

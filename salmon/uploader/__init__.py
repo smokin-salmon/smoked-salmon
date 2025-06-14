@@ -8,7 +8,7 @@ import click
 import pyperclip
 
 import salmon.trackers
-from salmon import config
+from salmon import cfg
 from salmon.checks import mqa_test
 from salmon.checks.integrity import (
     check_integrity,
@@ -142,12 +142,13 @@ loop = asyncio.get_event_loop()
 @click.option(
     "--rutorrent",
     is_flag=True,
+    default=cfg.rutorrent.enable_injection,
     help='Adds torrent to Rutorrent client after torrent upload (default: False)'
 )
 @click.option(
     "--qbittorrent",
     is_flag=True,
-    default=config.ENABLE_QBITTORRENT_INJECTION,
+    default=cfg.qbittorrent.enable_injection,
     help='Adds torrent to qBitTorrent client after torrent upload (default: False)'
 )
 @click.option("--source-url", "-su", 
@@ -193,7 +194,7 @@ def up(
 ):
     """Command to upload an album folder to a Gazelle Site."""
     if yyy:
-        config.YES_ALL = True
+        cfg.upload.yes_all = True
     gazelle_site = salmon.trackers.get_class(tracker)()
     if request:
         request = salmon.trackers.validate_request(gazelle_site, request)
@@ -258,7 +259,7 @@ def upload(
     """Upload an album folder to Gazelle Site
     Offer the choice to upload to another tracker after completion."""
     path = os.path.abspath(path)
-    remove_downloaded_cover_image = scene or config.REMOVE_AUTO_DOWNLOADED_COVER_IMAGE
+    remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
         source = _prompt_source()
     audio_info = gather_audio_info(path)
@@ -284,7 +285,7 @@ def upload(
             click.secho("No MQA release detected", fg="green")
 
         if rls_data["encoding"] == "24bit Lossless" and not skip_up:
-            if not config.YES_ALL:
+            if not cfg.upload.yes_all:
                 if click.confirm(
                         click.style(
                             "\n24bit detected. Do you want to check whether might be upconverted?",
@@ -334,7 +335,7 @@ def upload(
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
-        if platform.system() == "Windows" and config.WINDOWS_USE_RECYCLE_BIN:
+        if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
             try:
                 import send2trash
                 send2trash.send2trash(path)
@@ -360,7 +361,7 @@ def upload(
         spectral_urls = handle_spectrals_upload_and_deletion(
             spectrals_path, spectral_ids
         )
-    if config.LAST_MINUTE_DUPE_CHECK:
+    if cfg.upload.requests.last_minute_dupe_check:
         last_min_dupe_check(gazelle_site, searchstrs)
 
     # Shallow copy to avoid errors on multiple uploads in one session.
@@ -415,7 +416,7 @@ def upload(
                     os.remove(cover_path)
             cover_url = stored_cover_url
 
-        if not request_id and config.CHECK_REQUESTS:
+        if not request_id and cfg.upload.requests.check_requests:
             request_id = check_requests(gazelle_site, searchstrs)
 
         torrent_id, torrent_path, torrent_file = prepare_and_upload(
@@ -450,35 +451,45 @@ def upload(
             fg="green",
             bold=True,
         )
+        # TODO: refactor this!
         if rutorrent:
+            tracker_dirs = {
+                "OPS": cfg.directory.ops_download_directory,
+                "RED": cfg.directory.red_download_directory
+            }
+            tracker_labels = {
+                "OPS": cfg.rutorrent.ops_label,
+                "RED": cfg.rutorrent.red_label
+            }
             click.secho(
-            (f"\nAdding torrent to client {config.RUTORRENT_URL} "
-             f"{config.TRACKER_DIRS[tracker]} {config.TRACKER_LABELS[tracker]}"),
+            (f"\nAdding torrent to client {cfg.rutorrent.url} "
+             f"{tracker_dirs[tracker]} {tracker_labels[tracker]}"),
             fg="green",
             bold=True
             )
             add_torrent_to_rutorrent(
-                config.RUTORRENT_URL,
+                cfg.rutorrent.url,
                 torrent_path,
-                config.TRACKER_DIRS[tracker],
-                config.TRACKER_LABELS[tracker]
+                tracker_dirs[tracker],
+                tracker_labels[tracker]
             )
         if qbittorrent:
+            creds = cfg.qbittorrent.credentials
             click.secho(
-            (f"\nAdding torrent to client {config.QBITTORRENT_HOST} "
-             f"Save Path: {config.DOWNLOAD_DIRECTORY}, Category: {config.QBITTORRENT_CATEGORY}"),
+            (f"\nAdding torrent to client {creds.host} "
+             f"Save Path: {cfg.directory.download_directory}, Category: {cfg.qbittorrent.category}"),
             fg="green",
             bold=True
             )
             qbit_success = add_torrent_to_qbittorrent(
-                config.QBITTORRENT_HOST,
-                config.QBITTORRENT_PORT,
-                config.QBITTORRENT_USERNAME,
-                config.QBITTORRENT_PASSWORD,
+                creds.host,
+                creds.port,
+                creds.username,
+                creds.password,
                 torrent_path,
-                save_path=config.DOWNLOAD_DIRECTORY,
-                category=config.QBITTORRENT_CATEGORY,
-                skip_checking=config.QBITTORRENT_SKIP_HASH_CHECK
+                save_path=cfg.directory.download_directory,
+                category=cfg.qbittorrent.category,
+                skip_checking=cfg.qbittorrent.skip_hash_check
             )
             # Remove the torrent file after successful qBittorrent upload
             if qbit_success:
@@ -493,11 +504,11 @@ def upload(
                     fg="yellow"
                 )
 
-        if config.COPY_UPLOADED_URL_TO_CLIPBOARD:
+        if cfg.upload.description.copy_uploaded_url_to_clipboard:
             pyperclip.copy(url)
         tracker = None
         request_id = None
-        if not remaining_gazelle_sites or not config.MULTI_TRACKER_UPLOAD:
+        if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
             return click.secho("\nDone uploading this release.", fg="green")
 
 
@@ -520,7 +531,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
         check_folder_structure(path, metadata['scene'])
 
-        if config.YES_ALL or click.confirm(
+        if cfg.upload.yes_all or click.confirm(
             click.style(
                 "\nDo you want to check for integrity of this upload?",
                 fg="magenta"),
@@ -537,7 +548,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
                     bold=True,
                 )
                 raise click.Abort()
-            if not result[0] and (config.YES_ALL or click.confirm(
+            if not result[0] and (cfg.upload.yes_all or click.confirm(
                 click.style(
                     "\nDo you want to sanitize this upload?",
                     fg="magenta"),
@@ -549,7 +560,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
                 else:
                     click.secho("Some files failed sanitization", fg="red", bold=True)
 
-        if config.YES_ALL or click.confirm(
+        if cfg.upload.yes_all or click.confirm(
             click.style(
                 "\nWould you like to upload the torrent? (No to re-run metadata "
                 "section)",

@@ -9,11 +9,11 @@ from shutil import copyfile
 
 import click
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import InvalidSampleRate
 from salmon.tagger.audio_info import gather_audio_info
 
-THREADS = [None] * config.SIMULTANEOUS_THREADS
+THREADS = [None] * cfg.upload.simultaneous_threads
 COMMAND = "sox {input_} -G -b 16 {output} rate -v -L {rate} dither"
 FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 

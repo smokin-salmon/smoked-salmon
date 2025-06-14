@@ -45,37 +45,6 @@ class DeezerBase(BaseScraper):
             return self._session
 
         self._session = requests.Session()
-        try:
-            raise ImportError
-            from plugins.downloader.accounts import ACCOUNTS
-        except ImportError:
-            return self._session
-
-        try:
-            data = {
-                "type": "login",
-                "mail": list(ACCOUNTS["Deezer"]["IDK"].keys())[0],
-                "password": list(ACCOUNTS["Deezer"]["IDK"].values())[0]["password"],
-                "checkFormLogin": self._login_csrf_token,
-            }
-            cookie = list(ACCOUNTS["Deezer"]["IDK"].values())[0]["cookie"]
-        except (KeyError, IndexError):
-            return self._session
-
-        cookies = {"arl": cookie}
-        if cookie is None:
-            response = self._session.post(
-                "https://www.deezer.com/ajax/action.php", headers=HEADERS, data=data
-            )
-            if response.status_code != 200 or "success" not in response.text:
-                return self._session
-
-        response = self._session.get(
-            "https://www.deezer.com/account", headers=HEADERS, cookies=cookies
-        )
-        re_token = re.search(r'"?api(?:_k|K)ey"?: ?["\']([^"\',]*)', response.text)
-        if response.url == "https://www.deezer.com/account" and re_token:
-            self._csrf_token = re_token[1]
         return self._session
 
     @property

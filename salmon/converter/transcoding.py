@@ -9,9 +9,9 @@ from shutil import copyfile
 import click
 import mutagen
 
-from salmon import config
+from salmon import cfg
 
-THREADS = [None] * config.SIMULTANEOUS_THREADS
+THREADS = [None] * cfg.upload.simultaneous_threads
 COMMANDS = {
     "320": "flac --decode --stdout {input_} | lame -b 320 -q 0 --add-id3v2 "
         "--tt {tt} --ta {ta} --ty {ty} --tn {tn} --tl {tl} --tc {tc} --tg {tg} "

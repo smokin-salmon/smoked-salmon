@@ -1,4 +1,6 @@
 # flake8: noqa
+from salmon import cfg
+
 from salmon.sources.bandcamp import BandcampBase
 from salmon.sources.beatport import BeatportBase
 from salmon.sources.deezer import DeezerBase

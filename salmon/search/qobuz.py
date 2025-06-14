@@ -1,6 +1,6 @@
 import re
 
-from salmon import config
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import (
     IdentData,
@@ -11,7 +11,7 @@ from salmon.sources.qobuz import QobuzBase
 
 class Searcher(QobuzBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
-        if (not config.QOBUZ_USER_AUTH_TOKEN or not config.QOBUZ_APP_ID):
+        if not cfg.metadata.qobuz:
             return "Qobuz", None
 
         releases = {}

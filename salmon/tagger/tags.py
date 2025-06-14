@@ -4,7 +4,7 @@ import subprocess
 import click
 import mutagen
 
-from salmon import config
+from salmon import cfg
 from salmon.common import get_audio_files
 from salmon.tagger.tagfile import TagFile
 
@@ -24,7 +24,7 @@ def check_tags(path):
 
     check_required_tags(tags)
 
-    if config.PROMPT_PUDDLETAG:
+    if cfg.upload.prompt_puddletag:
         print_a_tag(next(iter(tags.values())))
         if prompt_editor(path):
             tags = gather_tags(path)
