@@ -1,4 +1,7 @@
-import config as user_config
+import os
+import os.path
+import tomllib
+from pathlib import Path
 
 DEFAULT_VALUES = {
     "SIMULTANEOUS_THREADS": 3,
@@ -11,11 +14,11 @@ DEFAULT_VALUES = {
     "SEARCH_EXCLUDED_LABELS": {"edm comps"},
     "BLACKLISTED_GENRES": {"Soundtrack", "Asian Music"},
     "FLAC_COMPRESSION_LEVEL": 8,
-    "TIDAL_TOKEN": None,    # Override in config.py
+    "TIDAL_TOKEN": None,    # Override in config.toml
     "TIDAL_SEARCH_REGIONS": ["DE", "NZ", "US", "GB"],
     "TIDAL_FETCH_REGIONS": ["DE", "NZ", "US", "GB"],
-    "QOBUZ_APP_ID": None,   # Override in config.py
-    "QOBUZ_USER_AUTH_TOKEN": None,  # Override in config.py
+    "QOBUZ_APP_ID": None,   # Override in config.toml
+    "QOBUZ_USER_AUTH_TOKEN": None,  # Override in config.toml
     "LOWERCASE_COVER": False,
     "VARIOUS_ARTIST_THRESHOLD": 4,
     "BLACKLISTED_SUBSTITUTION": "_",
@@ -77,9 +80,23 @@ class ConfigError(Exception):
 
 
 class Config:
+    def __init__(self):
+        config_home = Path(os.getenv("XDG_CONFIG_HOME", Path.home()))
+        for path in (
+            Path("config.toml"),
+            config_home / "smoked-salmon" / "config.toml",
+        ):
+            if not path.exists():
+                continue
+            with path.open() as f:
+                self.user_config = tomllib.load(f)
+                break
+        else:
+            self.user_config = {}
+
     def __getattr__(self, name):
         try:
-            return getattr(user_config, name)
+            return getattr(self.user_config, name)
         except AttributeError:
             try:
                 return DEFAULT_VALUES[name]

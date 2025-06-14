@@ -8,7 +8,7 @@ dist/
 
 test.py
 smoked.db*
-config.py
+config.toml
 accounts.json
 salmon/web/static/specs
 !.gitkeep

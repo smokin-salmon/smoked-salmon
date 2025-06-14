@@ -7,24 +7,24 @@
 # ===============================
 # Where to copy files (usually the download/seeding folder for your torrent client)
 DOWNLOAD_DIRECTORY = '/path/to/folder/for/the/releases'
-DISABLE_HARDLINKS = False
+DISABLE_HARDLINKS = false
 
-# Directory for temporary files (spectral images, etc). If None or empty, files will be created in the album folder
+# Directory for temporary files (spectral images, etc). If null or empty, files will be created in the album folder
 # This should be a dedicated directory used only for Salmon's temporary files
 # Example: '/path/to/salmon/tmp'
-TMP_DIR = None
+TMP_DIR = null
 
 # If True, clean the temporary directory at startup to prevent leftover files from accumulating
 # Only files in subdirectories will be cleaned, preserving the TMP_DIR itself
 # WARNING: use this feature with caution, as it will delete all files in the TMP_DIR
-CLEAN_TMP_DIR = False
+CLEAN_TMP_DIR = false
 
 # Can be a watch folder for your torrent client
 DOTTORRENTS_DIR = '/path/to/folder/for/these.torrents'
 
 # In case you want separate output folders for .torrents files
-RED_DOTTORRENTS_DIR = None
-OPS_DOTTORRENTS_DIR = None
+RED_DOTTORRENTS_DIR = null
+OPS_DOTTORRENTS_DIR = null
 
 # ===============================
 # IMAGE UPLOAD SETTINGS
@@ -42,7 +42,7 @@ PTSCREENS_KEY = 'api_key'
 OEIMG_KEY = 'api_key'
 
 # Remove downloaded cover images that are created in source folder, when one does not exist
-REMOVE_AUTO_DOWNLOADED_COVER_IMAGE = False
+REMOVE_AUTO_DOWNLOADED_COVER_IMAGE = false
 
 # ===============================
 # METADATA SERVICES
@@ -55,7 +55,7 @@ TIDAL_FETCH_REGIONS = ["DE", "NZ", "US", "GB"]
 # Remove if not using Qobuz (read wiki to see how to get your Tidal token)
 QOBUZ_APP_ID = 'app_id'
 QOBUZ_USER_AUTH_TOKEN = 'user_auth_token'
-NO_GENRES_FROM_QOBUZ = False    # if you have a non-english Qobuz account, set this to True to avoid retrieving non-english genres
+NO_GENRES_FROM_QOBUZ = false    # if you have a non-english Qobuz account, set this to True to avoid retrieving non-english genres
 
 # Discogs API Token (from https://www.discogs.com/settings/developers)
 DISCOGS_TOKEN = 'discogs-token'
@@ -80,10 +80,10 @@ QBITTORRENT_PORT = 8080
 QBITTORRENT_USERNAME = 'admin'
 QBITTORRENT_PASSWORD = 'adminadmin'
 QBITTORRENT_CATEGORY = 'salmon'  # Optional
-QBITTORRENT_SKIP_HASH_CHECK = False  # Set to True if you want to skip hash check when adding torrents
+QBITTORRENT_SKIP_HASH_CHECK = false  # Set to true if you want to skip hash check when adding torrents
 
 # Add a configuration option to enable qbittorrent injection by default
-ENABLE_QBITTORRENT_INJECTION = False
+ENABLE_QBITTORRENT_INJECTION = false
 
 # ===============================
 # UPLOADING & PROCESSING SETTINGS
@@ -103,34 +103,34 @@ FLAC_COMPRESSION_LEVEL = 8
 # Templates for folder and file naming
 FOLDER_TEMPLATE = "{artists} - {title} ({year}) [{source} {format}]"
 FILE_TEMPLATE = "{tracknumber}. {artist} - {title}"
-REMOVE_SOURCE_DIR = False
+REMOVE_SOURCE_DIR = false
 
 # Formatting options
-NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST = True
+NO_ARTIST_IN_FILENAME_IF_ONLY_ONE_ALBUM_ARTIST = true
 ONE_ALBUM_ARTIST_FILE_TEMPLATE = "{tracknumber}. {title}"
-LOWERCASE_COVER = True
+LOWERCASE_COVER = true
 VARIOUS_ARTIST_THRESHOLD = 4
 BLACKLISTED_SUBSTITUTION = "_"
-GUESTS_IN_TRACK_TITLE = False
+GUESTS_IN_TRACK_TITLE = false
 VARIOUS_ARTIST_WORD = "VA"
 
 # Torrent description settings
-BITRATES_IN_T_DESC = False
-INCLUDE_TRACKLIST_IN_T_DESC = False
-COPY_UPLOADED_URL_TO_CLIPBOARD = False
-REVIEW_AS_COMMENT_TAG = True
-ICONS_IN_DESCRIPTIONS = True
-FULLWIDTH_REPLACEMENTS = False
-EMPTY_TRACK_COMMENT_TAG = True
+BITRATES_IN_T_DESC = false
+INCLUDE_TRACKLIST_IN_T_DESC = false
+COPY_UPLOADED_URL_TO_CLIPBOARD = false
+REVIEW_AS_COMMENT_TAG = true
+ICONS_IN_DESCRIPTIONS = true
+FULLWIDTH_REPLACEMENTS = false
+EMPTY_TRACK_COMMENT_TAG = true
 
 # Miscellaneous settings
-NATIVE_SPECTRALS_VIEWER = False
-FEH_FULLSCREEN = True
-STRIP_USELESS_VERSIONS = True
-PROMPT_PUDDLETAG = False
-ADD_EDITION_TITLE_TO_ALBUM_TAG = True
+NATIVE_SPECTRALS_VIEWER = false
+FEH_FULLSCREEN = true
+STRIP_USELESS_VERSIONS = true
+PROMPT_PUDDLETAG = false
+ADD_EDITION_TITLE_TO_ALBUM_TAG = true
 LOG_DUPE_TOLERANCE = 0.5
-WINDOWS_USE_RECYCLE_BIN = True
+WINDOWS_USE_RECYCLE_BIN = true
 
 # Web interface settings
 WEB_HOST = "127.0.0.1"
@@ -138,25 +138,25 @@ WEB_PORT = 55110
 WEB_STATIC_ROOT_URL = "/static"
 
 # Compression settings
-COMPRESS_SPECTRALS = True
-LMA_COMMENT_IN_T_DESC = False
-USE_UPC_AS_CATNO = True
+COMPRESS_SPECTRALS = true
+LMA_COMMENT_IN_T_DESC = false
+USE_UPC_AS_CATNO = true
 
 # Multi-tracker support
-MULTI_TRACKER_UPLOAD = True
+MULTI_TRACKER_UPLOAD = true
 
 # Debugging & Logging
-DEBUG_TRACKER_CONNECTION = False
+DEBUG_TRACKER_CONNECTION = false
 
 # Update notifications
-UPDATE_NOTIFICATION = True
-UPDATE_NOTIFICATION_VERBOSE = True
+UPDATE_NOTIFICATION = true
+UPDATE_NOTIFICATION_VERBOSE = true
 
 # Request handling
-ALWAYS_ASK_FOR_REQUEST_FILL = False
-CHECK_RECENT_UPLOADS = True
-CHECK_REQUESTS = True
-LAST_MINUTE_DUPE_CHECK = False
+ALWAYS_ASK_FOR_REQUEST_FILL = false
+CHECK_RECENT_UPLOADS = true
+CHECK_REQUESTS = true
+LAST_MINUTE_DUPE_CHECK = false
 
 # Answers Yes to all questions during upload. Risky!
-YES_ALL = False
+YES_ALL = false

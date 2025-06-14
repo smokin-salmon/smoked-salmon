@@ -201,7 +201,7 @@ def _backup_config(config_path):
     while os.path.exists(f"{config_path}.bak.{backup_index}"):
         backup_index += 1
     shutil.move(config_path, f"{config_path}.bak.{backup_index}")
-    click.secho(f"Existing config file renamed to config.py.bak.{backup_index}", fg="yellow")
+    click.secho(f"Existing config file renamed to config.toml.bak.{backup_index}", fg="yellow")
 
 @commandgroup.command()
 @click.option(
@@ -218,22 +218,22 @@ def checkconf(tracker, reset):
     Use the -r flag to reset/create the whole config file.
     """
     if reset:
-        click.secho("Resetting new config.py file", fg="cyan", bold=True)
-        
+        click.secho("Resetting new config.toml file", fg="cyan", bold=True)
+        # FIXME: need to keep track of path to config
         config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.py")
-        config_template = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.py.txt")
+        config_template = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.sample.toml")
 
 
         if os.path.exists(config_path):
             _backup_config(config_path)
         
         if not os.path.exists(config_template):
-            click.secho("Error: config.py.txt template not found.", fg="red")
+            click.secho("Error: config.sample.toml template not found.", fg="red")
             return
 
         shutil.copy(config_template, config_path)
         click.secho(
-            "A new config.py file has been created from the template. Please update it with your custom settings.",
+            "A new config.toml file has been created from the template. Please update it with your custom settings.",
             fg="green",
         )
         return

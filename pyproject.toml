@@ -38,7 +38,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["salmon"]
-py-modules = ["run", "config"]
+py-modules = ["run"]
 
 [dependency-groups]
 dev = [

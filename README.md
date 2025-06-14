@@ -62,10 +62,10 @@ If you want to enable spectrals compression (~30% gain in size), you also need t
 
 5. Configure salmon:
     ```bash
-    cp config.py.txt config.py
+    cp config.sample.toml ~/.config/smoked-salmon/config.toml
     ```
 
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
 6. Use the `checkconf` command to verify that the connection to the trackers is working:
     ```bash
@@ -81,20 +81,20 @@ A Docker image is generated per release.
     docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
     ```
 
-Copy the content of the file [`config.py`](https://github.com/smokin-salmon/smoked-salmon/blob/master/config.py.txt) to a location on your host server.
-Edit the `config.py` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/config.sample.toml) to a location on your host server.
+Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
 2. Run the container with the `checkconf` command to verify that the connection to the trackers is workin:
     ```bash
     docker run --rm -it  --network=host \
     -v /path/to/your/music:/data \
-    -v /path/to/your/config.py:/app/config.py \
+    -v /path/to/your/config.toml:/app/config.toml \
     -v /path/to/your/smoked.db:/app/smoked.db \
     -v /path/to/your/generated/dottorrents:/app/.torrents
     ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
     ```
 
-Depending on how you've set the `DOTTORRENTS_DIR` in your `config.py`, you may need to add an additional volume to your Docker command to map the directory where `.torrent` files will be saved on the host system.
+Depending on how you've set the `DOTTORRENTS_DIR` in your `config.toml`, you may need to add an additional volume to your Docker command to map the directory where `.torrent` files will be saved on the host system.
 
 ## 🚀 Usage
 
