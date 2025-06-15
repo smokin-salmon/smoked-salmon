@@ -215,8 +215,7 @@ def generate_torrent(gazelle_site, path):
         gazelle_site.dot_torrents_dir,
         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
     )
-    with open(tpath, "wb") as tf:
-        t.save(tf)
+    t.write(tpath)
     click.secho(" done!", fg="yellow")
     return tpath, open(tpath, "rb")
 
