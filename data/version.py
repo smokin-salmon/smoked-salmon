@@ -1,3 +1,21 @@
+__version__ = "0.9.5.1"
+
+"""
+Changelog for version 0.9.5.1 (2025-06-15):
+
+Fixed the error that occurred during torrent creation caused by switching from dottorrent to torf.
+
+## What's Changed
+* Bugfixes from toml pull request by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/113
+* Fix 'beautifulsoup4' dependency by @ambroisie in https://github.com/smokin-salmon/smoked-salmon/pull/112
+* Add database location migration message by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/116
+
+## New Contributors
+* @ambroisie made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/112
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.5...0.9.5.1
+"""
+
 __version__ = "0.9.5"
 
 """
