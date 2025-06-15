@@ -46,14 +46,15 @@ RELEASE_TYPES = {
     "Anthology": 6,
     "Compilation": 7,
     "Single": 9,
+    "Demo": 10,
     "Live album": 11,
+    "Split": 12,
     "Remix": 13,
     "Bootleg": 14,
     "Interview": 15,
     "Mixtape": 16,
-    "Demo": 17,
+    "DJ Mix": 17,
     "Concert Recording": 18,
-    "DJ Mix": 19,
     "Unknown": 21,
 }
 
