@@ -215,8 +215,7 @@ def generate_torrent(gazelle_site, path):
         gazelle_site.dot_torrents_dir,
         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
     )
-    with open(tpath, "wb") as tf:
-        t.save(tf)
+    t.write(tpath)
     click.secho(" done!", fg="yellow")
     return tpath, open(tpath, "rb")
 
@@ -364,7 +363,7 @@ def generate_source_links(metadata_urls, source_url=None):
             if hostname:
                 unmatched_urls.append(f"[url={url}]{hostname.group(1)}[/url]")
 
-    result = " ".join(links) if cfg.upload.description.icons_in_description else " | ".join(links)
+    result = " ".join(links) if cfg.upload.description.icons_in_descriptions else " | ".join(links)
 
     if unmatched_urls:
         if links:
