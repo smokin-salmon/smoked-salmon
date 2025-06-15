@@ -107,6 +107,12 @@ def get_current_version():
 def check_if_migration_is_needed():
     current_version = get_current_version()
     most_recent_mig = sorted(f for f in listdir(MIG_DIR) if f.endswith(".sql"))[-1:][0]
+    if path.exists(OLD_DB_PATH):
+        click.secho(
+            f"The database needs to be moved to the new directory ({DB_PATH}). Please run `salmon migrate`.\n",
+            fg="red",
+            bold=True,
+        )
     try:
         mig_version = int(most_recent_mig[:4])
     except TypeError:
