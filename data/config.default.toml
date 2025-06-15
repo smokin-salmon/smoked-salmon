@@ -9,7 +9,7 @@
 # Where to copy files (usually the download/seeding folder for your torrent client)
 download_directory = '/path/to/folder/for/the/releases'
 
-# Hardlinks are enabled by default, set the option below to true to DISABLE hardlinks (and use standard copy files)
+# Hardlinks are enabled by default, set the option below to false to DISABLE hardlinks (and use standard copy files)
 # hardlinks = false
 
 # Can be a watch folder for your torrent client, or a folder somewhere else where the .torrent files will be generated
