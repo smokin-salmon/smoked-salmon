@@ -81,29 +81,96 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 	```
 
 ### 🐳 Docker Installation
-A Docker image is generated per release.
+
+A Docker image is generated per release.  
 **Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
 
 1. Pull the latest image:
-    ```bash
-    docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
-    ```
 
-2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server. Alternatively, run smoked-salmon and let it generate a `config.default.toml`.
+   ```bash
+   docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
+   ```
 
-3. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server.  
+   Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
-4. Run the container with the `checkconf` command to verify that the connection to the trackers is working:
-    ```bash
-    docker run --rm -it  --network=host \
-    -v /path/to/your/music:/data \
-    -v /path/to/your/config/directory:/root/.config/smoked-salmon/ \
-    -v /path/to/your/smoked.db/directory:/root/.local/share/smoked-salmon/ \
-    -v /path/to/your/generated/dottorrents:/app/.torrents
-    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
-    ```
+---
 
-Depending on how you've set the `DOTTORRENTS_DIR` in your `config.toml`, you may need to add an additional volume to your Docker command to map the directory where `.torrent` files will be saved on the host system.
+### 🔁 Recommended Docker Operation Order
+
+1. **Check Configuration** -> **Run Migration** -> **Run the Web UI**  
+   Run the container with the `checkconf` command to verify that the connection to the trackers is working:
+
+   ```bash
+   docker run --rm -it --network=host \
+   -v /path/to/your/music:/data \
+   -v /path/to/your/config.toml/directory:/.config/smoked-salmon/ \
+   -v /path/to/your/smoked.db/directory:/.local/share/smoked-salmon/ \
+   -v /path/to/your/generated/dottorrents:/app/.torrents \
+   ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
+   ```
+
+   If the configuration is valid, use the `migrate` command to initialize or upgrade the database schema:
+   Once migration is complete, you may launch container in persistent mode with `web` command.
+
+2. **Connect to the Running Container**  
+   To manually execute operations inside the container(`web` command required), connect via SSH and run:
+
+   ```bash
+   docker exec -it smoked-salmon /bin/sh
+   ```
+
+   Then, inside the container, you can run the commands like this:
+
+   ```bash
+   .venv/bin/salmon up "/path/to/your/music" -s WEB
+   ```
+
+---
+
+### ⚠️ Notes
+
+- **Permission Issues**  
+  The container currently **able to handle permissions** properly.  
+  If your torrent client is not run as root, or if new uploads are inaccessible, you may need to:
+  - Manually adjust file/folder ownership (`chown`) or permissions (`chmod`)
+  - Ensure the container and torrent client users are compatible
+  - Optionally run containers with matching `--user` flags or add `umask` logic
+     ```bash
+    user: "1001:100"
+    environment:
+      - PUID=1001
+      - PGID=100
+     ```
+
+- **.torrent Directory Mapping**  
+  Depending on how you've set the `DOTTORRENTS_DIR` in your `config.toml`, you may need to map an additional directory for `.torrent` file output. Add:
+
+  ```bash
+  -v /your/host/torrent/output:/app/.torrents
+  ```
+
+---
+
+### 📦 Portainer Stack Alternative
+
+If using Portainer or Docker Compose, here's an example stack for persistent usage:
+
+```yaml
+version: "3"
+services:
+  smoked-salmon:
+    image: ghcr.io/smokin-salmon/smoked-salmon:latest
+    container_name: smoked-salmon
+    network_mode: host
+    restart: unless-stopped
+    volumes:
+      - /path/to/your/music:/data
+      - /path/to/your/config.toml/directory:/.config/smoked-salmon/
+      - /path/to/your/smoked.db/directory:/.local/share/smoked-salmon/
+      - /path/to/your/generated/dottorrents:/app/.torrents
+    command: web
+```
 
 ## 🚀 Usage
 
