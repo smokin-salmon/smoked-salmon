@@ -140,18 +140,6 @@ wheels = [
 ]
 
 [[package]]
-name = "bs4"
-version = "0.0.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "beautifulsoup4" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c9/aa/4acaf814ff901145da37332e05bb510452ebed97bc9602695059dd46ef39/bs4-0.0.2.tar.gz", hash = "sha256:a48685c58f50fe127722417bae83fe6badf500d54b55f7e39ffe43b798653925", size = 698, upload-time = "2024-01-17T18:15:47.371Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/bb/bf7aab772a159614954d84aa832c129624ba6c32faa559dfb200a534e50b/bs4-0.0.2-py2.py3-none-any.whl", hash = "sha256:abf8742c0805ef7f662dce4b51cca104cffe52b835238afc169142ab9b3fbccc", size = 1189, upload-time = "2024-01-17T18:15:48.613Z" },
-]
-
-[[package]]
 name = "certifi"
 version = "2025.4.26"
 source = { registry = "https://pypi.org/simple" }
@@ -533,13 +521,13 @@ wheels = [
 
 [[package]]
 name = "salmon"
-version = "0.9.4.9"
+version = "0.9.5"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiohttp-jinja2" },
+    { name = "beautifulsoup4" },
     { name = "bitstring" },
-    { name = "bs4" },
     { name = "click" },
     { name = "filetype" },
     { name = "httpx" },
@@ -571,8 +559,8 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.5" },
     { name = "aiohttp-jinja2", specifier = ">=1.5.1" },
+    { name = "beautifulsoup4", specifier = ">=4.13.0" },
     { name = "bitstring", specifier = ">=4.1.2" },
-    { name = "bs4", specifier = ">=0.0.1" },
     { name = "click", specifier = ">=8.1.7" },
     { name = "filetype", specifier = ">=1.2.0" },
     { name = "httpx", specifier = ">=0.28.1" },
