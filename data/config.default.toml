@@ -10,7 +10,7 @@
 download_directory = '/path/to/folder/for/the/releases'
 
 # Hardlinks are enabled by default, set the option below to false to DISABLE hardlinks (and use standard copy files)
-# hardlinks = false
+# hardlinks = true
 
 # Can be a watch folder for your torrent client, or a folder somewhere else where the .torrent files will be generated
 # You still need to have it set even if using direct torrent injection with qbittorrent
