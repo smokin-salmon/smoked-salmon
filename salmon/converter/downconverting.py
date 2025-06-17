@@ -1,7 +1,6 @@
 import contextlib
 import os
 import re
-import shlex
 import subprocess
 import time
 from copy import copy
@@ -14,19 +13,25 @@ from salmon.errors import InvalidSampleRate
 from salmon.tagger.audio_info import gather_audio_info
 
 THREADS = [None] * cfg.upload.simultaneous_threads
-COMMAND = "sox {input_} -G -b 16 {output} rate -v -L {rate} dither"
 FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 
 
-def convert_folder(path):
+def convert_folder(path, override_sample_rate=None):
     new_path = _generate_conversion_path_name(path)
-    if os.path.isdir(new_path):
-        return click.secho(
-            f"{new_path} already exists, please delete it to re-convert.", fg="red"
+    if override_sample_rate:
+        new_path = re.sub(
+            "FLAC",
+            f"24-{override_sample_rate / 1000:.0f}",
+            new_path,
+            flags=re.IGNORECASE,
         )
+    if os.path.isdir(new_path):
+        return click.secho(f"{new_path} already exists, please delete it to re-convert.", fg="red")
 
     files_convert, files_copy = _determine_files_actions(path)
-    _convert_files(path, new_path, files_convert, files_copy)
+    sample_rate = _convert_files(path, new_path, files_convert, files_copy, override_sample_rate)
+
+    return sample_rate, new_path
 
 
 def _determine_files_actions(path):
@@ -53,7 +58,7 @@ def _generate_conversion_path_name(path):
     return os.path.join(os.path.dirname(path), foldername)
 
 
-def _convert_files(old_path, new_path, files_convert, files_copy):
+def _convert_files(old_path, new_path, files_convert, files_copy, override_sample_rate=None):
     files_left = len(files_convert) - 1
     files = iter(files_convert)
 
@@ -83,32 +88,42 @@ def _convert_files(old_path, new_path, files_convert, files_copy):
                     THREADS[i] = None
                 else:
                     output = file_.replace(old_path, new_path)
-                    THREADS[i] = _convert_single_file(file_, output, sample_rate, files_left)
+                    THREADS[i] = _convert_single_file(file_, output, sample_rate, files_left, override_sample_rate)
                     files_left -= 1
 
-        if all(t is None for t in THREADS):     # No active threads and no more files
+        if all(t is None for t in THREADS):  # No active threads and no more files
             break
         time.sleep(0.1)
 
+    return override_sample_rate if override_sample_rate else _get_final_sample_rate(sample_rate)
 
-def _convert_single_file(file_, output, sample_rate, files_left):
+
+def _convert_single_file(file_, output, sample_rate, files_left, override_sample_rate=None):
     click.echo(f"Converting {os.path.basename(file_)} [{files_left} left to convert]")
     _create_path(output)
-    command = COMMAND.format(
-        input_=shlex.quote(file_),
-        output=shlex.quote(output),
-        rate=_get_final_sample_rate(sample_rate),
-    )
-    return subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True
-    )
+
+    command = [
+        "sox",
+        file_,
+        "-R",
+        "-G",
+        *(["-b", "16"] if not override_sample_rate else []),
+        output,
+        "rate",
+        "-v",
+        "-L",
+        str(override_sample_rate if override_sample_rate else _get_final_sample_rate(sample_rate)),
+        "dither",
+    ]
+
+    return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def _create_path(filepath):
     p = os.path.dirname(filepath)
     if not os.path.isdir(p):
         with contextlib.suppress(FileExistsError):
-            os.makedirs(p)
+            os.makedirs(p, exist_ok=True)
 
 
 def _get_final_sample_rate(sample_rate):
@@ -117,3 +132,23 @@ def _get_final_sample_rate(sample_rate):
     elif sample_rate % 48000 == 0:
         return 48000
     raise InvalidSampleRate
+
+
+def generate_conversion_description(url, sample_rate):
+    description = ""
+
+    if sample_rate <= 48000:
+        description += (
+            f"Encode Specifics: 16 bit {sample_rate / 1000:.01f} kHz\n"
+            f"[b]Source:[/b] {url}\n"
+            f"[b]Transcode process:[/b] "
+            f"[code]sox input.flac -R -G -b 16 output.flac rate -v -L {sample_rate} dither[/code]\n"
+        )
+    else:
+        description += (
+            f"Encode Specifics: 24 bit {sample_rate / 1000:.01f} kHz\n"
+            f"[b]Source:[/b] {url}\n"
+            f"[b]Transcode process:[/b] [code]sox input.flac -R -G output.flac rate -v -L {sample_rate} dither[/code]\n"
+        )
+
+    return description
