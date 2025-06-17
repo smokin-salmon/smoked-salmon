@@ -29,7 +29,7 @@ def choose_tracker(choices):
         # Loop until we have chosen a tracker or aborted.
         tracker_input = click.prompt(
             click.style(
-                f'Your choices are {" , ".join(choices)} ' 'or [a]bort.',
+                f'Your choices are {" , ".join(choices)} ' 'or [n]one.',
                 fg="magenta"
             ),
             default=choices[0],
@@ -44,9 +44,8 @@ def choose_tracker(choices):
                 if tracker_input == choice[0]:
                     click.secho(f"Using tracker: {choice}", fg="green")
                     return choice
-        elif tracker_input.lower().startswith("a"):
-            click.secho("\nDone with this release.", fg="green")
-            raise click.Abort
+        elif tracker_input.lower().startswith("n"):
+            return None
 
 
 def choose_tracker_first_time(question="Which tracker would you like to upload to?"):
