@@ -19,7 +19,8 @@ import salmon.web  # noqa F401
 from salmon import cfg
 from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress
-from salmon.config import find_config_path, get_default_config_path
+from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
+from salmon.database import DB_PATH
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
@@ -229,3 +230,38 @@ def checkconf(tracker, reset):
             click.secho(f"\n✖ Error testing {t}: {e}", fg="red", bold=True)
 
         click.secho("-" * 50, fg="yellow")  # Separator for readability
+
+
+def _iter_which(deps):
+    for dep in deps:
+        present = shutil.which(dep)
+        if present:
+            click.secho(f"{dep} ✓", fg="green")
+        else:
+            click.secho(f"{dep} ✘", fg="red")
+
+
+@commandgroup.command()
+def health():
+    """Check the status of smoked-salmon's config files and command line dependencies"""
+
+    try:
+        config_path = find_config_path()
+        click.echo(f"Config path: {config_path}")
+    except FileNotFoundError:
+        click.secho(f"Could not find config at {get_user_cfg_path()}", fg="red")
+
+    if os.path.exists(DB_PATH):
+        click.echo(f"DB path: {DB_PATH}")
+    else:
+        click.secho(f"Could not find database at {DB_PATH}", fg="red")
+
+    click.echo()
+
+    req_deps = ["curl", "ffmpeg", "flac", "git", "lame", "mp3val", "oxipng", "sox", "unzip"]
+    opt_deps = ["cambia", "puddletag", "feh"]
+    click.secho("Required Dependencies:", fg="cyan")
+    _iter_which(req_deps)
+
+    click.secho("\nOptional Dependencies:", fg="cyan")
+    _iter_which(opt_deps)
