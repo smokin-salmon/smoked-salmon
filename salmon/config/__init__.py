@@ -12,7 +12,7 @@ APPNAME = "smoked-salmon"
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 
-def _get_user_cfg_path():
+def get_user_cfg_path():
     return os.path.join(user_config_dir(APPNAME), "config.toml")
 
 
@@ -32,7 +32,7 @@ def _try_creating_config(src, dest):
 
 
 def find_config_path():
-    config_dir_path = _get_user_cfg_path()
+    config_dir_path = get_user_cfg_path()
     root_config_path = os.path.join(root_path, "config.toml")
 
     # You can put a config.toml in the root directory for development purposes
@@ -50,7 +50,7 @@ def setup_config():
     try:
         path = find_config_path()
     except Exception:
-        cfg_path = _get_user_cfg_path()
+        cfg_path = get_user_cfg_path()
         attempted_default_cfg = os.path.join(os.path.dirname(cfg_path), "config.default.toml")
 
         click.secho(f"Could not find configuration path at {cfg_path}.", fg="red")
