@@ -80,6 +80,12 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 	salmon checkconf
 	```
 
+5. Use the `health` command to verify that all necesasary command line dependencies are installed:
+
+	```
+	salmon health
+	```
+
 ### 🐳 Docker Installation
 A Docker image is generated per release.
 **Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
@@ -135,6 +141,11 @@ salmon
 To test the connection to the trackers, run:
 ```bash
 salmon checkconf
+```
+
+To check the status of salmon's command line and config dependencies, run:
+```bash
+salmon health
 ```
 
 To start an upload (with the WEB source):
