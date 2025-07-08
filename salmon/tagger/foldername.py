@@ -69,8 +69,13 @@ def rename_folder(path, metadata, auto_rename, check=True):
         same_volume = os.stat(path).st_dev == os.stat(cfg.directory.download_directory).st_dev
         use_hardlinks = same_volume and cfg.directory.hardlinks
         if use_hardlinks:
-            shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
-            click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
+            try:
+                shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
+                click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
+            except shutil.Error as _:
+                click.secho("Hardlinking didn't work, falling back to non-hardlink copy...", fg="red")
+                shutil.copytree(path, new_path, dirs_exist_ok=True)
+                click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
         else:
             shutil.copytree(path, new_path, dirs_exist_ok=True)
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
