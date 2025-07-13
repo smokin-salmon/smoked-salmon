@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 
 import click
@@ -36,6 +37,12 @@ def _calculate_file_crc(filepath, _ = None):
 
 def check_log_cambia(logpath, basepath):
     """Check a log file using Cambia."""
+
+    path_has_cambia = shutil.which("cambia")
+    if not path_has_cambia:
+        click.secho("Cambia is not on the system PATH. Skipping log check!", fg="yellow")
+        return
+
     try:
         cambia_output = json.loads(
             subprocess.check_output(
