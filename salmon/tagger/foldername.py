@@ -34,16 +34,15 @@ def rename_folder(path, metadata, auto_rename, check=True):
         click.secho("\nRenaming folder...", fg="cyan", bold=True)
         click.echo(f"Old folder name        : {old_base}")
         click.echo(f"New pending folder name: {new_base}")
-        if not auto_rename and not click.confirm(
+
+        user_rename_choice = click.confirm(
             click.style(
                 "\nWould you like to replace the original folder name?",
                 fg="magenta"                
             ),
-            default=True,
-        ):
-            return path
+            default=True)
 
-        new_base = _edit_folder_interactive(new_base, auto_rename)
+        new_base = _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
 
     new_path = os.path.join(cfg.directory.download_directory, new_base)
     if os.path.isdir(new_path) and not os.path.samefile(path, new_path):
@@ -69,8 +68,13 @@ def rename_folder(path, metadata, auto_rename, check=True):
         same_volume = os.stat(path).st_dev == os.stat(cfg.directory.download_directory).st_dev
         use_hardlinks = same_volume and cfg.directory.hardlinks
         if use_hardlinks:
-            shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
-            click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
+            try:
+                shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
+                click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
+            except shutil.Error as _:
+                click.secho("Hardlinking didn't work, falling back to non-hardlink copy...", fg="red")
+                shutil.copytree(path, new_path, dirs_exist_ok=True)
+                click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
         else:
             shutil.copytree(path, new_path, dirs_exist_ok=True)
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
