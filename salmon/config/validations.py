@@ -83,7 +83,7 @@ class GazelleTrackerSettings(BaseStruct):
 class Tracker(BaseStruct):
     red: GazelleTrackerSettings | None = None
     ops: GazelleTrackerSettings | None = None
-    default_tracker: Literal["RED", "OPS"] = "RED"
+    default_tracker: Literal["RED", "OPS"] | None = None
 
     def __post_init__(self):
         if (self.red is None) and (self.ops is None):
