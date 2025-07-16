@@ -69,7 +69,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 
 2. Copy the default config to `~/.config/smoked-salmon/config.toml`.
 	```
-	cp ~/.config/smoked-salmon/config.default.toml/ ~/.config/smoked-salmon/config.toml
+	cp ~/.config/smoked-salmon/config.default.toml ~/.config/smoked-salmon/config.toml
 	```
 
 3. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
