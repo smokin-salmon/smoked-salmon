@@ -134,7 +134,7 @@ def _handle_bad_extension(filepath, scene):
     while True:
         resp = click.prompt(
             f"{filepath} does not have an approved file extension. "
-            "[D]elete, [A]bort, or [C]ontinue?",
+            "[D]elete, [a]bort, or [c]ontinue?",
             default="D",
         ).lower()
         if resp[0].lower() == "d":
@@ -148,7 +148,7 @@ def _handle_bad_extension(filepath, scene):
 def _handle_multiple_audio_exts():
     while True:
         resp = click.prompt(
-            "There are multiple audio codecs in this folder. " "[A]bort or [C]ontinue?",
+            "There are multiple audio codecs in this folder. " "[A]bort or [c]ontinue?",
             default="A",
         ).lower()
         if resp[0] == "a":
