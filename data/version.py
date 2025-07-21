@@ -1,3 +1,28 @@
+__version__ = "0.9.6"
+
+"""
+Changelog for version 0.9.6 (2025-07-21):
+
+As of this version, smoked-salmon should now be able to run natively on Windows. This release features a refactored transcoding and downconverting module based on m3ercat, and other parts that were incompatible with Windows have also been refactored.
+
+## What's Changed
+* Add overwrite=True arg to torf write to avoid WriteError when file exists by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/119
+* Fix hardlink option parity being wacked up by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/124
+* Merge transcoding and downconverting module from smoked-salmon-oasis by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/105
+* Add health command to show state of dependencies by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/125
+* Two fixes in foldername.py by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/130
+* Make default tracker field not required by @resu-detcader in https://github.com/smokin-salmon/smoked-salmon/pull/133
+* Update README.md by @bznein in https://github.com/smokin-salmon/smoked-salmon/pull/135
+* Renamed host and port in config by @btTeddy in https://github.com/smokin-salmon/smoked-salmon/pull/136
+
+## New Contributors
+* @KyokoMiki made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/105
+* @bznein made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/135
+* @btTeddy made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/136
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.5.1...0.9.6
+"""
+
 __version__ = "0.9.5.1"
 
 """
