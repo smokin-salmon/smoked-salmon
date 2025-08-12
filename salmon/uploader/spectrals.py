@@ -72,16 +72,12 @@ def check_spectrals(
             force_prompt_lossy_master=force_prompt_lossy_master,
         )
     else:
-        spectral_ids = generate_spectrals_ids(
-            path, spectral_ids, spectrals_path, audio_info
-        )
+        spectral_ids = generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
 
     return lossy_master, spectral_ids
 
 
-def handle_spectrals_upload_and_deletion(
-    spectrals_path, spectral_ids, delete_spectrals=True
-):
+def handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids, delete_spectrals=True):
     spectral_urls = upload_spectrals(spectrals_path, spectral_ids)
     if delete_spectrals and os.path.isdir(spectrals_path):
         shutil.rmtree(spectrals_path, ignore_errors=True)
@@ -122,26 +118,54 @@ def _generate_spectral_for_file(path, filename, spectrals_path, audio_info, idx)
     Function to generate spectrals for a single file.
     """
     zoom_startpoint = calculate_zoom_startpoint(audio_info[filename])
-       
+
     full_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Full.png")
     zoom_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Zoom.png")
-    
+
     # Run the subprocess for generating the spectrals
     subprocess.run(
         [
             "sox",
             "--multi-threaded",
             os.path.join(path, filename),
-            "--buffer", "128000",
-            "-n", "remix", "1", "spectrogram", "-x", "2000", "-y", "513", "-z", "120",
-            "-w", "Kaiser", "-o", full_spectral_path,
-            "remix", "1", "spectrogram", "-x", "500", "-y", "1025", "-z", "120", "-w", "Kaiser",
-            "-S", str(zoom_startpoint), "-d", "0:02", "-o", zoom_spectral_path,
+            "--buffer",
+            "128000",
+            "-n",
+            "remix",
+            "1",
+            "spectrogram",
+            "-x",
+            "2000",
+            "-y",
+            "513",
+            "-z",
+            "120",
+            "-w",
+            "Kaiser",
+            "-o",
+            full_spectral_path,
+            "remix",
+            "1",
+            "spectrogram",
+            "-x",
+            "500",
+            "-y",
+            "1025",
+            "-z",
+            "120",
+            "-w",
+            "Kaiser",
+            "-S",
+            str(zoom_startpoint),
+            "-d",
+            "0:02",
+            "-o",
+            zoom_spectral_path,
         ],
-        check=True  # Raise error if subprocess fails
+        check=True,  # Raise error if subprocess fails
     )
 
-    return (idx+1, filename)  # Return the filename to track progress
+    return (idx + 1, filename)  # Return the filename to track progress
 
 
 def _generate_spectrals(path, files_li, spectrals_path, audio_info):
@@ -150,10 +174,12 @@ def _generate_spectrals(path, files_li, spectrals_path, audio_info):
     """
     spectral_ids = {}
 
-    results = process_files(files_li, 
-                            lambda file, idx: _generate_spectral_for_file(path, file, spectrals_path, audio_info, idx),
-                            "Generating Spectrals")
-    
+    results = process_files(
+        files_li,
+        lambda file, idx: _generate_spectral_for_file(path, file, spectrals_path, audio_info, idx),
+        "Generating Spectrals",
+    )
+
     click.secho("Finished generating spectrals.", fg="green")
     if cfg.upload.compression.compress_spectrals:
         _compress_spectrals(spectrals_path)
@@ -182,9 +208,9 @@ def _compress_spectrals(spectrals_path):
             "Error: oxipng is not installed.\n"
             "It typically provides ~30% file size reduction, making it nicer for image hosting providers like ptpimg.\n"
             "Check if a package is available for your system (https://github.com/shssoichiro/oxipng).\n"
-            "On Debian, you can typically install it with:"
-            "  wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && sudodpkg -i oxipng_9.1.4-1_amd64.deb\n"  # noqa: E501
-            "Or modify your config.py file with: COMPRESS_SPECTRALS = False",
+            "On Debian, you can typically install it with:  "
+            "wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && ",
+            "sudo dpkg -i oxipng_9.1.4-1_amd64.deb\nOr modify your config.py file with: COMPRESS_SPECTRALS = False",
             fg="red",
             bold=True,
         )
@@ -217,10 +243,7 @@ def _compress_spectrals(spectrals_path):
                         stderr=devnull,
                     )
 
-        if broken and all(
-            THREADS[i] is None or THREADS[i].poll() is not None
-            for i in range(len(THREADS))
-        ):
+        if broken and all(THREADS[i] is None or THREADS[i].poll() is not None for i in range(len(THREADS))):
             break
         time.sleep(0.05)
 
@@ -231,7 +254,7 @@ def get_spectrals_path(path):
     """Get the path to the spectrals folder for an album."""
     if cfg.directory.tmp_dir and os.path.isdir(cfg.directory.tmp_dir):
         # Create a unique subfolder for this album
-        base_name = os.path.basename(path.rstrip('/'))
+        base_name = os.path.basename(path.rstrip("/"))
         return os.path.join(cfg.directory.tmp_dir, f"spectrals_{base_name}")
     return os.path.join(path, "Spectrals")
 
@@ -258,9 +281,7 @@ def calculate_zoom_startpoint(track_data):
 def view_spectrals(spectrals_path, all_spectral_ids):
     """Open the generated spectrals in an image viewer."""
     if not cfg.upload.native_spectrals_viewer:
-        loop.run_until_complete(
-            _open_specs_in_web_server(spectrals_path, all_spectral_ids)
-        )
+        loop.run_until_complete(_open_specs_in_web_server(spectrals_path, all_spectral_ids))
     elif platform.system() == "Darwin":
         _open_specs_in_preview(spectrals_path)
     elif platform.system() == "Windows":
@@ -298,8 +319,7 @@ def _open_specs_in_feh(spectrals_path):
 
 
 def _open_specs_in_windows(spectrals_path):
-    png_files = [os.path.join(spectrals_path, f) for f in os.listdir(spectrals_path)
-                 if f.lower().endswith(".png")]
+    png_files = [os.path.join(spectrals_path, f) for f in os.listdir(spectrals_path) if f.lower().endswith(".png")]
 
     if not png_files:
         click.secho("No PNG files found to display.", fg="yellow")
@@ -327,9 +347,14 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
         await prompt_async(
             click.style(
                 f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"
-                f"""{click.style('Press enter once you are finished viewing to continue the uploading '
-                             'process', fg='magenta', bold=True)}""",
-                fg="magenta"
+                f"""{
+                    click.style(
+                        "Press enter once you are finished viewing to continue the uploading process",
+                        fg="magenta",
+                        bold=True,
+                    )
+                }""",
+                fg="magenta",
             ),
             end=" ",
             flush=True,
@@ -370,13 +395,17 @@ def upload_spectrals(spectrals_path, spectral_ids):
 def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
     """Ask which spectral IDs the user wants to upload."""
     while True:
-        ids = "*" if cfg.upload.yes_all and not force_prompt_lossy_master else click.prompt(
-            click.style(
-                f"What spectral IDs would you like to upload to {cfg.image.specs_uploader}? "
-                "(space-separated list of IDs, \"0\" for none, \"*\" for all, or \"+\" for a randomized selection)",
-                fg="magenta"
-            ),
-            default="*" if lossy_master else "+",
+        ids = (
+            "*"
+            if cfg.upload.yes_all and not force_prompt_lossy_master
+            else click.prompt(
+                click.style(
+                    f"What spectral IDs would you like to upload to {cfg.image.specs_uploader}? "
+                    '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
+                    fg="magenta",
+                ),
+                default="*" if lossy_master else "+",
+            )
         )
         if ids.strip() == "+":
             all_ids = list(spectral_ids.keys())
@@ -390,8 +419,7 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_m
         ids = [i.strip() for i in ids.split()]
         if not ids and lossy_master and check_lma:
             click.secho(
-                "This release has been flagged as lossy master, please select at least "
-                "one spectral.",
+                "This release has been flagged as lossy master, please select at least one spectral.",
                 fg="red",
             )
             continue
@@ -406,15 +434,18 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_m
 def prompt_lossy_master(force_prompt_lossy_master=False):
     while True:
         flush_stdin()
-        r = "n" if cfg.upload.yes_all and not force_prompt_lossy_master else click.prompt(
-            click.style(
-                "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, "
-                "[a]bort, [d]elete music folder",
-                fg="magenta"
-            ),
-            type=click.STRING,
-            default="n",
-        )[0].lower()
+        r = (
+            "n"
+            if cfg.upload.yes_all and not force_prompt_lossy_master
+            else click.prompt(
+                click.style(
+                    "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, [a]bort, [d]elete music folder",
+                    fg="magenta",
+                ),
+                type=click.STRING,
+                default="n",
+            )[0].lower()
+        )
         if r == "y":
             return True
         elif r == "n":
@@ -441,30 +472,29 @@ def report_lossy_master(
     for lossy WEB/master approval.
     """
 
-    comment = _add_spectral_links_to_lossy_comment(
-        comment, source_url, spectral_urls, spectral_ids
-    )
-    loop.run_until_complete(
-        gazelle_site.report_lossy_master(torrent_id, comment, source)
-    )
+    comment = _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids)
+    loop.run_until_complete(gazelle_site.report_lossy_master(torrent_id, comment, source))
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
 def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
-    comment = "" if cfg.upload.yes_all and not force_prompt_lossy_master else click.prompt(
-        click.style(
-            "Do you have a comment for the lossy approval report? It is appropriate to "
-            "make a note about the source here. Source information from go, gos, and the "
-            "queue will be included automatically.",
-            fg="cyan",
-            bold=True,
-        ),
-        default="",
+    comment = (
+        ""
+        if cfg.upload.yes_all and not force_prompt_lossy_master
+        else click.prompt(
+            click.style(
+                "Do you have a comment for the lossy approval report? It is appropriate to "
+                "make a note about the source here. Source information from go, gos, and the "
+                "queue will be included automatically.",
+                fg="cyan",
+                bold=True,
+            ),
+            default="",
+        )
     )
     if not (comment or source_url):
         click.secho(
-            "This release was not uploaded with go, gos, or the queue, "
-            "so you must add a comment about the source.",
+            "This release was not uploaded with go, gos, or the queue, so you must add a comment about the source.",
             fg="red",
         )
         return generate_lossy_approval_comment(source_url, filenames)
@@ -485,8 +515,8 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
     bbcode = "[hide=Spectrals]"
     for spec_id, urls in spectral_urls.items():
         filename = re.sub(r"[\[\]]", "_", spectral_ids[spec_id])
-        bbcode += f'[b]{filename} Full[/b]\n[img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n'
-    bbcode += '[/hide]\n'
+        bbcode += f"[b]{filename} Full[/b]\n[img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n"
+    bbcode += "[/hide]\n"
     return bbcode
 
 
@@ -498,10 +528,9 @@ def post_upload_spectral_check(
     As this is post upload, we have time to ask if this is a lossy master, so force prompt.
     """
     lossy_master, spectral_ids = check_spectrals(
-        path, track_data, None, spectral_ids,
-        force_prompt_lossy_master=True, format=format
+        path, track_data, None, spectral_ids, force_prompt_lossy_master=True, format=format
     )
-    if (not lossy_master and not spectral_ids):
+    if not lossy_master and not spectral_ids:
         return None, None, None, None
 
     lossy_comment = None
@@ -516,9 +545,7 @@ def post_upload_spectral_check(
 
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)
-        loop.run_until_complete(
-            gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
-        )
+        loop.run_until_complete(gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode))
 
     if lossy_master:
         report_lossy_master(

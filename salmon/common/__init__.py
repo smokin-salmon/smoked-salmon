@@ -32,9 +32,7 @@ from salmon.errors import ScrapeError
 loop = asyncio.get_event_loop()
 
 
-@click.group(
-    context_settings=dict(help_option_names=["-h", "--help"]), cls=AliasedCommands
-)
+@click.group(context_settings=dict(help_option_names=["-h", "--help"]), cls=AliasedCommands)
 def commandgroup():
     pass
 
@@ -74,13 +72,13 @@ def flush_stdin():
         from termios import TCIOFLUSH, tcflush
 
         tcflush(sys.stdin, TCIOFLUSH)
-    except:  # noqa E722
+    except Exception:
         try:
             import msvcrt
 
             while msvcrt.kbhit():
                 msvcrt.getch()
-        except:  # noqa E722
+        except Exception:
             pass
 
 

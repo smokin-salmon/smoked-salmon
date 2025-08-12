@@ -23,14 +23,8 @@ def get_metadata(path, tags, rls_data=None):
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
     click.secho(f"Searching for '{searchstrs}' releases...")
-    kwargs = (
-        dict(artists=[a for a, _ in rls_data["artists"]], album=rls_data["title"])
-        if rls_data
-        else {}
-    )
-    search_results = run_metasearch(
-        searchstrs, filter=False, track_count=len(tags), **kwargs
-    )
+    kwargs = dict(artists=[a for a, _ in rls_data["artists"]], album=rls_data["title"]) if rls_data else {}
+    search_results = run_metasearch(searchstrs, filter=False, track_count=len(tags), **kwargs)
     choices = _print_search_results(search_results, rls_data)
     metadata, source_url = _select_choice(choices, rls_data)
     remove_various_artists(metadata["tracks"])
@@ -72,7 +66,7 @@ def _print_search_results(results, rls_data=None):
             click.echo(f"{source} is inactive. Update your config.py with the necessary tokens to enable it.")
     if source_errors:
         click.echo()
-        click.secho(f'Failed to scrape {", ".join(source_errors)}.', fg="red")
+        click.secho(f"Failed to scrape {', '.join(source_errors)}.", fg="red")
 
     return choices
 
@@ -93,8 +87,8 @@ def _select_choice(choices, rls_data):
             res = click.prompt(
                 click.style(
                     "\nWhich metadata results would you like to use? Other "
-                    "options: paste URLs, [m]anual, [a], prefix choice or URL with \"*\" to indicate source (WEB)",
-                    fg="magenta"
+                    'options: paste URLs, [m]anual, [a], prefix choice or URL with "*" to indicate source (WEB)',
+                    fg="magenta",
                 ),
                 type=click.STRING,
             )
@@ -102,8 +96,8 @@ def _select_choice(choices, rls_data):
             res = click.prompt(
                 click.style(
                     "\nNo metadata results were found. Options: paste URLs, "
-                    "[m]anual, [a]bort, prefix URL with \"*\" to indicate source (WEB)",
-                    fg="magenta"
+                    '[m]anual, [a]bort, prefix URL with "*" to indicate source (WEB)',
+                    fg="magenta",
                 ),
                 type=click.STRING,
             )
@@ -138,16 +132,10 @@ def _select_choice(choices, rls_data):
             elif stripped.strip().isdigit() and int(stripped) in choices:
                 scraper = METASOURCES[choices[int(stripped)][0]].Scraper()
                 sources.append(choices[int(stripped)][0])
-                tasks.append(
-                    handle_scrape_errors(
-                        scraper.scrape_release_from_id(choices[int(stripped)][1])
-                    )
-                )
+                tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(choices[int(stripped)][1])))
                 # Set source_url if this is a starred choice
                 if r.startswith("*"):
-                    source_url = SEARCHSOURCES[choices[int(stripped)][0]].Searcher.format_url(
-                        choices[int(stripped)][1]
-                    )
+                    source_url = SEARCHSOURCES[choices[int(stripped)][0]].Searcher.format_url(choices[int(stripped)][1])
 
         if not tasks:
             # Go to manual mode only if we have any URLs
@@ -184,9 +172,7 @@ def _get_manual_metadata(rls_data):
             return metadata_dict
         except (TypeError, json.decoder.JSONDecodeError):
             click.confirm(
-                click.style(
-                    "Metadata is not a valid JSON file, retry?", fg="magenta", bold=True
-                ),
+                click.style("Metadata is not a valid JSON file, retry?", fg="magenta", bold=True),
                 default=True,
                 abort=True,
             )
@@ -195,9 +181,7 @@ def _get_manual_metadata(rls_data):
 def _print_metadata(metadata, metadata_name="Pending"):
     """Print the metadata that is a part of the new metadata."""
     click.secho(f"\n{metadata_name} metadata:", fg="yellow", bold=True)
-    click.echo(
-        f"> TRACK COUNT   : {sum(len(d.values()) for d in metadata['tracks'].values())}"
-    )
+    click.echo(f"> TRACK COUNT   : {sum(len(d.values()) for d in metadata['tracks'].values())}")
     click.echo("> ARTISTS:")
     for artist in metadata["artists"]:
         click.echo(f">>>  {artist[0]} [{artist[1]}]")
@@ -221,10 +205,7 @@ def remove_various_artists(tracks):
         for _tnum, track in disc.items():
             artists = []
             for artist, importance in track["artists"]:
-                if (
-                    "various artists" not in artist.lower()
-                    or artist.lower().strip() != "various"
-                ):
+                if "various artists" not in artist.lower() or artist.lower().strip() != "various":
                     artists.append((artist, importance))
             track["artists"] = artists
 
@@ -233,24 +214,12 @@ def clean_metadata(metadata):
     for disc, tracks in metadata["tracks"].items():
         for num, track in tracks.items():
             for artist, importance in copy(track["artists"]):
-                guest_artists = {
-                    re_strip(a)
-                    for a, i in track["artists"]
-                    if i in {"guest", "remixer"}
-                }
+                guest_artists = {re_strip(a) for a, i in track["artists"] if i in {"guest", "remixer"}}
                 if re_strip(artist) in guest_artists and importance == "main":
-                    if (
-                        sum(
-                            'main' in item
-                            for item in metadata["tracks"][disc][num]["artists"]
-                        )
-                        == 1
-                    ):
+                    if sum("main" in item for item in metadata["tracks"][disc][num]["artists"]) == 1:
                         pass
                     else:
-                        metadata["tracks"][disc][num]["artists"].remove(
-                            (artist, importance)
-                        )
+                        metadata["tracks"][disc][num]["artists"].remove((artist, importance))
 
     if metadata["catno"] and metadata["catno"].replace(" ", "") == str(metadata["upc"]):
         metadata["catno"] = None

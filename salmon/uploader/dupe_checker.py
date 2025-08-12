@@ -48,14 +48,14 @@ def print_recent_upload_results(gazelle_site, recent_uploads, searchstr):
     These results can't be used for group selection because the log doesn't give us a group id"""
     if recent_uploads:
         click.secho(
-            f'\nFound similar recent uploads in the {gazelle_site.site_string} log: ',
+            f"\nFound similar recent uploads in the {gazelle_site.site_string} log: ",
             fg="red",
             nl=False,
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for u in recent_uploads[:5]:
             click.secho(
-                f'{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}',
+                f"{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}",
                 fg="cyan",
             )
 
@@ -69,9 +69,7 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     results = get_search_results(gazelle_site, searchstrs)
     if not results and cfg.upload.requests.check_recent_uploads:
         recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
-        print_recent_upload_results(
-            gazelle_site, recent_uploads, " / ".join(searchstrs)
-        )
+        print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
     else:
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
     group_id = _prompt_for_group_id(gazelle_site, results, offer_deletion)
@@ -85,11 +83,9 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
 
 def get_search_results(gazelle_site, searchstrs):
     results = []
-    tasks = [
-        gazelle_site.request("browse", searchstr=searchstr) for searchstr in searchstrs
-    ]
+    tasks = [gazelle_site.request("browse", searchstr=searchstr) for searchstr in searchstrs]
     for releases in loop.run_until_complete(asyncio.gather(*tasks)):
-        for release in releases['results']:
+        for release in releases["results"]:
             if release not in results:
                 results.append(release)
     return results
@@ -122,12 +118,8 @@ def _sanitize_album_for_dupe_check(album):
         album,
         flags=re.IGNORECASE,
     )
-    album = re.sub(
-        r"[\(\[][^\)\]]*Remixes[^\)\]]*[\)\]]", "remixes", album, flags=re.IGNORECASE
-    )
-    album = re.sub(
-        r"[\(\[][^\)\]]*Remix[^\)\]]*[\)\]]", "remix", album, flags=re.IGNORECASE
-    )
+    album = re.sub(r"[\(\[][^\)\]]*Remixes[^\)\]]*[\)\]]", "remixes", album, flags=re.IGNORECASE)
+    album = re.sub(r"[\(\[][^\)\]]*Remix[^\)\]]*[\)\]]", "remix", album, flags=re.IGNORECASE)
     return album
 
 
@@ -149,26 +141,24 @@ def print_search_results(gazelle_site, results, searchstr):
     """Print all the site search results."""
     if not results:
         click.secho(
-            f'\nNo groups found on {gazelle_site.site_string} matching this release.',
+            f"\nNo groups found on {gazelle_site.site_string} matching this release.",
             fg="green",
             nl=False,
         )
     else:
         click.secho(
-            f'\nResults matching this release were found on {gazelle_site.site_string}: ',
+            f"\nResults matching this release were found on {gazelle_site.site_string}: ",
             fg="red",
             nl=False,
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
             try:
-                url = f'{gazelle_site.base_url}/torrents.php?id={r["groupId"]}'
+                url = f"{gazelle_site.base_url}/torrents.php?id={r['groupId']}"
                 # User doesn't get to pick a zero index
-                click.echo(f" {r_index+1:02d} >> {r['groupId']} | ", nl=False)
+                click.echo(f" {r_index + 1:02d} >> {r['groupId']} | ", nl=False)
                 click.secho(f"{r['artist']} - {r['groupName']} ", fg="cyan", nl=False)
-                click.secho(
-                    f"({r['groupYear']}) [{r['releaseType']}] ", fg="yellow", nl=False
-                )
+                click.secho(f"({r['groupYear']}) [{r['releaseType']}] ", fg="yellow", nl=False)
                 click.echo(f"[Tags: {', '.join(r['tags'])}] | {url}")
             except (KeyError, TypeError):
                 continue
@@ -180,9 +170,9 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
         group_id = click.prompt(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
-                f"Paste a URL{', pick from groups found 'if results is not None else ''}"
-                f'or [N]ew group / [a]bort {"/ [d]elete music folder " if offer_deletion else ""}',
-                fg="magenta"
+                f"Paste a URL{', pick from groups found ' if results is not None else ''}"
+                f"or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}",
+                fg="magenta",
             ),
             default="",
         )
@@ -191,24 +181,20 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
             if group_id < 1:
                 group_id = 0  # If the user types 0 give them the first choice.
             if group_id < len(results):
-                group_id = results[group_id]['groupId']
+                group_id = results[group_id]["groupId"]
                 return int(group_id)
             else:
                 group_id = int(group_id) + 1
                 click.echo(f"Interpreting {group_id} as a group Id")
                 return group_id
 
-        elif (
-            group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php")
-        ):
+        elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
             parsed_query = parse.parse_qs(parse.urlparse(group_id).query)
-            if 'id' in parsed_query:
-                group_id = parsed_query['id'][0]
-            elif 'torrentid' in parsed_query:
-                group_id = parsed_query['torrentid'][0]
-                group_id = loop.run_until_complete(
-                    gazelle_site.get_redirect_torrentgroupid(group_id)
-                )
+            if "id" in parsed_query:
+                group_id = parsed_query["id"][0]
+            elif "torrentid" in parsed_query:
+                group_id = parsed_query["torrentid"][0]
+                group_id = loop.run_until_complete(gazelle_site.get_redirect_torrentgroupid(group_id))
                 return group_id
             else:
                 click.echo("Could not find group ID in URL.")
@@ -238,9 +224,7 @@ def _print_torrents(gazelle_site, group_id, rset):
             )
         if not t["remastered"]:
             if not group_info:
-                group_info = loop.run_until_complete(
-                    gazelle_site.torrentgroup(group_id)
-                )["group"]
+                group_info = loop.run_until_complete(gazelle_site.torrentgroup(group_id))["group"]
             click.echo(
                 f"> OR / {group_info['recordLabel']} / "
                 f"{group_info['catalogueNumber']} / {t['media']} / "
@@ -258,12 +242,12 @@ def _confirm_group_id(gazelle_site, group_id, results):
         try:
             rset = loop.run_until_complete(gazelle_site.torrentgroup(group_id))
             # account for differences between search result and group result json
-            rset['groupName'] = rset['group']['name']
-            rset['artist'] = ""
-            for a in rset['group']['musicInfo']['artists']:
-                rset['artist'] += a['name'] + " "
-            rset['groupId'] = rset['group']['id']
-            rset['groupYear'] = rset['group']['year']
+            rset["groupName"] = rset["group"]["name"]
+            rset["artist"] = ""
+            for a in rset["group"]["musicInfo"]["artists"]:
+                rset["artist"] += a["name"] + " "
+            rset["groupId"] = rset["group"]["id"]
+            rset["groupYear"] = rset["group"]["year"]
         except RequestError:
             click.secho(f"{group_id} does not exist.", fg="red")
             raise click.Abort from None
@@ -273,7 +257,7 @@ def _confirm_group_id(gazelle_site, group_id, results):
             click.style(
                 "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
                 "[n]ew group, [a]bort, [d]elete music folder",
-                fg="magenta"
+                fg="magenta",
             ),
             default="Y",
         )[0].lower()

@@ -59,7 +59,7 @@ def _check_path_lengths(path, scene):
                     really_offending_files.append(filepath)
 
     if scene and (offending_files or really_offending_files):
-        click.secho("The following files exceed 180 characters in length.", fg="red",bold=True)
+        click.secho("The following files exceed 180 characters in length.", fg="red", bold=True)
         for f in offending_files + really_offending_files:
             click.echo(f" >> {f}")
         raise NoncompliantFolderStructure
@@ -78,12 +78,10 @@ def _check_path_lengths(path, scene):
     if not offending_files:
         return click.secho("No paths exceed 180 characters in length.", fg="green")
 
-    click.secho(
-        "The following exceed 180 characters in length, truncating...", fg="red"
-    )
+    click.secho("The following exceed 180 characters in length, truncating...", fg="red")
     for filepath in sorted(offending_files):
         filename, ext = os.path.splitext(filepath)
-        newpath = filepath[: 178 - len(filename) - len(ext)*2 + root_len] + ".." + ext
+        newpath = filepath[: 178 - len(filename) - len(ext) * 2 + root_len] + ".." + ext
         os.rename(filepath, newpath)
         click.echo(f" >> {newpath}")
 
@@ -133,8 +131,7 @@ def _check_extensions(path, scene):
 def _handle_bad_extension(filepath, scene):
     while True:
         resp = click.prompt(
-            f"{filepath} does not have an approved file extension. "
-            "[D]elete, [a]bort, or [c]ontinue?",
+            f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?",
             default="D",
         ).lower()
         if resp[0].lower() == "d":
@@ -148,7 +145,7 @@ def _handle_bad_extension(filepath, scene):
 def _handle_multiple_audio_exts():
     while True:
         resp = click.prompt(
-            "There are multiple audio codecs in this folder. " "[A]bort or [c]ontinue?",
+            "There are multiple audio codecs in this folder. [A]bort or [c]ontinue?",
             default="A",
         ).lower()
         if resp[0] == "a":

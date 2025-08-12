@@ -48,9 +48,7 @@ def create_relative_path(root, path, filename):
         filename = '01. Track.flac'
     'Disc 1/01. Track.flac' would be returned.
     """
-    return os.path.join(
-        root.split(path, 1)[1][1:], filename
-    )  # [1:] to get rid of the slash.
+    return os.path.join(root.split(path, 1)[1][1:], filename)  # [1:] to get rid of the slash.
 
 
 def compress(filepath):

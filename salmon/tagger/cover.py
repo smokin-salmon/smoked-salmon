@@ -25,16 +25,14 @@ def download_cover_if_nonexistent(path, cover_url):
         cover_path = _download_cover(path, cover_url)
         if cover_path:
             return cover_path, True
-    click.secho(
-        "\nNo existing Cover Image found in Source Folder, no Cover Image downloaded", fg="red"
-    )
+    click.secho("\nNo existing Cover Image found in Source Folder, no Cover Image downloaded", fg="red")
     return None, None
 
 
 def _download_cover(path, cover_url):
     ext = os.path.splitext(cover_url)[1]
     c = "c" if cfg.upload.formatting.lowercase_cover else "C"
-    headers = {'User-Agent': 'smoked-salmon-v1'}
+    headers = {"User-Agent": "smoked-salmon-v1"}
     stream = requests.get(cover_url, stream=True, headers=headers)
 
     if stream.status_code < 400:

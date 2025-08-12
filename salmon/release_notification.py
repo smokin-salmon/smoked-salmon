@@ -7,7 +7,8 @@ import requests
 from salmon import cfg
 
 LOCAL_VERSION_FILE = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "version.py"))
-REMOTE_VERSION_URL = 'https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/data/version.py'
+REMOTE_VERSION_URL = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/data/version.py"
+
 
 def _extract_changelog(content, from_version, to_version):
     """Extracts the changelog entries between the specified versions."""
@@ -18,8 +19,8 @@ def _extract_changelog(content, from_version, to_version):
 
 def _parse_version(ver):
     """Convert a version string into a tuple for comparison, handling pre-release versions."""
-    match = re.match(r'(\d+(?:\.\d+)*)-?([a-zA-Z]*)', ver)
-    num_part = tuple(map(int, match.group(1).split('.')))
+    match = re.match(r"(\d+(?:\.\d+)*)-?([a-zA-Z]*)", ver)
+    num_part = tuple(map(int, match.group(1).split(".")))
     suffix = match.group(2)
 
     # Assign a weight for pre-release tags (lower than final versions)
@@ -83,7 +84,7 @@ def show_release_notification():
 
     if _parse_version(remote_version) > _parse_version(local_version):
         click.secho(f"[NOTICE] Update available: v{remote_version}", fg="green", bold=True)
-        
+
         if verbose and remote_content:
             changelog = _extract_changelog(remote_content, local_version, remote_version)
             if changelog:

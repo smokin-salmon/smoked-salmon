@@ -3,14 +3,7 @@ import qbittorrentapi
 
 
 def add_torrent_to_qbittorrent(
-    host,
-    port,
-    username,
-    password,
-    torrent_path,
-    save_path=None,
-    category=None,
-    skip_checking=False
+    host, port, username, password, torrent_path, save_path=None, category=None, skip_checking=False
 ):
     try:
         conn_info = {
@@ -31,7 +24,7 @@ def add_torrent_to_qbittorrent(
         if skip_checking:
             options["skip_checking"] = "true"
 
-        with open(torrent_path, 'rb') as torrent_file:
+        with open(torrent_path, "rb") as torrent_file:
             result = client.torrents_add(torrent_files=torrent_file, **options)
 
         if result == "Ok.":
@@ -51,5 +44,5 @@ def add_torrent_to_qbittorrent(
         print(f"Error adding torrent: {str(e)}")
         return False
     finally:
-        if 'client' in locals():
+        if "client" in locals():
             client.auth_log_out()

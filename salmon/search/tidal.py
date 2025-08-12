@@ -18,7 +18,7 @@ class Searcher(TidalBase, SearchMixin):
         Run a search of Tidal albums.
         Warnings are for stream quality/streambility.
         """
-        if (not cfg.metadata.tidal.token):
+        if not cfg.metadata.tidal.token:
             return "Tidal", None
 
         releases, tasks = {}, []
@@ -55,12 +55,8 @@ class Searcher(TidalBase, SearchMixin):
                 "countrycode": country_code,
             },
         )
-        albums = resp["albums"]["items"][
-            : limit * 2
-        ]  # Double it up to accomodate dupe results.
-        singles = await self._parse_singles(
-            resp["tracks"]["items"], country_code, limit * 2 - len(albums) // 2
-        )
+        albums = resp["albums"]["items"][: limit * 2]  # Double it up to accomodate dupe results.
+        singles = await self._parse_singles(resp["tracks"]["items"], country_code, limit * 2 - len(albums) // 2)
 
         results = []
         # Ghetto way of zipping into a list. SStaD!
@@ -71,16 +67,10 @@ class Searcher(TidalBase, SearchMixin):
                 results.append(sgl)
 
         for rls in [r for r in results if r][: limit * 2]:
-            artists = html.unescape(
-                ", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN")
-            )
+            artists = html.unescape(", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN"))
             title = rls["title"]
             track_count = rls["numberOfTracks"]
-            year = (
-                re.search(r"(\d{4})", rls["releaseDate"])[1]
-                if rls["releaseDate"]
-                else None
-            )
+            year = re.search(r"(\d{4})", rls["releaseDate"])[1] if rls["releaseDate"] else None
             copyright = parse_copyright(rls["copyright"])
             explicit = rls["explicit"]
 
@@ -118,9 +108,7 @@ class Searcher(TidalBase, SearchMixin):
                     and track['trackNumber'] in {1, 2}
                     and track['volumeNumber'] == 1):
             """
-            album = await self.get_json(
-                f"/albums/{track['album']['id']}", params={"countryCode": country_code}
-            )
+            album = await self.get_json(f"/albums/{track['album']['id']}", params={"countryCode": country_code})
             # if album['numberOfTracks'] < 3:
             singles.append(album)
             if len(singles) == limit:
@@ -161,17 +149,11 @@ class Searcher(TidalBase, SearchMixin):
                 "countrycode": country_code,
             },
         )
-        return {
-            a["id"]
-            for a in resp["artists"]["items"]
-            if a["name"].lower() == artiststr.lower()
-        }
+        return {a["id"] for a in resp["artists"]["items"] if a["name"].lower() == artiststr.lower()}
 
     async def _get_artist_albums(self, artist_id, country_code):
         try:
-            resp = await self.get_json(
-                f"/artists/{artist_id}/albums", params={"countrycode": country_code}
-            )
+            resp = await self.get_json(f"/artists/{artist_id}/albums", params={"countrycode": country_code})
         except ScrapeError:
             return []
         return [
@@ -179,9 +161,7 @@ class Searcher(TidalBase, SearchMixin):
                 url=rls["url"].replace("http://www.", "https://listen."),
                 quality=rls["audioQuality"],
                 year=self._parse_year(rls["releaseDate"]),
-                artist=", ".join(
-                    a["name"] for a in rls["artists"] if a["type"] == "MAIN"
-                ),
+                artist=", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN"),
                 album=rls["title"],
                 label=parse_copyright(rls["copyright"]),
                 explicit=rls["explicit"],
@@ -202,9 +182,7 @@ class Searcher(TidalBase, SearchMixin):
                 url=rls["url"].replace("http://www.", "https://listen."),
                 quality=rls["audioQuality"],
                 year=self._parse_year(rls["releaseDate"]),
-                artist=", ".join(
-                    a["name"] for a in rls["artists"] if a["type"] == "MAIN"
-                ),
+                artist=", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN"),
                 album=rls["title"],
                 label=parse_copyright(rls["copyright"]),
                 explicit=rls["explicit"],

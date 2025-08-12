@@ -13,9 +13,7 @@ loop = asyncio.get_event_loop()
 class Searcher(MusicBrainzBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
         releases = {}
-        soup = await loop.run_in_executor(
-            None, musicbrainzngs.search_releases, searchstr, 10
-        )
+        soup = await loop.run_in_executor(None, musicbrainzngs.search_releases, searchstr, 10)
         for rls in soup["release-list"]:
             try:
                 artists = rls["artist-credit-phrase"]

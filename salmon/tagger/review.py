@@ -37,7 +37,7 @@ def review_metadata(metadata, validator):
                 "\nAre there any metadata fields you would like to edit? [a]rtists, "
                 "artist a[l]iases, [t]itle, [g]enres, [r]elease type, [y]ears, "
                 "[e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing",
-                fg="magenta"
+                fg="magenta",
             )
         )
         r_let = r[0].lower()
@@ -53,9 +53,7 @@ def review_metadata(metadata, validator):
             validator(metadata)
         except InvalidMetadataError as e:
             click.confirm(
-                click.style(
-                    str(e) + " Revisit metadata step?", fg="magenta"
-                ),
+                click.style(str(e) + " Revisit metadata step?", fg="magenta"),
                 default=True,
                 abort=True,
             )
@@ -74,9 +72,8 @@ def _check_for_empty_genre_list(metadata):
     if not metadata["genres"]:
         click.prompt(
             click.style(
-                "\nNo genres were found for this release, but one must be added. "
-                "Press enter to open the genre editor.",
-                fg="magenta"
+                "\nNo genres were found for this release, but one must be added. Press enter to open the genre editor.",
+                fg="magenta",
             ),
             default="",
         )
@@ -106,8 +103,7 @@ def _edit_artists(metadata):
                     for artist_name, artist_role in track_artists:
                         # Update role for each artist from the album-level metadata
                         updated_role = next(
-                            (role for name, role in tuples_artists_list if name == artist_name),
-                            artist_role
+                            (role for name, role in tuples_artists_list if name == artist_name), artist_role
                         )
                         updated_track_artists.append((artist_name, updated_role))
                     track_info["artists"] = updated_track_artists
@@ -115,9 +111,7 @@ def _edit_artists(metadata):
             return
         except (ValueError, KeyError, TypeError) as e:
             click.confirm(
-                click.style(
-                    f"The tracks file is invalid ({type(e)}: {e}), retry?", fg="red"
-                ),
+                click.style(f"The tracks file is invalid ({type(e)}: {e}), retry?", fg="red"),
                 default=True,
                 abort=True,
             )
@@ -171,9 +165,7 @@ def _alias_artists(metadata):  # noqa: C901
                     metadata["tracks"][dnum][tnum]["artists"].pop(i)
                     for artist_name in artist_aliases[artist.lower()]:
                         if artist_name:
-                            metadata["tracks"][dnum][tnum]["artists"].append(
-                                (artist_name, importa)
-                            )
+                            metadata["tracks"][dnum][tnum]["artists"].append((artist_name, importa))
     for dnum, disc in metadata["tracks"].items():
         for tnum, track in disc.items():
             for i, (artist, _) in enumerate(track["artists"]):
@@ -187,10 +179,7 @@ def _edit_release_type(metadata):
     while True:
         rtype = (
             click.prompt(
-                click.style(
-                    "\nWhich release type corresponds to this release? (case insensitive)",
-                    fg="magenta"
-                ),
+                click.style("\nWhich release type corresponds to this release? (case insensitive)", fg="magenta"),
                 type=click.STRING,
             )
             .strip()
@@ -221,20 +210,14 @@ def _edit_title(metadata):
 
 def _edit_years(metadata):
     while True:
-        text = (
-            f'Year      : {metadata["year"]}\n' f'Group Year: {metadata["group_year"]}'
-        )
+        text = f"Year      : {metadata['year']}\nGroup Year: {metadata['group_year']}"
         text = click.edit(text)
         try:
             if not text:
                 return
-            year_line, group_year_line = (
-                line.strip() for line in text.strip().split("\n", 1)
-            )
+            year_line, group_year_line = (line.strip() for line in text.strip().split("\n", 1))
             metadata["year"] = re.match(r"Year *: *(\d{4})", year_line)[1]
-            metadata["group_year"] = re.match(
-                r"Group Year *: *(\d{4})", group_year_line
-            )[1]
+            metadata["group_year"] = re.match(r"Group Year *: *(\d{4})", group_year_line)[1]
             return
         except (TypeError, KeyError, ValueError):
             click.confirm(
@@ -253,7 +236,6 @@ def _edit_genres(metadata):
         metadata["genres"] = [g for g in genres.split("\n") if g.strip()]
 
 
-
 def _edit_urls(metadata):
     urls = click.edit("\n".join(metadata["urls"]))
     if urls:
@@ -263,24 +245,18 @@ def _edit_urls(metadata):
 def _edit_edition_info(metadata):
     while True:
         text = (
-            f'Label         : {metadata["label"] or ""}\n'
-            f'Catalog Number: {metadata["catno"] or ""}\n'
-            f'Edition Title : {metadata["edition_title"] or ""}'
+            f"Label         : {metadata['label'] or ''}\n"
+            f"Catalog Number: {metadata['catno'] or ''}\n"
+            f"Edition Title : {metadata['edition_title'] or ''}"
         )
         text = click.edit(text)
         try:
             if not text:
                 return
-            label_line, cat_line, title_line = (
-                line.strip() for line in text.strip().split("\n", 2)
-            )
+            label_line, cat_line, title_line = (line.strip() for line in text.strip().split("\n", 2))
             metadata["label"] = re.match(r"Label *: *(.*)", label_line)[1] or None
-            metadata["catno"] = (
-                re.match(r"Catalog Number *: *(.*)", cat_line)[1] or None
-            )
-            metadata["edition_title"] = (
-                re.match(r"Edition Title *: *(.*)", title_line)[1] or None
-            )
+            metadata["catno"] = re.match(r"Catalog Number *: *(.*)", cat_line)[1] or None
+            metadata["edition_title"] = re.match(r"Edition Title *: *(.*)", title_line)[1] or None
             return
         except (TypeError, KeyError, ValueError):
             click.confirm(
@@ -304,7 +280,7 @@ def _edit_tracks(metadata):
         for tnum, track in disc.items():
             text_tracks_li.append(
                 f"Disc {dnum} Track {tnum}\n"
-                f'Title: {track["title"]}\n'
+                f"Title: {track['title']}\n"
                 f"Artists:\n" + "\n".join(f"> {a} ({i})" for a, i in track["artists"])
             )
 
@@ -316,34 +292,22 @@ def _edit_tracks(metadata):
         try:
             tracks_li = [tr for tr in re.split("\n-+\n", text_tracks) if tr.strip()]
             for track_tx in tracks_li:
-                ident, title, _, *artists_li = [
-                    t.strip() for t in track_tx.split("\n") if t.strip()
-                ]
+                ident, title, _, *artists_li = [t.strip() for t in track_tx.split("\n") if t.strip()]
                 r_ident = re.search(r"Disc ([^ ]+) Track ([^ ]+)", ident)
                 discnum, tracknum = r_ident[1], r_ident[2]
-                metadata["tracks"][discnum][tracknum]["title"] = re.search(
-                    r"Title *: *(.+)", title
-                )[1]
+                metadata["tracks"][discnum][tracknum]["title"] = re.search(r"Title *: *(.+)", title)[1]
 
                 tuples_artists_list = []
                 for artist_line in artists_li:
                     artist_line_name, artist_line_role = artist_line.rsplit(" ", 1)
-                    artist_line_role = re.search(r"\((.+)\)", artist_line_role)[
-                        1
-                    ].lower()
-                    tuples_artists_list.append(
-                        (re.search(r"> *(.+)", artist_line_name)[1], artist_line_role)
-                    )
+                    artist_line_role = re.search(r"\((.+)\)", artist_line_role)[1].lower()
+                    tuples_artists_list.append((re.search(r"> *(.+)", artist_line_name)[1], artist_line_role))
                 metadata["tracks"][discnum][tracknum]["artists"] = tuples_artists_list
-            metadata["artists"], metadata["tracks"] = generate_artists(
-                metadata["tracks"]
-            )
+            metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
             return
         except (TypeError, ValueError, KeyError) as e:
             click.confirm(
-                click.style(
-                    f"The tracks file is invalid ({type(e)}: {e}), retry?", fg="red"
-                ),
+                click.style(f"The tracks file is invalid ({type(e)}: {e}), retry?", fg="red"),
                 default=True,
                 abort=True,
             )

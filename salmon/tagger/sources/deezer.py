@@ -48,14 +48,10 @@ class Scraper(DeezerBase, MetadataMixin):
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
-            tracks[str(track["DISK_NUMBER"])][
-                str(track["TRACK_NUMBER"])
-            ] = self.generate_track(
+            tracks[str(track["DISK_NUMBER"])][str(track["TRACK_NUMBER"])] = self.generate_track(
                 trackno=track["TRACK_NUMBER"],
                 discno=track["DISK_NUMBER"],
-                artists=self.parse_artists(
-                    track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"]
-                ),
+                artists=self.parse_artists(track["SNG_CONTRIBUTORS"], track["ARTISTS"], track["SNG_TITLE"]),
                 title=self.parse_title(track["SNG_TITLE"], track.get("VERSION", None)),
                 isrc=track["ISRC"],
                 explicit=track["EXPLICIT_LYRICS"],
@@ -69,8 +65,7 @@ class Scraper(DeezerBase, MetadataMixin):
 
     def process_label(self, data):
         if isinstance(data["label"], str) and any(
-            data["label"].lower().startswith(a.lower()) and i == "main"
-            for a, i in data["artists"]
+            data["label"].lower().startswith(a.lower()) and i == "main" for a, i in data["artists"]
         ):
             return "Self-Released"
         return data["label"]

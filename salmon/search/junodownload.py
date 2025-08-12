@@ -19,44 +19,38 @@ class Searcher(JunodownloadBase, SearchMixin):
             follow_redirects=False,
         )
         for meta in soup.find_all(
-            'div',
+            "div",
             attrs={
-                'class': 'row gutters-sm jd-listing-item',
-                'data-ua_location': 'release',
+                "class": "row gutters-sm jd-listing-item",
+                "data-ua_location": "release",
             },
         ):
             try:
-                su_title = meta.find('a', attrs={'class': 'juno-title'})
+                su_title = meta.find("a", attrs={"class": "juno-title"})
                 rls_id = re.search(r"/products/[^/]+/([\d-]+)", su_title["href"])[1]
                 title = su_title.string
 
-                #right_blob = meta.find('div', attrs={'class': 'text-sm mb-3 mb-lg-3'})
-                right_blob = meta.find('div', attrs={'class': 'text-sm text-muted mt-3'})
+                # right_blob = meta.find('div', attrs={'class': 'text-sm mb-3 mb-lg-3'})
+                right_blob = meta.find("div", attrs={"class": "text-sm text-muted mt-3"})
 
-                right_blob_elements_count = len(
-                    right_blob.get_text(separator="|").strip().split("|")
-                )
+                right_blob_elements_count = len(right_blob.get_text(separator="|").strip().split("|"))
                 if right_blob_elements_count != 3:
                     # skip item missing one or more of: catno, date or genre
                     continue
 
-                date = right_blob.find('br').next.strip()
+                date = right_blob.find("br").next.strip()
                 year = int(date[-2:])
 
                 year = 1900 + year if 40 <= year <= 99 else 2000 + year
 
-                catno = right_blob.find('br').previous_sibling.strip().replace(' ', '')
+                catno = right_blob.find("br").previous_sibling.strip().replace(" ", "")
 
-                ar_blob = meta.find('div', attrs={'class': 'col juno-artist'})
+                ar_blob = meta.find("div", attrs={"class": "col juno-artist"})
 
-                ar_li = [a.string.title() for a in ar_blob.find_all('a') if a.string]
-                artists = (
-                    ", ".join(ar_li)
-                    if ar_li and len(ar_li) < 5
-                    else cfg.upload.formatting.various_artist_word
-                )
+                ar_li = [a.string.title() for a in ar_blob.find_all("a") if a.string]
+                artists = ", ".join(ar_li) if ar_li and len(ar_li) < 5 else cfg.upload.formatting.various_artist_word
 
-                label_blob = meta.find('a', attrs={'class': 'juno-label'})
+                label_blob = meta.find("a", attrs={"class": "juno-label"})
                 label = label_blob.text.strip()
 
                 if label.lower() not in cfg.upload.search.excluded_labels:

@@ -15,9 +15,7 @@ MIG_DIR = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "
 
 
 @commandgroup.command()
-@click.option(
-    "--list", "-l", is_flag=True, help="List migrations instead of migrating."
-)
+@click.option("--list", "-l", is_flag=True, help="List migrations instead of migrating.")
 def migrate(list):
     """Migrate database to newest version"""
     if list:
@@ -38,8 +36,7 @@ def migrate(list):
                 mig_version = int(migration[:4])
             except TypeError:
                 click.secho(
-                    f"\n{migration} is improperly named. It must start with "
-                    "a four digit integer.",
+                    f"\n{migration} is improperly named. It must start with a four digit integer.",
                     fg="red",
                 )
                 raise click.Abort from None
@@ -50,9 +47,7 @@ def migrate(list):
                 cursor = conn.cursor()
                 with open(path.join(MIG_DIR, migration)) as mig_file:
                     cursor.executescript(mig_file.read())
-                    cursor.execute(
-                        "INSERT INTO version (id) VALUES (?)", (mig_version,)
-                    )
+                    cursor.execute("INSERT INTO version (id) VALUES (?)", (mig_version,))
                 conn.commit()
                 cursor.close()
 
@@ -68,8 +63,7 @@ def list_migrations():
             mig_version = int(migration[:4])
         except TypeError:
             click.secho(
-                f"\n{migration} is improperly named. It must start with a "
-                "four digit integer.",
+                f"\n{migration} is improperly named. It must start with a four digit integer.",
                 fg="red",
             )
             raise click.Abort from None
@@ -81,8 +75,7 @@ def list_migrations():
 
     if not current_version:
         click.secho(
-            "\nYou have not yet ran a migration. Catch your database up with "
-            "./run.py migrate",
+            "\nYou have not yet ran a migration. Catch your database up with ./run.py migrate",
             fg="magenta",
             bold=True,
         )
@@ -117,8 +110,7 @@ def check_if_migration_is_needed():
         mig_version = int(most_recent_mig[:4])
     except TypeError:
         click.secho(
-            f"\n{most_recent_mig} is improperly named. It must start with a "
-            "four digit integer.",
+            f"\n{most_recent_mig} is improperly named. It must start with a four digit integer.",
             fg="red",
         )
         raise click.Abort from None

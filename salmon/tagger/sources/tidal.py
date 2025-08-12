@@ -18,8 +18,8 @@ RECORD_TYPES = {
     "SINGLE": "Single",
 }
 
-class Scraper(TidalBase, MetadataMixin):
 
+class Scraper(TidalBase, MetadataMixin):
     regex = re.compile(r"^https?://.*(?:tidal|wimpmusic)\.com.*\/(album)\/([0-9]+)")
 
     def parse_release_title(self, soup):
@@ -57,14 +57,10 @@ class Scraper(TidalBase, MetadataMixin):
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
-            tracks[str(track["volumeNumber"])][
-                str(track["trackNumber"])
-            ] = self.generate_track(
+            tracks[str(track["volumeNumber"])][str(track["trackNumber"])] = self.generate_track(
                 trackno=track["trackNumber"],
                 discno=track["volumeNumber"],
-                artists=self.parse_artists(
-                    track["artists"], track["title"], track["id"]
-                ),
+                artists=self.parse_artists(track["artists"], track["title"], track["id"]),
                 title=self.parse_title(track["title"], track["version"]),
                 replay_gain=track["replayGain"],
                 peak=track["peak"],
@@ -78,8 +74,7 @@ class Scraper(TidalBase, MetadataMixin):
 
     def process_label(self, data):
         if isinstance(data["label"], str) and any(
-            data["label"].lower().startswith(a.lower()) and i == "main"
-            for a, i in data["artists"]
+            data["label"].lower().startswith(a.lower()) and i == "main" for a, i in data["artists"]
         ):
             return "Self-Released"
         return data["label"]
@@ -136,10 +131,7 @@ class Scraper(TidalBase, MetadataMixin):
                     if attempts > 3:
                         break
             for artist in artists:
-                if (
-                    artist["role"] == "Remixer"
-                    and artist["name"].lower() not in artist_set
-                ):
+                if artist["role"] == "Remixer" and artist["name"].lower() not in artist_set:
                     result.append((unescape(artist["name"]), "remixer"))
                     artist_set.add(artist["name"].lower())
 

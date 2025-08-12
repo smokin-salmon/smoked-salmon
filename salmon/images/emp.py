@@ -29,9 +29,9 @@ class ImageUploader(BaseImageUploader):
         "When class is first used we need to fetch an authtoken."
         global AUTH_TOKEN
         if not AUTH_TOKEN:
-            resp = requests.get('https://jerking.empornium.ph', cookies=cookies)
+            resp = requests.get("https://jerking.empornium.ph", cookies=cookies)
             soup = BeautifulSoup(resp.text, "html.parser")
-            AUTH_TOKEN = soup.find(attrs={"name": "auth_token"})['value']
+            AUTH_TOKEN = soup.find(attrs={"name": "auth_token"})["value"]
         self.auth_token = AUTH_TOKEN
         if not self.auth_token:
             raise ImageUploadFailed
@@ -55,19 +55,13 @@ class ImageUploader(BaseImageUploader):
             "auth_token": self.auth_token,
         }
 
-        resp = requests.post(
-            url, headers=HEADERS, data=data, cookies=cookies, files=files
-        )
+        resp = requests.post(url, headers=HEADERS, data=data, cookies=cookies, files=files)
         # print(resp.json())
         if resp.status_code == requests.codes.ok:
             try:
                 resp_data = resp.json()
                 return resp_data["image"]["url"], None
             except ValueError as e:
-                raise ImageUploadFailed(
-                    f"Failed decoding body:\n{e}\n{resp.content}"
-                ) from e
+                raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{resp.content}") from e
         else:
-            raise ImageUploadFailed(
-                f"Failed. Status {resp.status_code}:\n{resp.content}"
-            )
+            raise ImageUploadFailed(f"Failed. Status {resp.status_code}:\n{resp.content}")

@@ -14,15 +14,12 @@ from salmon.errors import ScrapeError
 
 HEADERS = {"User-Agent": choice(UAGENTS)}
 
-IdentData = namedtuple(
-    "IdentData", ["artist", "album", "year", "track_count", "source"]
-)
+IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
 
 loop = asyncio.get_event_loop()
 
 
 class BaseScraper:
-
     url = NotImplementedError
     site_url = NotImplementedError
     regex = NotImplementedError
@@ -42,9 +39,7 @@ class BaseScraper:
         keys = [fn for _, fn, _, _ in Formatter().parse(cls.release_format) if fn]
         if "rls_name" in keys:
             rls_name = rls_name or "a"
-            return cls.site_url + cls.release_format.format(
-                rls_id=rls_id, rls_name=cls.url_format_rls_name(rls_name)
-            )
+            return cls.site_url + cls.release_format.format(rls_id=rls_id, rls_name=cls.url_format_rls_name(rls_name))
         return cls.site_url + cls.release_format.format(rls_id=rls_id)
 
     async def get_json(self, url, params=None, headers=None):
@@ -52,20 +47,16 @@ class BaseScraper:
         Run an asynchronius GET request to a JSON API maintained by
         a metadata source.
         """
-        return await loop.run_in_executor(
-            None, lambda: self.get_json_sync(url, params, headers)
-        )
+        return await loop.run_in_executor(None, lambda: self.get_json_sync(url, params, headers))
 
     def get_json_sync(self, url, params=None, headers=None):
         """Make a synchronius get request, usually called by the async get_json."""
         params = {**(params or {}), **(self.get_params)}
         headers = {**(headers or {}), **HEADERS}
         try:
-            result = requests.get(
-                self.url + url, params=params, headers=headers, timeout=10
-            )
+            result = requests.get(self.url + url, params=params, headers=headers, timeout=10)
             if result.status_code != 200:
-                class_hierarchy = ' -> '.join([cls.__name__ for cls in self.__class__.mro()[:-1]])
+                class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
                 # traceback.print_stack()  # Removed to avoid confusion. ScrapeError already prints the stack trace.
                 error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {result.status_code}."
                 raise ScrapeError(error_msg, result.json())
@@ -86,14 +77,12 @@ class BaseScraper:
                 params=params,
                 headers=headers or HEADERS,
                 timeout=7,
-                follow_redirects=kwargs.pop('follow_redirects', True),
-                **kwargs
+                follow_redirects=kwargs.pop("follow_redirects", True),
+                **kwargs,
             ),
         )
         if r.status_code != 200:
-            raise ScrapeError(
-                f"Failed to successfully scrape page. Status code: {r.status_code}"
-            )
+            raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status_code}")
         return BeautifulSoup(r.text, "html.parser")
 
     @staticmethod

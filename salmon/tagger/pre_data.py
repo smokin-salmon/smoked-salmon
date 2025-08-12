@@ -93,7 +93,7 @@ def parse_title(title):
         match = junk_pattern.search(base)
         if match:
             edition = match.group(1).strip()
-            base = base[:match.start()].strip()
+            base = base[: match.start()].strip()
 
     return base, edition
 
@@ -131,17 +131,15 @@ def parse_encoding(format_, audio_info, supplied_encoding, prompt_encoding, hybr
             return "Lossless", False
         else:
             audio_track = next(iter(audio_info.values()))
-            if (audio_track["precision"] == 16):
+            if audio_track["precision"] == 16:
                 return "Lossless", False
-            if (audio_track["precision"] == 24):
+            if audio_track["precision"] == 24:
                 return "24bit Lossless", False
     if supplied_encoding and list(supplied_encoding) != [None, None]:
         return supplied_encoding
     if prompt_encoding:
         return _prompt_encoding()
-    click.secho(
-        "An encoding must be specified if the files are not lossless.", fg="red"
-    )
+    click.secho("An encoding must be specified if the files are not lossless.", fg="red")
     raise click.Abort
 
 
@@ -152,10 +150,12 @@ def create_track_list(tags, overwrite):
         discnumber = track.discnumber or "1"
         tracknumber = (
             str(track.tracknumber).split("/")[0]
-                if (track.tracknumber
-                    and str(track.tracknumber).split("/")[0].isdigit()
-                    and int(str(track.tracknumber).split("/")[0]) > 0)
-                else str(trackindex)
+            if (
+                track.tracknumber
+                and str(track.tracknumber).split("/")[0].isdigit()
+                and int(str(track.tracknumber).split("/")[0]) > 0
+            )
+            else str(trackindex)
         )
         tracks[discnumber][tracknumber] = {
             "track#": tracknumber,
@@ -203,13 +203,10 @@ def parse_artists(artist_list):
 
 
 def _prompt_encoding():
-    click.echo(f'\nValid encodings: {", ".join(TAG_ENCODINGS.keys())}')
+    click.echo(f"\nValid encodings: {', '.join(TAG_ENCODINGS.keys())}")
     while True:
         enc = click.prompt(
-            click.style(
-                "What is the encoding of this release? [a]bort",
-                fg="magenta"
-            ),
+            click.style("What is the encoding of this release? [a]bort", fg="magenta"),
             default="",
         )
         try:

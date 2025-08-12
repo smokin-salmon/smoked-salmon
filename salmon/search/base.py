@@ -3,15 +3,9 @@ from collections import namedtuple
 
 import click
 
-IdentData = namedtuple(
-    "IdentData", ["artist", "album", "year", "track_count", "source"]
-)
-ArtistRlsData = namedtuple(
-    "ArtistRlsData", ["url", "quality", "year", "artist", "album", "label", "explicit"]
-)
-LabelRlsData = namedtuple(
-    "LabelRlsData", ["url", "quality", "year", "artist", "album", "type", "explicit"]
-)
+IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
+ArtistRlsData = namedtuple("ArtistRlsData", ["url", "quality", "year", "artist", "album", "label", "explicit"])
+LabelRlsData = namedtuple("LabelRlsData", ["url", "quality", "year", "artist", "album", "type", "explicit"])
 
 
 class SearchMixin(ABC):

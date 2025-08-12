@@ -33,8 +33,7 @@ def validate_source(ctx, param, value):
         raise click.BadParameter(f"{value} is not a valid source.") from None
     except AttributeError:
         raise click.BadParameter(
-            "You must provide a source. Possible sources are: "
-            + ", ".join(SOURCES.values())
+            "You must provide a source. Possible sources are: " + ", ".join(SOURCES.values())
         ) from None
 
 
@@ -48,23 +47,20 @@ def validate_encoding(ctx, param, value):
 
 
 @commandgroup.command()
-@click.argument(
-    "path", type=click.Path(exists=True, file_okay=False, resolve_path=True)
-)
+@click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option(
     "--source",
     "-s",
     type=click.STRING,
     callback=validate_source,
-    help=f'Source of files ({"/".join(SOURCES.values())})',
+    help=f"Source of files ({'/'.join(SOURCES.values())})",
 )
 @click.option(
     "--encoding",
     "-e",
     type=click.STRING,
     callback=validate_encoding,
-    help="You must specify one of the following encodings if files aren't lossless: "
-    + ", ".join(TAG_ENCODINGS.keys()),
+    help="You must specify one of the following encodings if files aren't lossless: " + ", ".join(TAG_ENCODINGS.keys()),
 )
 @click.option(
     "--overwrite",
@@ -76,7 +72,7 @@ def validate_encoding(ctx, param, value):
     "--auto-rename",
     "-n",
     is_flag=True,
-    help='Rename files and folders automatically',
+    help="Rename files and folders automatically",
 )
 def tag(path, source, encoding, overwrite, auto_rename):
     """Interactively tag an album"""
@@ -84,9 +80,7 @@ def tag(path, source, encoding, overwrite, auto_rename):
     standardize_tags(path)
     tags = gather_tags(path)
     audio_info = gather_audio_info(path)
-    rls_data = construct_rls_data(
-        tags, audio_info, source, encoding, overwrite=overwrite
-    )
+    rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
     metadata, _ = get_metadata(path, tags, rls_data)
     metadata = review_metadata(metadata, metadata_validator_base)
@@ -121,16 +115,11 @@ def metadata_validator_base(metadata):
         raise InvalidMetadataError("You must have at least one main artist.")
     for track in chain.from_iterable([d.values() for d in metadata["tracks"].values()]):
         if "main" not in set(i for _, i in track["artists"]):
-            raise InvalidMetadataError(
-                "You must have at least one main artist per track."
-            )
+            raise InvalidMetadataError("You must have at least one main artist per track.")
     if not all(i in ARTIST_IMPORTANCES for i in artist_importances):
         raise InvalidMetadataError(
             "Invalid artist importance detected: {}.".format(
-                ", ".join(
-                    i
-                    for i in artist_importances.difference(ARTIST_IMPORTANCES.values())
-                )
+                ", ".join(i for i in artist_importances.difference(ARTIST_IMPORTANCES.values()))
             )
         )
     try:
@@ -144,19 +133,15 @@ def metadata_validator_base(metadata):
     if metadata["source"] == "CD" and metadata["year"] < 1982:
         raise InvalidMetadataError("You cannot have a CD upload from before 1982.")
     if metadata["source"] not in SOURCES.values():
-        raise InvalidMetadataError(f'{metadata["source"]} is not a valid source.')
-    if metadata["label"] and (
-        len(metadata["label"]) < 2 or len(metadata["label"]) > 80
-    ):
+        raise InvalidMetadataError(f"{metadata['source']} is not a valid source.")
+    if metadata["label"] and (len(metadata["label"]) < 2 or len(metadata["label"]) > 80):
         raise InvalidMetadataError("Label must be over 2 and under 80 characters.")
     if metadata["label"] is not None and "records dk" in metadata["label"].lower():
         raise InvalidMetadataError(
             "Records DK is not a label. It's a platform for releasing albums. "
             "Please change the label (e.g Self Released)"
         )
-    if metadata["catno"] and (
-        len(metadata["catno"]) < 2 or len(metadata["catno"]) > 80
-    ):
+    if metadata["catno"] and (len(metadata["catno"]) < 2 or len(metadata["catno"]) > 80):
         raise InvalidMetadataError("Catno must be over 2 and under 80 characters.")
 
     return metadata

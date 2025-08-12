@@ -75,7 +75,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
             catno = str(catno).strip()
 
             # Check for exact matches of none variants (case insensitive)
-            none_variants = ['none', '[none]', '(none)', 'n/a', '[n/a]', '(n/a)']
+            none_variants = ["none", "[none]", "(none)", "n/a", "[n/a]", "(n/a)"]
             if catno.lower() in none_variants:
                 return None
 
@@ -97,9 +97,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         for disc in soup["medium-list"]:
             for track in disc["track-list"]:
                 try:
-                    tracks[str(disc["position"])][
-                        str(track["number"])
-                    ] = self.generate_track(
+                    tracks[str(disc["position"])][str(track["number"])] = self.generate_track(
                         trackno=track["number"],
                         discno=disc["position"],
                         artists=parse_artists(track["recording"]["artist-credit"]),

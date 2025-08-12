@@ -40,13 +40,13 @@ def test_upconverted(path):
         for root, _, files in os.walk(path):
             for f in files:
                 if f.lower().endswith(".flac"):
-                    flac_files.append(os.path.join(root, f))       
+                    flac_files.append(os.path.join(root, f))
         results = process_files(flac_files, _upconvert_check_handler, "Checking FLAC files for upconverts")
         _display_results(results)
         return any(r[0] for r in results if r[0] is not None)
 
 
-def _upconvert_check_handler(filepath, _ = None):
+def _upconvert_check_handler(filepath, _=None):
     try:
         upconv, wasted_bits, bitdepth, error = check_upconvert(filepath)
         return upconv, wasted_bits, bitdepth, filepath, error
@@ -65,9 +65,7 @@ def check_upconvert(filepath):
         return None, None, bitdepth, "This is a 16bit FLAC file."
 
     with open(os.devnull, "w") as devnull:
-        response = subprocess.check_output(
-            ["flac", "-ac", filepath], stderr=devnull
-        ).decode("utf-8")
+        response = subprocess.check_output(["flac", "-ac", filepath], stderr=devnull).decode("utf-8")
 
     wasted_bits_list = []
     for line in response.split("\n"):
@@ -98,7 +96,7 @@ def _tracknumber_sort_key(file_path):
 
 def _display_results(results):
     sorted_results = sorted(results, key=lambda x: _tracknumber_sort_key(x[3]))
-    
+
     for upconv, wasted_bits, bitdepth, filepath, error in sorted_results:
         if upconv is None:
             click.secho(f"{os.path.basename(filepath)}: {error}", fg="yellow")
@@ -106,7 +104,5 @@ def _display_results(results):
             status = "likely upconverted" if upconv else "does not have a high number of wasted bits"
             color = "red" if upconv else "green"
             click.secho(
-                f"{os.path.basename(filepath)}: {status} (Wasted bits: {wasted_bits}/{bitdepth})",
-                fg=color,
-                bold=upconv
+                f"{os.path.basename(filepath)}: {status} (Wasted bits: {wasted_bits}/{bitdepth})", fg=color, bold=upconv
             )
