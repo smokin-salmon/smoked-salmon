@@ -11,6 +11,7 @@ import time
 from os.path import dirname, join
 
 import click
+import oxipng
 
 from salmon import cfg
 from salmon.common import flush_stdin, get_audio_files, prompt_async
@@ -194,60 +195,21 @@ def _generate_spectrals(path, files_li, spectrals_path, audio_info):
 
 def _compress_spectrals(spectrals_path):
     """
-    Iterate over the spectrals directory and compress them. Abuse async nature of
-    subprocess.Popen to spawn multiple processes and compress multiple simultaneously.
+    Iterate over the spectrals directory and compress them using pyoxipng.
     """
     files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
-    files_iter = iter(files)
-    cur_file = 1
-    broken = False
+    if not files:
+        return
 
-    # Check if oxipng is installed
-    if shutil.which("oxipng") is None:
-        click.secho(
-            "Error: oxipng is not installed.\n"
-            "It typically provides ~30% file size reduction, making it nicer for image hosting providers like ptpimg.\n"
-            "Check if a package is available for your system (https://github.com/shssoichiro/oxipng).\n"
-            "On Debian, you can typically install it with:  "
-            "wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && ",
-            "sudo dpkg -i oxipng_9.1.4-1_amd64.deb\nOr modify your config.py file with: COMPRESS_SPECTRALS = False",
-            fg="red",
-            bold=True,
-        )
-        exit(1)
+    filepaths = [os.path.join(spectrals_path, f) for f in files]
 
-    while True:
-        with open(os.devnull, "rb") as devnull:
-            for i in range(len(THREADS)):
-                if THREADS[i] is None or THREADS[i].poll() is not None:
-                    try:
-                        filename = next(files_iter)
-                    except StopIteration:
-                        broken = True
-                        break
+    process_files(
+        filepaths,
+        lambda filepath, idx: oxipng.optimize(filepath, level=2, strip=oxipng.StripChunks.all()),
+        "Compressing spectral images",
+    )
 
-                    click.secho(
-                        f"Compressing spectral image {cur_file:02d}/{len(files):02d}\r",
-                        nl=False,
-                    )
-                    cur_file += 1
-                    THREADS[i] = subprocess.Popen(
-                        [
-                            "oxipng",
-                            "-o2",
-                            "--strip",
-                            "all",
-                            os.path.join(spectrals_path, filename),
-                        ],
-                        stdout=devnull,
-                        stderr=devnull,
-                    )
-
-        if broken and all(THREADS[i] is None or THREADS[i].poll() is not None for i in range(len(THREADS))):
-            break
-        time.sleep(0.05)
-
-    click.secho("Finished compressing spectrals.               ", fg="green")
+    click.secho("Finished compressing spectrals.", fg="green")
 
 
 def get_spectrals_path(path):

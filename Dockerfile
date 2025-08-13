@@ -10,14 +10,11 @@ RUN ARCH=$(dpkg --print-architecture) && \
     sox flac mp3val curl nano vim-tiny \
     ca-certificates ffmpeg lame && rm -rf /var/lib/apt/lists/* && \
     if [ "$ARCH" = "amd64" ]; then \
-        wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
-        dpkg -i oxipng_9.1.4-1_amd64.deb; \
-        wget -O /usr/local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest; \
+        wget -O /usr/local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-x64; \
         chmod +x /usr/local/bin/cambia; \
     elif [ "$ARCH" = "arm64" ]; then \
-        wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_arm64.deb && \
-        dpkg -i oxipng_9.1.4-1_arm64.deb; \
-        echo "No arm64 build of cambia available yet"; \
+        wget -O /usr/local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-arm64; \
+        chmod +x /usr/local/bin/cambia; \
     else \
         echo "Unsupported architecture: $ARCH" && exit 1; \
     fi

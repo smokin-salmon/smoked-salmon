@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = "==3.11.*"
 
 [[package]]
@@ -441,6 +441,24 @@ wheels = [
 ]
 
 [[package]]
+name = "pyoxipng"
+version = "9.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f0/50/7e173ab2d028edd37938110d4f6e8fb135aaf7c12056810be5d46ea819bf/pyoxipng-9.1.0.tar.gz", hash = "sha256:f4252d77e7e8b45a5f19aed6a2ffe5e49ff5938312172d3ca852c0ee223563eb", size = 324397, upload-time = "2024-12-30T02:35:47.72Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/eb/f1/ba0cbca1d01e991f05730d23e086624ac02910244bc87318bd0f91348aac/pyoxipng-9.1.0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:67a0ea58dc8a08975b3ae0fdd3ad170254793c9fdcc5cbbaa09100ce24979767", size = 608822, upload-time = "2024-12-30T02:34:56.156Z" },
+    { url = "https://files.pythonhosted.org/packages/04/3b/030d3f6e0a510bca8a6058dfbca090c4253fb52afbe23e366aba68173c3a/pyoxipng-9.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:1f2ee899283726911a0fc8891685068a9f7f4ff50f6f9053cb2b6c0047267115", size = 569473, upload-time = "2024-12-30T02:34:43.059Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/4e/ff0854a47aca55e7f0753617f0280975942cb63df3c108f34f1ea8d0a3e5/pyoxipng-9.1.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:237f49f7dad785a32dbd519b9baadba6d3b5d5c2bbc9072a65b2352bd0c40614", size = 648859, upload-time = "2024-12-30T02:34:20.16Z" },
+    { url = "https://files.pythonhosted.org/packages/43/1b/188d9661c0d6f7956530c64130e788ed692d17fae127d0fa281115ba19b9/pyoxipng-9.1.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:c1c420a73ee0cb2820a41b8b961a8a3fa8920f3451d2f26b63958bf48720d333", size = 664308, upload-time = "2024-12-30T02:34:31.793Z" },
+    { url = "https://files.pythonhosted.org/packages/71/73/26b04506a2cfc7b0eee873fd89a0b9bb16493ecfdf3d77c392dcf0230e69/pyoxipng-9.1.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:d5c0f51409d725ed6e9223944eea2f8c5b4b83787bf9dd8a466922ad266cc3f3", size = 823755, upload-time = "2024-12-30T02:35:05.507Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/8d/d063ac6e94887adf2bd965041414e1a94b9630da6e79de2a148d21d2e698/pyoxipng-9.1.0-cp311-cp311-musllinux_1_2_armv7l.whl", hash = "sha256:8b1d5c690648f0cfedc648db95420d32fd3725965a8f8be1284b9e1ec36cca27", size = 905153, upload-time = "2024-12-30T02:35:16.245Z" },
+    { url = "https://files.pythonhosted.org/packages/ca/96/fd8b37fc0a527719d48af2736e868be51d35364864f5eae5855615d707d2/pyoxipng-9.1.0-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:aaf0c981c78054a6ee39b054c0fb06ff0b92850e0de88de644107b939da59f6b", size = 863563, upload-time = "2024-12-30T02:35:31.282Z" },
+    { url = "https://files.pythonhosted.org/packages/62/44/afb8f87705b0b003bc24c0adb1594dc9b0c49688d64aed4e6c540cfe7441/pyoxipng-9.1.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:4255f1bc090ac49f6b8058079fc5a83ddb67326bbb84737bb36136b30f7dbd9a", size = 832548, upload-time = "2024-12-30T02:35:40.17Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/35/ef2ca6a016275e74a1a7cb056b5c613fa443a56b5b8670a1b567f0160ed9/pyoxipng-9.1.0-cp311-cp311-win32.whl", hash = "sha256:be692572f7193aabdf39ae1312df96621f257c5bae0a7a0835ce050c033668f7", size = 436150, upload-time = "2024-12-30T02:36:00.648Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/cd/84cdd85ef6307508f3a7589495ada22f60309cacf0723ec0f5ebf2c75e49/pyoxipng-9.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:4e5d3a6166cc92fd440e73438e1e937afe12bae68f5ad09868afabeb44e33bbb", size = 460298, upload-time = "2024-12-30T02:35:52.138Z" },
+]
+
+[[package]]
 name = "pyperclip"
 version = "1.9.0"
 source = { registry = "https://pypi.org/simple" }
@@ -521,7 +539,7 @@ wheels = [
 
 [[package]]
 name = "salmon"
-version = "0.9.5"
+version = "0.9.6"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -536,6 +554,7 @@ dependencies = [
     { name = "musicbrainzngs" },
     { name = "mutagen" },
     { name = "platformdirs" },
+    { name = "pyoxipng" },
     { name = "pyperclip" },
     { name = "qbittorrent-api" },
     { name = "ratelimit" },
@@ -569,6 +588,7 @@ requires-dist = [
     { name = "musicbrainzngs", specifier = ">=0.7.1" },
     { name = "mutagen", specifier = ">=1.47.0" },
     { name = "platformdirs", specifier = ">=4.3.8" },
+    { name = "pyoxipng", specifier = ">=9.1.0" },
     { name = "pyperclip", specifier = ">=1.8.2" },
     { name = "qbittorrent-api", specifier = ">=2025.2.0" },
     { name = "ratelimit", specifier = ">=2.2.1" },

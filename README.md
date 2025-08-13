@@ -41,20 +41,18 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 2. Install Cambia (for log checking):
 
 	```bash
-	# Currently only x86_64/amd64 systems are supported:
+	# For x86_64/amd64 systems:
 	mkdir -p ~/.local/bin && \
-	wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.1/cambia-ubuntu-latest && \
+	wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-x64 && \
+	chmod +x ~/.local/bin/cambia
+	
+	# For arm64 systems:
+	mkdir -p ~/.local/bin && \
+	wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-arm64 && \
 	chmod +x ~/.local/bin/cambia
 	```
 
-3. If you want to enable spectrals compression (~30% gain in size), you also need to install [oxipng](https://github.com/shssoichiro/oxipng). Follow the installation instructions on their repository. On Debian/Ubuntu systems, you can typically install it with (check if this is the latest version):
-
-	```bash
-	wget https://github.com/shssoichiro/oxipng/releases/download/v9.1.4/oxipng_9.1.4-1_amd64.deb && \
-	sudo dpkg -i oxipng_9.1.4-1_amd64.deb
-	``` 
-
-4. Install smoked-salmon package from github:
+3. Install smoked-salmon package from github:
 	```bash
 	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
 	```
