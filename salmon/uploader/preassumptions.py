@@ -9,9 +9,7 @@ from salmon.errors import RequestError, UploadError
 loop = asyncio.get_event_loop()
 
 
-def print_preassumptions(
-    gazelle_site, path, group_id, source, lossy, spectrals, encoding, spectrals_after
-):
+def print_preassumptions(gazelle_site, path, group_id, source, lossy, spectrals, encoding, spectrals_after):
     """Print what all the passed CLI options will do."""
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     second = []
@@ -25,32 +23,28 @@ def print_preassumptions(
     if lossy is not None:
         second.append(f"with lossy master status as {lossy}")
     if second:
-        click.secho(f'Uploading {" ".join(second)}.', fg="yellow")
+        click.secho(f"Uploading {' '.join(second)}.", fg="yellow")
     if spectrals:
         if spectrals == (0,):
             click.secho("Uploading no spectrals.", fg="yellow")
         else:
             click.secho(
-                f'Uploading spectrals {", ".join(str(s) for s in spectrals)}.',
+                f"Uploading spectrals {', '.join(str(s) for s in spectrals)}.",
                 fg="yellow",
             )
     if spectrals_after:
         click.secho(
-            'Assessing spectrals after upload.', fg="yellow",
+            "Assessing spectrals after upload.",
+            fg="yellow",
         )
 
     if lossy and not spectrals:
-        raise UploadError(
-            "\nYou cannot report a torrent for lossy master without spectrals."
-        )
+        raise UploadError("\nYou cannot report a torrent for lossy master without spectrals.")
 
     if group_id:
         print_group_info(gazelle_site, group_id, source)
         click.confirm(
-            click.style(
-                "\nWould you like to continue to upload to this group?",
-                fg="magenta"
-            ),
+            click.style("\nWould you like to continue to upload to this group?", fg="magenta"),
             default=True,
             abort=True,
         )
@@ -69,8 +63,7 @@ def print_group_info(gazelle_site, group_id, source):
     artists = [a["name"] for a in group["group"]["musicInfo"]["artists"]]
     artists = ", ".join(artists) if len(artists) < 4 else cfg.upload.formatting.various_artist_word
     click.secho(
-        f"\nTorrents matching source {source} in (Group {group_id}) "
-        f'{artists} - {group["group"]["name"]}:',
+        f"\nTorrents matching source {source} in (Group {group_id}) {artists} - {group['group']['name']}:",
         fg="yellow",
         bold=True,
     )

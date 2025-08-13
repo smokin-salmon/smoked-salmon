@@ -18,13 +18,8 @@ class Searcher(QobuzBase, SearchMixin):
         try:
             resp = await self.get_json(
                 "/catalog/search",
-                params={
-                    "query": searchstr,
-                    "limit": limit,
-                    "offset": 0,
-                    "facet": None
-                },
-                headers=self.headers
+                params={"query": searchstr, "limit": limit, "offset": 0, "facet": None},
+                headers=self.headers,
             )
 
             if not resp or "albums" not in resp or "items" not in resp["albums"]:
@@ -36,17 +31,17 @@ class Searcher(QobuzBase, SearchMixin):
                     title = rls["title"]
                     year = self._parse_year(rls.get("release_date_original"))
                     track_count = rls["tracks_count"]
-                    
+
                     edition = f"{year}"
                     if rls.get("label", {}).get("name"):
                         edition += f" {rls['label']['name']}"
-                    
+
                     format_details = []
                     if rls.get("hires"):
                         format_details.append("Hi-Res")
                     if rls.get("maximum_bit_depth"):
                         format_details.append(f"{rls['maximum_bit_depth']}bit")
-                    
+
                     ed_title = ", ".join(format_details) if format_details else None
 
                     releases[rls["id"]] = (
@@ -63,16 +58,16 @@ class Searcher(QobuzBase, SearchMixin):
                             edition,
                             track_count=track_count,
                             ed_title=ed_title,
-                            explicit=rls.get("parental_warning", False)
+                            explicit=rls.get("parental_warning", False),
                         ),
                     )
                 except (KeyError, TypeError, AttributeError):
                     # Skip individual release if it has missing/malformed data
                     continue
-                    
+
                 if len(releases) == limit:
                     break
-                    
+
             return "Qobuz", releases
         except Exception as e:
             raise ScrapeError(f"Failed to retrieve or parse Qobuz search results: {str(e)}") from e

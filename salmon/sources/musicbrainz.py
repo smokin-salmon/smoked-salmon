@@ -8,7 +8,6 @@ musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")
 
 
 class MusicBrainzBase(BaseScraper):
-
     url = site_url = "https://musicbrainz.org"
     release_format = "/release/{rls_id}"
     regex = re.compile(r"^https?://(?:www\.)?musicbrainz.org/release/([a-z0-9\-]+)$")

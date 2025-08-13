@@ -6,16 +6,16 @@ from salmon import cfg
 from salmon.trackers import ops, red
 
 # hard coded as it needs to reflect the imports anyway.
-tracker_classes = {'RED': red.RedApi, 'OPS': ops.OpsApi}
-tracker_url_code_map = {'redacted.sh': 'RED', 'orpheus.network': 'OPS'}
+tracker_classes = {"RED": red.RedApi, "OPS": ops.OpsApi}
+tracker_url_code_map = {"redacted.sh": "RED", "orpheus.network": "OPS"}
 
 # tracker_list is used to offer the user choices. Generated if not specified in the config.
 tracker_cfg = cfg.tracker
 tracker_list = []
 if tracker_cfg.red:
-    tracker_list.append('RED')
+    tracker_list.append("RED")
 if tracker_cfg.ops:
-    tracker_list.append('OPS')
+    tracker_list.append("OPS")
 
 
 def get_class(site_code):
@@ -28,10 +28,7 @@ def choose_tracker(choices):
     while True:
         # Loop until we have chosen a tracker or aborted.
         tracker_input = click.prompt(
-            click.style(
-                f'Your choices are {" , ".join(choices)} ' 'or [a]bort.',
-                fg="magenta"
-            ),
+            click.style(f"Your choices are {' , '.join(choices)} or [a]bort.", fg="magenta"),
             default=choices[0],
         )
         tracker_input = tracker_input.strip().upper()
@@ -79,8 +76,7 @@ def validate_tracker(ctx, param, value):
             return choose_tracker(tracker_list)
     except AttributeError:
         raise click.BadParameter(
-            "This flag requires a tracker. Possible sources are: "
-            + ", ".join(tracker_list)
+            "This flag requires a tracker. Possible sources are: " + ", ".join(tracker_list)
         ) from None
 
 
@@ -93,10 +89,8 @@ def validate_request(gazelle_site, request):
             return None
         if request.strip().isdigit():
             pass
-        elif (
-            request.strip().lower().startswith(gazelle_site.base_url + "/requests.php")
-        ):
-            request = parse.parse_qs(parse.urlparse(request).query)['id'][0]
+        elif request.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
+            request = parse.parse_qs(parse.urlparse(request).query)["id"][0]
         click.secho(
             f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}",
             fg="green",

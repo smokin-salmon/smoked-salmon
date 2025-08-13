@@ -157,16 +157,10 @@ def decode_frame(inp, numchannels, sampledepth, out):
 
 def decode_subframes(inp, blocksize, sampledepth, chanasgn):
     if 0 <= chanasgn <= 7:
-        return [
-            decode_subframe(inp, blocksize, sampledepth) for _ in range(chanasgn + 1)
-        ]
+        return [decode_subframe(inp, blocksize, sampledepth) for _ in range(chanasgn + 1)]
     elif 8 <= chanasgn <= 10:
-        temp0 = decode_subframe(
-            inp, blocksize, sampledepth + (1 if (chanasgn == 9) else 0)
-        )
-        temp1 = decode_subframe(
-            inp, blocksize, sampledepth + (0 if (chanasgn == 9) else 1)
-        )
+        temp0 = decode_subframe(inp, blocksize, sampledepth + (1 if (chanasgn == 9) else 0))
+        temp1 = decode_subframe(inp, blocksize, sampledepth + (0 if (chanasgn == 9) else 1))
         if chanasgn == 8:
             for i in range(blocksize):
                 temp1[i] = temp0[i] - temp1[i]
@@ -200,9 +194,7 @@ def decode_subframe(inp, blocksize, sampledepth):
     elif 8 <= type <= 12:
         result = decode_fixed_prediction_subframe(inp, type - 8, blocksize, sampledepth)
     elif 32 <= type <= 63:
-        result = decode_linear_predictive_coding_subframe(
-            inp, type - 31, blocksize, sampledepth
-        )
+        result = decode_linear_predictive_coding_subframe(inp, type - 31, blocksize, sampledepth)
     else:
         raise ValueError("Reserved subframe type")
     return [(v << shift) for v in result]
@@ -260,9 +252,7 @@ def decode_residuals(inp, blocksize, result):
 
 def restore_linear_prediction(result, coefs, shift):
     for i in range(len(coefs), len(result)):
-        result[i] += (
-            sum((result[i - 1 - j] * c) for (j, c) in enumerate(coefs)) >> shift
-        )
+        result[i] += sum((result[i - 1 - j] * c) for (j, c) in enumerate(coefs)) >> shift
 
 
 class BitInputStream:

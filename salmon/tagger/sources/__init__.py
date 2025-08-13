@@ -32,11 +32,7 @@ loop = asyncio.get_event_loop()
 
 async def run_metadata(url, sources=None, return_source_name=False):
     """Run a scrape for the metadata of a URL"""
-    sources = (
-        METASOURCES
-        if not sources
-        else {name: source for name, source in METASOURCES.items() if name in sources}
-    )
+    sources = METASOURCES if not sources else {name: source for name, source in METASOURCES.items() if name in sources}
     for name, source in sources.items():
         if source.Scraper.regex.match(url):
             click.secho(f"Getting metadata from {name}.", fg="cyan")

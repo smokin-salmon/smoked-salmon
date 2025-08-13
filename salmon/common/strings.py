@@ -26,9 +26,7 @@ def normalize_accents(*strs):
     return_strings = []
     for str_ in strs:
         nkfd_form = unicodedata.normalize("NFKD", str_)
-        return_strings.append(
-            "".join(c for c in nkfd_form if not unicodedata.combining(c))
-        )
+        return_strings.append("".join(c for c in nkfd_form if not unicodedata.combining(c)))
     if not return_strings:
         return ""
     return return_strings if len(return_strings) > 1 else return_strings[0]
@@ -59,12 +57,12 @@ def fetch_genre(genre):
 def truncate(string, length):
     if len(string) < length:
         return string
-    return f"{string[:length - 3]}..."
+    return f"{string[: length - 3]}..."
 
 
-def format_size(num, suffix='B'):
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
+def format_size(num, suffix="B"):
+    for unit in ["", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"]:
         if abs(num) < 1024.0:
             return f"{num:3.1f} {unit}{suffix}"
         num /= 1024.0
-    return "{:.1f} {}{}".format(num, 'Yi', suffix)
+    return "{:.1f} {}{}".format(num, "Yi", suffix)

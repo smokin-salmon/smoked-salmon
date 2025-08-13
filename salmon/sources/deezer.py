@@ -23,12 +23,9 @@ HEADERS = {
 
 
 class DeezerBase(BaseScraper):
-
     url = "https://api.deezer.com"
     site_url = "https://www.deezer.com"
-    regex = re.compile(
-        r"^https*:\/\/.*?deezer\.com.*?\/(?:[a-z]+\/)?(album|playlist|track)\/([0-9]+)"
-    )
+    regex = re.compile(r"^https*:\/\/.*?deezer\.com.*?\/(?:[a-z]+\/)?(album|playlist|track)\/([0-9]+)")
     release_format = "/album/{rls_id}"
 
     def __init__(self):
@@ -76,9 +73,7 @@ class DeezerBase(BaseScraper):
         album_id = self.parse_release_id(url)
         try:
             data = await self.get_json(f"/album/{album_id}", params=params, headers=HEADERS)
-            internal_data = await self.get_internal_api_data(
-                f"/album/{album_id}", params
-            )
+            internal_data = await self.get_internal_api_data(f"/album/{album_id}", params)
             data["tracklist"] = self.get_tracks(internal_data)
             data["cover_xl"] = self.get_cover(internal_data)
             return data
@@ -91,9 +86,7 @@ class DeezerBase(BaseScraper):
         """Deezer puts some things in an api that isn't public facing.
         Like track information and album art before a release is available.
         """
-        track_data = await loop.run_in_executor(
-            None, lambda: self.sesh.get(self.site_url + url, params=(params or {}))
-        )
+        track_data = await loop.run_in_executor(None, lambda: self.sesh.get(self.site_url + url, params=(params or {})))
         r = re.search(
             r"window.__DZR_APP_STATE__ = ({.*?}})</script>",
             track_data.text.replace("\n", ""),
@@ -110,4 +103,4 @@ class DeezerBase(BaseScraper):
     def get_cover(self, internal_data):
         "This uses a hardcoded url. Hope the dns url doesn't change."
         artwork_code = internal_data["DATA"]["ALB_PICTURE"]
-        return f'https://e-cdns-images.dzcdn.net/images/cover/{artwork_code}/1000x1000-000000-100-0-0.jpg'
+        return f"https://e-cdns-images.dzcdn.net/images/cover/{artwork_code}/1000x1000-000000-100-0-0.jpg"

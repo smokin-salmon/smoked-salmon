@@ -83,9 +83,6 @@ def check_mqa(path):
             sound_data = wf.readframes(framerate)
 
     samples = list(iter_data(sound_data))
-    streams = (
-        Bits((x ^ y) >> p & 1 for x, y in zip(samples[::2], samples[1::2], strict=False))
-        for p in range(16, 24)
-    )
+    streams = (Bits((x ^ y) >> p & 1 for x, y in zip(samples[::2], samples[1::2], strict=False)) for p in range(16, 24))
 
     return bool(any(s.find(MAGIC) for s in streams))

@@ -54,7 +54,7 @@ class BaseGazelleApi:
             "Cache-Control": "max-age=0",
             "User-Agent": cfg.upload.user_agent,
         }
-        if not hasattr(self, 'dot_torrents_dir'):
+        if not hasattr(self, "dot_torrents_dir"):
             self.dot_torrents_dir = cfg.directory.dottorrents_dir
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -98,24 +98,22 @@ class BaseGazelleApi:
         try:
             resp = await loop.run_in_executor(
                 None,
-                lambda: self.session.get(
-                    url, params=params, timeout=5, allow_redirects=False
-                ),
+                lambda: self.session.get(url, params=params, timeout=5, allow_redirects=False),
             )
 
             if cfg.upload.debug_tracker_connection:
                 click.secho("URL: ", fg="cyan", nl=False)
                 click.secho(url, fg="yellow")
-                
+
                 click.secho("Params: ", fg="cyan", nl=False)
                 click.secho(str(params), fg="yellow")
-                
+
                 click.secho("Response: ", fg="cyan", nl=False)
                 click.secho(str(resp), fg="yellow")
 
                 click.secho("Response Text: ", fg="cyan", nl=False)
                 click.secho(resp.text, fg="green")
-                
+
             resp = resp.json()
         except JSONDecodeError as err:
             raise LoginError from err
@@ -141,9 +139,7 @@ class BaseGazelleApi:
         try:
             resp = await loop.run_in_executor(
                 None,
-                lambda: self.session.get(
-                    url, params=params, timeout=5, allow_redirects=False
-                ),
+                lambda: self.session.get(url, params=params, timeout=5, allow_redirects=False),
             )
             location = resp.headers.get("Location")
             if location:
@@ -180,9 +176,10 @@ class BaseGazelleApi:
             # We do not put compilations or guest appearances in this list.
             if not group["artists"]:
                 continue
-            if group["releaseType"] == 7 and (not group["extendedArtists"]["6"] or artist.lower() not in {
-                a["name"].lower() for a in group["extendedArtists"]["6"]
-            }):
+            if group["releaseType"] == 7 and (
+                not group["extendedArtists"]["6"]
+                or artist.lower() not in {a["name"].lower() for a in group["extendedArtists"]["6"]}
+            ):
                 continue
             if group["releaseType"] in {1023, 1021, 1022, 1024}:
                 continue
@@ -190,17 +187,12 @@ class BaseGazelleApi:
             releases.append(
                 SearchReleaseData(
                     lossless=any(t["format"] == "FLAC" for t in group["torrent"]),
-                    lossless_web=any(
-                        t["format"] == "FLAC" and t["media"] == "WEB"
-                        for t in group["torrent"]
-                    ),
+                    lossless_web=any(t["format"] == "FLAC" and t["media"] == "WEB" for t in group["torrent"]),
                     year=group["groupYear"],
-                    artist=html.unescape(
-                        compile_artists(group["artists"], group["releaseType"])
-                    ),
+                    artist=html.unescape(compile_artists(group["artists"], group["releaseType"])),
                     album=html.unescape(group["groupName"]),
                     release_type=INVERTED_RELEASE_TYPES[group["releaseType"]],
-                    url=f'{self.base_url}/torrents.php?id={group["groupId"]}',
+                    url=f"{self.base_url}/torrents.php?id={group['groupId']}",
                 )
             )
 
@@ -213,32 +205,30 @@ class BaseGazelleApi:
         Get all the torrent groups from a label on site.
         All groups without a FLAC will be highlighted.
         """
-        params = {'remasterrecordlabel': label}
+        params = {"remasterrecordlabel": label}
         if year:
-            params['year'] = year
+            params["year"] = year
         first_request = await self.request("browse", **params)
-        if 'pages' in first_request:
-            pages = first_request['pages']
+        if "pages" in first_request:
+            pages = first_request["pages"]
         else:
             return []
-        all_results = first_request['results']
+        all_results = first_request["results"]
         # Three is an arbitrary (low) number.
         # Hits to the site are slow because of rate limiting.
         # Should probably be spun out into its own pagnation function at some point.
         for i in range(2, max(3, pages)):
-            params['page'] = str(i)
+            params["page"] = str(i)
             new_results = await self.request("browse", **params)
-            all_results += new_results['results']
-        params['page'] = "1"
+            all_results += new_results["results"]
+        params["page"] = "1"
         resp2 = await self.request("browse", **params)
         all_results = all_results + resp2["results"]
         releases = []
         for group in all_results:
             if not group["artist"]:
-                if 'artists' in group:
-                    artist = html.unescape(
-                        compile_artists(group["artists"], group["releaseType"])
-                    )
+                if "artists" in group:
+                    artist = html.unescape(compile_artists(group["artists"], group["releaseType"]))
                 else:
                     artist = ""
             else:
@@ -246,15 +236,12 @@ class BaseGazelleApi:
             releases.append(
                 SearchReleaseData(
                     lossless=any(t["format"] == "FLAC" for t in group["torrents"]),
-                    lossless_web=any(
-                        t["format"] == "FLAC" and t["media"] == "WEB"
-                        for t in group["torrents"]
-                    ),
+                    lossless_web=any(t["format"] == "FLAC" and t["media"] == "WEB" for t in group["torrents"]),
                     year=group["groupYear"],
                     artist=artist,
                     album=html.unescape(group["groupName"]),
                     release_type=group["releaseType"],
-                    url=f'{self.base_url}/torrents.php?id={group["groupId"]}',
+                    url=f"{self.base_url}/torrents.php?id={group['groupId']}",
                 )
             )
 
@@ -265,27 +252,24 @@ class BaseGazelleApi:
     async def fetch_log(self, page):
         """Fetch a page of the log. No search. Search envokes the sphynx
         Doesn't use the API as there is no API endpoint."""
-        url = f'{self.base_url}/log.php'
+        url = f"{self.base_url}/log.php"
         resp = await loop.run_in_executor(
             None,
-            lambda: self.session.get(url, params={'page': page}, headers=self.headers),
+            lambda: self.session.get(url, params={"page": page}, headers=self.headers),
         )
         return resp
-    
+
     async def fetch_riplog(self, torrentid):
         """Fetch a page of the log. No search. Search envokes the sphynx
         Doesn't use the API as there is no API endpoint."""
-        url = f'{self.base_url}/torrents.php'
+        url = f"{self.base_url}/torrents.php"
         resp = await self.aiosession.get(
-            url, headers=self.headers, params={
-                'action': 'loglist',
-                'torrentid': torrentid
-            }
+            url, headers=self.headers, params={"action": "loglist", "torrentid": torrentid}
         )
         return re.sub(r" ?\([^)]+\)", "", resp.text)
 
     def get_uploads_from_log(self, max_pages=10):
-        'Crawls some pages of the log and returns uploads'
+        "Crawls some pages of the log and returns uploads"
         recent_uploads = []
         tasks = [self.fetch_log(i) for i in range(1, max_pages)]
         for page in loop.run_until_complete(asyncio.gather(*tasks)):
@@ -301,9 +285,7 @@ class BaseGazelleApi:
         api_key_headers = {**self.headers, "Authorization": self.api_key}
         resp = await loop.run_in_executor(
             None,
-            lambda: self.session.post(
-                url, data=data, files=files, headers=api_key_headers
-            ),
+            lambda: self.session.post(url, data=data, files=files, headers=api_key_headers),
         )
         try:
             resp = resp.json()
@@ -319,25 +301,26 @@ class BaseGazelleApi:
                 raise RequestError(f"API upload failed: {resp['error']}")
             elif resp["status"] == "success":
                 if (
-                    ('requestid' in resp['response']            #RED
-                    and resp['response']['requestid']) or
-                    ('fillRequest' in resp['response']          # OPS
-                     and resp['response']['fillRequest']
-                     and resp['response']['fillRequest']['requestId'])
+                    "requestid" in resp["response"]  # RED
+                    and resp["response"]["requestid"]
+                ) or (
+                    "fillRequest" in resp["response"]  # OPS
+                    and resp["response"]["fillRequest"]
+                    and resp["response"]["fillRequest"]["requestId"]
                 ):
                     requestId = (
-                        resp['response']['requestid']
-                        if 'requestid' in resp['response']
-                        else resp['response']['fillRequest']['requestId']
+                        resp["response"]["requestid"]
+                        if "requestid" in resp["response"]
+                        else resp["response"]["fillRequest"]["requestId"]
                     )
                     if requestId == -1:
                         click.secho(
-                            "Request fill failed!", fg="red",
+                            "Request fill failed!",
+                            fg="red",
                         )
                     else:
                         click.secho(
-                            "Filled request: "
-                            + self.request_url(requestId),
+                            "Filled request: " + self.request_url(requestId),
                             fg="green",
                         )
                 torrent_id = 0
@@ -356,41 +339,36 @@ class BaseGazelleApi:
         data["auth"] = self.authkey
         resp = await loop.run_in_executor(
             None,
-            lambda: self.session.post(
-                url, data=data, files=files, headers=self.headers
-            ),
+            lambda: self.session.post(url, data=data, files=files, headers=self.headers),
         )
 
         if self.announce in resp.text:
             match = re.search(
-                r'<p style="color: red; text-align: center;">(.+)<\/p>', resp.text,
+                r'<p style="color: red; text-align: center;">(.+)<\/p>',
+                resp.text,
             )
             if match:
-                raise RequestError(
-                    f"Site upload failed: {match[1]} ({resp.status_code})"
-                )
-        if 'requests.php' in resp.url:
+                raise RequestError(f"Site upload failed: {match[1]} ({resp.status_code})")
+        if "requests.php" in resp.url:
             try:
                 torrent_id = self.parse_torrent_id_from_filled_request_page(resp.text)
                 click.secho(f"Filled request: {resp.url}", fg="green")
                 return torrent_id
             except (TypeError, ValueError) as err:
                 soup = BeautifulSoup(resp.text, "html.parser")
-                error = soup.find('h2', text='Error')
+                error = soup.find("h2", text="Error")
                 if error:
-                    error_message = error.parent.parent.find('p').text
+                    error_message = error.parent.parent.find("p").text
                 raise RequestError(f"Request fill failed: {error_message}") from err
         try:
-            return self.parse_most_recent_torrent_and_group_id_from_group_page(
-                resp.text
-            )
+            return self.parse_most_recent_torrent_and_group_id_from_group_page(resp.text)
         except TypeError as err:
             raise RequestError(f"Site upload failed, response text: {resp.text}") from err
 
     async def upload(self, data, files):
         """Upload a torrent using upload.php
         or the API depending on whether an API key is set."""
-        if hasattr(self, 'api_key'):
+        if hasattr(self, "api_key"):
             return await self.api_key_upload(data, files)
         else:
             return await self.site_page_upload(data, files)
@@ -412,52 +390,47 @@ class BaseGazelleApi:
         }
         r = await loop.run_in_executor(
             None,
-            lambda: self.session.post(
-                url, params=params, data=data, headers=self.headers
-            ),
+            lambda: self.session.post(url, params=params, data=data, headers=self.headers),
         )
         if "torrents.php" in r.url:
             return True
-        raise RequestError(
-            f"Failed to report the torrent for lossy master, code {r.status_code}."
-        )
+        raise RequestError(f"Failed to report the torrent for lossy master, code {r.status_code}.")
 
     async def append_to_torrent_description(self, torrent_id, description_additon):
         """Adds to the start of an individual torrent description
         Currently not supported by the API"""
         current_details = await self.request("torrent", id=torrent_id)
         new_data = {
-            'action': 'takeedit',
-            'torrentid': torrent_id,
-            'type': 1,
+            "action": "takeedit",
+            "torrentid": torrent_id,
+            "type": 1,
             "groupremasters": 0,
-            "remaster_year": current_details['torrent']['remasterYear'],
-            "remaster_title": current_details['torrent']['remasterTitle'],
-            "remaster_record_label": current_details['torrent']['remasterRecordLabel'],
-            "remaster_catalogue_number": current_details['torrent'][
-                'remasterCatalogueNumber'
-            ],
-            "format": current_details['torrent']['format'],
-            "bitrate": current_details['torrent']['encoding'],
+            "remaster_year": current_details["torrent"]["remasterYear"],
+            "remaster_title": current_details["torrent"]["remasterTitle"],
+            "remaster_record_label": current_details["torrent"]["remasterRecordLabel"],
+            "remaster_catalogue_number": current_details["torrent"]["remasterCatalogueNumber"],
+            "format": current_details["torrent"]["format"],
+            "bitrate": current_details["torrent"]["encoding"],
             "other_bitrate": "",
-            "media": current_details['torrent']['media'],
-            "release_desc": description_additon
-            + current_details['torrent']['description'],
+            "media": current_details["torrent"]["media"],
+            "release_desc": description_additon + current_details["torrent"]["description"],
         }
 
-        url = self.base_url + '/torrents.php'
+        url = self.base_url + "/torrents.php"
         new_data["auth"] = self.authkey
         resp = await loop.run_in_executor(
-            None, lambda: self.session.post(url, data=new_data, headers=self.headers),
+            None,
+            lambda: self.session.post(url, data=new_data, headers=self.headers),
         )
         soup = BeautifulSoup(resp.text, "html.parser")
-        edit_error = soup.find('h2', text='Error')
+        edit_error = soup.find("h2", text="Error")
         if edit_error:
-            error_message = edit_error.parent.parent.find('p').text
+            error_message = edit_error.parent.parent.find("p").text
             raise RequestError(f"Failed to edit torrent: {error_message}")
         else:
             click.secho(
-                "Added spectrals to the torrent description.", fg="green",
+                "Added spectrals to the torrent description.",
+                fg="green",
             )
 
     """The following three parsing functions are part of the gazelle class
@@ -492,16 +465,14 @@ class BaseGazelleApi:
 
     def parse_uploads_from_log_html(self, text):
         """Parses a log page and returns best guess at
-         (torrent id, 'Artist', 'title') tuples for uploads"""
+        (torrent id, 'Artist', 'title') tuples for uploads"""
         log_uploads = []
         soup = BeautifulSoup(text, "html.parser")
         for entry in soup.find_all("span", class_="log_upload"):
-            torrent_id = entry.find("a")['href'][23:]
+            torrent_id = entry.find("a")["href"][23:]
             try:
                 # it having class log_upload is no guarantee that is what it is. Nice one log.
-                torrent_string = re.findall(
-                    r"\((.*?)\) \(", entry.find("a").next_sibling
-                )[0].split(" - ")
+                torrent_string = re.findall(r"\((.*?)\) \(", entry.find("a").next_sibling)[0].split(" - ")
             except BaseException:
                 continue
             artist = torrent_string[0]

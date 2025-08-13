@@ -37,9 +37,7 @@ def check_hybrid(tags):
     """Check whether or not the release has mixed precisions/sample rate."""
     first_tag = next(iter(tags.values()))
     if not all(
-        t["precision"] == first_tag["precision"]
-        and t["sample rate"] == first_tag["sample rate"]
-        for t in tags.values()
+        t["precision"] == first_tag["precision"] and t["sample rate"] == first_tag["sample rate"] for t in tags.values()
     ):
         click.secho(
             "Release has mixed bit depths / sample rates. Flagging as hybrid.",

@@ -95,16 +95,11 @@ class MetadataMixin(ABC):
             **kwargs,
         }
 
-
     def determine_rls_type(self, data):
         def strip_base_title(title):
             return re.sub(r"\s*\(.*?\)", "", title).strip().lower()
 
-        tracks = [
-            track
-            for disc in data["tracks"].values()
-            for track in disc.values()
-        ]
+        tracks = [track for disc in data["tracks"].values() for track in disc.values()]
 
         num_tracks = len(tracks)
         base_titles = {strip_base_title(track["title"]) for track in tracks}
@@ -120,7 +115,6 @@ class MetadataMixin(ABC):
             return re.sub(r"-? *Single$", "", title, flags=re.IGNORECASE).strip(), "Single"
         elif re.search(r"original.*soundtrack", data["title"], flags=re.IGNORECASE):
             return data["title"], "Soundtrack"
-
 
         # --- Explicit rls_type ---
         if rls_type == "soundtrack":
@@ -245,6 +239,7 @@ def determine_label_type(label, artists):
     Determine the type of label based on the label and artists.
     Return "Self-Released" if self-released, otherwise return the original label.
     """
+
     def _compare(label, artist):
         label, artist = label.lower(), artist.lower()
         return label == artist or label.startswith(artist)
@@ -316,10 +311,7 @@ def filter_artists(artists, tracks=None):
                         seen_normalized.add(normalized_art)
 
                 track["artists"] = fix_artists_list(
-                    [
-                        (artist_pool[normalize_accents(art.lower())], imp)
-                        for art, imp in deduplicated_artists
-                    ],
+                    [(artist_pool[normalize_accents(art.lower())], imp) for art, imp in deduplicated_artists],
                     to_replace,
                 )
     return artists, tracks
@@ -335,9 +327,7 @@ def construct_replacement_list(artists):
     artist_pool = sorted(
         [
             [
-                normalize_accents(
-                    "".join(s for s in a if s.isalnum()).replace(" ", "")
-                ).lower(),
+                normalize_accents("".join(s for s in a if s.isalnum()).replace(" ", "")).lower(),
                 a,
             ]
             for a, _ in artists
@@ -370,10 +360,7 @@ def fix_artists_list(original_artists, to_replace):
         for replaceds, replacement in to_replace:
             found = False
             for artist in sorted(artists, key=lambda a: len(a)):
-                if (
-                    any(artist == r for r in replaceds)
-                    and (artist, artist_type) in original_artists
-                ):
+                if any(artist == r for r in replaceds) and (artist, artist_type) in original_artists:
                     original_artists.remove((artist, artist_type))
                 else:
                     continue
@@ -393,7 +380,7 @@ def append_remixers_to_track_titles(data):
                 if len(remix_artists) >= cfg.upload.formatting.various_artist_threshold:
                     data[dnum][tnum]["title"] += " (Remixed)"
                 elif remix_artists:
-                    data[dnum][tnum]["title"] += f' ({" & ".join(remix_artists)} Remix)'
+                    data[dnum][tnum]["title"] += f" ({' & '.join(remix_artists)} Remix)"
 
     return data
 
@@ -409,7 +396,7 @@ def assign_track_totals(data):
 def _is_separate_word_in_combination(generic, combined):
     # Normalize to lowercase
     generic = generic.lower()
-    combined_parts = re.split(r'\s*/\s*|\s*&\s*|\s+and\s+', combined.lower())
+    combined_parts = re.split(r"\s*/\s*|\s*&\s*|\s+and\s+", combined.lower())
     return generic in combined_parts
 
 

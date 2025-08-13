@@ -46,7 +46,7 @@ loop = asyncio.get_event_loop()
 def metas(searchstr, track_count, limit):
     """Search for releases from metadata providers"""
     searchstr = " ".join(searchstr)
-    click.secho(f'Searching {", ".join(SEARCHSOURCES)} (searchstrs: {searchstr})', fg="cyan", bold=True)
+    click.secho(f"Searching {', '.join(SEARCHSOURCES)} (searchstrs: {searchstr})", fg="cyan", bold=True)
 
     results = run_metasearch([searchstr], limit=limit, track_count=track_count)
     not_found = []
@@ -74,7 +74,7 @@ def metas(searchstr, track_count, limit):
             fg="red",
         )
     if source_errors:
-        click.secho(f'Failed to scrape {", ".join(source_errors)}.', fg="red")
+        click.secho(f"Failed to scrape {', '.join(source_errors)}.", fg="red")
 
 
 def run_metasearch(
@@ -90,11 +90,7 @@ def run_metasearch(
     Run a search for releases matching the searchstr. Specify the artists and albums
     kwargs to have stronger filtering of results.
     """
-    sources = (
-        SEARCHSOURCES
-        if not sources
-        else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
-    )
+    sources = SEARCHSOURCES if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
     results = {}
     tasks = [
         handle_scrape_errors(s.Searcher().search_releases(search, limit))
@@ -126,8 +122,7 @@ def filter_results(results, artists, album):
                 if len(artists) == 1:
                     continue
             elif not any(a in stripped_rls_artist for a in split_artists) or not any(
-                a in stripped_rls_artist.split()
-                for a in chain.from_iterable([a.split() for a in split_artists])
+                a in stripped_rls_artist.split() for a in chain.from_iterable([a.split() for a in split_artists])
             ):
                 continue
         if album and not _compare_albums(album, result[0].album):

@@ -72,13 +72,7 @@ class Scraper(DiscogsBase, MetadataMixin):
     def parse_edition_title(self, soup):
         if soup["formats"] and "descriptions" in soup["formats"][0]:
             return (
-                " / ".join(
-                    [
-                        w
-                        for w in soup["formats"][0]["descriptions"]
-                        if any(v in w for v in VALID_EDITION_TITLES)
-                    ]
-                )
+                " / ".join([w for w in soup["formats"][0]["descriptions"] if any(v in w for v in VALID_EDITION_TITLES)])
                 or None
             )
 
@@ -94,13 +88,7 @@ class Scraper(DiscogsBase, MetadataMixin):
     def parse_release_type(self, soup):
         if "formats" in soup and soup["formats"] and "descriptions" in soup["formats"][0]:
             try:
-                return next(
-                    iter(
-                        RELEASE_TYPES[f]
-                        for f in soup["formats"][0]["descriptions"]
-                        if f in RELEASE_TYPES
-                    )
-                )
+                return next(iter(RELEASE_TYPES[f] for f in soup["formats"][0]["descriptions"] if f in RELEASE_TYPES))
             except StopIteration:
                 return
 
@@ -127,30 +115,22 @@ def parse_artists(artist_soup, track):
     each track.
     """
     if "artists" in track:
-        artists = [
-            *((sanitize_artist_name(art["name"]), "main") for art in track["artists"])
-        ]
+        artists = [*((sanitize_artist_name(art["name"]), "main") for art in track["artists"])]
     else:
-        artists = [
-            *(
-                (sanitize_artist_name(art["name"]), "main")
-                for art in artist_soup
-                if art["name"] != "Various"
-            )
-        ]
+        artists = [*((sanitize_artist_name(art["name"]), "main") for art in artist_soup if art["name"] != "Various")]
     if "extraartists" in track:
         for art in track["extraartists"]:
-            for role in art['role'].split(","):
+            for role in art["role"].split(","):
                 role = role.strip()
                 if role in ROLES:
-                    artists.append((sanitize_artist_name(art['name']), ROLES[role]))
+                    artists.append((sanitize_artist_name(art["name"]), ROLES[role]))
         for name, role in artists:
             if role != "main" and (name, "main") in artists:
                 artists.remove((name, "main"))
-#        for a, i in [
-#            (a, i) for a, i in artists if i != "main" and (a, "main") in artists
-#        ]:
-#            artists.remove((a, "main"))
+    #        for a, i in [
+    #            (a, i) for a, i in artists if i != "main" and (a, "main") in artists
+    #        ]:
+    #            artists.remove((a, "main"))
     return artists
 
 

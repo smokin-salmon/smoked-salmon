@@ -26,7 +26,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
     """
     old_base = os.path.basename(path)
     new_base = generate_folder_name(metadata)
-    if metadata['scene']:
+    if metadata["scene"]:
         new_base = old_base
         auto_rename = True
 
@@ -36,11 +36,8 @@ def rename_folder(path, metadata, auto_rename, check=True):
         click.echo(f"New pending folder name: {new_base}")
 
         user_rename_choice = click.confirm(
-            click.style(
-                "\nWould you like to replace the original folder name?",
-                fg="magenta"                
-            ),
-            default=True)
+            click.style("\nWould you like to replace the original folder name?", fg="magenta"), default=True
+        )
 
         new_base = _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
 
@@ -86,18 +83,18 @@ def rename_folder(path, metadata, auto_rename, check=True):
     if cfg.directory.tmp_dir and os.path.exists(cfg.directory.tmp_dir):
         tmp_old_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{old_base}")
         tmp_new_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{new_base}")
-        
+
         if os.path.exists(tmp_old_specs_path):
             if os.path.exists(tmp_new_specs_path) and not os.path.samefile(tmp_old_specs_path, tmp_new_specs_path):
                 shutil.rmtree(tmp_new_specs_path)
-            
+
             if use_hardlinks:
                 shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, copy_function=os.link, dirs_exist_ok=True)
                 click.secho(f"Hardlinked temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
             else:
                 shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, dirs_exist_ok=True)
                 click.secho(f"Copied temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
-            
+
             if cfg.upload.formatting.remove_source_dir:
                 shutil.rmtree(tmp_old_specs_path)
 
@@ -117,9 +114,7 @@ def generate_folder_name(metadata):
             template = strip_template_keys(template, k)
             keys.remove(k)
     sub_metadata = _fix_format(metadata, keys)
-    return template.format(
-        **{k: _sub_illegal_characters(sub_metadata[k]) for k in keys}
-    )
+    return template.format(**{k: _sub_illegal_characters(sub_metadata[k]) for k in keys})
 
 
 def _compile_artist_str(artist_data):
@@ -167,9 +162,7 @@ def _edit_folder_interactive(foldername, auto_rename):
     if auto_rename:
         return foldername
     if not click.confirm(
-        click.style(
-            "Is the new folder name acceptable? ([n] to edit)", fg="magenta"
-        ),
+        click.style("Is the new folder name acceptable? ([n] to edit)", fg="magenta"),
         default=True,
     ):
         newname = click.edit(foldername)

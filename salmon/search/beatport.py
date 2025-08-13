@@ -19,22 +19,22 @@ class Searcher(BeatportBase, SearchMixin):
             script_tag = soup.find("script", id="__NEXT_DATA__")
             if not script_tag:
                 raise ScrapeError("Could not find Next.js data script tag")
-            
+
             data = json.loads(script_tag.string)
             search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]
             for result in search_results:
                 try:
                     rls_id = result["release_id"]
-                    
+
                     # Filter artists to get only main artists (not remixers)
-                    main_artists = [a["artist_name"] for a in result["artists"] 
-                                if a["artist_type_name"] == "Artist"]
-                    
+                    main_artists = [a["artist_name"] for a in result["artists"] if a["artist_type_name"] == "Artist"]
+
                     title = result["release_name"]
-                    artists = (", ".join(main_artists) if len(main_artists) < 4 
-                             else cfg.upload.formatting.various_artist_word)
+                    artists = (
+                        ", ".join(main_artists) if len(main_artists) < 4 else cfg.upload.formatting.various_artist_word
+                    )
                     label = result["label"]["label_name"]
-                    
+
                     if label.lower() not in cfg.upload.search.excluded_labels:
                         releases[rls_id] = (
                             IdentData(artists, title, None, None, "WEB"),
@@ -42,11 +42,11 @@ class Searcher(BeatportBase, SearchMixin):
                         )
                 except (KeyError, IndexError) as e:
                     raise ScrapeError("Failed to parse search result item") from e
-                
+
                 if len(releases) == limit:
                     break
-                    
+
         except (KeyError, IndexError) as e:
             raise ScrapeError("Failed to parse scraped search results") from e
-            
+
         return "Beatport", releases

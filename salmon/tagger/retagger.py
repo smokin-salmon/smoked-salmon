@@ -30,10 +30,7 @@ def tag_files(path, tags, metadata, auto_rename):
     track_changes = create_track_changes(tags, metadata)
     print_changes(album_changes, track_changes, next(iter(tags.values())))
     if auto_rename or click.confirm(
-        click.style(
-            "\nWould you like to auto-tag the files with the updated metadata?",
-            fg="magenta"
-        ),
+        click.style("\nWould you like to auto-tag the files with the updated metadata?", fg="magenta"),
         default=True,
     ):
         retag_files(path, album_changes, track_changes)
@@ -46,8 +43,7 @@ def check_whether_to_tag(tags, metadata):
     """
     if len(tags) != sum([len(disc) for disc in metadata["tracks"].values()]):
         click.secho(
-            "Number of tracks differed from number of tracks in metadata, "
-            "skipping retagging procedure...",
+            "Number of tracks differed from number of tracks in metadata, skipping retagging procedure...",
             fg="red",
         )
         return False
@@ -57,7 +53,7 @@ def check_whether_to_tag(tags, metadata):
 def collect_album_data(metadata):
     """Create a dictionary of the proposed album tags (consistent across every track)."""
     if cfg.upload.formatting.add_edition_title_to_album_tag and metadata["edition_title"]:
-        title = f'{metadata["title"]} ({metadata["edition_title"]})'
+        title = f"{metadata['title']} ({metadata['edition_title']})"
     else:
         title = metadata["title"]
     return {
@@ -95,11 +91,11 @@ def create_track_changes(tags, metadata):
         changes[filename] = []
 
         try:
-            old_artist_str = ', '.join(tagset.artist)
+            old_artist_str = ", ".join(tagset.artist)
         except TypeError:
-            old_artist_str = 'None'
+            old_artist_str = "None"
 
-        new_artist_str = create_artist_str(trackmeta['artists'])
+        new_artist_str = create_artist_str(trackmeta["artists"])
         if old_artist_str != new_artist_str:
             changes[filename].append(Change("artist", old_artist_str, new_artist_str))
 
@@ -125,18 +121,14 @@ def create_track_changes(tags, metadata):
 
 def append_guests_to_track_titles(track):
     guest_artists = [a for a, i in track["artists"] if i == "guest"]
-    if ("feat" not in track["title"]
-            and guest_artists
-            and len(guest_artists) <= cfg.upload.formatting.various_artist_threshold):
-        c = (
-            ", "
-            if len(guest_artists) > 2 or "&" in "".join(guest_artists)
-            else " & "
-        )
+    if (
+        "feat" not in track["title"]
+        and guest_artists
+        and len(guest_artists) <= cfg.upload.formatting.various_artist_threshold
+    ):
+        c = ", " if len(guest_artists) > 2 or "&" in "".join(guest_artists) else " & "
         # If we find a remix parenthetical, remove it and re-add it after the guest artists.
-        remix = re.search(
-            r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE
-        )
+        remix = re.search(r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE)
         if remix:
             track["title"] = track["title"].replace(remix[1], "")
         track["title"] += f" (feat. {c.join(sorted(guest_artists))})"
@@ -159,9 +151,7 @@ def _compare_tag(tagfield, metafield, tagset, trackmeta):
         if not getattr(tagset, tagfield, False):
             return Change(tagfield, None, trackmeta[metafield])
         if str(getattr(tagset, tagfield, "")) != str(trackmeta[metafield]):
-            return Change(
-                tagfield, getattr(tagset, tagfield, "None"), trackmeta[metafield]
-            )
+            return Change(tagfield, getattr(tagset, tagfield, "None"), trackmeta[metafield])
     return None
 
 
@@ -176,11 +166,7 @@ def create_artist_str(artists):
         if len(guest_artists) >= cfg.upload.formatting.various_artist_threshold:
             artist_str += f" (feat. {cfg.upload.formatting.various_artist_word})"
         elif guest_artists:
-            c = (
-                ", "
-                if len(guest_artists) > 2 and "&" not in "".join(guest_artists)
-                else " & "
-            )
+            c = ", " if len(guest_artists) > 2 and "&" not in "".join(guest_artists) else " & "
             artist_str += f" (feat. {c.join(sorted(guest_artists))})"
 
     return artist_str
@@ -194,18 +180,14 @@ def print_changes(album_changes, track_changes, a_track):
         if changes:
             click.secho(f"> {filename}", fg="yellow")
             for change in changes:
-                click.echo(
-                    f"  {change.tag.ljust(20)} ••• {change.old} {ARROWS} {change.new}"
-                )
+                click.echo(f"  {change.tag.ljust(20)} ••• {change.old} {ARROWS} {change.new}")
 
     click.secho("\nAlbum tags (applied to all):", fg="yellow", bold=True)
     for field, value in album_changes.items():
         previous = getattr(a_track, field, "None")
         if isinstance(previous, list):
             previous = "; ".join(previous)
-        kwargs = (
-            {"bold": True} if str(previous) != str(value) else {}
-        )  # Bold if different
+        kwargs = {"bold": True} if str(previous) != str(value) else {}  # Bold if different
         if str(previous) == str(value):
             click.secho(f"> {field.ljust(13)} ••• {previous}", **kwargs)
         else:
@@ -235,14 +217,11 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     to_rename = []
     folders_to_create = set()
     multi_disc = len(metadata["tracks"]) > 1
-    md_word = "CD"# "Disc" if source == "CD" else "Part"
+    md_word = "CD"  # "Disc" if source == "CD" else "Part"
 
-    track_list = list(
-        chain.from_iterable([d.values() for d in metadata["tracks"].values()])
-    )
+    track_list = list(chain.from_iterable([d.values() for d in metadata["tracks"].values()]))
     multiple_artists = any(
-        {a for a, i in t["artists"] if i == "main"}
-        != {a for a, i in track_list[0]["artists"] if i == "main"}
+        {a for a, i in t["artists"] if i == "main"} != {a for a, i in track_list[0]["artists"] if i == "main"}
         for t in track_list[1:]
     )
 
@@ -251,25 +230,19 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
         new_name = generate_file_name(tracktags, ext, multiple_artists)
         if multi_disc:
             if isinstance(tracktags, dict):
-                disc_number = (
-                    int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
-                )
+                disc_number = int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
             else:
                 disc_number = int(tracktags.discnumber.split("/")[0]) or 1
             new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
             if multi_disc:
-                folders_to_create.add(
-                    os.path.join(path, f"{md_word}{disc_number:02d}")
-                )
+                folders_to_create.add(os.path.join(path, f"{md_word}{disc_number:02d}"))
 
     if to_rename:
         print_filenames(to_rename)
         if auto_rename or click.confirm(
-            click.style(
-                "\nWould you like to rename the files?", fg="magenta"
-            ),
+            click.style("\nWould you like to rename the files?", fg="magenta"),
             default=True,
         ):
             for folder in folders_to_create:
@@ -281,11 +254,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                 new_dir = os.path.dirname(os.path.join(path, new_name))
 
                 if old_dir != path:
-                    directory_move_pairs.add(
-                        (
-                            os.path.splitext(filename)[1], old_dir, new_dir
-                        )
-                    )
+                    directory_move_pairs.add((os.path.splitext(filename)[1], old_dir, new_dir))
                 new_path, new_path_ext = os.path.splitext(os.path.join(path, new_name))
                 # new_path = new_path[: 200 - len(new_path_ext) + len(os.path.dirname(path))] + new_path_ext
                 new_path = new_path + new_path_ext
@@ -315,9 +284,11 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
     """Generate the template keys and format the template with the tags."""
     template = cfg.upload.formatting.file_template
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
-    if ("artist" in keys
-            and cfg.upload.formatting.no_artist_in_filename_if_only_one_album_artist
-            and not multiple_artists):
+    if (
+        "artist" in keys
+        and cfg.upload.formatting.no_artist_in_filename_if_only_one_album_artist
+        and not multiple_artists
+    ):
         keys.remove("artist")
         template = cfg.upload.formatting.one_album_artist_file_template
     if isinstance(tags, dict):
@@ -332,9 +303,7 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
 
     if "artist" in keys:
         if isinstance(tags, dict):
-            artist_count = str(tags["artist"]).count(",") + str(tags["artist"]).count(
-                "&"
-            )
+            artist_count = str(tags["artist"]).count(",") + str(tags["artist"]).count("&")
         else:
             artist_count = str(tags.artist).count(",") + str(tags.artist).count("&")
         if artist_count > cfg.upload.formatting.various_artist_threshold:

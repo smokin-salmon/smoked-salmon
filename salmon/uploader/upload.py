@@ -31,7 +31,7 @@ def prepare_and_upload(
     spectral_ids,
     lossy_comment,
     request_id,
-    source_url
+    source_url,
 ):
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
@@ -45,7 +45,7 @@ def prepare_and_upload(
             spectral_ids,
             lossy_comment,
             request_id,
-            source_url=source_url
+            source_url=source_url,
         )
     else:
         data = compile_data_existing_group(
@@ -58,10 +58,10 @@ def prepare_and_upload(
             spectral_ids,
             lossy_comment,
             request_id,
-            source_url=source_url
+            source_url=source_url,
         )
-    if not data['scene']:
-        del data['scene']
+    if not data["scene"]:
+        del data["scene"]
     torrent_path, torrent_file = generate_torrent(gazelle_site, path)
     files = compile_files(path, torrent_file, metadata)
 
@@ -92,7 +92,7 @@ def compile_data_new_group(
     spectral_ids,
     lossy_comment,
     request_id=None,
-    source_url=None
+    source_url=None,
 ):
     """
     Compile the data dictionary that needs to be submitted with a brand new
@@ -125,7 +125,7 @@ def compile_data_new_group(
         "release_desc": generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, spectral_ids, lossy_comment, source_url
         ),
-        'requestid': request_id,
+        "requestid": request_id,
     }
 
 
@@ -139,7 +139,7 @@ def compile_data_existing_group(
     spectral_ids,
     lossy_comment,
     request_id,
-    source_url=None
+    source_url=None,
 ):
     """Compile the data that needs to be submitted
     with an upload to an existing group."""
@@ -161,7 +161,7 @@ def compile_data_existing_group(
         "release_desc": generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, spectral_ids, lossy_comment, source_url
         ),
-        'requestid': request_id,
+        "requestid": request_id,
     }
 
 
@@ -171,9 +171,7 @@ def compile_files(path, torrent_file, metadata):
     of the .torrent and any log files.
     """
     files = []
-    files.append(
-        ("file_input", ("meowmeow.torrent", torrent_file, "application/octet-stream"))
-    )
+    files.append(("file_input", ("meowmeow.torrent", torrent_file, "application/octet-stream")))
     if metadata["source"] == "CD":
         files += attach_logfiles(path)
     return files
@@ -186,9 +184,8 @@ def attach_logfiles(path):
         for filename in files:
             if filename.lower().endswith(".log"):
                 filepath = os.path.abspath(os.path.join(root, filename))
-                logfiles.append(
-                    (filename, open(filepath, "rb"), "application/octet-stream")  # noqa: SIM115
-                )
+                with open(filepath, "rb") as f:
+                    logfiles.append((filename, f.read(), "application/octet-stream"))
     return [("logfiles[]", lf) for lf in logfiles]
 
 
@@ -211,7 +208,7 @@ def generate_torrent(gazelle_site, path):
     )
     t.generate()
     tpath = os.path.join(
-        #tempfile.gettempdir(),
+        # tempfile.gettempdir(),
         gazelle_site.dot_torrents_dir,
         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
     )
@@ -226,8 +223,8 @@ def generate_description(track_data, metadata):
     multi_disc = any(
         (
             t["t"].discnumber
-            and t["t"].discnumber != '1/1'
-            and (t["t"].discnumber.startswith('1/') or int(t["t"].discnumber) > 1)
+            and t["t"].discnumber != "1/1"
+            and (t["t"].discnumber.startswith("1/") or int(t["t"].discnumber) > 1)
         )
         for t in track_data.values()
     )
@@ -237,17 +234,13 @@ def generate_description(track_data, metadata):
         total_duration += track["duration"]
         if multi_disc:
             description += (
-                f'[b]{str_to_int_if_int(track["t"].discnumber, zpad=True)}-'
-                f'{str_to_int_if_int(track["t"].tracknumber, zpad=True)}.[/b] '
+                f"[b]{str_to_int_if_int(track['t'].discnumber, zpad=True)}-"
+                f"{str_to_int_if_int(track['t'].tracknumber, zpad=True)}.[/b] "
             )
         else:
-            description += (
-                f'[b]{str_to_int_if_int(track["t"].tracknumber, zpad=True)}.[/b] '
-            )
+            description += f"[b]{str_to_int_if_int(track['t'].tracknumber, zpad=True)}.[/b] "
 
-        description += (
-            f'{", ".join(track["t"].artist)} - {track["t"].title} [i]({length})[/i]\n'
-        )
+        description += f"{', '.join(track['t'].artist)} - {track['t'].title} [i]({length})[/i]\n"
 
     if len(track_data.values()) > 1:
         description += f"\n[b]Total length: [/b]{total_duration // 60}:{total_duration % 60:02d}\n"
@@ -284,26 +277,20 @@ def generate_t_description(
             )
             description += "\n"
         else:
-            description += "Encode Specifics: {:.01f} kHz\n".format(
-                track["sample rate"] / 1000
-            )
+            description += "Encode Specifics: {:.01f} kHz\n".format(track["sample rate"] / 1000)
 
     if metadata["date"]:
-        description += f'Released on [b]{metadata["date"]}[/b]\n'
+        description += f"Released on [b]{metadata['date']}[/b]\n"
 
     if cfg.upload.description.include_tracklist_in_t_desc or hybrid:
         for filename, track in track_data.items():
             description += os.path.splitext(filename)[0]
-            description += " [i]({})[/i]".format(
-                f'{track["duration"] // 60}:{track["duration"] % 60:02d}'
-            )
+            description += " [i]({})[/i]".format(f"{track['duration'] // 60}:{track['duration'] % 60:02d}")
             if cfg.upload.description.bitrates_in_t_desc:
                 description += " [{:.01f}kbps]".format(track["bit rate"] / 1000)
 
             if hybrid:
-                description += " [{} bit / {} kHz]".format(
-                    track["precision"], track["sample rate"] / 1000
-                )
+                description += " [{} bit / {} kHz]".format(track["precision"], track["sample rate"] / 1000)
 
             description += "\n"
         description += "\n"
@@ -312,7 +299,7 @@ def generate_t_description(
         description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
 
     if source_url is not None:
-        matched =  False
+        matched = False
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(source_url):
                 if cfg.upload.description.icons_in_descriptions:
@@ -327,10 +314,9 @@ def generate_t_description(
 
         if not matched:
             # Extract hostname without TLD for unmatched URLs
-            hostname = re.match(r'https?://(?:www\.)?([^/]+)', source_url)
+            hostname = re.match(r"https?://(?:www\.)?([^/]+)", source_url)
             if hostname:
                 description += f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n\n"
-        
 
     if metadata_urls:
         description += "[b]More info:[/b] " + generate_source_links(metadata_urls, source_url)
@@ -348,10 +334,7 @@ def generate_source_links(metadata_urls, source_url=None):
         for name, source in METASOURCES.items():
             if source.Scraper.regex.match(url):
                 if cfg.upload.description.icons_in_descriptions:
-                    links.append(
-                        f"[pad=0|3][url={url}][img]{SOURCE_ICONS[name]}[/img] "
-                        f"{name}[/url][/pad]"
-                    )
+                    links.append(f"[pad=0|3][url={url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]")
                 else:
                     links.append(f"[url={url}]{name}[/url]")
                 matched = True
@@ -359,7 +342,7 @@ def generate_source_links(metadata_urls, source_url=None):
 
         if not matched:
             # Extract hostname without TLD for unmatched URLs
-            hostname = re.match(r'https?://(?:www\.)?([^/]+)', url)
+            hostname = re.match(r"https?://(?:www\.)?([^/]+)", url)
             if hostname:
                 unmatched_urls.append(f"[url={url}]{hostname.group(1)}[/url]")
 

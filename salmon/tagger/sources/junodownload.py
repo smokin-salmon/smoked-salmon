@@ -27,9 +27,7 @@ class Scraper(JunodownloadBase, MetadataMixin):
 
     def parse_genres(self, soup):
         try:
-            genre_str = re.sub(
-                r"[^A-Za-z]+$", "", soup.select('meta[itemprop="genre"]')[0]["content"]
-            )
+            genre_str = re.sub(r"[^A-Za-z]+$", "", soup.select('meta[itemprop="genre"]')[0]["content"])
             return {"Electronic", *(set(genre_str.split("/")))}
         except TypeError as e:
             raise ScrapeError("Could not parse genres.") from e
@@ -55,20 +53,14 @@ class Scraper(JunodownloadBase, MetadataMixin):
 
     def parse_release_catno(self, soup):
         try:
-            catblob = soup.find_all('div', attrs={'class': 'mb-2'})[10]
-            return (
-                catblob.find('strong', text='Cat:')
-                .next_sibling.strip()
-                .replace(" ", "")
-            )
+            catblob = soup.find_all("div", attrs={"class": "mb-2"})[10]
+            return catblob.find("strong", text="Cat:").next_sibling.strip().replace(" ", "")
         except IndexError as e:
             raise ScrapeError("Could not parse catalog number.") from e
 
     def parse_comment(self, soup):
         try:
-            return soup.select('#product_release_note span[itemprop="reviewBody"]')[
-                0
-            ].string
+            return soup.select('#product_release_note span[itemprop="reviewBody"]')[0].string
         except IndexError:
             return None
 
@@ -76,15 +68,13 @@ class Scraper(JunodownloadBase, MetadataMixin):
         tracks = defaultdict(dict)
         cur_disc = 1
         for track in soup.find_all(
-            'div',
-            attrs={
-                'class': 'row gutters-sm align-items-center product-tracklist-track'
-            },
+            "div",
+            attrs={"class": "row gutters-sm align-items-center product-tracklist-track"},
         ):
             try:
                 num = track.text.strip().split(".", 1)[0]
-                tobj = track.find('div', attrs={'class': 'col track-title'})
-                title = tobj.find('a').text
+                tobj = track.find("div", attrs={"class": "col track-title"})
+                title = tobj.find("a").text
                 tracks[str(cur_disc)][num] = self.generate_track(
                     trackno=(num),
                     discno=cur_disc,
@@ -118,11 +108,9 @@ def parse_title(title, track):
 def parse_artists(soup, track, title):
     """
     Parse the per-track artists from the tracks or the header."""
-    raw_rls_arts = [
-        s.string
-        for s in soup.select("#topbar_bread a")
-        if "/artists/" in s["href"] and s.string
-    ] or [s.string.title() for s in soup.select(".product-artist a")]
+    raw_rls_arts = [s.string for s in soup.select("#topbar_bread a") if "/artists/" in s["href"] and s.string] or [
+        s.string.title() for s in soup.select(".product-artist a")
+    ]
 
     artists = []
     for art in raw_rls_arts:
@@ -130,9 +118,7 @@ def parse_artists(soup, track, title):
             artists.append(split)
 
     try:
-        artists = split_artists(
-            track.select('meta[itemprop="byArtist"]')[0]["content"], artists
-        )
+        artists = split_artists(track.select('meta[itemprop="byArtist"]')[0]["content"], artists)
     except (TypeError, IndexError):
         artists = [(a, "main") for a in artists]
 
@@ -140,13 +126,8 @@ def parse_artists(soup, track, title):
     if guests:
         artists += [
             (
-                re.sub(
-                    r"(?:(?:\s*-)?\s+.+?\s+(?:mix|remix|edit)|(?:\s*-\s*.+))",
-                    "",
-                    a,
-                    flags=re.IGNORECASE
-                ).strip(),
-                "guest"
+                re.sub(r"(?:(?:\s*-)?\s+.+?\s+(?:mix|remix|edit)|(?:\s*-\s*.+))", "", a, flags=re.IGNORECASE).strip(),
+                "guest",
             )
             for a in re_split(guests[1])
         ]

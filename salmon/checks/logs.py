@@ -11,7 +11,7 @@ def is_sublist(*, sub, main):
     return all(elem in main for elem in sub)
 
 
-def _calculate_file_crc(filepath, _ = None):
+def _calculate_file_crc(filepath, _=None):
     """Calculate CRC32 hash for a single audio file."""
     output = subprocess.check_output(
         [
@@ -45,31 +45,23 @@ def check_log_cambia(logpath, basepath):
                 encoding="utf-8",
             )
         )
-        score = int(cambia_output['evaluation_combined'][0]['combined_score'])
+        score = int(cambia_output["evaluation_combined"][0]["combined_score"])
         if score < 100:
-            click.secho(
-                f"Log Score: {score} (The torrent will be trumpable)",
-                fg="yellow",
-                bold=True
-            )
+            click.secho(f"Log Score: {score} (The torrent will be trumpable)", fg="yellow", bold=True)
         else:
-            click.secho(
-                f"Log Score: {score}",
-                fg="green"
-            )
+            click.secho(f"Log Score: {score}", fg="green")
     except Exception as e:
         click.secho(f"Error checking log {logpath}: {e}", fg="red")
         raise
 
-    if cambia_output['parsed']['parsed_logs'][0]['checksum']['integrity'] == "Mismatch":
+    if cambia_output["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Mismatch":
         raise ValueError("Edited logs!")
-    elif cambia_output['parsed']['parsed_logs'][0]['checksum']['integrity'] == 'Unknown':
+    elif cambia_output["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Unknown":
         click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
 
     # Get list of CRCs from the log file
     copy_crc_list = [
-        track['test_and_copy']['copy_hash']
-        for track in cambia_output['parsed']['parsed_logs'][0]['tracks']
+        track["test_and_copy"]["copy_hash"] for track in cambia_output["parsed"]["parsed_logs"][0]["tracks"]
     ]
 
     # Get list of files to check
@@ -87,5 +79,5 @@ def check_log_cambia(logpath, basepath):
 
     if not is_sublist(sub=copy_crc_list, main=crc_list):
         raise ValueError("CRC Mismatch!")
-    
+
     click.secho("All CRC values match the log file.", fg="green")

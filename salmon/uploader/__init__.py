@@ -66,16 +66,14 @@ loop = asyncio.get_event_loop()
 
 
 @commandgroup.command()
-@click.argument(
-    "path", type=click.Path(exists=True, file_okay=False, resolve_path=True)
-)
+@click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option("--group-id", "-g", default=None, help="Group ID to upload torrent to")
 @click.option(
     "--source",
     "-s",
     type=click.STRING,
     callback=validate_source,
-    help=f'Source of files ({"/".join(SOURCES.values())})',
+    help=f"Source of files ({'/'.join(SOURCES.values())})",
 )
 @click.option(
     "--lossy/--not-lossy",
@@ -114,61 +112,55 @@ loop = asyncio.get_event_loop()
     "--tracker",
     "-t",
     callback=salmon.trackers.validate_tracker,
-    help=f'Uploading Choices: ({"/".join(salmon.trackers.tracker_list)})',
+    help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)})",
 )
-@click.option("--request", "-r", default=None, help='Pass a request URL or ID')
+@click.option("--request", "-r", default=None, help="Pass a request URL or ID")
 @click.option(
     "--spectrals-after",
     "-a",
     is_flag=True,
-    help='Assess / upload / report spectrals after torrent upload',
+    help="Assess / upload / report spectrals after torrent upload",
 )
 @click.option(
     "--auto-rename",
     "-n",
     is_flag=True,
-    help='Rename files and folders automatically',
+    help="Rename files and folders automatically",
 )
 @click.option(
     "--skip-up",
     is_flag=True,
-    help='Skip check for 24 bit upconversion',
+    help="Skip check for 24 bit upconversion",
 )
-@click.option(
-    "--scene",
-    is_flag=True,
-    help='Is this a scene release (default: False)'
-)
+@click.option("--scene", is_flag=True, help="Is this a scene release (default: False)")
 @click.option(
     "--rutorrent",
     is_flag=True,
     default=cfg.rutorrent.enable_injection,
-    help='Adds torrent to Rutorrent client after torrent upload (default: False)'
+    help="Adds torrent to Rutorrent client after torrent upload (default: False)",
 )
 @click.option(
     "--qbittorrent",
     is_flag=True,
     default=cfg.qbittorrent.enable_injection,
-    help='Adds torrent to qBitTorrent client after torrent upload (default: False)'
-)
-@click.option("--source-url", "-su", 
-    default=None, 
-    help='For WEB uploads provide the source of the album to be added in release description'
+    help="Adds torrent to qBitTorrent client after torrent upload (default: False)",
 )
 @click.option(
-    "-yyy",
-    is_flag=True,
-    help='Automatically pick the default answer for prompt'
+    "--source-url",
+    "-su",
+    default=None,
+    help="For WEB uploads provide the source of the album to be added in release description",
 )
+@click.option("-yyy", is_flag=True, help="Automatically pick the default answer for prompt")
 @click.option(
     "--skip-mqa",
     is_flag=True,
-    help='Skip check for MQA marker (on first file only)',
+    help="Skip check for MQA marker (on first file only)",
 )
 @click.option(
     "--skip-log-check",
     is_flag=True,
-    help='Skip checking CD logs',
+    help="Skip checking CD logs",
 )
 def up(
     path,
@@ -287,14 +279,13 @@ def upload(
         if rls_data["encoding"] == "24bit Lossless" and not skip_up:
             if not cfg.upload.yes_all:
                 if click.confirm(
-                        click.style(
-                            "\n24bit detected. Do you want to check whether might be upconverted?",
-                            fg="magenta"),
-                        default=True):
+                    click.style("\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"),
+                    default=True,
+                ):
                     upload_upconvert_test(path)
             else:
                 upload_upconvert_test(path)
-                
+
         if source == "CD" and not skip_log_check:
             click.secho("\nChecking logs", fg="green")
             for root, _, files in os.walk(path):
@@ -305,9 +296,7 @@ def upload(
                         check_log_cambia(filepath, path)
 
         if group_id is None:
-            searchstrs = generate_dupe_check_searchstrs(
-                rls_data["artists"], rls_data["title"], rls_data["catno"]
-            )
+            searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
             if len(searchstrs) > 0:
                 group_id = check_existing_group(gazelle_site, searchstrs)
 
@@ -316,9 +305,7 @@ def upload(
             lossy_master = False
             # We tell the uploader not to worry about it being lossy until later.
         else:
-            lossy_master, spectral_ids = check_spectrals(
-                path, audio_info, lossy, spectrals, format=rls_data["format"]
-            )
+            lossy_master, spectral_ids = check_spectrals(path, audio_info, lossy, spectrals, format=rls_data["format"])
 
         metadata, new_source_url = get_metadata(path, tags, rls_data)
         if new_source_url is not None:
@@ -338,6 +325,7 @@ def upload(
         if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
             try:
                 import send2trash
+
                 send2trash.send2trash(path)
                 return click.secho("\nMoved folder to recycle bin, aborting upload...", fg="red")
             except Exception as e:
@@ -352,15 +340,11 @@ def upload(
         spectral_urls = None
     else:
         if lossy_master:
-            lossy_comment = generate_lossy_approval_comment(
-                source_url, list(track_data.keys())
-            )
+            lossy_comment = generate_lossy_approval_comment(source_url, list(track_data.keys()))
             click.echo()
 
         spectrals_path = get_spectrals_path(path)
-        spectral_urls = handle_spectrals_upload_and_deletion(
-            spectrals_path, spectral_ids
-        )
+        spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
     if cfg.upload.requests.last_minute_dupe_check:
         last_min_dupe_check(gazelle_site, searchstrs)
 
@@ -371,9 +355,7 @@ def upload(
     cover_url = None
     stored_cover_url = None  # Store the cover URL for reuse across trackers
     # Regenerate searchstrs (will be used to search for requests)
-    searchstrs = generate_dupe_check_searchstrs(
-                rls_data["artists"], rls_data["title"], rls_data["catno"]
-            )
+    searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
 
     while True:
         # Loop until we don't want to upload to any more sites.
@@ -385,16 +367,12 @@ def upload(
                     gazelle_site, path, torrent_id, None, track_data, source, source_url, format=rls_data["format"]
                 )
                 spectrals_after = False
-            click.secho(
-                "\nWould you like to upload to another tracker? ", fg="magenta", nl=False
-            )
+            click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
             tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
             gazelle_site = salmon.trackers.get_class(tracker)()
 
             click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
-            searchstrs = generate_dupe_check_searchstrs(
-                rls_data["artists"], rls_data["title"], rls_data["catno"]
-            )
+            searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
             group_id = check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
@@ -432,7 +410,7 @@ def upload(
             spectral_ids,
             lossy_comment,
             request_id,
-            source_url
+            source_url,
         )
         if lossy_master:
             report_lossy_master(
@@ -453,33 +431,23 @@ def upload(
         )
         # TODO: refactor this!
         if rutorrent:
-            tracker_dirs = {
-                "OPS": cfg.directory.ops_download_directory,
-                "RED": cfg.directory.red_download_directory
-            }
-            tracker_labels = {
-                "OPS": cfg.rutorrent.ops_label,
-                "RED": cfg.rutorrent.red_label
-            }
+            tracker_dirs = {"OPS": cfg.directory.ops_download_directory, "RED": cfg.directory.red_download_directory}
+            tracker_labels = {"OPS": cfg.rutorrent.ops_label, "RED": cfg.rutorrent.red_label}
             click.secho(
-            (f"\nAdding torrent to client {cfg.rutorrent.url} "
-             f"{tracker_dirs[tracker]} {tracker_labels[tracker]}"),
-            fg="green",
-            bold=True
+                (f"\nAdding torrent to client {cfg.rutorrent.url} {tracker_dirs[tracker]} {tracker_labels[tracker]}"),
+                fg="green",
+                bold=True,
             )
-            add_torrent_to_rutorrent(
-                cfg.rutorrent.url,
-                torrent_path,
-                tracker_dirs[tracker],
-                tracker_labels[tracker]
-            )
+            add_torrent_to_rutorrent(cfg.rutorrent.url, torrent_path, tracker_dirs[tracker], tracker_labels[tracker])
         if qbittorrent:
             creds = cfg.qbittorrent.credentials
             click.secho(
-            (f"\nAdding torrent to client {creds.host} "
-             f"Save Path: {cfg.directory.download_directory}, Category: {cfg.qbittorrent.category}"),
-            fg="green",
-            bold=True
+                (
+                    f"\nAdding torrent to client {creds.host} "
+                    f"Save Path: {cfg.directory.download_directory}, Category: {cfg.qbittorrent.category}"
+                ),
+                fg="green",
+                bold=True,
             )
             qbit_success = add_torrent_to_qbittorrent(
                 creds.host,
@@ -489,7 +457,7 @@ def upload(
                 torrent_path,
                 save_path=cfg.directory.download_directory,
                 category=cfg.qbittorrent.category,
-                skip_checking=cfg.qbittorrent.skip_hash_check
+                skip_checking=cfg.qbittorrent.skip_hash_check,
             )
             # Remove the torrent file after successful qBittorrent upload
             if qbit_success:
@@ -501,7 +469,7 @@ def upload(
                 click.secho(
                     f"Warning: Failed to add torrent to qBittorrent. "
                     f"You can manually add the torrent file from: {torrent_path}",
-                    fg="yellow"
+                    fg="yellow",
                 )
 
         if cfg.upload.description.copy_uploaded_url_to_clipboard:
@@ -520,27 +488,25 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
     """
     while True:
         metadata = review_metadata(metadata, metadata_validator)
-        if not metadata['scene']:
+        if not metadata["scene"]:
             tag_files(path, tags, metadata, auto_rename)
 
         tags = check_tags(path)
-        if not metadata['scene'] and recompress:
+        if not metadata["scene"] and recompress:
             recompress_path(path)
         path = rename_folder(path, metadata, auto_rename)
-        if not metadata['scene']:
+        if not metadata["scene"]:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
-        check_folder_structure(path, metadata['scene'])
+        check_folder_structure(path, metadata["scene"])
 
         if cfg.upload.yes_all or click.confirm(
-            click.style(
-                "\nDo you want to check for integrity of this upload?",
-                fg="magenta"),
+            click.style("\nDo you want to check for integrity of this upload?", fg="magenta"),
             default=True,
-            ):
+        ):
             result = check_integrity(path)
             click.echo(format_integrity(result))
-            
-            if not result[0] and metadata['scene']:
+
+            if not result[0] and metadata["scene"]:
                 click.secho(
                     "Some files failed sanitization, and this a scene release. "
                     "You need to sanitize and de-scene before uploading. Aborting.",
@@ -548,12 +514,13 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
                     bold=True,
                 )
                 raise click.Abort()
-            if not result[0] and (cfg.upload.yes_all or click.confirm(
-                click.style(
-                    "\nDo you want to sanitize this upload?",
-                    fg="magenta"),
-                default=True,
-                )):
+            if not result[0] and (
+                cfg.upload.yes_all
+                or click.confirm(
+                    click.style("\nDo you want to sanitize this upload?", fg="magenta"),
+                    default=True,
+                )
+            ):
                 click.secho("\nSanitizing files...", fg="cyan", bold=True)
                 if sanitize_integrity(path):
                     click.secho("Sanitization complete", fg="green")
@@ -561,11 +528,7 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
                     click.secho("Some files failed sanitization", fg="red", bold=True)
 
         if cfg.upload.yes_all or click.confirm(
-            click.style(
-                "\nWould you like to upload the torrent? (No to re-run metadata "
-                "section)",
-                fg="magenta"
-            ),
+            click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
             default=True,
         ):
             metadata["tags"] = convert_genres(metadata["genres"])
@@ -581,18 +544,10 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
 
 def recheck_dupe(gazelle_site, searchstrs, metadata):
     "Rechecks for a dupe if the artist, album or catno have changed."
-    new_searchstrs = generate_dupe_check_searchstrs(
-        metadata["artists"], metadata["title"], metadata["catno"]
-    )
-    if (
-        searchstrs
-        and any(n not in searchstrs for n in new_searchstrs)
-        or not searchstrs
-        and new_searchstrs
-    ):
+    new_searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
+    if searchstrs and any(n not in searchstrs for n in new_searchstrs) or not searchstrs and new_searchstrs:
         click.secho(
-            f'\nRechecking for dupes on {gazelle_site.site_string} '
-            'due to metadata changes...',
+            f"\nRechecking for dupes on {gazelle_site.site_string} due to metadata changes...",
             fg="cyan",
             bold=True,
             nl=False,
@@ -608,11 +563,13 @@ def last_min_dupe_check(gazelle_site, searchstrs):
     click.secho(f"Last Minuite Dupe Check on {gazelle_site.site_code}", fg="cyan")
     recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
     if recent_uploads:
-        print_recent_upload_results(
-            gazelle_site, recent_uploads, " / ".join(searchstrs)
-        )
+        print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
         if not click.confirm(
-            click.style("\nWould you still like to upload?", fg="red", bold=True,),
+            click.style(
+                "\nWould you still like to upload?",
+                fg="red",
+                bold=True,
+            ),
             default=False,
         ):
             raise click.Abort
@@ -624,9 +581,9 @@ def metadata_validator(metadata):
     """Validate that the provided metadata is not an issue."""
     metadata = metadata_validator_base(metadata)
     if metadata["format"] not in FORMATS.values():
-        raise InvalidMetadataError(f'{metadata["format"]} is not a valid format.')
+        raise InvalidMetadataError(f"{metadata['format']} is not a valid format.")
     if metadata["encoding"] not in ENCODINGS:
-        raise InvalidMetadataError(f'{metadata["encoding"]} is not a valid encoding.')
+        raise InvalidMetadataError(f"{metadata['encoding']} is not a valid encoding.")
 
     return metadata
 
@@ -637,12 +594,10 @@ def convert_genres(genres):
 
 
 def _prompt_source():
-    click.echo(f'\nValid sources: {", ".join(SOURCES.values())}')
+    click.echo(f"\nValid sources: {', '.join(SOURCES.values())}")
     while True:
         sauce = click.prompt(
-            click.style(
-                "What is the source of this release? [a]bort", fg="magenta"
-            ),
+            click.style("What is the source of this release? [a]bort", fg="magenta"),
             default="",
         )
         try:

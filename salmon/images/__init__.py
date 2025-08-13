@@ -55,10 +55,7 @@ def up(filepaths, image_host):
         urls = []
         upload_function = image_host.ImageUploader().upload_file
         try:
-            tasks = [
-                loop.run_in_executor(None, lambda f=f: upload_function(f))
-                for f in filepaths
-            ]
+            tasks = [loop.run_in_executor(None, lambda f=f: upload_function(f)) for f in filepaths]
             for url, deletion_url in loop.run_until_complete(asyncio.gather(*tasks)):
                 cursor.execute(
                     "INSERT INTO image_uploads (url, deletion_url) VALUES (?, ?)",
@@ -75,9 +72,7 @@ def up(filepaths, image_host):
 
 
 @images.command()
-@click.option(
-    "--limit", "-l", type=click.INT, default=20, help="The number of images to show"
-)
+@click.option("--limit", "-l", type=click.INT, default=20, help="The number of images to show")
 @click.option(
     "--offset",
     "-o",
@@ -91,8 +86,7 @@ def ls(limit, offset):
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, url, deletion_url, time FROM image_uploads "
-            "ORDER BY id DESC LIMIT ? OFFSET ?",
+            "SELECT id, url, deletion_url, time FROM image_uploads ORDER BY id DESC LIMIT ? OFFSET ?",
             (limit, offset),
         )
         for row in cursor.fetchall():
@@ -167,29 +161,22 @@ def _handle_failed_spectrals(spectrals, successful):
         host = click.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
-                f'with? (Options: {", ".join(HOSTS.keys())})',
+                f"with? (Options: {', '.join(HOSTS.keys())})",
                 fg="magenta",
                 bold=True,
             ),
             default="ptpimg",
         ).lower()
         if host not in HOSTS:
-            click.secho(
-                f"{host} is an invalid image host. Please choose another one.", fg="red"
-            )
+            click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
         else:
-            return upload_spectrals(
-                spectrals, uploader=HOSTS[host], successful=successful
-            )
+            return upload_spectrals(spectrals, uploader=HOSTS[host], successful=successful)
 
 
 async def _spectrals_handler(spec_id, filename, spectral_paths, uploader):
     try:
         click.secho(f"Uploading spectrals for {filename}...", fg="yellow")
-        tasks = [
-            loop.run_in_executor(None, lambda f=f: uploader(f)[0])
-            for f in spectral_paths
-        ]
+        tasks = [loop.run_in_executor(None, lambda f=f: uploader(f)[0]) for f in spectral_paths]
         return spec_id, await asyncio.gather(*tasks)
     except ImageUploadFailed as e:
         click.secho(f"Failed to upload spectrals for {filename}: {e}", fg="red")

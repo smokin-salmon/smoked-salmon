@@ -19,7 +19,7 @@ PREFERENCES = [
     "Junodownload",
     "Discogs",
     "Beatport",
-    "iTunes",   # scraping half-broken, might want to put it back higher when fixed
+    "iTunes",  # scraping half-broken, might want to put it back higher when fixed
 ]
 
 
@@ -48,9 +48,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     sources = sort_metadatas(metadatas)
 
     source = get_source_from_link(source_url)
-    ordered_preferences = (
-        [source] if source in PREFERENCES else []
-    ) + [p for p in PREFERENCES if p != source]
+    ordered_preferences = ([source] if source in PREFERENCES else []) + [p for p in PREFERENCES if p != source]
 
     from_preferred_source = True
 
@@ -66,20 +64,13 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
             base["genres"] += metadata["genres"]
 
             with contextlib.suppress(TrackCombineError):
-                base["tracks"] = combine_tracks(
-                    base["tracks"],
-                    metadata["tracks"],
-                    from_preferred_source
-                )
+                base["tracks"] = combine_tracks(base["tracks"], metadata["tracks"], from_preferred_source)
 
             if (
                 (not base["catno"] or not base["label"])
                 and metadata["label"]
                 and metadata["catno"]
-                and (
-                    not base["label"]
-                    or any(w in metadata["label"] for w in base["label"].split())
-                )
+                and (not base["label"] or any(w in metadata["label"] for w in base["label"].split()))
             ) and (base["source"] != "WEB" or (base["source"] == "WEB" and from_preferred_source)):
                 base["label"] = metadata["label"]
                 base["catno"] = metadata["catno"]
@@ -93,7 +84,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                 if not base["comment"]:
                     base["comment"] = metadata["comment"]
                 else:
-                    base["comment"] += f'\n\n{"-"*32}\n\n' + metadata["comment"]
+                    base["comment"] += f"\n\n{'-' * 32}\n\n" + metadata["comment"]
 
             if not base["cover"]:
                 base["cover"] = metadata["cover"]
@@ -102,8 +93,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
             if not base["year"]:
                 base["year"] = metadata["year"]
             if not base["group_year"] or (
-                str(metadata["group_year"]).isdigit()
-                and int(metadata["group_year"]) < int(base["group_year"])
+                str(metadata["group_year"]).isdigit() and int(metadata["group_year"]) < int(base["group_year"])
             ):
                 base["group_year"] = metadata["group_year"]
             if not base["date"]:
@@ -146,17 +136,26 @@ def sort_metadatas(metadatas):
 def _extract_remixers_from_title(title):
     # Mix types that don't indicate a remixer when alone
     common_mix_types = {
-        "original", "extended", "radio", "club", "instrumental",
-        "acoustic", "album", "vocal", "main", "dub", "edit"
+        "original",
+        "extended",
+        "radio",
+        "club",
+        "instrumental",
+        "acoustic",
+        "album",
+        "vocal",
+        "main",
+        "dub",
+        "edit",
     }
-    
+
     # Match patterns like (Remixer Remix), (Remixer Mix), (Remixer Radio Mix), etc.
     # Also matches compound mix types like "Vocal Mix", "Club Mix", etc.
     match = re.search(r"\((.*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*(?:Remix|Mix|Edit)\)", title, re.IGNORECASE)
     if match:
         remixers = match.group(1).strip()
         # Split on common delimiters and strip each name
-        remixer_list = [r.strip() for r in re.split(r'\s*(?:&|,|/|;|\+)\s*', remixers)]
+        remixer_list = [r.strip() for r in re.split(r"\s*(?:&|,|/|;|\+)\s*", remixers)]
         # Filter out common mix types and return remaining as remixers
         return [(r, "remixer") for r in remixer_list if r.lower() not in common_mix_types]
     return []
@@ -189,8 +188,9 @@ def combine_tracks(base, meta, update_track_numbers):
 
             # Scraped title is the same than title when ignoring metadatas, and it contains accents and special
             # characters, prefer that one.
-            if (re_strip(track["title"]) != re_strip(unidecode(track["title"]))
-                    and re_strip(unidecode(track["title"])) == re_strip(unidecode(btrack["title"]))):
+            if re_strip(track["title"]) != re_strip(unidecode(track["title"])) and re_strip(
+                unidecode(track["title"])
+            ) == re_strip(unidecode(btrack["title"])):
                 btrack["title"] = track["title"]
 
             base_artists = {(re_strip(a[0]), a[1]) for a in btrack["artists"]}

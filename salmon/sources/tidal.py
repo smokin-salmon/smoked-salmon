@@ -7,13 +7,10 @@ from salmon.sources.base import BaseScraper
 
 
 class TidalBase(BaseScraper):
-
     url = "https://api.tidalhifi.com/v1"
     site_url = "https://listen.tidal.com"
     image_url = "https://resources.tidal.com/images/{album_id}/1280x1280.jpg"
-    regex = re.compile(
-        r"^https*:\/\/.*?(?:tidal|wimpmusic)\.com.*?\/(album|track|playlist)\/([0-9a-z\-]+)"
-    )
+    regex = re.compile(r"^https*:\/\/.*?(?:tidal|wimpmusic)\.com.*?\/(album|track|playlist)\/([0-9a-z\-]+)")
     release_format = "/album/{rls_id}"
     get_params = {"token": cfg.metadata.tidal.token}
 
@@ -38,9 +35,7 @@ class TidalBase(BaseScraper):
                 self.country_code = cc
                 params["countrycode"] = cc
                 data = await self.get_json(f"/albums/{album_id}", params=params)
-                tracklist = await self.get_json(
-                    f"/albums/{album_id}/tracks", params=params
-                )
+                tracklist = await self.get_json(f"/albums/{album_id}/tracks", params=params)
                 data["tracklist"] = tracklist["items"]
                 return data
             except json.decoder.JSONDecodeError as e:
@@ -56,4 +51,3 @@ def get_tidal_regions_to_fetch():
         return cfg.metadata.tidal.fetch_regions
     else:
         raise ScrapeError("No regions defined for Tidal to grab from")
-

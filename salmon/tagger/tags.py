@@ -49,13 +49,11 @@ def check_required_tags(tags):
             if not getattr(tag_item, t, False):
                 missing.append(t)
             if missing:
-                offending_files.append(f'{fln} ({", ".join(missing)})')
+                offending_files.append(f"{fln} ({', '.join(missing)})")
 
     if offending_files:
         click.secho(
-            "The following files do not contain all the required tags: {}.".format(
-                ", ".join(offending_files)
-            ),
+            "The following files do not contain all the required tags: {}.".format(", ".join(offending_files)),
             fg="red",
         )
     else:
@@ -71,10 +69,7 @@ def print_a_tag(tags):
 def prompt_editor(path):
     """Ask user whether or not to open the files in a tag editor."""
     if not click.confirm(
-        click.style(
-            "\nAre the above tags acceptable? ([n] to open in tag editor)",
-            fg="magenta"
-        ),
+        click.style("\nAre the above tags acceptable? ([n] to open in tag editor)", fg="magenta"),
         default=True,
     ):
         with open(os.devnull, "w") as devnull:
@@ -101,7 +96,4 @@ def standardize_tags(path):
                     found_aliased.add(alias)
         if found_aliased:
             mut.save()
-            click.secho(
-                f"Unaliased the following tags for {filename}: "
-                + ", ".join(found_aliased)
-            )
+            click.secho(f"Unaliased the following tags for {filename}: " + ", ".join(found_aliased))

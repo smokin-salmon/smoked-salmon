@@ -13,6 +13,7 @@ from salmon.errors import FilterError, LoginError, UploadError
 from salmon.release_notification import show_release_notification
 from salmon import cfg
 
+
 def cleanup_tmp_dir():
     """Clean up the temporary directory if configured."""
     if cfg.directory.tmp_dir and cfg.directory.clean_tmp_dir:
@@ -30,6 +31,7 @@ def cleanup_tmp_dir():
         except Exception as e:
             click.secho(f"Failed to clean temporary directory: {e}", fg="yellow")
 
+
 def main():
     try:
         cleanup_tmp_dir()
@@ -40,7 +42,9 @@ def main():
     except (UploadError, FilterError) as e:
         click.secho(f"There was an error: {e}", fg="red", bold=True)
     except LoginError:
-        click.secho(f"Failed to log in. Is your session cookie up to date? Run the checkconf command to diagnose.", fg="red")
+        click.secho(
+            f"Failed to log in. Is your session cookie up to date? Run the checkconf command to diagnose.", fg="red"
+        )
     except ImportError as e:
         click.secho(f"You are missing required dependencies: {e}", fg="red")
 

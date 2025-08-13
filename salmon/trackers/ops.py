@@ -8,10 +8,10 @@ from salmon.trackers.base import BaseGazelleApi
 
 class OpsApi(BaseGazelleApi):
     def __init__(self):
-        self.site_code = 'OPS'
-        self.base_url = 'https://orpheus.network'
-        self.tracker_url = 'https://home.opsfet.ch'
-        self.site_string = 'OPS'
+        self.site_code = "OPS"
+        self.base_url = "https://orpheus.network"
+        self.tracker_url = "https://home.opsfet.ch"
+        self.site_string = "OPS"
         if cfg.tracker.ops:
             ops_cfg = cfg.tracker.ops
             if ops_cfg.dottorrents_dir:

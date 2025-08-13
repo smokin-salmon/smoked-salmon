@@ -18,10 +18,6 @@ class ImageUploader(BaseImageUploader):
                 r = resp.json()[0]
                 return f"https://ptpimg.me/{r['code']}.{r['ext']}", None
             except ValueError as e:
-                raise ImageUploadFailed(
-                    f"Failed decoding body:\n{e}\n{resp.content}"
-                ) from e
+                raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{resp.content}") from e
         else:
-            raise ImageUploadFailed(
-                f"Failed. Status {resp.status_code}:\n{resp.content}"
-            )
+            raise ImageUploadFailed(f"Failed. Status {resp.status_code}:\n{resp.content}")

@@ -11,10 +11,10 @@ loop = asyncio.get_event_loop()
 
 class RedApi(BaseGazelleApi):
     def __init__(self):
-        self.site_code = 'RED'
-        self.base_url = 'https://redacted.sh'
-        self.tracker_url = 'https://flacsfor.me'
-        self.site_string = 'RED'
+        self.site_code = "RED"
+        self.base_url = "https://redacted.sh"
+        self.tracker_url = "https://flacsfor.me"
+        self.site_string = "RED"
         if cfg.tracker.red:
             red_cfg = cfg.tracker.red
 
@@ -46,12 +46,8 @@ class RedApi(BaseGazelleApi):
         }
         r = await loop.run_in_executor(
             None,
-            lambda: self.session.post(
-                url, params=params, data=data, headers=self.headers
-            ),
+            lambda: self.session.post(url, params=params, data=data, headers=self.headers),
         )
         if "torrents.php" in r.url:
             return True
-        raise RequestError(
-            f"Failed to report the torrent for lossy master, code {r.status_code}."
-        )
+        raise RequestError(f"Failed to report the torrent for lossy master, code {r.status_code}.")

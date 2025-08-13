@@ -18,9 +18,7 @@ class Searcher(DeezerBase, SearchMixin):
         # print(resp)
         for rls in resp["data"]:
             releases[rls["id"]] = (
-                IdentData(
-                    rls["artist"]["name"], rls["title"], None, rls["nb_tracks"], "WEB"
-                ),
+                IdentData(rls["artist"]["name"], rls["title"], None, rls["nb_tracks"], "WEB"),
                 self.format_result(
                     rls["artist"]["name"],
                     rls["title"],
@@ -38,9 +36,7 @@ class Searcher(DeezerBase, SearchMixin):
         all their releases.
         """
         artist_ids = await self._get_artist_ids(artiststr)
-        tasks = [
-            self._get_artist_albums(artist_id, artiststr) for artist_id in artist_ids
-        ]
+        tasks = [self._get_artist_albums(artist_id, artiststr) for artist_id in artist_ids]
         return "Deezer", list(chain.from_iterable(await asyncio.gather(*tasks)))
 
     async def _get_artist_ids(self, artiststr):
@@ -77,12 +73,12 @@ class Searcher(DeezerBase, SearchMixin):
                 album = await self.get_json(f"/album/{rls['id']}")
                 albums.append(
                     LabelRlsData(
-                        url=rls['link'],
+                        url=rls["link"],
                         quality="LOSSLESS",  # Cannot determine.
                         year=str(self._parse_year(album["release_date"])),
-                        artist=rls['artist']['name'],
+                        artist=rls["artist"]["name"],
                         album=rls["title"],
-                        type=album['record_type'],
+                        type=album["record_type"],
                         explicit=rls["explicit_lyrics"],
                     )
                 )

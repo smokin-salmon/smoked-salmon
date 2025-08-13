@@ -75,14 +75,13 @@ class Scraper(BeatportBase, MetadataMixin):
 
     def parse_comment(self, soup):
         return None
-    
+
     def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
         try:
             track_list = sorted(
-                soup["state"]["data"]["results"],
-                key=lambda x: int(x["id"]) if x["id"] is not None else 0
+                soup["state"]["data"]["results"], key=lambda x: int(x["id"]) if x["id"] is not None else 0
             )
             for i, track in enumerate(track_list, 1):
                 track_num = str(i)
@@ -94,7 +93,7 @@ class Scraper(BeatportBase, MetadataMixin):
                 for remixer in track["remixers"]:
                     for split in re.split(" & |; | / ", remixer["name"]):
                         artists.append((split, "remixer"))
-                
+
                 # Get title with mix name if not Original Mix
                 title = track["name"]
                 if track["mix_name"] and track["mix_name"] != "Original Mix":
@@ -105,8 +104,8 @@ class Scraper(BeatportBase, MetadataMixin):
                     discno=cur_disc,
                     artists=artists,
                     title=title,
-                    streamable=track['is_available_for_streaming'],
-                    isrc=track['isrc'],
+                    streamable=track["is_available_for_streaming"],
+                    isrc=track["isrc"],
                 )
             return dict(tracks)
         except (KeyError, IndexError) as e:
