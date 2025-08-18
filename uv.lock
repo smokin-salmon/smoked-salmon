@@ -432,6 +432,38 @@ wheels = [
 ]
 
 [[package]]
+name = "pycambia"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/b3/c92cd1726369f07310c357c11ea74fc984e7d34b5266c21cab71712e4e4e/pycambia-0.1.0.tar.gz", hash = "sha256:beddd2f84f15321969221632fd51186653136dd78e4d3ce0ae13ce7c59259420", size = 5561095, upload-time = "2025-08-16T12:11:07.702Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6c/68/39c9efedff82f64a9863f9cddc0e30d8ae5f7a5df0d995b4ac0dfd568c42/pycambia-0.1.0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:8604aa042bc9563f025e9cca2e46f60c0740a698ec8dfb349f00f90df010451e", size = 1281944, upload-time = "2025-08-16T12:09:50.828Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/b8/0610a59feec1083f6f887f2c1e1fa4ae1bfd61f4478f68a23342d7746727/pycambia-0.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:7f60cfaf1e4ef38f01a05f997f425cb447348cd28172943fbe972833552437b6", size = 1194076, upload-time = "2025-08-16T12:09:45.7Z" },
+    { url = "https://files.pythonhosted.org/packages/1d/ba/a611d29e7fcb45cf1de254d748e3f3f70e95e0d3122c99725c27ba076275/pycambia-0.1.0-cp311-cp311-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:2f422d49ae778740595ed09e58737277f53bc3290e9200bd39cb0c51ae13189b", size = 1373829, upload-time = "2025-08-16T12:09:14.463Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/9d/ce886991e61c0655aafc6933d25e5b83aaf21338ac5a796fe736538dc789/pycambia-0.1.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6c5f212e637aa9dab2adefe4ea4a45efe4f552c3a1803d33cdf782b3c2389e3a", size = 1355052, upload-time = "2025-08-16T12:07:58.405Z" },
+    { url = "https://files.pythonhosted.org/packages/75/96/45cebdee6d21b183b8ade9d9d6345bc31f5225b4e8a144ef05ec6b6f4ab4/pycambia-0.1.0-cp311-cp311-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:c0a30dd6322efbbb6ab9c50b0724634b2470240644b4b10348be47278cc364bd", size = 1312625, upload-time = "2025-08-16T12:08:17.765Z" },
+    { url = "https://files.pythonhosted.org/packages/d2/5c/335d93468c9c7db6ec5b0578bef2b1d9d5ae14e7866d0c045ad875877fc6/pycambia-0.1.0-cp311-cp311-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:3e1ad222f8b4b22db380b1bea89da1ec031c1b1c39f68f11e72af213ddbfee68", size = 1521920, upload-time = "2025-08-16T12:08:35.598Z" },
+    { url = "https://files.pythonhosted.org/packages/49/37/c2e35b246956d431cad8b9c0168bfb603574cc667433d74e699b0d3cf264/pycambia-0.1.0-cp311-cp311-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:9952fc82ed3991fc44fe25ff28ce09f71effb5d1d98f36bb9a0e1610cdd8417f", size = 1581939, upload-time = "2025-08-16T12:08:53.535Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/08/5d56ed1e28ad30f00744fc915fc38382a9e5669f995188d2c460382a384d/pycambia-0.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:806b1243f3d0fdb55d8fda14da91b7eec47ef530f48bac847672e579cd38e865", size = 1440959, upload-time = "2025-08-16T12:09:30.07Z" },
+    { url = "https://files.pythonhosted.org/packages/09/f5/1c526a1189ba07149b2d7088433a1419f5c22ae91768c9ec55c94d7f0078/pycambia-0.1.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:d70b150b019788402f07011cde75f426813258f841cffda4ea7a555f539b32c5", size = 1532905, upload-time = "2025-08-16T12:09:57.386Z" },
+    { url = "https://files.pythonhosted.org/packages/c6/67/234fe80ae19139c05fdfeb7f6e1520ce508360d07843f29f2aaf3d567da7/pycambia-0.1.0-cp311-cp311-musllinux_1_2_armv7l.whl", hash = "sha256:f6fec12c8ad480206d465231dd9dd4c1298471c51f9ddf61c0288c7d87287a96", size = 1576629, upload-time = "2025-08-16T12:10:16.677Z" },
+    { url = "https://files.pythonhosted.org/packages/9d/e0/45bd5823757dbc4e1713f275fb458dbde0bd4595ac1f27b8f13bc9321175/pycambia-0.1.0-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:520db9db48eee066eb387ba48b9831c0cb4e96c5c477c5a79d4d716d04448017", size = 1529009, upload-time = "2025-08-16T12:10:34.374Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/2f/b89335388b4f747c6f59e15a9f4e2f369953f63b835ccc1b9a7ce2ef7dff/pycambia-0.1.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:7947f17f82bcabb65c75928e34c4ca43cea215b66b8d4738ea3d50be8c6c9c2a", size = 1612629, upload-time = "2025-08-16T12:10:51.434Z" },
+    { url = "https://files.pythonhosted.org/packages/71/ff/456b199b16c6ed623156ffe4db809ed6b5d8edb3bf695024db4d3008ff6a/pycambia-0.1.0-cp311-cp311-win32.whl", hash = "sha256:b2f42f8705d8798c59c8580e91797d02badd7cee12912d661d927a16129b9724", size = 1179744, upload-time = "2025-08-16T12:11:20.343Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/38/4ff314e42cb89839b74ce8a3b53aba3ee5794b3badd7347b679292405cfa/pycambia-0.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:4b87f51c3c29b04bbcaa210d959b93d72b4e1435f45b1f04cd75b7ab2de6aab0", size = 1214594, upload-time = "2025-08-16T12:11:11.383Z" },
+    { url = "https://files.pythonhosted.org/packages/d4/1f/fb07a0024a75c2a91a153318e0674c8fcf001cedf742d54f49ac11f3addb/pycambia-0.1.0-pp311-pypy311_pp73-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:4b51a35f5dad5d6ead25426dd16df0ab2b8cba09d417f23922fef4d5f2da4eba", size = 1374370, upload-time = "2025-08-16T12:09:26.649Z" },
+    { url = "https://files.pythonhosted.org/packages/60/81/fd9c5760ae929df5d12620d39bad742b673ff86cce3e320fc2c899b48554/pycambia-0.1.0-pp311-pypy311_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:367e418cb30347d9fa86370a0e8c2ad6a09cd38c3b759da4dbf8915781204c25", size = 1355561, upload-time = "2025-08-16T12:08:12.16Z" },
+    { url = "https://files.pythonhosted.org/packages/97/d5/7edd966d4fb898a541d59b0870af68e24966c68052a43c3325f47455a8c1/pycambia-0.1.0-pp311-pypy311_pp73-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:ec5db874ff3b4fc54e02b9eacb6719ad15d31b41d5776241af554fdc769b7c0a", size = 1312842, upload-time = "2025-08-16T12:08:30.608Z" },
+    { url = "https://files.pythonhosted.org/packages/2a/c3/91e5f91f8257d329ee516c87be1a688ac18f851d90d30762593eeb297188/pycambia-0.1.0-pp311-pypy311_pp73-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:76915c53a308fb96a7e13201968fbf9861214c553ab3592c2045c811e8d8205a", size = 1522534, upload-time = "2025-08-16T12:08:47.708Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/78/fc56669e466b4a8294c680a038690726fb32730ff44bbfbb403f9228fc79/pycambia-0.1.0-pp311-pypy311_pp73-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:ff4989a5037e732c1386d9631f4d7b1937921ecf917ce6869e90226da67a7454", size = 1582226, upload-time = "2025-08-16T12:09:09.023Z" },
+    { url = "https://files.pythonhosted.org/packages/64/37/2a38e334d34c13ed8712a76687e046618d4c0eb00ff95af3c7b88a7d686d/pycambia-0.1.0-pp311-pypy311_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:72d012e236a3add574b7bd6e2941a295053afe5ad9acf8ace0ffa5edb2c0ab6c", size = 1441457, upload-time = "2025-08-16T12:09:43.153Z" },
+    { url = "https://files.pythonhosted.org/packages/af/80/bd3b611ddb7911e16e632629107812c1b9a012b085f0e6cdb0ed25cac605/pycambia-0.1.0-pp311-pypy311_pp73-musllinux_1_2_aarch64.whl", hash = "sha256:28a854b3db20682df060b79aad934d06c274deb7a06490e5b60c345fbbd9859d", size = 1533302, upload-time = "2025-08-16T12:10:10.829Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/e5/679fb9900b76da75ca7cdf016e99347751e6682d48f295531172006ebf79/pycambia-0.1.0-pp311-pypy311_pp73-musllinux_1_2_armv7l.whl", hash = "sha256:69dad0412b00ebc3e10f1cb171c323614a22671fb0b2169e9d7f764f8d243559", size = 1576869, upload-time = "2025-08-16T12:10:28.832Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/a1/28435e130bd7b9ebc88467838e3a3e9994f60f698dd36c7d64c97fb500ca/pycambia-0.1.0-pp311-pypy311_pp73-musllinux_1_2_i686.whl", hash = "sha256:df14fe423d1d7299e3b84d8ca4ac95ff64bdffcf550d4e232208f8b3baeb45cf", size = 1529406, upload-time = "2025-08-16T12:10:46.317Z" },
+    { url = "https://files.pythonhosted.org/packages/65/e6/4374c708a558901d71dea72f2fafb3c1ecf24b12dfb95f113e66d7e4af8d/pycambia-0.1.0-pp311-pypy311_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:b3352bcfe6997adb6260d2e9dba97b698d15f99c30476491e9ebab6c25f151e1", size = 1613003, upload-time = "2025-08-16T12:11:04.228Z" },
+]
+
+[[package]]
 name = "pygments"
 version = "2.19.1"
 source = { registry = "https://pypi.org/simple" }
@@ -554,6 +586,7 @@ dependencies = [
     { name = "musicbrainzngs" },
     { name = "mutagen" },
     { name = "platformdirs" },
+    { name = "pycambia" },
     { name = "pyoxipng" },
     { name = "pyperclip" },
     { name = "qbittorrent-api" },
@@ -588,6 +621,7 @@ requires-dist = [
     { name = "musicbrainzngs", specifier = ">=0.7.1" },
     { name = "mutagen", specifier = ">=1.47.0" },
     { name = "platformdirs", specifier = ">=4.3.8" },
+    { name = "pycambia", specifier = ">=0.1.0" },
     { name = "pyoxipng", specifier = ">=9.1.0" },
     { name = "pyperclip", specifier = ">=1.8.2" },
     { name = "qbittorrent-api", specifier = ">=2025.2.0" },

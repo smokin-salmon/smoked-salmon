@@ -5,19 +5,9 @@ FROM python:3.11
 WORKDIR /app
 
 # Install system dependencies
-RUN ARCH=$(dpkg --print-architecture) && \
-    apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     sox flac mp3val curl nano vim-tiny \
-    ca-certificates ffmpeg lame && rm -rf /var/lib/apt/lists/* && \
-    if [ "$ARCH" = "amd64" ]; then \
-        wget -O /usr/local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-x64; \
-        chmod +x /usr/local/bin/cambia; \
-    elif [ "$ARCH" = "arm64" ]; then \
-        wget -O /usr/local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-arm64; \
-        chmod +x /usr/local/bin/cambia; \
-    else \
-        echo "Unsupported architecture: $ARCH" && exit 1; \
-    fi
+    ca-certificates ffmpeg lame && rm -rf /var/lib/apt/lists/*
 
 # Ensure the cache directory is writable by any user
 RUN mkdir -p /.cache/uv && chmod -R 777 /.cache/uv

@@ -1,7 +1,7 @@
-import json
 import os
 import subprocess
 
+import cambia
 import click
 
 from salmon.common.figles import process_files
@@ -37,15 +37,14 @@ def _calculate_file_crc(filepath, _=None):
 def check_log_cambia(logpath, basepath):
     """Check a log file using Cambia."""
     try:
-        cambia_output = json.loads(
-            subprocess.check_output(
-                ["cambia", "-p", logpath],
-                stderr=subprocess.DEVNULL,
-                text=True,
-                encoding="utf-8",
-            )
-        )
-        score = int(cambia_output["evaluation_combined"][0]["combined_score"])
+        cambia_output = cambia.parse_file(logpath)
+
+        if not cambia_output["success"]:
+            raise ValueError(f"Cambia parsing failed for '{logpath}': {cambia_output['error']}")
+
+        log_data = cambia_output["data"]
+
+        score = int(log_data["evaluation_combined"][0]["combined_score"])
         if score < 100:
             click.secho(f"Log Score: {score} (The torrent will be trumpable)", fg="yellow", bold=True)
         else:
@@ -54,15 +53,13 @@ def check_log_cambia(logpath, basepath):
         click.secho(f"Error checking log {logpath}: {e}", fg="red")
         raise
 
-    if cambia_output["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Mismatch":
+    if log_data["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Mismatch":
         raise ValueError("Edited logs!")
-    elif cambia_output["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Unknown":
+    elif log_data["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Unknown":
         click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
 
     # Get list of CRCs from the log file
-    copy_crc_list = [
-        track["test_and_copy"]["copy_hash"] for track in cambia_output["parsed"]["parsed_logs"][0]["tracks"]
-    ]
+    copy_crc_list = [track["test_and_copy"]["copy_hash"] for track in log_data["parsed"]["parsed_logs"][0]["tracks"]]
 
     # Get list of files to check
     files_to_check = []

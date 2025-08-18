@@ -31,28 +31,55 @@ Manual installation instructions can be found on the [Wiki](https://github.com/s
 These steps use [`uv`](https://github.com/astral-sh/uv) for installing the *smoked-salmon* package. [`pipx`](https://github.com/pypa/pipx) also works.
 Installing with pip is not recommended because uv (and pipx) manage python versions and isolate the *smoked-salmon* installation from the system python installation.
 
-1. Install system packages and uv:
-
+#### Linux
+1. Install system packages:
     ```bash
     sudo apt install sox flac ffmpeg mp3val curl unzip lame
+    ```
+
+2. Install uv:
+    ```bash
     curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
 
-2. Install Cambia (for log checking):
-
+3. Install smoked-salmon package from github:
 	```bash
-	# For x86_64/amd64 systems:
-	mkdir -p ~/.local/bin && \
-	wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-x64 && \
-	chmod +x ~/.local/bin/cambia
-	
-	# For arm64 systems:
-	mkdir -p ~/.local/bin && \
-	wget -O ~/.local/bin/cambia https://github.com/KyokoMiki/cambia/releases/download/v1.0.2/cambia-linux-arm64 && \
-	chmod +x ~/.local/bin/cambia
+	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
 	```
 
+#### Windows
+1. Install required system packages using winget:
+    ```powershell
+    winget install -e Gyan.FFmpeg ChrisBagwell.SoX Xiph.FLAC LAME.LAME ring0.MP3val.WF
+    ```
+
+2. Install uv:
+    ```powershell
+    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    ```
+
 3. Install smoked-salmon package from github:
+	```powershell
+	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	```
+
+#### macOS
+1. Install Homebrew (if you haven't already):
+    ```bash
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ```
+
+2. Install system packages using Homebrew:
+    ```bash
+    brew install sox flac ffmpeg mp3val curl unzip lame
+    ```
+
+3. Install uv:
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+
+4. Install smoked-salmon package from github:
 	```bash
 	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
 	```
