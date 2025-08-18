@@ -1,3 +1,25 @@
+__version__ = "0.9.6.1"
+
+"""
+Changelog for version 0.9.6.1 (2025-08-18):
+
+This version fixes the issue on Windows platform where sometimes input would not be confirmed immediately and required multiple confirmations.
+
+Oxipng and cambia no longer need to be installed as dependencies. All external dependencies required by the current program can now be installed directly using the system package manager. 
+
+## What's Changed
+* Format code with ruff by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/146
+* Replace external oxipng with pyoxipng by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/147
+* Replace external cambia with pycambia library by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/149
+* Update README.md for docker usage by @maksii in https://github.com/smokin-salmon/smoked-salmon/pull/106
+* Resolve async input handling issues on Windows by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/150
+
+## New Contributors
+* @maksii made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/106
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.6...0.9.6.1
+"""
+
 __version__ = "0.9.6"
 
 """
