@@ -1,8 +1,8 @@
 import os
-import subprocess
 
 import cambia
 import click
+import ffmpeg
 
 from salmon.common.figles import process_files
 
@@ -13,25 +13,15 @@ def is_sublist(*, sub, main):
 
 def _calculate_file_crc(filepath, _=None):
     """Calculate CRC32 hash for a single audio file."""
-    output = subprocess.check_output(
-        [
-            "ffmpeg",
-            "-i",
-            filepath,
-            "-nostdin",
-            "-map",
-            "0:0",
-            "-f",
-            "hash",
-            "-hash",
-            "crc32",
-            "-",
-        ],
-        stderr=subprocess.DEVNULL,
-        text=True,
-        encoding="utf-8",
-    )
-    return output.strip().removeprefix("CRC32=").upper()
+    try:
+        out, _ = (
+            ffmpeg.input(filepath)
+            .output("pipe:", format="hash", hash="crc32", map="0:0")
+            .run(capture_stdout=True, capture_stderr=True)
+        )
+        return out.decode("utf-8").strip().removeprefix("CRC32=").upper()
+    except ffmpeg.Error as e:
+        raise RuntimeError(f"FFmpeg error calculating CRC32 for {filepath}: {e}") from e
 
 
 def check_log_cambia(logpath, basepath):

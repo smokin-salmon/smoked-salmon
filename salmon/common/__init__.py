@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import platform
 import sys
 
@@ -29,8 +30,6 @@ from salmon.common.strings import (  # noqa: F401
 )
 from salmon.errors import ScrapeError
 
-loop = asyncio.get_event_loop()
-
 
 @click.group(context_settings=dict(help_option_names=["-h", "--help"]), cls=AliasedCommands)
 def commandgroup():
@@ -44,6 +43,7 @@ class Prompt:
         self.q = asyncio.Queue()
         self.reader_added = False
         self.is_windows = platform.system() == "Windows"
+        self.reader_task = None
 
     def got_input(self):
         asyncio.create_task(self.q.put(sys.stdin.readline()))
@@ -51,17 +51,45 @@ class Prompt:
     async def __call__(self, msg, end="\n", flush=False):
         if not self.reader_added:
             if not self.is_windows:
-                loop.add_reader(sys.stdin, self.got_input)
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.add_reader(sys.stdin, self.got_input)
+                except RuntimeError:
+                    # Fallback if no running loop
+                    loop = asyncio.get_event_loop()
+                    loop.add_reader(sys.stdin, self.got_input)
             else:
-                asyncio.create_task(self._windows_input_reader())
+                self.reader_task = asyncio.create_task(self._windows_input_reader())
             self.reader_added = True
         print(msg, end=end, flush=flush)
-        return (await self.q.get()).rstrip("\n")
+        result = (await self.q.get()).rstrip("\n")
+        
+        # Clean up after getting input
+        await self._cleanup()
+        return result
 
     async def _windows_input_reader(self):
-        while True:
-            line = await asyncio.to_thread(sys.stdin.readline)
-            await self.q.put(line)
+        try:
+            while True:
+                line = await asyncio.to_thread(sys.stdin.readline)
+                await self.q.put(line)
+        except asyncio.CancelledError:
+            pass
+
+    async def _cleanup(self):
+        """Clean up resources after input is received"""
+        if self.is_windows and self.reader_task:
+            self.reader_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self.reader_task
+            self.reader_task = None
+        elif not self.is_windows:
+            try:
+                loop = asyncio.get_running_loop()
+                loop.remove_reader(sys.stdin)
+            except (RuntimeError, ValueError):
+                pass
+        self.reader_added = False
 
 
 prompt_async = Prompt()

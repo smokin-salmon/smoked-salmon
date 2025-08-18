@@ -7,7 +7,7 @@ from torf import Torrent
 
 from salmon import cfg
 from salmon.common import str_to_int_if_int
-from salmon.constants import ARTIST_IMPORTANCES, RELEASE_TYPES
+from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RequestError
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
@@ -36,6 +36,7 @@ def prepare_and_upload(
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
         data = compile_data_new_group(
+            gazelle_site,
             path,
             metadata,
             track_data,
@@ -49,6 +50,7 @@ def prepare_and_upload(
         )
     else:
         data = compile_data_existing_group(
+            gazelle_site,
             path,
             group_id,
             metadata,
@@ -60,8 +62,6 @@ def prepare_and_upload(
             request_id,
             source_url=source_url,
         )
-    if not data["scene"]:
-        del data["scene"]
     torrent_path, torrent_file = generate_torrent(gazelle_site, path)
     files = compile_files(path, torrent_file, metadata)
 
@@ -83,6 +83,7 @@ def concat_track_data(tags, audio_info):
 
 
 def compile_data_new_group(
+    gazelle_site,
     path,
     metadata,
     track_data,
@@ -107,7 +108,7 @@ def compile_data_new_group(
         "year": metadata["group_year"],
         "record_label": metadata["label"],
         "catalogue_number": generate_catno(metadata),
-        "releasetype": RELEASE_TYPES[metadata["rls_type"]],
+        "releasetype": gazelle_site.release_types[metadata["rls_type"]],
         "remaster": True,
         "remaster_year": metadata["year"],
         "remaster_title": metadata["edition_title"],
@@ -116,7 +117,7 @@ def compile_data_new_group(
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
         "other_bitrate": None,
-        "scene": metadata["scene"],
+        **({"scene": metadata["scene"]} if metadata["scene"] else {}),
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
         "tags": metadata["tags"],
@@ -130,6 +131,7 @@ def compile_data_new_group(
 
 
 def compile_data_existing_group(
+    gazelle_site,
     path,
     group_id,
     metadata,
@@ -154,7 +156,7 @@ def compile_data_existing_group(
         "remaster_catalogue_number": generate_catno(metadata),
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
-        "scene": metadata["scene"],
+        **({"scene": metadata["scene"]} if metadata["scene"] else {}),
         "other_bitrate": None,
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],

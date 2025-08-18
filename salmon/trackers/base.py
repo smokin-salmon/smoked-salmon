@@ -56,6 +56,9 @@ class BaseGazelleApi:
         }
         if not hasattr(self, "dot_torrents_dir"):
             self.dot_torrents_dir = cfg.directory.dottorrents_dir
+
+        self.release_types = RELEASE_TYPES
+
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 

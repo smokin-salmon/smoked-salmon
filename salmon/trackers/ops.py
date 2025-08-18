@@ -25,6 +25,26 @@ class OpsApi(BaseGazelleApi):
 
         super().__init__()
 
+        # OPS-specific release types
+        self.release_types = {
+            "Album": 1,
+            "Soundtrack": 3,
+            "EP": 5,
+            "Anthology": 6,
+            "Compilation": 7,
+            "Single": 9,
+            "Demo": 10,
+            "Live album": 11,
+            "Split": 12,
+            "Remix": 13,
+            "Bootleg": 14,
+            "Interview": 15,
+            "Mixtape": 16,
+            "DJ Mix": 17,
+            "Concert Recording": 18,
+            "Unknown": 21,
+        }
+
     def parse_most_recent_torrent_and_group_id_from_group_page(self, text):
         """
         Given the HTML (ew) response from a successful upload, find the most
