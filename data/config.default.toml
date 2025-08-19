@@ -85,26 +85,23 @@ session = 'get-from-site-cookie'
 # dottorrents_dir = 'path to ops dir'
 
 # ===============================
-# QBITTORRENT SETTINGS
+# SEEDING SETTINGS
 # ===============================
-# [qbittorrent]
-# # Add a configuration option to enable qbittorrent injection by default
-# enable_injection = false
-# category = 'salmon'     # Optional
-# skip_hash_check = false # Set to true if you want to skip hash check when adding torrents
+# [[seedbox]]
+# name = ""
+# enabled = true
+# url = "nas" # Name of remote in rclone
+# type = "rclone" # "local" or "rclone"
+# directory = "" # Directory when adding torrent to download client
+# flac_only = false # if true, only upload FLAC files
+# extra_args = [ "--checksum", "-P", "--sftp-path-override", "@/volume3" ] # pass these arguments to rclone
+# label = "smoked-salmon" # Label to apply to torrents in download client
 
-# [qbittorrent.credentials]
-# host = '127.0.0.1'
-# port = 8080
-# username = 'admin'
-# password = 'adminadmin'
-
-# ===============================
-# RUTORRENT SETTINGS
-# ===============================
-# [rutorrent]
-# enable_injection = false
-# url = "http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php"
+# # transmission+http://username:password@127.0.0.1:9091
+# # rutorrent+http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php
+# # deluge://username:password@127.0.0.1:58664
+# # qbittorrent+http://username:password@127.0.0.1:8080
+# torrent_client = ""
 
 # ===============================
 # UPLOADING & PROCESSING SETTINGS
@@ -133,6 +130,9 @@ session = 'get-from-site-cookie'
 
 # # answers yes to all questions during upload. risky!
 # yes_all = false
+
+# # enable seedbox uploading
+# upload_to_seedbox = false
 
 # [upload.search]
 # limit = 3

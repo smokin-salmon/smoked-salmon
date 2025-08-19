@@ -15,10 +15,6 @@ class Directory(BaseStruct):
     tmp_dir: str = None
     clean_tmp_dir: bool = False
 
-    # TODO: THESE ARE CURRENTLY ONLY USED BY RUTORRENT! Figure out a better way to handle this!
-    red_download_directory: str | None = None
-    ops_download_directory: str | None = None
-
     def __post_init__(self):
         if not os.path.isdir(self.dottorrents_dir):
             raise ValueError("dottorrents_dir is not a valid directory")
@@ -26,10 +22,6 @@ class Directory(BaseStruct):
             raise ValueError("download_directory is not a valid directory")
         if self.tmp_dir and not os.path.isdir(self.tmp_dir):
             raise ValueError("tmp_dir is not a valid directory")
-        if self.red_download_directory and not os.path.isdir(self.red_download_directory):
-            raise ValueError("red_download_directory is not a valid directory")
-        if self.ops_download_directory and not os.path.isdir(self.ops_download_directory):
-            raise ValueError("ops_download_directory is not a valid directory")
 
 
 ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "emp"]
@@ -95,35 +87,20 @@ class Tracker(BaseStruct):
             raise ValueError("Default tracker is invalid!")
 
 
-class QBitTorrentCredentials(BaseStruct):
-    host: str
-    port: int
-    username: str
-    password: str
-
-
-class QBitTorrent(BaseStruct):
-    # Should there be this setting?
-    enable_injection: bool = False
-    credentials: QBitTorrentCredentials | None = None
-    category: str | None = None
-    skip_hash_check: bool = False
+class Seedbox(BaseStruct):
+    name: str = ""
+    enabled: bool = False
+    url: str = ""  # Name of remote in rclone
+    type: Literal["local", "rclone", "webdav"] = "local"  # "local" or "rclone"
+    directory: str = ""  # Directory when adding torrent to download client
+    flac_only: bool = False  # if true, only upload FLAC files
+    extra_args: list[str] = msgspec.field(default_factory=list)  # pass these arguments to rclone
+    torrent_client: str = ""
+    label: str = ""  # Label to apply to torrents in download client
 
     def __post_init__(self):
-        if self.enable_injection and self.credentials is None:
-            raise ValueError("QBitTorrent credentials must be specified.")
-
-
-class RuTorrent(BaseStruct):
-    # Should there be this setting?
-    enable_injection: bool = False
-    url: str | None = None
-    red_label: str | None = None
-    ops_label: str | None = None
-
-    def __post_init__(self):
-        if self.enable_injection and self.url is None:
-            raise ValueError("RuTorrent must be specified.")
+        if self.type not in ("local", "rclone", "webdav"):
+            raise ValueError("Invalid seedbox type specified")
 
 
 class UploadSearch(BaseStruct):
@@ -208,6 +185,8 @@ class Upload(BaseStruct):
 
     yes_all: bool = False
 
+    upload_to_seedbox: bool = False
+
     # TODO: take these out of the upload struct!
     search: UploadSearch = msgspec.field(default_factory=UploadSearch)
     formatting: UploadFormatting = msgspec.field(default_factory=UploadFormatting)
@@ -224,6 +203,5 @@ class Cfg(BaseStruct):
     metadata: Metadata = msgspec.field(default_factory=Metadata)
     image: ImageUploader = msgspec.field(default_factory=ImageUploader)
     tracker: Tracker = msgspec.field(default_factory=Tracker)
-    qbittorrent: QBitTorrent = msgspec.field(default_factory=QBitTorrent)
-    rutorrent: RuTorrent = msgspec.field(default_factory=RuTorrent)
+    seedbox: list[Seedbox] = msgspec.field(default_factory=list)
     upload: Upload = msgspec.field(default_factory=Upload)

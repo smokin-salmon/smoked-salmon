@@ -63,7 +63,7 @@ class Prompt:
             self.reader_added = True
         print(msg, end=end, flush=flush)
         result = (await self.q.get()).rstrip("\n")
-        
+
         # Clean up after getting input
         await self._cleanup()
         return result

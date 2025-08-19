@@ -192,6 +192,15 @@ wheels = [
 ]
 
 [[package]]
+name = "deluge-client"
+version = "1.10.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/53/d6672ad7b44190d578ce7520822af34e7119760df9934cad4d730b0592a2/deluge-client-1.10.2.tar.gz", hash = "sha256:3881aee3c4e0ca9dd8a56b710047b837e1d087a83e421636a074771f92a9f1b5", size = 12601, upload-time = "2024-02-17T15:15:40.249Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/37/167fc27ae423905d3b38824a403f32f12c6b8c5679104e47838dfb294afd/deluge_client-1.10.2-py3-none-any.whl", hash = "sha256:ea052663c0ed3a2247517d316c3784d70c83279dd9e088623fd06b164768f4f1", size = 12355, upload-time = "2024-02-17T15:15:38.561Z" },
+]
+
+[[package]]
 name = "ffmpeg-python"
 version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -592,7 +601,7 @@ wheels = [
 
 [[package]]
 name = "salmon"
-version = "0.9.6"
+version = "0.9.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -600,6 +609,7 @@ dependencies = [
     { name = "beautifulsoup4" },
     { name = "bitstring" },
     { name = "click" },
+    { name = "deluge-client" },
     { name = "ffmpeg-python" },
     { name = "filetype" },
     { name = "httpx" },
@@ -620,6 +630,7 @@ dependencies = [
     { name = "setuptools-scm" },
     { name = "torf" },
     { name = "tqdm" },
+    { name = "transmission-rpc" },
     { name = "unidecode" },
     { name = "wheel" },
 ]
@@ -636,6 +647,7 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.13.0" },
     { name = "bitstring", specifier = ">=4.1.2" },
     { name = "click", specifier = ">=8.1.7" },
+    { name = "deluge-client", specifier = ">=1.10.2" },
     { name = "ffmpeg-python", specifier = ">=0.2.0" },
     { name = "filetype", specifier = ">=1.2.0" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -656,6 +668,7 @@ requires-dist = [
     { name = "setuptools-scm", specifier = ">=8.3.1" },
     { name = "torf", specifier = ">=4.3.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
+    { name = "transmission-rpc", specifier = ">=7.0.0" },
     { name = "unidecode", specifier = ">=1.3.8" },
     { name = "wheel", specifier = ">=0.45.1" },
 ]
@@ -734,6 +747,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/30/dc54f88dd4a2b5dc8a0279bdd7270e735851848b762aeb1c1184ed1f6b14/tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2", size = 78540, upload-time = "2024-11-24T20:12:19.698Z" },
+]
+
+[[package]]
+name = "transmission-rpc"
+version = "7.0.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/68/b8/dc4debf525c3bb8a676f4fd0ab8534845e3b067c78a81ad05ac39014d849/transmission_rpc-7.0.11.tar.gz", hash = "sha256:5872322e60b42e368bc9c4724773aea4593113cb19bd2da589f0ffcdabe57963", size = 113744, upload-time = "2024-08-20T22:41:07.485Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/4c/6319bcb1026e3f78c9cbcc9c24de77a76f09954e67ffc5ebfc29f7ce4b90/transmission_rpc-7.0.11-py3-none-any.whl", hash = "sha256:94fd008b54640dd9fff14d7ae26848f901e9d130a70950b8930f9b395988914f", size = 28231, upload-time = "2024-08-20T22:41:05.777Z" },
 ]
 
 [[package]]
