@@ -62,13 +62,13 @@ def prepare_and_upload(
             request_id,
             source_url=source_url,
         )
-    torrent_path, torrent_file = generate_torrent(gazelle_site, path)
-    files = compile_files(path, torrent_file, metadata)
+    torrent_path, torrent_content = generate_torrent(gazelle_site, path)
+    files = compile_files(path, torrent_path, metadata)
 
     click.secho("Uploading torrent...", fg="yellow")
     try:
         torrent_id = loop.run_until_complete(gazelle_site.upload(data, files))
-        return torrent_id, torrent_path, torrent_file
+        return torrent_id, torrent_path, torrent_content
     except RequestError as e:
         click.secho(str(e), fg="red", bold=True)
         exit()
@@ -167,13 +167,14 @@ def compile_data_existing_group(
     }
 
 
-def compile_files(path, torrent_file, metadata):
+def compile_files(path, torrent_path, metadata):
     """
     Compile a list of file tuples that should be uploaded. This consists
     of the .torrent and any log files.
     """
     files = []
-    files.append(("file_input", ("meowmeow.torrent", torrent_file, "application/octet-stream")))
+    with open(torrent_path, "rb") as torrent_file:
+        files.append(("file_input", ("meowmeow.torrent", torrent_file.read(), "application/octet-stream")))
     if metadata["source"] == "CD":
         files += attach_logfiles(path)
     return files
@@ -216,7 +217,7 @@ def generate_torrent(gazelle_site, path):
     )
     t.write(tpath, overwrite=True)
     click.secho(" done!", fg="yellow")
-    return tpath, open(tpath, "rb")
+    return tpath, t
 
 
 def generate_description(track_data, metadata):

@@ -338,6 +338,8 @@ def upload(
     # Regenerate searchstrs (will be used to search for requests)
     searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
 
+    seedbox_uploader = UploadManager()
+
     while True:
         # Loop until we don't want to upload to any more sites.
         if not tracker:
@@ -381,7 +383,7 @@ def upload(
         if not request_id and cfg.upload.requests.check_requests:
             request_id = check_requests(gazelle_site, searchstrs)
 
-        torrent_id, torrent_path, torrent_file = prepare_and_upload(
+        torrent_id, torrent_path, torrent_content = prepare_and_upload(
             gazelle_site,
             path,
             group_id,
@@ -414,8 +416,10 @@ def upload(
             bold=True,
         )
 
+        torrent_content.comment = url
+        torrent_content.write(torrent_path, overwrite=True)
+
         if cfg.upload.upload_to_seedbox:
-            seedbox_uploader = UploadManager()
             click.secho("\nAdd uploading task.", fg="green")
             seedbox_uploader.add_upload_task(path, task_type="folder")
             seedbox_uploader.add_upload_task(torrent_path, task_type="seed")

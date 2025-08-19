@@ -88,7 +88,7 @@ class TransmissionClient(TorrentClient):
                 torrent=torrent,
                 download_dir=remote_folder,
                 paused=is_paused,
-                labels=[label],
+                labels=([label] if label else None),
             )
             click.secho("Torrent added successfully", fg="green")
             return result
