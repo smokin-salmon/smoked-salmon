@@ -2,10 +2,10 @@ import asyncio
 from urllib import parse
 
 import click
+import humanfriendly
 import rich
 
 from salmon import cfg
-from salmon.common import format_size
 from salmon.errors import RequestError
 
 loop = asyncio.get_event_loop()
@@ -92,7 +92,7 @@ def _print_request_details(gazelle_site, req):
     elif "bounty" in req:
         bounty = req["bounty"]
 
-    bounty = format_size(bounty)
+    bounty = humanfriendly.format_size(bounty, binary=True)
     click.secho(bounty, fg="cyan")
 
     click.secho(f"Allowed Bitrate: {' | '.join(req['bitrateList'])}")

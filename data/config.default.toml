@@ -44,6 +44,9 @@ oeimg_key = 'api_key'
 # Set to true to remove downloaded cover images that are created in source folder, when one does not exist
 # remove_auto_downloaded_cover_image = false
 
+# Set to true to automatically process cover image sizes, including embedded covers in audio files
+# auto_compress_cover = false
+
 # ===============================
 # METADATA SERVICES
 # ===============================

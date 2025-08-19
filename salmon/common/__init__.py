@@ -21,7 +21,6 @@ from salmon.common.regexes import (  # noqa: F401
 )
 from salmon.common.strings import (  # noqa: F401
     fetch_genre,
-    format_size,
     less_uppers,
     make_searchstrs,
     normalize_accents,

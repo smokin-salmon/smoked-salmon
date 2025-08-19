@@ -16,12 +16,12 @@ THREADS = [None] * cfg.upload.simultaneous_threads
 FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 
 
-def convert_folder(path, override_sample_rate=None):
+def convert_folder(path, bit_depth=16, sample_rate=None):
     new_path = _generate_conversion_path_name(path)
-    if override_sample_rate:
+    if sample_rate and bit_depth == 24:
         new_path = re.sub(
             "FLAC",
-            f"24-{override_sample_rate / 1000:.0f}",
+            f"24-{sample_rate / 1000:.0f}",
             new_path,
             flags=re.IGNORECASE,
         )
@@ -29,9 +29,9 @@ def convert_folder(path, override_sample_rate=None):
         return click.secho(f"{new_path} already exists, please delete it to re-convert.", fg="red")
 
     files_convert, files_copy = _determine_files_actions(path)
-    sample_rate = _convert_files(path, new_path, files_convert, files_copy, override_sample_rate)
+    final_sample_rate = _convert_files(path, new_path, files_convert, files_copy, bit_depth, sample_rate)
 
-    return sample_rate, new_path
+    return final_sample_rate, new_path
 
 
 def _determine_files_actions(path):
@@ -58,7 +58,7 @@ def _generate_conversion_path_name(path):
     return os.path.join(os.path.dirname(path), foldername)
 
 
-def _convert_files(old_path, new_path, files_convert, files_copy, override_sample_rate=None):
+def _convert_files(old_path, new_path, files_convert, files_copy, bit_depth=16, sample_rate=None):
     files_left = len(files_convert) - 1
     files = iter(files_convert)
 
@@ -83,22 +83,29 @@ def _convert_files(old_path, new_path, files_convert, files_copy, override_sampl
 
             if THREADS[i] is None:  # If thread is free, assign new file
                 try:
-                    file_, sample_rate = next(files)
+                    file_, original_sample_rate = next(files)
                 except StopIteration:
                     THREADS[i] = None
                 else:
                     output = file_.replace(old_path, new_path)
-                    THREADS[i] = _convert_single_file(file_, output, sample_rate, files_left, override_sample_rate)
+                    final_sample_rate = sample_rate if sample_rate else _get_final_sample_rate(original_sample_rate)
+                    THREADS[i] = _convert_single_file(
+                        file_,
+                        output,
+                        files_left,
+                        bit_depth,
+                        final_sample_rate,
+                    )
                     files_left -= 1
 
         if all(t is None for t in THREADS):  # No active threads and no more files
             break
         time.sleep(0.1)
 
-    return override_sample_rate if override_sample_rate else _get_final_sample_rate(sample_rate)
+    return final_sample_rate
 
 
-def _convert_single_file(file_, output, sample_rate, files_left, override_sample_rate=None):
+def _convert_single_file(file_, output, files_left, bit_depth=16, sample_rate=None):
     click.echo(f"Converting {os.path.basename(file_)} [{files_left} left to convert]")
     _create_path(output)
 
@@ -107,12 +114,12 @@ def _convert_single_file(file_, output, sample_rate, files_left, override_sample
         file_,
         "-R",
         "-G",
-        *(["-b", "16"] if not override_sample_rate else []),
+        *([] if bit_depth == 24 else ["-b", str(bit_depth)]),
         output,
         "rate",
         "-v",
         "-L",
-        str(override_sample_rate if override_sample_rate else _get_final_sample_rate(sample_rate)),
+        str(sample_rate),
         "dither",
     ]
 

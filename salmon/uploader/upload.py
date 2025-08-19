@@ -31,7 +31,8 @@ def prepare_and_upload(
     spectral_ids,
     lossy_comment,
     request_id,
-    source_url,
+    source_url=None,
+    override_description=None,
 ):
     """Wrapper function for all the data compiling and processing."""
     if not group_id:
@@ -61,14 +62,15 @@ def prepare_and_upload(
             lossy_comment,
             request_id,
             source_url=source_url,
+            override_description=override_description,
         )
     torrent_path, torrent_content = generate_torrent(gazelle_site, path)
     files = compile_files(path, torrent_path, metadata)
 
     click.secho("Uploading torrent...", fg="yellow")
     try:
-        torrent_id = loop.run_until_complete(gazelle_site.upload(data, files))
-        return torrent_id, torrent_path, torrent_content
+        torrent_id, group_id = loop.run_until_complete(gazelle_site.upload(data, files))
+        return torrent_id, group_id, torrent_path, torrent_content
     except RequestError as e:
         click.secho(str(e), fg="red", bold=True)
         exit()
@@ -117,7 +119,7 @@ def compile_data_new_group(
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
         "other_bitrate": None,
-        **({"scene": metadata["scene"]} if metadata["scene"] else {}),
+        **({"scene": metadata["scene"]} if metadata.get("scene") else {}),
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
         "tags": metadata["tags"],
@@ -142,6 +144,7 @@ def compile_data_existing_group(
     lossy_comment,
     request_id,
     source_url=None,
+    override_description=None,
 ):
     """Compile the data that needs to be submitted
     with an upload to an existing group."""
@@ -156,11 +159,13 @@ def compile_data_existing_group(
         "remaster_catalogue_number": generate_catno(metadata),
         "format": metadata["format"],
         "bitrate": metadata["encoding"],
-        **({"scene": metadata["scene"]} if metadata["scene"] else {}),
+        **({"scene": metadata["scene"]} if metadata.get("scene") else {}),
         "other_bitrate": None,
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
-        "release_desc": generate_t_description(
+        "release_desc": override_description
+        if override_description
+        else generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, spectral_ids, lossy_comment, source_url
         ),
         "requestid": request_id,

@@ -3,6 +3,7 @@ import os
 import platform
 import re
 import shutil
+import time
 
 import click
 import pyperclip
@@ -19,6 +20,14 @@ from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
+from salmon.converter.downconverting import (
+    convert_folder,
+    generate_conversion_description,
+)
+from salmon.converter.transcoding import (
+    generate_transcode_description,
+    transcode_folder,
+)
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 from salmon.images import upload_cover
 from salmon.tagger import (
@@ -31,7 +40,7 @@ from salmon.tagger.audio_info import (
     gather_audio_info,
     recompress_path,
 )
-from salmon.tagger.cover import download_cover_if_nonexistent
+from salmon.tagger.cover import compress_pictures, download_cover_if_nonexistent
 from salmon.tagger.foldername import rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
@@ -44,6 +53,7 @@ from salmon.uploader.dupe_checker import (
     dupe_check_recent_torrents,
     generate_dupe_check_searchstrs,
     print_recent_upload_results,
+    print_torrents,
 )
 from salmon.uploader.preassumptions import print_preassumptions
 from salmon.uploader.request_checker import check_requests
@@ -380,10 +390,13 @@ def upload(
                     os.remove(cover_path)
             cover_url = stored_cover_url
 
+        if not scene and cfg.image.auto_compress_cover:
+            compress_pictures(path)
+
         if not request_id and cfg.upload.requests.check_requests:
             request_id = check_requests(gazelle_site, searchstrs)
 
-        torrent_id, torrent_path, torrent_content = prepare_and_upload(
+        torrent_id, group_id, torrent_path, torrent_content, url = upload_and_report(
             gazelle_site,
             path,
             group_id,
@@ -397,35 +410,45 @@ def upload(
             lossy_comment,
             request_id,
             source_url,
-        )
-        if lossy_master:
-            report_lossy_master(
-                gazelle_site,
-                torrent_id,
-                spectral_urls,
-                spectral_ids,
-                source,
-                lossy_comment,
-                source_url=source_url,
-            )
-
-        url = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
-        click.secho(
-            f"\nSuccessfully uploaded {url} ({os.path.basename(path)}).",
-            fg="green",
-            bold=True,
+            seedbox_uploader,
+            source=source,
         )
 
         torrent_content.comment = url
         torrent_content.write(torrent_path, overwrite=True)
 
-        if cfg.upload.upload_to_seedbox:
-            click.secho("\nAdd uploading task.", fg="green")
-            seedbox_uploader.add_upload_task(path, task_type="folder")
-            seedbox_uploader.add_upload_task(torrent_path, task_type="seed")
+        print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
-        if cfg.upload.description.copy_uploaded_url_to_clipboard:
-            pyperclip.copy(url)
+        if cfg.upload.yes_all or click.confirm(
+            click.style("\nWould you like to check downconversion options?", fg="magenta"),
+            default=True,
+        ):
+            selected_tasks = prompt_downconversion_choice(rls_data, track_data)
+            if selected_tasks:
+                display_names = [task["name"] for task in selected_tasks]
+                click.secho(f"\nSelected formats for downconversion: {', '.join(display_names)}", fg="green", bold=True)
+
+                # Execute downconversion tasks
+                execute_downconversion_tasks(
+                    selected_tasks,
+                    path,
+                    gazelle_site,
+                    group_id,
+                    metadata,
+                    cover_url,
+                    track_data,
+                    hybrid,
+                    lossy_master,
+                    spectral_urls,
+                    spectral_ids,
+                    lossy_comment,
+                    request_id,
+                    source_url,
+                    seedbox_uploader,
+                    source,
+                    url,
+                )
+
         tracker = None
         request_id = None
         if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
@@ -540,6 +563,340 @@ def metadata_validator(metadata):
         raise InvalidMetadataError(f"{metadata['encoding']} is not a valid encoding.")
 
     return metadata
+
+
+def get_downconversion_options(rls_data, track_data):
+    """
+    Determine available downconversion options based on current format.
+    Returns a list of downconversion tasks
+
+    Tier hierarchy:
+    1. 24bit 176.4 ~ 192 kHz
+    2. 24bit 44.1 ~ 96 kHz
+    3. 16bit 44.1 ~ 48 kHz
+    4. mp3 320
+    5. mp3 v0
+    """
+    if not track_data:
+        return []
+
+    # Get sample rate from first track
+    sample_rate = next(iter(track_data.values()))["sample rate"]
+    encoding = rls_data["encoding"]
+
+    options = []
+
+    # Tier 1: 24bit 176.4~192 kHz
+    if encoding == "24bit Lossless" and sample_rate >= 176400:
+        # Can downconvert to 24bit lower sample rate
+        target_rate = 96000 if sample_rate % 48000 == 0 else 88200
+        options.append(
+            {
+                "name": f"24bit {target_rate / 1000:.1f} kHz",
+                "action": "downconvert",
+                "target_bitdepth": 24,
+                "target_sample_rate": target_rate,
+            }
+        )
+
+    # Tier 2: 24bit 44.1~96 kHz
+    if encoding == "24bit Lossless" and sample_rate >= 44100:
+        # Can downconvert to 16bit
+        target_rate = 48000 if sample_rate % 48000 == 0 else 44100
+        options.append(
+            {
+                "name": f"16bit {target_rate / 1000:.1f} kHz",
+                "action": "downconvert",
+                "target_bitdepth": 16,
+                "target_sample_rate": target_rate,
+            }
+        )
+
+    # Tier 3: 16bit 44.1~48 kHz
+    if (encoding == "Lossless") or (encoding == "24bit Lossless"):
+        # Can transcode to MP3
+        options.extend(
+            [
+                {"name": "MP3 320", "action": "transcode", "encoding": "320"},
+                {"name": "MP3 V0", "action": "transcode", "encoding": "V0"},
+            ]
+        )
+
+    return options
+
+
+def prompt_downconversion_choice(rls_data, track_data):
+    """
+    Prompt user to select downconversion formats.
+    Returns a list of selected task dictionaries.
+    """
+    options = get_downconversion_options(rls_data, track_data)
+
+    if not options:
+        return []
+
+    click.secho("\nDownconversion Options", fg="cyan", bold=True)
+
+    # Get current format info for display
+    encoding = rls_data["encoding"]
+    if track_data:
+        sample_rate = next(iter(track_data.values()))["sample rate"]
+        current_format = f"{encoding}"
+        if encoding == "24bit Lossless" or encoding == "Lossless":
+            current_format += f" ({sample_rate / 1000:.1f} kHz)"
+    else:
+        current_format = encoding
+
+    click.secho(f"Current format: {current_format}", fg="yellow")
+    click.secho("Available downconversion formats:", fg="green")
+
+    for i, option in enumerate(options, 1):
+        click.secho(f"  {i}. {option['name']}", fg="white")
+
+    click.secho("  0. Skip downconversion", fg="white")
+    click.secho("  *. All formats", fg="white")
+
+    selected_tasks = []
+
+    while True:
+        try:
+            choices = click.prompt(
+                click.style(
+                    '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)', fg="magenta"
+                ),
+                default="*",
+            )
+
+            if choices.strip() == "0":
+                break
+
+            if choices.strip() == "*":
+                selected_tasks = options
+                break
+
+            # Parse choices - now using space separation
+            choice_nums = [int(x.strip()) for x in choices.split() if x.strip().isdigit()]
+
+            # Validate choices
+            invalid_choices = [x for x in choice_nums if x < 1 or x > len(options)]
+            if invalid_choices:
+                click.secho(
+                    f"Invalid choices: {invalid_choices}. Please enter numbers between 1-{len(options)}.", fg="red"
+                )
+                continue
+
+            # Get selected tasks
+            selected_tasks = [options[i - 1] for i in choice_nums]
+
+            # Confirm selection
+            if selected_tasks:
+                display_names = [task["name"] for task in selected_tasks]
+                click.secho(f"\nSelected formats: {', '.join(display_names)}", fg="green")
+                if click.confirm(click.style("Confirm selection?", fg="magenta"), default=True):
+                    break
+            else:
+                break
+
+        except (ValueError, IndexError):
+            click.secho("Invalid input format, please enter numeric options", fg="red")
+            continue
+
+    return selected_tasks
+
+
+def execute_downconversion_tasks(
+    selected_tasks,
+    path,
+    gazelle_site,
+    group_id,
+    metadata,
+    cover_url,
+    track_data,
+    hybrid,
+    lossy_master,
+    spectral_urls,
+    spectral_ids,
+    lossy_comment,
+    request_id,
+    source_url,
+    seedbox_uploader,
+    source,
+    base_url,
+):
+    """Execute the selected downconversion tasks."""
+
+    base_path = path
+
+    override_lossy_comment = (
+        f"Transcode of {base_url}\n[hide=Lossy comment of original torrent]{lossy_comment}[/hide]\n"
+        if lossy_comment
+        else None
+    )
+
+    for task in selected_tasks:
+        click.secho(f"\nProcessing: {task['name']}", fg="cyan", bold=True)
+
+        if task["action"] == "downconvert":
+            # Execute downconversion
+            sample_rate, new_path = convert_folder(
+                base_path, bit_depth=task["target_bitdepth"], sample_rate=task["target_sample_rate"]
+            )
+            time.sleep(0.1)
+
+            # Update metadata for this conversion
+            conversion_metadata = metadata.copy()
+            if task["target_bitdepth"] == 16:
+                conversion_metadata["encoding"] = "Lossless"
+
+            # Generate description for conversion
+            description = generate_conversion_description(base_url, sample_rate)
+            click.secho(f"  Generated description: {description[:100]}...", fg="blue")
+            check_folder_structure(new_path, conversion_metadata["scene"])
+
+            # Upload the converted version
+            torrent_id, group_id, torrent_path, torrent_content, new_url = upload_and_report(
+                gazelle_site,
+                new_path,
+                group_id,
+                conversion_metadata,
+                cover_url,
+                track_data,
+                hybrid,
+                lossy_master,
+                spectral_urls,
+                spectral_ids,
+                lossy_comment,
+                request_id,
+                source_url,
+                seedbox_uploader,
+                source=source,
+                override_description=description,
+                override_lossy_comment=override_lossy_comment,
+            )
+
+            click.secho(f"  ✓ {task['name']} conversion completed", fg="green")
+
+        elif task["action"] == "transcode":
+            # Call transcode function
+            click.secho(f"  Target encoding: {task['encoding']}", fg="white")
+
+            # Execute transcoding
+            transcoded_path = transcode_folder(base_path, task["encoding"])
+            time.sleep(0.1)
+
+            # Update metadata for this transcode
+            transcode_metadata = metadata.copy()
+            transcode_metadata["format"] = "MP3"
+            transcode_metadata["encoding"] = {"320": "320", "V0": "V0 (VBR)"}[task["encoding"]]
+            transcode_metadata["encoding_vbr"] = {"320": False, "V0": True}[task["encoding"]]
+
+            # Generate description for transcode
+            description = generate_transcode_description(base_url, task["encoding"])
+            click.secho(f"  Generated description: {description[:100]}...", fg="blue")
+            check_folder_structure(transcoded_path, transcode_metadata["scene"])
+
+            # Upload the transcoded version
+            torrent_id, group_id, torrent_path, torrent_content, new_url = upload_and_report(
+                gazelle_site,
+                transcoded_path,
+                group_id,
+                transcode_metadata,
+                cover_url,
+                track_data,
+                hybrid,
+                lossy_master,
+                spectral_urls,
+                spectral_ids,
+                lossy_comment,
+                request_id,
+                source_url,
+                seedbox_uploader,
+                source=source,
+                override_description=description,
+                override_lossy_comment=override_lossy_comment,
+            )
+
+            click.secho(f"  ✓ {task['name']} transcode completed", fg="green")
+
+
+def upload_and_report(
+    gazelle_site,
+    path,
+    group_id,
+    metadata,
+    cover_url,
+    track_data,
+    hybrid,
+    lossy_master,
+    spectral_urls,
+    spectral_ids,
+    lossy_comment,
+    request_id,
+    source_url,
+    seedbox_uploader,
+    source=None,
+    override_description=None,
+    override_lossy_comment=None,
+):
+    # Prepare upload parameters
+    upload_kwargs = {
+        "gazelle_site": gazelle_site,
+        "path": path,
+        "group_id": group_id,
+        "metadata": metadata,
+        "cover_url": cover_url,
+        "track_data": track_data,
+        "hybrid": hybrid,
+        "lossy_master": lossy_master,
+        "spectral_urls": spectral_urls,
+        "spectral_ids": spectral_ids,
+        "lossy_comment": lossy_comment,
+        "request_id": request_id,
+        "source_url": source_url,
+        **({"override_description": override_description} if override_description else {}),
+    }
+
+    # Execute upload
+    torrent_id, group_id, torrent_path, torrent_content = prepare_and_upload(**upload_kwargs)
+
+    # Handle lossy master reporting
+    if lossy_master:
+        report_lossy_master(
+            gazelle_site,
+            torrent_id,
+            spectral_urls,
+            spectral_ids,
+            source,
+            override_lossy_comment if override_lossy_comment else lossy_comment,
+            source_url=source_url,
+        )
+
+    # Generate URL
+    url = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
+
+    torrent_content.comment = url
+    torrent_content.write(torrent_path, overwrite=True)
+
+    # Display success message
+    click.secho(
+        f"Successfully uploaded {url} ({os.path.basename(path)}).",
+        fg="green",
+        bold=True,
+    )
+
+    # Copy URL to clipboard
+    if cfg.upload.description.copy_uploaded_url_to_clipboard:
+        pyperclip.copy(url)
+
+    # Add to seedbox upload queue
+    if cfg.upload.upload_to_seedbox:
+        click.secho("Add uploading task.", fg="green")
+        # Check if it's a FLAC file
+        is_flac = metadata.get("format", "").upper() == "FLAC"
+        seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac)
+        seedbox_uploader.add_upload_task(torrent_path, task_type="seed", is_flac=is_flac)
+
+    return torrent_id, group_id, torrent_path, torrent_content, url
 
 
 def convert_genres(genres):
