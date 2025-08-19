@@ -21,8 +21,6 @@ from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
 from salmon.images import upload_cover
-from salmon.qbittorrent.qbittorrentapi import add_torrent_to_qbittorrent
-from salmon.rutorrent.rutorrent import add_torrent_to_rutorrent
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -49,6 +47,7 @@ from salmon.uploader.dupe_checker import (
 )
 from salmon.uploader.preassumptions import print_preassumptions
 from salmon.uploader.request_checker import check_requests
+from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import (
     check_spectrals,
     generate_lossy_approval_comment,
@@ -134,18 +133,6 @@ loop = asyncio.get_event_loop()
 )
 @click.option("--scene", is_flag=True, help="Is this a scene release (default: False)")
 @click.option(
-    "--rutorrent",
-    is_flag=True,
-    default=cfg.rutorrent.enable_injection,
-    help="Adds torrent to Rutorrent client after torrent upload (default: False)",
-)
-@click.option(
-    "--qbittorrent",
-    is_flag=True,
-    default=cfg.qbittorrent.enable_injection,
-    help="Adds torrent to qBitTorrent client after torrent upload (default: False)",
-)
-@click.option(
     "--source-url",
     "-su",
     default=None,
@@ -177,8 +164,6 @@ def up(
     auto_rename,
     skip_up,
     scene,
-    rutorrent,
-    qbittorrent,
     source_url,
     yyy,
     skip_mqa,
@@ -213,8 +198,6 @@ def up(
         encoding,
         source_url=source_url,
         scene=scene,
-        rutorrent=rutorrent,
-        qbittorrent=qbittorrent,
         overwrite_meta=overwrite,
         recompress=compress,
         request_id=request,
@@ -235,8 +218,6 @@ def upload(
     spectrals,
     encoding,
     scene=False,
-    rutorrent=False,
-    qbittorrent=False,
     overwrite_meta=False,
     recompress=False,
     source_url=None,
@@ -369,6 +350,9 @@ def upload(
                 spectrals_after = False
             click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
             tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
+            if not tracker:
+                click.secho("\nDone with this release.", fg="green")
+                break
             gazelle_site = salmon.trackers.get_class(tracker)()
 
             click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
@@ -429,48 +413,12 @@ def upload(
             fg="green",
             bold=True,
         )
-        # TODO: refactor this!
-        if rutorrent:
-            tracker_dirs = {"OPS": cfg.directory.ops_download_directory, "RED": cfg.directory.red_download_directory}
-            tracker_labels = {"OPS": cfg.rutorrent.ops_label, "RED": cfg.rutorrent.red_label}
-            click.secho(
-                (f"\nAdding torrent to client {cfg.rutorrent.url} {tracker_dirs[tracker]} {tracker_labels[tracker]}"),
-                fg="green",
-                bold=True,
-            )
-            add_torrent_to_rutorrent(cfg.rutorrent.url, torrent_path, tracker_dirs[tracker], tracker_labels[tracker])
-        if qbittorrent:
-            creds = cfg.qbittorrent.credentials
-            click.secho(
-                (
-                    f"\nAdding torrent to client {creds.host} "
-                    f"Save Path: {cfg.directory.download_directory}, Category: {cfg.qbittorrent.category}"
-                ),
-                fg="green",
-                bold=True,
-            )
-            qbit_success = add_torrent_to_qbittorrent(
-                creds.host,
-                creds.port,
-                creds.username,
-                creds.password,
-                torrent_path,
-                save_path=cfg.directory.download_directory,
-                category=cfg.qbittorrent.category,
-                skip_checking=cfg.qbittorrent.skip_hash_check,
-            )
-            # Remove the torrent file after successful qBittorrent upload
-            if qbit_success:
-                try:
-                    os.remove(torrent_path)
-                except OSError as e:
-                    click.secho(f"Warning: Could not remove torrent file: {e}", fg="yellow")
-            else:
-                click.secho(
-                    f"Warning: Failed to add torrent to qBittorrent. "
-                    f"You can manually add the torrent file from: {torrent_path}",
-                    fg="yellow",
-                )
+
+        if cfg.upload.upload_to_seedbox:
+            seedbox_uploader = UploadManager()
+            click.secho("\nAdd uploading task.", fg="green")
+            seedbox_uploader.add_upload_task(path, task_type="folder")
+            seedbox_uploader.add_upload_task(torrent_path, task_type="seed")
 
         if cfg.upload.description.copy_uploaded_url_to_clipboard:
             pyperclip.copy(url)
@@ -478,6 +426,8 @@ def upload(
         request_id = None
         if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
             return click.secho("\nDone uploading this release.", fg="green")
+
+    seedbox_uploader.execute_upload()
 
 
 def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids):
