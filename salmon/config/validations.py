@@ -35,6 +35,7 @@ class ImageUploader(BaseStruct):
     ptscreens_key: str | None = None
     oeimg_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
+    auto_compress_cover: bool = False
 
     def __post_init__(self):
         uploader_selections = set({self.image_uploader, self.cover_uploader, self.specs_uploader})
@@ -75,15 +76,18 @@ class GazelleTrackerSettings(BaseStruct):
 class Tracker(BaseStruct):
     red: GazelleTrackerSettings | None = None
     ops: GazelleTrackerSettings | None = None
-    default_tracker: Literal["RED", "OPS"] | None = None
+    dic: GazelleTrackerSettings | None = None
+    default_tracker: Literal["RED", "OPS", "DIC"] | None = None
 
     def __post_init__(self):
-        if (self.red is None) and (self.ops is None):
+        if (self.red is None) and (self.ops is None) and (self.dic is None):
             raise ValueError("You need a tracker session cookie in your config!")
 
         if self.ops is None and self.default_tracker == "OPS":
             raise ValueError("Default tracker is invalid!")
         if self.red is None and self.default_tracker == "RED":
+            raise ValueError("Default tracker is invalid!")
+        if self.dic is None and self.default_tracker == "DIC":
             raise ValueError("Default tracker is invalid!")
 
 

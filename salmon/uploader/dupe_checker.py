@@ -209,36 +209,10 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
             return None
 
 
-def _print_torrents(gazelle_site, group_id, rset):
+def print_torrents(gazelle_site, group_id, rset=None, highlight_torrent_id=None):
     """Print the torrents that are a part of the torrent group."""
-    group_info = {}
-    click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
-    click.secho(f"| {rset['artist']} - {rset['groupName']} ", fg="cyan", nl=False)
-    click.secho(f"({rset['groupYear']})", fg="yellow")
-    click.secho("Torrents in this group:", fg="yellow", bold=True)
-    for t in rset["torrents"]:
-        if t["remastered"]:
-            click.echo(
-                f"> {t['remasterYear']} / {t['remasterCatalogueNumber']} / "
-                f"{t['media']} / {t['format']} / {t['encoding']}"
-            )
-        if not t["remastered"]:
-            if not group_info:
-                group_info = loop.run_until_complete(gazelle_site.torrentgroup(group_id))["group"]
-            click.echo(
-                f"> OR / {group_info['recordLabel']} / "
-                f"{group_info['catalogueNumber']} / {t['media']} / "
-                f"{t['format']} / {t['encoding']}"
-            )
-
-
-def _confirm_group_id(gazelle_site, group_id, results):
-    """Have the user decide whether or not to upload to a torrent group."""
-    for r in results:
-        if group_id == r["groupId"]:
-            rset = r
-            break
-    else:
+    # If rset is not provided, fetch it from the API
+    if rset is None:
         try:
             rset = loop.run_until_complete(gazelle_site.torrentgroup(group_id))
             # account for differences between search result and group result json
@@ -251,7 +225,40 @@ def _confirm_group_id(gazelle_site, group_id, results):
         except RequestError:
             click.secho(f"{group_id} does not exist.", fg="red")
             raise click.Abort from None
-    _print_torrents(gazelle_site, group_id, rset)
+
+    group_info = {}
+    click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
+    click.secho(f"| {rset['artist']} - {rset['groupName']} ", fg="cyan", nl=False)
+    click.secho(f"({rset['groupYear']})", fg="yellow")
+    click.secho("Torrents in this group:", fg="yellow", bold=True)
+    for t in rset["torrents"]:
+        color = "yellow" if highlight_torrent_id and t["id"] == highlight_torrent_id else None
+        if t["remastered"]:
+            click.secho(
+                f"> {t['remasterYear']} / {t['remasterCatalogueNumber']} / "
+                f"{t['media']} / {t['format']} / {t['encoding']}",
+                fg=color,
+            )
+        if not t["remastered"]:
+            if not group_info:
+                group_info = loop.run_until_complete(gazelle_site.torrentgroup(group_id))["group"]
+            click.secho(
+                f"> OR / {group_info['recordLabel']} / "
+                f"{group_info['catalogueNumber']} / {t['media']} / "
+                f"{t['format']} / {t['encoding']}",
+                fg=color,
+            )
+
+
+def _confirm_group_id(gazelle_site, group_id, results):
+    """Have the user decide whether or not to upload to a torrent group."""
+    rset = None
+    for r in results:
+        if group_id == r["groupId"]:
+            rset = r
+            break
+
+    print_torrents(gazelle_site, group_id, rset)
     while True:
         resp = click.prompt(
             click.style(

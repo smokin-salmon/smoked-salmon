@@ -329,9 +329,11 @@ class BaseGazelleApi:
                 torrent_id = 0
                 if "torrentid" in resp["response"]:
                     torrent_id = resp["response"]["torrentid"]
+                    group_id = resp["response"]["groupid"]
                 elif "torrentId" in resp["response"]:
                     torrent_id = resp["response"]["torrentId"]
-                return torrent_id
+                    group_id = resp["response"]["groupId"]
+                return torrent_id, group_id
         except TypeError as err:
             raise RequestError(f"API upload failed, response text: {resp.text}") from err
 
@@ -355,8 +357,9 @@ class BaseGazelleApi:
         if "requests.php" in resp.url:
             try:
                 torrent_id = self.parse_torrent_id_from_filled_request_page(resp.text)
+                group_id = await self.get_redirect_torrentgroupid(torrent_id)
                 click.secho(f"Filled request: {resp.url}", fg="green")
-                return torrent_id
+                return torrent_id, group_id
             except (TypeError, ValueError) as err:
                 soup = BeautifulSoup(resp.text, "html.parser")
                 error = soup.find("h2", text="Error")
@@ -377,12 +380,12 @@ class BaseGazelleApi:
             return await self.site_page_upload(data, files)
 
     async def report_lossy_master(self, torrent_id, comment, source):
-        """Automagically report a torrent for lossy master/web approval."""
+        """Automagically report a torrent for lossy master/web approval.
+        Use LWA if the torrent is web, otherwise LMA."""
+
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
-        # type_ = "lossywebapproval" if source == "WEB" else "lossyapproval" (only works on RED)
-        # this is has a RED specific implementation.
-        type_ = "lossyapproval"
+        type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"
         data = {
             "auth": self.authkey,
             "torrentid": torrent_id,
@@ -446,12 +449,18 @@ class BaseGazelleApi:
         recently uploaded torrent (it better be ours).
         """
         torrent_ids = []
+        group_ids = []
         soup = BeautifulSoup(text, "html.parser")
         for pl in soup.find_all("a", class_="tooltip"):
             torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
             if torrent_url:
                 torrent_ids.append(int(torrent_url[1]))
-        return max(torrent_ids)
+        for pl in soup.find_all("a", class_="brackets"):
+            group_url = re.search(r"upload.php\?groupid=(\d+)", pl["href"])
+            if group_url:
+                group_ids.append(int(group_url[1]))
+
+        return max(torrent_ids), max(group_ids)
 
     def parse_torrent_id_from_filled_request_page(self, text):
         """

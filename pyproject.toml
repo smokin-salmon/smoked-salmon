@@ -35,6 +35,8 @@ dependencies = [
     "pyoxipng>=9.1.0",
     "pycambia>=0.1.0",
     "ffmpeg-python>=0.2.0",
+    "humanfriendly>=10.0",
+    "pillow>=11.3.0",
 ]
 
 [project.scripts]
