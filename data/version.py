@@ -1,3 +1,93 @@
+__version__ = "0.9.7"
+
+"""
+Changelog for version 0.9.7 (2025-08-20):
+
+## ⚠️ Breaking Change: Torrent Client Injection
+
+This release introduces **breaking changes** to the torrent client integration system.
+
+### 🔄 New Seedbox Upload System
+
+The legacy qBittorrent and ruTorrent injection modules have been replaced with a unified seedbox upload system that supports:
+- **Multiple torrent clients**: qBittorrent, Transmission, Deluge, ruTorrent
+- **Multi-device deployment**: Upload files and torrents to multiple seedboxes simultaneously
+
+#### ✅ Migration Guide
+
+**Previous local injection is now considered a "local" seedbox**. You need to update your configuration:
+
+1. **Remove old settings** (these are no longer supported):
+   - Any qBittorrent or ruTorrent specific injection settings
+
+2. **Add new seedbox configuration** to your `config.toml`:
+   ```toml
+   # Example: Local seedbox (replaces old injection)
+   [[seedbox]]
+   name = "local"
+   enabled = true
+   type = "local"
+   directory = "/path/to/your/download/folder"
+   torrent_client = "transmission+http://username:password@localhost:9091"
+   label = "smoked-salmon"
+   
+   # Example: Remote seedbox via rclone
+   [[seedbox]]
+   name = "remote-seedbox"
+   enabled = true
+   type = "rclone"
+   url = "nas"  # Name of remote in rclone
+   directory = "/downloads"
+   torrent_client = "qbittorrent+http://username:password@192.168.1.2:8080"
+   flac_only = false
+   extra_args = ["--checksum", "-P"]
+   label = "smoked-salmon"
+   ```
+
+3. **Enable seedbox uploading**:
+   ```toml
+   [upload]
+   upload_to_seedbox = true
+   ```
+
+### 🎵 New Automatic Transcoding Feature
+
+This release introduces **automatic transcoding and upload** functionality:
+- Automatically detects all possible transcode formats after upload
+- Uploads all transcoded versions automatically  
+- **Lossy master report**: If source is lossy master, all transcoded torrents are automatically reported as lossy master
+- **No configuration required**: Works through interactive prompts during upload
+
+### 🎯 New Tracker Support
+
+Added support for **DICMusic** tracker. To configure:
+```toml
+[tracker.dic]
+session = 'get-from-site-cookie'
+```
+
+### 🖼️ Automatic Cover Compression
+
+New feature to automatically compress embedded cover images in FLAC files:
+```toml
+[image]
+auto_compress_cover = true  # Set to true to enable
+```
+
+### ⚠️ Important Notes
+
+- **No automatic migration** from old injection settings - manual configuration required
+- The **Wiki** is currently outdated and will be updated in a future release
+- **Please report** if you encounter crashes or strange behavior with these new features
+
+## What's Changed
+* Merge seedbox uploading module from smoked-salmon-oasis by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/118
+* Merge automatic transcoding and uploading module from smoked-salmon-oasis by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/151
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.6.1...0.9.7
+"""
+
 __version__ = "0.9.6.1"
 
 """
