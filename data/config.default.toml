@@ -7,14 +7,14 @@
 # ===============================
 [directory]
 # Where to copy files (usually the download/seeding folder for your torrent client)
-download_directory = '/path/to/folder/for/the/releases'
+download_directory = '.music'
 
 # Hardlinks are enabled by default, set the option below to false to DISABLE hardlinks (and use standard copy files)
 # hardlinks = true
 
 # Can be a watch folder for your torrent client, or a folder somewhere else where the .torrent files will be generated
 # You still need to have it set even if using direct torrent injection with qbittorrent
-dottorrents_dir = '/path/to/folder/for/these.torrents'
+dottorrents_dir = '.torrents'
 
 # Set the TMP dir where spectrals will be generated. If unset, the spectrals will be generated in the albums folders
 # and be cleaned up up before upload. Useful if you want to generate the spectral on a fast disk for instance.
