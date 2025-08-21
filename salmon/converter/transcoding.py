@@ -23,7 +23,8 @@ def transcode_folder(path, bitrate):
     _validate_folder_is_lossless(path)
     new_path = _generate_transcode_path_name(path, bitrate)
     if os.path.isdir(new_path):
-        return click.secho(f"{new_path} already exists, please delete it to re-transcode.", fg="red")
+        click.secho(f"{new_path} already exists.", fg="yellow")
+        return new_path
     transcode(Path(path), [bitrate], Path(new_path))
 
     return new_path

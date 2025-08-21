@@ -26,7 +26,8 @@ def convert_folder(path, bit_depth=16, sample_rate=None):
             flags=re.IGNORECASE,
         )
     if os.path.isdir(new_path):
-        return click.secho(f"{new_path} already exists, please delete it to re-convert.", fg="red")
+        click.secho(f"{new_path} already exists.", fg="yellow")
+        return sample_rate, new_path
 
     files_convert, files_copy = _determine_files_actions(path)
     final_sample_rate = _convert_files(path, new_path, files_convert, files_copy, bit_depth, sample_rate)
