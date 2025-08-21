@@ -125,6 +125,8 @@ A Docker image is generated per release.
 2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server.  
    Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
+3. Configure rclone if needed. The Docker Compose configuration expects an rclone configuration file. You can get the path to your rclone config file by running `rclone config file` on your host system.
+
 ---
 
 ### 🔁 Recommended Docker Operation Order
@@ -134,10 +136,11 @@ A Docker image is generated per release.
 
    ```bash
    docker run --rm -it --network=host \
-   -v /path/to/your/music:/data \
-   -v /path/to/your/config.toml/directory:/.config/smoked-salmon/ \
-   -v /path/to/your/smoked.db/directory:/.local/share/smoked-salmon/ \
+   -v /path/to/your/music:/app/.music \
+   -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
+   -v /path/to/your/smoked.db/directory:/root/.local/share/smoked-salmon/ \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
+   -v /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features \
    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
    ```
 
@@ -181,6 +184,13 @@ A Docker image is generated per release.
   -v /your/host/torrent/output:/app/.torrents
   ```
 
+- **rclone Configuration**  
+  If you're using rclone features, make sure to map your rclone configuration file. This is optional and only needed if you plan to use rclone functionality. You can find your rclone config file location by running `rclone config file` on your host system:
+
+  ```bash
+  -v /path/to/your/rclone.conf:/root/.config/rclone/rclone.conf
+  ```
+
 ---
 
 ### 📦 Portainer Stack Alternative
@@ -196,10 +206,11 @@ services:
     network_mode: host
     restart: unless-stopped
     volumes:
-      - /path/to/your/music:/data
-      - /path/to/your/config.toml/directory:/.config/smoked-salmon/
-      - /path/to/your/smoked.db/directory:/.local/share/smoked-salmon/
+      - /path/to/your/music:/app/.music
+      - /path/to/your/config.toml/directory:/root/.config/smoked-salmon/
+      - /path/to/your/smoked.db/directory:/root/.local/share/smoked-salmon/
       - /path/to/your/generated/dottorrents:/app/.torrents
+      - /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features
     command: web
 ```
 
