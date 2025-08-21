@@ -87,6 +87,12 @@ session = 'get-from-site-cookie'
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to ops dir'
 
+[tracker.dic]
+session = 'get-from-site-cookie'
+# api_key = 'dic-api-key'          # DIC does not support API key authentication for now
+# In case you want separate output folders for .torrent files
+# dottorrents_dir = 'path to dic dir'
+
 # ===============================
 # SEEDING SETTINGS
 # ===============================

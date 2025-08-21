@@ -30,7 +30,7 @@ def choose_tracker(choices):
     while True:
         # Loop until we have chosen a tracker or aborted.
         tracker_input = click.prompt(
-            click.style(f"Your choices are {' , '.join(choices)} or [a]bort.", fg="magenta"),
+            click.style(f"Your choices are {' , '.join(choices)} or [n]one.", fg="magenta"),
             default=choices[0],
         )
         tracker_input = tracker_input.strip().upper()
