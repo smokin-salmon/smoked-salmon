@@ -17,6 +17,7 @@ def _calculate_file_crc(filepath, _=None):
         out, _ = (
             ffmpeg.input(filepath)
             .output("pipe:", format="hash", hash="crc32", map="0:0")
+            .global_args("-nostdin")
             .run(capture_stdout=True, capture_stderr=True)
         )
         return out.decode("utf-8").strip().removeprefix("CRC32=").upper()
