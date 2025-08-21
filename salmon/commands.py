@@ -259,7 +259,7 @@ def health():
     click.echo()
 
     req_deps = ["curl", "ffmpeg", "flac", "git", "lame", "mp3val", "sox", "unzip"]
-    opt_deps = ["puddletag", "feh"]
+    opt_deps = ["puddletag", "feh", "rclone"]
     click.secho("Required Dependencies:", fg="cyan")
     _iter_which(req_deps)
 

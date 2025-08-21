@@ -13,7 +13,18 @@ from PIL import Image
 
 from salmon import cfg
 from salmon.common import get_audio_files
-from salmon.images import get_cover_from_path
+
+
+def get_cover_from_path(path):
+    """
+    Search a folder for a cover image, return its path.
+    """
+    for filename in os.listdir(path):
+        if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE):
+            fpath = os.path.join(path, filename)
+            return fpath
+    click.secho(f"Did not find a cover in path {path}", fg="red")
+    return None
 
 
 def download_cover_if_nonexistent(path, cover_url):
@@ -22,11 +33,10 @@ def download_cover_if_nonexistent(path, cover_url):
     returns local source path of cover image, and whether image was downloaded
     """
     # use local file if matches filter
-    for filename in os.listdir(path):
-        if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE):
-            cover_path = os.path.join(path, filename)
-            click.secho(f"\nUsing existing cover image found: {filename}...", fg="yellow")
-            return cover_path, False
+    cover_path = get_cover_from_path(path)
+    if cover_path:
+        click.secho(f"\nUsing existing cover image found: {cover_path}...", fg="yellow")
+        return cover_path, False
     # use url provided
     if cover_url:
         click.secho("\nDownloading Cover Image...", fg="yellow")
