@@ -1,3 +1,18 @@
+__version__ = "0.9.7.1"
+
+"""
+Changelog for version 0.9.7.1 (2025-08-21):
+
+## What's Changed
+* Multiple bug fixes and improvements by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/155
+* Resolve Linux input issues by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/157
+* Skip transcoding when target folder already exists by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/159
+* Update Docker documentation and default config paths by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/160
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7...0.9.7.1
+"""
+
 __version__ = "0.9.7"
 
 """
