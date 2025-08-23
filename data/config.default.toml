@@ -100,7 +100,7 @@ session = 'get-from-site-cookie'
 # name = ""
 # enabled = true
 # url = "nas" # Name of remote in rclone
-# type = "rclone" # "local" or "rclone"
+# type = "local" # "local" or "rclone"
 # directory = "" # Directory when adding torrent to download client
 # flac_only = false # if true, only upload FLAC files
 # extra_args = [ "--checksum", "-P", "--sftp-path-override", "@/volume3" ] # pass these arguments to rclone
@@ -141,7 +141,7 @@ session = 'get-from-site-cookie'
 # yes_all = false
 
 # # enable seedbox uploading
-# upload_to_seedbox = false
+# upload_to_seedbox = true
 
 # [upload.search]
 # limit = 3
