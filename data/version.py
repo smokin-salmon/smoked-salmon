@@ -1,3 +1,15 @@
+__version__ = "0.9.7.2"
+
+"""
+Changelog for version 0.9.7.2 (2025-08-23):
+
+## What's Changed
+* Add illegal folder detection and various fixes by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/161
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7.1...0.9.7.2
+"""
+
 __version__ = "0.9.7.1"
 
 """
