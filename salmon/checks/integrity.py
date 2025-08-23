@@ -166,4 +166,31 @@ def _sanitize_flac(path):
 
 
 def _sanitize_mp3(path):
-    return True
+    try:
+        backup_path = path + ".corrupted"
+        os.rename(path, backup_path)
+
+        result = subprocess.run(
+            ["mp3val", "-f", "-si", "-nb", "-t", backup_path],
+            capture_output=True,
+            text=True,
+        )
+
+        if os.path.exists(backup_path):
+            os.rename(backup_path, path)
+
+        # Check if the operation was successful
+        if result.returncode == 0:
+            return True
+        else:
+            # If mp3val failed, restore the original file
+            if os.path.exists(backup_path) and not os.path.exists(path):
+                os.rename(backup_path, path)
+            raise Exception(f"mp3val failed with return code {result.returncode}: {result.stderr}")
+
+    except Exception as e:
+        click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
+        # Ensure we restore the original file if something went wrong
+        if os.path.exists(backup_path) and not os.path.exists(path):
+            os.rename(backup_path, path)
+        return False

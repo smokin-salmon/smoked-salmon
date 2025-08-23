@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import click
 
@@ -16,6 +17,7 @@ def check_folder_structure(path, scene):
     while True:
         click.secho("\nChecking folder structure...", fg="cyan", bold=True)
         try:
+            _check_illegal_folders(path)
             _check_path_lengths(path, scene)
             _check_zero_len_folder(path)
             _check_extensions(path, scene)
@@ -39,6 +41,26 @@ def check_folder_structure(path, scene):
                 default=False,
                 abort=True,
             )
+
+
+def _check_illegal_folders(path):
+    """Verify illegal folders."""
+    for root, dirs, _files in os.walk(path, topdown=False):
+        for dirname in dirs:
+            if dirname == "@eaDir":
+                target_dir = os.path.join(root, dirname)
+                while True:
+                    resp = click.prompt(
+                        f"Dirname {target_dir} is illegal. [D]elete, [A]bort, or [C]ontinue?",
+                        default="D",
+                    ).lower()
+                    if resp[0].lower() == "d":
+                        shutil.rmtree(target_dir)
+                        break
+                    elif resp[0].lower() == "a":
+                        raise click.Abort
+                    elif resp[0].lower() == "c":
+                        break
 
 
 def _check_path_lengths(path, scene):

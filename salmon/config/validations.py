@@ -189,7 +189,7 @@ class Upload(BaseStruct):
 
     yes_all: bool = False
 
-    upload_to_seedbox: bool = False
+    upload_to_seedbox: bool = True
 
     # TODO: take these out of the upload struct!
     search: UploadSearch = msgspec.field(default_factory=UploadSearch)

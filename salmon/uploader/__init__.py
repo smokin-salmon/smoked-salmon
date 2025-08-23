@@ -452,7 +452,8 @@ def upload(
         tracker = None
         request_id = None
         if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
-            return click.secho("\nDone uploading this release.", fg="green")
+            click.secho("\nDone uploading this release.", fg="green")
+            break
 
     seedbox_uploader.execute_upload()
 

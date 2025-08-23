@@ -127,7 +127,9 @@ class LocalUploader(Uploader):
             torrent = file.read()
 
         try:
-            self.client.add_to_downloader(cfg.directory.download_directory, torrent, is_paused=False, label=label)
+            self.client.add_to_downloader(
+                os.path.abspath(cfg.directory.download_directory), torrent, is_paused=False, label=label
+            )
             click.secho("Torrent added to local client successfully", fg="green")
         except Exception as e:
             click.secho(f"Failed to add torrent to local client: {e}", fg="red")
