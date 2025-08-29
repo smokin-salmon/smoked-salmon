@@ -159,6 +159,11 @@ loop = asyncio.get_event_loop()
     is_flag=True,
     help="Skip checking CD logs",
 )
+@click.option(
+    "--skip-integrity-check",
+    is_flag=True,
+    help="Skip integrity check of audio files",
+)
 def up(
     path,
     group_id,
@@ -178,6 +183,7 @@ def up(
     yyy,
     skip_mqa,
     skip_log_check,
+    skip_integrity_check,
 ):
     """Command to upload an album folder to a Gazelle Site."""
     if yyy:
@@ -216,6 +222,7 @@ def up(
         skip_up=skip_up,
         skip_mqa=skip_mqa,
         skip_log_check=skip_log_check,
+        skip_integrity_check=skip_integrity_check,
     )
 
 
@@ -238,6 +245,7 @@ def upload(
     skip_up=False,
     skip_mqa=False,
     skip_log_check=False,
+    skip_integrity_check=False,
 ):
     """Upload an album folder to Gazelle Site
     Offer the choice to upload to another tracker after completion."""
@@ -303,7 +311,7 @@ def upload(
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
         path, metadata, tags, audio_info = edit_metadata(
-            path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids
+            path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check
         )
 
         if not group_id:
@@ -458,7 +466,9 @@ def upload(
     seedbox_uploader.execute_upload()
 
 
-def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids):
+def edit_metadata(
+    path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check=False
+):
     """
     The metadata editing portion of the uploading process. This sticks the user
     into an infinite loop where the metadata process is repeated until the user
@@ -477,10 +487,8 @@ def edit_metadata(path, tags, metadata, source, rls_data, recompress, auto_renam
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
         check_folder_structure(path, metadata["scene"])
 
-        if cfg.upload.yes_all or click.confirm(
-            click.style("\nDo you want to check for integrity of this upload?", fg="magenta"),
-            default=True,
-        ):
+        if not skip_integrity_check:
+            click.secho("\nChecking integrity of audio files...", fg="cyan", bold=True)
             result = check_integrity(path)
             click.echo(format_integrity(result))
 
