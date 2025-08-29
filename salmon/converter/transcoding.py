@@ -43,13 +43,17 @@ def _generate_transcode_path_name(path, bitrate):
     to_append = []
     foldername = os.path.basename(path)
     if FLAC_FOLDER_REGEX.search(foldername):
-        foldername = FLAC_FOLDER_REGEX.sub("MP3", foldername)
+        if LOSSLESS_FOLDER_REGEX.search(foldername):
+            foldername = FLAC_FOLDER_REGEX.sub("MP3", foldername)
+            foldername = LOSSLESS_FOLDER_REGEX.sub(bitrate, foldername)
+        else:
+            foldername = FLAC_FOLDER_REGEX.sub(f"MP3 {bitrate}", foldername)
     else:
-        to_append.append("MP3")
-    if LOSSLESS_FOLDER_REGEX.search(foldername):
-        foldername = LOSSLESS_FOLDER_REGEX.sub(bitrate, foldername)
-    else:
-        to_append.append(bitrate)
+        if LOSSLESS_FOLDER_REGEX.search(foldername):
+            foldername = LOSSLESS_FOLDER_REGEX.sub(bitrate, foldername)
+            to_append.append("MP3")
+        else:
+            to_append.append(f"MP3 {bitrate}")
 
     if to_append:
         foldername += f" [{' '.join(to_append)}]"
