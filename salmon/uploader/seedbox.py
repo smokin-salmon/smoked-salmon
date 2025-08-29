@@ -23,7 +23,7 @@ class Uploader:
     def upload_folder(self, remote_folder, path, type):
         raise NotImplementedError
 
-    def add_to_downloader(self, remote_folder, path, type, label="smoked-salmon"):
+    def add_to_downloader(self, remote_folder, path, type, label):
         raise NotImplementedError
 
 
@@ -93,7 +93,7 @@ class RcloneUploader(Uploader):
         else:
             click.secho(f"Rclone upload failed with exit code {result.returncode}", fg="red")
 
-    def add_to_downloader(self, remote_folder, path, type, label="smoked-salmon"):
+    def add_to_downloader(self, remote_folder, path, type, label):
         click.secho(f"Adding torrent to client: {os.path.basename(path)}", fg="cyan")
         with open(path, "rb") as file:
             torrent = file.read()
@@ -121,15 +121,14 @@ class LocalUploader(Uploader):
         click.secho("Skipping upload for local mode (no transfer needed)", fg="yellow")
         return
 
-    def add_to_downloader(self, remote_folder, path, type, label="smoked-salmon"):
+    def add_to_downloader(self, remote_folder, path, type, label):
         click.secho(f"Adding torrent to local client: {os.path.basename(path)}", fg="cyan")
         with open(path, "rb") as file:
             torrent = file.read()
 
         try:
-            self.client.add_to_downloader(
-                os.path.abspath(cfg.directory.download_directory), torrent, is_paused=False, label=label
-            )
+            download_path = remote_folder if remote_folder else os.path.abspath(cfg.directory.download_directory)
+            self.client.add_to_downloader(download_path, torrent, is_paused=False, label=label)
             click.secho("Torrent added to local client successfully", fg="green")
         except Exception as e:
             click.secho(f"Failed to add torrent to local client: {e}", fg="red")
