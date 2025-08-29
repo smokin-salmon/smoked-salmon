@@ -120,6 +120,11 @@ session = 'get-from-site-cookie'
 # simultaneous_threads = 3
 # user_agent = "salmon uploading tools"
 
+# # Default text editor for interactive editing operations
+# # "nano", "vim", "emacs", or any command available in PATH
+# # Leave empty to use system default
+# default_editor = ""
+
 # # miscellaneous settings
 # native_spectrals_viewer = false
 # feh_fullscreen = true

@@ -165,7 +165,7 @@ def _get_manual_metadata(rls_data):
     metadata = json.dumps(rls_data, indent=2)
     while True:
         try:
-            metadata = click.edit(metadata, extension=".json") or metadata
+            metadata = click.edit(metadata, extension=".json", editor=cfg.upload.default_editor) or metadata
             metadata_dict = json.loads(metadata)
             if isinstance(metadata_dict["genres"], str):
                 metadata_dict["genres"] = [metadata_dict["genres"]]

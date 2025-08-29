@@ -165,7 +165,7 @@ def _edit_folder_interactive(foldername, auto_rename):
         click.style("Is the new folder name acceptable? ([n] to edit)", fg="magenta"),
         default=True,
     ):
-        newname = click.edit(foldername)
+        newname = click.edit(foldername, editor=cfg.upload.default_editor)
         while True:
             if newname is None:
                 return foldername
@@ -181,5 +181,5 @@ def _edit_folder_interactive(foldername, auto_rename):
                     exit()
             else:
                 return newname.strip().replace("\n", "")
-            newname = click.edit(foldername)
+            newname = click.edit(foldername, editor=cfg.upload.default_editor)
     return foldername

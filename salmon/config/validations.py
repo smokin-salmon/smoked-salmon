@@ -173,6 +173,10 @@ class Upload(BaseStruct):
     simultaneous_threads: int = 3
     user_agent: str = "salmon uploading tools"
 
+    # Default text editor for click.edit operations
+    # Can be "nano", "vim", "emacs", or any command available in PATH
+    default_editor: str | None = None
+
     native_spectrals_viewer: bool = False
     feh_fullscreen: bool = True
     prompt_puddletag: bool = False
