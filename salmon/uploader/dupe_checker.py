@@ -60,6 +60,83 @@ def print_recent_upload_results(gazelle_site, recent_uploads, searchstr):
             )
 
 
+def _prompt_for_recent_upload_results(gazelle_site, recent_uploads, searchstr, offer_deletion):
+    """
+    Prints recent uploads and prompts user to choose a group ID or take other actions.
+    Combines the functionality of print_recent_upload_results and _prompt_for_group_id.
+    """
+    # First, print the recent uploads if any
+    if recent_uploads:
+        click.secho(
+            f"\nFound similar recent uploads in the {gazelle_site.site_string} log: ",
+            fg="red",
+            nl=False,
+        )
+        click.secho(f" (searchstrs: {searchstr})", bold=True)
+        for u_index, u in enumerate(recent_uploads[:5]):
+            click.echo(f" {u_index + 1:02d} >> ", nl=False)  # torrent_id
+            click.secho(f"{u[1]} - {u[2]} ", fg="cyan", nl=False)  # artist - title
+            click.echo(f"| {gazelle_site.base_url}/torrents.php?torrentid={u[0]}")
+
+    # Now prompt for user action
+    while True:
+        prompt_text = (
+            "\nWould you like to upload to an existing group?\n"
+            f"{'Pick from recent uploads found, p' if recent_uploads else 'P'}aste a URL"
+            f" or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}"
+        )
+
+        group_id = click.prompt(
+            click.style(prompt_text, fg="magenta"),
+            default="",
+        )
+
+        # Handle numeric input (selecting from recent uploads or direct group ID)
+        if group_id.strip().isdigit():
+            group_id_num = int(group_id)
+
+            if group_id_num == 0:
+                group_id_num = 1  # If the user types 0 give them the first choice.
+
+            # If user picks from recent uploads list
+            if recent_uploads and 1 <= group_id_num <= len(recent_uploads):
+                torrent_id = recent_uploads[group_id_num - 1][0]
+                # Need to convert torrent ID to group ID
+                try:
+                    group_id = loop.run_until_complete(gazelle_site.get_redirect_torrentgroupid(torrent_id))
+                    return group_id
+                except Exception:
+                    click.echo("Could not get group ID from torrent ID.")
+                    continue
+            else:
+                # Direct group ID input
+                click.echo(f"Interpreting {group_id_num} as a group ID")
+                return group_id_num
+
+        # Handle URL input
+        elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
+            parsed_query = parse.parse_qs(parse.urlparse(group_id).query)
+            if "id" in parsed_query:
+                group_id = parsed_query["id"][0]
+                return int(group_id)
+            elif "torrentid" in parsed_query:
+                torrent_id = parsed_query["torrentid"][0]
+                group_id = loop.run_until_complete(gazelle_site.get_redirect_torrentgroupid(torrent_id))
+                return group_id
+            else:
+                click.echo("Could not find group ID in URL.")
+                continue
+
+        # Handle action commands
+        elif group_id.lower().startswith("a"):
+            raise click.Abort
+        elif group_id.lower().startswith("d") and offer_deletion:
+            raise AbortAndDeleteFolder
+        elif group_id.lower().startswith("n") or not group_id.strip():
+            click.echo("Uploading to a new torrent group.")
+            return None
+
+
 def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     """
     Make a request to the API with a dupe-check searchstr,
@@ -69,10 +146,12 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
     results = get_search_results(gazelle_site, searchstrs)
     if not results and cfg.upload.requests.check_recent_uploads:
         recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
-        print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
+        group_id = _prompt_for_recent_upload_results(
+            gazelle_site, recent_uploads, " / ".join(searchstrs), offer_deletion
+        )
     else:
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
-    group_id = _prompt_for_group_id(gazelle_site, results, offer_deletion)
+        group_id = _prompt_for_group_id(gazelle_site, results, offer_deletion)
     if group_id:
         confirmation = _confirm_group_id(gazelle_site, group_id, results)
         if confirmation is True:
