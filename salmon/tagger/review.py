@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import click
 
+from salmon import cfg
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError
 from salmon.tagger.metadata import _print_metadata
@@ -83,7 +84,7 @@ def _check_for_empty_genre_list(metadata):
 def _edit_artists(metadata):
     artist_text = "\n".join(f"{a} ({i})" for a, i in metadata["artists"])
     while True:
-        artist_text = click.edit(artist_text)
+        artist_text = click.edit(artist_text, editor=cfg.upload.default_editor)
         if not artist_text:
             return
         try:
@@ -126,7 +127,7 @@ def _alias_artists(metadata):  # noqa: C901
             "\n".join({a for a, _ in metadata["artists"]})
             + "\n\nEnter the artist alias list below. Refer to README for syntax.\n\n"
         )
-        artist_list = click.edit(artist_list)
+        artist_list = click.edit(artist_list, editor=cfg.upload.default_editor)
         try:
             artist_text = artist_list.split("Refer to README for syntax.")[1].strip()
             for line in artist_text.split("\n"):
@@ -203,7 +204,7 @@ def _print_release_types():
 
 
 def _edit_title(metadata):
-    title = click.edit(metadata["title"])
+    title = click.edit(metadata["title"], editor=cfg.upload.default_editor)
     if title:
         metadata["title"] = title.strip()
 
@@ -211,7 +212,7 @@ def _edit_title(metadata):
 def _edit_years(metadata):
     while True:
         text = f"Year      : {metadata['year']}\nGroup Year: {metadata['group_year']}"
-        text = click.edit(text)
+        text = click.edit(text, editor=cfg.upload.default_editor)
         try:
             if not text:
                 return
@@ -231,13 +232,13 @@ def _edit_years(metadata):
 
 
 def _edit_genres(metadata):
-    genres = click.edit("\n".join(metadata["genres"]))
+    genres = click.edit("\n".join(metadata["genres"]), editor=cfg.upload.default_editor)
     if genres:
         metadata["genres"] = [g for g in genres.split("\n") if g.strip()]
 
 
 def _edit_urls(metadata):
-    urls = click.edit("\n".join(metadata["urls"]))
+    urls = click.edit("\n".join(metadata["urls"]), editor=cfg.upload.default_editor)
     if urls:
         metadata["urls"] = [g for g in urls.split("\n") if g.strip()]
 
@@ -249,7 +250,7 @@ def _edit_edition_info(metadata):
             f"Catalog Number: {metadata['catno'] or ''}\n"
             f"Edition Title : {metadata['edition_title'] or ''}"
         )
-        text = click.edit(text)
+        text = click.edit(text, editor=cfg.upload.default_editor)
         try:
             if not text:
                 return
@@ -270,7 +271,7 @@ def _edit_edition_info(metadata):
 
 
 def _edit_comment(metadata):
-    review = click.edit(metadata["comment"])
+    review = click.edit(metadata["comment"], editor=cfg.upload.default_editor)
     metadata["comment"] = review.strip() if review else None
 
 
@@ -286,7 +287,7 @@ def _edit_tracks(metadata):
 
     text_tracks = "\n\n-----\n\n".join(text_tracks_li)
     while True:
-        text_tracks = click.edit(text_tracks)
+        text_tracks = click.edit(text_tracks, editor=cfg.upload.default_editor)
         if not text_tracks:
             return
         try:
