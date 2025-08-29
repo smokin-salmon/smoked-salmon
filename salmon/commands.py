@@ -2,6 +2,7 @@ import asyncio
 import html
 import os
 import shutil
+import subprocess
 from urllib import parse
 
 import click
@@ -26,6 +27,7 @@ from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
 from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources import run_metadata
+from salmon.uploader.seedbox import UploaderGenerator
 from salmon.uploader.spectrals import (
     check_spectrals,
     get_spectrals_path,
@@ -185,16 +187,29 @@ def _backup_config(config_path):
     help=f"Choices: ({'/'.join(salmon.trackers.tracker_list)})",
 )
 @click.option(
+    "--metadata",
+    "-m",
+    is_flag=True,
+    help="Test metadata sources connections (Discogs, Tidal, Qobuz).",
+)
+@click.option(
+    "--seedbox",
+    "-s",
+    is_flag=True,
+    help="Test seedbox connections.",
+)
+@click.option(
     "--reset",
     "-r",
     is_flag=True,
     help="Reset the config file to the default template. Will create a backup of the current config file.",
 )
-# TODO: --reset doesn't work if the config file exists but is invalid. Maybe there should be a command for that?
-def checkconf(tracker, reset):
-    """Check the config and the connection to the trackers.\n
+def checkconf(tracker, metadata, seedbox, reset):
+    """Check the config and the connection to the trackers, metadata sources, and seedbox.\n
     Will output debug information if the connection fails.
     Use the -r flag to reset/create the whole config file.
+    Use the -m flag to test metadata sources connections.
+    Use the -s flag to test seedbox connections.
     """
     if reset:
         click.secho("Resetting new config.toml file", fg="cyan", bold=True)
@@ -218,18 +233,28 @@ def checkconf(tracker, reset):
 
     cfg.upload.debug_tracker_connection = True
 
-    trackers = [tracker] if tracker else salmon.trackers.tracker_list
+    # Test trackers if no specific test type is requested or if tracker is specified
+    if not (metadata or seedbox) or tracker:
+        trackers = [tracker] if tracker else salmon.trackers.tracker_list
 
-    for t in trackers:
-        click.secho(f"\n[ Testing Tracker: {t} ]", fg="cyan", bold=True)
+        for t in trackers:
+            click.secho(f"\n[ Testing Tracker: {t} ]", fg="cyan", bold=True)
 
-        try:
-            salmon.trackers.get_class(t)()
-            click.secho(f"\n✔ Successfully checked {t}", fg="green", bold=True)
-        except Exception as e:
-            click.secho(f"\n✖ Error testing {t}: {e}", fg="red", bold=True)
+            try:
+                salmon.trackers.get_class(t)()
+                click.secho(f"\n✔ Successfully checked {t}", fg="green", bold=True)
+            except Exception as e:
+                click.secho(f"\n✖ Error testing {t}: {e}", fg="red", bold=True)
 
-        click.secho("-" * 50, fg="yellow")  # Separator for readability
+            click.secho("-" * 50, fg="yellow")  # Separator for readability
+
+    # Test metadata sources
+    if metadata or not (tracker or seedbox):
+        _test_metadata_sources()
+
+    # Test seedbox connections
+    if seedbox or not (tracker or metadata):
+        _test_seedbox_connections()
 
 
 def _iter_which(deps):
@@ -239,6 +264,98 @@ def _iter_which(deps):
             click.secho(f"{dep} ✓", fg="green")
         else:
             click.secho(f"{dep} ✘", fg="red")
+
+
+def _test_metadata_sources():
+    """Test metadata sources connections (Discogs, Tidal, Qobuz)"""
+    click.secho("\n[ Testing Metadata Sources ]", fg="cyan", bold=True)
+
+    metadata_sources = {
+        "Discogs": {
+            "class": salmon.sources.DiscogsBase,
+            "test_url": "https://www.discogs.com/release/432932",
+            "config_check": lambda: bool(cfg.metadata.discogs_token),
+        },
+        "Tidal": {
+            "class": salmon.sources.TidalBase,
+            "test_url": "http://www.tidal.com/album/75194842",
+            "config_check": lambda: bool(cfg.metadata.tidal.token and cfg.metadata.tidal.fetch_regions),
+        },
+        "Qobuz": {
+            "class": salmon.sources.QobuzBase,
+            "test_url": "https://www.qobuz.com/album/-/0886446576442",
+            "config_check": lambda: bool(cfg.metadata.qobuz.app_id and cfg.metadata.qobuz.user_auth_token),
+        },
+    }
+
+    for source_name, source_info in metadata_sources.items():
+        click.secho(f"\n  Testing {source_name}...", fg="yellow")
+
+        try:
+            # Check if required config is present
+            if not source_info["config_check"]():
+                click.secho(f"  ✖ {source_name}: Missing required configuration", fg="red", bold=True)
+                continue
+
+            # Try to initialize the source class
+            source_instance = source_info["class"]()
+
+            # For a basic connection test, try to create soup with a test URL
+            try:
+                loop.run_until_complete(source_instance.create_soup(source_info["test_url"]))
+                click.secho(f"  ✔ {source_name}: Connection successful", fg="green", bold=True)
+            except Exception as inner_e:
+                click.secho(f"  ✖ {source_name}: Error - {inner_e}", fg="red", bold=True)
+
+        except Exception as e:
+            click.secho(f"  ✖ {source_name}: Failed to initialize - {e}", fg="red", bold=True)
+
+    click.secho("-" * 50, fg="yellow")
+
+
+def _test_seedbox_connections():
+    """Test seedbox connections"""
+    click.secho("\n[ Testing Seedbox Connections ]", fg="cyan", bold=True)
+
+    if not cfg.seedbox:
+        click.secho("  No seedboxes configured", fg="yellow")
+        click.secho("-" * 50, fg="yellow")
+        return
+
+    for i, seedbox_config in enumerate(cfg.seedbox):
+        if not seedbox_config.enabled:
+            click.secho(f"\n  Seedbox {i + 1} ({seedbox_config.name}): Disabled", fg="yellow")
+            continue
+
+        click.secho(f"\n  Testing Seedbox {i + 1} ({seedbox_config.name})...", fg="yellow")
+        click.secho(f"    Type: {seedbox_config.type}", fg="cyan")
+        click.secho(f"    URL: {seedbox_config.url}", fg="cyan")
+
+        try:
+            # Test the uploader initialization
+            UploaderGenerator.get_uploader(
+                seedbox_config.type, seedbox_config.url, seedbox_config.extra_args, seedbox_config.torrent_client
+            )
+
+            if seedbox_config.type == "rclone":
+                if shutil.which("rclone"):
+                    click.secho("    ✔ Rclone executable found", fg="green")
+                    # Test rclone config
+                    try:
+                        result = subprocess.run(["rclone", "listremotes"], capture_output=True, text=True, timeout=10)
+                        if seedbox_config.url + ":" in result.stdout:
+                            click.secho(f"    ✔ Rclone remote '{seedbox_config.url}' found", fg="green", bold=True)
+                        else:
+                            click.secho(f"    ✖ Rclone remote '{seedbox_config.url}' not found", fg="red", bold=True)
+                    except Exception as rclone_e:
+                        click.secho(f"    ✖ Rclone test failed: {rclone_e}", fg="red", bold=True)
+                else:
+                    click.secho("    ✖ Rclone executable not found", fg="red", bold=True)
+
+        except Exception as e:
+            click.secho(f"    ✖ Seedbox test failed: {e}", fg="red", bold=True)
+
+    click.secho("-" * 50, fg="yellow")
 
 
 @commandgroup.command()
