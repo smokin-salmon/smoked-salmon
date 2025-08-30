@@ -3,6 +3,7 @@ import shutil
 
 import click
 import msgspec
+import requests
 from platformdirs import user_config_dir
 
 from .validations import Cfg
@@ -17,7 +18,31 @@ def get_user_cfg_path():
 
 
 def get_default_config_path():
-    return os.path.join(root_path, "data", "config.default.toml")
+    default_config_path = os.path.join(root_path, "data", "config.default.toml")
+
+    if not os.path.exists(default_config_path):
+        click.secho(f"Default config file not found at {default_config_path}", fg="yellow")
+        click.secho("Downloading from GitHub...", fg="blue")
+
+        os.makedirs(os.path.dirname(default_config_path), exist_ok=True)
+
+        try:
+            github_url = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/master/data/config.default.toml"
+            response = requests.get(github_url, timeout=30)
+            response.raise_for_status()
+
+            with open(default_config_path, "w", encoding="utf-8") as f:
+                f.write(response.text)
+
+            click.secho(f"Successfully downloaded default config to {default_config_path}", fg="green")
+        except requests.exceptions.RequestException as e:
+            click.secho(f"Failed to download default config: {e}", fg="red")
+            raise FileNotFoundError(f"Could not find or download default config file: {e}") from e
+        except Exception as e:
+            click.secho(f"Failed to save default config: {e}", fg="red")
+            raise FileNotFoundError(f"Could not save default config file: {e}") from e
+
+    return default_config_path
 
 
 def _parse_config(config_path):

@@ -30,7 +30,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
         new_base = old_base
         auto_rename = True
 
-    if check:
+    if check and old_base != new_base:
         click.secho("\nRenaming folder...", fg="cyan", bold=True)
         click.echo(f"Old folder name        : {old_base}")
         click.echo(f"New pending folder name: {new_base}")

@@ -77,7 +77,6 @@ class RcloneUploader(Uploader):
         remote_path = posixpath.join(remote_folder, os.path.basename(path))
         commands = [
             "rclone",
-            *(["--config", "config/rclone.conf"] if os.path.exists("config/rclone.conf") else []),
             "copy",
             path,
             f"{self.url}:{remote_path}",
