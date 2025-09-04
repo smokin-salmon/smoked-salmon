@@ -34,9 +34,9 @@ def _check_log(path):
     try:
         check_log_cambia(path, os.path.dirname(path))
     except Exception as e:
-        if "Edited logs!" in str(e):
+        if "Edited logs" in str(e):
             click.secho("Error: Edited logs detected!", fg="red", bold=True)
-        elif "CRC Mismatch!" in str(e):
+        elif "CRC Mismatch" in str(e):
             click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
         else:
             click.secho(f"Error checking log: {e}", fg="red")
