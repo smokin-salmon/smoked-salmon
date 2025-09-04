@@ -53,12 +53,22 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
     winget install -e Gyan.FFmpeg ChrisBagwell.SoX Xiph.FLAC LAME.LAME ring0.MP3val.WF
     ```
 
-2. Install uv:
+2. Fix sox Unicode filename handling issue on Windows:
+    ```powershell
+    $soxDir = $((Get-Command sox).Source | Split-Path)
+    $zipPath = Join-Path -Path $soxDir -ChildPath "sox_windows_fix.zip"
+    Invoke-WebRequest -Uri "https://raw.githubusercontent.com/DevYukine/red_oxide/master/.github/dependency-fixes/sox_windows_fix.zip" -OutFile $zipPath
+    Expand-Archive -Path $zipPath -DestinationPath $soxDir -Force
+    regedit "$soxDir\PreferExternalManifest.reg"
+    Remove-Item $zipPath
+    ```
+
+3. Install uv:
     ```powershell
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
     ```
 
-3. Install smoked-salmon package from github:
+4. Install smoked-salmon package from github:
 	```powershell
 	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
 	```
