@@ -23,7 +23,7 @@ class Uploader:
     def upload_folder(self, remote_folder, path, type):
         raise NotImplementedError
 
-    def add_to_downloader(self, remote_folder, path, type, label):
+    def add_to_downloader(self, remote_folder, path, type, label, add_paused):
         raise NotImplementedError
 
 
@@ -92,7 +92,7 @@ class RcloneUploader(Uploader):
         else:
             click.secho(f"Rclone upload failed with exit code {result.returncode}", fg="red")
 
-    def add_to_downloader(self, remote_folder, path, type, label):
+    def add_to_downloader(self, remote_folder, path, type, label, add_paused):
         click.secho(f"Adding torrent to client: {os.path.basename(path)}", fg="cyan")
         with open(path, "rb") as file:
             torrent = file.read()
@@ -109,7 +109,7 @@ class RcloneUploader(Uploader):
                 shell_path = posixpath.join(path_override.removeprefix("@"), remote_folder.removeprefix("/"))
 
         try:
-            self.client.add_to_downloader(shell_path, torrent, is_paused=False, label=label)
+            self.client.add_to_downloader(shell_path, torrent, is_paused=add_paused, label=label)
             click.secho("Torrent added to client successfully", fg="green")
         except Exception as e:
             click.secho(f"Failed to add torrent to client: {e}", fg="red")
@@ -120,14 +120,14 @@ class LocalUploader(Uploader):
         click.secho("Skipping upload for local mode (no transfer needed)", fg="yellow")
         return
 
-    def add_to_downloader(self, remote_folder, path, type, label):
+    def add_to_downloader(self, remote_folder, path, type, label, add_paused):
         click.secho(f"Adding torrent to local client: {os.path.basename(path)}", fg="cyan")
         with open(path, "rb") as file:
             torrent = file.read()
 
         try:
             download_path = remote_folder if remote_folder else os.path.abspath(cfg.directory.download_directory)
-            self.client.add_to_downloader(download_path, torrent, is_paused=False, label=label)
+            self.client.add_to_downloader(download_path, torrent, is_paused=add_paused, label=label)
             click.secho("Torrent added to local client successfully", fg="green")
         except Exception as e:
             click.secho(f"Failed to add torrent to local client: {e}", fg="red")
@@ -166,17 +166,19 @@ class UploadManager:
                         "directory": seedbox.directory,
                         "flac_only": seedbox.flac_only,
                         "label": seedbox.label,
+                        "add_paused": seedbox.add_paused,
                     }
                 )
                 click.secho(f"Configured {seedbox.type} uploader to {seedbox.url}", fg="yellow")
             except Exception as e:
                 click.secho(f"Failed to configure {seedbox.type} uploader: {e}", fg="red")
 
-    def add_upload_task(self, directory, task_type, is_flac=True):
+    def add_upload_task(self, directory, task_type, is_flac):
         click.secho(f"Preparing upload tasks for: {directory}", fg="cyan")
         for uploader_info in self.uploaders:
             remote_directory = uploader_info.get("directory")
             label = uploader_info.get("label")
+            add_paused = uploader_info.get("add_paused")
 
             current_task = (
                 uploader_info["uploader"],
@@ -184,6 +186,7 @@ class UploadManager:
                 directory,
                 task_type,
                 label,
+                add_paused,
             )
 
             if (current_task not in self.tasks) and (is_flac or (not uploader_info["flac_only"])):
@@ -203,7 +206,7 @@ class UploadManager:
 
         click.secho(f"Executing {len(self.tasks)} upload tasks", fg="cyan")
         for i, task in enumerate(self.tasks, 1):
-            uploader, remote_directory, local_directory, task_type, label = task
+            uploader, remote_directory, local_directory, task_type, label, add_paused = task
             try:
                 click.secho(
                     f"\nTask {i}/{len(self.tasks)}: {task_type.upper()} - {os.path.basename(local_directory)}",
@@ -212,7 +215,7 @@ class UploadManager:
                 if task_type == "folder":
                     uploader.upload_folder(remote_directory, local_directory, task_type)
                 elif task_type == "seed":
-                    uploader.add_to_downloader(remote_directory, local_directory, task_type, label)
+                    uploader.add_to_downloader(remote_directory, local_directory, task_type, label, add_paused)
             except Exception as e:
                 click.secho(f"Critical error during task: {e}", fg="red")
 

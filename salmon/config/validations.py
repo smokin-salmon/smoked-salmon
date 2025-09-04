@@ -101,6 +101,7 @@ class Seedbox(BaseStruct):
     extra_args: list[str] = msgspec.field(default_factory=list)  # pass these arguments to rclone
     torrent_client: str = ""
     label: str = ""  # Label to apply to torrents in download client
+    add_paused: bool = False  # If true, add torrents to client in paused state
 
     def __post_init__(self):
         if self.type not in ("local", "rclone", "webdav"):

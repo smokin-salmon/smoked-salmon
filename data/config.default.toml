@@ -101,16 +101,18 @@ session = 'get-from-site-cookie'
 # enabled = true
 # url = "nas" # Name of remote in rclone
 # type = "local" # "local" or "rclone"
-# directory = "" # Directory when adding torrent to download client
 # flac_only = false # if true, only upload FLAC files
 # extra_args = [ "--checksum", "-P", "--sftp-path-override", "@/volume3" ] # pass these arguments to rclone
-# label = "smoked-salmon" # Label to apply to torrents in download client
 
 # # transmission+http://username:password@127.0.0.1:9091
 # # rutorrent+http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php
 # # deluge://username:password@127.0.0.1:58664
 # # qbittorrent+http://username:password@127.0.0.1:8080
 # torrent_client = ""
+# directory = "" # Directory when adding torrent to download client
+# label = "smoked-salmon" # Label to apply to torrents in download client
+# add_paused = false # If true, add torrents to client in paused state
+
 
 # ===============================
 # UPLOADING & PROCESSING SETTINGS
