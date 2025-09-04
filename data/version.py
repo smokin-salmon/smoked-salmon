@@ -1,3 +1,69 @@
+__version__ = "0.9.7.3"
+
+"""
+Changelog for version 0.9.7.3 (2025-09-04):
+
+### ⚙ New Options
+
+#### Default Editor Configuration
+New configuration option for setting your preferred text editor:
+```toml
+[upload]
+default_editor = "nano"  # Can be set to "vim", "emacs", or any editor in PATH
+```
+
+#### Enhanced Seedbox Configuration
+New seedbox configuration options for better torrent client control:
+```toml
+[[seedbox]]
+directory = "/downloads"  # Now overrides the directory provided to torrent client
+add_paused = true  # Add torrents in paused state
+```
+- **`add_paused`**: Control whether torrents are added in paused or active state
+- **Enhanced `directory`**: Now overrides the download path provided to the torrent client, useful when the torrent client has its own path mapping configuration
+
+#### Integrity check is now performed by default (like log check and MQA check)
+- Use `--skip-integrity-check` flag to skip the integrity verification of audio files
+
+### 📝 Notes for Windows Users
+
+SoX on Windows currently has issues with UTF-8 file paths. If you need UTF-8 path support, you can fix this using the following PowerShell commands. This fix is provided by [DevYukine](https://github.com/DevYukine) - many thanks to him!
+
+```powershell
+$soxDir = $((Get-Command sox).Source | Split-Path)
+$zipPath = Join-Path -Path $soxDir -ChildPath "sox_windows_fix.zip"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/DevYukine/red_oxide/master/.github/dependency-fixes/sox_windows_fix.zip" -OutFile $zipPath
+Expand-Archive -Path $zipPath -DestinationPath $soxDir -Force
+regedit "$soxDir\PreferExternalManifest.reg"
+Remove-Item $zipPath
+```
+
+Enjoy SoX working with UTF-8 paths! 🎉
+
+### 🔍 Metadata Sources and Connection Testing
+
+Added **metadata sources and seedbox connection testing**:
+- Use `checkconf -m` to test metadata source connections (Discogs, Tidal, Qobuz)
+- Use `checkconf -s` to test seedbox connections
+
+### 🐛 Various Fixes and Improvements
+
+- **Transcoding Path Names**: Fixed bug where MP3 transcoding output folders would add [320] or [V0] separately - now the output folder name follows the **FOLDER_TEMPLATE** configuration
+- **Range Rip CRC Calculation**: Added **CRC calculation for range rip logs** - automatically detects range rip type log files and calculates CRC by concatenating individual track files
+- **Upload Fix**: Fixed site_page_upload failure when uploading to existing group when only `session` is specified without `api_key`
+
+## What's Changed
+* Updates the transcoding path name generation logic to follow the FOLDER_TEMPLATE by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/162
+* Allow direct selection from recent upload results by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/163
+* Add an option in the configuration file for a default editor by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/164
+* Improve path handling logic in LocalUploader by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/165
+* Add metadata sources and seedbox connection testing by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/166
+* Add CRC calculation for range rip logs and various fixes by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/169
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7.2...0.9.7.3
+"""
+
 __version__ = "0.9.7.2"
 
 """
