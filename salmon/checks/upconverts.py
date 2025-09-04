@@ -65,7 +65,7 @@ def check_upconvert(filepath):
         return None, None, bitdepth, "This is a 16bit FLAC file."
 
     with open(os.devnull, "w") as devnull:
-        response = subprocess.check_output(["flac", "-ac", filepath], stderr=devnull).decode("utf-8")
+        response = subprocess.check_output(["flac", "-ac", filepath], stderr=devnull, text=True)
 
     wasted_bits_list = []
     for line in response.split("\n"):
