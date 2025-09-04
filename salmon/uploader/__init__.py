@@ -292,7 +292,24 @@ def upload(
                     if f.lower().endswith(".log"):
                         filepath = os.path.join(root, f)
                         click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
-                        check_log_cambia(filepath, path)
+                        try:
+                            check_log_cambia(filepath, path)
+                        except Exception as e:
+                            if "Edited logs" in str(e):
+                                raise click.Abort() from e
+                            elif "CRC Mismatch" in str(e):
+                                click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+                                if not click.confirm(
+                                    click.style(
+                                        "Log file CRC does not match audio files. "
+                                        "Do you want to continue upload anyway?",
+                                        fg="magenta",
+                                    ),
+                                    default=False,
+                                ):
+                                    raise click.Abort() from e
+                            else:
+                                click.secho(f"Error checking log: {e}", fg="red")
 
         if group_id is None:
             searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])

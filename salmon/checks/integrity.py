@@ -91,9 +91,9 @@ def check_integrity(path, _=None):
 
 def _check_flac_integrity(path):
     try:
-        result = subprocess.check_output(["flac", "-wt", path], stderr=subprocess.STDOUT)
+        result = subprocess.check_output(["flac", "-wt", path], stderr=subprocess.STDOUT, text=True)
         important_lines = []
-        for line in result.decode("utf-8").split("\n"):
+        for line in result.split("\n"):
             for important_lines_re in FLAC_IMPORTANT_REGEXES:
                 if important_lines_re.match(line):
                     important_lines.append(line)
@@ -104,9 +104,9 @@ def _check_flac_integrity(path):
 
 def _check_mp3_integrity(path):
     try:
-        result = subprocess.check_output(["mp3val", path])
+        result = subprocess.check_output(["mp3val", path], text=True)
         important_lines = []
-        for line in result.decode("utf-8").split("\n"):
+        for line in result.split("\n"):
             for important_lines_re in MP3_IMPORTANT_REGEXES:
                 if important_lines_re.match(line):
                     important_lines.append(line)

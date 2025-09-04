@@ -340,7 +340,10 @@ class BaseGazelleApi:
     async def site_page_upload(self, data, files):
         """Attempt to upload a torrent to the site.
         using the upload.php"""
-        url = self.base_url + "/upload.php"
+        if "groupid" in data:
+            url = self.base_url + f"/upload.php?groupid={data['groupid']}"
+        else:
+            url = self.base_url + "/upload.php"
         data["auth"] = self.authkey
         resp = await loop.run_in_executor(
             None,
