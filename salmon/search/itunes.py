@@ -9,7 +9,7 @@ class Searcher(iTunesBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
         releases = {}
         resp = await self.get_json(
-            "/search",
+            self.search_url,
             params={
                 "media": "music",
                 "entity": "album",

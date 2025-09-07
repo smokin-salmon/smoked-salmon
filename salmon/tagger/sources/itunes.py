@@ -1,8 +1,6 @@
 import re
 from collections import defaultdict
 
-import msgspec
-
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError
 from salmon.sources import iTunesBase
@@ -17,203 +15,203 @@ ALIAS_GENRE = {
 
 class Scraper(iTunesBase, MetadataMixin):
     def parse_release_title(self, soup):
+        """Parse release title from amp-api album attributes."""
         try:
-            title = soup.find("meta", {"name": "apple:title"})["content"].strip()
+            title = soup["album"].get("name", "").strip()
+            if not title:
+                raise ScrapeError("No album name found in Apple Music API response")
             return RE_FEAT.sub("", title)
-        except (TypeError, IndexError) as e:
-            raise ScrapeError("Failed to parse scraped title.") from e
+        except (TypeError, KeyError) as e:
+            raise ScrapeError("Failed to parse release title from Apple Music API") from e
 
     def parse_cover_url(self, soup):
+        """Parse cover URL from amp-api album artwork.
+
+        The artwork URL template uses ``{w}x{h}bb.jpg``; we substitute a high
+        resolution size so the scraper returns a full-quality image.
+        """
         try:
-            # Just choosing the last artwork url here.
-            return soup.find("meta", {"property": "og:image"})["content"].strip()
-        except (TypeError, IndexError) as e:
-            raise ScrapeError("Could not parse cover URL.") from e
+            artwork = soup["album"].get("artwork", {}) or {}
+            url_template = artwork.get("url", "")
+            if not url_template:
+                return None
+            return url_template.replace("{w}x{h}", "5000x5000")
+        except (TypeError, KeyError) as e:
+            raise ScrapeError("Could not parse cover URL from Apple Music API") from e
 
     def parse_genres(self, soup):
+        """Parse genres from amp-api album genreNames list."""
         try:
-            info = msgspec.json.decode(soup.find("script", {"id": "schema:music-album"}).text)
-            genres = {g for gs in info["genre"] for g in ALIAS_GENRE.get(gs, [gs])}
-            # either replace with alias (which can be more than one tag) or return untouched.
+            genre_names = soup["album"].get("genreNames") or []
+            genres: set[str] = set()
+            for genre in genre_names:
+                if not genre:
+                    continue
+                aliased = ALIAS_GENRE.get(genre)
+                if aliased is not None:
+                    genres.update(aliased)
+                else:
+                    genres.add(genre)
             return genres
-        except (TypeError, IndexError) as e:
-            raise ScrapeError("Could not parse genres.") from e
+        except (TypeError, KeyError) as e:
+            raise ScrapeError("Could not parse genres from Apple Music API") from e
 
     def parse_release_year(self, soup):
+        """Parse release year from amp-api album releaseDate."""
         try:
-            date = self.parse_release_date(soup)
-            match = re.search(r"(\d{4})", date) if date else None
-            if not match:
-                raise ScrapeError("Could not parse release year.")
-            return int(match[1])
-        except TypeError as e:
-            raise ScrapeError("Could not parse release year.") from e
+            release_date = soup["album"].get("releaseDate", "")
+            if release_date:
+                year_match = re.search(r"(\d{4})", release_date)
+                if year_match:
+                    return int(year_match.group(1))
+            raise ScrapeError("No valid release date found in Apple Music API response")
+        except (TypeError, ValueError) as e:
+            raise ScrapeError("Could not parse release year from Apple Music API") from e
 
     def parse_release_type(self, soup):
+        """Parse release type from amp-api album attributes.
+
+        amp-api exposes ``isSingle`` and ``isCompilation`` boolean flags, and
+        the ``name`` field may contain EP/Single suffixes.
+        """
         try:
-            title = soup.find("meta", {"name": "apple:title"})["content"].strip()
-            if re.match(r".*\sEP$", title, re.IGNORECASE):
+            attrs = soup["album"]
+            name = attrs.get("name", "").strip()
+            track_count = attrs.get("trackCount", 0) or 0
+
+            if re.search(r"\bE\.?P\.?\b", name, re.IGNORECASE):
                 return "EP"
-            if re.match(r".*\sSingle$", title, re.IGNORECASE):
+            if re.search(r"-? *Single$", name, re.IGNORECASE):
                 return "Single"
+
+            if attrs.get("isSingle"):
+                return "Single"
+            if attrs.get("isCompilation"):
+                return "Compilation"
+
+            if track_count == 1:
+                return "Single"
+            if track_count <= 6:
+                return "EP"
             return "Album"
-        except TypeError as e:
-            raise ScrapeError("Could not parse release type.") from e
+        except (TypeError, KeyError) as e:
+            raise ScrapeError("Could not parse release type from Apple Music API") from e
 
     def parse_release_date(self, soup):
-        # This can't be enough. Can it?
+        """Parse full release date (YYYY-MM-DD) from amp-api album attributes."""
         try:
-            date_string = soup.find(attrs={"property": "music:release_date"})["content"].split("T")[0]
-            return date_string
-        except BaseException:
+            release_date = soup["album"].get("releaseDate", "")
+            if release_date:
+                return release_date.split("T")[0]
+            return None
+        except (TypeError, KeyError):
             return None
 
     def parse_release_label(self, soup):
+        """Parse record label from amp-api album attributes."""
         try:
-            msgspec.json.decode(soup.find("script", {"id": "serialized-server-data"}).text)
-            copyright = soup.find("p", {"data-testid": "tracklist-footer-description"}).text
-            return parse_copyright(copyright)
-        except IndexError as e:
-            raise ScrapeError("Could not parse record label.") from e
+            attrs = soup["album"]
+            # amp-api returns recordLabel directly
+            label = attrs.get("recordLabel", "")
+            if label:
+                return label
+            # Fall back to copyright string parsing
+            copyright_text = attrs.get("copyright", "")
+            if copyright_text:
+                return parse_copyright(copyright_text)
+            return attrs.get("artistName", "Unknown")
+        except (TypeError, KeyError) as e:
+            raise ScrapeError("Could not parse record label from Apple Music API") from e
 
-    def parse_comment(self, soup):
+    def parse_upc(self, soup):
+        """Parse UPC from amp-api album attributes."""
         try:
-            return soup.select(".product-hero-desc .product-hero-desc__section > p")[0]["aria-label"].strip()
-        except IndexError:
+            return soup["album"].get("upc") or None
+        except (TypeError, KeyError):
             return None
 
-    async def parse_tracks(self, soup):
-        tracks = defaultdict(dict)
-        cur_disc = 1
+    def parse_comment(self, soup):
+        """amp-api does not provide editorial notes in the catalog endpoint."""
+        return None
 
-        # Find and parse JSON data from <script> tag
-        script_tag = soup.find("script", {"type": "application/ld+json"})
-        if not script_tag:
-            raise ScrapeError("JSON-LD script not found. Scraping needs to be updated")
+    async def parse_tracks(self, soup):
+        """Parse tracks from amp-api relationships.tracks.data list.
+
+        Each entry in ``soup["tracks"]`` is a catalog song object with an
+        ``attributes`` dict containing name, artistName, trackNumber,
+        discNumber, isrc, etc.
+        """
+        tracks: dict[str, dict] = defaultdict(dict)
 
         try:
-            data = msgspec.json.decode(script_tag.string)
-        except msgspec.DecodeError as e:
-            raise ScrapeError("Failed to decode JSON data.") from e
+            track_list = soup.get("tracks", [])
+            if not track_list:
+                raise ScrapeError("No tracks found in Apple Music API response")
 
-        if "tracks" not in data:
-            raise ScrapeError("Tracks data not found in JSON.")
+            for item in track_list:
+                # Skip music-video or other non-song entries
+                if item.get("type") not in ("songs", None):
+                    continue
 
-        for index, track in enumerate(data["tracks"], start=1):
-            try:
-                num = index
-                raw_title = track.get("name", "").strip()
+                attrs = item.get("attributes", {}) or {}
+                track_num = attrs.get("trackNumber", 0) or 0
+                disc_num = attrs.get("discNumber", 1) or 1
+
+                if track_num <= 0:
+                    continue
+
+                raw_title = attrs.get("name", "").strip()
                 title = RE_FEAT.sub("", raw_title)
 
-                # TODO: handle explicit + discnumber + artists (if available, will have to modify num too)
-                # explicit = track.get("isExplicit", False)
+                artists: list[tuple[str, str]] = []
+                artist_name = attrs.get("artistName", "")
+                if artist_name:
+                    artists.append((artist_name, "main"))
 
-                # Increment disc number if necessary
-                # if int(num) == 1 and num in tracks[str(cur_disc)]:
-                #    cur_disc += 1
+                # Extract featured artists embedded in track title
+                feat_match = RE_FEAT.search(raw_title)
+                if feat_match:
+                    for guest in _parse_guest_artists(feat_match.group(1)):
+                        if (guest, "guest") not in artists:
+                            artists.append((guest, "guest"))
 
-                tracks[str(cur_disc)][num] = self.generate_track(
-                    trackno=num,
-                    discno=cur_disc,
-                    artists=[],
-                    # artists=parse_artists(soup, track, raw_title),
+                tracks[str(disc_num)][track_num] = self.generate_track(
+                    trackno=track_num,
+                    discno=disc_num,
+                    artists=artists,
                     title=title,
-                    # explicit=explicit,
+                    isrc=attrs.get("isrc"),
+                    explicit=attrs.get("contentRating") == "explicit",
                 )
-            except (ValueError, KeyError) as e:
-                raise ScrapeError("Could not parse tracks.") from e
 
-        return dict(tracks)
+            if not tracks:
+                raise ScrapeError("No valid song tracks found in Apple Music API response")
+
+            return dict(tracks)
+
+        except (TypeError, KeyError, ValueError) as e:
+            raise ScrapeError("Could not parse tracks from Apple Music API") from e
 
 
-def parse_artists(soup, track, title):
+def _parse_guest_artists(artist_string: str) -> list[str]:
+    """Parse guest artists from a feature string.
+
+    Args:
+        artist_string: Raw featured artist string, e.g. "Artist A & Artist B".
+
+    Returns:
+        Deduplicated list of artist name strings.
     """
-    Parse all the artists from various locations and compile a split
-    list of all of them.  This is not foolproof, but better than the
-    alternative. Artists such as Vintage & Morelli will fuck this up,
-    but that is why we have manual confirmation for metadata.
-    """
-    header_artists = parse_artists_header(soup)
-    track_artists = parse_artists_track(track)
-    title_artists = parse_artists_title(title)
-    return reconcile_artists(header_artists, track_artists, title_artists)
+    separators = [" & ", " and ", ", ", " feat. ", " ft. ", " featuring "]
+    normalized = artist_string
+    for sep in separators:
+        normalized = normalized.replace(sep, " | ")
 
-
-def parse_artists_header(soup):
-    """Parse the artists listed in the header as artists of the release."""
-    artists = []
-    try:
-        release_artists = soup.select(".product-creator")[0].a.string.strip()
-    except (TypeError, IndexError):
-        return artists
-
-    if re.match(r"[^,]+, [^&]+ (& [^&]+)+", release_artists):
-        first_artist, rest = release_artists.split(",", 1)
-        artists.append(first_artist)
-        for a in rest.split("&"):
-            a = a.strip()
-            if a not in artists:
-                artists.append(a)
-    elif "&" in release_artists:
-        for a in release_artists.split("&"):
-            a = a.strip()
-            if a not in artists:
-                artists.append(a)
-    else:
-        artists.append(release_artists.strip())
-    return artists
-
-
-def parse_artists_track(track):
-    """Parse the artists listed per-track, below the track title."""
-    track_block = track.select(".by-line.typography-caption")
-    if len(track_block) == 1:
-        biline = track_block[0].text.strip().replace("\n", ", ")
-        if biline[0:3] == "By ":
-            return _parse_artists_commas(biline[2:])
-        else:
-            return _parse_artists_commas(biline)
-    return []
-
-
-def parse_artists_title(title):
-    """Parse the guest artists from the track title."""
-    feat = RE_FEAT.search(title)
-    if feat:
-        return _parse_artists_commas(feat[1])
-    return set()
-
-
-def _parse_artists_commas(artiststr):
-    """
-    Parse the artist names when they begin with commas and end with one
-    ampersand. Split and strip them.
-    """
-    artists = []
-    res = re.match(r"([^,]+)((?:, [^,&]+)+) & (.+)$", artiststr)
-    if res:
-        artists = [res[1].strip()] + [r.strip() for r in res[2].split(",") if r.strip()]
-        for a in artists:
-            if a not in artists:
-                artists.append(a)
-        artists.append(res[3].strip())
-    elif "&" in artiststr:
-        for a in artiststr.split("&"):
-            a = a.strip()
-            if a not in artists:
-                artists.append(a)
-    else:
-        artists.append(artiststr.strip())
-    return artists
-
-
-def reconcile_artists(headers, tracks, titles):
-    """De-duplicate the scraped artists and return a completed list."""
-    artists = []
-    for artist in tracks if tracks else headers:
-        if (artist, "main") not in artists:
-            artists.append((artist, "main"))
-    for artist in titles:
-        if (artist, "guest") not in artists:
-            artists.append((artist, "guest"))
-    return artists
+    seen: set[str] = set()
+    result: list[str] = []
+    for artist in normalized.split(" | "):
+        artist = artist.strip()
+        if artist and artist not in seen:
+            seen.add(artist)
+            result.append(artist)
+    return result

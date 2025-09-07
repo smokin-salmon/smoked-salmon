@@ -59,7 +59,9 @@ class BaseScraper:
         """Make async GET request to JSON API.
 
         Args:
-            url: The URL path to request.
+            url: Full URL or a path that will be appended to ``self.url``.
+                 If the value starts with ``http://`` or ``https://`` it is
+                 used as-is; otherwise ``self.url`` is prepended.
             params: Optional query parameters.
             headers: Optional HTTP headers.
 
@@ -71,11 +73,12 @@ class BaseScraper:
         """
         params = {**(params or {}), **(self.get_params or {})}
         headers = {**(headers or {}), **HEADERS}
+        full_url = url if url.startswith(("http://", "https://")) else self.url + url
         timeout = aiohttp.ClientTimeout(total=10)
         try:
             async with (
                 aiohttp.ClientSession(timeout=timeout) as session,
-                session.get(self.url + url, params=params, headers=headers) as resp,
+                session.get(full_url, params=params, headers=headers) as resp,
             ):
                 if resp.status != 200:
                     class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
@@ -85,7 +88,7 @@ class BaseScraper:
                     except Exception:
                         error_data = None
                     raise ScrapeError(error_msg, error_data)
-                return await resp.json(loads=msgspec.json.decode)
+                return msgspec.json.decode(await resp.read())
         except aiohttp.ContentTypeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
         except msgspec.DecodeError as e:

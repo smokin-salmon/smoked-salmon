@@ -105,7 +105,7 @@ async def tag(path: str, source: str, encoding: str | None, overwrite: bool, aut
     tag_files(path, tags, metadata, auto_rename)
 
     await download_cover_if_nonexistent(path, metadata["cover"])
-    tags = check_tags(path)
+    tags = await check_tags(path)
     path = rename_folder(path, metadata, auto_rename)
     rename_files(path, tags, metadata, auto_rename, None)
     await check_folder_structure(path, scene=False)
