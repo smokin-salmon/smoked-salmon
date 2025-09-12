@@ -58,12 +58,13 @@ def rename_folder(path, metadata, auto_rename, check=True):
     if not os.path.exists(new_path_dirname):
         os.makedirs(new_path_dirname)
 
+    # Check if hardlinks can be used
+    same_volume = os.stat(path).st_dev == os.stat(cfg.directory.download_directory).st_dev
+    use_hardlinks = same_volume and cfg.directory.hardlinks
+
     if os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path):
         click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
     else:
-        # Check if hardlinks can be used
-        same_volume = os.stat(path).st_dev == os.stat(cfg.directory.download_directory).st_dev
-        use_hardlinks = same_volume and cfg.directory.hardlinks
         if use_hardlinks:
             try:
                 shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
