@@ -159,7 +159,8 @@ class RuTorrentClient(TorrentClient):
     def login(self):
         try:
             rt_client = xmlrpc.client.Server(self.url)
-            # TODO: Test connection
+            version = rt_client.system.client_version()
+            click.secho(f"Successfully connected to ruTorrent, version: {version}", fg="green")
             return rt_client
         except Exception as e:
             click.secho(f"Connect to ruTorrent failed: {e}", fg="red", bold=True)
@@ -217,10 +218,8 @@ class TorrentClientGenerator:
             kwargs["password"] = password
 
         client = scheme[0]
-        if client in ["qbittorrent"]:
+        if client in ["qbittorrent", "rutorrent"]:
             kwargs["url"] = f"{scheme[1]}://{netloc}{parsed.path}"
-        elif client in ["rutorrent"]:
-            kwargs["url"] = netloc
         else:
             kwargs["scheme"] = scheme[1]
             kwargs["host"], kwargs["port"] = netloc.split(":")
