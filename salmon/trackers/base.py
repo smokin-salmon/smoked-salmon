@@ -366,8 +366,8 @@ class BaseGazelleApi:
             except (TypeError, ValueError) as err:
                 soup = BeautifulSoup(resp.text, "html.parser")
                 error = soup.find("h2", text="Error")
-                if error:
-                    error_message = error.parent.parent.find("p").text
+                p_tag = error.parent.parent.find("p") if error else None
+                error_message = p_tag.text if p_tag else resp.text
                 raise RequestError(f"Request fill failed: {error_message}") from err
         try:
             return self.parse_most_recent_torrent_and_group_id_from_group_page(resp.text)
