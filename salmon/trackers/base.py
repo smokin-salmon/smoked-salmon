@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlparse
 import click
 import requests
 from bs4 import BeautifulSoup
-from ratelimit import limits, sleep_and_retry
+from ratelimit import RateLimitException, limits, sleep_and_retry
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
 from salmon import cfg
@@ -117,7 +117,7 @@ class BaseGazelleApi:
                 click.secho("Response Text: ", fg="cyan", nl=False)
                 click.secho(resp.text, fg="green")
 
-            resp = resp.json()
+            resp_json = resp.json()
         except JSONDecodeError as err:
             raise LoginError from err
         except (ConnectTimeout, ReadTimeout):
@@ -127,9 +127,15 @@ class BaseGazelleApi:
             )
             raise click.Abort() from None
 
-        if resp["status"] != "success":
-            raise RequestFailedError(resp["error"])
-        return resp["response"]
+        if resp_json["status"] != "success":
+            if "rate limit" in resp_json["error"].lower():
+                retry_after = float(resp.headers.get("Retry-After", "20"))
+                click.secho(f"Rate limit exceeded, waiting {retry_after} seconds before retry...", fg="yellow")
+                # Raise RateLimitException to trigger the @sleep_and_retry decorator
+                raise RateLimitException("Rate limit exceeded", period_remaining=retry_after)
+            else:
+                raise RequestFailedError(resp_json["error"])
+        return resp_json["response"]
 
     async def torrentgroup(self, group_id):
         """Get information about a torrent group."""
