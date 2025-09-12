@@ -474,6 +474,8 @@ def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spe
 
 def make_spectral_bbcode(spectral_ids, spectral_urls):
     "Generates the bbcode for spectrals in descriptions and reports."
+    if not spectral_urls:
+        return ""
     bbcode = "[hide=Spectrals]"
     for spec_id, urls in spectral_urls.items():
         filename = re.sub(r"[\[\]]", "_", spectral_ids[spec_id])
