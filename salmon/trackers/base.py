@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlparse
 import click
 import requests
 from bs4 import BeautifulSoup
-from ratelimit import limits, sleep_and_retry
+from ratelimit import RateLimitException, limits, sleep_and_retry
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
 from salmon import cfg
@@ -117,7 +117,7 @@ class BaseGazelleApi:
                 click.secho("Response Text: ", fg="cyan", nl=False)
                 click.secho(resp.text, fg="green")
 
-            resp = resp.json()
+            resp_json = resp.json()
         except JSONDecodeError as err:
             raise LoginError from err
         except (ConnectTimeout, ReadTimeout):
@@ -127,9 +127,15 @@ class BaseGazelleApi:
             )
             raise click.Abort() from None
 
-        if resp["status"] != "success":
-            raise RequestFailedError(resp["error"])
-        return resp["response"]
+        if resp_json["status"] != "success":
+            if "rate limit" in resp_json["error"].lower():
+                retry_after = float(resp.headers.get("Retry-After", "20"))
+                click.secho(f"Rate limit exceeded, waiting {retry_after} seconds before retry...", fg="yellow")
+                # Raise RateLimitException to trigger the @sleep_and_retry decorator
+                raise RateLimitException("Rate limit exceeded", period_remaining=retry_after)
+            else:
+                raise RequestFailedError(resp_json["error"])
+        return resp_json["response"]
 
     async def torrentgroup(self, group_id):
         """Get information about a torrent group."""
@@ -366,8 +372,8 @@ class BaseGazelleApi:
             except (TypeError, ValueError) as err:
                 soup = BeautifulSoup(resp.text, "html.parser")
                 error = soup.find("h2", text="Error")
-                if error:
-                    error_message = error.parent.parent.find("p").text
+                p_tag = error.parent.parent.find("p") if error else None
+                error_message = p_tag.text if p_tag else resp.text
                 raise RequestError(f"Request fill failed: {error_message}") from err
         try:
             return self.parse_most_recent_torrent_and_group_id_from_group_page(resp.text)

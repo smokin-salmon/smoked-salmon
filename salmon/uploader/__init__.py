@@ -439,6 +439,8 @@ def upload(
             source=source,
         )
 
+        request_id = None
+
         torrent_content.comment = url
         torrent_content.write(torrent_path, overwrite=True)
 
@@ -475,7 +477,6 @@ def upload(
                 )
 
         tracker = None
-        request_id = None
         if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
             click.secho("\nDone uploading this release.", fg="green")
             break
