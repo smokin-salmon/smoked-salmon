@@ -3,6 +3,7 @@
 # flake8: noqa
 
 import os
+import readline
 import shutil
 
 import click
@@ -43,7 +44,7 @@ def main():
         click.secho(f"There was an error: {e}", fg="red", bold=True)
     except LoginError:
         click.secho(
-            f"Failed to log in. Is your session cookie up to date? Run the checkconf command to diagnose.", fg="red"
+            "Failed to log in. Is your session cookie up to date? Run the checkconf command to diagnose.", fg="red"
         )
     except ImportError as e:
         click.secho(f"You are missing required dependencies: {e}", fg="red")
