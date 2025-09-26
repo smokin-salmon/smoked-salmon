@@ -1,3 +1,24 @@
+__version__ = "0.9.7.4"
+
+"""
+Changelog for version 0.9.7.4 (2025-09-26):
+
+## What's Changed
+* Add support for Python 3.12+ and use dependabot for dependency updates by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/172
+* Fix ruTorrent connection URL parsing and add connection test by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/173
+* Fix multiple issues that cause program crashes by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/174
+* Fix spectral folder rename crash and arrow keys in docker by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/176
+* Bump ruff from 0.13.0 to 0.13.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/179
+* Bump click from 8.2.1 to 8.3.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/178
+* Bump pyperclip from 1.9.0 to 1.10.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/177
+* Decode username and password when parsing torrent client credentials by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/181
+
+## New Contributors
+* @dependabot[bot] made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/179
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7.3...0.9.7.4
+"""
+
 __version__ = "0.9.7.3"
 
 """
