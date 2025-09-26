@@ -1,7 +1,7 @@
 import base64
 import os
 import xmlrpc.client
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 import click
 import qbittorrentapi
@@ -214,8 +214,8 @@ class TorrentClientGenerator:
         if "@" in netloc:
             auth, netloc = netloc.rsplit("@", 1)
             username, password = auth.split(":", 1)
-            kwargs["username"] = username
-            kwargs["password"] = password
+            kwargs["username"] = unquote(username)
+            kwargs["password"] = unquote(password)
 
         client = scheme[0]
         if client in ["qbittorrent", "rutorrent"]:
