@@ -27,7 +27,7 @@ class SearchMixin(ABC):
         country_code=None,
         explicit=False,
         clean=False,
-        additional_info=None
+        additional_info=None,
     ):
         """
         Take the attributes of a search result and format them into a
@@ -52,5 +52,5 @@ class SearchMixin(ABC):
         # Add any additional information that might be helpful to identify the release
         if additional_info:
             result += f" {additional_info}"
-        
+
         return result
