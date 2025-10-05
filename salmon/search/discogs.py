@@ -1,4 +1,5 @@
 import re
+import click
 
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import DiscogsBase
@@ -29,9 +30,13 @@ class Searcher(DiscogsBase, SearchMixin):
             else:
                 edition += " Not On Label"
 
+            # Check if the release is in the user's discogs collection and add a hint if so
+            release_in_user_collection = rls["user_data"]["in_collection"]
+            collection_text = " " + click.style("IN COLLECTION", bg="red", bold=True) if release_in_user_collection else None
+                
             releases[rls["id"]] = (
                 IdentData(artists, title, year, None, source),
-                self.format_result(artists, title, edition, ed_title=ed_title),
+                self.format_result(artists, title, edition, ed_title=ed_title, additional_info=collection_text),
             )
             if len(releases) == limit:
                 break
