@@ -221,7 +221,7 @@ class TorrentClientGenerator:
         if client in ["qbittorrent", "rutorrent"]:
             kwargs["url"] = f"{scheme[1]}://{netloc}{parsed.path}"
         else:
-            kwargs["scheme"] = scheme[1]
+            kwargs["scheme"] = scheme[-1]  # Use last element of scheme to support deluge and transmission
             kwargs["host"], kwargs["port"] = netloc.split(":")
             kwargs["port"] = int(kwargs["port"])
 
