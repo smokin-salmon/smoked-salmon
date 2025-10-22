@@ -28,7 +28,7 @@ dottorrents_dir = '.torrents'
 # ===============================
 # IMAGE UPLOAD SETTINGS
 # ===============================
-# Image hosters: ptpimg, ptscreens, oeimg, catbox, emp (not tested recently)
+# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, emp (not tested recently)
 [image]
 image_uploader = "ptpimg"
 cover_uploader = "ptpimg"
@@ -40,6 +40,8 @@ ptpimg_key = 'api_key'
 ptscreens_key = 'api_key'
 # oeimg API key (log into imgoe, settings, API)
 oeimg_key = 'api_key'
+# imgbb API key (log into imgbb, about, API)
+imgbb_key = 'api_key'
 
 # Set to true to remove downloaded cover images that are created in source folder, when one does not exist
 # remove_auto_downloaded_cover_image = false
