@@ -24,7 +24,7 @@ class Directory(BaseStruct):
             raise ValueError("tmp_dir is not a valid directory")
 
 
-ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "emp"]
+ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "emp", "imgbb"]
 
 
 class ImageUploader(BaseStruct):
@@ -34,6 +34,7 @@ class ImageUploader(BaseStruct):
     ptpimg_key: str | None = None
     ptscreens_key: str | None = None
     oeimg_key: str | None = None
+    imgbb_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
     auto_compress_cover: bool = False
 
@@ -45,6 +46,8 @@ class ImageUploader(BaseStruct):
             raise ValueError("PTScreens key not specified")
         if "oeimg" in uploader_selections and self.oeimg_key is None:
             raise ValueError("oeimage key not specified")
+        if "imgbb" in uploader_selections and self.imgbb_key is None:
+            raise ValueError("imgbb key not specified")
 
 
 class TidalSettings(BaseStruct):
