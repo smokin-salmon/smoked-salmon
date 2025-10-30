@@ -56,19 +56,13 @@ class OpsApi(BaseGazelleApi):
         Given the HTML (ew) response from a successful upload, find the most
         recently uploaded torrent (it better be ours).
         """
-        torrent_ids = []
-        group_ids = []
+        ids = []
         soup = BeautifulSoup(text, "html.parser")
-        for pl in soup.find_all("a", class_="tooltip"):
-            torrent_url = re.search(r"torrents.php\?id=(\d+)", pl["href"])
-            if torrent_url:
-                torrent_ids.append(int(torrent_url[1]))
-        for pl in soup.find_all("a", class_="brackets"):
-            group_url = re.search(r"upload.php\?groupid=(\d+)", pl["href"])
-            if group_url:
-                group_ids.append(int(group_url[1]))
-
-        return max(torrent_ids), max(group_ids)
+        for pl in soup.find_all("a", title="Permalink"):
+            match = re.search(r"torrents.php\?id=(\d+)\&torrentid=(\d+)", pl["href"])
+            if match:
+                ids.append((match[2], match[1]))
+        return max(ids)
 
     async def report_lossy_master(self, torrent_id, comment, source):
         """Automagically report a torrent for lossy master/web approval."""
