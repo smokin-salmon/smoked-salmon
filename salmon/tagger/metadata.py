@@ -28,6 +28,7 @@ def get_metadata(path, tags, rls_data=None):
     choices = _print_search_results(search_results, rls_data)
     metadata, source_url = _select_choice(choices, rls_data)
     remove_various_artists(metadata["tracks"])
+    metadata = fix_hardcore_genre(metadata)
     return metadata, source_url
 
 
@@ -198,6 +199,33 @@ def _print_metadata(metadata, metadata_name="Pending"):
     click.echo("> URLS:")
     for url in metadata["urls"]:
         click.echo(f">>> {url}")
+
+
+def fix_hardcore_genre(metadata):
+    """
+    Fix the genre if it contains both rock/metal and dance/electronic, by changing
+    "Hardcore" to "Hardcore Rock" or "Hardcore Dance" as appropriate.
+    """
+    rock_found, dance_found = False, False
+    for i, genre in enumerate(metadata.get('genres', [])):
+        if 'rock' in genre.lower() or 'metal' in genre.lower():
+            rock_found = True
+        if 'dance' in genre.lower() or 'electronic' in genre.lower():
+            dance_found = True
+    if rock_found and dance_found:
+        return metadata
+    
+    if rock_found and not dance_found:
+        for i, genre in enumerate(metadata.get('genres', [])):
+            if 'hardcore' in genre.lower():
+                metadata['genres'][i] = 'Hardcore Rock'
+                break
+    elif dance_found and not rock_found:
+        for i, genre in enumerate(metadata.get('genres', [])):
+            if 'hardcore' in genre.lower():
+                metadata['genres'][i] = 'Hardcore Dance'
+                break
+    return metadata
 
 
 def remove_various_artists(tracks):
