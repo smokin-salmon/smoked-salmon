@@ -203,10 +203,10 @@ def _print_metadata(metadata, metadata_name="Pending"):
 
 def fix_hardcore_genre(metadata):
     """
-    Fix the genre if it contains 'hardcore' but is missing either 'rock' or 'dance'/electronic'.
+    Fix the genre if it contains both rock/metal and dance/electronic, by changing
+    "Hardcore" to "Hardcore Rock" or "Hardcore Dance" as appropriate.
     """
     rock_found, dance_found = False, False
-    print(metadata.get('genres'))
     for i, genre in enumerate(metadata.get('genres', [])):
         if 'rock' in genre.lower() or 'metal' in genre.lower():
             rock_found = True
@@ -225,8 +225,6 @@ def fix_hardcore_genre(metadata):
             if 'hardcore' in genre.lower():
                 metadata['genres'][i] = 'Hardcore Dance'
                 break
-
-    print(metadata.get('genres'))
     return metadata
 
 
