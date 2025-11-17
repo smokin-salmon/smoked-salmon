@@ -2,6 +2,9 @@ __pycache__
 .pytest_cache
 *.egg-info
 .vscode/
+.cursor/
+.windsurf/
+.windsurfrules
 .venv/
 .torrents/
 dist/
