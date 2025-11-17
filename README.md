@@ -6,7 +6,8 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 
 ## 🌟 Features  
 
-- **Interactive Uploading** – Supports **multiple trackers** (RED / OPS).
+- **Interactive Uploading** – Supports **multiple trackers** (RED / OPS / DIC).
+- **Log Checking** – Calculates log scores, verifies log checksum integrity, and validates log-to-FLAC file matching.
 - **Upconvert Detection** – Checks 24-bit flac files for potential upconverts.
 - **MQA Detection** – Checks files for common MQA markers.
 - **Duplicate Upload Detection** – Prevents redundant uploads.  
@@ -21,6 +22,9 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 - **Request Filling** – Scans for matching requests on trackers.
 - **Description generation** – Edition description generation (tracklist, sources, available streaming platforms, encoding details...).
 - **Down-convert and Transcode** – Can downconvert 24-bit flac files to 16-bit, and transcode to mp3.
+- **Multi-Format Upload** – Automatically transcodes and uploads multiple formats (FLAC 16-bit, MP3, etc.) in a single workflow.
+- **Torrent Client Injection** – Can inject generated torrent files into torrent clients (qBittorrent, Transmission, Deluge, ruTorrent).
+- **Remote Seeding** – Can transfer files to multiple remote locations via rclone and inject torrents into remote torrent clients for automatic seeding.
 - **Update Notifications** – Informs users when a new version is available.
 
 ## 📥 Installation  
@@ -303,5 +307,5 @@ For bug reports and feature requests, use GitHub Issues. Or use the forums.
 
 ## 🎩 Credits
 * Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon). Huge thanks!
-* Further development & maintenance by elghoto, xmoforf, miandru, redusys and others. Keeping the dream alive.
+* Further development & maintenance by elghoto, xmoforf, miandru, redusys, kyokomiki and others. Keeping the dream alive.
 * Docker image build workflow and update notification mechanisms heavily inspired from the awesome work of Audionut on his [Upload Assistant tool](https://github.com/Audionut/Upload-Assistant) !
