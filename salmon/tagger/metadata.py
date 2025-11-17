@@ -206,25 +206,21 @@ def fix_hardcore_genre(metadata):
     Fix the genre if it contains both rock/metal and dance/electronic, by changing
     "Hardcore" to "Hardcore Rock" or "Hardcore Dance" as appropriate.
     """
-    rock_found, dance_found = False, False
-    for i, genre in enumerate(metadata.get('genres', [])):
-        if 'rock' in genre.lower() or 'metal' in genre.lower():
-            rock_found = True
-        if 'dance' in genre.lower() or 'electronic' in genre.lower():
-            dance_found = True
+    genres = metadata.get("genres", [])
+
+    rock_found = any("rock" in g.lower() or "metal" in g.lower() for g in genres)
+    dance_found = any("dance" in g.lower() or "electronic" in g.lower() for g in genres)
+
+    # If both rock and dance are found, don't modify
     if rock_found and dance_found:
         return metadata
-    
-    if rock_found and not dance_found:
-        for i, genre in enumerate(metadata.get('genres', [])):
-            if 'hardcore' in genre.lower():
-                metadata['genres'][i] = 'Hardcore Rock'
-                break
-    elif dance_found and not rock_found:
-        for i, genre in enumerate(metadata.get('genres', [])):
-            if 'hardcore' in genre.lower():
-                metadata['genres'][i] = 'Hardcore Dance'
-                break
+
+    # Determine the replacement text
+    replacement = "Hardcore Rock" if rock_found else "Hardcore Dance"
+
+    # Apply replacement if needed
+    metadata["genres"] = [replacement if "hardcore" in g.lower() else g for g in genres]
+
     return metadata
 
 
