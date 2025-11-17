@@ -37,6 +37,7 @@ dependencies = [
     "ffmpeg-python>=0.2.0",
     "humanfriendly>=10.0",
     "pillow>=11.3.0",
+    "pyimgbox>=1.0.7",
 ]
 
 [project.scripts]
