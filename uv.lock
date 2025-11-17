@@ -958,6 +958,19 @@ wheels = [
 ]
 
 [[package]]
+name = "pyimgbox"
+version = "1.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "beautifulsoup4" },
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/6b/520e8df8d5337725f8f2cb8328996b0963a979eb7e92609e299db3cba251/pyimgbox-1.0.7.tar.gz", hash = "sha256:27cd9832fe97dfa73713031c5d5be7ea95c53212ae8dfb71dfd0bf60fb0ec2aa", size = 24275, upload-time = "2023-11-28T14:16:19.735Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/49/d4/1ec5e69c43c243952f125fa6485dfbaf7a6a978846d643721dcbbd339e87/pyimgbox-1.0.7-py3-none-any.whl", hash = "sha256:b6098e4f6c5e1da9cda7a28b27216e7e0db1c0a6ca650a56d488f3ef2cdbd0ea", size = 25584, upload-time = "2023-11-28T14:16:17.684Z" },
+]
+
+[[package]]
 name = "pyoxipng"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1109,6 +1122,7 @@ dependencies = [
     { name = "pillow" },
     { name = "platformdirs" },
     { name = "pycambia" },
+    { name = "pyimgbox" },
     { name = "pyoxipng" },
     { name = "pyperclip" },
     { name = "qbittorrent-api" },
@@ -1149,6 +1163,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=11.3.0" },
     { name = "platformdirs", specifier = ">=4.3.8" },
     { name = "pycambia", specifier = ">=0.1.0" },
+    { name = "pyimgbox", specifier = ">=1.0.7" },
     { name = "pyoxipng", specifier = ">=9.1.0" },
     { name = "pyperclip", specifier = ">=1.8.2" },
     { name = "qbittorrent-api", specifier = ">=2025.2.0" },
