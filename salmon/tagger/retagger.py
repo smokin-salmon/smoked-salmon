@@ -217,7 +217,8 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     to_rename = []
     folders_to_create = set()
     multi_disc = len(metadata["tracks"]) > 1
-    md_word = "CD"  # "Disc" if source == "CD" else "Part"
+    md_word = {"CD": "CD", "Vinyl": "LP"}.get(source, "Part")
+    # "Part" is default if not CD or Vinyl
 
     track_list = list(chain.from_iterable([d.values() for d in metadata["tracks"].values()]))
     multiple_artists = any(
