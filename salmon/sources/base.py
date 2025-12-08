@@ -5,7 +5,7 @@ from collections import namedtuple
 from random import choice
 from string import Formatter
 
-import httpx
+import aiohttp
 import requests
 from bs4 import BeautifulSoup
 
@@ -65,25 +65,26 @@ class BaseScraper:
 
     async def create_soup(self, url, params=None, headers=None, **kwargs):
         """
-        Asynchroniously run a webpage scrape and return a BeautifulSoup
+        Asynchronously run a webpage scrape and return a BeautifulSoup
         object containing the scraped HTML.
         """
         params = params or {}
-        loop = asyncio.get_running_loop()
-        r = await loop.run_in_executor(
-            None,
-            lambda: httpx.get(
+        follow_redirects = kwargs.pop("follow_redirects", True)
+        timeout = aiohttp.ClientTimeout(total=7)
+        async with (
+            aiohttp.ClientSession(timeout=timeout) as session,
+            session.get(
                 url,
                 params=params,
                 headers=headers or HEADERS,
-                timeout=7,
-                follow_redirects=kwargs.pop("follow_redirects", True),
+                allow_redirects=follow_redirects,
                 **kwargs,
-            ),
-        )
-        if r.status_code != 200:
-            raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status_code}")
-        return BeautifulSoup(r.text, "html.parser")
+            ) as r,
+        ):
+            if r.status != 200:
+                raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
+            text = await r.text()
+            return BeautifulSoup(text, "lxml")
 
     @staticmethod
     def url_format_rls_name(rls_name):

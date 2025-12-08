@@ -3,7 +3,6 @@ from urllib import parse
 
 import click
 import humanfriendly
-import rich
 
 from salmon import cfg
 from salmon.errors import RequestError
@@ -110,7 +109,7 @@ def _print_request_details(gazelle_site, req):
         description = "".join(description[:line_limit]) + f"...{num_lines - line_limit} more lines..."
     else:
         description = "".join(description)
-    rich.print(description)
+    click.echo(description)
 
 
 def _prompt_for_request_id(gazelle_site, results):

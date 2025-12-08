@@ -3,8 +3,8 @@ import contextlib
 import platform
 import sys
 
+import aiohttp
 import click
-import httpx
 from requests import RequestException
 
 from salmon.common.aliases import AliasedCommands  # noqa: F401
@@ -127,7 +127,7 @@ def run_gather(*tasks):
 async def handle_scrape_errors(task, mute=False):
     try:
         return await task
-    except (ScrapeError, httpx.RequestError, httpx.TimeoutException, KeyError, RequestException) as e:
+    except (ScrapeError, aiohttp.ClientError, TimeoutError, KeyError, RequestException) as e:
         if not mute:
             click.secho(f"Error message: {e}", fg="red", bold=True)
     except Exception as e:

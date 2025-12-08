@@ -28,7 +28,7 @@ class ImageUploader(BaseImageUploader):
         global AUTH_TOKEN
         if not AUTH_TOKEN:
             resp = requests.get("https://jerking.empornium.ph", cookies=cookies)
-            soup = BeautifulSoup(resp.text, "html.parser")
+            soup = BeautifulSoup(resp.text, "lxml")
             AUTH_TOKEN = soup.find(attrs={"name": "auth_token"})["value"]
         self.auth_token = AUTH_TOKEN
         if not self.auth_token:

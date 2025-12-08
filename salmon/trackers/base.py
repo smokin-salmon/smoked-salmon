@@ -378,7 +378,7 @@ class BaseGazelleApi:
                 click.secho(f"Filled request: {resp.url}", fg="green")
                 return torrent_id, group_id
             except (TypeError, ValueError) as err:
-                soup = BeautifulSoup(resp.text, "html.parser")
+                soup = BeautifulSoup(resp.text, "lxml")
                 error = soup.find("h2", text="Error")
                 p_tag = error.parent.parent.find("p") if error else None
                 error_message = p_tag.text if p_tag else resp.text
@@ -445,7 +445,7 @@ class BaseGazelleApi:
             None,
             lambda: self.session.post(url, data=new_data, headers=self.headers),
         )
-        soup = BeautifulSoup(resp.text, "html.parser")
+        soup = BeautifulSoup(resp.text, "lxml")
         edit_error = soup.find("h2", text="Error")
         if edit_error:
             error_message = edit_error.parent.parent.find("p").text
@@ -467,7 +467,7 @@ class BaseGazelleApi:
         """
         torrent_ids = []
         group_ids = []
-        soup = BeautifulSoup(text, "html.parser")
+        soup = BeautifulSoup(text, "lxml")
         for pl in soup.find_all("a", class_="tooltip"):
             torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
             if torrent_url:
@@ -485,7 +485,7 @@ class BaseGazelleApi:
         find the filling torrent (hopefully our upload)
         """
         torrent_ids = []
-        soup = BeautifulSoup(text, "html.parser")
+        soup = BeautifulSoup(text, "lxml")
         for pl in soup.find_all("a", string="Yes"):
             torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
             if torrent_url:
@@ -496,7 +496,7 @@ class BaseGazelleApi:
         """Parses a log page and returns best guess at
         (torrent id, 'Artist', 'title') tuples for uploads"""
         log_uploads = []
-        soup = BeautifulSoup(text, "html.parser")
+        soup = BeautifulSoup(text, "lxml")
         for entry in soup.find_all("span", class_="log_upload"):
             torrent_id = entry.find("a")["href"][23:]
             try:

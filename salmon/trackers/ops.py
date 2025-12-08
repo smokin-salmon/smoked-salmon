@@ -55,7 +55,7 @@ class OpsApi(BaseGazelleApi):
         recently uploaded torrent (it better be ours).
         """
         ids = []
-        soup = BeautifulSoup(text, "html.parser")
+        soup = BeautifulSoup(text, "lxml")
         for pl in soup.find_all("a", title="Permalink"):
             match = re.search(r"torrents.php\?id=(\d+)\&torrentid=(\d+)", pl["href"])
             if match:
