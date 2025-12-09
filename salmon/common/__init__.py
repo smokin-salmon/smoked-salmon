@@ -5,7 +5,6 @@ import sys
 
 import aiohttp
 import click
-from requests import RequestException
 
 from salmon.common.aliases import AliasedCommands  # noqa: F401
 from salmon.common.constants import RE_FEAT  # noqa: F401
@@ -115,19 +114,19 @@ def str_to_int_if_int(string, zpad=False):
     return string
 
 
-def run_gather(*tasks):
-    """Run multiple coroutines concurrently. Works on Python 3.11-3.14+."""
+async def handle_scrape_errors(task, mute: bool = False):
+    """Handle errors during scraping tasks.
 
-    async def _gather():
-        return await asyncio.gather(*tasks)
+    Args:
+        task: The async task to run.
+        mute: If True, suppress error messages.
 
-    return asyncio.run(_gather())
-
-
-async def handle_scrape_errors(task, mute=False):
+    Returns:
+        The task result or None on error.
+    """
     try:
         return await task
-    except (ScrapeError, aiohttp.ClientError, TimeoutError, KeyError, RequestException) as e:
+    except (ScrapeError, aiohttp.ClientError, TimeoutError, KeyError) as e:
         if not mute:
             click.secho(f"Error message: {e}", fg="red", bold=True)
     except Exception as e:

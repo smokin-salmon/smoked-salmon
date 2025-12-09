@@ -1,19 +1,28 @@
-import contextlib
 import mimetypes
-import os
 
 mimetypes.init()
 
 
 class BaseImageUploader:
-    def upload_file(self, filename):
-        # The ExitStack closes files for us when the with block exits
-        with contextlib.ExitStack() as stack:
-            open_file = stack.enter_context(open(filename, "rb"))
-            mime_type, _ = mimetypes.guess_type(filename)
-            if not mime_type or mime_type.split("/")[0] != "image":
-                raise ValueError(f"Unknown image file type {mime_type}")
-            ext = os.path.splitext(filename)[1]
-            return self._perform((filename, open_file, mime_type), ext)
-            # Do we need to strip filenames?
-            # return self._perform((f"filename{ext}", open_file, mime_type), ext)
+    """Base class for image uploaders.
+
+    Subclasses should implement the async upload_file method.
+    """
+
+    async def upload_file(self, filename: str) -> tuple[str, str | None]:
+        """Upload an image file and return the URL.
+
+        Args:
+            filename: Path to the image file.
+
+        Returns:
+            Tuple of (url, deletion_url). deletion_url may be None.
+
+        Raises:
+            ValueError: If the file is not an image.
+            NotImplementedError: If not overridden by subclass.
+        """
+        mime_type, _ = mimetypes.guess_type(filename)
+        if not mime_type or mime_type.split("/")[0] != "image":
+            raise ValueError(f"Unknown image file type {mime_type}")
+        raise NotImplementedError("Subclasses must implement upload_file")

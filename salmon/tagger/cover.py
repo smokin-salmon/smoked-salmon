@@ -2,10 +2,10 @@ import io
 import os
 import re
 
+import aiohttp
 import click
 import filetype
 import humanfriendly
-import requests
 from mutagen import PaddingInfo
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
@@ -27,10 +27,15 @@ def get_cover_from_path(path):
     return None
 
 
-def download_cover_if_nonexistent(path, cover_url):
-    """
-    source folder path, url for cover image to be downloaded from
-    returns local source path of cover image, and whether image was downloaded
+async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tuple[str | None, bool | None]:
+    """Download cover if not already present in folder.
+
+    Args:
+        path: Source folder path.
+        cover_url: URL for cover image to download.
+
+    Returns:
+        Tuple of (cover_path, was_downloaded). Both None if failed.
     """
     # use local file if matches filter
     cover_path = get_cover_from_path(path)
@@ -40,35 +45,52 @@ def download_cover_if_nonexistent(path, cover_url):
     # use url provided
     if cover_url:
         click.secho("\nDownloading Cover Image...", fg="yellow")
-        cover_path = _download_cover(path, cover_url)
+        cover_path = await _download_cover(path, cover_url)
         if cover_path:
             return cover_path, True
     click.secho("\nNo existing Cover Image found in Source Folder, no Cover Image downloaded", fg="red")
     return None, None
 
 
-def _download_cover(path, cover_url):
+async def _download_cover(path: str, cover_url: str) -> str | None:
+    """Download cover image from URL.
+
+    Args:
+        path: Directory to save the cover.
+        cover_url: URL to download from.
+
+    Returns:
+        Path to downloaded cover or None on failure.
+    """
     ext = os.path.splitext(cover_url)[1]
     c = "c" if cfg.upload.formatting.lowercase_cover else "C"
     headers = {"User-Agent": "smoked-salmon-v1"}
-    stream = requests.get(cover_url, stream=True, headers=headers)
 
-    if stream.status_code < 400:
-        cover_image_filename = c + "over" + ext
-        cover_path = os.path.join(path, cover_image_filename)
-        with open(cover_path, "wb") as f:
-            for chunk in stream.iter_content(chunk_size=5096):
-                if chunk:
-                    f.write(chunk)
+    timeout = aiohttp.ClientTimeout(total=30)
+    try:
+        async with (
+            aiohttp.ClientSession(timeout=timeout) as session,
+            session.get(cover_url, headers=headers) as response,
+        ):
+            if response.status < 400:
+                cover_image_filename = c + "over" + ext
+                cover_path = os.path.join(path, cover_image_filename)
+                with open(cover_path, "wb") as f:
+                    async for chunk in response.content.iter_chunked(5096):
+                        f.write(chunk)
 
-        kind = filetype.guess(cover_path)
-        if not kind or kind.mime not in ["image/jpeg", "image/png"]:
-            os.remove(cover_path)
-            click.secho("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])", fg="red")
-        click.secho(f"Cover image downloaded: {cover_image_filename} ", fg="yellow")
-        return cover_path
-    else:
-        click.secho(f"\nFailed to download cover image (ERROR {stream.status_code})", fg="red")
+                kind = filetype.guess(cover_path)
+                if not kind or kind.mime not in ["image/jpeg", "image/png"]:
+                    os.remove(cover_path)
+                    click.secho("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])", fg="red")
+                    return None
+                click.secho(f"Cover image downloaded: {cover_image_filename} ", fg="yellow")
+                return cover_path
+            else:
+                click.secho(f"\nFailed to download cover image (ERROR {response.status})", fg="red")
+                return None
+    except aiohttp.ClientError as e:
+        click.secho(f"\nFailed to download cover image (ERROR {e})", fg="red")
         return None
 
 
