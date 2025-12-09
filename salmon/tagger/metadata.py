@@ -30,10 +30,15 @@ async def get_metadata(
         Tuple of (metadata dict, source URL or None).
     """
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
+    if rls_data is None:
+        raise ValueError("rls_data cannot be None")
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
     click.secho(f"Searching for '{searchstrs}' releases...")
-    kwargs = dict(artists=[a for a, _ in rls_data["artists"]], album=rls_data["title"]) if rls_data else {}
-    search_results = await run_metasearch(searchstrs, filter=False, track_count=len(tags), **kwargs)
+    artists_list = [a for a, _ in rls_data["artists"]]
+    album_title = rls_data["title"]
+    search_results = await run_metasearch(
+        searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
+    )
     choices = _print_search_results(search_results, rls_data)
     metadata, source_url = await _select_choice(choices, rls_data)
     remove_various_artists(metadata["tracks"])
@@ -103,7 +108,7 @@ async def _select_choice(
 
     while True:
         if choices:
-            res = click.prompt(
+            res = await click.prompt(
                 click.style(
                     "\nWhich metadata results would you like to use? Other "
                     'options: paste URLs, [m]anual, [a], prefix choice or URL with "*" to indicate source (WEB)',
@@ -112,7 +117,7 @@ async def _select_choice(
                 type=click.STRING,
             )
         else:
-            res = click.prompt(
+            res = await click.prompt(
                 click.style(
                     "\nNo metadata results were found. Options: paste URLs, "
                     '[m]anual, [a]bort, prefix URL with "*" to indicate source (WEB)',
@@ -130,9 +135,10 @@ async def _select_choice(
         for r in res.split():
             # Handle starred items first
             stripped = r[1:] if r.startswith("*") else r
+            stripped_lower = stripped.lower()
 
             # Handle URLs (both starred and unstarred)
-            if stripped.lower().startswith("http"):
+            if stripped_lower.startswith("http"):
                 # Add any URL to rls_data urls if not already there
                 if stripped not in rls_data["urls"]:
                     rls_data["urls"].append(stripped)
@@ -148,7 +154,7 @@ async def _select_choice(
                         tasks.append(source.Scraper().scrape_release(stripped))
                         break
             # Handle numeric choices
-            elif stripped.strip().isdigit() and int(stripped) in choices:
+            elif stripped.strip().isdigit() and int(stripped.strip()) in choices:
                 scraper = METASOURCES[choices[int(stripped)][0]].Scraper()
                 sources.append(choices[int(stripped)][0])
                 tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(choices[int(stripped)][1])))

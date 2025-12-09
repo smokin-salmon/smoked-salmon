@@ -3,6 +3,7 @@ import re
 from collections import namedtuple
 from random import choice
 from string import Formatter
+from typing import Any
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -18,11 +19,11 @@ IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "
 class BaseScraper:
     """Base class for metadata scrapers."""
 
-    url = NotImplementedError
-    site_url = NotImplementedError
-    regex = NotImplementedError
-    release_format = NotImplementedError
-    get_params = {}
+    url: str = ""
+    site_url: str = ""
+    regex: re.Pattern[str]
+    release_format: str = ""
+    get_params: dict[str, Any] = {}
 
     @classmethod
     def format_url(cls, rls_id: str, rls_name: str | None = None) -> str:
@@ -77,7 +78,9 @@ class BaseScraper:
         except json.decoder.JSONDecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
 
-    async def create_soup(self, url: str, params: dict | None = None, headers: dict | None = None, **kwargs):
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, **kwargs
+    ) -> BeautifulSoup | dict[str, Any]:
         """Scrape webpage and return BeautifulSoup object.
 
         Args:

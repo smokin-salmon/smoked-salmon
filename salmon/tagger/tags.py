@@ -2,7 +2,7 @@ import os
 import subprocess
 
 import asyncclick as click
-import mutagen
+from mutagen import File as MutagenFile  # type: ignore[attr-defined]
 
 from salmon import cfg
 from salmon.common import get_audio_files
@@ -84,15 +84,18 @@ def standardize_tags(path):
     decided are the ones this script will use.
     """
     for filename in get_audio_files(path):
-        mut = mutagen.File(os.path.join(path, filename))
-        if not mut.tags:
-            mut.tags = []
+        mut = MutagenFile(os.path.join(path, filename))
+        if mut is None:
+            continue
+        tags = mut.tags
+        if tags is None:
+            continue
         found_aliased = set()
         for tag, aliases in STANDARDIZED_TAGS.items():
             for alias in aliases:
-                if alias in mut.tags:
-                    mut.tags[tag] = mut.tags[alias]
-                    del mut.tags[alias]
+                if alias in tags:
+                    tags[tag] = tags[alias]  # type: ignore[literal-required]
+                    del tags[alias]  # type: ignore[arg-type]
                     found_aliased.add(alias)
         if found_aliased:
             mut.save()

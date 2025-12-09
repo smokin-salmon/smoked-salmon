@@ -12,7 +12,7 @@ from salmon import cfg
 from salmon.errors import InvalidSampleRate
 from salmon.tagger.audio_info import gather_audio_info
 
-THREADS = [None] * cfg.upload.simultaneous_threads
+THREADS: list[subprocess.Popen[bytes] | None] = [None] * cfg.upload.simultaneous_threads
 FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 
 
@@ -62,6 +62,7 @@ def _generate_conversion_path_name(path):
 def _convert_files(old_path, new_path, files_convert, files_copy, bit_depth=16, sample_rate=None):
     files_left = len(files_convert) - 1
     files = iter(files_convert)
+    final_sample_rate = sample_rate
 
     for file_ in files_copy:
         output = file_.replace(old_path, new_path)
@@ -86,7 +87,7 @@ def _convert_files(old_path, new_path, files_convert, files_copy, bit_depth=16, 
                 try:
                     file_, original_sample_rate = next(files)
                 except StopIteration:
-                    THREADS[i] = None
+                    pass
                 else:
                     output = file_.replace(old_path, new_path)
                     final_sample_rate = sample_rate if sample_rate else _get_final_sample_rate(original_sample_rate)

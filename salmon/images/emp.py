@@ -50,7 +50,10 @@ class ImageUploader(BaseImageUploader):
             token_elem = soup.find(attrs={"name": "auth_token"})
             if not token_elem or "value" not in token_elem.attrs:
                 raise ImageUploadFailed("Failed to fetch auth token from EMP")
-            AUTH_TOKEN = token_elem["value"]
+            token_value = token_elem["value"]
+            if isinstance(token_value, list):
+                token_value = token_value[0]
+            AUTH_TOKEN = str(token_value)
             self.auth_token = AUTH_TOKEN
             return AUTH_TOKEN
 

@@ -88,14 +88,14 @@ async def tag(path: str, source: str, encoding: tuple, overwrite: bool, auto_ren
     rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
     metadata, _ = await get_metadata(path, tags, rls_data)
-    metadata = review_metadata(metadata, metadata_validator_base)
+    metadata = await review_metadata(metadata, metadata_validator_base)
     tag_files(path, tags, metadata, auto_rename)
 
     await download_cover_if_nonexistent(path, metadata["cover"])
     tags = check_tags(path)
     path = rename_folder(path, metadata, auto_rename)
     rename_files(path, tags, metadata, auto_rename, None)
-    check_folder_structure(path, scene=False)
+    await check_folder_structure(path, scene=False)
     click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
 
 
@@ -110,7 +110,8 @@ async def meta(url: str) -> None:
     try:
         metadata = await run_metadata(url)
         for key in ["encoding", "media", "encoding_vbr", "source"]:
-            del metadata[key]
+            if key in metadata and isinstance(metadata, dict):
+                del metadata[key]
         click.echo()
         pprint(metadata)
     except ScrapeError as e:

@@ -164,7 +164,7 @@ from salmon.uploader.upload import (
 )
 async def up(
     path: str,
-    group_id: str | None,
+    group_id: int | None,
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
@@ -229,7 +229,7 @@ async def up(
 async def upload(
     gazelle_site: Any,
     path: str,
-    group_id: str | None,
+    group_id: int | None,
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
@@ -239,7 +239,7 @@ async def upload(
     recompress: bool = False,
     source_url: str | None = None,
     searchstrs: list[str] | None = None,
-    request_id: str | None = None,
+    request_id: int | str | None = None,
     spectrals_after: bool = False,
     auto_rename: bool = False,
     skip_up: bool = False,
@@ -275,7 +275,7 @@ async def upload(
     path = os.path.abspath(path)
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
-        source = _prompt_source()
+        source = await _prompt_source()
     audio_info = gather_audio_info(path)
     hybrid = check_hybrid(audio_info)
     if not scene:
@@ -340,19 +340,21 @@ async def upload(
                 group_id = await check_existing_group(gazelle_site, searchstrs)
 
         spectral_ids = None
+        lossy_master: bool = False
         if spectrals_after:
-            lossy_master = False
             # We tell the uploader not to worry about it being lossy until later.
+            pass
         else:
-            lossy_master, spectral_ids = await check_spectrals(
+            lossy_result, spectral_ids = await check_spectrals(
                 path, audio_info, lossy, spectrals, format=rls_data["format"]
             )
+            lossy_master = lossy_result if lossy_result is not None else False
 
         metadata, new_source_url = await get_metadata(path, tags, rls_data)
         if new_source_url is not None:
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
-        path, metadata, tags, audio_info = edit_metadata(
+        path, metadata, tags, audio_info = await edit_metadata(
             path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check
         )
 
@@ -381,7 +383,7 @@ async def upload(
         spectral_urls = None
     else:
         if lossy_master:
-            lossy_comment = generate_lossy_approval_comment(source_url, list(track_data.keys()))
+            lossy_comment = await generate_lossy_approval_comment(source_url, list(track_data.keys()))
             click.echo()
 
         spectrals_path = get_spectrals_path(path)
@@ -411,7 +413,7 @@ async def upload(
                 )
                 spectrals_after = False
             click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
-            tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
+            tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
             if not tracker:
                 click.secho("\nDone with this release.", fg="green")
                 break
@@ -435,7 +437,7 @@ async def upload(
             if not stored_cover_url:
                 cover_path, is_downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
                 stored_cover_url = await upload_cover(cover_path)
-                if is_downloaded and remove_downloaded_cover_image:
+                if is_downloaded and remove_downloaded_cover_image and cover_path:
                     click.secho("Removing downloaded Cover Image File", fg="yellow")
                     os.remove(cover_path)
             cover_url = stored_cover_url
@@ -475,7 +477,7 @@ async def upload(
             click.style("\nWould you like to check downconversion options?", fg="magenta"),
             default=True,
         ):
-            selected_tasks = prompt_downconversion_choice(rls_data, track_data)
+            selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
             if selected_tasks:
                 display_names = [task["name"] for task in selected_tasks]
                 click.secho(f"\nSelected formats for downconversion: {', '.join(display_names)}", fg="green", bold=True)
@@ -509,7 +511,7 @@ async def upload(
     seedbox_uploader.execute_upload()
 
 
-def edit_metadata(
+async def edit_metadata(
     path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check=False
 ):
     """
@@ -518,7 +520,7 @@ def edit_metadata(
     decides it is ready for upload.
     """
     while True:
-        metadata = review_metadata(metadata, metadata_validator)
+        metadata = await review_metadata(metadata, metadata_validator)
         if not metadata["scene"]:
             tag_files(path, tags, metadata, auto_rename)
 
@@ -528,7 +530,7 @@ def edit_metadata(
         path = rename_folder(path, metadata, auto_rename)
         if not metadata["scene"]:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
-        check_folder_structure(path, metadata["scene"])
+        await check_folder_structure(path, metadata["scene"])
 
         if not skip_integrity_check:
             click.secho("\nChecking integrity of audio files...", fg="cyan", bold=True)
@@ -692,7 +694,7 @@ def get_downconversion_options(rls_data, track_data):
     return options
 
 
-def prompt_downconversion_choice(rls_data, track_data):
+async def prompt_downconversion_choice(rls_data, track_data):
     """
     Prompt user to select downconversion formats.
     Returns a list of selected task dictionaries.
@@ -727,7 +729,7 @@ def prompt_downconversion_choice(rls_data, track_data):
 
     while True:
         try:
-            choices = click.prompt(
+            choices = await click.prompt(
                 click.style(
                     '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)', fg="magenta"
                 ),
@@ -775,7 +777,7 @@ async def execute_downconversion_tasks(
     selected_tasks: list[dict[str, Any]],
     path: str,
     gazelle_site: Any,
-    group_id: str | None,
+    group_id: int | None,
     metadata: dict[str, Any],
     cover_url: str | None,
     track_data: dict[str, Any],
@@ -784,7 +786,7 @@ async def execute_downconversion_tasks(
     spectral_urls: dict[int, list[str]] | None,
     spectral_ids: dict[int, str] | None,
     lossy_comment: str | None,
-    request_id: str | None,
+    request_id: int | str | None,
     source_url: str | None,
     seedbox_uploader: Any,
     source: str | None,
@@ -838,7 +840,7 @@ async def execute_downconversion_tasks(
             # Generate description for conversion
             description = generate_conversion_description(base_url, sample_rate)
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            check_folder_structure(new_path, conversion_metadata["scene"])
+            await check_folder_structure(new_path, conversion_metadata["scene"])
 
             # Upload the converted version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
@@ -880,7 +882,7 @@ async def execute_downconversion_tasks(
             # Generate description for transcode
             description = generate_transcode_description(base_url, task["encoding"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            check_folder_structure(transcoded_path, transcode_metadata["scene"])
+            await check_folder_structure(transcoded_path, transcode_metadata["scene"])
 
             # Upload the transcoded version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
@@ -909,7 +911,7 @@ async def execute_downconversion_tasks(
 async def upload_and_report(
     gazelle_site: Any,
     path: str,
-    group_id: str | None,
+    group_id: int | None,
     metadata: dict[str, Any],
     cover_url: str | None,
     track_data: dict[str, Any],
@@ -918,13 +920,13 @@ async def upload_and_report(
     spectral_urls: dict[int, list[str]] | None,
     spectral_ids: dict[int, str] | None,
     lossy_comment: str | None,
-    request_id: str | None,
+    request_id: int | str | None,
     source_url: str | None,
     seedbox_uploader: Any,
     source: str | None = None,
     override_description: str | None = None,
     override_lossy_comment: str | None = None,
-) -> tuple[int, str, str, Any, str]:
+) -> tuple[int, int, str, Any, str]:
     """Upload torrent and report lossy master if needed.
 
     Args:
@@ -1015,10 +1017,10 @@ def convert_genres(genres):
     return ",".join(re.sub("[-_ ]", ".", g).strip() for g in genres)
 
 
-def _prompt_source():
+async def _prompt_source():
     click.echo(f"\nValid sources: {', '.join(SOURCES.values())}")
     while True:
-        sauce = click.prompt(
+        sauce = await click.prompt(
             click.style("What is the source of this release? [a]bort", fg="magenta"),
             default="",
         )

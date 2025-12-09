@@ -71,3 +71,13 @@ select = [
     # isort
     "I",
 ]
+
+[tool.pyright]
+include = ["salmon"]
+typeCheckingMode = "standard"
+reportPossiblyUnboundVariable = "warning"
+reportUnreachable = "warning"
+reportInvalidCast = "warning"
+reportUnsafeMultipleInheritance = "warning"
+reportImplicitAbstractClass = "warning"
+reportInvalidAbstractMethod = "warning"

@@ -1,7 +1,7 @@
 import os
 
 import asyncclick as click
-import mutagen
+from mutagen import File as MutagenFile  # type: ignore[attr-defined]
 
 from salmon.common import compress, get_audio_files
 from salmon.errors import UploadError
@@ -18,7 +18,9 @@ def gather_audio_info(path, sort_by_tracknumber=False):
 
     audio_info = {}
     for filename in files:
-        mut = mutagen.File(os.path.join(path, filename))
+        mut = MutagenFile(os.path.join(path, filename))
+        if mut is None:
+            raise UploadError(f"Could not read audio file: {filename}")
         audio_info[filename] = _parse_audio_info(mut.info)
     return audio_info
 

@@ -13,8 +13,11 @@ class DiscogsBase(BaseScraper):
     release_format = "/release/{rls_id}"
     get_params = {"token": cfg.metadata.discogs_token}
 
-    async def create_soup(self, url, params=None):
+    async def create_soup(self, url, params=None):  # type: ignore[override]
+        match = self.regex.match(url)
+        if not match:
+            raise ScrapeError("Invalid Discogs URL.")
         try:
-            return await self.get_json(f"/releases/{self.regex.match(url)[1]}", params=params)
+            return await self.get_json(f"/releases/{match[1]}", params=params)
         except json.decoder.JSONDecodeError as e:
             raise ScrapeError("Discogs page did not return valid JSON.") from e

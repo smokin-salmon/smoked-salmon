@@ -32,7 +32,8 @@ class Scraper(TidalBase, MetadataMixin):
 
     def parse_release_year(self, soup):
         try:
-            return int(re.search(r"(\d{4})", soup["releaseDate"])[1])
+            match = re.search(r"(\d{4})", soup["releaseDate"]) if soup.get("releaseDate") else None
+            return int(match[1]) if match else None
         except TypeError:
             return None
 
@@ -121,7 +122,7 @@ class Scraper(TidalBase, MetadataMixin):
             attempts = 0
             while True:
                 try:
-                    artists = self.get_json_sync(
+                    artists = self.get_json_sync(  # type: ignore[attr-defined]
                         f"/tracks/{track_id}/contributors",
                         params={"countryCode": self.country_code, "limit": 25},
                     )["items"]

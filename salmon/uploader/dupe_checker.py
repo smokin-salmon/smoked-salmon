@@ -103,7 +103,7 @@ async def _prompt_for_recent_upload_results(
             f" or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}"
         )
 
-        group_id = click.prompt(
+        group_id = await click.prompt(
             click.style(prompt_text, fg="magenta"),
             default="",
         )
@@ -294,7 +294,7 @@ async def _prompt_for_group_id(
         Group ID or None for new group.
     """
     while True:
-        group_id = click.prompt(
+        group_id = await click.prompt(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
                 f"Paste a URL{', pick from groups found ' if results is not None else ''}"
@@ -304,29 +304,29 @@ async def _prompt_for_group_id(
             default="",
         )
         if group_id.strip().isdigit():
-            group_id = int(group_id) - 1  # User doesn't type zero index
-            if group_id < 1:
-                group_id = 0  # If the user types 0 give them the first choice.
-            if group_id < len(results):
-                group_id = results[group_id]["groupId"]
-                return int(group_id)
+            group_id_num = int(group_id) - 1  # User doesn't type zero index
+            if group_id_num < 1:
+                group_id_num = 0  # If the user types 0 give them the first choice.
+            if group_id_num < len(results):
+                return int(results[group_id_num]["groupId"])
             else:
-                group_id = int(group_id) + 1
-                click.echo(f"Interpreting {group_id} as a group Id")
-                return group_id
+                group_id_num = int(group_id) + 1
+                click.echo(f"Interpreting {group_id_num} as a group Id")
+                return group_id_num
 
         elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
             parsed_query = parse.parse_qs(parse.urlparse(group_id).query)
             if "id" in parsed_query:
-                group_id = parsed_query["id"][0]
+                return int(parsed_query["id"][0])
             elif "torrentid" in parsed_query:
-                group_id = parsed_query["torrentid"][0]
-                group_id = await gazelle_site.get_redirect_torrentgroupid(group_id)
-                return group_id
+                torrent_id = parsed_query["torrentid"][0]
+                result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
+                if result_group_id is not None:
+                    return int(result_group_id)
+                continue
             else:
                 click.echo("Could not find group ID in URL.")
                 continue
-            return int(group_id)
         elif group_id.lower().startswith("a"):
             raise click.Abort
         elif group_id.lower().startswith("d") and offer_deletion:
@@ -353,17 +353,21 @@ async def print_torrents(
     # If rset is not provided, fetch it from the API
     if rset is None:
         try:
-            rset = await gazelle_site.torrentgroup(group_id)
+            fetched_rset = await gazelle_site.torrentgroup(group_id)
             # account for differences between search result and group result json
-            rset["groupName"] = rset["group"]["name"]
-            rset["artist"] = ""
-            for a in rset["group"]["musicInfo"]["artists"]:
-                rset["artist"] += a["name"] + " "
-            rset["groupId"] = rset["group"]["id"]
-            rset["groupYear"] = rset["group"]["year"]
+            fetched_rset["groupName"] = fetched_rset["group"]["name"]
+            fetched_rset["artist"] = ""
+            for a in fetched_rset["group"]["musicInfo"]["artists"]:
+                fetched_rset["artist"] += a["name"] + " "
+            fetched_rset["groupId"] = fetched_rset["group"]["id"]
+            fetched_rset["groupYear"] = fetched_rset["group"]["year"]
+            rset = fetched_rset
         except RequestError:
             click.secho(f"{group_id} does not exist.", fg="red")
             raise click.Abort from None
+
+    # At this point rset is guaranteed to be non-None
+    assert rset is not None
 
     group_info: dict = {}
     click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
@@ -408,13 +412,15 @@ async def _confirm_group_id(gazelle_site: Any, group_id: int, results: list[dict
 
     await print_torrents(gazelle_site, group_id, rset)
     while True:
-        resp = click.prompt(
-            click.style(
-                "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
-                "[n]ew group, [a]bort, [d]elete music folder",
-                fg="magenta",
-            ),
-            default="Y",
+        resp = (
+            await click.prompt(
+                click.style(
+                    "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
+                    "[n]ew group, [a]bort, [d]elete music folder",
+                    fg="magenta",
+                ),
+                default="Y",
+            )
         )[0].lower()
         if resp == "a":
             raise click.Abort

@@ -19,14 +19,17 @@ class TidalBase(BaseScraper):
         super().__init__()
 
     @classmethod
-    def format_url(cls, rls_id, rls_name=None):
+    def format_url(cls, rls_id, rls_name=None):  # type: ignore[override]
         return cls.site_url + cls.release_format.format(rls_id=rls_id[1])
 
     @classmethod
     def parse_release_id(cls, url):
-        return cls.regex.search(url)[2]
+        match = cls.regex.search(url)
+        if not match:
+            raise ValueError("Invalid Tidal URL.")
+        return match[2]
 
-    async def create_soup(self, url, params=None):
+    async def create_soup(self, url, params=None, headers=None, **kwargs):  # type: ignore[override]
         """Run a GET request to Tidal's JSON API for album data."""
         params = params or {}
         album_id = self.parse_release_id(url)

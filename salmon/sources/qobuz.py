@@ -19,9 +19,12 @@ class QobuzBase(BaseScraper):
     }
     get_params = {}
 
-    async def create_soup(self, url, params=None):
+    async def create_soup(self, url, params=None, headers=None, **kwargs):  # type: ignore[override]
         try:
-            rls_id = self.regex.match(url)[1]
+            match = self.regex.match(url)
+            if not match:
+                raise ScrapeError("Invalid Qobuz URL.")
+            rls_id = match[1]
             return await self.get_json(self.release_format.format(rls_id=rls_id), params=params, headers=self.headers)
         except json.decoder.JSONDecodeError as e:
             raise ScrapeError("Qobuz page did not return valid JSON.") from e

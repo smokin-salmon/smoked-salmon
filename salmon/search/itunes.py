@@ -23,7 +23,8 @@ class Searcher(iTunesBase, SearchMixin):
             title = rls["collectionName"]
             track_count = rls["trackCount"]
             date = rls["releaseDate"][:10]
-            year = int(re.search(r"(\d{4})", date)[1])
+            year_match = re.search(r"(\d{4})", date)
+            year = int(year_match[1]) if year_match else None
             copyright = parse_copyright(rls["copyright"]) if "copyright" in rls else None
             explicit = rls["collectionExplicitness"] == "explicit"
             clean = rls["collectionExplicitness"] == "cleaned"

@@ -19,7 +19,7 @@ from salmon.uploader.spectrals import (
 async def prepare_and_upload(
     gazelle_site: Any,
     path: str,
-    group_id: str | None,
+    group_id: int | None,
     metadata: dict[str, Any],
     cover_url: str | None,
     track_data: dict[str, Any],
@@ -28,10 +28,10 @@ async def prepare_and_upload(
     spectral_urls: dict[int, list[str]] | None,
     spectral_ids: dict[int, str] | None,
     lossy_comment: str | None,
-    request_id: str | None,
+    request_id: int | str | None,
     source_url: str | None = None,
     override_description: str | None = None,
-) -> tuple[int, str, str, Torrent]:
+) -> tuple[int, int, str, Torrent]:
     """Compile data and upload torrent to tracker.
 
     Args:
@@ -91,10 +91,11 @@ async def prepare_and_upload(
     click.secho("Uploading torrent...", fg="yellow")
     try:
         torrent_id, group_id = await gazelle_site.upload(data, files)
-        return torrent_id, group_id, torrent_path, torrent_content
+        # Ensure group_id is int (upload returns tuple[int, int])
+        return torrent_id, int(group_id) if group_id else 0, torrent_path, torrent_content
     except RequestError as e:
         click.secho(str(e), fg="red", bold=True)
-        exit()
+        raise SystemExit(1) from e
 
 
 def concat_track_data(tags: dict[str, Any], audio_info: dict[str, Any]) -> dict[str, Any]:
@@ -123,7 +124,7 @@ def compile_data_new_group(
     spectral_urls: dict[int, list[str]] | None,
     spectral_ids: dict[int, str] | None,
     lossy_comment: str | None,
-    request_id: str | None = None,
+    request_id: int | str | None = None,
     source_url: str | None = None,
 ) -> dict[str, Any]:
     """Compile data for a new torrent group upload.
@@ -178,14 +179,14 @@ def compile_data_new_group(
 def compile_data_existing_group(
     gazelle_site: Any,
     path: str,
-    group_id: str,
+    group_id: int,
     metadata: dict[str, Any],
     track_data: dict[str, Any],
     hybrid: bool,
     spectral_urls: dict[int, list[str]] | None,
     spectral_ids: dict[int, str] | None,
     lossy_comment: str | None,
-    request_id: str | None,
+    request_id: int | str | None,
     source_url: str | None = None,
     override_description: str | None = None,
 ) -> dict[str, Any]:

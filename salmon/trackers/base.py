@@ -46,6 +46,14 @@ SearchReleaseData = namedtuple(
 class BaseGazelleApi:
     """Base API client for Gazelle-based trackers."""
 
+    # Subclasses must set these attributes before calling __init__
+    cookie: str
+    base_url: str
+    tracker_url: str
+    site_code: str
+    site_string: str
+    api_key: str  # Optional, only for API key upload
+
     def __init__(self) -> None:
         """Initialize the API client. Subclasses should call this after setting cookie/base_url."""
         self.headers = {
@@ -411,6 +419,7 @@ class BaseGazelleApi:
                     else:
                         click.secho("Filled request: " + self.request_url(requestId), fg="green")
                 torrent_id = 0
+                group_id = 0
                 if "torrentid" in resp["response"]:
                     torrent_id = resp["response"]["torrentid"]
                     group_id = resp["response"]["groupid"]
@@ -420,6 +429,7 @@ class BaseGazelleApi:
                 return torrent_id, group_id
         except TypeError as err:
             raise RequestError(f"API upload failed, response: {resp}") from err
+        raise RequestError("API upload failed: unexpected response format")
 
     async def site_page_upload(self, data: dict, files: dict) -> tuple[int, int]:
         """Upload torrent via upload.php.
@@ -462,14 +472,18 @@ class BaseGazelleApi:
         if "requests.php" in resp_url:
             try:
                 torrent_id = self.parse_torrent_id_from_filled_request_page(resp_text)
-                group_id = await self.get_redirect_torrentgroupid(torrent_id)
+                group_id_str = await self.get_redirect_torrentgroupid(torrent_id)
+                group_id = int(group_id_str) if group_id_str else 0
                 click.secho(f"Filled request: {resp_url}", fg="green")
                 return torrent_id, group_id
             except (TypeError, ValueError) as err:
                 soup = BeautifulSoup(resp_text, "lxml")
                 error = soup.find("h2", text="Error")
-                p_tag = error.parent.parent.find("p") if error else None
-                error_message = p_tag.text if p_tag else resp_text
+                error_message = resp_text
+                if error and error.parent and error.parent.parent:
+                    p_tag = error.parent.parent.find("p")
+                    if p_tag:
+                        error_message = p_tag.text
                 raise RequestError(f"Request fill failed: {error_message}") from err
         try:
             return self.parse_most_recent_torrent_and_group_id_from_group_page(resp_text)
@@ -567,8 +581,9 @@ class BaseGazelleApi:
 
         soup = BeautifulSoup(resp_text, "lxml")
         edit_error = soup.find("h2", text="Error")
-        if edit_error:
-            error_message = edit_error.parent.parent.find("p").text
+        if edit_error and edit_error.parent and edit_error.parent.parent:
+            p_tag = edit_error.parent.parent.find("p")
+            error_message = p_tag.text if p_tag else "Unknown error"
             raise RequestError(f"Failed to edit torrent: {error_message}")
         else:
             click.secho("Added spectrals to the torrent description.", fg="green")
@@ -577,49 +592,60 @@ class BaseGazelleApi:
     in order that they be easily overwritten in the derivative site classes.
     It is not because they depend on anything from the class"""
 
-    def parse_most_recent_torrent_and_group_id_from_group_page(self, text):
+    def parse_most_recent_torrent_and_group_id_from_group_page(self, text: str) -> tuple[int, int]:
         """
         Given the HTML (ew) response from a successful upload, find the most
         recently uploaded torrent (it better be ours).
         """
-        torrent_ids = []
-        group_ids = []
+        torrent_ids: list[int] = []
+        group_ids: list[int] = []
         soup = BeautifulSoup(text, "lxml")
         for pl in soup.find_all("a", class_="tooltip"):
-            torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
+            href = pl.get("href", "")
+            torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", str(href))
             if torrent_url:
                 torrent_ids.append(int(torrent_url[1]))
         for pl in soup.find_all("a", class_="brackets"):
-            group_url = re.search(r"upload.php\?groupid=(\d+)", pl["href"])
+            href = pl.get("href", "")
+            group_url = re.search(r"upload.php\?groupid=(\d+)", str(href))
             if group_url:
                 group_ids.append(int(group_url[1]))
 
         return max(torrent_ids), max(group_ids)
 
-    def parse_torrent_id_from_filled_request_page(self, text):
+    def parse_torrent_id_from_filled_request_page(self, text: str) -> int:
         """
         Given the HTML (ew) response from filling a request,
         find the filling torrent (hopefully our upload)
         """
-        torrent_ids = []
+        torrent_ids: list[int] = []
         soup = BeautifulSoup(text, "lxml")
-        for pl in soup.find_all("a", string="Yes"):
-            torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", pl["href"])
-            if torrent_url:
-                torrent_ids.append(int(torrent_url[1]))
+        for pl in soup.find_all("a"):
+            if pl.string == "Yes":
+                href = pl.get("href", "")
+                torrent_url = re.search(r"torrents.php\?torrentid=(\d+)", str(href))
+                if torrent_url:
+                    torrent_ids.append(int(torrent_url[1]))
         return max(torrent_ids)
 
-    def parse_uploads_from_log_html(self, text):
+    def parse_uploads_from_log_html(self, text: str) -> list[tuple[str, str, str]]:
         """Parses a log page and returns best guess at
         (torrent id, 'Artist', 'title') tuples for uploads"""
-        log_uploads = []
+        log_uploads: list[tuple[str, str, str]] = []
         soup = BeautifulSoup(text, "lxml")
         for entry in soup.find_all("span", class_="log_upload"):
-            torrent_id = entry.find("a")["href"][23:]
+            anchor = entry.find("a")
+            if not anchor:
+                continue
+            href = anchor.get("href", "")
+            torrent_id = str(href)[23:]
             try:
                 # it having class log_upload is no guarantee that is what it is. Nice one log.
-                torrent_string = re.findall(r"\((.*?)\) \(", entry.find("a").next_sibling)[0].split(" - ")
-            except BaseException:
+                next_sib = anchor.next_sibling
+                if not next_sib:
+                    continue
+                torrent_string = re.findall(r"\((.*?)\) \(", str(next_sib))[0].split(" - ")
+            except (IndexError, TypeError):
                 continue
             artist = torrent_string[0]
             if len(torrent_string) > 1:

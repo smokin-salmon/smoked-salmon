@@ -10,11 +10,11 @@ from salmon.errors import RequestError, UploadError
 def print_preassumptions(
     gazelle_site: Any,
     path: str,
-    group_id: str | None,
+    group_id: int | None,
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
-    encoding: tuple[str | None, bool | None],
+    encoding: str | None,
     spectrals_after: bool,
 ) -> None:
     """Print what all the passed CLI options will do.
@@ -33,11 +33,8 @@ def print_preassumptions(
     second = []
     if source:
         second.append(f"from {source}")
-    if list(encoding) != [None, None]:
-        text = f"as {encoding[0]}"
-        if encoding[1]:
-            text += " (VBR)"
-        second.append(text)
+    if encoding:
+        second.append(f"as {encoding}")
     if lossy is not None:
         second.append(f"with lossy master status as {lossy}")
     if second:
@@ -60,7 +57,7 @@ def print_preassumptions(
         raise UploadError("\nYou cannot report a torrent for lossy master without spectrals.")
 
 
-async def confirm_group_upload(gazelle_site: Any, group_id: str, source: str | None) -> None:
+async def confirm_group_upload(gazelle_site: Any, group_id: int, source: str | None) -> None:
     """Confirm upload to existing group.
 
     Args:
@@ -76,7 +73,7 @@ async def confirm_group_upload(gazelle_site: Any, group_id: str, source: str | N
     )
 
 
-async def print_group_info(gazelle_site: Any, group_id: str, source: str | None) -> None:
+async def print_group_info(gazelle_site: Any, group_id: int, source: str | None) -> None:
     """Print information about the torrent group that was passed as a CLI argument.
 
     Also print all the torrents that are in that group.

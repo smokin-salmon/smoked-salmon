@@ -4,7 +4,7 @@ from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 
-HEADERS = {"X-API-Key": cfg.image.ptscreens_key}
+HEADERS: dict[str, str] = {"X-API-Key": cfg.image.ptscreens_key or ""}
 
 
 class ImageUploader(BaseImageUploader):

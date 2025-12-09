@@ -70,10 +70,16 @@ class DeezerBase(BaseScraper):
 
         Returns:
             The release ID.
-        """
-        return cls.regex.search(url)[2]
 
-    async def create_soup(self, url: str, params: dict | None = None):
+        Raises:
+            ValueError: If URL doesn't match expected pattern.
+        """
+        match = cls.regex.search(url)
+        if not match:
+            raise ValueError(f"Invalid Deezer URL: {url}")
+        return match[2]
+
+    async def create_soup(self, url: str, params: dict | None = None):  # type: ignore[override]
         """Fetch album data from Deezer API.
 
         Args:

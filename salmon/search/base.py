@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
+from typing import Any
 
 import asyncclick as click
 
@@ -10,7 +11,7 @@ LabelRlsData = namedtuple("LabelRlsData", ["url", "quality", "year", "artist", "
 
 class SearchMixin(ABC):
     @abstractmethod
-    async def search_releases(self, searchstr, limit):
+    async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any] | None]:
         """
         Search the metadata site for a release string and return a dictionary
         of release IDs and search results strings.

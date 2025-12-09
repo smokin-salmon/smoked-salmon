@@ -1,19 +1,20 @@
 import datetime
 import sqlite3
 from itertools import chain
+from typing import Any
 
-import aiohttp
+from aiohttp import web
 from aiohttp_jinja2 import render_template
 
 from salmon.database import DB_PATH
 
 
-async def handle_spectrals(request, **kwargs):
-    active_spectrals = get_active_spectrals()
-    if active_spectrals:
+async def handle_spectrals(request: web.Request, **kwargs) -> web.Response:
+    active_spectrals: dict[str, Any] = get_active_spectrals()
+    if active_spectrals.get("spectrals"):
         active_spectrals["now"] = datetime.datetime.now()
         return render_template("spectrals.html", request, active_spectrals)
-    return aiohttp.web.HTTPNotFound()
+    raise web.HTTPNotFound()
 
 
 def set_active_spectrals(spectrals):

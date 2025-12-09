@@ -49,17 +49,18 @@ class OpsApi(BaseGazelleApi):
             "Unknown": 21,
         }
 
-    def parse_most_recent_torrent_and_group_id_from_group_page(self, text):
+    def parse_most_recent_torrent_and_group_id_from_group_page(self, text: str) -> tuple[int, int]:
         """
         Given the HTML (ew) response from a successful upload, find the most
         recently uploaded torrent (it better be ours).
         """
-        ids = []
+        ids: list[tuple[int, int]] = []
         soup = BeautifulSoup(text, "lxml")
         for pl in soup.find_all("a", title="Permalink"):
-            match = re.search(r"torrents.php\?id=(\d+)\&torrentid=(\d+)", pl["href"])
+            href = pl.get("href", "")
+            match = re.search(r"torrents.php\?id=(\d+)\&torrentid=(\d+)", str(href))
             if match:
-                ids.append((match[2], match[1]))
+                ids.append((int(match[2]), int(match[1])))
         return max(ids)
 
     async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:

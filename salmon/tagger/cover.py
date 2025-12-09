@@ -6,9 +6,9 @@ import aiohttp
 import asyncclick as click
 import filetype
 import humanfriendly
-from mutagen import PaddingInfo
+from mutagen._util import PaddingInfo  # type: ignore[import-not-found]
 from mutagen.flac import FLAC, Picture
-from mutagen.id3 import PictureType
+from mutagen.id3._specs import PictureType  # type: ignore[import-not-found]
 from PIL import Image
 
 from salmon import cfg
@@ -149,6 +149,8 @@ def compress_pictures(path):
                         extension = "jpg"
                     elif picture.mime == "image/png":
                         extension = "png"
+                    else:
+                        extension = "jpg"  # Default fallback
 
                     if not cover_file:
                         cover_file = os.path.join(path, f"cover.{extension}")

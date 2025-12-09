@@ -202,7 +202,7 @@ async def _handle_failed_spectrals(spectrals, successful) -> dict:
         Dictionary of uploaded URLs.
     """
     while True:
-        host = click.prompt(
+        host_input: str = await click.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
                 f"with? (Options: {', '.join(HOSTS.keys())})",
@@ -210,7 +210,8 @@ async def _handle_failed_spectrals(spectrals, successful) -> dict:
                 bold=True,
             ),
             default="ptpimg",
-        ).lower()
+        )
+        host = host_input.lower()
         if host not in HOSTS:
             click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
         else:

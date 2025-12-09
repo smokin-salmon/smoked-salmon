@@ -25,11 +25,11 @@ def get_class(site_code):
     return tracker_classes[site_code]
 
 
-def choose_tracker(choices):
+async def choose_tracker(choices):
     """Allows the user to choose a tracker from choices."""
     while True:
         # Loop until we have chosen a tracker or aborted.
-        tracker_input = click.prompt(
+        tracker_input = await click.prompt(
             click.style(f"Your choices are {' , '.join(choices)} or [n]one.", fg="magenta"),
             default=choices[0],
         )
@@ -47,7 +47,7 @@ def choose_tracker(choices):
             return None
 
 
-def choose_tracker_first_time(question="Which tracker would you like to upload to?"):
+async def choose_tracker_first_time(question="Which tracker would you like to upload to?"):
     """Specific logic for the first time a tracker choice is offered.
     Uses default if there is one and uses the only tracker if there is only one."""
     choices = tracker_list
@@ -58,23 +58,23 @@ def choose_tracker_first_time(question="Which tracker would you like to upload t
         click.secho(f"Using tracker: {tracker_cfg.default_tracker}", fg="green")
         return tracker_cfg.default_tracker
     click.secho(question, fg="magenta")
-    tracker = choose_tracker(choices)
+    tracker = await choose_tracker(choices)
     return tracker
 
 
-def validate_tracker(ctx, param, value):
+async def validate_tracker(ctx, param, value):
     """Only allow trackers in the config tracker dict.
     If it isn't there. Prompt to choose.
     """
     try:
         if value is None:
-            return choose_tracker_first_time()
+            return await choose_tracker_first_time()
         if value.upper() in tracker_list:
             click.secho(f"Using tracker: {value.upper()}", fg="green")
             return value.upper()
         else:
             click.secho(f"{value} is not a tracker in your config.", fg="red")
-            return choose_tracker(tracker_list)
+            return await choose_tracker(tracker_list)
     except AttributeError:
         raise click.BadParameter(
             "This flag requires a tracker. Possible sources are: " + ", ".join(tracker_list)

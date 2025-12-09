@@ -39,6 +39,8 @@ def decode_file(inp, out, numsamples=None, seconds=None):
     if inp.read_uint(32) != 0x664C6143:
         raise ValueError("Invalid magic string")
     samplerate = None
+    numchannels = None
+    sampledepth = None
     last = False
     while not last:
         last = inp.read_uint(1) != 0
@@ -60,10 +62,12 @@ def decode_file(inp, out, numsamples=None, seconds=None):
         else:
             for _i in range(length):
                 inp.read_uint(8)
-    if samplerate is None:
+    if samplerate is None or numchannels is None or sampledepth is None:
         raise ValueError("Stream info metadata block absent")
     if sampledepth % 8 != 0:
         raise RuntimeError("Sample depth not supported")
+    if numsamples is None:
+        raise ValueError("Number of samples not determined")
 
     # Start writing WAV file headers
     sampledatalen = numsamples * numchannels * (sampledepth // 8)
@@ -113,6 +117,7 @@ def decode_frame(inp, numchannels, sampledepth, out):
         inp.read_uint(8)
         temp = (temp << 1) & 0xFF
 
+    blocksize: int
     if blocksizecode == 1:
         blocksize = 192
     elif 2 <= blocksizecode <= 5:
@@ -123,6 +128,8 @@ def decode_frame(inp, numchannels, sampledepth, out):
         blocksize = inp.read_uint(16) + 1
     elif 8 <= blocksizecode <= 15:
         blocksize = 256 << (blocksizecode - 8)
+    else:
+        raise ValueError(f"Invalid block size code: {blocksizecode}")
 
     if sampleratecode == 12:
         inp.read_uint(8)

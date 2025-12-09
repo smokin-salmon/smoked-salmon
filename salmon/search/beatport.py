@@ -8,19 +8,19 @@ from salmon.sources.base import BaseScraper
 
 
 class Searcher(BeatportBase, SearchMixin):
-    async def create_soup(self, url, params=None):
+    async def create_soup(self, url, params=None, headers=None, **kwargs):  # type: ignore[override]
         """Override to use BaseScraper's create_soup directly for search."""
-        return await BaseScraper.create_soup(self, url, params)
+        return await BaseScraper.create_soup(self, url, params, headers, **kwargs)
 
     async def search_releases(self, searchstr, limit):
         releases = {}
         soup = await self.create_soup(self.search_url, params={"q": searchstr})
         try:
-            script_tag = soup.find("script", id="__NEXT_DATA__")
+            script_tag = soup.find("script", id="__NEXT_DATA__")  # type: ignore[union-attr]
             if not script_tag:
                 raise ScrapeError("Could not find Next.js data script tag")
 
-            data = json.loads(script_tag.string)
+            data = json.loads(script_tag.string or "")
             search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]
             for result in search_results:
                 try:

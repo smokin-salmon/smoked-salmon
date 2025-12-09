@@ -34,7 +34,11 @@ class Scraper(JunodownloadBase, MetadataMixin):
 
     def parse_release_year(self, soup):
         try:
-            return int(re.search(r"(\d{4})", self.parse_release_date(soup))[1])
+            date = self.parse_release_date(soup)
+            match = re.search(r"(\d{4})", date) if date else None
+            if not match:
+                raise ScrapeError("Could not parse release year.")
+            return int(match[1])
         except TypeError as e:
             raise ScrapeError("Could not parse release year.") from e
 

@@ -118,13 +118,16 @@ class Scraper(QobuzBase, MetadataMixin):
     # Core API and Connection Methods
     # --------------------------------------------------------------------------
 
-    async def create_soup(self, url):
+    async def create_soup(self, url):  # type: ignore[override]
         """
         Override create_soup to properly get the album data from the API.
         This method uses the QobuzBase get_json method.
         """
         try:
-            rls_id = self.regex.match(url)[1]
+            match = self.regex.match(url)
+            if not match:
+                raise ScrapeError(f"Failed to extract release ID from URL: {url}")
+            rls_id = match[1]
         except (TypeError, IndexError) as err:
             raise ScrapeError(f"Failed to extract release ID from URL: {url}") from err
 
@@ -142,8 +145,8 @@ class Scraper(QobuzBase, MetadataMixin):
 
         return response
 
-    @staticmethod
-    def format_url(rls_id=None, rls_name=None, url=None):
+    @classmethod
+    def format_url(cls, rls_id=None, rls_name=None, url=None):  # type: ignore[override]
         """Format a URL for the release based on ID or original URL."""
         if url:
             return url
@@ -157,19 +160,28 @@ class Scraper(QobuzBase, MetadataMixin):
         """Parse the release title from the API response."""
         return RE_FEAT.sub("", soup["title"])
 
-    def parse_release_group_year(self, soup):
-        return RE_YEAR.search(safe_get(soup, ["release_date_original"])).group(1)
+    def parse_release_group_year(self, soup) -> int | None:
+        date = safe_get(soup, ["release_date_original"])
+        if not date or not isinstance(date, str):
+            return None
+        match = RE_YEAR.search(date)
+        return int(match.group(1)) if match else None
 
-    def parse_release_year(self, soup):
-        if self.parse_edition_title(soup):
-            if any(keyword in self.parse_edition_title(soup) for keyword in EDITION_KEYWORDS):
-                return RE_YEAR.search(safe_get(soup, ["copyright"])).group(1)
+    def parse_release_year(self, soup) -> int | None:
+        edition_title = self.parse_edition_title(soup)
+        if edition_title:
+            if any(keyword in edition_title for keyword in EDITION_KEYWORDS):
+                copyright_text = safe_get(soup, ["copyright"])
+                if not copyright_text or not isinstance(copyright_text, str):
+                    return None
+                match = RE_YEAR.search(copyright_text)
+                return int(match.group(1)) if match else None
             else:
                 return None
         else:
             return self.parse_release_group_year(soup)
 
-    def parse_release_label(self, soup):
+    def parse_release_label(self, soup) -> str | None:
         """
         Parse label name, marking as Self-Released if artist name appears in label.
         Also attempts to extract label from copyright information.
@@ -191,10 +203,11 @@ class Scraper(QobuzBase, MetadataMixin):
 
         # Check if this is likely self-released
         artist = safe_get(soup, ["artist", "name"])
-        if artist and artist.lower() in label.lower():
+        label_str = str(label) if label else ""
+        if artist and isinstance(artist, str) and label_str and artist.lower() in label_str.lower():
             return "Self-Released"
 
-        return label
+        return label_str if label_str else None
 
     def parse_tracks(self, soup):
         """
@@ -248,12 +261,13 @@ class Scraper(QobuzBase, MetadataMixin):
     # Optional Metadata Methods
     # --------------------------------------------------------------------------
 
-    def parse_cover_url(self, soup):
+    def parse_cover_url(self, soup) -> str | None:
         """
         Parse the cover URL from the API response.
         Qobuz already compresses their images, so using the large image is best.
         """
-        return safe_get(soup, ["image", "large"])
+        result = safe_get(soup, ["image", "large"])
+        return str(result) if result else None
 
     def parse_edition_title(self, soup):
         """

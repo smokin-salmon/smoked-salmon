@@ -166,8 +166,8 @@ def _sanitize_flac(path):
 
 
 def _sanitize_mp3(path):
+    backup_path = path + ".corrupted"
     try:
-        backup_path = path + ".corrupted"
         os.rename(path, backup_path)
 
         result = subprocess.run(

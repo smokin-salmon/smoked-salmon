@@ -8,7 +8,7 @@ from salmon import cfg
 from salmon.errors import RequestError
 
 
-async def check_requests(gazelle_site: Any, searchstrs: list[str]) -> str | None:
+async def check_requests(gazelle_site: Any, searchstrs: list[str]) -> int | None:
     """Search for requests on site and offer a choice to fill one.
 
     Args:
@@ -22,7 +22,7 @@ async def check_requests(gazelle_site: Any, searchstrs: list[str]) -> str | None
     print_request_results(gazelle_site, results, " / ".join(searchstrs))
     # Should add an option to still prompt if there are no results.
     if results or cfg.upload.requests.always_ask_for_request_fill:
-        request_id = _prompt_for_request_id(gazelle_site, results)
+        request_id = await _prompt_for_request_id(gazelle_site, results)
         if request_id:
             confirmation = await _confirm_request_id(gazelle_site, request_id)
             if confirmation is True:
@@ -97,13 +97,14 @@ def _print_request_details(gazelle_site, req):
     click.secho(f"({req['year']})", fg="yellow")
     click.secho(f" - {req['requestorName']} ", fg="cyan", nl=False)
 
+    bounty: int = 0
     if "totalBounty" in req:
         bounty = req["totalBounty"]
     elif "bounty" in req:
         bounty = req["bounty"]
 
-    bounty = humanfriendly.format_size(bounty, binary=True)
-    click.secho(bounty, fg="cyan")
+    bounty_str = humanfriendly.format_size(bounty, binary=True)
+    click.secho(bounty_str, fg="cyan")
 
     click.secho(f"Allowed Bitrate: {' | '.join(req['bitrateList'])}")
     click.secho(f"Allowed Formats: {' | '.join(req['formatList'])}")
@@ -127,28 +128,27 @@ def _print_request_details(gazelle_site, req):
     click.echo(description)
 
 
-def _prompt_for_request_id(gazelle_site, results):
+async def _prompt_for_request_id(gazelle_site, results):
     """Have the user choose a group ID"""
     while True:
-        request_id = click.prompt(
+        request_id = await click.prompt(
             click.style("\nFill a request? Choose from results, paste a url, or do[n]t.", fg="magenta"),
             default="N",
         )
         if request_id.strip().isdigit():
-            request_id = int(request_id) - 1  # User doesn't type zero index
-            if request_id < 1:
-                request_id = 0  # If the user types 0 give them the first choice.
-            if request_id < len(results):
-                request_id = results[request_id]["requestId"]
-                return int(request_id)
+            request_id_num = int(request_id) - 1  # User doesn't type zero index
+            if request_id_num < 1:
+                request_id_num = 0  # If the user types 0 give them the first choice.
+            if request_id_num < len(results):
+                return int(results[request_id_num]["requestId"])
             else:
-                request_id = int(request_id) + 1
-                click.echo(f"Interpreting {request_id} as a request id")
-                return request_id
+                request_id_num = int(request_id) + 1
+                click.echo(f"Interpreting {request_id_num} as a request id")
+                return request_id_num
 
         elif request_id.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
-            request_id = parse.parse_qs(parse.urlparse(request_id).query)["id"][0]
-            return request_id
+            parsed_id = parse.parse_qs(parse.urlparse(request_id).query)["id"][0]
+            return int(parsed_id)
         elif request_id.lower().startswith("n") or not request_id.strip():
             click.echo("Not filling a request")
             return None
@@ -180,9 +180,11 @@ async def _confirm_request_id(gazelle_site: Any, request_id: str | int) -> bool:
         return True
 
     while True:
-        resp = click.prompt(
-            click.style("\nAre you sure you would you like to fill this request [Y]es, [n]o", fg="magenta"),
-            default="Y",
+        resp = (
+            await click.prompt(
+                click.style("\nAre you sure you would you like to fill this request [Y]es, [n]o", fg="magenta"),
+                default="Y",
+            )
         )[0].lower()
         if resp == "y":
             return True

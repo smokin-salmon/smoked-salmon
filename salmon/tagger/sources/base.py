@@ -3,14 +3,22 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
 from itertools import chain
+from typing import TYPE_CHECKING, Any
 
 from salmon import cfg
 from salmon.common import fetch_genre, less_uppers, normalize_accents
 from salmon.errors import GenreNotInWhitelist
 
+if TYPE_CHECKING:
+    pass
+
 
 class MetadataMixin(ABC):
-    async def scrape_release_from_id(self, rls_id):
+    # These methods are expected to be provided by BaseScraper when used as a mixin
+    format_url: Any  # Provided by BaseScraper subclass
+    create_soup: Any
+
+    async def scrape_release_from_id(self, rls_id: str) -> dict[str, Any]:
         """Run a scrape from the release ID."""
         return await self.scrape_release(self.format_url(rls_id=rls_id), rls_id=rls_id)
 
@@ -148,49 +156,49 @@ class MetadataMixin(ABC):
         return title, "Album"
 
     @abstractmethod
-    def parse_release_title(self, soup):
+    def parse_release_title(self, soup) -> str | None:
         pass
 
     @abstractmethod
-    def parse_release_year(self, soup):
+    def parse_release_year(self, soup) -> int | None:
         pass
 
     @abstractmethod
-    def parse_release_label(self, soup):
+    def parse_release_label(self, soup) -> str | None:
         pass
 
     @abstractmethod
-    def parse_tracks(self, soup):
+    def parse_tracks(self, soup) -> dict:
         pass
 
     # The below parsers aren't present in every scraper.
 
-    def parse_release_group_year(self, soup):
+    def parse_release_group_year(self, soup) -> int | None:
         return self.parse_release_year(soup)
 
-    def parse_cover_url(self, soup):
-        return
+    def parse_cover_url(self, soup) -> str | None:
+        return None
 
-    def parse_release_date(self, soup):
-        return
+    def parse_release_date(self, soup) -> str | None:
+        return None
 
-    def parse_edition_title(self, soup):
-        return
+    def parse_edition_title(self, soup) -> str | None:
+        return None
 
-    def parse_release_catno(self, soup):
-        return
+    def parse_release_catno(self, soup) -> str | None:
+        return None
 
-    def parse_release_type(self, soup):
-        return
+    def parse_release_type(self, soup) -> str | None:
+        return None
 
-    def parse_genres(self, soup):
-        return {}
+    def parse_genres(self, soup) -> set | list:
+        return set()
 
-    def parse_upc(self, soup):
-        return
+    def parse_upc(self, soup) -> str | None:
+        return None
 
-    def parse_comment(self, soup):
-        return
+    def parse_comment(self, soup) -> str | None:
+        return None
 
     def process_label(self, data):
         """
@@ -250,7 +258,7 @@ def determine_label_type(label, artists):
             return "Self-Released"
 
         # Compare label to artist name
-        if any(_compare(label, a) and i == "main" for a, i in artists):
+        if any(_compare(label, str(a)) and i == "main" for a, i in artists):
             return "Self-Released"
     return label
 
@@ -317,23 +325,28 @@ def filter_artists(artists, tracks=None):
     return artists, tracks
 
 
-def construct_replacement_list(artists):
+def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[list[str], str]]:
     """
     Create the list of artists-to-replace. It compares a stripped version
     of each artist to combined versions of other artists in ascending
     length order.
+
+    Args:
+        artists: List of (artist_name, importance) tuples.
+
+    Returns:
+        List of (replacements, replacement_artist) tuples.
     """
-    to_replace = []
-    artist_pool = sorted(
-        [
-            [
-                normalize_accents("".join(s for s in a if s.isalnum()).replace(" ", "")).lower(),
-                a,
-            ]
-            for a, _ in artists
-        ],
-        key=lambda a: len(a),
-    )
+    to_replace: list[tuple[list[str], str]] = []
+    # Build artist pool with normalized names
+    unsorted_pool: list[list[str]] = []
+    for artist_name, _ in artists:
+        stripped = "".join(s for s in str(artist_name) if s.isalnum()).replace(" ", "")
+        normalized_result = normalize_accents(stripped)
+        # normalize_accents returns str when given single argument
+        normalized = str(normalized_result).lower() if normalized_result else ""
+        unsorted_pool.append([normalized, str(artist_name)])
+    artist_pool: list[list[str]] = sorted(unsorted_pool, key=lambda x: len(x))
     for i, pri_a_raw in enumerate(artist_pool):
         for other_a in reversed(artist_pool[0:i]):
             current_replacements = [pri_a_raw[1]]

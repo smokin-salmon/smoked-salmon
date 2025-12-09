@@ -21,7 +21,7 @@ RELEASE_TYPES = {
 }
 
 
-musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")
+musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")  # type: ignore[attr-defined]
 
 
 class Scraper(MusicBrainzBase, MetadataMixin):
@@ -32,7 +32,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         if soup["cover-art-archive"] and soup["cover-art-archive"]["front"] == "true":
             try:
                 r = musicbrainzngs.get_image_list(soup["id"])
-            except musicbrainzngs.musicbrainz.ResponseError:
+            except musicbrainzngs.musicbrainz.ResponseError:  # type: ignore[attr-defined]
                 return None
 
             for image in r["images"]:
@@ -43,7 +43,8 @@ class Scraper(MusicBrainzBase, MetadataMixin):
     def parse_release_year(self, soup):
         date = self.parse_release_date(soup)
         try:
-            return int(re.search(r"(\d{4})", date)[1])
+            match = re.search(r"(\d{4})", date) if date else None
+            return int(match[1]) if match else None
         except (TypeError, IndexError):
             return None
 
@@ -53,9 +54,11 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         except (KeyError, IndexError):
             return None
 
-    def parse_release_group_year(self, soup):
+    def parse_release_group_year(self, soup) -> int | None:
         try:
-            return re.search(r"(\d{4})", soup["release-group"]["first-release-date"])[1]
+            first_release_date = soup["release-group"]["first-release-date"]
+            match = re.search(r"(\d{4})", first_release_date) if first_release_date else None
+            return int(match[1]) if match else self.parse_release_year(soup)
         except (KeyError, IndexError, TypeError):
             return self.parse_release_year(soup)
 

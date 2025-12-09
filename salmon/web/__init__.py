@@ -1,10 +1,10 @@
 import asyncio
 from os.path import dirname, join
 
-import aiohttp
 import aiohttp_jinja2
 import asyncclick as click
 import jinja2
+from aiohttp import web
 from aiohttp_jinja2 import render_template
 
 from salmon import cfg
@@ -16,7 +16,7 @@ web_cfg = cfg.upload.web_interface
 
 
 @commandgroup.command()
-async def web() -> None:
+async def web_cmd() -> None:
     """Start the salmon web server."""
     click.secho(f"Running webserver on http://{web_cfg.host}:{web_cfg.port}", fg="cyan")
     runner = await create_app_async()
@@ -28,7 +28,7 @@ async def web() -> None:
         await runner.cleanup()
 
 
-async def create_app_async() -> aiohttp.web.AppRunner:
+async def create_app_async() -> web.AppRunner:
     """Create and start the aiohttp web application.
 
     Returns:
@@ -37,12 +37,12 @@ async def create_app_async() -> aiohttp.web.AppRunner:
     Raises:
         WebServerIsAlreadyRunning: If the port is already in use.
     """
-    app = aiohttp.web.Application()
+    app = web.Application()
     add_routes(app)
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates")))
-    runner = aiohttp.web.AppRunner(app)
+    runner = web.AppRunner(app)
     await runner.setup()
-    site = aiohttp.web.TCPSite(runner, "0.0.0.0", web_cfg.port)
+    site = web.TCPSite(runner, "0.0.0.0", web_cfg.port)
     try:
         await site.start()
     except OSError as err:
@@ -50,7 +50,7 @@ async def create_app_async() -> aiohttp.web.AppRunner:
     return runner
 
 
-def add_routes(app: aiohttp.web.Application) -> None:
+def add_routes(app: web.Application) -> None:
     """Add routes to the web application.
 
     Args:
@@ -62,7 +62,7 @@ def add_routes(app: aiohttp.web.Application) -> None:
     app["static_root_url"] = web_cfg.static_root_url
 
 
-def handle_index(request: aiohttp.web.Request, **kwargs) -> aiohttp.web.Response:
+async def handle_index(request: web.Request, **kwargs) -> web.Response:
     """Handle the index page request.
 
     Args:

@@ -75,11 +75,12 @@ class Searcher(QobuzBase, SearchMixin):
     @staticmethod
     def _parse_year(date):
         try:
-            return int(re.search(r"(\d{4})", date)[0])
+            match = re.search(r"(\d{4})", date)
+            return int(match[0]) if match else None
         except (ValueError, IndexError, TypeError):
             return None
 
     @staticmethod
-    def format_url(rls_id, rls_name=None):
+    def format_url(rls_id, rls_name=None):  # type: ignore[override]
         """Format a Qobuz URL from a release ID."""
         return f"https://www.qobuz.com/album/-/{rls_id}"

@@ -10,9 +10,13 @@ class Searcher(BandcampBase, SearchMixin):
         releases = {}
         try:
             soup = await self.create_soup(self.search_url, params={"q": searchstr}, follow_redirects=False)
-            for meta in soup.select(".result-items .searchresult.data-search .result-info"):
+            for meta in soup.select(".result-items .searchresult.data-search .result-info"):  # type: ignore[union-attr]
                 try:
-                    re_url = self.regex.search(meta.select(".itemurl a")[0].string)
+                    item_url_elem = meta.select(".itemurl a")[0]
+                    item_url_str = item_url_elem.string if item_url_elem else None
+                    if not item_url_str:
+                        continue
+                    re_url = self.regex.search(item_url_str)
                     if not re_url:
                         continue
 
@@ -20,22 +24,23 @@ class Searcher(BandcampBase, SearchMixin):
                     release_type = re_url[2]  # 'album' or 'track'
                     rls_id = re_url[3]
 
-                    title = meta.select(".heading a")[0].string.strip()
+                    heading_elem = meta.select(".heading a")[0]
+                    title_str = heading_elem.string if heading_elem else None
+                    title = title_str.strip() if title_str else ""
                     if len(title) > 100:
                         title = f"{title[:98]}.."
 
-                    artists = (re.search("by (.+)", meta.select(".subhead")[0].text)[1]).strip()
+                    subhead_match = re.search("by (.+)", meta.select(".subhead")[0].text)
+                    artists = subhead_match[1].strip() if subhead_match else ""
 
                     # For single tracks, there's just one track
-                    track_count = (
-                        1
-                        if release_type == "track"
-                        else int(re.search(r"(\d+) tracks?", meta.select(".length")[0].text)[1])
-                    )
+                    length_match = re.search(r"(\d+) tracks?", meta.select(".length")[0].text)
+                    track_count = 1 if release_type == "track" else int(length_match[1]) if length_match else 1
 
                     releaser = rls_url.split(".bandcamp.com")[0]
                     date = meta.select(".released")[0].text.strip()
-                    year = re.search(r"(\d{4})", date)[1]
+                    year_match = re.search(r"(\d{4})", date)
+                    year = year_match[1] if year_match else None
 
                     releases[(rls_url, release_type, rls_id)] = (
                         IdentData(artists, title, year, track_count, "WEB"),

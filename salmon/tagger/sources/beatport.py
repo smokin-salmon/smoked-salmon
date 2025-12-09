@@ -51,7 +51,10 @@ class Scraper(BeatportBase, MetadataMixin):
     def parse_release_year(self, soup):
         date = self.parse_release_date(soup)
         try:
-            return int(re.search(r"(\d{4})", date)[1])
+            match = re.search(r"(\d{4})", date) if date else None
+            if not match:
+                raise ScrapeError("Could not parse release year.")
+            return int(match[1])
         except (TypeError, IndexError) as e:
             raise ScrapeError("Could not parse release year.") from e
 

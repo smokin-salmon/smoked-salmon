@@ -10,7 +10,15 @@ from deluge_client import DelugeRPCClient
 
 
 class TorrentClient:
-    def __init__(self, username, password, url=None, scheme=None, host=None, port=None):
+    def __init__(
+        self,
+        username: str | None = None,
+        password: str | None = None,
+        url: str | None = None,
+        scheme: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
+    ):
         self.username = username
         self.password = password
         self.url = url
@@ -32,7 +40,8 @@ class QBittorrentClient(TorrentClient):
     def login(self):
         try:
             click.secho("Attempting to connect to qBittorrent...", fg="yellow")
-            qbt_client = qbittorrentapi.Client(host=self.url, username=self.username, password=self.password)
+            url = str(self.url) if self.url else ""
+            qbt_client = qbittorrentapi.Client(host=url, username=self.username, password=self.password)
             qbt_client.auth_log_in()
 
             click.secho("Successfully connected to qBittorrent", fg="green")
@@ -64,10 +73,14 @@ class TransmissionClient(TorrentClient):
     def login(self):
         try:
             click.secho("Attempting to connect to Transmission...", fg="yellow")
+            # Cast to expected types for transmission_rpc.Client
+            protocol = str(self.scheme) if self.scheme else "http"
+            host = str(self.host) if self.host else "localhost"
+            port = int(self.port) if self.port else 9091
             trt = transmission_rpc.Client(
-                protocol=self.scheme,
-                host=self.host,
-                port=self.port,
+                protocol=protocol,  # type: ignore[arg-type]
+                host=host,
+                port=port,
                 username=self.username,
                 password=self.password,
                 timeout=60,
@@ -101,7 +114,10 @@ class DelugeClient(TorrentClient):
     def login(self):
         try:
             click.secho("Attempting to connect to Deluge...", fg="yellow")
-            de_client = DelugeRPCClient(host=self.host, port=self.port, username=self.username, password=self.password)
+            # Cast to expected types for DelugeRPCClient
+            host = str(self.host) if self.host else "localhost"
+            port = int(self.port) if self.port else 58846
+            de_client = DelugeRPCClient(host=host, port=port, username=self.username, password=self.password)
             de_client.connect()
             if de_client.connected is True:
                 click.secho("Successfully connected to Deluge", fg="green")
@@ -158,7 +174,8 @@ class DelugeClient(TorrentClient):
 class RuTorrentClient(TorrentClient):
     def login(self):
         try:
-            rt_client = xmlrpc.client.Server(self.url)
+            url = str(self.url) if self.url else ""
+            rt_client = xmlrpc.client.Server(url)
             version = rt_client.system.client_version()
             click.secho(f"Successfully connected to ruTorrent, version: {version}", fg="green")
             return rt_client

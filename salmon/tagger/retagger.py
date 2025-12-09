@@ -187,9 +187,9 @@ def print_changes(album_changes, track_changes, a_track):
         previous = getattr(a_track, field, "None")
         if isinstance(previous, list):
             previous = "; ".join(previous)
-        kwargs = {"bold": True} if str(previous) != str(value) else {}  # Bold if different
-        if str(previous) == str(value):
-            click.secho(f"> {field.ljust(13)} ••• {previous}", **kwargs)
+        is_different = str(previous) != str(value)
+        if not is_different:
+            click.secho(f"> {field.ljust(13)} ••• {previous}")
         else:
             click.echo(
                 f"> {click.style(str(field.ljust(13)), bold=True)} ••• {str(previous)} "
@@ -217,7 +217,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     to_rename = []
     folders_to_create = set()
     multi_disc = len(metadata["tracks"]) > 1
-    md_word = {"CD": "CD", "Vinyl": "LP"}.get(source, "Part")
+    md_word = {"CD": "CD", "Vinyl": "LP"}.get(source or "", "Part")
     # "Part" is default if not CD or Vinyl
 
     track_list = list(chain.from_iterable([d.values() for d in metadata["tracks"].values()]))
@@ -229,6 +229,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     for filename, tracktags in tags.items():
         ext = os.path.splitext(filename)[1].lower()
         new_name = generate_file_name(tracktags, ext, multiple_artists)
+        disc_number = 1  # Default value
         if multi_disc:
             if isinstance(tracktags, dict):
                 disc_number = int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
@@ -293,13 +294,20 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
         keys.remove("artist")
         template = cfg.upload.formatting.one_album_artist_file_template
     if isinstance(tags, dict):
-        template_keys = {k: _parse_integer(tags[k][0]) for k in keys}
+        template_keys: dict[str, str | int] = {}
+        for k in keys:
+            tag_val = tags.get(k)
+            if tag_val is not None and isinstance(tag_val, list) and tag_val:
+                template_keys[k] = _parse_integer(tag_val[0])
+            else:
+                template_keys[k] = _parse_integer("")
     else:
         template_keys = {}
         for k in keys:
-            val = _parse_integer(getattr(tags, k))
-            if k == "artist":
-                val = val[0]
+            raw_val = getattr(tags, k, "")
+            if k == "artist" and isinstance(raw_val, list) and raw_val:
+                raw_val = raw_val[0]
+            val = _parse_integer(raw_val if isinstance(raw_val, (str, int)) else str(raw_val))
             template_keys[k] = val
 
     if "artist" in keys:

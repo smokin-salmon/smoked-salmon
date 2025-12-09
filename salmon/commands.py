@@ -16,6 +16,7 @@ import salmon.play
 import salmon.search
 import salmon.sources
 import salmon.tagger
+import salmon.trackers
 import salmon.uploader
 import salmon.web  # noqa F401
 from salmon import cfg
@@ -138,9 +139,10 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     By default checks the folder the script is run from.
     Can add spectrals to a torrent description and report a torrent as lossy web.
     """
-    if not torrent_id:
+    torrent_id_input: str = torrent_id or ""
+    if not torrent_id_input:
         click.secho("No torrent id provided.", fg="red")
-        torrent_id = click.prompt(
+        torrent_id_input = await click.prompt(
             click.style(
                 """Input a torrent id or a URL containing one.
                 Tracker in a URL will override -t flag.""",
@@ -148,30 +150,32 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
                 bold=True,
             ),
         )
-    if "/torrents.php" in torrent_id:
-        base_url = parse.urlparse(torrent_id).netloc
+
+    torrent_id_int: int
+    if "/torrents.php" in torrent_id_input:
+        base_url = parse.urlparse(torrent_id_input).netloc
         if base_url in salmon.trackers.tracker_url_code_map:
             # this will overide -t tracker
             tracker = salmon.trackers.tracker_url_code_map[base_url]
         else:
             click.echo("Unrecognised tracker!")
             raise click.Abort
-        torrent_id = int(parse.parse_qs(parse.urlparse(torrent_id).query)["torrentid"][0])
-    elif torrent_id.strip().isdigit():
-        torrent_id = int(torrent_id)
+        torrent_id_int = int(parse.parse_qs(parse.urlparse(torrent_id_input).query)["torrentid"][0])
+    elif torrent_id_input.strip().isdigit():
+        torrent_id_int = int(torrent_id_input)
     else:
         click.echo("Not a valid torrent!")
         raise click.Abort
 
-    tracker = salmon.trackers.validate_tracker(None, "tracker", tracker)
+    tracker = await salmon.trackers.validate_tracker(None, "tracker", tracker)
     gazelle_site = salmon.trackers.get_class(tracker)()
-    req = await gazelle_site.request("torrent", id=torrent_id)
+    req = await gazelle_site.request("torrent", id=torrent_id_int)
     path = os.path.join(path, html.unescape(req["torrent"]["filePath"]))
     source_url = None
     source = req["torrent"]["media"]
     click.echo(f"Generating spectrals for {source} sourced: {path}")
     track_data = gather_audio_info(path)
-    await post_upload_spectral_check(gazelle_site, path, torrent_id, None, track_data, source, source_url)
+    await post_upload_spectral_check(gazelle_site, path, torrent_id_int, None, track_data, source, source_url)
 
 
 def _backup_config(config_path: str) -> None:
