@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 from copy import deepcopy
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.common import RE_FEAT, re_split

@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.constants import RELEASE_TYPES

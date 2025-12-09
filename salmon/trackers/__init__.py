@@ -1,6 +1,6 @@
 from urllib import parse
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.trackers import dic, ops, red

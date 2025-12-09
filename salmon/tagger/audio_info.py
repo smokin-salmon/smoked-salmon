@@ -1,6 +1,6 @@
 import os
 
-import click
+import asyncclick as click
 import mutagen
 
 from salmon.common import compress, get_audio_files

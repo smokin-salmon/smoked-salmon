@@ -5,7 +5,7 @@ from collections import namedtuple
 from itertools import chain
 from string import Formatter
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.constants import (

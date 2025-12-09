@@ -1,4 +1,4 @@
-import click
+import asyncclick as click
 import mutagen
 from mutagen import id3
 

@@ -1,4 +1,4 @@
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.trackers.base import BaseGazelleApi

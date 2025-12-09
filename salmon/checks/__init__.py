@@ -1,6 +1,6 @@
 import os
 
-import click
+import asyncclick as click
 
 from salmon.checks.integrity import handle_integrity_check
 from salmon.checks.logs import check_log_cambia

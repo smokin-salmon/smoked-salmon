@@ -6,7 +6,7 @@ import subprocess as sp
 from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
 
-import click
+import asyncclick as click
 from mutagen import flac, id3, mp3
 
 from salmon import cfg

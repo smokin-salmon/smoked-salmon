@@ -6,7 +6,7 @@ import os
 import readline
 import shutil
 
-import click
+import asyncclick as click
 
 import salmon.commands
 from salmon.common import commandgroup

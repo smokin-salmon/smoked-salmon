@@ -1,34 +1,49 @@
-import asyncio
+from typing import Any
 from urllib import parse
 
-import click
+import asyncclick as click
 import humanfriendly
 
 from salmon import cfg
 from salmon.errors import RequestError
 
 
-def check_requests(gazelle_site, searchstrs):
+async def check_requests(gazelle_site: Any, searchstrs: list[str]) -> str | None:
+    """Search for requests on site and offer a choice to fill one.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings to find requests.
+
+    Returns:
+        Request ID if user chooses to fill one, None otherwise.
     """
-    Search for requests on site and offer a choice to fill one.
-    """
-    results = get_request_results(gazelle_site, searchstrs)
+    results = await get_request_results(gazelle_site, searchstrs)
     print_request_results(gazelle_site, results, " / ".join(searchstrs))
     # Should add an option to still prompt if there are no results.
     if results or cfg.upload.requests.always_ask_for_request_fill:
         request_id = _prompt_for_request_id(gazelle_site, results)
         if request_id:
-            confirmation = _confirm_request_id(gazelle_site, request_id)
+            confirmation = await _confirm_request_id(gazelle_site, request_id)
             if confirmation is True:
                 return request_id
     return None
 
 
-def get_request_results(gazelle_site, searchstrs):
-    "Get the request results from gazelle site"
+async def get_request_results(gazelle_site: Any, searchstrs: list[str]) -> list[dict[str, Any]]:
+    """Get the request results from gazelle site.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings to find requests.
+
+    Returns:
+        List of request results.
+    """
     results = []
     for searchstr in searchstrs:
-        for req in asyncio.run(gazelle_site.request("requests", search=searchstr))["results"]:
+        response = await gazelle_site.request("requests", search=searchstr)
+        for req in response["results"]:
             if req not in results:
                 results.append(req)
     return [item for item in results if item["categoryName"] > "Music"]
@@ -139,10 +154,18 @@ def _prompt_for_request_id(gazelle_site, results):
             return None
 
 
-def _confirm_request_id(gazelle_site, request_id):
-    """Have the user decide whether or not they want to fill request"""
+async def _confirm_request_id(gazelle_site: Any, request_id: str | int) -> bool:
+    """Have the user decide whether or not they want to fill request.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        request_id: The request ID to confirm.
+
+    Returns:
+        True if user confirms, False otherwise.
+    """
     try:
-        req = asyncio.run(gazelle_site.request("request", id=request_id))
+        req = await gazelle_site.request("request", id=request_id)
         req["artist"] = ""
         if len(req["musicInfo"]["artists"]) > 3:
             req["artist"] = "Various Artists"

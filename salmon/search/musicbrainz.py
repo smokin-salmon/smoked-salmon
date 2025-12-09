@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 import musicbrainzngs
 
@@ -9,10 +10,18 @@ from salmon.sources import MusicBrainzBase
 
 
 class Searcher(MusicBrainzBase, SearchMixin):
-    async def search_releases(self, searchstr, limit):
+    async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any]]:
+        """Search for releases on MusicBrainz.
+
+        Args:
+            searchstr: Search string.
+            limit: Maximum number of results.
+
+        Returns:
+            Tuple of (source name, releases dict).
+        """
         releases = {}
-        loop = asyncio.get_running_loop()
-        soup = await loop.run_in_executor(None, musicbrainzngs.search_releases, searchstr, 10)
+        soup = await asyncio.to_thread(musicbrainzngs.search_releases, searchstr, 10)
         for rls in soup["release-list"]:
             try:
                 artists = rls["artist-credit-phrase"]

@@ -1,4 +1,4 @@
-import click
+import asyncclick as click
 
 from salmon.config import Cfg, find_config_path, setup_config
 

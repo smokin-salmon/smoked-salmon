@@ -1,7 +1,7 @@
 import os
 import shutil
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.constants import ALLOWED_EXTENSIONS

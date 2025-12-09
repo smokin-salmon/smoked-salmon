@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-import click
+import asyncclick as click
 import mutagen
 
 from salmon import cfg

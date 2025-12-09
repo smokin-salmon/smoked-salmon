@@ -1,29 +1,41 @@
+import asyncio
 import json
 from copy import copy
 from itertools import islice
+from typing import Any
 
-import click
+import asyncclick as click
 
 from salmon import cfg
-from salmon.common import handle_scrape_errors, make_searchstrs, re_strip, run_gather
+from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.search import SEARCHSOURCES, run_metasearch
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists
 
 
-def get_metadata(path, tags, rls_data=None):
-    """
-    Get metadata pertaining to a release from various metadata sources. Have the user
-    decide which sources to use, and then combine their information.
+async def get_metadata(
+    path: str, tags: dict[str, Any], rls_data: dict[str, Any] | None = None
+) -> tuple[dict[str, Any], str | None]:
+    """Get metadata pertaining to a release from various metadata sources.
+
+    Have the user decide which sources to use, and then combine their information.
+
+    Args:
+        path: Path to the album folder.
+        tags: Tag data from audio files.
+        rls_data: Release data dictionary.
+
+    Returns:
+        Tuple of (metadata dict, source URL or None).
     """
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
     click.secho(f"Searching for '{searchstrs}' releases...")
     kwargs = dict(artists=[a for a, _ in rls_data["artists"]], album=rls_data["title"]) if rls_data else {}
-    search_results = run_metasearch(searchstrs, filter=False, track_count=len(tags), **kwargs)
+    search_results = await run_metasearch(searchstrs, filter=False, track_count=len(tags), **kwargs)
     choices = _print_search_results(search_results, rls_data)
-    metadata, source_url = _select_choice(choices, rls_data)
+    metadata, source_url = await _select_choice(choices, rls_data)
     remove_various_artists(metadata["tracks"])
     metadata = fix_hardcore_genre(metadata)
     return metadata, source_url
@@ -69,12 +81,21 @@ def _print_search_results(results, rls_data=None):
     return choices
 
 
-def _select_choice(choices, rls_data):
+async def _select_choice(
+    choices: dict[int, tuple[str, str]], rls_data: dict[str, Any] | None
+) -> tuple[dict[str, Any], str | None]:
+    """Allow the user to select a metadata choice.
+
+    Then, if the metadata came from a scraper, run the scrape(s) and return combined metadata.
+
+    Args:
+        choices: Dictionary of choice ID to (source, release_id) tuples.
+        rls_data: Release data dictionary.
+
+    Returns:
+        Tuple of (metadata dict, source URL or None).
+    """
     source_url = None
-    """
-    Allow the user to select a metadata choice. Then, if the metadata came from a scraper,
-    run the scrape(s) and return combined metadata.
-    """
     # Initialize rls_data if needed
     rls_data = rls_data or {}
     if "urls" not in rls_data:
@@ -146,7 +167,7 @@ def _select_choice(choices, rls_data):
                 return meta, source_url
             continue
 
-        metadatas = run_gather(*tasks)
+        metadatas = await asyncio.gather(*tasks)
         meta = combine_metadatas(
             *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data, source_url=source_url
         )

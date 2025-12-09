@@ -1,7 +1,7 @@
 import re
 from os import path
 
-import click
+import asyncclick as click
 import requests
 
 from salmon import cfg

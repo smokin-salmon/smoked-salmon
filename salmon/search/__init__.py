@@ -1,7 +1,9 @@
+import asyncio
 import re
 from itertools import chain
+from typing import Any
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.common import (
@@ -10,7 +12,6 @@ from salmon.common import (
     normalize_accents,
     re_split,
     re_strip,
-    run_gather,
 )
 from salmon.search import (
     bandcamp,
@@ -41,14 +42,14 @@ SEARCHSOURCES = {
 @click.argument("searchstr", nargs=-1, required=True)
 @click.option("--track-count", "-t", type=click.INT)
 @click.option("--limit", "-l", type=click.INT, default=cfg.upload.search.limit)
-def metas(searchstr, track_count, limit):
-    """Search for releases from metadata providers"""
-    searchstr = " ".join(searchstr)
-    click.secho(f"Searching {', '.join(SEARCHSOURCES)} (searchstrs: {searchstr})", fg="cyan", bold=True)
+async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int) -> None:
+    """Search for releases from metadata providers."""
+    search_query = " ".join(searchstr)
+    click.secho(f"Searching {', '.join(SEARCHSOURCES)} (searchstrs: {search_query})", fg="cyan", bold=True)
 
-    results = run_metasearch([searchstr], limit=limit, track_count=track_count)
-    not_found = []
-    inactive_sources = []
+    results = await run_metasearch([search_query], limit=limit, track_count=track_count)
+    not_found: list[str] = []
+    inactive_sources: list[str] = []
     source_errors = SEARCHSOURCES.keys() - [r for r in results]
     for source, releases in results.items():
         if releases:
@@ -75,27 +76,37 @@ def metas(searchstr, track_count, limit):
         click.secho(f"Failed to scrape {', '.join(source_errors)}.", fg="red")
 
 
-def run_metasearch(
-    searchstrs,
-    limit=cfg.upload.search.limit,
-    sources=None,
-    track_count=None,
-    artists=None,
-    album=None,
-    filter=True,
-):
-    """
-    Run a search for releases matching the searchstr. Specify the artists and albums
-    kwargs to have stronger filtering of results.
+async def run_metasearch(
+    searchstrs: list[str],
+    limit: int = cfg.upload.search.limit,
+    sources: dict[str, Any] | None = None,
+    track_count: int | None = None,
+    artists: list[str] | None = None,
+    album: str | None = None,
+    filter: bool = True,
+) -> dict[str, Any]:
+    """Run a search for releases matching the searchstr.
+
+    Args:
+        searchstrs: List of search strings.
+        limit: Maximum number of results per source.
+        sources: Dict of sources to search, defaults to all.
+        track_count: Filter by track count if specified.
+        artists: Filter by artists if specified.
+        album: Filter by album name if specified.
+        filter: Whether to apply filtering.
+
+    Returns:
+        Dict mapping source names to search results.
     """
     sources = SEARCHSOURCES if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
-    results = {}
+    results: dict[str, Any] = {}
     tasks = [
         handle_scrape_errors(s.Searcher().search_releases(search, limit))
         for search in searchstrs
         for s in sources.values()
     ]
-    task_responses = run_gather(*tasks)
+    task_responses = await asyncio.gather(*tasks)
     for source, result in [r or (None, None) for r in task_responses]:
         if result:
             if filter:
@@ -107,11 +118,25 @@ def run_metasearch(
     return results
 
 
-def filter_results(results, artists, album):
-    filtered = {}
+def filter_results(
+    results: dict[str, Any] | None,
+    artists: list[str] | None,
+    album: str | None,
+) -> dict[str, Any]:
+    """Filter search results by artist and album.
+
+    Args:
+        results: Search results to filter.
+        artists: Artist names to match.
+        album: Album name to match.
+
+    Returns:
+        Filtered results dict.
+    """
+    filtered: dict[str, Any] = {}
     for rls_id, result in (results or {}).items():
         if artists:
-            split_artists = []
+            split_artists: list[str] = []
             for a in artists:
                 split_artists += re_split(re_strip(normalize_accents(a)))
             stripped_rls_artist = re_strip(normalize_accents(result[0].artist))
@@ -129,15 +154,33 @@ def filter_results(results, artists, album):
     return filtered
 
 
-def filter_by_track_count(results, track_count):
-    filtered = {}
+def filter_by_track_count(results: dict[str, Any], track_count: int) -> dict[str, Any]:
+    """Filter results by track count.
+
+    Args:
+        results: Search results to filter.
+        track_count: Expected track count.
+
+    Returns:
+        Filtered results dict.
+    """
+    filtered: dict[str, Any] = {}
     for rls_id, (ident_data, res_str) in results.items():
         if not ident_data.track_count or abs(ident_data.track_count - track_count) <= 1:
             filtered[rls_id] = (ident_data, res_str)
     return filtered
 
 
-def _compare_albums(one, two):
+def _compare_albums(one: str, two: str) -> bool:
+    """Compare two album names for similarity.
+
+    Args:
+        one: First album name.
+        two: Second album name.
+
+    Returns:
+        True if albums are considered similar.
+    """
     one, two = normalize_accents(one, two)
     regex_pattern = r" \(?(mix|feat|with|incl|prod).+"
     return bool(

@@ -6,12 +6,11 @@ from json.decoder import JSONDecodeError
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
-import click
+import asyncclick as click
 from bs4 import BeautifulSoup
 from ratelimit import RateLimitException, limits, sleep_and_retry
 
 from salmon import cfg
-from salmon.common import run_gather
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
     LoginError,

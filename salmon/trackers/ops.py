@@ -1,6 +1,6 @@
-import asyncio
 import re
 
+import aiohttp
 from bs4 import BeautifulSoup
 
 from salmon import cfg
@@ -62,11 +62,26 @@ class OpsApi(BaseGazelleApi):
                 ids.append((match[2], match[1]))
         return max(ids)
 
-    async def report_lossy_master(self, torrent_id, comment, source):
-        """Automagically report a torrent for lossy master/web approval."""
+    async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
+        """Report torrent for lossy master approval (OPS-specific).
 
+        OPS only uses 'lossyapproval' type, not 'lossywebapproval'.
+
+        Args:
+            torrent_id: The torrent ID to report.
+            comment: The report comment.
+            source: Media source.
+
+        Returns:
+            True if report was successful.
+
+        Raises:
+            RequestError: If the report fails.
+        """
+        await self.ensure_authenticated()
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
+        # OPS only uses lossyapproval, not lossywebapproval
         type_ = "lossyapproval"
         data = {
             "auth": self.authkey,
@@ -76,10 +91,13 @@ class OpsApi(BaseGazelleApi):
             "extra": comment,
             "submit": True,
         }
-        r = await asyncio.get_running_loop().run_in_executor(
-            None,
-            lambda: self.session.post(url, params=params, data=data, headers=self.headers),
-        )
-        if "torrents.php" in r.url:
-            return True
-        raise RequestError(f"Failed to report the torrent for lossy master, code {r.status_code}.")
+
+        timeout = aiohttp.ClientTimeout(total=10)
+        async with (
+            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
+            session.post(url, params=params, data=data, headers=self.headers) as r,
+        ):
+            resp_url = str(r.url)
+            if "torrents.php" in resp_url:
+                return True
+            raise RequestError(f"Failed to report the torrent for lossy master, code {r.status}.")

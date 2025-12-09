@@ -7,7 +7,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "requests>=2.31.0",
-    "click>=8.1.7",
+    "asyncclick>=8.1.7.2",
     "beautifulsoup4[lxml]>=4.13.0",
     "musicbrainzngs>=0.7.1",
     "mutagen>=1.47.0",

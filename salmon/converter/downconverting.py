@@ -6,7 +6,7 @@ import time
 from copy import copy
 from shutil import copyfile
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.errors import InvalidSampleRate

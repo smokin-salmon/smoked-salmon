@@ -1,21 +1,28 @@
 import asyncio
 import re
 from difflib import SequenceMatcher as SM
+from typing import Any
 from urllib import parse
 
-import click
+import asyncclick as click
 
 from salmon import cfg
-from salmon.common import RE_FEAT, make_searchstrs, run_gather
+from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder, RequestError
 
 
-def dupe_check_recent_torrents(gazelle_site, searchstrs):
-    """Checks the site log for recent uploads similar to ours.
-    It may be a little slow as it has to fetch multiple pages of the log
-    It also has to do a string distance comparison for each result"""
+async def dupe_check_recent_torrents(gazelle_site: Any, searchstrs: list[str]) -> list[tuple]:
+    """Check site log for recent uploads similar to ours.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings to match against.
+
+    Returns:
+        List of matching upload tuples (id, artist, title).
+    """
     searchstr = searchstrs[0]
-    recent_uploads = gazelle_site.get_uploads_from_log()
+    recent_uploads = await gazelle_site.get_uploads_from_log()
     # Each upload in this list is best guess at (id,artist,title) from log
     hits = []
     seen = []
@@ -58,10 +65,22 @@ def print_recent_upload_results(gazelle_site, recent_uploads, searchstr):
             )
 
 
-def _prompt_for_recent_upload_results(gazelle_site, recent_uploads, searchstr, offer_deletion):
-    """
-    Prints recent uploads and prompts user to choose a group ID or take other actions.
-    Combines the functionality of print_recent_upload_results and _prompt_for_group_id.
+async def _prompt_for_recent_upload_results(
+    gazelle_site: Any,
+    recent_uploads: list[tuple],
+    searchstr: str,
+    offer_deletion: bool,
+) -> int | None:
+    """Print recent uploads and prompt user to choose a group ID.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        recent_uploads: List of recent upload tuples.
+        searchstr: Search string used.
+        offer_deletion: Whether to offer folder deletion option.
+
+    Returns:
+        Group ID or None for new group.
     """
     # First, print the recent uploads if any
     if recent_uploads:
@@ -101,7 +120,7 @@ def _prompt_for_recent_upload_results(gazelle_site, recent_uploads, searchstr, o
                 torrent_id = recent_uploads[group_id_num - 1][0]
                 # Need to convert torrent ID to group ID
                 try:
-                    group_id = asyncio.run(gazelle_site.get_redirect_torrentgroupid(torrent_id))
+                    group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
                     return group_id
                 except Exception:
                     click.echo("Could not get group ID from torrent ID.")
@@ -119,7 +138,7 @@ def _prompt_for_recent_upload_results(gazelle_site, recent_uploads, searchstr, o
                 return int(group_id)
             elif "torrentid" in parsed_query:
                 torrent_id = parsed_query["torrentid"][0]
-                group_id = asyncio.run(gazelle_site.get_redirect_torrentgroupid(torrent_id))
+                group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
                 return group_id
             else:
                 click.echo("Could not find group ID in URL.")
@@ -135,33 +154,51 @@ def _prompt_for_recent_upload_results(gazelle_site, recent_uploads, searchstr, o
             return None
 
 
-def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
+async def check_existing_group(
+    gazelle_site: Any,
+    searchstrs: list[str],
+    offer_deletion: bool = True,
+) -> int | None:
+    """Check for existing group and prompt user for selection.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings for dupe checking.
+        offer_deletion: Whether to offer folder deletion option.
+
+    Returns:
+        Group ID or None for new group.
     """
-    Make a request to the API with a dupe-check searchstr,
-    then have the user validate that the torrent does not match
-    anything on site.
-    """
-    results = get_search_results(gazelle_site, searchstrs)
+    results = await get_search_results(gazelle_site, searchstrs)
     if not results and cfg.upload.requests.check_recent_uploads:
-        recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
-        group_id = _prompt_for_recent_upload_results(
+        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
+        group_id = await _prompt_for_recent_upload_results(
             gazelle_site, recent_uploads, " / ".join(searchstrs), offer_deletion
         )
     else:
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
-        group_id = _prompt_for_group_id(gazelle_site, results, offer_deletion)
+        group_id = await _prompt_for_group_id(gazelle_site, results, offer_deletion)
     if group_id:
-        confirmation = _confirm_group_id(gazelle_site, group_id, results)
+        confirmation = await _confirm_group_id(gazelle_site, group_id, results)
         if confirmation is True:
             return group_id
         return None
     return group_id
 
 
-def get_search_results(gazelle_site, searchstrs):
-    results = []
+async def get_search_results(gazelle_site: Any, searchstrs: list[str]) -> list[dict]:
+    """Search for existing releases on tracker.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings to query.
+
+    Returns:
+        List of matching release dicts.
+    """
+    results: list[dict] = []
     tasks = [gazelle_site.request("browse", searchstr=searchstr) for searchstr in searchstrs]
-    for releases in run_gather(*tasks):
+    for releases in await asyncio.gather(*tasks):
         for release in releases["results"]:
             if release not in results:
                 results.append(release)
@@ -241,8 +278,21 @@ def print_search_results(gazelle_site, results, searchstr):
                 continue
 
 
-def _prompt_for_group_id(gazelle_site, results, offer_deletion):
-    """Have the user choose a group ID"""
+async def _prompt_for_group_id(
+    gazelle_site: Any,
+    results: list[dict],
+    offer_deletion: bool,
+) -> int | None:
+    """Prompt user to choose a group ID.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        results: Search results to choose from.
+        offer_deletion: Whether to offer folder deletion option.
+
+    Returns:
+        Group ID or None for new group.
+    """
     while True:
         group_id = click.prompt(
             click.style(
@@ -271,7 +321,7 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
                 group_id = parsed_query["id"][0]
             elif "torrentid" in parsed_query:
                 group_id = parsed_query["torrentid"][0]
-                group_id = asyncio.run(gazelle_site.get_redirect_torrentgroupid(group_id))
+                group_id = await gazelle_site.get_redirect_torrentgroupid(group_id)
                 return group_id
             else:
                 click.echo("Could not find group ID in URL.")
@@ -286,12 +336,24 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
             return None
 
 
-def print_torrents(gazelle_site, group_id, rset=None, highlight_torrent_id=None):
-    """Print the torrents that are a part of the torrent group."""
+async def print_torrents(
+    gazelle_site: Any,
+    group_id: int,
+    rset: dict | None = None,
+    highlight_torrent_id: int | None = None,
+) -> None:
+    """Print torrents in a torrent group.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        group_id: The group ID.
+        rset: Optional pre-fetched group data.
+        highlight_torrent_id: Torrent ID to highlight.
+    """
     # If rset is not provided, fetch it from the API
     if rset is None:
         try:
-            rset = asyncio.run(gazelle_site.torrentgroup(group_id))
+            rset = await gazelle_site.torrentgroup(group_id)
             # account for differences between search result and group result json
             rset["groupName"] = rset["group"]["name"]
             rset["artist"] = ""
@@ -303,7 +365,7 @@ def print_torrents(gazelle_site, group_id, rset=None, highlight_torrent_id=None)
             click.secho(f"{group_id} does not exist.", fg="red")
             raise click.Abort from None
 
-    group_info = {}
+    group_info: dict = {}
     click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
     click.secho(f"| {rset['artist']} - {rset['groupName']} ", fg="cyan", nl=False)
     click.secho(f"({rset['groupYear']})", fg="yellow")
@@ -318,7 +380,7 @@ def print_torrents(gazelle_site, group_id, rset=None, highlight_torrent_id=None)
             )
         if not t["remastered"]:
             if not group_info:
-                group_info = asyncio.run(gazelle_site.torrentgroup(group_id))["group"]
+                group_info = (await gazelle_site.torrentgroup(group_id))["group"]
             click.secho(
                 f"> OR / {group_info['recordLabel']} / "
                 f"{group_info['catalogueNumber']} / {t['media']} / "
@@ -327,15 +389,24 @@ def print_torrents(gazelle_site, group_id, rset=None, highlight_torrent_id=None)
             )
 
 
-def _confirm_group_id(gazelle_site, group_id, results):
-    """Have the user decide whether or not to upload to a torrent group."""
+async def _confirm_group_id(gazelle_site: Any, group_id: int, results: list[dict]) -> bool:
+    """Confirm upload to a torrent group.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        group_id: The group ID.
+        results: Search results.
+
+    Returns:
+        True if confirmed, False otherwise.
+    """
     rset = None
     for r in results:
         if group_id == r["groupId"]:
             rset = r
             break
 
-    print_torrents(gazelle_site, group_id, rset)
+    await print_torrents(gazelle_site, group_id, rset)
     while True:
         resp = click.prompt(
             click.style(

@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.common.figles import process_files

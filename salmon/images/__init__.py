@@ -1,11 +1,12 @@
 import asyncio
 import sqlite3
+from typing import Any
 
-import click
+import asyncclick as click
 import pyperclip
 
 from salmon import cfg
-from salmon.common import AliasedCommands, commandgroup, run_gather
+from salmon.common import AliasedCommands, commandgroup
 from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, emp, imgbb, imgbox, oeimg, ptpimg, ptscreens
@@ -21,8 +22,20 @@ HOSTS = {
 }
 
 
-def validate_image_host(ctx, param, value):
-    """Validate and return the image host module."""
+def validate_image_host(ctx: click.Context, param: click.Parameter, value: str) -> Any:
+    """Validate and return the image host module.
+
+    Args:
+        ctx: Click context.
+        param: Click parameter.
+        value: The image host name.
+
+    Returns:
+        The image host module.
+
+    Raises:
+        click.BadParameter: If the image host is invalid.
+    """
     try:
         return HOSTS[value]
     except KeyError:
@@ -30,8 +43,8 @@ def validate_image_host(ctx, param, value):
 
 
 @commandgroup.group(cls=AliasedCommands)
-def images():
-    """Create and manage uploads to image hosts"""
+async def images() -> None:
+    """Create and manage uploads to image hosts."""
     pass
 
 
@@ -48,9 +61,9 @@ def images():
     default=cfg.image.image_uploader,
     callback=validate_image_host,
 )
-def up(filepaths, image_host):
-    """Upload images to an image host"""
-    asyncio.run(upload_images(filepaths, image_host))
+async def up(filepaths: tuple[str, ...], image_host: Any) -> None:
+    """Upload images to an image host."""
+    await upload_images(filepaths, image_host)
 
 
 async def upload_images(filepaths: tuple, image_host) -> list[str]:
@@ -95,8 +108,8 @@ async def upload_images(filepaths: tuple, image_host) -> list[str]:
     default=0,
     help="The number of images to offset by",
 )
-def ls(limit, offset):
-    """View previously uploaded images"""
+async def ls(limit: int, offset: int) -> None:
+    """View previously uploaded images."""
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -224,17 +237,3 @@ async def _spectrals_handler(spec_id, filename, spectral_paths, uploader_instanc
     except ImageUploadFailed as e:
         click.secho(f"Failed to upload spectrals for {filename}: {e}", fg="red")
         return spec_id, None
-
-
-async def _run_uploads(upload_function, filepaths):
-    loop = asyncio.get_running_loop()
-    tasks = [loop.run_in_executor(None, lambda f=f: upload_function(f)) for f in filepaths]
-    return await asyncio.gather(*tasks)
-
-
-async def _run_cover_upload(cover_path):
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(
-        None,
-        lambda f=cover_path: HOSTS[cfg.image.cover_uploader].ImageUploader().upload_file(f)[0],
-    )

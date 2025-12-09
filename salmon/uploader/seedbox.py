@@ -5,7 +5,7 @@ import posixpath
 import subprocess
 
 import aiohttp
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.uploader.torrent_client import TorrentClientGenerator

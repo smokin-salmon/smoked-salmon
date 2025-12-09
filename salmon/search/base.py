@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import namedtuple
 
-import click
+import asyncclick as click
 
 IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
 ArtistRlsData = namedtuple("ArtistRlsData", ["url", "quality", "year", "artist", "album", "label", "explicit"])

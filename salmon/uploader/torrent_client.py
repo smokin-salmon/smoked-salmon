@@ -3,7 +3,7 @@ import os
 import xmlrpc.client
 from urllib.parse import unquote, urlparse
 
-import click
+import asyncclick as click
 import qbittorrentapi
 import transmission_rpc
 from deluge_client import DelugeRPCClient

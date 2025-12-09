@@ -3,7 +3,7 @@ import os
 import re
 
 import aiohttp
-import click
+import asyncclick as click
 import filetype
 import humanfriendly
 from mutagen import PaddingInfo

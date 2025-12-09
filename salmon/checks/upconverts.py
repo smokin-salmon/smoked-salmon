@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 
-import click
+import asyncclick as click
 import mutagen
 
 from salmon.common.figles import process_files
