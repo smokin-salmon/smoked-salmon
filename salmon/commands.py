@@ -18,7 +18,7 @@ import salmon.sources
 import salmon.tagger
 import salmon.trackers
 import salmon.uploader
-import salmon.web  # noqa F401
+import salmon.web
 from salmon import cfg
 from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress

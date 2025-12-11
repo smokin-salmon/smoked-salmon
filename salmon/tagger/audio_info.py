@@ -1,7 +1,7 @@
 import os
 
 import asyncclick as click
-from mutagen import File as MutagenFile  # type: ignore[attr-defined]
+from mutagen import File as MutagenFile
 
 from salmon.common import compress, get_audio_files
 from salmon.errors import UploadError

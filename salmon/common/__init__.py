@@ -7,19 +7,19 @@ from typing import Any
 import aiohttp
 import asyncclick as click
 
-from salmon.common.aliases import AliasedCommands  # noqa: F401
-from salmon.common.constants import RE_FEAT  # noqa: F401
-from salmon.common.figles import (  # noqa: F401
+from salmon.common.aliases import AliasedCommands
+from salmon.common.constants import RE_FEAT
+from salmon.common.figles import (
     compress,
     create_relative_path,
     get_audio_files,
 )
-from salmon.common.regexes import (  # noqa: F401
+from salmon.common.regexes import (
     parse_copyright,
     re_split,
     re_strip,
 )
-from salmon.common.strings import (  # noqa: F401
+from salmon.common.strings import (
     fetch_genre,
     less_uppers,
     make_searchstrs,
@@ -28,6 +28,30 @@ from salmon.common.strings import (  # noqa: F401
     truncate,
 )
 from salmon.errors import ScrapeError
+
+__all__ = [
+    "AliasedCommands",
+    "RE_FEAT",
+    "compress",
+    "create_relative_path",
+    "get_audio_files",
+    "parse_copyright",
+    "re_split",
+    "re_strip",
+    "fetch_genre",
+    "less_uppers",
+    "make_searchstrs",
+    "normalize_accents",
+    "strip_template_keys",
+    "truncate",
+    "ScrapeError",
+    "commandgroup",
+    "prompt_async",
+    "flush_stdin",
+    "str_to_int_if_int",
+    "handle_scrape_errors",
+    "Prompt",
+]
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]}, cls=AliasedCommands)

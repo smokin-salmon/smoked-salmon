@@ -29,6 +29,9 @@ class MetadataMixin(ABC):
         as None.
         """
         soup = await self.create_soup(url)
+
+        tracks_result = await self.parse_tracks(soup)
+
         data = {
             "title": self.parse_release_title(soup),
             "cover": self.parse_cover_url(soup),
@@ -46,7 +49,7 @@ class MetadataMixin(ABC):
             "label": self.parse_release_label(soup),
             "catno": self.parse_release_catno(soup),
             "rls_type": self.parse_release_type(soup),
-            "tracks": self.parse_tracks(soup),
+            "tracks": tracks_result,
             "upc": self.parse_upc(soup),
             "comment": self.parse_comment(soup),
             "scene": False,
@@ -72,20 +75,44 @@ class MetadataMixin(ABC):
 
     def generate_track(
         self,
-        trackno,
-        discno,
-        artists,
-        title,
-        replay_gain=None,
-        peak=None,
-        format_=None,
-        explicit=None,
-        isrc=None,
-        stream_id=None,
-        streamable=None,
-        **kwargs,
-    ):
-        """Return a generated track dictionary containing the required values."""
+        trackno: int | str,
+        discno: int | str,
+        artists: list[tuple[str, str]],
+        title: str,
+        replay_gain: float | None = None,
+        peak: float | None = None,
+        format_: str | None = None,
+        explicit: bool | None = None,
+        isrc: str | None = None,
+        stream_id: str | int | None = None,
+        streamable: bool | None = None,
+        md5_origin: str | None = None,
+        media_version: str | None = None,
+        lossless: bool | None = None,
+        mp3_320: bool | None = None,
+    ) -> dict[str, Any]:
+        """Return a generated track dictionary containing the required values.
+
+        Args:
+            trackno: Track number.
+            discno: Disc number.
+            artists: List of (artist_name, role) tuples.
+            title: Track title.
+            replay_gain: Replay gain value.
+            peak: Peak value.
+            format_: Audio format/quality.
+            explicit: Whether the track is explicit.
+            isrc: ISRC code.
+            stream_id: Stream ID for streaming services.
+            streamable: Whether the track is streamable.
+            md5_origin: MD5 origin hash (Deezer).
+            media_version: Media version (Deezer).
+            lossless: Whether lossless is available (Deezer).
+            mp3_320: Whether MP3 320 is available (Deezer).
+
+        Returns:
+            A dictionary containing track metadata.
+        """
         return {
             "track#": str(trackno),
             "disc#": str(discno),
@@ -100,7 +127,10 @@ class MetadataMixin(ABC):
             "format": format_,
             "stream_id": stream_id,
             "streamable": streamable,
-            **kwargs,
+            "md5_origin": md5_origin,
+            "media_version": media_version,
+            "lossless": lossless,
+            "mp3_320": mp3_320,
         }
 
     def determine_rls_type(self, data):
@@ -168,7 +198,7 @@ class MetadataMixin(ABC):
         pass
 
     @abstractmethod
-    def parse_tracks(self, soup) -> dict:
+    async def parse_tracks(self, soup) -> dict:
         pass
 
     # The below parsers aren't present in every scraper.

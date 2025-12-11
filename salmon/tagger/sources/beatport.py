@@ -79,7 +79,7 @@ class Scraper(BeatportBase, MetadataMixin):
     def parse_comment(self, soup):
         return None
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
         try:

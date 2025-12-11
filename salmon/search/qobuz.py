@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 from salmon import cfg
 from salmon.errors import ScrapeError
@@ -80,7 +81,9 @@ class Searcher(QobuzBase, SearchMixin):
         except (ValueError, IndexError, TypeError):
             return None
 
-    @staticmethod
-    def format_url(rls_id, rls_name=None):  # type: ignore[override]
+    @classmethod
+    def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
         """Format a Qobuz URL from a release ID."""
+        if url:
+            return url
         return f"https://www.qobuz.com/album/-/{rls_id}"

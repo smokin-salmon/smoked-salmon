@@ -1,11 +1,13 @@
 import re
 from collections import defaultdict
 from html import unescape
+from typing import Any
 
 from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
+from salmon.sources.base import SoupType
 from salmon.tagger.sources.base import MetadataMixin
 
 # ------------------------------------------------------------------------------
@@ -118,10 +120,24 @@ class Scraper(QobuzBase, MetadataMixin):
     # Core API and Connection Methods
     # --------------------------------------------------------------------------
 
-    async def create_soup(self, url):  # type: ignore[override]
-        """
-        Override create_soup to properly get the album data from the API.
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
+        """Override create_soup to properly get the album data from the API.
+
         This method uses the QobuzBase get_json method.
+
+        Args:
+            url: The Qobuz album URL.
+            params: Optional query parameters (unused).
+            headers: Optional HTTP headers (unused).
+            follow_redirects: Whether to follow redirects (unused).
+
+        Returns:
+            Album data dict from Qobuz API.
+
+        Raises:
+            ScrapeError: If fetching fails.
         """
         try:
             match = self.regex.match(url)
@@ -146,8 +162,17 @@ class Scraper(QobuzBase, MetadataMixin):
         return response
 
     @classmethod
-    def format_url(cls, rls_id=None, rls_name=None, url=None):  # type: ignore[override]
-        """Format a URL for the release based on ID or original URL."""
+    def format_url(cls, rls_id: Any = None, rls_name: str | None = None, url: str | None = None) -> str:
+        """Format a URL for the release based on ID or original URL.
+
+        Args:
+            rls_id: The release ID.
+            rls_name: Optional release name (unused).
+            url: Optional pre-formatted URL to return directly.
+
+        Returns:
+            The formatted URL string.
+        """
         if url:
             return url
         return f"https://www.qobuz.com/album/-/{rls_id}"
@@ -209,10 +234,8 @@ class Scraper(QobuzBase, MetadataMixin):
 
         return label_str if label_str else None
 
-    def parse_tracks(self, soup):
-        """
-        Parse track information from the API response.
-        """
+    async def parse_tracks(self, soup):
+        """Parse track information from the API response."""
         tracks = defaultdict(dict)
 
         # Get main artist from release

@@ -1,18 +1,12 @@
-#!/usr/bin/env python3
-
-# flake8: noqa
-
 import os
-import readline
 import shutil
 
 import asyncclick as click
 
-import salmon.commands
+from salmon import cfg
 from salmon.common import commandgroup
 from salmon.errors import FilterError, LoginError, UploadError
 from salmon.release_notification import show_release_notification
-from salmon import cfg
 
 
 def cleanup_tmp_dir():

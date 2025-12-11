@@ -8,8 +8,8 @@ from pathlib import Path
 
 import asyncclick as click
 from mutagen import flac, mp3
-from mutagen.id3 import Frames
-from mutagen.id3._frames import APIC, TXXX  # type: ignore[import-not-found]
+from mutagen.flac import VCFLACDict
+from mutagen.id3 import APIC, TXXX, Frames
 
 from salmon import cfg
 
@@ -167,11 +167,27 @@ def process_flac_file(flac_thing: flac.FLAC, tag_dict: dict, mp3_qual: str, mp3_
     copy_tags(tag_dict, flac_thing, mp3_file_path)
 
 
-def get_flac_n_tag_dict(flac_file_path: Path) -> tuple[flac.FLAC, dict[str, list]]:
+def get_flac_n_tag_dict(flac_file_path: Path) -> tuple[flac.FLAC, dict[str, list[str]]]:
+    """Get FLAC file and its tag dictionary.
+
+    Args:
+        flac_file_path: Path to the FLAC file.
+
+    Returns:
+        Tuple of (FLAC object, tag dictionary).
+
+    Raises:
+        ValueError: If FLAC file has no tags.
+    """
     fl = flac.FLAC(flac_file_path)
-    if fl.tags is None:
+    tags = fl.tags
+    if tags is None:
         raise ValueError(f"FLAC file has no tags: {flac_file_path}")
-    tag_dict: dict[str, list] = fl.tags.as_dict()  # type: ignore[assignment]
+    # For FLAC files, tags is VCommentDict which has as_dict() method
+    if not isinstance(tags, VCFLACDict):
+        raise ValueError(f"FLAC tags are not VCommentDict: {flac_file_path}")
+    # VCommentDict.as_dict() returns dict[str, list[str]]
+    tag_dict: dict[str, list[str]] = tags.as_dict()
     prepare_tags(tag_dict)
     return fl, tag_dict
 

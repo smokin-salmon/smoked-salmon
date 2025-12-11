@@ -3,7 +3,7 @@ import re
 
 from salmon import cfg
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper
+from salmon.sources.base import BaseScraper, SoupType
 
 
 class DiscogsBase(BaseScraper):
@@ -13,7 +13,9 @@ class DiscogsBase(BaseScraper):
     release_format = "/release/{rls_id}"
     get_params = {"token": cfg.metadata.discogs_token}
 
-    async def create_soup(self, url, params=None):  # type: ignore[override]
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
         match = self.regex.match(url)
         if not match:
             raise ScrapeError("Invalid Discogs URL.")

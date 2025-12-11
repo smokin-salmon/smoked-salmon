@@ -15,6 +15,9 @@ HEADERS = {"User-Agent": choice(UAGENTS)}
 
 IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
 
+# Type alias for soup return type - can be BeautifulSoup or dict (for JSON APIs)
+SoupType = BeautifulSoup | dict[str, Any]
+
 
 class BaseScraper:
     """Base class for metadata scrapers."""
@@ -26,21 +29,26 @@ class BaseScraper:
     get_params: dict[str, Any] = {}
 
     @classmethod
-    def format_url(cls, rls_id: str, rls_name: str | None = None) -> str:
+    def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
         """Format the URL for a scraped release.
 
         Args:
             rls_id: The release ID.
             rls_name: Optional release name for URL formatting.
+            url: Optional pre-formatted URL to return directly.
 
         Returns:
             The formatted URL string.
         """
+        if url:
+            return url
         keys = [fn for _, fn, _, _ in Formatter().parse(cls.release_format) if fn]
         if "rls_name" in keys:
             rls_name = rls_name or "a"
             return cls.site_url + cls.release_format.format(rls_id=rls_id, rls_name=cls.url_format_rls_name(rls_name))
-        return cls.site_url + cls.release_format.format(rls_id=rls_id)
+        # Handle tuple rls_id (e.g., from Tidal)
+        rls_id_str = rls_id[1] if isinstance(rls_id, tuple) else rls_id
+        return cls.site_url + cls.release_format.format(rls_id=rls_id_str)
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         """Make async GET request to JSON API.
@@ -79,15 +87,15 @@ class BaseScraper:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
 
     async def create_soup(
-        self, url: str, params: dict | None = None, headers: dict | None = None, **kwargs
-    ) -> BeautifulSoup | dict[str, Any]:
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
         """Scrape webpage and return BeautifulSoup object.
 
         Args:
             url: The URL to scrape.
             params: Optional query parameters.
             headers: Optional HTTP headers.
-            **kwargs: Additional arguments for the request.
+            follow_redirects: Whether to follow redirects. Defaults to True.
 
         Returns:
             BeautifulSoup object of the scraped page.
@@ -96,7 +104,6 @@ class BaseScraper:
             ScrapeError: If scraping fails.
         """
         params = params or {}
-        follow_redirects = kwargs.pop("follow_redirects", True)
         timeout = aiohttp.ClientTimeout(total=7)
         async with (
             aiohttp.ClientSession(timeout=timeout) as session,
@@ -105,7 +112,6 @@ class BaseScraper:
                 params=params,
                 headers=headers or HEADERS,
                 allow_redirects=follow_redirects,
-                **kwargs,
             ) as r,
         ):
             if r.status != 200:

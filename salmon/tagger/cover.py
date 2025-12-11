@@ -6,9 +6,9 @@ import aiohttp
 import asyncclick as click
 import filetype
 import humanfriendly
-from mutagen._util import PaddingInfo  # type: ignore[import-not-found]
+from mutagen import PaddingInfo
 from mutagen.flac import FLAC, Picture
-from mutagen.id3._specs import PictureType  # type: ignore[import-not-found]
+from mutagen.id3 import PictureType
 from PIL import Image
 
 from salmon import cfg

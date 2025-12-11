@@ -55,13 +55,14 @@ class Scraper(TidalBase, MetadataMixin):
     def parse_upc(self, soup):
         return soup["upc"]
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
+            artists = await self.parse_artists(track["artists"], track["title"], track["id"])
             tracks[str(track["volumeNumber"])][str(track["trackNumber"])] = self.generate_track(
                 trackno=track["trackNumber"],
                 discno=track["volumeNumber"],
-                artists=self.parse_artists(track["artists"], track["title"], track["id"]),
+                artists=artists,
                 title=self.parse_title(track["title"], track["version"]),
                 replay_gain=track["replayGain"],
                 peak=track["peak"],
@@ -80,13 +81,19 @@ class Scraper(TidalBase, MetadataMixin):
             return "Self-Released"
         return data["label"]
 
-    def parse_artists(self, artists, title, track_id):  # noqa: C901
+    async def parse_artists(self, artists: list[dict], title: str, track_id: int) -> list[tuple[str, str]]:
+        """Iterate over all artists and roles, returning a compliant list of artist tuples.
+
+        Args:
+            artists: List of artist dictionaries from Tidal API.
+            title: Track title.
+            track_id: Track ID for fetching contributors.
+
+        Returns:
+            List of (artist_name, role) tuples.
         """
-        Iterate over all artists and roles, returning a compliant list of
-        artist tuples.
-        """
-        result = []
-        artist_set = set()
+        result: list[tuple[str, str]] = []
+        artist_set: set[str] = set()
 
         feat = RE_FEAT.search(title)
         if feat:
@@ -120,18 +127,20 @@ class Scraper(TidalBase, MetadataMixin):
 
         if "mix" in title.lower():  # Get contributors for (re)mixes.
             attempts = 0
+            contributor_artists: list[dict] = []
             while True:
                 try:
-                    artists = self.get_json_sync(  # type: ignore[attr-defined]
+                    resp = await self.get_json(
                         f"/tracks/{track_id}/contributors",
                         params={"countryCode": self.country_code, "limit": 25},
-                    )["items"]
+                    )
+                    contributor_artists = resp["items"]
                     break
                 except ScrapeError:
                     attempts += 1
                     if attempts > 3:
                         break
-            for artist in artists:
+            for artist in contributor_artists:
                 if artist["role"] == "Remixer" and artist["name"].lower() not in artist_set:
                     result.append((unescape(artist["name"]), "remixer"))
                     artist_set.add(artist["name"].lower())

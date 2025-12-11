@@ -70,15 +70,15 @@ class QBittorrentClient(TorrentClient):
 
 
 class TransmissionClient(TorrentClient):
-    def login(self):
+    def login(self) -> transmission_rpc.Client | None:
         try:
             click.secho("Attempting to connect to Transmission...", fg="yellow")
             # Cast to expected types for transmission_rpc.Client
-            protocol = str(self.scheme) if self.scheme else "http"
+            protocol = "https" if self.scheme == "https" else "http"
             host = str(self.host) if self.host else "localhost"
             port = int(self.port) if self.port else 9091
             trt = transmission_rpc.Client(
-                protocol=protocol,  # type: ignore[arg-type]
+                protocol=protocol,
                 host=host,
                 port=port,
                 username=self.username,
@@ -216,30 +216,51 @@ TORRENT_CLIENT_MAPPING = {
 
 class TorrentClientGenerator:
     @staticmethod
-    def parse_libtc_url(url):
+    def parse_libtc_url(url: str) -> TorrentClient:
+        """Parse a libtc-style URL and return the appropriate torrent client instance.
+
+        Args:
+            url: The torrent client URL in libtc format.
+                Examples:
+                - transmission+http://127.0.0.1:9091
+                - rutorrent+http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php
+                - deluge://username:password@127.0.0.1:58664
+                - qbittorrent+http://username:password@127.0.0.1:8080
+
+        Returns:
+            An instance of the appropriate TorrentClient subclass.
+        """
         click.secho(f"\nParsing torrent client URL: {url}", fg="cyan")
 
-        # transmission+http://127.0.0.1:9091
-        # rutorrent+http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php
-        # deluge://username:password@127.0.0.1:58664
-        # qbittorrent+http://username:password@127.0.0.1:8080
+        username: str | None = None
+        password: str | None = None
+        client_url: str | None = None
+        scheme: str | None = None
+        host: str | None = None
+        port: int | None = None
 
-        kwargs = {}
         parsed = urlparse(url)
-        scheme = parsed.scheme.split("+")
+        scheme_parts = parsed.scheme.split("+")
         netloc = parsed.netloc
         if "@" in netloc:
             auth, netloc = netloc.rsplit("@", 1)
             username, password = auth.split(":", 1)
-            kwargs["username"] = unquote(username)
-            kwargs["password"] = unquote(password)
+            username = unquote(username)
+            password = unquote(password)
 
-        client = scheme[0]
+        client = scheme_parts[0]
         if client in ["qbittorrent", "rutorrent"]:
-            kwargs["url"] = f"{scheme[1]}://{netloc}{parsed.path}"
+            client_url = f"{scheme_parts[1]}://{netloc}{parsed.path}"
         else:
-            kwargs["scheme"] = scheme[-1]  # Use last element of scheme to support deluge and transmission
-            kwargs["host"], kwargs["port"] = netloc.split(":")
-            kwargs["port"] = int(kwargs["port"])
+            scheme = scheme_parts[-1]  # Use last element of scheme to support deluge and transmission
+            host, port_str = netloc.split(":")
+            port = int(port_str)
 
-        return TORRENT_CLIENT_MAPPING[client](**kwargs)
+        return TORRENT_CLIENT_MAPPING[client](
+            username=username,
+            password=password,
+            url=client_url,
+            scheme=scheme,
+            host=host,
+            port=port,
+        )

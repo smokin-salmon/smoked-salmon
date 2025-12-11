@@ -69,7 +69,7 @@ class Scraper(BandcampBase, MetadataMixin):
         except IndexError as e:
             raise ScrapeError("Could not parse record label.") from e
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         artist = ""
         namesection = soup.select("#name-section")

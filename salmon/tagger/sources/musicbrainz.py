@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 
 import musicbrainzngs
+from musicbrainzngs import musicbrainz as mb_module
 
 from salmon.errors import ScrapeError
 from salmon.sources import MusicBrainzBase
@@ -21,7 +22,7 @@ RELEASE_TYPES = {
 }
 
 
-musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")  # type: ignore[attr-defined]
+musicbrainzngs.set_useragent("salmon", "1.0", "noreply@salm.on")
 
 
 class Scraper(MusicBrainzBase, MetadataMixin):
@@ -32,7 +33,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         if soup["cover-art-archive"] and soup["cover-art-archive"]["front"] == "true":
             try:
                 r = musicbrainzngs.get_image_list(soup["id"])
-            except musicbrainzngs.musicbrainz.ResponseError:  # type: ignore[attr-defined]
+            except mb_module.ResponseError:
                 return None
 
             for image in r["images"]:
@@ -95,7 +96,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         except KeyError:
             return None
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for disc in soup["medium-list"]:
             for track in disc["track-list"]:

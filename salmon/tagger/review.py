@@ -119,7 +119,7 @@ async def _edit_artists(metadata):
             )
 
 
-async def _alias_artists(metadata):  # noqa: C901
+async def _alias_artists(metadata):
     existing_artists = {a for a, _ in metadata["artists"]}
     while True:
         artist_aliases = defaultdict(list)

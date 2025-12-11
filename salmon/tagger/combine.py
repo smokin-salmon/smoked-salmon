@@ -31,7 +31,7 @@ def get_source_from_link(url):
             return name
 
 
-def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
+def combine_metadatas(*metadatas, base=None, source_url=None):
     """
     This function takes a bunch of chosen metadata and splices
     together values to form one unified metadata dictionary.

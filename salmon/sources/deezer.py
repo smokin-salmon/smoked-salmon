@@ -7,7 +7,7 @@ import aiohttp
 
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper
+from salmon.sources.base import BaseScraper, SoupType
 
 HEADERS = {
     "User-Agent": choice(UAGENTS),
@@ -79,7 +79,9 @@ class DeezerBase(BaseScraper):
             raise ValueError(f"Invalid Deezer URL: {url}")
         return match[2]
 
-    async def create_soup(self, url: str, params: dict | None = None):  # type: ignore[override]
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
         """Fetch album data from Deezer API.
 
         Args:

@@ -1,9 +1,10 @@
 import json
 import re
+from typing import Any
 
 from salmon import cfg
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper
+from salmon.sources.base import BaseScraper, SoupType
 
 
 class QobuzBase(BaseScraper):
@@ -17,9 +18,11 @@ class QobuzBase(BaseScraper):
         "X-App-Id": cfg.metadata.qobuz.app_id,
         "X-User-Auth-Token": cfg.metadata.qobuz.user_auth_token,
     }
-    get_params = {}
+    get_params: dict[str, Any] = {}
 
-    async def create_soup(self, url, params=None, headers=None, **kwargs):  # type: ignore[override]
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
         try:
             match = self.regex.match(url)
             if not match:

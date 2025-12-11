@@ -8,6 +8,7 @@ __pycache__
 .windsurfrules
 .venv/
 .torrents/
+temp/
 dist/
 build/
 

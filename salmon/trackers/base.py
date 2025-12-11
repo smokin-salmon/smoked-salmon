@@ -3,6 +3,7 @@ import html
 import re
 from collections import namedtuple
 from json.decoder import JSONDecodeError
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
@@ -105,12 +106,12 @@ class BaseGazelleApi:
             await self.authenticate()
 
     @limits(10, 10)
-    async def request(self, action: str, **kwargs) -> dict:
+    async def request(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.
 
         Args:
             action: The API action to perform.
-            **kwargs: Additional parameters for the request.
+            params: Additional parameters for the request.
 
         Returns:
             The API response data.
@@ -120,7 +121,7 @@ class BaseGazelleApi:
             RequestFailedError: If the request fails.
         """
         url = self.base_url + "/ajax.php"
-        params = {"action": action, **kwargs}
+        params = {"action": action, **(params or {})}
         timeout = aiohttp.ClientTimeout(total=5)
 
         try:
@@ -170,7 +171,7 @@ class BaseGazelleApi:
             The torrent group data.
         """
         await self.ensure_authenticated()
-        return await self.request("torrentgroup", id=group_id)
+        return await self.request("torrentgroup", params={"id": group_id})
 
     async def get_redirect_torrentgroupid(self, torrentid: int) -> str | None:
         """Get torrent group ID from torrent ID via redirect.
@@ -219,7 +220,7 @@ class BaseGazelleApi:
             The request data.
         """
         await self.ensure_authenticated()
-        return await self.request("request", id=id)
+        return await self.request("request", params={"id": id})
 
     async def artist_rls(self, artist: str):
         """Get all torrent groups belonging to an artist.
@@ -231,7 +232,7 @@ class BaseGazelleApi:
             Tuple of (artist_id, list of releases).
         """
         await self.ensure_authenticated()
-        resp = await self.request("artist", artistname=artist)
+        resp = await self.request("artist", params={"artistname": artist})
         releases = []
         for group in resp["torrentgroup"]:
             # We do not put compilations or guest appearances in this list.
@@ -266,10 +267,10 @@ class BaseGazelleApi:
         Get all the torrent groups from a label on site.
         All groups without a FLAC will be highlighted.
         """
-        params = {"remasterrecordlabel": label}
+        browse_params = {"remasterrecordlabel": label}
         if year:
-            params["year"] = year
-        first_request = await self.request("browse", **params)
+            browse_params["year"] = year
+        first_request = await self.request("browse", params=browse_params)
         if "pages" in first_request:
             pages = first_request["pages"]
         else:
@@ -279,11 +280,11 @@ class BaseGazelleApi:
         # Hits to the site are slow because of rate limiting.
         # Should probably be spun out into its own pagnation function at some point.
         for i in range(2, max(3, pages)):
-            params["page"] = str(i)
-            new_results = await self.request("browse", **params)
+            browse_params["page"] = str(i)
+            new_results = await self.request("browse", params=browse_params)
             all_results += new_results["results"]
-        params["page"] = "1"
-        resp2 = await self.request("browse", **params)
+        browse_params["page"] = "1"
+        resp2 = await self.request("browse", params=browse_params)
         all_results = all_results + resp2["results"]
         releases = []
         for group in all_results:
@@ -553,7 +554,7 @@ class BaseGazelleApi:
             RequestError: If edit fails.
         """
         await self.ensure_authenticated()
-        current_details = await self.request("torrent", id=torrent_id)
+        current_details = await self.request("torrent", params={"id": torrent_id})
         new_data = {
             "action": "takeedit",
             "torrentid": torrent_id,

@@ -2,7 +2,7 @@ import os
 import subprocess
 
 import asyncclick as click
-from mutagen import File as MutagenFile  # type: ignore[attr-defined]
+from mutagen import File as MutagenFile
 
 from salmon import cfg
 from salmon.common import get_audio_files
@@ -78,10 +78,14 @@ def prompt_editor(path):
     return False
 
 
-def standardize_tags(path):
-    """
-    Change ambiguously defined tags field values into the fields I arbitrarily
-    decided are the ones this script will use.
+def standardize_tags(path: str) -> None:
+    """Change ambiguously defined tags field values into standardized fields.
+
+    This function renames tag fields to use consistent naming conventions.
+    For example, 'year' becomes 'date', 'recordlabel' becomes 'label', etc.
+
+    Args:
+        path: Path to the directory containing audio files.
     """
     for filename in get_audio_files(path):
         mut = MutagenFile(os.path.join(path, filename))
@@ -90,12 +94,13 @@ def standardize_tags(path):
         tags = mut.tags
         if tags is None:
             continue
-        found_aliased = set()
+        found_aliased: set[str] = set()
         for tag, aliases in STANDARDIZED_TAGS.items():
             for alias in aliases:
                 if alias in tags:
-                    tags[tag] = tags[alias]  # type: ignore[literal-required]
-                    del tags[alias]  # type: ignore[arg-type]
+                    # Mutagen tags support dynamic key access for Vorbis comments
+                    tags[tag] = tags[alias]
+                    del tags[alias]
                     found_aliased.add(alias)
         if found_aliased:
             mut.save()

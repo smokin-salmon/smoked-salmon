@@ -1,5 +1,7 @@
 import re
 
+from bs4 import BeautifulSoup
+
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
@@ -19,9 +21,9 @@ class Searcher(JunodownloadBase, SearchMixin):
             follow_redirects=False,
         )
         # soup can be BeautifulSoup or dict depending on source
-        if not hasattr(soup, "find_all"):
+        if not isinstance(soup, BeautifulSoup):
             return "Junodownload", releases
-        for meta in soup.find_all(  # type: ignore[union-attr]
+        for meta in soup.find_all(
             "div",
             attrs={
                 "class": "row gutters-sm jd-listing-item",

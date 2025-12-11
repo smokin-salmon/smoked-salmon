@@ -1,8 +1,11 @@
 from typing import Any
 
 import asyncclick as click
-from mutagen import File as MutagenFile  # type: ignore[attr-defined]
+from mutagen import File as MutagenFile
 from mutagen import flac, id3, mp3, mp4
+from mutagen._vorbis import VCommentDict
+from mutagen.id3 import ID3Tags
+from mutagen.mp4 import MP4Tags
 
 TAG_FIELDS = {
     "FLAC": {
@@ -80,37 +83,64 @@ class TagFile:
         return None
 
     def parse_tag(self, attr: str, format: str) -> Any:
+        """Parse a tag value from MP3 or AAC format.
+
+        Args:
+            attr: The attribute name to parse (e.g., 'artist', 'tracknumber').
+            format: The format type ('MP3' or 'AAC').
+
+        Returns:
+            The parsed tag value, or None if not found.
+        """
         mut = self.mut
         if mut is None:
             return None
-        tags = mut.tags
-        if tags is None:
+        raw_tags = mut.tags
+        if raw_tags is None:
             return None
+        # Verify tags type based on format
+        if not isinstance(raw_tags, (ID3Tags, MP4Tags)):
+            return None
+        tags: ID3Tags | MP4Tags = raw_tags
         fields = TAG_FIELDS[format][attr]
         for field in fields:
             try:
                 if attr in {"tracknumber", "tracktotal", "discnumber", "disctotal"}:
                     try:
-                        val = str(tags[field].text[0])  # type: ignore[union-attr]
+                        # MP3: ID3 frames have .text attribute
+                        frame = tags[field]
+                        val = str(frame.text[0])
                         if "number" in attr:
                             return val.split("/")[0]
                         elif "total" in attr and "/" in val:
                             return val.split("/")[1]
                     except (AttributeError, KeyError):
-                        number, total = tags[field][0]  # type: ignore[index]
+                        # AAC: MP4 tags are tuples like (track, total)
+                        tag_val = tags[field]
+                        number, total = tag_val[0]
                         return (number if "number" in attr else total) or None
                 try:
                     if attr in {"artist", "genre"}:
                         try:
-                            return list(tags[field].text) or []  # type: ignore[union-attr]
+                            # MP3: ID3 frames have .text attribute
+                            frame = tags[field]
+                            return list(frame.text) or []
                         except AttributeError:
-                            return list(tags[field]) or []  # type: ignore[arg-type]
+                            # AAC: MP4 tags are lists directly
+                            tag_val = tags[field]
+                            return list(tag_val) or []
                     try:
-                        return "; ".join(tags[field].text) or None  # type: ignore[union-attr]
+                        # MP3: ID3 frames have .text attribute
+                        frame = tags[field]
+                        return "; ".join(frame.text) or None
                     except AttributeError:
-                        return tags[field][0] or None  # type: ignore[index]
+                        # AAC: MP4 tags are lists directly
+                        tag_val = tags[field]
+                        return tag_val[0] or None
                 except TypeError:
-                    return tags[field].text[0].get_text()  # type: ignore[union-attr]
+                    # Handle ID3TimeStamp which has get_text() method
+                    frame = tags[field]
+                    return frame.text[0].get_text()
             except KeyError:
                 pass
         return None
@@ -122,8 +152,10 @@ class TagFile:
             return
         try:
             if isinstance(mut, flac.FLAC):
-                if mut.tags is not None:
-                    mut.tags[TAG_FIELDS["FLAC"][key]] = value  # type: ignore[literal-required]
+                raw_tags = mut.tags
+                if raw_tags is not None and isinstance(raw_tags, VCommentDict):
+                    # FLAC tags use VCommentDict which supports dynamic keys
+                    raw_tags[TAG_FIELDS["FLAC"][key]] = value
             elif isinstance(mut, mp3.MP3):
                 self.set_mp3_tag(key, value)
             elif isinstance(mut, mp4.MP4):
@@ -138,39 +170,39 @@ class TagFile:
         if not mut.tags:
             mut.tags = id3.ID3()
         tags = mut.tags
-        if tags is None:
+        if not isinstance(tags, id3.ID3):
             return
         if key in {"tracknumber", "discnumber"}:
             tag_key = TAG_FIELDS["MP3"][key][0]
             try:
-                _, total = tags[tag_key].text[0].split("/")  # type: ignore[union-attr]
+                _, total = tags[tag_key].text[0].split("/")
                 value = f"{value}/{total}"
             except (ValueError, KeyError, AttributeError):
                 pass
             frame = getattr(id3, tag_key)(text=value)
-            tags.delall(tag_key)  # type: ignore[union-attr]
-            tags.add(frame)  # type: ignore[union-attr]
+            tags.delall(tag_key)
+            tags.add(frame)
         elif key in {"tracktotal", "disctotal"}:
             tag_key = TAG_FIELDS["MP3"][key][0]
             try:
-                track, _ = tags[tag_key].text[0].split("/")  # type: ignore[union-attr]
+                track, _ = tags[tag_key].text[0].split("/")
             except ValueError:
-                track = tags[tag_key].text[0]  # type: ignore[union-attr]
+                track = tags[tag_key].text[0]
             except (KeyError, AttributeError):  # Well fuck...
                 return
             frame = getattr(id3, tag_key)(text=f"{track}/{value}")
-            tags.delall(tag_key)  # type: ignore[union-attr]
-            tags.add(frame)  # type: ignore[union-attr]
+            tags.delall(tag_key)
+            tags.add(frame)
         else:
             try:
                 tag_key, desc = TAG_FIELDS["MP3"][key][0].split(":")
                 frame = getattr(id3, tag_key)(desc=desc, text=value)
-                tags.add(frame)  # type: ignore[union-attr]
+                tags.add(frame)
             except ValueError:
                 tag_key = TAG_FIELDS["MP3"][key][0]
                 frame = getattr(id3, tag_key)(text=value)
-                tags.delall(tag_key)  # type: ignore[union-attr]
-                tags.add(frame)  # type: ignore[union-attr]
+                tags.delall(tag_key)
+                tags.add(frame)
 
     def set_aac_tag(self, key: str, value: Any) -> None:
         mut = self.mut

@@ -46,7 +46,7 @@ class Scraper(DeezerBase, MetadataMixin):
     def parse_upc(self, soup):
         return soup["upc"]
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
             tracks[str(track["DISK_NUMBER"])][str(track["TRACK_NUMBER"])] = self.generate_track(

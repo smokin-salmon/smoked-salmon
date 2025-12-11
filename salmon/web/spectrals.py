@@ -9,7 +9,7 @@ from aiohttp_jinja2 import render_template
 from salmon.database import DB_PATH
 
 
-async def handle_spectrals(request: web.Request, **kwargs) -> web.Response:
+async def handle_spectrals(request: web.Request) -> web.Response:
     active_spectrals: dict[str, Any] = get_active_spectrals()
     if active_spectrals.get("spectrals"):
         active_spectrals["now"] = datetime.datetime.now()

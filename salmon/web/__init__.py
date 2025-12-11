@@ -62,12 +62,11 @@ def add_routes(app: web.Application) -> None:
     app["static_root_url"] = web_cfg.static_root_url
 
 
-async def handle_index(request: web.Request, **kwargs) -> web.Response:
+async def handle_index(request: web.Request) -> web.Response:
     """Handle the index page request.
 
     Args:
         request: The aiohttp request object.
-        **kwargs: Additional keyword arguments.
 
     Returns:
         The rendered index page response.
