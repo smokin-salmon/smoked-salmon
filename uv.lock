@@ -346,12 +346,6 @@ wheels = [
 ]
 
 [[package]]
-name = "flatbencode"
-version = "0.2.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/96/3d/ed36c2a94bef2ff1b7fc62ba932fa2eb4db3f7ea30c89da01b1c64ecbb8c/flatbencode-0.2.1.tar.gz", hash = "sha256:77397d5d0108835404f6f7cad640d403c7025a11812afc7e1df4b0f92589ba77", size = 3234, upload-time = "2016-10-22T11:12:34.225Z" }
-
-[[package]]
 name = "frozenlist"
 version = "1.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1253,14 +1247,11 @@ wheels = [
 
 [[package]]
 name = "torf"
-version = "4.3.0"
+version = "4.3.1"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "flatbencode" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/dd/7c/7c306f85ddcffc09b4bf8f761c3ef5c27030141455cd67ac0dbd849c35d2/torf-4.3.0.tar.gz", hash = "sha256:6d2a87268dbd41ef5039faf11cbf805575fe17c9d1dff2eb0e42fec6879f2eff", size = 107454, upload-time = "2025-02-24T11:19:33.798Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/1f/152db30a4f60142766ea7b16af2cae86b648359f300179d06eb06b079270/torf-4.3.1.tar.gz", hash = "sha256:5c17656b2ad379122f2ec97a057398d1ec6a6bfce6f0b6f8ec0799b142493c5a", size = 109185, upload-time = "2026-01-13T10:55:29.501Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7d/cf/6215eec4ac0ce19f2b48788b27059eb7770c14bf998b315892418738ecbf/torf-4.3.0-py3-none-any.whl", hash = "sha256:57a5bb7f021668370d2a9f4062dbba9dbcf48142297adce87aeaabce5a28be6c", size = 65764, upload-time = "2025-02-24T11:19:32.154Z" },
+    { url = "https://files.pythonhosted.org/packages/88/86/eef1af063d4dcf60f8602cedfff6b6ea8b88b9542fd9cb3496d66e8ed108/torf-4.3.1-py3-none-any.whl", hash = "sha256:c76e5f6efda8c6b92c588df56e3e1a8ecf6a5377bd075ea60ca3ab997bd83a61", size = 67942, upload-time = "2026-01-13T10:55:27.635Z" },
 ]
 
 [[package]]
