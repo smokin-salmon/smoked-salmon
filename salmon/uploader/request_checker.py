@@ -36,7 +36,7 @@ def get_request_results(gazelle_site, searchstrs):
         )["results"]:
             if req not in results:
                 results.append(req)
-    return results
+    return [item for item in results if item["categoryName"] > 'Music']
 
 
 def print_request_results(gazelle_site, results, searchstr):
