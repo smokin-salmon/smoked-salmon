@@ -10,8 +10,6 @@ from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, emp, imgbb, imgbox, oeimg, ptpimg, ptscreens
 
-loop = asyncio.get_event_loop()
-
 HOSTS = {
     "ptpimg": ptpimg,
     "emp": emp,
@@ -57,8 +55,7 @@ def up(filepaths, image_host):
         urls = []
         upload_function = image_host.ImageUploader().upload_file
         try:
-            tasks = [loop.run_in_executor(None, lambda f=f: upload_function(f)) for f in filepaths]
-            for url, deletion_url in loop.run_until_complete(asyncio.gather(*tasks)):
+            for url, deletion_url in asyncio.run(_run_uploads(upload_function, filepaths)):
                 cursor.execute(
                     "INSERT INTO image_uploads (url, deletion_url) VALUES (?, ?)",
                     (url, deletion_url),
@@ -116,12 +113,7 @@ def upload_cover(cover_path):
     click.secho(f"Uploading cover to {cfg.image.cover_uploader}...", fg="yellow", nl=False)
     try:
         try:
-            url = loop.run_until_complete(
-                loop.run_in_executor(
-                    None,
-                    lambda f=cover_path: HOSTS[cfg.image.cover_uploader].ImageUploader().upload_file(f)[0],
-                )
-            )
+            url = asyncio.run(_run_cover_upload(cover_path))
         except (ImageUploadFailed, ValueError) as error:
             click.secho(f"Image Upload Failed. {error}", fg="red")
             raise ImageUploadFailed("Failed to upload image") from error
@@ -147,7 +139,7 @@ def upload_spectrals(spectrals, uploader=HOSTS[cfg.image.specs_uploader], succes
             for sid, filename, sp in specs_block
             if sid not in successful
         ]
-        for sid, urls in loop.run_until_complete(asyncio.gather(*tasks)):
+        for sid, urls in asyncio.run(asyncio.gather(*tasks)):
             if urls:
                 response = {**response, sid: urls}
                 successful.add(sid)
@@ -178,8 +170,23 @@ def _handle_failed_spectrals(spectrals, successful):
 async def _spectrals_handler(spec_id, filename, spectral_paths, uploader):
     try:
         click.secho(f"Uploading spectrals for {filename}...", fg="yellow")
+        loop = asyncio.get_running_loop()
         tasks = [loop.run_in_executor(None, lambda f=f: uploader(f)[0]) for f in spectral_paths]
         return spec_id, await asyncio.gather(*tasks)
     except ImageUploadFailed as e:
         click.secho(f"Failed to upload spectrals for {filename}: {e}", fg="red")
         return spec_id, None
+
+
+async def _run_uploads(upload_function, filepaths):
+    loop = asyncio.get_running_loop()
+    tasks = [loop.run_in_executor(None, lambda f=f: upload_function(f)) for f in filepaths]
+    return await asyncio.gather(*tasks)
+
+
+async def _run_cover_upload(cover_path):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(
+        None,
+        lambda f=cover_path: HOSTS[cfg.image.cover_uploader].ImageUploader().upload_file(f)[0],
+    )

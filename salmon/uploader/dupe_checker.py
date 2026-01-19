@@ -9,8 +9,6 @@ from salmon import cfg
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder, RequestError
 
-loop = asyncio.get_event_loop()
-
 
 def dupe_check_recent_torrents(gazelle_site, searchstrs):
     """Checks the site log for recent uploads similar to ours.
@@ -103,7 +101,7 @@ def _prompt_for_recent_upload_results(gazelle_site, recent_uploads, searchstr, o
                 torrent_id = recent_uploads[group_id_num - 1][0]
                 # Need to convert torrent ID to group ID
                 try:
-                    group_id = loop.run_until_complete(gazelle_site.get_redirect_torrentgroupid(torrent_id))
+                    group_id = asyncio.run(gazelle_site.get_redirect_torrentgroupid(torrent_id))
                     return group_id
                 except Exception:
                     click.echo("Could not get group ID from torrent ID.")
@@ -121,7 +119,7 @@ def _prompt_for_recent_upload_results(gazelle_site, recent_uploads, searchstr, o
                 return int(group_id)
             elif "torrentid" in parsed_query:
                 torrent_id = parsed_query["torrentid"][0]
-                group_id = loop.run_until_complete(gazelle_site.get_redirect_torrentgroupid(torrent_id))
+                group_id = asyncio.run(gazelle_site.get_redirect_torrentgroupid(torrent_id))
                 return group_id
             else:
                 click.echo("Could not find group ID in URL.")
@@ -163,7 +161,7 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
 def get_search_results(gazelle_site, searchstrs):
     results = []
     tasks = [gazelle_site.request("browse", searchstr=searchstr) for searchstr in searchstrs]
-    for releases in loop.run_until_complete(asyncio.gather(*tasks)):
+    for releases in asyncio.run(asyncio.gather(*tasks)):
         for release in releases["results"]:
             if release not in results:
                 results.append(release)
@@ -273,7 +271,7 @@ def _prompt_for_group_id(gazelle_site, results, offer_deletion):
                 group_id = parsed_query["id"][0]
             elif "torrentid" in parsed_query:
                 group_id = parsed_query["torrentid"][0]
-                group_id = loop.run_until_complete(gazelle_site.get_redirect_torrentgroupid(group_id))
+                group_id = asyncio.run(gazelle_site.get_redirect_torrentgroupid(group_id))
                 return group_id
             else:
                 click.echo("Could not find group ID in URL.")
@@ -293,7 +291,7 @@ def print_torrents(gazelle_site, group_id, rset=None, highlight_torrent_id=None)
     # If rset is not provided, fetch it from the API
     if rset is None:
         try:
-            rset = loop.run_until_complete(gazelle_site.torrentgroup(group_id))
+            rset = asyncio.run(gazelle_site.torrentgroup(group_id))
             # account for differences between search result and group result json
             rset["groupName"] = rset["group"]["name"]
             rset["artist"] = ""
@@ -320,7 +318,7 @@ def print_torrents(gazelle_site, group_id, rset=None, highlight_torrent_id=None)
             )
         if not t["remastered"]:
             if not group_info:
-                group_info = loop.run_until_complete(gazelle_site.torrentgroup(group_id))["group"]
+                group_info = asyncio.run(gazelle_site.torrentgroup(group_id))["group"]
             click.secho(
                 f"> OR / {group_info['recordLabel']} / "
                 f"{group_info['catalogueNumber']} / {t['media']} / "

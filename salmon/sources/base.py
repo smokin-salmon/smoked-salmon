@@ -16,8 +16,6 @@ HEADERS = {"User-Agent": choice(UAGENTS)}
 
 IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
 
-loop = asyncio.get_event_loop()
-
 
 class BaseScraper:
     url = NotImplementedError
@@ -47,6 +45,7 @@ class BaseScraper:
         Run an asynchronius GET request to a JSON API maintained by
         a metadata source.
         """
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, lambda: self.get_json_sync(url, params, headers))
 
     def get_json_sync(self, url, params=None, headers=None):
@@ -70,6 +69,7 @@ class BaseScraper:
         object containing the scraped HTML.
         """
         params = params or {}
+        loop = asyncio.get_running_loop()
         r = await loop.run_in_executor(
             None,
             lambda: httpx.get(

@@ -6,8 +6,6 @@ import click
 from salmon import cfg
 from salmon.errors import RequestError, UploadError
 
-loop = asyncio.get_event_loop()
-
 
 def print_preassumptions(gazelle_site, path, group_id, source, lossy, spectrals, encoding, spectrals_after):
     """Print what all the passed CLI options will do."""
@@ -56,7 +54,7 @@ def print_group_info(gazelle_site, group_id, source):
     Also print all the torrents that are in that group.
     """
     try:
-        group = loop.run_until_complete(gazelle_site.torrentgroup(group_id))
+        group = asyncio.run(gazelle_site.torrentgroup(group_id))
     except RequestError as err:
         raise UploadError("Could not get information about torrent group from RED.") from err
 

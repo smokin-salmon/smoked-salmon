@@ -23,8 +23,6 @@ from salmon.tagger.review import review_metadata
 from salmon.tagger.sources import run_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 
-loop = asyncio.get_event_loop()
-
 
 def validate_source(ctx, param, value):
     try:
@@ -99,7 +97,7 @@ def tag(path, source, encoding, overwrite, auto_rename):
 def meta(url):
     """Scrape metadata from release link"""
     try:
-        metadata = loop.run_until_complete(run_metadata(url))
+        metadata = asyncio.run(run_metadata(url))
         for key in ["encoding", "media", "encoding_vbr", "source"]:
             del metadata[key]
         click.echo()

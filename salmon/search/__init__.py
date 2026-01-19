@@ -36,8 +36,6 @@ SEARCHSOURCES = {
     "Deezer": deezer,
 }
 
-loop = asyncio.get_event_loop()
-
 
 @commandgroup.command()
 @click.argument("searchstr", nargs=-1, required=True)
@@ -97,7 +95,7 @@ def run_metasearch(
         for search in searchstrs
         for s in sources.values()
     ]
-    task_responses = loop.run_until_complete(asyncio.gather(*tasks))
+    task_responses = asyncio.run(asyncio.gather(*tasks))
     for source, result in [r or (None, None) for r in task_responses]:
         if result:
             if filter:

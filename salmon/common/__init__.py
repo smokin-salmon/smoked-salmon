@@ -52,11 +52,9 @@ class Prompt:
             if not self.is_windows:
                 try:
                     loop = asyncio.get_running_loop()
-                    loop.add_reader(sys.stdin, self.got_input)
-                except RuntimeError:
-                    # Fallback if no running loop
-                    loop = asyncio.get_event_loop()
-                    loop.add_reader(sys.stdin, self.got_input)
+                except RuntimeError as exc:
+                    raise RuntimeError("Prompt must be called from a running event loop.") from exc
+                loop.add_reader(sys.stdin, self.got_input)
             else:
                 self.reader_task = asyncio.create_task(self._windows_input_reader())
             self.reader_added = True

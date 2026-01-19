@@ -19,8 +19,6 @@ from salmon.errors import (
     RequestFailedError,
 )
 
-loop = asyncio.get_event_loop()
-
 ARTIST_TYPES = [
     "main",
     "guest",
@@ -79,7 +77,7 @@ class BaseGazelleApi:
         self.session.cookies.clear()
         self.session.cookies["session"] = self.cookie
         try:
-            acctinfo = loop.run_until_complete(self.request("index"))
+            acctinfo = asyncio.run(self.request("index"))
         except RequestError as err:
             raise LoginError from err
         self.authkey = acctinfo["authkey"]
@@ -99,7 +97,7 @@ class BaseGazelleApi:
         url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
         try:
-            resp = await loop.run_in_executor(
+            resp = await asyncio.get_running_loop().run_in_executor(
                 None,
                 lambda: self.session.get(url, params=params, timeout=5, allow_redirects=False),
             )
@@ -146,7 +144,7 @@ class BaseGazelleApi:
         params = {"torrentid": torrentid}
 
         try:
-            resp = await loop.run_in_executor(
+            resp = await asyncio.get_running_loop().run_in_executor(
                 None,
                 lambda: self.session.get(url, params=params, timeout=5, allow_redirects=False),
             )
@@ -262,7 +260,7 @@ class BaseGazelleApi:
         """Fetch a page of the log. No search. Search envokes the sphynx
         Doesn't use the API as there is no API endpoint."""
         url = f"{self.base_url}/log.php"
-        resp = await loop.run_in_executor(
+        resp = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: self.session.get(url, params={"page": page}, headers=self.headers),
         )
@@ -281,7 +279,7 @@ class BaseGazelleApi:
         "Crawls some pages of the log and returns uploads"
         recent_uploads = []
         tasks = [self.fetch_log(i) for i in range(1, max_pages)]
-        for page in loop.run_until_complete(asyncio.gather(*tasks)):
+        for page in asyncio.run(asyncio.gather(*tasks)):
             recent_uploads += self.parse_uploads_from_log_html(page.text)
         return recent_uploads
 
@@ -292,7 +290,7 @@ class BaseGazelleApi:
         data["auth"] = self.authkey
         # Shallow copy. We don't want the future requests to send the api key.
         api_key_headers = {**self.headers, "Authorization": self.api_key}
-        resp = await loop.run_in_executor(
+        resp = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: self.session.post(url, data=data, files=files, headers=api_key_headers),
         )
@@ -351,7 +349,7 @@ class BaseGazelleApi:
         else:
             url = self.base_url + "/upload.php"
         data["auth"] = self.authkey
-        resp = await loop.run_in_executor(
+        resp = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: self.session.post(url, data=data, files=files, headers=self.headers),
         )
@@ -403,7 +401,7 @@ class BaseGazelleApi:
             "extra": comment,
             "submit": True,
         }
-        r = await loop.run_in_executor(
+        r = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: self.session.post(url, params=params, data=data, headers=self.headers),
         )
@@ -433,7 +431,7 @@ class BaseGazelleApi:
 
         url = self.base_url + "/torrents.php"
         new_data["auth"] = self.authkey
-        resp = await loop.run_in_executor(
+        resp = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: self.session.post(url, data=new_data, headers=self.headers),
         )

@@ -12,30 +12,25 @@ from salmon.common import commandgroup
 from salmon.errors import WebServerIsAlreadyRunning
 from salmon.web import spectrals
 
-loop = asyncio.get_event_loop()
-
 web_cfg = cfg.upload.web_interface
 
 
 @commandgroup.command()
 def web():
     """Start the salmon web server"""
-    app = create_app()  # noqa: F841
     click.secho(f"Running webserver on http://{web_cfg.host}:{web_cfg.port}", fg="cyan")
-    loop.run_forever()
+    asyncio.run(_serve_web())
 
 
 def create_app():
     app = aiohttp.web.Application()
     add_routes(app)
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates")))
-    return loop.run_until_complete(loop.create_server(app.make_handler(), host="0.0.0.0", port=web_cfg.port))
+    return app
 
 
 async def create_app_async():
-    app = aiohttp.web.Application()
-    add_routes(app)
-    aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates")))
+    app = create_app()
     runner = aiohttp.web.AppRunner(app)
     await runner.setup()
     site = aiohttp.web.TCPSite(runner, "0.0.0.0", web_cfg.port)
@@ -44,6 +39,14 @@ async def create_app_async():
     except OSError as err:
         raise WebServerIsAlreadyRunning from err
     return runner
+
+
+async def _serve_web():
+    runner = await create_app_async()
+    try:
+        await asyncio.Event().wait()
+    finally:
+        await runner.cleanup()
 
 
 def add_routes(app):

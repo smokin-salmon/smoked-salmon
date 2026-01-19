@@ -12,8 +12,6 @@ from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists
 
-loop = asyncio.get_event_loop()
-
 
 def get_metadata(path, tags, rls_data=None):
     """
@@ -149,7 +147,7 @@ def _select_choice(choices, rls_data):
                 return meta, source_url
             continue
 
-        metadatas = loop.run_until_complete(asyncio.gather(*tasks))
+        metadatas = asyncio.run(asyncio.gather(*tasks))
         meta = combine_metadatas(
             *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data, source_url=source_url
         )
