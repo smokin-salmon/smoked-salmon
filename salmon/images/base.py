@@ -1,10 +1,8 @@
-import asyncio
 import contextlib
 import mimetypes
 import os
 
 mimetypes.init()
-loop = asyncio.get_event_loop()
 
 
 class BaseImageUploader:

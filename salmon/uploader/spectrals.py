@@ -25,7 +25,6 @@ from salmon.errors import (
 from salmon.images import upload_spectrals as upload_spectral_imgs
 from salmon.web import create_app_async, spectrals
 
-loop = asyncio.get_event_loop()
 THREADS = [None] * cfg.upload.simultaneous_threads
 
 
@@ -243,7 +242,7 @@ def calculate_zoom_startpoint(track_data):
 def view_spectrals(spectrals_path, all_spectral_ids):
     """Open the generated spectrals in an image viewer."""
     if not cfg.upload.native_spectrals_viewer:
-        loop.run_until_complete(_open_specs_in_web_server(spectrals_path, all_spectral_ids))
+        asyncio.run(_open_specs_in_web_server(spectrals_path, all_spectral_ids))
     elif platform.system() == "Darwin":
         _open_specs_in_preview(spectrals_path)
     elif platform.system() == "Windows":
@@ -435,7 +434,7 @@ def report_lossy_master(
     """
 
     comment = _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids)
-    loop.run_until_complete(gazelle_site.report_lossy_master(torrent_id, comment, source))
+    asyncio.run(gazelle_site.report_lossy_master(torrent_id, comment, source))
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
@@ -509,7 +508,7 @@ def post_upload_spectral_check(
 
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)
-        loop.run_until_complete(gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode))
+        asyncio.run(gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode))
 
     if lossy_master:
         report_lossy_master(

@@ -1,4 +1,3 @@
-import asyncio
 import contextlib
 import mimetypes
 import os
@@ -12,7 +11,6 @@ from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 
 mimetypes.init()
-loop = asyncio.get_event_loop()
 
 HEADERS = {
     "User-Agent": choice(UAGENTS),

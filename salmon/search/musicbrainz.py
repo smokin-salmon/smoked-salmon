@@ -7,12 +7,11 @@ from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import MusicBrainzBase
 
-loop = asyncio.get_event_loop()
-
 
 class Searcher(MusicBrainzBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
         releases = {}
+        loop = asyncio.get_running_loop()
         soup = await loop.run_in_executor(None, musicbrainzngs.search_releases, searchstr, 10)
         for rls in soup["release-list"]:
             try:

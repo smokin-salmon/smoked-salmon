@@ -8,8 +8,6 @@ import rich
 from salmon import cfg
 from salmon.errors import RequestError
 
-loop = asyncio.get_event_loop()
-
 
 def check_requests(gazelle_site, searchstrs):
     """
@@ -31,12 +29,10 @@ def get_request_results(gazelle_site, searchstrs):
     "Get the request results from gazelle site"
     results = []
     for searchstr in searchstrs:
-        for req in loop.run_until_complete(
-            gazelle_site.request("requests", search=searchstr)  # ,order='bounty')
-        )["results"]:
+        for req in asyncio.run(gazelle_site.request("requests", search=searchstr))["results"]:
             if req not in results:
                 results.append(req)
-    return [item for item in results if item["categoryName"] > 'Music']
+    return [item for item in results if item["categoryName"] > "Music"]
 
 
 def print_request_results(gazelle_site, results, searchstr):
@@ -147,7 +143,7 @@ def _prompt_for_request_id(gazelle_site, results):
 def _confirm_request_id(gazelle_site, request_id):
     """Have the user decide whether or not they want to fill request"""
     try:
-        req = loop.run_until_complete(gazelle_site.request("request", id=request_id))
+        req = asyncio.run(gazelle_site.request("request", id=request_id))
         req["artist"] = ""
         if len(req["musicInfo"]["artists"]) > 3:
             req["artist"] = "Various Artists"

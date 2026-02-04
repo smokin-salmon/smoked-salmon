@@ -10,8 +10,6 @@ from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
 from salmon.sources.base import BaseScraper
 
-loop = asyncio.get_event_loop()
-
 HEADERS = {
     "User-Agent": choice(UAGENTS),
     "Content-Language": "en-US",
@@ -86,7 +84,11 @@ class DeezerBase(BaseScraper):
         """Deezer puts some things in an api that isn't public facing.
         Like track information and album art before a release is available.
         """
-        track_data = await loop.run_in_executor(None, lambda: self.sesh.get(self.site_url + url, params=(params or {})))
+        loop = asyncio.get_running_loop()
+        track_data = await loop.run_in_executor(
+            None,
+            lambda: self.sesh.get(self.site_url + url, params=(params or {})),
+        )
         r = re.search(
             r"window.__DZR_APP_STATE__ = ({.*?}})</script>",
             track_data.text.replace("\n", ""),

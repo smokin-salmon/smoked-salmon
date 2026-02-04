@@ -1,5 +1,3 @@
-import asyncio
-
 import click
 
 from salmon.errors import ScrapeError
@@ -26,8 +24,6 @@ METASOURCES = {
     "Tidal": tidal,
     "Bandcamp": bandcamp,  # Must be last due to the catch-all nature of its URLs.
 }
-
-loop = asyncio.get_event_loop()
 
 
 async def run_metadata(url, sources=None, return_source_name=False):

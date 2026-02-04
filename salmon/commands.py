@@ -36,8 +36,6 @@ from salmon.uploader.spectrals import (
 )
 from salmon.uploader.upload import generate_source_links
 
-loop = asyncio.get_event_loop()
-
 
 @commandgroup.command()
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1)
@@ -74,7 +72,7 @@ def descgen(urls):
     if not urls:
         return click.secho("You must specify at least one URL", fg="red")
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
-    metadatas = loop.run_until_complete(asyncio.gather(*tasks))
+    metadatas = asyncio.run(asyncio.gather(*tasks))
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
     remove_various_artists(metadata["tracks"])
 
@@ -162,7 +160,7 @@ def checkspecs(tracker, torrent_id, path):
         raise click.Abort
     tracker = salmon.trackers.validate_tracker(None, "tracker", tracker)
     gazelle_site = salmon.trackers.get_class(tracker)()
-    req = loop.run_until_complete(gazelle_site.request("torrent", id=torrent_id))
+    req = asyncio.run(gazelle_site.request("torrent", id=torrent_id))
     path = os.path.join(path, html.unescape(req["torrent"]["filePath"]))
     source_url = None
     source = req["torrent"]["media"]
@@ -302,7 +300,7 @@ def _test_metadata_sources():
 
             # For a basic connection test, try to create soup with a test URL
             try:
-                loop.run_until_complete(source_instance.create_soup(source_info["test_url"]))
+                asyncio.run(source_instance.create_soup(source_info["test_url"]))
                 click.secho(f"  ✔ {source_name}: Connection successful", fg="green", bold=True)
             except Exception as inner_e:
                 click.secho(f"  ✖ {source_name}: Error - {inner_e}", fg="red", bold=True)

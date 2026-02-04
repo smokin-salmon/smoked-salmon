@@ -9,8 +9,6 @@ from salmon.errors import (
 )
 from salmon.trackers.base import BaseGazelleApi
 
-loop = asyncio.get_event_loop()
-
 
 class OpsApi(BaseGazelleApi):
     def __init__(self):
@@ -78,7 +76,7 @@ class OpsApi(BaseGazelleApi):
             "extra": comment,
             "submit": True,
         }
-        r = await loop.run_in_executor(
+        r = await asyncio.get_running_loop().run_in_executor(
             None,
             lambda: self.session.post(url, params=params, data=data, headers=self.headers),
         )

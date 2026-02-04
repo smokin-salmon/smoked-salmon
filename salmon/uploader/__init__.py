@@ -1,4 +1,3 @@
-import asyncio
 import os
 import platform
 import re
@@ -70,8 +69,6 @@ from salmon.uploader.upload import (
     concat_track_data,
     prepare_and_upload,
 )
-
-loop = asyncio.get_event_loop()
 
 
 @commandgroup.command()
