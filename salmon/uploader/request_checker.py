@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib import parse
 
 import asyncclick as click
@@ -7,8 +7,11 @@ import humanfriendly
 from salmon import cfg
 from salmon.errors import RequestError
 
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 
-async def check_requests(gazelle_site: Any, searchstrs: list[str]) -> int | None:
+
+async def check_requests(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> int | None:
     """Search for requests on site and offer a choice to fill one.
 
     Args:
@@ -30,7 +33,7 @@ async def check_requests(gazelle_site: Any, searchstrs: list[str]) -> int | None
     return None
 
 
-async def get_request_results(gazelle_site: Any, searchstrs: list[str]) -> list[dict[str, Any]]:
+async def get_request_results(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[dict[str, Any]]:
     """Get the request results from gazelle site.
 
     Args:
@@ -42,7 +45,7 @@ async def get_request_results(gazelle_site: Any, searchstrs: list[str]) -> list[
     """
     results = []
     for searchstr in searchstrs:
-        response = await gazelle_site.request("requests", search=searchstr)
+        response = await gazelle_site.request("requests", {"search": searchstr})
         for req in response["results"]:
             if req not in results:
                 results.append(req)
@@ -154,7 +157,7 @@ async def _prompt_for_request_id(gazelle_site, results):
             return None
 
 
-async def _confirm_request_id(gazelle_site: Any, request_id: str | int) -> bool:
+async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | int) -> bool:
     """Have the user decide whether or not they want to fill request.
 
     Args:
@@ -165,7 +168,7 @@ async def _confirm_request_id(gazelle_site: Any, request_id: str | int) -> bool:
         True if user confirms, False otherwise.
     """
     try:
-        req = await gazelle_site.request("request", id=request_id)
+        req = await gazelle_site.request("request", {"id": request_id})
         req["artist"] = ""
         if len(req["musicInfo"]["artists"]) > 3:
             req["artist"] = "Various Artists"

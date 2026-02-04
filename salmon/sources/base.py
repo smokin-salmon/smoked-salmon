@@ -1,11 +1,11 @@
 import json
 import re
-from collections import namedtuple
 from random import choice
 from string import Formatter
 from typing import Any
 
 import aiohttp
+import msgspec
 from bs4 import BeautifulSoup
 
 from salmon.constants import UAGENTS
@@ -13,7 +13,16 @@ from salmon.errors import ScrapeError
 
 HEADERS = {"User-Agent": choice(UAGENTS)}
 
-IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
+
+class IdentData(msgspec.Struct, frozen=True):
+    """Data structure for release identification."""
+
+    artist: str
+    album: str
+    year: int | str | None
+    track_count: int | None
+    source: str
+
 
 # Type alias for soup return type - can be BeautifulSoup or dict (for JSON APIs)
 SoupType = BeautifulSoup | dict[str, Any]

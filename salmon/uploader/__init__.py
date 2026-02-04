@@ -3,12 +3,15 @@ import platform
 import re
 import shutil
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import asyncclick as click
 import pyperclip
 
 import salmon.trackers
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 from salmon import cfg
 from salmon.checks import mqa_test
 from salmon.checks.integrity import (
@@ -227,7 +230,7 @@ async def up(
 
 
 async def upload(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     path: str,
     group_id: int | None,
     source: str | None,
@@ -776,7 +779,7 @@ async def prompt_downconversion_choice(rls_data, track_data):
 async def execute_downconversion_tasks(
     selected_tasks: list[dict[str, Any]],
     path: str,
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     group_id: int | None,
     metadata: dict[str, Any],
     cover_url: str | None,
@@ -909,7 +912,7 @@ async def execute_downconversion_tasks(
 
 
 async def upload_and_report(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     path: str,
     group_id: int | None,
     metadata: dict[str, Any],

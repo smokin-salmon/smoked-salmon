@@ -7,10 +7,13 @@ import shutil
 import subprocess
 import time
 from os.path import dirname, join
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import asyncclick as click
 import oxipng
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 
 from salmon import cfg
 from salmon.common import flush_stdin, get_audio_files, prompt_async
@@ -461,7 +464,7 @@ async def prompt_lossy_master(force_prompt_lossy_master=False):
 
 
 async def report_lossy_master(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     torrent_id: int,
     spectral_urls: dict[int, list[str]] | None,
     spectral_ids: dict[int, str] | None,
@@ -481,6 +484,9 @@ async def report_lossy_master(
         source_url: Source URL.
     """
     comment = _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids)
+    if source is None:
+        click.secho("Cannot report lossy master without source.", fg="red")
+        return
     await gazelle_site.report_lossy_master(torrent_id, comment, source)
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
@@ -531,7 +537,7 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
 
 
 async def post_upload_spectral_check(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     path: str,
     torrent_id: int,
     spectral_ids: dict[int, str] | None,

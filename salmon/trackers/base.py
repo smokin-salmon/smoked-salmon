@@ -1,15 +1,17 @@
 import asyncio
 import html
 import re
-from collections import namedtuple
 from json.decoder import JSONDecodeError
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
 import asyncclick as click
+import msgspec
+from aiohttp import FormData
+from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
-from ratelimit import RateLimitException, limits, sleep_and_retry
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from salmon import cfg
 from salmon.constants import RELEASE_TYPES
@@ -38,10 +40,47 @@ INVERTED_RELEASE_TYPES = {
 }
 
 
-SearchReleaseData = namedtuple(
-    "SearchReleaseData",
-    ["lossless", "lossless_web", "year", "artist", "album", "release_type", "url"],
-)
+def _compose_form_data(files: FormData, data: dict[str, Any]) -> FormData:
+    """Compose FormData by adding data fields with proper value conversion.
+
+    Args:
+        files: The FormData object containing file uploads.
+        data: Dictionary of field names and values to add.
+
+    Returns:
+        The FormData object with all fields added.
+    """
+    for key, value in data.items():
+        if isinstance(value, list):
+            for item in value:
+                # Convert bool to string for FormData compatibility
+                if isinstance(item, bool):
+                    item = str(item).lower()
+                files.add_field(key, item)
+        else:
+            # Convert bool to string for FormData compatibility
+            if isinstance(value, bool):
+                value = str(value).lower()
+            files.add_field(key, value)
+    return files
+
+
+class SearchReleaseData(msgspec.Struct, frozen=True):
+    """Data structure for search release results."""
+
+    lossless: bool
+    lossless_web: bool
+    year: int | None
+    artist: str
+    album: str
+    release_type: str | int
+    url: str
+
+
+class RetryableError(Exception):
+    """Exception for retryable network errors."""
+
+    pass
 
 
 class BaseGazelleApi:
@@ -54,6 +93,9 @@ class BaseGazelleApi:
     site_code: str
     site_string: str
     api_key: str  # Optional, only for API key upload
+
+    # Rate limiter: 10 requests per 10 seconds (shared across all instances)
+    _rate_limiter = AsyncLimiter(10, 10)
 
     def __init__(self) -> None:
         """Initialize the API client. Subclasses should call this after setting cookie/base_url."""
@@ -105,7 +147,12 @@ class BaseGazelleApi:
         if not self._authenticated:
             await self.authenticate()
 
-    @limits(10, 10)
+    @retry(
+        retry=retry_if_exception_type(RetryableError),
+        stop=stop_after_attempt(5),
+        wait=wait_fixed(1),
+        reraise=True,
+    )
     async def request(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.
 
@@ -119,6 +166,7 @@ class BaseGazelleApi:
         Raises:
             LoginError: If authentication fails.
             RequestFailedError: If the request fails.
+            RetryableError: If network error persists after retries.
         """
         url = self.base_url + "/ajax.php"
         params = {"action": action, **(params or {})}
@@ -126,6 +174,7 @@ class BaseGazelleApi:
 
         try:
             async with (
+                self._rate_limiter,
                 aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
                 session.get(url, params=params, headers=self.headers, allow_redirects=False) as resp,
             ):
@@ -143,20 +192,18 @@ class BaseGazelleApi:
                     click.secho(resp_text, fg="green")
 
                 resp_json = await resp.json()
+                retry_after_header = resp.headers.get("Retry-After", "20")
         except JSONDecodeError as err:
             raise LoginError from err
-        except TimeoutError:
-            click.secho(
-                "Connection to API timed out, try script again later. Gomen!",
-                fg="red",
-            )
-            raise click.Abort() from None
+        except (TimeoutError, aiohttp.ClientError) as err:
+            raise RetryableError(f"Network error: {err}") from err
 
         if resp_json["status"] != "success":
             if "rate limit" in resp_json["error"].lower():
-                retry_after = float(resp.headers.get("Retry-After", "20"))
-                click.secho(f"Rate limit exceeded, waiting {retry_after} seconds before retry...", fg="yellow")
-                raise RateLimitException("Rate limit exceeded", period_remaining=retry_after)
+                retry_after = float(retry_after_header)
+                click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
+                await asyncio.sleep(retry_after)
+                raise RetryableError("Rate limit exceeded")
             else:
                 raise RequestFailedError(resp_json["error"])
         return resp_json["response"]
@@ -173,14 +220,14 @@ class BaseGazelleApi:
         await self.ensure_authenticated()
         return await self.request("torrentgroup", params={"id": group_id})
 
-    async def get_redirect_torrentgroupid(self, torrentid: int) -> str | None:
+    async def get_redirect_torrentgroupid(self, torrentid: int) -> int | None:
         """Get torrent group ID from torrent ID via redirect.
 
         Args:
             torrentid: The torrent ID.
 
         Returns:
-            The torrent group ID.
+            The torrent group ID as int, or None if not found.
         """
         await self.ensure_authenticated()
         url = self.base_url + "/torrents.php"
@@ -196,7 +243,8 @@ class BaseGazelleApi:
                 if location:
                     parsed = urlparse(location)
                     query = parse_qs(parsed.query)
-                    return query.get("id", [None])[0]
+                    group_id = query.get("id", [None])[0]
+                    return int(group_id) if group_id else None
                 else:
                     click.secho(
                         "Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!",
@@ -363,12 +411,12 @@ class BaseGazelleApi:
             recent_uploads += self.parse_uploads_from_log_html(page_text)
         return recent_uploads
 
-    async def api_key_upload(self, data: dict, files: dict) -> tuple[int, int]:
+    async def api_key_upload(self, data: dict, files: FormData) -> tuple[int, int]:
         """Upload torrent via API.
 
         Args:
             data: Upload form data.
-            files: Files to upload (torrent file).
+            files: FormData containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id).
@@ -381,16 +429,12 @@ class BaseGazelleApi:
         data["auth"] = self.authkey
         api_key_headers = {**self.headers, "Authorization": self.api_key}
 
-        form_data = aiohttp.FormData()
-        for key, value in data.items():
-            form_data.add_field(key, str(value))
-        for key, (filename, file_obj, content_type) in files.items():
-            form_data.add_field(key, file_obj, filename=filename, content_type=content_type)
+        _compose_form_data(files, data)
 
         timeout = aiohttp.ClientTimeout(total=30)
         async with (
             aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.post(url, data=form_data, headers=api_key_headers) as response,
+            session.post(url, data=files, headers=api_key_headers) as response,
         ):
             try:
                 resp = await response.json()
@@ -432,12 +476,12 @@ class BaseGazelleApi:
             raise RequestError(f"API upload failed, response: {resp}") from err
         raise RequestError("API upload failed: unexpected response format")
 
-    async def site_page_upload(self, data: dict, files: dict) -> tuple[int, int]:
+    async def site_page_upload(self, data: dict, files: FormData) -> tuple[int, int]:
         """Upload torrent via upload.php.
 
         Args:
             data: Upload form data.
-            files: Files to upload (torrent file).
+            files: FormData containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id).
@@ -452,16 +496,12 @@ class BaseGazelleApi:
             url = self.base_url + "/upload.php"
         data["auth"] = self.authkey
 
-        form_data = aiohttp.FormData()
-        for key, value in data.items():
-            form_data.add_field(key, str(value))
-        for key, (filename, file_obj, content_type) in files.items():
-            form_data.add_field(key, file_obj, filename=filename, content_type=content_type)
+        _compose_form_data(files, data)
 
         timeout = aiohttp.ClientTimeout(total=30)
         async with (
             aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.post(url, data=form_data, headers=self.headers) as response,
+            session.post(url, data=files, headers=self.headers) as response,
         ):
             resp_text = await response.text()
             resp_url = str(response.url)
@@ -473,8 +513,7 @@ class BaseGazelleApi:
         if "requests.php" in resp_url:
             try:
                 torrent_id = self.parse_torrent_id_from_filled_request_page(resp_text)
-                group_id_str = await self.get_redirect_torrentgroupid(torrent_id)
-                group_id = int(group_id_str) if group_id_str else 0
+                group_id = await self.get_redirect_torrentgroupid(torrent_id) or 0
                 click.secho(f"Filled request: {resp_url}", fg="green")
                 return torrent_id, group_id
             except (TypeError, ValueError) as err:
@@ -491,12 +530,12 @@ class BaseGazelleApi:
         except TypeError as err:
             raise RequestError(f"Site upload failed, response text: {resp_text}") from err
 
-    async def upload(self, data: dict, files: dict) -> tuple[int, int]:
+    async def upload(self, data: dict, files: FormData) -> tuple[int, int]:
         """Upload torrent via API or upload.php.
 
         Args:
             data: Upload form data.
-            files: Files to upload.
+            files: FormData containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id).

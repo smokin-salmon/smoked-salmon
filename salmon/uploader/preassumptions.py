@@ -1,14 +1,17 @@
 from html import unescape
-from typing import Any
+from typing import TYPE_CHECKING
 
 import asyncclick as click
 
 from salmon import cfg
 from salmon.errors import RequestError, UploadError
 
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
+
 
 def print_preassumptions(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     path: str,
     group_id: int | None,
     source: str | None,
@@ -57,7 +60,7 @@ def print_preassumptions(
         raise UploadError("\nYou cannot report a torrent for lossy master without spectrals.")
 
 
-async def confirm_group_upload(gazelle_site: Any, group_id: int, source: str | None) -> None:
+async def confirm_group_upload(gazelle_site: "BaseGazelleApi", group_id: int, source: str | None) -> None:
     """Confirm upload to existing group.
 
     Args:
@@ -73,7 +76,7 @@ async def confirm_group_upload(gazelle_site: Any, group_id: int, source: str | N
     )
 
 
-async def print_group_info(gazelle_site: Any, group_id: int, source: str | None) -> None:
+async def print_group_info(gazelle_site: "BaseGazelleApi", group_id: int, source: str | None) -> None:
     """Print information about the torrent group that was passed as a CLI argument.
 
     Also print all the torrents that are in that group.

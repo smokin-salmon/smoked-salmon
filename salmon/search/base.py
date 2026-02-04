@@ -1,12 +1,42 @@
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from typing import Any
 
 import asyncclick as click
+import msgspec
 
-IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
-ArtistRlsData = namedtuple("ArtistRlsData", ["url", "quality", "year", "artist", "album", "label", "explicit"])
-LabelRlsData = namedtuple("LabelRlsData", ["url", "quality", "year", "artist", "album", "type", "explicit"])
+
+class IdentData(msgspec.Struct, frozen=True):
+    """Data structure for release identification."""
+
+    artist: str
+    album: str
+    year: int | str | None
+    track_count: int | None
+    source: str
+
+
+class ArtistRlsData(msgspec.Struct, frozen=True):
+    """Data structure for artist release search results."""
+
+    url: str
+    quality: str | None
+    year: int | str | None
+    artist: str
+    album: str
+    label: str | None
+    explicit: bool
+
+
+class LabelRlsData(msgspec.Struct, frozen=True):
+    """Data structure for label release search results."""
+
+    url: str
+    quality: str | None
+    year: int | str | None
+    artist: str
+    album: str
+    type: str | None
+    explicit: bool
 
 
 class SearchMixin(ABC):

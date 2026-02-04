@@ -35,12 +35,25 @@ def validate_source(ctx, param, value):
 
 
 def validate_encoding(ctx, param, value):
+    """Validate and convert encoding parameter.
+
+    Args:
+        ctx: Click context.
+        param: Click parameter.
+        value: The encoding value to validate.
+
+    Returns:
+        The validated encoding string or None if not provided.
+
+    Raises:
+        click.BadParameter: If the encoding is invalid.
+    """
+    if value is None:
+        return None
     try:
         return TAG_ENCODINGS[value.upper()]
     except KeyError:
         raise click.BadParameter(f"{value} is not a valid encoding.") from None
-    except AttributeError:
-        return None, None
 
 
 @commandgroup.command()
@@ -71,13 +84,13 @@ def validate_encoding(ctx, param, value):
     is_flag=True,
     help="Rename files and folders automatically",
 )
-async def tag(path: str, source: str, encoding: tuple, overwrite: bool, auto_rename: bool) -> None:
+async def tag(path: str, source: str, encoding: str | None, overwrite: bool, auto_rename: bool) -> None:
     """Interactively tag an album.
 
     Args:
         path: Path to the album folder.
         source: Media source.
-        encoding: Audio encoding tuple.
+        encoding: Audio encoding string or None if not specified.
         overwrite: Whether to overwrite metadata.
         auto_rename: Whether to auto-rename files.
     """

@@ -1,7 +1,7 @@
 import asyncio
 import re
-from difflib import SequenceMatcher as SM
-from typing import Any
+from difflib import SequenceMatcher
+from typing import TYPE_CHECKING
 from urllib import parse
 
 import asyncclick as click
@@ -10,8 +10,11 @@ from salmon import cfg
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder, RequestError
 
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 
-async def dupe_check_recent_torrents(gazelle_site: Any, searchstrs: list[str]) -> list[tuple]:
+
+async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[tuple]:
     """Check site log for recent uploads similar to ours.
 
     Args:
@@ -38,7 +41,7 @@ async def dupe_check_recent_torrents(gazelle_site: Any, searchstrs: list[str]) -
         possible_comparisons = generate_dupe_check_searchstrs(artist, title)
         ratio = 0
         for comparison_string in possible_comparisons:
-            new_ratio = SM(None, searchstr, comparison_string).ratio()
+            new_ratio = SequenceMatcher(None, searchstr, comparison_string).ratio()
             ratio = max(ratio, new_ratio)
         # Default tolerance is 0.5
         if ratio > cfg.upload.log_dupe_tolerance:
@@ -46,7 +49,7 @@ async def dupe_check_recent_torrents(gazelle_site: Any, searchstrs: list[str]) -
     return hits
 
 
-def print_recent_upload_results(gazelle_site, recent_uploads, searchstr):
+def print_recent_upload_results(gazelle_site: "BaseGazelleApi", recent_uploads: list[tuple], searchstr: str) -> None:
     """Prints any recent uploads.
     Currently hard limited to 5.
     Realistically we are probably only interested in 1.
@@ -66,7 +69,7 @@ def print_recent_upload_results(gazelle_site, recent_uploads, searchstr):
 
 
 async def _prompt_for_recent_upload_results(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     recent_uploads: list[tuple],
     searchstr: str,
     offer_deletion: bool,
@@ -120,8 +123,11 @@ async def _prompt_for_recent_upload_results(
                 torrent_id = recent_uploads[group_id_num - 1][0]
                 # Need to convert torrent ID to group ID
                 try:
-                    group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
-                    return group_id
+                    result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
+                    if result_group_id is not None:
+                        return result_group_id
+                    click.echo("Could not get group ID from torrent ID.")
+                    continue
                 except Exception:
                     click.echo("Could not get group ID from torrent ID.")
                     continue
@@ -138,8 +144,11 @@ async def _prompt_for_recent_upload_results(
                 return int(group_id)
             elif "torrentid" in parsed_query:
                 torrent_id = parsed_query["torrentid"][0]
-                group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
-                return group_id
+                result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
+                if result_group_id is not None:
+                    return result_group_id
+                click.echo("Could not get group ID from torrent ID.")
+                continue
             else:
                 click.echo("Could not find group ID in URL.")
                 continue
@@ -155,7 +164,7 @@ async def _prompt_for_recent_upload_results(
 
 
 async def check_existing_group(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     searchstrs: list[str],
     offer_deletion: bool = True,
 ) -> int | None:
@@ -186,7 +195,7 @@ async def check_existing_group(
     return group_id
 
 
-async def get_search_results(gazelle_site: Any, searchstrs: list[str]) -> list[dict]:
+async def get_search_results(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[dict]:
     """Search for existing releases on tracker.
 
     Args:
@@ -197,7 +206,7 @@ async def get_search_results(gazelle_site: Any, searchstrs: list[str]) -> list[d
         List of matching release dicts.
     """
     results: list[dict] = []
-    tasks = [gazelle_site.request("browse", searchstr=searchstr) for searchstr in searchstrs]
+    tasks = [gazelle_site.request("browse", {"searchstr": searchstr}) for searchstr in searchstrs]
     for releases in await asyncio.gather(*tasks):
         for release in releases["results"]:
             if release not in results:
@@ -251,7 +260,7 @@ def filter_unnecessary_searchstrs(searchstrs):
     return new_strs
 
 
-def print_search_results(gazelle_site, results, searchstr):
+def print_search_results(gazelle_site: "BaseGazelleApi", results: list[dict], searchstr: str) -> None:
     """Print all the site search results."""
     if not results:
         click.secho(
@@ -279,7 +288,7 @@ def print_search_results(gazelle_site, results, searchstr):
 
 
 async def _prompt_for_group_id(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     results: list[dict],
     offer_deletion: bool,
 ) -> int | None:
@@ -322,7 +331,7 @@ async def _prompt_for_group_id(
                 torrent_id = parsed_query["torrentid"][0]
                 result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
                 if result_group_id is not None:
-                    return int(result_group_id)
+                    return result_group_id
                 continue
             else:
                 click.echo("Could not find group ID in URL.")
@@ -337,7 +346,7 @@ async def _prompt_for_group_id(
 
 
 async def print_torrents(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     group_id: int,
     rset: dict | None = None,
     highlight_torrent_id: int | None = None,
@@ -393,7 +402,7 @@ async def print_torrents(
             )
 
 
-async def _confirm_group_id(gazelle_site: Any, group_id: int, results: list[dict]) -> bool:
+async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict]) -> bool:
     """Confirm upload to a torrent group.
 
     Args:

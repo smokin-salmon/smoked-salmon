@@ -1,11 +1,12 @@
 import os
 import re
 import shutil
-from collections import namedtuple
 from itertools import chain
 from string import Formatter
+from typing import Any
 
 import asyncclick as click
+import msgspec
 
 from salmon import cfg
 from salmon.constants import (
@@ -15,7 +16,13 @@ from salmon.constants import (
 )
 from salmon.tagger.tagfile import TagFile
 
-Change = namedtuple("Change", ["tag", "old", "new"])
+
+class Change(msgspec.Struct, frozen=True):
+    """Data structure for tag changes."""
+
+    tag: str
+    old: Any
+    new: Any
 
 
 def tag_files(path, tags, metadata, auto_rename):

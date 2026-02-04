@@ -1,11 +1,15 @@
 import os
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import asyncclick as click
+from aiohttp import FormData
 from torf import Torrent
 
 from salmon import cfg
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RequestError
@@ -17,7 +21,7 @@ from salmon.uploader.spectrals import (
 
 
 async def prepare_and_upload(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     path: str,
     group_id: int | None,
     metadata: dict[str, Any],
@@ -115,7 +119,7 @@ def concat_track_data(tags: dict[str, Any], audio_info: dict[str, Any]) -> dict[
 
 
 def compile_data_new_group(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     path: str,
     metadata: dict[str, Any],
     track_data: dict[str, Any],
@@ -177,7 +181,7 @@ def compile_data_new_group(
 
 
 def compile_data_existing_group(
-    gazelle_site: Any,
+    gazelle_site: "BaseGazelleApi",
     path: str,
     group_id: int,
     metadata: dict[str, Any],
@@ -233,7 +237,7 @@ def compile_data_existing_group(
     }
 
 
-def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> list[tuple[str, tuple]]:
+def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> FormData:
     """Compile files to upload (torrent and log files).
 
     Args:
@@ -242,33 +246,31 @@ def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> lis
         metadata: Release metadata.
 
     Returns:
-        List of file tuples for upload.
+        FormData containing files to upload.
     """
-    files: list[tuple[str, tuple]] = []
+    files = FormData()
     with open(torrent_path, "rb") as torrent_file:
-        files.append(("file_input", ("meowmeow.torrent", torrent_file.read(), "application/octet-stream")))
+        files.add_field(
+            "file_input", torrent_file.read(), filename="meowmeow.torrent", content_type="application/octet-stream"
+        )
     if metadata["source"] == "CD":
-        files += attach_logfiles(path)
+        attach_logfiles(path, files)
     return files
 
 
-def attach_logfiles(path: str) -> list[tuple[str, tuple]]:
+def attach_logfiles(path: str, files: FormData) -> None:
     """Attach all log files for upload.
 
     Args:
         path: Path to the album folder.
-
-    Returns:
-        List of logfile tuples.
+        files: FormData to add log files to.
     """
-    logfiles: list[tuple] = []
-    for root, _, files in os.walk(path):
-        for filename in files:
+    for root, _, filenames in os.walk(path):
+        for filename in filenames:
             if filename.lower().endswith(".log"):
                 filepath = os.path.abspath(os.path.join(root, filename))
                 with open(filepath, "rb") as f:
-                    logfiles.append((filename, f.read(), "application/octet-stream"))
-    return [("logfiles[]", lf) for lf in logfiles]
+                    files.add_field("logfiles[]", f.read(), filename=filename, content_type="application/octet-stream")
 
 
 def generate_catno(metadata: dict[str, Any]) -> str:
@@ -287,7 +289,7 @@ def generate_catno(metadata: dict[str, Any]) -> str:
     return ""
 
 
-def generate_torrent(gazelle_site: Any, path: str) -> tuple[str, Torrent]:
+def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, Torrent]:
     """Generate torrent file for the album.
 
     Args:
