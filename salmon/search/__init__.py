@@ -1,4 +1,3 @@
-import asyncio
 import re
 from itertools import chain
 
@@ -11,6 +10,7 @@ from salmon.common import (
     normalize_accents,
     re_split,
     re_strip,
+    run_gather,
 )
 from salmon.search import (
     bandcamp,
@@ -95,7 +95,7 @@ def run_metasearch(
         for search in searchstrs
         for s in sources.values()
     ]
-    task_responses = asyncio.run(asyncio.gather(*tasks))
+    task_responses = run_gather(*tasks)
     for source, result in [r or (None, None) for r in task_responses]:
         if result:
             if filter:

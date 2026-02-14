@@ -5,7 +5,7 @@ import click
 import pyperclip
 
 from salmon import cfg
-from salmon.common import AliasedCommands, commandgroup
+from salmon.common import AliasedCommands, commandgroup, run_gather
 from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, emp, imgbb, imgbox, oeimg, ptpimg, ptscreens
@@ -139,7 +139,7 @@ def upload_spectrals(spectrals, uploader=HOSTS[cfg.image.specs_uploader], succes
             for sid, filename, sp in specs_block
             if sid not in successful
         ]
-        for sid, urls in asyncio.run(asyncio.gather(*tasks)):
+        for sid, urls in run_gather(*tasks):
             if urls:
                 response = {**response, sid: urls}
                 successful.add(sid)

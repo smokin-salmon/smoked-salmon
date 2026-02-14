@@ -1,4 +1,3 @@
-import asyncio
 import json
 from copy import copy
 from itertools import islice
@@ -6,7 +5,7 @@ from itertools import islice
 import click
 
 from salmon import cfg
-from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
+from salmon.common import handle_scrape_errors, make_searchstrs, re_strip, run_gather
 from salmon.search import SEARCHSOURCES, run_metasearch
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
@@ -147,7 +146,7 @@ def _select_choice(choices, rls_data):
                 return meta, source_url
             continue
 
-        metadatas = asyncio.run(asyncio.gather(*tasks))
+        metadatas = run_gather(*tasks)
         meta = combine_metadatas(
             *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data, source_url=source_url
         )
