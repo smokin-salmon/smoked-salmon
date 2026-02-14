@@ -18,7 +18,7 @@ import salmon.tagger
 import salmon.uploader
 import salmon.web  # noqa F401
 from salmon import cfg
-from salmon.common import commandgroup, str_to_int_if_int
+from salmon.common import commandgroup, run_gather, str_to_int_if_int
 from salmon.common import compress as recompress
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.database import DB_PATH
@@ -72,7 +72,7 @@ def descgen(urls):
     if not urls:
         return click.secho("You must specify at least one URL", fg="red")
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
-    metadatas = asyncio.run(asyncio.gather(*tasks))
+    metadatas = run_gather(*tasks)
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
     remove_various_artists(metadata["tracks"])
 

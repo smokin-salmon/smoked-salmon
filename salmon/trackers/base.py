@@ -8,10 +8,11 @@ from urllib.parse import parse_qs, urlparse
 import click
 import requests
 from bs4 import BeautifulSoup
-from ratelimit import RateLimitException, limits, sleep_and_retry
+from ratelimit import RateLimitException, limits
 from requests.exceptions import ConnectTimeout, ReadTimeout
 
 from salmon import cfg
+from salmon.common import run_gather
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
     LoginError,
@@ -83,57 +84,66 @@ class BaseGazelleApi:
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
 
-    @sleep_and_retry
     @limits(10, 10)
+    def _check_rate_limit(self):
+        """Client-side rate-limit check. @limits raises RateLimitException if >10 calls/10s."""
+
     async def request(self, action, **kwargs):
         """
         Make a request to the site API, accomodating the rate limit.
-        This uses the ratelimit library to ensure that
-        the 10 requests / 10 seconds rate limit isn't violated, while allowing
-        short bursts of requests without a 2 second wait after each one
-        (at the expense of a potentially longer wait later).
+        Uses async retry loop for both client-side and server-side rate limits.
         """
-
         url = self.base_url + "/ajax.php"
         params = {"action": action, **kwargs}
-        try:
-            resp = await asyncio.get_running_loop().run_in_executor(
-                None,
-                lambda: self.session.get(url, params=params, timeout=5, allow_redirects=False),
-            )
+        max_retries = 5
 
-            if cfg.upload.debug_tracker_connection:
-                click.secho("URL: ", fg="cyan", nl=False)
-                click.secho(url, fg="yellow")
+        for _attempt in range(max_retries):
+            try:
+                self._check_rate_limit()
+            except RateLimitException as e:
+                await asyncio.sleep(e.period_remaining)
+                continue
 
-                click.secho("Params: ", fg="cyan", nl=False)
-                click.secho(str(params), fg="yellow")
+            try:
+                resp = await asyncio.get_running_loop().run_in_executor(
+                    None,
+                    lambda: self.session.get(url, params=params, timeout=5, allow_redirects=False),
+                )
 
-                click.secho("Response: ", fg="cyan", nl=False)
-                click.secho(str(resp), fg="yellow")
+                if cfg.upload.debug_tracker_connection:
+                    click.secho("URL: ", fg="cyan", nl=False)
+                    click.secho(url, fg="yellow")
 
-                click.secho("Response Text: ", fg="cyan", nl=False)
-                click.secho(resp.text, fg="green")
+                    click.secho("Params: ", fg="cyan", nl=False)
+                    click.secho(str(params), fg="yellow")
 
-            resp_json = resp.json()
-        except JSONDecodeError as err:
-            raise LoginError from err
-        except (ConnectTimeout, ReadTimeout):
-            click.secho(
-                "Connection to API timed out, try script again later. Gomen!",
-                fg="red",
-            )
-            raise click.Abort() from None
+                    click.secho("Response: ", fg="cyan", nl=False)
+                    click.secho(str(resp), fg="yellow")
 
-        if resp_json["status"] != "success":
-            if "rate limit" in resp_json["error"].lower():
-                retry_after = float(resp.headers.get("Retry-After", "20"))
-                click.secho(f"Rate limit exceeded, waiting {retry_after} seconds before retry...", fg="yellow")
-                # Raise RateLimitException to trigger the @sleep_and_retry decorator
-                raise RateLimitException("Rate limit exceeded", period_remaining=retry_after)
-            else:
-                raise RequestFailedError(resp_json["error"])
-        return resp_json["response"]
+                    click.secho("Response Text: ", fg="cyan", nl=False)
+                    click.secho(resp.text, fg="green")
+
+                resp_json = resp.json()
+            except JSONDecodeError as err:
+                raise LoginError from err
+            except (ConnectTimeout, ReadTimeout):
+                click.secho(
+                    "Connection to API timed out, try script again later. Gomen!",
+                    fg="red",
+                )
+                raise click.Abort() from None
+
+            if resp_json["status"] != "success":
+                if "rate limit" in resp_json["error"].lower():
+                    retry_after = float(resp.headers.get("Retry-After", "20"))
+                    click.secho(f"Rate limit exceeded, waiting {retry_after} seconds before retry...", fg="yellow")
+                    await asyncio.sleep(retry_after)
+                    continue
+                else:
+                    raise RequestFailedError(resp_json["error"])
+            return resp_json["response"]
+
+        raise RequestFailedError("Rate limit retry attempts exhausted")
 
     async def torrentgroup(self, group_id):
         """Get information about a torrent group."""
@@ -279,7 +289,7 @@ class BaseGazelleApi:
         "Crawls some pages of the log and returns uploads"
         recent_uploads = []
         tasks = [self.fetch_log(i) for i in range(1, max_pages)]
-        for page in asyncio.run(asyncio.gather(*tasks)):
+        for page in run_gather(*tasks):
             recent_uploads += self.parse_uploads_from_log_html(page.text)
         return recent_uploads
 

@@ -59,10 +59,10 @@ class Prompt:
                 self.reader_task = asyncio.create_task(self._windows_input_reader())
             self.reader_added = True
         print(msg, end=end, flush=flush)
-        result = (await self.q.get()).rstrip("\n")
-
-        # Clean up after getting input
-        await self._cleanup()
+        try:
+            result = (await self.q.get()).rstrip("\n")
+        finally:
+            await self._cleanup()
         return result
 
     async def _windows_input_reader(self):
@@ -113,6 +113,15 @@ def str_to_int_if_int(string, zpad=False):
             return f"{int(string):02d}"
         return int(string)
     return string
+
+
+def run_gather(*tasks):
+    """Run multiple coroutines concurrently. Works on Python 3.11-3.14+."""
+
+    async def _gather():
+        return await asyncio.gather(*tasks)
+
+    return asyncio.run(_gather())
 
 
 async def handle_scrape_errors(task, mute=False):

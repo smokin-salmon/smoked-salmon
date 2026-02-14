@@ -34,23 +34,16 @@ class ImageUploader(BaseImageUploader):
     def _perform(self, filename: str) -> tuple[str, str | None]:
         """
         Executes the actual upload in a new asyncio event loop.
-        Creates a temporary event loop since this method is called synchronously,
-        runs the async upload, and cleans up properly.
         Args:
             filename: Path to the image file to upload.
         Returns:
             Tuple containing the final image/thumbnail URL and None.
         """
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
         try:
-            url = loop.run_until_complete(self._upload_single(filename))
+            url = asyncio.run(self._upload_single(filename))
             return url, None
         except Exception as e:
             raise ImageUploadFailed(f"ImgBox upload failed: {e}") from e
-        finally:
-            loop.close()
 
     async def _upload_single(self, filename: str) -> str:
         """

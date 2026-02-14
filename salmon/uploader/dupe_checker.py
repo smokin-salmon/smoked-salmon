@@ -6,7 +6,7 @@ from urllib import parse
 import click
 
 from salmon import cfg
-from salmon.common import RE_FEAT, make_searchstrs
+from salmon.common import RE_FEAT, make_searchstrs, run_gather
 from salmon.errors import AbortAndDeleteFolder, RequestError
 
 
@@ -161,7 +161,7 @@ def check_existing_group(gazelle_site, searchstrs, offer_deletion=True):
 def get_search_results(gazelle_site, searchstrs):
     results = []
     tasks = [gazelle_site.request("browse", searchstr=searchstr) for searchstr in searchstrs]
-    for releases in asyncio.run(asyncio.gather(*tasks)):
+    for releases in run_gather(*tasks):
         for release in releases["results"]:
             if release not in results:
                 results.append(release)
