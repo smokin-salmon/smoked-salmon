@@ -1,4 +1,4 @@
-import click
+import asyncclick as click
 
 COMMAND_ALIASES = {
     "list": "ls",
@@ -13,7 +13,18 @@ COMMAND_ALIASES = {
 
 
 class AliasedCommands(click.Group):
-    def get_command(self, ctx, cmd_name):
+    """Click group with command alias support."""
+
+    def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+        """Get command by name or alias.
+
+        Args:
+            ctx: Click context.
+            cmd_name: Command name or alias.
+
+        Returns:
+            The command if found, None otherwise.
+        """
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
             return rv

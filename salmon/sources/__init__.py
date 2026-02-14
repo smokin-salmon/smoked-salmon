@@ -1,6 +1,4 @@
-# flake8: noqa
 from salmon import cfg
-
 from salmon.sources.bandcamp import BandcampBase
 from salmon.sources.beatport import BeatportBase
 from salmon.sources.deezer import DeezerBase
@@ -10,6 +8,20 @@ from salmon.sources.junodownload import JunodownloadBase
 from salmon.sources.musicbrainz import MusicBrainzBase
 from salmon.sources.qobuz import QobuzBase
 from salmon.sources.tidal import TidalBase
+
+__all__ = [
+    "cfg",
+    "BandcampBase",
+    "BeatportBase",
+    "DeezerBase",
+    "DiscogsBase",
+    "iTunesBase",
+    "JunodownloadBase",
+    "MusicBrainzBase",
+    "QobuzBase",
+    "TidalBase",
+    "SOURCE_ICONS",
+]
 
 SOURCE_ICONS = {
     "Bandcamp": "https://ptpimg.me/91oo89.png",

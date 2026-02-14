@@ -6,20 +6,40 @@ from salmon.constants import GENRE_LIST
 from salmon.errors import GenreNotInWhitelist
 
 
-def make_searchstrs(artists, album, normalize=False):
-    artists = [a for a, i in artists if i == "main"]
+def make_searchstrs(artists, album, normalize=False) -> list[str]:
+    """Generate search strings from artists and album name.
+
+    Args:
+        artists: List of (artist_name, importance) tuples.
+        album: Album name.
+        normalize: Whether to normalize accents.
+
+    Returns:
+        List of search strings.
+    """
+    main_artists = [a for a, i in artists if i == "main"]
     album = album or ""
     album = re.sub(r" ?(- )? (EP|Single)", "", album)
     album = re.sub(r"\(?[Ff]eat(\.|uring)? [^\)]+\)?", "", album)
 
-    if len(artists) > 3 or (artists and any("Various" in a for a in artists)):
+    search: str | list[str]
+    if len(main_artists) > 3 or (main_artists and any("Various" in a for a in main_artists)):
         search = re_strip(album, filter_nonscrape=False)
-    elif len(artists) == 1:
-        search = re_strip(artists[0], album, filter_nonscrape=False)
-    elif len(artists) <= 3:
-        search = [re_strip(art, album, filter_nonscrape=False) for art in artists]
-        return normalize_accents(*search) if normalize else search
-    return [normalize_accents(search) if normalize else search]
+    elif len(main_artists) == 1:
+        search = re_strip(main_artists[0], album, filter_nonscrape=False)
+    elif len(main_artists) <= 3:
+        search_list = [re_strip(art, album, filter_nonscrape=False) for art in main_artists]
+        if normalize:
+            result = normalize_accents(*search_list)
+            return result if isinstance(result, list) else [result]
+        return search_list
+    else:
+        search = re_strip(album, filter_nonscrape=False)
+
+    if normalize:
+        result = normalize_accents(search)
+        return [result] if isinstance(result, str) else result
+    return [search] if isinstance(search, str) else search
 
 
 def normalize_accents(*strs):
@@ -45,8 +65,21 @@ def strip_template_keys(template, key):
     return re.sub(r" *- *$", "", folder)
 
 
-def fetch_genre(genre):
+def fetch_genre(genre: str) -> set[str]:
+    """Fetch standardized genre from whitelist.
+
+    Args:
+        genre: The genre string to look up.
+
+    Returns:
+        Set of standardized genre strings.
+
+    Raises:
+        GenreNotInWhitelist: If genre is not in whitelist.
+    """
     normalized = normalize_accents(genre)
+    if isinstance(normalized, list):
+        normalized = normalized[0] if normalized else ""
     key_search = re.sub(r"[^a-z]", "", normalized.lower().replace("&", "and"))
     try:
         return GENRE_LIST[key_search]

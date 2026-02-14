@@ -1,7 +1,7 @@
 import os
 
+import asyncclick as click
 import cambia
-import click
 import ffmpeg
 
 from salmon.common.figles import process_files

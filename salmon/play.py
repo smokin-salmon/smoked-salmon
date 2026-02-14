@@ -1,7 +1,7 @@
 import time
 from random import choice
 
-import click
+import asyncclick as click
 
 from salmon.common import commandgroup
 

@@ -1,6 +1,6 @@
 from random import choice
 
-import requests
+import aiohttp
 
 from salmon.constants import UAGENTS
 from salmon.errors import ImageUploadFailed
@@ -13,18 +13,32 @@ HEADERS = {
 
 
 class ImageUploader(BaseImageUploader):
-    def _perform(self, file_, ext):
-        data = {
-            "reqtype": "fileupload",
-            "userhash": "",
-        }
+    async def upload_file(self, filename: str) -> tuple[str, None]:
+        """Upload image file to catbox.moe.
+
+        Args:
+            filename: Path to the image file.
+
+        Returns:
+            Tuple of (url, deletion_url).
+
+        Raises:
+            ImageUploadFailed: If upload fails.
+        """
+        with open(filename, "rb") as f:
+            file_data = f.read()
+        data = aiohttp.FormData()
+        data.add_field("reqtype", "fileupload")
+        data.add_field("userhash", "")
+        data.add_field("fileToUpload", file_data, filename=filename)
         url = "https://catbox.moe/user/api.php"
-        files = {"fileToUpload": file_}
-        resp = requests.post(url, headers=HEADERS, data=data, files=files)
-        if resp.status_code == requests.codes.ok:
-            try:
-                return resp.text, None
-            except ValueError as e:
-                raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{resp.content}") from e
-        else:
-            raise ImageUploadFailed(f"Failed. Status {resp.status_code}:\n{resp.content}")
+        async with aiohttp.ClientSession() as session, session.post(url, headers=HEADERS, data=data) as resp:
+            if resp.status == 200:
+                try:
+                    return await resp.text(), None
+                except ValueError as e:
+                    content = await resp.read()
+                    raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{content}") from e
+            else:
+                content = await resp.read()
+                raise ImageUploadFailed(f"Failed. Status {resp.status}:\n{content}")

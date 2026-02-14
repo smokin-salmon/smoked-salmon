@@ -1,7 +1,7 @@
 import os
 import shutil
 
-import click
+import asyncclick as click
 import msgspec
 import requests
 from platformdirs import user_config_dir

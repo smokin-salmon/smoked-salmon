@@ -6,8 +6,10 @@ import subprocess as sp
 from collections.abc import Collection, Iterable, Iterator
 from pathlib import Path
 
-import click
-from mutagen import flac, id3, mp3
+import asyncclick as click
+from mutagen import flac, mp3
+from mutagen.flac import VCFLACDict
+from mutagen.id3 import APIC, TXXX, Frames
 
 from salmon import cfg
 
@@ -63,7 +65,7 @@ vorbis_to_id3_map = {
 }
 ##############################################################
 
-assert all(fr in id3.Frames for fr in vorbis_to_id3_map.values())
+assert all(fr in Frames for fr in vorbis_to_id3_map.values())
 folder_re = re.compile(flac_folder_pattern)
 
 
@@ -76,7 +78,7 @@ def flac_to_mp3(lame_qual: str, flac_path: str, mp3_path: Path):
     click.secho(f"Encoding: {mp3_path}", fg="cyan")
     p1 = sp.Popen(flac_command, stdout=sp.PIPE, stderr=sp.PIPE)
     p2 = sp.run(lame_command, stdin=p1.stdout, stderr=sp.PIPE)
-    if p1.poll():
+    if p1.poll() and p1.stderr:
         err = p1.stderr.read().decode()
         if err:
             click.secho(err, fg="yellow")
@@ -87,11 +89,11 @@ def flac_to_mp3(lame_qual: str, flac_path: str, mp3_path: Path):
 def get_id3_frame(tag_name: str, tag_value: list):
     if tag_name in vorbis_to_id3_map:
         frame_name = vorbis_to_id3_map[tag_name]
-        frame_type = id3.Frames[frame_name]
+        frame_type = Frames[frame_name]
 
         return frame_type(encoding=3, text=tag_value)
 
-    return id3.TXXX(encoding=3, desc=tag_name, text=tag_value)
+    return TXXX(encoding=3, desc=tag_name, text=tag_value)
 
 
 def copy_tags(tag_dict: dict, flac_thing: flac.FLAC, mp3_path: Path):
@@ -100,13 +102,15 @@ def copy_tags(tag_dict: dict, flac_thing: flac.FLAC, mp3_path: Path):
 
     if not mp3_thing.tags:
         mp3_thing.add_tags()
+    if mp3_thing.tags is None:
+        raise ValueError(f"Failed to create tags for MP3 file: {mp3_path}")
     for k, v in tag_dict.items():
         frame_to_add = get_id3_frame(k, v)
         mp3_thing.tags.add(frame_to_add)
 
     if copy_embedded_pics:
         for pic in flac_thing.pictures:
-            mp3_thing.tags.add(id3.APIC(encoding=3, mime=pic.mime, type=pic.type, desc=pic.desc, data=pic.data))
+            mp3_thing.tags.add(APIC(encoding=3, mime=pic.mime, type=pic.type, desc=pic.desc, data=pic.data))
 
     mp3_thing.save(v1=0, v2_version=id3v2_version)
 
@@ -157,19 +161,39 @@ def process_flac_file(flac_thing: flac.FLAC, tag_dict: dict, mp3_qual: str, mp3_
         raise ValueError(
             f"{flac_thing.filename} has {flac_thing.info.channels} channels. This can't be converted to mp3."
         )
-    flac_to_mp3(mp3_qual, flac_thing.filename, mp3_file_path)
+    if flac_thing.filename is None:
+        raise ValueError("FLAC file has no filename")
+    flac_to_mp3(mp3_qual, str(flac_thing.filename), mp3_file_path)
     copy_tags(tag_dict, flac_thing, mp3_file_path)
 
 
-def get_flac_n_tag_dict(flac_file_path: Path) -> tuple[flac.FLAC, dict[str, list]]:
+def get_flac_n_tag_dict(flac_file_path: Path) -> tuple[flac.FLAC, dict[str, list[str]]]:
+    """Get FLAC file and its tag dictionary.
+
+    Args:
+        flac_file_path: Path to the FLAC file.
+
+    Returns:
+        Tuple of (FLAC object, tag dictionary).
+
+    Raises:
+        ValueError: If FLAC file has no tags.
+    """
     fl = flac.FLAC(flac_file_path)
-    tag_dict = fl.tags.as_dict()
+    tags = fl.tags
+    if tags is None:
+        raise ValueError(f"FLAC file has no tags: {flac_file_path}")
+    # For FLAC files, tags is VCommentDict which has as_dict() method
+    if not isinstance(tags, VCFLACDict):
+        raise ValueError(f"FLAC tags are not VCommentDict: {flac_file_path}")
+    # VCommentDict.as_dict() returns dict[str, list[str]]
+    tag_dict: dict[str, list[str]] = tags.as_dict()
     prepare_tags(tag_dict)
     return fl, tag_dict
 
 
 def single_file(
-    flac_file_path: Path, lame_qual: Iterable[str], out_dir: Path = None
+    flac_file_path: Path, lame_qual: Iterable[str], out_dir: Path | None = None
 ) -> Iterator[tuple[flac.FLAC, dict, str, Path]]:
     flac_thing, tag_dict = get_flac_n_tag_dict(flac_file_path)
     mp3_p = flac_file_path.with_suffix(".mp3")
@@ -192,7 +216,7 @@ def folder_mode(
             yield flac_thing, tag_dict, q, mp3_file_path
 
 
-def mp3_dirs(album_dir: Path, lame_qual: Iterable[str], out_dir: Path) -> dict[str, Path]:
+def mp3_dirs(album_dir: Path, lame_qual: Iterable[str], out_dir: Path | None) -> dict[str, Path]:
     if out_dir:
         return {q: out_dir for q in lame_qual}
 
@@ -207,7 +231,7 @@ def mp3_dirs(album_dir: Path, lame_qual: Iterable[str], out_dir: Path) -> dict[s
     return {q: out.with_name(out.name.replace("{qual}", q.lstrip("b"))) for q in lame_qual}
 
 
-def transcode(flac_path: Path, lame_qual: Iterable[str], out_dir: Path):
+def transcode(flac_path: Path, lame_qual: Iterable[str], out_dir: Path | None):
     mp3_album_dirs = None
     if flac_path.is_dir():
         mp3_album_dirs = mp3_dirs(flac_path, lame_qual, out_dir)
@@ -236,7 +260,7 @@ def copy_only(flac_file: Path, mp3_file: Path):
     copy_tags(tag_dict, flac_thing, mp3_file)
 
 
-def parse_args() -> tuple[Path, Collection[str], Path, Path]:
+def parse_args() -> tuple[Path, Collection[str], Path | None, Path | None]:
     parser = argparse.ArgumentParser(prog="m3ercat", description="m3ercat: the Mp3 EncodeR that Copies All Tags")
     parser.add_argument(
         "flac_path", help="Album folder or single flac file. (must be single file in combination with -c/--copy_to)"
@@ -262,8 +286,8 @@ def parse_args() -> tuple[Path, Collection[str], Path, Path]:
     assert p.exists(), f"Flac path does not exist: {p}"
 
     q = args.q or default_lame_quality
-    o = args.out
-    c = args.copy_to
+    o: Path | None = args.out
+    c: Path | None = args.copy_to
     if c:
         c = Path(c)
         assert c.is_file(), f'Must be an existing file: "{c}"'
@@ -275,12 +299,12 @@ def parse_args() -> tuple[Path, Collection[str], Path, Path]:
     return p, q, o, c
 
 
-def main():
+def main() -> None:
     p, q, o, c = parse_args()
     if c:
         copy_only(p, c)
-    else:
-        transcode(p, q, o)
+        return
+    transcode(p, q, o)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import shutil
 import sqlite3
 from os import listdir, makedirs, path
 
-import click
+import asyncclick as click
 from platformdirs import user_data_dir
 
 from salmon.common import commandgroup

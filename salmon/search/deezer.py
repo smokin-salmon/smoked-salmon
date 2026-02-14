@@ -93,6 +93,7 @@ class Searcher(DeezerBase, SearchMixin):
     @staticmethod
     def _parse_year(date):
         try:
-            return int(re.search(r"(\d{4})", date)[0])
+            match = re.search(r"(\d{4})", date)
+            return int(match[0]) if match else None
         except (ValueError, IndexError, TypeError):
             return None

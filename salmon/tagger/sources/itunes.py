@@ -40,7 +40,11 @@ class Scraper(iTunesBase, MetadataMixin):
 
     def parse_release_year(self, soup):
         try:
-            return int(re.search(r"(\d{4})", self.parse_release_date(soup))[1])
+            date = self.parse_release_date(soup)
+            match = re.search(r"(\d{4})", date) if date else None
+            if not match:
+                raise ScrapeError("Could not parse release year.")
+            return int(match[1])
         except TypeError as e:
             raise ScrapeError("Could not parse release year.") from e
 
@@ -77,7 +81,7 @@ class Scraper(iTunesBase, MetadataMixin):
         except IndexError:
             return None
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
 

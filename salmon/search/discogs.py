@@ -1,6 +1,6 @@
 import re
 
-import click
+import asyncclick as click
 
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import DiscogsBase

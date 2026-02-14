@@ -1,7 +1,7 @@
 import re
 from os import path
 
-import click
+import asyncclick as click
 import requests
 
 from salmon import cfg
@@ -20,6 +20,8 @@ def _extract_changelog(content, from_version, to_version):
 def _parse_version(ver):
     """Convert a version string into a tuple for comparison, handling pre-release versions."""
     match = re.match(r"(\d+(?:\.\d+)*)-?([a-zA-Z]*)", ver)
+    if not match:
+        return (0,)
     num_part = tuple(map(int, match.group(1).split(".")))
     suffix = match.group(2)
 

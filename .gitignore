@@ -3,10 +3,12 @@ __pycache__
 *.egg-info
 .vscode/
 .cursor/
+.kiro/
 .windsurf/
 .windsurfrules
 .venv/
 .torrents/
+temp/
 dist/
 build/
 

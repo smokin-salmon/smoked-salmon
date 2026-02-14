@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 
 import musicbrainzngs
+from musicbrainzngs import musicbrainz as mb_module
 
 from salmon.errors import ScrapeError
 from salmon.sources import MusicBrainzBase
@@ -32,7 +33,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         if soup["cover-art-archive"] and soup["cover-art-archive"]["front"] == "true":
             try:
                 r = musicbrainzngs.get_image_list(soup["id"])
-            except musicbrainzngs.musicbrainz.ResponseError:
+            except mb_module.ResponseError:
                 return None
 
             for image in r["images"]:
@@ -43,7 +44,8 @@ class Scraper(MusicBrainzBase, MetadataMixin):
     def parse_release_year(self, soup):
         date = self.parse_release_date(soup)
         try:
-            return int(re.search(r"(\d{4})", date)[1])
+            match = re.search(r"(\d{4})", date) if date else None
+            return int(match[1]) if match else None
         except (TypeError, IndexError):
             return None
 
@@ -53,9 +55,11 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         except (KeyError, IndexError):
             return None
 
-    def parse_release_group_year(self, soup):
+    def parse_release_group_year(self, soup) -> int | None:
         try:
-            return re.search(r"(\d{4})", soup["release-group"]["first-release-date"])[1]
+            first_release_date = soup["release-group"]["first-release-date"]
+            match = re.search(r"(\d{4})", first_release_date) if first_release_date else None
+            return int(match[1]) if match else self.parse_release_year(soup)
         except (KeyError, IndexError, TypeError):
             return self.parse_release_year(soup)
 
@@ -92,7 +96,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         except KeyError:
             return None
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         for disc in soup["medium-list"]:
             for track in disc["track-list"]:
