@@ -49,7 +49,7 @@ async def get_request_results(gazelle_site: "BaseGazelleApi", searchstrs: list[s
         for req in response["results"]:
             if req not in results:
                 results.append(req)
-    return [item for item in results if item["categoryName"] > "Music"]
+    return [item for item in results if item["categoryName"] == "Music"]
 
 
 def print_request_results(gazelle_site, results, searchstr):
@@ -139,15 +139,13 @@ async def _prompt_for_request_id(gazelle_site, results):
             default="N",
         )
         if request_id.strip().isdigit():
-            request_id_num = int(request_id) - 1  # User doesn't type zero index
-            if request_id_num < 1:
-                request_id_num = 0  # If the user types 0 give them the first choice.
-            if request_id_num < len(results):
-                return int(results[request_id_num]["requestId"])
+            raw_input = int(request_id)
+            list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
+            if list_index < len(results):
+                return int(results[list_index]["requestId"])
             else:
-                request_id_num = int(request_id) + 1
-                click.echo(f"Interpreting {request_id_num} as a request id")
-                return request_id_num
+                click.echo(f"Interpreting {raw_input} as a request id")
+                return raw_input
 
         elif request_id.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
             parsed_id = parse.parse_qs(parse.urlparse(request_id).query)["id"][0]

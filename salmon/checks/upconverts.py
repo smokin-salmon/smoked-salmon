@@ -4,7 +4,7 @@ import re
 import subprocess
 
 import asyncclick as click
-from mutagen import flac
+from mutagen import MutagenError, flac
 
 from salmon.common.figles import process_files
 from salmon.errors import NotAValidInputFile
@@ -58,7 +58,7 @@ def check_upconvert(filepath):
     try:
         mut = flac.FLAC(filepath)
         bitdepth = mut.info.bits_per_sample
-    except Exception:
+    except MutagenError:
         return None, None, None, "This is not a FLAC file."
 
     if bitdepth == 16:

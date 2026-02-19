@@ -1,3 +1,4 @@
+from pathlib import Path
 from random import choice
 
 import aiohttp
@@ -30,7 +31,7 @@ class ImageUploader(BaseImageUploader):
         data = aiohttp.FormData()
         data.add_field("reqtype", "fileupload")
         data.add_field("userhash", "")
-        data.add_field("fileToUpload", file_data, filename=filename)
+        data.add_field("fileToUpload", file_data, filename=Path(filename).name)
         url = "https://catbox.moe/user/api.php"
         async with aiohttp.ClientSession() as session, session.post(url, headers=HEADERS, data=data) as resp:
             if resp.status == 200:

@@ -41,9 +41,11 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
     it's fairly important that the base metadata contain the correct
     number of tracks.
     """
-    url_sources: set[str | None] = set()
+    url_sources: set[str] = set()
     if base and base.get("url", False):
-        url_sources.add(get_source_from_link(base["url"]))
+        link_source = get_source_from_link(base["url"])
+        if link_source:
+            url_sources.add(link_source)
 
     sources = sort_metadatas(metadatas)
 
@@ -57,7 +59,9 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
             if base is None:
                 base = metadata
                 if base.get("url", False):
-                    url_sources.add(get_source_from_link(base["url"]))
+                    link_source = get_source_from_link(base["url"])
+                    if link_source:
+                        url_sources.add(link_source)
                 from_preferred_source = False
                 continue
 

@@ -609,7 +609,7 @@ async def last_min_dupe_check(gazelle_site, searchstrs):
         searchstrs: Search strings for dupe checking.
     """
     # Should really avoid asking if already shown the same releases from the log.
-    click.secho(f"Last Minuite Dupe Check on {gazelle_site.site_code}", fg="cyan")
+    click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
     recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
     if recent_uploads:
         print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))

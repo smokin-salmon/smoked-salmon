@@ -230,7 +230,16 @@ class TorrentClientGenerator:
         Returns:
             An instance of the appropriate TorrentClient subclass.
         """
-        click.secho(f"\nParsing torrent client URL: {url}", fg="cyan")
+        # Sanitize URL for logging to avoid leaking credentials
+        parsed = urlparse(url)
+        if parsed.username or parsed.password:
+            safe_netloc = f"****:****@{parsed.hostname}"
+            if parsed.port:
+                safe_netloc += f":{parsed.port}"
+            safe_url = f"{parsed.scheme}://{safe_netloc}{parsed.path}"
+        else:
+            safe_url = url
+        click.secho(f"\nParsing torrent client URL: {safe_url}", fg="cyan")
 
         username: str | None = None
         password: str | None = None
@@ -239,7 +248,6 @@ class TorrentClientGenerator:
         host: str | None = None
         port: int | None = None
 
-        parsed = urlparse(url)
         scheme_parts = parsed.scheme.split("+")
         netloc = parsed.netloc
         if "@" in netloc:
@@ -253,8 +261,11 @@ class TorrentClientGenerator:
             client_url = f"{scheme_parts[1]}://{netloc}{parsed.path}"
         else:
             scheme = scheme_parts[-1]  # Use last element of scheme to support deluge and transmission
-            host, port_str = netloc.split(":")
-            port = int(port_str)
+            if ":" in netloc:
+                host, port_str = netloc.split(":", 1)
+                port = int(port_str)
+            else:
+                host = netloc
 
         return TORRENT_CLIENT_MAPPING[client](
             username=username,

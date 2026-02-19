@@ -326,7 +326,7 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     Returns:
         BBCode description string.
     """
-    description = "[b][size=4]Tracklist[/b]\n"
+    description = "[b][size=4]Tracklist[/size][/b]\n"
     multi_disc = any(
         (
             t["t"].discnumber

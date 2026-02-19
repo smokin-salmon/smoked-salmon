@@ -3,6 +3,7 @@ __pycache__
 *.egg-info
 .vscode/
 .cursor/
+.agent/
 .kiro/
 .windsurf/
 .windsurfrules

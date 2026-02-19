@@ -61,6 +61,8 @@ class OpsApi(BaseGazelleApi):
             match = re.search(r"torrents.php\?id=(\d+)\&torrentid=(\d+)", str(href))
             if match:
                 ids.append((int(match[2]), int(match[1])))
+        if not ids:
+            raise TypeError("Could not parse torrent/group id from group page: no permalink ids found")
         return max(ids)
 
     async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
@@ -94,11 +96,16 @@ class OpsApi(BaseGazelleApi):
         }
 
         timeout = aiohttp.ClientTimeout(total=10)
-        async with (
-            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.post(url, params=params, data=data, headers=self.headers) as r,
-        ):
-            resp_url = str(r.url)
-            if "torrents.php" in resp_url:
-                return True
-            raise RequestError(f"Failed to report the torrent for lossy master, code {r.status}.")
+        try:
+            async with (
+                aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
+                session.post(url, params=params, data=data, headers=self.headers) as r,
+            ):
+                resp_url = str(r.url)
+                if "torrents.php" in resp_url:
+                    return True
+                raise RequestError(
+                    f"Failed to report torrent for lossy master: unexpected redirect to {resp_url} (status {r.status})"
+                )
+        except (TimeoutError, aiohttp.ClientError) as exc:
+            raise RequestError(f"Error reporting torrent for lossy master: {exc}") from exc

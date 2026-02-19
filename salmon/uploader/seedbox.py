@@ -31,21 +31,21 @@ class WebDAVUploader(Uploader):
     async def upload_file(self, local_path: str, remote_path: str) -> None:
         """Upload single file via WebDAV.
 
+        Streams the file instead of loading it entirely into memory.
+
         Args:
             local_path: Local file path.
             remote_path: Remote WebDAV path.
         """
-        with open(local_path, "rb") as file:
-            file_data = file.read()
-
         timeout = aiohttp.ClientTimeout(total=300)
         try:
-            async with (
-                aiohttp.ClientSession(timeout=timeout) as session,
-                session.put(remote_path.replace("\\", "/"), data=file_data) as response,
-            ):
-                response.raise_for_status()
-                click.secho(f"Upload successful: {local_path} to {remote_path}", fg="green")
+            with open(local_path, "rb") as file:
+                async with (
+                    aiohttp.ClientSession(timeout=timeout) as session,
+                    session.put(remote_path.replace("\\", "/"), data=file) as response,
+                ):
+                    response.raise_for_status()
+                    click.secho(f"Upload successful: {local_path} to {remote_path}", fg="green")
         except aiohttp.ClientError as err:
             click.secho(f"Upload failed: {local_path}, Error: {err}", fg="red")
 
@@ -78,7 +78,7 @@ class WebDAVUploader(Uploader):
             await asyncio.gather(*tasks)
             click.secho("WebDAV folder upload completed", fg="green")
         elif type == "seed":
-            remote_path = self.url + os.path.join(remote_folder, os.path.basename(path))
+            remote_path = posixpath.join(self.url, remote_folder, os.path.basename(path))
             await self.upload_file(path, remote_path)
             click.secho("WebDAV seed file upload completed", fg="green")
         else:

@@ -50,7 +50,7 @@ async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int)
     results = await run_metasearch([search_query], limit=limit, track_count=track_count)
     not_found: list[str] = []
     inactive_sources: list[str] = []
-    source_errors = SEARCHSOURCES.keys() - [r for r in results]
+    source_errors = set(SEARCHSOURCES.keys()) - set(results)
     for source, releases in results.items():
         if releases:
             click.secho(f"\nResults from {source}:", fg="yellow", bold=True)

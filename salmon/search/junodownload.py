@@ -38,7 +38,7 @@ class Searcher(JunodownloadBase, SearchMixin):
                 if not href_match:
                     continue
                 rls_id = href_match[1]
-                title = su_title.string
+                title = su_title.string or ""
 
                 # right_blob = meta.find('div', attrs={'class': 'text-sm mb-3 mb-lg-3'})
                 right_blob = meta.find("div", attrs={"class": "text-sm text-muted mt-3"})
@@ -58,6 +58,8 @@ class Searcher(JunodownloadBase, SearchMixin):
                 if not next_elem or not hasattr(next_elem, "strip"):
                     continue
                 date = str(next_elem).strip()
+                if len(date) < 2 or not date[-2:].isdigit():
+                    continue
                 year = int(date[-2:])
 
                 year = 1900 + year if 40 <= year <= 99 else 2000 + year

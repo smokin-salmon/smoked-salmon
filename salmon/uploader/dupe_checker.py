@@ -313,15 +313,13 @@ async def _prompt_for_group_id(
             default="",
         )
         if group_id.strip().isdigit():
-            group_id_num = int(group_id) - 1  # User doesn't type zero index
-            if group_id_num < 1:
-                group_id_num = 0  # If the user types 0 give them the first choice.
-            if group_id_num < len(results):
-                return int(results[group_id_num]["groupId"])
+            raw_input = int(group_id)
+            list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
+            if list_index < len(results):
+                return int(results[list_index]["groupId"])
             else:
-                group_id_num = int(group_id) + 1
-                click.echo(f"Interpreting {group_id_num} as a group Id")
-                return group_id_num
+                click.echo(f"Interpreting {raw_input} as a group Id")
+                return raw_input
 
         elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
             parsed_query = parse.parse_qs(parse.urlparse(group_id).query)

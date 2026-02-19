@@ -52,7 +52,7 @@ class Scraper(BandcampBase, MetadataMixin):
                 raise ScrapeError("Could not parse release date.")
             date = match[1]
             return datetime.strptime(date, "%B %d, %Y").strftime("%Y-%m-%d")
-        except (TypeError, IndexError) as e:
+        except (TypeError, IndexError, ValueError) as e:
             raise ScrapeError("Could not parse release date.") from e
 
     def parse_release_label(self, soup):

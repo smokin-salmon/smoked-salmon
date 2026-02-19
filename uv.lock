@@ -1297,11 +1297,11 @@ wheels = [
 
 [[package]]
 name = "platformdirs"
-version = "4.8.0"
+version = "4.9.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/41/9b/20c8288dc591129bf9dd7be2c91aec6ef23e450605c3403716bd6c74833e/platformdirs-4.8.0.tar.gz", hash = "sha256:c1d4a51ab04087041dd602707fbe7ee8b62b64e590f30e336e5c99c2d0c542d2", size = 27607, upload-time = "2026-02-14T01:52:03.451Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1b/04/fea538adf7dbbd6d186f551d595961e564a3b6715bdf276b477460858672/platformdirs-4.9.2.tar.gz", hash = "sha256:9a33809944b9db043ad67ca0db94b14bf452cc6aeaac46a88ea55b26e2e9d291", size = 28394, upload-time = "2026-02-16T03:56:10.574Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/f0/227a7d1b8d80ae55c4b47f271c0870dd7a153aa65353bf71921265df2300/platformdirs-4.8.0-py3-none-any.whl", hash = "sha256:1c1328b4d2ea997bbcb904175a9bde14e824a3fa79f751ea3888d63d7d727557", size = 20647, upload-time = "2026-02-14T01:52:01.915Z" },
+    { url = "https://files.pythonhosted.org/packages/48/31/05e764397056194206169869b50cf2fee4dbbbc71b344705b9c0d878d4d8/platformdirs-4.9.2-py3-none-any.whl", hash = "sha256:9170634f126f8efdae22fb58ae8a0eaa86f38365bc57897a6c4f781d1f5875bd", size = 21168, upload-time = "2026-02-16T03:56:08.891Z" },
 ]
 
 [[package]]
@@ -1684,6 +1684,7 @@ dependencies = [
     { name = "aiohttp", extra = ["speedups"] },
     { name = "aiohttp-jinja2" },
     { name = "aiolimiter" },
+    { name = "anyio" },
     { name = "asyncclick" },
     { name = "beautifulsoup4", extra = ["lxml"] },
     { name = "bitstring" },
@@ -1721,6 +1722,7 @@ requires-dist = [
     { name = "aiohttp", extras = ["speedups"], specifier = ">=3.8.5" },
     { name = "aiohttp-jinja2", specifier = ">=1.5.1" },
     { name = "aiolimiter", specifier = ">=1.2.1" },
+    { name = "anyio", specifier = ">=4.12.1" },
     { name = "asyncclick", specifier = ">=8.1.7.2" },
     { name = "beautifulsoup4", extras = ["lxml"], specifier = ">=4.13.0" },
     { name = "bitstring", specifier = ">=4.1.2" },

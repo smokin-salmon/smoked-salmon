@@ -18,11 +18,25 @@ class QobuzBase(BaseScraper):
         "X-App-Id": cfg.metadata.qobuz.app_id,
         "X-User-Auth-Token": cfg.metadata.qobuz.user_auth_token,
     }
-    get_params: dict[str, Any] = {}
+    get_params: dict[str, Any] | None = {}
 
     async def create_soup(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
     ) -> SoupType:
+        """Fetch album data from Qobuz JSON API.
+
+        Args:
+            url: The Qobuz album URL.
+            params: Optional query parameters.
+            headers: Unused, kept for API compatibility.
+            follow_redirects: Unused, kept for API compatibility.
+
+        Returns:
+            Album data dict from Qobuz API.
+
+        Raises:
+            ScrapeError: If URL is invalid or request fails.
+        """
         try:
             match = self.regex.match(url)
             if not match:

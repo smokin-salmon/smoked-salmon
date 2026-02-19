@@ -25,6 +25,8 @@ async def web_cmd() -> None:
         while True:
             await asyncio.sleep(3600)
     except asyncio.CancelledError:
+        pass
+    finally:
         await runner.cleanup()
 
 
@@ -42,7 +44,7 @@ async def create_app_async() -> web.AppRunner:
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates")))
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", web_cfg.port)
+    site = web.TCPSite(runner, web_cfg.host, web_cfg.port)
     try:
         await site.start()
     except OSError as err:

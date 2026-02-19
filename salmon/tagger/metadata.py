@@ -14,9 +14,7 @@ from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists
 
 
-async def get_metadata(
-    path: str, tags: dict[str, Any], rls_data: dict[str, Any] | None = None
-) -> tuple[dict[str, Any], str | None]:
+async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
     """Get metadata pertaining to a release from various metadata sources.
 
     Have the user decide which sources to use, and then combine their information.
@@ -30,7 +28,7 @@ async def get_metadata(
         Tuple of (metadata dict, source URL or None).
     """
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
-    if rls_data is None:
+    if not rls_data:
         raise ValueError("rls_data cannot be None")
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
     click.secho(f"Searching for '{searchstrs}' releases...")

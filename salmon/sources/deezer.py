@@ -124,11 +124,18 @@ class DeezerBase(BaseScraper):
             ScrapeError: If scraping fails.
         """
         timeout = aiohttp.ClientTimeout(total=10)
-        async with (
-            aiohttp.ClientSession(timeout=timeout) as session,
-            session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
-        ):
-            text = await response.text()
+        try:
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
+            ):
+                if response.status != 200:
+                    raise ScrapeError(
+                        f"Deezer internal API returned status {response.status} for {self.site_url + url}"
+                    )
+                text = await response.text()
+        except (TimeoutError, aiohttp.ClientError) as e:
+            raise ScrapeError(f"Failed to fetch Deezer internal data: {e}") from e
 
         r = re.search(
             r"window.__DZR_APP_STATE__ = ({.*?}})</script>",

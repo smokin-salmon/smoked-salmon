@@ -21,7 +21,7 @@ class Searcher(MusicBrainzBase, SearchMixin):
             Tuple of (source name, releases dict).
         """
         releases = {}
-        soup = await asyncio.to_thread(musicbrainzngs.search_releases, searchstr, 10)
+        soup = await asyncio.to_thread(musicbrainzngs.search_releases, searchstr, limit)
         for rls in soup["release-list"]:
             try:
                 artists = rls["artist-credit-phrase"]
@@ -53,7 +53,13 @@ class Searcher(MusicBrainzBase, SearchMixin):
 
                 if label.lower() not in cfg.upload.search.excluded_labels:
                     releases[rls["id"]] = (
-                        IdentData(artists, rls["title"], None, track_count, source),
+                        IdentData(
+                            artists,
+                            rls["title"],
+                            None,
+                            track_count,
+                            source or "",
+                        ),
                         self.format_result(
                             artists,
                             rls["title"],

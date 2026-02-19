@@ -1,8 +1,9 @@
 import asyncio
 import html
+import json
 import re
 from json.decoder import JSONDecodeError
-from typing import Any
+from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
 import aiohttp
@@ -191,22 +192,26 @@ class BaseGazelleApi:
                     click.secho("Response Text: ", fg="cyan", nl=False)
                     click.secho(resp_text, fg="green")
 
-                resp_json = await resp.json()
+                try:
+                    resp_json = json.loads(resp_text)
+                except (json.JSONDecodeError, ValueError):
+                    resp_json = {"status": "error", "error": resp_text}
                 retry_after_header = resp.headers.get("Retry-After", "20")
         except JSONDecodeError as err:
             raise LoginError from err
         except (TimeoutError, aiohttp.ClientError) as err:
             raise RetryableError(f"Network error: {err}") from err
 
-        if resp_json["status"] != "success":
-            if "rate limit" in resp_json["error"].lower():
+        if resp_json.get("status") != "success":
+            error_msg = resp_json.get("error", resp_text)
+            if "rate limit" in str(error_msg).lower():
                 retry_after = float(retry_after_header)
                 click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
                 await asyncio.sleep(retry_after)
                 raise RetryableError("Rate limit exceeded")
             else:
-                raise RequestFailedError(resp_json["error"])
-        return resp_json["response"]
+                raise RequestFailedError(str(error_msg))
+        return cast(dict, resp_json["response"])
 
     async def torrentgroup(self, group_id: int) -> dict:
         """Get information about a torrent group.
@@ -540,7 +545,7 @@ class BaseGazelleApi:
         Returns:
             Tuple of (torrent_id, group_id).
         """
-        if hasattr(self, "api_key"):
+        if getattr(self, "api_key", None):
             return await self.api_key_upload(data, files)
         else:
             return await self.site_page_upload(data, files)
@@ -650,6 +655,9 @@ class BaseGazelleApi:
             group_url = re.search(r"upload.php\?groupid=(\d+)", str(href))
             if group_url:
                 group_ids.append(int(group_url[1]))
+
+        if not torrent_ids or not group_ids:
+            raise TypeError("Could not parse torrent/group id from group page")
 
         return max(torrent_ids), max(group_ids)
 

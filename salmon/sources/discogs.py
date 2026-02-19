@@ -1,9 +1,10 @@
 import json
 import re
+from typing import Any
 
 from salmon import cfg
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper, SoupType
+from salmon.sources.base import BaseScraper
 
 
 class DiscogsBase(BaseScraper):
@@ -15,7 +16,21 @@ class DiscogsBase(BaseScraper):
 
     async def create_soup(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> SoupType:
+    ) -> dict[str, Any]:
+        """Fetch release data from Discogs JSON API.
+
+        Args:
+            url: The Discogs release URL.
+            params: Optional query parameters.
+            headers: Optional HTTP headers (forwarded to get_json).
+            follow_redirects: Unused, kept for API compatibility.
+
+        Returns:
+            Release data dict from Discogs API.
+
+        Raises:
+            ScrapeError: If URL is invalid or request fails.
+        """
         match = self.regex.match(url)
         if not match:
             raise ScrapeError("Invalid Discogs URL.")

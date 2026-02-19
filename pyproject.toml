@@ -9,6 +9,7 @@ dependencies = [
     "aiohttp-jinja2>=1.5.1",
     "aiohttp[speedups]>=3.8.5",
     "aiolimiter>=1.2.1",
+    "anyio>=4.12.1",
     "asyncclick>=8.1.7.2",
     "beautifulsoup4[lxml]>=4.13.0",
     "bitstring>=4.1.2",

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import aiohttp
 
 from salmon import cfg
@@ -26,17 +28,23 @@ class ImageUploader(BaseImageUploader):
             file_data = f.read()
 
         data = aiohttp.FormData()
-        data.add_field("source", file_data, filename=filename)
+        data.add_field("source", file_data, filename=Path(filename).name)
 
         url = "https://ptscreens.com/api/1/upload"
-        async with aiohttp.ClientSession() as session, session.post(url, headers=HEADERS, data=data) as resp:
+        async with (
+            aiohttp.ClientSession() as session,
+            session.post(url, headers=HEADERS, data=data) as resp,
+        ):
             if resp.status == 200:
                 try:
                     r = await resp.json()
-                    if "image" in r:
-                        result_url = r["image"].get("url")
-                        return result_url, None
-                    raise ImageUploadFailed("Missing image data in response")
+                    image_data = r.get("image")
+                    if not image_data:
+                        raise ImageUploadFailed(f"Missing image data in response: {r}")
+                    result_url = image_data.get("url")
+                    if not result_url:
+                        raise ImageUploadFailed(f"Missing image URL in response: {r}")
+                    return result_url, None
                 except ValueError as e:
                     content = await resp.read()
                     raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{content}") from e

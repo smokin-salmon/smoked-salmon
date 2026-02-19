@@ -35,7 +35,7 @@ class BaseScraper:
     site_url: str = ""
     regex: re.Pattern[str]
     release_format: str = ""
-    get_params: dict[str, Any] = {}
+    get_params: dict[str, Any] | None = None
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
@@ -73,7 +73,7 @@ class BaseScraper:
         Raises:
             ScrapeError: If request fails or response is not JSON.
         """
-        params = {**(params or {}), **(self.get_params)}
+        params = {**(params or {}), **(self.get_params or {})}
         headers = {**(headers or {}), **HEADERS}
         timeout = aiohttp.ClientTimeout(total=10)
         try:
@@ -114,19 +114,22 @@ class BaseScraper:
         """
         params = params or {}
         timeout = aiohttp.ClientTimeout(total=7)
-        async with (
-            aiohttp.ClientSession(timeout=timeout) as session,
-            session.get(
-                url,
-                params=params,
-                headers=headers or HEADERS,
-                allow_redirects=follow_redirects,
-            ) as r,
-        ):
-            if r.status != 200:
-                raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
-            text = await r.text()
-            return BeautifulSoup(text, "lxml")
+        try:
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.get(
+                    url,
+                    params=params,
+                    headers=headers or HEADERS,
+                    allow_redirects=follow_redirects,
+                ) as r,
+            ):
+                if r.status != 200:
+                    raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
+                text = await r.text()
+                return BeautifulSoup(text, "lxml")
+        except (TimeoutError, aiohttp.ClientError) as e:
+            raise ScrapeError(f"Failed to scrape page: {e}") from e
 
     @staticmethod
     def url_format_rls_name(rls_name: str) -> str:

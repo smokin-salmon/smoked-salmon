@@ -106,8 +106,8 @@ async def descgen(urls: tuple[str, ...]) -> None:
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 async def compress(path: str) -> None:
     """Recompress a directory of FLACs to level 8."""
-    for root, _, figles in os.walk(path):
-        for f in sorted(figles):
+    for root, _, files in os.walk(path):
+        for f in sorted(files):
             if os.path.splitext(f)[1].lower() == ".flac":
                 filepath = os.path.join(root, f)
                 click.secho(f"Recompressing {filepath[len(path) + 1 :]}...")

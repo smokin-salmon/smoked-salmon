@@ -376,7 +376,7 @@ def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[lis
         # normalize_accents returns str when given single argument
         normalized = str(normalized_result).lower() if normalized_result else ""
         unsorted_pool.append([normalized, str(artist_name)])
-    artist_pool: list[list[str]] = sorted(unsorted_pool, key=lambda x: len(x))
+    artist_pool: list[list[str]] = sorted(unsorted_pool, key=lambda x: len(x[0]))
     for i, pri_a_raw in enumerate(artist_pool):
         for other_a in reversed(artist_pool[0:i]):
             current_replacements = [pri_a_raw[1]]

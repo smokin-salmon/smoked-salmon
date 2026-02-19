@@ -24,10 +24,13 @@ class Searcher(BeatportBase, SearchMixin):
             raise ScrapeError("Expected BeautifulSoup object")
         try:
             script_tag = soup.find("script", id="__NEXT_DATA__")
-            if not script_tag:
+            if not script_tag or not script_tag.string:
                 raise ScrapeError("Could not find Next.js data script tag")
 
-            data = json.loads(script_tag.string or "")
+            try:
+                data = json.loads(script_tag.string)
+            except json.JSONDecodeError as e:
+                raise ScrapeError("Failed to parse Beatport JSON data") from e
             search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]
             for result in search_results:
                 try:

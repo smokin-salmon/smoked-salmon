@@ -34,7 +34,7 @@ class Searcher(iTunesBase, SearchMixin):
                 self.format_result(
                     artists,
                     title,
-                    f"{year} {copyright}",
+                    f"{year or ''} {copyright or ''}".strip(),
                     track_count=track_count,
                     explicit=explicit,
                     clean=clean,

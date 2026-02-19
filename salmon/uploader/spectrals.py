@@ -492,27 +492,27 @@ async def report_lossy_master(
 
 
 async def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
-    comment = (
-        ""
-        if cfg.upload.yes_all and not force_prompt_lossy_master
-        else await click.prompt(
-            click.style(
-                "Do you have a comment for the lossy approval report? It is appropriate to "
-                "make a note about the source here. Source information from go, gos, and the "
-                "queue will be included automatically.",
-                fg="cyan",
-                bold=True,
-            ),
-            default="",
+    while True:
+        comment = (
+            ""
+            if cfg.upload.yes_all and not force_prompt_lossy_master
+            else await click.prompt(
+                click.style(
+                    "Do you have a comment for the lossy approval report? It is appropriate to "
+                    "make a note about the source here. Source information from go, gos, and the "
+                    "queue will be included automatically.",
+                    fg="cyan",
+                    bold=True,
+                ),
+                default="",
+            )
         )
-    )
-    if not (comment or source_url):
+        if comment or source_url:
+            return comment
         click.secho(
             "This release was not uploaded with go, gos, or the queue, so you must add a comment about the source.",
             fg="red",
         )
-        return await generate_lossy_approval_comment(source_url, filenames)
-    return comment
 
 
 def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids):
