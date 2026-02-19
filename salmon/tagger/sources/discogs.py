@@ -92,7 +92,7 @@ class Scraper(DiscogsBase, MetadataMixin):
             except StopIteration:
                 return
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
         for track in soup["tracklist"]:

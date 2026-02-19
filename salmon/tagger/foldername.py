@@ -4,7 +4,7 @@ import shutil
 from copy import copy
 from string import Formatter
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.common import strip_template_keys

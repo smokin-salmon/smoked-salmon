@@ -3,14 +3,22 @@ import os
 import xmlrpc.client
 from urllib.parse import unquote, urlparse
 
-import click
+import asyncclick as click
 import qbittorrentapi
 import transmission_rpc
 from deluge_client import DelugeRPCClient
 
 
 class TorrentClient:
-    def __init__(self, username, password, url=None, scheme=None, host=None, port=None):
+    def __init__(
+        self,
+        username: str | None = None,
+        password: str | None = None,
+        url: str | None = None,
+        scheme: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
+    ):
         self.username = username
         self.password = password
         self.url = url
@@ -32,7 +40,8 @@ class QBittorrentClient(TorrentClient):
     def login(self):
         try:
             click.secho("Attempting to connect to qBittorrent...", fg="yellow")
-            qbt_client = qbittorrentapi.Client(host=self.url, username=self.username, password=self.password)
+            url = str(self.url) if self.url else ""
+            qbt_client = qbittorrentapi.Client(host=url, username=self.username, password=self.password)
             qbt_client.auth_log_in()
 
             click.secho("Successfully connected to qBittorrent", fg="green")
@@ -61,13 +70,17 @@ class QBittorrentClient(TorrentClient):
 
 
 class TransmissionClient(TorrentClient):
-    def login(self):
+    def login(self) -> transmission_rpc.Client | None:
         try:
             click.secho("Attempting to connect to Transmission...", fg="yellow")
+            # Cast to expected types for transmission_rpc.Client
+            protocol = "https" if self.scheme == "https" else "http"
+            host = str(self.host) if self.host else "localhost"
+            port = int(self.port) if self.port else 9091
             trt = transmission_rpc.Client(
-                protocol=self.scheme,
-                host=self.host,
-                port=self.port,
+                protocol=protocol,
+                host=host,
+                port=port,
                 username=self.username,
                 password=self.password,
                 timeout=60,
@@ -101,7 +114,10 @@ class DelugeClient(TorrentClient):
     def login(self):
         try:
             click.secho("Attempting to connect to Deluge...", fg="yellow")
-            de_client = DelugeRPCClient(host=self.host, port=self.port, username=self.username, password=self.password)
+            # Cast to expected types for DelugeRPCClient
+            host = str(self.host) if self.host else "localhost"
+            port = int(self.port) if self.port else 58846
+            de_client = DelugeRPCClient(host=host, port=port, username=self.username, password=self.password)
             de_client.connect()
             if de_client.connected is True:
                 click.secho("Successfully connected to Deluge", fg="green")
@@ -158,7 +174,8 @@ class DelugeClient(TorrentClient):
 class RuTorrentClient(TorrentClient):
     def login(self):
         try:
-            rt_client = xmlrpc.client.Server(self.url)
+            url = str(self.url) if self.url else ""
+            rt_client = xmlrpc.client.Server(url)
             version = rt_client.system.client_version()
             click.secho(f"Successfully connected to ruTorrent, version: {version}", fg="green")
             return rt_client
@@ -199,30 +216,62 @@ TORRENT_CLIENT_MAPPING = {
 
 class TorrentClientGenerator:
     @staticmethod
-    def parse_libtc_url(url):
-        click.secho(f"\nParsing torrent client URL: {url}", fg="cyan")
+    def parse_libtc_url(url: str) -> TorrentClient:
+        """Parse a libtc-style URL and return the appropriate torrent client instance.
 
-        # transmission+http://127.0.0.1:9091
-        # rutorrent+http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php
-        # deluge://username:password@127.0.0.1:58664
-        # qbittorrent+http://username:password@127.0.0.1:8080
+        Args:
+            url: The torrent client URL in libtc format.
+                Examples:
+                - transmission+http://127.0.0.1:9091
+                - rutorrent+http://RUTORRENT_ADDRESS:9380/plugins/rpc/rpc.php
+                - deluge://username:password@127.0.0.1:58664
+                - qbittorrent+http://username:password@127.0.0.1:8080
 
-        kwargs = {}
+        Returns:
+            An instance of the appropriate TorrentClient subclass.
+        """
+        # Sanitize URL for logging to avoid leaking credentials
         parsed = urlparse(url)
-        scheme = parsed.scheme.split("+")
+        if parsed.username or parsed.password:
+            safe_netloc = f"****:****@{parsed.hostname}"
+            if parsed.port:
+                safe_netloc += f":{parsed.port}"
+            safe_url = f"{parsed.scheme}://{safe_netloc}{parsed.path}"
+        else:
+            safe_url = url
+        click.secho(f"\nParsing torrent client URL: {safe_url}", fg="cyan")
+
+        username: str | None = None
+        password: str | None = None
+        client_url: str | None = None
+        scheme: str | None = None
+        host: str | None = None
+        port: int | None = None
+
+        scheme_parts = parsed.scheme.split("+")
         netloc = parsed.netloc
         if "@" in netloc:
             auth, netloc = netloc.rsplit("@", 1)
             username, password = auth.split(":", 1)
-            kwargs["username"] = unquote(username)
-            kwargs["password"] = unquote(password)
+            username = unquote(username)
+            password = unquote(password)
 
-        client = scheme[0]
+        client = scheme_parts[0]
         if client in ["qbittorrent", "rutorrent"]:
-            kwargs["url"] = f"{scheme[1]}://{netloc}{parsed.path}"
+            client_url = f"{scheme_parts[1]}://{netloc}{parsed.path}"
         else:
-            kwargs["scheme"] = scheme[-1]  # Use last element of scheme to support deluge and transmission
-            kwargs["host"], kwargs["port"] = netloc.split(":")
-            kwargs["port"] = int(kwargs["port"])
+            scheme = scheme_parts[-1]  # Use last element of scheme to support deluge and transmission
+            if ":" in netloc:
+                host, port_str = netloc.split(":", 1)
+                port = int(port_str)
+            else:
+                host = netloc
 
-        return TORRENT_CLIENT_MAPPING[client](**kwargs)
+        return TORRENT_CLIENT_MAPPING[client](
+            username=username,
+            password=password,
+            url=client_url,
+            scheme=scheme,
+            host=host,
+            port=port,
+        )

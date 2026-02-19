@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 from copy import deepcopy
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.common import RE_FEAT, re_split
@@ -52,7 +52,9 @@ def construct_rls_data(
     if not overwrite:
         metadata["artists"] = construct_artists_li(tags)
         with contextlib.suppress(ValueError, IndexError, TypeError):
-            metadata["year"] = re.search(r"(\d{4})", str(tag_track.date))[1]
+            year_match = re.search(r"(\d{4})", str(tag_track.date))
+            if year_match:
+                metadata["year"] = year_match[1]
         metadata["group_year"] = metadata["year"]
         metadata["upc"] = tag_track.upc
         metadata["label"] = tag_track.label
@@ -205,10 +207,8 @@ def parse_artists(artist_list):
 def _prompt_encoding():
     click.echo(f"\nValid encodings: {', '.join(TAG_ENCODINGS.keys())}")
     while True:
-        enc = click.prompt(
-            click.style("What is the encoding of this release? [a]bort", fg="magenta"),
-            default="",
-        )
+        # Use synchronous input since this is called from sync context
+        enc = input(click.style("What is the encoding of this release? [a]bort: ", fg="magenta"))
         try:
             return TAG_ENCODINGS[enc.upper()]
         except KeyError:

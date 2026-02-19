@@ -3,11 +3,15 @@ import platform
 import re
 import shutil
 import time
+from typing import TYPE_CHECKING, Any
 
-import click
+import asyncclick as click
 import pyperclip
 
 import salmon.trackers
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 from salmon import cfg
 from salmon.checks import mqa_test
 from salmon.checks.integrity import (
@@ -54,7 +58,7 @@ from salmon.uploader.dupe_checker import (
     print_recent_upload_results,
     print_torrents,
 )
-from salmon.uploader.preassumptions import print_preassumptions
+from salmon.uploader.preassumptions import confirm_group_upload, print_preassumptions
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import (
@@ -161,27 +165,27 @@ from salmon.uploader.upload import (
     is_flag=True,
     help="Skip integrity check of audio files",
 )
-def up(
-    path,
-    group_id,
-    source,
-    lossy,
-    spectrals,
-    overwrite,
-    encoding,
-    compress,
-    tracker,
-    request,
-    spectrals_after,
-    auto_rename,
-    skip_up,
-    scene,
-    source_url,
-    yyy,
-    skip_mqa,
-    skip_log_check,
-    skip_integrity_check,
-):
+async def up(
+    path: str,
+    group_id: int | None,
+    source: str | None,
+    lossy: bool | None,
+    spectrals: tuple[int, ...],
+    overwrite: bool,
+    encoding: str | None,
+    compress: bool,
+    tracker: str,
+    request: str | None,
+    spectrals_after: bool,
+    auto_rename: bool,
+    skip_up: bool,
+    scene: bool,
+    source_url: str | None,
+    yyy: bool,
+    skip_mqa: bool,
+    skip_log_check: bool,
+    skip_integrity_check: bool,
+) -> None:
     """Command to upload an album folder to a Gazelle Site."""
     if yyy:
         cfg.upload.yes_all = True
@@ -199,9 +203,11 @@ def up(
         encoding,
         spectrals_after,
     )
+    if group_id:
+        await confirm_group_upload(gazelle_site, group_id, source)
     if source_url:
         source_url = source_url.strip()
-    upload(
+    await upload(
         gazelle_site,
         path,
         group_id,
@@ -223,33 +229,56 @@ def up(
     )
 
 
-def upload(
-    gazelle_site,
-    path,
-    group_id,
-    source,
-    lossy,
-    spectrals,
-    encoding,
-    scene=False,
-    overwrite_meta=False,
-    recompress=False,
-    source_url=None,
-    searchstrs=None,
-    request_id=None,
-    spectrals_after=False,
-    auto_rename=False,
-    skip_up=False,
-    skip_mqa=False,
-    skip_log_check=False,
-    skip_integrity_check=False,
-):
-    """Upload an album folder to Gazelle Site
-    Offer the choice to upload to another tracker after completion."""
+async def upload(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    group_id: int | None,
+    source: str | None,
+    lossy: bool | None,
+    spectrals: tuple[int, ...],
+    encoding: str | None,
+    scene: bool = False,
+    overwrite_meta: bool = False,
+    recompress: bool = False,
+    source_url: str | None = None,
+    searchstrs: list[str] | None = None,
+    request_id: int | str | None = None,
+    spectrals_after: bool = False,
+    auto_rename: bool = False,
+    skip_up: bool = False,
+    skip_mqa: bool = False,
+    skip_log_check: bool = False,
+    skip_integrity_check: bool = False,
+) -> None:
+    """Upload an album folder to Gazelle Site.
+
+    Offer the choice to upload to another tracker after completion.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+        group_id: Optional existing group ID.
+        source: Media source (CD, WEB, etc).
+        lossy: Whether files are lossy mastered.
+        spectrals: Track numbers for spectrals.
+        encoding: Audio encoding.
+        scene: Whether this is a scene release.
+        overwrite_meta: Whether to overwrite metadata.
+        recompress: Whether to recompress FLACs.
+        source_url: Source URL for WEB uploads.
+        searchstrs: Search strings for dupe checking.
+        request_id: Request ID to fill.
+        spectrals_after: Check spectrals after upload.
+        auto_rename: Auto-rename files and folders.
+        skip_up: Skip upconvert check.
+        skip_mqa: Skip MQA check.
+        skip_log_check: Skip log checking.
+        skip_integrity_check: Skip integrity check.
+    """
     path = os.path.abspath(path)
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
-        source = _prompt_source()
+        source = await _prompt_source()
     audio_info = gather_audio_info(path)
     hybrid = check_hybrid(audio_info)
     if not scene:
@@ -311,25 +340,29 @@ def upload(
         if group_id is None:
             searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
             if len(searchstrs) > 0:
-                group_id = check_existing_group(gazelle_site, searchstrs)
+                group_id = await check_existing_group(gazelle_site, searchstrs)
 
         spectral_ids = None
+        lossy_master: bool = False
         if spectrals_after:
-            lossy_master = False
             # We tell the uploader not to worry about it being lossy until later.
+            pass
         else:
-            lossy_master, spectral_ids = check_spectrals(path, audio_info, lossy, spectrals, format=rls_data["format"])
+            lossy_result, spectral_ids = await check_spectrals(
+                path, audio_info, lossy, spectrals, format=rls_data["format"]
+            )
+            lossy_master = lossy_result if lossy_result is not None else False
 
-        metadata, new_source_url = get_metadata(path, tags, rls_data)
+        metadata, new_source_url = await get_metadata(path, tags, rls_data)
         if new_source_url is not None:
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
-        path, metadata, tags, audio_info = edit_metadata(
+        path, metadata, tags, audio_info = await edit_metadata(
             path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check
         )
 
         if not group_id:
-            group_id = recheck_dupe(gazelle_site, searchstrs, metadata)
+            group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
             click.echo()
         track_data = concat_track_data(tags, audio_info)
     except click.Abort:
@@ -353,13 +386,13 @@ def upload(
         spectral_urls = None
     else:
         if lossy_master:
-            lossy_comment = generate_lossy_approval_comment(source_url, list(track_data.keys()))
+            lossy_comment = await generate_lossy_approval_comment(source_url, list(track_data.keys()))
             click.echo()
 
         spectrals_path = get_spectrals_path(path)
-        spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
+        spectral_urls = await handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
     if cfg.upload.requests.last_minute_dupe_check:
-        last_min_dupe_check(gazelle_site, searchstrs)
+        await last_min_dupe_check(gazelle_site, searchstrs)
 
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
@@ -378,12 +411,12 @@ def upload(
             if spectrals_after and torrent_id:
                 # Here we are checking the spectrals after uploading to the first site
                 # if they were not done before.
-                lossy_master, lossy_comment, spectral_urls, spectral_ids = post_upload_spectral_check(
+                lossy_master, lossy_comment, spectral_urls, spectral_ids = await post_upload_spectral_check(
                     gazelle_site, path, torrent_id, None, track_data, source, source_url, format=rls_data["format"]
                 )
                 spectrals_after = False
             click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
-            tracker = salmon.trackers.choose_tracker(remaining_gazelle_sites)
+            tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
             if not tracker:
                 click.secho("\nDone with this release.", fg="green")
                 break
@@ -391,23 +424,23 @@ def upload(
 
             click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
             searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
-            group_id = check_existing_group(gazelle_site, searchstrs, metadata)
+            group_id = await check_existing_group(gazelle_site, searchstrs, metadata)
 
         remaining_gazelle_sites.remove(tracker)
 
         # Handle cover image for this tracker
         if group_id:
             if not remove_downloaded_cover_image:
-                download_cover_if_nonexistent(path, metadata["cover"])
+                await download_cover_if_nonexistent(path, metadata["cover"])
             # Don't need cover URL for existing groups
             cover_url = None
         else:
             # For new groups, we need a cover URL
             # If we already uploaded it for a previous tracker, reuse that URL
             if not stored_cover_url:
-                cover_path, is_downloaded = download_cover_if_nonexistent(path, metadata["cover"])
-                stored_cover_url = upload_cover(cover_path)
-                if is_downloaded and remove_downloaded_cover_image:
+                cover_path, is_downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
+                stored_cover_url = await upload_cover(cover_path)
+                if is_downloaded and remove_downloaded_cover_image and cover_path:
                     click.secho("Removing downloaded Cover Image File", fg="yellow")
                     os.remove(cover_path)
             cover_url = stored_cover_url
@@ -416,9 +449,9 @@ def upload(
             compress_pictures(path)
 
         if not request_id and cfg.upload.requests.check_requests:
-            request_id = check_requests(gazelle_site, searchstrs)
+            request_id = await check_requests(gazelle_site, searchstrs)
 
-        torrent_id, group_id, torrent_path, torrent_content, url = upload_and_report(
+        torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
             gazelle_site,
             path,
             group_id,
@@ -441,19 +474,19 @@ def upload(
         torrent_content.comment = url
         torrent_content.write(torrent_path, overwrite=True)
 
-        print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+        await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
         if cfg.upload.yes_all or click.confirm(
             click.style("\nWould you like to check downconversion options?", fg="magenta"),
             default=True,
         ):
-            selected_tasks = prompt_downconversion_choice(rls_data, track_data)
+            selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
             if selected_tasks:
                 display_names = [task["name"] for task in selected_tasks]
                 click.secho(f"\nSelected formats for downconversion: {', '.join(display_names)}", fg="green", bold=True)
 
                 # Execute downconversion tasks
-                execute_downconversion_tasks(
+                await execute_downconversion_tasks(
                     selected_tasks,
                     path,
                     gazelle_site,
@@ -481,7 +514,7 @@ def upload(
     seedbox_uploader.execute_upload()
 
 
-def edit_metadata(
+async def edit_metadata(
     path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check=False
 ):
     """
@@ -490,7 +523,7 @@ def edit_metadata(
     decides it is ready for upload.
     """
     while True:
-        metadata = review_metadata(metadata, metadata_validator)
+        metadata = await review_metadata(metadata, metadata_validator)
         if not metadata["scene"]:
             tag_files(path, tags, metadata, auto_rename)
 
@@ -500,7 +533,7 @@ def edit_metadata(
         path = rename_folder(path, metadata, auto_rename)
         if not metadata["scene"]:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
-        check_folder_structure(path, metadata["scene"])
+        await check_folder_structure(path, metadata["scene"])
 
         if not skip_integrity_check:
             click.secho("\nChecking integrity of audio files...", fg="cyan", bold=True)
@@ -543,8 +576,17 @@ def edit_metadata(
     return path, metadata, tags, audio_info
 
 
-def recheck_dupe(gazelle_site, searchstrs, metadata):
-    "Rechecks for a dupe if the artist, album or catno have changed."
+async def recheck_dupe(gazelle_site, searchstrs, metadata):
+    """Rechecks for a dupe if the artist, album or catno have changed.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Original search strings.
+        metadata: Release metadata.
+
+    Returns:
+        Group ID if found, None otherwise.
+    """
     new_searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
     if searchstrs and any(n not in searchstrs for n in new_searchstrs) or not searchstrs and new_searchstrs:
         click.secho(
@@ -553,16 +595,22 @@ def recheck_dupe(gazelle_site, searchstrs, metadata):
             bold=True,
             nl=False,
         )
-        return check_existing_group(gazelle_site, new_searchstrs)
+        return await check_existing_group(gazelle_site, new_searchstrs)
+    return None
 
 
-def last_min_dupe_check(gazelle_site, searchstrs):
-    "Check for dupes in the log on last time before upload."
-    "Helpful if you are uploading something in race like conditions."
+async def last_min_dupe_check(gazelle_site, searchstrs):
+    """Check for dupes in the log one last time before upload.
 
+    Helpful if you are uploading something in race like conditions.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings for dupe checking.
+    """
     # Should really avoid asking if already shown the same releases from the log.
-    click.secho(f"Last Minuite Dupe Check on {gazelle_site.site_code}", fg="cyan")
-    recent_uploads = dupe_check_recent_torrents(gazelle_site, searchstrs)
+    click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
+    recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
     if recent_uploads:
         print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
         if not click.confirm(
@@ -649,7 +697,7 @@ def get_downconversion_options(rls_data, track_data):
     return options
 
 
-def prompt_downconversion_choice(rls_data, track_data):
+async def prompt_downconversion_choice(rls_data, track_data):
     """
     Prompt user to select downconversion formats.
     Returns a list of selected task dictionaries.
@@ -684,7 +732,7 @@ def prompt_downconversion_choice(rls_data, track_data):
 
     while True:
         try:
-            choices = click.prompt(
+            choices = await click.prompt(
                 click.style(
                     '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)', fg="magenta"
                 ),
@@ -728,26 +776,46 @@ def prompt_downconversion_choice(rls_data, track_data):
     return selected_tasks
 
 
-def execute_downconversion_tasks(
-    selected_tasks,
-    path,
-    gazelle_site,
-    group_id,
-    metadata,
-    cover_url,
-    track_data,
-    hybrid,
-    lossy_master,
-    spectral_urls,
-    spectral_ids,
-    lossy_comment,
-    request_id,
-    source_url,
-    seedbox_uploader,
-    source,
-    base_url,
-):
-    """Execute the selected downconversion tasks."""
+async def execute_downconversion_tasks(
+    selected_tasks: list[dict[str, Any]],
+    path: str,
+    gazelle_site: "BaseGazelleApi",
+    group_id: int | None,
+    metadata: dict[str, Any],
+    cover_url: str | None,
+    track_data: dict[str, Any],
+    hybrid: bool,
+    lossy_master: bool,
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    lossy_comment: str | None,
+    request_id: int | str | None,
+    source_url: str | None,
+    seedbox_uploader: Any,
+    source: str | None,
+    base_url: str,
+) -> None:
+    """Execute the selected downconversion tasks.
+
+    Args:
+        selected_tasks: List of downconversion task dicts.
+        path: Path to the album folder.
+        gazelle_site: The tracker API instance.
+        group_id: Optional existing group ID.
+        metadata: Release metadata.
+        cover_url: Cover image URL.
+        track_data: Track information.
+        hybrid: Whether this is a hybrid release.
+        lossy_master: Whether this is lossy mastered.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        lossy_comment: Lossy approval comment.
+        request_id: Request ID to fill.
+        source_url: Source URL.
+        seedbox_uploader: Seedbox upload manager.
+        source: Media source.
+        base_url: Base URL for the original upload.
+    """
 
     base_path = path
 
@@ -775,10 +843,10 @@ def execute_downconversion_tasks(
             # Generate description for conversion
             description = generate_conversion_description(base_url, sample_rate)
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            check_folder_structure(new_path, conversion_metadata["scene"])
+            await check_folder_structure(new_path, conversion_metadata["scene"])
 
             # Upload the converted version
-            torrent_id, group_id, torrent_path, torrent_content, new_url = upload_and_report(
+            torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
                 gazelle_site,
                 new_path,
                 group_id,
@@ -817,10 +885,10 @@ def execute_downconversion_tasks(
             # Generate description for transcode
             description = generate_transcode_description(base_url, task["encoding"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            check_folder_structure(transcoded_path, transcode_metadata["scene"])
+            await check_folder_structure(transcoded_path, transcode_metadata["scene"])
 
             # Upload the transcoded version
-            torrent_id, group_id, torrent_path, torrent_content, new_url = upload_and_report(
+            torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
                 gazelle_site,
                 transcoded_path,
                 group_id,
@@ -843,25 +911,49 @@ def execute_downconversion_tasks(
             click.secho(f"  ✓ {task['name']} transcode completed", fg="green")
 
 
-def upload_and_report(
-    gazelle_site,
-    path,
-    group_id,
-    metadata,
-    cover_url,
-    track_data,
-    hybrid,
-    lossy_master,
-    spectral_urls,
-    spectral_ids,
-    lossy_comment,
-    request_id,
-    source_url,
-    seedbox_uploader,
-    source=None,
-    override_description=None,
-    override_lossy_comment=None,
-):
+async def upload_and_report(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    group_id: int | None,
+    metadata: dict[str, Any],
+    cover_url: str | None,
+    track_data: dict[str, Any],
+    hybrid: bool,
+    lossy_master: bool,
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    lossy_comment: str | None,
+    request_id: int | str | None,
+    source_url: str | None,
+    seedbox_uploader: Any,
+    source: str | None = None,
+    override_description: str | None = None,
+    override_lossy_comment: str | None = None,
+) -> tuple[int, int, str, Any, str]:
+    """Upload torrent and report lossy master if needed.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+        group_id: Optional existing group ID.
+        metadata: Release metadata.
+        cover_url: Cover image URL.
+        track_data: Track information.
+        hybrid: Whether this is a hybrid release.
+        lossy_master: Whether this is lossy mastered.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        lossy_comment: Lossy approval comment.
+        request_id: Request ID to fill.
+        source_url: Source URL.
+        seedbox_uploader: Seedbox upload manager.
+        source: Media source.
+        override_description: Override torrent description.
+        override_lossy_comment: Override lossy comment.
+
+    Returns:
+        Tuple of (torrent_id, group_id, torrent_path, torrent_content, url).
+    """
     # Prepare upload parameters
     upload_kwargs = {
         "gazelle_site": gazelle_site,
@@ -881,11 +973,11 @@ def upload_and_report(
     }
 
     # Execute upload
-    torrent_id, group_id, torrent_path, torrent_content = prepare_and_upload(**upload_kwargs)
+    torrent_id, group_id, torrent_path, torrent_content = await prepare_and_upload(**upload_kwargs)
 
     # Handle lossy master reporting
     if lossy_master:
-        report_lossy_master(
+        await report_lossy_master(
             gazelle_site,
             torrent_id,
             spectral_urls,
@@ -928,10 +1020,10 @@ def convert_genres(genres):
     return ",".join(re.sub("[-_ ]", ".", g).strip() for g in genres)
 
 
-def _prompt_source():
+async def _prompt_source():
     click.echo(f"\nValid sources: {', '.join(SOURCES.values())}")
     while True:
-        sauce = click.prompt(
+        sauce = await click.prompt(
             click.style("What is the source of this release? [a]bort", fg="magenta"),
             default="",
         )

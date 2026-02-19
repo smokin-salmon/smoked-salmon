@@ -1,4 +1,4 @@
-import click
+import asyncclick as click
 
 from salmon.common import commandgroup
 from salmon.converter.downconverting import convert_folder

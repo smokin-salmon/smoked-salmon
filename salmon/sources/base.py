@@ -1,12 +1,11 @@
-import asyncio
 import json
 import re
-from collections import namedtuple
 from random import choice
 from string import Formatter
+from typing import Any
 
-import httpx
-import requests
+import aiohttp
+import msgspec
 from bs4 import BeautifulSoup
 
 from salmon.constants import UAGENTS
@@ -14,83 +13,133 @@ from salmon.errors import ScrapeError
 
 HEADERS = {"User-Agent": choice(UAGENTS)}
 
-IdentData = namedtuple("IdentData", ["artist", "album", "year", "track_count", "source"])
+
+class IdentData(msgspec.Struct, frozen=True):
+    """Data structure for release identification."""
+
+    artist: str
+    album: str
+    year: int | str | None
+    track_count: int | None
+    source: str
+
+
+# Type alias for soup return type - can be BeautifulSoup or dict (for JSON APIs)
+SoupType = BeautifulSoup | dict[str, Any]
 
 
 class BaseScraper:
-    url = NotImplementedError
-    site_url = NotImplementedError
-    regex = NotImplementedError
-    release_format = NotImplementedError
-    get_params = {}
+    """Base class for metadata scrapers."""
+
+    url: str = ""
+    site_url: str = ""
+    regex: re.Pattern[str]
+    release_format: str = ""
+    get_params: dict[str, Any] | None = None
 
     @classmethod
-    def format_url(cls, rls_id, rls_name=None):
+    def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
+        """Format the URL for a scraped release.
+
+        Args:
+            rls_id: The release ID.
+            rls_name: Optional release name for URL formatting.
+            url: Optional pre-formatted URL to return directly.
+
+        Returns:
+            The formatted URL string.
         """
-        Format the URL for a scraped release. The ``release_format``
-        attribute of the scraper is processed and populated by the rls_id
-        and rls_name. The rls_name is only relevant when back-filling
-        into the sources that include release name in the URL. Those stores
-        do not require the release name to reach the webpage, but re-adding
-        something resembling the link doesn't harm us.
-        """
+        if url:
+            return url
         keys = [fn for _, fn, _, _ in Formatter().parse(cls.release_format) if fn]
         if "rls_name" in keys:
             rls_name = rls_name or "a"
             return cls.site_url + cls.release_format.format(rls_id=rls_id, rls_name=cls.url_format_rls_name(rls_name))
-        return cls.site_url + cls.release_format.format(rls_id=rls_id)
+        # Handle tuple rls_id (e.g., from Tidal)
+        rls_id_str = rls_id[1] if isinstance(rls_id, tuple) else rls_id
+        return cls.site_url + cls.release_format.format(rls_id=rls_id_str)
 
-    async def get_json(self, url, params=None, headers=None):
-        """
-        Run an asynchronius GET request to a JSON API maintained by
-        a metadata source.
-        """
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: self.get_json_sync(url, params, headers))
+    async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
+        """Make async GET request to JSON API.
 
-    def get_json_sync(self, url, params=None, headers=None):
-        """Make a synchronius get request, usually called by the async get_json."""
-        params = {**(params or {}), **(self.get_params)}
+        Args:
+            url: The URL path to request.
+            params: Optional query parameters.
+            headers: Optional HTTP headers.
+
+        Returns:
+            The JSON response as a dict.
+
+        Raises:
+            ScrapeError: If request fails or response is not JSON.
+        """
+        params = {**(params or {}), **(self.get_params or {})}
         headers = {**(headers or {}), **HEADERS}
+        timeout = aiohttp.ClientTimeout(total=10)
         try:
-            result = requests.get(self.url + url, params=params, headers=headers, timeout=10)
-            if result.status_code != 200:
-                class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
-                # traceback.print_stack()  # Removed to avoid confusion. ScrapeError already prints the stack trace.
-                error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {result.status_code}."
-                raise ScrapeError(error_msg, result.json())
-            return result.json()
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.get(self.url + url, params=params, headers=headers) as resp,
+            ):
+                if resp.status != 200:
+                    class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
+                    error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
+                    try:
+                        error_data = await resp.json()
+                    except Exception:
+                        error_data = None
+                    raise ScrapeError(error_msg, error_data)
+                return await resp.json()
+        except aiohttp.ContentTypeError as e:
+            raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
         except json.decoder.JSONDecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
 
-    async def create_soup(self, url, params=None, headers=None, **kwargs):
-        """
-        Asynchroniously run a webpage scrape and return a BeautifulSoup
-        object containing the scraped HTML.
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
+        """Scrape webpage and return BeautifulSoup object.
+
+        Args:
+            url: The URL to scrape.
+            params: Optional query parameters.
+            headers: Optional HTTP headers.
+            follow_redirects: Whether to follow redirects. Defaults to True.
+
+        Returns:
+            BeautifulSoup object of the scraped page.
+
+        Raises:
+            ScrapeError: If scraping fails.
         """
         params = params or {}
-        loop = asyncio.get_running_loop()
-        r = await loop.run_in_executor(
-            None,
-            lambda: httpx.get(
-                url,
-                params=params,
-                headers=headers or HEADERS,
-                timeout=7,
-                follow_redirects=kwargs.pop("follow_redirects", True),
-                **kwargs,
-            ),
-        )
-        if r.status_code != 200:
-            raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status_code}")
-        return BeautifulSoup(r.text, "html.parser")
+        timeout = aiohttp.ClientTimeout(total=7)
+        try:
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.get(
+                    url,
+                    params=params,
+                    headers=headers or HEADERS,
+                    allow_redirects=follow_redirects,
+                ) as r,
+            ):
+                if r.status != 200:
+                    raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
+                text = await r.text()
+                return BeautifulSoup(text, "lxml")
+        except (TimeoutError, aiohttp.ClientError) as e:
+            raise ScrapeError(f"Failed to scrape page: {e}") from e
 
     @staticmethod
-    def url_format_rls_name(rls_name):
-        """
-        Format the URL release name from the actual release name. This
-        is not accurate to how the web stores do it; it is merely a
-        convenience for user readability.
+    def url_format_rls_name(rls_name: str) -> str:
+        """Format release name for URL.
+
+        Args:
+            rls_name: The release name.
+
+        Returns:
+            URL-formatted release name.
         """
         url = re.sub(r"[^\-a-z\d]", "", rls_name.lower().replace(" ", "-"))
         return re.sub("-+", "-", url)

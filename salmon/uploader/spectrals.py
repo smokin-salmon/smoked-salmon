@@ -1,17 +1,19 @@
-import asyncio
+import contextlib
 import os
 import platform
-
-# used by post upload stuff might move.
 import random
 import re
 import shutil
 import subprocess
 import time
 from os.path import dirname, join
+from typing import TYPE_CHECKING, Any
 
-import click
+import asyncclick as click
 import oxipng
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 
 from salmon import cfg
 from salmon.common import flush_stdin, get_audio_files, prompt_async
@@ -28,19 +30,31 @@ from salmon.web import create_app_async, spectrals
 THREADS = [None] * cfg.upload.simultaneous_threads
 
 
-def check_spectrals(
-    path,
-    audio_info,
-    lossy_master=None,
-    spectral_ids=None,
-    check_lma=True,
-    force_prompt_lossy_master=False,
-    format="FLAC",
-):
-    """
-    Run the spectral checker functions. Generate the spectrals and ask whether or
-    not the files are lossy. If the IDs were not all provided, prompt for spectrals
-    to upload.
+async def check_spectrals(
+    path: str,
+    audio_info: dict[str, Any],
+    lossy_master: bool | None = None,
+    spectral_ids: tuple[int, ...] | dict[int, str] | None = None,
+    check_lma: bool = True,
+    force_prompt_lossy_master: bool = False,
+    format: str = "FLAC",
+) -> tuple[bool | None, dict[int, str] | None]:
+    """Run spectral checker functions.
+
+    Generate spectrals and ask whether files are lossy. If IDs were not provided,
+    prompt for spectrals to upload.
+
+    Args:
+        path: Path to the album folder.
+        audio_info: Audio file information dict.
+        lossy_master: Whether files are lossy mastered.
+        spectral_ids: Track IDs for spectrals.
+        check_lma: Whether to check for lossy master.
+        force_prompt_lossy_master: Force lossy master prompt.
+        format: Audio format.
+
+    Returns:
+        Tuple of (lossy_master, spectral_ids).
     """
     if format != "FLAC":
         click.secho(
@@ -50,22 +64,23 @@ def check_spectrals(
         return None, None
     click.secho("\nChecking lossy master / spectrals...", fg="cyan", bold=True)
     spectrals_path = create_specs_folder(path)
+    all_spectral_ids: dict[int, str] = {}
     if not spectral_ids:
         all_spectral_ids = generate_spectrals_all(path, spectrals_path, audio_info)
         while True:
-            view_spectrals(spectrals_path, all_spectral_ids)
+            await view_spectrals(spectrals_path, all_spectral_ids)
             if lossy_master is None and check_lma:
-                lossy_master = prompt_lossy_master(force_prompt_lossy_master)
+                lossy_master = await prompt_lossy_master(force_prompt_lossy_master)
                 if lossy_master is not None:
                     break
             else:
                 break
     else:
         if lossy_master is None:
-            lossy_master = prompt_lossy_master(force_prompt_lossy_master)
+            lossy_master = await prompt_lossy_master(force_prompt_lossy_master)
 
     if not spectral_ids:
-        spectral_ids = prompt_spectrals(
+        spectral_ids = await prompt_spectrals(
             all_spectral_ids,
             lossy_master,
             check_lma,
@@ -77,8 +92,22 @@ def check_spectrals(
     return lossy_master, spectral_ids
 
 
-def handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids, delete_spectrals=True):
-    spectral_urls = upload_spectrals(spectrals_path, spectral_ids)
+async def handle_spectrals_upload_and_deletion(
+    spectrals_path: str,
+    spectral_ids: dict[int, str] | None,
+    delete_spectrals: bool = True,
+) -> dict[int, list[str]] | None:
+    """Upload spectrals and optionally delete local files.
+
+    Args:
+        spectrals_path: Path to spectrals folder.
+        spectral_ids: Dict mapping spectral IDs to filenames.
+        delete_spectrals: Whether to delete local spectral files.
+
+    Returns:
+        Dict mapping spectral IDs to uploaded URLs.
+    """
+    spectral_urls = await upload_spectrals(spectrals_path, spectral_ids)
     if delete_spectrals and os.path.isdir(spectrals_path):
         shutil.rmtree(spectrals_path, ignore_errors=True)
         time.sleep(0.5)
@@ -239,10 +268,15 @@ def calculate_zoom_startpoint(track_data):
     return 0
 
 
-def view_spectrals(spectrals_path, all_spectral_ids):
-    """Open the generated spectrals in an image viewer."""
+async def view_spectrals(spectrals_path: str, all_spectral_ids: dict[int, str]) -> None:
+    """Open the generated spectrals in an image viewer.
+
+    Args:
+        spectrals_path: Path to spectrals folder.
+        all_spectral_ids: Dict mapping spectral IDs to filenames.
+    """
     if not cfg.upload.native_spectrals_viewer:
-        asyncio.run(_open_specs_in_web_server(spectrals_path, all_spectral_ids))
+        await _open_specs_in_web_server(spectrals_path, all_spectral_ids)
     elif platform.system() == "Darwin":
         _open_specs_in_preview(spectrals_path)
     elif platform.system() == "Windows":
@@ -293,17 +327,15 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
     spectrals.set_active_spectrals(all_spectral_ids)
     symlink_path = join(dirname(dirname(__file__)), "web", "static", "specs")
 
-    shutdown = True
+    runner = None
     try:
         try:
             os.symlink(specs_path, symlink_path)
         except FileExistsError:
             os.unlink(symlink_path)
             os.symlink(specs_path, symlink_path)
-        try:
+        with contextlib.suppress(WebServerIsAlreadyRunning):
             runner = await create_app_async()
-        except WebServerIsAlreadyRunning:
-            shutdown = False
         url = f"http://{cfg.upload.web_interface.host}:{cfg.upload.web_interface.port}/spectrals"
         await prompt_async(
             click.style(
@@ -320,23 +352,31 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
             end=" ",
             flush=True,
         )
-        if shutdown:
+        if runner is not None:
             await runner.cleanup()
     finally:
         os.unlink(symlink_path)
 
 
-def upload_spectrals(spectrals_path, spectral_ids):
-    """
-    Create the tuples of spectral ids and filenames, then send them to the
-    spectral uploader.
+async def upload_spectrals(
+    spectrals_path: str,
+    spectral_ids: dict[int, str] | None,
+) -> dict[int, list[str]] | None:
+    """Upload spectral images to image host.
+
+    Args:
+        spectrals_path: Path to spectrals folder.
+        spectral_ids: Dict mapping spectral IDs to filenames.
+
+    Returns:
+        Dict mapping spectral IDs to uploaded URLs, or None.
     """
     if not spectral_ids:
         return None
 
-    spectrals = []
+    spectrals_list: list[tuple[int, str, tuple[str, str]]] = []
     for sid, filename in spectral_ids.items():
-        spectrals.append(
+        spectrals_list.append(
             (
                 sid,
                 filename,
@@ -348,18 +388,19 @@ def upload_spectrals(spectrals_path, spectral_ids):
         )
 
     try:
-        return upload_spectral_imgs(spectrals)
+        return await upload_spectral_imgs(spectrals_list)
     except ImageUploadFailed as e:
-        return click.secho(f"Failed to upload spectral: {e}", fg="red")
+        click.secho(f"Failed to upload spectral: {e}", fg="red")
+        return None
 
 
-def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
+async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
     """Ask which spectral IDs the user wants to upload."""
     while True:
         ids = (
             "*"
             if cfg.upload.yes_all and not force_prompt_lossy_master
-            else click.prompt(
+            else await click.prompt(
                 click.style(
                     f"What spectral IDs would you like to upload to {cfg.image.specs_uploader}? "
                     '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
@@ -392,19 +433,22 @@ def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_m
         )
 
 
-def prompt_lossy_master(force_prompt_lossy_master=False):
+async def prompt_lossy_master(force_prompt_lossy_master=False):
     while True:
         flush_stdin()
         r = (
             "n"
             if cfg.upload.yes_all and not force_prompt_lossy_master
-            else click.prompt(
-                click.style(
-                    "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, [a]bort, [d]elete music folder",
-                    fg="magenta",
-                ),
-                type=click.STRING,
-                default="n",
+            else (
+                await click.prompt(
+                    click.style(
+                        "\nIs this release lossy mastered? "
+                        "[y]es, [N]o, [r]eopen spectrals, [a]bort, [d]elete music folder",
+                        fg="magenta",
+                    ),
+                    type=click.STRING,
+                    default="n",
+                )
             )[0].lower()
         )
         if r == "y":
@@ -419,47 +463,56 @@ def prompt_lossy_master(force_prompt_lossy_master=False):
             raise AbortAndDeleteFolder
 
 
-def report_lossy_master(
-    gazelle_site,
-    torrent_id,
-    spectral_urls,
-    spectral_ids,
-    source,
-    comment,
-    source_url=None,
-):
-    """
-    Generate the report description and call the function to report the torrent
-    for lossy WEB/master approval.
-    """
+async def report_lossy_master(
+    gazelle_site: "BaseGazelleApi",
+    torrent_id: int,
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    source: str | None,
+    comment: str | None,
+    source_url: str | None = None,
+) -> None:
+    """Report torrent for lossy WEB/master approval.
 
+    Args:
+        gazelle_site: The tracker API instance.
+        torrent_id: The torrent ID.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        source: Media source.
+        comment: Lossy approval comment.
+        source_url: Source URL.
+    """
     comment = _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids)
-    asyncio.run(gazelle_site.report_lossy_master(torrent_id, comment, source))
+    if source is None:
+        click.secho("Cannot report lossy master without source.", fg="red")
+        return
+    await gazelle_site.report_lossy_master(torrent_id, comment, source)
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
-def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
-    comment = (
-        ""
-        if cfg.upload.yes_all and not force_prompt_lossy_master
-        else click.prompt(
-            click.style(
-                "Do you have a comment for the lossy approval report? It is appropriate to "
-                "make a note about the source here. Source information from go, gos, and the "
-                "queue will be included automatically.",
-                fg="cyan",
-                bold=True,
-            ),
-            default="",
+async def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
+    while True:
+        comment = (
+            ""
+            if cfg.upload.yes_all and not force_prompt_lossy_master
+            else await click.prompt(
+                click.style(
+                    "Do you have a comment for the lossy approval report? It is appropriate to "
+                    "make a note about the source here. Source information from go, gos, and the "
+                    "queue will be included automatically.",
+                    fg="cyan",
+                    bold=True,
+                ),
+                default="",
+            )
         )
-    )
-    if not (comment or source_url):
+        if comment or source_url:
+            return comment
         click.secho(
             "This release was not uploaded with go, gos, or the queue, so you must add a comment about the source.",
             fg="red",
         )
-        return generate_lossy_approval_comment(source_url, filenames)
-    return comment
 
 
 def _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids):
@@ -483,14 +536,34 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
     return bbcode
 
 
-def post_upload_spectral_check(
-    gazelle_site, path, torrent_id, spectral_ids, track_data, source, source_url, format="FLAC"
-):
+async def post_upload_spectral_check(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    torrent_id: int,
+    spectral_ids: dict[int, str] | None,
+    track_data: dict[str, Any],
+    source: str | None,
+    source_url: str | None,
+    format: str = "FLAC",
+) -> tuple[bool | None, str | None, dict[int, list[str]] | None, dict[int, str] | None]:
+    """Generate and add spectrals after upload.
+
+    As this is post upload, we have time to ask if this is a lossy master.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+        torrent_id: The torrent ID.
+        spectral_ids: Spectral IDs.
+        track_data: Track information.
+        source: Media source.
+        source_url: Source URL.
+        format: Audio format.
+
+    Returns:
+        Tuple of (lossy_master, lossy_comment, spectral_urls, spectral_ids).
     """
-    Offers generation and addition of spectrals after upload.
-    As this is post upload, we have time to ask if this is a lossy master, so force prompt.
-    """
-    lossy_master, spectral_ids = check_spectrals(
+    lossy_master, spectral_ids = await check_spectrals(
         path, track_data, None, spectral_ids, force_prompt_lossy_master=True, format=format
     )
     if not lossy_master and not spectral_ids:
@@ -498,20 +571,20 @@ def post_upload_spectral_check(
 
     lossy_comment = None
     if lossy_master:
-        lossy_comment = generate_lossy_approval_comment(
+        lossy_comment = await generate_lossy_approval_comment(
             source_url, list(track_data.keys()), force_prompt_lossy_master=True
         )
         click.echo()
 
     spectrals_path = get_spectrals_path(path)
-    spectral_urls = handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
+    spectral_urls = await handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
 
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)
-        asyncio.run(gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode))
+        await gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
 
     if lossy_master:
-        report_lossy_master(
+        await report_lossy_master(
             gazelle_site,
             torrent_id,
             spectral_urls,

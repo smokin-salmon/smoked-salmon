@@ -1,11 +1,15 @@
-import asyncio
 import os
 import re
+from typing import TYPE_CHECKING, Any
 
-import click
+import asyncclick as click
+from aiohttp import FormData
 from torf import Torrent
 
 from salmon import cfg
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RequestError
@@ -16,23 +20,46 @@ from salmon.uploader.spectrals import (
 )
 
 
-def prepare_and_upload(
-    gazelle_site,
-    path,
-    group_id,
-    metadata,
-    cover_url,
-    track_data,
-    hybrid,
-    lossy_master,
-    spectral_urls,
-    spectral_ids,
-    lossy_comment,
-    request_id,
-    source_url=None,
-    override_description=None,
-):
-    """Wrapper function for all the data compiling and processing."""
+async def prepare_and_upload(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    group_id: int | None,
+    metadata: dict[str, Any],
+    cover_url: str | None,
+    track_data: dict[str, Any],
+    hybrid: bool,
+    lossy_master: bool,
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    lossy_comment: str | None,
+    request_id: int | str | None,
+    source_url: str | None = None,
+    override_description: str | None = None,
+) -> tuple[int, int, str, Torrent]:
+    """Compile data and upload torrent to tracker.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+        group_id: Optional existing group ID.
+        metadata: Release metadata.
+        cover_url: Cover image URL.
+        track_data: Track information.
+        hybrid: Whether this is a hybrid release.
+        lossy_master: Whether this is lossy mastered.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        lossy_comment: Lossy approval comment.
+        request_id: Request ID to fill.
+        source_url: Source URL.
+        override_description: Override torrent description.
+
+    Returns:
+        Tuple of (torrent_id, group_id, torrent_path, torrent_content).
+
+    Raises:
+        SystemExit: If upload fails.
+    """
     if not group_id:
         data = compile_data_new_group(
             gazelle_site,
@@ -67,37 +94,60 @@ def prepare_and_upload(
 
     click.secho("Uploading torrent...", fg="yellow")
     try:
-        torrent_id, group_id = asyncio.run(gazelle_site.upload(data, files))
-        return torrent_id, group_id, torrent_path, torrent_content
+        torrent_id, group_id = await gazelle_site.upload(data, files)
+        # Ensure group_id is int (upload returns tuple[int, int])
+        return torrent_id, int(group_id) if group_id else 0, torrent_path, torrent_content
     except RequestError as e:
         click.secho(str(e), fg="red", bold=True)
-        exit()
+        raise SystemExit(1) from e
 
 
-def concat_track_data(tags, audio_info):
-    """Combine the tag and audio data into one dictionary per track."""
-    track_data = {}
+def concat_track_data(tags: dict[str, Any], audio_info: dict[str, Any]) -> dict[str, Any]:
+    """Combine the tag and audio data into one dictionary per track.
+
+    Args:
+        tags: Tag data keyed by filename.
+        audio_info: Audio info keyed by filename.
+
+    Returns:
+        Combined track data dict.
+    """
+    track_data: dict[str, Any] = {}
     for k, v in audio_info.items():
         track_data[k] = {**v, "t": tags[k]}
     return track_data
 
 
 def compile_data_new_group(
-    gazelle_site,
-    path,
-    metadata,
-    track_data,
-    hybrid,
-    cover_url,
-    spectral_urls,
-    spectral_ids,
-    lossy_comment,
-    request_id=None,
-    source_url=None,
-):
-    """
-    Compile the data dictionary that needs to be submitted with a brand new
-    torrent group upload POST.
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    metadata: dict[str, Any],
+    track_data: dict[str, Any],
+    hybrid: bool,
+    cover_url: str | None,
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    lossy_comment: str | None,
+    request_id: int | str | None = None,
+    source_url: str | None = None,
+) -> dict[str, Any]:
+    """Compile data for a new torrent group upload.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+        metadata: Release metadata.
+        track_data: Track information.
+        hybrid: Whether this is a hybrid release.
+        cover_url: Cover image URL.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        lossy_comment: Lossy approval comment.
+        request_id: Request ID to fill.
+        source_url: Source URL.
+
+    Returns:
+        Data dict for upload POST.
     """
     return {
         "submit": True,
@@ -131,21 +181,38 @@ def compile_data_new_group(
 
 
 def compile_data_existing_group(
-    gazelle_site,
-    path,
-    group_id,
-    metadata,
-    track_data,
-    hybrid,
-    spectral_urls,
-    spectral_ids,
-    lossy_comment,
-    request_id,
-    source_url=None,
-    override_description=None,
-):
-    """Compile the data that needs to be submitted
-    with an upload to an existing group."""
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    group_id: int,
+    metadata: dict[str, Any],
+    track_data: dict[str, Any],
+    hybrid: bool,
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    lossy_comment: str | None,
+    request_id: int | str | None,
+    source_url: str | None = None,
+    override_description: str | None = None,
+) -> dict[str, Any]:
+    """Compile data for upload to an existing group.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+        group_id: Existing group ID.
+        metadata: Release metadata.
+        track_data: Track information.
+        hybrid: Whether this is a hybrid release.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        lossy_comment: Lossy approval comment.
+        request_id: Request ID to fill.
+        source_url: Source URL.
+        override_description: Override torrent description.
+
+    Returns:
+        Data dict for upload POST.
+    """
     return {
         "submit": True,
         "type": 0,
@@ -170,32 +237,51 @@ def compile_data_existing_group(
     }
 
 
-def compile_files(path, torrent_path, metadata):
+def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> FormData:
+    """Compile files to upload (torrent and log files).
+
+    Args:
+        path: Path to the album folder.
+        torrent_path: Path to the torrent file.
+        metadata: Release metadata.
+
+    Returns:
+        FormData containing files to upload.
     """
-    Compile a list of file tuples that should be uploaded. This consists
-    of the .torrent and any log files.
-    """
-    files = []
+    files = FormData()
     with open(torrent_path, "rb") as torrent_file:
-        files.append(("file_input", ("meowmeow.torrent", torrent_file.read(), "application/octet-stream")))
+        files.add_field(
+            "file_input", torrent_file.read(), filename="meowmeow.torrent", content_type="application/octet-stream"
+        )
     if metadata["source"] == "CD":
-        files += attach_logfiles(path)
+        attach_logfiles(path, files)
     return files
 
 
-def attach_logfiles(path):
-    """Attach all the log files that should be uploaded."""
-    logfiles = []
-    for root, _, files in os.walk(path):
-        for filename in files:
+def attach_logfiles(path: str, files: FormData) -> None:
+    """Attach all log files for upload.
+
+    Args:
+        path: Path to the album folder.
+        files: FormData to add log files to.
+    """
+    for root, _, filenames in os.walk(path):
+        for filename in filenames:
             if filename.lower().endswith(".log"):
                 filepath = os.path.abspath(os.path.join(root, filename))
                 with open(filepath, "rb") as f:
-                    logfiles.append((filename, f.read(), "application/octet-stream"))
-    return [("logfiles[]", lf) for lf in logfiles]
+                    files.add_field("logfiles[]", f.read(), filename=filename, content_type="application/octet-stream")
 
 
-def generate_catno(metadata):
+def generate_catno(metadata: dict[str, Any]) -> str:
+    """Generate catalog number from metadata.
+
+    Args:
+        metadata: Release metadata.
+
+    Returns:
+        Catalog number string.
+    """
     if metadata.get("catno"):
         return metadata["catno"]
     elif cfg.upload.compression.use_upc_as_catno:
@@ -203,8 +289,16 @@ def generate_catno(metadata):
     return ""
 
 
-def generate_torrent(gazelle_site, path):
-    """Call the dottorrent function to generate a torrent."""
+def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, Torrent]:
+    """Generate torrent file for the album.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+
+    Returns:
+        Tuple of (torrent_path, torrent_object).
+    """
     click.secho("Generating torrent file...", fg="yellow", nl=False)
     t = Torrent(
         path,
@@ -214,7 +308,6 @@ def generate_torrent(gazelle_site, path):
     )
     t.generate()
     tpath = os.path.join(
-        # tempfile.gettempdir(),
         gazelle_site.dot_torrents_dir,
         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
     )
@@ -223,9 +316,17 @@ def generate_torrent(gazelle_site, path):
     return tpath, t
 
 
-def generate_description(track_data, metadata):
-    """Generate the group description with the tracklist and metadata source links."""
-    description = "[b][size=4]Tracklist[/b]\n"
+def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -> str:
+    """Generate group description with tracklist.
+
+    Args:
+        track_data: Track information.
+        metadata: Release metadata.
+
+    Returns:
+        BBCode description string.
+    """
+    description = "[b][size=4]Tracklist[/size][/b]\n"
     multi_disc = any(
         (
             t["t"].discnumber
@@ -261,11 +362,29 @@ def generate_description(track_data, metadata):
 
 
 def generate_t_description(
-    metadata, track_data, hybrid, metadata_urls, spectral_urls, spectral_ids, lossy_comment, source_url
-):
-    """
-    Generate the torrent description. Add information about each file, and
-    add the specrals URLs if any were specified.
+    metadata: dict[str, Any],
+    track_data: dict[str, Any],
+    hybrid: bool,
+    metadata_urls: list[str],
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    lossy_comment: str | None,
+    source_url: str | None,
+) -> str:
+    """Generate torrent description with spectrals and file info.
+
+    Args:
+        metadata: Release metadata.
+        track_data: Track information.
+        hybrid: Whether this is a hybrid release.
+        metadata_urls: Metadata source URLs.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        lossy_comment: Lossy approval comment.
+        source_url: Source URL.
+
+    Returns:
+        BBCode description string.
     """
     description = ""
     if spectral_urls:
@@ -319,7 +438,6 @@ def generate_t_description(
                 break
 
         if not matched:
-            # Extract hostname without TLD for unmatched URLs
             hostname = re.match(r"https?://(?:www\.)?([^/]+)", source_url)
             if hostname:
                 description += f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n\n"
@@ -331,9 +449,18 @@ def generate_t_description(
     return description
 
 
-def generate_source_links(metadata_urls, source_url=None):
-    links = []
-    unmatched_urls = []
+def generate_source_links(metadata_urls: list[str], source_url: str | None = None) -> str:
+    """Generate BBCode links for metadata sources.
+
+    Args:
+        metadata_urls: List of metadata source URLs.
+        source_url: Optional source URL to exclude.
+
+    Returns:
+        BBCode formatted links string.
+    """
+    links: list[str] = []
+    unmatched_urls: list[str] = []
 
     for url in metadata_urls:
         matched = False
@@ -347,7 +474,6 @@ def generate_source_links(metadata_urls, source_url=None):
                 break
 
         if not matched:
-            # Extract hostname without TLD for unmatched URLs
             hostname = re.match(r"https?://(?:www\.)?([^/]+)", url)
             if hostname:
                 unmatched_urls.append(f"[url={url}]{hostname.group(1)}[/url]")

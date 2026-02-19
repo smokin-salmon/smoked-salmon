@@ -1,26 +1,36 @@
 import json
+from typing import Any
+
+from bs4 import BeautifulSoup
 
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BeatportBase
-from salmon.sources.base import BaseScraper
+from salmon.sources.base import BaseScraper, SoupType
 
 
 class Searcher(BeatportBase, SearchMixin):
-    async def create_soup(self, url, params=None):
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
         """Override to use BaseScraper's create_soup directly for search."""
-        return await BaseScraper.create_soup(self, url, params)
+        return await BaseScraper.create_soup(self, url, params, headers, follow_redirects)
 
-    async def search_releases(self, searchstr, limit):
-        releases = {}
+    async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict]:
+        releases: dict[Any, Any] = {}
         soup = await self.create_soup(self.search_url, params={"q": searchstr})
+        if not isinstance(soup, BeautifulSoup):
+            raise ScrapeError("Expected BeautifulSoup object")
         try:
             script_tag = soup.find("script", id="__NEXT_DATA__")
-            if not script_tag:
+            if not script_tag or not script_tag.string:
                 raise ScrapeError("Could not find Next.js data script tag")
 
-            data = json.loads(script_tag.string)
+            try:
+                data = json.loads(script_tag.string)
+            except json.JSONDecodeError as e:
+                raise ScrapeError("Failed to parse Beatport JSON data") from e
             search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]
             for result in search_results:
                 try:

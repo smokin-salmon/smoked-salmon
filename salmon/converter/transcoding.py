@@ -2,7 +2,7 @@ import os
 import re
 from pathlib import Path
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.converter.m3ercat import transcode

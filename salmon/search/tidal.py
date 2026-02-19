@@ -70,7 +70,8 @@ class Searcher(TidalBase, SearchMixin):
             artists = html.unescape(", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN"))
             title = rls["title"]
             track_count = rls["numberOfTracks"]
-            year = re.search(r"(\d{4})", rls["releaseDate"])[1] if rls["releaseDate"] else None
+            year_match = re.search(r"(\d{4})", rls["releaseDate"]) if rls["releaseDate"] else None
+            year = year_match[1] if year_match else None
             copyright = parse_copyright(rls["copyright"])
             explicit = rls["explicit"]
 
@@ -193,7 +194,8 @@ class Searcher(TidalBase, SearchMixin):
     @staticmethod
     def _parse_year(date):
         try:
-            return int(re.search(r"(\d{4})", date)[0])
+            match = re.search(r"(\d{4})", date)
+            return int(match[0]) if match else None
         except (ValueError, IndexError, TypeError):
             return None
 

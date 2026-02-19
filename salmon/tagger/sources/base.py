@@ -3,14 +3,22 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
 from itertools import chain
+from typing import TYPE_CHECKING, Any
 
 from salmon import cfg
 from salmon.common import fetch_genre, less_uppers, normalize_accents
 from salmon.errors import GenreNotInWhitelist
 
+if TYPE_CHECKING:
+    pass
+
 
 class MetadataMixin(ABC):
-    async def scrape_release_from_id(self, rls_id):
+    # These methods are expected to be provided by BaseScraper when used as a mixin
+    format_url: Any  # Provided by BaseScraper subclass
+    create_soup: Any
+
+    async def scrape_release_from_id(self, rls_id: str) -> dict[str, Any]:
         """Run a scrape from the release ID."""
         return await self.scrape_release(self.format_url(rls_id=rls_id), rls_id=rls_id)
 
@@ -21,6 +29,9 @@ class MetadataMixin(ABC):
         as None.
         """
         soup = await self.create_soup(url)
+
+        tracks_result = await self.parse_tracks(soup)
+
         data = {
             "title": self.parse_release_title(soup),
             "cover": self.parse_cover_url(soup),
@@ -38,7 +49,7 @@ class MetadataMixin(ABC):
             "label": self.parse_release_label(soup),
             "catno": self.parse_release_catno(soup),
             "rls_type": self.parse_release_type(soup),
-            "tracks": self.parse_tracks(soup),
+            "tracks": tracks_result,
             "upc": self.parse_upc(soup),
             "comment": self.parse_comment(soup),
             "scene": False,
@@ -64,20 +75,44 @@ class MetadataMixin(ABC):
 
     def generate_track(
         self,
-        trackno,
-        discno,
-        artists,
-        title,
-        replay_gain=None,
-        peak=None,
-        format_=None,
-        explicit=None,
-        isrc=None,
-        stream_id=None,
-        streamable=None,
-        **kwargs,
-    ):
-        """Return a generated track dictionary containing the required values."""
+        trackno: int | str,
+        discno: int | str,
+        artists: list[tuple[str, str]],
+        title: str,
+        replay_gain: float | None = None,
+        peak: float | None = None,
+        format_: str | None = None,
+        explicit: bool | None = None,
+        isrc: str | None = None,
+        stream_id: str | int | None = None,
+        streamable: bool | None = None,
+        md5_origin: str | None = None,
+        media_version: str | None = None,
+        lossless: bool | None = None,
+        mp3_320: bool | None = None,
+    ) -> dict[str, Any]:
+        """Return a generated track dictionary containing the required values.
+
+        Args:
+            trackno: Track number.
+            discno: Disc number.
+            artists: List of (artist_name, role) tuples.
+            title: Track title.
+            replay_gain: Replay gain value.
+            peak: Peak value.
+            format_: Audio format/quality.
+            explicit: Whether the track is explicit.
+            isrc: ISRC code.
+            stream_id: Stream ID for streaming services.
+            streamable: Whether the track is streamable.
+            md5_origin: MD5 origin hash (Deezer).
+            media_version: Media version (Deezer).
+            lossless: Whether lossless is available (Deezer).
+            mp3_320: Whether MP3 320 is available (Deezer).
+
+        Returns:
+            A dictionary containing track metadata.
+        """
         return {
             "track#": str(trackno),
             "disc#": str(discno),
@@ -92,7 +127,10 @@ class MetadataMixin(ABC):
             "format": format_,
             "stream_id": stream_id,
             "streamable": streamable,
-            **kwargs,
+            "md5_origin": md5_origin,
+            "media_version": media_version,
+            "lossless": lossless,
+            "mp3_320": mp3_320,
         }
 
     def determine_rls_type(self, data):
@@ -148,49 +186,49 @@ class MetadataMixin(ABC):
         return title, "Album"
 
     @abstractmethod
-    def parse_release_title(self, soup):
+    def parse_release_title(self, soup) -> str | None:
         pass
 
     @abstractmethod
-    def parse_release_year(self, soup):
+    def parse_release_year(self, soup) -> int | None:
         pass
 
     @abstractmethod
-    def parse_release_label(self, soup):
+    def parse_release_label(self, soup) -> str | None:
         pass
 
     @abstractmethod
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup) -> dict:
         pass
 
     # The below parsers aren't present in every scraper.
 
-    def parse_release_group_year(self, soup):
+    def parse_release_group_year(self, soup) -> int | None:
         return self.parse_release_year(soup)
 
-    def parse_cover_url(self, soup):
-        return
+    def parse_cover_url(self, soup) -> str | None:
+        return None
 
-    def parse_release_date(self, soup):
-        return
+    def parse_release_date(self, soup) -> str | None:
+        return None
 
-    def parse_edition_title(self, soup):
-        return
+    def parse_edition_title(self, soup) -> str | None:
+        return None
 
-    def parse_release_catno(self, soup):
-        return
+    def parse_release_catno(self, soup) -> str | None:
+        return None
 
-    def parse_release_type(self, soup):
-        return
+    def parse_release_type(self, soup) -> str | None:
+        return None
 
-    def parse_genres(self, soup):
-        return {}
+    def parse_genres(self, soup) -> set | list:
+        return set()
 
-    def parse_upc(self, soup):
-        return
+    def parse_upc(self, soup) -> str | None:
+        return None
 
-    def parse_comment(self, soup):
-        return
+    def parse_comment(self, soup) -> str | None:
+        return None
 
     def process_label(self, data):
         """
@@ -250,7 +288,7 @@ def determine_label_type(label, artists):
             return "Self-Released"
 
         # Compare label to artist name
-        if any(_compare(label, a) and i == "main" for a, i in artists):
+        if any(_compare(label, str(a)) and i == "main" for a, i in artists):
             return "Self-Released"
     return label
 
@@ -317,23 +355,28 @@ def filter_artists(artists, tracks=None):
     return artists, tracks
 
 
-def construct_replacement_list(artists):
+def construct_replacement_list(artists: list[tuple[str, str]]) -> list[tuple[list[str], str]]:
     """
     Create the list of artists-to-replace. It compares a stripped version
     of each artist to combined versions of other artists in ascending
     length order.
+
+    Args:
+        artists: List of (artist_name, importance) tuples.
+
+    Returns:
+        List of (replacements, replacement_artist) tuples.
     """
-    to_replace = []
-    artist_pool = sorted(
-        [
-            [
-                normalize_accents("".join(s for s in a if s.isalnum()).replace(" ", "")).lower(),
-                a,
-            ]
-            for a, _ in artists
-        ],
-        key=lambda a: len(a),
-    )
+    to_replace: list[tuple[list[str], str]] = []
+    # Build artist pool with normalized names
+    unsorted_pool: list[list[str]] = []
+    for artist_name, _ in artists:
+        stripped = "".join(s for s in str(artist_name) if s.isalnum()).replace(" ", "")
+        normalized_result = normalize_accents(stripped)
+        # normalize_accents returns str when given single argument
+        normalized = str(normalized_result).lower() if normalized_result else ""
+        unsorted_pool.append([normalized, str(artist_name)])
+    artist_pool: list[list[str]] = sorted(unsorted_pool, key=lambda x: len(x[0]))
     for i, pri_a_raw in enumerate(artist_pool):
         for other_a in reversed(artist_pool[0:i]):
             current_replacements = [pri_a_raw[1]]

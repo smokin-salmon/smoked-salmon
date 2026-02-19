@@ -31,7 +31,7 @@ def get_source_from_link(url):
             return name
 
 
-def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
+def combine_metadatas(*metadatas, base=None, source_url=None):
     """
     This function takes a bunch of chosen metadata and splices
     together values to form one unified metadata dictionary.
@@ -41,9 +41,11 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     it's fairly important that the base metadata contain the correct
     number of tracks.
     """
-    url_sources = set()
+    url_sources: set[str] = set()
     if base and base.get("url", False):
-        url_sources.add(get_source_from_link(base["url"]))
+        link_source = get_source_from_link(base["url"])
+        if link_source:
+            url_sources.add(link_source)
 
     sources = sort_metadatas(metadatas)
 
@@ -54,10 +56,12 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
 
     for pref in ordered_preferences:
         for metadata in sources[pref]:
-            if not base:
+            if base is None:
                 base = metadata
                 if base.get("url", False):
-                    url_sources.add(get_source_from_link(base["url"]))
+                    link_source = get_source_from_link(base["url"])
+                    if link_source:
+                        url_sources.add(link_source)
                 from_preferred_source = False
                 continue
 
@@ -107,7 +111,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
 
             from_preferred_source = False
 
-        if sources[pref]:
+        if sources[pref] and base is not None:
             # Process URLs from all metadata entries from this source
             for metadata in sources[pref]:
                 if "url" in metadata:
@@ -115,6 +119,11 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                     if link_source and metadata["url"] not in base["urls"]:
                         base["urls"].append(metadata["url"])
                         url_sources.add(link_source)
+
+    if base is None:
+        raise ValueError("No metadata provided to combine")
+
+    assert base is not None  # Type narrowing for pyright
 
     if "url" in base:
         del base["url"]

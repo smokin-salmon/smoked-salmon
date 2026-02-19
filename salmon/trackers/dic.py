@@ -1,4 +1,5 @@
-import click
+import asyncclick as click
+from aiohttp import FormData
 
 from salmon import cfg
 from salmon.trackers.base import BaseGazelleApi
@@ -11,7 +12,8 @@ class DICApi(BaseGazelleApi):
         self.tracker_url = "https://tracker.52dic.vip"
         self.site_string = "DICMusic"
 
-        self.specific_params = {"edited": False, "buy": None, "diy": None, "jinzhuan": None}
+        self._marks_prompted = False
+        self.specific_params = {}
 
         if cfg.tracker.dic:
             dic_cfg = cfg.tracker.dic
@@ -26,12 +28,19 @@ class DICApi(BaseGazelleApi):
 
         super().__init__()
 
-    async def site_page_upload(self, data, files):
-        """Attempt to upload a torrent to the site.
-        using the upload.php"""
+    async def site_page_upload(self, data: dict, files: FormData) -> tuple[int, int]:
+        """Attempt to upload a torrent to the site using the upload.php.
 
-        if not self.specific_params["edited"]:
-            mark = click.prompt(
+        Args:
+            data: Upload form data dictionary.
+            files: FormData containing files to upload.
+
+        Returns:
+            Tuple of (torrent_id, group_id) from the upload response.
+        """
+        if not self._marks_prompted:
+            # Prompt for mark type
+            raw_mark = await click.prompt(
                 click.style(
                     "\n"
                     "Do you want to mark this torrent as 'Self-purchased' or 'Self-rip'?\n"
@@ -42,14 +51,19 @@ class DICApi(BaseGazelleApi):
                 ),
                 type=click.STRING,
                 default="N",
-            )[0].lower()
-            if mark == "p":
-                self.specific_params["buy"] = "on"
-            elif mark == "r":
-                self.specific_params["diy"] = "on"
+            )
+            mark = raw_mark[0].lower() if raw_mark else "n"
 
-            if mark == "p" or mark == "r":
-                mark = click.prompt(
+            # Build mark parameters immutably
+            mark_params = {}
+            if mark == "p":
+                mark_params["buy"] = "on"
+            elif mark == "r":
+                mark_params["diy"] = "on"
+
+            # Prompt for exclusive mark if needed
+            if mark in ("p", "r"):
+                raw_excl = await click.prompt(
                     click.style(
                         "\nDo you want to mark this torrent as 'Exclusive'?\n[E]xclusive, [N]one",
                         fg="magenta",
@@ -57,15 +71,16 @@ class DICApi(BaseGazelleApi):
                     ),
                     type=click.STRING,
                     default="N",
-                )[0].lower()
-                if mark == "e":
-                    self.specific_params["jinzhuan"] = "on"
+                )
+                excl = raw_excl[0].lower() if raw_excl else "n"
+                if excl == "e":
+                    mark_params["jinzhuan"] = "on"
 
-            self.specific_params["edited"] = True
+            # Update params and mark as prompted
+            self.specific_params = mark_params
+            self._marks_prompted = True
 
-        data = {
-            **data,
-            **{key: value for key, value in self.specific_params.items() if value and key not in ["edited"]},
-        }
+        # Merge data with params (no filtering needed)
+        enriched_data = {**data, **self.specific_params}
 
-        return await super().site_page_upload(data, files)
+        return await super().site_page_upload(enriched_data, files)

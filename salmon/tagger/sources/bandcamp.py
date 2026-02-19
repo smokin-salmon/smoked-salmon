@@ -34,36 +34,49 @@ class Scraper(BandcampBase, MetadataMixin):
 
     def parse_release_year(self, soup):
         try:
-            return int(re.search(r"(\d{4})", self.parse_release_date(soup))[1])
+            date = self.parse_release_date(soup)
+            match = re.search(r"(\d{4})", date) if date else None
+            if not match:
+                raise ScrapeError("Could not parse release year.")
+            return int(match[1])
         except TypeError as e:
             raise ScrapeError("Could not parse release year.") from e
 
     def parse_release_date(self, soup):
         try:
-            date = re.search(
+            match = re.search(
                 r"release(?:d|s) ([^\d]+ \d+, \d{4})",
                 soup.select(".tralbumData.tralbum-credits")[0].text,
-            )[1]
+            )
+            if not match:
+                raise ScrapeError("Could not parse release date.")
+            date = match[1]
             return datetime.strptime(date, "%B %d, %Y").strftime("%Y-%m-%d")
-        except (TypeError, IndexError) as e:
+        except (TypeError, IndexError, ValueError) as e:
             raise ScrapeError("Could not parse release date.") from e
 
     def parse_release_label(self, soup):
         try:
+            artist = ""
             namesection = soup.select("#name-section")
             for div in namesection:
-                artist = div.find("span").text.strip()
+                span = div.find("span")
+                if span:
+                    artist = span.text.strip()
             label = soup.select("#band-name-location .title")[0].string
             if artist != label:
                 return label
         except IndexError as e:
             raise ScrapeError("Could not parse record label.") from e
 
-    def parse_tracks(self, soup):
+    async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
+        artist = ""
         namesection = soup.select("#name-section")
         for div in namesection:
-            artist = div.find("span").text.strip()
+            span = div.find("span")
+            if span:
+                artist = span.text.strip()
         various = artist
         tracklist_scrape = soup.select("#track_table tr.track_row_view")
         if tracklist_scrape:

@@ -1,6 +1,6 @@
 import re
 
-import click
+import asyncclick as click
 
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import DiscogsBase
@@ -36,7 +36,7 @@ class Searcher(DiscogsBase, SearchMixin):
             collection_text = click.style("IN COLLECTION", bg="red", bold=True) if release_in_user_collection else None
 
             releases[rls["id"]] = (
-                IdentData(artists, title, year, None, source),
+                IdentData(artists, title, year, None, source or ""),
                 self.format_result(artists, title, edition, ed_title=ed_title, additional_info=collection_text),
             )
             if len(releases) == limit:

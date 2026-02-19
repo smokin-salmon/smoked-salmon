@@ -1,5 +1,7 @@
 import re
 
+from bs4 import BeautifulSoup
+
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
@@ -18,6 +20,9 @@ class Searcher(JunodownloadBase, SearchMixin):
             },
             follow_redirects=False,
         )
+        # soup can be BeautifulSoup or dict depending on source
+        if not isinstance(soup, BeautifulSoup):
+            return "Junodownload", releases
         for meta in soup.find_all(
             "div",
             attrs={
@@ -27,31 +32,50 @@ class Searcher(JunodownloadBase, SearchMixin):
         ):
             try:
                 su_title = meta.find("a", attrs={"class": "juno-title"})
-                rls_id = re.search(r"/products/[^/]+/([\d-]+)", su_title["href"])[1]
-                title = su_title.string
+                if not su_title or not su_title.get("href"):
+                    continue
+                href_match = re.search(r"/products/[^/]+/([\d-]+)", str(su_title["href"]))
+                if not href_match:
+                    continue
+                rls_id = href_match[1]
+                title = su_title.string or ""
 
                 # right_blob = meta.find('div', attrs={'class': 'text-sm mb-3 mb-lg-3'})
                 right_blob = meta.find("div", attrs={"class": "text-sm text-muted mt-3"})
+                if not right_blob:
+                    continue
 
                 right_blob_elements_count = len(right_blob.get_text(separator="|").strip().split("|"))
                 if right_blob_elements_count != 3:
                     # skip item missing one or more of: catno, date or genre
                     continue
 
-                date = right_blob.find("br").next.strip()
+                br_tag = right_blob.find("br")
+                if not br_tag:
+                    continue
+
+                next_elem = br_tag.next
+                if not next_elem or not hasattr(next_elem, "strip"):
+                    continue
+                date = str(next_elem).strip()
+                if len(date) < 2 or not date[-2:].isdigit():
+                    continue
                 year = int(date[-2:])
 
                 year = 1900 + year if 40 <= year <= 99 else 2000 + year
 
-                catno = right_blob.find("br").previous_sibling.strip().replace(" ", "")
+                prev_sibling = br_tag.previous_sibling
+                catno = str(prev_sibling).strip().replace(" ", "") if prev_sibling else ""
 
                 ar_blob = meta.find("div", attrs={"class": "col juno-artist"})
+                if not ar_blob:
+                    continue
 
                 ar_li = [a.string.title() for a in ar_blob.find_all("a") if a.string]
                 artists = ", ".join(ar_li) if ar_li and len(ar_li) < 5 else cfg.upload.formatting.various_artist_word
 
                 label_blob = meta.find("a", attrs={"class": "juno-label"})
-                label = label_blob.text.strip()
+                label = label_blob.text.strip() if label_blob else ""
 
                 if label.lower() not in cfg.upload.search.excluded_labels:
                     releases[rls_id] = (

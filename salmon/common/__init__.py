@@ -2,24 +2,24 @@ import asyncio
 import contextlib
 import platform
 import sys
+from typing import Any
 
-import click
-import httpx
-from requests import RequestException
+import aiohttp
+import asyncclick as click
 
-from salmon.common.aliases import AliasedCommands  # noqa: F401
-from salmon.common.constants import RE_FEAT  # noqa: F401
-from salmon.common.figles import (  # noqa: F401
+from salmon.common.aliases import AliasedCommands
+from salmon.common.constants import RE_FEAT
+from salmon.common.figles import (
     compress,
     create_relative_path,
     get_audio_files,
 )
-from salmon.common.regexes import (  # noqa: F401
+from salmon.common.regexes import (
     parse_copyright,
     re_split,
     re_strip,
 )
-from salmon.common.strings import (  # noqa: F401
+from salmon.common.strings import (
     fetch_genre,
     less_uppers,
     make_searchstrs,
@@ -29,31 +29,65 @@ from salmon.common.strings import (  # noqa: F401
 )
 from salmon.errors import ScrapeError
 
+__all__ = [
+    "AliasedCommands",
+    "RE_FEAT",
+    "compress",
+    "create_relative_path",
+    "get_audio_files",
+    "parse_copyright",
+    "re_split",
+    "re_strip",
+    "fetch_genre",
+    "less_uppers",
+    "make_searchstrs",
+    "normalize_accents",
+    "strip_template_keys",
+    "truncate",
+    "ScrapeError",
+    "commandgroup",
+    "prompt_async",
+    "flush_stdin",
+    "str_to_int_if_int",
+    "handle_scrape_errors",
+    "Prompt",
+]
 
-@click.group(context_settings=dict(help_option_names=["-h", "--help"]), cls=AliasedCommands)
-def commandgroup():
+
+@click.group(context_settings={"help_option_names": ["-h", "--help"]}, cls=AliasedCommands)
+async def commandgroup() -> None:
+    """Main command group for salmon CLI."""
     pass
 
 
 class Prompt:
-    # https://stackoverflow.com/a/35514777
+    """Async prompt handler for reading stdin without blocking the event loop."""
 
-    def __init__(self):
-        self.q = asyncio.Queue()
+    def __init__(self) -> None:
+        """Initialize the prompt handler."""
+        self.q: asyncio.Queue[str] = asyncio.Queue()
         self.reader_added = False
         self.is_windows = platform.system() == "Windows"
-        self.reader_task = None
+        self.reader_task: asyncio.Task[None] | None = None
 
-    def got_input(self):
+    def got_input(self) -> None:
+        """Callback when input is received on stdin."""
         asyncio.create_task(self.q.put(sys.stdin.readline()))
 
-    async def __call__(self, msg, end="\n", flush=False):
+    async def __call__(self, msg: str, end: str = "\n", flush: bool = False) -> str:
+        """Display a message and wait for user input.
+
+        Args:
+            msg: The message to display.
+            end: String to append after the message.
+            flush: Whether to flush stdout.
+
+        Returns:
+            The user input string.
+        """
         if not self.reader_added:
             if not self.is_windows:
-                try:
-                    loop = asyncio.get_running_loop()
-                except RuntimeError as exc:
-                    raise RuntimeError("Prompt must be called from a running event loop.") from exc
+                loop = asyncio.get_running_loop()
                 loop.add_reader(sys.stdin, self.got_input)
             else:
                 self.reader_task = asyncio.create_task(self._windows_input_reader())
@@ -65,7 +99,8 @@ class Prompt:
             await self._cleanup()
         return result
 
-    async def _windows_input_reader(self):
+    async def _windows_input_reader(self) -> None:
+        """Read stdin in a thread for Windows compatibility."""
         try:
             while True:
                 line = await asyncio.to_thread(sys.stdin.readline)
@@ -73,8 +108,8 @@ class Prompt:
         except asyncio.CancelledError:
             pass
 
-    async def _cleanup(self):
-        """Clean up resources after input is received"""
+    async def _cleanup(self) -> None:
+        """Clean up resources after input is received."""
         if self.is_windows and self.reader_task:
             self.reader_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -107,7 +142,16 @@ def flush_stdin():
             pass
 
 
-def str_to_int_if_int(string, zpad=False):
+def str_to_int_if_int(string: str, zpad: bool = False) -> str | int:
+    """Convert string to int if it's a digit string.
+
+    Args:
+        string: The string to convert.
+        zpad: Whether to zero-pad the result to 2 digits.
+
+    Returns:
+        The integer or zero-padded string if digit, original string otherwise.
+    """
     if string.isdigit():
         if zpad:
             return f"{int(string):02d}"
@@ -115,22 +159,23 @@ def str_to_int_if_int(string, zpad=False):
     return string
 
 
-def run_gather(*tasks):
-    """Run multiple coroutines concurrently. Works on Python 3.11-3.14+."""
+async def handle_scrape_errors(task: Any, mute: bool = False) -> Any | None:
+    """Handle errors during scraping tasks.
 
-    async def _gather():
-        return await asyncio.gather(*tasks)
+    Args:
+        task: The async task to run.
+        mute: If True, suppress error messages.
 
-    return asyncio.run(_gather())
-
-
-async def handle_scrape_errors(task, mute=False):
+    Returns:
+        The task result or None on error.
+    """
     try:
         return await task
-    except (ScrapeError, httpx.RequestError, httpx.TimeoutException, KeyError, RequestException) as e:
+    except (ScrapeError, aiohttp.ClientError, TimeoutError, KeyError) as e:
         if not mute:
             click.secho(f"Error message: {e}", fg="red", bold=True)
     except Exception as e:
         # Catch any unexpected errors too
         if not mute:
             click.secho(f"Unexpected scrape error: {e}", fg="red", bold=True)
+    return None

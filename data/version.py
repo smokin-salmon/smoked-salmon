@@ -55,7 +55,7 @@ $soxDir = $((Get-Command sox).Source | Split-Path)
 $zipPath = Join-Path -Path $soxDir -ChildPath "sox_windows_fix.zip"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/DevYukine/red_oxide/master/.github/dependency-fixes/sox_windows_fix.zip" -OutFile $zipPath
 Expand-Archive -Path $zipPath -DestinationPath $soxDir -Force
-regedit "$soxDir\PreferExternalManifest.reg"
+regedit "$soxDir\\PreferExternalManifest.reg"
 Remove-Item $zipPath
 ```
 

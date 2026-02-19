@@ -1,6 +1,6 @@
-import asyncio
 import re
 
+import aiohttp
 from bs4 import BeautifulSoup
 
 from salmon import cfg
@@ -49,24 +49,42 @@ class OpsApi(BaseGazelleApi):
             "Unknown": 21,
         }
 
-    def parse_most_recent_torrent_and_group_id_from_group_page(self, text):
+    def parse_most_recent_torrent_and_group_id_from_group_page(self, text: str) -> tuple[int, int]:
         """
         Given the HTML (ew) response from a successful upload, find the most
         recently uploaded torrent (it better be ours).
         """
-        ids = []
-        soup = BeautifulSoup(text, "html.parser")
+        ids: list[tuple[int, int]] = []
+        soup = BeautifulSoup(text, "lxml")
         for pl in soup.find_all("a", title="Permalink"):
-            match = re.search(r"torrents.php\?id=(\d+)\&torrentid=(\d+)", pl["href"])
+            href = pl.get("href", "")
+            match = re.search(r"torrents.php\?id=(\d+)\&torrentid=(\d+)", str(href))
             if match:
-                ids.append((match[2], match[1]))
+                ids.append((int(match[2]), int(match[1])))
+        if not ids:
+            raise TypeError("Could not parse torrent/group id from group page: no permalink ids found")
         return max(ids)
 
-    async def report_lossy_master(self, torrent_id, comment, source):
-        """Automagically report a torrent for lossy master/web approval."""
+    async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
+        """Report torrent for lossy master approval (OPS-specific).
 
+        OPS only uses 'lossyapproval' type, not 'lossywebapproval'.
+
+        Args:
+            torrent_id: The torrent ID to report.
+            comment: The report comment.
+            source: Media source.
+
+        Returns:
+            True if report was successful.
+
+        Raises:
+            RequestError: If the report fails.
+        """
+        await self.ensure_authenticated()
         url = self.base_url + "/reportsv2.php"
         params = {"action": "takereport"}
+        # OPS only uses lossyapproval, not lossywebapproval
         type_ = "lossyapproval"
         data = {
             "auth": self.authkey,
@@ -76,10 +94,18 @@ class OpsApi(BaseGazelleApi):
             "extra": comment,
             "submit": True,
         }
-        r = await asyncio.get_running_loop().run_in_executor(
-            None,
-            lambda: self.session.post(url, params=params, data=data, headers=self.headers),
-        )
-        if "torrents.php" in r.url:
-            return True
-        raise RequestError(f"Failed to report the torrent for lossy master, code {r.status_code}.")
+
+        timeout = aiohttp.ClientTimeout(total=10)
+        try:
+            async with (
+                aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
+                session.post(url, params=params, data=data, headers=self.headers) as r,
+            ):
+                resp_url = str(r.url)
+                if "torrents.php" in resp_url:
+                    return True
+                raise RequestError(
+                    f"Failed to report torrent for lossy master: unexpected redirect to {resp_url} (status {r.status})"
+                )
+        except (TimeoutError, aiohttp.ClientError) as exc:
+            raise RequestError(f"Error reporting torrent for lossy master: {exc}") from exc

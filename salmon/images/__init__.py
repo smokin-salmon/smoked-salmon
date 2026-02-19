@@ -1,11 +1,12 @@
 import asyncio
 import sqlite3
+from typing import Any
 
-import click
+import asyncclick as click
 import pyperclip
 
 from salmon import cfg
-from salmon.common import AliasedCommands, commandgroup, run_gather
+from salmon.common import AliasedCommands, commandgroup
 from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, emp, imgbb, imgbox, oeimg, ptpimg, ptscreens
@@ -21,7 +22,20 @@ HOSTS = {
 }
 
 
-def validate_image_host(ctx, param, value):
+def validate_image_host(ctx: click.Context, param: click.Parameter, value: str) -> Any:
+    """Validate and return the image host module.
+
+    Args:
+        ctx: Click context.
+        param: Click parameter.
+        value: The image host name.
+
+    Returns:
+        The image host module.
+
+    Raises:
+        click.BadParameter: If the image host is invalid.
+    """
     try:
         return HOSTS[value]
     except KeyError:
@@ -29,8 +43,8 @@ def validate_image_host(ctx, param, value):
 
 
 @commandgroup.group(cls=AliasedCommands)
-def images():
-    """Create and manage uploads to image hosts"""
+async def images() -> None:
+    """Create and manage uploads to image hosts."""
     pass
 
 
@@ -47,15 +61,29 @@ def images():
     default=cfg.image.image_uploader,
     callback=validate_image_host,
 )
-def up(filepaths, image_host):
-    """Upload images to an image host"""
+async def up(filepaths: tuple[str, ...], image_host: Any) -> None:
+    """Upload images to an image host."""
+    await upload_images(filepaths, image_host)
+
+
+async def upload_images(filepaths: tuple, image_host) -> list[str]:
+    """Upload images to the specified host asynchronously.
+
+    Args:
+        filepaths: Tuple of file paths to upload.
+        image_host: The image host module.
+
+    Returns:
+        List of uploaded URLs.
+    """
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         urls = []
-        upload_function = image_host.ImageUploader().upload_file
+        uploader = image_host.ImageUploader()
         try:
-            for url, deletion_url in asyncio.run(_run_uploads(upload_function, filepaths)):
+            tasks = [uploader.upload_file(f) for f in filepaths]
+            for url, deletion_url in await asyncio.gather(*tasks):
                 cursor.execute(
                     "INSERT INTO image_uploads (url, deletion_url) VALUES (?, ?)",
                     (url, deletion_url),
@@ -65,6 +93,7 @@ def up(filepaths, image_host):
             conn.commit()
             if cfg.upload.description.copy_uploaded_url_to_clipboard:
                 pyperclip.copy("\n".join(urls))
+            return urls
         except (ImageUploadFailed, ValueError) as error:
             click.secho(f"Image Upload Failed. {error}", fg="red")
             raise ImageUploadFailed("Failed to upload image") from error
@@ -79,8 +108,8 @@ def up(filepaths, image_host):
     default=0,
     help="The number of images to offset by",
 )
-def ls(limit, offset):
-    """View previously uploaded images"""
+async def ls(limit: int, offset: int) -> None:
+    """View previously uploaded images."""
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -102,57 +131,78 @@ def chunker(seq, size=4):
         yield seq[pos : pos + size]
 
 
-def upload_cover(cover_path):
-    """
-    If filepath to cover image is provided, upload it
-    The image url is returned, otherwise None.
+async def upload_cover(cover_path: str | None) -> str | None:
+    """Upload cover image to the configured image host.
+
+    Args:
+        cover_path: Path to the cover image file.
+
+    Returns:
+        The uploaded image URL, or None if upload failed.
     """
     if not cover_path:
         click.secho("\nNo Cover Image Path was provided to upload...", fg="red", nl=False)
         return None
     click.secho(f"Uploading cover to {cfg.image.cover_uploader}...", fg="yellow", nl=False)
     try:
-        try:
-            url = asyncio.run(_run_cover_upload(cover_path))
-        except (ImageUploadFailed, ValueError) as error:
-            click.secho(f"Image Upload Failed. {error}", fg="red")
-            raise ImageUploadFailed("Failed to upload image") from error
-    except ImageUploadFailed:
-        return click.secho(" failed :(", fg="red")
-    click.secho(f" done! {url}", fg="yellow")
-    return url
+        uploader = HOSTS[cfg.image.cover_uploader].ImageUploader()
+        url, _ = await uploader.upload_file(cover_path)
+        click.secho(f" done! {url}", fg="yellow")
+        return url
+    except (ImageUploadFailed, ValueError) as error:
+        click.secho(f" failed :( {error}", fg="red")
+        return None
 
 
-def upload_spectrals(spectrals, uploader=HOSTS[cfg.image.specs_uploader], successful=None):
+async def upload_spectrals(spectrals, uploader=None, successful=None) -> dict:
+    """Upload spectral images to image host.
+
+    Args:
+        spectrals: List of (spec_id, filename, spectral_paths) tuples.
+        uploader: The image host module to use.
+        successful: Set of already successful spec_ids.
+
+    Returns:
+        Dictionary mapping spec_id to list of URLs.
     """
-    Given the spectrals list of (filename, [spectral_url, ..]), send them
-    to the coroutine upload handler and return a dictionary of filenames
-    and spectral urls.
-    """
+    if uploader is None:
+        uploader = HOSTS[cfg.image.specs_uploader]
+
     response = {}
     successful = successful or set()
     one_failed = False
-    upload_function = uploader.ImageUploader().upload_file
+    uploader_instance = uploader.ImageUploader()
+
     for specs_block in chunker(spectrals):
         tasks = [
-            _spectrals_handler(sid, filename, sp, upload_function)
+            _spectrals_handler(sid, filename, sp, uploader_instance)
             for sid, filename, sp in specs_block
             if sid not in successful
         ]
-        for sid, urls in run_gather(*tasks):
+        for sid, urls in await asyncio.gather(*tasks):
             if urls:
-                response = {**response, sid: urls}
+                response[sid] = urls
                 successful.add(sid)
             else:
                 one_failed = True
         if one_failed:
-            return {**response, **_handle_failed_spectrals(spectrals, successful)}
+            retry_result = await _handle_failed_spectrals(spectrals, successful)
+            return {**response, **retry_result}
     return response
 
 
-def _handle_failed_spectrals(spectrals, successful):
+async def _handle_failed_spectrals(spectrals, successful) -> dict:
+    """Handle failed spectral uploads by prompting for a new host.
+
+    Args:
+        spectrals: List of spectral tuples.
+        successful: Set of already successful spec_ids.
+
+    Returns:
+        Dictionary of uploaded URLs.
+    """
     while True:
-        host = click.prompt(
+        host_input: str = await click.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
                 f"with? (Options: {', '.join(HOSTS.keys())})",
@@ -160,33 +210,31 @@ def _handle_failed_spectrals(spectrals, successful):
                 bold=True,
             ),
             default="ptpimg",
-        ).lower()
+        )
+        host = host_input.lower()
         if host not in HOSTS:
             click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
         else:
-            return upload_spectrals(spectrals, uploader=HOSTS[host], successful=successful)
+            return await upload_spectrals(spectrals, uploader=HOSTS[host], successful=successful)
 
 
-async def _spectrals_handler(spec_id, filename, spectral_paths, uploader):
+async def _spectrals_handler(spec_id, filename, spectral_paths, uploader_instance):
+    """Handle uploading spectrals for a single file.
+
+    Args:
+        spec_id: The spectral ID.
+        filename: The audio filename.
+        spectral_paths: List of spectral image paths.
+        uploader_instance: The image uploader instance.
+
+    Returns:
+        Tuple of (spec_id, list of URLs or None).
+    """
     try:
         click.secho(f"Uploading spectrals for {filename}...", fg="yellow")
-        loop = asyncio.get_running_loop()
-        tasks = [loop.run_in_executor(None, lambda f=f: uploader(f)[0]) for f in spectral_paths]
-        return spec_id, await asyncio.gather(*tasks)
+        tasks = [uploader_instance.upload_file(f) for f in spectral_paths]
+        results = await asyncio.gather(*tasks)
+        return spec_id, [url for url, _ in results]
     except ImageUploadFailed as e:
         click.secho(f"Failed to upload spectrals for {filename}: {e}", fg="red")
         return spec_id, None
-
-
-async def _run_uploads(upload_function, filepaths):
-    loop = asyncio.get_running_loop()
-    tasks = [loop.run_in_executor(None, lambda f=f: upload_function(f)) for f in filepaths]
-    return await asyncio.gather(*tasks)
-
-
-async def _run_cover_upload(cover_path):
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(
-        None,
-        lambda f=cover_path: HOSTS[cfg.image.cover_uploader].ImageUploader().upload_file(f)[0],
-    )

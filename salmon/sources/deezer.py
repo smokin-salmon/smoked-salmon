@@ -1,14 +1,13 @@
-import asyncio
 import json
 import re
 from json.decoder import JSONDecodeError
 from random import choice
 
-import requests
+import aiohttp
 
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper
+from salmon.sources.base import BaseScraper, SoupType
 
 HEADERS = {
     "User-Agent": choice(UAGENTS),
@@ -21,52 +20,80 @@ HEADERS = {
 
 
 class DeezerBase(BaseScraper):
+    """Base scraper for Deezer metadata."""
+
     url = "https://api.deezer.com"
     site_url = "https://www.deezer.com"
     regex = re.compile(r"^https*:\/\/.*?deezer\.com.*?\/(?:[a-z]+\/)?(album|playlist|track)\/([0-9]+)")
     release_format = "/album/{rls_id}"
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialize Deezer scraper."""
         self.country_code = None
         super().__init__()
+        self._csrf_token: str | None = None
+        self._login_csrf_token: str | None = None
 
-        self._csrf_token = None
-        self._login_csrf_token = None
-        self._session = None
+    async def _ensure_api_token(self) -> str | None:
+        """Fetch API token from Deezer if not cached.
 
-    @property
-    def sesh(self):
-        if self._session:
-            return self._session
-
-        self._session = requests.Session()
-        return self._session
-
-    @property
-    def api_token(self):
+        Returns:
+            The CSRF token or None if failed.
+        """
         if self._csrf_token:
             return self._csrf_token
 
-        params = {"api_version": "1.0", "api_token": "null", "input": "3"}
-        response = self.sesh.get(
-            "https://www.deezer.com/ajax/gw-light.php",
-            params={"method": "deezer.getUserData", **params},
-            headers=HEADERS,
-        )
+        params = {"api_version": "1.0", "api_token": "null", "input": "3", "method": "deezer.getUserData"}
+        timeout = aiohttp.ClientTimeout(total=10)
         try:
-            check_data = json.loads(response.text)
-            self._csrf_token = check_data["results"]["checkForm"]
-            self._login_csrf_token = check_data["results"]["checkFormLogin"]
-        except (JSONDecodeError, KeyError):
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.get(
+                    "https://www.deezer.com/ajax/gw-light.php",
+                    params=params,
+                    headers=HEADERS,
+                ) as response,
+            ):
+                check_data = await response.json()
+                self._csrf_token = check_data["results"]["checkForm"]
+                self._login_csrf_token = check_data["results"]["checkFormLogin"]
+        except (JSONDecodeError, KeyError, aiohttp.ClientError):
             pass
         return self._csrf_token
 
     @classmethod
-    def parse_release_id(cls, url):
-        return cls.regex.search(url)[2]
+    def parse_release_id(cls, url: str) -> str:
+        """Parse release ID from Deezer URL.
 
-    async def create_soup(self, url, params=None):
-        """Run a GET request to Deezer's JSON API for album data."""
+        Args:
+            url: The Deezer URL.
+
+        Returns:
+            The release ID.
+
+        Raises:
+            ValueError: If URL doesn't match expected pattern.
+        """
+        match = cls.regex.search(url)
+        if not match:
+            raise ValueError(f"Invalid Deezer URL: {url}")
+        return match[2]
+
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
+        """Fetch album data from Deezer API.
+
+        Args:
+            url: The Deezer album URL.
+            params: Optional query parameters.
+
+        Returns:
+            Album data dict with tracklist and cover.
+
+        Raises:
+            ScrapeError: If fetching fails.
+        """
         params = params or {}
         album_id = self.parse_release_id(url)
         try:
@@ -80,18 +107,39 @@ class DeezerBase(BaseScraper):
         except (KeyError, ScrapeError) as e:
             raise ScrapeError(f"Failed to grab metadata for {url}.") from e
 
-    async def get_internal_api_data(self, url, params=None):
-        """Deezer puts some things in an api that isn't public facing.
-        Like track information and album art before a release is available.
+    async def get_internal_api_data(self, url: str, params: dict | None = None) -> dict:
+        """Fetch internal API data from Deezer.
+
+        Deezer puts some things in an API that isn't public facing,
+        like track information and album art before a release is available.
+
+        Args:
+            url: The URL path.
+            params: Optional query parameters.
+
+        Returns:
+            Internal API data dict.
+
+        Raises:
+            ScrapeError: If scraping fails.
         """
-        loop = asyncio.get_running_loop()
-        track_data = await loop.run_in_executor(
-            None,
-            lambda: self.sesh.get(self.site_url + url, params=(params or {})),
-        )
+        timeout = aiohttp.ClientTimeout(total=10)
+        try:
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
+            ):
+                if response.status != 200:
+                    raise ScrapeError(
+                        f"Deezer internal API returned status {response.status} for {self.site_url + url}"
+                    )
+                text = await response.text()
+        except (TimeoutError, aiohttp.ClientError) as e:
+            raise ScrapeError(f"Failed to fetch Deezer internal data: {e}") from e
+
         r = re.search(
             r"window.__DZR_APP_STATE__ = ({.*?}})</script>",
-            track_data.text.replace("\n", ""),
+            text.replace("\n", ""),
         )
         if not r:
             raise ScrapeError("Failed to scrape track data.")
@@ -99,10 +147,25 @@ class DeezerBase(BaseScraper):
         raw = re.sub("\t+([^:]+): ", r'"\1":', raw)
         return json.loads(raw)
 
-    def get_tracks(self, internal_data):
+    def get_tracks(self, internal_data: dict) -> list:
+        """Extract track list from internal data.
+
+        Args:
+            internal_data: The internal API data.
+
+        Returns:
+            List of track data.
+        """
         return internal_data["SONGS"]["data"]
 
-    def get_cover(self, internal_data):
-        "This uses a hardcoded url. Hope the dns url doesn't change."
+    def get_cover(self, internal_data: dict) -> str:
+        """Extract cover URL from internal data.
+
+        Args:
+            internal_data: The internal API data.
+
+        Returns:
+            The cover image URL.
+        """
         artwork_code = internal_data["DATA"]["ALB_PICTURE"]
         return f"https://e-cdns-images.dzcdn.net/images/cover/{artwork_code}/1000x1000-000000-100-0-0.jpg"

@@ -12,7 +12,7 @@ class Directory(BaseStruct):
     dottorrents_dir: str
     download_directory: str
     hardlinks: bool = True
-    tmp_dir: str = None
+    tmp_dir: str | None = None
     clean_tmp_dir: bool = False
 
     def __post_init__(self):
@@ -52,8 +52,8 @@ class ImageUploader(BaseStruct):
 
 class TidalSettings(BaseStruct):
     token: str | None = None
-    search_regions: list[str] = ("de", "nz", "us", "gb")
-    fetch_regions: list[str] = ("de", "nz", "us", "gb")
+    search_regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
+    fetch_regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
 
 
 # TODO: Add validations here
@@ -114,8 +114,8 @@ class Seedbox(BaseStruct):
 class UploadSearch(BaseStruct):
     limit: int = 3
     # TODO: are these reasonable defaults?
-    excluded_labels: list[str] = ("edm comps",)
-    blacklisted_genres: list[str] = ("Soundtrack", "Asian Music")
+    excluded_labels: list[str] = msgspec.field(default_factory=lambda: ["edm comps"])
+    blacklisted_genres: list[str] = msgspec.field(default_factory=lambda: ["Soundtrack", "Asian Music"])
 
 
 class UploadFormatting(BaseStruct):

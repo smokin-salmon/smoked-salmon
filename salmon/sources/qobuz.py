@@ -1,9 +1,10 @@
 import json
 import re
+from typing import Any
 
 from salmon import cfg
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper
+from salmon.sources.base import BaseScraper, SoupType
 
 
 class QobuzBase(BaseScraper):
@@ -17,11 +18,30 @@ class QobuzBase(BaseScraper):
         "X-App-Id": cfg.metadata.qobuz.app_id,
         "X-User-Auth-Token": cfg.metadata.qobuz.user_auth_token,
     }
-    get_params = {}
+    get_params: dict[str, Any] | None = {}
 
-    async def create_soup(self, url, params=None):
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
+        """Fetch album data from Qobuz JSON API.
+
+        Args:
+            url: The Qobuz album URL.
+            params: Optional query parameters.
+            headers: Unused, kept for API compatibility.
+            follow_redirects: Unused, kept for API compatibility.
+
+        Returns:
+            Album data dict from Qobuz API.
+
+        Raises:
+            ScrapeError: If URL is invalid or request fails.
+        """
         try:
-            rls_id = self.regex.match(url)[1]
+            match = self.regex.match(url)
+            if not match:
+                raise ScrapeError("Invalid Qobuz URL.")
+            rls_id = match[1]
             return await self.get_json(self.release_format.format(rls_id=rls_id), params=params, headers=self.headers)
         except json.decoder.JSONDecodeError as e:
             raise ScrapeError("Qobuz page did not return valid JSON.") from e

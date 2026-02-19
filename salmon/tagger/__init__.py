@@ -1,8 +1,7 @@
-import asyncio
 from itertools import chain
 from pprint import pprint
 
-import click
+import asyncclick as click
 
 from salmon.common import commandgroup
 from salmon.constants import (
@@ -36,12 +35,25 @@ def validate_source(ctx, param, value):
 
 
 def validate_encoding(ctx, param, value):
+    """Validate and convert encoding parameter.
+
+    Args:
+        ctx: Click context.
+        param: Click parameter.
+        value: The encoding value to validate.
+
+    Returns:
+        The validated encoding string or None if not provided.
+
+    Raises:
+        click.BadParameter: If the encoding is invalid.
+    """
+    if value is None:
+        return None
     try:
         return TAG_ENCODINGS[value.upper()]
     except KeyError:
         raise click.BadParameter(f"{value} is not a valid encoding.") from None
-    except AttributeError:
-        return None, None
 
 
 @commandgroup.command()
@@ -72,34 +84,47 @@ def validate_encoding(ctx, param, value):
     is_flag=True,
     help="Rename files and folders automatically",
 )
-def tag(path, source, encoding, overwrite, auto_rename):
-    """Interactively tag an album"""
+async def tag(path: str, source: str, encoding: str | None, overwrite: bool, auto_rename: bool) -> None:
+    """Interactively tag an album.
+
+    Args:
+        path: Path to the album folder.
+        source: Media source.
+        encoding: Audio encoding string or None if not specified.
+        overwrite: Whether to overwrite metadata.
+        auto_rename: Whether to auto-rename files.
+    """
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     standardize_tags(path)
     tags = gather_tags(path)
     audio_info = gather_audio_info(path)
     rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
-    metadata, _ = get_metadata(path, tags, rls_data)
-    metadata = review_metadata(metadata, metadata_validator_base)
+    metadata, _ = await get_metadata(path, tags, rls_data)
+    metadata = await review_metadata(metadata, metadata_validator_base)
     tag_files(path, tags, metadata, auto_rename)
 
-    download_cover_if_nonexistent(path, metadata["cover"])
+    await download_cover_if_nonexistent(path, metadata["cover"])
     tags = check_tags(path)
     path = rename_folder(path, metadata, auto_rename)
     rename_files(path, tags, metadata, auto_rename, None)
-    check_folder_structure(path, scene=False)
+    await check_folder_structure(path, scene=False)
     click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
 
 
 @commandgroup.command()
 @click.argument("url")
-def meta(url):
-    """Scrape metadata from release link"""
+async def meta(url: str) -> None:
+    """Scrape metadata from release link.
+
+    Args:
+        url: URL to scrape metadata from.
+    """
     try:
-        metadata = asyncio.run(run_metadata(url))
+        metadata = await run_metadata(url)
         for key in ["encoding", "media", "encoding_vbr", "source"]:
-            del metadata[key]
+            if key in metadata and isinstance(metadata, dict):
+                del metadata[key]
         click.echo()
         pprint(metadata)
     except ScrapeError as e:

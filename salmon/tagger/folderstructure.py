@@ -1,14 +1,14 @@
 import os
 import shutil
 
-import click
+import asyncclick as click
 
 from salmon import cfg
 from salmon.constants import ALLOWED_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
 
 
-def check_folder_structure(path, scene):
+async def check_folder_structure(path, scene):
     """
     Run through every filesystem check that causes uploads to violate the rules
     or be rejected on the upload form. Verify that path lengths <180, that there
@@ -17,10 +17,10 @@ def check_folder_structure(path, scene):
     while True:
         click.secho("\nChecking folder structure...", fg="cyan", bold=True)
         try:
-            _check_illegal_folders(path)
+            await _check_illegal_folders(path)
             _check_path_lengths(path, scene)
             _check_zero_len_folder(path)
-            _check_extensions(path, scene)
+            await _check_extensions(path, scene)
             return
         except NoncompliantFolderStructure:
             if scene:
@@ -43,16 +43,18 @@ def check_folder_structure(path, scene):
             )
 
 
-def _check_illegal_folders(path):
+async def _check_illegal_folders(path):
     """Verify illegal folders."""
     for root, dirs, _files in os.walk(path, topdown=False):
         for dirname in dirs:
             if dirname == "@eaDir":
                 target_dir = os.path.join(root, dirname)
                 while True:
-                    resp = click.prompt(
-                        f"Dirname {target_dir} is illegal. [D]elete, [A]bort, or [C]ontinue?",
-                        default="D",
+                    resp = (
+                        await click.prompt(
+                            f"Dirname {target_dir} is illegal. [D]elete, [A]bort, or [C]ontinue?",
+                            default="D",
+                        )
                     ).lower()
                     if resp[0].lower() == "d":
                         shutil.rmtree(target_dir)
@@ -119,7 +121,7 @@ def _check_zero_len_folder(path):
     click.secho("No zero length folders were found.", fg="green")
 
 
-def _check_extensions(path, scene):
+async def _check_extensions(path, scene):
     """Validate that all file extensions are valid."""
     mp3, aac, flac = [], [], []
     offending_files = []  # Collect offending files for scene releases
@@ -136,7 +138,7 @@ def _check_extensions(path, scene):
                 if scene:
                     offending_files.append(os.path.join(root, fln))
                 else:
-                    _handle_bad_extension(os.path.join(root, fln), scene)
+                    await _handle_bad_extension(os.path.join(root, fln), scene)
 
     if scene and offending_files:
         click.secho("The following files have invalid extensions:", fg="red", bold=True)
@@ -145,16 +147,18 @@ def _check_extensions(path, scene):
         raise NoncompliantFolderStructure
 
     if len([li for li in [mp3, flac, aac] if li]) > 1:
-        _handle_multiple_audio_exts()
+        await _handle_multiple_audio_exts()
     else:
         click.secho("File extensions have been validated.", fg="green")
 
 
-def _handle_bad_extension(filepath, scene):
+async def _handle_bad_extension(filepath, scene):
     while True:
-        resp = click.prompt(
-            f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?",
-            default="D",
+        resp = (
+            await click.prompt(
+                f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?",
+                default="D",
+            )
         ).lower()
         if resp[0].lower() == "d":
             return os.remove(filepath)
@@ -164,11 +168,13 @@ def _handle_bad_extension(filepath, scene):
             return
 
 
-def _handle_multiple_audio_exts():
+async def _handle_multiple_audio_exts():
     while True:
-        resp = click.prompt(
-            "There are multiple audio codecs in this folder. [A]bort or [c]ontinue?",
-            default="A",
+        resp = (
+            await click.prompt(
+                "There are multiple audio codecs in this folder. [A]bort or [c]ontinue?",
+                default="A",
+            )
         ).lower()
         if resp[0] == "a":
             raise click.Abort

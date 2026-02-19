@@ -1,11 +1,13 @@
 import re
 from collections import defaultdict
 from html import unescape
+from typing import Any
 
 from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
+from salmon.sources.base import SoupType
 from salmon.tagger.sources.base import MetadataMixin
 
 # ------------------------------------------------------------------------------
@@ -118,13 +120,30 @@ class Scraper(QobuzBase, MetadataMixin):
     # Core API and Connection Methods
     # --------------------------------------------------------------------------
 
-    async def create_soup(self, url):
-        """
-        Override create_soup to properly get the album data from the API.
+    async def create_soup(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> SoupType:
+        """Override create_soup to properly get the album data from the API.
+
         This method uses the QobuzBase get_json method.
+
+        Args:
+            url: The Qobuz album URL.
+            params: Optional query parameters (unused).
+            headers: Optional HTTP headers (unused).
+            follow_redirects: Whether to follow redirects (unused).
+
+        Returns:
+            Album data dict from Qobuz API.
+
+        Raises:
+            ScrapeError: If fetching fails.
         """
         try:
-            rls_id = self.regex.match(url)[1]
+            match = self.regex.match(url)
+            if not match:
+                raise ScrapeError(f"Failed to extract release ID from URL: {url}")
+            rls_id = match[1]
         except (TypeError, IndexError) as err:
             raise ScrapeError(f"Failed to extract release ID from URL: {url}") from err
 
@@ -142,9 +161,18 @@ class Scraper(QobuzBase, MetadataMixin):
 
         return response
 
-    @staticmethod
-    def format_url(rls_id=None, rls_name=None, url=None):
-        """Format a URL for the release based on ID or original URL."""
+    @classmethod
+    def format_url(cls, rls_id: Any = None, rls_name: str | None = None, url: str | None = None) -> str:
+        """Format a URL for the release based on ID or original URL.
+
+        Args:
+            rls_id: The release ID.
+            rls_name: Optional release name (unused).
+            url: Optional pre-formatted URL to return directly.
+
+        Returns:
+            The formatted URL string.
+        """
         if url:
             return url
         return f"https://www.qobuz.com/album/-/{rls_id}"
@@ -157,19 +185,28 @@ class Scraper(QobuzBase, MetadataMixin):
         """Parse the release title from the API response."""
         return RE_FEAT.sub("", soup["title"])
 
-    def parse_release_group_year(self, soup):
-        return RE_YEAR.search(safe_get(soup, ["release_date_original"])).group(1)
+    def parse_release_group_year(self, soup) -> int | None:
+        date = safe_get(soup, ["release_date_original"])
+        if not date or not isinstance(date, str):
+            return None
+        match = RE_YEAR.search(date)
+        return int(match.group(1)) if match else None
 
-    def parse_release_year(self, soup):
-        if self.parse_edition_title(soup):
-            if any(keyword in self.parse_edition_title(soup) for keyword in EDITION_KEYWORDS):
-                return RE_YEAR.search(safe_get(soup, ["copyright"])).group(1)
+    def parse_release_year(self, soup) -> int | None:
+        edition_title = self.parse_edition_title(soup)
+        if edition_title:
+            if any(keyword in edition_title for keyword in EDITION_KEYWORDS):
+                copyright_text = safe_get(soup, ["copyright"])
+                if not copyright_text or not isinstance(copyright_text, str):
+                    return None
+                match = RE_YEAR.search(copyright_text)
+                return int(match.group(1)) if match else None
             else:
                 return None
         else:
             return self.parse_release_group_year(soup)
 
-    def parse_release_label(self, soup):
+    def parse_release_label(self, soup) -> str | None:
         """
         Parse label name, marking as Self-Released if artist name appears in label.
         Also attempts to extract label from copyright information.
@@ -191,15 +228,14 @@ class Scraper(QobuzBase, MetadataMixin):
 
         # Check if this is likely self-released
         artist = safe_get(soup, ["artist", "name"])
-        if artist and artist.lower() in label.lower():
+        label_str = str(label) if label else ""
+        if artist and isinstance(artist, str) and label_str and artist.lower() in label_str.lower():
             return "Self-Released"
 
-        return label
+        return label_str if label_str else None
 
-    def parse_tracks(self, soup):
-        """
-        Parse track information from the API response.
-        """
+    async def parse_tracks(self, soup):
+        """Parse track information from the API response."""
         tracks = defaultdict(dict)
 
         # Get main artist from release
@@ -248,12 +284,13 @@ class Scraper(QobuzBase, MetadataMixin):
     # Optional Metadata Methods
     # --------------------------------------------------------------------------
 
-    def parse_cover_url(self, soup):
+    def parse_cover_url(self, soup) -> str | None:
         """
         Parse the cover URL from the API response.
         Qobuz already compresses their images, so using the large image is best.
         """
-        return safe_get(soup, ["image", "large"])
+        result = safe_get(soup, ["image", "large"])
+        return str(result) if result else None
 
     def parse_edition_title(self, soup):
         """

@@ -3,9 +3,10 @@ import html
 import os
 import shutil
 import subprocess
+from typing import Any
 from urllib import parse
 
-import click
+import asyncclick as click
 import pyperclip
 
 import salmon.checks
@@ -15,10 +16,11 @@ import salmon.play
 import salmon.search
 import salmon.sources
 import salmon.tagger
+import salmon.trackers
 import salmon.uploader
-import salmon.web  # noqa F401
+import salmon.web
 from salmon import cfg
-from salmon.common import commandgroup, run_gather, str_to_int_if_int
+from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.database import DB_PATH
@@ -41,22 +43,22 @@ from salmon.uploader.upload import generate_source_links
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1)
 @click.option("--no-delete-specs", "-nd", is_flag=True)
 @click.option("--format-output", "-f", is_flag=True)
-def specs(path, no_delete_specs, format_output):
-    """Generate and open spectrals for a folder"""
+async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
+    """Generate and open spectrals for a folder."""
     audio_info = gather_audio_info(path, True)
-    _, sids = check_spectrals(path, audio_info, check_lma=False)
+    _, sids = await check_spectrals(path, audio_info, check_lma=False)
     spath = get_spectrals_path(path)
-    spectral_urls = handle_spectrals_upload_and_deletion(spath, sids, delete_spectrals=not no_delete_specs)
+    spectral_urls = await handle_spectrals_upload_and_deletion(spath, sids, delete_spectrals=not no_delete_specs)
 
     filenames = list(audio_info.keys())
     if spectral_urls:
-        output = []
+        output_lines: list[str] = []
         for spec_id, urls in spectral_urls.items():
             if format_output:
-                output.append(f"[hide={filenames[spec_id - 1]}][img={'][img='.join(urls)}][/hide]")
+                output_lines.append(f"[hide={filenames[spec_id - 1]}][img={'][img='.join(urls)}][/hide]")
             else:
-                output.append(f"{filenames[spec_id - 1]}: {' '.join(urls)}")
-        output = "\n".join(output)
+                output_lines.append(f"{filenames[spec_id - 1]}: {' '.join(urls)}")
+        output = "\n".join(output_lines)
         click.secho(output)
         if cfg.upload.description.copy_uploaded_url_to_clipboard:
             pyperclip.copy(output)
@@ -67,12 +69,14 @@ def specs(path, no_delete_specs, format_output):
 
 @commandgroup.command()
 @click.argument("urls", type=click.STRING, nargs=-1)
-def descgen(urls):
-    """Generate a description from metadata sources"""
+async def descgen(urls: tuple[str, ...]) -> None:
+    """Generate a description from metadata sources."""
     if not urls:
-        return click.secho("You must specify at least one URL", fg="red")
+        click.secho("You must specify at least one URL", fg="red")
+        return
+
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
-    metadatas = run_gather(*tasks)
+    metadatas = await asyncio.gather(*tasks)
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
     remove_various_artists(metadata["tracks"])
 
@@ -100,10 +104,10 @@ def descgen(urls):
 
 @commandgroup.command()
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
-def compress(path):
-    """Recompress a directory of FLACs to level 8"""
-    for root, _, figles in os.walk(path):
-        for f in sorted(figles):
+async def compress(path: str) -> None:
+    """Recompress a directory of FLACs to level 8."""
+    for root, _, files in os.walk(path):
+        for f in sorted(files):
             if os.path.splitext(f)[1].lower() == ".flac":
                 filepath = os.path.join(root, f)
                 click.secho(f"Recompressing {filepath[len(path) + 1 :]}...")
@@ -128,15 +132,17 @@ def compress(path):
     nargs=1,
     default=".",
 )
-def checkspecs(tracker, torrent_id, path):
-    """Will check and upload the spectrals of a given torrent\n
+async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> None:
+    """Check and upload spectrals of a given torrent.
+
     Based on local files, not the ones on the tracker.
     By default checks the folder the script is run from.
     Can add spectrals to a torrent description and report a torrent as lossy web.
     """
-    if not torrent_id:
+    torrent_id_input: str = torrent_id or ""
+    if not torrent_id_input:
         click.secho("No torrent id provided.", fg="red")
-        torrent_id = click.prompt(
+        torrent_id_input = await click.prompt(
             click.style(
                 """Input a torrent id or a URL containing one.
                 Tracker in a URL will override -t flag.""",
@@ -144,32 +150,40 @@ def checkspecs(tracker, torrent_id, path):
                 bold=True,
             ),
         )
-    if "/torrents.php" in torrent_id:
-        base_url = parse.urlparse(torrent_id).netloc
+
+    torrent_id_int: int
+    if "/torrents.php" in torrent_id_input:
+        base_url = parse.urlparse(torrent_id_input).netloc
         if base_url in salmon.trackers.tracker_url_code_map:
             # this will overide -t tracker
             tracker = salmon.trackers.tracker_url_code_map[base_url]
         else:
             click.echo("Unrecognised tracker!")
             raise click.Abort
-        torrent_id = int(parse.parse_qs(parse.urlparse(torrent_id).query)["torrentid"][0])
-    elif torrent_id.strip().isdigit():
-        torrent_id = int(torrent_id)
+        torrent_id_int = int(parse.parse_qs(parse.urlparse(torrent_id_input).query)["torrentid"][0])
+    elif torrent_id_input.strip().isdigit():
+        torrent_id_int = int(torrent_id_input)
     else:
         click.echo("Not a valid torrent!")
         raise click.Abort
-    tracker = salmon.trackers.validate_tracker(None, "tracker", tracker)
+
+    tracker = await salmon.trackers.validate_tracker(None, "tracker", tracker)
     gazelle_site = salmon.trackers.get_class(tracker)()
-    req = asyncio.run(gazelle_site.request("torrent", id=torrent_id))
+    req = await gazelle_site.request("torrent", id=torrent_id_int)
     path = os.path.join(path, html.unescape(req["torrent"]["filePath"]))
     source_url = None
     source = req["torrent"]["media"]
     click.echo(f"Generating spectrals for {source} sourced: {path}")
     track_data = gather_audio_info(path)
-    post_upload_spectral_check(gazelle_site, path, torrent_id, None, track_data, source, source_url)
+    await post_upload_spectral_check(gazelle_site, path, torrent_id_int, None, track_data, source, source_url)
 
 
-def _backup_config(config_path):
+def _backup_config(config_path: str) -> None:
+    """Backup existing config file with incremental suffix.
+
+    Args:
+        config_path: Path to the config file to backup.
+    """
     backup_index = 1
     while os.path.exists(f"{config_path}.bak.{backup_index}"):
         backup_index += 1
@@ -202,8 +216,9 @@ def _backup_config(config_path):
     is_flag=True,
     help="Reset the config file to the default template. Will create a backup of the current config file.",
 )
-def checkconf(tracker, metadata, seedbox, reset):
-    """Check the config and the connection to the trackers, metadata sources, and seedbox.\n
+async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: bool) -> None:
+    """Check config and connection to trackers, metadata sources, and seedbox.
+
     Will output debug information if the connection fails.
     Use the -r flag to reset/create the whole config file.
     Use the -m flag to test metadata sources connections.
@@ -248,14 +263,19 @@ def checkconf(tracker, metadata, seedbox, reset):
 
     # Test metadata sources
     if metadata or not (tracker or seedbox):
-        _test_metadata_sources()
+        await _test_metadata_sources()
 
     # Test seedbox connections
     if seedbox or not (tracker or metadata):
         _test_seedbox_connections()
 
 
-def _iter_which(deps):
+def _iter_which(deps: list[str]) -> None:
+    """Check and display which dependencies are installed.
+
+    Args:
+        deps: List of dependency names to check.
+    """
     for dep in deps:
         present = shutil.which(dep)
         if present:
@@ -264,11 +284,11 @@ def _iter_which(deps):
             click.secho(f"{dep} ✘", fg="red")
 
 
-def _test_metadata_sources():
-    """Test metadata sources connections (Discogs, Tidal, Qobuz)"""
+async def _test_metadata_sources() -> None:
+    """Test metadata sources connections (Discogs, Tidal, Qobuz)."""
     click.secho("\n[ Testing Metadata Sources ]", fg="cyan", bold=True)
 
-    metadata_sources = {
+    metadata_sources: dict[str, dict[str, Any]] = {
         "Discogs": {
             "class": salmon.sources.DiscogsBase,
             "test_url": "https://www.discogs.com/release/432932",
@@ -300,7 +320,7 @@ def _test_metadata_sources():
 
             # For a basic connection test, try to create soup with a test URL
             try:
-                asyncio.run(source_instance.create_soup(source_info["test_url"]))
+                await source_instance.create_soup(source_info["test_url"])
                 click.secho(f"  ✔ {source_name}: Connection successful", fg="green", bold=True)
             except Exception as inner_e:
                 click.secho(f"  ✖ {source_name}: Error - {inner_e}", fg="red", bold=True)
@@ -311,8 +331,8 @@ def _test_metadata_sources():
     click.secho("-" * 50, fg="yellow")
 
 
-def _test_seedbox_connections():
-    """Test seedbox connections"""
+def _test_seedbox_connections() -> None:
+    """Test seedbox connections."""
     click.secho("\n[ Testing Seedbox Connections ]", fg="cyan", bold=True)
 
     if not cfg.seedbox:
@@ -357,9 +377,8 @@ def _test_seedbox_connections():
 
 
 @commandgroup.command()
-def health():
-    """Check the status of smoked-salmon's config files and command line dependencies"""
-
+async def health() -> None:
+    """Check the status of smoked-salmon's config files and command line dependencies."""
     try:
         config_path = find_config_path()
         click.echo(f"Config path: {config_path}")
