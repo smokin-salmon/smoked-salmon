@@ -211,7 +211,7 @@ class BaseGazelleApi:
                 raise RetryableError("Rate limit exceeded")
             else:
                 raise RequestFailedError(str(error_msg))
-        return cast(dict, resp_json["response"])
+        return cast("dict", resp_json["response"])
 
     async def torrentgroup(self, group_id: int) -> dict:
         """Get information about a torrent group.

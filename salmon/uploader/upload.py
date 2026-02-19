@@ -7,9 +7,6 @@ from aiohttp import FormData
 from torf import Torrent
 
 from salmon import cfg
-
-if TYPE_CHECKING:
-    from salmon.trackers.base import BaseGazelleApi
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RequestError
@@ -18,6 +15,9 @@ from salmon.tagger.sources import METASOURCES
 from salmon.uploader.spectrals import (
     make_spectral_bbcode,
 )
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 
 
 async def prepare_and_upload(

@@ -39,11 +39,11 @@ def _determine_files_actions(path):
     convert_files = []
     copy_files = [os.path.join(r, f) for r, _, files in os.walk(path) for f in files]
     audio_info = gather_audio_info(path)
-    for figle in copy(copy_files):
-        for info_figle, figle_info in audio_info.items():
-            if figle.endswith(info_figle) and figle_info["precision"] == 24:
-                convert_files.append((figle, figle_info["sample rate"]))
-                copy_files.remove(figle)
+    for file in copy(copy_files):
+        for info_file, file_info in audio_info.items():
+            if file.endswith(info_file) and file_info["precision"] == 24:
+                convert_files.append((file, file_info["sample rate"]))
+                copy_files.remove(file)
     return convert_files, copy_files
 
 

@@ -23,8 +23,8 @@ def log(path):
     if os.path.isfile(path):
         _check_log(path)
     elif os.path.isdir(path):
-        for root, _, figles in os.walk(path):
-            for f in figles:
+        for root, _, files in os.walk(path):
+            for f in files:
                 if f.lower().endswith(".log"):
                     filepath = os.path.join(root, f)
                     click.secho(f"\nScoring {filepath}...", fg="cyan")
@@ -66,8 +66,8 @@ def mqa(path):
         else:
             click.secho("Did not find MQA syncword", fg="green")
     elif os.path.isdir(path):
-        for root, _, figles in os.walk(path):
-            for f in figles:
+        for root, _, files in os.walk(path):
+            for f in files:
                 if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
                     filepath = os.path.join(root, f)
                     click.secho(f"\nChecking {filepath}...", fg="cyan")
@@ -86,8 +86,8 @@ def mqa_test(path):
         else:
             return False
     elif os.path.isdir(path):
-        for root, _, figles in os.walk(path):
-            for f in figles:
+        for root, _, files in os.walk(path):
+            for f in files:
                 if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
                     filepath = os.path.join(root, f)
                     """ Only check the first file """

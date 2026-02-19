@@ -5,7 +5,7 @@ import asyncclick as click
 import cambia
 import ffmpeg
 
-from salmon.common.figles import process_files
+from salmon.common.files import process_files
 from salmon.errors import CRCMismatchError, EditedLogError
 
 

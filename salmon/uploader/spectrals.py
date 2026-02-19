@@ -12,12 +12,9 @@ from typing import TYPE_CHECKING, Any
 import asyncclick as click
 import oxipng
 
-if TYPE_CHECKING:
-    from salmon.trackers.base import BaseGazelleApi
-
 from salmon import cfg
 from salmon.common import flush_stdin, get_audio_files, prompt_async
-from salmon.common.figles import process_files
+from salmon.common.files import process_files
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
@@ -26,6 +23,10 @@ from salmon.errors import (
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
 from salmon.web import create_app_async, spectrals
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
+
 
 THREADS = [None] * cfg.upload.simultaneous_threads
 

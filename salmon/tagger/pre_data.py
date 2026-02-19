@@ -8,7 +8,7 @@ import asyncclick as click
 
 from salmon import cfg
 from salmon.common import RE_FEAT, re_split
-from salmon.common.figles import _tracknumber_sort_key
+from salmon.common.files import _tracknumber_sort_key
 from salmon.constants import FORMATS, TAG_ENCODINGS
 
 EMPTY_METADATA = {
