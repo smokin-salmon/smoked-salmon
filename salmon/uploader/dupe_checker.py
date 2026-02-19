@@ -376,28 +376,54 @@ async def print_torrents(
     # At this point rset is guaranteed to be non-None
     assert rset is not None
 
-    group_info: dict = {}
     click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
     click.secho(f"| {rset['artist']} - {rset['groupName']} ", fg="cyan", nl=False)
     click.secho(f"({rset['groupYear']})", fg="yellow")
     click.secho("Torrents in this group:", fg="yellow", bold=True)
+    # Pull group-level info once (optional fallback only)
+    group_info = rset.get("group", {}) or {}
+    group_label = (group_info.get("recordLabel") or "").strip()
+    group_catno = (group_info.get("catalogueNumber") or "").strip()
+
     for t in rset["torrents"]:
-        color = "yellow" if highlight_torrent_id and t["id"] == highlight_torrent_id else None
-        if t["remastered"]:
-            click.secho(
-                f"> {t['remasterYear']} / {t['remasterCatalogueNumber']} / "
-                f"{t['media']} / {t['format']} / {t['encoding']}",
-                fg=color,
+        color = "yellow" if highlight_torrent_id and t.get("id") == highlight_torrent_id else None
+
+        # Robust across RED/OPS: don't assume `remastered` exists
+        is_remaster = bool(t.get("remastered")) or any(
+            (
+                t.get("remasterYear"),
+                (t.get("remasterTitle") or "").strip(),
+                (t.get("remasterRecordLabel") or "").strip(),
+                (t.get("remasterCatalogueNumber") or "").strip(),
             )
-        if not t["remastered"]:
-            if not group_info:
-                group_info = (await gazelle_site.torrentgroup(group_id))["group"]
-            click.secho(
-                f"> OR / {group_info['recordLabel']} / "
-                f"{group_info['catalogueNumber']} / {t['media']} / "
-                f"{t['format']} / {t['encoding']}",
-                fg=color,
-            )
+        )
+
+        label = ((t.get("remasterRecordLabel") or "").strip() if is_remaster else "") or group_label
+        catno = ((t.get("remasterCatalogueNumber") or "").strip() if is_remaster else "") or group_catno
+
+        prefix_parts = []
+        if is_remaster:
+            if t.get("remasterYear"):
+                prefix_parts.append(str(t["remasterYear"]))
+            title = (t.get("remasterTitle") or "").strip()
+            if title:
+                prefix_parts.append(title)
+        else:
+            prefix_parts.append("OR")
+
+        if label:
+            prefix_parts.append(label)
+        if catno:
+            prefix_parts.append(catno)
+
+        prefix = " / ".join(prefix_parts)
+        if prefix:
+            prefix += " / "
+
+        click.secho(
+            f"> {prefix}{t['media']} / {t['format']} / {t['encoding']}",
+            fg=color,
+        )
 
 
 async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict]) -> bool:
