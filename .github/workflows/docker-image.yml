@@ -21,12 +21,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensures we get all history for tag retrieval and pushing
-          token: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }} 
+          fetch-depth: 0 # Ensures we get all history for tag retrieval and pushing
+          token: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
-        
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -82,7 +82,7 @@ jobs:
         env:
           RELEASE_NOTES: ${{ github.event.release.body }}
 
-      - name: Update version.py (only on release)
+      - name: Update version files
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: |
           TIMESTAMP=$(date +"%Y-%m-%d")
@@ -110,6 +110,9 @@ jobs:
 
           # Update version in pyproject.toml
           sed -i "s/^version = \".*\"/version = \"${{ env.VERSION }}\"/" "$PYPROJECT_FILE"
+
+          # Regenerate uv.lock to update the package version
+          uv lock
         env:
           RELEASE_NOTES: ${{ env.RELEASE_NOTES }}
 
@@ -121,9 +124,14 @@ jobs:
           git checkout master  # Ensure we're on master branch
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/version.py pyproject.toml
+          git add data/version.py pyproject.toml uv.lock
           git commit -m "Update version.py/pyproject.toml to ${{ env.VERSION }} with changelog"
           git push origin master
+
+      - name: Move tag to version bump commit and push
+        run: |
+          git tag -f ${{ env.VERSION }}
+          git push origin "refs/tags/${{ env.VERSION }}" --force
 
       - name: Debug VERSION and UPDATE_VERSION
         run: |
