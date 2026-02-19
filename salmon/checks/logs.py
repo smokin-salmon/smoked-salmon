@@ -1,21 +1,28 @@
 import os
+from typing import Any
 
 import asyncclick as click
 import cambia
 import ffmpeg
 
 from salmon.common.figles import process_files
+from salmon.errors import CRCMismatchError, EditedLogError
 
 
-def is_sublist(*, sub, main):
-    return all(elem in main for elem in sub)
-
-
-def _get_audio_duration_sectors(filepath):
+def _get_audio_duration_sectors(filepath: str) -> int:
     """Get the duration of an audio file in CD sectors using ffprobe.
 
     Uses duration_ts to calculate precise sector count:
     duration_ts * 75 / 44100 = sectors (since 44100 samples/sec ÷ 75 sectors/sec = 588 samples/sector)
+
+    Args:
+        filepath: Path to the audio file.
+
+    Returns:
+        Duration in CD sectors.
+
+    Raises:
+        RuntimeError: If there's an error getting duration from the file.
     """
     try:
         probe = ffmpeg.probe(filepath)
@@ -26,8 +33,19 @@ def _get_audio_duration_sectors(filepath):
         raise RuntimeError(f"Error getting duration in sectors for {filepath}: {e}") from e
 
 
-def _calculate_file_crc(filepath, _=None):
-    """Calculate CRC32 hash for a single audio file."""
+def _calculate_file_crc(filepath: str, _: Any = None) -> str:
+    """Calculate CRC32 hash for a single audio file.
+
+    Args:
+        filepath: Path to the audio file.
+        _: Unused parameter for compatibility with process_files interface.
+
+    Returns:
+        CRC32 hash as uppercase hex string.
+
+    Raises:
+        RuntimeError: If FFmpeg fails to calculate CRC32.
+    """
     try:
         out, _ = (
             ffmpeg.input(filepath)
@@ -40,8 +58,20 @@ def _calculate_file_crc(filepath, _=None):
         raise RuntimeError(f"FFmpeg error calculating CRC32 for {filepath}: {e}") from e
 
 
-def _calculate_range_crc(track_files, toc_entries):
-    """Calculate CRC32 hash by concatenating individual track files to recreate the original range rip."""
+def _calculate_range_crc(track_files: list[str], toc_entries: list[cambia.TocEntry]) -> str:
+    """Calculate CRC32 hash by concatenating individual track files to recreate the original range rip.
+
+    Args:
+        track_files: List of paths to track audio files.
+        toc_entries: List of TOC entries from the log file.
+
+    Returns:
+        CRC32 hash as uppercase hex string.
+
+    Raises:
+        ValueError: If track file count doesn't match TOC entry count.
+        RuntimeError: If FFmpeg fails to calculate CRC32.
+    """
     try:
         # Sort track files by track number to match TOC entries order
         # Assuming files are named like "01 - track.flac", "02 - track.flac", etc.
@@ -55,7 +85,7 @@ def _calculate_range_crc(track_files, toc_entries):
 
         for track_file, toc_entry in zip(sorted_files, toc_entries, strict=True):
             # Use sector information for precise positioning
-            track_length_sectors = toc_entry["end_sector"] - toc_entry["start_sector"] + 1
+            track_length_sectors = toc_entry.end_sector - toc_entry.start_sector + 1
 
             # Get actual audio file duration in sectors
             actual_duration_sectors = _get_audio_duration_sectors(track_file)
@@ -94,17 +124,21 @@ def _calculate_range_crc(track_files, toc_entries):
         raise RuntimeError(f"FFmpeg error calculating range CRC32: {e}\nStderr: {stderr_output}") from e
 
 
-def check_log_cambia(logpath, basepath):
-    """Check a log file using Cambia."""
+def check_log_cambia(logpath: str, basepath: str) -> None:
+    """Check a log file using Cambia.
+
+    Args:
+        logpath: Path to the log file to check.
+        basepath: Base directory path containing audio files.
+
+    Raises:
+        ValueError: If log parsing fails, log is edited, or CRC mismatch detected.
+        Exception: If any other error occurs during checking.
+    """
     try:
-        cambia_output = cambia.parse_file(logpath)
+        cambia_output = cambia.parse_log_file(logpath)
 
-        if not cambia_output["success"]:
-            raise ValueError(f"Cambia parsing failed for '{logpath}': {cambia_output['error']}")
-
-        log_data = cambia_output["data"]
-
-        score = int(log_data["evaluation_combined"][0]["combined_score"])
+        score = int(cambia_output.evaluation_combined[0].combined_score)
         if score < 100:
             click.secho(f"Log Score: {score} (The torrent will be trumpable)", fg="yellow", bold=True)
         else:
@@ -113,13 +147,13 @@ def check_log_cambia(logpath, basepath):
         click.secho(f"Error checking log {logpath}: {e}", fg="red")
         raise
 
-    if log_data["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Mismatch":
-        raise ValueError("Edited logs")
-    elif log_data["parsed"]["parsed_logs"][0]["checksum"]["integrity"] == "Unknown":
+    if cambia_output.parsed.parsed_logs[0].checksum.integrity == cambia.Integrity.Mismatch:
+        raise EditedLogError("Edited logs")
+    elif cambia_output.parsed.parsed_logs[0].checksum.integrity == cambia.Integrity.Unknown:
         click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
 
     # Get list of CRCs from the log file
-    copy_crc_list = [track["test_and_copy"]["copy_hash"] for track in log_data["parsed"]["parsed_logs"][0]["tracks"]]
+    copy_crc_set = {track.test_and_copy.copy_hash for track in cambia_output.parsed.parsed_logs[0].tracks}
 
     # Get list of files to check
     files_to_check = []
@@ -132,17 +166,17 @@ def check_log_cambia(logpath, basepath):
         raise ValueError("No audio files found!")
 
     click.secho("\nVerifying audio file CRC values...", fg="cyan", bold=True)
-    if log_data["parsed"]["parsed_logs"][0]["tracks"][0]["is_range"]:
-        toc_entries = log_data["parsed"]["parsed_logs"][0]["toc"]["raw"]["entries"]
+    if cambia_output.parsed.parsed_logs[0].tracks[0].is_range:
+        toc_entries = cambia_output.parsed.parsed_logs[0].toc.raw.entries
 
         # Log contains range rip CRC, but we have individual track files
         # Concatenate track files to recreate the original range rip for CRC verification
         range_crc = _calculate_range_crc(files_to_check, toc_entries)
-        crc_list = [range_crc]
+        crc_set = {range_crc}
     else:
-        crc_list = process_files(files_to_check, _calculate_file_crc, "Calculating CRC32 hashes")
+        crc_set = set(process_files(files_to_check, _calculate_file_crc, "Calculating CRC32 hashes"))
 
-    if not is_sublist(sub=copy_crc_list, main=crc_list):
-        raise ValueError("CRC Mismatch")
+    if not copy_crc_set.issubset(crc_set):
+        raise CRCMismatchError("CRC Mismatch")
 
     click.secho("All CRC values match the log file.", fg="green")

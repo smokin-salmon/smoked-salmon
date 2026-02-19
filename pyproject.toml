@@ -23,7 +23,7 @@ dependencies = [
     "mutagen>=1.47.0",
     "pillow>=11.3.0",
     "platformdirs>=4.3.8",
-    "pycambia==0.1.0",
+    "pycambia>=0.2.0",
     "pyimgbox>=1.0.7",
     "pyoxipng>=9.1.0",
     "pyperclip>=1.8.2",
@@ -49,9 +49,7 @@ packages = ["salmon", "data"]
 py-modules = ["run"]
 
 [dependency-groups]
-dev = [
-    "ruff>=0.11.2",
-]
+dev = ["ruff>=0.11.2"]
 
 [tool.ruff]
 line-length = 120

@@ -9,9 +9,6 @@ import asyncclick as click
 import pyperclip
 
 import salmon.trackers
-
-if TYPE_CHECKING:
-    from salmon.trackers.base import BaseGazelleApi
 from salmon import cfg
 from salmon.checks import mqa_test
 from salmon.checks.integrity import (
@@ -31,7 +28,7 @@ from salmon.converter.transcoding import (
     generate_transcode_description,
     transcode_folder,
 )
-from salmon.errors import AbortAndDeleteFolder, InvalidMetadataError
+from salmon.errors import AbortAndDeleteFolder, CRCMismatchError, EditedLogError, InvalidMetadataError
 from salmon.images import upload_cover
 from salmon.tagger import (
     metadata_validator_base,
@@ -73,6 +70,9 @@ from salmon.uploader.upload import (
     concat_track_data,
     prepare_and_upload,
 )
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 
 
 @commandgroup.command()
@@ -320,22 +320,20 @@ async def upload(
                         click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
                         try:
                             check_log_cambia(filepath, path)
-                        except Exception as e:
-                            if "Edited logs" in str(e):
+                        except EditedLogError as e:
+                            raise click.Abort() from e
+                        except CRCMismatchError as e:
+                            click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+                            if not click.confirm(
+                                click.style(
+                                    "Log file CRC does not match audio files. Do you want to continue upload anyway?",
+                                    fg="magenta",
+                                ),
+                                default=False,
+                            ):
                                 raise click.Abort() from e
-                            elif "CRC Mismatch" in str(e):
-                                click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
-                                if not click.confirm(
-                                    click.style(
-                                        "Log file CRC does not match audio files. "
-                                        "Do you want to continue upload anyway?",
-                                        fg="magenta",
-                                    ),
-                                    default=False,
-                                ):
-                                    raise click.Abort() from e
-                            else:
-                                click.secho(f"Error checking log: {e}", fg="red")
+                        except Exception as e:
+                            click.secho(f"Error checking log: {e}", fg="red")
 
         if group_id is None:
             searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])

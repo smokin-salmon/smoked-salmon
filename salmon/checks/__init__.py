@@ -7,6 +7,7 @@ from salmon.checks.logs import check_log_cambia
 from salmon.checks.mqa import check_mqa
 from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
+from salmon.errors import CRCMismatchError, EditedLogError
 
 
 @commandgroup.group()
@@ -33,13 +34,12 @@ def log(path):
 def _check_log(path):
     try:
         check_log_cambia(path, os.path.dirname(path))
+    except EditedLogError:
+        click.secho("Error: Edited logs detected!", fg="red", bold=True)
+    except CRCMismatchError:
+        click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
     except Exception as e:
-        if "Edited logs" in str(e):
-            click.secho("Error: Edited logs detected!", fg="red", bold=True)
-        elif "CRC Mismatch" in str(e):
-            click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
-        else:
-            click.secho(f"Error checking log: {e}", fg="red")
+        click.secho(f"Error checking log: {e}", fg="red")
 
 
 @check.command()
