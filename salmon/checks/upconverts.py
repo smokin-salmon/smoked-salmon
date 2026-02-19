@@ -6,7 +6,7 @@ import subprocess
 import asyncclick as click
 from mutagen import MutagenError, flac
 
-from salmon.common.figles import process_files
+from salmon.common.files import process_files
 from salmon.errors import NotAValidInputFile
 
 

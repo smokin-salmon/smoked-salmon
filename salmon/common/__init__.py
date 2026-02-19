@@ -9,7 +9,7 @@ import asyncclick as click
 
 from salmon.common.aliases import AliasedCommands
 from salmon.common.constants import RE_FEAT
-from salmon.common.figles import (
+from salmon.common.files import (
     compress,
     create_relative_path,
     get_audio_files,

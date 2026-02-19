@@ -5,7 +5,7 @@ import subprocess
 import asyncclick as click
 
 from salmon import cfg
-from salmon.common.figles import process_files
+from salmon.common.files import process_files
 
 FLAC_IMPORTANT_REGEXES = [
     re.compile(".+\\.flac: testing,.*\x08ok"),

@@ -3,14 +3,11 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from copy import copy
 from itertools import chain
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from salmon import cfg
 from salmon.common import fetch_genre, less_uppers, normalize_accents
 from salmon.errors import GenreNotInWhitelist
-
-if TYPE_CHECKING:
-    pass
 
 
 class MetadataMixin(ABC):
