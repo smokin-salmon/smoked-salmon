@@ -66,3 +66,15 @@ class RequestFailedError(RequestError):
 
 class LoginError(RequestError):
     pass
+
+
+class EditedLogError(Exception):
+    """Raised when a log file has been edited."""
+
+    pass
+
+
+class CRCMismatchError(Exception):
+    """Raised when CRC values don't match between log and audio files."""
+
+    pass
