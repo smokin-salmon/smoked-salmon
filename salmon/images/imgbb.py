@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import aiohttp
+import anyio
 import msgspec.json
 
 from salmon import cfg
@@ -25,8 +26,8 @@ class ImageUploader(BaseImageUploader):
         Raises:
             ImageUploadFailed: If upload fails.
         """
-        with open(filename, "rb") as f:
-            file_data = f.read()
+        async with await anyio.open_file(filename, "rb") as f:
+            file_data = await f.read()
 
         data = aiohttp.FormData()
         data.add_field("key", cfg.image.imgbb_key)

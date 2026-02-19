@@ -509,7 +509,7 @@ async def upload(
             click.secho("\nDone uploading this release.", fg="green")
             break
 
-    seedbox_uploader.execute_upload()
+    await seedbox_uploader.execute_upload()
 
 
 async def edit_metadata(

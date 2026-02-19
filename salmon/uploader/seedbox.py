@@ -5,6 +5,7 @@ import posixpath
 import subprocess
 
 import aiohttp
+import anyio
 import asyncclick as click
 
 from salmon import cfg
@@ -39,10 +40,11 @@ class WebDAVUploader(Uploader):
         """
         timeout = aiohttp.ClientTimeout(total=300)
         try:
-            with open(local_path, "rb") as file:
+            async with await anyio.open_file(local_path, "rb") as file:
+                file_data = await file.read()
                 async with (
                     aiohttp.ClientSession(timeout=timeout) as session,
-                    session.put(remote_path.replace("\\", "/"), data=file) as response,
+                    session.put(remote_path.replace("\\", "/"), data=file_data) as response,
                 ):
                     response.raise_for_status()
                     click.secho(f"Upload successful: {local_path} to {remote_path}", fg="green")
@@ -107,10 +109,10 @@ class RcloneUploader(Uploader):
         else:
             click.secho(f"Rclone upload failed with exit code {result.returncode}", fg="red")
 
-    def add_to_downloader(self, remote_folder, path, type, label, add_paused):
+    async def add_to_downloader(self, remote_folder, path, type, label, add_paused):
         click.secho(f"Adding torrent to client: {os.path.basename(path)}", fg="cyan")
-        with open(path, "rb") as file:
-            torrent = file.read()
+        async with await anyio.open_file(path, "rb") as file:
+            torrent = await file.read()
 
         parser = argparse.ArgumentParser()
         parser.add_argument("--sftp-path-override", type=str, default=None)
@@ -135,10 +137,10 @@ class LocalUploader(Uploader):
         click.secho("Skipping upload for local mode (no transfer needed)", fg="yellow")
         return
 
-    def add_to_downloader(self, remote_folder, path, type, label, add_paused):
+    async def add_to_downloader(self, remote_folder, path, type, label, add_paused):
         click.secho(f"Adding torrent to local client: {os.path.basename(path)}", fg="cyan")
-        with open(path, "rb") as file:
-            torrent = file.read()
+        async with await anyio.open_file(path, "rb") as file:
+            torrent = await file.read()
 
         try:
             download_path = remote_folder if remote_folder else os.path.abspath(cfg.directory.download_directory)
@@ -214,7 +216,7 @@ class UploadManager:
                         f"Added folder transfer task to {uploader_info['uploader'].__class__.__name__}", fg="magenta"
                     )
 
-    def execute_upload(self):
+    async def execute_upload(self):
         if not self.tasks:
             click.secho("No upload tasks to execute", fg="yellow")
             return
@@ -228,9 +230,9 @@ class UploadManager:
                     fg="cyan",
                 )
                 if task_type == "folder":
-                    uploader.upload_folder(remote_directory, local_directory, task_type)
+                    await uploader.upload_folder(remote_directory, local_directory, task_type)
                 elif task_type == "seed":
-                    uploader.add_to_downloader(remote_directory, local_directory, task_type, label, add_paused)
+                    await uploader.add_to_downloader(remote_directory, local_directory, task_type, label, add_paused)
             except Exception as e:
                 click.secho(f"Critical error during task: {e}", fg="red")
 

@@ -2,6 +2,7 @@ import mimetypes
 from random import choice
 
 import aiohttp
+import anyio
 from bs4 import BeautifulSoup
 
 from salmon.constants import UAGENTS
@@ -76,8 +77,8 @@ class ImageUploader(BaseImageUploader):
 
         await self._ensure_auth_token()
 
-        with open(filename, "rb") as f:
-            file_data = f.read()
+        async with await anyio.open_file(filename, "rb") as f:
+            file_data = await f.read()
 
         data = aiohttp.FormData()
         data.add_field("action", "upload")

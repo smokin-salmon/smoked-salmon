@@ -2,6 +2,7 @@ import os
 import re
 from typing import TYPE_CHECKING, Any
 
+import anyio
 import asyncclick as click
 from aiohttp import FormData
 from torf import Torrent
@@ -90,7 +91,7 @@ async def prepare_and_upload(
             override_description=override_description,
         )
     torrent_path, torrent_content = generate_torrent(gazelle_site, path)
-    files = compile_files(path, torrent_path, metadata)
+    files = await compile_files(path, torrent_path, metadata)
 
     click.secho("Uploading torrent...", fg="yellow")
     try:
@@ -237,7 +238,7 @@ def compile_data_existing_group(
     }
 
 
-def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> FormData:
+async def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> FormData:
     """Compile files to upload (torrent and log files).
 
     Args:
@@ -249,16 +250,19 @@ def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> For
         FormData containing files to upload.
     """
     files = FormData()
-    with open(torrent_path, "rb") as torrent_file:
+    async with await anyio.open_file(torrent_path, "rb") as torrent_file:
         files.add_field(
-            "file_input", torrent_file.read(), filename="meowmeow.torrent", content_type="application/octet-stream"
+            "file_input",
+            await torrent_file.read(),
+            filename="meowmeow.torrent",
+            content_type="application/octet-stream",
         )
     if metadata["source"] == "CD":
-        attach_logfiles(path, files)
+        await attach_logfiles(path, files)
     return files
 
 
-def attach_logfiles(path: str, files: FormData) -> None:
+async def attach_logfiles(path: str, files: FormData) -> None:
     """Attach all log files for upload.
 
     Args:
@@ -269,8 +273,10 @@ def attach_logfiles(path: str, files: FormData) -> None:
         for filename in filenames:
             if filename.lower().endswith(".log"):
                 filepath = os.path.abspath(os.path.join(root, filename))
-                with open(filepath, "rb") as f:
-                    files.add_field("logfiles[]", f.read(), filename=filename, content_type="application/octet-stream")
+                async with await anyio.open_file(filepath, "rb") as f:
+                    files.add_field(
+                        "logfiles[]", await f.read(), filename=filename, content_type="application/octet-stream"
+                    )
 
 
 def generate_catno(metadata: dict[str, Any]) -> str:

@@ -3,6 +3,7 @@ import os
 import re
 
 import aiohttp
+import anyio
 import asyncclick as click
 import filetype
 import humanfriendly
@@ -75,9 +76,9 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
             if response.status < 400:
                 cover_image_filename = c + "over" + ext
                 cover_path = os.path.join(path, cover_image_filename)
-                with open(cover_path, "wb") as f:
+                async with await anyio.open_file(cover_path, "wb") as f:
                     async for chunk in response.content.iter_chunked(5096):
-                        f.write(chunk)
+                        await f.write(chunk)
 
                 kind = filetype.guess(cover_path)
                 if not kind or kind.mime not in ["image/jpeg", "image/png"]:

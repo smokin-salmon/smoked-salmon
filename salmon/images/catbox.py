@@ -2,6 +2,7 @@ from pathlib import Path
 from random import choice
 
 import aiohttp
+import anyio
 
 from salmon.constants import UAGENTS
 from salmon.errors import ImageUploadFailed
@@ -26,8 +27,8 @@ class ImageUploader(BaseImageUploader):
         Raises:
             ImageUploadFailed: If upload fails.
         """
-        with open(filename, "rb") as f:
-            file_data = f.read()
+        async with await anyio.open_file(filename, "rb") as f:
+            file_data = await f.read()
         data = aiohttp.FormData()
         data.add_field("reqtype", "fileupload")
         data.add_field("userhash", "")
