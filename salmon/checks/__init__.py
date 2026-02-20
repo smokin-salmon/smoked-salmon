@@ -18,22 +18,31 @@ def check():
 
 @check.command()
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
-def log(path):
-    """Check the score of log file(s)"""
+async def log(path: str) -> None:
+    """Check the score of log file(s).
+
+    Args:
+        path: Path to a log file or directory containing log files.
+    """
     if os.path.isfile(path):
-        _check_log(path)
+        await _check_log(path)
     elif os.path.isdir(path):
         for root, _, files in os.walk(path):
             for f in files:
                 if f.lower().endswith(".log"):
                     filepath = os.path.join(root, f)
                     click.secho(f"\nScoring {filepath}...", fg="cyan")
-                    _check_log(filepath)
+                    await _check_log(filepath)
 
 
-def _check_log(path):
+async def _check_log(path: str) -> None:
+    """Score a single log file and display the result.
+
+    Args:
+        path: Path to the log file to check.
+    """
     try:
-        check_log_cambia(path, os.path.dirname(path))
+        await check_log_cambia(path, os.path.dirname(path))
     except EditedLogError:
         click.secho("Error: Edited logs detected!", fg="red", bold=True)
     except CRCMismatchError:
@@ -44,16 +53,24 @@ def _check_log(path):
 
 @check.command()
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
-def upconv(path):
-    """Check a 24bit FLAC file for upconversion"""
-    test_upconverted(path)
+async def upconv(path: str) -> None:
+    """Check a 24bit FLAC file for upconversion.
+
+    Args:
+        path: Path to the FLAC file or directory to check.
+    """
+    await test_upconverted(path)
 
 
 @check.command()
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
-def integrity(path):
-    """Check the integrity of audio files"""
-    handle_integrity_check(path)
+async def integrity(path: str) -> None:
+    """Check the integrity of audio files.
+
+    Args:
+        path: Path to the audio file or directory to check.
+    """
+    await handle_integrity_check(path)
 
 
 @check.command()
@@ -77,11 +94,22 @@ def mqa(path):
                         click.secho("Did not find MQA syncword", fg="green")
 
 
-def mqa_test(path):
-    """Check if a FLAC file is MQA"""
+def mqa_test(path: str) -> bool | None:
+    """Check if a FLAC file or directory contains MQA content.
+
+    Args:
+        path: Path to the FLAC file or directory to check.
+
+    Returns:
+        False if no MQA detected in a single file, True/False for
+        the first file in a directory, or None if path is invalid.
+
+    Raises:
+        click.Abort: If MQA syncword is detected in a single file.
+    """
     if os.path.isfile(path):
         if check_mqa(path):
-            click.secho("MQA syncword present in '{path}'", fg="red", bold=True)
+            click.secho(f"MQA syncword present in '{path}'", fg="red", bold=True)
             raise click.Abort
         else:
             return False
@@ -90,5 +118,5 @@ def mqa_test(path):
             for f in files:
                 if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
                     filepath = os.path.join(root, f)
-                    """ Only check the first file """
+                    # Only check the first file
                     return bool(check_mqa(filepath))

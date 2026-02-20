@@ -1,6 +1,8 @@
 import os
 from typing import Any
 
+import anyio
+import anyio.to_thread
 import asyncclick as click
 import cambia
 import ffmpeg
@@ -56,6 +58,19 @@ def _calculate_file_crc(filepath: str, _: Any = None) -> str:
         return out.decode("utf-8").strip().removeprefix("CRC32=").upper()
     except ffmpeg.Error as e:
         raise RuntimeError(f"FFmpeg error calculating CRC32 for {filepath}: {e}") from e
+
+
+async def _calculate_file_crc_async(filepath: str, _: Any = None) -> str:
+    """Async wrapper for _calculate_file_crc, runs in a thread.
+
+    Args:
+        filepath: Path to the audio file.
+        _: Unused parameter for compatibility with process_files interface.
+
+    Returns:
+        CRC32 hash as uppercase hex string.
+    """
+    return await anyio.to_thread.run_sync(lambda: _calculate_file_crc(filepath))
 
 
 def _calculate_range_crc(track_files: list[str], toc_entries: list[cambia.TocEntry]) -> str:
@@ -124,7 +139,7 @@ def _calculate_range_crc(track_files: list[str], toc_entries: list[cambia.TocEnt
         raise RuntimeError(f"FFmpeg error calculating range CRC32: {e}\nStderr: {stderr_output}") from e
 
 
-def check_log_cambia(logpath: str, basepath: str) -> None:
+async def check_log_cambia(logpath: str, basepath: str) -> None:
     """Check a log file using Cambia.
 
     Args:
@@ -156,7 +171,7 @@ def check_log_cambia(logpath: str, basepath: str) -> None:
     copy_crc_set = {track.test_and_copy.copy_hash for track in cambia_output.parsed.parsed_logs[0].tracks}
 
     # Get list of files to check
-    files_to_check = []
+    files_to_check: list[str] = []
     for root, _folders, files_ in os.walk(basepath):
         for f in files_:
             if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}:
@@ -174,7 +189,8 @@ def check_log_cambia(logpath: str, basepath: str) -> None:
         range_crc = _calculate_range_crc(files_to_check, toc_entries)
         crc_set = {range_crc}
     else:
-        crc_set = set(process_files(files_to_check, _calculate_file_crc, "Calculating CRC32 hashes"))
+        crc_results = await process_files(files_to_check, _calculate_file_crc_async, "Calculating CRC32 hashes")
+        crc_set = set(crc_results)
 
     if not copy_crc_set.issubset(crc_set):
         raise CRCMismatchError("CRC Mismatch")

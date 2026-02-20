@@ -307,9 +307,9 @@ async def upload(
                     click.style("\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"),
                     default=True,
                 ):
-                    upload_upconvert_test(path)
+                    await upload_upconvert_test(path)
             else:
-                upload_upconvert_test(path)
+                await upload_upconvert_test(path)
 
         if source == "CD" and not skip_log_check:
             click.secho("\nChecking logs", fg="green")
@@ -319,7 +319,7 @@ async def upload(
                         filepath = os.path.join(root, f)
                         click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
                         try:
-                            check_log_cambia(filepath, path)
+                            await check_log_cambia(filepath, path)
                         except EditedLogError as e:
                             raise click.Abort() from e
                         except CRCMismatchError as e:
@@ -527,7 +527,7 @@ async def edit_metadata(
 
         tags = check_tags(path)
         if not metadata["scene"] and recompress:
-            recompress_path(path)
+            await recompress_path(path)
         path = rename_folder(path, metadata, auto_rename)
         if not metadata["scene"]:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
@@ -535,7 +535,7 @@ async def edit_metadata(
 
         if not skip_integrity_check:
             click.secho("\nChecking integrity of audio files...", fg="cyan", bold=True)
-            result = check_integrity(path)
+            result = await check_integrity(path)
             click.echo(format_integrity(result))
 
             if not result[0] and metadata["scene"]:
@@ -554,7 +554,7 @@ async def edit_metadata(
                 )
             ):
                 click.secho("\nSanitizing files...", fg="cyan", bold=True)
-                if sanitize_integrity(path):
+                if await sanitize_integrity(path):
                     click.secho("Sanitization complete", fg="green")
                 else:
                     click.secho("Some files failed sanitization", fg="red", bold=True)
@@ -828,7 +828,7 @@ async def execute_downconversion_tasks(
 
         if task["action"] == "downconvert":
             # Execute downconversion
-            sample_rate, new_path = convert_folder(
+            sample_rate, new_path = await convert_folder(
                 base_path, bit_depth=task["target_bitdepth"], sample_rate=task["target_sample_rate"]
             )
             time.sleep(0.1)
@@ -839,7 +839,7 @@ async def execute_downconversion_tasks(
                 conversion_metadata["encoding"] = "Lossless"
 
             # Generate description for conversion
-            description = generate_conversion_description(base_url, sample_rate)
+            description = generate_conversion_description(base_url, sample_rate, task["target_bitdepth"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
             await check_folder_structure(new_path, conversion_metadata["scene"])
 
@@ -871,7 +871,7 @@ async def execute_downconversion_tasks(
             click.secho(f"  Target encoding: {task['encoding']}", fg="white")
 
             # Execute transcoding
-            transcoded_path = transcode_folder(base_path, task["encoding"])
+            transcoded_path = await transcode_folder(base_path, task["encoding"])
             time.sleep(0.1)
 
             # Update metadata for this transcode

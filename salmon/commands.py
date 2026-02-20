@@ -2,10 +2,10 @@ import asyncio
 import html
 import os
 import shutil
-import subprocess
 from typing import Any
 from urllib import parse
 
+import anyio
 import asyncclick as click
 import pyperclip
 
@@ -111,7 +111,7 @@ async def compress(path: str) -> None:
             if os.path.splitext(f)[1].lower() == ".flac":
                 filepath = os.path.join(root, f)
                 click.secho(f"Recompressing {filepath[len(path) + 1 :]}...")
-                recompress(filepath)
+                await recompress(filepath)
 
 
 @commandgroup.command()
@@ -267,7 +267,7 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
 
     # Test seedbox connections
     if seedbox or not (tracker or metadata):
-        _test_seedbox_connections()
+        await _test_seedbox_connections()
 
 
 def _iter_which(deps: list[str]) -> None:
@@ -331,7 +331,7 @@ async def _test_metadata_sources() -> None:
     click.secho("-" * 50, fg="yellow")
 
 
-def _test_seedbox_connections() -> None:
+async def _test_seedbox_connections() -> None:
     """Test seedbox connections."""
     click.secho("\n[ Testing Seedbox Connections ]", fg="cyan", bold=True)
 
@@ -360,8 +360,10 @@ def _test_seedbox_connections() -> None:
                     click.secho("    ✔ Rclone executable found", fg="green")
                     # Test rclone config
                     try:
-                        result = subprocess.run(["rclone", "listremotes"], capture_output=True, text=True, timeout=10)
-                        if seedbox_config.url + ":" in result.stdout:
+                        with anyio.fail_after(10):
+                            result = await anyio.run_process(["rclone", "listremotes"])
+                        stdout = result.stdout.decode()
+                        if seedbox_config.url + ":" in stdout:
                             click.secho(f"    ✔ Rclone remote '{seedbox_config.url}' found", fg="green", bold=True)
                         else:
                             click.secho(f"    ✖ Rclone remote '{seedbox_config.url}' not found", fg="red", bold=True)

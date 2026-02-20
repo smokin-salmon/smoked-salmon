@@ -49,11 +49,15 @@ def check_hybrid(tags):
     return False
 
 
-def recompress_path(path):
-    """Recompress all flacs in the directory to the configured compression level."""
+async def recompress_path(path: str) -> None:
+    """Recompress all flacs in the directory to the configured compression level.
+
+    Args:
+        path: Path to the directory containing FLAC files.
+    """
     files = get_audio_files(path)
     if not files or not all(".flac" in f for f in files):
         return click.secho("No flacs found to recompress. Skipping...", fg="red")
     for filename in files:
         filepath = os.path.join(path, filename)
-        compress(filepath)
+        await compress(filepath)

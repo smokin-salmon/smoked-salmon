@@ -1,11 +1,14 @@
 import os
 import re
-import subprocess
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections.abc import Awaitable, Callable
+from typing import TypeVar, cast
 
+import anyio
 from tqdm import tqdm
 
 from salmon import cfg
+
+T = TypeVar("T")
 
 
 def get_audio_files(path, sort_by_tracknumber=False):
@@ -51,28 +54,43 @@ def create_relative_path(root, path, filename):
     return os.path.join(root.split(path, 1)[1][1:], filename)  # [1:] to get rid of the slash.
 
 
-def compress(filepath):
-    """Re-compress a .flac file with the configured level."""
-    with open(os.devnull, "w") as devnull:
-        subprocess.call(
-            [
-                "flac",
-                f"-{cfg.upload.compression.flac_compression_level}",
-                filepath,
-                "-o",
-                f"{filepath}.new",
-                "--delete-input-file",
-            ],
-            stdout=devnull,
-            stderr=devnull,
-        )
-    os.rename(f"{filepath}.new", filepath)
+async def compress(filepath: str) -> None:
+    """Re-compress a .flac file with the configured compression level.
+
+    Args:
+        filepath: Path to the FLAC file to re-compress.
+    """
+    await anyio.run_process(
+        [
+            "flac",
+            f"-{cfg.upload.compression.flac_compression_level}",
+            "-V",
+            filepath,
+            "--force",
+        ],
+        check=False,
+    )
 
 
-def process_files(files, process_func, desc):
-    with ThreadPoolExecutor(max_workers=cfg.upload.simultaneous_threads) as executor:
-        futures = [executor.submit(process_func, file, idx) for idx, file in enumerate(files)]
-        results = []
-        for future in tqdm(as_completed(futures), total=len(files), desc=desc, colour="cyan"):
-            results.append(future.result())
-    return results
+async def process_files(
+    files: list[str],
+    process_func: Callable[[str, int], Awaitable[T]],
+    desc: str,
+) -> list[T]:
+    """Process files concurrently using anyio with a capacity limiter."""
+    results: list[T | None] = [None] * len(files)
+    limiter = anyio.CapacityLimiter(cfg.upload.simultaneous_threads)
+
+    with tqdm(total=len(files), desc=desc, colour="cyan") as pbar:
+
+        async def process_with_result(file: str, idx: int) -> None:
+            async with limiter:
+                result = await process_func(file, idx)
+            results[idx] = result
+            pbar.update(1)
+
+        async with anyio.create_task_group() as tg:
+            for idx, file in enumerate(files):
+                tg.start_soon(process_with_result, file, idx)
+
+    return cast("list[T]", results)

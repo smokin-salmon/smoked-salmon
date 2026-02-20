@@ -53,7 +53,7 @@ dev = ["ruff>=0.11.2"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py311"
 extend-exclude = ["data/version.py"]
 
 [tool.ruff.lint]

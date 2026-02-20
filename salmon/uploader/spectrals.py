@@ -4,11 +4,14 @@ import platform
 import random
 import re
 import shutil
-import subprocess
 import time
+from functools import partial
 from os.path import dirname, join
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+import anyio
+import anyio.to_thread
 import asyncclick as click
 import oxipng
 
@@ -67,7 +70,7 @@ async def check_spectrals(
     spectrals_path = create_specs_folder(path)
     all_spectral_ids: dict[int, str] = {}
     if not spectral_ids:
-        all_spectral_ids = generate_spectrals_all(path, spectrals_path, audio_info)
+        all_spectral_ids = await generate_spectrals_all(path, spectrals_path, audio_info)
         while True:
             await view_spectrals(spectrals_path, all_spectral_ids)
             if lossy_master is None and check_lma:
@@ -88,7 +91,7 @@ async def check_spectrals(
             force_prompt_lossy_master=force_prompt_lossy_master,
         )
     else:
-        spectral_ids = generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
+        spectral_ids = await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
 
     return lossy_master, spectral_ids
 
@@ -118,21 +121,45 @@ async def handle_spectrals_upload_and_deletion(
     return spectral_urls
 
 
-def generate_spectrals_all(path, spectrals_path, audio_info):
-    """Wrapper function to generate all spectrals."""
+async def generate_spectrals_all(path: str, spectrals_path: str, audio_info: dict[str, Any]) -> dict[int, str]:
+    """Generate spectral images for all audio files.
+
+    Args:
+        path: Path to the album directory.
+        spectrals_path: Path to the spectrals output folder.
+        audio_info: Audio file information dict.
+
+    Returns:
+        Dictionary mapping track numbers to filenames.
+    """
     files_li = get_audio_files(path, True)
-    return _generate_spectrals(path, files_li, spectrals_path, audio_info)
+    return await _generate_spectrals(path, files_li, spectrals_path, audio_info)
 
 
-def generate_spectrals_ids(path, track_ids, spectrals_path, audio_info):
-    """Wrapper function to generate a specific set of spectrals."""
+async def generate_spectrals_ids(
+    path: str,
+    track_ids: tuple[int, ...] | dict[int, str],
+    spectrals_path: str,
+    audio_info: dict[str, Any],
+) -> dict[int, str]:
+    """Generate spectral images for specific track IDs.
+
+    Args:
+        path: Path to the album directory.
+        track_ids: Tuple of 1-based track IDs to generate spectrals for.
+        spectrals_path: Path to the spectrals output folder.
+        audio_info: Audio file information dict.
+
+    Returns:
+        Dictionary mapping track numbers to filenames.
+    """
     if track_ids == (0,):
         click.secho("Uploading no spectrals...", fg="yellow")
         return {}
 
     wanted_filenames = get_wanted_filenames(list(audio_info), track_ids)
     files_li = [fn for fn in get_audio_files(path) if fn in wanted_filenames]
-    return _generate_spectrals(path, files_li, spectrals_path, audio_info)
+    return await _generate_spectrals(path, files_li, spectrals_path, audio_info)
 
 
 def get_wanted_filenames(filenames, track_ids):
@@ -143,17 +170,28 @@ def get_wanted_filenames(filenames, track_ids):
         raise UploadError("Spectral IDs out of range.") from None
 
 
-def _generate_spectral_for_file(path, filename, spectrals_path, audio_info, idx):
-    """
-    Function to generate spectrals for a single file.
+async def _generate_spectral_for_file(
+    path: str, filename: str, spectrals_path: str, audio_info: dict[str, Any], idx: int
+) -> tuple[int, str]:
+    """Generate full and zoomed spectral images for a single audio file.
+
+    Args:
+        path: Path to the album directory.
+        filename: Relative filename of the audio file.
+        spectrals_path: Path to the spectrals output folder.
+        audio_info: Audio file information dict.
+        idx: Zero-based index of the file.
+
+    Returns:
+        Tuple of (1-based track number, filename).
     """
     zoom_startpoint = calculate_zoom_startpoint(audio_info[filename])
 
     full_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Full.png")
     zoom_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Zoom.png")
 
-    # Run the subprocess for generating the spectrals
-    subprocess.run(
+    # Run the process for generating the spectrals
+    await anyio.run_process(
         [
             "sox",
             "--multi-threaded",
@@ -192,19 +230,29 @@ def _generate_spectral_for_file(path, filename, spectrals_path, audio_info, idx)
             "-o",
             zoom_spectral_path,
         ],
-        check=True,  # Raise error if subprocess fails
+        check=True,  # Raise error if process fails
     )
 
     return (idx + 1, filename)  # Return the filename to track progress
 
 
-def _generate_spectrals(path, files_li, spectrals_path, audio_info):
-    """
-    Iterate over the filenames and generate the spectrals.
-    """
-    spectral_ids = {}
+async def _generate_spectrals(
+    path: str, files_li: list[str], spectrals_path: str, audio_info: dict[str, Any]
+) -> dict[int, str]:
+    """Generate spectral images for a list of audio files.
 
-    results = process_files(
+    Args:
+        path: Path to the album directory.
+        files_li: List of relative audio filenames.
+        spectrals_path: Path to the spectrals output folder.
+        audio_info: Audio file information dict.
+
+    Returns:
+        Sorted dictionary mapping track numbers to filenames.
+    """
+    spectral_ids: dict[int, str] = {}
+
+    results = await process_files(
         files_li,
         lambda file, idx: _generate_spectral_for_file(path, file, spectrals_path, audio_info, idx),
         "Generating Spectrals",
@@ -212,19 +260,34 @@ def _generate_spectrals(path, files_li, spectrals_path, audio_info):
 
     click.secho("Finished generating spectrals.", fg="green")
     if cfg.upload.compression.compress_spectrals:
-        _compress_spectrals(spectrals_path)
+        await _compress_spectrals(spectrals_path)
 
-    for track_num, filename in results:
-        spectral_ids[track_num] = filename
+    for result in results:
+        if result:
+            track_num, filename = result
+            spectral_ids[track_num] = filename
 
     sorted_spectrals = dict(sorted(spectral_ids.items()))
 
     return sorted_spectrals
 
 
-def _compress_spectrals(spectrals_path):
+async def _compress_single_spectral(filepath: str, _idx: int) -> None:
+    """Compress a single spectral PNG image using oxipng in a thread.
+
+    Args:
+        filepath: Path to the PNG file to compress.
+        _idx: Unused index parameter for process_files compatibility.
     """
-    Iterate over the spectrals directory and compress them using pyoxipng.
+    func = partial(oxipng.optimize, filepath, level=2, strip=oxipng.StripChunks.all())
+    return await anyio.to_thread.run_sync(func)
+
+
+async def _compress_spectrals(spectrals_path: str) -> None:
+    """Compress all spectral PNG images in a directory using oxipng.
+
+    Args:
+        spectrals_path: Path to the directory containing spectral PNG files.
     """
     files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
     if not files:
@@ -232,9 +295,9 @@ def _compress_spectrals(spectrals_path):
 
     filepaths = [os.path.join(spectrals_path, f) for f in files]
 
-    process_files(
+    await process_files(
         filepaths,
-        lambda filepath, idx: oxipng.optimize(filepath, level=2, strip=oxipng.StripChunks.all()),
+        _compress_single_spectral,
         "Compressing spectral images",
     )
 
@@ -279,24 +342,32 @@ async def view_spectrals(spectrals_path: str, all_spectral_ids: dict[int, str]) 
     if not cfg.upload.native_spectrals_viewer:
         await _open_specs_in_web_server(spectrals_path, all_spectral_ids)
     elif platform.system() == "Darwin":
-        _open_specs_in_preview(spectrals_path)
+        await _open_specs_in_preview(spectrals_path)
     elif platform.system() == "Windows":
         _open_specs_in_windows(spectrals_path)
     else:
-        _open_specs_in_feh(spectrals_path)
+        await _open_specs_in_feh(spectrals_path)
 
 
-def _open_specs_in_preview(spectrals_path):
-    args = [
-        "qlmanage",
-        "-p",
-        f"{spectrals_path}/*",
-    ]
-    with open(os.devnull, "w") as devnull:
-        subprocess.Popen(args, stdout=devnull, stderr=devnull)
+async def _open_specs_in_preview(spectrals_path: str) -> None:
+    """Open spectral images in macOS Quick Look preview.
+
+    Args:
+        spectrals_path: Path to the spectrals directory.
+    """
+    files = sorted(Path(spectrals_path).glob("*"))
+    if not files:
+        return
+    args = ["qlmanage", "-p", *(str(f) for f in files)]
+    await anyio.run_process(args, check=False)
 
 
-def _open_specs_in_feh(spectrals_path):
+async def _open_specs_in_feh(spectrals_path: str) -> None:
+    """Open spectral images in feh image viewer on Linux.
+
+    Args:
+        spectrals_path: Path to the spectrals directory.
+    """
     args = [
         "feh",
         "--cycle-once",
@@ -310,8 +381,7 @@ def _open_specs_in_feh(spectrals_path):
     ]
     if cfg.upload.feh_fullscreen:
         args.insert(4, "--fullscreen")
-    with open(os.devnull, "w") as devnull:
-        subprocess.Popen(args, stdout=devnull, stderr=devnull)
+    await anyio.run_process(args, check=False)
 
 
 def _open_specs_in_windows(spectrals_path):

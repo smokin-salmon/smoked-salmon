@@ -2,7 +2,6 @@ import argparse
 import collections
 import os
 import posixpath
-import subprocess
 
 import aiohttp
 import anyio
@@ -89,7 +88,14 @@ class WebDAVUploader(Uploader):
 
 
 class RcloneUploader(Uploader):
-    def upload_folder(self, remote_folder, path, type):
+    async def upload_folder(self, remote_folder: str, path: str, type: str) -> None:
+        """Upload a folder to a remote via rclone.
+
+        Args:
+            remote_folder: Remote destination folder path.
+            path: Local folder path to upload.
+            type: Upload type identifier.
+        """
         click.secho(f"Starting Rclone upload to {self.url}:{remote_folder}", fg="cyan")
         remote_path = posixpath.join(remote_folder, os.path.basename(path))
         commands = [
@@ -102,7 +108,7 @@ class RcloneUploader(Uploader):
 
         click.secho(f"Executing: {' '.join(commands)}", fg="yellow")
 
-        result = subprocess.run(commands)
+        result = await anyio.run_process(commands)
 
         if result.returncode == 0:
             click.secho(f"Rclone upload successful: {path} to {self.url}:{remote_path}", fg="green")
