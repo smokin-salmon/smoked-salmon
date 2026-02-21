@@ -38,7 +38,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 #### Linux
 1. Install system packages:
     ```bash
-    sudo apt install sox flac ffmpeg mp3val curl unzip lame
+    sudo apt install sox flac mp3val curl unzip lame
     ```
 
 2. Install uv:
@@ -54,7 +54,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 #### Windows
 1. Install required system packages using winget:
     ```powershell
-    winget install -e Gyan.FFmpeg ChrisBagwell.SoX Xiph.FLAC LAME.LAME ring0.MP3val.WF
+    winget install -e ChrisBagwell.SoX Xiph.FLAC LAME.LAME ring0.MP3val.WF
     ```
 
 2. Fix sox Unicode filename handling issue on Windows:
@@ -85,7 +85,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 
 2. Install system packages using Homebrew:
     ```bash
-    brew install sox flac ffmpeg mp3val curl unzip lame
+    brew install sox flac mp3val curl unzip lame
     ```
 
 3. Install uv:
