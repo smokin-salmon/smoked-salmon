@@ -298,7 +298,7 @@ async def upload(
     try:
         if not skip_mqa:
             click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
-            mqa_test(path)
+            await mqa_test(path)
             click.secho("No MQA release detected", fg="green")
 
         if rls_data["encoding"] == "24bit Lossless" and not skip_up:

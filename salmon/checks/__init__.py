@@ -75,10 +75,10 @@ async def integrity(path: str) -> None:
 
 @check.command()
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
-def mqa(path):
+async def mqa(path):
     """Check if a FLAC file is MQA"""
     if os.path.isfile(path):
-        if check_mqa(path):
+        if await check_mqa(path):
             click.secho("MQA syncword present", fg="red")
         else:
             click.secho("Did not find MQA syncword", fg="green")
@@ -88,13 +88,13 @@ def mqa(path):
                 if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
                     filepath = os.path.join(root, f)
                     click.secho(f"\nChecking {filepath}...", fg="cyan")
-                    if check_mqa(filepath):
+                    if await check_mqa(filepath):
                         click.secho("MQA syncword present", fg="red")
                     else:
                         click.secho("Did not find MQA syncword", fg="green")
 
 
-def mqa_test(path: str) -> bool | None:
+async def mqa_test(path: str) -> bool | None:
     """Check if a FLAC file or directory contains MQA content.
 
     Args:
@@ -108,7 +108,7 @@ def mqa_test(path: str) -> bool | None:
         click.Abort: If MQA syncword is detected in a single file.
     """
     if os.path.isfile(path):
-        if check_mqa(path):
+        if await check_mqa(path):
             click.secho(f"MQA syncword present in '{path}'", fg="red", bold=True)
             raise click.Abort
         else:
@@ -119,4 +119,4 @@ def mqa_test(path: str) -> bool | None:
                 if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
                     filepath = os.path.join(root, f)
                     # Only check the first file
-                    return bool(check_mqa(filepath))
+                    return bool(await check_mqa(filepath))
