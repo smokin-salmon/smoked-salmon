@@ -1,163 +1,246 @@
-import contextlib
 import os
 import re
-import subprocess
-import time
-from copy import copy
-from shutil import copyfile
+import shutil
+from pathlib import Path
+from typing import Literal
 
+import anyio
 import asyncclick as click
+import msgspec
 
-from salmon import cfg
+from salmon.common.files import process_files
 from salmon.errors import InvalidSampleRate
 from salmon.tagger.audio_info import gather_audio_info
 
-THREADS: list[subprocess.Popen[bytes] | None] = [None] * cfg.upload.simultaneous_threads
-FLAC_FOLDER_REGEX = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
+BitDepth = Literal[16, 24]
+
+SOX_DEPTH_ARGS: dict[BitDepth, list[str]] = {
+    16: ["-R", "-G", "-b", "16"],
+    24: ["-R", "-G"],
+}
 
 
-def convert_folder(path, bit_depth=16, sample_rate=None):
-    new_path = _generate_conversion_path_name(path)
-    if sample_rate and bit_depth == 24:
-        new_path = re.sub(
-            "FLAC",
-            f"24-{sample_rate / 1000:.0f}",
-            new_path,
-            flags=re.IGNORECASE,
-        )
-    if os.path.isdir(new_path):
-        click.secho(f"{new_path} already exists.", fg="yellow")
-        return sample_rate, new_path
+class ConvertItem(msgspec.Struct, frozen=True):
+    """A file that needs sample rate / bit depth conversion."""
 
-    files_convert, files_copy = _determine_files_actions(path)
-    final_sample_rate = _convert_files(path, new_path, files_convert, files_copy, bit_depth, sample_rate)
-
-    return final_sample_rate, new_path
+    src: str
+    dst: str
+    sample_rate: int
+    target_rate: int
 
 
-def _determine_files_actions(path):
-    convert_files = []
-    copy_files = [os.path.join(r, f) for r, _, files in os.walk(path) for f in files]
-    audio_info = gather_audio_info(path)
-    for file in copy(copy_files):
-        for info_file, file_info in audio_info.items():
-            if file.endswith(info_file) and file_info["precision"] == 24:
-                convert_files.append((file, file_info["sample rate"]))
-                copy_files.remove(file)
-    return convert_files, copy_files
+# ---------------------------------------------------------------------------
+# Pure helper functions
+# ---------------------------------------------------------------------------
 
 
-def _generate_conversion_path_name(path):
+def _resolve_sample_rate(sample_rate: int) -> int:
+    """Determine the standard sample rate family for a given rate.
+
+    Args:
+        sample_rate: The original sample rate.
+
+    Returns:
+        44100 or 48000 depending on the rate family.
+
+    Raises:
+        InvalidSampleRate: If the rate doesn't belong to either family.
+    """
+    if sample_rate % 44100 == 0:
+        return 44100
+    if sample_rate % 48000 == 0:
+        return 48000
+    raise InvalidSampleRate
+
+
+def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None) -> str:
+    """Generate the output directory path based on source path and conversion params.
+
+    Args:
+        path: Source album directory path.
+        bit_depth: Target bit depth.
+        sample_rate: Target sample rate, or None.
+
+    Returns:
+        The output directory path string.
+    """
     foldername = os.path.basename(path)
-    if re.search("24 ?bit FLAC", foldername, flags=re.IGNORECASE):
-        foldername = re.sub("24 ?bit FLAC", "FLAC", foldername, flags=re.IGNORECASE)
+    if re.search(r"24 ?bit FLAC", foldername, flags=re.IGNORECASE):
+        foldername = re.sub(r"24 ?bit FLAC", "FLAC", foldername, flags=re.IGNORECASE)
     elif re.search("FLAC", foldername, flags=re.IGNORECASE):
         foldername = re.sub("FLAC", "16bit FLAC", foldername, flags=re.IGNORECASE)
     else:
         foldername += " [FLAC]"
 
+    if sample_rate and bit_depth == 24:
+        foldername = re.sub(
+            "FLAC",
+            f"24-{sample_rate / 1000:.0f}",
+            foldername,
+            flags=re.IGNORECASE,
+        )
+
     return os.path.join(os.path.dirname(path), foldername)
 
 
-def _convert_files(old_path, new_path, files_convert, files_copy, bit_depth=16, sample_rate=None):
-    files_left = len(files_convert) - 1
-    files = iter(files_convert)
-    final_sample_rate = sample_rate
+def _collect_convert_items(
+    path: str,
+    new_path: str,
+    sample_rate: int | None,
+) -> list[ConvertItem]:
+    """Collect all 24-bit FLAC files and compute their output paths and target rates.
 
-    for file_ in files_copy:
-        output = file_.replace(old_path, new_path)
-        _create_path(output)
-        copyfile(file_, output)
-        click.secho(f"Copied {os.path.basename(file_)}")
+    Args:
+        path: Source album directory path.
+        new_path: Destination album directory path.
+        sample_rate: Explicit target sample rate, or None for automatic.
 
-    while True:
-        for i, thread in enumerate(THREADS):
-            if thread and thread.poll() is not None:  # Process finished
-                exit_code = thread.returncode
-                if exit_code != 0:  # Error handling
-                    stderr_output = thread.communicate()[1].decode("utf-8", "ignore")
-                    click.secho(f"Error downconverting a file, error {exit_code}:", fg="red")
-                    click.secho(stderr_output)
-                    raise click.Abort  # Consider collecting errors instead of aborting
+    Returns:
+        List of ConvertItem structs.
+    """
+    src_path = Path(path)
+    dst_path = Path(new_path)
+    audio_info = gather_audio_info(path)
 
-                # Process is finished, and there was no error
-                THREADS[i] = None  # Mark the slot as free
-
-            if THREADS[i] is None:  # If thread is free, assign new file
-                try:
-                    file_, original_sample_rate = next(files)
-                except StopIteration:
-                    pass
-                else:
-                    output = file_.replace(old_path, new_path)
-                    final_sample_rate = sample_rate if sample_rate else _get_final_sample_rate(original_sample_rate)
-                    THREADS[i] = _convert_single_file(
-                        file_,
-                        output,
-                        files_left,
-                        bit_depth,
-                        final_sample_rate,
-                    )
-                    files_left -= 1
-
-        if all(t is None for t in THREADS):  # No active threads and no more files
-            break
-        time.sleep(0.1)
-
-    return final_sample_rate
-
-
-def _convert_single_file(file_, output, files_left, bit_depth=16, sample_rate=None):
-    click.echo(f"Converting {os.path.basename(file_)} [{files_left} left to convert]")
-    _create_path(output)
-
-    command = [
-        "sox",
-        file_,
-        "-R",
-        "-G",
-        *([] if bit_depth == 24 else ["-b", str(bit_depth)]),
-        output,
-        "rate",
-        "-v",
-        "-L",
-        str(sample_rate),
-        "dither",
-    ]
-
-    return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-
-def _create_path(filepath):
-    p = os.path.dirname(filepath)
-    if not os.path.isdir(p):
-        with contextlib.suppress(FileExistsError):
-            os.makedirs(p, exist_ok=True)
-
-
-def _get_final_sample_rate(sample_rate):
-    if sample_rate % 44100 == 0:
-        return 44100
-    elif sample_rate % 48000 == 0:
-        return 48000
-    raise InvalidSampleRate
-
-
-def generate_conversion_description(url, sample_rate):
-    description = ""
-
-    if sample_rate <= 48000:
-        description += (
-            f"Encode Specifics: 16 bit {sample_rate / 1000:.01f} kHz\n"
-            f"[b]Source:[/b] {url}\n"
-            f"[b]Transcode process:[/b] "
-            f"[code]sox input.flac -R -G -b 16 output.flac rate -v -L {sample_rate} dither[/code]\n"
-        )
-    else:
-        description += (
-            f"Encode Specifics: 24 bit {sample_rate / 1000:.01f} kHz\n"
-            f"[b]Source:[/b] {url}\n"
-            f"[b]Transcode process:[/b] [code]sox input.flac -R -G output.flac rate -v -L {sample_rate} dither[/code]\n"
+    items: list[ConvertItem] = []
+    for info_file, file_info in audio_info.items():
+        if file_info["precision"] != 24:
+            continue
+        src_file = src_path / info_file
+        rel = Path(info_file)
+        dst_file = dst_path / rel
+        target_rate = sample_rate if sample_rate else _resolve_sample_rate(file_info["sample rate"])
+        items.append(
+            ConvertItem(
+                src=str(src_file),
+                dst=str(dst_file),
+                sample_rate=file_info["sample rate"],
+                target_rate=target_rate,
+            )
         )
 
-    return description
+    return items
+
+
+# ---------------------------------------------------------------------------
+# Side-effect functions
+# ---------------------------------------------------------------------------
+
+
+def _copy_extra_files(path: str, new_path: str, convert_srcs: frozenset[str]) -> None:
+    """Copy non-conversion files (images, text, 16-bit audio) to the output directory.
+
+    Args:
+        path: Source album directory path.
+        new_path: Destination album directory path.
+        convert_srcs: Set of source paths that will be converted (to exclude).
+    """
+    src_path = Path(path)
+    dst_path = Path(new_path)
+
+    for p in src_path.rglob("*"):
+        if not p.is_file() or str(p) in convert_srcs:
+            continue
+        rel = p.relative_to(src_path)
+        out = dst_path / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        click.secho(f"Copy {rel}", fg="cyan")
+        shutil.copy(p, out)
+
+
+async def _convert_audio_files(
+    items: list[ConvertItem],
+    bit_depth: BitDepth,
+) -> None:
+    """Convert audio files concurrently using sox.
+
+    Args:
+        items: List of ConvertItem structs.
+        bit_depth: Target bit depth (16 or 24).
+    """
+    if not items:
+        return
+
+    async def _convert_one(file: str, idx: int) -> None:
+        item = items[idx]
+        click.secho(f"Converting: {item.dst}", fg="cyan")
+        Path(item.dst).parent.mkdir(parents=True, exist_ok=True)
+
+        command = [
+            "sox",
+            item.src,
+            *SOX_DEPTH_ARGS[bit_depth],
+            item.dst,
+            "rate",
+            "-v",
+            "-L",
+            str(item.target_rate),
+            "dither",
+        ]
+
+        result = await anyio.run_process(command, check=False)
+        if result.returncode != 0:
+            err = result.stderr.decode() if result.stderr else ""
+            if err:
+                click.secho(err, fg="yellow")
+            raise RuntimeError(f"sox conversion failed for {os.path.basename(item.src)} with code {result.returncode}")
+
+    file_paths = [item.src for item in items]
+    await process_files(file_paths, _convert_one, "Converting")
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+
+async def convert_folder(
+    path: str,
+    bit_depth: BitDepth = 16,
+    sample_rate: int | None = None,
+) -> tuple[int | None, str]:
+    """Convert a folder of 24-bit FLAC files to the target bit depth.
+
+    Args:
+        path: Path to the source album directory.
+        bit_depth: Target bit depth. Defaults to 16.
+        sample_rate: Target sample rate. None for automatic detection.
+
+    Returns:
+        Tuple of (final_sample_rate, new_folder_path).
+    """
+    new_path = _build_output_path(path, bit_depth, sample_rate)
+
+    if os.path.isdir(new_path):
+        click.secho(f"{new_path} already exists.", fg="yellow")
+        return sample_rate, new_path
+
+    items = _collect_convert_items(path, new_path, sample_rate)
+    convert_srcs = frozenset(item.src for item in items)
+    _copy_extra_files(path, new_path, convert_srcs)
+    await _convert_audio_files(items, bit_depth)
+
+    final_rate = items[-1].target_rate if items else None
+    return final_rate or sample_rate, new_path
+
+
+def generate_conversion_description(url: str, sample_rate: int | None, bit_depth: BitDepth = 16) -> str:
+    """Generate a BBCode description for the conversion process.
+
+    Args:
+        url: Source URL for attribution.
+        sample_rate: The sample rate used in conversion.
+        bit_depth: Target bit depth (16 or 24).
+
+    Returns:
+        Formatted description string.
+    """
+    if sample_rate is None:
+        return ""
+    depth_args = " ".join(SOX_DEPTH_ARGS[bit_depth])
+    sox_cmd = f"sox input.flac {depth_args} output.flac rate -v -L {sample_rate} dither"
+    return (
+        f"Encode Specifics: {bit_depth} bit {sample_rate / 1000:.01f} kHz\n"
+        f"[b]Source:[/b] {url}\n"
+        f"[b]Transcode process:[/b] [code]{sox_cmd}[/code]\n"
+    )

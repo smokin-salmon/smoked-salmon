@@ -48,6 +48,12 @@ class NotAValidInputFile(Exception):
     pass
 
 
+class UpconvertCheckError(Exception):
+    """Raised when an upconvert check cannot be performed on a file."""
+
+    pass
+
+
 class NoncompliantFolderStructure(Exception):
     pass
 

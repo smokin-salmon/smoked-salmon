@@ -1,6 +1,6 @@
 import os
-import subprocess
 
+import anyio
 import asyncclick as click
 from mutagen import File as MutagenFile
 
@@ -15,8 +15,18 @@ STANDARDIZED_TAGS = {
 }
 
 
-def check_tags(path):
-    """Get and then check the tags for problems. Offer user way to edit tags."""
+async def check_tags(path: str) -> dict[str, TagFile]:
+    """Get and then check the tags for problems. Offer user way to edit tags.
+
+    Args:
+        path: Path to the directory containing audio files.
+
+    Returns:
+        Dictionary mapping filenames to their TagFile objects.
+
+    Raises:
+        IndexError: If no tracks are found.
+    """
     click.secho("\nChecking tags...", fg="yellow", bold=True)
     tags = gather_tags(path)
     if not tags:
@@ -26,7 +36,7 @@ def check_tags(path):
 
     if cfg.upload.prompt_puddletag:
         print_a_tag(next(iter(tags.values())))
-        if prompt_editor(path):
+        if await prompt_editor(path):
             tags = gather_tags(path)
 
     return tags
@@ -66,14 +76,20 @@ def print_a_tag(tags):
         click.echo(f"> {key}: {value}")
 
 
-def prompt_editor(path):
-    """Ask user whether or not to open the files in a tag editor."""
+async def prompt_editor(path: str) -> bool:
+    """Ask user whether or not to open the files in a tag editor.
+
+    Args:
+        path: Path to the directory containing audio files.
+
+    Returns:
+        True if the editor was opened, False if tags were accepted.
+    """
     if not click.confirm(
         click.style("\nAre the above tags acceptable? ([n] to open in tag editor)", fg="magenta"),
         default=True,
     ):
-        with open(os.devnull, "w") as devnull:
-            subprocess.call(["puddletag", path], stdout=devnull, stderr=devnull)
+        await anyio.run_process(["puddletag", path], check=False)
         return True
     return False
 
