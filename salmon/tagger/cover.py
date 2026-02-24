@@ -5,7 +5,6 @@ import re
 import aiohttp
 import anyio
 import asyncclick as click
-import filetype
 import humanfriendly
 from mutagen import PaddingInfo
 from mutagen.flac import FLAC, Picture
@@ -53,6 +52,22 @@ async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tup
     return None, None
 
 
+def _is_valid_cover(cover_path: str) -> bool:
+    """Check if the file at cover_path is a valid JPEG or PNG image.
+
+    Args:
+        cover_path: Path to the image file.
+
+    Returns:
+        True if the file is a valid JPEG or PNG image.
+    """
+    try:
+        mime = Image.open(cover_path).get_format_mimetype()
+    except Exception:
+        return False
+    return mime in ("image/jpeg", "image/png")
+
+
 async def _download_cover(path: str, cover_url: str) -> str | None:
     """Download cover image from URL.
 
@@ -66,6 +81,8 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
     ext = os.path.splitext(cover_url)[1]
     c = "c" if cfg.upload.formatting.lowercase_cover else "C"
     headers = {"User-Agent": "smoked-salmon-v1"}
+    cover_image_filename = c + "over" + ext
+    cover_path = os.path.join(path, cover_image_filename)
 
     timeout = aiohttp.ClientTimeout(total=30)
     try:
@@ -73,26 +90,24 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
             aiohttp.ClientSession(timeout=timeout) as session,
             session.get(cover_url, headers=headers) as response,
         ):
-            if response.status < 400:
-                cover_image_filename = c + "over" + ext
-                cover_path = os.path.join(path, cover_image_filename)
-                async with await anyio.open_file(cover_path, "wb") as f:
-                    async for chunk in response.content.iter_chunked(5096):
-                        await f.write(chunk)
-
-                kind = filetype.guess(cover_path)
-                if not kind or kind.mime not in ["image/jpeg", "image/png"]:
-                    os.remove(cover_path)
-                    click.secho("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])", fg="red")
-                    return None
-                click.secho(f"Cover image downloaded: {cover_image_filename} ", fg="yellow")
-                return cover_path
-            else:
+            if response.status >= 400:
                 click.secho(f"\nFailed to download cover image (ERROR {response.status})", fg="red")
                 return None
+
+            async with await anyio.open_file(cover_path, "wb") as f:
+                async for chunk in response.content.iter_chunked(5096):
+                    await f.write(chunk)
     except aiohttp.ClientError as e:
         click.secho(f"\nFailed to download cover image (ERROR {e})", fg="red")
         return None
+
+    if not _is_valid_cover(cover_path):
+        os.remove(cover_path)
+        click.secho("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])", fg="red")
+        return None
+
+    click.secho(f"Cover image downloaded: {cover_image_filename} ", fg="yellow")
+    return cover_path
 
 
 def compress_to_target_size(image, target_size):
