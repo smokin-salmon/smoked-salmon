@@ -9,11 +9,10 @@ from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
 from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
-from salmon.images import catbox, emp, imgbb, imgbox, oeimg, ptpimg, ptscreens
+from salmon.images import catbox, imgbb, imgbox, oeimg, ptpimg, ptscreens
 
 HOSTS = {
     "ptpimg": ptpimg,
-    "emp": emp,
     "catbox": catbox,
     "ptscreens": ptscreens,
     "oeimg": oeimg,
