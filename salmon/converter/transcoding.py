@@ -1,11 +1,10 @@
+import asyncio
 import os
 import re
 import shutil
-import subprocess
 from pathlib import Path
 from typing import Literal
 
-import anyio
 import asyncclick as click
 import msgspec
 from mutagen import flac, mp3
@@ -13,6 +12,7 @@ from mutagen.flac import VCFLACDict
 from mutagen.id3 import APIC, TXXX, Frames
 
 from salmon.common.files import process_files
+from salmon.release_notification import get_version
 
 Bitrate = Literal["V0", "320"]
 
@@ -249,7 +249,6 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
         ValueError: If MP3 tags cannot be created.
     """
     mp3_thing = mp3.MP3(mp3_path)
-    click.secho(f"     Copy tags: {mp3_path}", fg="cyan")
 
     if not mp3_thing.tags:
         mp3_thing.add_tags()
@@ -288,8 +287,8 @@ def _copy_extra_files(path: str, new_path: str) -> None:
 async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> None:
     """Decode a FLAC file and pipe directly to LAME for MP3 encoding.
 
-    Uses an OS-level pipe to connect flac stdout to lame stdin,
-    avoiding temporary files and keeping data in kernel space.
+    Uses asyncio subprocesses to connect flac stdout to lame stdin,
+    avoiding temporary files.
 
     Args:
         lame_qual: LAME quality setting key (e.g. "V0", "320").
@@ -301,59 +300,54 @@ async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> Non
     """
     Path(mp3_path).parent.mkdir(parents=True, exist_ok=True)
 
-    flac_err = b""
-    lame_err = b""
-    flac_rc = 0
-    lame_rc = 0
-
     read_fd, write_fd = os.pipe()
     try:
-        async with await anyio.open_process(
-            ["flac", "-Vdsc", "-o", "-", flac_path],
+        flac_proc = await asyncio.create_subprocess_exec(
+            "flac",
+            "-Vdsc",
+            "-o",
+            "-",
+            flac_path,
             stdout=write_fd,
-            stderr=subprocess.PIPE,
-        ) as flac_proc:
-            os.close(write_fd)
-            write_fd = -1
+            stderr=asyncio.subprocess.PIPE,
+        )
+        os.close(write_fd)
+        write_fd = -1
 
-            async with await anyio.open_process(
-                [
-                    "lame",
-                    *LAME_COMMAND_MAP[lame_qual],
-                    "--quiet",
-                    "--add-id3v2",
-                    "--ignore-tag-errors",
-                    "-",
-                    mp3_path,
-                ],
+        try:
+            lame_proc = await asyncio.create_subprocess_exec(
+                "lame",
+                *LAME_COMMAND_MAP[lame_qual],
+                "--quiet",
+                "--add-id3v2",
+                "--ignore-tag-errors",
+                "-",
+                mp3_path,
                 stdin=read_fd,
-                stderr=subprocess.PIPE,
-            ) as lame_proc:
-                os.close(read_fd)
-                read_fd = -1
-
-                await lame_proc.wait()
-                if lame_proc.stderr:
-                    lame_err = await lame_proc.stderr.receive()
-                lame_rc = lame_proc.returncode or 0
-
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except Exception:
+            flac_proc.kill()
             await flac_proc.wait()
-            if flac_proc.stderr:
-                flac_err = await flac_proc.stderr.receive()
-            flac_rc = flac_proc.returncode or 0
+            raise
+        os.close(read_fd)
+        read_fd = -1
     finally:
         if write_fd >= 0:
             os.close(write_fd)
         if read_fd >= 0:
             os.close(read_fd)
 
-    if flac_rc:
+    _, flac_err = await flac_proc.communicate()
+    _, lame_err = await lame_proc.communicate()
+
+    if flac_proc.returncode:
         err = flac_err.decode()
         if err:
             click.secho(err, fg="yellow")
-        raise RuntimeError(f"FLAC decoding failed with code {flac_rc}")
+        raise RuntimeError(f"FLAC decoding failed with code {flac_proc.returncode}")
 
-    if lame_rc:
+    if lame_proc.returncode:
         raise RuntimeError(lame_err.decode() or "LAME encoding failed")
 
 
@@ -374,7 +368,6 @@ async def _transcode_audio_files(
         item = items[idx]
         if item.flac_obj.info.channels > 2:
             raise ValueError(f"{item.src} has {item.flac_obj.info.channels} channels. Cannot convert to MP3.")
-        click.secho(f"Encoding: {item.dst}", fg="cyan")
         await _flac_to_mp3(bitrate, item.src, item.dst)
         _copy_tags(item.tags, item.flac_obj, Path(item.dst))
 
@@ -435,4 +428,6 @@ def generate_transcode_description(url: str, bitrate: Bitrate) -> str:
         f"[b]Source:[/b] {url}\n"
         f"[b]Transcode process:[/b] "
         f"[code]flac -Vdsc -- input.flac | lame -S {lame_command} --ignore-tag-errors - output.mp3[/code]\n"
+        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
+        f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )

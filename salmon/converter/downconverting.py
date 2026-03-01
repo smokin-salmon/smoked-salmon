@@ -10,6 +10,7 @@ import msgspec
 
 from salmon.common.files import process_files
 from salmon.errors import InvalidSampleRate
+from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 
 BitDepth = Literal[16, 24]
@@ -163,7 +164,6 @@ async def _convert_audio_files(
 
     async def _convert_one(file: str, idx: int) -> None:
         item = items[idx]
-        click.secho(f"Converting: {item.dst}", fg="cyan")
         Path(item.dst).parent.mkdir(parents=True, exist_ok=True)
 
         command = [
@@ -243,4 +243,6 @@ def generate_conversion_description(url: str, sample_rate: int | None, bit_depth
         f"Encode Specifics: {bit_depth} bit {sample_rate / 1000:.01f} kHz\n"
         f"[b]Source:[/b] {url}\n"
         f"[b]Transcode process:[/b] [code]{sox_cmd}[/code]\n"
+        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
+        f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )

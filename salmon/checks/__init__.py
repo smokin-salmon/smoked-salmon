@@ -94,29 +94,32 @@ async def mqa(path):
                         click.secho("Did not find MQA syncword", fg="green")
 
 
-async def mqa_test(path: str) -> bool | None:
+async def mqa_test(path: str) -> None:
     """Check if a FLAC file or directory contains MQA content.
+
+    For directories, only the first audio file is checked.
 
     Args:
         path: Path to the FLAC file or directory to check.
 
-    Returns:
-        False if no MQA detected in a single file, True/False for
-        the first file in a directory, or None if path is invalid.
-
     Raises:
-        click.Abort: If MQA syncword is detected in a single file.
+        click.Abort: If MQA syncword is detected.
     """
     if os.path.isfile(path):
-        if await check_mqa(path):
-            click.secho(f"MQA syncword present in '{path}'", fg="red", bold=True)
-            raise click.Abort
-        else:
-            return False
+        filepath = path
     elif os.path.isdir(path):
-        for root, _, files in os.walk(path):
-            for f in files:
-                if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
-                    filepath = os.path.join(root, f)
-                    # Only check the first file
-                    return bool(await check_mqa(filepath))
+        filepath = next(
+            (
+                os.path.join(root, f)
+                for root, _, files in os.walk(path)
+                for f in files
+                if f.lower().endswith((".mp3", ".flac"))
+            ),
+            None,
+        )
+    else:
+        return
+
+    if filepath and await check_mqa(filepath):
+        click.secho(f"MQA syncword present in '{filepath}'", fg="red", bold=True)
+        raise click.Abort

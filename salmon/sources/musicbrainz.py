@@ -1,6 +1,7 @@
 import re
 from typing import Any
 
+import anyio.to_thread
 import musicbrainzngs
 
 from .base import BaseScraper
@@ -34,16 +35,19 @@ class MusicBrainzBase(BaseScraper):
         if not match:
             raise ValueError("Invalid MusicBrainz URL.")
         rls_id = match[1]
-        return musicbrainzngs.get_release_by_id(
-            rls_id,
-            [
-                "artists",
-                "labels",
-                "recordings",
-                "release-groups",
-                "media",
-                "artist-credits",
-                "artist-rels",
-                "recording-level-rels",
-            ],
+        return (
+            await anyio.to_thread.run_sync(
+                musicbrainzngs.get_release_by_id,
+                rls_id,
+                [
+                    "artists",
+                    "labels",
+                    "recordings",
+                    "release-groups",
+                    "media",
+                    "artist-credits",
+                    "artist-rels",
+                    "recording-level-rels",
+                ],
+            )
         )["release"]

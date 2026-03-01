@@ -54,15 +54,25 @@ def _compose_form_data(files: FormData, data: dict[str, Any]) -> FormData:
     for key, value in data.items():
         if isinstance(value, list):
             for item in value:
-                # Convert bool to string for FormData compatibility
-                if isinstance(item, bool):
-                    item = str(item).lower()
-                files.add_field(key, item)
+                # aiohttp FormData only accepts str/bytes/IO types, not int/bool
+                if item is True:
+                    files.add_field(key, "on")
+                elif item is False or item is None:
+                    continue
+                elif isinstance(item, int):
+                    files.add_field(key, str(item))
+                else:
+                    files.add_field(key, item)
         else:
-            # Convert bool to string for FormData compatibility
-            if isinstance(value, bool):
-                value = str(value).lower()
-            files.add_field(key, value)
+            # aiohttp FormData only accepts str/bytes/IO types, not int/bool
+            if value is True:
+                files.add_field(key, "on")
+            elif value is False or value is None:
+                continue
+            elif isinstance(value, int):
+                files.add_field(key, str(value))
+            else:
+                files.add_field(key, value)
     return files
 
 

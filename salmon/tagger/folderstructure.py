@@ -8,11 +8,21 @@ from salmon.constants import ALLOWED_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
 
 
-async def check_folder_structure(path, scene):
-    """
-    Run through every filesystem check that causes uploads to violate the rules
-    or be rejected on the upload form. Verify that path lengths <180, that there
-    are no zero length folders, and that the file extensions are valid.
+async def check_folder_structure(path: str, scene: bool) -> None:
+    """Run through every filesystem check that causes uploads to violate the rules
+    or be rejected on the upload form.
+
+    Verifies that path lengths are <180 characters, that there are no zero length
+    folders, and that the file extensions are valid. Loops until the user has fixed
+    all issues or the upload is aborted.
+
+    Args:
+        path: Absolute path to the release folder being checked.
+        scene: Whether the release is a scene release. Scene releases are not
+            automatically fixed and require manual intervention.
+
+    Raises:
+        click.Abort: If the user aborts, or if a scene release has structural issues.
     """
     while True:
         click.secho("\nChecking folder structure...", fg="cyan", bold=True)
@@ -43,8 +53,18 @@ async def check_folder_structure(path, scene):
             )
 
 
-async def _check_illegal_folders(path):
-    """Verify illegal folders."""
+async def _check_illegal_folders(path: str) -> None:
+    """Verify that no illegal folders exist within the release directory.
+
+    Currently checks for Synology NAS metadata directories (``@eaDir``).
+    Prompts the user to delete, abort, or continue for each offending folder.
+
+    Args:
+        path: Absolute path to the release folder being checked.
+
+    Raises:
+        click.Abort: If the user chooses to abort.
+    """
     for root, dirs, _files in os.walk(path, topdown=False):
         for dirname in dirs:
             if dirname == "@eaDir":
@@ -56,17 +76,31 @@ async def _check_illegal_folders(path):
                             default="D",
                         )
                     ).lower()
-                    if resp[0].lower() == "d":
+                    if resp[0] == "d":
                         shutil.rmtree(target_dir)
                         break
-                    elif resp[0].lower() == "a":
+                    elif resp[0] == "a":
                         raise click.Abort
-                    elif resp[0].lower() == "c":
+                    elif resp[0] == "c":
                         break
 
 
-def _check_path_lengths(path, scene):
-    """Verify that all path lengths are <=180 characters."""
+def _check_path_lengths(path: str, scene: bool) -> None:
+    """Verify that all file and folder paths are no longer than 180 characters.
+
+    Paths are measured relative to the configured download directory. Files with
+    paths between 180 and 250 characters are automatically truncated. Paths
+    exceeding 250 characters cannot be safely truncated and raise immediately.
+
+    Args:
+        path: Absolute path to the release folder being checked.
+        scene: Whether the release is a scene release. Scene releases are never
+            auto-truncated; any offending path raises instead.
+
+    Raises:
+        NoncompliantFolderStructure: If any path exceeds the 180-character limit
+            and cannot be (or should not be) automatically fixed.
+    """
     offending_files, really_offending_files = [], []
     root_len = len(cfg.directory.download_directory) + 1
     for root, _, files in os.walk(path):
@@ -110,19 +144,44 @@ def _check_path_lengths(path, scene):
         click.echo(f" >> {newpath}")
 
 
-def _check_zero_len_folder(path):
-    """Verify that a zero length folder does not exist."""
+def _check_zero_len_folder(path: str) -> None:
+    """Verify that no zero-length (empty-name) folder segments exist in any path.
+
+    Detects consecutive path separators (``//``) which indicate an empty folder
+    name component.
+
+    Args:
+        path: Absolute path to the release folder being checked.
+
+    Raises:
+        NoncompliantFolderStructure: If a zero-length folder segment is found.
+    """
     for root, _, files in os.walk(path):
         for filename in files:
             foldlist = os.path.join(root, filename)
-            if "//" in foldlist:
+            if os.sep * 2 in foldlist:
                 click.secho("A zero length folder exists in this directory.", fg="red")
                 raise NoncompliantFolderStructure
     click.secho("No zero length folders were found.", fg="green")
 
 
-async def _check_extensions(path, scene):
-    """Validate that all file extensions are valid."""
+async def _check_extensions(path: str, scene: bool) -> None:
+    """Validate that all file extensions within the release folder are permitted.
+
+    Files with disallowed extensions are either handled interactively (non-scene)
+    or collected and reported as a group before raising (scene). Also warns when
+    multiple audio codecs are present in the same folder.
+
+    Args:
+        path: Absolute path to the release folder being checked.
+        scene: Whether the release is a scene release. Scene releases report all
+            offending files at once rather than prompting per-file.
+
+    Raises:
+        NoncompliantFolderStructure: If scene release contains files with invalid
+            extensions.
+        click.Abort: If the user aborts during interactive extension handling.
+    """
     mp3, aac, flac = [], [], []
     offending_files = []  # Collect offending files for scene releases
     for root, _, files in os.walk(path):
@@ -138,7 +197,7 @@ async def _check_extensions(path, scene):
                 if scene:
                     offending_files.append(os.path.join(root, fln))
                 else:
-                    await _handle_bad_extension(os.path.join(root, fln), scene)
+                    await _handle_bad_extension(os.path.join(root, fln))
 
     if scene and offending_files:
         click.secho("The following files have invalid extensions:", fg="red", bold=True)
@@ -152,7 +211,18 @@ async def _check_extensions(path, scene):
         click.secho("File extensions have been validated.", fg="green")
 
 
-async def _handle_bad_extension(filepath, scene):
+async def _handle_bad_extension(filepath: str) -> None:
+    """Interactively handle a file with a disallowed extension.
+
+    Prompts the user to delete the file, abort the upload, or continue without
+    taking action.
+
+    Args:
+        filepath: Absolute path to the offending file.
+
+    Raises:
+        click.Abort: If the user chooses to abort.
+    """
     while True:
         resp = (
             await click.prompt(
@@ -168,7 +238,15 @@ async def _handle_bad_extension(filepath, scene):
             return
 
 
-async def _handle_multiple_audio_exts():
+async def _handle_multiple_audio_exts() -> None:
+    """Interactively handle the presence of multiple audio codec types in one folder.
+
+    Prompts the user to abort or continue. Having mixed codecs (e.g. both FLAC
+    and MP3 files) in a single release folder is generally against upload rules.
+
+    Raises:
+        click.Abort: If the user chooses to abort.
+    """
     while True:
         resp = (
             await click.prompt(
