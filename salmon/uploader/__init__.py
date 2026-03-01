@@ -815,7 +815,7 @@ async def execute_downconversion_tasks(
     lossy_comment: str | None,
     request_id: int | str | None,
     source_url: str | None,
-    seedbox_uploader: Any,
+    seedbox_uploader: UploadManager,
     source: str | None,
     base_url: str,
 ) -> None:
@@ -949,7 +949,7 @@ async def upload_and_report(
     lossy_comment: str | None,
     request_id: int | str | None,
     source_url: str | None,
-    seedbox_uploader: Any,
+    seedbox_uploader: UploadManager,
     source: str | None = None,
     override_description: str | None = None,
     override_lossy_comment: str | None = None,

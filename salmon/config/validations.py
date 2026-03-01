@@ -98,7 +98,7 @@ class Seedbox(BaseStruct):
     name: str = ""
     enabled: bool = False
     url: str = ""  # Name of remote in rclone
-    type: Literal["local", "rclone", "webdav"] = "local"  # "local" or "rclone"
+    type: Literal["local", "rclone"] = "local"
     directory: str = ""  # Directory when adding torrent to download client
     flac_only: bool = False  # if true, only upload FLAC files
     extra_args: list[str] = msgspec.field(default_factory=list)  # pass these arguments to rclone
@@ -107,7 +107,7 @@ class Seedbox(BaseStruct):
     add_paused: bool = False  # If true, add torrents to client in paused state
 
     def __post_init__(self):
-        if self.type not in ("local", "rclone", "webdav"):
+        if self.type not in ("local", "rclone"):
             raise ValueError("Invalid seedbox type specified")
 
 
