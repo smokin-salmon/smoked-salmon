@@ -24,6 +24,9 @@ jobs:
           fetch-depth: 0 # Ensures we get all history for tag retrieval and pushing
           token: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -85,28 +88,10 @@ jobs:
       - name: Update version files
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: |
-          TIMESTAMP=$(date +"%Y-%m-%d")
-          VERSION_FILE="data/version.py"
           PYPROJECT_FILE="pyproject.toml"
 
-          # Create version.py if it doesn't exist
-          if [ ! -f "$VERSION_FILE" ]; then
-            echo "__version__ = \"0.0.0\"" > "$VERSION_FILE"
-            echo "" >> "$VERSION_FILE"
-          fi
-
-          # Prepend new release info
-          TEMP_FILE=$(mktemp)
-          echo "__version__ = \"${{ env.VERSION }}\"" > "$TEMP_FILE"
-          echo "" >> "$TEMP_FILE"
-          echo "\"\"\"" >> "$TEMP_FILE"
-          echo "Changelog for version ${{ env.VERSION }} ($TIMESTAMP):" >> "$TEMP_FILE"
-          echo "" >> "$TEMP_FILE"
-          echo "$RELEASE_NOTES" >> "$TEMP_FILE"
-          echo "\"\"\"" >> "$TEMP_FILE"
-          echo "" >> "$TEMP_FILE"
-          cat "$VERSION_FILE" >> "$TEMP_FILE"
-          mv "$TEMP_FILE" "$VERSION_FILE"
+          # Prepend new changelog entry and update current version
+          uv run --with tomlkit python -c $'import os, tomlkit\n\nfrom datetime import date\n\nversion = os.environ["VERSION"]\nrelease_date = date.today().strftime("%Y-%m-%d")\nnotes = os.environ["RELEASE_NOTES"]\npath = "data/version.toml"\n\nwith open(path, "r", encoding="utf-8") as f:\n    data = tomlkit.load(f)\n\ndata["current"] = version\n\nentry = tomlkit.table()\nentry.add("version", version)\nentry.add("date", release_date)\nentry.add("notes", tomlkit.string(notes, multiline=True))\nentry.add(tomlkit.nl())\n\ndata["changelog"].insert(0, entry)\n\nwith open(path, "w", encoding="utf-8") as f:\n    tomlkit.dump(data, f)\n'
 
           # Update version in pyproject.toml
           sed -i "s/^version = \".*\"/version = \"${{ env.VERSION }}\"/" "$PYPROJECT_FILE"
@@ -124,8 +109,8 @@ jobs:
           git checkout master  # Ensure we're on master branch
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/version.py pyproject.toml uv.lock
-          git commit -m "Update version.py/pyproject.toml to ${{ env.VERSION }} with changelog"
+          git add data/version.toml pyproject.toml uv.lock
+          git commit -m "Update version.toml/pyproject.toml to ${{ env.VERSION }} with changelog"
           git push origin master
 
       - name: Move tag to version bump commit and push

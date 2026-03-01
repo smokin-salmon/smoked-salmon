@@ -1,8 +1,9 @@
-__version__ = "0.9.7.4"
+current = "0.9.7.4"
 
-"""
-Changelog for version 0.9.7.4 (2025-09-26):
-
+[[changelog]]
+version = "0.9.7.4"
+date = "2025-09-26"
+notes = """
 ## What's Changed
 * Add support for Python 3.12+ and use dependabot for dependency updates by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/172
 * Fix ruTorrent connection URL parsing and add connection test by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/173
@@ -19,11 +20,10 @@ Changelog for version 0.9.7.4 (2025-09-26):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7.3...0.9.7.4
 """
 
-__version__ = "0.9.7.3"
-
-"""
-Changelog for version 0.9.7.3 (2025-09-04):
-
+[[changelog]]
+version = "0.9.7.3"
+date = "2025-09-04"
+notes = """
 ### ⚙ New Options
 
 #### Default Editor Configuration
@@ -85,11 +85,10 @@ Added **metadata sources and seedbox connection testing**:
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7.2...0.9.7.3
 """
 
-__version__ = "0.9.7.2"
-
-"""
-Changelog for version 0.9.7.2 (2025-08-23):
-
+[[changelog]]
+version = "0.9.7.2"
+date = "2025-08-23"
+notes = """
 ## What's Changed
 * Add illegal folder detection and various fixes by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/161
 
@@ -97,11 +96,10 @@ Changelog for version 0.9.7.2 (2025-08-23):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7.1...0.9.7.2
 """
 
-__version__ = "0.9.7.1"
-
-"""
-Changelog for version 0.9.7.1 (2025-08-21):
-
+[[changelog]]
+version = "0.9.7.1"
+date = "2025-08-21"
+notes = """
 ## What's Changed
 * Multiple bug fixes and improvements by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/155
 * Resolve Linux input issues by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/157
@@ -112,11 +110,10 @@ Changelog for version 0.9.7.1 (2025-08-21):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7...0.9.7.1
 """
 
-__version__ = "0.9.7"
-
-"""
-Changelog for version 0.9.7 (2025-08-20):
-
+[[changelog]]
+version = "0.9.7"
+date = "2025-08-20"
+notes = """
 ## ⚠️ Breaking Change: Torrent Client Injection
 
 This release introduces **breaking changes** to the torrent client integration system.
@@ -202,11 +199,10 @@ auto_compress_cover = true  # Set to true to enable
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.6.1...0.9.7
 """
 
-__version__ = "0.9.6.1"
-
-"""
-Changelog for version 0.9.6.1 (2025-08-18):
-
+[[changelog]]
+version = "0.9.6.1"
+date = "2025-08-18"
+notes = """
 This version fixes the issue on Windows platform where sometimes input would not be confirmed immediately and required multiple confirmations.
 
 Oxipng and cambia no longer need to be installed as dependencies. All external dependencies required by the current program can now be installed directly using the system package manager. 
@@ -224,11 +220,10 @@ Oxipng and cambia no longer need to be installed as dependencies. All external d
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.6...0.9.6.1
 """
 
-__version__ = "0.9.6"
-
-"""
-Changelog for version 0.9.6 (2025-07-21):
-
+[[changelog]]
+version = "0.9.6"
+date = "2025-07-21"
+notes = """
 As of this version, smoked-salmon should now be able to run natively on Windows. This release features a refactored transcoding and downconverting module based on m3ercat, and other parts that were incompatible with Windows have also been refactored.
 
 ## What's Changed
@@ -249,11 +244,10 @@ As of this version, smoked-salmon should now be able to run natively on Windows.
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.5.1...0.9.6
 """
 
-__version__ = "0.9.5.1"
-
-"""
-Changelog for version 0.9.5.1 (2025-06-15):
-
+[[changelog]]
+version = "0.9.5.1"
+date = "2025-06-15"
+notes = """
 Fixed the error that occurred during torrent creation caused by switching from dottorrent to torf.
 
 ## What's Changed
@@ -267,11 +261,10 @@ Fixed the error that occurred during torrent creation caused by switching from d
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.5...0.9.5.1
 """
 
-__version__ = "0.9.5"
-
-"""
-Changelog for version 0.9.5 (2025-06-14):
-
+[[changelog]]
+version = "0.9.5"
+date = "2025-06-14"
+notes = """
 ## ⚠️ Breaking Change: Configuration File Format
 
 This release introduces a **major breaking change**: we are transitioning away from the legacy `config.py` configuration file.
@@ -303,11 +296,10 @@ We understand this requires extra effort and appreciate your patience as we make
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.9...0.9.5
 """
 
-__version__ = "0.9.4.9"
-
-"""
-Changelog for version 0.9.4.9 (2025-06-02):
-
+[[changelog]]
+version = "0.9.4.9"
+date = "2025-06-02"
+notes = """
 ## What's Changed
 * Fix spectrals folder rename when using TMP_DIR by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/101
 
@@ -315,11 +307,10 @@ Changelog for version 0.9.4.9 (2025-06-02):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.8...0.9.4.9
 """
 
-__version__ = "0.9.4.8"
-
-"""
-Changelog for version 0.9.4.8 (2025-06-02):
-
+[[changelog]]
+version = "0.9.4.8"
+date = "2025-06-02"
+notes = """
 Please report if you encounter crashes or strange behavior when using `TMP_DIR`. All known issues related to that seem to be fixed for now.
 
 ## What's Changed
@@ -333,11 +324,10 @@ Please report if you encounter crashes or strange behavior when using `TMP_DIR`.
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.7...0.9.4.8
 """
 
-__version__ = "0.9.4.7"
-
-"""
-Changelog for version 0.9.4.7 (2025-06-01):
-
+[[changelog]]
+version = "0.9.4.7"
+date = "2025-06-01"
+notes = """
 New options:
 `TMP_DIR`: spectrals will be generated in this folder, instead of the album folder. Leave empty to keep the old behavior.
 `CLEAN_TMP_DIR`: cleanup the temp folder on each startup. Careful though, this option removes all files from the temp folder, so make sure it's only used by smoked salmon. This option has no effect if `TMP_DIR` is undefined.
@@ -351,11 +341,10 @@ New options:
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.6...0.9.4.7
 """
 
-__version__ = "0.9.4.6"
-
-"""
-Changelog for version 0.9.4.6 (2025-05-28):
-
+[[changelog]]
+version = "0.9.4.6"
+date = "2025-05-28"
+notes = """
 ## What's Changed
 * Fix tag crash due to rename_files refactoring by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/91
 
@@ -363,21 +352,19 @@ Changelog for version 0.9.4.6 (2025-05-28):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.5...0.9.4.6
 """
 
-__version__ = "0.9.4.5"
-
-"""
-Changelog for version 0.9.4.5 (2025-05-28):
-
+[[changelog]]
+version = "0.9.4.5"
+date = "2025-05-28"
+notes = """
 Fix docker build
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.4...0.9.4.5
 """
 
-__version__ = "0.9.4.4"
-
-"""
-Changelog for version 0.9.4.4 (2025-05-28):
-
+[[changelog]]
+version = "0.9.4.4"
+date = "2025-05-28"
+notes = """
 CD uploads will now automatically check for logs (score, edited logs, matching CRC with files).
 You can pass `--skip-log-check` to bypass that check.
 
@@ -388,11 +375,10 @@ You can pass `--skip-log-check` to bypass that check.
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.3...0.9.4.4
 """
 
-__version__ = "0.9.4.3"
-
-"""
-Changelog for version 0.9.4.3 (2025-05-28):
-
+[[changelog]]
+version = "0.9.4.3"
+date = "2025-05-28"
+notes = """
 Added two new image hosters: oeimg and ptscreens. You will need to register on their site, and provide your API Key in your `config.py` file (`OEIMG_KEY` and `PTSCREENS_KEY`).
 Also removed imgur as an option, due to its autoremoval policy making it unsuitable for this use case.
 
@@ -403,11 +389,10 @@ Also removed imgur as an option, due to its autoremoval policy making it unsuita
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.2...0.9.4.3
 """
 
-__version__ = "0.9.4.2"
-
-"""
-Changelog for version 0.9.4.2 (2025-05-27):
-
+[[changelog]]
+version = "0.9.4.2"
+date = "2025-05-27"
+notes = """
 ## What's Changed
 * Fix Juno feat artists parsing by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/86
 * Fix uploading tracks with no album tags (crash)
@@ -416,11 +401,10 @@ Changelog for version 0.9.4.2 (2025-05-27):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4.1...0.9.4.2
 """
 
-__version__ = "0.9.4.1"
-
-"""
-Changelog for version 0.9.4.1 (2025-05-27):
-
+[[changelog]]
+version = "0.9.4.1"
+date = "2025-05-27"
+notes = """
 ## What's Changed
 * Use beatport track_id instead of label_track_identifier by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/85
 
@@ -428,11 +412,10 @@ Changelog for version 0.9.4.1 (2025-05-27):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.4...0.9.4.1
 """
 
-__version__ = "0.9.4"
-
-"""
-Changelog for version 0.9.4 (2025-05-27):
-
+[[changelog]]
+version = "0.9.4"
+date = "2025-05-27"
+notes = """
 Big news: beatport scraping is back! Please report any strangeness (if possible with the associated link) that you may encounter.
 
 ## What's Changed
@@ -444,11 +427,10 @@ Big news: beatport scraping is back! Please report any strangeness (if possible 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.7...0.9.4
 """
 
-__version__ = "0.9.3.7"
-
-"""
-Changelog for version 0.9.3.7 (2025-05-12):
-
+[[changelog]]
+version = "0.9.3.7"
+date = "2025-05-12"
+notes = """
 ## What's Changed
 * Use only lame for transcoding by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/74
 * Allow using workdir with docker (-w) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/75
@@ -457,24 +439,10 @@ Changelog for version 0.9.3.7 (2025-05-12):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.6.1...0.9.3.7
 """
 
-__version__ = "0.9.3.7"
-
-"""
-Changelog for version 0.9.3.7 (2025-05-12):
-
-## What's Changed
-* Use only lame for transcoding by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/74
-* Allow using workdir with docker (-w) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/75
-* Fix strict python version (3.11) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/76
-
-**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.6.1...0.9.3.7
-"""
-
-__version__ = "0.9.3.6.1"
-
-"""
-Changelog for version 0.9.3.6.1 (2025-05-10):
-
+[[changelog]]
+version = "0.9.3.6.1"
+date = "2025-05-10"
+notes = """
 Technical fix for python 3.11
 
 ## What's Changed
@@ -484,11 +452,10 @@ Technical fix for python 3.11
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.6...0.9.3.6.1
 """
 
-__version__ = "0.9.3.6"
-
-"""
-Changelog for version 0.9.3.6 (2025-05-09):
-
+[[changelog]]
+version = "0.9.3.6"
+date = "2025-05-09"
+notes = """
 Transcoding should now work on docker, thanks to @milkers69 !
 
 ## What's Changed
@@ -503,11 +470,10 @@ Transcoding should now work on docker, thanks to @milkers69 !
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.5...0.9.3.6
 """
 
-__version__ = "0.9.3.5"
-
-"""
-Changelog for version 0.9.3.5 (2025-04-24):
-
+[[changelog]]
+version = "0.9.3.5"
+date = "2025-04-24"
+notes = """
 Big update from Audionut! The coolest part: you can now send torrents straight to qBittorrent using its API. No more messing with watched folders or adding them by hand.
 
 Check `config.py.txt` for the new `QBITTORRENT_XXX` settings. With that option, if you’re using Docker, you might not need to map the `.torrents` folder anymore, just use `/app/.torrents` inside the container: torrents will be generated there and injected into qbittorrent. Additional configuration, specific to docker, might be necessary to be able to call the `qbittorrent` API from smoked-salmon container.
@@ -521,11 +487,10 @@ Check `config.py.txt` for the new `QBITTORRENT_XXX` settings. With that option, 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.4...0.9.3.5
 """
 
-__version__ = "0.9.3.4"
-
-"""
-Changelog for version 0.9.3.4 (2025-04-17):
-
+[[changelog]]
+version = "0.9.3.4"
+date = "2025-04-17"
+notes = """
 ## What's Changed
 * Identify Self-Released label correctly when retrieved from base tags by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/57
 * Fix crash when folder already exists by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/58
@@ -534,11 +499,10 @@ Changelog for version 0.9.3.4 (2025-04-17):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.3...0.9.3.4
 """
 
-__version__ = "0.9.3.3"
-
-"""
-Changelog for version 0.9.3.3 (2025-04-16):
-
+[[changelog]]
+version = "0.9.3.3"
+date = "2025-04-16"
+notes = """
 We welcome @Audionut to the list of contributors 💯 
 He actually already contributed, unknowingly, a good part of the docker image build and the update changelog mechanism ! 💘 
 
@@ -552,11 +516,10 @@ He actually already contributed, unknowingly, a good part of the docker image bu
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.2...0.9.3.3
 """
 
-__version__ = "0.9.3.2"
-
-"""
-Changelog for version 0.9.3.2 (2025-04-16):
-
+[[changelog]]
+version = "0.9.3.2"
+date = "2025-04-16"
+notes = """
 ## What's Changed
 * Fix /app permission when running docker as non-root by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/53
 
@@ -564,11 +527,10 @@ Changelog for version 0.9.3.2 (2025-04-16):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3.1...0.9.3.2
 """
 
-__version__ = "0.9.3.1"
-
-"""
-Changelog for version 0.9.3.1 (2025-04-15):
-
+[[changelog]]
+version = "0.9.3.1"
+date = "2025-04-15"
+notes = """
 ## What's Changed
 * Fix crashes by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/52
   * Fix crash when uploading to an existing group
@@ -578,11 +540,10 @@ Changelog for version 0.9.3.1 (2025-04-15):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.3...0.9.3.1
 """
 
-__version__ = "0.9.3"
-
-"""
-Changelog for version 0.9.3 (2025-04-15):
-
+[[changelog]]
+version = "0.9.3"
+date = "2025-04-15"
+notes = """
 Hardlinks are now used by default when copying files (if source and destination are on the same volume), unless the `DISABLE_HARDLINKS` config is set to `True` (default: `False`).
 New `REMOVE_AUTO_DOWNLOADED_COVER_IMAGE` config option (default: `False`).
 
@@ -601,11 +562,10 @@ New `REMOVE_AUTO_DOWNLOADED_COVER_IMAGE` config option (default: `False`).
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.20...0.9.3
 """
 
-__version__ = "0.9.2.20"
-
-"""
-Changelog for version 0.9.2.20 (2025-04-11):
-
+[[changelog]]
+version = "0.9.2.20"
+date = "2025-04-11"
+notes = """
 ## What's Changed
 * Fix crash when pasting recent log url from RED by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/38
 * Improve metadata scraping by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/39
@@ -617,11 +577,10 @@ Changelog for version 0.9.2.20 (2025-04-11):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.19...0.9.2.20
 """
 
-__version__ = "0.9.2.19"
-
-"""
-Changelog for version 0.9.2.19 (2025-04-10):
-
+[[changelog]]
+version = "0.9.2.19"
+date = "2025-04-10"
+notes = """
 There is a new option available for use in config.py: `REMOVE_SOURCE_DIR ` (default value: `False`)
 When set to `True`, the source folder will be deleted after it has been copied to the target location.
 
@@ -643,11 +602,10 @@ When set to `True`, the source folder will be deleted after it has been copied t
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.18...0.9.2.19
 """
 
-__version__ = "0.9.2.18"
-
-"""
-Changelog for version 0.9.2.18 (2025-04-08):
-
+[[changelog]]
+version = "0.9.2.18"
+date = "2025-04-08"
+notes = """
 ## What's Changed
 * Update Juno Source Artist Selectors by @digerati-red in https://github.com/smokin-salmon/smoked-salmon/pull/29
 
@@ -657,11 +615,10 @@ Changelog for version 0.9.2.18 (2025-04-08):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.17...0.9.2.18
 """
 
-__version__ = "0.9.2.17"
-
-"""
-Changelog for version 0.9.2.17 (2025-04-07):
-
+[[changelog]]
+version = "0.9.2.17"
+date = "2025-04-07"
+notes = """
 ## What's Changed
 * Fix mp3 upload (fix crash)
 * Fix scene uploads: they should now work properly!
@@ -671,22 +628,20 @@ Changelog for version 0.9.2.17 (2025-04-07):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.16...0.9.2.17
 """
 
-__version__ = "0.9.2.16"
-
-"""
-Changelog for version 0.9.2.16 (2025-04-06):
-
+[[changelog]]
+version = "0.9.2.16"
+date = "2025-04-06"
+notes = """
 ## What's Changed
 * Remove leftover debug statement
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.15...0.9.2.16
 """
 
-__version__ = "0.9.2.15"
-
-"""
-Changelog for version 0.9.2.15 (2025-04-06):
-
+[[changelog]]
+version = "0.9.2.15"
+date = "2025-04-06"
+notes = """
 ## Metadata Parsing Improvements
 
 Numerous small changes were made to improve metadata parsing accuracy.  
@@ -717,11 +672,10 @@ If you encounter any strange metadata behavior, please share feedback — and if
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.14...0.9.2.15
 """
 
-__version__ = "0.9.2.14"
-
-"""
-Changelog for version 0.9.2.14 (2025-04-05):
-
+[[changelog]]
+version = "0.9.2.14"
+date = "2025-04-05"
+notes = """
 ## What's Changed
 * Fix request filling output for OPS (cosmetics only, requests were being filled correctly)
 * Fix salmon upconv for single files, fixes #20 
@@ -730,11 +684,10 @@ Changelog for version 0.9.2.14 (2025-04-05):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.13...0.9.2.14
 """
 
-__version__ = "0.9.2.13"
-
-"""
-Changelog for version 0.9.2.13 (2025-04-04):
-
+[[changelog]]
+version = "0.9.2.13"
+date = "2025-04-04"
+notes = """
 The file `config.py.txt` has been updated to include all possible configuration options along with their default values. If any options are unclear or insufficiently detailed on the wiki, feel free to open issues or submit PRs to enhance the documentation.
 
 ## What's Changed
@@ -745,41 +698,37 @@ The file `config.py.txt` has been updated to include all possible configuration 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.12...0.9.2.13
 """
 
-__version__ = "0.9.2.12"
-
-"""
-Changelog for version 0.9.2.12 (2025-04-04):
-
+[[changelog]]
+version = "0.9.2.12"
+date = "2025-04-04"
+notes = """
 Technical release - still testing github actions
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.11...0.9.2.12
 """
 
-__version__ = "0.9.2.11"
-
-"""
-Changelog for version 0.9.2.11 (2025-04-04):
-
+[[changelog]]
+version = "0.9.2.11"
+date = "2025-04-04"
+notes = """
 Technical release - Testing github actions
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.10...0.9.2.11
 """
 
-__version__ = "0.9.2.10"
-
-"""
-Changelog for version 0.9.2.10 (2025-04-04):
-
+[[changelog]]
+version = "0.9.2.10"
+date = "2025-04-04"
+notes = """
 Technical release - Nothing changed.
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.9...0.9.2.10
 """
 
-__version__ = "0.9.2.9"
-
-"""
-Changelog for version 0.9.2.9 (2025-04-04):
-
+[[changelog]]
+version = "0.9.2.9"
+date = "2025-04-04"
+notes = """
 ## What's Changed
 * Fix github action rights to bump versions
 
@@ -787,11 +736,10 @@ Changelog for version 0.9.2.9 (2025-04-04):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.8...0.9.2.9
 """
 
-__version__ = "0.9.2.7"
-
-"""
-Changelog for version 0.9.2.7 (2025-04-03):
-
+[[changelog]]
+version = "0.9.2.7"
+date = "2025-04-03"
+notes = """
 ## What's Changed
 * Fix crash when folder doesn't need to be renamed (shutil related crash)
 * Fix crash when exiting editor without saving during metadata edition
@@ -801,11 +749,10 @@ Changelog for version 0.9.2.7 (2025-04-03):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.6...0.9.2.7
 """
 
-__version__ = "0.9.2.6"
-
-"""
-Changelog for version 0.9.2.6 (2025-04-02):
-
+[[changelog]]
+version = "0.9.2.6"
+date = "2025-04-02"
+notes = """
 ## What's Changed
 * Improve Multi-Discs releases ! It should be working fine, feedback appreciated.
 * For post-upload lma checks, ask if this is a lma and which spectrals to upload (even if YES_ALL is active)
@@ -814,11 +761,10 @@ Changelog for version 0.9.2.6 (2025-04-02):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.5...0.9.2.6
 """
 
-__version__ = "0.9.2.5"
-
-"""
-Changelog for version 0.9.2.5 (2025-04-02):
-
+[[changelog]]
+version = "0.9.2.5"
+date = "2025-04-02"
+notes = """
 ## What's Changed
 * Fix spectrals upload in multi trackers scenario and post-upload spectrals check
 * Force lossy master prompt if checking spectrals post upload (upload is done, we have time)
@@ -827,22 +773,20 @@ Changelog for version 0.9.2.5 (2025-04-02):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.4...0.9.2.5
 """
 
-__version__ = "0.9.2.4"
-
-"""
-Changelog for version 0.9.2.4 (2025-04-01):
-
+[[changelog]]
+version = "0.9.2.4"
+date = "2025-04-01"
+notes = """
 ## What's Changed
 * Add `--skip-mqa` option to skip the MQA check during upload
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.3...0.9.2.4
 """
 
-__version__ = "0.9.2.3"
-
-"""
-Changelog for version 0.9.2.3 (2025-04-01):
-
+[[changelog]]
+version = "0.9.2.3"
+date = "2025-04-01"
+notes = """
 ## New dependency
 Oxipng is a modern replacement for OptiPNG, written in Rust and optimized for multi-core processors. It offers faster processing and better compression than OptiPNG. Smoked-salmon now utilizes Oxipng for PNG compression, achieving around a 30% reduction in file size, making it more efficient for image hosting.
 
@@ -862,22 +806,20 @@ Alternatively, you can still disable compression by setting `COMPRESS_SPECTRALS 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.2...0.9.2.3
 """
 
-__version__ = "0.9.2.2"
-
-"""
-Changelog for version 0.9.2.2 (2025-03-31):
-
+[[changelog]]
+version = "0.9.2.2"
+date = "2025-03-31"
+notes = """
 ## What's Changed
 * Fix special characters handling in github actions (like `this is a string` or `this`)
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2.1...0.9.2.2
 """
 
-__version__ = "0.9.2.1"
-
-"""
-Changelog for version 0.9.2.1 (2025-03-31):
-
+[[changelog]]
+version = "0.9.2.1"
+date = "2025-03-31"
+notes = """
 ##New config options
 * DEBUG_TRACKER_CONNECTION : Automatically set to True when using the  subcommand. It shouldn't be needed to override this option manually in your config.py
 * UPDATE_NOTIFICATION : when set to True (default value), will show a notice message when a new version is available on this repository
@@ -890,11 +832,10 @@ Changelog for version 0.9.2.1 (2025-03-31):
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.2...0.9.2.1
 """
 
-__version__ = "0.9.2"
-
-"""
-Changelog for version 0.9.2 (2025-03-31):
-
+[[changelog]]
+version = "0.9.2"
+date = "2025-03-31"
+notes = """
 First pre-release since creating this new home for smoked-salmon.
 
 ## What's Changed
@@ -910,4 +851,3 @@ First pre-release since creating this new home for smoked-salmon.
 
 **Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.1...0.9.2
 """
-
