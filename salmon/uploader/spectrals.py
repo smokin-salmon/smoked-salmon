@@ -616,7 +616,7 @@ async def post_upload_spectral_check(
     source: str | None,
     source_url: str | None,
     format: str = "FLAC",
-) -> tuple[bool | None, str | None, dict[int, list[str]] | None, dict[int, str] | None]:
+) -> tuple[bool, str | None, dict[int, list[str]] | None, dict[int, str] | None]:
     """Generate and add spectrals after upload.
 
     As this is post upload, we have time to ask if this is a lossy master.
@@ -638,7 +638,7 @@ async def post_upload_spectral_check(
         path, track_data, None, spectral_ids, force_prompt_lossy_master=True, format=format
     )
     if not lossy_master and not spectral_ids:
-        return None, None, None, None
+        return False, None, None, None
 
     lossy_comment = None
     if lossy_master:
@@ -664,4 +664,4 @@ async def post_upload_spectral_check(
             lossy_comment,
             source_url,
         )
-    return lossy_master, lossy_comment, spectral_urls, spectral_ids
+    return bool(lossy_master), lossy_comment, spectral_urls, spectral_ids

@@ -11,6 +11,7 @@ from salmon import cfg
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RequestError
+from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
 from salmon.uploader.spectrals import (
@@ -392,67 +393,62 @@ def generate_t_description(
     Returns:
         BBCode description string.
     """
-    description = ""
-    if spectral_urls:
-        description += make_spectral_bbcode(spectral_ids, spectral_urls)
+    spectrals = make_spectral_bbcode(spectral_ids, spectral_urls) if spectral_urls else ""
 
     if not hybrid:
         track = next(iter(track_data.values()))
+        sample_rate = track["sample rate"] / 1000
         if track["precision"]:
-            if cfg.upload.description.icons_in_descriptions:
-                description += "[img]https://ptpimg.me/pu93q2.png[/img]"
-            else:
-                description += "Encode Specifics:"
-            description += " [b]{} bit [color=#2E86C1]{:.01f}[/color] kHz[/b]".format(
-                track["precision"], track["sample rate"] / 1000
+            icon_url = "https://ptpimg.me/67vp4c.png" if track["precision"] == 16 else "https://ptpimg.me/c1osdy.png"
+            prefix = f"[img]{icon_url}[/img]" if cfg.upload.description.icons_in_descriptions else "Encode Specifics:"
+            encode_specifics = (
+                f"{prefix} [b]{track['precision']} bit [color=#2E86C1]{sample_rate:.01f}[/color] kHz[/b]\n"
             )
-            description += "\n"
         else:
-            description += "Encode Specifics: {:.01f} kHz\n".format(track["sample rate"] / 1000)
+            encode_specifics = f"Encode Specifics: {sample_rate:.01f} kHz\n"
+    else:
+        encode_specifics = ""
 
-    if metadata["date"]:
-        description += f"Released on [b]{metadata['date']}[/b]\n"
+    release_date = f"Released on [b]{metadata['date']}[/b]\n" if metadata["date"] else ""
 
+    tracklist = ""
     if cfg.upload.description.include_tracklist_in_t_desc or hybrid:
         for filename, track in track_data.items():
-            description += os.path.splitext(filename)[0]
-            description += " [i]({})[/i]".format(f"{track['duration'] // 60}:{track['duration'] % 60:02d}")
-            if cfg.upload.description.bitrates_in_t_desc:
-                description += " [{:.01f}kbps]".format(track["bit rate"] / 1000)
+            mins, secs = track["duration"] // 60, track["duration"] % 60
+            bitrate = f" [{track['bit rate'] / 1000:.01f}kbps]" if cfg.upload.description.bitrates_in_t_desc else ""
+            hybrid_info = f" [{track['precision']} bit / {track['sample rate'] / 1000} kHz]" if hybrid else ""
+            tracklist += f"{os.path.splitext(filename)[0]} [i]({mins}:{secs:02d})[/i]{bitrate}{hybrid_info}\n"
+        tracklist += "\n"
 
-            if hybrid:
-                description += " [{} bit / {} kHz]".format(track["precision"], track["sample rate"] / 1000)
+    lossy_notes = (
+        f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
+        if lossy_comment and cfg.upload.compression.lma_comment_in_t_desc
+        else ""
+    )
 
-            description += "\n"
-        description += "\n"
-
-    if lossy_comment and cfg.upload.compression.lma_comment_in_t_desc:
-        description += f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
-
+    source = ""
     if source_url is not None:
-        matched = False
-        for name, source in METASOURCES.items():
-            if source.Scraper.regex.match(source_url):
-                if cfg.upload.description.icons_in_descriptions:
-                    description += (
-                        f"[b]Source:[/b] [pad=0|3][url={source_url}][img]"
-                        f"{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n\n"
-                    )
-                else:
-                    description += f"[b]Source:[/b] [url={source_url}]{name}[/url]\n\n"
-                matched = True
+        for name, src in METASOURCES.items():
+            if src.Scraper.regex.match(source_url):
+                source = (
+                    f"[b]Source:[/b] [pad=0|3][url={source_url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n\n"
+                    if cfg.upload.description.icons_in_descriptions
+                    else f"[b]Source:[/b] [url={source_url}]{name}[/url]\n\n"
+                )
                 break
-
-        if not matched:
+        if not source:
             hostname = re.match(r"https?://(?:www\.)?([^/]+)", source_url)
             if hostname:
-                description += f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n\n"
+                source = f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n\n"
 
-    if metadata_urls:
-        description += "[b]More info:[/b] " + generate_source_links(metadata_urls, source_url)
-        description += "\n"
+    more_info = f"[b]More info:[/b] {generate_source_links(metadata_urls, source_url)}\n" if metadata_urls else ""
 
-    return description
+    footer = (
+        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
+        f"[b]smoked-salmon[/b] v{get_version()}[/url]"
+    )
+
+    return f"{spectrals}{encode_specifics}{release_date}{tracklist}{lossy_notes}{source}{more_info}{footer}"
 
 
 def generate_source_links(metadata_urls: list[str], source_url: str | None = None) -> str:

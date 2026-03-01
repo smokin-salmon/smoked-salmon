@@ -27,7 +27,7 @@ SOURCE_ICONS = {
     "Bandcamp": "https://ptpimg.me/91oo89.png",
     "Beatport": "https://ptpimg.me/5hwjpv.png",
     "Deezer": "https://ptpimg.me/m265v2.png",
-    "Discogs": "https://ptpimg.me/13y32k.png",
+    "Discogs": "https://ptpimg.me/mt4ql3.png",
     "iTunes": "https://ptpimg.me/0z2x90.png",
     "Junodownload": "https://ptpimg.me/u1rpx9.png",
     "MusicBrainz": "https://ptpimg.me/56plwd.png",

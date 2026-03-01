@@ -72,6 +72,7 @@ from salmon.uploader.upload import (
 )
 
 if TYPE_CHECKING:
+    from salmon.tagger.tagfile import TagFile
     from salmon.trackers.base import BaseGazelleApi
 
 
@@ -422,7 +423,7 @@ async def upload(
 
             click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
             searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
-            group_id = await check_existing_group(gazelle_site, searchstrs, metadata)
+            group_id = await check_existing_group(gazelle_site, searchstrs)
 
         remaining_gazelle_sites.remove(tracker)
 
@@ -513,19 +514,44 @@ async def upload(
 
 
 async def edit_metadata(
-    path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check=False
-):
-    """
-    The metadata editing portion of the uploading process. This sticks the user
-    into an infinite loop where the metadata process is repeated until the user
-    decides it is ready for upload.
+    path: str,
+    tags: dict[str, "TagFile"],
+    metadata: dict[str, Any],
+    source: str,
+    rls_data: dict[str, Any],
+    recompress: bool,
+    auto_rename: bool,
+    spectral_ids: dict[int, str] | None,
+    skip_integrity_check: bool = False,
+) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
+    """Edit release metadata in an interactive loop until the user confirms.
+
+    Repeatedly prompts the user to review and edit metadata, then applies tags,
+    renames files and folder, checks integrity, and confirms readiness for upload.
+
+    Args:
+        path: Path to the release directory.
+        tags: Mapping of filename to TagFile objects.
+        metadata: Release metadata dictionary.
+        source: Source string (e.g. "WEB", "CD").
+        rls_data: Release data dictionary from pre_data construction.
+        recompress: Whether to recompress audio files after tagging.
+        auto_rename: Whether to automatically rename files and folder.
+        spectral_ids: Mapping of track index to spectral image ID, or None.
+        skip_integrity_check: Whether to skip the integrity check step.
+
+    Returns:
+        A tuple of (path, metadata, tags, audio_info) after editing is complete.
+
+    Raises:
+        click.Abort: If a scene release fails sanitization.
     """
     while True:
         metadata = await review_metadata(metadata, metadata_validator)
         if not metadata["scene"]:
             tag_files(path, tags, metadata, auto_rename)
 
-        tags = check_tags(path)
+        tags = await check_tags(path)
         if not metadata["scene"] and recompress:
             await recompress_path(path)
         path = rename_folder(path, metadata, auto_rename)

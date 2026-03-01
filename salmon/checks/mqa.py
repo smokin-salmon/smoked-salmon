@@ -50,7 +50,7 @@ def _decode_first_second(path: str) -> NDArray[np.int32]:
         if sample_rate is None:
             raise ValueError("Cannot determine sample rate")
 
-        resampler = av.audio.resampler.AudioResampler(format="s32", layout="stereo")
+        resampler = av.audio.resampler.AudioResampler(format="s32p", layout="stereo")
         target_samples = sample_rate  # 1 second
         collected: list[NDArray[np.int32]] = []
         total = 0
@@ -128,8 +128,8 @@ def _check_mqa_sync(path: str) -> bool:
     """
     try:
         samples = _decode_first_second(path)
-    except Exception:
-        click.secho(f"Failed to decode file: {path}", fg="red")
+    except Exception as e:
+        click.secho(f"Failed to decode file: {path}, error: {e}", fg="red")
         return False
 
     return _check_mqa_syncword(samples[:, 0], samples[:, 1])

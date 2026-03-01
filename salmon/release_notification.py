@@ -17,6 +17,12 @@ def _extract_changelog(content, from_version, to_version):
     return match.group(1).strip() if match else None
 
 
+def _extract_version(content: str) -> str | None:
+    """Extracts the version string from file content."""
+    match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
+    return match.group(1) if match else None
+
+
 def _parse_version(ver):
     """Convert a version string into a tuple for comparison, handling pre-release versions."""
     match = re.match(r"(\d+(?:\.\d+)*)-?([a-zA-Z]*)", ver)
@@ -31,15 +37,25 @@ def _parse_version(ver):
     return num_part + (suffix_order.get(suffix, -4),)  # Default to lowest priority if unknown
 
 
+def get_version() -> str | None:
+    """Returns the local installed version, or None if not found."""
+    try:
+        with open(LOCAL_VERSION_FILE, encoding="utf-8") as f:
+            content = f.read()
+        return _extract_version(content)
+    except FileNotFoundError:
+        return None
+
+
 def _get_local_version(version_file):
     """Extracts the local version from the version.py file."""
     try:
         with open(version_file, encoding="utf-8") as f:
             content = f.read()
-        match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
-        if match:
-            click.secho(f"Local Version: {match.group(1)}", fg="yellow")
-            return match.group(1)
+        version = _extract_version(content)
+        if version:
+            click.secho(f"Local Version: {version}", fg="yellow")
+            return version
         else:
             click.secho("Version not found in local file.", fg="red")
             return None
@@ -54,9 +70,9 @@ def _get_remote_version(url):
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             content = response.text
-            match = re.search(r'__version__\s*=\s*"([^"]+)"', content)
-            if match:
-                return match.group(1), content
+            version = _extract_version(content)
+            if version:
+                return version, content
             else:
                 click.secho("Version not found in remote file.", fg="red")
                 return None, None
