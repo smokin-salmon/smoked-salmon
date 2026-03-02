@@ -37,23 +37,15 @@ class ImageUploader(BaseImageUploader):
         data.add_field("file-upload[0]", file_data, filename=Path(filename).name)
 
         url = "https://ptpimg.me/upload.php"
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, headers=HEADERS, data=data) as resp,
-        ):
-            content = await resp.read()
-            if resp.status != 200:
-                raise ImageUploadFailed(f"Failed. Status {resp.status}:\n{content}")
-            try:
-                parsed = msgspec.json.decode(content)
-                r = parsed[0]
-                return (
-                    f"https://ptpimg.me/{r['code']}.{r['ext']}",
-                    None,
-                )
-            except (
-                msgspec.DecodeError,
-                KeyError,
-                IndexError,
-            ) as e:
-                raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{content}") from e
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(url, headers=HEADERS, data=data) as resp,
+            ):
+                resp.raise_for_status()
+                r = await resp.json(loads=msgspec.json.decode)
+                return f"https://ptpimg.me/{r[0]['code']}.{r[0]['ext']}", None
+        except (msgspec.DecodeError, KeyError, IndexError) as e:
+            raise ImageUploadFailed(f"Failed decoding body: {e}") from e
+        except aiohttp.ClientError as e:
+            raise ImageUploadFailed(f"Network error: {e}") from e

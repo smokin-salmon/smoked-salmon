@@ -431,15 +431,15 @@ def generate_t_description(
         for name, src in METASOURCES.items():
             if src.Scraper.regex.match(source_url):
                 source = (
-                    f"[b]Source:[/b] [pad=0|3][url={source_url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n\n"
+                    f"[b]Source:[/b] [pad=0|3][url={source_url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]\n"
                     if cfg.upload.description.icons_in_descriptions
-                    else f"[b]Source:[/b] [url={source_url}]{name}[/url]\n\n"
+                    else f"[b]Source:[/b] [url={source_url}]{name}[/url]\n"
                 )
                 break
         if not source:
             hostname = re.match(r"https?://(?:www\.)?([^/]+)", source_url)
             if hostname:
-                source = f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n\n"
+                source = f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n"
 
     more_info = f"[b]More info:[/b] {generate_source_links(metadata_urls, source_url)}\n" if metadata_urls else ""
 

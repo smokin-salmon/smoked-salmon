@@ -23,7 +23,7 @@ LAME_COMMAND_MAP: dict[Bitrate, list[str]] = {
 }
 
 COPY_EXTENSIONS = frozenset((".jpg", ".jpeg", ".png", ".pdf", ".txt"))
-FLAC_FOLDER_RE = re.compile(r"\[FLAC.*\]")
+FLAC_FOLDER_RE = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 LOSSLESS_FOLDER_RE = re.compile(r"Lossless", flags=re.IGNORECASE)
 
 # Vorbis comment → ID3v2 frame mapping
