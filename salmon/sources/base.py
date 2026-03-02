@@ -1,4 +1,3 @@
-import json
 import re
 from random import choice
 from string import Formatter
@@ -85,14 +84,14 @@ class BaseScraper:
                     class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
                     error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
                     try:
-                        error_data = await resp.json()
+                        error_data = await resp.json(loads=msgspec.json.decode)
                     except Exception:
                         error_data = None
                     raise ScrapeError(error_msg, error_data)
-                return await resp.json()
+                return await resp.json(loads=msgspec.json.decode)
         except aiohttp.ContentTypeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
-        except json.decoder.JSONDecodeError as e:
+        except msgspec.DecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
 
     async def create_soup(

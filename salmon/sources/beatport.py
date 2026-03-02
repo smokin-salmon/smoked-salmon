@@ -1,6 +1,6 @@
-import json
 import re
 
+import msgspec
 from bs4 import BeautifulSoup
 
 from salmon.errors import ScrapeError
@@ -38,7 +38,7 @@ class BeatportBase(BaseScraper):
             if not script_tag or not script_tag.string:
                 raise ScrapeError("Could not find Next.js data script tag")
 
-            data = json.loads(script_tag.string)
+            data = msgspec.json.decode(script_tag.string)
             queries = data["props"]["pageProps"]["dehydratedState"]["queries"]
 
             track_query = next((q for q in queries if q.get("queryKey") and q["queryKey"][0] == "tracks"), None)
@@ -48,7 +48,7 @@ class BeatportBase(BaseScraper):
 
             return track_query
 
-        except json.JSONDecodeError as e:
+        except msgspec.DecodeError as e:
             raise ScrapeError("Failed to parse Beatport JSON data") from e
         except (KeyError, AttributeError) as e:
             raise ScrapeError(f"Failed to extract required data from Beatport page: {e}") from e

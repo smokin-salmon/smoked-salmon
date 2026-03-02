@@ -1,8 +1,6 @@
 import asyncio
 import html
-import json
 import re
-from json.decoder import JSONDecodeError
 from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
@@ -203,11 +201,11 @@ class BaseGazelleApi:
                     click.secho(resp_text, fg="green")
 
                 try:
-                    resp_json = json.loads(resp_text)
-                except (json.JSONDecodeError, ValueError):
+                    resp_json = msgspec.json.decode(resp_text)
+                except (msgspec.DecodeError, ValueError):
                     resp_json = {"status": "error", "error": resp_text}
                 retry_after_header = resp.headers.get("Retry-After", "20")
-        except JSONDecodeError as err:
+        except msgspec.DecodeError as err:
             raise LoginError from err
         except (TimeoutError, aiohttp.ClientError) as err:
             raise RetryableError(f"Network error: {err}") from err
@@ -452,8 +450,8 @@ class BaseGazelleApi:
             session.post(url, data=files, headers=api_key_headers) as response,
         ):
             try:
-                resp = await response.json()
-            except (JSONDecodeError, ValueError) as e:
+                resp = await response.json(loads=msgspec.json.decode)
+            except (msgspec.DecodeError, ValueError) as e:
                 text = await response.text()
                 click.secho("❌ Failed to decode JSON response", fg="red", err=True)
                 click.secho(f"Status code: {response.status}", fg="red", err=True)

@@ -1,6 +1,6 @@
-import json
 from typing import Any
 
+import msgspec
 from bs4 import BeautifulSoup
 
 from salmon import cfg
@@ -28,8 +28,8 @@ class Searcher(BeatportBase, SearchMixin):
                 raise ScrapeError("Could not find Next.js data script tag")
 
             try:
-                data = json.loads(script_tag.string)
-            except json.JSONDecodeError as e:
+                data = msgspec.json.decode(script_tag.string)
+            except msgspec.DecodeError as e:
                 raise ScrapeError("Failed to parse Beatport JSON data") from e
             search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]
             for result in search_results:

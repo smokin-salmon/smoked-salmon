@@ -1,6 +1,7 @@
-import json
 import re
 from typing import Any
+
+import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
@@ -36,5 +37,5 @@ class DiscogsBase(BaseScraper):
             raise ScrapeError("Invalid Discogs URL.")
         try:
             return await self.get_json(f"/releases/{match[1]}", params=params)
-        except json.decoder.JSONDecodeError as e:
+        except msgspec.DecodeError as e:
             raise ScrapeError("Discogs page did not return valid JSON.") from e

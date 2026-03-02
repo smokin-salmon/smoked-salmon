@@ -2,7 +2,7 @@ from pathlib import Path
 
 import aiohttp
 import anyio
-import msgspec.json
+import msgspec
 
 from salmon import cfg
 from salmon.errors import ImageUploadFailed

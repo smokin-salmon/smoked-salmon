@@ -1,9 +1,8 @@
-import json
 import re
-from json.decoder import JSONDecodeError
 from random import choice
 
 import aiohttp
+import msgspec
 
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
@@ -54,10 +53,10 @@ class DeezerBase(BaseScraper):
                     headers=HEADERS,
                 ) as response,
             ):
-                check_data = await response.json()
+                check_data = await response.json(loads=msgspec.json.decode)
                 self._csrf_token = check_data["results"]["checkForm"]
                 self._login_csrf_token = check_data["results"]["checkFormLogin"]
-        except (JSONDecodeError, KeyError, aiohttp.ClientError):
+        except (msgspec.DecodeError, KeyError, aiohttp.ClientError):
             pass
         return self._csrf_token
 
@@ -102,7 +101,7 @@ class DeezerBase(BaseScraper):
             data["tracklist"] = self.get_tracks(internal_data)
             data["cover_xl"] = self.get_cover(internal_data)
             return data
-        except json.decoder.JSONDecodeError as e:
+        except msgspec.DecodeError as e:
             raise ScrapeError("Deezer page did not return valid JSON.") from e
         except (KeyError, ScrapeError) as e:
             raise ScrapeError(f"Failed to grab metadata for {url}.") from e
@@ -145,7 +144,7 @@ class DeezerBase(BaseScraper):
             raise ScrapeError("Failed to scrape track data.")
         raw = re.sub(r"{(\s*)type\: +\'([^\']+)\'", r'{\1type: "\2"', r[1])
         raw = re.sub("\t+([^:]+): ", r'"\1":', raw)
-        return json.loads(raw)
+        return msgspec.json.decode(raw)
 
     def get_tracks(self, internal_data: dict) -> list:
         """Extract track list from internal data.

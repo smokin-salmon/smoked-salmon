@@ -2,7 +2,7 @@ from pathlib import Path
 
 import aiohttp
 import anyio
-import msgspec.json
+import msgspec
 
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
@@ -40,8 +40,7 @@ class ImageUploader(BaseImageUploader):
                 session.post(url, headers=HEADERS, data=data) as resp,
             ):
                 resp.raise_for_status()
-                content = await resp.read()
-                resp_data = msgspec.json.decode(content)
+                resp_data = await resp.json(loads=msgspec.json.decode)
                 return resp_data["data"]["url"], None
         except (msgspec.DecodeError, KeyError, TypeError) as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
