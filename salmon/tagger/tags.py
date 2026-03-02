@@ -12,6 +12,8 @@ STANDARDIZED_TAGS = {
     "date": ["year"],
     "label": ["recordlabel", "organization", "publisher"],
     "catalognumber": ["labelno", "catalog #", "catno"],
+    "tracktotal": ["totaltracks", "total tracks"],
+    "disctotal": ["totaldiscs", "total discs"],
 }
 
 

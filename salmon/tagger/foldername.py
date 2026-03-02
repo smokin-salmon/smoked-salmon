@@ -35,7 +35,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
         click.echo(f"Old folder name        : {old_base}")
         click.echo(f"New pending folder name: {new_base}")
 
-        user_rename_choice = click.confirm(
+        user_rename_choice = cfg.upload.yes_all or click.confirm(
             click.style("\nWould you like to replace the original folder name?", fg="magenta"), default=True
         )
 
@@ -85,11 +85,9 @@ def rename_folder(path, metadata, auto_rename, check=True):
         tmp_old_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{old_base}")
         tmp_new_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{new_base}")
 
-        if (
-            os.path.exists(tmp_old_specs_path)
-            and os.path.exists(tmp_new_specs_path)
-            and os.path.samefile(tmp_old_specs_path, tmp_new_specs_path)
-        ):
+        if not os.path.exists(tmp_old_specs_path):
+            pass  # No spectrals folder exists, nothing to rename
+        elif os.path.exists(tmp_new_specs_path) and os.path.samefile(tmp_old_specs_path, tmp_new_specs_path):
             click.secho(f"Skipping copy, same location already for '{tmp_new_specs_path}'", fg="yellow")
         else:
             if use_hardlinks:

@@ -257,21 +257,24 @@ async def _edit_edition_info(metadata):
         text = (
             f"Label         : {metadata['label'] or ''}\n"
             f"Catalog Number: {metadata['catno'] or ''}\n"
-            f"Edition Title : {metadata['edition_title'] or ''}"
+            f"Edition Title : {metadata['edition_title'] or ''}\n"
+            f"UPC           : {metadata['upc'] or ''}"
         )
         text = click.edit(text, editor=cfg.upload.default_editor)
         try:
             if not text:
                 return
-            label_line, cat_line, title_line = (line.strip() for line in text.strip().split("\n", 2))
+            label_line, cat_line, title_line, upc_line = (line.strip() for line in text.strip().split("\n", 3))
             label_match = re.match(r"Label *: *(.*)", label_line)
             catno_match = re.match(r"Catalog Number *: *(.*)", cat_line)
             edition_match = re.match(r"Edition Title *: *(.*)", title_line)
-            if not label_match or not catno_match or not edition_match:
+            upc_match = re.match(r"UPC *: *(.*)", upc_line)
+            if not label_match or not catno_match or not edition_match or not upc_match:
                 raise ValueError("Invalid format")
             metadata["label"] = label_match[1] or None
             metadata["catno"] = catno_match[1] or None
             metadata["edition_title"] = edition_match[1] or None
+            metadata["upc"] = upc_match[1] or None
             return
         except (TypeError, KeyError, ValueError):
             click.confirm(

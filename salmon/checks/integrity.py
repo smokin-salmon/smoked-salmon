@@ -8,7 +8,8 @@ from salmon import cfg
 from salmon.common.files import process_files
 
 FLAC_IMPORTANT_REGEXES = [
-    re.compile(".+\\.flac: testing,.*\x08ok"),
+    re.compile(r"(.+\.flac: testing,.*)\x08ok"),
+    re.compile(r"(.+\.flac:.+)\nok\s*", re.MULTILINE),
 ]
 
 MP3_IMPORTANT_REGEXES = [
@@ -129,12 +130,11 @@ async def _check_flac_integrity(path: str) -> tuple[bool, str]:
         result_text = result.stdout.decode() if result.stdout else ""
         if result.stderr:
             result_text += result.stderr.decode()
-        important_lines: list[str] = []
-        for line in result_text.split("\n"):
-            for important_lines_re in FLAC_IMPORTANT_REGEXES:
-                if important_lines_re.match(line):
-                    important_lines.append(line)
-        return True, "\n".join(important_lines)
+        important_matches: list[str] = []
+        for important_re in FLAC_IMPORTANT_REGEXES:
+            important_matches.extend(m.strip() for m in important_re.findall(result_text))
+        passed = result.returncode == 0
+        return passed, "\n".join(important_matches)
     except Exception:
         return False, click.style(f"{os.path.basename(path)}: Failed integrity", fg="red", bold=True)
 

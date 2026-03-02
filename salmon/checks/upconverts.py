@@ -122,6 +122,8 @@ async def check_upconvert(filepath: str) -> UpconvertCheckResult:
         response = await anyio.run_process(["flac", "-ac", filepath], check=False)
     except FileNotFoundError as e:
         raise UpconvertCheckError(f"flac binary not found: {e}") from e
+    if response.returncode != 0:
+        raise UpconvertCheckError(f"File appears to be corrupt: {response.stderr.decode().strip()}")
     response_text = response.stdout.decode() if response.stdout else ""
 
     wasted_bits_list: list[int] = []
