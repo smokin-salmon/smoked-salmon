@@ -91,7 +91,7 @@ jobs:
           PYPROJECT_FILE="pyproject.toml"
 
           # Prepend new changelog entry and update current version
-          uv run --with tomlkit python -c $'import os, tomlkit\n\nfrom datetime import date\n\nversion = os.environ["VERSION"]\nrelease_date = date.today().strftime("%Y-%m-%d")\nnotes = os.environ["RELEASE_NOTES"]\npath = "data/version.toml"\n\nwith open(path, "r", encoding="utf-8") as f:\n    data = tomlkit.load(f)\n\ndata["current"] = version\n\nentry = tomlkit.table()\nentry.add("version", version)\nentry.add("date", release_date)\nentry.add("notes", tomlkit.string(notes, multiline=True))\nentry.add(tomlkit.nl())\n\ndata["changelog"].insert(0, entry)\n\nwith open(path, "w", encoding="utf-8") as f:\n    tomlkit.dump(data, f)\n'
+          uv run --with tomlkit python -c $'import os, tomlkit\n\nfrom datetime import date\n\nversion = os.environ["VERSION"]\nrelease_date = date.today().strftime("%Y-%m-%d")\nnotes = os.environ["RELEASE_NOTES"]\npath = "data/version.toml"\n\nwith open(path, "r", encoding="utf-8") as f:\n    data = tomlkit.load(f)\n\ndata["current"] = version\n\nentry = tomlkit.table()\nentry.add("version", version)\nentry.add("date", release_date)\nentry.add("notes", tomlkit.string("\\n" + notes + "\\n", multiline=True))\nentry.add(tomlkit.nl())\n\ndata["changelog"].insert(0, entry)\n\nwith open(path, "w", encoding="utf-8") as f:\n    tomlkit.dump(data, f)\n'
 
           # Update version in pyproject.toml
           sed -i "s/^version = \".*\"/version = \"${{ env.VERSION }}\"/" "$PYPROJECT_FILE"
