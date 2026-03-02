@@ -29,13 +29,13 @@ from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
 from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources import run_metadata
-from salmon.uploader.seedbox import UploaderGenerator
 from salmon.uploader.spectrals import (
     check_spectrals,
     get_spectrals_path,
     handle_spectrals_upload_and_deletion,
     post_upload_spectral_check,
 )
+from salmon.uploader.torrent_client import TorrentClientGenerator
 from salmon.uploader.upload import generate_source_links
 
 
@@ -350,10 +350,8 @@ async def _test_seedbox_connections() -> None:
         click.secho(f"    URL: {seedbox_config.url}", fg="cyan")
 
         try:
-            # Test the uploader initialization
-            UploaderGenerator.get_uploader(
-                seedbox_config.type, seedbox_config.url, seedbox_config.extra_args, seedbox_config.torrent_client
-            )
+            # Test the torrent client initialization
+            TorrentClientGenerator.parse_libtc_url(seedbox_config.torrent_client)
 
             if seedbox_config.type == "rclone":
                 if shutil.which("rclone"):

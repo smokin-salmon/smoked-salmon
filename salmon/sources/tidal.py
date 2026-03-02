@@ -1,6 +1,7 @@
-import json
 import re
 from typing import Any
+
+import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
@@ -65,7 +66,7 @@ class TidalBase(BaseScraper):
                 tracklist = await self.get_json(f"/albums/{album_id}/tracks", params=params)
                 data["tracklist"] = tracklist["items"]
                 return data
-            except json.decoder.JSONDecodeError as e:
+            except msgspec.DecodeError as e:
                 raise ScrapeError("Tidal page did not return valid JSON.") from e
             except (KeyError, ScrapeError):
                 pass

@@ -41,7 +41,7 @@ class ImageUploader(BaseImageUploader):
 
                 url = submission["thumbnail_url"] if self.USE_THUMBNAIL else submission["image_url"]
                 return url, None
+        except ImageUploadFailed:
+            raise
         except Exception as e:
-            if isinstance(e, ImageUploadFailed):
-                raise
             raise ImageUploadFailed(f"ImgBox upload failed: {e}") from e

@@ -1,6 +1,7 @@
-import json
 import re
 from typing import Any
+
+import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
@@ -43,7 +44,7 @@ class QobuzBase(BaseScraper):
                 raise ScrapeError("Invalid Qobuz URL.")
             rls_id = match[1]
             return await self.get_json(self.release_format.format(rls_id=rls_id), params=params, headers=self.headers)
-        except json.decoder.JSONDecodeError as e:
+        except msgspec.DecodeError as e:
             raise ScrapeError("Qobuz page did not return valid JSON.") from e
         except (AttributeError, IndexError) as e:
             raise ScrapeError("Invalid Qobuz URL.") from e

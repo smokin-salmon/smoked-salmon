@@ -9,6 +9,7 @@ __pycache__
 .windsurfrules
 .venv/
 .torrents/
+.music/
 temp/
 dist/
 build/

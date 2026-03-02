@@ -5,6 +5,7 @@ from itertools import islice
 from typing import Any
 
 import asyncclick as click
+import msgspec
 
 from salmon import cfg
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
@@ -189,11 +190,11 @@ def _get_manual_metadata(rls_data):
     while True:
         try:
             metadata = click.edit(metadata, extension=".json", editor=cfg.upload.default_editor) or metadata
-            metadata_dict = json.loads(metadata)
+            metadata_dict = msgspec.json.decode(metadata)
             if isinstance(metadata_dict["genres"], str):
                 metadata_dict["genres"] = [metadata_dict["genres"]]
             return metadata_dict
-        except (TypeError, json.decoder.JSONDecodeError):
+        except (TypeError, msgspec.DecodeError):
             click.confirm(
                 click.style("Metadata is not a valid JSON file, retry?", fg="magenta", bold=True),
                 default=True,

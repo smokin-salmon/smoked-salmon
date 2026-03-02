@@ -34,13 +34,11 @@ class ImageUploader(BaseImageUploader):
         data.add_field("userhash", "")
         data.add_field("fileToUpload", file_data, filename=Path(filename).name)
         url = "https://catbox.moe/user/api.php"
-        async with aiohttp.ClientSession() as session, session.post(url, headers=HEADERS, data=data) as resp:
-            if resp.status == 200:
-                try:
-                    return await resp.text(), None
-                except ValueError as e:
-                    content = await resp.read()
-                    raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{content}") from e
-            else:
-                content = await resp.read()
-                raise ImageUploadFailed(f"Failed. Status {resp.status}:\n{content}")
+        try:
+            async with aiohttp.ClientSession() as session, session.post(url, headers=HEADERS, data=data) as resp:
+                resp.raise_for_status()
+                return await resp.text(), None
+        except ValueError as e:
+            raise ImageUploadFailed(f"Failed decoding body: {e}") from e
+        except aiohttp.ClientError as e:
+            raise ImageUploadFailed(f"Network error: {e}") from e

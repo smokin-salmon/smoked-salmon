@@ -1,6 +1,7 @@
-import json
 import re
 from collections import defaultdict
+
+import msgspec
 
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError
@@ -31,7 +32,7 @@ class Scraper(iTunesBase, MetadataMixin):
 
     def parse_genres(self, soup):
         try:
-            info = json.loads(soup.find("script", {"id": "schema:music-album"}).text)
+            info = msgspec.json.decode(soup.find("script", {"id": "schema:music-album"}).text)
             genres = {g for gs in info["genre"] for g in ALIAS_GENRE.get(gs, [gs])}
             # either replace with alias (which can be more than one tag) or return untouched.
             return genres
@@ -69,7 +70,7 @@ class Scraper(iTunesBase, MetadataMixin):
 
     def parse_release_label(self, soup):
         try:
-            json.loads(soup.find("script", {"id": "serialized-server-data"}).text)
+            msgspec.json.decode(soup.find("script", {"id": "serialized-server-data"}).text)
             copyright = soup.find("p", {"data-testid": "tracklist-footer-description"}).text
             return parse_copyright(copyright)
         except IndexError as e:
@@ -91,8 +92,8 @@ class Scraper(iTunesBase, MetadataMixin):
             raise ScrapeError("JSON-LD script not found. Scraping needs to be updated")
 
         try:
-            data = json.loads(script_tag.string)
-        except json.JSONDecodeError as e:
+            data = msgspec.json.decode(script_tag.string)
+        except msgspec.DecodeError as e:
             raise ScrapeError("Failed to decode JSON data.") from e
 
         if "tracks" not in data:

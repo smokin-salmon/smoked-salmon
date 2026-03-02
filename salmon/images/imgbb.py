@@ -2,7 +2,7 @@ from pathlib import Path
 
 import aiohttp
 import anyio
-import msgspec.json
+import msgspec
 
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
@@ -34,19 +34,15 @@ class ImageUploader(BaseImageUploader):
         data.add_field("image", file_data, filename=Path(filename).name)
 
         url = "https://api.imgbb.com/1/upload"
-        async with (
-            aiohttp.ClientSession() as session,
-            session.post(url, headers=HEADERS, data=data) as resp,
-        ):
-            content = await resp.read()
-            if resp.status != 200:
-                raise ImageUploadFailed(f"Failed. Status {resp.status}:\n{content}")
-            try:
-                resp_data = msgspec.json.decode(content)
+        try:
+            async with (
+                aiohttp.ClientSession() as session,
+                session.post(url, headers=HEADERS, data=data) as resp,
+            ):
+                resp.raise_for_status()
+                resp_data = await resp.json(loads=msgspec.json.decode)
                 return resp_data["data"]["url"], None
-            except (
-                msgspec.DecodeError,
-                KeyError,
-                TypeError,
-            ) as e:
-                raise ImageUploadFailed(f"Failed decoding body:\n{e}\n{content}") from e
+        except (msgspec.DecodeError, KeyError, TypeError) as e:
+            raise ImageUploadFailed(f"Failed decoding body: {e}") from e
+        except aiohttp.ClientError as e:
+            raise ImageUploadFailed(f"Network error: {e}") from e

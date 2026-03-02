@@ -28,7 +28,7 @@ dottorrents_dir = '.torrents'
 # ===============================
 # IMAGE UPLOAD SETTINGS
 # ===============================
-# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, emp (not tested recently)
+# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, imgbox
 [image]
 image_uploader = "ptpimg"
 cover_uploader = "ptpimg"
