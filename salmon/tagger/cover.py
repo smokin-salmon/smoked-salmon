@@ -137,6 +137,8 @@ def get_8kib_padding(info: PaddingInfo):
 
 def compress_pictures(path):
     for filename in get_audio_files(path):
+        if not filename.lower().endswith(".flac"):
+            continue
         click.secho(f"Processing file: {filename}", fg="blue")
         audio = FLAC(os.path.join(path, filename))
 

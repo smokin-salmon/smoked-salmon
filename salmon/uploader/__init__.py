@@ -404,113 +404,114 @@ async def upload(
 
     seedbox_uploader = UploadManager()
 
-    while True:
-        # Loop until we don't want to upload to any more sites.
-        if not tracker:
-            if spectrals_after and torrent_id:
-                # Here we are checking the spectrals after uploading to the first site
-                # if they were not done before.
-                lossy_master, lossy_comment, spectral_urls, spectral_ids = await post_upload_spectral_check(
-                    gazelle_site, path, torrent_id, None, track_data, source, source_url, format=rls_data["format"]
-                )
-                spectrals_after = False
-            click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
-            tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
+    try:
+        while True:
+            # Loop until we don't want to upload to any more sites.
             if not tracker:
-                click.secho("\nDone with this release.", fg="green")
+                if spectrals_after and torrent_id:
+                    # Here we are checking the spectrals after uploading to the first site
+                    # if they were not done before.
+                    lossy_master, lossy_comment, spectral_urls, spectral_ids = await post_upload_spectral_check(
+                        gazelle_site, path, torrent_id, None, track_data, source, source_url, format=rls_data["format"]
+                    )
+                    spectrals_after = False
+                click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
+                tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
+                if not tracker:
+                    click.secho("\nDone with this release.", fg="green")
+                    break
+                gazelle_site = salmon.trackers.get_class(tracker)()
+
+                click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
+                searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
+                group_id = await check_existing_group(gazelle_site, searchstrs)
+
+            remaining_gazelle_sites.remove(tracker)
+
+            # Handle cover image for this tracker
+            if group_id:
+                if not remove_downloaded_cover_image:
+                    await download_cover_if_nonexistent(path, metadata["cover"])
+                # Don't need cover URL for existing groups
+                cover_url = None
+            else:
+                # For new groups, we need a cover URL
+                # If we already uploaded it for a previous tracker, reuse that URL
+                if not stored_cover_url:
+                    cover_path, is_downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
+                    stored_cover_url = await upload_cover(cover_path)
+                    if is_downloaded and remove_downloaded_cover_image and cover_path:
+                        click.secho("Removing downloaded Cover Image File", fg="yellow")
+                        os.remove(cover_path)
+                cover_url = stored_cover_url
+
+            if not scene and cfg.image.auto_compress_cover:
+                compress_pictures(path)
+
+            if not request_id and cfg.upload.requests.check_requests:
+                request_id = await check_requests(gazelle_site, searchstrs)
+
+            torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
+                gazelle_site,
+                path,
+                group_id,
+                metadata,
+                cover_url,
+                track_data,
+                hybrid,
+                lossy_master,
+                spectral_urls,
+                spectral_ids,
+                lossy_comment,
+                request_id,
+                source_url,
+                seedbox_uploader,
+                source=source,
+            )
+
+            request_id = None
+
+            await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+
+            if cfg.upload.yes_all or click.confirm(
+                click.style("\nWould you like to check downconversion options?", fg="magenta"),
+                default=True,
+            ):
+                selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
+                if selected_tasks:
+                    display_names = [task["name"] for task in selected_tasks]
+                    click.secho(
+                        f"\nSelected formats for downconversion: {', '.join(display_names)}", fg="green", bold=True
+                    )
+
+                    # Execute downconversion tasks
+                    await execute_downconversion_tasks(
+                        selected_tasks,
+                        path,
+                        gazelle_site,
+                        group_id,
+                        metadata,
+                        cover_url,
+                        track_data,
+                        hybrid,
+                        lossy_master,
+                        spectral_urls,
+                        spectral_ids,
+                        lossy_comment,
+                        request_id,
+                        source_url,
+                        seedbox_uploader,
+                        source,
+                        url,
+                    )
+
+            tracker = None
+            if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+                click.secho("\nDone uploading this release.", fg="green")
                 break
-            gazelle_site = salmon.trackers.get_class(tracker)()
 
-            click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
-            searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
-            group_id = await check_existing_group(gazelle_site, searchstrs)
-
-        remaining_gazelle_sites.remove(tracker)
-
-        # Handle cover image for this tracker
-        if group_id:
-            if not remove_downloaded_cover_image:
-                await download_cover_if_nonexistent(path, metadata["cover"])
-            # Don't need cover URL for existing groups
-            cover_url = None
-        else:
-            # For new groups, we need a cover URL
-            # If we already uploaded it for a previous tracker, reuse that URL
-            if not stored_cover_url:
-                cover_path, is_downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
-                stored_cover_url = await upload_cover(cover_path)
-                if is_downloaded and remove_downloaded_cover_image and cover_path:
-                    click.secho("Removing downloaded Cover Image File", fg="yellow")
-                    os.remove(cover_path)
-            cover_url = stored_cover_url
-
-        if not scene and cfg.image.auto_compress_cover:
-            compress_pictures(path)
-
-        if not request_id and cfg.upload.requests.check_requests:
-            request_id = await check_requests(gazelle_site, searchstrs)
-
-        torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
-            gazelle_site,
-            path,
-            group_id,
-            metadata,
-            cover_url,
-            track_data,
-            hybrid,
-            lossy_master,
-            spectral_urls,
-            spectral_ids,
-            lossy_comment,
-            request_id,
-            source_url,
-            seedbox_uploader,
-            source=source,
-        )
-
-        request_id = None
-
-        torrent_content.comment = url
-        torrent_content.write(torrent_path, overwrite=True)
-
-        await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
-
-        if cfg.upload.yes_all or click.confirm(
-            click.style("\nWould you like to check downconversion options?", fg="magenta"),
-            default=True,
-        ):
-            selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
-            if selected_tasks:
-                display_names = [task["name"] for task in selected_tasks]
-                click.secho(f"\nSelected formats for downconversion: {', '.join(display_names)}", fg="green", bold=True)
-
-                # Execute downconversion tasks
-                await execute_downconversion_tasks(
-                    selected_tasks,
-                    path,
-                    gazelle_site,
-                    group_id,
-                    metadata,
-                    cover_url,
-                    track_data,
-                    hybrid,
-                    lossy_master,
-                    spectral_urls,
-                    spectral_ids,
-                    lossy_comment,
-                    request_id,
-                    source_url,
-                    seedbox_uploader,
-                    source,
-                    url,
-                )
-
-        tracker = None
-        if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
-            click.secho("\nDone uploading this release.", fg="green")
-            break
-
-    await seedbox_uploader.execute_upload()
+    finally:
+        await seedbox_uploader.execute_upload()
 
 
 async def edit_metadata(
@@ -730,6 +731,9 @@ async def prompt_downconversion_choice(rls_data, track_data):
 
     if not options:
         return []
+
+    if cfg.upload.yes_all:
+        return options
 
     click.secho("\nDownconversion Options", fg="cyan", bold=True)
 
