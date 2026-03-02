@@ -1675,7 +1675,7 @@ wheels = [
 
 [[package]]
 name = "salmon"
-version = "0.9.7.4"
+version = "0.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp", extra = ["speedups"] },

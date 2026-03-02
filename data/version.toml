@@ -1,4 +1,144 @@
-current = "0.9.7.4"
+current = "0.10.0"
+
+[[changelog]]
+version = "0.10.0"
+date = "2026-03-02"
+notes = """
+This is a major modernization release focused on rewriting the codebase with modern async patterns and comprehensive type safety.
+
+## ⚠️ Breaking Change: emp Image Uploader and WebDAV Seedbox Support Removed
+
+Images hosted on jerking.empornium.ph can no longer be loaded from other sites, so the emp image uploader has been removed. Please switch to an alternative image host. WebDAV support was deprecated several versions ago and has now been officially removed — use rclone to connect to your WebDAV server instead.
+
+## 🔄 Modern Async Architecture
+
+The entire codebase has been rewritten to use fully asynchronous I/O patterns:
+- All import-time asyncio loop usage has been replaced with proper `async`/`await` patterns
+- CLI migrated to `asyncclick` for consistent async entry points
+- File I/O migrated to `anyio.open_file` and `anyio.Path`
+- All subprocess calls migrated to `anyio` with proper async handling
+- HTTP client unified to `aiohttp` (replacing httpx and synchronous requests)
+- Rate limiting migrated from `ratelimit` to `aiolimiter`
+
+## 🎵 Audio Processing Improvements
+
+- ffmpeg is no longer required as an external dependency. All audio processing (log analysis, MQA detection, transcoding) has been migrated to `PyAV`, which is bundled as a Python package.
+- MQA detection rewritten with `PyAV` and `NumPy`, removing the custom FLAC decoder
+- Audio log analysis now uses `PyAV` instead of ffmpeg subprocess calls
+- Transcoding pipeline rewritten with `anyio` for proper async execution
+- Cover image validation migrated from `filetype` dependency to `Pillow`
+
+## ✨ New Features & Improvements
+
+- Added smoked-salmon upload footer to release descriptions
+- Use bit-depth-specific icons in torrent descriptions — 16-bit lossless and 24-bit releases now use distinct markers
+- Add alpha Docker image build workflow — every commit is now automatically pushed as an alpha image
+- Network request exceptions during tracker uploads can now be retried
+- Requests list now filtered to Music requests only
+- Add Discogs collection hint in metadata search results — see if a release is in your collection before uploading
+- Extend `yes_all` to auto-confirm folder rename prompt and downconversion
+
+## 🐛 Bug Fixes
+
+All reported bugs since 0.9.7.4 have been addressed. Due to the large-scale rewrite, some features may still behave unexpectedly — please report any crashes or issues you encounter.
+- Fix upload failure when using cookie-only authentication — uploading to an existing group no longer prompts `Please enter at least one main artist (200)`
+- Fix image upload retry mechanism not working — image hosting uploads now retry on exception
+- Fix `asyncio.run(asyncio.gather())` crash on Python 3.13+
+- Fix import-time asyncio loop usage for Python 3.14 compatibility
+- Fix dupe checker for trackers missing `remastered` field — now uses `remasterRecordLabel`/`catalogueNumber`
+- Fix crash when attempting to embed cover art into non-FLAC files
+- Fix skipping seedbox upload when exiting after uploading to another tracker
+- Fix FLAC integrity check always reporting success on newer versions of flac
+- Fix crash when incomplete files are detected during upload
+- Fix MQA detection result being silently ignored
+- Fix various typos, uninitialized variables, and incorrect calls caused by lack of type annotations in the old codebase
+
+## 🔒 Type Safety Improvements
+
+- Full `basedpyright` type checking integrated into CI
+- Removed all `# type: ignore` comments — all type issues resolved
+- Version file migrated from `version.py` to TOML format
+
+## 🖼️ Image Hosting
+
+- Removed **emp** image uploader (service no longer works)
+- Added **imgbox** and **imgbb** as new image hosting options
+
+## What's Changed
+* Add a hint to the metadata results if a release is saved in the users discogs collection by @StackOverBuffer in https://github.com/smokin-salmon/smoked-salmon/pull/188
+* Bump pyperclip from 1.10.0 to 1.11.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/184
+* Bump beautifulsoup4 from 4.13.5 to 4.14.2 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/190
+* Bump ruff from 0.13.1 to 0.13.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/191
+* Fix broken deluge URL parser by @KarlKode in https://github.com/smokin-salmon/smoked-salmon/pull/202
+* Bump rich from 14.1.0 to 14.2.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/193
+* Bump platformdirs from 4.4.0 to 4.5.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/195
+* Bump aiohttp from 3.12.15 to 3.13.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/199
+* Bump setuptools-scm from 9.2.0 to 9.2.2 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/200
+* Bump ruff from 0.13.3 to 0.14.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/201
+* Fix ID extraction for OPS uploads. by @yafbot in https://github.com/smokin-salmon/smoked-salmon/pull/208
+* Bump pillow from 11.3.0 to 12.0.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/205
+* Bump aiohttp from 3.13.1 to 3.13.2 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/209
+* Bump ruff from 0.14.1 to 0.14.4 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/213
+* add imgbb.com uploader by @KarlKode in https://github.com/smokin-salmon/smoked-salmon/pull/203
+* Hardcore genre fix added by @minicoz in https://github.com/smokin-salmon/smoked-salmon/pull/214
+* Update README with new features by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/217
+* adding imgbox as img hoster by @minicoz in https://github.com/smokin-salmon/smoked-salmon/pull/218
+* Bump qbittorrent-api from 2025.7.0 to 2025.11.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/222
+* Bump ruff from 0.14.4 to 0.14.6 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/223
+* Bump click from 8.3.0 to 8.3.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/224
+* Bump ruff from 0.14.6 to 0.14.7 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/226
+* Bump beautifulsoup4 from 4.14.2 to 4.14.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/227
+* Bump msgspec from 0.19.0 to 0.20.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/228
+* Bump platformdirs from 4.5.0 to 4.5.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/232
+* Bump ruff from 0.14.7 to 0.14.8 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/233
+* Bump ruff from 0.14.8 to 0.14.10 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/239
+* Only keep Music requests by @Moreasan in https://github.com/smokin-salmon/smoked-salmon/pull/250
+* Bump aiohttp from 3.13.2 to 3.13.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/241
+* Bump pillow from 12.0.0 to 12.1.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/243
+* Bump torf from 4.3.0 to 4.3.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/247
+* Bump send2trash from 1.8.3 to 2.1.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/248
+* Bump ruff from 0.14.10 to 0.14.13 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/249
+* Fix import-time asyncio loop usage for Python 3.14 compatibility by @nironics in https://github.com/smokin-salmon/smoked-salmon/pull/251
+* Bump wheel from 0.45.1 to 0.46.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/253
+* Bump rich from 14.2.0 to 14.3.2 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/254
+* Bump tqdm from 4.67.1 to 4.67.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/255
+* Bump ruff from 0.14.13 to 0.15.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/256
+* Bump urllib3 from 2.4.0 to 2.6.3 in the uv group across 1 directory by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/258
+* Bump pillow from 12.1.0 to 12.1.1 in the uv group across 1 directory by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/260
+* Fix asyncio bugs for Python 3.13+ compatibility by @0rkag in https://github.com/smokin-salmon/smoked-salmon/pull/261
+* Modernize codebase with type safety improvements and async pattern upgrades by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/262
+* Fix dupe checker crash on trackers missing `remastered` + use remaster fields for label/catalogue by @kisiel92 in https://github.com/smokin-salmon/smoked-salmon/pull/267
+* Add pyright type checking and fix version management in CI by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/269
+* Bump docker/metadata-action from 4 to 5 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/270
+* Bump docker/login-action from 2 to 3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/271
+* Bump docker/setup-buildx-action from 2 to 3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/272
+* Bump docker/build-push-action from 4 to 6 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/273
+* Bump docker/setup-qemu-action from 2 to 3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/274
+* Upgrade pycambia to 0.2.0 and adapt to new API by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/275
+* Fix figles typo throughout codebase by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/276
+* Bump ruff from 0.15.1 to 0.15.2 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/277
+* Bump actions/checkout from 3 to 6 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/278
+* Replace subprocess calls with async and reduce external CLI dependencies by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/281
+* Bump ruff from 0.15.2 to 0.15.4 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/283
+* Fix bugs and add smoked-salmon upload footer to descriptions by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/284
+* Migrate version file to TOML format by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/285
+* Fix inability to retry after image upload exceptions by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/286
+* Fix upload failure with cookie-only auth and other improvements by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/287
+* Add alpha image build workflow and upgrade to Python 3.13 by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/288
+* Fix release notification and changelog rendering by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/289
+
+## New Contributors
+* @StackOverBuffer made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/188
+* @KarlKode made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/202
+* @yafbot made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/208
+* @minicoz made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/214
+* @Moreasan made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/250
+* @nironics made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/251
+* @0rkag made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/261
+* @kisiel92 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/267
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.9.7.4...0.10.0
+"""
 
 [[changelog]]
 version = "0.9.7.4"
