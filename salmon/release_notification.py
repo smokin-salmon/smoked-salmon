@@ -10,6 +10,8 @@ from salmon import cfg
 LOCAL_VERSION_FILE = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "version.toml"))
 REMOTE_VERSION_URL = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/data/version.toml"
 
+_cached_version: str | None = None
+
 
 class ChangelogEntry(msgspec.Struct, frozen=True):
     version: str
@@ -17,13 +19,13 @@ class ChangelogEntry(msgspec.Struct, frozen=True):
     date: str
 
     @property
-    def formatted(self) -> str:
-        """Formats the entry as a human-readable changelog block.
+    def header(self) -> str:
+        """Returns the changelog entry header line.
 
         Returns:
-            A string with a header line followed by the stripped notes content.
+            A formatted header string with version and date.
         """
-        return f"Changelog for version {self.version} ({self.date}):\n{self.notes.strip()}"
+        return f"Changelog for version {self.version} ({self.date}):"
 
 
 class VersionData(msgspec.Struct, frozen=True):
@@ -31,7 +33,7 @@ class VersionData(msgspec.Struct, frozen=True):
     changelog: list[ChangelogEntry]
 
 
-def _extract_changelog(data: VersionData, from_version: str, to_version: str) -> str | None:
+def _extract_changelog(data: VersionData, from_version: str, to_version: str) -> list[ChangelogEntry]:
     """Extracts changelog entries between two versions.
 
     Args:
@@ -40,53 +42,38 @@ def _extract_changelog(data: VersionData, from_version: str, to_version: str) ->
         to_version: The upper bound version (inclusive).
 
     Returns:
-        A formatted string of changelog entries, or None if no entries found.
+        A list of ChangelogEntry objects.
     """
     collecting = False
-    notes_parts = []
+    entries = []
     for entry in data.changelog:
         if entry.version == to_version:
             collecting = True
         if entry.version == from_version:
             break
         if collecting:
-            notes_parts.append(entry.formatted)
-    return "\n\n".join(notes_parts) if notes_parts else None
+            entries.append(entry)
+    return entries
 
 
 def get_version() -> str | None:
-    """Returns the local installed version.
+    """Returns the local installed version, cached after first read.
 
     Returns:
         The current version string, or None if the version file is not found.
     """
+    global _cached_version
+    if _cached_version is not None:
+        return _cached_version
     try:
         with open(LOCAL_VERSION_FILE, "rb") as f:
-            return msgspec.toml.decode(f.read(), type=VersionData).current
+            _cached_version = msgspec.toml.decode(f.read(), type=VersionData).current
+        return _cached_version
     except FileNotFoundError:
         return None
 
 
-def _get_local_version(version_file: str) -> VersionData | None:
-    """Loads and parses the local version file.
-
-    Args:
-        version_file: Absolute path to the local version TOML file.
-
-    Returns:
-        Parsed VersionData, or None if the file is not found.
-    """
-    try:
-        with open(version_file, "rb") as f:
-            data = msgspec.toml.decode(f.read(), type=VersionData)
-        click.secho(f"Local Version: {data.current}", fg="yellow")
-        return data
-    except FileNotFoundError:
-        click.secho("Version file not found.", fg="red")
-        return None
-
-
-def _get_remote_version(url: str) -> VersionData | None:
+def _get_remote_version_data(url: str) -> VersionData | None:
     """Fetches and parses the remote version file.
 
     Args:
@@ -120,24 +107,29 @@ def show_release_notification() -> None:
     if not notify:
         return
 
-    local_data = _get_local_version(LOCAL_VERSION_FILE)
-    if not local_data:
+    local_version = get_version()
+    if not local_version:
+        click.secho("Version file not found.", fg="red")
         return
 
-    remote_data = _get_remote_version(REMOTE_VERSION_URL)
+    click.secho(f"Local Version: {local_version}", fg="yellow")
+
+    remote_data = _get_remote_version_data(REMOTE_VERSION_URL)
     if not remote_data:
         return
 
-    if Version(remote_data.current) > Version(local_data.current):
-        click.secho(f"[NOTICE] Update available: v{remote_data.current}", fg="green", bold=True)
+    if Version(remote_data.current) > Version(local_version):
+        click.secho(f"[NOTICE] Update available: v{remote_data.current}\n", fg="green", bold=True)
 
         if verbose:
-            changelog = _extract_changelog(remote_data, local_data.current, remote_data.current)
+            changelog = _extract_changelog(remote_data, local_version, remote_data.current)
             if changelog:
-                click.secho(changelog, fg="yellow")
+                for entry in changelog:
+                    click.secho(f"{entry.header}\n", fg="yellow")
+                    click.secho(f"{entry.notes.strip()}\n")
             else:
                 click.secho(
-                    f"Changelog not found between versions ({local_data.current} -> {remote_data.current}).",
+                    f"Changelog not found between versions ({local_version} -> {remote_data.current}).",
                     fg="yellow",
                 )
     else:
