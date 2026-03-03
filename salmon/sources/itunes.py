@@ -1,5 +1,6 @@
 import re
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import aiohttp
 
@@ -20,6 +21,22 @@ class iTunesBase(BaseScraper):
     get_params: dict[str, Any] | None = None
 
     _token: str | None = None
+
+    @classmethod
+    def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
+        """Format an Apple Music album URL from a release ID.
+
+        ``rls_id`` may be either a plain collection ID (int/str) or a
+        ``(storefront, collection_id)`` tuple as produced by the multi-region
+        search.
+        """
+        if url:
+            return url
+        if isinstance(rls_id, tuple):
+            # key is (storefront, lang, collection_id) from multi-region search
+            storefront, _, collection_id = rls_id
+            return f"{cls.site_url}/{storefront}/album/-/{collection_id}"
+        return f"{cls.site_url}/album/-/{rls_id}"
 
     @classmethod
     async def _get_token(cls) -> str:
@@ -63,18 +80,23 @@ class iTunesBase(BaseScraper):
             raise ScrapeError("Network error while fetching Apple Music token") from e
 
     async def fetch_data(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
     ) -> dict[str, Any]:
         """Fetch release data from Apple Music amp-api.
 
-        Extract storefront and album ID from the URL, then fetch album data
-        including full track listing from the amp-api.
-
         Args:
             url: The Apple Music album URL.
-            params: Optional query parameters (unused, kept for interface compat).
-            headers: Optional HTTP headers (unused, kept for interface compat).
-            follow_redirects: Whether to follow redirects.
+            params: Unused, kept for interface compatibility.
+            headers: Unused, kept for interface compatibility.
+            follow_redirects: Unused, kept for interface compatibility.
+            rls_id: Release ID tuple ``(storefront, lang, collection_id)`` as
+                produced by the multi-region search. Used to determine which
+                storefront and language to query.
 
         Returns:
             A dict with keys ``album`` (album attributes dict) and
@@ -87,9 +109,14 @@ class iTunesBase(BaseScraper):
         if not match:
             raise ScrapeError("Invalid Apple Music URL format")
 
-        # group(2) is the optional storefront code, group(3) is the album ID
-        storefront = match.group(2) or "us"
         album_id = match.group(3).split("?")[0].split("/")[0]
+
+        if isinstance(rls_id, tuple):
+            sf, lang, _ = rls_id
+        else:
+            sf = match.group(2) or "us"
+            qs = parse_qs(urlparse(url).query)
+            lang = qs.get("l", ["en-US"])[0]
 
         token = await self._get_token()
         request_headers = {
@@ -99,23 +126,21 @@ class iTunesBase(BaseScraper):
 
         try:
             data = await self.get_json(
-                f"{AMP_API_URL}/v1/catalog/{storefront}/albums/{album_id}",
-                params={
-                    "include": "tracks",
-                },
+                f"{AMP_API_URL}/v1/catalog/{sf}/albums/{album_id}",
+                params={"include": "tracks", "l": lang},
                 headers=request_headers,
             )
 
             album_data = data["data"][0]
-            tracks_data = album_data.get("relationships", {}).get("tracks", {}).get("data", [])
-            tracks_next = album_data.get("relationships", {}).get("tracks", {}).get("next")
+            tracks_rel = album_data.get("relationships", {}).get("tracks", {})
+            tracks_data = list(tracks_rel.get("data", []))
+            tracks_next = tracks_rel.get("next")
 
-            # Paginate if the track list was truncated
             offset = len(tracks_data)
             while tracks_next:
                 page_data = await self.get_json(
-                    f"{AMP_API_URL}/v1/catalog/{storefront}/albums/{album_id}/tracks",
-                    params={"offset": offset},
+                    f"{AMP_API_URL}/v1/catalog/{sf}/albums/{album_id}/tracks",
+                    params={"offset": offset, "l": lang},
                     headers=request_headers,
                 )
                 tracks_data.extend(page_data.get("data", []))
@@ -128,4 +153,4 @@ class iTunesBase(BaseScraper):
             }
 
         except (KeyError, IndexError) as e:
-            raise ScrapeError("Failed to parse Apple Music API response") from e
+            raise ScrapeError(f"Failed to grab Apple Music metadata for {url}.") from e

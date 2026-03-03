@@ -131,7 +131,12 @@ class BaseScraper:
             raise ScrapeError(f"Failed to scrape page: {e}") from e
 
     async def fetch_data(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
     ) -> dict[str, Any]:
         """Fetch release data from a source.
 

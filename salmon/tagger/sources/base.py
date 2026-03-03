@@ -29,7 +29,7 @@ class MetadataMixin(ABC):
         as None.
         """
         if self.is_json_api:
-            soup = await self.fetch_data(url)
+            soup = await self.fetch_data(url, rls_id=rls_id)
         else:
             soup = await self.fetch_page(url)
 
