@@ -9,7 +9,6 @@ from salmon.tagger.sources import (
     deezer,
     discogs,
     itunes,
-    junodownload,
     musicbrainz,
     qobuz,
     tidal,
@@ -18,7 +17,6 @@ from salmon.tagger.sources import (
 METASOURCES = {
     "MusicBrainz": musicbrainz,
     "iTunes": itunes,
-    "Junodownload": junodownload,
     "Deezer": deezer,
     "Discogs": discogs,
     "Beatport": beatport,
