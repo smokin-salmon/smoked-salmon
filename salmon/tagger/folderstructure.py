@@ -1,5 +1,6 @@
 import os
 import shutil
+from pathlib import Path
 
 import asyncclick as click
 
@@ -147,8 +148,9 @@ def _check_path_lengths(path: str, scene: bool) -> None:
 def _check_zero_len_folder(path: str) -> None:
     """Verify that no zero-length (empty-name) folder segments exist in any path.
 
-    Detects consecutive path separators (``//``) which indicate an empty folder
-    name component.
+    Uses ``pathlib`` to iterate through every entry under *path* and checks
+    whether any directory or file has an empty (or whitespace-only) name,
+    which would indicate a malformed folder structure.
 
     Args:
         path: Absolute path to the release folder being checked.
@@ -156,12 +158,10 @@ def _check_zero_len_folder(path: str) -> None:
     Raises:
         NoncompliantFolderStructure: If a zero-length folder segment is found.
     """
-    for root, _, files in os.walk(path):
-        for filename in files:
-            foldlist = os.path.join(root, filename)
-            if os.sep * 2 in foldlist:
-                click.secho("A zero length folder exists in this directory.", fg="red")
-                raise NoncompliantFolderStructure
+    for item in Path(path).rglob("*"):
+        if not item.name.strip():
+            click.secho("A zero length folder exists in this directory.", fg="red")
+            raise NoncompliantFolderStructure
     click.secho("No zero length folders were found.", fg="green")
 
 
