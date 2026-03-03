@@ -62,7 +62,7 @@ class QobuzSettings(BaseStruct):
     no_genres_from_qobuz: bool = False
 
 
-class iTunesSettings(BaseStruct):
+class AppleMusicSettings(BaseStruct):
     storefronts: list[str] = msgspec.field(default_factory=lambda: ["us:en-US", "jp:ja", "cn:zh-Hans-CN"])
 
 
@@ -70,7 +70,7 @@ class Metadata(BaseStruct):
     discogs_token: str | None = None
     qobuz: QobuzSettings = msgspec.field(default_factory=QobuzSettings)
     tidal: TidalSettings = msgspec.field(default_factory=TidalSettings)
-    itunes: iTunesSettings = msgspec.field(default_factory=iTunesSettings)
+    apple_music: AppleMusicSettings = msgspec.field(default_factory=AppleMusicSettings)
 
 
 class GazelleTrackerSettings(BaseStruct):

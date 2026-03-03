@@ -12,7 +12,7 @@ AMP_API_URL = "https://amp-api.music.apple.com"
 APPLE_MUSIC_URL = "https://music.apple.com"
 
 
-class iTunesBase(BaseScraper):
+class AppleMusicBase(BaseScraper):
     url = AMP_API_URL
     site_url = APPLE_MUSIC_URL
     search_url = "https://itunes.apple.com/search"

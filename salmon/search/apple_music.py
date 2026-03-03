@@ -6,10 +6,10 @@ import anyio
 from salmon import cfg
 from salmon.common import parse_copyright
 from salmon.search.base import IdentData, SearchMixin
-from salmon.sources import iTunesBase
+from salmon.sources import AppleMusicBase
 
 
-class Searcher(iTunesBase, SearchMixin):
+class Searcher(AppleMusicBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
         # Group langs by storefront — search once per storefront
         sf_langs = _get_storefronts_and_langs()
@@ -83,7 +83,7 @@ class Searcher(iTunesBase, SearchMixin):
                         ),
                     )
 
-        return "iTunes", releases
+        return "Apple Music", releases
 
 
 def _get_storefronts_and_langs() -> dict[str, list[str]]:
@@ -93,7 +93,7 @@ def _get_storefronts_and_langs() -> dict[str, list[str]]:
     within each storefront.
     """
     result: dict[str, list[str]] = {}
-    for entry in cfg.metadata.itunes.storefronts:
+    for entry in cfg.metadata.apple_music.storefronts:
         if ":" in entry:
             sf, lang = entry.split(":", 1)
         else:

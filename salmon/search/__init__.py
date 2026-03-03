@@ -14,11 +14,11 @@ from salmon.common import (
     re_strip,
 )
 from salmon.search import (
+    apple_music,
     bandcamp,
     beatport,
     deezer,
     discogs,
-    itunes,
     musicbrainz,
     qobuz,
     tidal,
@@ -27,7 +27,7 @@ from salmon.search import (
 SEARCHSOURCES = {
     "Bandcamp": bandcamp,
     "MusicBrainz": musicbrainz,
-    "iTunes": itunes,
+    "Apple Music": apple_music,
     "Discogs": discogs,
     "Beatport": beatport,
     "Qobuz": qobuz,

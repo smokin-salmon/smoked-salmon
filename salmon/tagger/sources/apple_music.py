@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError
-from salmon.sources import iTunesBase
+from salmon.sources import AppleMusicBase
 from salmon.tagger.sources.base import MetadataMixin
 
 ALIAS_GENRE = {
@@ -13,7 +13,7 @@ ALIAS_GENRE = {
 }
 
 
-class Scraper(iTunesBase, MetadataMixin):
+class Scraper(AppleMusicBase, MetadataMixin):
     def parse_release_title(self, soup):
         """Parse release title from amp-api album attributes."""
         try:

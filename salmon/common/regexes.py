@@ -27,7 +27,7 @@ def re_split(stri):
 
 def parse_copyright(copyright):
     """
-    Filter out a bunch of shit from the copyright fields provided on iTunes
+    Filter out a bunch of shit from the copyright fields provided on Apple Music
     and Tidal pages. Their copyright info does not always accurately represent
     the label, but it's the best we can do.
     """

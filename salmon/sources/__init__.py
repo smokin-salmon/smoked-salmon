@@ -1,9 +1,9 @@
 from salmon import cfg
+from salmon.sources.apple_music import AppleMusicBase
 from salmon.sources.bandcamp import BandcampBase
 from salmon.sources.beatport import BeatportBase
 from salmon.sources.deezer import DeezerBase
 from salmon.sources.discogs import DiscogsBase
-from salmon.sources.itunes import iTunesBase
 from salmon.sources.musicbrainz import MusicBrainzBase
 from salmon.sources.qobuz import QobuzBase
 from salmon.sources.tidal import TidalBase
@@ -14,7 +14,7 @@ __all__ = [
     "BeatportBase",
     "DeezerBase",
     "DiscogsBase",
-    "iTunesBase",
+    "AppleMusicBase",
     "MusicBrainzBase",
     "QobuzBase",
     "TidalBase",
@@ -26,7 +26,7 @@ SOURCE_ICONS = {
     "Beatport": "https://ptpimg.me/5hwjpv.png",
     "Deezer": "https://ptpimg.me/m265v2.png",
     "Discogs": "https://ptpimg.me/mt4ql3.png",
-    "iTunes": "https://ptpimg.me/0z2x90.png",
+    "Apple Music": "https://ptpimg.me/0z2x90.png",
     "MusicBrainz": "https://ptpimg.me/56plwd.png",
     "Qobuz": "https://ptpimg.me/e4d045.png",
     "Tidal": "https://ptpimg.me/5vxo23.png",

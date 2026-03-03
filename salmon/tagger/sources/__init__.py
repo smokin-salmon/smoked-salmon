@@ -4,11 +4,11 @@ import asyncclick as click
 
 from salmon.errors import ScrapeError
 from salmon.tagger.sources import (
+    apple_music,
     bandcamp,
     beatport,
     deezer,
     discogs,
-    itunes,
     musicbrainz,
     qobuz,
     tidal,
@@ -16,7 +16,7 @@ from salmon.tagger.sources import (
 
 METASOURCES = {
     "MusicBrainz": musicbrainz,
-    "iTunes": itunes,
+    "Apple Music": apple_music,
     "Deezer": deezer,
     "Discogs": discogs,
     "Beatport": beatport,
