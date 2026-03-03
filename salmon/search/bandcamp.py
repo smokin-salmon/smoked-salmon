@@ -1,8 +1,6 @@
 import re
 from typing import Any
 
-from bs4 import BeautifulSoup
-
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BandcampBase
@@ -12,9 +10,7 @@ class Searcher(BandcampBase, SearchMixin):
     async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict]:
         releases: dict[Any, Any] = {}
         try:
-            soup = await self.create_soup(self.search_url, params={"q": searchstr}, follow_redirects=False)
-            if not isinstance(soup, BeautifulSoup):
-                raise ScrapeError("Expected BeautifulSoup object")
+            soup = await self.fetch_page(self.search_url, params={"q": searchstr}, follow_redirects=False)
             for meta in soup.select(".result-items .searchresult.data-search .result-info"):
                 try:
                     item_url_elem = meta.select(".itemurl a")[0]

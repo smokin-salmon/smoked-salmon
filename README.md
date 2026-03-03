@@ -15,7 +15,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 - **Spectral Upload** – Can generate spectrals for an existing upload (based on local files), and update the release description.  
 - **Lossy Master Report Generation** – Supports lossy master reports during upload.
 - **Metadata Retrieval** – Fetches metadata from:
-  - Bandcamp, Beatport, Deezer, Discogs, iTunes, JunoDownload, MusicBrainz, Qobuz, Tidal.
+  - Apple Music, Bandcamp, Beatport, Deezer, Discogs, MusicBrainz, Qobuz, Tidal.
 - **File Management** –  
   - Retags and renames files to standard formats (based on metadata).
   - Checks file integrity and sanitizes if needed.  

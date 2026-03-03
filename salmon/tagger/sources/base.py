@@ -1,6 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from collections.abc import Callable
 from copy import copy
 from itertools import chain
 from typing import Any
@@ -11,9 +12,11 @@ from salmon.errors import GenreNotInWhitelist
 
 
 class MetadataMixin(ABC):
-    # These methods are expected to be provided by BaseScraper when used as a mixin
-    format_url: Any  # Provided by BaseScraper subclass
-    create_soup: Any
+    # These methods/attributes are expected to be provided by BaseScraper when used as a mixin
+    format_url: Callable
+    is_json_api: bool
+    fetch_page: Callable  # HTML path: BaseScraper.fetch_page
+    fetch_data: Callable  # JSON path: defined on JSON source bases
 
     async def scrape_release_from_id(self, rls_id: str) -> dict[str, Any]:
         """Run a scrape from the release ID."""
@@ -25,7 +28,10 @@ class MetadataMixin(ABC):
         Data may vary depending on the source; unavailable keys will be left
         as None.
         """
-        soup = await self.create_soup(url)
+        if self.is_json_api:
+            soup = await self.fetch_data(url, rls_id=rls_id)
+        else:
+            soup = await self.fetch_page(url)
 
         tracks_result = await self.parse_tracks(soup)
 

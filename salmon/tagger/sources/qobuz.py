@@ -7,7 +7,6 @@ from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.sources.base import SoupType
 from salmon.tagger.sources.base import MetadataMixin
 
 # ------------------------------------------------------------------------------
@@ -120,10 +119,15 @@ class Scraper(QobuzBase, MetadataMixin):
     # Core API and Connection Methods
     # --------------------------------------------------------------------------
 
-    async def create_soup(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> SoupType:
-        """Override create_soup to properly get the album data from the API.
+    async def fetch_data(
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
+    ) -> dict[str, Any]:
+        """Override fetch_data to properly get the album data from the API.
 
         This method uses the QobuzBase get_json method.
 

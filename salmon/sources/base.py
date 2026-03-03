@@ -23,10 +23,6 @@ class IdentData(msgspec.Struct, frozen=True):
     source: str
 
 
-# Type alias for soup return type - can be BeautifulSoup or dict (for JSON APIs)
-SoupType = BeautifulSoup | dict[str, Any]
-
-
 class BaseScraper:
     """Base class for metadata scrapers."""
 
@@ -35,6 +31,7 @@ class BaseScraper:
     regex: re.Pattern[str]
     release_format: str = ""
     get_params: dict[str, Any] | None = None
+    is_json_api: bool = True
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
@@ -62,7 +59,9 @@ class BaseScraper:
         """Make async GET request to JSON API.
 
         Args:
-            url: The URL path to request.
+            url: Full URL or a path that will be appended to ``self.url``.
+                 If the value starts with ``http://`` or ``https://`` it is
+                 used as-is; otherwise ``self.url`` is prepended.
             params: Optional query parameters.
             headers: Optional HTTP headers.
 
@@ -74,29 +73,30 @@ class BaseScraper:
         """
         params = {**(params or {}), **(self.get_params or {})}
         headers = {**(headers or {}), **HEADERS}
+        full_url = url if url.startswith(("http://", "https://")) else self.url + url
         timeout = aiohttp.ClientTimeout(total=10)
         try:
             async with (
                 aiohttp.ClientSession(timeout=timeout) as session,
-                session.get(self.url + url, params=params, headers=headers) as resp,
+                session.get(full_url, params=params, headers=headers) as resp,
             ):
                 if resp.status != 200:
                     class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
                     error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
                     try:
-                        error_data = await resp.json(loads=msgspec.json.decode)
+                        error_data = await resp.text()
                     except Exception:
                         error_data = None
                     raise ScrapeError(error_msg, error_data)
-                return await resp.json(loads=msgspec.json.decode)
+                return msgspec.json.decode(await resp.read())
         except aiohttp.ContentTypeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
         except msgspec.DecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
 
-    async def create_soup(
+    async def fetch_page(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> SoupType:
+    ) -> BeautifulSoup:
         """Scrape webpage and return BeautifulSoup object.
 
         Args:
@@ -125,10 +125,38 @@ class BaseScraper:
             ):
                 if r.status != 200:
                     raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
-                text = await r.text()
-                return BeautifulSoup(text, "lxml")
+                data = await r.read()
+                return BeautifulSoup(data, "lxml")
         except (TimeoutError, aiohttp.ClientError) as e:
             raise ScrapeError(f"Failed to scrape page: {e}") from e
+
+    async def fetch_data(
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
+    ) -> dict[str, Any]:
+        """Fetch release data from a source.
+
+        Subclasses that use JSON APIs should override this method to return
+        parsed release data.  The default implementation raises
+        ``NotImplementedError``.
+
+        Args:
+            url: The release URL.
+            params: Optional query parameters.
+            headers: Optional HTTP headers.
+            follow_redirects: Whether to follow redirects.
+
+        Returns:
+            Release data dict.
+
+        Raises:
+            NotImplementedError: Always, unless overridden.
+        """
+        raise NotImplementedError
 
     @staticmethod
     def url_format_rls_name(rls_name: str) -> str:

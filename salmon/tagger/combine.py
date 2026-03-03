@@ -16,10 +16,9 @@ PREFERENCES = [
     "Qobuz",
     "Bandcamp",
     "MusicBrainz",
-    "Junodownload",
     "Discogs",
     "Beatport",
-    "iTunes",  # scraping half-broken, might want to put it back higher when fixed
+    "Apple Music",
 ]
 
 

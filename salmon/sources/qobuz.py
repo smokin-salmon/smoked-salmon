@@ -5,7 +5,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper, SoupType
+from salmon.sources.base import BaseScraper
 
 
 class QobuzBase(BaseScraper):
@@ -21,9 +21,14 @@ class QobuzBase(BaseScraper):
     }
     get_params: dict[str, Any] | None = {}
 
-    async def create_soup(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> SoupType:
+    async def fetch_data(
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
+    ) -> dict[str, Any]:
         """Fetch album data from Qobuz JSON API.
 
         Args:

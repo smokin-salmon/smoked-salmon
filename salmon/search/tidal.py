@@ -9,7 +9,7 @@ from salmon.errors import ScrapeError
 from salmon.search.base import ArtistRlsData, IdentData, SearchMixin
 from salmon.sources import TidalBase
 
-COUNTRIES = cfg.metadata.tidal.search_regions
+COUNTRIES = [cc.upper() for cc in cfg.metadata.tidal.regions]
 
 
 class Searcher(TidalBase, SearchMixin):
@@ -19,7 +19,7 @@ class Searcher(TidalBase, SearchMixin):
         Warnings are for stream quality/streambility.
         """
         if not cfg.metadata.tidal.token:
-            return "Tidal", None
+            return "Tidal", {}
 
         releases, tasks = {}, []
 

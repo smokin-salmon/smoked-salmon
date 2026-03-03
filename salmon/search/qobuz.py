@@ -13,20 +13,22 @@ from salmon.sources.qobuz import QobuzBase
 class Searcher(QobuzBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
         if not cfg.metadata.qobuz:
-            return "Qobuz", None
+            return "Qobuz", {}
 
         releases = {}
         try:
             resp = await self.get_json(
                 "/catalog/search",
-                params={"query": searchstr, "limit": limit, "offset": 0, "facet": None},
+                params={"query": searchstr, "limit": limit, "offset": 0},
                 headers=self.headers,
             )
 
-            if not resp or "albums" not in resp or "items" not in resp["albums"]:
+            items = resp.get("albums", {}).get("items")
+
+            if not items:
                 return "Qobuz", {}
 
-            for rls in resp["albums"]["items"]:
+            for rls in items:
                 try:
                     artists = rls["artist"]["name"]
                     title = rls["title"]

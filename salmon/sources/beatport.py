@@ -1,10 +1,10 @@
 import re
+from typing import Any
 
 import msgspec
-from bs4 import BeautifulSoup
 
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper, SoupType
+from salmon.sources.base import BaseScraper
 
 
 class BeatportBase(BaseScraper):
@@ -13,9 +13,14 @@ class BeatportBase(BaseScraper):
     release_format = "/release/{rls_name}/{rls_id}"
     regex = re.compile(r"^https?://(?:(?:www|classic)\.)?beatport\.com/release/.+?/(\d+)/?$")
 
-    async def create_soup(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> SoupType:
+    async def fetch_data(
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
+    ) -> dict:
         """Extract JSON track data from Beatport's HTML page.
 
         Args:
@@ -30,9 +35,7 @@ class BeatportBase(BaseScraper):
         Raises:
             ScrapeError: If extraction fails.
         """
-        soup = await super().create_soup(url, params)
-        if not isinstance(soup, BeautifulSoup):
-            raise ScrapeError("Expected BeautifulSoup object from parent create_soup")
+        soup = await self.fetch_page(url, params)
         try:
             script_tag = soup.find("script", id="__NEXT_DATA__")
             if not script_tag or not script_tag.string:

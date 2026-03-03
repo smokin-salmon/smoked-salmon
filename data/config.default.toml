@@ -59,8 +59,14 @@ discogs_token = 'discogs-token'
 # remove if not using tidal (see wiki to see how to get your tidal token)
 [metadata.tidal]
 token = 'your-token'
-# search_regions = ["de", "nz", "us", "gb"]
-# fetch_regions = ["de", "nz", "us", "gb"]
+# regions = ["de", "nz", "us", "gb"]
+
+# Apple Music storefronts for searching and fetching metadata.
+# All storefronts are searched in parallel; results are interleaved by rank.
+# A single storefront can have multiple languages for fetching metadata tags.
+# Format: "storefront:lang", e.g. "us:en-US", "jp:ja", "cn:zh-Hans-CN"
+# [metadata.apple_music]
+# storefronts = ["us:en-US", "jp:ja", "cn:zh-Hans-CN"]
 
 # remove if not using qobuz (see wiki to see how to get your tidal token)
 [metadata.qobuz]
