@@ -52,8 +52,7 @@ class ImageUploader(BaseStruct):
 
 class TidalSettings(BaseStruct):
     token: str | None = None
-    search_regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
-    fetch_regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
+    regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
 
 
 # TODO: Add validations here

@@ -16,7 +16,12 @@ class DiscogsBase(BaseScraper):
     get_params = {"token": cfg.metadata.discogs_token}
 
     async def fetch_data(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
     ) -> dict[str, Any]:
         """Fetch release data from Discogs JSON API.
 

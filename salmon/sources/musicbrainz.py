@@ -15,7 +15,12 @@ class MusicBrainzBase(BaseScraper):
     regex = re.compile(r"^https?://(?:www\.)?musicbrainz.org/release/([a-f0-9\-]+)$")
 
     async def fetch_data(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
     ) -> dict[str, Any]:
         """Fetch release data from MusicBrainz API.
 

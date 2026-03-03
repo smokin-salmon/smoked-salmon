@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 import msgspec
 
@@ -13,7 +14,12 @@ class BeatportBase(BaseScraper):
     regex = re.compile(r"^https?://(?:(?:www|classic)\.)?beatport\.com/release/.+?/(\d+)/?$")
 
     async def fetch_data(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
     ) -> dict:
         """Extract JSON track data from Beatport's HTML page.
 

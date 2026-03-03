@@ -9,7 +9,7 @@ from salmon.errors import ScrapeError
 from salmon.search.base import ArtistRlsData, IdentData, SearchMixin
 from salmon.sources import TidalBase
 
-COUNTRIES = cfg.metadata.tidal.search_regions
+COUNTRIES = [cc.upper() for cc in cfg.metadata.tidal.regions]
 
 
 class Searcher(TidalBase, SearchMixin):
@@ -52,7 +52,7 @@ class Searcher(TidalBase, SearchMixin):
             params={
                 "types": "ALBUMS,TRACKS",
                 "query": searchstr,
-                "countrycode": country_code.upper(),
+                "countrycode": country_code,
             },
         )
         albums = resp["albums"]["items"][: limit * 2]  # Double it up to accomodate dupe results.

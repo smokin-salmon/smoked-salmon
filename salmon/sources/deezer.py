@@ -80,7 +80,12 @@ class DeezerBase(BaseScraper):
         return match[2]
 
     async def fetch_data(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+        self,
+        url: str,
+        params: dict | None = None,
+        headers: dict | None = None,
+        follow_redirects: bool = True,
+        rls_id: Any = None,
     ) -> dict[str, Any]:
         """Fetch album data from Deezer API.
 

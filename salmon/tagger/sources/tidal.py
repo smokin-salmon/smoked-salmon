@@ -56,9 +56,10 @@ class Scraper(TidalBase, MetadataMixin):
         return soup["upc"]
 
     async def parse_tracks(self, soup):
+        cc = soup.get("_country_code") or ""
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
-            artists = await self.parse_artists(track["artists"], track["title"], track["id"])
+            artists = await self.parse_artists(track["artists"], track["title"], track["id"], cc)
             tracks[str(track["volumeNumber"])][str(track["trackNumber"])] = self.generate_track(
                 trackno=track["trackNumber"],
                 discno=track["volumeNumber"],
@@ -81,13 +82,14 @@ class Scraper(TidalBase, MetadataMixin):
             return "Self-Released"
         return data["label"]
 
-    async def parse_artists(self, artists: list[dict], title: str, track_id: int) -> list[tuple[str, str]]:
+    async def parse_artists(self, artists: list[dict], title: str, track_id: int, cc: str) -> list[tuple[str, str]]:
         """Iterate over all artists and roles, returning a compliant list of artist tuples.
 
         Args:
             artists: List of artist dictionaries from Tidal API.
             title: Track title.
             track_id: Track ID for fetching contributors.
+            cc: Country code for the contributors API request.
 
         Returns:
             List of (artist_name, role) tuples.
@@ -132,7 +134,7 @@ class Scraper(TidalBase, MetadataMixin):
                 try:
                     resp = await self.get_json(
                         f"/tracks/{track_id}/contributors",
-                        params={"countryCode": self.country_code, "limit": 25},
+                        params={"countryCode": cc, "limit": 25},
                     )
                     contributor_artists = resp["items"]
                     break
