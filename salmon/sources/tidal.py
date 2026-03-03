@@ -5,10 +5,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
-from salmon.sources.base import BaseScraper, SoupType
-
-# Unused parameter in override - kept for API compatibility
-# ruff: noqa: ARG002
+from salmon.sources.base import BaseScraper
 
 
 class TidalBase(BaseScraper):
@@ -38,10 +35,10 @@ class TidalBase(BaseScraper):
             raise ValueError("Invalid Tidal URL.")
         return match[2]
 
-    async def create_soup(
+    async def fetch_data(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> SoupType:
-        """Run a GET request to Tidal's JSON API for album data.
+    ) -> dict[str, Any]:
+        """Fetch album data from Tidal's JSON API.
 
         Args:
             url: The Tidal album URL.

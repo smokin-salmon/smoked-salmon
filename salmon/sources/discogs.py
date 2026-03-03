@@ -15,7 +15,7 @@ class DiscogsBase(BaseScraper):
     release_format = "/release/{rls_id}"
     get_params = {"token": cfg.metadata.discogs_token}
 
-    async def create_soup(
+    async def fetch_data(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
     ) -> dict[str, Any]:
         """Fetch release data from Discogs JSON API.

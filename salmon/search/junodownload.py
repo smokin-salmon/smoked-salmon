@@ -1,7 +1,5 @@
 import re
 
-from bs4 import BeautifulSoup
-
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
@@ -11,7 +9,7 @@ from salmon.sources import JunodownloadBase
 class Searcher(JunodownloadBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
         releases = {}
-        soup = await self.create_soup(
+        soup = await self.fetch_page(
             self.search_url,
             params={
                 "submit-search": "SEARCH",
@@ -20,9 +18,6 @@ class Searcher(JunodownloadBase, SearchMixin):
             },
             follow_redirects=False,
         )
-        # soup can be BeautifulSoup or dict depending on source
-        if not isinstance(soup, BeautifulSoup):
-            return "Junodownload", releases
         for meta in soup.find_all(
             "div",
             attrs={

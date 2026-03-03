@@ -320,7 +320,7 @@ async def _test_metadata_sources() -> None:
 
             # For a basic connection test, try to create soup with a test URL
             try:
-                await source_instance.create_soup(source_info["test_url"])
+                await source_instance.fetch_data(source_info["test_url"])
                 click.secho(f"  ✔ {source_name}: Connection successful", fg="green", bold=True)
             except Exception as inner_e:
                 click.secho(f"  ✖ {source_name}: Error - {inner_e}", fg="red", bold=True)

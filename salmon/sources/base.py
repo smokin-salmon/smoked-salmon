@@ -23,10 +23,6 @@ class IdentData(msgspec.Struct, frozen=True):
     source: str
 
 
-# Type alias for soup return type - can be BeautifulSoup or dict (for JSON APIs)
-SoupType = BeautifulSoup | dict[str, Any]
-
-
 class BaseScraper:
     """Base class for metadata scrapers."""
 
@@ -84,7 +80,7 @@ class BaseScraper:
                     class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
                     error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
                     try:
-                        error_data = await resp.json(loads=msgspec.json.decode)
+                        error_data = await resp.text()
                     except Exception:
                         error_data = None
                     raise ScrapeError(error_msg, error_data)
@@ -94,9 +90,9 @@ class BaseScraper:
         except msgspec.DecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
 
-    async def create_soup(
+    async def fetch_page(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> SoupType:
+    ) -> BeautifulSoup:
         """Scrape webpage and return BeautifulSoup object.
 
         Args:
@@ -129,6 +125,29 @@ class BaseScraper:
                 return BeautifulSoup(text, "lxml")
         except (TimeoutError, aiohttp.ClientError) as e:
             raise ScrapeError(f"Failed to scrape page: {e}") from e
+
+    async def fetch_data(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> dict[str, Any]:
+        """Fetch release data from a source.
+
+        Subclasses that use JSON APIs should override this method to return
+        parsed release data.  The default implementation raises
+        ``NotImplementedError``.
+
+        Args:
+            url: The release URL.
+            params: Optional query parameters.
+            headers: Optional HTTP headers.
+            follow_redirects: Whether to follow redirects.
+
+        Returns:
+            Release data dict.
+
+        Raises:
+            NotImplementedError: Always, unless overridden.
+        """
+        raise NotImplementedError
 
     @staticmethod
     def url_format_rls_name(rls_name: str) -> str:
