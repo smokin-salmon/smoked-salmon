@@ -31,6 +31,7 @@ class BaseScraper:
     regex: re.Pattern[str]
     release_format: str = ""
     get_params: dict[str, Any] | None = None
+    is_json_api: bool = True
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
@@ -121,8 +122,8 @@ class BaseScraper:
             ):
                 if r.status != 200:
                     raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
-                text = await r.text()
-                return BeautifulSoup(text, "lxml")
+                data = await r.read()
+                return BeautifulSoup(data, "lxml")
         except (TimeoutError, aiohttp.ClientError) as e:
             raise ScrapeError(f"Failed to scrape page: {e}") from e
 

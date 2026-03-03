@@ -19,7 +19,7 @@ class Searcher(TidalBase, SearchMixin):
         Warnings are for stream quality/streambility.
         """
         if not cfg.metadata.tidal.token:
-            return "Tidal", None
+            return "Tidal", {}
 
         releases, tasks = {}, []
 
@@ -52,7 +52,7 @@ class Searcher(TidalBase, SearchMixin):
             params={
                 "types": "ALBUMS,TRACKS",
                 "query": searchstr,
-                "countrycode": country_code,
+                "countrycode": country_code.upper(),
             },
         )
         albums = resp["albums"]["items"][: limit * 2]  # Double it up to accomodate dupe results.

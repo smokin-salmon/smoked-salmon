@@ -5,6 +5,7 @@ from salmon.sources.base import BaseScraper
 
 
 class BandcampBase(BaseScraper):
+    is_json_api = False
     search_url = "https://bandcamp.com/search/"
     regex = re.compile(r"^https?://([^/]+)/(album|track)/([^/]+)/?")
     release_format = "https://{rls_url}/{type}/{rls_id}"

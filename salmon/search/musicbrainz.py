@@ -21,8 +21,8 @@ class Searcher(MusicBrainzBase, SearchMixin):
             Tuple of (source name, releases dict).
         """
         releases = {}
-        soup = await asyncio.to_thread(musicbrainzngs.search_releases, searchstr, limit)
-        for rls in soup["release-list"]:
+        result = await asyncio.to_thread(musicbrainzngs.search_releases, searchstr, limit)
+        for rls in result["release-list"]:
             try:
                 artists = rls["artist-credit-phrase"]
                 try:

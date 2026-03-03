@@ -1,32 +1,24 @@
 from typing import Any
 
 import msgspec
-from bs4 import BeautifulSoup
 
 from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BeatportBase
-from salmon.sources.base import BaseScraper
 
 
 class Searcher(BeatportBase, SearchMixin):
-    async def search_page(
-        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
-    ) -> BeautifulSoup:
-        """Use BaseScraper's fetch_page directly for search."""
-        return await BaseScraper.fetch_page(self, url, params, headers, follow_redirects)
-
     async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict]:
         releases: dict[Any, Any] = {}
-        soup = await self.search_page(self.search_url, params={"q": searchstr})
+        soup = await self.fetch_page(self.search_url, params={"q": searchstr})
         try:
             script_tag = soup.find("script", id="__NEXT_DATA__")
-            if not script_tag or not script_tag.string:
+            if not script_tag or not script_tag.text:
                 raise ScrapeError("Could not find Next.js data script tag")
 
             try:
-                data = msgspec.json.decode(script_tag.string)
+                data = msgspec.json.decode(script_tag.text)
             except msgspec.DecodeError as e:
                 raise ScrapeError("Failed to parse Beatport JSON data") from e
             search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]

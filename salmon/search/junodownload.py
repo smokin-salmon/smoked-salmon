@@ -12,9 +12,8 @@ class Searcher(JunodownloadBase, SearchMixin):
         soup = await self.fetch_page(
             self.search_url,
             params={
-                "submit-search": "SEARCH",
                 "solrorder": "relevancy",
-                "q[all][]": [searchstr],
+                "q[all][]": searchstr,
             },
             follow_redirects=False,
         )

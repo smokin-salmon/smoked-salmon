@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import platform
 import sys
+import traceback
 from typing import Any
 
 import aiohttp
@@ -173,9 +174,9 @@ async def handle_scrape_errors(task: Any, mute: bool = False) -> Any | None:
         return await task
     except (ScrapeError, aiohttp.ClientError, TimeoutError, KeyError) as e:
         if not mute:
-            click.secho(f"Error message: {e}", fg="red", bold=True)
+            click.secho(f"Error message: {e}\n{''.join(traceback.format_exception(e))}", fg="red", bold=True)
     except Exception as e:
         # Catch any unexpected errors too
         if not mute:
-            click.secho(f"Unexpected scrape error: {e}", fg="red", bold=True)
+            click.secho(f"Unexpected scrape error: {e}\n{''.join(traceback.format_exception(e))}", fg="red", bold=True)
     return None
