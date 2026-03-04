@@ -309,6 +309,7 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, To
         Tuple of (torrent_path, torrent_object).
     """
     click.secho("Generating torrent file...", fg="yellow", nl=False)
+    await gazelle_site.ensure_authenticated()
     t = Torrent(
         path,
         trackers=[gazelle_site.announce],
