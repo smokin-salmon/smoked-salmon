@@ -91,6 +91,7 @@ async def prepare_and_upload(
             source_url=source_url,
             override_description=override_description,
         )
+    await gazelle_site.ensure_authenticated()
     torrent_path, torrent_content = generate_torrent(gazelle_site, path)
     files = await compile_files(path, torrent_path, metadata)
 
@@ -309,7 +310,6 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, To
         Tuple of (torrent_path, torrent_object).
     """
     click.secho("Generating torrent file...", fg="yellow", nl=False)
-    await gazelle_site.ensure_authenticated()
     t = Torrent(
         path,
         trackers=[gazelle_site.announce],
