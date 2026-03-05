@@ -1,6 +1,7 @@
 import asyncio
 import html
 import re
+from contextlib import suppress
 from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
@@ -92,6 +93,14 @@ class RetryableError(Exception):
     pass
 
 
+class HttpResponse(msgspec.Struct, frozen=True):
+    """HTTP response data extracted from aiohttp.ClientResponse."""
+
+    text: str
+    url: str
+    status: int
+
+
 class BaseGazelleApi:
     """Base API client for Gazelle-based trackers."""
 
@@ -101,10 +110,10 @@ class BaseGazelleApi:
     tracker_url: str
     site_code: str
     site_string: str
-    api_key: str  # Optional, only for API key upload
+    api_key: str = ""  # Optional, only for API key upload
 
-    # Rate limiter: 10 requests per 10 seconds (shared across all instances)
-    _rate_limiter = AsyncLimiter(10, 10)
+    # Rate limiter: 5 requests per 10 seconds (shared across all instances)
+    _rate_limiter = AsyncLimiter(5, 10)
 
     def __init__(self) -> None:
         """Initialize the API client. Subclasses should call this after setting cookie/base_url."""
@@ -144,7 +153,7 @@ class BaseGazelleApi:
     async def authenticate(self) -> None:
         """Authenticate with the tracker API and get authkey/passkey."""
         try:
-            acctinfo = await self.request("index")
+            acctinfo = await self.api_call("index")
         except RequestError as err:
             raise LoginError from err
         self.authkey = acctinfo["authkey"]
@@ -162,7 +171,69 @@ class BaseGazelleApi:
         wait=wait_fixed(1),
         reraise=True,
     )
-    async def request(self, action: str, params: dict[str, Any] | None = None) -> dict:
+    async def _request(
+        self,
+        method: str,
+        url: str,
+        params: dict[str, Any] | None = None,
+        data: Any = None,
+        timeout_secs: int = 10,
+        prefer_api_key: bool = False,
+    ) -> HttpResponse:
+        """Authenticated HTTP request, returns response data.
+
+        Args:
+            method: HTTP method (e.g. "GET", "POST").
+            url: The URL to request.
+            params: Query parameters.
+            data: POST body data.
+            timeout_secs: Request timeout in seconds.
+            prefer_api_key: If True and api_key is set, use Authorization header
+                only (no cookie). If False or api_key is empty, use cookie only
+                (no Authorization header).
+
+        Returns:
+            HttpResponse with text, url, status, and headers.
+        """
+        if not (params and params.get("action") == "index"):
+            await self.ensure_authenticated()
+
+        use_api_key = prefer_api_key and bool(self.api_key)
+        headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
+        cookies = {} if use_api_key else self._get_cookies()
+
+        try:
+            timeout = aiohttp.ClientTimeout(total=timeout_secs)
+            async with (
+                self._rate_limiter,
+                aiohttp.ClientSession(timeout=timeout, cookies=cookies, headers=headers) as session,
+                session.request(method, url, params=params, data=data) as resp,
+            ):
+                text = await resp.text()
+
+                if not resp.ok:
+                    error_msg = text
+                    with suppress(msgspec.DecodeError, ValueError):
+                        error_msg = msgspec.json.decode(text)["error"]
+
+                    if "rate limit" in str(error_msg).lower():
+                        retry_after = float(resp.headers.get("Retry-After", "20"))
+                        click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
+                        await asyncio.sleep(retry_after)
+                        raise RetryableError("Rate limit exceeded")
+                    raise RequestFailedError(str(error_msg))
+
+                return HttpResponse(
+                    text=text,
+                    url=str(resp.url),
+                    status=resp.status,
+                )
+        except msgspec.DecodeError as err:
+            raise LoginError from err
+        except (TimeoutError, aiohttp.ClientError) as err:
+            raise RetryableError(f"Network error: {err}") from err
+
+    async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.
 
         Args:
@@ -179,46 +250,31 @@ class BaseGazelleApi:
         """
         url = self.base_url + "/ajax.php"
         params = {"action": action, **(params or {})}
-        timeout = aiohttp.ClientTimeout(total=5)
 
         try:
-            async with (
-                self._rate_limiter,
-                aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-                session.get(url, params=params, headers=self.headers, allow_redirects=False) as resp,
-            ):
-                if cfg.upload.debug_tracker_connection:
-                    click.secho("URL: ", fg="cyan", nl=False)
-                    click.secho(url, fg="yellow")
-                    click.secho("Params: ", fg="cyan", nl=False)
-                    click.secho(str(params), fg="yellow")
-                    click.secho("Response: ", fg="cyan", nl=False)
-                    click.secho(str(resp.status), fg="yellow")
+            if cfg.upload.debug_tracker_connection:
+                click.secho("URL: ", fg="cyan", nl=False)
+                click.secho(url, fg="yellow")
+                click.secho("Params: ", fg="cyan", nl=False)
+                click.secho(str(params), fg="yellow")
 
-                resp_text = await resp.text()
-                if cfg.upload.debug_tracker_connection:
-                    click.secho("Response Text: ", fg="cyan", nl=False)
-                    click.secho(resp_text, fg="green")
+            resp = await self._request("GET", url, params=params, timeout_secs=5, prefer_api_key=True)
 
-                try:
-                    resp_json = msgspec.json.decode(resp_text)
-                except (msgspec.DecodeError, ValueError):
-                    resp_json = {"status": "error", "error": resp_text}
-                retry_after_header = resp.headers.get("Retry-After", "20")
+            if cfg.upload.debug_tracker_connection:
+                click.secho("Response: ", fg="cyan", nl=False)
+                click.secho(str(resp.status), fg="yellow")
+                click.secho("Response Text: ", fg="cyan", nl=False)
+                click.secho(resp.text, fg="green")
+
+            try:
+                resp_json = msgspec.json.decode(resp.text)
+            except (msgspec.DecodeError, ValueError):
+                resp_json = {"status": "error", "error": resp.text}
         except msgspec.DecodeError as err:
             raise LoginError from err
-        except (TimeoutError, aiohttp.ClientError) as err:
-            raise RetryableError(f"Network error: {err}") from err
 
         if resp_json.get("status") != "success":
-            error_msg = resp_json.get("error", resp_text)
-            if "rate limit" in str(error_msg).lower():
-                retry_after = float(retry_after_header)
-                click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
-                await asyncio.sleep(retry_after)
-                raise RetryableError("Rate limit exceeded")
-            else:
-                raise RequestFailedError(str(error_msg))
+            raise RequestFailedError(str(resp_json.get("error", resp.text)))
         return cast("dict", resp_json["response"])
 
     async def torrentgroup(self, group_id: int) -> dict:
@@ -231,7 +287,7 @@ class BaseGazelleApi:
             The torrent group data.
         """
         await self.ensure_authenticated()
-        return await self.request("torrentgroup", params={"id": group_id})
+        return await self.api_call("torrentgroup", params={"id": group_id})
 
     async def get_redirect_torrentgroupid(self, torrentid: int) -> int | None:
         """Get torrent group ID from torrent ID via redirect.
@@ -242,34 +298,19 @@ class BaseGazelleApi:
         Returns:
             The torrent group ID as int, or None if not found.
         """
-        await self.ensure_authenticated()
         url = self.base_url + "/torrents.php"
-        params = {"torrentid": torrentid}
-        timeout = aiohttp.ClientTimeout(total=5)
-
         try:
-            async with (
-                aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-                session.get(url, params=params, headers=self.headers, allow_redirects=False) as resp,
-            ):
-                location = resp.headers.get("Location")
-                if location:
-                    parsed = urlparse(location)
-                    query = parse_qs(parsed.query)
-                    group_id = query.get("id", [None])[0]
-                    return int(group_id) if group_id else None
-                else:
-                    click.secho(
-                        "Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!",
-                        fg="red",
-                    )
-                    raise click.Abort()
+            resp = await self._request("GET", url, params={"torrentid": torrentid}, timeout_secs=5)
         except TimeoutError:
-            click.secho(
-                "Connection to API timed out, try script again later. Gomen!",
-                fg="red",
-            )
+            click.secho("Connection to API timed out, try script again later. Gomen!", fg="red")
             raise click.Abort() from None
+        parsed = urlparse(resp.url)
+        query = parse_qs(parsed.query)
+        group_id = query.get("id", [None])[0]
+        if group_id:
+            return int(group_id)
+        click.secho("Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!", fg="red")
+        raise click.Abort()
 
     async def get_request(self, id: int) -> dict:
         """Get information about a request.
@@ -281,7 +322,7 @@ class BaseGazelleApi:
             The request data.
         """
         await self.ensure_authenticated()
-        return await self.request("request", params={"id": id})
+        return await self.api_call("request", params={"id": id})
 
     async def artist_rls(self, artist: str):
         """Get all torrent groups belonging to an artist.
@@ -293,7 +334,7 @@ class BaseGazelleApi:
             Tuple of (artist_id, list of releases).
         """
         await self.ensure_authenticated()
-        resp = await self.request("artist", params={"artistname": artist})
+        resp = await self.api_call("artist", params={"artistname": artist})
         releases = []
         for group in resp["torrentgroup"]:
             # We do not put compilations or guest appearances in this list.
@@ -331,7 +372,7 @@ class BaseGazelleApi:
         browse_params = {"remasterrecordlabel": label}
         if year:
             browse_params["year"] = year
-        first_request = await self.request("browse", params=browse_params)
+        first_request = await self.api_call("browse", params=browse_params)
         if "pages" in first_request:
             pages = first_request["pages"]
         else:
@@ -342,10 +383,10 @@ class BaseGazelleApi:
         # Should probably be spun out into its own pagnation function at some point.
         for i in range(2, max(3, pages)):
             browse_params["page"] = str(i)
-            new_results = await self.request("browse", params=browse_params)
+            new_results = await self.api_call("browse", params=browse_params)
             all_results += new_results["results"]
         browse_params["page"] = "1"
-        resp2 = await self.request("browse", params=browse_params)
+        resp2 = await self.api_call("browse", params=browse_params)
         all_results = all_results + resp2["results"]
         releases = []
         for group in all_results:
@@ -381,14 +422,9 @@ class BaseGazelleApi:
         Returns:
             The page HTML text.
         """
-        await self.ensure_authenticated()
         url = f"{self.base_url}/log.php"
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with (
-            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.get(url, params={"page": page}, headers=self.headers) as resp,
-        ):
-            return await resp.text()
+        resp = await self._request("GET", url, params={"page": page})
+        return resp.text
 
     async def fetch_riplog(self, torrentid: int) -> str:
         """Fetch rip log for a torrent.
@@ -399,15 +435,9 @@ class BaseGazelleApi:
         Returns:
             The log text with some content stripped.
         """
-        await self.ensure_authenticated()
         url = f"{self.base_url}/torrents.php"
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with (
-            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.get(url, headers=self.headers, params={"action": "loglist", "torrentid": torrentid}) as resp,
-        ):
-            text = await resp.text()
-            return re.sub(r" ?\([^)]+\)", "", text)
+        resp = await self._request("GET", url, params={"action": "loglist", "torrentid": torrentid})
+        return re.sub(r" ?\([^)]+\)", "", resp.text)
 
     async def get_uploads_from_log(self, max_pages: int = 10) -> list:
         """Crawl log pages and return uploads.
@@ -440,23 +470,17 @@ class BaseGazelleApi:
         await self.ensure_authenticated()
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
-        api_key_headers = {**self.headers, "Authorization": self.api_key}
 
         _compose_form_data(files, data)
 
-        timeout = aiohttp.ClientTimeout(total=30)
-        async with (
-            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.post(url, data=files, headers=api_key_headers) as response,
-        ):
-            try:
-                resp = await response.json(loads=msgspec.json.decode)
-            except (msgspec.DecodeError, ValueError) as e:
-                text = await response.text()
-                click.secho("❌ Failed to decode JSON response", fg="red", err=True)
-                click.secho(f"Status code: {response.status}", fg="red", err=True)
-                click.secho(f"Response text: {repr(text)}", fg="red", err=True)
-                raise click.Abort from e
+        response = await self._request("POST", url, data=files, timeout_secs=30, prefer_api_key=True)
+        try:
+            resp = msgspec.json.decode(response.text)
+        except (msgspec.DecodeError, ValueError) as e:
+            click.secho("❌ Failed to decode JSON response", fg="red", err=True)
+            click.secho(f"Status code: {response.status}", fg="red", err=True)
+            click.secho(f"Response text: {repr(response.text)}", fg="red", err=True)
+            raise click.Abort from e
 
         try:
             if resp["status"] != "success":
@@ -511,13 +535,9 @@ class BaseGazelleApi:
 
         _compose_form_data(files, data)
 
-        timeout = aiohttp.ClientTimeout(total=30)
-        async with (
-            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.post(url, data=files, headers=self.headers) as response,
-        ):
-            resp_text = await response.text()
-            resp_url = str(response.url)
+        response = await self._request("POST", url, data=files, timeout_secs=30)
+        resp_text = response.text
+        resp_url = response.url
 
         if self.announce in resp_text:
             match = re.search(r'<p style="color: red; text-align: center;">(.+)<\/p>', resp_text)
@@ -553,10 +573,10 @@ class BaseGazelleApi:
         Returns:
             Tuple of (torrent_id, group_id).
         """
-        if getattr(self, "api_key", None):
+        if self.api_key:
             return await self.api_key_upload(data, files)
-        else:
-            return await self.site_page_upload(data, files)
+
+        return await self.site_page_upload(data, files)
 
     async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
         """Report torrent for lossy master/web approval.
@@ -574,7 +594,6 @@ class BaseGazelleApi:
         """
         await self.ensure_authenticated()
         url = self.base_url + "/reportsv2.php"
-        params = {"action": "takereport"}
         type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"
         data = {
             "auth": self.authkey,
@@ -584,16 +603,10 @@ class BaseGazelleApi:
             "extra": comment,
             "submit": True,
         }
-
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with (
-            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.post(url, params=params, data=data, headers=self.headers) as r,
-        ):
-            resp_url = str(r.url)
-            if "torrents.php" in resp_url:
-                return True
-            raise RequestError(f"Failed to report the torrent for lossy master, code {r.status}.")
+        resp = await self._request("POST", url, params={"action": "takereport"}, data=data)
+        if "torrents.php" in resp.url:
+            return True
+        raise RequestError(f"Failed to report the torrent for lossy master, code {resp.status}.")
 
     async def append_to_torrent_description(self, torrent_id: int, description_addition: str) -> None:
         """Add text to start of torrent description.
@@ -606,7 +619,7 @@ class BaseGazelleApi:
             RequestError: If edit fails.
         """
         await self.ensure_authenticated()
-        current_details = await self.request("torrent", params={"id": torrent_id})
+        current_details = await self.api_call("torrent", params={"id": torrent_id})
         new_data = {
             "action": "takeedit",
             "torrentid": torrent_id,
@@ -623,14 +636,9 @@ class BaseGazelleApi:
             "release_desc": description_addition + current_details["torrent"]["description"],
             "auth": self.authkey,
         }
-
         url = self.base_url + "/torrents.php"
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with (
-            aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-            session.post(url, data=new_data, headers=self.headers) as resp,
-        ):
-            resp_text = await resp.text()
+        resp = await self._request("POST", url, data=new_data)
+        resp_text = resp.text
 
         soup = BeautifulSoup(resp_text, "lxml")
         edit_error = soup.find("h2", text="Error")

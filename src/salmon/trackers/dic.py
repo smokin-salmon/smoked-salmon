@@ -28,7 +28,7 @@ class DICApi(BaseGazelleApi):
 
         super().__init__()
 
-    async def site_page_upload(self, data: dict, files: FormData) -> tuple[int, int]:
+    async def upload(self, data: dict, files: FormData) -> tuple[int, int]:
         """Attempt to upload a torrent to the site using the upload.php.
 
         Args:
@@ -83,4 +83,4 @@ class DICApi(BaseGazelleApi):
         # Merge data with params (no filtering needed)
         enriched_data = {**data, **self.specific_params}
 
-        return await super().site_page_upload(enriched_data, files)
+        return await super().upload(enriched_data, files)

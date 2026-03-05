@@ -206,7 +206,7 @@ async def get_search_results(gazelle_site: "BaseGazelleApi", searchstrs: list[st
         List of matching release dicts.
     """
     results: list[dict] = []
-    tasks = [gazelle_site.request("browse", {"searchstr": searchstr}) for searchstr in searchstrs]
+    tasks = [gazelle_site.api_call("browse", {"searchstr": searchstr}) for searchstr in searchstrs]
     for releases in await asyncio.gather(*tasks):
         for release in releases["results"]:
             if release not in results:
