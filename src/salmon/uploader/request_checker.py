@@ -45,7 +45,7 @@ async def get_request_results(gazelle_site: "BaseGazelleApi", searchstrs: list[s
     """
     results = []
     for searchstr in searchstrs:
-        response = await gazelle_site.request("requests", {"search": searchstr})
+        response = await gazelle_site.api_call("requests", {"search": searchstr})
         for req in response["results"]:
             if req not in results:
                 results.append(req)
@@ -166,7 +166,7 @@ async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | 
         True if user confirms, False otherwise.
     """
     try:
-        req = await gazelle_site.request("request", {"id": request_id})
+        req = await gazelle_site.api_call("request", {"id": request_id})
         req["artist"] = ""
         if len(req["musicInfo"]["artists"]) > 3:
             req["artist"] = "Various Artists"

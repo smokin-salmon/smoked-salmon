@@ -1,6 +1,7 @@
 import re
 
-import aiohttp
+import asyncclick as click
+from aiohttp import FormData
 from bs4 import BeautifulSoup
 
 from salmon import cfg
@@ -16,6 +17,10 @@ class OpsApi(BaseGazelleApi):
         self.base_url = "https://orpheus.network"
         self.tracker_url = "https://home.opsfet.ch"
         self.site_string = "OPS"
+
+        self._split_prompted = False
+        self._use_split = False
+
         if cfg.tracker.ops:
             ops_cfg = cfg.tracker.ops
             if ops_cfg.dottorrents_dir:
@@ -48,6 +53,46 @@ class OpsApi(BaseGazelleApi):
             "Concert Recording": 18,
             "Unknown": 21,
         }
+
+    async def upload(self, data: dict, files: FormData) -> tuple[int, int]:
+        """Upload torrent, prompting once to set release type to Split for multi-artist releases.
+
+        If the upload is for a new group (has 'releasetype' in data) and two or more
+        artists are listed, the user is asked once whether to set the release type
+        to Split (12). The answer is cached for subsequent uploads in the same session.
+
+        Args:
+            data: Upload form data.
+            files: FormData containing files to upload.
+
+        Returns:
+            Tuple of (torrent_id, group_id).
+        """
+        artists = data.get("artists[]", [])
+        if "releasetype" in data and len(artists) >= 2 and not self._split_prompted:
+            self._use_split = click.confirm(
+                click.style(
+                    f"\nThis release has {len(artists)} artists. "
+                    "OPS has a 'Split' release type:\n\n"
+                    "An album or EP that includes tracks by two or more separate artists. "
+                    "Unlike a compilation or collaboration, a split generally includes several tracks by each artist. "
+                    "Also unlike a compilation, a split is made up of new material or new performances, "
+                    "not re-packaged tracks from previous albums or singles.\n"
+                    "Split albums and EPs often include the word 'split' in the title or on the packaging. "
+                    "If you aren't sure if an album is a split, check Discogs, MusicBrainz or another reputable "
+                    "source before uploading.\n\n"
+                    "Do you want to set the release type to Split?",
+                    fg="magenta",
+                    bold=True,
+                ),
+                default=False,
+            )
+            self._split_prompted = True
+
+        upload_data = (
+            {**data, "releasetype": self.release_types["Split"]} if self._use_split and "releasetype" in data else data
+        )
+        return await super().upload(upload_data, files)
 
     def parse_most_recent_torrent_and_group_id_from_group_page(self, text: str) -> tuple[int, int]:
         """
@@ -83,29 +128,18 @@ class OpsApi(BaseGazelleApi):
         """
         await self.ensure_authenticated()
         url = self.base_url + "/reportsv2.php"
-        params = {"action": "takereport"}
         # OPS only uses lossyapproval, not lossywebapproval
-        type_ = "lossyapproval"
         data = {
             "auth": self.authkey,
             "torrentid": torrent_id,
             "categoryid": 1,
-            "type": type_,
+            "type": "lossyapproval",
             "extra": comment,
             "submit": True,
         }
-
-        timeout = aiohttp.ClientTimeout(total=10)
-        try:
-            async with (
-                aiohttp.ClientSession(timeout=timeout, cookies=self._get_cookies()) as session,
-                session.post(url, params=params, data=data, headers=self.headers) as r,
-            ):
-                resp_url = str(r.url)
-                if "torrents.php" in resp_url:
-                    return True
-                raise RequestError(
-                    f"Failed to report torrent for lossy master: unexpected redirect to {resp_url} (status {r.status})"
-                )
-        except (TimeoutError, aiohttp.ClientError) as exc:
-            raise RequestError(f"Error reporting torrent for lossy master: {exc}") from exc
+        resp = await self._request("POST", url, params={"action": "takereport"}, data=data)
+        if "torrents.php" in resp.url:
+            return True
+        raise RequestError(
+            f"Failed to report torrent for lossy master: unexpected redirect to {resp.url} (status {resp.status})"
+        )

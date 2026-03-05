@@ -4,6 +4,7 @@ import asyncclick as click
 
 from salmon import cfg
 from salmon.trackers import dic, ops, red
+from salmon.trackers.base import BaseGazelleApi
 
 # hard coded as it needs to reflect the imports anyway.
 tracker_classes = {"RED": red.RedApi, "OPS": ops.OpsApi, "DIC": dic.DICApi}
@@ -20,7 +21,7 @@ if tracker_cfg.dic:
     tracker_list.append("DIC")
 
 
-def get_class(site_code):
+def get_class(site_code) -> type[BaseGazelleApi]:
     "Returns the api class from the tracker string."
     return tracker_classes[site_code]
 

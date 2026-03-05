@@ -169,7 +169,7 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
 
     tracker = await salmon.trackers.validate_tracker(None, "tracker", tracker)
     gazelle_site = salmon.trackers.get_class(tracker)()
-    req = await gazelle_site.request("torrent", id=torrent_id_int)
+    req = await gazelle_site.api_call("torrent", params={"id": torrent_id_int})
     path = os.path.join(path, html.unescape(req["torrent"]["filePath"]))
     source_url = None
     source = req["torrent"]["media"]
@@ -254,7 +254,7 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
             click.secho(f"\n[ Testing Tracker: {t} ]", fg="cyan", bold=True)
 
             try:
-                salmon.trackers.get_class(t)()
+                await salmon.trackers.get_class(t)().authenticate()
                 click.secho(f"\n✔ Successfully checked {t}", fg="green", bold=True)
             except Exception as e:
                 click.secho(f"\n✖ Error testing {t}: {e}", fg="red", bold=True)
