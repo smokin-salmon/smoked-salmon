@@ -1,4 +1,4 @@
-from os import path
+from pathlib import Path
 
 import asyncclick as click
 import msgspec
@@ -7,8 +7,10 @@ from packaging.version import Version
 
 from salmon import cfg
 
-LOCAL_VERSION_FILE = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "version.toml"))
-REMOTE_VERSION_URL = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/data/version.toml"
+LOCAL_VERSION_FILE = Path(__file__).parent / "data" / "version.toml"
+REMOTE_VERSION_URL = (
+    "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/src/salmon/data/version.toml"
+)
 
 _cached_version: str | None = None
 
@@ -66,8 +68,7 @@ def get_version() -> str | None:
     if _cached_version is not None:
         return _cached_version
     try:
-        with open(LOCAL_VERSION_FILE, "rb") as f:
-            _cached_version = msgspec.toml.decode(f.read(), type=VersionData).current
+        _cached_version = msgspec.toml.decode(LOCAL_VERSION_FILE.read_bytes(), type=VersionData).current
         return _cached_version
     except FileNotFoundError:
         return None

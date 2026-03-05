@@ -1,5 +1,5 @@
-import os
 import shutil
+from pathlib import Path
 
 import asyncclick as click
 import msgspec
@@ -10,29 +10,28 @@ from .validations import Cfg
 
 APPNAME = "smoked-salmon"
 
-root_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+_PKG_DIR = Path(__file__).parent.parent
 
 
-def get_user_cfg_path():
-    return os.path.join(user_config_dir(APPNAME), "config.toml")
+def get_user_cfg_path() -> Path:
+    return Path(user_config_dir(APPNAME)) / "config.toml"
 
 
-def get_default_config_path():
-    default_config_path = os.path.join(root_path, "data", "config.default.toml")
+def get_default_config_path() -> Path:
+    default_config_path = _PKG_DIR / "data" / "config.default.toml"
 
-    if not os.path.exists(default_config_path):
+    if not default_config_path.exists():
         click.secho(f"Default config file not found at {default_config_path}", fg="yellow")
         click.secho("Downloading from GitHub...", fg="blue")
 
-        os.makedirs(os.path.dirname(default_config_path), exist_ok=True)
+        default_config_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            github_url = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/master/data/config.default.toml"
+            github_url = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/master/src/salmon/data/config.default.toml"
             response = requests.get(github_url, timeout=30)
             response.raise_for_status()
 
-            with open(default_config_path, "w", encoding="utf-8") as f:
-                f.write(response.text)
+            default_config_path.write_text(response.text, encoding="utf-8")
 
             click.secho(f"Successfully downloaded default config to {default_config_path}", fg="green")
         except requests.exceptions.RequestException as e:
@@ -45,41 +44,37 @@ def get_default_config_path():
     return default_config_path
 
 
-def _parse_config(config_path):
-    with open(config_path, "rb") as f:
-        cfg_string = f.read()
-        return msgspec.toml.decode(cfg_string, type=Cfg)
+def _parse_config(config_path: Path) -> Cfg:
+    return msgspec.toml.decode(config_path.read_bytes(), type=Cfg)
 
 
-def _try_creating_config(src, dest):
-    os.makedirs(os.path.dirname(dest), exist_ok=True)
+def _try_creating_config(src: Path, dest: Path) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy(src, dest)
 
 
-def find_config_path():
+def find_config_path() -> Path:
     config_dir_path = get_user_cfg_path()
-    root_config_path = os.path.join(root_path, "config.toml")
+    root_config_path = _PKG_DIR.parent.parent / "config.toml"
 
     # You can put a config.toml in the root directory for development purposes
-    if os.path.exists(root_config_path):
-        config_path = root_config_path
-    elif os.path.exists(config_dir_path):
-        config_path = config_dir_path
+    if root_config_path.exists():
+        return root_config_path
+    elif config_dir_path.exists():
+        return config_dir_path
     else:
         raise FileNotFoundError("Could not find config path")
 
-    return config_path
 
-
-def setup_config():
+def setup_config() -> Cfg:
     try:
         path = find_config_path()
     except Exception:
         cfg_path = get_user_cfg_path()
-        attempted_default_cfg = os.path.join(os.path.dirname(cfg_path), "config.default.toml")
+        attempted_default_cfg = cfg_path.parent / "config.default.toml"
 
         click.secho(f"Could not find configuration path at {cfg_path}.", fg="red")
-        if os.path.exists(attempted_default_cfg):
+        if attempted_default_cfg.exists():
             click.secho(
                 "Hint: Create a config by copying config.default.toml to config.toml. Hope you enjoy your salmon :)",
                 fg="yellow",

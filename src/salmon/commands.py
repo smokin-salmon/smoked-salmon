@@ -231,7 +231,7 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
         config_template = get_default_config_path()
 
         if os.path.exists(config_path):
-            _backup_config(config_path)
+            _backup_config(str(config_path))
 
         if not os.path.exists(config_template):
             click.secho("Error: config.default.toml template not found.", fg="red")

@@ -37,15 +37,11 @@ dependencies = [
 ]
 
 [project.scripts]
-salmon = "run:main"
+salmon = "salmon.run:main"
 
 [build-system]
-requires = ["setuptools >= 61.0", "setuptools-scm >= 8"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-packages = ["salmon", "data"]
-py-modules = ["run"]
+requires = ["uv_build>=0.10.7,<0.11.0"]
+build-backend = "uv_build"
 
 [dependency-groups]
 dev = ["ruff>=0.11.2"]
@@ -74,10 +70,9 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 # run.py imports command modules for their side effects (registering CLI commands)
-"run.py" = ["F401"]
+"src/salmon/run.py" = ["F401"]
 
 [tool.pyright]
-include = ["salmon"]
 typeCheckingMode = "standard"
 reportPossiblyUnboundVariable = "warning"
 reportUnreachable = "warning"

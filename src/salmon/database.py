@@ -1,6 +1,6 @@
 import shutil
 import sqlite3
-from os import listdir, makedirs, path
+from pathlib import Path
 
 import asyncclick as click
 from platformdirs import user_data_dir
@@ -8,10 +8,12 @@ from platformdirs import user_data_dir
 from salmon.common import commandgroup
 from salmon.config import APPNAME
 
-DB_DIR = user_data_dir(appname=APPNAME)
-DB_PATH = path.join(DB_DIR, "smoked.db")
-OLD_DB_PATH = path.abspath(path.join(path.dirname(path.dirname(__file__)), "smoked.db"))
-MIG_DIR = path.abspath(path.join(path.dirname(path.dirname(__file__)), "data", "migrations"))
+_PKG_DIR = Path(__file__).parent
+
+DB_DIR = Path(user_data_dir(appname=APPNAME))
+DB_PATH = DB_DIR / "smoked.db"
+OLD_DB_PATH = _PKG_DIR.parent.parent / "smoked.db"
+MIG_DIR = _PKG_DIR / "data" / "migrations"
 
 
 @commandgroup.command()
@@ -24,14 +26,14 @@ def migrate(list):
 
     current_version = get_current_version()
     ran_once = False
-    makedirs(DB_DIR, exist_ok=True)
-    if path.exists(OLD_DB_PATH):
+    DB_DIR.mkdir(parents=True, exist_ok=True)
+    if OLD_DB_PATH.exists():
         click.secho(f"Moving existing smoked.db to {DB_PATH}...", fg="yellow")
         shutil.move(OLD_DB_PATH, DB_PATH)
     else:
         click.secho(f"Connecting to database at {DB_PATH}...", fg="yellow")
     with sqlite3.connect(DB_PATH) as conn:
-        for migration in sorted(f for f in listdir(MIG_DIR) if f.endswith(".sql")):
+        for migration in sorted(f.name for f in MIG_DIR.iterdir() if f.suffix == ".sql"):
             try:
                 mig_version = int(migration[:4])
             except TypeError:
@@ -45,7 +47,7 @@ def migrate(list):
                 ran_once = True
                 click.secho(f"Running {migration}...")
                 cursor = conn.cursor()
-                with open(path.join(MIG_DIR, migration)) as mig_file:
+                with open(MIG_DIR / migration) as mig_file:
                     cursor.executescript(mig_file.read())
                     cursor.execute("INSERT INTO version (id) VALUES (?)", (mig_version,))
                 conn.commit()
@@ -58,7 +60,7 @@ def migrate(list):
 def list_migrations():
     """List migration history and current status"""
     current_version = get_current_version()
-    for migration in sorted(f for f in listdir(MIG_DIR) if f.endswith(".sql")):
+    for migration in sorted(f.name for f in MIG_DIR.iterdir() if f.suffix == ".sql"):
         try:
             mig_version = int(migration[:4])
         except TypeError:
@@ -83,8 +85,8 @@ def list_migrations():
 
 def get_current_version():
     current_path = DB_PATH
-    if not path.isfile(current_path):
-        if path.isfile(OLD_DB_PATH):
+    if not current_path.is_file():
+        if OLD_DB_PATH.is_file():
             current_path = OLD_DB_PATH
         else:
             return 0
@@ -99,8 +101,8 @@ def get_current_version():
 
 def check_if_migration_is_needed():
     current_version = get_current_version()
-    most_recent_mig = sorted(f for f in listdir(MIG_DIR) if f.endswith(".sql"))[-1:][0]
-    if path.exists(OLD_DB_PATH):
+    most_recent_mig = max(f.name for f in MIG_DIR.iterdir() if f.suffix == ".sql")
+    if OLD_DB_PATH.exists():
         click.secho(
             f"The database needs to be moved to the new directory ({DB_PATH}). Please run `salmon migrate`.\n",
             fg="red",
@@ -108,7 +110,7 @@ def check_if_migration_is_needed():
         )
     try:
         mig_version = int(most_recent_mig[:4])
-    except TypeError:
+    except ValueError:
         click.secho(
             f"\n{most_recent_mig} is improperly named. It must start with a four digit integer.",
             fg="red",
