@@ -202,6 +202,11 @@ class BaseGazelleApi:
         headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
         cookies = {} if use_api_key else self._get_cookies()
 
+        if cfg.upload.debug_tracker_connection:
+            click.secho(f"[DEBUG] {method} {url}", fg="cyan")
+            click.secho(f"[DEBUG] params: {params}", fg="cyan")
+            click.secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
+
         try:
             timeout = aiohttp.ClientTimeout(total=timeout_secs)
             async with (
@@ -210,6 +215,11 @@ class BaseGazelleApi:
                 session.request(method, url, params=params, data=data) as resp,
             ):
                 text = await resp.text()
+
+                if cfg.upload.debug_tracker_connection:
+                    click.secho(f"[DEBUG] status: {resp.status}", fg="cyan")
+                    click.secho(f"[DEBUG] response headers: {dict(resp.headers)}", fg="cyan")
+                    click.secho(f"[DEBUG] response body: {text}", fg="green")
 
                 if not resp.ok:
                     error_msg = text
@@ -252,19 +262,7 @@ class BaseGazelleApi:
         params = {"action": action, **(params or {})}
 
         try:
-            if cfg.upload.debug_tracker_connection:
-                click.secho("URL: ", fg="cyan", nl=False)
-                click.secho(url, fg="yellow")
-                click.secho("Params: ", fg="cyan", nl=False)
-                click.secho(str(params), fg="yellow")
-
             resp = await self._request("GET", url, params=params, timeout_secs=5, prefer_api_key=True)
-
-            if cfg.upload.debug_tracker_connection:
-                click.secho("Response: ", fg="cyan", nl=False)
-                click.secho(str(resp.status), fg="yellow")
-                click.secho("Response Text: ", fg="cyan", nl=False)
-                click.secho(resp.text, fg="green")
 
             try:
                 resp_json = msgspec.json.decode(resp.text)
