@@ -172,6 +172,13 @@ def _extract_remixers_from_title(title):
 def combine_tracks(base, meta, update_track_numbers):
     """Combine the metadata for the tracks of two different sources."""
     btracks = iter(chain.from_iterable([list(d.values()) for d in base.values()]))
+
+    # If the source already provides remixer credits, skip title-based inference
+    # to avoid adding spurious artists from mix names like "Attitude Dub Mix".
+    meta_has_remixer = any(
+        role == "remixer" for tracks in meta.values() for track in tracks.values() for _, role in track["artists"]
+    )
+
     for disc, tracks in meta.items():
         for num, track in tracks.items():
             try:
@@ -206,10 +213,15 @@ def combine_tracks(base, meta, update_track_numbers):
             for a in track["artists"]:
                 if (re_strip(a[0]), a[1]) not in base_artists:
                     btrack["artists"].append(a)
-            remixers = _extract_remixers_from_title(track["title"])
-            for remixer in remixers:
-                if (re_strip(remixer[0]), remixer[1]) not in base_artists:
-                    btrack["artists"].append(remixer)
+
+            # Skip title-based remixer inference if remixers are already credited
+            # (e.g. from Discogs), to avoid adding spurious artists from mix names
+            if not meta_has_remixer:
+                remixers = _extract_remixers_from_title(track["title"])
+                for remixer in remixers:
+                    if (re_strip(remixer[0]), remixer[1]) not in base_artists:
+                        btrack["artists"].append(remixer)
+
             btrack["artists"] = check_for_artist_fragments(btrack["artists"])
 
             if track["explicit"]:

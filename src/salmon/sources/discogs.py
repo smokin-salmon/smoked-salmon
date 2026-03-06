@@ -11,7 +11,7 @@ from salmon.sources.base import BaseScraper
 class DiscogsBase(BaseScraper):
     url = "https://api.discogs.com"
     site_url = "https://www.discogs.com"
-    regex = re.compile(r"^https?://(?:www\.)?discogs\.com/(?:.+?/)?release/(\d+)/?$")
+    regex = re.compile(r"^https?://(?:www\.)?discogs\.com/(?:.+?/)?release/(\d+)")
     release_format = "/release/{rls_id}"
     get_params = {"token": cfg.metadata.discogs_token}
 
