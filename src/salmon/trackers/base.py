@@ -39,6 +39,26 @@ INVERTED_RELEASE_TYPES = {
     1021: "Produced By",
 }
 
+_SENSITIVE_KEYS = re.compile(
+    r'"(authkey|passkey|auth|api_key|Authorization)"\s*:\s*"[^"]*"',
+    re.IGNORECASE,
+)
+
+
+def _redact(text: str) -> str:
+    """Redact sensitive keys from debug output strings.
+
+    Replaces values of known sensitive fields (authkey, passkey, auth, etc.)
+    with [REDACTED] to prevent accidental exposure in logs.
+
+    Args:
+        text: The string to redact.
+
+    Returns:
+        The string with sensitive values replaced.
+    """
+    return _SENSITIVE_KEYS.sub(lambda m: f'"{m.group(1)}": "[REDACTED]"', text)
+
 
 def _compose_form_data(files: FormData, data: dict[str, Any]) -> FormData:
     """Compose FormData by adding data fields with proper value conversion.
@@ -204,7 +224,7 @@ class BaseGazelleApi:
 
         if cfg.upload.debug_tracker_connection:
             click.secho(f"[DEBUG] {method} {url}", fg="cyan")
-            click.secho(f"[DEBUG] params: {params}", fg="cyan")
+            click.secho(f"[DEBUG] params: {_redact(str(params))}", fg="cyan")
             click.secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
         try:
@@ -218,8 +238,11 @@ class BaseGazelleApi:
 
                 if cfg.upload.debug_tracker_connection:
                     click.secho(f"[DEBUG] status: {resp.status}", fg="cyan")
-                    click.secho(f"[DEBUG] response headers: {dict(resp.headers)}", fg="cyan")
-                    click.secho(f"[DEBUG] response body: {text}", fg="green")
+                    click.secho(
+                        f"[DEBUG] response headers: {_redact(msgspec.json.encode(resp.headers).decode())}",
+                        fg="cyan",
+                    )
+                    click.secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
 
                 if not resp.ok:
                     error_msg = text
@@ -231,6 +254,10 @@ class BaseGazelleApi:
                         click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
                         await asyncio.sleep(retry_after)
                         raise RetryableError("Rate limit exceeded")
+
+                    if resp.status in (500, 502, 503, 504):
+                        raise RetryableError(f"Server error {resp.status}, retrying...")
+
                     raise RequestFailedError(str(error_msg))
 
                 return HttpResponse(
@@ -239,6 +266,9 @@ class BaseGazelleApi:
                     status=resp.status,
                 )
         except msgspec.DecodeError as err:
+            raise LoginError from err
+        except aiohttp.TooManyRedirects as err:
+            click.secho("Too many redirects. Your cookies may be invalid or expired.", fg="red", bold=True)
             raise LoginError from err
         except (TimeoutError, aiohttp.ClientError) as err:
             raise RetryableError(f"Network error: {err}") from err
