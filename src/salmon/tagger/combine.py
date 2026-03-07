@@ -66,6 +66,16 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
 
             base["genres"] += metadata["genres"]
 
+            # The first selected metadata source should be able to replace stale
+            # embedded/local title data. Otherwise WEB uploads can preserve a
+            # composite ALBUM tag from the source files even after selecting a
+            # clean scraped release title.
+            if from_preferred_source:
+                if metadata["title"]:
+                    base["title"] = metadata["title"]
+                if metadata["edition_title"] is not None:
+                    base["edition_title"] = metadata["edition_title"]
+
             with contextlib.suppress(TrackCombineError):
                 base["tracks"] = combine_tracks(base["tracks"], metadata["tracks"], from_preferred_source)
 
