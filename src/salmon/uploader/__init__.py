@@ -677,41 +677,34 @@ def get_downconversion_options(rls_data, track_data):
     if not track_data:
         return []
 
-    # Get sample rate from first track
-    sample_rate = next(iter(track_data.values()))["sample rate"]
+    # Use max sample rate across all tracks to determine which tiers to offer
+    max_sample_rate = max(t["sample rate"] for t in track_data.values())
     encoding = rls_data["encoding"]
 
     options = []
 
-    # Tier 1: 24bit 176.4~192 kHz
-    if encoding == "24bit Lossless" and sample_rate >= 176400:
-        # Can downconvert to 24bit lower sample rate
-        target_rate = 96000 if sample_rate % 48000 == 0 else 88200
+    # Tier 1: 24bit 176.4~192 kHz — offer downconvert to 24bit lower rate
+    if encoding == "24bit Lossless" and max_sample_rate >= 176400:
         options.append(
             {
-                "name": f"24bit {target_rate / 1000:.1f} kHz",
+                "name": "24bit (downsampled)",
                 "action": "downconvert",
                 "target_bitdepth": 24,
-                "target_sample_rate": target_rate,
             }
         )
 
-    # Tier 2: 24bit 44.1~96 kHz
-    if encoding == "24bit Lossless" and sample_rate >= 44100:
-        # Can downconvert to 16bit
-        target_rate = 48000 if sample_rate % 48000 == 0 else 44100
+    # Tier 2: 24bit 44.1~96 kHz — offer downconvert to 16bit
+    if encoding == "24bit Lossless" and max_sample_rate >= 44100:
         options.append(
             {
-                "name": f"16bit {target_rate / 1000:.1f} kHz",
+                "name": "16bit FLAC",
                 "action": "downconvert",
                 "target_bitdepth": 16,
-                "target_sample_rate": target_rate,
             }
         )
 
-    # Tier 3: 16bit 44.1~48 kHz
-    if (encoding == "Lossless") or (encoding == "24bit Lossless"):
-        # Can transcode to MP3
+    # Tier 3: lossless — offer transcode to MP3
+    if encoding in ("Lossless", "24bit Lossless"):
         options.extend(
             [
                 {"name": "MP3 320", "action": "transcode", "encoding": "320"},
@@ -740,10 +733,10 @@ async def prompt_downconversion_choice(rls_data, track_data):
     # Get current format info for display
     encoding = rls_data["encoding"]
     if track_data:
-        sample_rate = next(iter(track_data.values()))["sample rate"]
+        max_sample_rate = max(t["sample rate"] for t in track_data.values())
         current_format = f"{encoding}"
-        if encoding == "24bit Lossless" or encoding == "Lossless":
-            current_format += f" ({sample_rate / 1000:.1f} kHz)"
+        if encoding in ("24bit Lossless", "Lossless"):
+            current_format += f" ({max_sample_rate / 1000:.1f} kHz)"
     else:
         current_format = encoding
 
@@ -858,8 +851,8 @@ async def execute_downconversion_tasks(
 
         if task["action"] == "downconvert":
             # Execute downconversion
-            sample_rate, new_path = await convert_folder(
-                base_path, bit_depth=task["target_bitdepth"], sample_rate=task["target_sample_rate"]
+            new_path = await convert_folder(
+                base_path, bit_depth=task["target_bitdepth"]
             )
             time.sleep(0.1)
 
@@ -869,7 +862,7 @@ async def execute_downconversion_tasks(
                 conversion_metadata["encoding"] = "Lossless"
 
             # Generate description for conversion
-            description = generate_conversion_description(base_url, sample_rate, task["target_bitdepth"])
+            description = generate_conversion_description(base_url, task["target_bitdepth"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
             await check_folder_structure(new_path, conversion_metadata["scene"])
 
