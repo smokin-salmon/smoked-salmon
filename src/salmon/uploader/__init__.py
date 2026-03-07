@@ -28,7 +28,7 @@ from salmon.converter.transcoding import (
     generate_transcode_description,
     transcode_folder,
 )
-from salmon.errors import AbortAndDeleteFolder, CRCMismatchError, EditedLogError, InvalidMetadataError
+from salmon.errors import AbortAndDeleteFolder, CRCMismatchError, EditedLogError, InvalidMetadataError, RequestError
 from salmon.images import upload_cover
 from salmon.tagger import (
     metadata_validator_base,
@@ -451,59 +451,62 @@ async def upload(
             if not request_id and cfg.upload.requests.check_requests:
                 request_id = await check_requests(gazelle_site, searchstrs)
 
-            torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
-                gazelle_site,
-                path,
-                group_id,
-                metadata,
-                cover_url,
-                track_data,
-                hybrid,
-                lossy_master,
-                spectral_urls,
-                spectral_ids,
-                lossy_comment,
-                request_id,
-                source_url,
-                seedbox_uploader,
-                source=source,
-            )
+            try:
+                torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
+                    gazelle_site,
+                    path,
+                    group_id,
+                    metadata,
+                    cover_url,
+                    track_data,
+                    hybrid,
+                    lossy_master,
+                    spectral_urls,
+                    spectral_ids,
+                    lossy_comment,
+                    request_id,
+                    source_url,
+                    seedbox_uploader,
+                    source=source,
+                )
 
-            request_id = None
+                request_id = None
 
-            await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+                await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
-            if cfg.upload.yes_all or click.confirm(
-                click.style("\nWould you like to check downconversion options?", fg="magenta"),
-                default=True,
-            ):
-                selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
-                if selected_tasks:
-                    display_names = [task["name"] for task in selected_tasks]
-                    click.secho(
-                        f"\nSelected formats for downconversion: {', '.join(display_names)}", fg="green", bold=True
-                    )
+                if cfg.upload.yes_all or click.confirm(
+                    click.style("\nWould you like to check downconversion options?", fg="magenta"),
+                    default=True,
+                ):
+                    selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
+                    if selected_tasks:
+                        display_names = [task["name"] for task in selected_tasks]
+                        click.secho(
+                            f"\nSelected formats for downconversion: {', '.join(display_names)}", fg="green", bold=True
+                        )
 
-                    # Execute downconversion tasks
-                    await execute_downconversion_tasks(
-                        selected_tasks,
-                        path,
-                        gazelle_site,
-                        group_id,
-                        metadata,
-                        cover_url,
-                        track_data,
-                        hybrid,
-                        lossy_master,
-                        spectral_urls,
-                        spectral_ids,
-                        lossy_comment,
-                        request_id,
-                        source_url,
-                        seedbox_uploader,
-                        source,
-                        url,
-                    )
+                        # Execute downconversion tasks
+                        await execute_downconversion_tasks(
+                            selected_tasks,
+                            path,
+                            gazelle_site,
+                            group_id,
+                            metadata,
+                            cover_url,
+                            track_data,
+                            hybrid,
+                            lossy_master,
+                            spectral_urls,
+                            spectral_ids,
+                            lossy_comment,
+                            request_id,
+                            source_url,
+                            seedbox_uploader,
+                            source,
+                            url,
+                        )
+            except RequestError as e:
+                click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
 
             tracker = None
             if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
