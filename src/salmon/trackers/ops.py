@@ -8,10 +8,15 @@ from salmon import cfg
 from salmon.errors import (
     RequestError,
 )
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
 class OpsApi(BaseGazelleApi):
+    TAG_RULES = TagRules(
+        allowed_sample_rates=(44100, 48000, 88200, 96000, 176400, 192000),
+        max_16bit_sample_rate=48000,
+    )
+
     def __init__(self):
         self.site_code = "OPS"
         self.base_url = "https://orpheus.network"

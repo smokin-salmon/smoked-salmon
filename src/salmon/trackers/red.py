@@ -1,8 +1,10 @@
 from salmon import cfg
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
 class RedApi(BaseGazelleApi):
+    TAG_RULES = TagRules(max_path_length=180, require_tracknumber_field=True)
+
     def __init__(self):
         self.site_code = "RED"
         self.base_url = "https://redacted.sh"
