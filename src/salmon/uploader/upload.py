@@ -10,7 +10,6 @@ from torf import Torrent
 from salmon import cfg
 from salmon.common import str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
-from salmon.errors import RequestError
 from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
@@ -96,13 +95,9 @@ async def prepare_and_upload(
     files = await compile_files(path, torrent_path, metadata)
 
     click.secho("Uploading torrent...", fg="yellow")
-    try:
-        torrent_id, group_id = await gazelle_site.upload(data, files)
-        # Ensure group_id is int (upload returns tuple[int, int])
-        return torrent_id, int(group_id) if group_id else 0, torrent_path, torrent_content
-    except RequestError as e:
-        click.secho(str(e), fg="red", bold=True)
-        raise SystemExit(1) from e
+    torrent_id, group_id = await gazelle_site.upload(data, files)
+    # Ensure group_id is int (upload returns tuple[int, int])
+    return torrent_id, int(group_id) if group_id else 0, torrent_path, torrent_content
 
 
 def concat_track_data(tags: dict[str, Any], audio_info: dict[str, Any]) -> dict[str, Any]:
