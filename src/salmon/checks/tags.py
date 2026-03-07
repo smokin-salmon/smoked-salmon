@@ -72,7 +72,7 @@ def _check_flac_tag_format(path: str, tag_rules: TagRules) -> list[str]:
         # Check TRACKNUMBER field name (RED requires TRACKNUMBER, not TRACK)
         if tag_rules.require_tracknumber_field:
             vorbis = mut.tags
-            if vorbis is not None and "TRACK" in vorbis and "TRACKNUMBER" not in vorbis:
+            if isinstance(vorbis, mutagen.flac.VCFLACDict) and "TRACK" in vorbis and "TRACKNUMBER" not in vorbis:
                 warnings.append(
                     f"{filename}: uses 'TRACK' instead of 'TRACKNUMBER' Vorbis comment"
                 )
@@ -175,9 +175,10 @@ def _check_file_naming(path: str) -> list[str]:
 
         # Track number missing from filename
         # Allow numeric (01, 1) or vinyl-style (A1, B2)
-        if not re.match(r"^\d+", basename.lstrip()):
-            if not re.match(r"^[A-Z]\d+", basename.lstrip(), re.IGNORECASE):
-                warnings.append(f"{filename}: file name missing track number")
+        if not re.match(r"^\d+", basename.lstrip()) and not re.match(
+            r"^[A-Z]\d+", basename.lstrip(), re.IGNORECASE
+        ):
+            warnings.append(f"{filename}: file name missing track number")
 
     # Check folder name for leading spaces
     folder_name = os.path.basename(path)

@@ -22,6 +22,7 @@ from salmon.errors import (
     RequestFailedError,
 )
 
+
 @dataclass(frozen=True, slots=True)
 class TagRules:
     max_path_length: int = 255

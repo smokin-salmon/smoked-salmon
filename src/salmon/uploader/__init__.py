@@ -17,6 +17,7 @@ from salmon.checks.integrity import (
     sanitize_integrity,
 )
 from salmon.checks.logs import check_log_cambia
+from salmon.checks.tags import validate_tags_for_tracker
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
@@ -73,7 +74,7 @@ from salmon.uploader.upload import (
 
 if TYPE_CHECKING:
     from salmon.tagger.tagfile import TagFile
-    from salmon.trackers.base import BaseGazelleApi
+    from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
 @commandgroup.command()
@@ -357,7 +358,8 @@ async def upload(
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
         path, metadata, tags, audio_info = await edit_metadata(
-            path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check
+            path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check,
+            tag_rules=gazelle_site.TAG_RULES,
         )
 
         if not group_id:
@@ -524,6 +526,7 @@ async def edit_metadata(
     auto_rename: bool,
     spectral_ids: dict[int, str] | None,
     skip_integrity_check: bool = False,
+    tag_rules: "TagRules | None" = None,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
     """Edit release metadata in an interactive loop until the user confirms.
 
@@ -540,6 +543,7 @@ async def edit_metadata(
         auto_rename: Whether to automatically rename files and folder.
         spectral_ids: Mapping of track index to spectral image ID, or None.
         skip_integrity_check: Whether to skip the integrity check step.
+        tag_rules: Optional tracker-specific tag validation rules.
 
     Returns:
         A tuple of (path, metadata, tags, audio_info) after editing is complete.
@@ -553,6 +557,16 @@ async def edit_metadata(
             tag_files(path, tags, metadata, auto_rename)
 
         tags = await check_tags(path)
+
+        # Validate file-level tags against tracker rules
+        if tag_rules:
+            audio_info_for_check = gather_audio_info(path)
+            tag_warnings = validate_tags_for_tracker(path, tags, audio_info_for_check, tag_rules)
+            if tag_warnings:
+                click.secho("\nTag validation warnings:", fg="yellow", bold=True)
+                for w in tag_warnings:
+                    click.secho(f"  - {w}", fg="yellow")
+
         if not metadata["scene"] and recompress:
             await recompress_path(path)
         path = rename_folder(path, metadata, auto_rename)
