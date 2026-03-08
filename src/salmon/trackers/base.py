@@ -239,7 +239,7 @@ class BaseGazelleApi:
                 if cfg.upload.debug_tracker_connection:
                     click.secho(f"[DEBUG] status: {resp.status}", fg="cyan")
                     click.secho(
-                        f"[DEBUG] response headers: {_redact(msgspec.json.encode(resp.headers).decode())}",
+                        f"[DEBUG] response headers: {_redact(msgspec.json.encode(dict(resp.headers)).decode())}",
                         fg="cyan",
                     )
                     click.secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
