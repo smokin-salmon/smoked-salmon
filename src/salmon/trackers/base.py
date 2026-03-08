@@ -2,6 +2,7 @@ import asyncio
 import html
 import re
 from contextlib import suppress
+from http import HTTPStatus
 from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
@@ -172,10 +173,7 @@ class BaseGazelleApi:
 
     async def authenticate(self) -> None:
         """Authenticate with the tracker API and get authkey/passkey."""
-        try:
-            acctinfo = await self.api_call("index")
-        except RequestError as err:
-            raise LoginError from err
+        acctinfo = await self.api_call("index")
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
         self._authenticated = True
@@ -224,7 +222,7 @@ class BaseGazelleApi:
 
         if cfg.upload.debug_tracker_connection:
             click.secho(f"[DEBUG] {method} {url}", fg="cyan")
-            click.secho(f"[DEBUG] params: {_redact(str(params))}", fg="cyan")
+            click.secho(f"[DEBUG] params: {_redact(msgspec.json.encode(params).decode())}", fg="cyan")
             click.secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
         try:
@@ -247,28 +245,46 @@ class BaseGazelleApi:
                 if not resp.ok:
                     error_msg = text
                     with suppress(msgspec.DecodeError, ValueError):
-                        error_msg = msgspec.json.decode(text)["error"]
+                        error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
 
-                    if "rate limit" in str(error_msg).lower():
+                    if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
                         retry_after = float(resp.headers.get("Retry-After", "20"))
                         click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
                         await asyncio.sleep(retry_after)
                         raise RetryableError("Rate limit exceeded")
 
-                    if resp.status in (500, 502, 503, 504):
+                    if resp.status == HTTPStatus.UNAUTHORIZED:
+                        click.secho(
+                            f"Authentication to {self.site_string} failed: {error_msg}.\nYour API key may be invalid.",
+                            fg="red",
+                        )
+                        raise LoginError(error_msg)
+
+                    if resp.status in (
+                        HTTPStatus.INTERNAL_SERVER_ERROR,
+                        HTTPStatus.BAD_GATEWAY,
+                        HTTPStatus.SERVICE_UNAVAILABLE,
+                        HTTPStatus.GATEWAY_TIMEOUT,
+                    ):
                         raise RetryableError(f"Server error {resp.status}, retrying...")
 
-                    raise RequestFailedError(str(error_msg))
+                    click.secho(
+                        f"Request to {self.site_string} failed ({resp.status}): {error_msg}",
+                        fg="red",
+                    )
+                    raise RequestFailedError(error_msg)
 
                 return HttpResponse(
                     text=text,
                     url=str(resp.url),
                     status=resp.status,
                 )
-        except msgspec.DecodeError as err:
-            raise LoginError from err
         except aiohttp.TooManyRedirects as err:
-            click.secho("Too many redirects. Your cookies may be invalid or expired.", fg="red", bold=True)
+            click.secho(
+                "Too many redirects. Your cookies may be invalid or expired.",
+                fg="red",
+                bold=True,
+            )
             raise LoginError from err
         except (TimeoutError, aiohttp.ClientError) as err:
             raise RetryableError(f"Network error: {err}") from err
@@ -291,15 +307,12 @@ class BaseGazelleApi:
         url = self.base_url + "/ajax.php"
         params = {"action": action, **(params or {})}
 
-        try:
-            resp = await self._request("GET", url, params=params, timeout_secs=5, prefer_api_key=True)
+        resp = await self._request("GET", url, params=params, timeout_secs=5, prefer_api_key=True)
 
-            try:
-                resp_json = msgspec.json.decode(resp.text)
-            except (msgspec.DecodeError, ValueError):
-                resp_json = {"status": "error", "error": resp.text}
-        except msgspec.DecodeError as err:
-            raise LoginError from err
+        try:
+            resp_json = msgspec.json.decode(resp.text)
+        except (msgspec.DecodeError, ValueError):
+            resp_json = {"status": "error", "error": resp.text}
 
         if resp_json.get("status") != "success":
             raise RequestFailedError(str(resp_json.get("error", resp.text)))

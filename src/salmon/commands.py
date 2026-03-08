@@ -252,12 +252,50 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
 
         for t in trackers:
             click.secho(f"\n[ Testing Tracker: {t} ]", fg="cyan", bold=True)
+            failed_checks: list[str] = []
 
+            tracker_instance = salmon.trackers.get_class(t)()
+
+            # Test session cookie (independent of API key auth)
             try:
-                await salmon.trackers.get_class(t)().authenticate()
+                click.secho("\n[ Testing Session Cookie ]", fg="cyan", bold=True)
+                await tracker_instance._request(
+                    "GET",
+                    f"{tracker_instance.base_url}/ajax.php",
+                    params={"action": "index"},
+                    prefer_api_key=False,
+                )
+                click.secho("  ✔ Session cookie OK", fg="green")
+            except Exception as cookie_err:
+                click.secho(
+                    f"  ✖ Session cookie check failed: {cookie_err}",
+                    fg="red",
+                    bold=True,
+                )
+                failed_checks.append("session cookie")
+
+            if tracker_instance.api_key:
+                # Test API key authentication
+                try:
+                    await tracker_instance._request(
+                        "GET",
+                        f"{tracker_instance.base_url}/ajax.php",
+                        params={"action": "index"},
+                        prefer_api_key=True,
+                    )
+                    click.secho("  ✔ API authentication OK", fg="green")
+                except Exception as e:
+                    click.secho(f"  ✖ API authentication failed: {e}", fg="red", bold=True)
+                    failed_checks.append("API key")
+
+            if failed_checks:
+                click.secho(
+                    f"\n✖ Error testing {t} ({', '.join(failed_checks)})",
+                    fg="red",
+                    bold=True,
+                )
+            else:
                 click.secho(f"\n✔ Successfully checked {t}", fg="green", bold=True)
-            except Exception as e:
-                click.secho(f"\n✖ Error testing {t}: {e}", fg="red", bold=True)
 
             click.secho("-" * 50, fg="yellow")  # Separator for readability
 
