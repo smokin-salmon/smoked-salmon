@@ -2,6 +2,7 @@ import asyncio
 import html
 import re
 from contextlib import suppress
+from dataclasses import dataclass
 from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
@@ -20,6 +21,15 @@ from salmon.errors import (
     RequestError,
     RequestFailedError,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class TagRules:
+    max_path_length: int = 255
+    allowed_sample_rates: tuple[int, ...] | None = None
+    max_16bit_sample_rate: int | None = None
+    require_tracknumber_field: bool = False
+
 
 ARTIST_TYPES = [
     "main",
@@ -123,6 +133,8 @@ class HttpResponse(msgspec.Struct, frozen=True):
 
 class BaseGazelleApi:
     """Base API client for Gazelle-based trackers."""
+
+    TAG_RULES = TagRules()
 
     # Subclasses must set these attributes before calling __init__
     cookie: str
