@@ -17,14 +17,20 @@ async def handle_spectrals(request: web.Request) -> web.Response:
     raise web.HTTPNotFound()
 
 
+def _sanitize_filename(filename: str) -> str:
+    """Encode filename to UTF-8, replacing undecodable characters."""
+    return filename.encode("utf-8", "replace").decode("utf-8", "replace")
+
+
 def set_active_spectrals(spectrals):
+    sanitized = {k: _sanitize_filename(v) for k, v in spectrals.items()}
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute("DELETE FROM spectrals")
         cursor.execute(
-            "INSERT INTO spectrals (id, filename) VALUES " + ", ".join("(?, ?)" for _ in range(len(spectrals))),
-            tuple(chain.from_iterable(list(spectrals.items()))),
+            "INSERT INTO spectrals (id, filename) VALUES " + ", ".join("(?, ?)" for _ in range(len(sanitized))),
+            tuple(chain.from_iterable(list(sanitized.items()))),
         )
         conn.commit()
 
