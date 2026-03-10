@@ -1,0 +1,47 @@
+name: Publish GitHub release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish, for example 0.10.1
+        required: true
+        type: string
+      name:
+        description: Release title shown in GitHub
+        required: true
+        type: string
+      commit:
+        description: Branch or commit to tag when the tag does not already exist
+        required: false
+        default: master
+        type: string
+      release_summary:
+        description: Optional Markdown summary prepended before generated release notes
+        required: false
+        type: string
+      prerelease:
+        description: Publish this as a prerelease
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Publish GitHub release
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
+        with:
+          # Use the repo PAT so the resulting published release event fans out into downstream workflows.
+          token: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+          body: ${{ inputs.release_summary }}
+          commit: ${{ inputs.commit }}
+          generateReleaseNotes: true
+          makeLatest: ${{ inputs.prerelease && 'false' || 'legacy' }}
+          name: ${{ inputs.name }}
+          prerelease: ${{ inputs.prerelease }}
+          tag: ${{ inputs.tag }}
