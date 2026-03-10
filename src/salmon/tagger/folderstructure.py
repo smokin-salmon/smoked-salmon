@@ -5,11 +5,11 @@ from pathlib import Path
 import asyncclick as click
 
 from salmon import cfg
-from salmon.constants import ALLOWED_EXTENSIONS
+from salmon.constants import ALLOWED_EXTENSIONS, ESSENTIAL_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
 
 
-async def check_folder_structure(path: str, scene: bool) -> None:
+async def check_folder_structure(path: str, scene: bool, *, essential_only: bool = False) -> None:
     """Run through every filesystem check that causes uploads to violate the rules
     or be rejected on the upload form.
 
@@ -21,6 +21,8 @@ async def check_folder_structure(path: str, scene: bool) -> None:
         path: Absolute path to the release folder being checked.
         scene: Whether the release is a scene release. Scene releases are not
             automatically fixed and require manual intervention.
+        essential_only: If True, only essential extensions are allowed;
+            files like nfo, sfv, md5, txt, etc. are flagged for removal.
 
     Raises:
         click.Abort: If the user aborts, or if a scene release has structural issues.
@@ -31,7 +33,7 @@ async def check_folder_structure(path: str, scene: bool) -> None:
             await _check_illegal_folders(path)
             _check_path_lengths(path, scene)
             _check_zero_len_folder(path)
-            await _check_extensions(path, scene)
+            await _check_extensions(path, scene, essential_only=essential_only)
             return
         except NoncompliantFolderStructure:
             if scene:
@@ -165,7 +167,7 @@ def _check_zero_len_folder(path: str) -> None:
     click.secho("No zero length folders were found.", fg="green")
 
 
-async def _check_extensions(path: str, scene: bool) -> None:
+async def _check_extensions(path: str, scene: bool, *, essential_only: bool = False) -> None:
     """Validate that all file extensions within the release folder are permitted.
 
     Files with disallowed extensions are either handled interactively (non-scene)
@@ -176,6 +178,7 @@ async def _check_extensions(path: str, scene: bool) -> None:
         path: Absolute path to the release folder being checked.
         scene: Whether the release is a scene release. Scene releases report all
             offending files at once rather than prompting per-file.
+        essential_only: If True, only essential extensions are allowed.
 
     Raises:
         NoncompliantFolderStructure: If scene release contains files with invalid
@@ -184,6 +187,7 @@ async def _check_extensions(path: str, scene: bool) -> None:
     """
     mp3, aac, flac = [], [], []
     offending_files = []  # Collect offending files for scene releases
+    effective_extensions = ESSENTIAL_EXTENSIONS if essential_only else ALLOWED_EXTENSIONS
     for root, _, files in os.walk(path):
         for fln in files:
             _, ext = os.path.splitext(fln.lower())
@@ -193,7 +197,7 @@ async def _check_extensions(path: str, scene: bool) -> None:
                 flac.append(fln)
             elif ext == ".m4a":
                 aac.append(fln)
-            elif ext not in ALLOWED_EXTENSIONS:
+            elif ext not in effective_extensions:
                 if scene:
                     offending_files.append(os.path.join(root, fln))
                 else:

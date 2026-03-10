@@ -40,3 +40,7 @@ RE_FEAT = re.compile(
     flags=re.IGNORECASE,
 )
 _RE_SPLIT = re.compile("|".join(re.escape(s) for s in SPLIT_CHARS))
+
+LOSSY_EXTENSIONS = frozenset({".mp3", ".m4a", ".ogg", ".opus"})
+SCENE_EXTENSIONS = frozenset({".nfo", ".sfv", ".md5"})
+IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".pdf", ".gif"})
