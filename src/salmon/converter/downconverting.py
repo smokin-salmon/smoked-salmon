@@ -8,6 +8,7 @@ import anyio
 import asyncclick as click
 import msgspec
 
+from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.errors import InvalidSampleRate
 from salmon.release_notification import get_version
@@ -128,13 +129,36 @@ def _collect_convert_items(
 # ---------------------------------------------------------------------------
 
 
-def _copy_extra_files(path: str, new_path: str, convert_srcs: frozenset[str]) -> None:
+def _validate_lossless(path: str) -> None:
+    """Validate that a folder contains no lossy audio files.
+
+    Args:
+        path: Path to the directory to validate.
+
+    Raises:
+        click.Abort: If a lossy file is found.
+    """
+    for _root, _, files in os.walk(path):
+        for f in files:
+            if os.path.splitext(f)[1].lower() in LOSSY_EXTENSIONS:
+                click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
+                raise click.Abort
+
+
+def _copy_extra_files(
+    path: str,
+    new_path: str,
+    convert_srcs: frozenset[str],
+    *,
+    essential_only: bool = False,
+) -> None:
     """Copy non-conversion files (images, text, 16-bit audio) to the output directory.
 
     Args:
         path: Source album directory path.
         new_path: Destination album directory path.
         convert_srcs: Set of source paths that will be converted (to exclude).
+        essential_only: If True, only copy image files; skip everything else.
     """
     src_path = Path(path)
     dst_path = Path(new_path)
@@ -143,9 +167,12 @@ def _copy_extra_files(path: str, new_path: str, convert_srcs: frozenset[str]) ->
         if not p.is_file() or str(p) in convert_srcs:
             continue
         rel = p.relative_to(src_path)
+        if essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS:
+            click.secho(f"Skip  {rel}", fg="yellow")
+            continue
         out = dst_path / rel
         out.parent.mkdir(parents=True, exist_ok=True)
-        click.secho(f"Copy {rel}", fg="cyan")
+        click.secho(f"Copy  {rel}", fg="cyan")
         shutil.copy(p, out)
 
 
@@ -198,6 +225,7 @@ async def convert_folder(
     path: str,
     bit_depth: BitDepth = 16,
     sample_rate: int | None = None,
+    essential_only: bool = False,
 ) -> tuple[int | None, str]:
     """Convert a folder of 24-bit FLAC files to the target bit depth.
 
@@ -205,10 +233,13 @@ async def convert_folder(
         path: Path to the source album directory.
         bit_depth: Target bit depth. Defaults to 16.
         sample_rate: Target sample rate. None for automatic detection.
+        essential_only: If True, only image files are copied; all other extra
+            files (scans, cues, logs, etc.) are skipped.
 
     Returns:
         Tuple of (final_sample_rate, new_folder_path).
     """
+    _validate_lossless(path)
     new_path = _build_output_path(path, bit_depth, sample_rate)
 
     if os.path.isdir(new_path):
@@ -217,7 +248,7 @@ async def convert_folder(
 
     items = _collect_convert_items(path, new_path, sample_rate)
     convert_srcs = frozenset(item.src for item in items)
-    _copy_extra_files(path, new_path, convert_srcs)
+    _copy_extra_files(path, new_path, convert_srcs, essential_only=essential_only)
     await _convert_audio_files(items, bit_depth)
 
     final_rate = items[-1].target_rate if items else None

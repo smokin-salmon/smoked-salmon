@@ -166,6 +166,12 @@ if TYPE_CHECKING:
     is_flag=True,
     help="Skip integrity check of audio files",
 )
+@click.option(
+    "--essential-only",
+    "-eo",
+    is_flag=True,
+    help="Only keep essential files; strip nfo, sfv, md5, txt, and other extras.",
+)
 async def up(
     path: str,
     group_id: int | None,
@@ -186,8 +192,11 @@ async def up(
     skip_mqa: bool,
     skip_log_check: bool,
     skip_integrity_check: bool,
+    essential_only: bool,
 ) -> None:
     """Command to upload an album folder to a Gazelle Site."""
+    if essential_only and scene:
+        raise click.UsageError("--essential-only and --scene cannot be used together.")
     if yyy:
         cfg.upload.yes_all = True
     gazelle_site = salmon.trackers.get_class(tracker)()
@@ -227,6 +236,7 @@ async def up(
         skip_mqa=skip_mqa,
         skip_log_check=skip_log_check,
         skip_integrity_check=skip_integrity_check,
+        essential_only=essential_only,
     )
 
 
@@ -250,6 +260,7 @@ async def upload(
     skip_mqa: bool = False,
     skip_log_check: bool = False,
     skip_integrity_check: bool = False,
+    essential_only: bool = False,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
@@ -275,6 +286,7 @@ async def upload(
         skip_mqa: Skip MQA check.
         skip_log_check: Skip log checking.
         skip_integrity_check: Skip integrity check.
+        essential_only: If True, only essential extensions are allowed.
     """
     path = os.path.abspath(path)
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
@@ -357,7 +369,16 @@ async def upload(
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
         path, metadata, tags, audio_info = await edit_metadata(
-            path, tags, metadata, source, rls_data, recompress, auto_rename, spectral_ids, skip_integrity_check
+            path,
+            tags,
+            metadata,
+            source,
+            rls_data,
+            recompress,
+            auto_rename,
+            spectral_ids,
+            skip_integrity_check,
+            essential_only,
         )
 
         if not group_id:
@@ -527,6 +548,7 @@ async def edit_metadata(
     auto_rename: bool,
     spectral_ids: dict[int, str] | None,
     skip_integrity_check: bool = False,
+    essential_only: bool = False,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
     """Edit release metadata in an interactive loop until the user confirms.
 
@@ -543,6 +565,7 @@ async def edit_metadata(
         auto_rename: Whether to automatically rename files and folder.
         spectral_ids: Mapping of track index to spectral image ID, or None.
         skip_integrity_check: Whether to skip the integrity check step.
+        essential_only: If True, only essential extensions are allowed.
 
     Returns:
         A tuple of (path, metadata, tags, audio_info) after editing is complete.
@@ -561,7 +584,7 @@ async def edit_metadata(
         path = rename_folder(path, metadata, auto_rename)
         if not metadata["scene"]:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
-        await check_folder_structure(path, metadata["scene"])
+        await check_folder_structure(path, metadata["scene"], essential_only=essential_only)
 
         if not skip_integrity_check:
             click.secho("\nChecking integrity of audio files...", fg="cyan", bold=True)

@@ -11,6 +11,7 @@ from mutagen import flac, mp3
 from mutagen.flac import VCFLACDict
 from mutagen.id3 import APIC, TXXX, Frames
 
+from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.release_notification import get_version
 
@@ -22,7 +23,7 @@ LAME_COMMAND_MAP: dict[Bitrate, list[str]] = {
     "320": ["-h", "-b", "320"],
 }
 
-COPY_EXTENSIONS = frozenset((".jpg", ".jpeg", ".png", ".pdf", ".txt"))
+SKIP_EXTENSIONS = frozenset((".cue", ".log", ".m3u", ".m3u8", ".accurip"))
 FLAC_FOLDER_RE = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 LOSSLESS_FOLDER_RE = re.compile(r"Lossless", flags=re.IGNORECASE)
 
@@ -114,7 +115,7 @@ def _validate_lossless(path: str) -> None:
     for _root, _, files in os.walk(path):
         for f in files:
             ext = os.path.splitext(f)[1].lower()
-            if ext in {".mp3", ".m4a", ".ogg", ".opus"}:
+            if ext in LOSSY_EXTENSIONS:
                 click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
                 raise click.Abort
 
@@ -264,21 +265,31 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
     mp3_thing.save(v1=0, v2_version=4)
 
 
-def _copy_extra_files(path: str, new_path: str) -> None:
-    """Copy non-audio files (images, text, etc.) to the output directory.
+def _copy_extra_files(path: str, new_path: str, *, essential_only: bool = False) -> None:
+    """Copy non-audio files to the output directory.
+
+    By default all non-FLAC files are copied except those in SKIP_EXTENSIONS.
+    When essential_only is True, only image files (matching IMAGE_EXTENSIONS) are kept.
 
     Args:
         path: Source album directory path.
         new_path: Destination album directory path.
+        essential_only: If True, only copy image files; skip everything else.
     """
     src_path = Path(path)
     dst_path = Path(new_path)
 
     for p in src_path.rglob("*"):
-        if not p.is_file() or p.suffix.lower() not in COPY_EXTENSIONS:
+        if not p.is_file() or p.suffix.lower() == ".flac":
             continue
         rel = p.relative_to(src_path)
-        click.secho(f"Copy {rel}", fg="cyan")
+        if p.suffix.lower() in SKIP_EXTENSIONS:
+            click.secho(f"Skip  {rel}", fg="yellow")
+            continue
+        if essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS:
+            click.secho(f"Skip  {rel}", fg="yellow")
+            continue
+        click.secho(f"Copy  {rel}", fg="cyan")
         out = dst_path / rel
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(p, out)
@@ -380,12 +391,14 @@ async def _transcode_audio_files(
 # ---------------------------------------------------------------------------
 
 
-async def transcode_folder(path: str, bitrate: Bitrate) -> str:
+async def transcode_folder(path: str, bitrate: Bitrate, essential_only: bool = False) -> str:
     """Transcode a lossless folder to MP3 at the specified bitrate.
 
     Args:
         path: Path to the directory containing lossless audio files.
         bitrate: Target MP3 bitrate (e.g. "V0", "320").
+        essential_only: If True, only image files are copied; all other extra
+            files (scans, cues, logs, etc.) are skipped.
 
     Returns:
         Path to the newly created transcoded directory.
@@ -406,7 +419,7 @@ async def transcode_folder(path: str, bitrate: Bitrate) -> str:
         shutil.rmtree(new_path)
 
     items = _collect_transcode_items(path, new_path)
-    _copy_extra_files(path, new_path)
+    _copy_extra_files(path, new_path, essential_only=essential_only)
     await _transcode_audio_files(items, bitrate)
 
     return new_path

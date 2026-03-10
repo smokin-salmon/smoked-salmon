@@ -397,3 +397,24 @@ ALLOWED_EXTENSIONS = {
     ".sfv",
     ".txt",
 }
+
+# Subset of ALLOWED_EXTENSIONS: audio, image, log, and cue files.
+# Used by --essential-only to strip nfo, sfv, md5, txt, and other extras.
+ESSENTIAL_EXTENSIONS = {
+    ".ac3",
+    ".accurip",
+    ".cue",
+    ".dts",
+    ".flac",
+    ".gif",
+    ".jpeg",
+    ".jpg",
+    ".log",
+    ".m3u",
+    ".m3u8",
+    ".m4a",
+    ".m4b",
+    ".mp3",
+    ".pdf",
+    ".png",
+}
