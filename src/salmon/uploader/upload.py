@@ -214,8 +214,6 @@ def compile_data_existing_group(
     return {
         "submit": True,
         "type": 0,
-        "artists[]": [a[0] for a in metadata["artists"]],
-        "importance[]": [ARTIST_IMPORTANCES[a[1]] for a in metadata["artists"]],
         "groupid": group_id,
         "remaster": True,
         "remaster_year": metadata["year"],
