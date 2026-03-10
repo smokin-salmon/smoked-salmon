@@ -7,7 +7,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp-jinja2>=1.5.1",
-    "aiohttp[speedups]>=3.8.5",
+    "aiohttp[speedups]>=3.8.5 ; sys_platform != 'win32'",
+    "aiohttp>=3.8.5 ; sys_platform == 'win32'",
     "aiolimiter>=1.2.1",
     "anyio>=4.12.1",
     "asyncclick>=8.1.7.2",
