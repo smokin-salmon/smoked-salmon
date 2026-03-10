@@ -1,5 +1,4 @@
 import asyncio
-import sqlite3
 from typing import Any
 
 import asyncclick as click
@@ -7,7 +6,6 @@ import pyperclip
 
 from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
-from salmon.database import DB_PATH
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, imgbb, imgbox, oeimg, ptpimg, ptscreens
 
@@ -75,54 +73,19 @@ async def upload_images(filepaths: tuple, image_host) -> list[str]:
     Returns:
         List of uploaded URLs.
     """
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        urls = []
-        uploader = image_host.ImageUploader()
-        try:
-            tasks = [uploader.upload_file(f) for f in filepaths]
-            for url, deletion_url in await asyncio.gather(*tasks):
-                cursor.execute(
-                    "INSERT INTO image_uploads (url, deletion_url) VALUES (?, ?)",
-                    (url, deletion_url),
-                )
-                click.secho(url)
-                urls.append(url)
-            conn.commit()
-            if cfg.upload.description.copy_uploaded_url_to_clipboard:
-                pyperclip.copy("\n".join(urls))
-            return urls
-        except (ImageUploadFailed, ValueError) as error:
-            click.secho(f"Image Upload Failed. {error}", fg="red")
-            raise ImageUploadFailed("Failed to upload image") from error
-
-
-@images.command()
-@click.option("--limit", "-l", type=click.INT, default=20, help="The number of images to show")
-@click.option(
-    "--offset",
-    "-o",
-    type=click.INT,
-    default=0,
-    help="The number of images to offset by",
-)
-async def ls(limit: int, offset: int) -> None:
-    """View previously uploaded images."""
-    with sqlite3.connect(DB_PATH) as conn:
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, url, deletion_url, time FROM image_uploads ORDER BY id DESC LIMIT ? OFFSET ?",
-            (limit, offset),
-        )
-        for row in cursor.fetchall():
-            click.secho("")
-            click.secho(f"{row['id']:04d}. ", fg="yellow", nl=False)
-            click.secho(f"{row['time']} ", fg="green", nl=False)
-            click.secho(f"{row['url']} ", fg="cyan", nl=False)
-            if row["deletion_url"]:
-                click.secho(f"Delete: {row['deletion_url']}", fg="red")
+    urls = []
+    uploader = image_host.ImageUploader()
+    try:
+        tasks = [uploader.upload_file(f) for f in filepaths]
+        for url, _deletion_url in await asyncio.gather(*tasks):
+            click.secho(url)
+            urls.append(url)
+        if cfg.upload.description.copy_uploaded_url_to_clipboard:
+            pyperclip.copy("\n".join(urls))
+        return urls
+    except (ImageUploadFailed, ValueError) as error:
+        click.secho(f"Image Upload Failed. {error}", fg="red")
+        raise ImageUploadFailed("Failed to upload image") from error
 
 
 def chunker(seq, size=4):
