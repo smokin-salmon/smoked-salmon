@@ -130,6 +130,12 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 A Docker image is generated per release.  
 **Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
 
+A rolling pre-release is also published from `master`:
+
+- Docker: `ghcr.io/smokin-salmon/smoked-salmon:alpha`
+- Immutable Docker snapshots: `ghcr.io/smokin-salmon/smoked-salmon:alpha-<commit>`
+- GitHub Releases: see the latest `Alpha pre-release` on the [Releases page](https://github.com/smokin-salmon/smoked-salmon/releases)
+
 1. Pull the latest image:
 
    ```bash
