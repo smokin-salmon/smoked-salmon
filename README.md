@@ -145,21 +145,19 @@ A Docker image is generated per release.
 
 ### 🔁 Recommended Docker Operation Order
 
-1. **Check Configuration** -> **Run Migration** -> **Run the Web UI**  
+1. **Check Configuration** -> **Run the Web UI**
    Run the container with the `checkconf` command to verify that the connection to the trackers is working:
 
    ```bash
    docker run --rm -it --network=host \
    -v /path/to/your/music:/app/.music \
    -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
-   -v /path/to/your/smoked.db/directory:/root/.local/share/smoked-salmon/ \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
    -v /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features \
    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
    ```
 
-   If the configuration is valid, use the `migrate` command to initialize or upgrade the database schema:
-   Once migration is complete, you may launch container in persistent mode with `web` command.
+   If the configuration is valid, you may launch the container in persistent mode with the `web` command.
 
 2. **Connect to the Running Container**  
    To manually execute operations inside the container(`web` command required), connect via SSH and run:
@@ -222,7 +220,6 @@ services:
     volumes:
       - /path/to/your/music:/app/.music
       - /path/to/your/config.toml/directory:/root/.config/smoked-salmon/
-      - /path/to/your/smoked.db/directory:/root/.local/share/smoked-salmon/
       - /path/to/your/generated/dottorrents:/app/.torrents
       - /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features
     command: web
@@ -244,11 +241,6 @@ smoked-salmon uses distinct terminal colors for different types of messages:
 smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server. Quick start usage instructions can be found on the [Wiki Usage page](https://github.com/smokin-salmon/smoked-salmon/wiki#usage).
 
 The examples below show how to run smoked-salmon directly. If you're using Docker, you'll need to adjust them accordingly, but the underlying principles remain the same.
-
-On the first run, you will need to create the database:
-```bash
-salmon migrate
-```
 
 To see the available commands, just type:
 ```bash

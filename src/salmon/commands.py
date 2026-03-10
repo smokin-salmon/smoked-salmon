@@ -11,7 +11,6 @@ import pyperclip
 
 import salmon.checks
 import salmon.converter
-import salmon.database
 import salmon.play
 import salmon.search
 import salmon.sources
@@ -23,7 +22,6 @@ from salmon import cfg
 from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
-from salmon.database import DB_PATH
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
@@ -422,11 +420,6 @@ async def health() -> None:
         click.echo(f"Config path: {config_path}")
     except FileNotFoundError:
         click.secho(f"Could not find config at {get_user_cfg_path()}", fg="red")
-
-    if os.path.exists(DB_PATH):
-        click.echo(f"DB path: {DB_PATH}")
-    else:
-        click.secho(f"Could not find database at {DB_PATH}", fg="red")
 
     click.echo()
 
