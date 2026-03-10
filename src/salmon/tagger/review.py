@@ -9,6 +9,16 @@ from salmon.errors import InvalidMetadataError
 from salmon.tagger.metadata import _print_metadata
 from salmon.tagger.sources.base import generate_artists
 
+_CLASSICAL_GENRES = {
+    "classical",
+    "baroque",
+    "chambermusic",
+    "choral",
+    "modernclassical",
+    "orchestral",
+    "opera",
+}
+
 
 async def review_metadata(metadata, validator):
     """
@@ -61,6 +71,8 @@ async def review_metadata(metadata, validator):
             continue
         if break_:
             break
+
+    _warn_classical_genre(metadata)
     return metadata
 
 
@@ -77,6 +89,68 @@ async def _check_for_empty_genre_list(metadata):
             fg="magenta",
         )
         await _edit_genres(metadata)
+
+
+def _warn_classical_genre(metadata: dict) -> None:
+    """Display a warning when a classical genre is detected.
+
+    Classical music has stricter tagging standards on Gazelle trackers that
+    salmon cannot currently enforce automatically. This function alerts the
+    user so they can verify compliance manually before uploading.
+
+    Args:
+        metadata: The release metadata dictionary.
+    """
+    detected = {g for g in metadata["genres"] if g.lower() in _CLASSICAL_GENRES}
+    if not detected:
+        return
+
+    click.secho(
+        "\n==================== CLASSICAL MUSIC WARNING ====================",
+        fg="yellow",
+        bold=True,
+    )
+    click.secho(
+        f"""\
+Detected classical genre(s): {", ".join(sorted(detected))}
+
+Salmon is NOT currently suited for uploading classical music.
+Classical releases have strict tagging requirements (composer tags,
+per-work artist/composer fields, specific title formatting, etc.)
+that salmon cannot handle automatically.
+
+It is STRONGLY RECOMMENDED to upload classical music manually
+through the tracker's upload form to ensure full compliance.
+
+If you choose to continue, please verify the following manually:
+
+[Composer]  Must be in the COMPOSER tag (not Artist), full name
+            required (e.g. "Johann Sebastian Bach", not "Bach").
+            Set per-work on multi-composer albums.
+
+[Artist]    Must list performers only, in order:
+            Soloist(s), Orchestra/Ensemble, Conductor.
+            Set per-work on multi-work albums.
+
+[Title]     Format: <Work Name> - <Movement No.>. <Tempo/Name>
+            e.g. "Symphony No. 5 in C minor, Op. 67 - I. Allegro con brio"
+            Do NOT include the composer name in the title.
+
+[Date]      Must be the release date, NOT the composition date.
+
+[Album]     Should match the label/spine title where possible.
+
+[Upload]    Use the Composer field for composer(s), Conductor for
+            conductor(s), Main Artist for performer(s) on the form.
+
+For full rules, see the tracker's Classical Tagging Guide.""",
+        fg="yellow",
+    )
+    click.secho(
+        "=================================================================\n",
+        fg="yellow",
+        bold=True,
+    )
 
 
 async def _edit_artists(metadata):
