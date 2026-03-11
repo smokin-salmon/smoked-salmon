@@ -1,10 +1,10 @@
 import re
 
 import asyncclick as click
-from aiohttp import FormData
 from bs4 import BeautifulSoup
 
 from salmon import cfg
+from salmon.common import UploadFiles
 from salmon.errors import (
     RequestError,
 )
@@ -54,7 +54,7 @@ class OpsApi(BaseGazelleApi):
             "Unknown": 21,
         }
 
-    async def upload(self, data: dict, files: FormData) -> tuple[int, int]:
+    async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent, prompting once to set release type to Split for multi-artist releases.
 
         If the upload is for a new group (has 'releasetype' in data) and two or more
@@ -63,7 +63,7 @@ class OpsApi(BaseGazelleApi):
 
         Args:
             data: Upload form data.
-            files: FormData containing files to upload.
+            files: UploadFiles containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id).
@@ -126,7 +126,6 @@ class OpsApi(BaseGazelleApi):
         Raises:
             RequestError: If the report fails.
         """
-        await self.ensure_authenticated()
         url = self.base_url + "/reportsv2.php"
         # OPS only uses lossyapproval, not lossywebapproval
         data = {

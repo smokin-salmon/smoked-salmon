@@ -7,6 +7,7 @@ from typing import Any
 
 import aiohttp
 import asyncclick as click
+import msgspec
 
 from salmon.common.aliases import AliasedCommands
 from salmon.common.constants import RE_FEAT
@@ -33,6 +34,7 @@ from salmon.errors import ScrapeError
 __all__ = [
     "AliasedCommands",
     "RE_FEAT",
+    "UploadFiles",
     "compress",
     "create_relative_path",
     "get_audio_files",
@@ -180,3 +182,10 @@ async def handle_scrape_errors(task: Any, mute: bool = False) -> Any | None:
         if not mute:
             click.secho(f"Unexpected scrape error: {e}\n{''.join(traceback.format_exception(e))}", fg="red", bold=True)
     return None
+
+
+class UploadFiles(msgspec.Struct):
+    """Container for files to upload (torrent and log files)."""
+
+    torrent_data: bytes
+    log_files: list[tuple[str, bytes]] = []
