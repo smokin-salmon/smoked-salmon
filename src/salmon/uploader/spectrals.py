@@ -407,7 +407,7 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
             os.symlink(specs_path, symlink_path)
         with contextlib.suppress(WebServerIsAlreadyRunning):
             runner = await create_app_async()
-        url = f"http://{cfg.upload.web_interface.host}:{cfg.upload.web_interface.port}/spectrals"
+        url = f"http://{cfg.upload.web_interface.effective_host}:{cfg.upload.web_interface.port}/spectrals"
         await prompt_async(
             click.style(
                 f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"
