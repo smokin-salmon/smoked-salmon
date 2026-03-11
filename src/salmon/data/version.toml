@@ -1,4 +1,82 @@
-current = "0.10.0"
+current = "0.10.1"
+
+[[changelog]]
+version = "0.10.1"
+date = "2026-03-11"
+notes = """
+## ⚠️ Breaking Changes
+
+- **SQLite database removed**: The SQLite database has been replaced with in-memory state. This simplifies deployment and removes the need for database file management. The `salmon migrate` command is no longer needed during installation.
+- **Project migrated to src layout**: The project has been restructured to a standard Python src layout (`src/salmon/`). The build backend has been switched to **uv**. If you are running from source, you may need to reinstall the package.
+- **Junodownload metadata source dropped**: Junodownload has been removed as a metadata source. 
+
+## ✨ New Features & Improvements
+
+- Add **Apple Music** multi-storefront search support (replacing the old iTunes scraper)
+- Add `--essential-only` option to strip extra files during upload and conversion
+- Add `display_host` config option for web interface — server now binds to `0.0.0.0` by default for Docker/remote access, while user-facing URLs use `display_host` (defaults to `localhost`)
+- Add classical genre detection warning during metadata review
+- Add OPS split release type support
+- Extract **Bandcamp** catalog numbers from release pages
+- Simplify **Tidal** region handling and pass country code through API pipeline
+
+## 🐛 Bug Fixes
+
+- Fix an issue where RED may incorrectly create a new group instead of uploading to an existing group when using cookie-only uploads
+- Fix aiohttp aiodns issue on Windows by excluding speedups extra
+- Fix spectral filenames with undecodable characters causing database errors
+- Fix tracker auth error when debug messages are enabled
+- Fix preferred metadata title override not being applied
+- Fix spurious remixer artists and Discogs URL matching
+- Fix scraper dispatch and search issues across multiple metadata sources
+- Fix zero-length folder segments causing path errors
+- Fix torrent generation before authentication
+- Handle multi-tracker upload failure gracefully instead of crashing
+
+## 🔒 Tracker & Security Improvements
+
+- Default to using API key instead of cookie for tracker requests when an API key is configured
+- Refactor Dockerfile to use multi-stage build for smaller images
+- Replace `FormData` with `UploadFiles` struct for cleaner upload file handling
+- Improve tracker HTTP error handling and redact sensitive data from debug output
+- Improve `checkconf` diagnostics for tracker connection testing
+
+## What's Changed
+* Use pathlib to detect zero-length folder segments by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/291
+* Refactor scraper architecture, migrate iTunes to multi-region Apple Music, drop Junodownload by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/292
+* Ensure authentication before torrent generation to prevent None announce URL by @kisiel92 in https://github.com/smokin-salmon/smoked-salmon/pull/295
+* Migrate to src layout with uv build backend and multi-stage Docker build by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/296
+* Refactor tracker HTTP layer and add OPS split release type support by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/297
+* Bump platformdirs from 4.9.2 to 4.9.4 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/299
+* Bump ruff from 0.15.4 to 0.15.5 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/300
+* Bump docker/metadata-action from 5 to 6 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/301
+* Bump docker/login-action from 3 to 4 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/302
+* Bump docker/setup-buildx-action from 3 to 4 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/303
+* Bump docker/build-push-action from 6 to 7 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/304
+* Bump docker/setup-qemu-action from 3 to 4 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/305
+* Move tracker debug logging into _request() to cover all HTTP calls by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/306
+* Fix spurious remixer artists and Discogs URL matching by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/307
+* Improve tracker HTTP error handling and redact sensitive data from debug output by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/309
+* Respect preferred metadata title over embedded album tags by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/313
+* Extract catalog numbers from Bandcamp metadata by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/315
+* Handle multi-tracker upload failure gracefully by @0rkag in https://github.com/smokin-salmon/smoked-salmon/pull/316
+* fix: convert response headers to dict before JSON encoding in debug output by @0rkag in https://github.com/smokin-salmon/smoked-salmon/pull/319
+* Improve tracker error handling and checkconf diagnostics by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/320
+* Fix spectral filenames with undecodable characters causing database errors by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/323
+* Add --essential-only option to strip extra files during upload and conversion by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/327
+* Fix aiohttp aiodns issue on Windows by excluding speedups extra by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/328
+* Add contributing guidelines by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/329
+* Add RED upload form enrichment for cookie-only uploads to existing groups by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/330
+* Add classical genre detection warning during metadata review by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/331
+* Remove SQLite database and replace with in-memory state by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/332
+* Replace FormData with UploadFiles struct and simplify upload file handling by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/333
+* Add display_host config for web interface and bind to 0.0.0.0 by default by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/334
+
+## New Contributors
+* @tomerh2001 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/313
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.10.0...0.10.1
+"""
 
 [[changelog]]
 version = "0.10.0"
