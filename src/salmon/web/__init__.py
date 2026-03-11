@@ -18,7 +18,7 @@ web_cfg = cfg.upload.web_interface
 @commandgroup.command()
 async def web_cmd() -> None:
     """Start the salmon web server."""
-    click.secho(f"Running webserver on http://{web_cfg.host}:{web_cfg.port}", fg="cyan")
+    click.secho(f"Running webserver on http://{web_cfg.effective_host}:{web_cfg.port}", fg="cyan")
     runner = await create_app_async()
     try:
         # Keep the server running

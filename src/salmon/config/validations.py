@@ -153,13 +153,22 @@ class UploadDescription(BaseStruct):
 
 
 class UploadWebInterface(BaseStruct):
-    host: str = "127.0.0.1"
+    host: str = "0.0.0.0"
     port: int = 55110
+    display_host: str = "localhost"
     static_root_url: str = "/static"
 
     def __post_init__(self):
         if self.port < 1 or self.port > 65535:
             raise ValueError("Port number is invalid")
+
+    @property
+    def effective_host(self) -> str:
+        """Host used for generating user-facing URLs.
+
+        Falls back to ``host`` when ``display_host`` is not set.
+        """
+        return self.display_host if self.display_host else self.host
 
 
 class UploadRequests(BaseStruct):
