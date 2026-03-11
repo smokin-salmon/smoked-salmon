@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
 
 from salmon import cfg
+from salmon.common import UploadFiles
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
     LoginError,
@@ -61,39 +62,58 @@ def _redact(text: str) -> str:
     return _SENSITIVE_KEYS.sub(lambda m: f'"{m.group(1)}": "[REDACTED]"', text)
 
 
-def _compose_form_data(files: FormData, data: dict[str, Any]) -> FormData:
-    """Compose FormData by adding data fields with proper value conversion.
+def _add_form_field(form: FormData, key: str, value: Any) -> None:
+    """Add a single value to FormData, coercing types as needed.
+
+    aiohttp FormData only accepts str/bytes/IO types, so bool and int
+    values are converted accordingly. False and None are skipped.
 
     Args:
-        files: The FormData object containing file uploads.
+        form: The FormData instance to add the field to.
+        key: The field name.
+        value: The field value.
+    """
+    if value is True:
+        form.add_field(key, "on")
+    elif value is False or value is None:
+        return
+    elif isinstance(value, int):
+        form.add_field(key, str(value))
+    else:
+        form.add_field(key, value)
+
+
+def _compose_form_data(files: UploadFiles, data: dict[str, Any]) -> FormData:
+    """Compose FormData by converting UploadFiles and adding data fields.
+
+    Args:
+        files: The UploadFiles object containing file uploads.
         data: Dictionary of field names and values to add.
 
     Returns:
-        The FormData object with all fields added.
+        A new FormData object with all files and fields added.
     """
+    form = FormData()
+    form.add_field(
+        "file_input",
+        files.torrent_data,
+        filename="meowmeow.torrent",
+        content_type="application/octet-stream",
+    )
+    for log_name, log_data in files.log_files:
+        form.add_field(
+            "logfiles[]",
+            log_data,
+            filename=log_name,
+            content_type="application/octet-stream",
+        )
     for key, value in data.items():
         if isinstance(value, list):
             for item in value:
-                # aiohttp FormData only accepts str/bytes/IO types, not int/bool
-                if item is True:
-                    files.add_field(key, "on")
-                elif item is False or item is None:
-                    continue
-                elif isinstance(item, int):
-                    files.add_field(key, str(item))
-                else:
-                    files.add_field(key, item)
+                _add_form_field(form, key, item)
         else:
-            # aiohttp FormData only accepts str/bytes/IO types, not int/bool
-            if value is True:
-                files.add_field(key, "on")
-            elif value is False or value is None:
-                continue
-            elif isinstance(value, int):
-                files.add_field(key, str(value))
-            else:
-                files.add_field(key, value)
-    return files
+            _add_form_field(form, key, value)
+    return form
 
 
 class SearchReleaseData(msgspec.Struct, frozen=True):
@@ -327,7 +347,6 @@ class BaseGazelleApi:
         Returns:
             The torrent group data.
         """
-        await self.ensure_authenticated()
         return await self.api_call("torrentgroup", params={"id": group_id})
 
     async def get_redirect_torrentgroupid(self, torrentid: int) -> int | None:
@@ -362,7 +381,6 @@ class BaseGazelleApi:
         Returns:
             The request data.
         """
-        await self.ensure_authenticated()
         return await self.api_call("request", params={"id": id})
 
     async def artist_rls(self, artist: str):
@@ -374,7 +392,6 @@ class BaseGazelleApi:
         Returns:
             Tuple of (artist_id, list of releases).
         """
-        await self.ensure_authenticated()
         resp = await self.api_call("artist", params={"artistname": artist})
         releases = []
         for group in resp["torrentgroup"]:
@@ -495,12 +512,12 @@ class BaseGazelleApi:
             recent_uploads += self.parse_uploads_from_log_html(page_text)
         return recent_uploads
 
-    async def api_key_upload(self, data: dict, files: FormData) -> tuple[int, int]:
+    async def api_key_upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via API.
 
         Args:
             data: Upload form data.
-            files: FormData containing files to upload.
+            files: UploadFiles containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id).
@@ -508,13 +525,12 @@ class BaseGazelleApi:
         Raises:
             RequestError: If upload fails.
         """
-        await self.ensure_authenticated()
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
 
-        _compose_form_data(files, data)
-
-        response = await self._request("POST", url, data=files, timeout_secs=30, prefer_api_key=True)
+        response = await self._request(
+            "POST", url, data=_compose_form_data(files, data), timeout_secs=30, prefer_api_key=True
+        )
         try:
             resp = msgspec.json.decode(response.text)
         except (msgspec.DecodeError, ValueError) as e:
@@ -526,40 +542,38 @@ class BaseGazelleApi:
         try:
             if resp["status"] != "success":
                 raise RequestError(f"API upload failed: {resp['error']}")
-            elif resp["status"] == "success":
-                if ("requestid" in resp["response"] and resp["response"]["requestid"]) or (
-                    "fillRequest" in resp["response"]
-                    and resp["response"]["fillRequest"]
-                    and resp["response"]["fillRequest"]["requestId"]
-                ):
-                    requestId = (
-                        resp["response"]["requestid"]
-                        if "requestid" in resp["response"]
-                        else resp["response"]["fillRequest"]["requestId"]
-                    )
-                    if requestId == -1:
-                        click.secho("Request fill failed!", fg="red")
-                    else:
-                        click.secho("Filled request: " + self.request_url(requestId), fg="green")
-                torrent_id = 0
-                group_id = 0
-                if "torrentid" in resp["response"]:
-                    torrent_id = resp["response"]["torrentid"]
-                    group_id = resp["response"]["groupid"]
-                elif "torrentId" in resp["response"]:
-                    torrent_id = resp["response"]["torrentId"]
-                    group_id = resp["response"]["groupId"]
-                return torrent_id, group_id
+            if ("requestid" in resp["response"] and resp["response"]["requestid"]) or (
+                "fillRequest" in resp["response"]
+                and resp["response"]["fillRequest"]
+                and resp["response"]["fillRequest"]["requestId"]
+            ):
+                requestId = (
+                    resp["response"]["requestid"]
+                    if "requestid" in resp["response"]
+                    else resp["response"]["fillRequest"]["requestId"]
+                )
+                if requestId == -1:
+                    click.secho("Request fill failed!", fg="red")
+                else:
+                    click.secho("Filled request: " + self.request_url(requestId), fg="green")
+            torrent_id = 0
+            group_id = 0
+            if "torrentid" in resp["response"]:
+                torrent_id = resp["response"]["torrentid"]
+                group_id = resp["response"]["groupid"]
+            elif "torrentId" in resp["response"]:
+                torrent_id = resp["response"]["torrentId"]
+                group_id = resp["response"]["groupId"]
+            return torrent_id, group_id
         except TypeError as err:
             raise RequestError(f"API upload failed, response: {resp}") from err
-        raise RequestError("API upload failed: unexpected response format")
 
-    async def site_page_upload(self, data: dict, files: FormData) -> tuple[int, int]:
+    async def site_page_upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via upload.php.
 
         Args:
             data: Upload form data.
-            files: FormData containing files to upload.
+            files: UploadFiles containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id).
@@ -567,16 +581,13 @@ class BaseGazelleApi:
         Raises:
             RequestError: If upload fails.
         """
-        await self.ensure_authenticated()
         if "groupid" in data:
             url = self.base_url + f"/upload.php?groupid={data['groupid']}"
         else:
             url = self.base_url + "/upload.php"
         data["auth"] = self.authkey
 
-        _compose_form_data(files, data)
-
-        response = await self._request("POST", url, data=files, timeout_secs=30)
+        response = await self._request("POST", url, data=_compose_form_data(files, data), timeout_secs=30)
         resp_text = response.text
         resp_url = response.url
 
@@ -604,12 +615,12 @@ class BaseGazelleApi:
         except TypeError as err:
             raise RequestError(f"Site upload failed, response text: {resp_text}") from err
 
-    async def upload(self, data: dict, files: FormData) -> tuple[int, int]:
+    async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via API or upload.php.
 
         Args:
             data: Upload form data.
-            files: FormData containing files to upload.
+            files: UploadFiles containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id).
@@ -633,7 +644,6 @@ class BaseGazelleApi:
         Raises:
             RequestError: If report fails.
         """
-        await self.ensure_authenticated()
         url = self.base_url + "/reportsv2.php"
         type_ = "lossywebapproval" if source == "WEB" else "lossyapproval"
         data = {
@@ -659,7 +669,6 @@ class BaseGazelleApi:
         Raises:
             RequestError: If edit fails.
         """
-        await self.ensure_authenticated()
         current_details = await self.api_call("torrent", params={"id": torrent_id})
         new_data = {
             "action": "takeedit",

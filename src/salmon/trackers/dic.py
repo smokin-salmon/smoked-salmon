@@ -1,7 +1,7 @@
 import asyncclick as click
-from aiohttp import FormData
 
 from salmon import cfg
+from salmon.common import UploadFiles
 from salmon.trackers.base import BaseGazelleApi
 
 
@@ -28,12 +28,12 @@ class DICApi(BaseGazelleApi):
 
         super().__init__()
 
-    async def upload(self, data: dict, files: FormData) -> tuple[int, int]:
+    async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Attempt to upload a torrent to the site using the upload.php.
 
         Args:
             data: Upload form data dictionary.
-            files: FormData containing files to upload.
+            files: UploadFiles containing files to upload.
 
         Returns:
             Tuple of (torrent_id, group_id) from the upload response.

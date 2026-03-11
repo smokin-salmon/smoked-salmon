@@ -4,11 +4,10 @@ from typing import TYPE_CHECKING, Any
 
 import anyio
 import asyncclick as click
-from aiohttp import FormData
 from torf import Torrent
 
 from salmon import cfg
-from salmon.common import str_to_int_if_int
+from salmon.common import UploadFiles, str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
@@ -92,7 +91,7 @@ async def prepare_and_upload(
         )
     await gazelle_site.ensure_authenticated()
     torrent_path, torrent_content = generate_torrent(gazelle_site, path)
-    files = await compile_files(path, torrent_path, metadata)
+    files = await compile_files(path, torrent_content, metadata)
 
     click.secho("Uploading torrent...", fg="yellow")
     torrent_id, group_id = await gazelle_site.upload(data, files)
@@ -235,45 +234,35 @@ def compile_data_existing_group(
     }
 
 
-async def compile_files(path: str, torrent_path: str, metadata: dict[str, Any]) -> FormData:
+async def compile_files(path: str, torrent_content: Torrent, metadata: dict[str, Any]) -> UploadFiles:
     """Compile files to upload (torrent and log files).
 
     Args:
         path: Path to the album folder.
-        torrent_path: Path to the torrent file.
+        torrent_content: Torrent object.
         metadata: Release metadata.
 
     Returns:
-        FormData containing files to upload.
+        UploadFiles containing file data for upload.
     """
-    files = FormData()
-    async with await anyio.open_file(torrent_path, "rb") as torrent_file:
-        files.add_field(
-            "file_input",
-            await torrent_file.read(),
-            filename="meowmeow.torrent",
-            content_type="application/octet-stream",
-        )
-    if metadata["source"] == "CD":
-        await attach_logfiles(path, files)
-    return files
+    torrent_data = torrent_content.dump()
+    log_files = await collect_logfiles(path) if metadata["source"] == "CD" else []
+    return UploadFiles(torrent_data=torrent_data, log_files=log_files)
 
 
-async def attach_logfiles(path: str, files: FormData) -> None:
-    """Attach all log files for upload.
+async def collect_logfiles(path: str) -> list[tuple[str, bytes]]:
+    """Collect all log files for upload.
 
     Args:
         path: Path to the album folder.
-        files: FormData to add log files to.
+
+    Returns:
+        List of (filename, file_bytes) tuples for each log file found.
     """
-    for root, _, filenames in os.walk(path):
-        for filename in filenames:
-            if filename.lower().endswith(".log"):
-                filepath = os.path.abspath(os.path.join(root, filename))
-                async with await anyio.open_file(filepath, "rb") as f:
-                    files.add_field(
-                        "logfiles[]", await f.read(), filename=filename, content_type="application/octet-stream"
-                    )
+    log_files: list[tuple[str, bytes]] = []
+    async for filepath in anyio.Path(path).rglob("*.log"):
+        log_files.append((filepath.name, await filepath.read_bytes()))
+    return log_files
 
 
 def generate_catno(metadata: dict[str, Any]) -> str:
