@@ -52,9 +52,14 @@ async def get_request_results(gazelle_site: "BaseGazelleApi", searchstrs: list[s
     return [item for item in results if item["categoryName"] == "Music"]
 
 
-def print_request_results(gazelle_site, results, searchstr):
+def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any]], searchstr: str) -> None:
     """Print all the request search results.
-    Could use a table in the future."""
+
+    Args:
+        gazelle_site: The tracker API instance.
+        results: List of request result dicts from the API.
+        searchstr: Combined search string for display.
+    """
     if not results:
         click.secho(
             f"\nNo requests were found on {gazelle_site.site_string}",
@@ -91,8 +96,13 @@ def print_request_results(gazelle_site, results, searchstr):
                 continue
 
 
-def _print_request_details(gazelle_site, req):
-    """Print request details."""
+def _print_request_details(gazelle_site: "BaseGazelleApi", req: dict[str, Any]) -> None:
+    """Print detailed information for a selected request.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        req: Request detail dict from the API.
+    """
     click.secho("\nSelected Request:")
     click.secho(gazelle_site.request_url(req["requestId"]))
     click.secho(f" {req['artist']}", fg="cyan", nl=False)
@@ -113,7 +123,19 @@ def _print_request_details(gazelle_site, req):
     click.secho(f"Allowed Formats: {' | '.join(req['formatList'])}")
     if "CD" in req["mediaList"]:
         req["mediaList"].remove("CD")
-        req["mediaList"].append(str("CD " + req["logCue"]))
+        if req.get("logCue"):
+            # RED provides a pre-formatted logCue string
+            req["mediaList"].append(f"CD {req.get('logCue')}")
+        else:
+            # OPS provides separate fields
+            cd_parts = ["CD"]
+            if req.get("needLog"):
+                cd_parts.append(f"Log ({req.get('minLogScore', 100)}%)")
+            if req.get("needCue"):
+                cd_parts.append("Cue")
+            if req.get("needLogChecksum"):
+                cd_parts.append("Checksum")
+            req["mediaList"].append(" + ".join(cd_parts))
     click.secho(f"Allowed   Media: {' | '.join(req['mediaList'])}")
     click.secho(
         "Description:",
@@ -131,8 +153,16 @@ def _print_request_details(gazelle_site, req):
     click.echo(description)
 
 
-async def _prompt_for_request_id(gazelle_site, results):
-    """Have the user choose a group ID"""
+async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any]]) -> int | None:
+    """Prompt the user to choose a request to fill.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        results: List of request result dicts from the search.
+
+    Returns:
+        The selected request ID, or None if the user declines.
+    """
     while True:
         request_id = await click.prompt(
             click.style("\nFill a request? Choose from results, paste a url, or do[n]t.", fg="magenta"),
