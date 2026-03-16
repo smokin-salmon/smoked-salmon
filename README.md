@@ -103,24 +103,18 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 	```
 	salmon-user@salmon:~$ salmon
 	Could not find configuration path at /home/salmon-user/.config/smoked-salmon/config.toml.
-	Do you want smoked-salmon to create a default config file at /home/salmon-user/.config/smoked-salmon/config.default.toml? [y/N]:
+	Do you want smoked-salmon to create a default config file at /home/salmon-user/.config/smoked-salmon/config.toml? [y/N]:
 	```
 
-2. Copy the default config to `~/.config/smoked-salmon/config.toml`.
-	```
-	cp ~/.config/smoked-salmon/config.default.toml ~/.config/smoked-salmon/config.toml
-	```
+2. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
-3. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
-
-4. Use the `checkconf` command to verify that the connection to the trackers is working:
+3. Use the `checkconf` command to verify that the connection to the trackers is working:
 
 	```
 	salmon checkconf
 	```
 
-5. Use the `health` command to verify that all necesasary command line dependencies are installed:
-
+4. Use the `health` command to verify that all necessary command line dependencies are installed:
 	```
 	salmon health
 	```
@@ -130,22 +124,28 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 A Docker image is generated per release.  
 **Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
 
-1. Pull the latest image:
+1. Pull the image:
 
    ```bash
+   # Stable release
    docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
+
+   # Alpha (built on every push to master, equivalent to `uv tool install git+...`)
+   docker pull ghcr.io/smokin-salmon/smoked-salmon:alpha
    ```
 
-2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server.  
+   > The examples below use the `latest` tag. Replace with `alpha` to use the latest development version.
+
+2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server.
    Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
 3. Configure rclone if needed. The Docker Compose configuration expects an rclone configuration file. You can get the path to your rclone config file by running `rclone config file` on your host system.
 
 ---
 
-### 🔁 Recommended Docker Operation Order
+### 🔁 Docker Usage
 
-1. **Check Configuration** -> **Run the Web UI**
+1. **Check Configuration**
    Run the container with the `checkconf` command to verify that the connection to the trackers is working:
 
    ```bash
@@ -157,20 +157,38 @@ A Docker image is generated per release.
    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
    ```
 
-   If the configuration is valid, you may launch the container in persistent mode with the `web` command.
-
-2. **Connect to the Running Container**  
-   To manually execute operations inside the container(`web` command required), connect via SSH and run:
+2. **Upload**
+   Run the upload command directly (replace `checkconf` with any salmon command):
 
    ```bash
-   docker exec -it smoked-salmon /bin/sh
+   docker run --rm -it --network=host \
+   -v /path/to/your/music:/app/.music \
+   -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
+   -v /path/to/your/generated/dottorrents:/app/.torrents \
+   -v /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features \
+   ghcr.io/smokin-salmon/smoked-salmon:latest up "/app/.music/path/to/album" -s WEB
    ```
 
-   Then, inside the container, you can run the commands like this:
+### 💡 Shell Alias (Optional)
 
-   ```bash
-   .venv/bin/salmon up "/path/to/your/music" -s WEB
-   ```
+To avoid repeating the long `docker run` command, add the following alias to your shell configuration file (`~/.bashrc`, `~/.zshrc`, etc.):
+
+```bash
+alias salmon='docker run --rm -it --network=host \
+  -v /path/to/your/music:/app/.music \
+  -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
+  -v /path/to/your/generated/dottorrents:/app/.torrents \
+  -v /path/to/your/rclone.conf:/root/.config/rclone/rclone.conf \
+  ghcr.io/smokin-salmon/smoked-salmon:latest'
+```
+
+Then use it just like a native install:
+
+```bash
+salmon checkconf
+salmon health
+salmon up "/app/.music/path/to/album" -s WEB
+```
 
 ---
 
@@ -205,24 +223,29 @@ A Docker image is generated per release.
 
 ---
 
-### 📦 Portainer Stack Alternative
+### 📦 Docker Compose
 
-If using Portainer or Docker Compose, here's an example stack for persistent usage:
+If using Docker Compose, create a `docker-compose.yml` to define your volume mappings and network settings, then use `docker compose run` to execute any salmon command on demand:
 
 ```yaml
-version: "3"
 services:
-  smoked-salmon:
+  salmon:
     image: ghcr.io/smokin-salmon/smoked-salmon:latest
-    container_name: smoked-salmon
     network_mode: host
-    restart: unless-stopped
     volumes:
       - /path/to/your/music:/app/.music
       - /path/to/your/config.toml/directory:/root/.config/smoked-salmon/
       - /path/to/your/generated/dottorrents:/app/.torrents
       - /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features
-    command: web
+
+```
+
+```bash
+# Check configuration
+docker compose run --rm salmon checkconf
+
+# Upload
+docker compose run --rm salmon up "/app/.music/path/to/album" -s WEB
 ```
 
 ## 🚀 Usage

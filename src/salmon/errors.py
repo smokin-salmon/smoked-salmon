@@ -58,10 +58,6 @@ class NoncompliantFolderStructure(Exception):
     pass
 
 
-class WebServerIsAlreadyRunning(Exception):
-    pass
-
-
 class RequestError(Exception):
     pass
 
