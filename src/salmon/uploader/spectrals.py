@@ -1,10 +1,9 @@
-import contextlib
+import errno
 import os
 import platform
 import random
 import re
 import shutil
-import time
 from functools import partial
 from os.path import dirname, join
 from pathlib import Path
@@ -22,16 +21,12 @@ from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
     UploadError,
-    WebServerIsAlreadyRunning,
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
 from salmon.web import create_app_async, spectrals
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
-
-
-THREADS = [None] * cfg.upload.simultaneous_threads
 
 
 async def check_spectrals(
@@ -114,10 +109,10 @@ async def handle_spectrals_upload_and_deletion(
     spectral_urls = await upload_spectrals(spectrals_path, spectral_ids)
     if delete_spectrals and os.path.isdir(spectrals_path):
         shutil.rmtree(spectrals_path, ignore_errors=True)
-        time.sleep(0.5)
+        await anyio.sleep(0.5)
         if os.path.isdir(spectrals_path):
             shutil.rmtree(spectrals_path)
-            time.sleep(0.5)
+            await anyio.sleep(0.5)
     return spectral_urls
 
 
@@ -405,8 +400,31 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
         except FileExistsError:
             os.unlink(symlink_path)
             os.symlink(specs_path, symlink_path)
-        with contextlib.suppress(WebServerIsAlreadyRunning):
+        try:
             runner = await create_app_async()
+        except OSError as e:
+            port = cfg.upload.web_interface.port
+            if e.errno == errno.EADDRINUSE:
+                click.secho(
+                    f"\nFailed to start web server: port {port} is already in use ({e}). "
+                    "Please check if another process is using this port.",
+                    fg="red",
+                    bold=True,
+                )
+            elif e.errno == errno.EACCES:
+                click.secho(
+                    f"\nFailed to start web server: permission denied for port {port} ({e}). "
+                    "Try using a non-privileged port (>1024).",
+                    fg="red",
+                    bold=True,
+                )
+            else:
+                click.secho(
+                    f"\nFailed to start web server on port {port}: {e!r}",
+                    fg="red",
+                    bold=True,
+                )
+            return
         url = f"http://{cfg.upload.web_interface.effective_host}:{cfg.upload.web_interface.port}/spectrals"
         await prompt_async(
             click.style(
@@ -423,9 +441,9 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
             end=" ",
             flush=True,
         )
+    finally:
         if runner is not None:
             await runner.cleanup()
-    finally:
         os.unlink(symlink_path)
 
 
