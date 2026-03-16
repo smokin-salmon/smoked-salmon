@@ -1,6 +1,6 @@
-import time
 from random import choice
 
+import anyio
 import asyncclick as click
 
 from salmon.common import commandgroup
@@ -116,10 +116,10 @@ def play():
 
 
 @play.command()
-def despacito():
+async def despacito():
     """This is so sad Alexa play Despacito"""
     for line in DESPACITO.split("\n"):
         for word in line.split():
             click.secho(f"{word} ", fg=choice(COLORS), nl=False)
-            time.sleep(0.2)
+            await anyio.sleep(0.2)
         click.echo()

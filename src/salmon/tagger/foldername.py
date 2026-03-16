@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import sys
 from copy import copy
 from string import Formatter
 
@@ -185,7 +186,7 @@ def _edit_folder_interactive(foldername, auto_rename):
                     ),
                     default=True,
                 ):
-                    exit()
+                    sys.exit(1)
             else:
                 return newname.strip().replace("\n", "")
             newname = click.edit(foldername, editor=cfg.upload.default_editor)

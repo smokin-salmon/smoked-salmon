@@ -2,9 +2,9 @@ import os
 import platform
 import re
 import shutil
-import time
 from typing import TYPE_CHECKING, Any
 
+import anyio
 import asyncclick as click
 import pyperclip
 
@@ -887,7 +887,7 @@ async def execute_downconversion_tasks(
             sample_rate, new_path = await convert_folder(
                 base_path, bit_depth=task["target_bitdepth"], sample_rate=task["target_sample_rate"]
             )
-            time.sleep(0.1)
+            await anyio.sleep(0.1)
 
             # Update metadata for this conversion
             conversion_metadata = metadata.copy()
@@ -928,7 +928,7 @@ async def execute_downconversion_tasks(
 
             # Execute transcoding
             transcoded_path = await transcode_folder(base_path, task["encoding"])
-            time.sleep(0.1)
+            await anyio.sleep(0.1)
 
             # Update metadata for this transcode
             transcode_metadata = metadata.copy()
