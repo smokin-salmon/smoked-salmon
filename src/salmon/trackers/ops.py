@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 
 from salmon import cfg
 from salmon.common import UploadFiles
+from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import (
     RequestError,
 )
@@ -58,8 +59,9 @@ class OpsApi(BaseGazelleApi):
         """Upload torrent, prompting once to set release type to Split for multi-artist releases.
 
         If the upload is for a new group (has 'releasetype' in data) and two or more
-        artists are listed, the user is asked once whether to set the release type
-        to Split (12). The answer is cached for subsequent uploads in the same session.
+        main artists are listed, the user is asked once whether to set the release type
+        to Split (12). Guest-only additions should not trigger this prompt. The answer is
+        cached for subsequent uploads in the same session.
 
         Args:
             data: Upload form data.
@@ -68,11 +70,15 @@ class OpsApi(BaseGazelleApi):
         Returns:
             Tuple of (torrent_id, group_id).
         """
-        artists = data.get("artists[]", [])
-        if "releasetype" in data and len(artists) >= 2 and not self._split_prompted:
+        main_artist_count = sum(
+            1
+            for importance in data.get("importance[]", [])
+            if str(importance).strip() == str(ARTIST_IMPORTANCES["main"])
+        )
+        if "releasetype" in data and main_artist_count >= 2 and not self._split_prompted:
             self._use_split = click.confirm(
                 click.style(
-                    f"\nThis release has {len(artists)} artists. "
+                    f"\nThis release has {main_artist_count} main artists. "
                     "OPS has a 'Split' release type:\n\n"
                     "An album or EP that includes tracks by two or more separate artists. "
                     "Unlike a compilation or collaboration, a split generally includes several tracks by each artist. "

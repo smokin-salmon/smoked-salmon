@@ -1,7 +1,7 @@
 class ScrapeError(Exception):
     def __init__(self, message, payload=None):
         self.payload = payload
-        super().__init__(self, message)
+        super().__init__(message)
 
 
 class AbortAndDeleteFolder(Exception):
