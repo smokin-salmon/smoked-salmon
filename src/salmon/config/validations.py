@@ -186,6 +186,20 @@ class UploadCompression(BaseStruct):
     use_upc_as_catno: bool = True
 
 
+class UploadAiReview(BaseStruct):
+    enabled: bool = False
+    api_key: str | None = None
+    model: str = "gpt-5.4"
+    reasoning_effort: Literal["low", "medium", "high", "xhigh"] = "medium"
+    use_web_search: bool = True
+    timeout_seconds: Annotated[int, msgspec.Meta(ge=5, le=300)] = 45
+    background: bool = False
+
+    def __post_init__(self):
+        if self.enabled and not self.api_key:
+            raise ValueError("upload.ai_review.api_key must be set when AI review is enabled")
+
+
 class Upload(BaseStruct):
     simultaneous_threads: int = 3
     user_agent: str = "salmon uploading tools"
@@ -219,6 +233,7 @@ class Upload(BaseStruct):
     web_interface: UploadWebInterface = msgspec.field(default_factory=UploadWebInterface)
     requests: UploadRequests = msgspec.field(default_factory=UploadRequests)
     compression: UploadCompression = msgspec.field(default_factory=UploadCompression)
+    ai_review: UploadAiReview = msgspec.field(default_factory=UploadAiReview)
 
 
 class Cfg(BaseStruct):

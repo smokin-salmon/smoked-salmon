@@ -35,6 +35,7 @@ from salmon.tagger import (
     validate_encoding,
     validate_source,
 )
+from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import (
     check_hybrid,
     gather_audio_info,
@@ -368,6 +369,7 @@ async def upload(
         if new_source_url is not None:
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
+        metadata = await review_metadata_with_ai(metadata, rls_data, source_url, metadata_validator)
         path, metadata, tags, audio_info = await edit_metadata(
             path,
             tags,

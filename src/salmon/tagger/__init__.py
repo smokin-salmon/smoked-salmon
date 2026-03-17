@@ -11,6 +11,7 @@ from salmon.constants import (
     TAG_ENCODINGS,
 )
 from salmon.errors import InvalidMetadataError, ScrapeError
+from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.cover import download_cover_if_nonexistent
 from salmon.tagger.foldername import rename_folder
@@ -100,7 +101,8 @@ async def tag(path: str, source: str, encoding: str | None, overwrite: bool, aut
     audio_info = gather_audio_info(path)
     rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
-    metadata, _ = await get_metadata(path, tags, rls_data)
+    metadata, source_url = await get_metadata(path, tags, rls_data)
+    metadata = await review_metadata_with_ai(metadata, rls_data, source_url, metadata_validator_base)
     metadata = await review_metadata(metadata, metadata_validator_base)
     tag_files(path, tags, metadata, auto_rename)
 

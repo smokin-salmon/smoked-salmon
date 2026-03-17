@@ -214,3 +214,13 @@ session = 'get-from-site-cookie'
 # compress_spectrals = true
 # lma_comment_in_t_desc = false
 # use_upc_as_catno = true
+
+# [upload.ai_review]
+# # Optional AI-assisted metadata verification after Salmon combines sources
+# enabled = false
+# api_key = "sk-..."
+# model = "gpt-5.4"
+# reasoning_effort = "medium"
+# use_web_search = true
+# timeout_seconds = 45
+# background = false
