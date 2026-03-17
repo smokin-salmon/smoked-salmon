@@ -33,7 +33,9 @@ When web_search is available, you must use it before finalizing your answer.
 Do not change artists, release type, format, encoding, source, scene flags,
 comments, cover art, or track artist credits.
 Only patch: title, group_year, year, edition_title, label, catno, upc, genres, urls, and track titles.
-Omit patch keys that should stay unchanged. Use null only when you are confident the field should be cleared.
+Every patch field must be present in the output.
+Use null for unchanged scalar fields.
+Use [] for unchanged list fields like genres and urls.
 Keep urls relevant and deduplicated.
 If you are unsure, leave the field unchanged.
 """
@@ -50,6 +52,17 @@ def _ai_review_schema() -> dict[str, Any]:
             "patch": {
                 "type": "object",
                 "additionalProperties": False,
+                "required": [
+                    "title",
+                    "group_year",
+                    "year",
+                    "edition_title",
+                    "label",
+                    "catno",
+                    "upc",
+                    "genres",
+                    "urls",
+                ],
                 "properties": {
                     "title": nullable_string,
                     "group_year": nullable_string,
@@ -267,9 +280,12 @@ def apply_ai_metadata_patch(metadata: dict[str, Any], review: dict[str, Any]) ->
         if field not in patch:
             continue
         if field in {"genres", "urls"}:
-            updated[field] = _normalize_list(patch[field])
+            normalized = _normalize_list(patch[field])
+            if normalized:
+                updated[field] = normalized
         else:
-            updated[field] = patch[field]
+            if patch[field] is not None:
+                updated[field] = patch[field]
 
     track_title_changes = review.get("track_title_changes", [])
     if not isinstance(track_title_changes, list):
@@ -299,7 +315,15 @@ def build_ai_review_diff(metadata: dict[str, Any], review: dict[str, Any]) -> li
             if field not in patch:
                 continue
             before = metadata.get(field)
-            after = _normalize_list(patch[field]) if field in {"genres", "urls"} else patch[field]
+            if field in {"genres", "urls"}:
+                normalized = _normalize_list(patch[field])
+                if not normalized:
+                    continue
+                after = normalized
+            else:
+                after = patch[field]
+                if after is None:
+                    continue
             if before != after:
                 lines.append(f"{field}: {_format_diff_value(before)} -> {_format_diff_value(after)}")
 

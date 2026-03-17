@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from salmon import cfg
 from salmon.tagger import ai_review
-from salmon.tagger.ai_review import apply_ai_metadata_patch, build_ai_review_diff
+from salmon.tagger.ai_review import _ai_review_schema, apply_ai_metadata_patch, build_ai_review_diff
 
 
 def make_metadata() -> dict:
@@ -131,6 +131,21 @@ def test_apply_ai_metadata_patch_rejects_missing_track_reference() -> None:
         assert "missing track reference" in str(exc)
     else:
         raise AssertionError("Expected AI patch with missing track reference to fail")
+
+
+def test_ai_review_schema_requires_every_patch_key() -> None:
+    patch_schema = _ai_review_schema()["properties"]["patch"]
+    assert patch_schema["required"] == [
+        "title",
+        "group_year",
+        "year",
+        "edition_title",
+        "label",
+        "catno",
+        "upc",
+        "genres",
+        "urls",
+    ]
 
 
 def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_apply(monkeypatch) -> None:
