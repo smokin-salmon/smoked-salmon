@@ -369,11 +369,11 @@ async def upload(
         if new_source_url is not None:
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
-        metadata = await review_metadata_with_ai(metadata, rls_data, source_url, metadata_validator)
         path, metadata, tags, audio_info = await edit_metadata(
             path,
             tags,
             metadata,
+            source_url,
             source,
             rls_data,
             recompress,
@@ -544,6 +544,7 @@ async def edit_metadata(
     path: str,
     tags: dict[str, "TagFile"],
     metadata: dict[str, Any],
+    source_url: str | None,
     source: str,
     rls_data: dict[str, Any],
     recompress: bool,
@@ -576,7 +577,13 @@ async def edit_metadata(
         click.Abort: If a scene release fails sanitization.
     """
     while True:
-        metadata = await review_metadata(metadata, metadata_validator)
+        metadata = await review_metadata_with_ai(
+            metadata,
+            rls_data,
+            source_url,
+            metadata_validator,
+            review_metadata,
+        )
         if not metadata["scene"]:
             tag_files(path, tags, metadata, auto_rename)
 

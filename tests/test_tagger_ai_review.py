@@ -2,8 +2,12 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+import anyio
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from salmon import cfg
+from salmon.tagger import ai_review
 from salmon.tagger.ai_review import apply_ai_metadata_patch, build_ai_review_diff
 
 
@@ -127,3 +131,82 @@ def test_apply_ai_metadata_patch_rejects_missing_track_reference() -> None:
         assert "missing track reference" in str(exc)
     else:
         raise AssertionError("Expected AI patch with missing track reference to fail")
+
+
+def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_apply(monkeypatch) -> None:
+    metadata = make_metadata()
+    review = {
+        "summary": "Updated metadata",
+        "patch": {"label": "New Label"},
+        "track_title_changes": [],
+        "citations": [],
+    }
+    sequence: list[str] = []
+    original_enabled = cfg.upload.ai_review.enabled
+
+    async def fake_manual_review(current_metadata, _validator):
+        sequence.append(f"manual:{current_metadata['label']}")
+        return current_metadata
+
+    async def fake_request_ai_review(*_args, **_kwargs):
+        sequence.append("ai")
+        return review, "response-1"
+
+    async def fake_prompt(*_args, **_kwargs):
+        return "a"
+
+    def fake_confirm(*_args, **_kwargs):
+        sequence.append("confirm")
+        return True
+
+    try:
+        cfg.upload.ai_review.enabled = True
+        monkeypatch.setattr(ai_review, "_request_ai_review", fake_request_ai_review)
+        monkeypatch.setattr(ai_review.click, "prompt", fake_prompt)
+        monkeypatch.setattr(ai_review.click, "confirm", fake_confirm)
+
+        result = anyio.run(
+            ai_review.review_metadata_with_ai,
+            metadata,
+            metadata,
+            None,
+            lambda current_metadata: current_metadata,
+            fake_manual_review,
+        )
+    finally:
+        cfg.upload.ai_review.enabled = original_enabled
+
+    assert result["label"] == "New Label"
+    assert sequence == ["manual:Old Label", "confirm", "ai", "manual:New Label"]
+
+
+def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> None:
+    metadata = make_metadata()
+    sequence: list[str] = []
+    original_enabled = cfg.upload.ai_review.enabled
+
+    async def fake_manual_review(current_metadata, _validator):
+        sequence.append("manual")
+        return current_metadata
+
+    def fake_confirm(*_args, **_kwargs):
+        sequence.append("confirm")
+        return False
+
+    try:
+        cfg.upload.ai_review.enabled = True
+        monkeypatch.setattr(ai_review.click, "confirm", fake_confirm)
+
+        result = anyio.run(
+            ai_review.review_metadata_with_ai,
+            metadata,
+            metadata,
+            None,
+            lambda current_metadata: current_metadata,
+            fake_manual_review,
+        )
+    finally:
+        cfg.upload.ai_review.enabled = original_enabled
+
+    assert result["label"] == "Old Label"
+    assert sequence == ["manual", "confirm"]

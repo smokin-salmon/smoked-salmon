@@ -353,19 +353,22 @@ async def review_metadata_with_ai(
     tag_baseline: dict[str, Any],
     source_url: str | None,
     validator,
+    manual_review,
 ) -> dict[str, Any]:
+    current_metadata = await manual_review(metadata, validator)
+
     ai_cfg = cfg.upload.ai_review
     if not ai_cfg.enabled:
-        return metadata
+        return current_metadata
 
-    should_run = cfg.upload.yes_all or await click.confirm(
+    should_run = cfg.upload.yes_all or click.confirm(
         click.style("\nRun AI metadata review?", fg="magenta"),
         default=False,
     )
     if not should_run:
-        return metadata
+        return current_metadata
 
-    current_metadata = deepcopy(metadata)
+    current_metadata = deepcopy(current_metadata)
     previous_response_id = None
     user_instruction = None
 
@@ -423,8 +426,11 @@ async def review_metadata_with_ai(
                 )
                 break
 
-            if choice in {"k", "e"}:
+            if choice == "k":
                 return current_metadata
+
+            if choice == "e":
+                return await manual_review(current_metadata, validator)
 
             if choice == "a":
                 if not diff_lines:
@@ -439,6 +445,6 @@ async def review_metadata_with_ai(
                     continue
 
                 click.secho("Applied AI metadata suggestions.", fg="green")
-                return updated_metadata
+                return await manual_review(updated_metadata, validator)
 
             click.secho(f"{choice} is not a valid AI review option.", fg="red")

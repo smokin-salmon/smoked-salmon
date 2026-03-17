@@ -102,8 +102,13 @@ async def tag(path: str, source: str, encoding: str | None, overwrite: bool, aut
     rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
     metadata, source_url = await get_metadata(path, tags, rls_data)
-    metadata = await review_metadata_with_ai(metadata, rls_data, source_url, metadata_validator_base)
-    metadata = await review_metadata(metadata, metadata_validator_base)
+    metadata = await review_metadata_with_ai(
+        metadata,
+        rls_data,
+        source_url,
+        metadata_validator_base,
+        review_metadata,
+    )
     tag_files(path, tags, metadata, auto_rename)
 
     await download_cover_if_nonexistent(path, metadata["cover"])
