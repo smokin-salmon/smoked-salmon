@@ -745,6 +745,9 @@ async def review_metadata_with_ai(
         if citations and citations[0] != "No citations were returned.":
             click.echo(f"> sources used: {', '.join(line.split(': ', 1)[0][2:] for line in citations)}")
 
+        if not diff_lines:
+            return current_metadata
+
         while True:
             choice = await click.prompt(
                 click.style(

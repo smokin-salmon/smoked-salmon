@@ -269,3 +269,66 @@ def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> Non
 
     assert result["label"] == "Old Label"
     assert sequence == ["manual", "confirm"]
+
+
+def test_review_metadata_with_ai_auto_keeps_when_no_suggestions(monkeypatch) -> None:
+    metadata = make_metadata()
+    review = {
+        "summary": "No strongly supported corrections found.",
+        "patch": {
+            "title": None,
+            "group_year": None,
+            "year": None,
+            "edition_title": None,
+            "label": None,
+            "catno": None,
+            "upc": None,
+            "genres": [],
+            "urls": [],
+        },
+        "track_title_changes": [],
+        "citations": [
+            {
+                "title": "Dawn//Dust | Mouse and Banjo",
+                "url": "https://mouseandbanjo.bandcamp.com/album/dawn-dust",
+                "supports": ["summary", "title", "year"],
+            }
+        ],
+    }
+    sequence: list[str] = []
+    original_enabled = cfg.upload.ai_review.enabled
+
+    async def fake_manual_review(current_metadata, _validator):
+        sequence.append("manual")
+        return current_metadata
+
+    async def fake_request_ai_review(*_args, **_kwargs):
+        sequence.append("ai")
+        return review, "response-1"
+
+    def fake_confirm(*_args, **_kwargs):
+        sequence.append("confirm")
+        return True
+
+    async def fake_prompt(*_args, **_kwargs):
+        raise AssertionError("Prompt should not be shown when AI has no suggestions")
+
+    try:
+        cfg.upload.ai_review.enabled = True
+        monkeypatch.setattr(ai_review, "_request_ai_review", fake_request_ai_review)
+        monkeypatch.setattr(ai_review.click, "confirm", fake_confirm)
+        monkeypatch.setattr(ai_review.click, "prompt", fake_prompt)
+
+        result = anyio.run(
+            ai_review.review_metadata_with_ai,
+            metadata,
+            metadata,
+            None,
+            lambda current_metadata: current_metadata,
+            fake_manual_review,
+        )
+    finally:
+        cfg.upload.ai_review.enabled = original_enabled
+
+    assert result["label"] == "Old Label"
+    assert sequence == ["manual", "confirm", "ai"]
