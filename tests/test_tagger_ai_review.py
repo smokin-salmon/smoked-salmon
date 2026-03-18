@@ -12,6 +12,7 @@ from salmon.tagger.ai_review import (
     _ai_review_schema,
     _build_request_payload,
     _extract_progress_updates,
+    _format_ai_progress,
     apply_ai_metadata_patch,
     build_ai_review_diff,
 )
@@ -160,6 +161,14 @@ def test_build_request_payload_requests_reasoning_summary() -> None:
     assert payload["reasoning"]["summary"] == "auto"
 
 
+def test_format_ai_progress_compacts_and_clamps_text() -> None:
+    formatted = _format_ai_progress("line one\nline two   " + ("x" * 220))
+
+    assert "\n" not in formatted
+    assert len(formatted) == 200
+    assert formatted.endswith("...")
+
+
 def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
     payload = {
         "output": [
@@ -178,9 +187,8 @@ def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
 
     lines, last_summary = _extract_progress_updates(payload, set(), None)
 
-    assert any("AI reasoning summary:" in line for line in lines)
-    assert any("Comparing Bandcamp and MusicBrainz." in line for line in lines)
-    assert any(line == "AI web search status: searching | search | Mouse and Banjo Dawn Dust label" for line in lines)
+    assert any(line == "reasoning: Comparing Bandcamp and MusicBrainz." for line in lines)
+    assert any(line == "web_search: searching | search | Mouse and Banjo Dawn Dust label" for line in lines)
     assert last_summary == "Comparing Bandcamp and MusicBrainz."
 
 

@@ -12,6 +12,7 @@ from salmon import cfg
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 POLL_INTERVAL_SECONDS = 5
+AI_PROGRESS_MAX_CHARS = 200
 TOP_LEVEL_PATCH_FIELDS = (
     "title",
     "group_year",
@@ -174,6 +175,19 @@ def _extract_response_error(payload: dict[str, Any]) -> str:
     return str(payload)
 
 
+def _format_ai_progress(text: str) -> str:
+    compact = " ".join(text.split())
+    if len(compact) <= AI_PROGRESS_MAX_CHARS:
+        return compact
+    return compact[: AI_PROGRESS_MAX_CHARS - 3].rstrip() + "..."
+
+
+def _emit_ai_progress(text: str) -> None:
+    formatted = _format_ai_progress(text)
+    if formatted:
+        click.secho(formatted, fg="bright_black")
+
+
 async def _fetch_response(
     session: aiohttp.ClientSession, headers: dict[str, str], response_id: str
 ) -> dict[str, Any]:
@@ -203,7 +217,6 @@ async def _wait_for_response(
 
     deadline = time.monotonic() + timeout_seconds
     current_payload = payload
-    started_at = time.monotonic()
     last_status = None
     seen_progress_events: set[tuple[str, str, str]] = set()
     last_reasoning_summary: str | None = None
@@ -212,18 +225,14 @@ async def _wait_for_response(
         if status in FINAL_RESPONSE_STATUSES:
             return current_payload
 
-        elapsed = int(time.monotonic() - started_at)
         if status != last_status:
-            click.secho(f"AI metadata review status: {status}", fg="cyan")
+            _emit_ai_progress(f"status: {status}")
             last_status = status
         progress_lines, last_reasoning_summary = _extract_progress_updates(
             current_payload, seen_progress_events, last_reasoning_summary
         )
-        if progress_lines:
-            for line in progress_lines:
-                click.secho(line, fg="cyan")
-        else:
-            click.secho(f"AI metadata review still running... ({elapsed}s elapsed)", fg="cyan")
+        for line in progress_lines:
+            _emit_ai_progress(line)
 
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
         current_payload = await _fetch_response(session, headers, response_id)
@@ -323,7 +332,7 @@ def _extract_progress_updates(
 
     reasoning_summary = _extract_reasoning_summary(payload)
     if reasoning_summary and reasoning_summary != last_reasoning_summary:
-        lines.append(f"AI reasoning summary:\n{reasoning_summary}")
+        lines.append(f"reasoning: {reasoning_summary}")
         last_reasoning_summary = reasoning_summary
 
     for index, item in enumerate(payload.get("output", [])):
@@ -338,7 +347,7 @@ def _extract_progress_updates(
             continue
 
         seen_progress_events.add(signature)
-        line = f"AI web search status: {status}"
+        line = f"web_search: {status}"
         if action_detail:
             line = f"{line} | {action_detail}"
         lines.append(line)
@@ -366,14 +375,14 @@ def _extract_stream_progress_updates(
         signature = ("stream_web_search", status, "")
         if signature not in seen_progress_events:
             seen_progress_events.add(signature)
-            lines.append(f"AI web search event: {status}")
+            lines.append(f"web_search: {status}")
 
     if event_type.endswith("reasoning_summary_text.done"):
         text = event_payload.get("text")
         if isinstance(text, str):
             cleaned = text.strip()
             if cleaned and cleaned != last_reasoning_summary:
-                lines.append(f"AI reasoning summary:\n{cleaned}")
+                lines.append(f"reasoning: {cleaned}")
                 last_reasoning_summary = cleaned
 
     return lines, last_reasoning_summary
@@ -385,10 +394,7 @@ async def _stream_response(
     headers: dict[str, str],
     timeout_seconds: int,
 ) -> dict[str, Any]:
-    click.secho("Streaming AI metadata review events from OpenAI...", fg="cyan")
-
-    started_at = time.monotonic()
-    deadline = started_at + timeout_seconds
+    deadline = time.monotonic() + timeout_seconds
     last_status = None
     response_id: str | None = None
     current_response: dict[str, Any] | None = None
@@ -413,14 +419,14 @@ async def _stream_response(
             response_id = str(response.get("id") or response_id or "")
             status = response.get("status")
             if status != last_status and status is not None:
-                click.secho(f"AI metadata review status: {status}", fg="cyan")
+                _emit_ai_progress(f"status: {status}")
                 last_status = status
 
             progress_lines, last_reasoning_summary = _extract_progress_updates(
                 response, seen_progress_events, last_reasoning_summary
             )
             for line in progress_lines:
-                click.secho(line, fg="cyan")
+                _emit_ai_progress(line)
 
             if status in FINAL_RESPONSE_STATUSES:
                 return response
@@ -429,7 +435,7 @@ async def _stream_response(
             event_payload, seen_progress_events, last_reasoning_summary
         )
         for line in progress_lines:
-            click.secho(line, fg="cyan")
+            _emit_ai_progress(line)
 
         return None
 
@@ -443,8 +449,6 @@ async def _stream_response(
                 resp.content.readline(), timeout=min(POLL_INTERVAL_SECONDS, remaining)
             )
         except TimeoutError:
-            elapsed = int(time.monotonic() - started_at)
-            click.secho(f"AI metadata review still running... ({elapsed}s elapsed)", fg="cyan")
             continue
 
         if not raw_line:
@@ -508,7 +512,6 @@ async def _request_ai_review(
     )
 
     async with aiohttp.ClientSession(timeout=timeout) as session:
-        click.secho("Submitting AI metadata review request to OpenAI...", fg="cyan")
         request_payload = payload
         if use_background:
             request_payload = {**payload, "stream": True}
