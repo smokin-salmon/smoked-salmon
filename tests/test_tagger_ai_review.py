@@ -296,6 +296,7 @@ def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_appl
 def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> None:
     metadata = make_metadata()
     sequence: list[str] = []
+    confirm_kwargs: dict[str, object] = {}
     original_enabled = cfg.upload.ai_review.enabled
 
     async def fake_manual_review(current_metadata, _validator):
@@ -303,6 +304,7 @@ def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> Non
         return current_metadata
 
     def fake_confirm(*_args, **_kwargs):
+        confirm_kwargs.update(_kwargs)
         sequence.append("confirm")
         return False
 
@@ -323,6 +325,7 @@ def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> Non
 
     assert result["label"] == "Old Label"
     assert sequence == ["manual", "confirm"]
+    assert confirm_kwargs["default"] is None
 
 
 def test_review_metadata_with_ai_auto_keeps_when_no_suggestions(monkeypatch) -> None:

@@ -755,7 +755,7 @@ async def review_metadata_with_ai(
 
     should_run = cfg.upload.yes_all or click.confirm(
         click.style("\nRun AI metadata review?", fg="magenta"),
-        default=False,
+        default=None,
     )
     if not should_run:
         return current_metadata
