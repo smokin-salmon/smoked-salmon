@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import json
 import re
 import time
@@ -10,6 +11,7 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg
+from salmon.errors import InvalidMetadataError
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 POLL_INTERVAL_SECONDS = 5
@@ -673,6 +675,30 @@ def _format_diff_value(value: Any) -> str:
     return text if text else "(empty)"
 
 
+async def _finalize_manual_review(metadata: dict[str, Any], validator, manual_review) -> dict[str, Any]:
+    try:
+        validator(metadata)
+    except InvalidMetadataError:
+        return await _run_manual_review(metadata, validator, manual_review)
+    return metadata
+
+
+async def _run_manual_review(
+    metadata: dict[str, Any],
+    validator,
+    manual_review,
+    *,
+    enforce_required_fields: bool = True,
+) -> dict[str, Any]:
+    if "enforce_required_fields" in inspect.signature(manual_review).parameters:
+        return await manual_review(
+            metadata,
+            validator,
+            enforce_required_fields=enforce_required_fields,
+        )
+    return await manual_review(metadata, validator)
+
+
 async def review_metadata_with_ai(
     metadata: dict[str, Any],
     tag_baseline: dict[str, Any],
@@ -680,18 +706,23 @@ async def review_metadata_with_ai(
     validator,
     manual_review,
 ) -> dict[str, Any]:
-    current_metadata = await manual_review(metadata, validator)
-
     ai_cfg = cfg.upload.ai_review
     if not ai_cfg.enabled:
-        return current_metadata
+        return await _run_manual_review(metadata, validator, manual_review)
+
+    current_metadata = await _run_manual_review(
+        metadata,
+        validator,
+        manual_review,
+        enforce_required_fields=False,
+    )
 
     should_run = cfg.upload.yes_all or click.confirm(
         click.style("\nRun AI metadata review?", fg="magenta"),
         default=None,
     )
     if not should_run:
-        return current_metadata
+        return await _finalize_manual_review(current_metadata, validator, manual_review)
 
     current_metadata = deepcopy(current_metadata)
     previous_response_id = None
@@ -734,7 +765,7 @@ async def review_metadata_with_ai(
         citations = format_ai_review_citations(review)
 
         if not diff_lines:
-            return current_metadata
+            return await _finalize_manual_review(current_metadata, validator, manual_review)
 
         while True:
             choice = await click.prompt(
@@ -761,7 +792,7 @@ async def review_metadata_with_ai(
                 break
 
             if choice == "k":
-                return current_metadata
+                return await _finalize_manual_review(current_metadata, validator, manual_review)
 
             if choice == "a":
                 if not diff_lines:
@@ -776,6 +807,6 @@ async def review_metadata_with_ai(
                     continue
 
                 click.secho("Applied AI metadata suggestions.", fg="green")
-                return await manual_review(updated_metadata, validator)
+                return await _run_manual_review(updated_metadata, validator, manual_review)
 
             click.secho(f"{choice} is not a valid AI review option.", fg="red")

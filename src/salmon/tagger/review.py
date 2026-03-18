@@ -18,15 +18,20 @@ _CLASSICAL_GENRES = {
     "orchestral",
     "opera",
 }
+_DEFERRED_REQUIRED_METADATA_ERRORS = {
+    "Invalid release type.",
+    "You must specify at least one genre.",
+}
 
 
-async def review_metadata(metadata, validator):
+async def review_metadata(metadata, validator, enforce_required_fields: bool = True):
     """
     Validate that the metadata is per the user's wishes and then offer the user
     the ability to edit it.
     """
-    await _check_for_empty_release_type(metadata)
-    await _check_for_empty_genre_list(metadata)
+    if enforce_required_fields:
+        await _check_for_empty_release_type(metadata)
+        await _check_for_empty_genre_list(metadata)
 
     break_ = False
     edit_functions = {
@@ -63,6 +68,10 @@ async def review_metadata(metadata, validator):
         try:
             validator(metadata)
         except InvalidMetadataError as e:
+            if not enforce_required_fields and str(e) in _DEFERRED_REQUIRED_METADATA_ERRORS:
+                if break_:
+                    break
+                continue
             click.confirm(
                 click.style(str(e) + " Revisit metadata step?", fg="magenta"),
                 default=True,
