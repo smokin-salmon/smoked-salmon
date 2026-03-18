@@ -54,6 +54,7 @@ SYSTEM_PROMPT = """You research one exact music release for Smoked Salmon.
 
 Build the album-level metadata from scratch using online evidence.
 The selected_source_url is your starting anchor for identifying the release, not a source you must obey.
+The prompt may include local Salmon metadata snapshots; treat them as search hints, not authoritative evidence.
 
 Focus only on these album-level fields:
 title, group_year, year, edition_title, label, catno, upc, genres, urls
@@ -61,7 +62,10 @@ title, group_year, year, edition_title, label, catno, upc, genres, urls
 Ignore track titles, track order, and track pages entirely.
 Do not research anything at track level unless album-level identification is impossible without it.
 
-Use the anchor page first. If it already clearly identifies the release,
+If selected_source_url is provided, your first web action must be opening that exact URL.
+Do not search before opening it.
+Do not conclude the release is unverified, or clear supported metadata, until after inspecting selected_source_url.
+If the anchor page already clearly identifies the release,
 only do extra web searches for fields that are still missing or conflicting.
 Prefer release-level pages over artist bios, reviews, videos, lyrics pages, playlists, marketplaces, and fan sites.
 Use at most 4 web actions total.
@@ -72,6 +76,8 @@ Only set label when a release-level source explicitly names a label or imprint f
 Use group_year for the earliest supported release year of the release group.
 Use year for the exact edition or source you identified.
 If you cannot distinguish them, set both to the same supported year.
+Prefer preserving a plausible non-empty local value when you find no
+contradictory release-level evidence within the allowed web budget.
 Normalize genres into human-readable title case when possible.
 Only include genres or tags that are explicitly supported by the consulted sources.
 Include only release-level URLs that directly identify this exact release.
@@ -102,16 +108,37 @@ def _ai_review_schema() -> dict[str, Any]:
 
 def _format_prompt(
     metadata: dict[str, Any],
+    tag_baseline: dict[str, Any],
     source_url: str | None,
     user_instruction: str | None,
 ) -> str:
     prompt = [
         "Research this release online and build the album-level metadata from scratch.",
-        "You are not being given trusted current metadata values to patch.",
-        "",
-        "Release reference JSON:",
-        json.dumps(_build_release_reference(metadata, source_url), indent=2, ensure_ascii=False),
+        "The local metadata snapshots below are untrusted hints for identification and search targeting.",
+        "Do not blindly patch from them, but do not discard plausible non-empty values without contradictory evidence.",
     ]
+    if source_url:
+        prompt.extend(
+            [
+                "",
+                "Selected source URL:",
+                source_url,
+                "Open that exact page first before doing any search.",
+            ]
+        )
+    prompt.extend(
+        [
+            "",
+            "Release reference JSON:",
+            json.dumps(_build_release_reference(metadata, source_url), indent=2, ensure_ascii=False),
+            "",
+            "Current editable album metadata JSON:",
+            json.dumps(_build_album_metadata_snapshot(metadata), indent=2, ensure_ascii=False),
+            "",
+            "Tag-derived album metadata baseline JSON:",
+            json.dumps(_build_album_metadata_snapshot(tag_baseline), indent=2, ensure_ascii=False),
+        ]
+    )
     if user_instruction:
         prompt.extend(["", "Additional user instruction for this pass:", user_instruction])
     return "\n".join(prompt)
@@ -135,9 +162,16 @@ def _build_release_reference(metadata: dict[str, Any], source_url: str | None) -
     }
 
 
+def _build_album_metadata_snapshot(metadata: dict[str, Any]) -> dict[str, Any]:
+    snapshot: dict[str, Any] = {}
+    for field in TOP_LEVEL_PATCH_FIELDS:
+        snapshot[field] = _normalize_review_metadata_value(field, deepcopy(metadata.get(field)))
+    return snapshot
+
+
 def _build_request_payload(
     metadata: dict[str, Any],
-    _tag_baseline: dict[str, Any],
+    tag_baseline: dict[str, Any],
     source_url: str | None,
     user_instruction: str | None = None,
     previous_response_id: str | None = None,
@@ -150,7 +184,7 @@ def _build_request_payload(
         "model": ai_cfg.model,
         "store": False,
         "instructions": SYSTEM_PROMPT,
-        "input": _format_prompt(metadata, source_url, user_instruction),
+        "input": _format_prompt(metadata, tag_baseline, source_url, user_instruction),
         "text": {
             "format": {
                 "type": "json_schema",

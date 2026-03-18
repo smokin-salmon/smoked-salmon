@@ -10,6 +10,7 @@ from salmon import cfg
 from salmon.tagger import ai_review
 from salmon.tagger.ai_review import (
     _ai_review_schema,
+    _build_album_metadata_snapshot,
     _build_release_reference,
     _build_request_payload,
     _extract_progress_updates,
@@ -184,16 +185,52 @@ def test_build_release_reference_keeps_only_identifying_fields() -> None:
     }
 
 
-def test_build_request_payload_only_sends_release_reference() -> None:
-    payload = _build_request_payload(make_metadata(), make_metadata(), None)
+def test_build_album_metadata_snapshot_keeps_only_patchable_album_fields() -> None:
+    snapshot = _build_album_metadata_snapshot(make_metadata())
+
+    assert snapshot == {
+        "title": "Original Title",
+        "group_year": "2004",
+        "year": "2004",
+        "edition_title": None,
+        "label": "Old Label",
+        "catno": "OLD-001",
+        "upc": None,
+        "genres": ["Electronic"],
+        "urls": ["https://old.example/release"],
+    }
+
+
+def test_build_request_payload_includes_local_album_metadata_context_but_not_tracks() -> None:
+    metadata = make_metadata()
+    tag_baseline = make_metadata()
+    tag_baseline["title"] = "Tag Title"
+    tag_baseline["label"] = None
+    tag_baseline["urls"] = ["https://tag.example/release"]
+
+    payload = _build_request_payload(metadata, tag_baseline, None)
     prompt = payload["input"]
 
     assert "Release reference JSON:" in prompt
-    assert "Current editable metadata JSON:" not in prompt
-    assert "Editable metadata from local tags before Salmon combined sources:" not in prompt
+    assert "Current editable album metadata JSON:" in prompt
+    assert "Tag-derived album metadata baseline JSON:" in prompt
     assert '"release_title_hint": "Original Title"' in prompt
+    assert '"label": "Old Label"' in prompt
+    assert '"title": "Tag Title"' in prompt
     assert "Track One" not in prompt
-    assert "Old Label" not in prompt
+
+
+def test_build_request_payload_surfaces_selected_source_url_as_first_step() -> None:
+    payload = _build_request_payload(
+        make_metadata(),
+        make_metadata(),
+        "https://example.com/release",
+    )
+    prompt = payload["input"]
+
+    assert "Selected source URL:" in prompt
+    assert "https://example.com/release" in prompt
+    assert "Open that exact page first before doing any search." in prompt
 
 
 def test_format_ai_progress_compacts_without_clamping_text() -> None:
