@@ -731,12 +731,6 @@ def format_ai_review_citations(review: dict[str, Any]) -> list[str]:
     return lines or ["No citations were returned."]
 
 
-def summarize_ai_review_citation_titles(citations: list[str]) -> str | None:
-    if not citations or citations[0] == "No citations were returned.":
-        return None
-    return ", ".join(line.split(": ", 1)[0][2:] for line in citations)
-
-
 def _format_diff_value(value: Any) -> str:
     if value is None:
         return "(empty)"
@@ -805,14 +799,6 @@ async def review_metadata_with_ai(
             click.secho("\nAI did not suggest metadata changes.", fg="yellow")
 
         citations = format_ai_review_citations(review)
-        citation_summary = summarize_ai_review_citation_titles(citations)
-        if citation_summary:
-            click.echo(
-                "\n"
-                + click.style("AI sources:", fg="yellow")
-                + f" {citation_summary}",
-                color=True,
-            )
 
         if not diff_lines:
             return current_metadata
