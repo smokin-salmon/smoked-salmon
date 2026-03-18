@@ -10,13 +10,12 @@ from salmon import cfg
 from salmon.tagger import ai_review
 from salmon.tagger.ai_review import (
     _ai_review_schema,
-    _build_editable_metadata_snapshot,
     _build_release_reference,
     _build_request_payload,
     _extract_progress_updates,
     _format_ai_progress,
     _style_ai_progress,
-    apply_ai_metadata_patch,
+    apply_ai_metadata_result,
     build_ai_review_diff,
 )
 
@@ -77,75 +76,81 @@ def make_metadata() -> dict:
     }
 
 
-def test_apply_ai_metadata_patch_updates_allowed_fields_and_track_titles() -> None:
+def make_review(**metadata_overrides) -> dict:
     metadata = make_metadata()
-    review = {
+    review_metadata = {
+        "title": metadata["title"],
+        "group_year": metadata["group_year"],
+        "year": metadata["year"],
+        "edition_title": metadata["edition_title"],
+        "label": metadata["label"],
+        "catno": metadata["catno"],
+        "upc": metadata["upc"],
+        "genres": deepcopy(metadata["genres"]),
+        "urls": deepcopy(metadata["urls"]),
+    }
+    review_metadata.update(metadata_overrides)
+    return {
         "summary": "Updated metadata",
-        "patch": {
-            "label": "New Label",
-            "year": "2003",
-            "group_year": "2003",
-            "genres": ["Electronic", "Deep House", "Electronic"],
-            "urls": ["https://official.example/release", "https://official.example/release"],
-        },
-        "track_title_changes": [{"disc_number": "1", "track_number": "2", "title": "Track Two (Extended Mix)"}],
+        "metadata": review_metadata,
         "citations": [],
     }
 
-    updated = apply_ai_metadata_patch(metadata, review)
+
+def test_apply_ai_metadata_result_replaces_album_level_fields() -> None:
+    metadata = make_metadata()
+    review = make_review(
+        label="New Label",
+        year="2003",
+        group_year="2003",
+        genres=["Electronic", "Deep House", "Electronic"],
+        urls=["https://official.example/release", "https://official.example/release"],
+    )
+
+    updated = apply_ai_metadata_result(metadata, review)
 
     assert updated["label"] == "New Label"
     assert updated["year"] == "2003"
     assert updated["group_year"] == "2003"
     assert updated["genres"] == ["Electronic", "Deep House"]
     assert updated["urls"] == ["https://official.example/release"]
-    assert updated["tracks"]["1"]["2"]["title"] == "Track Two (Extended Mix)"
+    assert updated["tracks"]["1"]["2"]["title"] == "Track Two"
     assert metadata["label"] == "Old Label"
+
+
+def test_apply_ai_metadata_result_can_clear_fields() -> None:
+    metadata = make_metadata()
+    review = make_review(label=None, catno=None, genres=[], urls=[])
+
+    updated = apply_ai_metadata_result(metadata, review)
+
+    assert updated["label"] is None
+    assert updated["catno"] is None
+    assert updated["genres"] == []
+    assert updated["urls"] == []
 
 
 def test_build_ai_review_diff_reports_only_actual_changes() -> None:
     metadata = make_metadata()
-    review = {
-        "summary": "Updated metadata",
-        "patch": {
-            "label": "New Label",
-            "year": "2003",
-            "genres": ["Electronic", "Deep House"],
-            "urls": metadata["urls"],
-        },
-        "track_title_changes": [{"disc_number": "1", "track_number": "2", "title": "Track Two (Extended Mix)"}],
-        "citations": [],
-    }
+    review = make_review(
+        label="New Label",
+        year="2003",
+        genres=["Electronic", "Deep House"],
+        urls=metadata["urls"],
+    )
 
     diff_lines = build_ai_review_diff(metadata, review)
 
     assert "label: Old Label -> New Label" in diff_lines
     assert "year: 2004 -> 2003" in diff_lines
     assert "genres: Electronic -> Electronic, Deep House" in diff_lines
-    assert "track 1-2 title: Track Two -> Track Two (Extended Mix)" in diff_lines
     assert not any(line.startswith("urls:") for line in diff_lines)
+    assert not any("track" in line for line in diff_lines)
 
 
-def test_apply_ai_metadata_patch_rejects_missing_track_reference() -> None:
-    metadata = make_metadata()
-    review = {
-        "summary": "Updated metadata",
-        "patch": {},
-        "track_title_changes": [{"disc_number": "9", "track_number": "99", "title": "Ghost Track"}],
-        "citations": [],
-    }
-
-    try:
-        apply_ai_metadata_patch(deepcopy(metadata), review)
-    except ValueError as exc:
-        assert "missing track reference" in str(exc)
-    else:
-        raise AssertionError("Expected AI patch with missing track reference to fail")
-
-
-def test_ai_review_schema_requires_every_patch_key() -> None:
-    patch_schema = _ai_review_schema()["properties"]["patch"]
-    assert patch_schema["required"] == [
+def test_ai_review_schema_requires_every_metadata_key() -> None:
+    metadata_schema = _ai_review_schema()["properties"]["metadata"]
+    assert metadata_schema["required"] == [
         "title",
         "group_year",
         "year",
@@ -158,10 +163,11 @@ def test_ai_review_schema_requires_every_patch_key() -> None:
     ]
 
 
-def test_build_request_payload_requests_reasoning_summary() -> None:
+def test_build_request_payload_requests_reasoning_summary_and_does_not_store() -> None:
     payload = _build_request_payload(make_metadata(), make_metadata(), None)
 
     assert payload["reasoning"]["summary"] == "auto"
+    assert payload["store"] is False
 
 
 def test_build_release_reference_keeps_only_identifying_fields() -> None:
@@ -169,35 +175,25 @@ def test_build_release_reference_keeps_only_identifying_fields() -> None:
 
     assert reference == {
         "artists": [{"name": "Example Artist", "role": "main"}],
-        "release_type": "Album",
+        "release_title_hint": "Original Title",
+        "release_type_hint": "Album",
         "source": "WEB",
         "format": "FLAC",
         "encoding": "Lossless",
-        "encoding_vbr": False,
-        "scene": False,
-        "track_count": 2,
         "selected_source_url": "https://example.com/release",
     }
 
 
-def test_build_editable_metadata_snapshot_keeps_only_editable_fields_and_track_titles() -> None:
-    snapshot = _build_editable_metadata_snapshot(make_metadata())
+def test_build_request_payload_only_sends_release_reference() -> None:
+    payload = _build_request_payload(make_metadata(), make_metadata(), None)
+    prompt = payload["input"]
 
-    assert snapshot == {
-        "title": "Original Title",
-        "group_year": "2004",
-        "year": "2004",
-        "edition_title": None,
-        "label": "Old Label",
-        "catno": "OLD-001",
-        "upc": None,
-        "genres": ["Electronic"],
-        "urls": ["https://old.example/release"],
-        "track_titles": [
-            {"disc_number": "1", "track_number": "1", "title": "Track One"},
-            {"disc_number": "1", "track_number": "2", "title": "Track Two"},
-        ],
-    }
+    assert "Release reference JSON:" in prompt
+    assert "Current editable metadata JSON:" not in prompt
+    assert "Editable metadata from local tags before Salmon combined sources:" not in prompt
+    assert '"release_title_hint": "Original Title"' in prompt
+    assert "Track One" not in prompt
+    assert "Old Label" not in prompt
 
 
 def test_format_ai_progress_compacts_without_clamping_text() -> None:
@@ -209,10 +205,10 @@ def test_format_ai_progress_compacts_without_clamping_text() -> None:
 
 
 def test_style_ai_progress_renders_markdown_bold_without_literal_asterisks() -> None:
-    styled = _style_ai_progress("reasoning: **Verifying track details** right now")
+    styled = _style_ai_progress("reasoning: **Verifying release-level evidence** right now")
 
     assert "**" not in styled
-    assert "Verifying track details" in styled
+    assert "Verifying release-level evidence" in styled
     assert "\x1b[" in styled
 
 
@@ -221,7 +217,10 @@ def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
         "output": [
             {
                 "type": "reasoning",
-                "summary": [{"type": "summary_text", "text": "Comparing Bandcamp and MusicBrainz."}],
+                "summary": [
+                    {"type": "summary_text", "text": "Comparing Bandcamp and MusicBrainz."},
+                    {"type": "summary_text", "text": "Keeping the anchor page as primary evidence."},
+                ],
             },
             {
                 "id": "ws_123",
@@ -233,27 +232,36 @@ def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
                 "id": "ws_456",
                 "type": "web_search_call",
                 "status": "completed",
-                "action": {"type": "search", "query": "\"Mouse and Banjo\" \"Dawn//Dust\""},
+                "action": {"type": "search", "query": '"Mouse and Banjo" "Dawn//Dust"'},
+            },
+            {
+                "id": "ws_789",
+                "type": "web_search_call",
+                "status": "completed",
+                "action": {"type": "find_in_page", "url": "https://example.com/release"},
+            },
+            {
+                "id": "ws_999",
+                "type": "web_search_call",
+                "status": "completed",
+                "action": {"type": "open_page"},
             },
         ]
     }
 
     lines, last_summary = _extract_progress_updates(payload, set(), None)
 
-    assert any(line == "reasoning: Comparing Bandcamp and MusicBrainz." for line in lines)
+    assert any(line == "reasoning: Keeping the anchor page as primary evidence." for line in lines)
     assert any(line == 'web_search: completed | search | "Mouse and Banjo" "Dawn//Dust"' for line in lines)
     assert not any("web_search: searching" in line for line in lines)
-    assert last_summary == "Comparing Bandcamp and MusicBrainz."
+    assert not any("find in page" in line for line in lines)
+    assert not any(line.endswith("open page") for line in lines)
+    assert last_summary == "Keeping the anchor page as primary evidence."
 
 
 def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_apply(monkeypatch) -> None:
     metadata = make_metadata()
-    review = {
-        "summary": "Updated metadata",
-        "patch": {"label": "New Label"},
-        "track_title_changes": [],
-        "citations": [],
-    }
+    review = make_review(label="New Label")
     sequence: list[str] = []
     original_enabled = cfg.upload.ai_review.enabled
 
@@ -330,28 +338,7 @@ def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> Non
 
 def test_review_metadata_with_ai_auto_keeps_when_no_suggestions(monkeypatch) -> None:
     metadata = make_metadata()
-    review = {
-        "summary": "No strongly supported corrections found.",
-        "patch": {
-            "title": None,
-            "group_year": None,
-            "year": None,
-            "edition_title": None,
-            "label": None,
-            "catno": None,
-            "upc": None,
-            "genres": [],
-            "urls": [],
-        },
-        "track_title_changes": [],
-        "citations": [
-            {
-                "title": "Dawn//Dust | Mouse and Banjo",
-                "url": "https://mouseandbanjo.bandcamp.com/album/dawn-dust",
-                "supports": ["summary", "title", "year"],
-            }
-        ],
-    }
+    review = make_review()
     sequence: list[str] = []
     original_enabled = cfg.upload.ai_review.enabled
 

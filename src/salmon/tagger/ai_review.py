@@ -29,24 +29,34 @@ BOLD_MARKDOWN_PATTERN = re.compile(r"\*\*(.+?)\*\*")
 
 SYSTEM_PROMPT = """You research one exact music release for Smoked Salmon.
 
-Your job is to find the most accurate metadata for this release online and return a conservative structured patch.
-The selected source URL is a reference, not an exclusive authority. You may use any online sources that help identify
-and verify the exact release.
+Build the album-level metadata from scratch using online evidence.
+The selected_source_url is your starting anchor for identifying the release, not a source you must obey.
 
-Match the same release by artist, release title, release type, and track count/order whenever possible.
-Only change a field when the online evidence supports the same release. If evidence is weak, conflicting, or indirect,
-leave the field unchanged.
+Focus only on these album-level fields:
+title, group_year, year, edition_title, label, catno, upc, genres, urls
 
-Do not change artists, release type, format, encoding, source, scene flags, comments, cover art,
-or track artist credits.
-Only patch: title, group_year, year, edition_title, label, catno, upc, genres, urls, and track titles.
+Ignore track titles, track order, and track pages entirely.
+Do not research anything at track level unless album-level identification is impossible without it.
 
-Return a structured metadata patch only. Never return freeform prose outside the schema.
-Never rewrite files directly.
-Every patch field must be present in the output.
-Use null for unchanged scalar fields.
-Use [] for unchanged list fields like genres and urls.
-Keep urls relevant and deduplicated.
+Use the anchor page first.
+If it already clearly identifies the release,
+only do extra web searches for fields that are still missing or conflicting.
+Prefer release-level pages over artist bios, reviews, videos, lyrics pages, playlists, marketplaces, and fan sites.
+Use at most 4 web actions total.
+Stop as soon as you have enough evidence for the album-level fields.
+
+Never infer label from the artist name, a store name, or a seller.
+Only set label when a release-level source explicitly names
+a label or imprint for this release.
+Use group_year for the earliest supported release year of the release group.
+Use year for the exact edition or source you identified.
+If you cannot distinguish them, set both to the same supported year.
+Normalize genres into human-readable title case when possible.
+Only include genres or tags that are explicitly supported
+by the consulted sources.
+Include only release-level URLs that directly identify this exact release.
+
+Return only the schema. Never return freeform prose outside the schema. Never rewrite files directly.
 """
 
 
@@ -55,10 +65,10 @@ def _ai_review_schema() -> dict[str, Any]:
     return {
         "type": "object",
         "additionalProperties": False,
-        "required": ["summary", "patch", "track_title_changes", "citations"],
+        "required": ["summary", "metadata", "citations"],
         "properties": {
             "summary": {"type": "string"},
-            "patch": {
+            "metadata": {
                 "type": "object",
                 "additionalProperties": False,
                 "required": [
@@ -84,19 +94,6 @@ def _ai_review_schema() -> dict[str, Any]:
                     "urls": {"type": "array", "items": {"type": "string"}},
                 },
             },
-            "track_title_changes": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "required": ["disc_number", "track_number", "title"],
-                    "properties": {
-                        "disc_number": {"type": "string", "minLength": 1},
-                        "track_number": {"type": "string", "minLength": 1},
-                        "title": {"type": "string", "minLength": 1},
-                    },
-                },
-            },
             "citations": {
                 "type": "array",
                 "items": {
@@ -119,23 +116,15 @@ def _ai_review_schema() -> dict[str, Any]:
 
 def _format_prompt(
     metadata: dict[str, Any],
-    tag_baseline: dict[str, Any],
     source_url: str | None,
     user_instruction: str | None,
 ) -> str:
     prompt = [
-        "Research this release online and suggest corrections only where the evidence is strong.",
-        "Use the selected source URL as a reference,",
-        "but you may use any online sources needed to identify the exact release.",
+        "Research this release online and build the album-level metadata from scratch.",
+        "You are not being given trusted current metadata values to patch.",
         "",
-        "Release reference JSON (do not edit these fields directly):",
+        "Release reference JSON:",
         json.dumps(_build_release_reference(metadata, source_url), indent=2, ensure_ascii=False),
-        "",
-        "Current editable metadata JSON:",
-        json.dumps(_build_editable_metadata_snapshot(metadata), indent=2, ensure_ascii=False),
-        "",
-        "Editable metadata from local tags before Salmon combined sources:",
-        json.dumps(_build_editable_metadata_snapshot(tag_baseline), indent=2, ensure_ascii=False),
     ]
     if user_instruction:
         prompt.extend(["", "Additional user instruction for this pass:", user_instruction])
@@ -148,37 +137,16 @@ def _build_release_reference(metadata: dict[str, Any], source_url: str | None) -
         for artist_name, artist_role in metadata.get("artists", [])
         if artist_name
     ]
-    tracks = metadata.get("tracks", {})
-    track_count = sum(len(disc_tracks) for disc_tracks in tracks.values())
 
     return {
         "artists": artists,
-        "release_type": metadata.get("rls_type"),
+        "release_title_hint": metadata.get("title"),
+        "release_type_hint": metadata.get("rls_type"),
         "source": metadata.get("source"),
         "format": metadata.get("format"),
         "encoding": metadata.get("encoding"),
-        "encoding_vbr": metadata.get("encoding_vbr"),
-        "scene": metadata.get("scene"),
-        "track_count": track_count,
         "selected_source_url": source_url,
     }
-
-
-def _build_editable_metadata_snapshot(metadata: dict[str, Any]) -> dict[str, Any]:
-    snapshot = {
-        field: deepcopy(metadata.get(field))
-        for field in TOP_LEVEL_PATCH_FIELDS
-    }
-    snapshot["track_titles"] = [
-        {
-            "disc_number": disc_number,
-            "track_number": track_number,
-            "title": track.get("title"),
-        }
-        for disc_number, disc_tracks in metadata.get("tracks", {}).items()
-        for track_number, track in disc_tracks.items()
-    ]
-    return snapshot
 
 
 def _build_request_payload(
@@ -194,9 +162,9 @@ def _build_request_payload(
         use_background = ai_cfg.background
     payload: dict[str, Any] = {
         "model": ai_cfg.model,
-        "store": True,
+        "store": False,
         "instructions": SYSTEM_PROMPT,
-        "input": _format_prompt(metadata, tag_baseline, source_url, user_instruction),
+        "input": _format_prompt(metadata, source_url, user_instruction),
         "text": {
             "format": {
                 "type": "json_schema",
@@ -360,7 +328,7 @@ def _extract_reasoning_summary(payload: dict[str, Any]) -> str | None:
                     summaries.append(cleaned)
     if not summaries:
         return None
-    return "\n\n".join(summaries)
+    return summaries[-1]
 
 
 def _describe_web_search_action(item: dict[str, Any]) -> str:
@@ -368,20 +336,18 @@ def _describe_web_search_action(item: dict[str, Any]) -> str:
     if not isinstance(action, dict):
         return ""
 
-    parts: list[str] = []
     action_type = action.get("type")
-    if isinstance(action_type, str) and action_type.strip():
-        parts.append(action_type.replace("_", " "))
+    if not isinstance(action_type, str):
+        return ""
+    action_type = action_type.strip()
 
     query = action.get("query")
-    if isinstance(query, str) and query.strip():
-        parts.append(query.strip())
-
     url = action.get("url")
-    if isinstance(url, str) and url.strip():
-        parts.append(url.strip())
-
-    return " | ".join(parts)
+    if action_type == "search" and isinstance(query, str) and query.strip():
+        return f"search | {query.strip()}"
+    if action_type == "open_page" and isinstance(url, str) and url.strip():
+        return f"open page | {url.strip()}"
+    return ""
 
 
 def _extract_progress_updates(
@@ -638,79 +604,38 @@ def _normalize_list(values: list[str] | None) -> list[str]:
     return deduped
 
 
-def apply_ai_metadata_patch(metadata: dict[str, Any], review: dict[str, Any]) -> dict[str, Any]:
+def apply_ai_metadata_result(metadata: dict[str, Any], review: dict[str, Any]) -> dict[str, Any]:
     updated = deepcopy(metadata)
-    patch = review.get("patch", {})
-    if not isinstance(patch, dict):
-        raise ValueError("AI patch payload is invalid")
+    result_metadata = review.get("metadata", {})
+    if not isinstance(result_metadata, dict):
+        raise ValueError("AI metadata payload is invalid")
 
     for field in TOP_LEVEL_PATCH_FIELDS:
-        if field not in patch:
+        if field not in result_metadata:
             continue
         if field in {"genres", "urls"}:
-            normalized = _normalize_list(patch[field])
-            if normalized:
-                updated[field] = normalized
-        else:
-            if patch[field] is not None:
-                updated[field] = patch[field]
-
-    track_title_changes = review.get("track_title_changes", [])
-    if not isinstance(track_title_changes, list):
-        raise ValueError("AI track title patch payload is invalid")
-
-    for change in track_title_changes:
-        if not isinstance(change, dict):
-            raise ValueError("AI track title change is invalid")
-
-        disc_number = change["disc_number"]
-        track_number = change["track_number"]
-        try:
-            updated["tracks"][disc_number][track_number]["title"] = change["title"].strip()
-        except KeyError as exc:
-            raise ValueError(
-                f"AI suggested a missing track reference: disc {disc_number} track {track_number}"
-            ) from exc
+            updated[field] = _normalize_list(result_metadata[field])
+            continue
+        updated[field] = result_metadata[field]
 
     return updated
 
 
 def build_ai_review_diff(metadata: dict[str, Any], review: dict[str, Any]) -> list[str]:
     lines: list[str] = []
-    patch = review.get("patch", {})
-    if isinstance(patch, dict):
+    result_metadata = review.get("metadata", {})
+    if isinstance(result_metadata, dict):
         for field in TOP_LEVEL_PATCH_FIELDS:
-            if field not in patch:
+            if field not in result_metadata:
                 continue
             before = metadata.get(field)
             if field in {"genres", "urls"}:
-                normalized = _normalize_list(patch[field])
-                if not normalized:
-                    continue
-                after = normalized
+                before = _normalize_list(before)
+                after = _normalize_list(result_metadata[field])
             else:
-                after = patch[field]
-                if after is None:
-                    continue
+                after = result_metadata[field]
             if before != after:
                 lines.append(f"{field}: {_format_diff_value(before)} -> {_format_diff_value(after)}")
-
-    track_title_changes = review.get("track_title_changes", [])
-    if isinstance(track_title_changes, list):
-        for change in track_title_changes:
-            if not isinstance(change, dict):
-                continue
-            disc_number = change.get("disc_number")
-            track_number = change.get("track_number")
-            if not disc_number or not track_number:
-                continue
-            before = metadata.get("tracks", {}).get(disc_number, {}).get(track_number, {}).get("title")
-            after = change.get("title")
-            if before != after:
-                lines.append(
-                    f"track {disc_number}-{track_number} title: "
-                    f"{_format_diff_value(before)} -> {_format_diff_value(after)}"
-                )
     return lines
 
 
@@ -839,7 +764,7 @@ async def review_metadata_with_ai(
                     continue
 
                 try:
-                    updated_metadata = apply_ai_metadata_patch(current_metadata, review)
+                    updated_metadata = apply_ai_metadata_result(current_metadata, review)
                     validator(updated_metadata)
                 except Exception as exc:
                     click.secho(f"AI suggestions were rejected: {exc}", fg="red")
