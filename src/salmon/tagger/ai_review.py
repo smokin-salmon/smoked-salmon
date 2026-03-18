@@ -24,8 +24,29 @@ TOP_LEVEL_PATCH_FIELDS = (
     "genres",
     "urls",
 )
+NORMALIZED_METADATA_FIELDS = {"genres", "urls"}
 FINAL_RESPONSE_STATUSES = {"completed", "failed", "cancelled", "incomplete"}
 BOLD_MARKDOWN_PATTERN = re.compile(r"\*\*(.+?)\*\*")
+NULLABLE_STRING_SCHEMA = {"anyOf": [{"type": "string"}, {"type": "null"}]}
+LIST_OF_STRINGS_SCHEMA = {"type": "array", "items": {"type": "string"}}
+METADATA_SCHEMA_PROPERTIES = {
+    **{
+        field: NULLABLE_STRING_SCHEMA
+        for field in TOP_LEVEL_PATCH_FIELDS
+        if field not in NORMALIZED_METADATA_FIELDS
+    },
+    **{field: LIST_OF_STRINGS_SCHEMA for field in NORMALIZED_METADATA_FIELDS},
+}
+CITATION_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["title", "url", "supports"],
+    "properties": {
+        "title": {"type": "string", "minLength": 1},
+        "url": {"type": "string", "minLength": 1},
+        "supports": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    },
+}
 
 SYSTEM_PROMPT = """You research one exact music release for Smoked Salmon.
 
@@ -38,22 +59,19 @@ title, group_year, year, edition_title, label, catno, upc, genres, urls
 Ignore track titles, track order, and track pages entirely.
 Do not research anything at track level unless album-level identification is impossible without it.
 
-Use the anchor page first.
-If it already clearly identifies the release,
+Use the anchor page first. If it already clearly identifies the release,
 only do extra web searches for fields that are still missing or conflicting.
 Prefer release-level pages over artist bios, reviews, videos, lyrics pages, playlists, marketplaces, and fan sites.
 Use at most 4 web actions total.
 Stop as soon as you have enough evidence for the album-level fields.
 
 Never infer label from the artist name, a store name, or a seller.
-Only set label when a release-level source explicitly names
-a label or imprint for this release.
+Only set label when a release-level source explicitly names a label or imprint for this release.
 Use group_year for the earliest supported release year of the release group.
 Use year for the exact edition or source you identified.
 If you cannot distinguish them, set both to the same supported year.
 Normalize genres into human-readable title case when possible.
-Only include genres or tags that are explicitly supported
-by the consulted sources.
+Only include genres or tags that are explicitly supported by the consulted sources.
 Include only release-level URLs that directly identify this exact release.
 
 Return only the schema. Never return freeform prose outside the schema. Never rewrite files directly.
@@ -61,7 +79,6 @@ Return only the schema. Never return freeform prose outside the schema. Never re
 
 
 def _ai_review_schema() -> dict[str, Any]:
-    nullable_string = {"anyOf": [{"type": "string"}, {"type": "null"}]}
     return {
         "type": "object",
         "additionalProperties": False,
@@ -71,45 +88,10 @@ def _ai_review_schema() -> dict[str, Any]:
             "metadata": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": [
-                    "title",
-                    "group_year",
-                    "year",
-                    "edition_title",
-                    "label",
-                    "catno",
-                    "upc",
-                    "genres",
-                    "urls",
-                ],
-                "properties": {
-                    "title": nullable_string,
-                    "group_year": nullable_string,
-                    "year": nullable_string,
-                    "edition_title": nullable_string,
-                    "label": nullable_string,
-                    "catno": nullable_string,
-                    "upc": nullable_string,
-                    "genres": {"type": "array", "items": {"type": "string"}},
-                    "urls": {"type": "array", "items": {"type": "string"}},
-                },
+                "required": list(TOP_LEVEL_PATCH_FIELDS),
+                "properties": METADATA_SCHEMA_PROPERTIES,
             },
-            "citations": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "required": ["title", "url", "supports"],
-                    "properties": {
-                        "title": {"type": "string", "minLength": 1},
-                        "url": {"type": "string", "minLength": 1},
-                        "supports": {
-                            "type": "array",
-                            "items": {"type": "string", "minLength": 1},
-                        },
-                    },
-                },
-            },
+            "citations": {"type": "array", "items": CITATION_SCHEMA},
         },
     }
 
@@ -151,7 +133,7 @@ def _build_release_reference(metadata: dict[str, Any], source_url: str | None) -
 
 def _build_request_payload(
     metadata: dict[str, Any],
-    tag_baseline: dict[str, Any],
+    _tag_baseline: dict[str, Any],
     source_url: str | None,
     user_instruction: str | None = None,
     previous_response_id: str | None = None,
@@ -221,17 +203,28 @@ def _emit_ai_progress(text: str) -> None:
         click.echo(styled, color=True)
 
 
+def _emit_ai_progress_lines(lines: list[str]) -> None:
+    for line in lines:
+        _emit_ai_progress(line)
+
+
+async def _load_json_response(resp: aiohttp.ClientResponse, *, non_json_error: str) -> dict[str, Any]:
+    try:
+        payload = await resp.json()
+    except aiohttp.ContentTypeError:
+        raw = await resp.text()
+        raise RuntimeError(f"{non_json_error} (status {resp.status}): {raw[:200]}") from None
+    return payload
+
+
 async def _fetch_response(
     session: aiohttp.ClientSession, headers: dict[str, str], response_id: str
 ) -> dict[str, Any]:
     async with session.get(f"{OPENAI_RESPONSES_URL}/{response_id}", headers=headers) as resp:
-        try:
-            payload = await resp.json()
-        except aiohttp.ContentTypeError:
-            raw = await resp.text()
-            raise RuntimeError(
-                f"OpenAI API returned a non-JSON polling response (status {resp.status}): {raw[:200]}"
-            ) from None
+        payload = await _load_json_response(
+            resp,
+            non_json_error="OpenAI API returned a non-JSON polling response",
+        )
         if resp.status >= 400:
             raise RuntimeError(f"OpenAI API error while polling: {_extract_response_error(payload)}")
         return payload
@@ -257,11 +250,11 @@ async def _wait_for_response(
         if status in FINAL_RESPONSE_STATUSES:
             return current_payload
 
-        progress_lines, last_reasoning_summary = _extract_progress_updates(
-            current_payload, seen_progress_events, last_reasoning_summary
+        last_reasoning_summary = _emit_progress_from_payload(
+            current_payload,
+            seen_progress_events,
+            last_reasoning_summary,
         )
-        for line in progress_lines:
-            _emit_ai_progress(line)
 
         await asyncio.sleep(POLL_INTERVAL_SECONDS)
         current_payload = await _fetch_response(session, headers, response_id)
@@ -303,16 +296,6 @@ def _decode_sse_event(event_name: str | None, data_lines: list[str]) -> dict[str
     if event_name and "type" not in payload:
         payload["type"] = event_name
     return payload
-
-
-def _extract_response_from_stream_event(event_payload: dict[str, Any]) -> dict[str, Any] | None:
-    response = event_payload.get("response")
-    if isinstance(response, dict):
-        return response
-
-    if "id" in event_payload and "status" in event_payload:
-        return event_payload
-    return None
 
 
 def _extract_reasoning_summary(payload: dict[str, Any]) -> str | None:
@@ -384,30 +367,14 @@ def _extract_progress_updates(
     return lines, last_reasoning_summary
 
 
-def _extract_stream_progress_updates(
-    event_payload: dict[str, Any],
-    seen_progress_events: set[tuple[str, str, str]],
-    last_reasoning_summary: str | None,
-) -> tuple[list[str], str | None]:
-    lines: list[str] = []
-    event_type = str(event_payload.get("type") or "")
-
-    item = event_payload.get("item")
-    if isinstance(item, dict):
-        item_lines, last_reasoning_summary = _extract_progress_updates(
-            {"output": [item]}, seen_progress_events, last_reasoning_summary
-        )
-        lines.extend(item_lines)
-
-    if event_type.endswith("reasoning_summary_text.done"):
-        text = event_payload.get("text")
-        if isinstance(text, str):
-            cleaned = text.strip()
-            if cleaned and cleaned != last_reasoning_summary:
-                lines.append(f"reasoning: {cleaned}")
-                last_reasoning_summary = cleaned
-
-    return lines, last_reasoning_summary
+def _emit_progress_from_payload(
+    payload: dict[str, Any], seen_progress_events: set[tuple[str, str, str]], last_reasoning_summary: str | None
+) -> str | None:
+    progress_lines, last_reasoning_summary = _extract_progress_updates(
+        payload, seen_progress_events, last_reasoning_summary
+    )
+    _emit_ai_progress_lines(progress_lines)
+    return last_reasoning_summary
 
 
 async def _stream_response(
@@ -418,7 +385,6 @@ async def _stream_response(
 ) -> dict[str, Any]:
     deadline = time.monotonic() + timeout_seconds
     response_id: str | None = None
-    current_response: dict[str, Any] | None = None
     seen_progress_events: set[tuple[str, str, str]] = set()
     last_reasoning_summary: str | None = None
 
@@ -426,7 +392,7 @@ async def _stream_response(
     data_lines: list[str] = []
 
     async def flush_event() -> dict[str, Any] | None:
-        nonlocal event_name, data_lines, response_id, current_response, last_reasoning_summary
+        nonlocal event_name, data_lines, response_id, last_reasoning_summary
 
         event_payload = _decode_sse_event(event_name, data_lines)
         event_name = None
@@ -434,26 +400,41 @@ async def _stream_response(
         if not event_payload:
             return None
 
-        response = _extract_response_from_stream_event(event_payload)
+        response = event_payload.get("response")
+        if not isinstance(response, dict) and "id" in event_payload and "status" in event_payload:
+            response = event_payload
         if response:
-            current_response = response
             response_id = str(response.get("id") or response_id or "")
             status = response.get("status")
 
-            progress_lines, last_reasoning_summary = _extract_progress_updates(
-                response, seen_progress_events, last_reasoning_summary
+            last_reasoning_summary = _emit_progress_from_payload(
+                response,
+                seen_progress_events,
+                last_reasoning_summary,
             )
-            for line in progress_lines:
-                _emit_ai_progress(line)
 
             if status in FINAL_RESPONSE_STATUSES:
                 return response
 
-        progress_lines, last_reasoning_summary = _extract_stream_progress_updates(
-            event_payload, seen_progress_events, last_reasoning_summary
-        )
-        for line in progress_lines:
-            _emit_ai_progress(line)
+        progress_lines: list[str] = []
+        item = event_payload.get("item")
+        if isinstance(item, dict):
+            progress_lines, last_reasoning_summary = _extract_progress_updates(
+                {"output": [item]},
+                seen_progress_events,
+                last_reasoning_summary,
+            )
+
+        event_type = str(event_payload.get("type") or "")
+        if event_type.endswith("reasoning_summary_text.done"):
+            text = event_payload.get("text")
+            if isinstance(text, str):
+                cleaned = text.strip()
+                if cleaned and cleaned != last_reasoning_summary:
+                    progress_lines.append(f"reasoning: {cleaned}")
+                    last_reasoning_summary = cleaned
+
+        _emit_ai_progress_lines(progress_lines)
 
         return None
 
@@ -507,7 +488,7 @@ def _should_use_background() -> bool:
 
 async def _request_ai_review(
     metadata: dict[str, Any],
-    tag_baseline: dict[str, Any],
+    _tag_baseline: dict[str, Any],
     source_url: str | None,
     user_instruction: str | None,
     previous_response_id: str | None,
@@ -522,7 +503,7 @@ async def _request_ai_review(
     timeout = aiohttp.ClientTimeout(total=None, connect=30, sock_connect=30, sock_read=None)
     payload = _build_request_payload(
         metadata,
-        tag_baseline,
+        _tag_baseline,
         source_url,
         user_instruction,
         previous_response_id,
@@ -537,13 +518,10 @@ async def _request_ai_review(
             async with asyncio.timeout(ai_cfg.timeout_seconds):
                 async with session.post(OPENAI_RESPONSES_URL, headers=headers, json=request_payload) as resp:
                     if resp.status >= 400:
-                        try:
-                            error_payload = await resp.json()
-                        except aiohttp.ContentTypeError:
-                            raw = await resp.text()
-                            raise RuntimeError(
-                                f"OpenAI API returned a non-JSON response (status {resp.status}): {raw[:200]}"
-                            ) from None
+                        error_payload = await _load_json_response(
+                            resp,
+                            non_json_error="OpenAI API returned a non-JSON response",
+                        )
                         raise RuntimeError(f"OpenAI API error: {_extract_response_error(error_payload)}")
 
                     if use_background and resp.content_type == "text/event-stream":
@@ -551,13 +529,10 @@ async def _request_ai_review(
                             resp, session, headers, ai_cfg.timeout_seconds
                         )
                     else:
-                        try:
-                            response_payload = await resp.json()
-                        except aiohttp.ContentTypeError:
-                            raw = await resp.text()
-                            raise RuntimeError(
-                                f"OpenAI API returned a non-JSON response (status {resp.status}): {raw[:200]}"
-                            ) from None
+                        response_payload = await _load_json_response(
+                            resp,
+                            non_json_error="OpenAI API returned a non-JSON response",
+                        )
         except TimeoutError as exc:
             raise RuntimeError(
                 f"Timed out after {ai_cfg.timeout_seconds}s while submitting the AI metadata review request. "
@@ -604,38 +579,45 @@ def _normalize_list(values: list[str] | None) -> list[str]:
     return deduped
 
 
-def apply_ai_metadata_result(metadata: dict[str, Any], review: dict[str, Any]) -> dict[str, Any]:
-    updated = deepcopy(metadata)
+def _iter_review_metadata(review: dict[str, Any]):
     result_metadata = review.get("metadata", {})
     if not isinstance(result_metadata, dict):
         raise ValueError("AI metadata payload is invalid")
 
     for field in TOP_LEVEL_PATCH_FIELDS:
-        if field not in result_metadata:
-            continue
-        if field in {"genres", "urls"}:
-            updated[field] = _normalize_list(result_metadata[field])
-            continue
-        updated[field] = result_metadata[field]
+        if field in result_metadata:
+            yield field, result_metadata[field]
+
+
+def _normalize_review_metadata_value(field: str, value: Any) -> Any:
+    if field in NORMALIZED_METADATA_FIELDS:
+        return _normalize_list(value)
+    return value
+
+
+def apply_ai_metadata_result(metadata: dict[str, Any], review: dict[str, Any]) -> dict[str, Any]:
+    updated = deepcopy(metadata)
+
+    for field, value in _iter_review_metadata(review):
+        updated[field] = _normalize_review_metadata_value(field, value)
 
     return updated
 
 
 def build_ai_review_diff(metadata: dict[str, Any], review: dict[str, Any]) -> list[str]:
     lines: list[str] = []
-    result_metadata = review.get("metadata", {})
-    if isinstance(result_metadata, dict):
-        for field in TOP_LEVEL_PATCH_FIELDS:
-            if field not in result_metadata:
-                continue
-            before = metadata.get(field)
-            if field in {"genres", "urls"}:
-                before = _normalize_list(before)
-                after = _normalize_list(result_metadata[field])
-            else:
-                after = result_metadata[field]
-            if before != after:
-                lines.append(f"{field}: {_format_diff_value(before)} -> {_format_diff_value(after)}")
+    try:
+        review_items = list(_iter_review_metadata(review))
+    except ValueError:
+        return lines
+
+    for field, value in review_items:
+        before = metadata.get(field)
+        if field in NORMALIZED_METADATA_FIELDS:
+            before = _normalize_list(before)
+        after = _normalize_review_metadata_value(field, value)
+        if before != after:
+            lines.append(f"{field}: {_format_diff_value(before)} -> {_format_diff_value(after)}")
     return lines
 
 
