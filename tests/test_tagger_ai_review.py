@@ -18,6 +18,7 @@ from salmon.tagger.ai_review import (
     _style_ai_progress,
     apply_ai_metadata_patch,
     build_ai_review_diff,
+    summarize_ai_review_citation_titles,
 )
 
 
@@ -214,6 +215,20 @@ def test_style_ai_progress_renders_markdown_bold_without_literal_asterisks() -> 
     assert "**" not in styled
     assert "Verifying track details" in styled
     assert "\x1b[" in styled
+
+
+def test_summarize_ai_review_citation_titles_returns_display_text() -> None:
+    summary = summarize_ai_review_citation_titles(
+        [
+            "- Dawn//Dust | Mouse and Banjo | Bandcamp (summary, genres): https://example.com/a",
+            '- Release "Dawn//Dust" by Mouse and Banjo - MusicBrainz (summary): https://example.com/b',
+        ]
+    )
+
+    assert summary == (
+        'Dawn//Dust | Mouse and Banjo | Bandcamp (summary, genres), '
+        'Release "Dawn//Dust" by Mouse and Banjo - MusicBrainz (summary)'
+    )
 
 
 def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
