@@ -12,7 +12,6 @@ from salmon import cfg
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 POLL_INTERVAL_SECONDS = 5
-AI_PROGRESS_MAX_CHARS = 200
 TOP_LEVEL_PATCH_FIELDS = (
     "title",
     "group_year",
@@ -176,10 +175,7 @@ def _extract_response_error(payload: dict[str, Any]) -> str:
 
 
 def _format_ai_progress(text: str) -> str:
-    compact = " ".join(text.split())
-    if len(compact) <= AI_PROGRESS_MAX_CHARS:
-        return compact
-    return compact[: AI_PROGRESS_MAX_CHARS - 3].rstrip() + "..."
+    return " ".join(text.split())
 
 
 def _emit_ai_progress(text: str) -> None:
@@ -217,7 +213,6 @@ async def _wait_for_response(
 
     deadline = time.monotonic() + timeout_seconds
     current_payload = payload
-    last_status = None
     seen_progress_events: set[tuple[str, str, str]] = set()
     last_reasoning_summary: str | None = None
     while time.monotonic() < deadline:
@@ -225,9 +220,6 @@ async def _wait_for_response(
         if status in FINAL_RESPONSE_STATUSES:
             return current_payload
 
-        if status != last_status:
-            _emit_ai_progress(f"status: {status}")
-            last_status = status
         progress_lines, last_reasoning_summary = _extract_progress_updates(
             current_payload, seen_progress_events, last_reasoning_summary
         )
@@ -342,6 +334,8 @@ def _extract_progress_updates(
         item_id = str(item.get("id") or f"web_search_call_{index}")
         status = str(item.get("status") or "unknown")
         action_detail = _describe_web_search_action(item)
+        if status != "completed" or not action_detail:
+            continue
         signature = (item_id, status, action_detail)
         if signature in seen_progress_events:
             continue
@@ -370,13 +364,6 @@ def _extract_stream_progress_updates(
         )
         lines.extend(item_lines)
 
-    if "web_search_call" in event_type and not isinstance(item, dict):
-        status = event_type.rsplit(".", 1)[-1].replace("_", " ")
-        signature = ("stream_web_search", status, "")
-        if signature not in seen_progress_events:
-            seen_progress_events.add(signature)
-            lines.append(f"web_search: {status}")
-
     if event_type.endswith("reasoning_summary_text.done"):
         text = event_payload.get("text")
         if isinstance(text, str):
@@ -395,7 +382,6 @@ async def _stream_response(
     timeout_seconds: int,
 ) -> dict[str, Any]:
     deadline = time.monotonic() + timeout_seconds
-    last_status = None
     response_id: str | None = None
     current_response: dict[str, Any] | None = None
     seen_progress_events: set[tuple[str, str, str]] = set()
@@ -405,7 +391,7 @@ async def _stream_response(
     data_lines: list[str] = []
 
     async def flush_event() -> dict[str, Any] | None:
-        nonlocal event_name, data_lines, last_status, response_id, current_response, last_reasoning_summary
+        nonlocal event_name, data_lines, response_id, current_response, last_reasoning_summary
 
         event_payload = _decode_sse_event(event_name, data_lines)
         event_name = None
@@ -418,9 +404,6 @@ async def _stream_response(
             current_response = response
             response_id = str(response.get("id") or response_id or "")
             status = response.get("status")
-            if status != last_status and status is not None:
-                _emit_ai_progress(f"status: {status}")
-                last_status = status
 
             progress_lines, last_reasoning_summary = _extract_progress_updates(
                 response, seen_progress_events, last_reasoning_summary

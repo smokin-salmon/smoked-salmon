@@ -161,12 +161,12 @@ def test_build_request_payload_requests_reasoning_summary() -> None:
     assert payload["reasoning"]["summary"] == "auto"
 
 
-def test_format_ai_progress_compacts_and_clamps_text() -> None:
+def test_format_ai_progress_compacts_without_clamping_text() -> None:
     formatted = _format_ai_progress("line one\nline two   " + ("x" * 220))
 
     assert "\n" not in formatted
-    assert len(formatted) == 200
-    assert formatted.endswith("...")
+    assert "line one line two" in formatted
+    assert formatted.endswith("x" * 220)
 
 
 def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
@@ -182,13 +182,20 @@ def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
                 "status": "searching",
                 "action": {"type": "search", "query": "Mouse and Banjo Dawn Dust label"},
             },
+            {
+                "id": "ws_456",
+                "type": "web_search_call",
+                "status": "completed",
+                "action": {"type": "search", "query": "\"Mouse and Banjo\" \"Dawn//Dust\""},
+            },
         ]
     }
 
     lines, last_summary = _extract_progress_updates(payload, set(), None)
 
     assert any(line == "reasoning: Comparing Bandcamp and MusicBrainz." for line in lines)
-    assert any(line == "web_search: searching | search | Mouse and Banjo Dawn Dust label" for line in lines)
+    assert any(line == 'web_search: completed | search | "Mouse and Banjo" "Dawn//Dust"' for line in lines)
+    assert not any("web_search: searching" in line for line in lines)
     assert last_summary == "Comparing Bandcamp and MusicBrainz."
 
 
