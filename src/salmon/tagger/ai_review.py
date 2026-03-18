@@ -784,7 +784,12 @@ async def review_metadata_with_ai(
         diff_lines = build_ai_review_diff(current_metadata, review)
         summary = review.get("summary")
         if isinstance(summary, str) and summary.strip():
-            click.secho(f"\nAI summary: {summary.strip()}", fg="yellow")
+            click.echo(
+                "\n"
+                + click.style("AI summary:", fg="yellow")
+                + f" {summary.strip()}",
+                color=True,
+            )
 
         if diff_lines:
             click.secho("\nAI suggested metadata updates:", fg="yellow", bold=True)
