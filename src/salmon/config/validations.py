@@ -192,7 +192,7 @@ class UploadAiReview(BaseStruct):
     model: str = "gpt-5.4"
     reasoning_effort: Literal["low", "medium", "high", "xhigh"] = "medium"
     use_web_search: bool = True
-    timeout_seconds: Annotated[int, msgspec.Meta(ge=5, le=300)] = 45
+    timeout_seconds: Annotated[int, msgspec.Meta(ge=5, le=1800)] = 45
     background: bool = False
 
     def __post_init__(self):

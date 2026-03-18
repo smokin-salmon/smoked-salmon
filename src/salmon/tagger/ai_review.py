@@ -11,6 +11,7 @@ import msgspec
 from salmon import cfg
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
+POLL_INTERVAL_SECONDS = 5
 TOP_LEVEL_PATCH_FIELDS = (
     "title",
     "group_year",
@@ -137,8 +138,11 @@ def _build_request_payload(
     source_url: str | None,
     user_instruction: str | None = None,
     previous_response_id: str | None = None,
+    use_background: bool | None = None,
 ) -> dict[str, Any]:
     ai_cfg = cfg.upload.ai_review
+    if use_background is None:
+        use_background = ai_cfg.background
     payload: dict[str, Any] = {
         "model": ai_cfg.model,
         "store": True,
@@ -152,11 +156,11 @@ def _build_request_payload(
                 "schema": _ai_review_schema(),
             }
         },
-        "reasoning": {"effort": ai_cfg.reasoning_effort},
+        "reasoning": {"effort": ai_cfg.reasoning_effort, "summary": "auto"},
     }
     if ai_cfg.use_web_search:
         payload["tools"] = [{"type": "web_search"}]
-    if ai_cfg.background:
+    if use_background:
         payload["background"] = True
     if previous_response_id:
         payload["previous_response_id"] = previous_response_id
@@ -174,7 +178,13 @@ async def _fetch_response(
     session: aiohttp.ClientSession, headers: dict[str, str], response_id: str
 ) -> dict[str, Any]:
     async with session.get(f"{OPENAI_RESPONSES_URL}/{response_id}", headers=headers) as resp:
-        payload = await resp.json()
+        try:
+            payload = await resp.json()
+        except aiohttp.ContentTypeError:
+            raw = await resp.text()
+            raise RuntimeError(
+                f"OpenAI API returned a non-JSON polling response (status {resp.status}): {raw[:200]}"
+            ) from None
         if resp.status >= 400:
             raise RuntimeError(f"OpenAI API error while polling: {_extract_response_error(payload)}")
         return payload
@@ -193,13 +203,35 @@ async def _wait_for_response(
 
     deadline = time.monotonic() + timeout_seconds
     current_payload = payload
+    started_at = time.monotonic()
+    last_status = None
+    seen_progress_events: set[tuple[str, str, str]] = set()
+    last_reasoning_summary: str | None = None
     while time.monotonic() < deadline:
-        if current_payload.get("status") in FINAL_RESPONSE_STATUSES:
+        status = current_payload.get("status")
+        if status in FINAL_RESPONSE_STATUSES:
             return current_payload
-        await asyncio.sleep(1)
+
+        elapsed = int(time.monotonic() - started_at)
+        if status != last_status:
+            click.secho(f"AI metadata review status: {status}", fg="cyan")
+            last_status = status
+        progress_lines, last_reasoning_summary = _extract_progress_updates(
+            current_payload, seen_progress_events, last_reasoning_summary
+        )
+        if progress_lines:
+            for line in progress_lines:
+                click.secho(line, fg="cyan")
+        else:
+            click.secho(f"AI metadata review still running... ({elapsed}s elapsed)", fg="cyan")
+
+        await asyncio.sleep(POLL_INTERVAL_SECONDS)
         current_payload = await _fetch_response(session, headers, response_id)
 
-    raise RuntimeError("Timed out waiting for AI metadata review to finish")
+    raise RuntimeError(
+        f"Timed out waiting for AI metadata review to finish after {timeout_seconds}s. "
+        "Increase upload.ai_review.timeout_seconds or keep background mode enabled."
+    )
 
 
 def _extract_output_text(payload: dict[str, Any]) -> str:
@@ -214,6 +246,243 @@ def _extract_output_text(payload: dict[str, Any]) -> str:
     return "\n".join(texts).strip()
 
 
+def _decode_sse_event(event_name: str | None, data_lines: list[str]) -> dict[str, Any] | None:
+    if not data_lines:
+        return None
+
+    raw_data = "\n".join(data_lines).strip()
+    if not raw_data or raw_data == "[DONE]":
+        return None
+
+    try:
+        payload = json.loads(raw_data)
+    except json.JSONDecodeError:
+        payload = {"raw_data": raw_data}
+
+    if not isinstance(payload, dict):
+        payload = {"data": payload}
+
+    if event_name and "type" not in payload:
+        payload["type"] = event_name
+    return payload
+
+
+def _extract_response_from_stream_event(event_payload: dict[str, Any]) -> dict[str, Any] | None:
+    response = event_payload.get("response")
+    if isinstance(response, dict):
+        return response
+
+    if "id" in event_payload and "status" in event_payload:
+        return event_payload
+    return None
+
+
+def _extract_reasoning_summary(payload: dict[str, Any]) -> str | None:
+    summaries: list[str] = []
+    for item in payload.get("output", []):
+        if item.get("type") != "reasoning":
+            continue
+        for summary_item in item.get("summary", []):
+            text = summary_item.get("text")
+            if isinstance(text, str):
+                cleaned = text.strip()
+                if cleaned:
+                    summaries.append(cleaned)
+    if not summaries:
+        return None
+    return "\n\n".join(summaries)
+
+
+def _describe_web_search_action(item: dict[str, Any]) -> str:
+    action = item.get("action")
+    if not isinstance(action, dict):
+        return ""
+
+    parts: list[str] = []
+    action_type = action.get("type")
+    if isinstance(action_type, str) and action_type.strip():
+        parts.append(action_type.replace("_", " "))
+
+    query = action.get("query")
+    if isinstance(query, str) and query.strip():
+        parts.append(query.strip())
+
+    url = action.get("url")
+    if isinstance(url, str) and url.strip():
+        parts.append(url.strip())
+
+    return " | ".join(parts)
+
+
+def _extract_progress_updates(
+    payload: dict[str, Any],
+    seen_progress_events: set[tuple[str, str, str]],
+    last_reasoning_summary: str | None,
+) -> tuple[list[str], str | None]:
+    lines: list[str] = []
+
+    reasoning_summary = _extract_reasoning_summary(payload)
+    if reasoning_summary and reasoning_summary != last_reasoning_summary:
+        lines.append(f"AI reasoning summary:\n{reasoning_summary}")
+        last_reasoning_summary = reasoning_summary
+
+    for index, item in enumerate(payload.get("output", [])):
+        if item.get("type") != "web_search_call":
+            continue
+
+        item_id = str(item.get("id") or f"web_search_call_{index}")
+        status = str(item.get("status") or "unknown")
+        action_detail = _describe_web_search_action(item)
+        signature = (item_id, status, action_detail)
+        if signature in seen_progress_events:
+            continue
+
+        seen_progress_events.add(signature)
+        line = f"AI web search status: {status}"
+        if action_detail:
+            line = f"{line} | {action_detail}"
+        lines.append(line)
+
+    return lines, last_reasoning_summary
+
+
+def _extract_stream_progress_updates(
+    event_payload: dict[str, Any],
+    seen_progress_events: set[tuple[str, str, str]],
+    last_reasoning_summary: str | None,
+) -> tuple[list[str], str | None]:
+    lines: list[str] = []
+    event_type = str(event_payload.get("type") or "")
+
+    item = event_payload.get("item")
+    if isinstance(item, dict):
+        item_lines, last_reasoning_summary = _extract_progress_updates(
+            {"output": [item]}, seen_progress_events, last_reasoning_summary
+        )
+        lines.extend(item_lines)
+
+    if "web_search_call" in event_type and not isinstance(item, dict):
+        status = event_type.rsplit(".", 1)[-1].replace("_", " ")
+        signature = ("stream_web_search", status, "")
+        if signature not in seen_progress_events:
+            seen_progress_events.add(signature)
+            lines.append(f"AI web search event: {status}")
+
+    if event_type.endswith("reasoning_summary_text.done"):
+        text = event_payload.get("text")
+        if isinstance(text, str):
+            cleaned = text.strip()
+            if cleaned and cleaned != last_reasoning_summary:
+                lines.append(f"AI reasoning summary:\n{cleaned}")
+                last_reasoning_summary = cleaned
+
+    return lines, last_reasoning_summary
+
+
+async def _stream_response(
+    resp: aiohttp.ClientResponse,
+    session: aiohttp.ClientSession,
+    headers: dict[str, str],
+    timeout_seconds: int,
+) -> dict[str, Any]:
+    click.secho("Streaming AI metadata review events from OpenAI...", fg="cyan")
+
+    started_at = time.monotonic()
+    deadline = started_at + timeout_seconds
+    last_status = None
+    response_id: str | None = None
+    current_response: dict[str, Any] | None = None
+    seen_progress_events: set[tuple[str, str, str]] = set()
+    last_reasoning_summary: str | None = None
+
+    event_name: str | None = None
+    data_lines: list[str] = []
+
+    async def flush_event() -> dict[str, Any] | None:
+        nonlocal event_name, data_lines, last_status, response_id, current_response, last_reasoning_summary
+
+        event_payload = _decode_sse_event(event_name, data_lines)
+        event_name = None
+        data_lines = []
+        if not event_payload:
+            return None
+
+        response = _extract_response_from_stream_event(event_payload)
+        if response:
+            current_response = response
+            response_id = str(response.get("id") or response_id or "")
+            status = response.get("status")
+            if status != last_status and status is not None:
+                click.secho(f"AI metadata review status: {status}", fg="cyan")
+                last_status = status
+
+            progress_lines, last_reasoning_summary = _extract_progress_updates(
+                response, seen_progress_events, last_reasoning_summary
+            )
+            for line in progress_lines:
+                click.secho(line, fg="cyan")
+
+            if status in FINAL_RESPONSE_STATUSES:
+                return response
+
+        progress_lines, last_reasoning_summary = _extract_stream_progress_updates(
+            event_payload, seen_progress_events, last_reasoning_summary
+        )
+        for line in progress_lines:
+            click.secho(line, fg="cyan")
+
+        return None
+
+    while True:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            break
+
+        try:
+            raw_line = await asyncio.wait_for(
+                resp.content.readline(), timeout=min(POLL_INTERVAL_SECONDS, remaining)
+            )
+        except TimeoutError:
+            elapsed = int(time.monotonic() - started_at)
+            click.secho(f"AI metadata review still running... ({elapsed}s elapsed)", fg="cyan")
+            continue
+
+        if not raw_line:
+            break
+
+        line = raw_line.decode("utf-8", errors="replace").rstrip("\r\n")
+        if not line:
+            final_response = await flush_event()
+            if final_response:
+                return final_response
+            continue
+
+        if line.startswith(":"):
+            continue
+
+        if line.startswith("event:"):
+            event_name = line.partition(":")[2].strip()
+            continue
+
+        if line.startswith("data:"):
+            data_lines.append(line.partition(":")[2].lstrip())
+
+    final_response = await flush_event()
+    if final_response:
+        return final_response
+
+    if response_id:
+        latest_payload = await _fetch_response(session, headers, response_id)
+        return await _wait_for_response(session, headers, latest_payload, timeout_seconds)
+
+    raise RuntimeError("AI metadata review stream ended before a response ID was received")
+
+
+def _should_use_background() -> bool:
+    ai_cfg = cfg.upload.ai_review
+    return ai_cfg.background or ai_cfg.reasoning_effort in {"high", "xhigh"} or ai_cfg.use_web_search
+
+
 async def _request_ai_review(
     metadata: dict[str, Any],
     tag_baseline: dict[str, Any],
@@ -222,24 +491,68 @@ async def _request_ai_review(
     previous_response_id: str | None,
 ) -> tuple[dict[str, Any], str | None]:
     ai_cfg = cfg.upload.ai_review
+    use_background = _should_use_background()
     headers = {
         "Authorization": f"Bearer {ai_cfg.api_key}",
         "Content-Type": "application/json",
         "User-Agent": cfg.upload.user_agent,
     }
-    timeout = aiohttp.ClientTimeout(total=ai_cfg.timeout_seconds)
-    payload = _build_request_payload(metadata, tag_baseline, source_url, user_instruction, previous_response_id)
+    timeout = aiohttp.ClientTimeout(total=None, connect=30, sock_connect=30, sock_read=None)
+    payload = _build_request_payload(
+        metadata,
+        tag_baseline,
+        source_url,
+        user_instruction,
+        previous_response_id,
+        use_background=use_background,
+    )
 
     async with aiohttp.ClientSession(timeout=timeout) as session:
-        async with session.post(OPENAI_RESPONSES_URL, headers=headers, json=payload) as resp:
-            response_payload = await resp.json()
-            if resp.status >= 400:
-                raise RuntimeError(f"OpenAI API error: {_extract_response_error(response_payload)}")
+        click.secho("Submitting AI metadata review request to OpenAI...", fg="cyan")
+        request_payload = payload
+        if use_background:
+            request_payload = {**payload, "stream": True}
+        try:
+            async with asyncio.timeout(ai_cfg.timeout_seconds):
+                async with session.post(OPENAI_RESPONSES_URL, headers=headers, json=request_payload) as resp:
+                    if resp.status >= 400:
+                        try:
+                            error_payload = await resp.json()
+                        except aiohttp.ContentTypeError:
+                            raw = await resp.text()
+                            raise RuntimeError(
+                                f"OpenAI API returned a non-JSON response (status {resp.status}): {raw[:200]}"
+                            ) from None
+                        raise RuntimeError(f"OpenAI API error: {_extract_response_error(error_payload)}")
 
-        response_payload = await _wait_for_response(session, headers, response_payload, ai_cfg.timeout_seconds)
+                    if use_background and resp.content_type == "text/event-stream":
+                        response_payload = await _stream_response(
+                            resp, session, headers, ai_cfg.timeout_seconds
+                        )
+                    else:
+                        try:
+                            response_payload = await resp.json()
+                        except aiohttp.ContentTypeError:
+                            raw = await resp.text()
+                            raise RuntimeError(
+                                f"OpenAI API returned a non-JSON response (status {resp.status}): {raw[:200]}"
+                            ) from None
+        except TimeoutError as exc:
+            raise RuntimeError(
+                f"Timed out after {ai_cfg.timeout_seconds}s while submitting the AI metadata review request. "
+                "Background mode is recommended for long-running reviews."
+            ) from exc
+
+        if response_payload.get("status") in {"queued", "in_progress"}:
+            response_payload = await _wait_for_response(
+                session, headers, response_payload, ai_cfg.timeout_seconds
+            )
         status = response_payload.get("status")
         if status in {"failed", "cancelled", "incomplete"}:
             raise RuntimeError(f"AI metadata review did not complete successfully (status: {status})")
+
+    if response_payload.get("error"):
+        raise RuntimeError(f"OpenAI API error: {_extract_response_error(response_payload)}")
 
     output_text = _extract_output_text(response_payload)
     if not output_text:
@@ -406,6 +719,9 @@ async def review_metadata_with_ai(
                 user_instruction,
                 previous_response_id,
             )
+        except asyncio.CancelledError:
+            click.secho("\nAI metadata review aborted by user.", fg="yellow")
+            raise click.Abort() from None
         except Exception as exc:
             click.secho(f"AI metadata review failed: {exc}", fg="red")
             return current_metadata

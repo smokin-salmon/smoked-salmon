@@ -222,5 +222,6 @@ session = 'get-from-site-cookie'
 # model = "gpt-5.4"
 # reasoning_effort = "medium"
 # use_web_search = true
+# # Increase this for slower reviews, especially with high/xhigh reasoning and web search.
 # timeout_seconds = 45
 # background = false

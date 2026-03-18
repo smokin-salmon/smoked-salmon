@@ -8,7 +8,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from salmon import cfg
 from salmon.tagger import ai_review
-from salmon.tagger.ai_review import _ai_review_schema, apply_ai_metadata_patch, build_ai_review_diff
+from salmon.tagger.ai_review import (
+    _ai_review_schema,
+    _build_request_payload,
+    _extract_progress_updates,
+    apply_ai_metadata_patch,
+    build_ai_review_diff,
+)
 
 
 def make_metadata() -> dict:
@@ -146,6 +152,36 @@ def test_ai_review_schema_requires_every_patch_key() -> None:
         "genres",
         "urls",
     ]
+
+
+def test_build_request_payload_requests_reasoning_summary() -> None:
+    payload = _build_request_payload(make_metadata(), make_metadata(), None)
+
+    assert payload["reasoning"]["summary"] == "auto"
+
+
+def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
+    payload = {
+        "output": [
+            {
+                "type": "reasoning",
+                "summary": [{"type": "summary_text", "text": "Comparing Bandcamp and MusicBrainz."}],
+            },
+            {
+                "id": "ws_123",
+                "type": "web_search_call",
+                "status": "searching",
+                "action": {"type": "search", "query": "Mouse and Banjo Dawn Dust label"},
+            },
+        ]
+    }
+
+    lines, last_summary = _extract_progress_updates(payload, set(), None)
+
+    assert any("AI reasoning summary:" in line for line in lines)
+    assert any("Comparing Bandcamp and MusicBrainz." in line for line in lines)
+    assert any(line == "AI web search status: searching | search | Mouse and Banjo Dawn Dust label" for line in lines)
+    assert last_summary == "Comparing Bandcamp and MusicBrainz."
 
 
 def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_apply(monkeypatch) -> None:
