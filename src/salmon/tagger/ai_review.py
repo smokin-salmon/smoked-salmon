@@ -616,8 +616,10 @@ def build_ai_review_diff(metadata: dict[str, Any], review: dict[str, Any]) -> li
         if field in NORMALIZED_METADATA_FIELDS:
             before = _normalize_list(before)
         after = _normalize_review_metadata_value(field, value)
-        if before != after:
-            lines.append(f"{field}: {_format_diff_value(before)} -> {_format_diff_value(after)}")
+        before_text = _format_diff_value(before)
+        after_text = _format_diff_value(after)
+        if before_text != after_text:
+            lines.append(f"{field}: {before_text} -> {after_text}")
     return lines
 
 
