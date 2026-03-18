@@ -73,6 +73,8 @@ If you cannot distinguish them, set both to the same supported year.
 Normalize genres into human-readable title case when possible.
 Only include genres or tags that are explicitly supported by the consulted sources.
 Include only release-level URLs that directly identify this exact release.
+If selected_source_url is provided, it must remain in urls.
+You may add more release-level URLs, but do not remove existing URLs.
 
 Return only the schema. Never return freeform prose outside the schema. Never rewrite files directly.
 """
@@ -595,16 +597,38 @@ def _normalize_review_metadata_value(field: str, value: Any) -> Any:
     return value
 
 
-def apply_ai_metadata_result(metadata: dict[str, Any], review: dict[str, Any]) -> dict[str, Any]:
+def _resolve_review_metadata_value(
+    field: str,
+    before: Any,
+    value: Any,
+    source_url: str | None = None,
+) -> Any:
+    if field != "urls" or not source_url:
+        return _normalize_review_metadata_value(field, value)
+
+    merged_urls = _normalize_list(before)
+    merged_urls = _normalize_list([*merged_urls, source_url])
+    return _normalize_list([*merged_urls, *_normalize_list(value)])
+
+
+def apply_ai_metadata_result(
+    metadata: dict[str, Any],
+    review: dict[str, Any],
+    source_url: str | None = None,
+) -> dict[str, Any]:
     updated = deepcopy(metadata)
 
     for field, value in _iter_review_metadata(review):
-        updated[field] = _normalize_review_metadata_value(field, value)
+        updated[field] = _resolve_review_metadata_value(field, updated.get(field), value, source_url)
 
     return updated
 
 
-def build_ai_review_diff(metadata: dict[str, Any], review: dict[str, Any]) -> list[str]:
+def build_ai_review_diff(
+    metadata: dict[str, Any],
+    review: dict[str, Any],
+    source_url: str | None = None,
+) -> list[str]:
     lines: list[str] = []
     try:
         review_items = list(_iter_review_metadata(review))
@@ -615,7 +639,7 @@ def build_ai_review_diff(metadata: dict[str, Any], review: dict[str, Any]) -> li
         before = metadata.get(field)
         if field in NORMALIZED_METADATA_FIELDS:
             before = _normalize_list(before)
-        after = _normalize_review_metadata_value(field, value)
+        after = _resolve_review_metadata_value(field, before, value, source_url)
         before_text = _format_diff_value(before)
         after_text = _format_diff_value(after)
         if before_text != after_text:
@@ -690,7 +714,7 @@ async def review_metadata_with_ai(
             click.secho(f"AI metadata review failed: {exc}", fg="red")
             return current_metadata
 
-        diff_lines = build_ai_review_diff(current_metadata, review)
+        diff_lines = build_ai_review_diff(current_metadata, review, source_url)
         summary = review.get("summary")
         if isinstance(summary, str) and summary.strip():
             click.echo(
@@ -715,7 +739,7 @@ async def review_metadata_with_ai(
         while True:
             choice = await click.prompt(
                 click.style(
-                    "\n[a]pply suggestions, [k]eep original, [e]dit manually, "
+                    "\n[a]pply suggestions, [k]eep original, "
                     "[p]rompt model and rerun, [v]iew citations",
                     fg="magenta",
                 ),
@@ -739,16 +763,13 @@ async def review_metadata_with_ai(
             if choice == "k":
                 return current_metadata
 
-            if choice == "e":
-                return await manual_review(current_metadata, validator)
-
             if choice == "a":
                 if not diff_lines:
                     click.secho("There are no AI changes to apply.", fg="yellow")
                     continue
 
                 try:
-                    updated_metadata = apply_ai_metadata_result(current_metadata, review)
+                    updated_metadata = apply_ai_metadata_result(current_metadata, review, source_url)
                     validator(updated_metadata)
                 except Exception as exc:
                     click.secho(f"AI suggestions were rejected: {exc}", fg="red")
