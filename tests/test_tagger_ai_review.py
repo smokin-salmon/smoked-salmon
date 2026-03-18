@@ -15,6 +15,7 @@ from salmon.tagger.ai_review import (
     _build_request_payload,
     _extract_progress_updates,
     _format_ai_progress,
+    _style_ai_progress,
     apply_ai_metadata_patch,
     build_ai_review_diff,
 )
@@ -205,6 +206,14 @@ def test_format_ai_progress_compacts_without_clamping_text() -> None:
     assert "\n" not in formatted
     assert "line one line two" in formatted
     assert formatted.endswith("x" * 220)
+
+
+def test_style_ai_progress_renders_markdown_bold_without_literal_asterisks() -> None:
+    styled = _style_ai_progress("reasoning: **Verifying track details** right now")
+
+    assert "**" not in styled
+    assert "Verifying track details" in styled
+    assert "\x1b[" in styled
 
 
 def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:

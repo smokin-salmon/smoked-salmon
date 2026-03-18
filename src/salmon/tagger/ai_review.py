@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import time
 from copy import deepcopy
 from typing import Any
@@ -24,6 +25,7 @@ TOP_LEVEL_PATCH_FIELDS = (
     "urls",
 )
 FINAL_RESPONSE_STATUSES = {"completed", "failed", "cancelled", "incomplete"}
+BOLD_MARKDOWN_PATTERN = re.compile(r"\*\*(.+?)\*\*")
 
 SYSTEM_PROMPT = """You research one exact music release for Smoked Salmon.
 
@@ -225,10 +227,30 @@ def _format_ai_progress(text: str) -> str:
     return " ".join(text.split())
 
 
-def _emit_ai_progress(text: str) -> None:
+def _style_ai_progress(text: str) -> str:
     formatted = _format_ai_progress(text)
-    if formatted:
-        click.secho(formatted, fg="bright_black")
+    if not formatted:
+        return ""
+
+    parts: list[str] = []
+    last_index = 0
+    for match in BOLD_MARKDOWN_PATTERN.finditer(formatted):
+        start, end = match.span()
+        if start > last_index:
+            parts.append(click.style(formatted[last_index:start], fg="bright_black"))
+        parts.append(click.style(match.group(1), fg="bright_black", bold=True))
+        last_index = end
+
+    if last_index < len(formatted):
+        parts.append(click.style(formatted[last_index:], fg="bright_black"))
+
+    return "".join(parts)
+
+
+def _emit_ai_progress(text: str) -> None:
+    styled = _style_ai_progress(text)
+    if styled:
+        click.echo(styled, color=True)
 
 
 async def _fetch_response(
