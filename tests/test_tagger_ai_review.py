@@ -10,6 +10,8 @@ from salmon import cfg
 from salmon.tagger import ai_review
 from salmon.tagger.ai_review import (
     _ai_review_schema,
+    _build_editable_metadata_snapshot,
+    _build_release_reference,
     _build_request_payload,
     _extract_progress_updates,
     _format_ai_progress,
@@ -159,6 +161,42 @@ def test_build_request_payload_requests_reasoning_summary() -> None:
     payload = _build_request_payload(make_metadata(), make_metadata(), None)
 
     assert payload["reasoning"]["summary"] == "auto"
+
+
+def test_build_release_reference_keeps_only_identifying_fields() -> None:
+    reference = _build_release_reference(make_metadata(), "https://example.com/release")
+
+    assert reference == {
+        "artists": [{"name": "Example Artist", "role": "main"}],
+        "release_type": "Album",
+        "source": "WEB",
+        "format": "FLAC",
+        "encoding": "Lossless",
+        "encoding_vbr": False,
+        "scene": False,
+        "track_count": 2,
+        "selected_source_url": "https://example.com/release",
+    }
+
+
+def test_build_editable_metadata_snapshot_keeps_only_editable_fields_and_track_titles() -> None:
+    snapshot = _build_editable_metadata_snapshot(make_metadata())
+
+    assert snapshot == {
+        "title": "Original Title",
+        "group_year": "2004",
+        "year": "2004",
+        "edition_title": None,
+        "label": "Old Label",
+        "catno": "OLD-001",
+        "upc": None,
+        "genres": ["Electronic"],
+        "urls": ["https://old.example/release"],
+        "track_titles": [
+            {"disc_number": "1", "track_number": "1", "title": "Track One"},
+            {"disc_number": "1", "track_number": "2", "title": "Track Two"},
+        ],
+    }
 
 
 def test_format_ai_progress_compacts_without_clamping_text() -> None:

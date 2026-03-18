@@ -25,20 +25,26 @@ TOP_LEVEL_PATCH_FIELDS = (
 )
 FINAL_RESPONSE_STATUSES = {"completed", "failed", "cancelled", "incomplete"}
 
-SYSTEM_PROMPT = """You verify music release metadata for Smoked Salmon.
+SYSTEM_PROMPT = """You research one exact music release for Smoked Salmon.
+
+Your job is to find the most accurate metadata for this release online and return a conservative structured patch.
+The selected source URL is a reference, not an exclusive authority. You may use any online sources that help identify
+and verify the exact release.
+
+Match the same release by artist, release title, release type, and track count/order whenever possible.
+Only change a field when the online evidence supports the same release. If evidence is weak, conflicting, or indirect,
+leave the field unchanged.
+
+Do not change artists, release type, format, encoding, source, scene flags, comments, cover art,
+or track artist credits.
+Only patch: title, group_year, year, edition_title, label, catno, upc, genres, urls, and track titles.
 
 Return a structured metadata patch only. Never return freeform prose outside the schema.
 Never rewrite files directly.
-Only suggest changes you can justify with evidence.
-When web_search is available, you must use it before finalizing your answer.
-Do not change artists, release type, format, encoding, source, scene flags,
-comments, cover art, or track artist credits.
-Only patch: title, group_year, year, edition_title, label, catno, upc, genres, urls, and track titles.
 Every patch field must be present in the output.
 Use null for unchanged scalar fields.
 Use [] for unchanged list fields like genres and urls.
 Keep urls relevant and deduplicated.
-If you are unsure, leave the field unchanged.
 """
 
 
@@ -116,20 +122,61 @@ def _format_prompt(
     user_instruction: str | None,
 ) -> str:
     prompt = [
-        "Review this release metadata and suggest corrections only where the evidence is strong.",
-        "The current metadata is Salmon's combined metadata from scraped sources and local tags.",
-        "The baseline metadata comes from the local file tags before the combine step.",
-        f"Selected source URL: {source_url or '(none)'}",
+        "Research this release online and suggest corrections only where the evidence is strong.",
+        "Use the selected source URL as a reference,",
+        "but you may use any online sources needed to identify the exact release.",
         "",
-        "Current metadata JSON:",
-        json.dumps(metadata, indent=2, ensure_ascii=False),
+        "Release reference JSON (do not edit these fields directly):",
+        json.dumps(_build_release_reference(metadata, source_url), indent=2, ensure_ascii=False),
         "",
-        "Tag-derived baseline JSON:",
-        json.dumps(tag_baseline, indent=2, ensure_ascii=False),
+        "Current editable metadata JSON:",
+        json.dumps(_build_editable_metadata_snapshot(metadata), indent=2, ensure_ascii=False),
+        "",
+        "Editable metadata from local tags before Salmon combined sources:",
+        json.dumps(_build_editable_metadata_snapshot(tag_baseline), indent=2, ensure_ascii=False),
     ]
     if user_instruction:
         prompt.extend(["", "Additional user instruction for this pass:", user_instruction])
     return "\n".join(prompt)
+
+
+def _build_release_reference(metadata: dict[str, Any], source_url: str | None) -> dict[str, Any]:
+    artists = [
+        {"name": artist_name, "role": artist_role}
+        for artist_name, artist_role in metadata.get("artists", [])
+        if artist_name
+    ]
+    tracks = metadata.get("tracks", {})
+    track_count = sum(len(disc_tracks) for disc_tracks in tracks.values())
+
+    return {
+        "artists": artists,
+        "release_type": metadata.get("rls_type"),
+        "source": metadata.get("source"),
+        "format": metadata.get("format"),
+        "encoding": metadata.get("encoding"),
+        "encoding_vbr": metadata.get("encoding_vbr"),
+        "scene": metadata.get("scene"),
+        "track_count": track_count,
+        "selected_source_url": source_url,
+    }
+
+
+def _build_editable_metadata_snapshot(metadata: dict[str, Any]) -> dict[str, Any]:
+    snapshot = {
+        field: deepcopy(metadata.get(field))
+        for field in TOP_LEVEL_PATCH_FIELDS
+    }
+    snapshot["track_titles"] = [
+        {
+            "disc_number": disc_number,
+            "track_number": track_number,
+            "title": track.get("title"),
+        }
+        for disc_number, disc_tracks in metadata.get("tracks", {}).items()
+        for track_number, track in disc_tracks.items()
+    ]
+    return snapshot
 
 
 def _build_request_payload(

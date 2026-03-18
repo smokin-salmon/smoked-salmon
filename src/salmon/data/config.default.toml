@@ -219,7 +219,7 @@ session = 'get-from-site-cookie'
 # # Optional AI-assisted metadata verification after Salmon combines sources
 # enabled = false
 # api_key = "sk-..."
-# model = "gpt-5.4"
+# model = "gpt-5.4-2026-03-05"
 # reasoning_effort = "medium"
 # use_web_search = true
 # # Increase this for slower reviews, especially with high/xhigh reasoning and web search.
