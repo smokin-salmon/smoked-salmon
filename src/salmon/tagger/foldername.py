@@ -36,7 +36,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
         click.echo(f"Old folder name        : {old_base}")
         click.echo(f"New pending folder name: {new_base}")
 
-        user_rename_choice = cfg.upload.yes_all or click.confirm(
+        user_rename_choice = auto_rename or cfg.upload.yes_all or click.confirm(
             click.style("\nWould you like to replace the original folder name?", fg="magenta"), default=True
         )
 

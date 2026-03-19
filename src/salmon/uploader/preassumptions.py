@@ -17,6 +17,7 @@ def print_preassumptions(
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
+    all_spectrals: bool,
     encoding: str | None,
     spectrals_after: bool,
 ) -> None:
@@ -29,6 +30,7 @@ def print_preassumptions(
         source: Media source.
         lossy: Whether files are lossy mastered.
         spectrals: Track numbers for spectrals.
+        all_spectrals: Whether to upload all generated spectrals.
         encoding: Audio encoding tuple.
         spectrals_after: Check spectrals after upload.
     """
@@ -42,7 +44,9 @@ def print_preassumptions(
         second.append(f"with lossy master status as {lossy}")
     if second:
         click.secho(f"Uploading {' '.join(second)}.", fg="yellow")
-    if spectrals:
+    if all_spectrals:
+        click.secho("Uploading all spectrals.", fg="yellow")
+    elif spectrals:
         if spectrals == (0,):
             click.secho("Uploading no spectrals.", fg="yellow")
         else:
@@ -56,7 +60,7 @@ def print_preassumptions(
             fg="yellow",
         )
 
-    if lossy and not spectrals:
+    if lossy and not spectrals and not all_spectrals:
         raise UploadError("\nYou cannot report a torrent for lossy master without spectrals.")
 
 
