@@ -26,6 +26,26 @@ def get_class(site_code) -> type[BaseGazelleApi]:
     return tracker_classes[site_code]
 
 
+def normalize_tracker(value: str) -> str:
+    normalized = value.strip().upper()
+    if normalized in tracker_list:
+        return normalized
+    if normalized in [choice[0] for choice in tracker_list]:
+        for choice in tracker_list:
+            if normalized == choice[0]:
+                return choice
+    raise click.BadParameter("This flag requires a tracker. Possible sources are: " + ", ".join(tracker_list))
+
+
+def normalize_trackers(values: tuple[str, ...] | list[str]) -> list[str]:
+    normalized: list[str] = []
+    for value in values:
+        tracker = normalize_tracker(value)
+        if tracker not in normalized:
+            normalized.append(tracker)
+    return normalized
+
+
 async def choose_tracker(choices):
     """Allows the user to choose a tracker from choices."""
     while True:
@@ -67,19 +87,16 @@ async def validate_tracker(ctx, param, value):
     """Only allow trackers in the config tracker dict.
     If it isn't there. Prompt to choose.
     """
-    try:
-        if value is None:
-            return await choose_tracker_first_time()
-        if value.upper() in tracker_list:
-            click.secho(f"Using tracker: {value.upper()}", fg="green")
-            return value.upper()
-        else:
-            click.secho(f"{value} is not a tracker in your config.", fg="red")
-            return await choose_tracker(tracker_list)
-    except AttributeError:
-        raise click.BadParameter(
-            "This flag requires a tracker. Possible sources are: " + ", ".join(tracker_list)
-        ) from None
+    if not value:
+        tracker = await choose_tracker_first_time()
+        return [tracker]
+
+    trackers = normalize_trackers(list(value) if isinstance(value, tuple) else [value])
+    if len(trackers) == 1:
+        click.secho(f"Using tracker: {trackers[0]}", fg="green")
+    else:
+        click.secho(f"Using trackers: {', '.join(trackers)}", fg="green")
+    return trackers
 
 
 def validate_request(gazelle_site, request):
