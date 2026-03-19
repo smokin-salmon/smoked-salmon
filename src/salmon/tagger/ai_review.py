@@ -68,8 +68,32 @@ Do not conclude the release is unverified, or clear supported metadata, until af
 If the anchor page already clearly identifies the release,
 only do extra web searches for fields that are still missing or conflicting.
 Prefer release-level pages over artist bios, reviews, videos, lyrics pages, playlists, marketplaces, and fan sites.
-Use at most 4 web actions total.
+Use 4 to 6 web actions total.
+Aim to finish in 4 when the anchor page is clear, but spend up to 6 when needed to resolve
+missing or conflicting release-level fields.
 Stop as soon as you have enough evidence for the album-level fields.
+
+When normalizing metadata, follow RED's upload, tagging, capitalization, and editing standards:
+- Prefer the actual release title, not packaging noise, scene-style naming, or store-specific fluff.
+- Do not keep a catalog number in title unless release-level sources clearly show it is part of
+  the title. If a title starts with a bracketed or prefixed catalog code, prefer moving that code
+  to catno instead of leaving it in title.
+- Use standard capitalization and title case for English titles and labels unless release-level
+  evidence clearly shows intentional stylization.
+- edition_title is only for edition-specific descriptors. Do not put the album title, store name,
+  DSP name unless it is an exclusive edition, format, bitrate, bit depth, sample rate, or generic
+  descriptors like Digital, Original, or First Pressing in edition_title.
+- Prefer the credited release label or imprint. Do not infer label from the artist name, store,
+  seller, distributor, or parent company alone, and omit corporate suffixes when the release-level
+  source clearly uses the shorter imprint name.
+- Use catno only when a release-level source supports it. For WEB, if there is no definitive catno
+  but there is an explicit UPC and it is the only supported release identifier, you may use that UPC
+  as catno while also keeping it in upc.
+- Genres must behave like RED tags: keep only explicit source-supported genres, prefer specific
+  genres over vague umbrellas, and never add artists, labels, formats, bitrates, release types,
+  or store names as genres.
+- Discogs and MusicBrainz are useful cross-checks, but they are not authoritative over a clearer
+  official release page.
 
 Never infer label from the artist name, a store name, or a seller.
 Only set label when a release-level source explicitly names a label or imprint for this release.

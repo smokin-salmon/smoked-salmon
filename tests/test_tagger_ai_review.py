@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon import cfg
 from salmon.tagger import ai_review
 from salmon.tagger.ai_review import (
+    SYSTEM_PROMPT,
     _ai_review_schema,
     _build_album_metadata_snapshot,
     _build_release_reference,
@@ -169,6 +170,14 @@ def test_build_request_payload_requests_reasoning_summary_and_does_not_store() -
 
     assert payload["reasoning"]["summary"] == "auto"
     assert payload["store"] is False
+
+
+def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
+    assert "Use 4 to 6 web actions total." in SYSTEM_PROMPT
+    assert "Do not keep a catalog number in title" in SYSTEM_PROMPT
+    assert "edition_title is only for edition-specific descriptors." in SYSTEM_PROMPT
+    assert "Genres must behave like RED tags" in SYSTEM_PROMPT
+    assert "Discogs and MusicBrainz are useful cross-checks" in SYSTEM_PROMPT
 
 
 def test_build_release_reference_keeps_only_identifying_fields() -> None:
