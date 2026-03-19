@@ -107,10 +107,14 @@ def test_edit_metadata_auto_upload_skips_confirmation(monkeypatch, tmp_path: Pat
     async def fake_check_folder_structure(*_args, **_kwargs):
         return None
 
+    async def fake_review_metadata_with_ai(current_metadata, *_args, **_kwargs):
+        return current_metadata
+
     def fail_confirm(*_args, **_kwargs):
         raise AssertionError("click.confirm should not run when auto upload is enabled")
 
     monkeypatch.setattr(uploader, "review_metadata", fake_review_metadata)
+    monkeypatch.setattr(uploader, "review_metadata_with_ai", fake_review_metadata_with_ai)
     monkeypatch.setattr(uploader, "tag_files", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(uploader, "check_tags", fake_check_tags)
     monkeypatch.setattr(uploader, "rename_folder", lambda path, *_args, **_kwargs: path)
@@ -125,6 +129,7 @@ def test_edit_metadata_auto_upload_skips_confirmation(monkeypatch, tmp_path: Pat
             str(tmp_path),
             tags,
             metadata,
+            None,
             "WEB",
             {},
             False,

@@ -433,9 +433,8 @@ def test_review_metadata_with_ai_auto_applies_when_flag_enabled(monkeypatch) -> 
     async def fail_prompt(*_args, **_kwargs):
         raise AssertionError("click.prompt should not run when AI suggestions are auto-applied")
 
-    def fake_confirm(*_args, **_kwargs):
-        sequence.append("confirm")
-        return True
+    def fail_confirm(*_args, **_kwargs):
+        raise AssertionError("click.confirm should not run when AI suggestions auto-run and auto-apply")
 
     async def run_review():
         return await ai_review.review_metadata_with_ai(
@@ -452,7 +451,7 @@ def test_review_metadata_with_ai_auto_applies_when_flag_enabled(monkeypatch) -> 
         cfg.upload.yes_all = False
         monkeypatch.setattr(ai_review, "_request_ai_review", fake_request_ai_review)
         monkeypatch.setattr(ai_review.click, "prompt", fail_prompt)
-        monkeypatch.setattr(ai_review.click, "confirm", fake_confirm)
+        monkeypatch.setattr(ai_review.click, "confirm", fail_confirm)
 
         result = anyio.run(run_review)
     finally:
@@ -460,7 +459,7 @@ def test_review_metadata_with_ai_auto_applies_when_flag_enabled(monkeypatch) -> 
         cfg.upload.yes_all = original_yes_all
 
     assert result["label"] == "New Label"
-    assert sequence == ["manual:Old Label", "confirm", "ai", "manual:New Label"]
+    assert sequence == ["manual:Old Label", "ai"]
 
 
 def test_review_metadata_with_ai_skips_initial_review_when_flag_enabled(monkeypatch) -> None:
@@ -549,4 +548,4 @@ def test_review_metadata_with_ai_yes_all_auto_applies(monkeypatch) -> None:
         cfg.upload.yes_all = original_yes_all
 
     assert result["label"] == "New Label"
-    assert sequence == ["ai", "manual:New Label"]
+    assert sequence == ["ai"]

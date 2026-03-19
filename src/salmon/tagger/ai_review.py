@@ -717,12 +717,11 @@ async def _finalize_manual_review(metadata: dict[str, Any], validator, manual_re
     return metadata
 
 
-async def _apply_ai_review_and_reopen_manual_review(
+async def _apply_ai_review(
     metadata: dict[str, Any],
     review: dict[str, Any],
     source_url: str | None,
     validator,
-    manual_review,
 ) -> dict[str, Any] | None:
     try:
         updated_metadata = apply_ai_metadata_result(metadata, review, source_url)
@@ -732,7 +731,7 @@ async def _apply_ai_review_and_reopen_manual_review(
         return None
 
     click.secho("Applied AI metadata suggestions.", fg="green")
-    return await _run_manual_review(updated_metadata, validator, manual_review)
+    return updated_metadata
 
 
 async def _run_manual_review(
@@ -775,7 +774,7 @@ async def review_metadata_with_ai(
             enforce_required_fields=False,
         )
 
-    should_run = cfg.upload.yes_all or click.confirm(
+    should_run = cfg.upload.yes_all or apply_suggestions or click.confirm(
         click.style("\nRun AI metadata review?", fg="magenta"),
         default=None,
     )
@@ -826,12 +825,11 @@ async def review_metadata_with_ai(
             return await _finalize_manual_review(current_metadata, validator, manual_review)
 
         if cfg.upload.yes_all or apply_suggestions:
-            applied_metadata = await _apply_ai_review_and_reopen_manual_review(
+            applied_metadata = await _apply_ai_review(
                 current_metadata,
                 review,
                 source_url,
                 validator,
-                manual_review,
             )
             if applied_metadata is not None:
                 return applied_metadata
@@ -869,15 +867,14 @@ async def review_metadata_with_ai(
                     click.secho("There are no AI changes to apply.", fg="yellow")
                     continue
 
-                applied_metadata = await _apply_ai_review_and_reopen_manual_review(
+                applied_metadata = await _apply_ai_review(
                     current_metadata,
                     review,
                     source_url,
                     validator,
-                    manual_review,
                 )
                 if applied_metadata is not None:
-                    return applied_metadata
+                    return await _run_manual_review(applied_metadata, validator, manual_review)
                 continue
 
             click.secho(f"{choice} is not a valid AI review option.", fg="red")
