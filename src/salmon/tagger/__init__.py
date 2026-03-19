@@ -85,7 +85,19 @@ def validate_encoding(ctx, param, value):
     is_flag=True,
     help="Rename files and folders automatically",
 )
-async def tag(path: str, source: str, encoding: str | None, overwrite: bool, auto_rename: bool) -> None:
+@click.option(
+    "--apply-ai-suggestions",
+    is_flag=True,
+    help="Automatically apply AI review suggestions when AI review is enabled.",
+)
+async def tag(
+    path: str,
+    source: str,
+    encoding: str | None,
+    overwrite: bool,
+    auto_rename: bool,
+    apply_ai_suggestions: bool,
+) -> None:
     """Interactively tag an album.
 
     Args:
@@ -94,6 +106,7 @@ async def tag(path: str, source: str, encoding: str | None, overwrite: bool, aut
         encoding: Audio encoding string or None if not specified.
         overwrite: Whether to overwrite metadata.
         auto_rename: Whether to auto-rename files.
+        apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     standardize_tags(path)
@@ -108,6 +121,7 @@ async def tag(path: str, source: str, encoding: str | None, overwrite: bool, aut
         source_url,
         metadata_validator_base,
         review_metadata,
+        apply_suggestions=apply_ai_suggestions,
     )
     tag_files(path, tags, metadata, auto_rename)
 

@@ -512,11 +512,11 @@ async def _stream_response(
     if final_response:
         return final_response
 
-    if response_id:
-        latest_payload = await _fetch_response(session, headers, response_id)
-        return await _wait_for_response(session, headers, latest_payload, timeout_seconds)
+    if response_id is None:
+        raise RuntimeError("AI metadata review stream ended before a response ID was received")
 
-    raise RuntimeError("AI metadata review stream ended before a response ID was received")
+    latest_payload = await _fetch_response(session, headers, response_id)
+    return await _wait_for_response(session, headers, latest_payload, timeout_seconds)
 
 
 def _should_use_background() -> bool:
@@ -717,6 +717,24 @@ async def _finalize_manual_review(metadata: dict[str, Any], validator, manual_re
     return metadata
 
 
+async def _apply_ai_review_and_reopen_manual_review(
+    metadata: dict[str, Any],
+    review: dict[str, Any],
+    source_url: str | None,
+    validator,
+    manual_review,
+) -> dict[str, Any] | None:
+    try:
+        updated_metadata = apply_ai_metadata_result(metadata, review, source_url)
+        validator(updated_metadata)
+    except Exception as exc:
+        click.secho(f"AI suggestions were rejected: {exc}", fg="red")
+        return None
+
+    click.secho("Applied AI metadata suggestions.", fg="green")
+    return await _run_manual_review(updated_metadata, validator, manual_review)
+
+
 async def _run_manual_review(
     metadata: dict[str, Any],
     validator,
@@ -739,6 +757,8 @@ async def review_metadata_with_ai(
     source_url: str | None,
     validator,
     manual_review,
+    *,
+    apply_suggestions: bool = False,
 ) -> dict[str, Any]:
     ai_cfg = cfg.upload.ai_review
     if not ai_cfg.enabled:
@@ -801,6 +821,18 @@ async def review_metadata_with_ai(
         if not diff_lines:
             return await _finalize_manual_review(current_metadata, validator, manual_review)
 
+        if cfg.upload.yes_all or apply_suggestions:
+            applied_metadata = await _apply_ai_review_and_reopen_manual_review(
+                current_metadata,
+                review,
+                source_url,
+                validator,
+                manual_review,
+            )
+            if applied_metadata is not None:
+                return applied_metadata
+            return await _finalize_manual_review(current_metadata, validator, manual_review)
+
         while True:
             choice = await click.prompt(
                 click.style(
@@ -833,14 +865,15 @@ async def review_metadata_with_ai(
                     click.secho("There are no AI changes to apply.", fg="yellow")
                     continue
 
-                try:
-                    updated_metadata = apply_ai_metadata_result(current_metadata, review, source_url)
-                    validator(updated_metadata)
-                except Exception as exc:
-                    click.secho(f"AI suggestions were rejected: {exc}", fg="red")
-                    continue
-
-                click.secho("Applied AI metadata suggestions.", fg="green")
-                return await _run_manual_review(updated_metadata, validator, manual_review)
+                applied_metadata = await _apply_ai_review_and_reopen_manual_review(
+                    current_metadata,
+                    review,
+                    source_url,
+                    validator,
+                    manual_review,
+                )
+                if applied_metadata is not None:
+                    return applied_metadata
+                continue
 
             click.secho(f"{choice} is not a valid AI review option.", fg="red")
