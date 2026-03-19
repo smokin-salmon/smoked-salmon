@@ -9,7 +9,9 @@ from salmon.sources import BandcampBase
 from salmon.tagger.sources.base import MetadataMixin
 
 CATNO_PREFIX_RE = re.compile(r"^(?P<catno>(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ._-]{1,31})\s*/\s*(?P<title>.+)$")
-BRACKETED_CATNO_PREFIX_RE = re.compile(r"^[\[(](?P<catno>(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ._-]{1,31})[\])]\s*(?P<title>.+)$")
+BRACKETED_CATNO_PREFIX_RE = re.compile(
+    r"^[\[(](?P<catno>(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ._-]{1,31})[\])]\s*(?P<title>.+)$"
+)
 TITLE_ARTIST_PREFIX_RE = re.compile(r"^(?P<artist>.+?)\s+-\s+(?P<title>.+)$")
 TRACK_SIDE_PREFIX_RE = re.compile(r"^(?P<prefix>[A-Z]{1,3}\d{1,2}[A-Z]?)\s+(?P<artist>.+)$", re.IGNORECASE)
 
