@@ -106,6 +106,7 @@ def configure_tracker_overrides(gazelle_site: "BaseGazelleApi", ops_split: bool 
     multiple=True,
     help="Track numbers of spectrals to include in torrent description",
 )
+@click.option("--all-spectrals", is_flag=True, help="Upload all generated spectrals without prompting.")
 @click.option(
     "--overwrite",
     "-ow",
@@ -144,12 +145,14 @@ def configure_tracker_overrides(gazelle_site: "BaseGazelleApi", ops_split: bool 
     is_flag=True,
     help="Assess / upload / report spectrals after torrent upload",
 )
+@click.option("--all-downconversions", is_flag=True, help="Select all available downconversions without prompting.")
 @click.option(
     "--auto-rename",
     "-n",
     is_flag=True,
     help="Rename files and folders automatically",
 )
+@click.option("--auto-upload", is_flag=True, help="Upload torrent without the final confirmation prompt.")
 @click.option(
     "--skip-up",
     is_flag=True,
@@ -194,13 +197,16 @@ async def up(
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
+    all_spectrals: bool,
     overwrite: bool,
     encoding: str | None,
     compress: bool,
     trackers: list[str],
     request: str | None,
     spectrals_after: bool,
+    all_downconversions: bool,
     auto_rename: bool,
+    auto_upload: bool,
     skip_up: bool,
     scene: bool,
     source_url: str | None,
@@ -214,6 +220,8 @@ async def up(
     """Command to upload an album folder to a Gazelle Site."""
     if essential_only and scene:
         raise click.UsageError("--essential-only and --scene cannot be used together.")
+    if all_spectrals and spectrals:
+        raise click.UsageError("--all-spectrals cannot be used together with --spectrals.")
     if yyy:
         cfg.upload.yes_all = True
     tracker = trackers[0]
@@ -229,6 +237,7 @@ async def up(
         source,
         lossy,
         spectrals,
+        all_spectrals,
         encoding,
         spectrals_after,
     )
@@ -246,6 +255,7 @@ async def up(
         source,
         lossy,
         spectrals,
+        all_spectrals,
         encoding,
         source_url=source_url,
         scene=scene,
@@ -253,7 +263,9 @@ async def up(
         recompress=compress,
         request_id=request,
         spectrals_after=spectrals_after,
+        all_downconversions=all_downconversions,
         auto_rename=auto_rename,
+        auto_upload=auto_upload,
         skip_up=skip_up,
         skip_mqa=skip_mqa,
         skip_log_check=skip_log_check,
@@ -271,6 +283,7 @@ async def upload(
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
+    all_spectrals: bool,
     encoding: str | None,
     scene: bool = False,
     overwrite_meta: bool = False,
@@ -279,7 +292,9 @@ async def upload(
     searchstrs: list[str] | None = None,
     request_id: int | str | None = None,
     spectrals_after: bool = False,
+    all_downconversions: bool = False,
     auto_rename: bool = False,
+    auto_upload: bool = False,
     skip_up: bool = False,
     skip_mqa: bool = False,
     skip_log_check: bool = False,
@@ -299,6 +314,7 @@ async def upload(
         source: Media source (CD, WEB, etc).
         lossy: Whether files are lossy mastered.
         spectrals: Track numbers for spectrals.
+        all_spectrals: Upload all generated spectrals without prompting.
         encoding: Audio encoding.
         scene: Whether this is a scene release.
         overwrite_meta: Whether to overwrite metadata.
@@ -307,7 +323,9 @@ async def upload(
         searchstrs: Search strings for dupe checking.
         request_id: Request ID to fill.
         spectrals_after: Check spectrals after upload.
+        all_downconversions: Select all available downconversions without prompting.
         auto_rename: Auto-rename files and folders.
+        auto_upload: Upload torrent without the final confirmation prompt.
         skip_up: Skip upconvert check.
         skip_mqa: Skip MQA check.
         skip_log_check: Skip log checking.
@@ -389,7 +407,12 @@ async def upload(
             pass
         else:
             lossy_result, spectral_ids = await check_spectrals(
-                path, audio_info, lossy, spectrals, format=rls_data["format"]
+                path,
+                audio_info,
+                lossy,
+                spectrals,
+                all_spectrals=all_spectrals,
+                format=rls_data["format"],
             )
             lossy_master = lossy_result if lossy_result is not None else False
 
@@ -406,6 +429,7 @@ async def upload(
             recompress,
             auto_rename,
             spectral_ids,
+            auto_upload,
             skip_integrity_check,
             essential_only,
         )
@@ -463,7 +487,15 @@ async def upload(
                     # Here we are checking the spectrals after uploading to the first site
                     # if they were not done before.
                     lossy_master, lossy_comment, spectral_urls, spectral_ids = await post_upload_spectral_check(
-                        gazelle_site, path, torrent_id, None, track_data, source, source_url, format=rls_data["format"]
+                        gazelle_site,
+                        path,
+                        torrent_id,
+                        None,
+                        track_data,
+                        source,
+                        source_url,
+                        all_spectrals=all_spectrals,
+                        format=rls_data["format"],
                     )
                     spectrals_after = False
                 if queued_trackers is not None:
@@ -532,11 +564,15 @@ async def upload(
 
                 await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
-                if cfg.upload.yes_all or click.confirm(
+                if all_downconversions or cfg.upload.yes_all or click.confirm(
                     click.style("\nWould you like to check downconversion options?", fg="magenta"),
                     default=True,
                 ):
-                    selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
+                    selected_tasks = await prompt_downconversion_choice(
+                        rls_data,
+                        track_data,
+                        all_downconversions=all_downconversions,
+                    )
                     if selected_tasks:
                         display_names = [task["name"] for task in selected_tasks]
                         click.secho(
@@ -588,6 +624,7 @@ async def edit_metadata(
     recompress: bool,
     auto_rename: bool,
     spectral_ids: dict[int, str] | None,
+    auto_upload: bool = False,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
@@ -605,6 +642,7 @@ async def edit_metadata(
         recompress: Whether to recompress audio files after tagging.
         auto_rename: Whether to automatically rename files and folder.
         spectral_ids: Mapping of track index to spectral image ID, or None.
+        auto_upload: Whether to skip the final upload confirmation prompt.
         skip_integrity_check: Whether to skip the integrity check step.
         essential_only: If True, only essential extensions are allowed.
 
@@ -653,7 +691,7 @@ async def edit_metadata(
                 else:
                     click.secho("Some files failed sanitization", fg="red", bold=True)
 
-        if cfg.upload.yes_all or click.confirm(
+        if auto_upload or cfg.upload.yes_all or click.confirm(
             click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
             default=True,
         ):
@@ -789,7 +827,7 @@ def get_downconversion_options(rls_data, track_data):
     return options
 
 
-async def prompt_downconversion_choice(rls_data, track_data):
+async def prompt_downconversion_choice(rls_data, track_data, all_downconversions: bool = False):
     """
     Prompt user to select downconversion formats.
     Returns a list of selected task dictionaries.
@@ -799,7 +837,7 @@ async def prompt_downconversion_choice(rls_data, track_data):
     if not options:
         return []
 
-    if cfg.upload.yes_all:
+    if all_downconversions or cfg.upload.yes_all:
         return options
 
     click.secho("\nDownconversion Options", fg="cyan", bold=True)
