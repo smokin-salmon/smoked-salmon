@@ -39,6 +39,7 @@ async def check_spectrals(
     audio_info: dict[str, Any],
     lossy_master: bool | None = None,
     spectral_ids: tuple[int, ...] | dict[int, str] | None = None,
+    all_spectrals: bool = False,
     check_lma: bool = True,
     force_prompt_lossy_master: bool = False,
     format: str = "FLAC",
@@ -53,6 +54,7 @@ async def check_spectrals(
         audio_info: Audio file information dict.
         lossy_master: Whether files are lossy mastered.
         spectral_ids: Track IDs for spectrals.
+        all_spectrals: Whether to upload all generated spectrals without prompting.
         check_lma: Whether to check for lossy master.
         force_prompt_lossy_master: Force lossy master prompt.
         format: Audio format.
@@ -88,6 +90,7 @@ async def check_spectrals(
             all_spectral_ids,
             lossy_master,
             check_lma,
+            all_spectrals=all_spectrals,
             force_prompt_lossy_master=force_prompt_lossy_master,
         )
     else:
@@ -465,8 +468,16 @@ async def upload_spectrals(
         return None
 
 
-async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
+async def prompt_spectrals(
+    spectral_ids,
+    lossy_master,
+    check_lma,
+    all_spectrals: bool = False,
+    force_prompt_lossy_master: bool = False,
+):
     """Ask which spectral IDs the user wants to upload."""
+    if all_spectrals:
+        return spectral_ids
     while True:
         ids = (
             "*"
@@ -615,6 +626,7 @@ async def post_upload_spectral_check(
     track_data: dict[str, Any],
     source: str | None,
     source_url: str | None,
+    all_spectrals: bool = False,
     format: str = "FLAC",
 ) -> tuple[bool, str | None, dict[int, list[str]] | None, dict[int, str] | None]:
     """Generate and add spectrals after upload.
@@ -629,13 +641,20 @@ async def post_upload_spectral_check(
         track_data: Track information.
         source: Media source.
         source_url: Source URL.
+        all_spectrals: Whether to upload all generated spectrals without prompting.
         format: Audio format.
 
     Returns:
         Tuple of (lossy_master, lossy_comment, spectral_urls, spectral_ids).
     """
     lossy_master, spectral_ids = await check_spectrals(
-        path, track_data, None, spectral_ids, force_prompt_lossy_master=True, format=format
+        path,
+        track_data,
+        None,
+        spectral_ids,
+        all_spectrals=all_spectrals,
+        force_prompt_lossy_master=True,
+        format=format,
     )
     if not lossy_master and not spectral_ids:
         return False, None, None, None
