@@ -81,6 +81,10 @@ def make_metadata() -> dict:
 def make_review(**metadata_overrides) -> dict:
     metadata = make_metadata()
     review_metadata = {
+        "artists": [
+            {"name": artist_name, "role": artist_role}
+            for artist_name, artist_role in metadata["artists"]
+        ],
         "title": metadata["title"],
         "group_year": metadata["group_year"],
         "year": metadata["year"],
@@ -120,6 +124,26 @@ def test_apply_ai_metadata_result_replaces_album_level_fields() -> None:
     assert metadata["label"] == "Old Label"
 
 
+def test_apply_ai_metadata_result_can_replace_release_level_artists_only() -> None:
+    metadata = make_metadata()
+    original_track_artists = deepcopy(metadata["tracks"]["1"]["1"]["artists"])
+    review = make_review(
+        artists=[
+            {"name": "Riddim Research Lab", "role": "main"},
+            {"name": "Ant To Be", "role": "guest"},
+        ]
+    )
+
+    updated = apply_ai_metadata_result(metadata, review)
+
+    assert updated["artists"] == [
+        ("Riddim Research Lab", "main"),
+        ("Ant To Be", "guest"),
+    ]
+    assert updated["tracks"]["1"]["1"]["artists"] == original_track_artists
+    assert updated["tracks"]["1"]["2"]["artists"] == metadata["tracks"]["1"]["2"]["artists"]
+
+
 def test_apply_ai_metadata_result_can_clear_fields() -> None:
     metadata = make_metadata()
     review = make_review(label=None, catno=None, genres=[], urls=[])
@@ -150,9 +174,27 @@ def test_build_ai_review_diff_reports_only_actual_changes() -> None:
     assert not any("track" in line for line in diff_lines)
 
 
+def test_build_ai_review_diff_formats_release_level_artist_changes() -> None:
+    metadata = make_metadata()
+    review = make_review(
+        artists=[
+            {"name": "Riddim Research Lab", "role": "main"},
+            {"name": "Ant To Be", "role": "guest"},
+        ]
+    )
+
+    diff_lines = build_ai_review_diff(metadata, review)
+
+    assert (
+        "artists: Example Artist [main] -> Riddim Research Lab [main], Ant To Be [guest]"
+        in diff_lines
+    )
+
+
 def test_ai_review_schema_requires_every_metadata_key() -> None:
     metadata_schema = _ai_review_schema()["properties"]["metadata"]
     assert metadata_schema["required"] == [
+        "artists",
         "title",
         "group_year",
         "year",
@@ -176,8 +218,12 @@ def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
     assert "Use 4 to 6 web actions total." in SYSTEM_PROMPT
     assert "Do not keep a catalog number in title" in SYSTEM_PROMPT
     assert "edition_title is only for edition-specific descriptors." in SYSTEM_PROMPT
+    assert "Artists means release-level artist entries only." in SYSTEM_PROMPT
+    assert "List each credited release artist separately as" in SYSTEM_PROMPT
+    assert 'do not use "Various Artists"' in SYSTEM_PROMPT
     assert "Genres must behave like RED tags" in SYSTEM_PROMPT
     assert "Discogs and MusicBrainz are useful cross-checks" in SYSTEM_PROMPT
+    assert "For singles or small releases, you may inspect the release-page tracklist" in SYSTEM_PROMPT
 
 
 def test_build_release_reference_keeps_only_identifying_fields() -> None:
@@ -198,6 +244,7 @@ def test_build_album_metadata_snapshot_keeps_only_patchable_album_fields() -> No
     snapshot = _build_album_metadata_snapshot(make_metadata())
 
     assert snapshot == {
+        "artists": [{"name": "Example Artist", "role": "main"}],
         "title": "Original Title",
         "group_year": "2004",
         "year": "2004",
@@ -224,6 +271,8 @@ def test_build_request_payload_includes_local_album_metadata_context_but_not_tra
     assert "Current editable album metadata JSON:" in prompt
     assert "Tag-derived album metadata baseline JSON:" in prompt
     assert '"release_title_hint": "Original Title"' in prompt
+    assert '"artists": [' in prompt
+    assert '"name": "Example Artist"' in prompt
     assert '"label": "Old Label"' in prompt
     assert '"title": "Tag Title"' in prompt
     assert "Track One" not in prompt

@@ -11,11 +11,13 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg
+from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import InvalidMetadataError
 
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 POLL_INTERVAL_SECONDS = 5
 TOP_LEVEL_PATCH_FIELDS = (
+    "artists",
     "title",
     "group_year",
     "year",
@@ -27,6 +29,16 @@ TOP_LEVEL_PATCH_FIELDS = (
     "urls",
 )
 NORMALIZED_METADATA_FIELDS = {"genres", "urls"}
+ARTIST_ROLE_VALUES = list(ARTIST_IMPORTANCES)
+ARTIST_SCHEMA = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["name", "role"],
+    "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "role": {"type": "string", "enum": ARTIST_ROLE_VALUES},
+    },
+}
 FINAL_RESPONSE_STATUSES = {"completed", "failed", "cancelled", "incomplete"}
 BOLD_MARKDOWN_PATTERN = re.compile(r"\*\*(.+?)\*\*")
 NULLABLE_STRING_SCHEMA = {"anyOf": [{"type": "string"}, {"type": "null"}]}
@@ -35,9 +47,10 @@ METADATA_SCHEMA_PROPERTIES = {
     **{
         field: NULLABLE_STRING_SCHEMA
         for field in TOP_LEVEL_PATCH_FIELDS
-        if field not in NORMALIZED_METADATA_FIELDS
+        if field not in NORMALIZED_METADATA_FIELDS and field != "artists"
     },
     **{field: LIST_OF_STRINGS_SCHEMA for field in NORMALIZED_METADATA_FIELDS},
+    "artists": {"type": "array", "items": ARTIST_SCHEMA},
 }
 CITATION_SCHEMA = {
     "type": "object",
@@ -57,10 +70,13 @@ The selected_source_url is your starting anchor for identifying the release, not
 The prompt may include local Salmon metadata snapshots; treat them as search hints, not authoritative evidence.
 
 Focus only on these album-level fields:
-title, group_year, year, edition_title, label, catno, upc, genres, urls
+artists, title, group_year, year, edition_title, label, catno, upc, genres, urls
 
-Ignore track titles, track order, and track pages entirely.
-Do not research anything at track level unless album-level identification is impossible without it.
+Ignore track titles, track order, and track pages unless album-level identification is ambiguous.
+For singles or small releases, you may inspect the release-page tracklist when needed to resolve
+artist/title splits, mix-name placement, or label-vs-artist confusion on the anchor page.
+Do not browse unrelated track pages unless album-level identification is otherwise impossible.
+Artists means release-level artist entries only. Do not return per-track artist edits in this review.
 
 If selected_source_url is provided, your first web action must be opening that exact URL.
 Do not search before opening it.
@@ -86,6 +102,13 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
 - Prefer the credited release label or imprint. Do not infer label from the artist name, store,
   seller, distributor, or parent company alone, and omit corporate suffixes when the release-level
   source clearly uses the shorter imprint name.
+- Artists must follow RED's multiple-artists rules. List each credited release artist separately as
+  a {name, role} entry. Use only supported roles: main, guest, remixer, composer, conductor,
+  djcompiler, producer.
+- For contributing artists who only appear on certain tracks, prefer guest instead of promoting them
+  to main unless the release-level source clearly credits them as release artists.
+- When individual artists are known on a compilation or split release, do not use "Various Artists"
+  as a release artist entry. List the individual artists instead.
 - Use catno only when a release-level source supports it. For WEB, if there is no definitive catno
   but there is an explicit UPC and it is the only supported release identifier, you may use that UPC
   as catno while also keeping it in upc.
@@ -641,6 +664,41 @@ def _normalize_list(values: list[str] | None) -> list[str]:
     return deduped
 
 
+def _normalize_artist_entries(values: Any) -> list[dict[str, str]]:
+    if not values:
+        return []
+
+    deduped: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for value in values:
+        if isinstance(value, dict):
+            name = value.get("name")
+            role = value.get("role")
+        elif isinstance(value, (list, tuple)) and len(value) >= 2:
+            name, role = value[0], value[1]
+        else:
+            continue
+
+        if not isinstance(name, str) or not isinstance(role, str):
+            continue
+        normalized_name = name.strip()
+        normalized_role = role.strip().lower()
+        if not normalized_name or normalized_role not in ARTIST_IMPORTANCES:
+            continue
+
+        signature = (normalized_name, normalized_role)
+        if signature in seen:
+            continue
+        seen.add(signature)
+        deduped.append({"name": normalized_name, "role": normalized_role})
+
+    return deduped
+
+
+def _normalize_artist_tuples(values: Any) -> list[tuple[str, str]]:
+    return [(artist["name"], artist["role"]) for artist in _normalize_artist_entries(values)]
+
+
 def _iter_review_metadata(review: dict[str, Any]):
     result_metadata = review.get("metadata", {})
     if not isinstance(result_metadata, dict):
@@ -652,6 +710,8 @@ def _iter_review_metadata(review: dict[str, Any]):
 
 
 def _normalize_review_metadata_value(field: str, value: Any) -> Any:
+    if field == "artists":
+        return _normalize_artist_entries(value)
     if field in NORMALIZED_METADATA_FIELDS:
         return _normalize_list(value)
     return value
@@ -663,6 +723,8 @@ def _resolve_review_metadata_value(
     value: Any,
     source_url: str | None = None,
 ) -> Any:
+    if field == "artists":
+        return _normalize_artist_tuples(value)
     if field != "urls" or not source_url:
         return _normalize_review_metadata_value(field, value)
 
@@ -728,6 +790,9 @@ def _format_diff_value(value: Any) -> str:
     if value is None:
         return "(empty)"
     if isinstance(value, list):
+        if value and all(isinstance(item, (dict, list, tuple)) for item in value):
+            artists = _normalize_artist_entries(value)
+            return ", ".join(f"{artist['name']} [{artist['role']}]" for artist in artists) if artists else "(empty)"
         return ", ".join(value) if value else "(empty)"
     text = str(value).strip()
     return text if text else "(empty)"
