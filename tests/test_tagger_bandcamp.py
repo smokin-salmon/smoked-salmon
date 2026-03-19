@@ -177,3 +177,37 @@ def test_various_artist_track_side_prefixes_are_removed_from_track_artists() -> 
     assert tracks["1"]["1"]["title"] == "DEEPER LOVE"
     assert tracks["1"]["8"]["artists"] == [("TABZ", "main"), ("NICKOLAI", "main")]
     assert tracks["1"]["8"]["title"] == "BACK 2 BUSINESS"
+
+
+def test_bandcamp_tracks_can_parse_unlinked_track_rows() -> None:
+    scraper = Scraper()
+    soup = make_soup("""
+        <div id="name-section">
+          <span>Ladytron</span>
+          <div class="trackTitle">Paradies</div>
+        </div>
+        <table id="track_table">
+          <tr class="track_row_view linked" rel="tracknum=1">
+            <td class="track-number-col"><div class="track_number">1.</div></td>
+            <td class="title-col">
+              <div class="title">
+                <a href="/track/i-believe-in-you-2"><span class="track-title">I Believe In You</span></a>
+                <span class="time secondaryText">05:02</span>
+              </div>
+            </td>
+          </tr>
+          <tr class="track_row_view" rel="tracknum=2">
+            <td class="track-number-col"><div class="track_number">2.</div></td>
+            <td class="title-col">
+              <div class="title">
+                <span>In Blood</span>
+              </div>
+            </td>
+          </tr>
+        </table>
+    """)
+
+    tracks = asyncio.run(scraper.parse_tracks(soup))
+
+    assert tracks["1"]["1"]["title"] == "I Believe In You"
+    assert tracks["1"]["2"]["title"] == "In Blood"

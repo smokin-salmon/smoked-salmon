@@ -103,7 +103,7 @@ class Scraper(BandcampBase, MetadataMixin):
             for track in tracklist_scrape:
                 try:
                     num = track.select(".track-number-col .track_number")[0].text.rstrip(".")
-                    title = track.select('.title-col span[class="track-title"]')[0].string
+                    title = extract_track_title(track)
                     track_artists, strip_artist_prefix = parse_artists(artist, title, release_title=release_title)
                     tracks["1"][num] = self.generate_track(
                         trackno=int(num),
@@ -219,6 +219,25 @@ def strip_track_side_prefix(track_artists):
     if not match:
         return track_artists.strip()
     return match["artist"].strip()
+
+
+def extract_track_title(track):
+    title_node = track.select_one('.title-col .track-title')
+    if title_node:
+        return title_node.get_text(strip=True)
+
+    title_container = track.select_one(".title-col .title")
+    if title_container:
+        for child in title_container.children:
+            if getattr(child, "name", None) != "span":
+                continue
+            classes = set(child.get("class", []))
+            if "time" in classes:
+                continue
+            text = child.get_text(strip=True)
+            if text:
+                return text
+    raise ScrapeError("Could not parse track title.")
 
 
 def parse_artists(artist, title, release_title=None):
