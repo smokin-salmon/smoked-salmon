@@ -123,6 +123,32 @@ def test_label_hosted_bandcamp_release_title_can_recover_release_artist_and_labe
     assert tracks["1"]["4"]["title"] == "Tripwire - (Deep Space Dub)"
 
 
+def test_hyphenated_release_title_is_not_reinterpreted_without_tracklist_support() -> None:
+    scraper = Scraper()
+    soup = make_soup("""
+        <div id="name-section">
+          <h2 class="trackTitle">Club Cuts - Remixes</h2>
+          <h3>by <span><a href="https://example.bandcamp.com">Example Label</a></span></h3>
+        </div>
+        <p id="band-name-location">
+          <span class="title">Example Label</span>
+        </p>
+        <table id="track_table">
+          <tr class="track_row_view linked" rel="tracknum=1">
+            <td class="track-number-col"><div class="track_number">1.</div></td>
+            <td class="title-col"><span class="track-title">Sunrise Mix</span></td>
+          </tr>
+          <tr class="track_row_view linked" rel="tracknum=2">
+            <td class="track-number-col"><div class="track_number">2.</div></td>
+            <td class="title-col"><span class="track-title">Moonlight Dub</span></td>
+          </tr>
+        </table>
+    """)
+
+    assert scraper.parse_release_title(soup) == "Club Cuts - Remixes"
+    assert scraper.parse_release_label(soup) is None
+
+
 def test_various_artist_track_side_prefixes_are_removed_from_track_artists() -> None:
     scraper = Scraper()
     soup = make_soup("""
