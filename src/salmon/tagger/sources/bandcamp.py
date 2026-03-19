@@ -175,7 +175,11 @@ def resolve_release_context(soup):
         and normalize_release_key(page_artist) == normalize_release_key(account_title)
     ):
         split_title = split_artist_prefixed_title(clean_title)
-        if split_title and normalize_release_key(split_title[0]) != normalize_release_key(page_artist):
+        if (
+            split_title
+            and normalize_release_key(split_title[0]) != normalize_release_key(page_artist)
+            and tracklist_supports_release_title(soup, split_title[1])
+        ):
             release_artist, release_title = split_title
 
     return {
@@ -191,6 +195,21 @@ def split_artist_prefixed_title(title):
     if not match:
         return None
     return match["artist"].strip(), match["title"].strip()
+
+
+def tracklist_supports_release_title(soup, release_title):
+    candidate = normalize_release_key(release_title)
+    if not candidate:
+        return False
+
+    track_titles = [
+        normalize_release_key(track.get_text(strip=True))
+        for track in soup.select("#track_table tr.track_row_view .track-title")
+        if track.get_text(strip=True)
+    ]
+    if not track_titles:
+        return False
+    return sum(title.startswith(candidate) for title in track_titles) >= 2
 
 
 def strip_track_side_prefix(track_artists):
