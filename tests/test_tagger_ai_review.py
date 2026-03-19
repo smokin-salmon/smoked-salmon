@@ -463,6 +463,51 @@ def test_review_metadata_with_ai_auto_applies_when_flag_enabled(monkeypatch) -> 
     assert sequence == ["manual:Old Label", "confirm", "ai", "manual:New Label"]
 
 
+def test_review_metadata_with_ai_skips_initial_review_when_flag_enabled(monkeypatch) -> None:
+    metadata = make_metadata()
+    review = make_review(label="New Label")
+    sequence: list[str] = []
+    original_enabled = cfg.upload.ai_review.enabled
+
+    async def fake_manual_review(current_metadata, _validator):
+        sequence.append(f"manual:{current_metadata['label']}")
+        return current_metadata
+
+    async def fake_request_ai_review(*_args, **_kwargs):
+        sequence.append("ai")
+        return review, "response-1"
+
+    async def fake_prompt(*_args, **_kwargs):
+        return "a"
+
+    def fake_confirm(*_args, **_kwargs):
+        sequence.append("confirm")
+        return True
+
+    async def run_review():
+        return await ai_review.review_metadata_with_ai(
+            metadata,
+            metadata,
+            None,
+            lambda current_metadata: current_metadata,
+            fake_manual_review,
+            skip_initial_review=True,
+        )
+
+    try:
+        cfg.upload.ai_review.enabled = True
+        monkeypatch.setattr(ai_review, "_request_ai_review", fake_request_ai_review)
+        monkeypatch.setattr(ai_review.click, "prompt", fake_prompt)
+        monkeypatch.setattr(ai_review.click, "confirm", fake_confirm)
+
+        result = anyio.run(run_review)
+    finally:
+        cfg.upload.ai_review.enabled = original_enabled
+
+    assert result["label"] == "New Label"
+    assert sequence == ["confirm", "ai", "manual:New Label"]
+
+
 def test_review_metadata_with_ai_yes_all_auto_applies(monkeypatch) -> None:
     metadata = make_metadata()
     review = make_review(label="New Label")
@@ -504,4 +549,4 @@ def test_review_metadata_with_ai_yes_all_auto_applies(monkeypatch) -> None:
         cfg.upload.yes_all = original_yes_all
 
     assert result["label"] == "New Label"
-    assert sequence == ["manual:Old Label", "ai", "manual:New Label"]
+    assert sequence == ["ai", "manual:New Label"]

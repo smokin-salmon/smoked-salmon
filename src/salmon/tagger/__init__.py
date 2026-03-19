@@ -86,6 +86,11 @@ def validate_encoding(ctx, param, value):
     help="Rename files and folders automatically",
 )
 @click.option(
+    "--skip-initial-review",
+    is_flag=True,
+    help="Skip the initial manual metadata review before AI review.",
+)
+@click.option(
     "--apply-ai-suggestions",
     is_flag=True,
     help="Automatically apply AI review suggestions when AI review is enabled.",
@@ -96,6 +101,7 @@ async def tag(
     encoding: str | None,
     overwrite: bool,
     auto_rename: bool,
+    skip_initial_review: bool,
     apply_ai_suggestions: bool,
 ) -> None:
     """Interactively tag an album.
@@ -106,6 +112,7 @@ async def tag(
         encoding: Audio encoding string or None if not specified.
         overwrite: Whether to overwrite metadata.
         auto_rename: Whether to auto-rename files.
+        skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
@@ -121,6 +128,7 @@ async def tag(
         source_url,
         metadata_validator_base,
         review_metadata,
+        skip_initial_review=skip_initial_review,
         apply_suggestions=apply_ai_suggestions,
     )
     tag_files(path, tags, metadata, auto_rename)

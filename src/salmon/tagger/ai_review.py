@@ -758,18 +758,22 @@ async def review_metadata_with_ai(
     validator,
     manual_review,
     *,
+    skip_initial_review: bool = False,
     apply_suggestions: bool = False,
 ) -> dict[str, Any]:
     ai_cfg = cfg.upload.ai_review
     if not ai_cfg.enabled:
         return await _run_manual_review(metadata, validator, manual_review)
 
-    current_metadata = await _run_manual_review(
-        metadata,
-        validator,
-        manual_review,
-        enforce_required_fields=False,
-    )
+    if cfg.upload.yes_all or skip_initial_review:
+        current_metadata = deepcopy(metadata)
+    else:
+        current_metadata = await _run_manual_review(
+            metadata,
+            validator,
+            manual_review,
+            enforce_required_fields=False,
+        )
 
     should_run = cfg.upload.yes_all or click.confirm(
         click.style("\nRun AI metadata review?", fg="magenta"),
