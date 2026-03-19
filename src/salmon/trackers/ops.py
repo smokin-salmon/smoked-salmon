@@ -54,6 +54,11 @@ class OpsApi(BaseGazelleApi):
             "Unknown": 21,
         }
 
+    def set_split_choice(self, use_split: bool) -> None:
+        """Preconfigure whether eligible uploads should use OPS Split."""
+        self._use_split = use_split
+        self._split_prompted = True
+
     async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent, prompting once to set release type to Split for multi-artist releases.
 

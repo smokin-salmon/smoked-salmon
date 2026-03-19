@@ -10,12 +10,18 @@ import msgspec
 from salmon import cfg
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.search import SEARCHSOURCES, run_metasearch
+from salmon.sources.bandcamp import resolve_source_url as resolve_bandcamp_source_url
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists
 
 
-async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
+async def get_metadata(
+    path: str,
+    tags: dict[str, Any],
+    rls_data: dict[str, Any],
+    preferred_source_url: str | None = None,
+) -> tuple[dict[str, Any], str | None]:
     """Get metadata pertaining to a release from various metadata sources.
 
     Have the user decide which sources to use, and then combine their information.
@@ -39,7 +45,9 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
         searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
     )
     choices = _print_search_results(search_results, rls_data)
-    metadata, source_url = await _select_choice(choices, rls_data)
+    if preferred_source_url:
+        preferred_source_url = await resolve_bandcamp_source_url(preferred_source_url)
+    metadata, source_url = await _select_choice(choices, rls_data, preferred_source_url=preferred_source_url)
     remove_various_artists(metadata["tracks"])
     metadata = fix_hardcore_genre(metadata)
     return metadata, source_url
@@ -86,7 +94,9 @@ def _print_search_results(results, rls_data=None):
 
 
 async def _select_choice(
-    choices: dict[int, tuple[str, str]], rls_data: dict[str, Any] | None
+    choices: dict[int, tuple[str, str]],
+    rls_data: dict[str, Any] | None,
+    preferred_source_url: str | None = None,
 ) -> tuple[dict[str, Any], str | None]:
     """Allow the user to select a metadata choice.
 
@@ -106,7 +116,10 @@ async def _select_choice(
         rls_data["urls"] = []
 
     while True:
-        if choices:
+        if preferred_source_url is not None:
+            res = f"*{preferred_source_url}"
+            preferred_source_url = None
+        elif choices:
             res = await click.prompt(
                 click.style(
                     "\nWhich metadata results would you like to use? Other "

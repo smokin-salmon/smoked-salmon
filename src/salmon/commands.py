@@ -165,8 +165,8 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
         click.echo("Not a valid torrent!")
         raise click.Abort
 
-    tracker = await salmon.trackers.validate_tracker(None, "tracker", tracker)
-    gazelle_site = salmon.trackers.get_class(tracker)()
+    trackers = await salmon.trackers.validate_tracker(None, "tracker", tracker)
+    gazelle_site = salmon.trackers.get_class(trackers[0])()
     req = await gazelle_site.api_call("torrent", params={"id": torrent_id_int})
     path = os.path.join(path, html.unescape(req["torrent"]["filePath"]))
     source_url = None
