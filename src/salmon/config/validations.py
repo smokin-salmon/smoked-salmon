@@ -25,6 +25,7 @@ class Directory(BaseStruct):
 
 
 ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "imgbb", "imgbox"]
+SpectralSelectionLiteral = Literal["*", "+", "0"]
 
 
 class ImageUploader(BaseStruct):
@@ -37,6 +38,7 @@ class ImageUploader(BaseStruct):
     imgbb_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
     auto_compress_cover: bool = False
+    default_spectral_ids: SpectralSelectionLiteral | None = None
 
     def __post_init__(self):
         uploader_selections = set({self.image_uploader, self.cover_uploader, self.specs_uploader})

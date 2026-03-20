@@ -34,6 +34,10 @@ image_uploader = "ptpimg"
 cover_uploader = "ptpimg"
 specs_uploader = "ptpimg"
 
+# Default selection for "What spectral IDs would you like to upload?" prompt.
+# "*" = all, "+" = randomized selection, "0" = none. Leave unset to use context-based default.
+# default_spectral_ids = "*"
+
 # ptpimg API key (log into ptpimg, developpers tools, go to the Elements tab, and search for 'api_key')
 ptpimg_key = 'api_key'
 # ptscreens API key (log into ptscreens, settings, API)
