@@ -495,7 +495,9 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
                     '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
                     fg="magenta",
                 ),
-                default=cfg.image.default_spectral_ids if cfg.image.default_spectral_ids is not None else ("*" if lossy_master else "+"),
+                default=cfg.image.default_spectral_ids
+                if cfg.image.default_spectral_ids is not None
+                else ("*" if lossy_master else "+"),
             )
         )
         if ids.strip() == "+":
