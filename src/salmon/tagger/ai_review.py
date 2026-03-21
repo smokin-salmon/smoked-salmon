@@ -102,6 +102,10 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
 - Prefer the credited release label or imprint. Do not infer label from the artist name, store,
   seller, distributor, or parent company alone, and omit corporate suffixes when the release-level
   source clearly uses the shorter imprint name.
+- RED distinguishes "no label involved" from an unknown omitted label. If local metadata already
+  has a plausible no-label marker such as "Self-Released" or "Not on Label", do not clear it
+  merely because an official store page omits a named label; only replace it when release-level
+  evidence supports a specific different label.
 - Artists must follow RED's multiple-artists rules. List each credited release artist separately as
   a {name, role} entry. Use only supported roles: main, guest, remixer, composer, conductor,
   djcompiler, producer.
