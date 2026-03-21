@@ -11,11 +11,14 @@ from salmon.tagger import ai_review
 from salmon.tagger.ai_review import (
     SYSTEM_PROMPT,
     _ai_review_schema,
+    _apply_ai_review_guardrails,
     _build_album_metadata_snapshot,
     _build_release_reference,
     _build_request_payload,
+    _extract_opened_page_urls,
     _extract_progress_updates,
     _format_ai_progress,
+    _page_explicitly_names_label,
     _style_ai_progress,
     apply_ai_metadata_result,
     build_ai_review_diff,
@@ -360,9 +363,77 @@ def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
     assert last_summary == "Keeping the anchor page as primary evidence."
 
 
-def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_apply(monkeypatch) -> None:
+def test_extract_opened_page_urls_keeps_only_completed_open_page_actions() -> None:
+    payload = {
+        "output": [
+            {
+                "type": "web_search_call",
+                "status": "completed",
+                "action": {"type": "open_page", "url": "https://example.com/release?utm=1"},
+            },
+            {
+                "type": "web_search_call",
+                "status": "searching",
+                "action": {"type": "open_page", "url": "https://example.com/ignored"},
+            },
+            {
+                "type": "web_search_call",
+                "status": "completed",
+                "action": {"type": "search", "query": "ignored"},
+            },
+        ]
+    }
+
+    assert _extract_opened_page_urls(payload) == {"https://example.com/release"}
+
+
+def test_page_explicitly_names_label_rejects_bare_rights_lines() -> None:
+    assert _page_explicitly_names_label(
+        "Label: Crash Blossoms Money World Suicide Mob",
+        "Crash Blossoms Money World Suicide Mob",
+    )
+    assert not _page_explicitly_names_label(
+        "℗ 2024 Crash Blossoms Money World Suicide Mob",
+        "Crash Blossoms Money World Suicide Mob",
+    )
+
+
+def test_apply_ai_review_guardrails_ignores_unsupported_label_changes() -> None:
+    metadata = make_metadata()
+    metadata["label"] = "doin' fine"
+    review = make_review(label="Crash Blossoms Money World Suicide Mob")
+
+    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+
+    assert sanitized_review["metadata"]["label"] == "doin' fine"
+    assert warnings == [
+        'Ignored AI label change to "Crash Blossoms Money World Suicide Mob" because no opened citation '
+        "explicitly supported the label field."
+    ]
+
+
+def test_apply_ai_review_guardrails_accepts_explicit_opened_label_evidence(monkeypatch) -> None:
     metadata = make_metadata()
     review = make_review(label="New Label")
+    review["citations"] = [
+        {
+            "title": "Official release page",
+            "url": "https://example.com/release",
+            "supports": ["label"],
+        }
+    ]
+    review["_opened_page_urls"] = ["https://example.com/release"]
+    monkeypatch.setattr(ai_review, "_url_explicitly_names_label", lambda _url, _label: True)
+
+    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+
+    assert sanitized_review["metadata"]["label"] == "New Label"
+    assert warnings == []
+
+
+def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_apply(monkeypatch) -> None:
+    metadata = make_metadata()
+    review = make_review(year="2003")
     sequence: list[str] = []
     original_enabled = cfg.upload.ai_review.enabled
 
@@ -398,8 +469,8 @@ def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_appl
     finally:
         cfg.upload.ai_review.enabled = original_enabled
 
-    assert result["label"] == "New Label"
-    assert sequence == ["manual:Old Label", "confirm", "ai", "manual:New Label"]
+    assert result["year"] == "2003"
+    assert sequence == ["manual:Old Label", "confirm", "ai", "manual:Old Label"]
 
 
 def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> None:
@@ -481,7 +552,7 @@ def test_review_metadata_with_ai_auto_keeps_when_no_suggestions(monkeypatch) -> 
 
 def test_review_metadata_with_ai_auto_applies_when_flag_enabled(monkeypatch) -> None:
     metadata = make_metadata()
-    review = make_review(label="New Label")
+    review = make_review(year="2003")
     sequence: list[str] = []
     original_enabled = cfg.upload.ai_review.enabled
     original_yes_all = cfg.upload.yes_all
@@ -522,13 +593,13 @@ def test_review_metadata_with_ai_auto_applies_when_flag_enabled(monkeypatch) -> 
         cfg.upload.ai_review.enabled = original_enabled
         cfg.upload.yes_all = original_yes_all
 
-    assert result["label"] == "New Label"
+    assert result["year"] == "2003"
     assert sequence == ["manual:Old Label", "ai"]
 
 
 def test_review_metadata_with_ai_skips_initial_review_when_flag_enabled(monkeypatch) -> None:
     metadata = make_metadata()
-    review = make_review(label="New Label")
+    review = make_review(year="2003")
     sequence: list[str] = []
     original_enabled = cfg.upload.ai_review.enabled
 
@@ -567,13 +638,13 @@ def test_review_metadata_with_ai_skips_initial_review_when_flag_enabled(monkeypa
     finally:
         cfg.upload.ai_review.enabled = original_enabled
 
-    assert result["label"] == "New Label"
-    assert sequence == ["confirm", "ai", "manual:New Label"]
+    assert result["year"] == "2003"
+    assert sequence == ["confirm", "ai", "manual:Old Label"]
 
 
 def test_review_metadata_with_ai_yes_all_auto_applies(monkeypatch) -> None:
     metadata = make_metadata()
-    review = make_review(label="New Label")
+    review = make_review(year="2003")
     sequence: list[str] = []
     original_enabled = cfg.upload.ai_review.enabled
     original_yes_all = cfg.upload.yes_all
@@ -611,5 +682,5 @@ def test_review_metadata_with_ai_yes_all_auto_applies(monkeypatch) -> None:
         cfg.upload.ai_review.enabled = original_enabled
         cfg.upload.yes_all = original_yes_all
 
-    assert result["label"] == "New Label"
+    assert result["year"] == "2003"
     assert sequence == ["ai"]

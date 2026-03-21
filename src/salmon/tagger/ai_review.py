@@ -4,11 +4,15 @@ import json
 import re
 import time
 from copy import deepcopy
+from functools import lru_cache
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import aiohttp
 import asyncclick as click
 import msgspec
+import requests
+from bs4 import BeautifulSoup
 
 from salmon import cfg
 from salmon.constants import ARTIST_IMPORTANCES
@@ -41,8 +45,17 @@ ARTIST_SCHEMA = {
 }
 FINAL_RESPONSE_STATUSES = {"completed", "failed", "cancelled", "incomplete"}
 BOLD_MARKDOWN_PATTERN = re.compile(r"\*\*(.+?)\*\*")
+WHITESPACE_PATTERN = re.compile(r"\s+")
 NULLABLE_STRING_SCHEMA = {"anyOf": [{"type": "string"}, {"type": "null"}]}
 LIST_OF_STRINGS_SCHEMA = {"type": "array", "items": {"type": "string"}}
+LABEL_EVIDENCE_MARKERS = (
+    "label",
+    "record label",
+    "imprint",
+    "released by",
+    "under exclusive license to",
+    "licensed to",
+)
 METADATA_SCHEMA_PROPERTIES = {
     **{
         field: NULLABLE_STRING_SCHEMA
@@ -430,6 +443,161 @@ def _describe_web_search_action(item: dict[str, Any]) -> str:
     return ""
 
 
+def _normalize_optional_text(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _normalize_evidence_url(url: str | None) -> str | None:
+    if not isinstance(url, str):
+        return None
+
+    trimmed = url.strip()
+    if not trimmed:
+        return None
+
+    parts = urlsplit(trimmed)
+    if not parts.scheme or not parts.netloc:
+        return None
+
+    path = parts.path or ""
+    if path != "/":
+        path = path.rstrip("/")
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, "", ""))
+
+
+def _extract_opened_page_urls(payload: dict[str, Any]) -> set[str]:
+    urls: set[str] = set()
+    for item in payload.get("output", []):
+        if item.get("type") != "web_search_call" or item.get("status") != "completed":
+            continue
+        action = item.get("action")
+        if not isinstance(action, dict) or action.get("type") != "open_page":
+            continue
+        normalized = _normalize_evidence_url(action.get("url"))
+        if normalized:
+            urls.add(normalized)
+    return urls
+
+
+def _iter_field_citations(review: dict[str, Any], field: str):
+    citations = review.get("citations", [])
+    if not isinstance(citations, list):
+        return
+
+    for citation in citations:
+        if not isinstance(citation, dict):
+            continue
+        supports = citation.get("supports", [])
+        if not isinstance(supports, list):
+            continue
+        normalized_supports = {str(item).strip().lower() for item in supports if str(item).strip()}
+        if field.lower() in normalized_supports:
+            yield citation
+
+
+def _page_explicitly_names_label(page_text: str, label: str) -> bool:
+    normalized_text = WHITESPACE_PATTERN.sub(" ", page_text).casefold()
+    normalized_label = WHITESPACE_PATTERN.sub(" ", label).strip().casefold()
+    if not normalized_text or not normalized_label:
+        return False
+
+    escaped_label = re.escape(normalized_label)
+    marker_pattern = "|".join(re.escape(marker.casefold()) for marker in LABEL_EVIDENCE_MARKERS)
+    patterns = (
+        rf"(?:{marker_pattern})[^.!?\n]{{0,120}}{escaped_label}",
+        rf"{escaped_label}[^.!?\n]{{0,120}}(?:{marker_pattern})",
+    )
+    return any(re.search(pattern, normalized_text) for pattern in patterns)
+
+
+@lru_cache(maxsize=64)
+def _fetch_release_page_text(url: str) -> str:
+    response = requests.get(
+        url,
+        headers={"User-Agent": cfg.upload.user_agent},
+        timeout=15,
+    )
+    response.raise_for_status()
+    html = response.text
+    soup = BeautifulSoup(html, "lxml")
+    return f"{soup.get_text(' ', strip=True)} {html}"
+
+
+def _url_explicitly_names_label(url: str, label: str) -> bool:
+    try:
+        page_text = _fetch_release_page_text(url)
+    except (requests.RequestException, ValueError):
+        return False
+    return _page_explicitly_names_label(page_text, label)
+
+
+def _guard_ai_label_change(
+    metadata: dict[str, Any],
+    review: dict[str, Any],
+    source_url: str | None,
+    opened_page_urls: set[str],
+) -> str | None:
+    review_metadata = review.get("metadata")
+    if not isinstance(review_metadata, dict) or "label" not in review_metadata:
+        return None
+
+    current_label = _normalize_optional_text(metadata.get("label"))
+    proposed_label = _normalize_optional_text(
+        _resolve_review_metadata_value("label", metadata.get("label"), review_metadata.get("label"), source_url)
+    )
+    if current_label == proposed_label:
+        return None
+
+    review_metadata["label"] = metadata.get("label")
+    if proposed_label is None:
+        return "Ignored AI label change because clearing label values requires manual review."
+
+    opened_label_urls = {
+        normalized_url
+        for citation in _iter_field_citations(review, "label")
+        if (normalized_url := _normalize_evidence_url(citation.get("url"))) in opened_page_urls
+    }
+    if not opened_label_urls:
+        return (
+            f'Ignored AI label change to "{proposed_label}" because no opened citation explicitly '
+            "supported the label field."
+        )
+
+    if any(_url_explicitly_names_label(url, proposed_label) for url in opened_label_urls):
+        review_metadata["label"] = proposed_label
+        return None
+
+    return (
+        f'Ignored AI label change to "{proposed_label}" because none of the opened label citations '
+        "explicitly named it as a label or imprint."
+    )
+
+
+def _apply_ai_review_guardrails(
+    metadata: dict[str, Any],
+    review: dict[str, Any],
+    source_url: str | None,
+) -> tuple[dict[str, Any], list[str]]:
+    sanitized_review = deepcopy(review)
+    warnings = list(sanitized_review.get("_local_warnings", []))
+    opened_page_urls = {
+        normalized_url
+        for url in sanitized_review.get("_opened_page_urls", [])
+        if (normalized_url := _normalize_evidence_url(url))
+    }
+
+    label_warning = _guard_ai_label_change(metadata, sanitized_review, source_url, opened_page_urls)
+    if label_warning:
+        warnings.append(label_warning)
+
+    sanitized_review["_opened_page_urls"] = sorted(opened_page_urls)
+    sanitized_review["_local_warnings"] = warnings
+    return sanitized_review, warnings
+
+
 def _extract_progress_updates(
     payload: dict[str, Any],
     seen_progress_events: set[tuple[str, str, str]],
@@ -659,6 +827,7 @@ async def _request_ai_review(
     if not isinstance(review, dict):
         raise RuntimeError("AI metadata review returned an unexpected response shape")
 
+    review["_opened_page_urls"] = sorted(_extract_opened_page_urls(response_payload))
     return review, response_payload.get("id")
 
 
@@ -825,7 +994,8 @@ async def _apply_ai_review(
     validator,
 ) -> dict[str, Any] | None:
     try:
-        updated_metadata = apply_ai_metadata_result(metadata, review, source_url)
+        sanitized_review, _warnings = _apply_ai_review_guardrails(metadata, review, source_url)
+        updated_metadata = apply_ai_metadata_result(metadata, sanitized_review, source_url)
         validator(updated_metadata)
     except Exception as exc:
         click.secho(f"AI suggestions were rejected: {exc}", fg="red")
@@ -903,6 +1073,7 @@ async def review_metadata_with_ai(
             click.secho(f"AI metadata review failed: {exc}", fg="red")
             return current_metadata
 
+        review, guardrail_warnings = _apply_ai_review_guardrails(current_metadata, review, source_url)
         diff_lines = build_ai_review_diff(current_metadata, review, source_url)
         summary = review.get("summary")
         if isinstance(summary, str) and summary.strip():
@@ -912,6 +1083,9 @@ async def review_metadata_with_ai(
                 + f" {summary.strip()}",
                 color=True,
             )
+
+        for warning in guardrail_warnings:
+            click.secho(f"AI guardrail: {warning}", fg="yellow")
 
         if diff_lines:
             click.secho("\nAI suggested metadata updates:", fg="yellow", bold=True)
