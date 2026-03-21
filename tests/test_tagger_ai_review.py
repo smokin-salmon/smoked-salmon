@@ -233,6 +233,9 @@ def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
     assert "edition_title is only for edition-specific descriptors." in SYSTEM_PROMPT
     assert "WEB quality such as 24-bit/44.1 kHz, leave edition_title blank." in SYSTEM_PROMPT
     assert 'plausible no-label marker such as "Self-Released" or "Not on Label"' in SYSTEM_PROMPT
+    assert "Normalize label values to RED style instead of copying vendor rights text verbatim." in SYSTEM_PROMPT
+    assert '"Label A - Rights Holder under exclusive\n  license to Label B"' in SYSTEM_PROMPT
+    assert "prefer the primary credited\n  label or imprint entity" in SYSTEM_PROMPT
     assert "Artists means release-level artist entries only." in SYSTEM_PROMPT
     assert "List each credited release artist separately as" in SYSTEM_PROMPT
     assert "supported release-level guest artist merely because that artist only appears" in SYSTEM_PROMPT

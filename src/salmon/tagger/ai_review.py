@@ -118,6 +118,12 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
 - Prefer the credited release label or imprint. Do not infer label from the artist name, store,
   seller, distributor, or parent company alone, and omit corporate suffixes when the release-level
   source clearly uses the shorter imprint name.
+- Normalize label values to RED style instead of copying vendor rights text verbatim. When a
+  release-level source shows a compound line such as "Label A - Rights Holder under exclusive
+  license to Label B" or similar distributor/licensor wording, prefer the primary credited
+  label or imprint entity and drop the rights/licensing/distribution tail unless the page clearly
+  presents multiple entities as true co-labels. If a sub-label or imprint appears alongside a
+  parent label, prefer only the sub-label or imprint.
 - RED distinguishes "no label involved" from an unknown omitted label. If local metadata already
   has a plausible no-label marker such as "Self-Released" or "Not on Label", do not clear it
   merely because an official store page omits a named label; only replace it when release-level
