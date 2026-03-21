@@ -218,10 +218,13 @@ def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
     assert "Use 4 to 6 web actions total." in SYSTEM_PROMPT
     assert "Do not keep a catalog number in title" in SYSTEM_PROMPT
     assert "edition_title is only for edition-specific descriptors." in SYSTEM_PROMPT
+    assert "WEB quality such as 24-bit/44.1 kHz, leave edition_title blank." in SYSTEM_PROMPT
     assert 'plausible no-label marker such as "Self-Released" or "Not on Label"' in SYSTEM_PROMPT
     assert "Artists means release-level artist entries only." in SYSTEM_PROMPT
     assert "List each credited release artist separately as" in SYSTEM_PROMPT
+    assert "supported release-level guest artist merely because that artist only appears" in SYSTEM_PROMPT
     assert 'do not use "Various Artists"' in SYSTEM_PROMPT
+    assert "Do not treat a bare ℗ or © rights line as label evidence" in SYSTEM_PROMPT
     assert "Genres must behave like RED tags" in SYSTEM_PROMPT
     assert "Discogs and MusicBrainz are useful cross-checks" in SYSTEM_PROMPT
     assert "For singles or small releases, you may inspect the release-page tracklist" in SYSTEM_PROMPT

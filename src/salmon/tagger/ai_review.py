@@ -98,7 +98,8 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
   evidence clearly shows intentional stylization.
 - edition_title is only for edition-specific descriptors. Do not put the album title, store name,
   DSP name unless it is an exclusive edition, format, bitrate, bit depth, sample rate, or generic
-  descriptors like Digital, Original, or First Pressing in edition_title.
+  descriptors like Digital, Original, or First Pressing in edition_title. If the only extra info
+  you have is WEB quality such as 24-bit/44.1 kHz, leave edition_title blank.
 - Prefer the credited release label or imprint. Do not infer label from the artist name, store,
   seller, distributor, or parent company alone, and omit corporate suffixes when the release-level
   source clearly uses the shorter imprint name.
@@ -110,7 +111,8 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
   a {name, role} entry. Use only supported roles: main, guest, remixer, composer, conductor,
   djcompiler, producer.
 - For contributing artists who only appear on certain tracks, prefer guest instead of promoting them
-  to main unless the release-level source clearly credits them as release artists.
+  to main unless the release-level source clearly credits them as release artists. Do not drop a
+  supported release-level guest artist merely because that artist only appears on some tracks.
 - When individual artists are known on a compilation or split release, do not use "Various Artists"
   as a release artist entry. List the individual artists instead.
 - Use catno only when a release-level source supports it. For WEB, if there is no definitive catno
@@ -124,6 +126,8 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
 
 Never infer label from the artist name, a store name, or a seller.
 Only set label when a release-level source explicitly names a label or imprint for this release.
+Do not treat a bare ℗ or © rights line as label evidence unless the source also explicitly presents
+that entity as the release label or imprint.
 Use group_year for the earliest supported release year of the release group.
 Use year for the exact edition or source you identified.
 If you cannot distinguish them, set both to the same supported year.
