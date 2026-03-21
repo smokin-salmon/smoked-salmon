@@ -1,4 +1,5 @@
 import shutil
+import sys
 from pathlib import Path
 
 import asyncclick as click
@@ -71,22 +72,27 @@ def setup_config() -> Cfg:
         path = find_config_path()
     except Exception:
         cfg_path = get_user_cfg_path()
-        attempted_default_cfg = cfg_path.parent / "config.default.toml"
 
         click.secho(f"Could not find configuration path at {cfg_path}.", fg="red")
-        if attempted_default_cfg.exists():
-            click.secho(
-                "Hint: Create a config by copying config.default.toml to config.toml. Hope you enjoy your salmon :)",
-                fg="yellow",
-            )
-        else:
-            user_choice = click.confirm(
-                f"Do you want smoked-salmon to create a default config file at {attempted_default_cfg}?"
-            )
-            if user_choice:
+        user_choice = click.confirm(f"Do you want smoked-salmon to create a default config file at {cfg_path}?")
+        if user_choice:
+            try:
                 default_cfg = get_default_config_path()
-                _try_creating_config(default_cfg, attempted_default_cfg)
-        exit(-1)
+                _try_creating_config(default_cfg, cfg_path)
+            except (FileNotFoundError, OSError, PermissionError) as e:
+                click.secho(f"Failed to create default config: {e}", fg="red")
+                sys.exit(1)
+            click.secho(
+                f"Default config created at {cfg_path}. Please edit it with your settings and restart.",
+                fg="green",
+            )
+            sys.exit(0)
+        click.secho(
+            f"No config was created. To get started, manually create a config file at {cfg_path} "
+            "or re-run smoked-salmon to generate one from the default template.",
+            fg="yellow",
+        )
+        sys.exit(1)
 
     cfg = _parse_config(path)
     return cfg

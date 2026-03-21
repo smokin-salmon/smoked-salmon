@@ -1,33 +1,14 @@
-import asyncio
 from os.path import dirname, join
 
 import aiohttp_jinja2
-import asyncclick as click
 import jinja2
 from aiohttp import web
 from aiohttp_jinja2 import render_template
 
 from salmon import cfg
-from salmon.common import commandgroup
-from salmon.errors import WebServerIsAlreadyRunning
 from salmon.web import spectrals
 
 web_cfg = cfg.upload.web_interface
-
-
-@commandgroup.command()
-async def web_cmd() -> None:
-    """Start the salmon web server."""
-    click.secho(f"Running webserver on http://{web_cfg.effective_host}:{web_cfg.port}", fg="cyan")
-    runner = await create_app_async()
-    try:
-        # Keep the server running
-        while True:
-            await asyncio.sleep(3600)
-    except asyncio.CancelledError:
-        pass
-    finally:
-        await runner.cleanup()
 
 
 async def create_app_async() -> web.AppRunner:
@@ -37,7 +18,7 @@ async def create_app_async() -> web.AppRunner:
         The AppRunner instance for the web server.
 
     Raises:
-        WebServerIsAlreadyRunning: If the port is already in use.
+        OSError: If the port is already in use.
     """
     app = web.Application()
     add_routes(app)
@@ -45,10 +26,7 @@ async def create_app_async() -> web.AppRunner:
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, web_cfg.host, web_cfg.port)
-    try:
-        await site.start()
-    except OSError as err:
-        raise WebServerIsAlreadyRunning from err
+    await site.start()
     return runner
 
 
