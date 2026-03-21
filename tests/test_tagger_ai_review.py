@@ -443,6 +443,25 @@ def test_apply_ai_review_guardrails_accepts_explicit_opened_label_evidence(monke
     assert warnings == []
 
 
+def test_apply_ai_review_guardrails_accepts_annotated_label_support(monkeypatch) -> None:
+    metadata = make_metadata()
+    review = make_review(label="ITModels")
+    review["citations"] = [
+        {
+            "title": "Qobuz release page",
+            "url": "https://example.com/release",
+            "supports": ["label (compound source credit)", "title", "urls"],
+        }
+    ]
+    review["_opened_page_urls"] = ["https://example.com/release"]
+    monkeypatch.setattr(ai_review, "_url_explicitly_names_label", lambda _url, _label: True)
+
+    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+
+    assert sanitized_review["metadata"]["label"] == "ITModels"
+    assert warnings == []
+
+
 def test_format_ai_review_citations_marks_opened_status() -> None:
     review = make_review()
     review["citations"] = [

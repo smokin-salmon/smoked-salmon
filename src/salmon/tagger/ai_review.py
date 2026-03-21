@@ -505,15 +505,24 @@ def _iter_field_citations(review: dict[str, Any], field: str):
     if not isinstance(citations, list):
         return
 
+    normalized_field = field.strip().lower()
     for citation in citations:
         if not isinstance(citation, dict):
             continue
         supports = citation.get("supports", [])
         if not isinstance(supports, list):
             continue
-        normalized_supports = {str(item).strip().lower() for item in supports if str(item).strip()}
-        if field.lower() in normalized_supports:
-            yield citation
+        for support in supports:
+            normalized_support = WHITESPACE_PATTERN.sub(" ", str(support).strip()).lower()
+            if not normalized_support:
+                continue
+            if (
+                normalized_support == normalized_field
+                or normalized_support.startswith(f"{normalized_field} ")
+                or normalized_support.startswith(f"{normalized_field}(")
+            ):
+                yield citation
+                break
 
 
 def _page_explicitly_names_label(page_text: str, label: str) -> bool:
