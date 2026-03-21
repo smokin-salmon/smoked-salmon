@@ -84,6 +84,8 @@ Do not conclude the release is unverified, or clear supported metadata, until af
 If the anchor page already clearly identifies the release,
 only do extra web searches for fields that are still missing or conflicting.
 Prefer release-level pages over artist bios, reviews, videos, lyrics pages, playlists, marketplaces, and fan sites.
+Search-result snippets and result titles are only leads. Do not use them as evidence for metadata
+changes or citations until you open the page.
 Use 4 to 6 web actions total.
 Aim to finish in 4 when the anchor page is clear, but spend up to 6 when needed to resolve
 missing or conflicting release-level fields.
@@ -128,6 +130,8 @@ Never infer label from the artist name, a store name, or a seller.
 Only set label when a release-level source explicitly names a label or imprint for this release.
 Do not treat a bare ℗ or © rights line as label evidence unless the source also explicitly presents
 that entity as the release label or imprint.
+If no opened release-level page explicitly names a label or imprint, do not replace the current
+label with a new guess.
 Use group_year for the earliest supported release year of the release group.
 Use year for the exact edition or source you identified.
 If you cannot distinguish them, set both to the same supported year.
