@@ -534,6 +534,71 @@ def _url_explicitly_names_label(url: str, label: str) -> bool:
     return _page_explicitly_names_label(page_text, label)
 
 
+def _guard_ai_artist_change(metadata: dict[str, Any], review: dict[str, Any]) -> str | None:
+    review_metadata = review.get("metadata")
+    if not isinstance(review_metadata, dict) or "artists" not in review_metadata:
+        return None
+
+    current_artists = _normalize_artist_entries(metadata.get("artists"))
+    proposed_artists = _normalize_artist_entries(review_metadata.get("artists"))
+    if not current_artists or not proposed_artists:
+        return None
+
+    proposed_names = {artist["name"].casefold() for artist in proposed_artists}
+    missing_guests = [
+        artist
+        for artist in current_artists
+        if artist["role"] == "guest" and artist["name"].casefold() not in proposed_names
+    ]
+    if not missing_guests:
+        return None
+
+    review_metadata["artists"] = [*proposed_artists, *missing_guests]
+    guest_names = ", ".join(artist["name"] for artist in missing_guests)
+    return f"Preserved existing guest artists that the AI tried to remove: {guest_names}."
+
+
+def _guard_ai_url_change(
+    metadata: dict[str, Any], review: dict[str, Any], source_url: str | None, opened_page_urls: set[str]
+) -> str | None:
+    review_metadata = review.get("metadata")
+    if not isinstance(review_metadata, dict) or "urls" not in review_metadata:
+        return None
+
+    preserved_urls = _normalize_list([*_normalize_list(metadata.get("urls")), *([source_url] if source_url else [])])
+    preserved_normalized = {
+        normalized_url for url in preserved_urls if (normalized_url := _normalize_evidence_url(url))
+    }
+    proposed_urls = _resolve_review_metadata_value(
+        "urls",
+        metadata.get("urls"),
+        review_metadata.get("urls"),
+        source_url,
+    )
+
+    desired_urls = list(preserved_urls)
+    dropped_additions: list[str] = []
+    for url in proposed_urls:
+        normalized_url = _normalize_evidence_url(url)
+        if not normalized_url:
+            continue
+        if normalized_url in preserved_normalized or normalized_url in opened_page_urls:
+            desired_urls.append(url)
+            preserved_normalized.add(normalized_url)
+        else:
+            dropped_additions.append(url)
+
+    review_metadata["urls"] = _normalize_list(desired_urls)
+    if not dropped_additions:
+        return None
+
+    return (
+        "Ignored AI URL additions that were not opened during review: "
+        + ", ".join(dropped_additions)
+        + "."
+    )
+
+
 def _guard_ai_label_change(
     metadata: dict[str, Any],
     review: dict[str, Any],
@@ -588,6 +653,14 @@ def _apply_ai_review_guardrails(
         for url in sanitized_review.get("_opened_page_urls", [])
         if (normalized_url := _normalize_evidence_url(url))
     }
+
+    artist_warning = _guard_ai_artist_change(metadata, sanitized_review)
+    if artist_warning:
+        warnings.append(artist_warning)
+
+    url_warning = _guard_ai_url_change(metadata, sanitized_review, source_url, opened_page_urls)
+    if url_warning:
+        warnings.append(url_warning)
 
     label_warning = _guard_ai_label_change(metadata, sanitized_review, source_url, opened_page_urls)
     if label_warning:

@@ -431,6 +431,55 @@ def test_apply_ai_review_guardrails_accepts_explicit_opened_label_evidence(monke
     assert warnings == []
 
 
+def test_apply_ai_review_guardrails_preserves_existing_guest_artists() -> None:
+    metadata = make_metadata()
+    metadata["artists"] = [
+        ("doin' fine + ilysm", "main"),
+        ("MSPAINTBOI", "guest"),
+        ("STARRI", "guest"),
+        ("SOR UH", "guest"),
+    ]
+    review = make_review(
+        artists=[
+            {"name": "doin' fine", "role": "main"},
+            {"name": "ilysm", "role": "main"},
+        ]
+    )
+
+    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+
+    assert sanitized_review["metadata"]["artists"] == [
+        {"name": "doin' fine", "role": "main"},
+        {"name": "ilysm", "role": "main"},
+        {"name": "MSPAINTBOI", "role": "guest"},
+        {"name": "STARRI", "role": "guest"},
+        {"name": "SOR UH", "role": "guest"},
+    ]
+    assert warnings == [
+        "Preserved existing guest artists that the AI tried to remove: MSPAINTBOI, STARRI, SOR UH."
+    ]
+
+
+def test_apply_ai_review_guardrails_drops_unopened_url_additions() -> None:
+    metadata = make_metadata()
+    review = make_review(
+        urls=[
+            "https://old.example/release",
+            "https://music.apple.com/us/album/example/123",
+            "https://music.amazon.in/albums/example",
+        ]
+    )
+    review["_opened_page_urls"] = ["https://old.example/release"]
+
+    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+
+    assert sanitized_review["metadata"]["urls"] == ["https://old.example/release"]
+    assert warnings == [
+        "Ignored AI URL additions that were not opened during review: "
+        "https://music.apple.com/us/album/example/123, https://music.amazon.in/albums/example."
+    ]
+
+
 def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_apply(monkeypatch) -> None:
     metadata = make_metadata()
     review = make_review(year="2003")
