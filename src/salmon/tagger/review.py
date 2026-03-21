@@ -18,9 +18,12 @@ _CLASSICAL_GENRES = {
     "orchestral",
     "opera",
 }
-_DEFERRED_REQUIRED_METADATA_ERRORS = {
+_DEFERRED_PRE_AI_METADATA_ERRORS = {
     "Invalid release type.",
     "You must specify at least one genre.",
+    "Label must be over 2 and under 80 characters.",
+    "Records DK is not a label. It's a platform for releasing albums. Please change the label (e.g Self Released)",
+    "Catno must be over 2 and under 80 characters.",
 }
 
 
@@ -68,7 +71,7 @@ async def review_metadata(metadata, validator, enforce_required_fields: bool = T
         try:
             validator(metadata)
         except InvalidMetadataError as e:
-            if not enforce_required_fields and str(e) in _DEFERRED_REQUIRED_METADATA_ERRORS:
+            if not enforce_required_fields and str(e) in _DEFERRED_PRE_AI_METADATA_ERRORS:
                 if break_:
                     break
                 continue
