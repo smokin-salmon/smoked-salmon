@@ -124,6 +124,11 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
   label or imprint entity and drop the rights/licensing/distribution tail unless the page clearly
   presents multiple entities as true co-labels. If a sub-label or imprint appears alongside a
   parent label, prefer only the sub-label or imprint.
+- Only use a slash-separated multi-label value like `Label 1 / Label 2` when an opened
+  release-level page clearly presents multiple legitimate labels or imprints as parallel release
+  labels. Do not invent a slash-separated label from a compound rights/licensing string; if the
+  evidence is a vendor line like `Label A - Rights Holder under exclusive license to Label B`,
+  prefer `Label A` unless the page explicitly frames both entities as labels/imprints.
 - RED distinguishes "no label involved" from an unknown omitted label. If local metadata already
   has a plausible no-label marker such as "Self-Released" or "Not on Label", do not clear it
   merely because an official store page omits a named label; only replace it when release-level

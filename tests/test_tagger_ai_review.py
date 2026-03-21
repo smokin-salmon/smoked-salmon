@@ -236,6 +236,9 @@ def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
     assert "Normalize label values to RED style instead of copying vendor rights text verbatim." in SYSTEM_PROMPT
     assert '"Label A - Rights Holder under exclusive\n  license to Label B"' in SYSTEM_PROMPT
     assert "prefer the primary credited\n  label or imprint entity" in SYSTEM_PROMPT
+    assert "Only use a slash-separated multi-label value like `Label 1 / Label 2`" in SYSTEM_PROMPT
+    assert "Do not invent a slash-separated label from a compound rights/licensing string" in SYSTEM_PROMPT
+    assert "prefer `Label A` unless the page explicitly frames both entities as labels/imprints." in SYSTEM_PROMPT
     assert "Artists means release-level artist entries only." in SYSTEM_PROMPT
     assert "List each credited release artist separately as" in SYSTEM_PROMPT
     assert "supported release-level guest artist merely because that artist only appears" in SYSTEM_PROMPT
