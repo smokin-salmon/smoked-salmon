@@ -20,7 +20,6 @@ from salmon.tagger.ai_review import (
     _extract_progress_updates,
     _format_ai_progress,
     _page_explicitly_names_label,
-    _page_explicitly_names_parallel_labels,
     _style_ai_progress,
     apply_ai_metadata_result,
     build_ai_review_diff,
@@ -414,17 +413,6 @@ def test_page_explicitly_names_label_rejects_bare_rights_lines() -> None:
     )
 
 
-def test_page_explicitly_names_parallel_labels_requires_explicit_parallel_label_context() -> None:
-    assert _page_explicitly_names_parallel_labels(
-        "Label: ITModels / Doli & Penn",
-        "ITModels / Doli & Penn",
-    )
-    assert not _page_explicitly_names_parallel_labels(
-        "℗ 2019 ITModels / Doli & Penn Under exclusive license to NMC United Entertainment Ltd.",
-        "ITModels / Doli & Penn",
-    )
-
-
 def test_apply_ai_review_guardrails_ignores_unsupported_label_changes() -> None:
     metadata = make_metadata()
     metadata["label"] = "doin' fine"
@@ -474,52 +462,6 @@ def test_apply_ai_review_guardrails_accepts_annotated_label_support(monkeypatch)
     sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
 
     assert sanitized_review["metadata"]["label"] == "ITModels"
-    assert warnings == []
-
-
-def test_apply_ai_review_guardrails_rejects_parallel_labels_from_compound_rights_lines(monkeypatch) -> None:
-    metadata = make_metadata()
-    metadata["label"] = "ITModels  -  Doli & Penn Under exclusive license to NMC United Entertainment Ltd."
-    review = make_review(label="ITModels / Doli & Penn")
-    review["citations"] = [
-        {
-            "title": "Qobuz release page",
-            "url": "https://example.com/release",
-            "supports": ["label (compound source credit)"],
-        }
-    ]
-    review["_opened_page_urls"] = ["https://example.com/release"]
-    monkeypatch.setattr(ai_review, "_url_explicitly_names_parallel_labels", lambda _url, _label: False)
-
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
-
-    assert (
-        sanitized_review["metadata"]["label"]
-        == "ITModels  -  Doli & Penn Under exclusive license to NMC United Entertainment Ltd."
-    )
-    assert warnings == [
-        'Ignored AI label change to "ITModels / Doli & Penn" because none of the opened cited pages '
-        "explicitly supported multiple parallel labels or imprints."
-    ]
-
-
-def test_apply_ai_review_guardrails_accepts_parallel_labels_with_explicit_parallel_evidence(monkeypatch) -> None:
-    metadata = make_metadata()
-    metadata["label"] = "Old Label"
-    review = make_review(label="Label One / Label Two")
-    review["citations"] = [
-        {
-            "title": "Official release page",
-            "url": "https://example.com/release",
-            "supports": ["label"],
-        }
-    ]
-    review["_opened_page_urls"] = ["https://example.com/release"]
-    monkeypatch.setattr(ai_review, "_url_explicitly_names_parallel_labels", lambda _url, _label: True)
-
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
-
-    assert sanitized_review["metadata"]["label"] == "Label One / Label Two"
     assert warnings == []
 
 

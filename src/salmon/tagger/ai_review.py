@@ -56,20 +56,6 @@ LABEL_EVIDENCE_MARKERS = (
     "under exclusive license to",
     "licensed to",
 )
-STRICT_LABEL_EVIDENCE_MARKERS = (
-    "label",
-    "record label",
-    "imprint",
-    "released by",
-)
-LICENSING_CONTEXT_MARKERS = (
-    "under exclusive license to",
-    "licensed to",
-    "distributed by",
-    "distribution by",
-    "℗",
-    "©",
-)
 METADATA_SCHEMA_PROPERTIES = {
     **{
         field: NULLABLE_STRING_SCHEMA
@@ -559,28 +545,6 @@ def _page_explicitly_names_label(page_text: str, label: str) -> bool:
     return any(re.search(pattern, normalized_text) for pattern in patterns)
 
 
-def _page_explicitly_names_parallel_labels(page_text: str, label: str) -> bool:
-    normalized_text = WHITESPACE_PATTERN.sub(" ", page_text).casefold()
-    normalized_label = WHITESPACE_PATTERN.sub(" ", label).strip().casefold()
-    if " / " not in normalized_label or not normalized_text:
-        return False
-
-    escaped_label = re.escape(normalized_label)
-    strict_marker_pattern = "|".join(re.escape(marker.casefold()) for marker in STRICT_LABEL_EVIDENCE_MARKERS)
-    licensing_pattern = "|".join(re.escape(marker.casefold()) for marker in LICENSING_CONTEXT_MARKERS)
-    patterns = (
-        rf"((?:{strict_marker_pattern})[^.!?\n]{{0,160}}{escaped_label}[^.!?\n]{{0,160}})",
-        rf"({escaped_label}[^.!?\n]{{0,160}}(?:{strict_marker_pattern})[^.!?\n]{{0,160}})",
-    )
-
-    for pattern in patterns:
-        for match in re.finditer(pattern, normalized_text):
-            window = match.group(1)
-            if not re.search(licensing_pattern, window):
-                return True
-    return False
-
-
 @lru_cache(maxsize=64)
 def _fetch_release_page_text(url: str) -> str:
     response = requests.get(
@@ -600,14 +564,6 @@ def _url_explicitly_names_label(url: str, label: str) -> bool:
     except (requests.RequestException, ValueError):
         return False
     return _page_explicitly_names_label(page_text, label)
-
-
-def _url_explicitly_names_parallel_labels(url: str, label: str) -> bool:
-    try:
-        page_text = _fetch_release_page_text(url)
-    except (requests.RequestException, ValueError):
-        return False
-    return _page_explicitly_names_parallel_labels(page_text, label)
 
 
 def _guard_ai_artist_change(metadata: dict[str, Any], review: dict[str, Any]) -> str | None:
@@ -705,15 +661,6 @@ def _guard_ai_label_change(
         return (
             f'Ignored AI label change to "{proposed_label}" because no opened citation explicitly '
             "supported the label field."
-        )
-
-    if " / " in proposed_label:
-        if any(_url_explicitly_names_parallel_labels(url, proposed_label) for url in opened_label_urls):
-            review_metadata["label"] = proposed_label
-            return None
-        return (
-            f'Ignored AI label change to "{proposed_label}" because none of the opened cited pages '
-            "explicitly supported multiple parallel labels or imprints."
         )
 
     if any(_url_explicitly_names_label(url, proposed_label) for url in opened_label_urls):
