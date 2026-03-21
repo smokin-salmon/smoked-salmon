@@ -239,6 +239,9 @@ def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
     assert "Only use a slash-separated multi-label value like `Label 1 / Label 2`" in SYSTEM_PROMPT
     assert "Do not invent a slash-separated label from a compound rights/licensing string" in SYSTEM_PROMPT
     assert "prefer `Label A` unless the page explicitly frames both entities as labels/imprints." in SYSTEM_PROMPT
+    assert "Be aggressive about collapsing compound DSP rights strings down to the clean RED label." in SYSTEM_PROMPT
+    assert "`ITModels - Doli & Penn Under exclusive license to NMC United Entertainment Ltd.`" in SYSTEM_PROMPT
+    assert "as strong evidence for `ITModels`, not for `ITModels / Doli & Penn`" in SYSTEM_PROMPT
     assert "Artists means release-level artist entries only." in SYSTEM_PROMPT
     assert "List each credited release artist separately as" in SYSTEM_PROMPT
     assert "supported release-level guest artist merely because that artist only appears" in SYSTEM_PROMPT
@@ -248,6 +251,7 @@ def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
     assert "Genres must behave like RED tags" in SYSTEM_PROMPT
     assert "Discogs and MusicBrainz are useful cross-checks" in SYSTEM_PROMPT
     assert "For singles or small releases, you may inspect the release-page tracklist" in SYSTEM_PROMPT
+    assert "In your summary and citations, mention only pages you actually opened during this review." in SYSTEM_PROMPT
 
 
 def test_build_release_reference_keeps_only_identifying_fields() -> None:

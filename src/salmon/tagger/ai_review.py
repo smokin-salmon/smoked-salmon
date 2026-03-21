@@ -129,6 +129,12 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
   labels. Do not invent a slash-separated label from a compound rights/licensing string; if the
   evidence is a vendor line like `Label A - Rights Holder under exclusive license to Label B`,
   prefer `Label A` unless the page explicitly frames both entities as labels/imprints.
+- Be aggressive about collapsing compound DSP rights strings down to the clean RED label. If one
+  opened page shows a long vendor string and another opened page shows only one clean candidate
+  label/imprint, prefer the single clean imprint instead of synthesizing a slash label. For
+  example, treat `ITModels - Doli & Penn Under exclusive license to NMC United Entertainment Ltd.`
+  as strong evidence for `ITModels`, not for `ITModels / Doli & Penn`, unless the opened pages
+  explicitly present both `ITModels` and `Doli & Penn` as peer labels or imprints.
 - RED distinguishes "no label involved" from an unknown omitted label. If local metadata already
   has a plausible no-label marker such as "Self-Released" or "Not on Label", do not clear it
   merely because an official store page omits a named label; only replace it when release-level
@@ -166,6 +172,7 @@ Only include genres or tags that are explicitly supported by the consulted sourc
 Include only release-level URLs that directly identify this exact release.
 If selected_source_url is provided, it must remain in urls.
 You may add more release-level URLs, but do not remove existing URLs.
+In your summary and citations, mention only pages you actually opened during this review.
 
 Return only the schema. Never return freeform prose outside the schema. Never rewrite files directly.
 """
