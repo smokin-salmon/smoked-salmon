@@ -15,6 +15,7 @@ from salmon.tagger.ai_review import (
     _build_album_metadata_snapshot,
     _build_release_reference,
     _build_request_payload,
+    _choose_ai_anchor_url,
     _extract_opened_page_urls,
     _extract_progress_updates,
     _format_ai_progress,
@@ -22,6 +23,7 @@ from salmon.tagger.ai_review import (
     _style_ai_progress,
     apply_ai_metadata_result,
     build_ai_review_diff,
+    format_ai_review_citations,
 )
 
 
@@ -215,6 +217,13 @@ def test_build_request_payload_requests_reasoning_summary_and_does_not_store() -
 
     assert payload["reasoning"]["summary"] == "auto"
     assert payload["store"] is False
+
+
+def test_choose_ai_anchor_url_prefers_explicit_source_then_first_metadata_url() -> None:
+    metadata = make_metadata()
+
+    assert _choose_ai_anchor_url(metadata, "https://explicit.example/release") == "https://explicit.example/release"
+    assert _choose_ai_anchor_url(metadata, None) == "https://old.example/release"
 
 
 def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
@@ -431,6 +440,28 @@ def test_apply_ai_review_guardrails_accepts_explicit_opened_label_evidence(monke
     assert warnings == []
 
 
+def test_format_ai_review_citations_marks_opened_status() -> None:
+    review = make_review()
+    review["citations"] = [
+        {
+            "title": "Opened source",
+            "url": "https://example.com/release",
+            "supports": ["title"],
+        },
+        {
+            "title": "Not opened source",
+            "url": "https://example.com/other",
+            "supports": ["label"],
+        },
+    ]
+    review["_opened_page_urls"] = ["https://example.com/release?utm=1"]
+
+    assert format_ai_review_citations(review) == [
+        "- Opened source (title) [opened]: https://example.com/release",
+        "- Not opened source (label) [not opened]: https://example.com/other",
+    ]
+
+
 def test_apply_ai_review_guardrails_preserves_existing_guest_artists() -> None:
     metadata = make_metadata()
     metadata["artists"] = [
@@ -597,6 +628,42 @@ def test_review_metadata_with_ai_auto_keeps_when_no_suggestions(monkeypatch) -> 
 
     assert result["label"] == "Old Label"
     assert sequence == ["manual", "confirm", "ai"]
+
+
+def test_review_metadata_with_ai_uses_first_metadata_url_as_anchor_when_source_url_missing(monkeypatch) -> None:
+    metadata = make_metadata()
+    review = make_review()
+    seen_source_urls: list[str | None] = []
+    original_enabled = cfg.upload.ai_review.enabled
+
+    async def fake_manual_review(current_metadata, _validator):
+        return current_metadata
+
+    async def fake_request_ai_review(current_metadata, _tag_baseline, source_url, _user_instruction, _previous_id):
+        seen_source_urls.append(source_url)
+        return review, "response-1"
+
+    def fake_confirm(*_args, **_kwargs):
+        return True
+
+    try:
+        cfg.upload.ai_review.enabled = True
+        monkeypatch.setattr(ai_review, "_request_ai_review", fake_request_ai_review)
+        monkeypatch.setattr(ai_review.click, "confirm", fake_confirm)
+
+        result = anyio.run(
+            ai_review.review_metadata_with_ai,
+            metadata,
+            metadata,
+            None,
+            lambda current_metadata: current_metadata,
+            fake_manual_review,
+        )
+    finally:
+        cfg.upload.ai_review.enabled = original_enabled
+
+    assert result["label"] == "Old Label"
+    assert seen_source_urls == ["https://old.example/release"]
 
 
 def test_review_metadata_with_ai_auto_applies_when_flag_enabled(monkeypatch) -> None:

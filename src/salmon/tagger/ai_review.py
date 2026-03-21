@@ -468,6 +468,18 @@ def _normalize_evidence_url(url: str | None) -> str | None:
     return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), path, "", ""))
 
 
+def _choose_ai_anchor_url(metadata: dict[str, Any], source_url: str | None) -> str | None:
+    normalized_source_url = _normalize_optional_text(source_url)
+    if normalized_source_url:
+        return normalized_source_url
+
+    for url in _normalize_list(metadata.get("urls")):
+        normalized_url = _normalize_optional_text(url)
+        if normalized_url:
+            return normalized_url
+    return None
+
+
 def _extract_opened_page_urls(payload: dict[str, Any]) -> set[str]:
     urls: set[str] = set()
     for item in payload.get("output", []):
@@ -618,7 +630,7 @@ def _guard_ai_label_change(
 
     review_metadata["label"] = metadata.get("label")
     if proposed_label is None:
-        return "Ignored AI label change because clearing label values requires manual review."
+        return "Ignored AI label removal because clearing label values requires manual review."
 
     opened_label_urls = {
         normalized_url
@@ -636,7 +648,7 @@ def _guard_ai_label_change(
         return None
 
     return (
-        f'Ignored AI label change to "{proposed_label}" because none of the opened label citations '
+        f'Ignored AI label change to "{proposed_label}" because none of the opened cited pages '
         "explicitly named it as a label or imprint."
     )
 
@@ -1028,6 +1040,11 @@ def format_ai_review_citations(review: dict[str, Any]) -> list[str]:
     if not isinstance(citations, list) or not citations:
         return ["No citations were returned."]
 
+    opened_page_urls = {
+        normalized_url
+        for url in review.get("_opened_page_urls", [])
+        if (normalized_url := _normalize_evidence_url(url))
+    }
     lines: list[str] = []
     for citation in citations:
         if not isinstance(citation, dict):
@@ -1036,7 +1053,10 @@ def format_ai_review_citations(review: dict[str, Any]) -> list[str]:
         url = citation.get("url", "")
         supports = citation.get("supports", [])
         support_text = f" ({', '.join(supports)})" if supports else ""
-        lines.append(f"- {title}{support_text}: {url}")
+        opened_text = ""
+        if normalized_url := _normalize_evidence_url(url):
+            opened_text = " [opened]" if normalized_url in opened_page_urls else " [not opened]"
+        lines.append(f"- {title}{support_text}{opened_text}: {url}")
     return lines or ["No citations were returned."]
 
 
@@ -1132,10 +1152,11 @@ async def review_metadata_with_ai(
     while True:
         click.secho("\nRunning AI metadata review...", fg="cyan", bold=True)
         try:
+            ai_anchor_url = _choose_ai_anchor_url(current_metadata, source_url)
             review, previous_response_id = await _request_ai_review(
                 current_metadata,
                 tag_baseline,
-                source_url,
+                ai_anchor_url,
                 user_instruction,
                 previous_response_id,
             )
@@ -1168,6 +1189,10 @@ async def review_metadata_with_ai(
             click.secho("\nAI did not suggest metadata changes.", fg="yellow")
 
         citations = format_ai_review_citations(review)
+        if citations and citations != ["No citations were returned."]:
+            click.secho("\nAI citations:", fg="yellow", bold=True)
+            for line in citations:
+                click.echo(line)
 
         if not diff_lines:
             return await _finalize_manual_review(current_metadata, validator, manual_review)
@@ -1186,19 +1211,12 @@ async def review_metadata_with_ai(
         while True:
             choice = await click.prompt(
                 click.style(
-                    "\n[a]pply suggestions, [k]eep original, "
-                    "[p]rompt model and rerun, [v]iew citations",
+                    "\n[a]pply suggestions, [k]eep original, [p]rompt model and rerun",
                     fg="magenta",
                 ),
                 type=click.STRING,
             )
             choice = choice.strip().lower()[:1]
-
-            if choice == "v":
-                click.secho("\nAI citations:", fg="yellow", bold=True)
-                for line in citations:
-                    click.echo(line)
-                continue
 
             if choice == "p":
                 user_instruction = await click.prompt(
