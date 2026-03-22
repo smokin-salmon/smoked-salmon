@@ -441,6 +441,6 @@ def generate_transcode_description(url: str, bitrate: Bitrate) -> str:
         f"[b]Source:[/b] {url}\n"
         f"[b]Transcode process:[/b] "
         f"[code]flac -Vdsc -- input.flac | lame -S {lame_command} --ignore-tag-errors - output.mp3[/code]\n"
-        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
+        f"[hr]Uploaded with [url=https://github.com/tomerh2001/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )

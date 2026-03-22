@@ -1,8 +1,18 @@
-[![Build and Publish Docker Image](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml/badge.svg)](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/docker-image.yml) [![Linting](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/smokin-salmon/smoked-salmon/actions/workflows/lint.yml)
+[![Build and Publish Docker Image](https://github.com/tomerh2001/smoked-salmon/actions/workflows/docker-image.yml/badge.svg)](https://github.com/tomerh2001/smoked-salmon/actions/workflows/docker-image.yml) [![Linting](https://github.com/tomerh2001/smoked-salmon/actions/workflows/lint.yml/badge.svg?branch=master)](https://github.com/tomerh2001/smoked-salmon/actions/workflows/lint.yml)
 
 # 🐟 smoked-salmon  
 
 A simple tool to take the work out of uploading on Gazelle-based trackers. It generates spectrals, gathers metadata, allows re-tagging/renaming files, and automates the upload process.
+
+This repository is Tomer's actively maintained fork of `smokin-salmon/smoked-salmon`. If you want the forked build, Docker image, and update path to stay aligned, use the commands in this README rather than the upstream wiki.
+
+## 🔗 Fork Links
+
+- Fork repository: https://github.com/tomerh2001/smoked-salmon
+- Upstream repository: https://github.com/smokin-salmon/smoked-salmon
+- Fork issues: https://github.com/tomerh2001/smoked-salmon/issues
+- Fork releases: https://github.com/tomerh2001/smoked-salmon/releases
+- Docker images: `ghcr.io/tomerh2001/smoked-salmon:latest` and `ghcr.io/tomerh2001/smoked-salmon:alpha`
 
 ## 🌟 Features  
 
@@ -29,7 +39,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 
 ## 📥 Installation  
 
-Manual installation instructions can be found on the [Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Installation).
+This README is the main installation and configuration guide for the fork. The checked-in template at [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml) is the source of truth for current config keys.
 
 ### 🔹  Install smoked-salmon 
 These steps use [`uv`](https://github.com/astral-sh/uv) for installing the *smoked-salmon* package. [`pipx`](https://github.com/pypa/pipx) also works.
@@ -48,7 +58,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 
 3. Install smoked-salmon package from github:
 	```bash
-	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	uv tool install git+https://github.com/tomerh2001/smoked-salmon
 	```
 
 #### Windows
@@ -74,7 +84,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 
 4. Install smoked-salmon package from github:
 	```powershell
-	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	uv tool install git+https://github.com/tomerh2001/smoked-salmon
 	```
 
 #### macOS
@@ -95,7 +105,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 
 4. Install smoked-salmon package from github:
 	```bash
-	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
+	uv tool install git+https://github.com/tomerh2001/smoked-salmon
 	```
 
 ### 🔹  Initial Setup
@@ -108,7 +118,9 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 
 2. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
-3. Use the `checkconf` command to verify that the connection to the trackers is working:
+3. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies, and update your preferences. The checked-in template lives at [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml).
+
+4. Use the `checkconf` command to verify that the connection to the trackers is working:
 
 	```
 	salmon checkconf
@@ -119,25 +131,33 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 	salmon health
 	```
 
+### Configuration Notes
+
+Use [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml) as the current reference for available settings. If you compare against the upstream wiki, prefer the fork's checked-in config template when there is a mismatch.
+
 ### 🐳 Docker Installation
 
-A Docker image is generated per release.  
-**Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
+The fork publishes two GHCR image tracks:
+
+- `ghcr.io/tomerh2001/smoked-salmon:latest` for tagged releases
+- `ghcr.io/tomerh2001/smoked-salmon:alpha` for the current `master` branch
+
+If you want the newest fork changes before the next tagged release, use `:alpha`.
 
 1. Pull the image:
 
    ```bash
    # Stable release
-   docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
+   docker pull ghcr.io/tomerh2001/smoked-salmon:latest
 
-   # Alpha (built on every push to master, equivalent to `uv tool install git+...`)
-   docker pull ghcr.io/smokin-salmon/smoked-salmon:alpha
+   # Current fork master
+   docker pull ghcr.io/tomerh2001/smoked-salmon:alpha
    ```
 
-   > The examples below use the `latest` tag. Replace with `alpha` to use the latest development version.
+   The examples below use the `latest` tag. Replace it with `alpha` if you want the current fork `master` build.
 
-2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server.
-   Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+2. Copy the content of [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml) to a location on your host server.  
+   Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies, and update your preferences.
 
 3. Configure rclone if needed. The Docker Compose configuration expects an rclone configuration file. You can get the path to your rclone config file by running `rclone config file` on your host system.
 
@@ -154,7 +174,7 @@ A Docker image is generated per release.
    -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
    -v /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features \
-   ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
+   ghcr.io/tomerh2001/smoked-salmon:latest checkconf
    ```
 
 2. **Upload**
@@ -230,7 +250,8 @@ If using Docker Compose, create a `docker-compose.yml` to define your volume map
 ```yaml
 services:
   salmon:
-    image: ghcr.io/smokin-salmon/smoked-salmon:latest
+    image: ghcr.io/tomerh2001/smoked-salmon:latest
+    container_name: smoked-salmon
     network_mode: host
     volumes:
       - /path/to/your/music:/app/.music
@@ -261,7 +282,7 @@ smoked-salmon uses distinct terminal colors for different types of messages:
 * Magenta – User prompts
 
 ### 🔧 CLI Mode
-smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server. Quick start usage instructions can be found on the [Wiki Usage page](https://github.com/smokin-salmon/smoked-salmon/wiki#usage).
+smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server. The most useful commands are shown below.
 
 The examples below show how to run smoked-salmon directly. If you're using Docker, you'll need to adjust them accordingly, but the underlying principles remain the same.
 
@@ -297,6 +318,12 @@ For **normal installs**:
 uv tool update salmon
 ```
 
+If you installed from GitHub directly and want to stay on the fork explicitly:
+
+```bash
+uv tool install --force git+https://github.com/tomerh2001/smoked-salmon
+```
+
 For **manual installs**:
 ```bash
 cd smoked-salmon
@@ -306,11 +333,11 @@ uv sync
 
 For **Docker users**:
 ```bash
-docker pull ghcr.io/smokin-salmon/smoked-salmon:latest
+docker pull ghcr.io/tomerh2001/smoked-salmon:latest
 ```
 
 ## 📞 Support
-For bug reports and feature requests, use GitHub Issues. Or use the forums.
+For fork-specific bug reports and feature requests, use [GitHub Issues](https://github.com/tomerh2001/smoked-salmon/issues). Upstream discussion can still happen on the forums.
 
 
 ## 🎭 Testimonials
@@ -323,4 +350,5 @@ For bug reports and feature requests, use GitHub Issues. Or use the forums.
 ## 🎩 Credits
 * Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon). Huge thanks!
 * Further development & maintenance by elghoto, xmoforf, miandru, redusys, kyokomiki and others. Keeping the dream alive.
+* Fork packaging, publishing, and custom maintenance by [tomerh2001](https://github.com/tomerh2001).
 * Docker image build workflow and update notification mechanisms heavily inspired from the awesome work of Audionut on his [Upload Assistant tool](https://github.com/Audionut/Upload-Assistant) !

@@ -28,7 +28,10 @@ def get_default_config_path() -> Path:
         default_config_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            github_url = "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/master/src/salmon/data/config.default.toml"
+            github_url = (
+                "https://raw.githubusercontent.com/"
+                "tomerh2001/smoked-salmon/master/src/salmon/data/config.default.toml"
+            )
             response = requests.get(github_url, timeout=30)
             response.raise_for_status()
 

@@ -9,7 +9,8 @@ from salmon import cfg
 
 LOCAL_VERSION_FILE = Path(__file__).parent / "data" / "version.toml"
 REMOTE_VERSION_URL = (
-    "https://raw.githubusercontent.com/smokin-salmon/smoked-salmon/refs/heads/master/src/salmon/data/version.toml"
+    "https://raw.githubusercontent.com/"
+    "tomerh2001/smoked-salmon/refs/heads/master/src/salmon/data/version.toml"
 )
 
 _cached_version: str | None = None
