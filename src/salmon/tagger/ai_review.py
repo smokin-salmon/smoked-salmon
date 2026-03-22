@@ -139,6 +139,11 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
   has a plausible no-label marker such as "Self-Released" or "Not on Label", do not clear it
   merely because an official store page omits a named label; only replace it when release-level
   evidence supports a specific different label.
+- If the only plausible normalized label would be exactly the same as a credited release artist
+  name, prefer treating that as self-released/no-label rather than promoting the artist name to
+  label. Only replace "Self-Released" or "Not on Label" with the artist name when an opened
+  release-level page clearly presents that exact artist-name string as a distinct label or imprint
+  for the release, not merely as the release artist in a rights/licensing line.
 - Artists must follow RED's multiple-artists rules. List each credited release artist separately as
   a {name, role} entry. Use only supported roles: main, guest, remixer, composer, conductor,
   djcompiler, producer.
@@ -150,6 +155,13 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
 - Use catno only when a release-level source supports it. For WEB, if there is no definitive catno
   but there is an explicit UPC and it is the only supported release identifier, you may use that UPC
   as catno while also keeping it in upc.
+- Be conservative with UPC and catno changes. Do not replace an existing UPC or catno from the
+  chosen source or another exact release page with a weaker value from a search snippet, artist
+  discography page, broad release list, or other non-exact index page. For identifiers, prefer
+  exact release pages and exact release records only. MusicBrainz artist release-list pages are too
+  weak to override a stronger exact-release DSP identifier.
+- Only copy a UPC into catno when the same exact release page or exact release record explicitly
+  supports that UPC for this release.
 - Genres must behave like RED tags: keep only explicit source-supported genres, prefer specific
   genres over vague umbrellas, and never add artists, labels, formats, bitrates, release types,
   or store names as genres.

@@ -242,12 +242,17 @@ def test_system_prompt_reflects_red_metadata_rules_and_web_budget() -> None:
     assert "Be aggressive about collapsing compound DSP rights strings down to the clean RED label." in SYSTEM_PROMPT
     assert "`ITModels - Doli & Penn Under exclusive license to NMC United Entertainment Ltd.`" in SYSTEM_PROMPT
     assert "as strong evidence for `ITModels`, not for `ITModels / Doli & Penn`" in SYSTEM_PROMPT
+    assert "prefer treating that as self-released/no-label rather than promoting the artist name to" in SYSTEM_PROMPT
+    assert 'Only replace "Self-Released" or "Not on Label" with the artist name' in SYSTEM_PROMPT
     assert "Artists means release-level artist entries only." in SYSTEM_PROMPT
     assert "List each credited release artist separately as" in SYSTEM_PROMPT
     assert "supported release-level guest artist merely because that artist only appears" in SYSTEM_PROMPT
     assert 'do not use "Various Artists"' in SYSTEM_PROMPT
     assert "Do not treat a bare ℗ or © rights line as label evidence" in SYSTEM_PROMPT
     assert "do not replace the current\nlabel with a new guess" in SYSTEM_PROMPT
+    assert "Do not replace an existing UPC or catno from the" in SYSTEM_PROMPT
+    assert "MusicBrainz artist release-list pages are too" in SYSTEM_PROMPT
+    assert "Only copy a UPC into catno when the same exact release page or exact release record" in SYSTEM_PROMPT
     assert "Genres must behave like RED tags" in SYSTEM_PROMPT
     assert "Discogs and MusicBrainz are useful cross-checks" in SYSTEM_PROMPT
     assert "For singles or small releases, you may inspect the release-page tracklist" in SYSTEM_PROMPT
