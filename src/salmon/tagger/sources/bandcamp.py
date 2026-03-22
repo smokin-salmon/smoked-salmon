@@ -9,14 +9,17 @@ from salmon.sources import BandcampBase
 from salmon.tagger.sources.base import MetadataMixin
 
 CATNO_PREFIX_RE = re.compile(r"^(?P<catno>(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ._-]{1,31})\s*/\s*(?P<title>.+)$")
+BRACKETED_CATNO_PREFIX_RE = re.compile(
+    r"^[\[(](?P<catno>(?=.*\d)[A-Za-z0-9][A-Za-z0-9 ._-]{1,31})[\])]\s*(?P<title>.+)$"
+)
+TITLE_ARTIST_PREFIX_RE = re.compile(r"^(?P<artist>.+?)\s+-\s+(?P<title>.+)$")
+TRACK_SIDE_PREFIX_RE = re.compile(r"^(?P<prefix>[A-Z]{1,3}\d{1,2}[A-Z]?)\s+(?P<artist>.+)$", re.IGNORECASE)
 
 
 class Scraper(BandcampBase, MetadataMixin):
     def parse_release_title(self, soup):
         try:
-            artist = parse_page_artist(soup)
-            _, title = extract_catno_and_title(parse_raw_release_title(soup), artist)
-            return title
+            return resolve_release_context(soup)["title"]
         except (TypeError, IndexError) as e:
             raise ScrapeError("Failed to parse scraped title.") from e
 
@@ -61,17 +64,18 @@ class Scraper(BandcampBase, MetadataMixin):
 
     def parse_release_label(self, soup):
         try:
-            artist = parse_page_artist(soup)
-            label = soup.select("#band-name-location .title")[0].string
-            if artist != label:
+            context = resolve_release_context(soup)
+            label = context["account_title"]
+            if label and normalize_release_key(context["artist"]) != normalize_release_key(label):
                 return label
         except IndexError as e:
             raise ScrapeError("Could not parse record label.") from e
 
     def parse_release_catno(self, soup):
-        artist = parse_page_artist(soup)
-        raw_title = parse_raw_release_title(soup)
-        catno, clean_title = extract_catno_and_title(raw_title, artist)
+        context = resolve_release_context(soup)
+        artist = context["artist"]
+        catno = context["catno"]
+        clean_title = context["title"]
         if catno:
             return catno
 
@@ -91,33 +95,31 @@ class Scraper(BandcampBase, MetadataMixin):
 
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
-        artist = parse_page_artist(soup)
-        various = artist
+        context = resolve_release_context(soup)
+        artist = context["artist"]
+        release_title = context["title"]
         tracklist_scrape = soup.select("#track_table tr.track_row_view")
         if tracklist_scrape:
             for track in tracklist_scrape:
                 try:
                     num = track.select(".track-number-col .track_number")[0].text.rstrip(".")
-                    title = track.select('.title-col span[class="track-title"]')[0].string
+                    title = extract_track_title(track)
+                    track_artists, strip_artist_prefix = parse_artists(artist, title, release_title=release_title)
                     tracks["1"][num] = self.generate_track(
                         trackno=int(num),
                         discno=1,
-                        artists=parse_artists(artist, title),
-                        title=parse_title(title, various=various),
+                        artists=track_artists,
+                        title=parse_title(title, strip_artist_prefix=strip_artist_prefix),
                     )
                 except (ValueError, IndexError, TypeError) as e:
                     raise ScrapeError("Could not parse tracks.") from e
         else:
-            try:
-                title = self.parse_release_title(soup)
-                tracks["1"]["1"] = self.generate_track(
-                    trackno=1,
-                    discno=1,
-                    artists=parse_artists(artist, title),
-                    title=parse_title(title, various=various),
-                )
-            except (ValueError, TypeError) as e:
-                raise ScrapeError("Could not parse single track.") from e
+            tracks["1"]["1"] = self.generate_track(
+                trackno=1,
+                discno=1,
+                artists=[(a, "main") for a in re_split(artist)],
+                title=release_title,
+            )
         return dict(tracks)
 
 
@@ -136,9 +138,16 @@ def parse_page_artist(soup):
     return ""
 
 
+def parse_account_title(soup):
+    title = soup.select_one("#band-name-location .title")
+    if title:
+        return title.get_text(strip=True)
+    return None
+
+
 def extract_catno_and_title(raw_title, artist=None):
     title = raw_title.strip()
-    match = CATNO_PREFIX_RE.match(title)
+    match = CATNO_PREFIX_RE.match(title) or BRACKETED_CATNO_PREFIX_RE.match(title)
     if not match:
         return None, title
 
@@ -154,13 +163,91 @@ def normalize_release_key(text):
     return re.sub(r"[^a-z0-9]+", "", text.casefold())
 
 
-def parse_artists(artist, title):
+def resolve_release_context(soup):
+    raw_title = parse_raw_release_title(soup)
+    page_artist = parse_page_artist(soup)
+    account_title = parse_account_title(soup)
+    catno, clean_title = extract_catno_and_title(raw_title, page_artist)
+    release_artist = page_artist
+    release_title = clean_title
+
+    if (
+        page_artist
+        and account_title
+        and normalize_release_key(page_artist) == normalize_release_key(account_title)
+    ):
+        split_title = split_artist_prefixed_title(clean_title)
+        if (
+            split_title
+            and normalize_release_key(split_title[0]) != normalize_release_key(page_artist)
+            and tracklist_supports_release_title(soup, split_title[1])
+        ):
+            release_artist, release_title = split_title
+
+    return {
+        "artist": release_artist,
+        "title": release_title,
+        "catno": catno,
+        "account_title": account_title,
+    }
+
+
+def split_artist_prefixed_title(title):
+    match = TITLE_ARTIST_PREFIX_RE.match(title or "")
+    if not match:
+        return None
+    return match["artist"].strip(), match["title"].strip()
+
+
+def tracklist_supports_release_title(soup, release_title):
+    candidate = normalize_release_key(release_title)
+    if not candidate:
+        return False
+
+    track_titles = [
+        normalize_release_key(track.get_text(strip=True))
+        for track in soup.select("#track_table tr.track_row_view .track-title")
+        if track.get_text(strip=True)
+    ]
+    if not track_titles:
+        return False
+    return sum(title.startswith(candidate) for title in track_titles) >= 2
+
+
+def strip_track_side_prefix(track_artists):
+    match = TRACK_SIDE_PREFIX_RE.match(track_artists.strip())
+    if not match:
+        return track_artists.strip()
+    return match["artist"].strip()
+
+
+def extract_track_title(track):
+    title_node = track.select_one('.title-col .track-title')
+    if title_node:
+        return title_node.get_text(strip=True)
+
+    title_container = track.select_one(".title-col .title")
+    if title_container:
+        for child in title_container.children:
+            if getattr(child, "name", None) != "span":
+                continue
+            classes = set(child.get("class", []))
+            if "time" in classes:
+                continue
+            text = child.get_text(strip=True)
+            if text:
+                return text
+    raise ScrapeError("Could not parse track title.")
+
+
+def parse_artists(artist, title, release_title=None):
     """
     Parse guest artists from the title and add them to the list
     of artists as guests.
     """
     feat_artists = RE_FEAT.search(title)
     artists = []
+    strip_artist_prefix = False
     if feat_artists:
         feat_part = feat_artists[1].split(" - ", 1)[0]  # Match only until ' - '
         artists = [(a, "guest") for a in re_split(feat_part)]
@@ -171,7 +258,14 @@ def parse_artists(artist, title):
         if feat_artists:
             # Remove featuring artists from track artists
             track_artists = track_artists.replace(feat_artists[0].split(" - ", 1)[0], "").strip()
-        artists += [(a, "main") for a in re_split(track_artists)]
+        normalized_track_artist = normalize_release_key(track_artists)
+        normalized_release_title = normalize_release_key(release_title) if release_title else ""
+        normalized_release_artist = normalize_release_key(artist)
+        if normalized_track_artist not in {normalized_release_title, normalized_release_artist}:
+            if "various" in artist.lower():
+                track_artists = strip_track_side_prefix(track_artists)
+            artists += [(a, "main") for a in re_split(track_artists)]
+            strip_artist_prefix = True
     except (IndexError, TypeError):
         pass
     if "various" not in artist.lower():
@@ -179,11 +273,11 @@ def parse_artists(artist, title):
             if (a, "main") not in artists:
                 artists.append((a, "main"))
 
-    return artists
+    return artists, strip_artist_prefix
 
 
-def parse_title(title, various):
+def parse_title(title, strip_artist_prefix=False):
     """Strip featuring artists from title; they belong with artists."""
-    if various and " - " in title:
+    if strip_artist_prefix and " - " in title:
         title = title.split(" - ", 1)[1]
     return RE_FEAT.sub("", title).rstrip()
