@@ -35,6 +35,15 @@ Fork-only commits on `master`:
 - immutable fork prereleases in the form `0.10.1-personal-fork.<run>`
 - fork-specific README and install/update guidance
 
+How new work enters fork `master`:
+
+1. Create a new issue on the upstream repository for the bug or feature.
+2. Branch from upstream `smokin-salmon/smoked-salmon` `master`, not from this fork's `master`.
+3. Implement the fix on that upstream-based branch and open a focused upstream PR.
+4. Merge that PR branch into this fork's `master` so the integration branch stays ahead with the combined local state.
+5. Let the fork `master` CI/CD publish a new prerelease and refresh the rolling Docker tags.
+6. Let local consumers use the new fork release artifacts instead of relying on an editable local checkout.
+
 If you only want the AI work without the rest of the integration branch, use [PR #342](https://github.com/smokin-salmon/smoked-salmon/pull/342).
 
 ## 🌟 Features  
