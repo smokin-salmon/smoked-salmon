@@ -14,6 +14,29 @@ This repository is Tomer's actively maintained fork of `smokin-salmon/smoked-sal
 - Fork releases: https://github.com/tomerh2001/smoked-salmon/releases
 - Docker images: `ghcr.io/tomerh2001/smoked-salmon:latest`, `ghcr.io/tomerh2001/smoked-salmon:personal-fork`, and `ghcr.io/tomerh2001/smoked-salmon:alpha`
 
+## 🧩 Fork Master Composition
+
+This fork's `master` branch is an integration branch. It is intentionally built from `smokin-salmon/smoked-salmon` `master` plus the in-flight patch sets below so there is one branch that always reflects the combined state I run locally.
+
+It is not meant to be reviewed upstream as one giant PR. The upstream review units are the smaller PRs listed here.
+
+| PR | Status | Included in fork `master` | Summary |
+| --- | --- | --- | --- |
+| [#342](https://github.com/smokin-salmon/smoked-salmon/pull/342) | Open | Yes | Optional AI metadata review workflow |
+| [#345](https://github.com/smokin-salmon/smoked-salmon/pull/345) | Open | Yes | Upload CLI automation flags and source-url helpers |
+| [#347](https://github.com/smokin-salmon/smoked-salmon/pull/347) | Open | Yes | Bandcamp parsing fixes for catno-prefixed and label-hosted releases |
+| [#352](https://github.com/smokin-salmon/smoked-salmon/pull/352) | Open | Yes | `open.qobuz.com` URL handling |
+| [#362](https://github.com/smokin-salmon/smoked-salmon/pull/362) | Open | Yes | RED cookie-backed upload hardening |
+
+Fork-only commits on `master`:
+
+- prerelease CI/CD for the fork `master` branch
+- rolling Docker tags `personal-fork` and `alpha`
+- immutable fork prereleases in the form `0.10.1-personal-fork.<run>`
+- fork-specific README and install/update guidance
+
+If you only want the AI work without the rest of the integration branch, use [PR #342](https://github.com/smokin-salmon/smoked-salmon/pull/342).
+
 ## 🌟 Features  
 
 - **Interactive Uploading** – Supports **multiple trackers** (RED / OPS / DIC).
