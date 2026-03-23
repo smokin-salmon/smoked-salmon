@@ -3,7 +3,10 @@ import asyncio
 import aiohttp
 from yarl import URL
 
-from salmon.trackers.base import _normalize_session_cookie
+from salmon.trackers.base import (
+    _build_tracker_cookies,
+    _normalize_session_cookie,
+)
 
 
 def test_normalize_session_cookie_encodes_decoded_red_style_values() -> None:
@@ -40,3 +43,10 @@ def test_normalized_cookie_header_is_not_quoted() -> None:
         assert jar.filter_cookies(url).output(header="Cookie:") == "Cookie: session=abc%2Fdef%2Bghi%3Ajkl%3D%3D"
     finally:
         loop.close()
+
+
+def test_build_tracker_cookies_includes_optional_keeplogged() -> None:
+    assert _build_tracker_cookies("abc/def", "keep-me") == {
+        "session": "abc%2Fdef",
+        "keeplogged": "keep-me",
+    }
