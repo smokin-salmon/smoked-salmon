@@ -41,6 +41,8 @@ FROM python:3.13-slim-trixie
 # Set working directory
 WORKDIR /app
 
+ARG SALMON_DISPLAY_VERSION=""
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sox flac mp3val curl nano vim rclone \
@@ -53,6 +55,7 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Set environment variables for Python virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
+ENV SALMON_DISPLAY_VERSION="${SALMON_DISPLAY_VERSION}"
 
 # Ensure app directory and its contents are writable by any user
 RUN mkdir -p /app/.music /app/.torrents && chmod -R 777 /app

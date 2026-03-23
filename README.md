@@ -34,6 +34,7 @@ Fork-only commits on `master`:
 - rolling Docker tags `personal-fork` and `alpha`
 - immutable fork prereleases in the form `0.10.1-personal-fork.<run>`
 - fork-specific README and install/update guidance
+- fork images report their own `0.10.1-personal-fork.<run>` runtime version inside Salmon
 
 How new work enters fork `master`:
 
