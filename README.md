@@ -12,7 +12,7 @@ This repository is Tomer's actively maintained fork of `smokin-salmon/smoked-sal
 - Upstream repository: https://github.com/smokin-salmon/smoked-salmon
 - Fork issues: https://github.com/tomerh2001/smoked-salmon/issues
 - Fork releases: https://github.com/tomerh2001/smoked-salmon/releases
-- Docker images: `ghcr.io/tomerh2001/smoked-salmon:latest` and `ghcr.io/tomerh2001/smoked-salmon:alpha`
+- Docker images: `ghcr.io/tomerh2001/smoked-salmon:latest`, `ghcr.io/tomerh2001/smoked-salmon:personal-fork`, and `ghcr.io/tomerh2001/smoked-salmon:alpha`
 
 ## 🌟 Features  
 
@@ -116,11 +116,9 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 	Do you want smoked-salmon to create a default config file at /home/salmon-user/.config/smoked-salmon/config.toml? [y/N]:
 	```
 
-2. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+2. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies, and update your preferences. The checked-in template lives at [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml).
 
-3. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies, and update your preferences. The checked-in template lives at [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml).
-
-4. Use the `checkconf` command to verify that the connection to the trackers is working:
+3. Use the `checkconf` command to verify that the connection to the trackers is working:
 
 	```
 	salmon checkconf
@@ -137,12 +135,14 @@ Use [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml)
 
 ### 🐳 Docker Installation
 
-The fork publishes two GHCR image tracks:
+The fork publishes three GHCR image tracks:
 
 - `ghcr.io/tomerh2001/smoked-salmon:latest` for tagged releases
-- `ghcr.io/tomerh2001/smoked-salmon:alpha` for the current `master` branch
+- `ghcr.io/tomerh2001/smoked-salmon:personal-fork` as the rolling "use this fork right now" tag
+- `ghcr.io/tomerh2001/smoked-salmon:alpha` as a compatibility alias for the current `master` branch
 
-If you want the newest fork changes before the next tagged release, use `:alpha`.
+If you want the newest fork changes before the next tagged release, use `:personal-fork`.
+Every push to fork `master` also creates an immutable prerelease tag in the form `0.10.1-personal-fork.<run>` on the fork releases page.
 
 1. Pull the image:
 
@@ -151,10 +151,13 @@ If you want the newest fork changes before the next tagged release, use `:alpha`
    docker pull ghcr.io/tomerh2001/smoked-salmon:latest
 
    # Current fork master
+   docker pull ghcr.io/tomerh2001/smoked-salmon:personal-fork
+
+   # Compatibility alias for the same moving master build
    docker pull ghcr.io/tomerh2001/smoked-salmon:alpha
    ```
 
-   The examples below use the `latest` tag. Replace it with `alpha` if you want the current fork `master` build.
+   The examples below use the `latest` tag. Replace it with `personal-fork` if you want the current fork `master` build.
 
 2. Copy the content of [`src/salmon/data/config.default.toml`](src/salmon/data/config.default.toml) to a location on your host server.  
    Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies, and update your preferences.
@@ -186,7 +189,7 @@ If you want the newest fork changes before the next tagged release, use `:alpha`
    -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
    -v /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features \
-   ghcr.io/smokin-salmon/smoked-salmon:latest up "/app/.music/path/to/album" -s WEB
+   ghcr.io/tomerh2001/smoked-salmon:personal-fork up "/app/.music/path/to/album" -s WEB
    ```
 
 ### 💡 Shell Alias (Optional)
@@ -199,7 +202,7 @@ alias salmon='docker run --rm -it --network=host \
   -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
   -v /path/to/your/generated/dottorrents:/app/.torrents \
   -v /path/to/your/rclone.conf:/root/.config/rclone/rclone.conf \
-  ghcr.io/smokin-salmon/smoked-salmon:latest'
+  ghcr.io/tomerh2001/smoked-salmon:personal-fork'
 ```
 
 Then use it just like a native install:

@@ -1,15 +1,20 @@
-name: Build Alpha Image
+name: Publish Fork Master Images
 
 on:
   push:
     branches:
       - master
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-alpha-image:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -41,12 +46,61 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            ghcr.io/${{ github.repository }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           flavor: |
             latest=false
           tags: |
             type=raw,value=alpha
             type=sha,prefix=alpha-
+            type=raw,value=personal-fork
+            type=raw,value=master-personal-fork
+            type=sha,prefix=personal-fork-
+
+      - name: Compute fork prerelease metadata
+        id: fork_meta
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          python - <<'PY'
+          import os
+          import pathlib
+          import textwrap
+          import tomllib
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          short_sha = sha[:7]
+          run_number = os.environ["GITHUB_RUN_NUMBER"]
+          server = os.environ["GITHUB_SERVER_URL"]
+          before = os.environ.get("GITHUB_EVENT_BEFORE", "")
+
+          version = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
+          release_tag = f"{version}-personal-fork.{run_number}"
+
+          compare_url = ""
+          if before and before != "0000000000000000000000000000000000000000":
+              compare_url = f"{server}/{repo}/compare/{before}...{sha}"
+
+          notes = textwrap.dedent(
+              f"""\
+              Automated prerelease for the fork `master` branch.
+
+              - Fork repository: {server}/{repo}
+              - Commit: {server}/{repo}/commit/{sha}
+              - Upstream repository: https://github.com/smokin-salmon/smoked-salmon
+              - Rolling Docker tag: `ghcr.io/{repo}:personal-fork`
+              - Compatibility Docker tag: `ghcr.io/{repo}:alpha`
+              - Commit Docker tags: `ghcr.io/{repo}:personal-fork-{short_sha}` and `ghcr.io/{repo}:alpha-{short_sha}`
+              """
+          )
+          if compare_url:
+              notes += f"\n- Compare with previous master push: {compare_url}\n"
+
+          pathlib.Path("fork-release-notes.md").write_text(notes, encoding="utf-8")
+
+          with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as fh:
+              fh.write(f"release_tag={release_tag}\n")
+          PY
 
       - name: Build and push alpha Docker image
         uses: docker/build-push-action@v7
@@ -58,3 +112,13 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Publish fork prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.fork_meta.outputs.release_tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ steps.fork_meta.outputs.release_tag }}
+          body_path: fork-release-notes.md
+          prerelease: true
+          generate_release_notes: false
