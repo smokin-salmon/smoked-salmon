@@ -115,6 +115,7 @@ class RedApi(BaseGazelleApi):
             red_cfg = cfg.tracker.red
 
             self.cookie = red_cfg.session
+            self.keeplogged = red_cfg.keeplogged
             if red_cfg.api_key:
                 self.api_key = red_cfg.api_key
 

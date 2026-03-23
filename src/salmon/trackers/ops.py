@@ -29,6 +29,7 @@ class OpsApi(BaseGazelleApi):
                 self.dot_torrents_dir = cfg.directory.dottorrents_dir
 
             self.cookie = ops_cfg.session
+            self.keeplogged = ops_cfg.keeplogged
             if ops_cfg.api_key:
                 self.api_key = ops_cfg.api_key
 

@@ -85,18 +85,21 @@ default_tracker = 'RED'       # If not set, you'll be prompted to choose when us
 # Authentication (Replace with valid session keys or API keys)
 [tracker.red]
 session = 'get-from-site-cookie' # Required for now (waiting on API support)
+# keeplogged = 'optional-keep-me-logged-in-cookie' # Needed on some Gazelle sites when session alone loops to login
 # api_key = 'red-api-key'          # Needs uploading privileges (optional for now)
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to dir'
 
 [tracker.ops]
 session = 'get-from-site-cookie'
+# keeplogged = 'optional-keep-me-logged-in-cookie'
 # api_key = 'ops-api-key'          # Needs uploading privileges (optional for now)
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to ops dir'
 
 [tracker.dic]
 session = 'get-from-site-cookie'
+# keeplogged = 'optional-keep-me-logged-in-cookie'
 # api_key = 'dic-api-key'          # DIC does not support API key authentication for now
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to dic dir'
