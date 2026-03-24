@@ -17,7 +17,7 @@ def test_get_version_prefers_display_version_override(monkeypatch) -> None:
     assert release_notification.get_version() == "0.10.1-personal-fork.42"
 
 
-def test_get_remote_personal_fork_version_data_picks_latest_release(monkeypatch) -> None:
+def test_get_remote_personal_fork_version_data_picks_latest_fork_release(monkeypatch) -> None:
     payload = [
         {
             "tag_name": "0.10.1-personal-fork.8",

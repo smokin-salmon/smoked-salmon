@@ -56,7 +56,7 @@ jobs:
             type=raw,value=master-personal-fork
             type=sha,prefix=personal-fork-
 
-      - name: Compute fork prerelease metadata
+      - name: Compute fork release metadata
         id: fork_meta
         env:
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
@@ -83,7 +83,7 @@ jobs:
 
           notes = textwrap.dedent(
               f"""\
-              Automated prerelease for the fork `master` branch.
+              Automated release for the fork `master` branch.
 
               - Fork repository: {server}/{repo}
               - Commit: {server}/{repo}/commit/{sha}
@@ -115,12 +115,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Publish fork prerelease
+      - name: Publish fork release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.fork_meta.outputs.release_tag }}
           target_commitish: ${{ github.sha }}
           name: ${{ steps.fork_meta.outputs.release_tag }}
           body_path: fork-release-notes.md
-          prerelease: true
+          prerelease: false
           generate_release_notes: false

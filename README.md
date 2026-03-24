@@ -30,9 +30,9 @@ It is not meant to be reviewed upstream as one giant PR. The upstream review uni
 
 Fork-only commits on `master`:
 
-- prerelease CI/CD for the fork `master` branch
+- release CI/CD for the fork `master` branch
 - rolling Docker tags `personal-fork` and `alpha`
-- immutable fork prereleases in the form `0.10.1-personal-fork.<run>`
+- immutable fork releases in the form `0.10.1-personal-fork.<run>`
 - fork-specific README and integration-branch policy
 - fork images report their own `0.10.1-personal-fork.<run>` runtime version inside Salmon
 
@@ -46,7 +46,7 @@ Every fork-changing task must follow this exact sequence:
 2. Branch from upstream `smokin-salmon/smoked-salmon` `master`, not from this fork's `master`.
 3. Implement the fix on that upstream-based branch and open a focused upstream PR.
 4. Merge that PR branch into this fork's `master` so the integration branch stays ahead with the combined local state.
-5. Let the fork `master` CI/CD publish a new prerelease and refresh the rolling Docker tags.
+5. Let the fork `master` CI/CD publish a new release and refresh the rolling Docker tags.
 6. Let local consumers use the new fork release artifacts instead of relying on an editable local checkout.
 
 If you only want the AI work without the rest of the integration branch, use [PR #342](https://github.com/smokin-salmon/smoked-salmon/pull/342).
@@ -61,9 +61,9 @@ This section documents the fork-only value on `master`: what this fork currently
 - `open.qobuz.com` URL handling from [PR #352](https://github.com/smokin-salmon/smoked-salmon/pull/352).
 - RED cookie-backed upload hardening from [PR #362](https://github.com/smokin-salmon/smoked-salmon/pull/362).
 - Fork-specific release/distribution behavior:
-  - prerelease CI/CD on fork `master`
+  - release CI/CD on fork `master`
   - rolling Docker tags `personal-fork` and `alpha`
-  - immutable prereleases in the form `0.10.1-personal-fork.<run>`
+  - immutable releases in the form `0.10.1-personal-fork.<run>`
   - fork images report their own `0.10.1-personal-fork.<run>` runtime version inside Salmon
 
 For the baseline smoked-salmon feature set that this fork inherits from upstream, see the upstream repository and README: https://github.com/smokin-salmon/smoked-salmon

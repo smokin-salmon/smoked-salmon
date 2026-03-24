@@ -121,7 +121,7 @@ def _get_remote_version_data(url: str) -> VersionData | None:
 
 
 def _get_remote_personal_fork_version_data(url: str) -> VersionData | None:
-    """Fetch the latest personal-fork prerelease metadata from GitHub releases."""
+    """Fetch the latest personal-fork release metadata from GitHub releases."""
     try:
         response = requests.get(url, timeout=10, headers={"Accept": "application/vnd.github+json"})
         if response.status_code != 200:
@@ -147,7 +147,7 @@ def _get_remote_personal_fork_version_data(url: str) -> VersionData | None:
             )
 
         if not entries:
-            click.secho("No personal-fork prereleases were found on GitHub.", fg="red")
+            click.secho("No personal-fork releases were found on GitHub.", fg="red")
             return None
 
         entries.sort(key=lambda entry: _personal_fork_sort_key(entry.version), reverse=True)
