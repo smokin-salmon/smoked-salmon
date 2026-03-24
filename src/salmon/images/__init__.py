@@ -7,16 +7,25 @@ import pyperclip
 from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
 from salmon.errors import ImageUploadFailed
-from salmon.images import catbox, imgbb, imgbox, oeimg, ptpimg, ptscreens
 
-HOSTS = {
-    "ptpimg": ptpimg,
-    "catbox": catbox,
-    "ptscreens": ptscreens,
-    "oeimg": oeimg,
-    "imgbb": imgbb,
-    "imgbox": imgbox,
-}
+_HOSTS: dict[str, Any] | None = None
+
+
+def get_hosts() -> dict[str, Any]:
+    """Load image-host integrations only when an upload flow needs them."""
+    global _HOSTS
+    if _HOSTS is None:
+        from salmon.images import catbox, imgbb, imgbox, oeimg, ptpimg, ptscreens
+
+        _HOSTS = {
+            "ptpimg": ptpimg,
+            "catbox": catbox,
+            "ptscreens": ptscreens,
+            "oeimg": oeimg,
+            "imgbb": imgbb,
+            "imgbox": imgbox,
+        }
+    return _HOSTS
 
 
 def validate_image_host(ctx: click.Context, param: click.Parameter, value: str) -> Any:
@@ -33,8 +42,9 @@ def validate_image_host(ctx: click.Context, param: click.Parameter, value: str) 
     Raises:
         click.BadParameter: If the image host is invalid.
     """
+    hosts = get_hosts()
     try:
-        return HOSTS[value]
+        return hosts[value]
     except KeyError:
         raise click.BadParameter(f"{value} is not a valid image host") from None
 
@@ -107,7 +117,7 @@ async def upload_cover(cover_path: str | None) -> str | None:
         return None
     click.secho(f"Uploading cover to {cfg.image.cover_uploader}...", fg="yellow", nl=False)
     try:
-        uploader = HOSTS[cfg.image.cover_uploader].ImageUploader()
+        uploader = get_hosts()[cfg.image.cover_uploader].ImageUploader()
         url, _ = await uploader.upload_file(cover_path)
         click.secho(f" done! {url}", fg="yellow")
         return url
@@ -128,7 +138,7 @@ async def upload_spectrals(spectrals, uploader=None, successful=None) -> dict:
         Dictionary mapping spec_id to list of URLs.
     """
     if uploader is None:
-        uploader = HOSTS[cfg.image.specs_uploader]
+        uploader = get_hosts()[cfg.image.specs_uploader]
 
     response = {}
     successful = successful or set()
@@ -163,21 +173,22 @@ async def _handle_failed_spectrals(spectrals, successful) -> dict:
     Returns:
         Dictionary of uploaded URLs.
     """
+    hosts = get_hosts()
     while True:
         host_input: str = await click.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
-                f"with? (Options: {', '.join(HOSTS.keys())})",
+                f"with? (Options: {', '.join(hosts.keys())})",
                 fg="magenta",
                 bold=True,
             ),
             default="ptpimg",
         )
         host = host_input.lower()
-        if host not in HOSTS:
+        if host not in hosts:
             click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
         else:
-            return await upload_spectrals(spectrals, uploader=HOSTS[host], successful=successful)
+            return await upload_spectrals(spectrals, uploader=hosts[host], successful=successful)
 
 
 async def _spectrals_handler(spec_id, filename, spectral_paths, uploader_instance):

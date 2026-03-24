@@ -9,7 +9,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
-from salmon.search import SEARCHSOURCES, run_metasearch
+from salmon.search import get_search_sources, run_metasearch
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists
@@ -47,14 +47,15 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
 
 def _print_search_results(results, rls_data=None):
     """Print the results from the metadata source."""
+    search_sources = get_search_sources()
     if rls_data:
         _print_metadata(rls_data, metadata_name="Previous")
 
     choices = {}
     choice_id = 1
-    not_found = list(SEARCHSOURCES.keys())
+    not_found = list(search_sources.keys())
     inactive_sources = []
-    source_errors = SEARCHSOURCES.keys() - [r for r in results]
+    source_errors = search_sources.keys() - [r for r in results]
 
     for source, releases in results.items():
         if releases:
@@ -63,7 +64,7 @@ def _print_search_results(results, rls_data=None):
             results = dict(islice(releases.items(), cfg.upload.search.limit))
             for rls_id, release in results.items():
                 choices[choice_id] = (source, rls_id)
-                url = SEARCHSOURCES[source].Searcher.format_url(rls_id)
+                url = search_sources[source].Searcher.format_url(rls_id)
                 click.secho(f"> {choice_id:02d} {release[1]} | {url}")
                 choice_id += 1
         if releases is None:
@@ -159,7 +160,10 @@ async def _select_choice(
                 tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(choices[int(stripped)][1])))
                 # Set source_url if this is a starred choice
                 if r.startswith("*"):
-                    source_url = SEARCHSOURCES[choices[int(stripped)][0]].Searcher.format_url(choices[int(stripped)][1])
+                    search_sources = get_search_sources()
+                    source_url = search_sources[choices[int(stripped)][0]].Searcher.format_url(
+                        choices[int(stripped)][1]
+                    )
 
         if not tasks:
             # Go to manual mode only if we have any URLs
