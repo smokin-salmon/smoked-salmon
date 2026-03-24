@@ -26,10 +26,22 @@ This section documents the fork-only value on `master`: what this fork currently
 - Fork-specific release/distribution behavior:
   - release CI/CD on fork `master`
   - rolling Docker tags `personal-fork` and `alpha`
-  - immutable releases in the form `0.10.1-personal-fork.<run>`
-  - fork images report their own `0.10.1-personal-fork.<run>` runtime version inside Salmon
+  - immutable releases in the form `X.Y.Z-personal-fork.N`
+  - fork images report their own `X.Y.Z-personal-fork.N` runtime version inside Salmon
 
 For the baseline smoked-salmon feature set that this fork inherits from upstream, see the upstream repository and README: https://github.com/smokin-salmon/smoked-salmon
+
+## 🔢 Fork Release Versioning
+
+Fork `master` treats the version in `pyproject.toml` as the synced upstream base version, not as the final fork release version.
+
+The release workflow reads `.github/fork-versioning.toml` and publishes the next semver after that upstream base:
+
+- `release_bump = "patch"` when the fork-only delta is bugfix-only. Example: upstream `0.10.1` becomes fork `0.10.2-personal-fork.N`.
+- `release_bump = "minor"` when the fork still carries any fork-only feature. Example: upstream `0.10.1` becomes fork `0.11.0-personal-fork.N`.
+- After upstream advances, the same rule is applied again from the new synced base. Example: upstream `0.10.2` with a bugfix-only fork delta becomes `0.10.3-personal-fork.N`.
+
+Keep `.github/fork-versioning.toml` aligned with the current fork-only delta whenever the carried patch set changes.
 
 ## 🧩 Fork Master Composition
 
@@ -49,9 +61,9 @@ Fork-only commits on `master`:
 
 - release CI/CD for the fork `master` branch
 - rolling Docker tags `personal-fork` and `alpha`
-- immutable fork releases in the form `0.10.1-personal-fork.<run>`
+- immutable fork releases in the form `X.Y.Z-personal-fork.N`
 - fork-specific README and integration-branch policy
-- fork images report their own `0.10.1-personal-fork.<run>` runtime version inside Salmon
+- fork images report their own `X.Y.Z-personal-fork.N` runtime version inside Salmon
 
 How new work enters fork `master`:
 

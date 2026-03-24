@@ -1,0 +1,9 @@
+# Source of truth for how fork `master` versions are derived from the
+# upstream-synced version in pyproject.toml.
+#
+# Set this to:
+# - "patch" when the fork-only delta is bugfix-only
+# - "minor" when any fork-only feature is still carried on fork `master`
+# - "major" only for intentional fork-only breaking changes
+release_bump = "minor"
+reason = "Fork master currently carries fork-only feature work on top of upstream."

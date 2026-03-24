@@ -56,7 +56,7 @@ jobs:
             type=raw,value=master-personal-fork
             type=sha,prefix=personal-fork-
 
-      - name: Compute fork release metadata
+      - name: Compute fork release version
         id: fork_meta
         env:
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
@@ -64,18 +64,23 @@ jobs:
           python - <<'PY'
           import os
           import pathlib
+          import sys
           import textwrap
-          import tomllib
+
+          sys.path.insert(0, str(pathlib.Path("src").resolve()))
+          from salmon.fork_versioning import compute_fork_release_version
 
           repo = os.environ["GITHUB_REPOSITORY"]
           sha = os.environ["GITHUB_SHA"]
           short_sha = sha[:7]
-          run_number = os.environ["GITHUB_RUN_NUMBER"]
           server = os.environ["GITHUB_SERVER_URL"]
           before = os.environ.get("GITHUB_EVENT_BEFORE", "")
 
-          version = tomllib.loads(pathlib.Path("pyproject.toml").read_text(encoding="utf-8"))["project"]["version"]
-          release_tag = f"{version}-personal-fork.{run_number}"
+          release = compute_fork_release_version(
+              pathlib.Path("pyproject.toml"),
+              pathlib.Path(".github/fork-versioning.toml"),
+              os.environ["GITHUB_RUN_NUMBER"],
+          )
 
           compare_url = ""
           if before and before != "0000000000000000000000000000000000000000":
@@ -85,6 +90,9 @@ jobs:
               f"""\
               Automated release for the fork `master` branch.
 
+              - Upstream-synced base version: `{release.base_version}`
+              - Fork release bump: `{release.release_bump}`
+              - Published fork release: `{release.release_tag}`
               - Fork repository: {server}/{repo}
               - Commit: {server}/{repo}/commit/{sha}
               - Upstream repository: https://github.com/smokin-salmon/smoked-salmon
@@ -93,13 +101,15 @@ jobs:
               - Commit Docker tags: `ghcr.io/{repo}:personal-fork-{short_sha}` and `ghcr.io/{repo}:alpha-{short_sha}`
               """
           )
+          if release.reason:
+              notes += f"\n- Fork release bump reason: {release.reason}\n"
           if compare_url:
               notes += f"\n- Compare with previous master push: {compare_url}\n"
 
           pathlib.Path("fork-release-notes.md").write_text(notes, encoding="utf-8")
 
           with pathlib.Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as fh:
-              fh.write(f"release_tag={release_tag}\n")
+              fh.write(f"release_tag={release.release_tag}\n")
           PY
 
       - name: Build and push alpha Docker image
