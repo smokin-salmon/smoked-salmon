@@ -43,6 +43,8 @@ The release workflow reads `.github/fork-versioning.toml` and publishes the next
 
 Keep `.github/fork-versioning.toml` aligned with the current fork-only delta whenever the carried patch set changes.
 
+The release calculation lives in the repo-root helper [fork_versioning.py](fork_versioning.py) so GitHub Actions can compute release metadata before project dependencies are installed.
+
 ## 🧩 Fork Master Composition
 
 This fork's `master` branch is an integration branch. It is intentionally built from `smokin-salmon/smoked-salmon` `master` plus the in-flight patch sets below so there is one branch that always reflects the combined state I run locally.

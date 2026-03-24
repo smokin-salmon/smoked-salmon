@@ -64,11 +64,9 @@ jobs:
           python - <<'PY'
           import os
           import pathlib
-          import sys
           import textwrap
 
-          sys.path.insert(0, str(pathlib.Path("src").resolve()))
-          from salmon.fork_versioning import compute_fork_release_version
+          from fork_versioning import compute_fork_release_version
 
           repo = os.environ["GITHUB_REPOSITORY"]
           sha = os.environ["GITHUB_SHA"]

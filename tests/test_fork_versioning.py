@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from salmon.fork_versioning import bump_base_version, compute_fork_release_version
+from fork_versioning import bump_base_version, compute_fork_release_version
 
 
 def test_bump_base_version_patch() -> None:
