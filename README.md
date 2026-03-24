@@ -14,6 +14,23 @@ This repository is Tomer's actively maintained fork of `smokin-salmon/smoked-sal
 - Fork releases: https://github.com/tomerh2001/smoked-salmon/releases
 - Docker images: `ghcr.io/tomerh2001/smoked-salmon:latest`, `ghcr.io/tomerh2001/smoked-salmon:personal-fork`, and `ghcr.io/tomerh2001/smoked-salmon:alpha`
 
+## 🌟 Features
+
+This section documents the fork-only value on `master`: what this fork currently has that upstream does not.
+
+- Optional AI metadata review workflow from [PR #342](https://github.com/smokin-salmon/smoked-salmon/pull/342).
+- Upload CLI automation flags and source-url helpers from [PR #345](https://github.com/smokin-salmon/smoked-salmon/pull/345).
+- Bandcamp parsing fixes for catno-prefixed and label-hosted releases from [PR #347](https://github.com/smokin-salmon/smoked-salmon/pull/347).
+- `open.qobuz.com` URL handling from [PR #352](https://github.com/smokin-salmon/smoked-salmon/pull/352).
+- RED cookie-backed upload hardening from [PR #362](https://github.com/smokin-salmon/smoked-salmon/pull/362).
+- Fork-specific release/distribution behavior:
+  - release CI/CD on fork `master`
+  - rolling Docker tags `personal-fork` and `alpha`
+  - immutable releases in the form `0.10.1-personal-fork.<run>`
+  - fork images report their own `0.10.1-personal-fork.<run>` runtime version inside Salmon
+
+For the baseline smoked-salmon feature set that this fork inherits from upstream, see the upstream repository and README: https://github.com/smokin-salmon/smoked-salmon
+
 ## 🧩 Fork Master Composition
 
 This fork's `master` branch is an integration branch. It is intentionally built from `smokin-salmon/smoked-salmon` `master` plus the in-flight patch sets below so there is one branch that always reflects the combined state I run locally.
@@ -50,20 +67,3 @@ Every fork-changing task must follow this exact sequence:
 6. Let local consumers use the new fork release artifacts instead of relying on an editable local checkout.
 
 If you only want the AI work without the rest of the integration branch, use [PR #342](https://github.com/smokin-salmon/smoked-salmon/pull/342).
-
-## 🌟 Features
-
-This section documents the fork-only value on `master`: what this fork currently has that upstream does not.
-
-- Optional AI metadata review workflow from [PR #342](https://github.com/smokin-salmon/smoked-salmon/pull/342).
-- Upload CLI automation flags and source-url helpers from [PR #345](https://github.com/smokin-salmon/smoked-salmon/pull/345).
-- Bandcamp parsing fixes for catno-prefixed and label-hosted releases from [PR #347](https://github.com/smokin-salmon/smoked-salmon/pull/347).
-- `open.qobuz.com` URL handling from [PR #352](https://github.com/smokin-salmon/smoked-salmon/pull/352).
-- RED cookie-backed upload hardening from [PR #362](https://github.com/smokin-salmon/smoked-salmon/pull/362).
-- Fork-specific release/distribution behavior:
-  - release CI/CD on fork `master`
-  - rolling Docker tags `personal-fork` and `alpha`
-  - immutable releases in the form `0.10.1-personal-fork.<run>`
-  - fork images report their own `0.10.1-personal-fork.<run>` runtime version inside Salmon
-
-For the baseline smoked-salmon feature set that this fork inherits from upstream, see the upstream repository and README: https://github.com/smokin-salmon/smoked-salmon
