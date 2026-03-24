@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
 
 
+LOG_DUPE_WORD_OVERLAP_THRESHOLD = 0.5
+
+
 async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[tuple]:
     """Check site log for recent uploads similar to ours.
 
@@ -24,7 +27,6 @@ async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs:
     Returns:
         List of matching upload tuples (id, artist, title).
     """
-    searchstr = searchstrs[0]
     recent_uploads = await gazelle_site.get_uploads_from_log()
     # Each upload in this list is best guess at (id,artist,title) from log
     hits = []
@@ -39,14 +41,35 @@ async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs:
         title = upload[2]
         artist = [[artist, "main"]]
         possible_comparisons = generate_dupe_check_searchstrs(artist, title)
-        ratio = 0
-        for comparison_string in possible_comparisons:
-            new_ratio = SequenceMatcher(None, searchstr, comparison_string).ratio()
-            ratio = max(ratio, new_ratio)
-        # Default tolerance is 0.5
-        if ratio > cfg.upload.log_dupe_tolerance:
+        if _recent_upload_matches(searchstrs, possible_comparisons, cfg.upload.log_dupe_tolerance):
             hits.append(upload)
     return hits
+
+
+def _recent_upload_matches(searchstrs: list[str], possible_comparisons: list[str], tolerance: float) -> bool:
+    """Return True when any candidate is genuinely similar enough to our release.
+
+    SequenceMatcher alone overweights shared artist prefixes, so we also require
+    the normalized strings to share enough words to suggest title overlap.
+    """
+    for searchstr in searchstrs:
+        for comparison_string in possible_comparisons:
+            ratio = SequenceMatcher(None, searchstr, comparison_string).ratio()
+            if ratio <= tolerance:
+                continue
+            if _word_overlap_ratio(searchstr, comparison_string) < LOG_DUPE_WORD_OVERLAP_THRESHOLD:
+                continue
+            return True
+    return False
+
+
+def _word_overlap_ratio(left: str, right: str) -> float:
+    """Measure overlap between normalized search tokens."""
+    left_words = set(left.split())
+    right_words = set(right.split())
+    if not left_words or not right_words:
+        return 0.0
+    return len(left_words & right_words) / max(len(left_words), len(right_words))
 
 
 def print_recent_upload_results(gazelle_site: "BaseGazelleApi", recent_uploads: list[tuple], searchstr: str) -> None:
@@ -101,7 +124,8 @@ async def _prompt_for_recent_upload_results(
     # Now prompt for user action
     while True:
         prompt_text = (
-            "\nWould you like to upload to an existing group?\n"
+            "\nThese are similar recent uploads from the site log, not exact group matches.\n"
+            "Pick one only if it is actually the same group.\n"
             f"{'Pick from recent uploads found, p' if recent_uploads else 'P'}aste a URL"
             f" or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}"
         )
