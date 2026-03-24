@@ -9,31 +9,11 @@ import anyio
 import asyncclick as click
 import pyperclip
 
-import salmon.checks
-import salmon.converter
-import salmon.play
-import salmon.search
-import salmon.sources
-import salmon.tagger
 import salmon.trackers
-import salmon.uploader
 from salmon import cfg
 from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
-from salmon.tagger.audio_info import gather_audio_info
-from salmon.tagger.combine import combine_metadatas
-from salmon.tagger.metadata import clean_metadata, remove_various_artists
-from salmon.tagger.retagger import create_artist_str
-from salmon.tagger.sources import run_metadata
-from salmon.uploader.spectrals import (
-    check_spectrals,
-    get_spectrals_path,
-    handle_spectrals_upload_and_deletion,
-    post_upload_spectral_check,
-)
-from salmon.uploader.torrent_client import TorrentClientGenerator
-from salmon.uploader.upload import generate_source_links
 
 
 @commandgroup.command()
@@ -42,6 +22,13 @@ from salmon.uploader.upload import generate_source_links
 @click.option("--format-output", "-f", is_flag=True)
 async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
     """Generate and open spectrals for a folder."""
+    from salmon.tagger.audio_info import gather_audio_info
+    from salmon.uploader.spectrals import (
+        check_spectrals,
+        get_spectrals_path,
+        handle_spectrals_upload_and_deletion,
+    )
+
     audio_info = gather_audio_info(path, True)
     _, sids = await check_spectrals(path, audio_info, check_lma=False)
     spath = get_spectrals_path(path)
@@ -68,6 +55,12 @@ async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
 @click.argument("urls", type=click.STRING, nargs=-1)
 async def descgen(urls: tuple[str, ...]) -> None:
     """Generate a description from metadata sources."""
+    from salmon.tagger.combine import combine_metadatas
+    from salmon.tagger.metadata import clean_metadata, remove_various_artists
+    from salmon.tagger.retagger import create_artist_str
+    from salmon.tagger.sources import run_metadata
+    from salmon.uploader.upload import generate_source_links
+
     if not urls:
         click.secho("You must specify at least one URL", fg="red")
         return
@@ -171,6 +164,9 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     source_url = None
     source = req["torrent"]["media"]
     click.echo(f"Generating spectrals for {source} sourced: {path}")
+    from salmon.tagger.audio_info import gather_audio_info
+    from salmon.uploader.spectrals import post_upload_spectral_check
+
     track_data = gather_audio_info(path)
     await post_upload_spectral_check(gazelle_site, path, torrent_id_int, None, track_data, source, source_url)
 
@@ -321,21 +317,25 @@ def _iter_which(deps: list[str]) -> None:
 
 async def _test_metadata_sources() -> None:
     """Test metadata sources connections (Discogs, Tidal, Qobuz)."""
+    from salmon.sources.discogs import DiscogsBase
+    from salmon.sources.qobuz import QobuzBase
+    from salmon.sources.tidal import TidalBase
+
     click.secho("\n[ Testing Metadata Sources ]", fg="cyan", bold=True)
 
     metadata_sources: dict[str, dict[str, Any]] = {
         "Discogs": {
-            "class": salmon.sources.DiscogsBase,
+            "class": DiscogsBase,
             "test_url": "https://www.discogs.com/release/432932",
             "config_check": lambda: bool(cfg.metadata.discogs_token),
         },
         "Tidal": {
-            "class": salmon.sources.TidalBase,
+            "class": TidalBase,
             "test_url": "http://www.tidal.com/album/75194842",
             "config_check": lambda: bool(cfg.metadata.tidal.token),
         },
         "Qobuz": {
-            "class": salmon.sources.QobuzBase,
+            "class": QobuzBase,
             "test_url": "https://www.qobuz.com/album/-/0886446576442",
             "config_check": lambda: bool(cfg.metadata.qobuz.app_id and cfg.metadata.qobuz.user_auth_token),
         },
@@ -368,6 +368,8 @@ async def _test_metadata_sources() -> None:
 
 async def _test_seedbox_connections() -> None:
     """Test seedbox connections."""
+    from salmon.uploader.torrent_client import TorrentClientGenerator
+
     click.secho("\n[ Testing Seedbox Connections ]", fg="cyan", bold=True)
 
     if not cfg.seedbox:

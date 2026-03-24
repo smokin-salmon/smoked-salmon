@@ -13,27 +13,36 @@ from salmon.common import (
     re_split,
     re_strip,
 )
-from salmon.search import (
-    apple_music,
-    bandcamp,
-    beatport,
-    deezer,
-    discogs,
-    musicbrainz,
-    qobuz,
-    tidal,
-)
 
-SEARCHSOURCES = {
-    "Bandcamp": bandcamp,
-    "MusicBrainz": musicbrainz,
-    "Apple Music": apple_music,
-    "Discogs": discogs,
-    "Beatport": beatport,
-    "Qobuz": qobuz,
-    "Tidal": tidal,
-    "Deezer": deezer,
-}
+_SEARCHSOURCES: dict[str, Any] | None = None
+
+
+def get_search_sources() -> dict[str, Any]:
+    """Load metadata search backends only when a search command needs them."""
+    global _SEARCHSOURCES
+    if _SEARCHSOURCES is None:
+        from salmon.search import (
+            apple_music,
+            bandcamp,
+            beatport,
+            deezer,
+            discogs,
+            musicbrainz,
+            qobuz,
+            tidal,
+        )
+
+        _SEARCHSOURCES = {
+            "Bandcamp": bandcamp,
+            "MusicBrainz": musicbrainz,
+            "Apple Music": apple_music,
+            "Discogs": discogs,
+            "Beatport": beatport,
+            "Qobuz": qobuz,
+            "Tidal": tidal,
+            "Deezer": deezer,
+        }
+    return _SEARCHSOURCES
 
 
 @commandgroup.command()
@@ -42,19 +51,20 @@ SEARCHSOURCES = {
 @click.option("--limit", "-l", type=click.INT, default=cfg.upload.search.limit)
 async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int) -> None:
     """Search for releases from metadata providers."""
+    search_sources = get_search_sources()
     search_query = " ".join(searchstr)
-    click.secho(f"Searching {', '.join(SEARCHSOURCES)} (searchstrs: {search_query})", fg="cyan", bold=True)
+    click.secho(f"Searching {', '.join(search_sources)} (searchstrs: {search_query})", fg="cyan", bold=True)
 
     results = await run_metasearch([search_query], limit=limit, track_count=track_count)
     not_found: list[str] = []
     inactive_sources: list[str] = []
-    source_errors = set(SEARCHSOURCES.keys()) - set(results)
+    source_errors = set(search_sources) - set(results)
     for source, releases in results.items():
         if releases:
             click.secho(f"\nResults from {source}:", fg="yellow", bold=True)
             for rls_id, release in releases.items():
                 rls_name = release[0][1]
-                url = SEARCHSOURCES[source].Searcher.format_url(rls_id, rls_name)
+                url = search_sources[source].Searcher.format_url(rls_id, rls_name)
                 click.echo(f"> {release[1]} {url}")
         elif source:
             if releases is None:
@@ -97,7 +107,8 @@ async def run_metasearch(
     Returns:
         Dict mapping source names to search results.
     """
-    sources = SEARCHSOURCES if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
+    search_sources = get_search_sources()
+    sources = search_sources if not sources else {k: m for k, m in search_sources.items() if k in sources}
     results: dict[str, Any] = {}
     tasks = [
         handle_scrape_errors(s.Searcher().search_releases(search, limit))
