@@ -265,7 +265,7 @@ async def up(
         await runtime.confirm_group_upload(gazelle_site, group_id, source)
     if source_url:
         source_url = source_url.strip()
-    await upload(
+    await run_upload(
         gazelle_site,
         path,
         group_id,
@@ -288,7 +288,7 @@ async def up(
     )
 
 
-async def upload(
+async def run_upload(
     gazelle_site: "BaseGazelleApi",
     path: str,
     group_id: int | None,
