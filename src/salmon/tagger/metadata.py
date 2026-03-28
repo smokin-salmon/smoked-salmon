@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from copy import copy
 from itertools import islice
 from typing import Any
@@ -143,17 +144,17 @@ async def _select_choice(
         elif res.lower().startswith("a"):
             raise click.Abort
 
+        selected_urls: list[str] = []
         sources, tasks = [], []
-        for r in res.split():
+        for r in _split_metadata_selection(res):
             # Handle starred items first
             stripped = r[1:] if r.startswith("*") else r
             stripped_lower = stripped.lower()
 
             # Handle URLs (both starred and unstarred)
             if stripped_lower.startswith("http"):
-                # Add any URL to rls_data urls if not already there
-                if stripped not in rls_data["urls"]:
-                    rls_data["urls"].append(stripped)
+                _append_unique(selected_urls, stripped)
+                _append_unique(rls_data["urls"], stripped)
 
                 # Set source_url if this is a starred URL
                 if r.startswith("*"):
@@ -167,18 +168,22 @@ async def _select_choice(
                         break
             # Handle numeric choices
             elif stripped.strip().isdigit() and int(stripped.strip()) in choices:
-                scraper = METASOURCES[choices[int(stripped)][0]].Scraper()
-                sources.append(choices[int(stripped)][0])
-                tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(choices[int(stripped)][1])))
+                choice_id = int(stripped.strip())
+                source_name, release_id = choices[choice_id]
+                scraper = METASOURCES[source_name].Scraper()
+                sources.append(source_name)
+                tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(release_id)))
+                choice_url = SEARCHSOURCES[source_name].Searcher.format_url(release_id)
+                _append_unique(selected_urls, choice_url)
                 # Set source_url if this is a starred choice
                 if r.startswith("*"):
-                    source_url = SEARCHSOURCES[choices[int(stripped)][0]].Searcher.format_url(choices[int(stripped)][1])
+                    source_url = choice_url
 
         if not tasks:
             # Go to manual mode only if we have any URLs
             if rls_data["urls"]:
                 meta = _get_manual_metadata(rls_data)
-                meta["urls"] = meta.get("urls", [])
+                meta["urls"] = _merge_urls(selected_urls, meta.get("urls", []))
                 # If we have a source_url (from a starred URL), make sure it's included
                 if source_url and source_url not in meta["urls"]:
                     meta["urls"].append(source_url)
@@ -191,7 +196,29 @@ async def _select_choice(
         )
         meta = clean_metadata(meta)
         meta["artists"], meta["tracks"] = generate_artists(meta["tracks"])
+        meta["urls"] = _merge_urls(selected_urls, meta.get("urls", []))
         return meta, source_url
+
+
+def _split_metadata_selection(response: str) -> list[str]:
+    """Split selection input while preserving the user's ordering."""
+    return [token for token in re.split(r"[\s,]+", response) if token]
+
+
+def _append_unique(items: list[str], value: str) -> None:
+    """Append a value only once while preserving insertion order."""
+    if value not in items:
+        items.append(value)
+
+
+def _merge_urls(selected_urls: list[str], existing_urls: list[str]) -> list[str]:
+    """Keep user-selected URLs first, then append any additional discovered URLs."""
+    merged: list[str] = []
+    for url in selected_urls:
+        _append_unique(merged, url)
+    for url in existing_urls:
+        _append_unique(merged, url)
+    return merged
 
 
 def _get_manual_metadata(rls_data):
