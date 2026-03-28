@@ -30,6 +30,7 @@ from salmon.converter.transcoding import (
 )
 from salmon.errors import AbortAndDeleteFolder, CRCMismatchError, EditedLogError, InvalidMetadataError, RequestError
 from salmon.images import upload_cover
+from salmon.sources.bandcamp import resolve_source_url as resolve_bandcamp_source_url
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -76,6 +77,12 @@ if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
 
 
+def configure_tracker_overrides(gazelle_site: "BaseGazelleApi", ops_split: bool = False) -> None:
+    set_split_choice = getattr(gazelle_site, "set_split_choice", None)
+    if ops_split and getattr(gazelle_site, "site_code", None) == "OPS" and callable(set_split_choice):
+        set_split_choice(True)
+
+
 @commandgroup.command()
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option("--group-id", "-g", default=None, help="Group ID to upload torrent to")
@@ -99,6 +106,7 @@ if TYPE_CHECKING:
     multiple=True,
     help="Track numbers of spectrals to include in torrent description",
 )
+@click.option("--all-spectrals", is_flag=True, help="Upload all generated spectrals without prompting.")
 @click.option(
     "--overwrite",
     "-ow",
@@ -122,8 +130,13 @@ if TYPE_CHECKING:
 @click.option(
     "--tracker",
     "-t",
+    "trackers",
+    multiple=True,
     callback=salmon.trackers.validate_tracker,
-    help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)})",
+    help=(
+        f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)}). "
+        "Repeat to upload to multiple trackers in order."
+    ),
 )
 @click.option("--request", "-r", default=None, help="Pass a request URL or ID")
 @click.option(
@@ -132,12 +145,14 @@ if TYPE_CHECKING:
     is_flag=True,
     help="Assess / upload / report spectrals after torrent upload",
 )
+@click.option("--all-downconversions", is_flag=True, help="Select all available downconversions without prompting.")
 @click.option(
     "--auto-rename",
     "-n",
     is_flag=True,
     help="Rename files and folders automatically",
 )
+@click.option("--auto-upload", is_flag=True, help="Upload torrent without the final confirmation prompt.")
 @click.option(
     "--skip-up",
     is_flag=True,
@@ -148,8 +163,12 @@ if TYPE_CHECKING:
     "--source-url",
     "-su",
     default=None,
-    help="For WEB uploads provide the source of the album to be added in release description",
+    help=(
+        "For WEB uploads provide the source of the album to be added in release description "
+        "and used as the preferred metadata source. Bandcamp checkout URLs are resolved automatically."
+    ),
 )
+@click.option("--ops-split", is_flag=True, help="Use OPS Split release type for eligible new-group uploads.")
 @click.option("-yyy", is_flag=True, help="Automatically pick the default answer for prompt")
 @click.option(
     "--skip-mqa",
@@ -178,16 +197,20 @@ async def up(
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
+    all_spectrals: bool,
     overwrite: bool,
     encoding: str | None,
     compress: bool,
-    tracker: str,
+    trackers: list[str],
     request: str | None,
     spectrals_after: bool,
+    all_downconversions: bool,
     auto_rename: bool,
+    auto_upload: bool,
     skip_up: bool,
     scene: bool,
     source_url: str | None,
+    ops_split: bool,
     yyy: bool,
     skip_mqa: bool,
     skip_log_check: bool,
@@ -197,9 +220,13 @@ async def up(
     """Command to upload an album folder to a Gazelle Site."""
     if essential_only and scene:
         raise click.UsageError("--essential-only and --scene cannot be used together.")
+    if all_spectrals and spectrals:
+        raise click.UsageError("--all-spectrals cannot be used together with --spectrals.")
     if yyy:
         cfg.upload.yes_all = True
+    tracker = trackers[0]
     gazelle_site = salmon.trackers.get_class(tracker)()
+    configure_tracker_overrides(gazelle_site, ops_split=ops_split)
     if request:
         request = salmon.trackers.validate_request(gazelle_site, request)
         # This is isn't handled by click because we need the tracker sorted first.
@@ -210,13 +237,17 @@ async def up(
         source,
         lossy,
         spectrals,
+        all_spectrals,
         encoding,
         spectrals_after,
     )
     if group_id:
         await confirm_group_upload(gazelle_site, group_id, source)
     if source_url:
-        source_url = source_url.strip()
+        raw_source_url = source_url.strip()
+        source_url = await resolve_bandcamp_source_url(raw_source_url)
+        if source_url != raw_source_url:
+            click.secho(f"Resolved source URL: {source_url}", fg="yellow")
     await upload(
         gazelle_site,
         path,
@@ -224,6 +255,7 @@ async def up(
         source,
         lossy,
         spectrals,
+        all_spectrals,
         encoding,
         source_url=source_url,
         scene=scene,
@@ -231,12 +263,16 @@ async def up(
         recompress=compress,
         request_id=request,
         spectrals_after=spectrals_after,
+        all_downconversions=all_downconversions,
         auto_rename=auto_rename,
+        auto_upload=auto_upload,
         skip_up=skip_up,
         skip_mqa=skip_mqa,
         skip_log_check=skip_log_check,
         skip_integrity_check=skip_integrity_check,
         essential_only=essential_only,
+        tracker_sequence=trackers,
+        ops_split=ops_split,
     )
 
 
@@ -247,6 +283,7 @@ async def upload(
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
+    all_spectrals: bool,
     encoding: str | None,
     scene: bool = False,
     overwrite_meta: bool = False,
@@ -255,12 +292,16 @@ async def upload(
     searchstrs: list[str] | None = None,
     request_id: int | str | None = None,
     spectrals_after: bool = False,
+    all_downconversions: bool = False,
     auto_rename: bool = False,
+    auto_upload: bool = False,
     skip_up: bool = False,
     skip_mqa: bool = False,
     skip_log_check: bool = False,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
+    tracker_sequence: list[str] | None = None,
+    ops_split: bool = False,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
@@ -273,6 +314,7 @@ async def upload(
         source: Media source (CD, WEB, etc).
         lossy: Whether files are lossy mastered.
         spectrals: Track numbers for spectrals.
+        all_spectrals: Upload all generated spectrals without prompting.
         encoding: Audio encoding.
         scene: Whether this is a scene release.
         overwrite_meta: Whether to overwrite metadata.
@@ -281,14 +323,19 @@ async def upload(
         searchstrs: Search strings for dupe checking.
         request_id: Request ID to fill.
         spectrals_after: Check spectrals after upload.
+        all_downconversions: Select all available downconversions without prompting.
         auto_rename: Auto-rename files and folders.
+        auto_upload: Upload torrent without the final confirmation prompt.
         skip_up: Skip upconvert check.
         skip_mqa: Skip MQA check.
         skip_log_check: Skip log checking.
         skip_integrity_check: Skip integrity check.
         essential_only: If True, only essential extensions are allowed.
+        tracker_sequence: Ordered tracker override supplied on the CLI.
+        ops_split: Use OPS Split release type automatically for eligible uploads.
     """
     path = os.path.abspath(path)
+    configure_tracker_overrides(gazelle_site, ops_split=ops_split)
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
         source = await _prompt_source()
@@ -360,11 +407,16 @@ async def upload(
             pass
         else:
             lossy_result, spectral_ids = await check_spectrals(
-                path, audio_info, lossy, spectrals, format=rls_data["format"]
+                path,
+                audio_info,
+                lossy,
+                spectrals,
+                all_spectrals=all_spectrals,
+                format=rls_data["format"],
             )
             lossy_master = lossy_result if lossy_result is not None else False
 
-        metadata, new_source_url = await get_metadata(path, tags, rls_data)
+        metadata, new_source_url = await get_metadata(path, tags, rls_data, preferred_source_url=source_url)
         if new_source_url is not None:
             source_url = new_source_url
             click.secho(f"New Source URL: {source_url}", fg="yellow")
@@ -377,6 +429,7 @@ async def upload(
             recompress,
             auto_rename,
             spectral_ids,
+            auto_upload,
             skip_integrity_check,
             essential_only,
         )
@@ -415,7 +468,8 @@ async def upload(
         await last_min_dupe_check(gazelle_site, searchstrs)
 
     # Shallow copy to avoid errors on multiple uploads in one session.
-    remaining_gazelle_sites = list(salmon.trackers.tracker_list)
+    remaining_gazelle_sites = [t for t in salmon.trackers.tracker_list if t != gazelle_site.site_code]
+    queued_trackers = list(tracker_sequence[1:]) if tracker_sequence and len(tracker_sequence) > 1 else None
     tracker = gazelle_site.site_code
     torrent_id = None
     cover_url = None
@@ -433,21 +487,36 @@ async def upload(
                     # Here we are checking the spectrals after uploading to the first site
                     # if they were not done before.
                     lossy_master, lossy_comment, spectral_urls, spectral_ids = await post_upload_spectral_check(
-                        gazelle_site, path, torrent_id, None, track_data, source, source_url, format=rls_data["format"]
+                        gazelle_site,
+                        path,
+                        torrent_id,
+                        None,
+                        track_data,
+                        source,
+                        source_url,
+                        all_spectrals=all_spectrals,
+                        format=rls_data["format"],
                     )
                     spectrals_after = False
-                click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
-                tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
+                if queued_trackers is not None:
+                    tracker = queued_trackers.pop(0) if queued_trackers else None
+                    if tracker:
+                        click.secho(f"\nUsing tracker: {tracker}", fg="green")
+                else:
+                    click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
+                    tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
                 if not tracker:
                     click.secho("\nDone with this release.", fg="green")
                     break
                 gazelle_site = salmon.trackers.get_class(tracker)()
+                configure_tracker_overrides(gazelle_site, ops_split=ops_split)
 
                 click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
                 searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
                 group_id = await check_existing_group(gazelle_site, searchstrs)
 
-            remaining_gazelle_sites.remove(tracker)
+            if tracker in remaining_gazelle_sites:
+                remaining_gazelle_sites.remove(tracker)
 
             # Handle cover image for this tracker
             if group_id:
@@ -495,11 +564,15 @@ async def upload(
 
                 await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
-                if cfg.upload.yes_all or click.confirm(
+                if all_downconversions or cfg.upload.yes_all or click.confirm(
                     click.style("\nWould you like to check downconversion options?", fg="magenta"),
                     default=True,
                 ):
-                    selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
+                    selected_tasks = await prompt_downconversion_choice(
+                        rls_data,
+                        track_data,
+                        all_downconversions=all_downconversions,
+                    )
                     if selected_tasks:
                         display_names = [task["name"] for task in selected_tasks]
                         click.secho(
@@ -530,7 +603,11 @@ async def upload(
                 click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
 
             tracker = None
-            if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+            if queued_trackers is not None:
+                if not queued_trackers:
+                    click.secho("\nDone uploading this release.", fg="green")
+                    break
+            elif not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
                 click.secho("\nDone uploading this release.", fg="green")
                 break
 
@@ -547,6 +624,7 @@ async def edit_metadata(
     recompress: bool,
     auto_rename: bool,
     spectral_ids: dict[int, str] | None,
+    auto_upload: bool = False,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
@@ -564,6 +642,7 @@ async def edit_metadata(
         recompress: Whether to recompress audio files after tagging.
         auto_rename: Whether to automatically rename files and folder.
         spectral_ids: Mapping of track index to spectral image ID, or None.
+        auto_upload: Whether to skip the final upload confirmation prompt.
         skip_integrity_check: Whether to skip the integrity check step.
         essential_only: If True, only essential extensions are allowed.
 
@@ -612,7 +691,7 @@ async def edit_metadata(
                 else:
                     click.secho("Some files failed sanitization", fg="red", bold=True)
 
-        if cfg.upload.yes_all or click.confirm(
+        if auto_upload or cfg.upload.yes_all or click.confirm(
             click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
             default=True,
         ):
@@ -748,7 +827,7 @@ def get_downconversion_options(rls_data, track_data):
     return options
 
 
-async def prompt_downconversion_choice(rls_data, track_data):
+async def prompt_downconversion_choice(rls_data, track_data, all_downconversions: bool = False):
     """
     Prompt user to select downconversion formats.
     Returns a list of selected task dictionaries.
@@ -758,7 +837,7 @@ async def prompt_downconversion_choice(rls_data, track_data):
     if not options:
         return []
 
-    if cfg.upload.yes_all:
+    if all_downconversions or cfg.upload.yes_all:
         return options
 
     click.secho("\nDownconversion Options", fg="cyan", bold=True)

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from copy import copy
 from itertools import islice
 from typing import Any
@@ -10,12 +11,18 @@ import msgspec
 from salmon import cfg
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.search import SEARCHSOURCES, run_metasearch
+from salmon.sources.bandcamp import resolve_source_url as resolve_bandcamp_source_url
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists
 
 
-async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
+async def get_metadata(
+    path: str,
+    tags: dict[str, Any],
+    rls_data: dict[str, Any],
+    preferred_source_url: str | None = None,
+) -> tuple[dict[str, Any], str | None]:
     """Get metadata pertaining to a release from various metadata sources.
 
     Have the user decide which sources to use, and then combine their information.
@@ -39,7 +46,9 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
         searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
     )
     choices = _print_search_results(search_results, rls_data)
-    metadata, source_url = await _select_choice(choices, rls_data)
+    if preferred_source_url:
+        preferred_source_url = await resolve_bandcamp_source_url(preferred_source_url)
+    metadata, source_url = await _select_choice(choices, rls_data, preferred_source_url=preferred_source_url)
     remove_various_artists(metadata["tracks"])
     metadata = fix_hardcore_genre(metadata)
     return metadata, source_url
@@ -86,7 +95,9 @@ def _print_search_results(results, rls_data=None):
 
 
 async def _select_choice(
-    choices: dict[int, tuple[str, str]], rls_data: dict[str, Any] | None
+    choices: dict[int, tuple[str, str]],
+    rls_data: dict[str, Any] | None,
+    preferred_source_url: str | None = None,
 ) -> tuple[dict[str, Any], str | None]:
     """Allow the user to select a metadata choice.
 
@@ -106,7 +117,10 @@ async def _select_choice(
         rls_data["urls"] = []
 
     while True:
-        if choices:
+        if preferred_source_url is not None:
+            res = f"*{preferred_source_url}"
+            preferred_source_url = None
+        elif choices:
             res = await click.prompt(
                 click.style(
                     "\nWhich metadata results would you like to use? Other "
@@ -130,17 +144,17 @@ async def _select_choice(
         elif res.lower().startswith("a"):
             raise click.Abort
 
+        selected_urls: list[str] = []
         sources, tasks = [], []
-        for r in res.split():
+        for r in _split_metadata_selection(res):
             # Handle starred items first
             stripped = r[1:] if r.startswith("*") else r
             stripped_lower = stripped.lower()
 
             # Handle URLs (both starred and unstarred)
             if stripped_lower.startswith("http"):
-                # Add any URL to rls_data urls if not already there
-                if stripped not in rls_data["urls"]:
-                    rls_data["urls"].append(stripped)
+                _append_unique(selected_urls, stripped)
+                _append_unique(rls_data["urls"], stripped)
 
                 # Set source_url if this is a starred URL
                 if r.startswith("*"):
@@ -154,18 +168,22 @@ async def _select_choice(
                         break
             # Handle numeric choices
             elif stripped.strip().isdigit() and int(stripped.strip()) in choices:
-                scraper = METASOURCES[choices[int(stripped)][0]].Scraper()
-                sources.append(choices[int(stripped)][0])
-                tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(choices[int(stripped)][1])))
+                choice_id = int(stripped.strip())
+                source_name, release_id = choices[choice_id]
+                scraper = METASOURCES[source_name].Scraper()
+                sources.append(source_name)
+                tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(release_id)))
+                choice_url = SEARCHSOURCES[source_name].Searcher.format_url(release_id)
+                _append_unique(selected_urls, choice_url)
                 # Set source_url if this is a starred choice
                 if r.startswith("*"):
-                    source_url = SEARCHSOURCES[choices[int(stripped)][0]].Searcher.format_url(choices[int(stripped)][1])
+                    source_url = choice_url
 
         if not tasks:
             # Go to manual mode only if we have any URLs
             if rls_data["urls"]:
                 meta = _get_manual_metadata(rls_data)
-                meta["urls"] = meta.get("urls", [])
+                meta["urls"] = _merge_urls(selected_urls, meta.get("urls", []))
                 # If we have a source_url (from a starred URL), make sure it's included
                 if source_url and source_url not in meta["urls"]:
                     meta["urls"].append(source_url)
@@ -178,7 +196,29 @@ async def _select_choice(
         )
         meta = clean_metadata(meta)
         meta["artists"], meta["tracks"] = generate_artists(meta["tracks"])
+        meta["urls"] = _merge_urls(selected_urls, meta.get("urls", []))
         return meta, source_url
+
+
+def _split_metadata_selection(response: str) -> list[str]:
+    """Split selection input while preserving the user's ordering."""
+    return [token for token in re.split(r"[\s,]+", response) if token]
+
+
+def _append_unique(items: list[str], value: str) -> None:
+    """Append a value only once while preserving insertion order."""
+    if value not in items:
+        items.append(value)
+
+
+def _merge_urls(selected_urls: list[str], existing_urls: list[str]) -> list[str]:
+    """Keep user-selected URLs first, then append any additional discovered URLs."""
+    merged: list[str] = []
+    for url in selected_urls:
+        _append_unique(merged, url)
+    for url in existing_urls:
+        _append_unique(merged, url)
+    return merged
 
 
 def _get_manual_metadata(rls_data):
