@@ -35,6 +35,7 @@ from salmon.tagger import (
     validate_encoding,
     validate_source,
 )
+from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import (
     check_hybrid,
     gather_audio_info,
@@ -150,6 +151,16 @@ if TYPE_CHECKING:
     default=None,
     help="For WEB uploads provide the source of the album to be added in release description",
 )
+@click.option(
+    "--skip-initial-review",
+    is_flag=True,
+    help="Skip the initial manual metadata review before AI review.",
+)
+@click.option(
+    "--apply-ai-suggestions",
+    is_flag=True,
+    help="Automatically apply AI review suggestions when AI review is enabled.",
+)
 @click.option("-yyy", is_flag=True, help="Automatically pick the default answer for prompt")
 @click.option(
     "--skip-mqa",
@@ -188,6 +199,8 @@ async def up(
     skip_up: bool,
     scene: bool,
     source_url: str | None,
+    skip_initial_review: bool,
+    apply_ai_suggestions: bool,
     yyy: bool,
     skip_mqa: bool,
     skip_log_check: bool,
@@ -237,6 +250,8 @@ async def up(
         skip_log_check=skip_log_check,
         skip_integrity_check=skip_integrity_check,
         essential_only=essential_only,
+        skip_initial_review=skip_initial_review,
+        apply_ai_suggestions=apply_ai_suggestions,
     )
 
 
@@ -261,6 +276,8 @@ async def upload(
     skip_log_check: bool = False,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
+    skip_initial_review: bool = False,
+    apply_ai_suggestions: bool = False,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
@@ -287,6 +304,8 @@ async def upload(
         skip_log_check: Skip log checking.
         skip_integrity_check: Skip integrity check.
         essential_only: If True, only essential extensions are allowed.
+        skip_initial_review: Skip the first manual metadata review before AI review.
+        apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
     path = os.path.abspath(path)
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
@@ -372,6 +391,7 @@ async def upload(
             path,
             tags,
             metadata,
+            source_url,
             source,
             rls_data,
             recompress,
@@ -379,6 +399,8 @@ async def upload(
             spectral_ids,
             skip_integrity_check,
             essential_only,
+            skip_initial_review,
+            apply_ai_suggestions,
         )
 
         if not group_id:
@@ -542,6 +564,7 @@ async def edit_metadata(
     path: str,
     tags: dict[str, "TagFile"],
     metadata: dict[str, Any],
+    source_url: str | None,
     source: str,
     rls_data: dict[str, Any],
     recompress: bool,
@@ -549,6 +572,8 @@ async def edit_metadata(
     spectral_ids: dict[int, str] | None,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
+    skip_initial_review: bool = False,
+    apply_ai_suggestions: bool = False,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
     """Edit release metadata in an interactive loop until the user confirms.
 
@@ -566,6 +591,8 @@ async def edit_metadata(
         spectral_ids: Mapping of track index to spectral image ID, or None.
         skip_integrity_check: Whether to skip the integrity check step.
         essential_only: If True, only essential extensions are allowed.
+        skip_initial_review: Skip the first manual metadata review before AI review.
+        apply_ai_suggestions: Automatically apply AI review suggestions when present.
 
     Returns:
         A tuple of (path, metadata, tags, audio_info) after editing is complete.
@@ -574,7 +601,15 @@ async def edit_metadata(
         click.Abort: If a scene release fails sanitization.
     """
     while True:
-        metadata = await review_metadata(metadata, metadata_validator)
+        metadata = await review_metadata_with_ai(
+            metadata,
+            rls_data,
+            source_url,
+            metadata_validator,
+            review_metadata,
+            skip_initial_review=skip_initial_review,
+            apply_suggestions=apply_ai_suggestions,
+        )
         if not metadata["scene"]:
             tag_files(path, tags, metadata, auto_rename)
 
