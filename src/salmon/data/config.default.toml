@@ -219,6 +219,7 @@ session = 'get-from-site-cookie'
 # # Optional AI-assisted metadata verification after Salmon combines sources
 # enabled = false
 # api_key = "sk-..."
+# base_url = "https://api.openai.com/v1"
 # model = "gpt-5.4-2026-03-05"
 # reasoning_effort = "medium"
 # use_web_search = true

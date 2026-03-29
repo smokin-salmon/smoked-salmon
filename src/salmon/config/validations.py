@@ -189,6 +189,7 @@ class UploadCompression(BaseStruct):
 class UploadAiReview(BaseStruct):
     enabled: bool = False
     api_key: str | None = None
+    base_url: str | None = None
     model: str = "gpt-5.4-2026-03-05"
     reasoning_effort: Literal["low", "medium", "high", "xhigh"] = "medium"
     use_web_search: bool = True

@@ -6,9 +6,9 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "aiohttp>=3.8.5 ; sys_platform == 'win32'",
     "aiohttp-jinja2>=1.5.1",
     "aiohttp[speedups]>=3.8.5 ; sys_platform != 'win32'",
-    "aiohttp>=3.8.5 ; sys_platform == 'win32'",
     "aiolimiter>=1.2.1",
     "anyio>=4.12.1",
     "asyncclick>=8.1.7.2",
@@ -21,6 +21,7 @@ dependencies = [
     "musicbrainzngs>=0.7.1",
     "mutagen>=1.47.0",
     "numpy>=2.4.2",
+    "openai>=2.30.0",
     "pillow>=11.3.0",
     "platformdirs>=4.3.8",
     "pycambia>=0.2.0",
@@ -45,7 +46,10 @@ requires = ["uv_build>=0.10.7,<0.11.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
-dev = ["ruff>=0.11.2"]
+dev = [
+    "pytest>=9.0.2",
+    "ruff>=0.11.2",
+]
 
 [tool.ruff]
 line-length = 120

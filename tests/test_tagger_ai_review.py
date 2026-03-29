@@ -3,6 +3,9 @@ from copy import deepcopy
 from pathlib import Path
 
 import anyio
+from openai.types.responses import Response, ResponseFunctionWebSearch, ResponseReasoningItem
+from openai.types.responses.response_function_web_search import ActionFind, ActionOpenPage, ActionSearch
+from openai.types.responses.response_reasoning_item import Summary
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -26,6 +29,20 @@ from salmon.tagger.ai_review import (
     build_ai_review_diff,
     format_ai_review_citations,
 )
+
+_RESPONSE_DEFAULTS: dict = {
+    "id": "resp_test",
+    "created_at": 0.0,
+    "model": "test",
+    "object": "response",
+    "parallel_tool_calls": True,
+    "tool_choice": "auto",
+    "tools": [],
+}
+
+
+def make_response(output: list) -> Response:
+    return Response(**{**_RESPONSE_DEFAULTS, "output": output})
 
 
 def make_metadata() -> dict:
@@ -337,43 +354,44 @@ def test_style_ai_progress_renders_markdown_bold_without_literal_asterisks() -> 
 
 
 def test_extract_progress_updates_reports_reasoning_and_web_search() -> None:
-    payload = {
-        "output": [
-            {
-                "type": "reasoning",
-                "summary": [
-                    {"type": "summary_text", "text": "Comparing Bandcamp and MusicBrainz."},
-                    {"type": "summary_text", "text": "Keeping the anchor page as primary evidence."},
+    response = make_response(
+        [
+            ResponseReasoningItem(
+                id="r_1",
+                type="reasoning",
+                summary=[
+                    Summary(type="summary_text", text="Comparing Bandcamp and MusicBrainz."),
+                    Summary(type="summary_text", text="Keeping the anchor page as primary evidence."),
                 ],
-            },
-            {
-                "id": "ws_123",
-                "type": "web_search_call",
-                "status": "searching",
-                "action": {"type": "search", "query": "Mouse and Banjo Dawn Dust label"},
-            },
-            {
-                "id": "ws_456",
-                "type": "web_search_call",
-                "status": "completed",
-                "action": {"type": "search", "query": '"Mouse and Banjo" "Dawn//Dust"'},
-            },
-            {
-                "id": "ws_789",
-                "type": "web_search_call",
-                "status": "completed",
-                "action": {"type": "find_in_page", "url": "https://example.com/release"},
-            },
-            {
-                "id": "ws_999",
-                "type": "web_search_call",
-                "status": "completed",
-                "action": {"type": "open_page"},
-            },
+            ),
+            ResponseFunctionWebSearch(
+                id="ws_123",
+                type="web_search_call",
+                status="searching",
+                action=ActionSearch(type="search", query="Mouse and Banjo Dawn Dust label"),
+            ),
+            ResponseFunctionWebSearch(
+                id="ws_456",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query='"Mouse and Banjo" "Dawn//Dust"'),
+            ),
+            ResponseFunctionWebSearch(
+                id="ws_789",
+                type="web_search_call",
+                status="completed",
+                action=ActionFind(type="find_in_page", pattern="", url="https://example.com/release"),
+            ),
+            ResponseFunctionWebSearch(
+                id="ws_999",
+                type="web_search_call",
+                status="completed",
+                action=ActionOpenPage(type="open_page"),
+            ),
         ]
-    }
+    )
 
-    lines, last_summary = _extract_progress_updates(payload, set(), None)
+    lines, last_summary = _extract_progress_updates(response, set(), None)
 
     assert any(line == "reasoning: Keeping the anchor page as primary evidence." for line in lines)
     assert any(line == 'web_search: completed | search | "Mouse and Banjo" "Dawn//Dust"' for line in lines)
@@ -425,27 +443,30 @@ def test_emit_ai_status_heartbeat_reports_initial_and_periodic_waits(monkeypatch
 
 
 def test_extract_opened_page_urls_keeps_only_completed_open_page_actions() -> None:
-    payload = {
-        "output": [
-            {
-                "type": "web_search_call",
-                "status": "completed",
-                "action": {"type": "open_page", "url": "https://example.com/release?utm=1"},
-            },
-            {
-                "type": "web_search_call",
-                "status": "searching",
-                "action": {"type": "open_page", "url": "https://example.com/ignored"},
-            },
-            {
-                "type": "web_search_call",
-                "status": "completed",
-                "action": {"type": "search", "query": "ignored"},
-            },
+    response = make_response(
+        [
+            ResponseFunctionWebSearch(
+                id="ws_1",
+                type="web_search_call",
+                status="completed",
+                action=ActionOpenPage(type="open_page", url="https://example.com/release?utm=1"),
+            ),
+            ResponseFunctionWebSearch(
+                id="ws_2",
+                type="web_search_call",
+                status="searching",
+                action=ActionOpenPage(type="open_page", url="https://example.com/ignored"),
+            ),
+            ResponseFunctionWebSearch(
+                id="ws_3",
+                type="web_search_call",
+                status="completed",
+                action=ActionSearch(type="search", query="ignored"),
+            ),
         ]
-    }
+    )
 
-    assert _extract_opened_page_urls(payload) == {"https://example.com/release"}
+    assert _extract_opened_page_urls(response) == {"https://example.com/release"}
 
 
 def test_page_explicitly_names_label_rejects_bare_rights_lines() -> None:

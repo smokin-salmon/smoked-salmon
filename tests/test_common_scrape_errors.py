@@ -25,9 +25,7 @@ def test_handle_scrape_errors_logs_expected_failures_without_traceback(monkeypat
     result = asyncio.run(handle_scrape_errors(raise_error()))
 
     assert result is None
-    assert messages == [
-        ("Scrape error: Could not find Next.js data script tag", {"fg": "red", "bold": True})
-    ]
+    assert messages == [("Scrape error: Could not find Next.js data script tag", {"fg": "red", "bold": True})]
 
 
 def test_handle_scrape_errors_keeps_traceback_for_unexpected_failures(monkeypatch) -> None:
