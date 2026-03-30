@@ -426,7 +426,8 @@ def generate_t_description(
             if hostname:
                 source = f"[b]Source:[/b] [url={source_url}]{hostname.group(1)}[/url]\n"
 
-    more_info = f"[b]More info:[/b] {generate_source_links(metadata_urls, source_url)}\n" if metadata_urls else ""
+    more_info_links = generate_source_links(metadata_urls, source_url) if metadata_urls else ""
+    more_info = f"[b]More info:[/b] {more_info_links}\n" if more_info_links else ""
 
     footer = (
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
@@ -448,22 +449,27 @@ def generate_source_links(metadata_urls: list[str], source_url: str | None = Non
     """
     links: list[str] = []
     unmatched_urls: list[str] = []
+    excluded_urls = {source_url.strip()} if source_url else set()
 
     for url in metadata_urls:
+        normalized_url = url.strip()
+        if normalized_url in excluded_urls:
+            continue
+
         matched = False
         for name, source in METASOURCES.items():
-            if source.Scraper.regex.match(url):
+            if source.Scraper.regex.match(normalized_url):
                 if cfg.upload.description.icons_in_descriptions:
-                    links.append(f"[pad=0|3][url={url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]")
+                    links.append(f"[pad=0|3][url={normalized_url}][img]{SOURCE_ICONS[name]}[/img] {name}[/url][/pad]")
                 else:
-                    links.append(f"[url={url}]{name}[/url]")
+                    links.append(f"[url={normalized_url}]{name}[/url]")
                 matched = True
                 break
 
         if not matched:
-            hostname = re.match(r"https?://(?:www\.)?([^/]+)", url)
+            hostname = re.match(r"https?://(?:www\.)?([^/]+)", normalized_url)
             if hostname:
-                unmatched_urls.append(f"[url={url}]{hostname.group(1)}[/url]")
+                unmatched_urls.append(f"[url={normalized_url}]{hostname.group(1)}[/url]")
 
     result = " ".join(links) if cfg.upload.description.icons_in_descriptions else " | ".join(links)
 
