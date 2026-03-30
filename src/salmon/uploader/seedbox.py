@@ -44,7 +44,8 @@ async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str)
     commands = ["rclone", "copy", path, f"{seedbox.url}:{remote_path}", *seedbox.extra_args]
     click.secho(f"Starting Rclone upload to {seedbox.url}:{remote_folder}", fg="cyan")
     click.secho(f"Executing: {' '.join(commands)}", fg="yellow")
-    result = await anyio.run_process(commands)
+    # Let rclone write directly to the terminal so flags like -P can render live progress output.
+    result = await anyio.run_process(commands, stdout=None, stderr=None, check=False)
     if result.returncode == 0:
         click.secho(f"Rclone upload successful: {path} to {seedbox.url}:{remote_path}", fg="green")
     else:
