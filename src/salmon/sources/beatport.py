@@ -41,7 +41,7 @@ class BeatportBase(BaseScraper):
             if not script_tag or not script_tag.string:
                 raise ScrapeError("Could not find Next.js data script tag")
 
-            data = msgspec.json.decode(script_tag.string)
+            data = msgspec.json.decode(str(script_tag.string))
             queries = data["props"]["pageProps"]["dehydratedState"]["queries"]
 
             track_query = next((q for q in queries if q.get("queryKey") and q["queryKey"][0] == "tracks"), None)
