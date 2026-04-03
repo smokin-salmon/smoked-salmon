@@ -4,7 +4,7 @@ import re
 from contextlib import suppress
 from http import HTTPStatus
 from typing import Any, cast
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 import aiohttp
 import asyncclick as click
@@ -60,6 +60,39 @@ def _redact(text: str) -> str:
         The string with sensitive values replaced.
     """
     return _SENSITIVE_KEYS.sub(lambda m: f'"{m.group(1)}": "[REDACTED]"', text)
+
+
+def _normalize_session_cookie(cookie: str) -> str:
+    """Normalize session cookies so aiohttp sends them in a browser-like form.
+
+    RED-style session cookies often contain characters like `/`, `+`, `:`, and `=`.
+    If we pass the decoded value directly into aiohttp's cookie jar, it gets wrapped
+    in quotes when serialized into the Cookie header. Normalizing to a canonical
+    percent-encoded form keeps the header unquoted and matches what browsers send.
+
+    Args:
+        cookie: Raw or already-encoded session cookie value from config.
+
+    Returns:
+        Canonical percent-encoded cookie value.
+    """
+    return quote(unquote(cookie.strip()), safe="")
+
+
+def _build_tracker_cookies(session_cookie: str, keeplogged_cookie: str | None = None) -> dict[str, str]:
+    """Build the cookie payload for tracker requests.
+
+    Args:
+        session_cookie: The tracker session cookie value.
+        keeplogged_cookie: Optional persistent-login cookie value.
+
+    Returns:
+        Cookie mapping ready for aiohttp.
+    """
+    cookies = {"session": _normalize_session_cookie(session_cookie)}
+    if keeplogged_cookie:
+        cookies["keeplogged"] = keeplogged_cookie.strip()
+    return cookies
 
 
 def _add_form_field(form: FormData, key: str, value: Any) -> None:
@@ -152,6 +185,7 @@ class BaseGazelleApi:
     site_code: str
     site_string: str
     api_key: str = ""  # Optional, only for API key upload
+    keeplogged: str | None = None
 
     # Rate limiter: 5 requests per 10 seconds (shared across all instances)
     _rate_limiter = AsyncLimiter(5, 10)
@@ -173,7 +207,7 @@ class BaseGazelleApi:
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
-        return {"session": self.cookie}
+        return _build_tracker_cookies(self.cookie, self.keeplogged)
 
     @property
     def announce(self) -> str:

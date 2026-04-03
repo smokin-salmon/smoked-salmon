@@ -23,6 +23,7 @@ class DICApi(BaseGazelleApi):
                 self.dot_torrents_dir = cfg.directory.dottorrents_dir
 
             self.cookie = dic_cfg.session
+            self.keeplogged = dic_cfg.keeplogged
             if dic_cfg.api_key:
                 self.api_key = dic_cfg.api_key
 
