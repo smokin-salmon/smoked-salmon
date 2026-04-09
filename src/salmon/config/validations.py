@@ -68,11 +68,17 @@ class AppleMusicSettings(BaseStruct):
     storefronts: list[str] = msgspec.field(default_factory=lambda: ["us:en-US", "jp:ja", "cn:zh-Hans-CN"])
 
 
+class BeatportSettings(BaseStruct):
+    username: str | None = None
+    password: str | None = None
+
+
 class Metadata(BaseStruct):
     discogs_token: str | None = None
     qobuz: QobuzSettings = msgspec.field(default_factory=QobuzSettings)
     tidal: TidalSettings = msgspec.field(default_factory=TidalSettings)
     apple_music: AppleMusicSettings = msgspec.field(default_factory=AppleMusicSettings)
+    beatport: BeatportSettings = msgspec.field(default_factory=BeatportSettings)
 
 
 class GazelleTrackerSettings(BaseStruct):

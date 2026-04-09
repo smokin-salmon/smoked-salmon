@@ -79,6 +79,10 @@ user_auth_token = 'user_auth_token'
 # if you are using salmon from a non-english country, set this to true to avoid retrieving non-english genres
 # no_genres_from_qobuz = False
 
+# remove if not using beatport
+[metadata.beatport]
+username = 'username'
+password = 'password'
 
 # ===============================
 # TRACKER SETTINGS
