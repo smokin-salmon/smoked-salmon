@@ -24,21 +24,20 @@ SPLIT_GENRES = {
 class Scraper(BeatportBase, MetadataMixin):
     def parse_release_title(self, soup):
         try:
-            return soup["state"]["data"]["results"][0]["release"]["name"]
+            return soup["release"]["name"]
         except (KeyError, IndexError) as e:
             raise ScrapeError("Could not parse release title") from e
 
     def parse_cover_url(self, soup):
         try:
-            return soup["state"]["data"]["results"][0]["release"]["image"]["uri"]
+            return soup["release"]["image"]["uri"]
         except (KeyError, IndexError) as e:
             raise ScrapeError("Could not parse cover URL") from e
 
     def parse_genres(self, soup):
         genres = {"Electronic"}
         try:
-            tracks = soup["state"]["data"]["results"]
-            for track in tracks:
+            for track in soup["tracks"]:
                 genre_name = track["genre"]["name"]
                 try:
                     genres |= SPLIT_GENRES[genre_name]
@@ -60,32 +59,36 @@ class Scraper(BeatportBase, MetadataMixin):
 
     def parse_release_date(self, soup):
         try:
-            return soup["state"]["data"]["results"][0]["new_release_date"]
+            return soup["release"]["new_release_date"]
         except (KeyError, IndexError) as e:
             raise ScrapeError("Could not parse release date") from e
 
     def parse_release_label(self, soup):
         try:
-            return soup["state"]["data"]["results"][0]["release"]["label"]["name"]
+            return soup["release"]["label"]["name"]
         except (KeyError, IndexError) as e:
             raise ScrapeError("Could not parse release label") from e
 
     def parse_release_catno(self, soup):
         try:
-            return soup["state"]["data"]["results"][0]["catalog_number"]
+            return soup["release"]["catalog_number"]
         except (KeyError, IndexError) as e:
             raise ScrapeError("Could not parse catalog number") from e
 
     def parse_comment(self, soup):
         return None
 
+    def parse_upc(self, soup):
+        try:
+            return soup["release"]["upc"]
+        except (KeyError, IndexError) as e:
+            raise ScrapeError("Could not parse UPC") from e
+
     async def parse_tracks(self, soup):
         tracks = defaultdict(dict)
         cur_disc = 1
         try:
-            track_list = sorted(
-                soup["state"]["data"]["results"], key=lambda x: int(x["id"]) if x["id"] is not None else 0
-            )
+            track_list = sorted(soup["tracks"], key=lambda x: int(x["id"]) if x["id"] is not None else 0)
             for i, track in enumerate(track_list, 1):
                 track_num = str(i)
                 # Get artists and remixers

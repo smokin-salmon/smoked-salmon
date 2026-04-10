@@ -55,6 +55,17 @@ class BaseScraper:
         rls_id_str = rls_id[1] if isinstance(rls_id, tuple) else rls_id
         return cls.site_url + cls.release_format.format(rls_id=rls_id_str)
 
+    async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
+        if resp.status != 200:
+            class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
+            error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
+            try:
+                error_data = await resp.text()
+            except Exception:
+                error_data = None
+            raise ScrapeError(error_msg, error_data)
+        return msgspec.json.decode(await resp.read())
+
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         """Make async GET request to JSON API.
 
@@ -80,15 +91,7 @@ class BaseScraper:
                 aiohttp.ClientSession(timeout=timeout) as session,
                 session.get(full_url, params=params, headers=headers) as resp,
             ):
-                if resp.status != 200:
-                    class_hierarchy = " -> ".join([cls.__name__ for cls in self.__class__.mro()[:-1]])
-                    error_msg = f"{self.__class__.__name__}({class_hierarchy}): Status code {resp.status}."
-                    try:
-                        error_data = await resp.text()
-                    except Exception:
-                        error_data = None
-                    raise ScrapeError(error_msg, error_data)
-                return msgspec.json.decode(await resp.read())
+                return await self.handle_json_response(resp)
         except aiohttp.ContentTypeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
         except msgspec.DecodeError as e:
@@ -145,10 +148,11 @@ class BaseScraper:
         ``NotImplementedError``.
 
         Args:
-            url: The release URL.
-            params: Optional query parameters.
-            headers: Optional HTTP headers.
-            follow_redirects: Whether to follow redirects.
+            :param url: The release URL.
+            :param params: Optional query parameters.
+            :param headers: Optional HTTP headers.
+            :param follow_redirects: Whether to follow redirects.
+            :param rls_id: The Release ID.
 
         Returns:
             Release data dict.
