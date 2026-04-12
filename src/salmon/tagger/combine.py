@@ -181,7 +181,9 @@ def _extract_remixers_from_title(title):
 
 def combine_tracks(base, meta, update_track_numbers):
     """Combine the metadata for the tracks of two different sources."""
-    btracks = iter(chain.from_iterable([list(d.values()) for d in base.values()]))
+    # btracks could be sorted by filename, so sort by track# if possible
+    btracks_sorted = [[track for (no, track) in sorted(disc.items())] for disc in base.values()]
+    btracks = iter(chain.from_iterable(btracks_sorted))
 
     # If the source already provides remixer credits, skip title-based inference
     # to avoid adding spurious artists from mix names like "Attitude Dub Mix".
