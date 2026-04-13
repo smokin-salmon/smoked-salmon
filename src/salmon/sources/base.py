@@ -83,6 +83,7 @@ class BaseScraper:
             ScrapeError: If request fails or response is not JSON.
         """
         params = {**(params or {}), **(self.get_params or {})}
+        params = {k: v for k, v in params.items() if v is not None}  # remove None values before serializing
         headers = {**(headers or {}), **HEADERS}
         full_url = url if url.startswith(("http://", "https://")) else self.url + url
         timeout = aiohttp.ClientTimeout(total=10)
