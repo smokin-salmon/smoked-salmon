@@ -1,7 +1,7 @@
 import contextlib
 import re
 from collections import defaultdict
-from itertools import chain
+from collections.abc import Iterator
 
 from unidecode import unidecode
 
@@ -179,11 +179,17 @@ def _extract_remixers_from_title(title):
     return []
 
 
+def _sorted_base_tracks(base: dict[str, dict]) -> Iterator[dict]:
+    """An iterator over base tracks, sorted by track#. exists only for readability"""
+    for disc in base.values():
+        tracks_sorted = sorted(disc.items(), key=lambda tup: int(tup[0]))
+        yield from [track for (no, track) in tracks_sorted]
+
+
 def combine_tracks(base, meta, update_track_numbers):
     """Combine the metadata for the tracks of two different sources."""
-    # btracks could be sorted by filename, so sort by track# if possible
-    btracks_sorted = [[track for (no, track) in sorted(disc.items())] for disc in base.values()]
-    btracks = iter(chain.from_iterable(btracks_sorted))
+    # btracks could be sorted by filename
+    btracks = _sorted_base_tracks(base)
 
     # If the source already provides remixer credits, skip title-based inference
     # to avoid adding spurious artists from mix names like "Attitude Dub Mix".
