@@ -1947,7 +1947,7 @@ requires-dist = [
     { name = "anyio", specifier = ">=4.12.1" },
     { name = "asyncclick", specifier = ">=8.1.7.2" },
     { name = "av", specifier = ">=16.1.0" },
-    { name = "beautifulsoup4", extras = ["lxml"], specifier = ">=4.13.0" },
+    { name = "beautifulsoup4", extras = ["lxml"], specifier = ">=4.14.3" },
     { name = "deluge-client", specifier = ">=1.10.2" },
     { name = "humanfriendly", specifier = ">=10.0" },
     { name = "jinja2", specifier = ">=3.1.2" },
