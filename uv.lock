@@ -1941,7 +1941,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", marker = "sys_platform == 'win32'", specifier = ">=3.8.5" },
-    { name = "aiohttp", extras = ["speedups"], marker = "sys_platform != 'win32'", specifier = ">=3.8.5" },
+    { name = "aiohttp", extras = ["speedups"], marker = "sys_platform != 'win32'", specifier = ">=3.13.5" },
     { name = "aiohttp-jinja2", specifier = ">=1.5.1" },
     { name = "aiolimiter", specifier = ">=1.2.1" },
     { name = "anyio", specifier = ">=4.12.1" },
