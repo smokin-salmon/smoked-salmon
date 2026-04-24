@@ -9,6 +9,7 @@ from salmon.sources.base import BaseScraper
 
 
 class TidalBase(BaseScraper):
+    proxy_service = "tidal"
     url = "https://api.tidalhifi.com/v1"
     site_url = "https://listen.tidal.com"
     image_url = "https://resources.tidal.com/images/{album_id}/1280x1280.jpg"

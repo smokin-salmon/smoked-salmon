@@ -7,6 +7,7 @@ import anyio
 from salmon.constants import UAGENTS
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
+from salmon.proxy import session_kwargs
 
 HEADERS = {
     "User-Agent": choice(UAGENTS),
@@ -15,6 +16,8 @@ HEADERS = {
 
 
 class ImageUploader(BaseImageUploader):
+    proxy_service = "catbox"
+
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to catbox.moe.
 
@@ -35,7 +38,7 @@ class ImageUploader(BaseImageUploader):
         data.add_field("fileToUpload", file_data, filename=Path(filename).name)
         url = "https://catbox.moe/user/api.php"
         try:
-            async with aiohttp.ClientSession() as session, session.post(url, headers=HEADERS, data=data) as resp:
+            async with aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session, session.post(url, headers=HEADERS, data=data) as resp:
                 resp.raise_for_status()
                 return await resp.text(), None
         except ValueError as e:

@@ -7,6 +7,7 @@ import msgspec
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
+from salmon.proxy import session_kwargs
 
 HEADERS = {
     "referer": "https://ptpimg.me/index.php",
@@ -16,6 +17,8 @@ HEADERS = {
 
 class ImageUploader(BaseImageUploader):
     """Image uploader for ptpimg.me."""
+
+    proxy_service = "ptpimg"
 
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to ptpimg.me.
@@ -39,7 +42,7 @@ class ImageUploader(BaseImageUploader):
         url = "https://ptpimg.me/upload.php"
         try:
             async with (
-                aiohttp.ClientSession() as session,
+                aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session,
                 session.post(url, headers=HEADERS, data=data) as resp,
             ):
                 resp.raise_for_status()

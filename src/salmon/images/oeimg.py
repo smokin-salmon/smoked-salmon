@@ -7,12 +7,15 @@ import msgspec
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
+from salmon.proxy import session_kwargs
 
 HEADERS: dict[str, str] = {"X-API-Key": cfg.image.oeimg_key or ""}
 
 
 class ImageUploader(BaseImageUploader):
     """Image uploader for imgoe.download (oeimg)."""
+
+    proxy_service = "oeimg"
 
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to oeimg.
@@ -35,7 +38,7 @@ class ImageUploader(BaseImageUploader):
         url = "https://imgoe.download/api/1/upload"
         try:
             async with (
-                aiohttp.ClientSession() as session,
+                aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session,
                 session.post(url, headers=HEADERS, data=data) as resp,
             ):
                 resp.raise_for_status()

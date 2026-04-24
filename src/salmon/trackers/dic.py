@@ -6,6 +6,8 @@ from salmon.trackers.base import BaseGazelleApi
 
 
 class DICApi(BaseGazelleApi):
+    proxy_service = "dic"
+
     def __init__(self):
         self.site_code = "DIC"
         self.base_url = "https://dicmusic.com"
