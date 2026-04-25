@@ -22,6 +22,7 @@ from salmon.errors import (
     RequestError,
     RequestFailedError,
 )
+from salmon.proxy import session_kwargs
 
 ARTIST_TYPES = [
     "main",
@@ -152,6 +153,7 @@ class BaseGazelleApi:
     site_code: str
     site_string: str
     api_key: str = ""  # Optional, only for API key upload
+    proxy_service: str = ""  # Set in subclasses to enable proxy routing
 
     # Rate limiter: 5 requests per 10 seconds (shared across all instances)
     _rate_limiter = AsyncLimiter(5, 10)
@@ -237,7 +239,10 @@ class BaseGazelleApi:
             await self.ensure_authenticated()
 
         use_api_key = prefer_api_key and bool(self.api_key)
-        headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
+        headers = {
+            **self.headers,
+            **({"Authorization": self.api_key} if use_api_key else {}),
+        }
         cookies = {} if use_api_key else self._get_cookies()
 
         if cfg.upload.debug_tracker_connection:
@@ -249,7 +254,12 @@ class BaseGazelleApi:
             timeout = aiohttp.ClientTimeout(total=timeout_secs)
             async with (
                 self._rate_limiter,
-                aiohttp.ClientSession(timeout=timeout, cookies=cookies, headers=headers) as session,
+                aiohttp.ClientSession(
+                    timeout=timeout,
+                    cookies=cookies,
+                    headers=headers,
+                    **session_kwargs(self.proxy_service),
+                ) as session,
                 session.request(method, url, params=params, data=data) as resp,
             ):
                 text = await resp.text()

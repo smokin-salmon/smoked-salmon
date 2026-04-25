@@ -106,6 +106,8 @@ def _parse_upload_form(data: dict, soup: BeautifulSoup) -> None:
 
 
 class RedApi(BaseGazelleApi):
+    proxy_service = "red"
+
     def __init__(self):
         self.site_code = "RED"
         self.base_url = "https://redacted.sh"

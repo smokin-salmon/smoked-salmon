@@ -245,6 +245,31 @@ class Upload(BaseStruct):
     ai_review: UploadAiReview = msgspec.field(default_factory=UploadAiReview)
 
 
+class ProxyServicesCfg(BaseStruct):
+    """Per-service proxy overrides. None = inherit global; empty string = no proxy."""
+
+    red: str | None = None
+    ops: str | None = None
+    dic: str | None = None
+    qobuz: str | None = None
+    tidal: str | None = None
+    bandcamp: str | None = None
+    deezer: str | None = None
+    beatport: str | None = None
+    discogs: str | None = None
+    apple_music: str | None = None
+    ptpimg: str | None = None
+    ptscreens: str | None = None
+    oeimg: str | None = None
+    imgbb: str | None = None
+    catbox: str | None = None
+
+
+class ProxyCfg(BaseStruct):
+    url: str | None = None
+    services: ProxyServicesCfg = msgspec.field(default_factory=ProxyServicesCfg)
+
+
 class Cfg(BaseStruct):
     "This class defines the schema that msgspec uses to parse the config"
 
@@ -254,3 +279,4 @@ class Cfg(BaseStruct):
     tracker: Tracker = msgspec.field(default_factory=Tracker)
     seedbox: list[Seedbox] = msgspec.field(default_factory=list)
     upload: Upload = msgspec.field(default_factory=Upload)
+    proxy: ProxyCfg = msgspec.field(default_factory=ProxyCfg)

@@ -9,6 +9,8 @@ class BaseImageUploader:
     Subclasses should implement the async upload_file method.
     """
 
+    proxy_service: str = ""  # Set in subclasses to enable proxy routing
+
     async def upload_file(self, filename: str) -> tuple[str, str | None]:
         """Upload an image file and return the URL.
 

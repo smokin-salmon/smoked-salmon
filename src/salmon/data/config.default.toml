@@ -234,3 +234,43 @@ session = 'get-from-site-cookie'
 # # Increase this for slower reviews, especially with high/xhigh reasoning and web search.
 # timeout_seconds = 45
 # background = false
+
+# ===============================
+# PROXY SETTINGS
+# ===============================
+# # Supports HTTP, HTTPS, SOCKS4, SOCKS4A, SOCKS5. Auth is embedded in the URL.
+# # Format: scheme://[user:pass@]host:port
+# #
+# # To proxy only one service (e.g. qobuz):
+# #   [proxy.services]
+# #   qobuz = "https://host:port"
+# #
+# # To proxy everything:
+# #   [proxy]
+# #   url = "socks4://host:port"
+# #
+# # To proxy everything except one service (empty string disables):
+# #   [proxy]
+# #   url = "socks5://host:port"
+# #   [proxy.services]
+# #   bandcamp = ""
+
+# [proxy]
+# url = ""
+
+# [proxy.services]
+# red         = ""
+# ops         = ""
+# dic         = ""
+# qobuz       = ""
+# tidal       = ""
+# bandcamp    = ""
+# deezer      = ""
+# beatport    = ""
+# discogs     = ""
+# apple_music = ""
+# ptpimg      = ""
+# ptscreens   = ""
+# oeimg       = ""
+# imgbb       = ""
+# catbox      = ""

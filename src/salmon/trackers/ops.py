@@ -13,6 +13,8 @@ from salmon.trackers.base import BaseGazelleApi
 
 
 class OpsApi(BaseGazelleApi):
+    proxy_service = "ops"
+
     def __init__(self):
         self.site_code = "OPS"
         self.base_url = "https://orpheus.network"
