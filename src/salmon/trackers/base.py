@@ -17,12 +17,12 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fi
 from salmon import cfg
 from salmon.common import UploadFiles
 from salmon.constants import RELEASE_TYPES
-from salmon.proxy import session_kwargs
 from salmon.errors import (
     LoginError,
     RequestError,
     RequestFailedError,
 )
+from salmon.proxy import session_kwargs
 
 ARTIST_TYPES = [
     "main",
@@ -239,7 +239,10 @@ class BaseGazelleApi:
             await self.ensure_authenticated()
 
         use_api_key = prefer_api_key and bool(self.api_key)
-        headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
+        headers = {
+            **self.headers,
+            **({"Authorization": self.api_key} if use_api_key else {}),
+        }
         cookies = {} if use_api_key else self._get_cookies()
 
         if cfg.upload.debug_tracker_connection:
@@ -251,7 +254,12 @@ class BaseGazelleApi:
             timeout = aiohttp.ClientTimeout(total=timeout_secs)
             async with (
                 self._rate_limiter,
-                aiohttp.ClientSession(timeout=timeout, cookies=cookies, headers=headers, **session_kwargs(self.proxy_service)) as session,
+                aiohttp.ClientSession(
+                    timeout=timeout,
+                    cookies=cookies,
+                    headers=headers,
+                    **session_kwargs(self.proxy_service),
+                ) as session,
                 session.request(method, url, params=params, data=data) as resp,
             ):
                 text = await resp.text()

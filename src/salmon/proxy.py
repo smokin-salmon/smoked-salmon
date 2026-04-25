@@ -17,10 +17,9 @@ def get_connector(service: str) -> BaseConnector | None:
     from salmon import cfg
 
     service_proxy = getattr(cfg.proxy.services, service, None)
-    if service_proxy is not None:
-        proxy_url = service_proxy or None  # empty string → explicitly disabled
-    else:
-        proxy_url = cfg.proxy.url or None
+    proxy_url = (
+        service_proxy or None if service_proxy is not None else cfg.proxy.url or None
+    )
 
     if not proxy_url:
         return None
