@@ -24,7 +24,7 @@ class Directory(BaseStruct):
             raise ValueError("tmp_dir is not a valid directory")
 
 
-ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "imgbb", "imgbox"]
+ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "ra"]
 SpectralSelectionLiteral = Literal["*", "+", "0"]
 
 
@@ -36,6 +36,7 @@ class ImageUploader(BaseStruct):
     ptscreens_key: str | None = None
     oeimg_key: str | None = None
     imgbb_key: str | None = None
+    ra_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
     auto_compress_cover: bool = False
     default_spectral_ids: SpectralSelectionLiteral | None = None
@@ -50,6 +51,11 @@ class ImageUploader(BaseStruct):
             raise ValueError("oeimage key not specified")
         if "imgbb" in uploader_selections and self.imgbb_key is None:
             raise ValueError("imgbb key not specified")
+        if "ra" in uploader_selections and self.ra_key is None:
+            raise ValueError("ra key not specified")
+        # ra does not allow spectral uploads
+        if self.specs_uploader == "ra":
+            raise ValueError("Ra does not support spectral uploads")
 
 
 class TidalSettings(BaseStruct):
