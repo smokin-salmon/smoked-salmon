@@ -1,4 +1,5 @@
 import asyncclick as click
+import re
 
 from salmon import cfg
 from salmon.common import UploadFiles
