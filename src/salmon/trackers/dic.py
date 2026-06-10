@@ -1,3 +1,5 @@
+import re
+
 import asyncclick as click
 
 from salmon import cfg
@@ -83,4 +85,39 @@ class DICApi(BaseGazelleApi):
         # Merge data with params (no filtering needed)
         enriched_data = {**data, **self.specific_params}
 
+        sample_rate = self._extract_sample_rate(enriched_data.get("release_desc", ""))
+        if sample_rate:
+            enriched_data["sample_rate"] = sample_rate
         return await super().upload(enriched_data, files)
+
+    def _extract_sample_rate(self, release_desc: str) -> str | None:
+        """
+        HACK: Extract sample rate from release_desc.
+        """
+        patterns = [
+            r"\b\d+\s*bit\s*\[color=[^\]]+\](\d+(?:\.\d+)?)\[/color\]\s*kHz",
+            r"\b\d+\s*bit\s*(\d+(?:\.\d+)?)\s*kHz",
+            r"(\d+(?:\.\d+)?)\s*kHz",
+        ]
+
+        mapping = {
+            44: "44.1kHz",
+            48: "48kHz",
+            88: "88.2kHz",
+            96: "96kHz",
+            176: "176.4kHz",
+            192: "192kHz",
+        }
+
+        for pattern in patterns:
+            match = re.search(pattern, release_desc, re.IGNORECASE)
+            if not match:
+                continue
+
+            khz = float(match.group(1))
+            # normalize safely
+            khz_int = int(round(khz))
+
+            return mapping.get(khz_int)
+
+        return None
