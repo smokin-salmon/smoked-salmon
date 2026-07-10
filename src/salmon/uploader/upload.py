@@ -384,7 +384,7 @@ def generate_t_description(
         track = next(iter(track_data.values()))
         sample_rate = track["sample rate"] / 1000
         if track["precision"]:
-            icon_url = "https://ptpimg.me/67vp4c.png" if track["precision"] == 16 else "https://ptpimg.me/c1osdy.png"
+            icon_url = "https://i.ibb.co/hPnL0dT/cdq.png" if track["precision"] == 16 else "https://i.ibb.co/4R16Ktwx/hires.png"
             prefix = f"[img]{icon_url}[/img]" if cfg.upload.description.icons_in_descriptions else "Encode Specifics:"
             encode_specifics = (
                 f"{prefix} [b]{track['precision']} bit [color=#2E86C1]{sample_rate:.01f}[/color] kHz[/b]\n"
