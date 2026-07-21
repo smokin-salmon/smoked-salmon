@@ -28,7 +28,9 @@ dottorrents_dir = '.torrents'
 # ===============================
 # IMAGE UPLOAD SETTINGS
 # ===============================
-# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, imgbox
+# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, imgbox, red
+# Note: red (RED's own image host) authenticates with tracker.red.api_key and
+# cannot be used as specs_uploader, as RED's rules forbid spectrals there.
 [image]
 image_uploader = "ptpimg"
 cover_uploader = "ptpimg"
