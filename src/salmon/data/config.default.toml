@@ -192,6 +192,7 @@ session = 'get-from-site-cookie'
 # folder_template = "{artists} - {title} ({year}) [{source} {format}]"
 # file_template = "{tracknumber}. {artist} - {title}"
 # remove_source_dir = false
+# split_multi_disc_into_folders = true
 
 # # formatting options
 # no_artist_in_filename_if_only_one_album_artist = true

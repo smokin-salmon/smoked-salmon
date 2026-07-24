@@ -278,6 +278,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     multi_disc = len(metadata["tracks"]) > 1
     md_word = {"CD": "CD", "Vinyl": "LP"}.get(source or "", "Part")
     # "Part" is default if not CD or Vinyl
+    split_multi_disc_into_folders = cfg.upload.formatting.split_multi_disc_into_folders
 
     track_list = list(chain.from_iterable([d.values() for d in metadata["tracks"].values()]))
     multiple_artists = any(
@@ -288,16 +289,17 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     for filename, tracktags in tags.items():
         ext = os.path.splitext(filename)[1].lower()
         new_name = generate_file_name(tracktags, ext, multiple_artists)
-        disc_number = 1  # Default value
+        disc_number = 1
         if multi_disc:
-            if isinstance(tracktags, dict):
-                disc_number = int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
+            disc_number = _get_tag_number(tracktags, "discnumber")
+            if split_multi_disc_into_folders:
+                new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
             else:
-                disc_number = int(tracktags.discnumber.split("/")[0]) or 1
-            new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
+                track_number = _get_tag_number(tracktags, "tracknumber")
+                new_name = generate_file_name(tracktags, ext, multiple_artists, trackno_or=f"{disc_number}.{track_number}")
         if filename != new_name:
             to_rename.append((filename, new_name))
-            if multi_disc:
+            if multi_disc and split_multi_disc_into_folders:
                 folders_to_create.add(os.path.join(path, f"{md_word}{disc_number:02d}"))
 
     if to_rename:
