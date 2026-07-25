@@ -286,21 +286,35 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
         for t in track_list[1:]
     )
 
+    # Zero-pad width = digits needed for the largest track/disc number in this
+    # release, floored at 2 (so "9" -> "09"), growing only if there are 100+.
+    track_digits = max(2, len(str(max(_get_tag_number(t, "tracknumber") for t in tags.values()))))
+    disc_digits = 2
+    if multi_disc:
+        disc_digits = max(2, len(str(max(_get_tag_number(t, "discnumber") for t in tags.values()))))
+
     for filename, tracktags in tags.items():
         ext = os.path.splitext(filename)[1].lower()
-        new_name = generate_file_name(tracktags, ext, multiple_artists)
+        new_name = generate_file_name(
+            tracktags, ext, multiple_artists, track_digits=track_digits, disc_digits=disc_digits
+        )
         disc_number = 1
         if multi_disc:
             disc_number = _get_tag_number(tracktags, "discnumber")
             if split_multi_disc_into_folders:
-                new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
+                new_name = os.path.join(f"{md_word}{disc_number:0{disc_digits}d}", new_name)
             else:
                 track_number = _get_tag_number(tracktags, "tracknumber")
-                new_name = generate_file_name(tracktags, ext, multiple_artists, trackno_or=f"{disc_number}.{track_number}")
+                new_name = generate_file_name(
+                    tracktags,
+                    ext,
+                    multiple_artists,
+                    trackno_or=f"{disc_number:0{disc_digits}d}.{track_number:0{track_digits}d}",
+                )
         if filename != new_name:
             to_rename.append((filename, new_name))
             if multi_disc and split_multi_disc_into_folders:
-                folders_to_create.add(os.path.join(path, f"{md_word}{disc_number:02d}"))
+                folders_to_create.add(os.path.join(path, f"{md_word}{disc_number:0{disc_digits}d}"))
 
     if to_rename:
         print_filenames(to_rename)
@@ -343,7 +357,7 @@ def print_filenames(to_rename):
         click.echo(f"   {filename} {ARROWS} {new_name}")
 
 
-def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
+def generate_file_name(tags, ext, multiple_artists, trackno_or=None, track_digits=2, disc_digits=2):
     """Generate the template keys and format the template with the tags."""
     template = cfg.upload.formatting.file_template
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
@@ -354,21 +368,32 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
     ):
         keys.remove("artist")
         template = cfg.upload.formatting.one_album_artist_file_template
+
+    def _width_for(key):
+        if key == "tracknumber":
+            return track_digits
+        if key == "discnumber":
+            return disc_digits
+        return 2
+
     if isinstance(tags, dict):
         template_keys: dict[str, str | int] = {}
         for k in keys:
             tag_val = tags.get(k)
             if tag_val is not None and isinstance(tag_val, list) and tag_val:
-                template_keys[k] = _parse_integer(tag_val[0])
+                template_keys[k] = _parse_integer(tag_val[0], _width_for(k))
             else:
-                template_keys[k] = _parse_integer("")
+                template_keys[k] = _parse_integer("", _width_for(k))
     else:
         template_keys = {}
         for k in keys:
             raw_val = getattr(tags, k, "")
             if k == "artist" and isinstance(raw_val, list) and raw_val:
                 raw_val = raw_val[0]
-            val = _parse_integer(raw_val if isinstance(raw_val, (str, int)) else str(raw_val))
+            val = _parse_integer(
+                raw_val if isinstance(raw_val, (str, int)) else str(raw_val),
+                _width_for(k),
+            )
             template_keys[k] = val
 
     if "artist" in keys:
@@ -387,9 +412,9 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
     return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, new_base)
 
 
-def _parse_integer(value):
+def _parse_integer(value, width=2):
     if isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
-        return f"{int(value):02d}"
+        return f"{int(value):0{width}d}"
     return value
 
 
