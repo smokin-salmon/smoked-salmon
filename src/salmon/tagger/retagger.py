@@ -275,6 +275,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     """
     to_rename = []
     folders_to_create = set()
+    directory_disc_map = {}
     multi_disc = len(metadata["tracks"]) > 1
     md_word = {"CD": "CD", "Vinyl": "LP"}.get(source or "", "Part")
     # "Part" is default if not CD or Vinyl
@@ -289,9 +290,9 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     # Zero-pad width = digits needed for the largest track/disc number in this
     # release, floored at 2 (so "9" -> "09"), growing only if there are 100+.
     track_digits = max(2, len(str(max(_get_tag_number(t, "tracknumber") for t in tags.values()))))
-    disc_digits = 2
+    disc_digits = 1
     if multi_disc:
-        disc_digits = max(2, len(str(max(_get_tag_number(t, "discnumber") for t in tags.values()))))
+        disc_digits = len(str(max(_get_tag_number(t, "discnumber") for t in tags.values())))
 
     for filename, tracktags in tags.items():
         ext = os.path.splitext(filename)[1].lower()
@@ -311,6 +312,9 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                     multiple_artists,
                     trackno_or=f"{disc_number:0{disc_digits}d}.{track_number:0{track_digits}d}",
                 )
+                old_dir = os.path.dirname(os.path.join(path, filename))
+                if old_dir != path:
+                    directory_disc_map[old_dir] = disc_number
         if filename != new_name:
             to_rename.append((filename, new_name))
             if multi_disc and split_multi_disc_into_folders:
@@ -344,7 +348,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                             if value == old_name:
                                 spectral_ids[key] = new_name
 
-            move_non_audio_files(directory_move_pairs)
+            move_non_audio_files(directory_move_pairs, directory_disc_map)
             delete_empty_folders(path)
     else:
         click.secho("\nNo file renaming is recommended.", fg="green")
@@ -434,11 +438,32 @@ def _get_tag_number(tracktags, field):
     return 1
 
 
-def move_non_audio_files(directory_move_pairs):
+def move_non_audio_files(directory_move_pairs, directory_disc_map=None):
+    """
+    Move every non-music file (log, cue, m3u, cover, etc.) out of each
+    per-disc source folder and into its destination folder.
+
+    When multiple disc folders (CD1/CD2, 1/2, etc.) are being merged into
+    the same destination, same-named files (e.g. a "log" or "cover.jpg" in
+    each disc folder) would otherwise collide and overwrite one another. In
+    that case each file is suffixed with its disc number, e.g. "log.1.log",
+    "log.2.log", "cover.1.jpg", "cover.2.jpg".
+    """
+    directory_disc_map = directory_disc_map or {}
+    source_dirs = {old_dir for _, old_dir, _ in directory_move_pairs}
+    merging_multiple_folders = len(source_dirs) > 1
+
     for ext, old_dir, new_dir in directory_move_pairs:
+        disc_number = directory_disc_map.get(old_dir)
         for file in os.listdir(old_dir):
-            if not file.endswith(ext) or os.path.isdir(os.path.join(old_dir, file)):
-                shutil.move(os.path.join(old_dir, file), os.path.join(new_dir, file))
+            file_path = os.path.join(old_dir, file)
+            if file.endswith(ext) or os.path.isdir(file_path):
+                continue
+            dest_name = file
+            if merging_multiple_folders and disc_number is not None:
+                base, file_ext = os.path.splitext(file)
+                dest_name = f"{base}.{disc_number}{file_ext}"
+            shutil.move(file_path, os.path.join(new_dir, dest_name))
 
 
 def delete_empty_folders(path):
