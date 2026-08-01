@@ -69,7 +69,10 @@ class AppleMusicBase(BaseScraper):
                         raise ScrapeError("Failed to load Apple Music JS bundle")
                     js_text = await js_resp.text()
 
-                token_match = re.search(r'eyJh([^"]*)', js_text)
+                # Apple does not guarantee the order of fields in the JWT
+                # header.  Tokens have used both ``eyJh`` (``{"alg": ...}``)
+                # and ``eyJ0`` (``{"typ": "JWT", ...}``) prefixes.
+                token_match = re.search(r"(eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)", js_text)
                 if not token_match:
                     raise ScrapeError("Could not extract Bearer token from Apple Music JS bundle")
 
