@@ -94,7 +94,16 @@ def create_track_changes(tags, metadata):
     """
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
-    for (filename, tagset), trackmeta in zip(tags.items(), tracks, strict=False):
+
+    sorted_tags = sorted(
+        tags.items(),
+        key=lambda item: (
+            _get_tag_number(item[1], "discnumber"),
+            _get_tag_number(item[1], "tracknumber"),
+        ),
+    )
+
+    for (filename, tagset), trackmeta in zip(sorted_tags, tracks, strict=False):
         changes[filename] = []
 
         try:
