@@ -332,7 +332,7 @@ async def _test_metadata_sources() -> None:
         "Tidal": {
             "class": salmon.sources.TidalBase,
             "test_url": "http://www.tidal.com/album/75194842",
-            "config_check": lambda: bool(cfg.metadata.tidal.token),
+            "config_check": lambda: bool(cfg.metadata.tidal.client_id and cfg.metadata.tidal.client_secret),
         },
         "Qobuz": {
             "class": salmon.sources.QobuzBase,

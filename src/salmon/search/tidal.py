@@ -2,14 +2,18 @@ import asyncio
 import html
 import re
 from itertools import chain, zip_longest
+from urllib.parse import quote
 
 from salmon import cfg
 from salmon.common import parse_copyright
 from salmon.errors import ScrapeError
 from salmon.search.base import ArtistRlsData, IdentData, SearchMixin
 from salmon.sources import TidalBase
+from salmon.sources.tidal import parse_quality
 
 COUNTRIES = [cc.upper() for cc in cfg.metadata.tidal.regions]
+
+SEARCH_INCLUDES = "albums,albums.artists,tracks,tracks.albums,tracks.albums.artists"
 
 
 class Searcher(TidalBase, SearchMixin):
@@ -18,7 +22,7 @@ class Searcher(TidalBase, SearchMixin):
         Run a search of Tidal albums.
         Warnings are for stream quality/streambility.
         """
-        if not cfg.metadata.tidal.token:
+        if not (cfg.metadata.tidal.client_id and cfg.metadata.tidal.client_secret):
             return "Tidal", {}
 
         releases, tasks = {}, []
@@ -46,17 +50,34 @@ class Searcher(TidalBase, SearchMixin):
         so we can run searches on all countries simultaneously from the primary
         search function.
         """
-        releases = []
         resp = await self.get_json(
-            "/search",
+            f"/searchResults/{quote(searchstr)}",
             params={
-                "types": "ALBUMS,TRACKS",
-                "query": searchstr,
-                "countrycode": country_code,
+                "countryCode": country_code,
+                "include": SEARCH_INCLUDES,
             },
         )
-        albums = resp["albums"]["items"][: limit * 2]  # Double it up to accomodate dupe results.
-        singles = await self._parse_singles(resp["tracks"]["items"], country_code, limit * 2 - len(albums) // 2)
+        album_map = {obj["id"]: obj for obj in resp["included"] if obj["type"] == "albums"}
+
+        albums = [
+            album_map[rls["id"]] for rls in resp["data"]["relationships"]["albums"]["data"] if rls["id"] in album_map
+        ][: limit * 2]  # Double it up to accomodate dupe results.
+
+        single_ids = []
+        for track in resp["data"]["relationships"]["tracks"]["data"]:
+            track_obj = next(
+                (obj for obj in resp["included"] if obj["type"] == "tracks" and obj["id"] == track["id"]),
+                None,
+            )
+            if not track_obj:
+                continue
+            album_ids = [rel["id"] for rel in track_obj.get("relationships", {}).get("albums", {}).get("data", [])]
+            for album_id in album_ids:
+                if album_id in album_map and album_id not in single_ids:
+                    single_ids.append(album_id)
+            if len(single_ids) >= limit * 2 - len(albums) // 2:
+                break
+        singles = [album_map[rls_id] for rls_id in single_ids]
 
         results = []
         # Ghetto way of zipping into a list. SStaD!
@@ -66,14 +87,16 @@ class Searcher(TidalBase, SearchMixin):
             if sgl:
                 results.append(sgl)
 
+        releases = []
         for rls in [r for r in results if r][: limit * 2]:
-            artists = html.unescape(", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN"))
-            title = rls["title"]
-            track_count = rls["numberOfTracks"]
-            year_match = re.search(r"(\d{4})", rls["releaseDate"]) if rls["releaseDate"] else None
+            attributes = rls["attributes"]
+            artists = html.unescape(", ".join(a["name"] for a in self._album_artists(rls, resp["included"])))
+            title = attributes["title"]
+            track_count = attributes["numberOfItems"]
+            year_match = re.search(r"(\d{4})", attributes["releaseDate"]) if attributes["releaseDate"] else None
             year = year_match[1] if year_match else None
-            copyright = parse_copyright(rls["copyright"])
-            explicit = rls["explicit"]
+            copyright = parse_copyright((attributes.get("copyright") or {}).get("text"))
+            explicit = attributes["explicit"]
 
             releases.append(
                 (
@@ -95,26 +118,16 @@ class Searcher(TidalBase, SearchMixin):
             )
         return releases
 
-    async def _parse_singles(self, track_results, country_code, limit):
-        """
-        Parse single track results from the tracks response. Single releases cannot
-        be searched for as albums, which is a royal PITA. This is our way around that,
-        at the cost of extra API calls.
-        """
-        # This has been turned into getting the albums of all matching tracks.
-        singles = []
-        for track in track_results:
-            """
-            if (abs(track['id'] - track['album']['id']) < 5
-                    and track['trackNumber'] in {1, 2}
-                    and track['volumeNumber'] == 1):
-            """
-            album = await self.get_json(f"/albums/{track['album']['id']}", params={"countryCode": country_code})
-            # if album['numberOfTracks'] < 3:
-            singles.append(album)
-            if len(singles) == limit:
-                break
-        return singles
+    @staticmethod
+    def _album_artists(album: dict, included: list[dict]) -> list[dict]:
+        """Return the artist resource objects of an album resource."""
+        artist_ids = [rel["id"] for rel in album.get("relationships", {}).get("artists", {}).get("data", [])]
+        by_id = {obj["id"]: obj for obj in included if obj["type"] == "artists"}
+        return [
+            {"id": artist_id, "name": by_id[artist_id]["attributes"]["name"]}
+            for artist_id in artist_ids
+            if artist_id in by_id
+        ]
 
     async def get_artist_releases(self, artiststr):
         """
@@ -143,53 +156,52 @@ class Searcher(TidalBase, SearchMixin):
 
     async def _search_artists_country(self, artiststr, country_code):
         resp = await self.get_json(
-            "/search",
+            f"/searchResults/{quote(artiststr)}",
             params={
-                "types": "ARTISTS",
-                "query": artiststr,
-                "countrycode": country_code,
+                "countryCode": country_code,
+                "include": "artists",
             },
         )
-        return {a["id"] for a in resp["artists"]["items"] if a["name"].lower() == artiststr.lower()}
+        return {
+            obj["id"]
+            for obj in resp["included"]
+            if obj["type"] == "artists" and obj["attributes"]["name"].lower() == artiststr.lower()
+        }
 
-    async def _get_artist_albums(self, artist_id, country_code):
+    async def _get_artist_albums(self, artist_id, country_code, album_types=None):
+        """Fetch an artist's albums, optionally filtered by album type."""
+        albums: list[tuple[dict, list[dict]]] = []
+        cursor = None
         try:
-            resp = await self.get_json(f"/artists/{artist_id}/albums", params={"countrycode": country_code})
+            while True:
+                params = {"countryCode": country_code, "include": "albums,albums.artists"}
+                if cursor:
+                    params["page[cursor]"] = cursor
+                resp = await self.get_json(f"/artists/{artist_id}/relationships/albums", params=params)
+                by_id = {obj["id"]: obj for obj in resp["included"] if obj["type"] == "albums"}
+                albums += [(by_id[rls["id"]], resp["included"]) for rls in resp["data"] if rls["id"] in by_id]
+                cursor = resp.get("links", {}).get("meta", {}).get("nextCursor")
+                if not cursor:
+                    break
         except ScrapeError:
             return []
+
         return [
             ArtistRlsData(
-                url=rls["url"].replace("http://www.", "https://listen."),
-                quality=rls["audioQuality"],
-                year=self._parse_year(rls["releaseDate"]),
-                artist=", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN"),
-                album=rls["title"],
-                label=parse_copyright(rls["copyright"]),
-                explicit=rls["explicit"],
+                url=self.format_url(rls_id=rls["id"]),
+                quality=parse_quality(rls["attributes"].get("mediaTags", [])),
+                year=self._parse_year(rls["attributes"].get("releaseDate")),
+                artist=", ".join(a["name"] for a in self._album_artists(rls, included)),
+                album=rls["attributes"]["title"],
+                label=parse_copyright((rls["attributes"].get("copyright") or {}).get("text")),
+                explicit=rls["attributes"]["explicit"],
             )
-            for rls in resp["items"]
+            for rls, included in albums
+            if not album_types or rls["attributes"].get("albumType") in album_types
         ]
 
     async def _get_artist_eps_and_singles(self, artist_id, country_code):
-        try:
-            resp = await self.get_json(
-                f"/artists/{artist_id}/albums",
-                params={"countrycode": country_code, "filter": "EPSANDSINGLES"},
-            )
-        except ScrapeError:
-            return []
-        return [
-            ArtistRlsData(
-                url=rls["url"].replace("http://www.", "https://listen."),
-                quality=rls["audioQuality"],
-                year=self._parse_year(rls["releaseDate"]),
-                artist=", ".join(a["name"] for a in rls["artists"] if a["type"] == "MAIN"),
-                album=rls["title"],
-                label=parse_copyright(rls["copyright"]),
-                explicit=rls["explicit"],
-            )
-            for rls in resp["items"]
-        ]
+        return await self._get_artist_albums(artist_id, country_code, album_types={"EP", "SINGLE"})
 
     @staticmethod
     def _parse_year(date):

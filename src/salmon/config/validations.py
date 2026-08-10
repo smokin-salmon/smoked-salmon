@@ -97,7 +97,8 @@ class ImageUploader(BaseStruct):
 
 
 class TidalSettings(BaseStruct):
-    token: str | None = None
+    client_id: str | None = None
+    client_secret: str | None = None
     regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
 
 

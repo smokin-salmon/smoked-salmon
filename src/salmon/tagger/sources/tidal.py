@@ -1,16 +1,11 @@
 import re
+import unicodedata
 from collections import defaultdict
 from html import unescape
 
 from salmon.common import RE_FEAT, parse_copyright, re_split
-from salmon.errors import ScrapeError
 from salmon.sources import TidalBase
 from salmon.tagger.sources.base import MetadataMixin
-
-ROLES = {
-    "MAIN": "main",
-    "FEATURED": "guest",
-}
 
 RECORD_TYPES = {
     "ALBUM": "Album",
@@ -26,9 +21,7 @@ class Scraper(TidalBase, MetadataMixin):
         return RE_FEAT.sub("", soup["title"])
 
     def parse_cover_url(self, soup):
-        if not soup["cover"]:
-            return None
-        return self.image_url.format(album_id=soup["cover"].replace("-", "/"))
+        return soup["cover"]
 
     def parse_release_year(self, soup):
         try:
@@ -56,10 +49,10 @@ class Scraper(TidalBase, MetadataMixin):
         return soup["upc"]
 
     async def parse_tracks(self, soup):
-        cc = soup.get("_country_code") or ""
+        album_artists = soup.get("artists") or []
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
-            artists = await self.parse_artists(track["artists"], track["title"], track["id"], cc)
+            artists = self.parse_artists(track["artists"], track["title"], track["version"], album_artists)
             tracks[str(track["volumeNumber"])][str(track["trackNumber"])] = self.generate_track(
                 trackno=track["trackNumber"],
                 discno=track["volumeNumber"],
@@ -82,14 +75,24 @@ class Scraper(TidalBase, MetadataMixin):
             return "Self-Released"
         return data["label"]
 
-    async def parse_artists(self, artists: list[dict], title: str, track_id: int, cc: str) -> list[tuple[str, str]]:
+    def parse_artists(
+        self,
+        artists: list[dict],
+        title: str,
+        version: str | None,
+        album_artists: list[dict],
+    ) -> list[tuple[str, str]]:
         """Iterate over all artists and roles, returning a compliant list of artist tuples.
 
+        Tidal's V2 API does not expose per-track artist roles (MAIN/FEATURED) or
+        contributor credits, so roles are inferred from the album's main artists,
+        the track title's ``feat.`` clauses, and the track version's remix info.
+
         Args:
-            artists: List of artist dictionaries from Tidal API.
+            artists: List of track artist dictionaries from the Tidal API.
             title: Track title.
-            track_id: Track ID for fetching contributors.
-            cc: Country code for the contributors API request.
+            version: Track version, e.g. ``"Tiësto Remix"``.
+            album_artists: List of the album's main artist dictionaries.
 
         Returns:
             List of (artist_name, role) tuples.
@@ -97,55 +100,52 @@ class Scraper(TidalBase, MetadataMixin):
         result: list[tuple[str, str]] = []
         artist_set: set[str] = set()
 
+        def norm(s: str) -> str:
+            return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode().lower()
+
+        album_artist_names = {norm(a["name"]) for a in album_artists}
+        compilation = "various artists" in album_artist_names
+
+        # Remixer names from a title "(X Remix)" clause and a version like "X Remix".
+        remixers: set[str] = set()
+        remixer_str = re.search(r" \(([^()]+) [Rr]emix\)$", title)
+        if remixer_str:
+            remixers.add(unescape(remixer_str[1]).strip())
+        if version and re.search(r"[Rr]emix(es)?$", version):
+            remixers.add(re.sub(r"[Rr]emix(es)?$", "", version).strip())
+        remix_str = f" {' '.join(norm(r) for r in remixers)} "
+
         feat = RE_FEAT.search(title)
         if feat:
             for artist in re_split(feat[1]):
                 result.append((unescape(artist), "guest"))
-                artist_set.add(unescape(artist).lower())
+                artist_set.add(norm(unescape(artist)))
 
-        remix_str = ""
-        remixer_str = re.search(r" \((.*) [Rr]emix\)", title)
-        if remixer_str:
-            remix_str = unescape(remixer_str[1]).lower()
-
-        all_guests = all(a["type"] == "FEATURED" for a in artists)
         for artist in artists:
             artist_without_feat = artist["name"]
             feat = RE_FEAT.search(artist["name"])
             if feat:
                 for artist_ in re_split(feat[1]):
                     result.append((unescape(artist_), "guest"))
-                    artist_set.add(unescape(artist_).lower())
+                    artist_set.add(norm(unescape(artist_)))
                 artist_without_feat = re.sub(re.escape(feat[0]) + "$", "", artist_without_feat).rstrip()
             for a in re_split(artist_without_feat):
-                if artist["type"] in ROLES and unescape(a).lower() not in artist_set:
-                    if unescape(a).lower() in remix_str:
-                        result.append((unescape(a), "remixer"))
-                    elif all_guests:
-                        result.append((unescape(a), "main"))
-                    else:
-                        result.append((unescape(a), ROLES[artist["type"]]))
-                    artist_set.add(unescape(a).lower())
+                name = unescape(a)
+                if norm(name) in artist_set:
+                    continue
+                if norm(name) in remix_str:
+                    result.append((name, "remixer"))
+                elif compilation or not album_artist_names or norm(name) in album_artist_names:
+                    result.append((name, "main"))
+                else:
+                    result.append((name, "guest"))
+                artist_set.add(norm(name))
 
-        if "mix" in title.lower():  # Get contributors for (re)mixes.
-            attempts = 0
-            contributor_artists: list[dict] = []
-            while True:
-                try:
-                    resp = await self.get_json(
-                        f"/tracks/{track_id}/contributors",
-                        params={"countryCode": cc, "limit": 25},
-                    )
-                    contributor_artists = resp["items"]
-                    break
-                except ScrapeError:
-                    attempts += 1
-                    if attempts > 3:
-                        break
-            for artist in contributor_artists:
-                if artist["role"] == "Remixer" and artist["name"].lower() not in artist_set:
-                    result.append((unescape(artist["name"]), "remixer"))
-                    artist_set.add(artist["name"].lower())
+        # The remixer may not be listed among the track artists; add them anyway.
+        for remixer in remixers:
+            if norm(remixer) not in artist_set:
+                result.append((remixer, "remixer"))
+                artist_set.add(norm(remixer))
 
         # In case something is fucked, have a failsafe of returning all artists.
         return result if result else [(unescape(a["name"]), "main") for a in artists]

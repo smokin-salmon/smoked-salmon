@@ -70,9 +70,12 @@ imgbb_key = 'api_key'
 # Discogs API Token (from https://www.discogs.com/settings/developers)
 discogs_token = 'discogs-token'
 
-# remove if not using tidal (see wiki to see how to get your tidal token)
+# remove if not using tidal
+# register a client at https://developer.tidal.com
+# use the client_id/client_secret from the client-credentials flow
 [metadata.tidal]
-token = 'your-token'
+client_id = 'your-client-id'
+client_secret = 'your-client-secret'
 # regions = ["de", "nz", "us", "gb"]
 
 # Apple Music storefronts for searching and fetching metadata.
