@@ -25,7 +25,10 @@ class Directory(BaseStruct):
 
 
 ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "ra", "red"]
-SpectralSelectionLiteral = Literal["*", "+", "0"]
+SpectralSelectionLiteral = Annotated[
+    str,
+    msgspec.Meta(pattern=r"^(\*|\+|0|\d+(\s\d+)*)$")
+]
 
 _TRACKER_CODES = ("red", "ops", "dic")
 # Image hosts run by a tracker, mapped to the trackers whose pages can display their

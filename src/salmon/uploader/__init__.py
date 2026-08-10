@@ -566,11 +566,6 @@ async def upload(
                         except Exception as e:
                             click.secho(f"Error checking log: {e}", fg="red")
 
-        if group_id is None:
-            searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
-            if len(searchstrs) > 0:
-                group_id = await check_existing_group(gazelle_site, searchstrs)
-
         spectral_ids = None
         lossy_master: bool = False
         if spectrals_after:
@@ -581,6 +576,11 @@ async def upload(
                 path, audio_info, lossy, spectrals, format=rls_data["format"]
             )
             lossy_master = lossy_result if lossy_result is not None else False
+
+        if group_id is None:
+            searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
+            if len(searchstrs) > 0:
+                group_id = await check_existing_group(gazelle_site, searchstrs)
 
         metadata, new_source_url = await get_metadata(path, tags, rls_data)
         if new_source_url is not None:

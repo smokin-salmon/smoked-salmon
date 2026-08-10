@@ -86,6 +86,8 @@ async def check_spectrals(
             check_lma,
             force_prompt_lossy_master=force_prompt_lossy_master,
         )
+        if spectral_ids and cfg.upload.compression.compress_spectrals:
+            await _compress_spectrals(spectrals_path, spectral_ids)
     else:
         spectral_ids = await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
 
@@ -129,7 +131,10 @@ async def generate_spectrals_all(path: str, spectrals_path: str, audio_info: dic
         Dictionary mapping track numbers to filenames.
     """
     files_li = get_audio_files(path, True)
-    return await _generate_spectrals(path, files_li, spectrals_path, audio_info)
+    # Compression happens after the user selects which spectrals to upload
+    # (see check_spectrals), not here, since most generated spectrals are
+    # only for viewing and are never uploaded.
+    return await _generate_spectrals(path, files_li, spectrals_path, audio_info, compress=False)
 
 
 async def generate_spectrals_ids(
@@ -233,7 +238,11 @@ async def _generate_spectral_for_file(
 
 
 async def _generate_spectrals(
-    path: str, files_li: list[str], spectrals_path: str, audio_info: dict[str, Any]
+    path: str,
+    files_li: list[str],
+    spectrals_path: str,
+    audio_info: dict[str, Any],
+    compress: bool = True,
 ) -> dict[int, str]:
     """Generate spectral images for a list of audio files.
 
@@ -242,6 +251,9 @@ async def _generate_spectrals(
         files_li: List of relative audio filenames.
         spectrals_path: Path to the spectrals output folder.
         audio_info: Audio file information dict.
+        compress: Whether to compress the generated spectrals immediately.
+            Set to False when the caller will compress only a subset later
+            (e.g. once the user has picked which spectrals to upload).
 
     Returns:
         Sorted dictionary mapping track numbers to filenames.
@@ -255,7 +267,7 @@ async def _generate_spectrals(
     )
 
     click.secho("Finished generating spectrals.", fg="green")
-    if cfg.upload.compression.compress_spectrals:
+    if compress and cfg.upload.compression.compress_spectrals:
         await _compress_spectrals(spectrals_path)
 
     for result in results:
@@ -279,13 +291,25 @@ async def _compress_single_spectral(filepath: str, _idx: int) -> None:
     return await anyio.to_thread.run_sync(func)
 
 
-async def _compress_spectrals(spectrals_path: str) -> None:
-    """Compress all spectral PNG images in a directory using oxipng.
+async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] | None = None) -> None:
+    """Compress spectral PNG images in a directory using oxipng.
 
     Args:
         spectrals_path: Path to the directory containing spectral PNG files.
+        spectral_ids: If provided, only compress the Full/Zoom images for
+            these track IDs instead of every PNG in the folder. This is used
+            to avoid compressing spectrals that were only generated for
+            viewing and were never selected for upload.
     """
-    files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
+    if spectral_ids:
+        files = [
+            fname
+            for sid in spectral_ids
+            for fname in (f"{sid:02d} Full.png", f"{sid:02d} Zoom.png")
+            if os.path.isfile(os.path.join(spectrals_path, fname))
+        ]
+    else:
+        files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
     if not files:
         return
 
