@@ -1,3 +1,4 @@
+import asyncio
 import os
 import platform
 import re
@@ -54,9 +55,11 @@ from salmon.uploader.dupe_checker import (
     check_existing_group,
     describe_torrent,
     dupe_check_recent_torrents,
+    fetch_existing_group_candidates,
     generate_dupe_check_searchstrs,
     print_recent_upload_results,
     print_torrents,
+    resolve_existing_group,
 )
 from salmon.uploader.preassumptions import confirm_group_upload, print_preassumptions
 from salmon.uploader.request_checker import check_requests
@@ -526,6 +529,22 @@ async def upload(
         if flac_url is None:
             return click.secho("\nAborting upload...", fg="red")
 
+    # Kick off the existing-group dupe check's network lookup now, in the
+    # background, while we do log checks, integrity checks, spectral
+    # generation, etc. We only fetch here (no prompting) so it doesn't
+    # collide with output/prompts from those other steps; the interactive
+    # part (resolve_existing_group) runs later once that work is done.
+    dupe_check_searchstrs: list[str] | None = None
+    dupe_check_task = None
+    if group_id is None:
+        dupe_check_searchstrs = generate_dupe_check_searchstrs(
+            rls_data["artists"], rls_data["title"], rls_data["catno"]
+        )
+        if len(dupe_check_searchstrs) > 0:
+            dupe_check_task = asyncio.ensure_future(
+                fetch_existing_group_candidates(gazelle_site, dupe_check_searchstrs)
+            )
+
     try:
         if not skip_mqa:
             click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
@@ -577,10 +596,12 @@ async def upload(
             )
             lossy_master = lossy_result if lossy_result is not None else False
 
-        if group_id is None:
-            searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
-            if len(searchstrs) > 0:
-                group_id = await check_existing_group(gazelle_site, searchstrs)
+        if group_id is None and dupe_check_task is not None:
+            results, recent_uploads = await dupe_check_task
+            group_id = await resolve_existing_group(
+                gazelle_site, dupe_check_searchstrs, results, recent_uploads
+            )
+        searchstrs = dupe_check_searchstrs
 
         metadata, new_source_url = await get_metadata(path, tags, rls_data)
         if new_source_url is not None:
@@ -607,8 +628,12 @@ async def upload(
             click.echo()
         track_data = concat_track_data(tags, audio_info)
     except click.Abort:
+        if dupe_check_task is not None and not dupe_check_task.done():
+            dupe_check_task.cancel()
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
+        if dupe_check_task is not None and not dupe_check_task.done():
+            dupe_check_task.cancel()
         if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
             try:
                 import send2trash

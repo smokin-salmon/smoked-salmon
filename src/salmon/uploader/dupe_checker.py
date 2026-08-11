@@ -185,24 +185,50 @@ async def _prompt_for_recent_upload_results(
             return None
 
 
-async def check_existing_group(
+async def fetch_existing_group_candidates(
     gazelle_site: "BaseGazelleApi",
     searchstrs: list[str],
-    offer_deletion: bool = True,
-) -> int | None:
-    """Check for existing group and prompt user for selection.
+) -> tuple[list[dict], list[tuple] | None]:
+    """Network-only phase of the dupe check: no prompting.
+
+    Safe to run in the background (e.g. via asyncio.ensure_future) while other
+    non-interactive work (log checks, integrity checks, spectral generation)
+    happens, so the results are ready by the time the user needs to be prompted.
 
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking.
+
+    Returns:
+        Tuple of (search results, recent uploads or None if that path wasn't taken).
+    """
+    results = await get_search_results(gazelle_site, searchstrs)
+    recent_uploads = None
+    if not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
+        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
+    return results, recent_uploads
+
+
+async def resolve_existing_group(
+    gazelle_site: "BaseGazelleApi",
+    searchstrs: list[str],
+    results: list[dict],
+    recent_uploads: list[tuple] | None,
+    offer_deletion: bool = True,
+) -> int | None:
+    """Interactive phase of the dupe check: prompt the user using prefetched data.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings for dupe checking.
+        results: Search results from fetch_existing_group_candidates.
+        recent_uploads: Recent uploads from fetch_existing_group_candidates, or None.
         offer_deletion: Whether to offer folder deletion option.
 
     Returns:
         Group ID or None for new group.
     """
-    results = await get_search_results(gazelle_site, searchstrs)
-    if not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
-        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
+    if not results and recent_uploads is not None:
         group_id = await _prompt_for_recent_upload_results(
             gazelle_site, recent_uploads, " / ".join(searchstrs), offer_deletion
         )
@@ -215,6 +241,29 @@ async def check_existing_group(
             return group_id
         return None
     return group_id
+
+
+async def check_existing_group(
+    gazelle_site: "BaseGazelleApi",
+    searchstrs: list[str],
+    offer_deletion: bool = True,
+) -> int | None:
+    """Check for existing group and prompt user for selection.
+
+    Convenience wrapper around fetch_existing_group_candidates +
+    resolve_existing_group for call sites that don't need to run the network
+    lookup in the background.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings for dupe checking.
+        offer_deletion: Whether to offer folder deletion option.
+
+    Returns:
+        Group ID or None for new group.
+    """
+    results, recent_uploads = await fetch_existing_group_candidates(gazelle_site, searchstrs)
+    return await resolve_existing_group(gazelle_site, searchstrs, results, recent_uploads, offer_deletion)
 
 
 async def get_search_results(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[dict]:
