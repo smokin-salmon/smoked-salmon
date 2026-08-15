@@ -285,6 +285,12 @@ To start an upload (with the WEB source):
 salmon up /data/path/to/album -s WEB
 ```
 
+If the FLAC torrent is already in an existing group, skip re-uploading it and
+select the lower formats to transcode and upload:
+```bash
+salmon up /data/path/to/album -s WEB -g GROUP_ID --skip-flac-upload
+```
+
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
 ### 🌐 Spectral Web Interface

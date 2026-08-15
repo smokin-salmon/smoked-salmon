@@ -82,6 +82,11 @@ if TYPE_CHECKING:
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option("--group-id", "-g", default=None, help="Group ID to upload torrent to")
 @click.option(
+    "--skip-flac-upload",
+    is_flag=True,
+    help="Skip uploading the local FLAC torrent and only upload selected lower formats to --group-id.",
+)
+@click.option(
     "--source",
     "-s",
     type=click.STRING,
@@ -187,6 +192,7 @@ if TYPE_CHECKING:
 async def up(
     path: str,
     group_id: int | None,
+    skip_flac_upload: bool,
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
@@ -209,6 +215,8 @@ async def up(
     essential_only: bool,
 ) -> None:
     """Command to upload an album folder to a Gazelle Site."""
+    if skip_flac_upload and group_id is None:
+        raise click.UsageError("--skip-flac-upload requires --group-id.")
     if essential_only and scene:
         raise click.UsageError("--essential-only and --scene cannot be used together.")
     if yyy:
@@ -251,6 +259,7 @@ async def up(
         skip_log_check=skip_log_check,
         skip_integrity_check=skip_integrity_check,
         essential_only=essential_only,
+        skip_flac_upload=skip_flac_upload,
         skip_initial_review=skip_initial_review,
         apply_ai_suggestions=apply_ai_suggestions,
     )
@@ -367,6 +376,7 @@ async def upload(
     skip_log_check: bool = False,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
+    skip_flac_upload: bool = False,
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
 ) -> None:
@@ -395,6 +405,7 @@ async def upload(
         skip_log_check: Skip log checking.
         skip_integrity_check: Skip integrity check.
         essential_only: If True, only essential extensions are allowed.
+        skip_flac_upload: Skip the source torrent and upload lower formats to the existing group.
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
@@ -581,27 +592,31 @@ async def upload(
                 request_id = await check_requests(gazelle_site, searchstrs)
 
             try:
-                torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
-                    gazelle_site,
-                    path,
-                    group_id,
-                    metadata,
-                    cover_url,
-                    track_data,
-                    hybrid,
-                    lossy_master,
-                    spectral_urls,
-                    spectral_ids,
-                    lossy_comment,
-                    request_id,
-                    source_url,
-                    seedbox_uploader,
-                    source=source,
-                )
+                if skip_flac_upload:
+                    click.secho("Skipping FLAC upload; using the existing group.", fg="yellow")
+                    url = f"{gazelle_site.base_url}/torrents.php?id={group_id}"
+                else:
+                    torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
+                        gazelle_site,
+                        path,
+                        group_id,
+                        metadata,
+                        cover_url,
+                        track_data,
+                        hybrid,
+                        lossy_master,
+                        spectral_urls,
+                        spectral_ids,
+                        lossy_comment,
+                        request_id,
+                        source_url,
+                        seedbox_uploader,
+                        source=source,
+                    )
 
-                request_id = None
+                    request_id = None
 
-                await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+                    await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
                 if cfg.upload.yes_all or click.confirm(
                     click.style("\nWould you like to check downconversion options?", fg="magenta"),
@@ -638,7 +653,7 @@ async def upload(
                 click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
 
             tracker = None
-            if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+            if skip_flac_upload or not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
                 click.secho("\nDone uploading this release.", fg="green")
                 break
 
