@@ -387,20 +387,30 @@ async def _test_seedbox_connections() -> None:
 
         try:
             # Test the torrent client initialization
-            TorrentClientGenerator.parse_libtc_url(seedbox_config.torrent_client)
+            torrent_client = TorrentClientGenerator.parse_libtc_url(seedbox_config.torrent_client)
+            if torrent_client.client is None:
+                click.secho("    ✖ Torrent client connection failed", fg="red", bold=True)
+            else:
+                click.secho("    ✔ Torrent client connection successful", fg="green", bold=True)
 
             if seedbox_config.type == "rclone":
                 if shutil.which("rclone"):
                     click.secho("    ✔ Rclone executable found", fg="green")
-                    # Test rclone config
+                    # Test access to the configured remote, not just local config presence.
                     try:
                         with anyio.fail_after(10):
-                            result = await anyio.run_process(["rclone", "listremotes"])
-                        stdout = result.stdout.decode()
-                        if seedbox_config.url + ":" in stdout:
-                            click.secho(f"    ✔ Rclone remote '{seedbox_config.url}' found", fg="green", bold=True)
+                            result = await anyio.run_process(
+                                ["rclone", "lsd", f"{seedbox_config.url}:"], check=False
+                            )
+                        if result.returncode == 0:
+                            click.secho(
+                                f"    ✔ Rclone remote '{seedbox_config.url}' is accessible", fg="green", bold=True
+                            )
                         else:
-                            click.secho(f"    ✖ Rclone remote '{seedbox_config.url}' not found", fg="red", bold=True)
+                            error = result.stderr.decode().strip() or f"exit code {result.returncode}"
+                            click.secho(
+                                f"    ✖ Rclone remote '{seedbox_config.url}' failed: {error}", fg="red", bold=True
+                            )
                     except Exception as rclone_e:
                         click.secho(f"    ✖ Rclone test failed: {rclone_e}", fg="red", bold=True)
                 else:
@@ -410,6 +420,12 @@ async def _test_seedbox_connections() -> None:
             click.secho(f"    ✖ Seedbox test failed: {e}", fg="red", bold=True)
 
     click.secho("-" * 50, fg="yellow")
+
+
+@commandgroup.command()
+async def seedboxhealth() -> None:
+    """Test configured seedbox torrent clients and rclone remotes."""
+    await _test_seedbox_connections()
 
 
 @commandgroup.command()
