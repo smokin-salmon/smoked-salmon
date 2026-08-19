@@ -1,8 +1,9 @@
 import re
 from time import monotonic
-from typing import Any
+from typing import Any, ClassVar
 
 import aiohttp
+import anyio
 import msgspec
 
 from salmon import cfg
@@ -34,29 +35,40 @@ class TidalBase(BaseScraper):
 
     _access_token: str | None = None
     _token_expiry: float = 0.0
+    _token_lock: ClassVar[anyio.Lock] = anyio.Lock()
 
     @classmethod
     async def _ensure_token(cls) -> str:
         """Return a valid OAuth2 access token, fetching one if needed."""
         if cls._access_token and monotonic() < cls._token_expiry - 60:
             return cls._access_token
-        timeout = aiohttp.ClientTimeout(total=10)
-        async with (
-            aiohttp.ClientSession(timeout=timeout) as session,
-            session.post(
-                "https://auth.tidal.com/v1/oauth2/token",
-                data={
-                    "grant_type": "client_credentials",
-                    "client_id": cfg.metadata.tidal.client_id,
-                    "client_secret": cfg.metadata.tidal.client_secret,
-                },
-            ) as resp,
-        ):
-            data = msgspec.json.decode(await resp.read())
-        token = data["access_token"]
-        cls._access_token = token
-        cls._token_expiry = monotonic() + data["expires_in"]
-        return token
+        # Serialize refreshes so a cold cache doesn't fire N concurrent auth POSTs.
+        async with cls._token_lock:
+            if cls._access_token and monotonic() < cls._token_expiry - 60:
+                return cls._access_token
+            timeout = aiohttp.ClientTimeout(total=10)
+            async with (
+                aiohttp.ClientSession(timeout=timeout) as session,
+                session.post(
+                    "https://auth.tidal.com/v1/oauth2/token",
+                    data={
+                        "grant_type": "client_credentials",
+                        "client_id": cfg.metadata.tidal.client_id,
+                        "client_secret": cfg.metadata.tidal.client_secret,
+                    },
+                ) as resp,
+            ):
+                body = await resp.read()
+                if resp.status != 200:
+                    raise ScrapeError(f"Tidal authentication failed (HTTP {resp.status}).")
+            try:
+                data = msgspec.json.decode(body)
+                token = data["access_token"]
+                cls._access_token = token
+                cls._token_expiry = monotonic() + data["expires_in"]
+            except (msgspec.DecodeError, KeyError, TypeError) as e:
+                raise ScrapeError(f"Tidal authentication returned an unexpected response: {e}") from e
+            return token
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         token = await self._ensure_token()
@@ -202,7 +214,9 @@ class TidalBase(BaseScraper):
             album_artists = self._parse_resource_artists(doc["data"], doc.get("included", []))
 
             cursor = doc["data"]["relationships"]["items"]["links"].get("meta", {}).get("nextCursor")
-            while cursor:
+            pages = 0
+            while cursor and pages < 50:  # cap paging so a malformed nextCursor can't loop forever
+                pages += 1
                 page = await self._get_items_page(album_id, cc, cursor)
                 items += page["data"]
                 for obj in page.get("included", []):

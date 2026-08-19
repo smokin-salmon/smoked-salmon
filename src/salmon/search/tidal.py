@@ -172,8 +172,10 @@ class Searcher(TidalBase, SearchMixin):
         """Fetch an artist's albums, optionally filtered by album type."""
         albums: list[tuple[dict, list[dict]]] = []
         cursor = None
+        pages = 0
         try:
-            while True:
+            while pages < 50:  # cap paging so a malformed nextCursor can't loop forever
+                pages += 1
                 params = {"countryCode": country_code, "include": "albums,albums.artists"}
                 if cursor:
                     params["page[cursor]"] = cursor
