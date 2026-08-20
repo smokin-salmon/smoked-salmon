@@ -24,6 +24,7 @@ RE_SOUNDTRACK = re.compile(r"original.*soundtrack", re.IGNORECASE)
 RECORD_TYPES = {
     "album": "Album",
     "ep": "EP",
+    "epmini": "EP",
     "single": "Single",
 }
 
