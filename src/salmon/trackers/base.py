@@ -12,7 +12,7 @@ import msgspec
 from aiohttp import FormData
 from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
 
 from salmon import cfg
 from salmon.common import UploadFiles
@@ -170,10 +170,33 @@ class BaseGazelleApi:
         self.authkey: str | None = None
         self.passkey: str | None = None
         self._authenticated = False
+        self._session: aiohttp.ClientSession | None = None
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
         return {"session": self.cookie}
+
+    def _http_session(self) -> aiohttp.ClientSession:
+        """Get the persistent HTTP session for this API instance."""
+        if self._session is None or self._session.closed:
+            # One connection, so gathered calls cannot burst simultaneous TLS
+            # handshakes from one IP and read as scanner traffic to tracker edges.
+            # Per instance, as a ClientSession binds to the running loop.
+            # DummyCookieJar keeps nothing between requests, so an api-key request
+            # still goes out without a session cookie.
+            self._session = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(limit=1),
+                cookie_jar=aiohttp.DummyCookieJar(),
+            )
+            with suppress(RuntimeError):
+                click.get_current_context().call_on_close(self.close)
+        return self._session
+
+    async def close(self) -> None:
+        """Close the persistent HTTP session."""
+        if self._session is not None:
+            await self._session.close()
+            self._session = None
 
     @property
     def announce(self) -> str:
@@ -206,7 +229,9 @@ class BaseGazelleApi:
     @retry(
         retry=retry_if_exception_type(RetryableError),
         stop=stop_after_attempt(5),
-        wait=wait_fixed(1),
+        # Backing off beats hammering at a fixed 1s, and the random term keeps a
+        # batch that fails together from retrying in one synchronized salvo.
+        wait=wait_exponential(multiplier=1, min=1, max=30) + wait_random(0, 2),
         reraise=True,
     )
     async def _request(
@@ -247,10 +272,18 @@ class BaseGazelleApi:
 
         try:
             timeout = aiohttp.ClientTimeout(total=timeout_secs)
+            session = self._http_session()
             async with (
                 self._rate_limiter,
-                aiohttp.ClientSession(timeout=timeout, cookies=cookies, headers=headers) as session,
-                session.request(method, url, params=params, data=data) as resp,
+                session.request(
+                    method,
+                    url,
+                    params=params,
+                    data=data,
+                    headers=headers,
+                    cookies=cookies,
+                    timeout=timeout,
+                ) as resp,
             ):
                 text = await resp.text()
 
