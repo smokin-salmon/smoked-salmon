@@ -12,7 +12,7 @@ import msgspec
 from aiohttp import FormData
 from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
 
 from salmon import cfg
 from salmon.common import UploadFiles
@@ -229,7 +229,9 @@ class BaseGazelleApi:
     @retry(
         retry=retry_if_exception_type(RetryableError),
         stop=stop_after_attempt(5),
-        wait=wait_fixed(1),
+        # Backing off beats hammering at a fixed 1s, and the random term keeps a
+        # batch that fails together from retrying in one synchronized salvo.
+        wait=wait_exponential(multiplier=1, min=1, max=30) + wait_random(0, 2),
         reraise=True,
     )
     async def _request(
