@@ -142,8 +142,9 @@ class Scraper(QobuzBase, MetadataMixin):
             Album data dict from Qobuz API.
 
         Raises:
-            ScrapeError: If fetching fails.
+            ScrapeError: If Qobuz is not configured or fetching fails.
         """
+        self.require_configured()
         try:
             match = self.regex.match(url)
             if not match:

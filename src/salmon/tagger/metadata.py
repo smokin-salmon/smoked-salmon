@@ -103,7 +103,7 @@ def _print_search_results(results, rls_data=None):
 
     if inactive_sources:
         for source in inactive_sources:
-            click.echo(f"{source} is inactive. Update your config.py with the necessary tokens to enable it.")
+            click.echo(f"{source} is inactive. Add its credentials to config.toml to enable it.")
     if source_errors:
         click.echo()
         click.secho(f"Failed to scrape {', '.join(source_errors)}.", fg="red")

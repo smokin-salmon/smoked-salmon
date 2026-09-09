@@ -1,7 +1,6 @@
 import re
 from typing import Any
 
-from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.search.base import (
     IdentData,
@@ -11,9 +10,9 @@ from salmon.sources.qobuz import QobuzBase
 
 
 class Searcher(QobuzBase, SearchMixin):
-    async def search_releases(self, searchstr, limit):
-        if not cfg.metadata.qobuz.app_id:
-            return "Qobuz", {}
+    async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any] | None]:
+        if not self.configured():
+            return "Qobuz", None
 
         releases = {}
         try:

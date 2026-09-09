@@ -16,11 +16,24 @@ class QobuzBase(BaseScraper):
         r"^https?://(?:www\.|play\.|open\.)?qobuz\.com/(?:(?:.+?/)?album/(?:.+?/)?|album/(?:-/)?)([a-zA-Z0-9]+)/?$"
     )
     release_format = "/album/get?album_id={rls_id}"
-    headers = {
-        "X-App-Id": cfg.metadata.qobuz.app_id,
-        "X-User-Auth-Token": cfg.metadata.qobuz.user_auth_token,
-    }
     get_params: dict[str, Any] | None = {}
+
+    @staticmethod
+    def configured() -> bool:
+        """Qobuz refuses every API call without both an app id and a user token, so either missing means inactive."""
+        return bool(cfg.metadata.qobuz.app_id and cfg.metadata.qobuz.user_auth_token)
+
+    @property
+    def headers(self) -> dict[str, str]:
+        """Auth headers from the live config; unset values are left out rather than sent as None."""
+        qobuz = cfg.metadata.qobuz
+        candidates = {"X-App-Id": qobuz.app_id, "X-User-Auth-Token": qobuz.user_auth_token}
+        return {key: value for key, value in candidates.items() if value}
+
+    def require_configured(self) -> None:
+        """Raise the ScrapeError the metadata step shows when a Qobuz URL is used without credentials."""
+        if not self.configured():
+            raise ScrapeError("Qobuz is inactive: set [metadata.qobuz] app_id and user_auth_token in config.toml")
 
     async def fetch_data(
         self,
@@ -44,6 +57,7 @@ class QobuzBase(BaseScraper):
         Raises:
             ScrapeError: If URL is invalid or request fails.
         """
+        self.require_configured()
         try:
             match = self.regex.match(url)
             if not match:
