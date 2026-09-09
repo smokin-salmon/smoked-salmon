@@ -38,13 +38,13 @@ def test_search_reports_inactive_without_a_user_token(monkeypatch) -> None:
     assert result == ("Qobuz", None)
 
 
-def test_scraper_refuses_a_qobuz_url_without_an_app_id(monkeypatch) -> None:
+def test_api_client_refuses_a_qobuz_url_without_an_app_id(monkeypatch) -> None:
     monkeypatch.setattr(cfg.metadata.qobuz, "app_id", None)
     monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", "token-456")
     _no_network(monkeypatch)
 
     with pytest.raises(ScrapeError, match="inactive"):
-        anyio.run(Scraper().fetch_data, QOBUZ_URL)
+        anyio.run(qobuz_base.QobuzBase().fetch_data, QOBUZ_URL)
 
 
 def test_headers_never_carry_a_none_value(monkeypatch) -> None:
