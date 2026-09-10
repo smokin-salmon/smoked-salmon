@@ -14,6 +14,7 @@ from mutagen.id3 import APIC, TXXX, Frames
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
+from salmon.converter.conversions import record_conversion
 from salmon.errors import UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -439,6 +440,8 @@ async def transcode_folder(
     _copy_extra_files(path, new_path, essential_only=essential_only)
     await _transcode_audio_files(items, bitrate)
 
+    if items:
+        record_conversion(new_path, source=path, kind="transcode", bitrate=bitrate)
     return new_path
 
 

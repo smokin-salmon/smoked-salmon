@@ -108,6 +108,10 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
             click.secho(f"Not removing {path}: it is in library_dirs, or holds one.", fg="yellow")
         elif cfg.upload.formatting.remove_source_dir:
             shutil.rmtree(path)
+    # Local: the converter package imports this module.
+    from salmon.converter.conversions import carry_conversion
+
+    carry_conversion(path, new_path)
 
     # Also rename spectrals folder in TMP_DIR if it exists
     if cfg.directory.tmp_dir and os.path.exists(cfg.directory.tmp_dir):

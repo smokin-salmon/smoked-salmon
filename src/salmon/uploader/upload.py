@@ -76,6 +76,7 @@ async def prepare_and_upload(
             lossy_comment,
             request_id,
             source_url=source_url,
+            override_description=override_description,
         )
     else:
         data = compile_data_existing_group(
@@ -169,6 +170,7 @@ def compile_data_new_group(
     lossy_comment: str | None,
     request_id: int | str | None = None,
     source_url: str | None = None,
+    override_description: str | None = None,
 ) -> dict[str, Any]:
     """Compile data for a new torrent group upload.
 
@@ -184,6 +186,7 @@ def compile_data_new_group(
         lossy_comment: Lossy approval comment.
         request_id: Request ID to fill.
         source_url: Source URL.
+        override_description: Override torrent description.
 
     Returns:
         Data dict for upload POST.
@@ -215,7 +218,9 @@ def compile_data_new_group(
         "tags": metadata["tags"],
         "image": cover_url,
         "album_desc": generate_description(track_data, metadata),
-        "release_desc": generate_t_description(
+        "release_desc": override_description
+        if override_description
+        else generate_t_description(
             metadata, track_data, hybrid, metadata["urls"], spectral_urls, spectral_ids, lossy_comment, source_url
         ),
         "requestid": request_id,

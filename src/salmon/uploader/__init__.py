@@ -3,7 +3,7 @@ import platform
 import shutil
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import anyio
 import asyncclick as click
@@ -20,11 +20,14 @@ from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup, tagify
 from salmon.config.image_hosts import cover_refusal
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
+from salmon.converter.conversions import conversion_of
 from salmon.converter.downconverting import (
+    BitDepth,
     convert_folder,
     generate_conversion_description,
 )
 from salmon.converter.transcoding import (
+    Bitrate,
     generate_transcode_description,
     transcode_folder,
 )
@@ -589,6 +592,8 @@ async def upload(
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
     path = os.path.abspath(path)
+    # Read before staging and renaming: the record knows the folder by the name the converter gave it.
+    conversion = conversion_of(path)
     if flac_group is not None and (refusal := validate_skip_flac_source(path)):
         return click.secho(f"\n{refusal}", fg="red", bold=True)
     # The group's FLAC is most likely seeding from path, so with --skip-flac-upload everything works on a copy.
@@ -624,7 +629,20 @@ async def upload(
             apply_ai_suggestions=apply_ai_suggestions,
             rename_into=rename_into,
             library_album=path if cfg.directory.is_library_path(path) else None,
+            conversion=conversion,
         )
+
+
+def conversion_description(conversion: dict[str, Any] | None, url: str | None) -> str | None:
+    """The conversion note for a folder a converter made, worded exactly as the in-run conversion upload."""
+    if not conversion:
+        return None
+    click.secho(f"\nThis folder was converted from {conversion.get('source')}; describing the conversion.", fg="cyan")
+    if conversion.get("kind") == "transcode":
+        return generate_transcode_description(url or "", cast("Bitrate", conversion.get("bitrate")))
+    return generate_conversion_description(
+        url or "", conversion.get("sample_rate"), cast("BitDepth", conversion.get("bit_depth", 16))
+    )
 
 
 def _trackers_for_run(first_tracker: str, flac_group: dict[str, Any] | None) -> list[str]:
@@ -683,10 +701,12 @@ async def _upload_staged(
     apply_ai_suggestions: bool,
     rename_into: str | None,
     library_album: str | None,
+    conversion: dict[str, Any] | None = None,
 ) -> None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
     Args:
+        conversion: What the folder was converted from, when a converter made it: the upload describes it.
         rename_into: The directory the renamed folder goes into, instead of download_directory.
         library_album: The folder path is a copy of, when that folder must be kept: "delete" deletes only the copy.
     """
@@ -917,6 +937,7 @@ async def _upload_staged(
                         }
                         held = held_formats(flac_group or {}, metadata, source_flac, formats)
                     else:
+                        group_link = f"{gazelle_site.base_url}/torrents.php?id={group_id}" if group_id else source_url
                         torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
                             gazelle_site,
                             path,
@@ -933,6 +954,7 @@ async def _upload_staged(
                             source_url,
                             seedbox_uploader,
                             source=source,
+                            override_description=conversion_description(conversion, group_link),
                         )
 
                         request_id = None
