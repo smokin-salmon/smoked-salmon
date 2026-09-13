@@ -149,6 +149,39 @@ def test_the_existing_parsers_read_the_page_shape() -> None:
     assert ("Illy", "main") in tracks["1"]["1"]["artists"]
 
 
+# Gorgon City "Oracle": the header reads "Gorgon City & Jem Cooke", but Jem Cooke is on track 1 only.
+ORACLE_TRACKS = (
+    ("Oracle", "Gorgon City, MainArtist, Producer - Jem Cooke, MainArtist - Joe Baker, Composer"),
+    ("Work It Out", "Gorgon City, MainArtist, Producer - Poppy Baskcomb, Vocals, Composer"),
+    ("Second Nature", "Gorgon City, MainArtist, Producer - Taet, MainArtist - Matt Robson-Scott, Composer"),
+)
+
+
+def test_each_track_credits_only_its_own_artists_when_the_header_joins_two() -> None:
+    tracks_html = "".join(
+        _track(n, title, "00:03:00", credits, COPYRIGHT) for n, (title, credits) in enumerate(ORACLE_TRACKS, 1)
+    )
+    header = '<span class="artist-name">Gorgon City &amp; Jem Cooke</span>'
+    links = (
+        '<a class="album-meta__link" href="/a1">Gorgon City</a> '
+        '<a class="album-meta__link" href="/a2">Jem Cooke</a>'
+    )
+    html = (
+        _page(tracks_html, about_count="1 disc(s) - 3 track(s)")
+        .replace('<span class="artist-name">Illy</span>', header)
+        .replace('<a class="album-meta__link" href="/a" title="Illy">Illy</a>', links)
+    )
+    data = page_to_api_shape(BeautifulSoup(html, "lxml"))
+
+    assert data["artist"] == {"name": "Gorgon City"}
+    tracks = anyio.run(Scraper().parse_tracks, data)["1"]
+    assert [tracks[n]["artists"] for n in ("1", "2", "3")] == [
+        [("Gorgon City", "main"), ("Jem Cooke", "guest")],
+        [("Gorgon City", "main")],
+        [("Gorgon City", "main"), ("Taet", "guest")],
+    ]
+
+
 @pytest.mark.parametrize(
     "pasted",
     [

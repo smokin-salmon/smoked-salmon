@@ -188,14 +188,13 @@ def page_to_api_shape(soup: BeautifulSoup) -> dict[str, Any]:
     count_match = _TRACK_COUNT.search(_text(about_count)) if about_count else None
     cover = soup.find("meta", property="og:image")
     cover_url = str(cover.get("content", "")) if isinstance(cover, Tag) else ""
-    artist_name = _text(soup.select_one(".album-meta__title .artist-name"))
+    artist_links = main_artists.select("a") if main_artists else []
+    # The header joins every main artist into one name ("A & B"); each track's own credits tell them apart.
+    artist_name = _text(artist_links[0]) if artist_links else _text(soup.select_one(".album-meta__title .artist-name"))
     return {
         "title": _text(soup.select_one(".album-meta__title .album-title")),
         "artist": {"name": artist_name},
-        "artists": [
-            {"name": _text(link), "roles": ["main-artist"]}
-            for link in (main_artists.select("a") if main_artists else [])
-        ],
+        "artists": [{"name": _text(link), "roles": ["main-artist"]} for link in artist_links],
         "label": {"name": _text(label_link)} if label_link else {},
         "release_date_original": _released_on(_text(released)) if released else None,
         "copyright": next((track["copyright"] for track in tracks if track.get("copyright")), None),
