@@ -989,10 +989,6 @@ def _iter_review_metadata(review: dict[str, Any]):
 def _normalize_review_metadata_value(field: str, value: Any) -> Any:
     if field == "artists":
         return _normalize_artist_entries(value)
-    if field == "genres":
-        # The model returns combined genres like "Dance / Pop"; fall back rather than empty the field.
-        normalized = _normalize_list(value)
-        return standardize_genres(normalized) or normalized
     if field in NORMALIZED_METADATA_FIELDS:
         return _normalize_list(value)
     return value
@@ -1006,6 +1002,12 @@ def _resolve_review_metadata_value(
 ) -> Any:
     if field == "artists":
         return _normalize_artist_tuples(value)
+    if field == "genres":
+        normalized = _normalize_list(value)
+        if not normalized:
+            return []  # an explicit empty list stays a deliberate clear
+        # Combined genres like "Dance / Pop" split here; junk that standardizes to nothing keeps what we had.
+        return standardize_genres(normalized) or _normalize_list(before)
     if field != "urls" or not source_url:
         return _normalize_review_metadata_value(field, value)
 

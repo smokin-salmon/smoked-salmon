@@ -85,11 +85,17 @@ def test_ai_returned_genres_are_standardized():
     assert sorted(out["genres"]) == ["Dance", "Drum & Bass", "Pop", "Rock"]
 
 
-def test_ai_genres_that_normalize_to_nothing_are_not_dropped():
+def test_ai_genres_that_normalize_to_nothing_keep_the_existing_ones():
+    # Delimiter-only output must not replace a valid list, with junk or with nothing.
     metadata = {"genres": ["Electronic"], "group_year": 2026, "artists": [], "urls": []}
-    review = {"metadata": {"genres": ["///"]}}
-    out = apply_ai_metadata_result(metadata, review, None)
-    assert out["genres"] == ["///"]
+    out = apply_ai_metadata_result(metadata, {"metadata": {"genres": ["///"]}}, None)
+    assert out["genres"] == ["Electronic"]
+
+
+def test_ai_can_still_clear_genres_explicitly():
+    metadata = {"genres": ["Electronic"], "group_year": 2026, "artists": [], "urls": []}
+    out = apply_ai_metadata_result(metadata, {"metadata": {"genres": []}}, None)
+    assert out["genres"] == []
 
 
 def test_standardize_genres_preserves_input_order():
