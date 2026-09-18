@@ -992,7 +992,7 @@ def _normalize_review_metadata_value(field: str, value: Any) -> Any:
     if field == "genres":
         # The model returns combined genres like "Dance / Pop"; fall back rather than empty the field.
         normalized = _normalize_list(value)
-        return standardize_genres(set(normalized)) or normalized
+        return standardize_genres(normalized) or normalized
     if field in NORMALIZED_METADATA_FIELDS:
         return _normalize_list(value)
     return value

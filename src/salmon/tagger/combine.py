@@ -138,7 +138,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
         del base["url"]
 
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
-    base["genres"] = standardize_genres(set(base["genres"]))
+    base["genres"] = standardize_genres(base["genres"])
     base["label"] = determine_label_type(base["label"], base["artists"])
     return base
 

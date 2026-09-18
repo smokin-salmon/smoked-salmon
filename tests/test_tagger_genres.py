@@ -90,3 +90,10 @@ def test_ai_genres_that_normalize_to_nothing_are_not_dropped():
     review = {"metadata": {"genres": ["///"]}}
     out = apply_ai_metadata_result(metadata, review, None)
     assert out["genres"] == ["///"]
+
+
+def test_standardize_genres_preserves_input_order():
+    # Building the result from a set made it depend on PYTHONHASHSEED.
+    assert standardize_genres(["Electronic", "Deep House"]) == ["Electronic", "Deep House"]
+    assert standardize_genres(["Deep House", "Electronic"]) == ["Deep House", "Electronic"]
+    assert standardize_genres(["Dance / Pop", "House"]) == ["Dance", "Pop", "House"]
