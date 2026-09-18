@@ -1,6 +1,5 @@
 import os
 import platform
-import re
 import shutil
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -20,7 +19,7 @@ from salmon.checks.integrity import (
 )
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import upload_upconvert_test
-from salmon.common import commandgroup
+from salmon.common import commandgroup, tagify
 from salmon.config.image_hosts import cover_refusal
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.converter.downconverting import (
@@ -1463,16 +1462,9 @@ async def upload_and_report(
     return torrent_id, group_id, torrent_path, torrent_content, url
 
 
-def _tagify(genre):
-    """One tag: words joined by dots, "&" spelled out because it is not a tag character."""
-    tag = re.sub(r"\s*&\s*", ".and.", genre)
-    tag = re.sub(r"[-_ /]+", ".", tag)
-    return re.sub(r"\.+", ".", tag).strip(".")
-
-
 def convert_genres(genres):
     """Convert the weirdly spaced genres to RED-compliant genres."""
-    return ",".join(t for t in (_tagify(g) for g in genres) if t)
+    return ",".join(t for t in (tagify(g) for g in genres) if t)
 
 
 async def _prompt_source():

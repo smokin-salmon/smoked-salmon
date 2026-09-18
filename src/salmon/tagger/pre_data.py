@@ -7,7 +7,7 @@ from copy import deepcopy
 import asyncclick as click
 
 from salmon import cfg
-from salmon.common import RE_FEAT, re_split
+from salmon.common import RE_FEAT, re_split, split_genre
 from salmon.common.files import _tracknumber_sort_key
 from salmon.constants import FORMATS, TAG_ENCODINGS
 
@@ -113,8 +113,7 @@ def split_genres(genres_list):
     genres = set()
     if genres_list:
         for g in genres_list:
-            for genre in re_split(g):
-                genres.add(genre.strip())
+            genres.update(split_genre(g))
     return list(genres)
 
 

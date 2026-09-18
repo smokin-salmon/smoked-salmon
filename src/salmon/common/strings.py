@@ -97,6 +97,22 @@ def fetch_genre(genre: str) -> set[str]:
         raise GenreNotInWhitelist from None
 
 
+# Never "&": the whitelist stores "Drum & Bass" and "R&B" as single genres.
+_GENRE_SEPARATORS = re.compile(r"\s*[/;,]\s*|\s+\\\s+")
+
+
+def split_genre(genre: str) -> list[str]:
+    """Split one genre string into the separate genres it names."""
+    return [part.strip() for part in _GENRE_SEPARATORS.split(genre) if part.strip()]
+
+
+def tagify(genre: str) -> str:
+    """One tracker tag: words joined by dots, "&" spelled out because it is not a tag character."""
+    tag = re.sub(r"\s*&\s*", ".and.", genre)
+    tag = re.sub(r"[-_ /]+", ".", tag)
+    return re.sub(r"\.+", ".", tag).strip(".")
+
+
 def truncate(string, length):
     if len(string) < length:
         return string

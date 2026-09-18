@@ -1,5 +1,7 @@
 """Genre standardization: splitting combined genres without breaking whitelisted ones."""
 
+from salmon.common import split_genre
+from salmon.tagger.pre_data import split_genres
 from salmon.tagger.sources.base import standardize_genres
 from salmon.uploader import convert_genres
 
@@ -45,3 +47,23 @@ def test_convert_genres_spells_out_ampersands():
 def test_convert_genres_collapses_slashes_and_runs():
     assert convert_genres(["Dance / Pop"]) == "Dance.Pop"
     assert convert_genres(["Electronica / Downtempo"]) == "Electronica.Downtempo"
+
+
+def test_split_genre_never_splits_on_an_ampersand():
+    # "&" is a separator for artists but not for genres; the whitelist stores these whole.
+    assert split_genre("Drum & Bass") == ["Drum & Bass"]
+    assert split_genre("Rock & Roll") == ["Rock & Roll"]
+    assert split_genre("R&B") == ["R&B"]
+
+
+def test_split_genre_splits_the_genre_separators():
+    assert split_genre("Dance / Pop") == ["Dance", "Pop"]
+    assert split_genre("Rock; Pop, Jazz") == ["Rock", "Pop", "Jazz"]
+    assert split_genre("House") == ["House"]
+    assert split_genre("  ") == []
+
+
+def test_file_tag_genres_keep_their_ampersands():
+    # split_genres used the artist splitter, which turned "Drum & Bass" into "Drum" and "Bass".
+    assert split_genres(["Drum & Bass"]) == ["Drum & Bass"]
+    assert sorted(split_genres(["Rock; Pop"])) == ["Pop", "Rock"]

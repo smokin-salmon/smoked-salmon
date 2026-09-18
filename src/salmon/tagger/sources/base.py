@@ -7,7 +7,7 @@ from itertools import chain
 from typing import Any
 
 from salmon import cfg
-from salmon.common import fetch_genre, less_uppers, normalize_accents
+from salmon.common import fetch_genre, less_uppers, normalize_accents, split_genre
 from salmon.errors import GenreNotInWhitelist
 
 
@@ -449,10 +449,7 @@ def _is_separate_word_in_combination(generic, combined):
 def standardize_genres(genre_set):
     new_set = set()
     for g in genre_set:
-        # Split on "/" only — "Drum & Bass" and "R&B" are single whitelisted genres.
-        for part in (p.strip() for p in re.split(r"\s*/\s*", g)):
-            if not part:
-                continue
+        for part in split_genre(g):
             try:
                 new_set |= fetch_genre(part)
             except GenreNotInWhitelist:
