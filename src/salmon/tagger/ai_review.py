@@ -1003,9 +1003,11 @@ def _resolve_review_metadata_value(
     if field == "artists":
         return _normalize_artist_tuples(value)
     if field == "genres":
+        if value == []:
+            return []  # only a literal empty list is a deliberate clear
         normalized = _normalize_list(value)
         if not normalized:
-            return []  # an explicit empty list stays a deliberate clear
+            return _normalize_list(before)  # [" "] and [None] normalize away; they are not a clear
         # Combined genres like "Dance / Pop" split here; junk that standardizes to nothing keeps what we had.
         return standardize_genres(normalized) or _normalize_list(before)
     if field != "urls" or not source_url:

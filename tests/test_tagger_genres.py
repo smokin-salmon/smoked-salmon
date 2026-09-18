@@ -98,6 +98,14 @@ def test_ai_can_still_clear_genres_explicitly():
     assert out["genres"] == []
 
 
+def test_only_a_literal_empty_list_clears_the_genres():
+    # _normalize_list drops these to [], which is not the same as the model asking for a clear.
+    metadata = {"genres": ["Electronic"], "group_year": 2026, "artists": [], "urls": []}
+    for value in ([" "], [None], ["", "  "]):
+        out = apply_ai_metadata_result(dict(metadata), {"metadata": {"genres": value}}, None)
+        assert out["genres"] == ["Electronic"], value
+
+
 def test_standardize_genres_preserves_input_order():
     # Building the result from a set made it depend on PYTHONHASHSEED.
     assert standardize_genres(["Electronic", "Deep House"]) == ["Electronic", "Deep House"]
