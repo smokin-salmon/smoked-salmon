@@ -1463,9 +1463,16 @@ async def upload_and_report(
     return torrent_id, group_id, torrent_path, torrent_content, url
 
 
+def _tagify(genre):
+    """One tag: words joined by dots, "&" spelled out because it is not a tag character."""
+    tag = re.sub(r"\s*&\s*", ".and.", genre)
+    tag = re.sub(r"[-_ /]+", ".", tag)
+    return re.sub(r"\.+", ".", tag).strip(".")
+
+
 def convert_genres(genres):
     """Convert the weirdly spaced genres to RED-compliant genres."""
-    return ",".join(re.sub("[-_ ]", ".", g).strip() for g in genres)
+    return ",".join(t for t in (_tagify(g) for g in genres) if t)
 
 
 async def _prompt_source():
