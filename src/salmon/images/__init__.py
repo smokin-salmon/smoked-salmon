@@ -182,6 +182,10 @@ async def upload_cover(cover_path: str | None, host: str | None = None, red_api:
     try:
         uploader = red.ImageUploader(red_api) if host == "red" else HOSTS[host].ImageUploader()
         url, _ = await uploader.upload_file(cover_path)
+        # A host can return without raising and still hand back nothing usable; treat that as a failure too.
+        if not url:
+            click.secho(" failed :( host returned no URL", fg="red")
+            return None
         click.secho(f" done! {url}", fg="yellow")
         return url
     except (ImageUploadFailed, ValueError) as error:

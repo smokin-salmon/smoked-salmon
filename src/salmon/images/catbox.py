@@ -40,7 +40,11 @@ class ImageUploader(BaseImageUploader):
         try:
             async with self._http_session() as session, session.post(url, headers=HEADERS, data=data) as resp:
                 resp.raise_for_status()
-                return await resp.text(), None
+                body = (await resp.text()).strip()
+                # A 200 with no/garbage body has been observed; catbox's own failure text never starts with the scheme.
+                if not body.startswith(("http://", "https://")):
+                    raise ImageUploadFailed(f"catbox returned an unexpected response: {body[:200]!r}")
+                return body, None
         except ValueError as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
         except TimeoutError as e:
