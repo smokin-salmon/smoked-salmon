@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from salmon import cfg
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import InvalidMetadataError
+from salmon.tagger.sources.base import standardize_genres
 
 # openai takes about 0.3 s to import, so it is imported where a review runs, not when salmon starts.
 if TYPE_CHECKING:
@@ -988,6 +989,10 @@ def _iter_review_metadata(review: dict[str, Any]):
 def _normalize_review_metadata_value(field: str, value: Any) -> Any:
     if field == "artists":
         return _normalize_artist_entries(value)
+    if field == "genres":
+        # The model returns combined genres like "Dance / Pop"; fall back rather than empty the field.
+        normalized = _normalize_list(value)
+        return standardize_genres(set(normalized)) or normalized
     if field in NORMALIZED_METADATA_FIELDS:
         return _normalize_list(value)
     return value

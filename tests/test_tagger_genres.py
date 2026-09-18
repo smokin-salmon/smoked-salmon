@@ -1,6 +1,7 @@
 """Genre standardization: splitting combined genres without breaking whitelisted ones."""
 
 from salmon.common import split_genre
+from salmon.tagger.ai_review import apply_ai_metadata_result
 from salmon.tagger.pre_data import split_genres
 from salmon.tagger.sources.base import standardize_genres
 from salmon.uploader import convert_genres
@@ -74,3 +75,18 @@ def test_qobuz_hierarchy_arrows_split_and_map_to_english():
     assert split_genre("\u00c9lectronique\u2192Dance") == ["\u00c9lectronique", "Dance"]
     assert sorted(standardize_genres({"Electronic", "\u00c9lectronique\u2192Dance"})) == ["Dance", "Electronic"]
     assert sorted(standardize_genres({"Pop/Rock\u2192Rock"})) == ["Pop", "Rock"]
+
+
+def test_ai_returned_genres_are_standardized():
+    # The model is free-text; combined genres must not reach the tracker as one tag.
+    metadata = {"genres": ["Electronic"], "group_year": 2026, "artists": [], "urls": []}
+    review = {"metadata": {"genres": ["Dance / Pop", "Drum & Bass", "Rock;Pop"]}}
+    out = apply_ai_metadata_result(metadata, review, None)
+    assert sorted(out["genres"]) == ["Dance", "Drum & Bass", "Pop", "Rock"]
+
+
+def test_ai_genres_that_normalize_to_nothing_are_not_dropped():
+    metadata = {"genres": ["Electronic"], "group_year": 2026, "artists": [], "urls": []}
+    review = {"metadata": {"genres": ["///"]}}
+    out = apply_ai_metadata_result(metadata, review, None)
+    assert out["genres"] == ["///"]
