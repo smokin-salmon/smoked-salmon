@@ -111,3 +111,33 @@ def test_standardize_genres_preserves_input_order():
     assert standardize_genres(["Electronic", "Deep House"]) == ["Electronic", "Deep House"]
     assert standardize_genres(["Deep House", "Electronic"]) == ["Deep House", "Electronic"]
     assert standardize_genres(["Dance / Pop", "House"]) == ["Dance", "Pop", "House"]
+
+
+def _md():
+    return {
+        "artists": [("Real Artist", "main")], "title": "Real Title", "group_year": "2004",
+        "year": "2004", "edition_title": "Deluxe", "label": "Real Label", "catno": "CAT-1",
+        "upc": "123456789012", "genres": ["Electronic"], "urls": [],
+    }
+
+
+def test_blank_ai_values_never_replace_a_real_one():
+    for field in ("title", "group_year", "year", "edition_title", "label", "catno", "upc"):
+        for blank in ("", "   "):
+            out = apply_ai_metadata_result(_md(), {"metadata": {field: blank}}, None)
+            assert out[field] == _md()[field], (field, blank)
+
+
+def test_null_clears_an_optional_field_but_not_a_required_one():
+    for field in ("edition_title", "label", "catno", "upc"):
+        out = apply_ai_metadata_result(_md(), {"metadata": {field: None}}, None)
+        assert out[field] is None, field
+    for field in ("title", "group_year"):
+        out = apply_ai_metadata_result(_md(), {"metadata": {field: None}}, None)
+        assert out[field] == _md()[field], field
+
+
+def test_real_ai_values_still_apply():
+    out = apply_ai_metadata_result(_md(), {"metadata": {"title": "Better Title", "label": "Real Records"}}, None)
+    assert out["title"] == "Better Title"
+    assert out["label"] == "Real Records"
