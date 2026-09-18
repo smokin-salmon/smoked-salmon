@@ -329,7 +329,11 @@ async def _edit_years(metadata):
 async def _edit_genres(metadata):
     genres = click.edit("\n".join(metadata["genres"]), editor=cfg.upload.default_editor)
     if genres:
-        metadata["genres"] = standardize_genres({g.strip() for g in genres.split("\n") if g.strip()})
+        standardized = standardize_genres({g.strip() for g in genres.split("\n") if g.strip()})
+        if not standardized:
+            click.secho("Those genres normalize to nothing; keeping the previous ones.", fg="red")
+            return
+        metadata["genres"] = standardized
 
 
 async def _edit_urls(metadata):

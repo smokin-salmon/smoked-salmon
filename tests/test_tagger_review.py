@@ -69,3 +69,18 @@ def test_review_metadata_still_prompts_for_label_errors_in_final_review(monkeypa
         raise AssertionError("Expected final review to prompt for the invalid label")
 
     assert any("Label must be over 2 and under 80 characters." in call for call in confirm_calls)
+
+
+def test_edit_genres_keeps_existing_when_the_edit_normalizes_to_nothing(monkeypatch) -> None:
+    metadata = make_metadata()
+    monkeypatch.setattr(review_module.click, "edit", lambda *_a, **_k: "///\n,,,")
+    monkeypatch.setattr(review_module.click, "secho", lambda *_a, **_k: None)
+    anyio.run(review_module._edit_genres, metadata)
+    assert metadata["genres"] == ["Pop"]
+
+
+def test_edit_genres_standardizes_what_the_editor_returns(monkeypatch) -> None:
+    metadata = make_metadata()
+    monkeypatch.setattr(review_module.click, "edit", lambda *_a, **_k: "Dance / Pop\nDrum & Bass")
+    anyio.run(review_module._edit_genres, metadata)
+    assert sorted(metadata["genres"]) == ["Dance", "Drum & Bass", "Pop"]
