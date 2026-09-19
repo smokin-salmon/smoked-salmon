@@ -348,6 +348,7 @@ async def print_torrents(
     group_id: int,
     rset: dict | None = None,
     highlight_torrent_id: int | None = None,
+    current: dict | None = None,
 ) -> None:
     """Print torrents in a torrent group.
 
@@ -356,6 +357,7 @@ async def print_torrents(
         group_id: The group ID.
         rset: Optional pre-fetched group data.
         highlight_torrent_id: Torrent ID to highlight.
+        current: Optional {"media","format","encoding"} to warn on same-edition dupes (RED 2.2.2).
     """
     # If rset is not provided, fetch it from the API
     if rset is None:
@@ -424,6 +426,16 @@ async def print_torrents(
             f"> {prefix}{t['media']} / {t['format']} / {t['encoding']}",
             fg=color,
         )
+        # ponytail: warn-only dupe hint per RED 2.2.2
+        if not current:
+            continue
+        same = (
+            t.get("media") == current.get("media")
+            and t.get("format") == current.get("format")
+            and t.get("encoding") == current.get("encoding")
+        )
+        if same:
+            click.secho(f"  !! Same {t['media']}/{t['format']}/{t['encoding']} exists (dupe?).", fg="yellow")
 
 
 async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict]) -> bool:

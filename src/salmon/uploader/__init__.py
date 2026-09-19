@@ -11,6 +11,7 @@ import pyperclip
 import salmon.trackers
 from salmon import cfg
 from salmon.checks import mqa_test
+from salmon.checks.flac_compliance import warn_flac_compliance
 from salmon.checks.integrity import (
     check_integrity,
     format_integrity,
@@ -313,6 +314,8 @@ async def upload(
         source = await _prompt_source()
     audio_info = gather_audio_info(path)
     hybrid = check_hybrid(audio_info)
+    # ponytail: FLAC 16/24-only RED minimums, warn-only
+    await warn_flac_compliance(path, audio_info, source)
     if not scene:
         standardize_tags(path)
     tags = gather_tags(path)

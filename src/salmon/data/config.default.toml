@@ -197,6 +197,7 @@ session = 'get-from-site-cookie'
 # icons_in_descriptions = true
 # fullwidth_replacements = false
 # empty_track_comment_tag = true
+# show_upload_footer = false # RED 1.1.5: keep off unless you want a smoked-salmon credit
 
 # [upload.web_interface]
 # # web interface settings

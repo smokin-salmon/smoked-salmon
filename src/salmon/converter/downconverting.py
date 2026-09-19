@@ -8,6 +8,7 @@ import anyio
 import asyncclick as click
 import msgspec
 
+from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.errors import InvalidSampleRate
@@ -270,10 +271,16 @@ def generate_conversion_description(url: str, sample_rate: int | None, bit_depth
         return ""
     depth_args = " ".join(SOX_DEPTH_ARGS[bit_depth])
     sox_cmd = f"sox input.flac {depth_args} output.flac rate -v -L {sample_rate} dither"
+    # ponytail: footer off by default per RED 1.1.5, opt-in via config
+    footer = (
+        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
+        f"[b]smoked-salmon[/b] v{get_version()}[/url]"
+        if cfg.upload.description.show_upload_footer
+        else ""
+    )
     return (
         f"Encode Specifics: {bit_depth} bit {sample_rate / 1000:.01f} kHz\n"
         f"[b]Source:[/b] {url}\n"
         f"[b]Transcode process:[/b] [code]{sox_cmd}[/code]\n"
-        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
-        f"[b]smoked-salmon[/b] v{get_version()}[/url]"
+        f"{footer}"
     )

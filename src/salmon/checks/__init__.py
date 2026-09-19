@@ -98,12 +98,13 @@ async def mqa_test(path: str) -> None:
     """Check if a FLAC file or directory contains MQA content.
 
     For directories, only the first audio file is checked.
+    Warn-only per RED 2.13: prompts to continue, aborts only if declined.
 
     Args:
         path: Path to the FLAC file or directory to check.
 
     Raises:
-        click.Abort: If MQA syncword is detected.
+        click.Abort: If MQA is detected and user declines to continue.
     """
     if os.path.isfile(path):
         filepath = path
@@ -121,5 +122,6 @@ async def mqa_test(path: str) -> None:
         return
 
     if filepath and await check_mqa(filepath):
-        click.secho(f"MQA syncword present in '{filepath}'", fg="red", bold=True)
-        raise click.Abort
+        click.secho(f"MQA syncword in '{filepath}' (RED 2.13: label MQA + rate)", fg="red", bold=True)
+        if not await click.confirm(click.style("MQA detected. Continue?", fg="magenta"), default=False):
+            raise click.Abort

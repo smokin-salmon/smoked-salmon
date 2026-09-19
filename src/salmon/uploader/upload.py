@@ -429,9 +429,12 @@ def generate_t_description(
     more_info_links = generate_source_links(metadata_urls, source_url) if metadata_urls else ""
     more_info = f"[b]More info:[/b] {more_info_links}\n" if more_info_links else ""
 
+    # ponytail: warn-only minimum; footer off by default per RED 1.1.5, opt-in via config
     footer = (
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
+        if cfg.upload.description.show_upload_footer
+        else ""
     )
 
     return f"{spectrals}{encode_specifics}{release_date}{tracklist}{lossy_notes}{source}{more_info}{footer}"

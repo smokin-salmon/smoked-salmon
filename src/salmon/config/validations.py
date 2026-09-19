@@ -158,6 +158,8 @@ class UploadDescription(BaseStruct):
     fullwidth_replacements: bool = False
     # TODO: should this be in description?
     empty_track_comment_tag: bool = True
+    # RED 1.1.5: no advertising in descriptions. Footer is opt-in only.
+    show_upload_footer: bool = False
 
 
 class UploadWebInterface(BaseStruct):

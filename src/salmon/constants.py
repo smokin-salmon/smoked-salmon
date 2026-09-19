@@ -21,7 +21,6 @@ QUALITY_INDEX = ["LOSSLESS", "HIGH", "LOW"]
 SOURCES = {
     "web": "WEB",
     "cd": "CD",
-    "dvd": "DVD",
     "vinyl": "Vinyl",
     "soundboard": "Soundboard",
     "sacd": "SACD",

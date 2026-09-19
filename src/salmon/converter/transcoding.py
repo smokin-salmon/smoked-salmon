@@ -11,6 +11,7 @@ from mutagen import flac, mp3
 from mutagen.flac import VCFLACDict
 from mutagen.id3 import APIC, TXXX, Frames
 
+from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.release_notification import get_version
@@ -437,10 +438,16 @@ def generate_transcode_description(url: str, bitrate: Bitrate) -> str:
     """
     lame_command = " ".join(LAME_COMMAND_MAP[bitrate])
 
+    # ponytail: footer off by default per RED 1.1.5, opt-in via config
+    footer = (
+        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
+        f"[b]smoked-salmon[/b] v{get_version()}[/url]"
+        if cfg.upload.description.show_upload_footer
+        else ""
+    )
     return (
         f"[b]Source:[/b] {url}\n"
         f"[b]Transcode process:[/b] "
         f"[code]flac -Vdsc -- input.flac | lame -S {lame_command} --ignore-tag-errors - output.mp3[/code]\n"
-        f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
-        f"[b]smoked-salmon[/b] v{get_version()}[/url]"
+        f"{footer}"
     )

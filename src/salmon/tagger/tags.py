@@ -77,7 +77,9 @@ def check_required_tags(tags):
 
     if offending_files:
         click.secho(
-            "The following files do not contain all the required tags: {}.".format(", ".join(offending_files)),
+            "RED 2.3.16.4: missing required tags (Artist/Album/Title/TrackNumber, TRACKNUMBER for FLAC): {}.".format(
+                ", ".join(offending_files)
+            ),
             fg="red",
         )
     else:
