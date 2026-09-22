@@ -128,7 +128,7 @@ git push origin feat/your-feature-name
 
 After you submit your PR:
 
-1. **CI checks** will run automatically (ruff linting, basedpyright type checking and the pytest suite). All three must pass before a PR can be merged. For a first-time contributor, a maintainer has to approve the CI run first.
+1. **CI checks** will run automatically (ruff lint and format checks, basedpyright type checking and the pytest suite). All three must pass before a PR can be merged. For a first-time contributor, a maintainer has to approve the CI run first.
 2. A maintainer will **review your code**. They may:
    - Approve it as-is
    - Request changes (with specific feedback)
