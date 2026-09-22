@@ -28,7 +28,8 @@ dottorrents_dir = '.torrents'
 # ===============================
 # IMAGE UPLOAD SETTINGS
 # ===============================
-# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, imgbox
+# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, imgbox, red
+# red is RED's own image host: see [image.red] below.
 [image]
 image_uploader = "ptpimg"
 cover_uploader = "ptpimg"
@@ -52,6 +53,16 @@ imgbb_key = 'api_key'
 
 # Set to true to automatically process cover image sizes, including embedded covers in audio files
 # auto_compress_cover = false
+
+# Per-tracker cover host (optional). Unset trackers use cover_uploader above.
+# red (RED's own image host) only displays on RED and OPS, so it is only allowed here,
+# under [image.red] or [image.ops]. It always authenticates with tracker.red.api_key.
+# [image.red]
+# cover_uploader = "red"
+# [image.ops]
+# cover_uploader = "red"
+# [image.dic]
+# cover_uploader = "imgbox"
 
 # ===============================
 # METADATA SERVICES
