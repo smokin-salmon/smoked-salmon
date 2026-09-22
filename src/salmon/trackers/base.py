@@ -593,9 +593,12 @@ class BaseGazelleApi:
         Returns:
             List of (torrent_id, artist, title) tuples.
         """
+        # Page 1 goes alone first: if the log cannot be read, that costs one request,
+        # not one per page (#432).
+        pages = [await self.fetch_log(1)]
+        pages += await asyncio.gather(*(self.fetch_log(i) for i in range(2, max_pages)))
         recent_uploads = []
-        tasks = [self.fetch_log(i) for i in range(1, max_pages)]
-        for page_text in await asyncio.gather(*tasks):
+        for page_text in pages:
             recent_uploads += self.parse_uploads_from_log_html(page_text)
         return recent_uploads
 
