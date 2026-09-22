@@ -24,3 +24,6 @@ accounts.json
 salmon/web/static/specs
 !.gitkeep
 .venv
+
+# Throwaway implementation plans (see AGENTS.md)
+docs/plans/

@@ -60,13 +60,18 @@ Use a descriptive branch name with a prefix:
 ### 2. Make Your Changes
 
 - Keep changes focused. One logical change per branch/PR.
+- Bug fixes should come with a test that fails without the fix.
+- If you use an AI coding agent, point it at [AGENTS.md](AGENTS.md).
 - Follow the existing code style (the project uses [ruff](https://github.com/astral-sh/ruff) for linting and formatting).
 
-### 3. Run Lint Checks Locally
+### 3. Run Tests and Lint Checks Locally
 
-Before committing, make sure your code passes the lint checks that run in CI:
+Before committing, make sure your code passes the checks that run in CI:
 
 ```bash
+# Tests
+uv run pytest
+
 # Linting and auto-fix
 uv run ruff check . --fix
 
@@ -123,7 +128,7 @@ git push origin feat/your-feature-name
 
 After you submit your PR:
 
-1. **CI checks** will run automatically (ruff linting and basedpyright type checking). Make sure they pass.
+1. **CI checks** will run automatically (ruff linting, basedpyright type checking and the pytest suite). All three must pass before a PR can be merged. For a first-time contributor, a maintainer has to approve the CI run first.
 2. A maintainer will **review your code**. They may:
    - Approve it as-is
    - Request changes (with specific feedback)
