@@ -28,9 +28,10 @@ ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "imgbb", 
 SpectralSelectionLiteral = Literal["*", "+", "0"]
 
 _TRACKER_CODES = ("red", "ops", "dic")
-# Image hosts run by a tracker, mapped to that tracker. Their images only display for
-# the tracker's logged-in members, so each is valid solely as its own tracker's cover host.
-_TRACKER_ONLY_HOSTS = {"red": "red"}
+# Image hosts run by a tracker, mapped to the trackers whose pages can display their
+# images: RED's host serves only logged-in RED members, and OPS accepts RED-hosted images.
+# Each is valid solely as a cover host for those trackers.
+_TRACKER_ONLY_HOSTS = {"red": ("red", "ops")}
 
 
 class TrackerImageSettings(BaseStruct):
@@ -88,11 +89,13 @@ class ImageUploader(BaseStruct):
         # Covers, description images and spectrals set in [image] are shared by every
         # tracker, and RED also forbids spectrals on its host.
         for setting, host in selections:
-            owner = _TRACKER_ONLY_HOSTS.get(host)
-            if owner is not None and setting != f"{owner}.cover_uploader":
+            trackers = _TRACKER_ONLY_HOSTS.get(host)
+            if trackers is not None and setting not in {f"{code}.cover_uploader" for code in trackers}:
+                sections = " or ".join(f"[image.{code}]" for code in trackers)
                 raise ValueError(
-                    f'image.{setting} = "{host}": {owner.upper()}\'s image host only displays for '
-                    f"{owner.upper()} members, so it can only be set as cover_uploader under [image.{owner}]"
+                    f'image.{setting} = "{host}": the {host} image host only displays on '
+                    f"{'/'.join(code.upper() for code in trackers)}, so it can only be set as "
+                    f"cover_uploader under {sections}"
                 )
 
 
@@ -300,5 +303,9 @@ class Cfg(BaseStruct):
     upload: Upload = msgspec.field(default_factory=Upload)
 
     def __post_init__(self):
-        if self.image.cover_uploader_for("RED") == "red" and not (self.tracker.red and self.tracker.red.api_key):
-            raise ValueError('image.red.cover_uploader = "red" needs tracker.red.api_key to be set')
+        # Uploads to RED's image host authenticate with the RED API key, whichever tracker the cover is for.
+        red_host_users = [code for code in ("RED", "OPS", "DIC") if self.image.cover_uploader_for(code) == "red"]
+        if red_host_users and not (self.tracker.red and self.tracker.red.api_key):
+            raise ValueError(
+                f'image.{red_host_users[0].lower()}.cover_uploader = "red" needs tracker.red.api_key to be set'
+            )

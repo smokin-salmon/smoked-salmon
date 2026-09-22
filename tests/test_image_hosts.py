@@ -7,7 +7,7 @@ import pytest
 import salmon.uploader
 from salmon.config.validations import Cfg, ImageUploader
 
-SHARED_HOST_ERROR = r"can only be set as cover_uploader under \[image\.red\]"
+SHARED_HOST_ERROR = r"can only be set as cover_uploader under \[image\.red\] or \[image\.ops\]"
 
 
 def _image(**settings: Any) -> ImageUploader:
@@ -18,6 +18,12 @@ def test_trackers_without_an_override_use_the_global_cover_host() -> None:
     image = _image(cover_uploader="imgbox")
     assert image.cover_uploader_for("RED") == "imgbox"
     assert image.cover_uploader_for("OPS") == "imgbox"
+
+
+def test_ops_may_also_use_the_red_image_host() -> None:
+    image = _image(cover_uploader="imgbox", ops={"cover_uploader": "red"})
+    assert image.cover_uploader_for("OPS") == "red"
+    assert image.cover_uploader_for("RED") == "imgbox"
 
 
 def test_a_tracker_override_only_applies_to_that_tracker() -> None:
@@ -33,7 +39,6 @@ def test_a_tracker_override_only_applies_to_that_tracker() -> None:
         {"cover_uploader": "red"},
         {"image_uploader": "red"},
         {"specs_uploader": "red"},
-        {"ops": {"cover_uploader": "red"}},
         {"dic": {"cover_uploader": "red"}},
     ],
 )
@@ -47,19 +52,21 @@ def test_a_host_set_only_in_an_override_still_needs_its_key() -> None:
         _image(ops={"cover_uploader": "ptpimg"})
 
 
-def _cfg(tmp_path, red: dict[str, Any]) -> dict[str, Any]:
+def _cfg(tmp_path, code: str, red: dict[str, Any]) -> dict[str, Any]:
     return {
         "directory": {"dottorrents_dir": str(tmp_path), "download_directory": str(tmp_path)},
-        "image": {"red": {"cover_uploader": "red"}},
-        "tracker": {"red": red},
+        "image": {code: {"cover_uploader": "red"}},
+        "tracker": {"red": red, "ops": {"session": "cookie"}},
     }
 
 
-def test_red_cover_host_needs_the_red_api_key(tmp_path) -> None:
-    with pytest.raises(msgspec.ValidationError, match="needs tracker.red.api_key"):
-        msgspec.convert(_cfg(tmp_path, {"session": "cookie"}), Cfg)
-    cfg = msgspec.convert(_cfg(tmp_path, {"session": "cookie", "api_key": "key"}), Cfg)
-    assert cfg.image.cover_uploader_for("RED") == "red"
+@pytest.mark.parametrize("code", ["red", "ops"])
+def test_red_cover_host_needs_the_red_api_key(tmp_path, code: str) -> None:
+    # The RED key authenticates the upload even when the cover is for OPS.
+    with pytest.raises(msgspec.ValidationError, match=f"image.{code}.cover_uploader .* needs tracker.red.api_key"):
+        msgspec.convert(_cfg(tmp_path, code, {"session": "cookie"}), Cfg)
+    cfg = msgspec.convert(_cfg(tmp_path, code, {"session": "cookie", "api_key": "key"}), Cfg)
+    assert cfg.image.cover_uploader_for(code.upper()) == "red"
 
 
 def test_each_cover_host_gets_its_own_upload_reused_across_trackers(monkeypatch) -> None:
