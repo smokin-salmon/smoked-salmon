@@ -113,6 +113,35 @@ async def _post_redirect_is_fetched_with_get() -> None:
         await runner.cleanup()
 
 
+async def _upload_filling_a_request_follows_both_hops() -> None:
+    hits = []
+
+    async def upload(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path_qs))
+        raise web.HTTPFound("/requests.php?action=takefill&requestid=7")
+
+    async def requests(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path_qs))
+        if request.query["action"] == "takefill":
+            raise web.HTTPFound("/requests.php?action=view&id=7")
+        return web.Response(text="request page")
+
+    runner, url = await _serve(upload=upload, requests=requests)
+    api = FakeApi(url)
+    try:
+        resp = await api._request("POST", url + "/upload.php", data={"auth": "an-authkey"})
+        # site_page_upload reads a final requests.php URL as a filled request.
+        assert resp.url == url + "/requests.php?action=view&id=7"
+        assert hits == [
+            ("POST", "/upload.php"),
+            ("GET", "/requests.php?action=takefill&requestid=7"),
+            ("GET", "/requests.php?action=view&id=7"),
+        ]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
 async def _redirect_to_another_site_is_not_followed() -> None:
     other_hits = []
 
@@ -154,7 +183,7 @@ async def _redirect_loop_is_cut_short() -> None:
     try:
         with pytest.raises(RequestFailedError):
             await api._request("GET", url + "/ping.php")
-        assert hits == ["/ping.php", "/pong.php", "/ping.php"]
+        assert hits == ["/ping.php", "/pong.php", "/ping.php", "/pong.php"]
     finally:
         await api.close()
         await runner.cleanup()
@@ -170,6 +199,10 @@ def test_redirect_hops_take_a_rate_limiter_slot() -> None:
 
 def test_post_redirect_is_fetched_with_get() -> None:
     anyio.run(_post_redirect_is_fetched_with_get)
+
+
+def test_upload_filling_a_request_follows_both_hops() -> None:
+    anyio.run(_upload_filling_a_request_follows_both_hops)
 
 
 def test_redirect_to_another_site_is_not_followed() -> None:

@@ -128,9 +128,12 @@ class SearchReleaseData(msgspec.Struct, frozen=True):
     url: str
 
 
-# Gazelle's own redirects, such as torrents.php?torrentid= to its group or an upload
-# POST to the group it created, take one hop; the second is a margin.
-_MAX_REDIRECTS = 2
+# Gazelle's own redirects take up to two hops: torrents.php?torrentid= to its group and
+# an upload POST to the group it created take one, and an upload that fills a request
+# takes two (upload.php to requests.php?action=takefill to requests.php?action=view).
+# The third is a margin: running out after a successful POST would report an upload
+# that went through as failed.
+_MAX_REDIRECTS = 3
 _REDIRECT_STATUSES = frozenset(
     {
         HTTPStatus.MOVED_PERMANENTLY,
@@ -276,7 +279,7 @@ class BaseGazelleApi:
                 only (no cookie). If False or api_key is empty, use cookie only
                 (no Authorization header).
 
-        Redirects within the site are followed, up to two hops, each one through the
+        Redirects within the site are followed, up to three hops, each one through the
         rate limiter. A redirect to the login page raises LoginError without requesting it.
 
         Returns:
