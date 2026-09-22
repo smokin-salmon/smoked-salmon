@@ -255,6 +255,38 @@ async def up(
     )
 
 
+async def get_cover_url(
+    tracker: str,
+    cover_urls: dict[str, str | None],
+    path: str,
+    cover_source: str | None,
+    remove_downloaded: bool,
+) -> str | None:
+    """Get the cover URL for a new group on a tracker, uploading the cover if needed.
+
+    Each tracker can have its own cover host, so a cover uploaded for one tracker is
+    only reused by trackers that share its host. A failed upload is retried next time.
+
+    Args:
+        tracker: The tracker site code, e.g. "RED".
+        cover_urls: Cover URLs already uploaded in this run, by image host. Updated in place.
+        path: The release folder.
+        cover_source: URL to download the cover from if the folder has none.
+        remove_downloaded: Delete the cover file after uploading, if it was downloaded.
+
+    Returns:
+        The cover URL, or None if the upload failed.
+    """
+    host = cfg.image.cover_uploader_for(tracker)
+    if not cover_urls.get(host):
+        cover_path, is_downloaded = await download_cover_if_nonexistent(path, cover_source)
+        cover_urls[host] = await upload_cover(cover_path, host)
+        if is_downloaded and remove_downloaded and cover_path:
+            click.secho("Removing downloaded Cover Image File", fg="yellow")
+            os.remove(cover_path)
+    return cover_urls[host]
+
+
 async def upload(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -441,7 +473,7 @@ async def upload(
     tracker = gazelle_site.site_code
     torrent_id = None
     cover_url = None
-    stored_cover_url = None  # Store the cover URL for reuse across trackers
+    cover_urls: dict[str, str | None] = {}  # Uploaded cover URL per image host, reused across trackers
     # Regenerate searchstrs (will be used to search for requests)
     searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
 
@@ -479,14 +511,9 @@ async def upload(
                 cover_url = None
             else:
                 # For new groups, we need a cover URL
-                # If we already uploaded it for a previous tracker, reuse that URL
-                if not stored_cover_url:
-                    cover_path, is_downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
-                    stored_cover_url = await upload_cover(cover_path)
-                    if is_downloaded and remove_downloaded_cover_image and cover_path:
-                        click.secho("Removing downloaded Cover Image File", fg="yellow")
-                        os.remove(cover_path)
-                cover_url = stored_cover_url
+                cover_url = await get_cover_url(
+                    tracker, cover_urls, path, metadata["cover"], remove_downloaded_cover_image
+                )
 
             if not scene and cfg.image.auto_compress_cover:
                 compress_pictures(path)
