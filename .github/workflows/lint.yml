@@ -15,18 +15,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # Both steps use the ruff version pinned in uv.lock, the one `uv run ruff` uses
-      # locally, so a newer release cannot format or lint differently in CI.
-      - name: Run Ruff
-        uses: astral-sh/ruff-action@v3
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
         with:
-          version-file: uv.lock
+          enable-cache: true
+
+      # Through uv, so CI runs the ruff version locked in uv.lock, the same one as
+      # `uv run ruff` locally; ruff-action would take the newest release instead.
+      - name: Run Ruff
+        run: uv run --frozen --only-group dev ruff check --output-format=github .
 
       - name: Check formatting
-        uses: astral-sh/ruff-action@v3
-        with:
-          version-file: uv.lock
-          args: format --check --diff
+        run: uv run --frozen --only-group dev ruff format --check --diff .
 
   pyright:
     runs-on: ubuntu-latest
