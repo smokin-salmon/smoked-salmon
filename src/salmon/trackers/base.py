@@ -179,13 +179,15 @@ class BaseGazelleApi:
     def _http_session(self) -> aiohttp.ClientSession:
         """Get the persistent HTTP session for this API instance."""
         if self._session is None or self._session.closed:
-            # One connection, so gathered calls cannot burst simultaneous TLS
-            # handshakes from one IP and read as scanner traffic to tracker edges.
+            # A small, reused pool, so gathered calls cannot burst one TLS handshake
+            # per request from one IP and read as scanner traffic to tracker edges.
+            # Two connections keep short batches from queueing behind a single one;
+            # long batches are paced by the rate limiter anyway.
             # Per instance, as a ClientSession binds to the running loop.
             # DummyCookieJar keeps nothing between requests, so an api-key request
             # still goes out without a session cookie.
             self._session = aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(limit=1),
+                connector=aiohttp.TCPConnector(limit=2),
                 cookie_jar=aiohttp.DummyCookieJar(),
             )
             with suppress(RuntimeError):
@@ -271,7 +273,9 @@ class BaseGazelleApi:
             click.secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
         try:
-            timeout = aiohttp.ClientTimeout(total=timeout_secs)
+            # No total: it would also count the wait for a free pooled connection,
+            # so a request queued behind others could expire, be aborted and retried.
+            timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout_secs, sock_read=timeout_secs)
             session = self._http_session()
             async with (
                 self._rate_limiter,

@@ -39,10 +39,11 @@ def _ok() -> web.Response:
     return web.json_response({"status": "success", "response": {"authkey": "a", "passkey": "p"}})
 
 
-async def _gathered_requests_share_one_connection() -> None:
+async def _gathered_requests_reuse_a_small_pool() -> None:
     peers = []
 
     async def handle_ajax(request: web.Request) -> web.Response:
+        assert request.transport is not None
         peers.append(request.transport.get_extra_info("peername"))
         return _ok()
 
@@ -56,7 +57,8 @@ async def _gathered_requests_share_one_connection() -> None:
             )
         )
         assert len(peers) == 6
-        assert len({peer[1] for peer in peers}) == 1
+        # Six requests, at most two connections: the pool is capped and reused.
+        assert len({peer[1] for peer in peers}) <= 2
     finally:
         await api.close()
         await runner.cleanup()
@@ -88,8 +90,38 @@ async def _api_key_requests_stay_cookie_free() -> None:
         await runner.cleanup()
 
 
-def test_gathered_requests_share_one_connection() -> None:
-    anyio.run(_gathered_requests_share_one_connection)
+async def _queued_requests_do_not_time_out_while_waiting() -> None:
+    hits = []
+
+    async def handle_ajax(request: web.Request) -> web.Response:
+        hits.append(request.path)
+        await asyncio.sleep(0.4)
+        return _ok()
+
+    runner = await _serve(handle_ajax)
+    api = FakeApi(_url(runner))
+    try:
+        # Six 0.4s answers over two connections take 1.2s end to end. Each request
+        # is well inside its 1s timeout, but a timeout that also counted the wait
+        # for a free connection would expire the last ones and retry them.
+        await asyncio.gather(
+            *(
+                api._request("GET", api.base_url + "/ajax.php", params={"action": "index"}, timeout_secs=1)
+                for _ in range(6)
+            )
+        )
+        assert len(hits) == 6
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+def test_gathered_requests_reuse_a_small_pool() -> None:
+    anyio.run(_gathered_requests_reuse_a_small_pool)
+
+
+def test_queued_requests_do_not_time_out_while_waiting() -> None:
+    anyio.run(_queued_requests_do_not_time_out_while_waiting)
 
 
 def test_api_key_requests_stay_cookie_free() -> None:
