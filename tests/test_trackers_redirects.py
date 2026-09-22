@@ -75,7 +75,7 @@ async def _redirect_hops_take_a_rate_limiter_slot() -> None:
     async def torrents(request: web.Request) -> web.Response:
         hits.append(request.path_qs)
         if "id" not in request.query:
-            raise web.HTTPFound(f"torrents.php?id=2&torrentid={request.query['torrentid']}#torrent1")
+            raise web.HTTPFound(f"torrents.php?id=2&torrentid={int(request.query['torrentid'])}#torrent1")
         return web.Response(text="group page")
 
     runner, url = await _serve(torrents=torrents)

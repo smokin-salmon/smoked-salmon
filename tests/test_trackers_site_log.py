@@ -56,8 +56,8 @@ class FakeTracker:
         self.hits.append(request.path_qs)
         if request.cookies.get("session") != "good":
             raise web.HTTPFound("/login.php")
-        page = request.query["page"]
-        if page == "1":
+        page = int(request.query["page"])
+        if page == 1:
             # Slow enough for pages requested alongside page 1 to arrive before it is answered.
             await asyncio.sleep(0.2)
             self.requested_when_page_one_answered = list(self.hits)
