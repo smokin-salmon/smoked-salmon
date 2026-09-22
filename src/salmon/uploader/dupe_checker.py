@@ -14,6 +14,28 @@ if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
 
 
+def can_check_site_log(gazelle_site: "BaseGazelleApi") -> bool:
+    """Whether the site log can be read for recent uploads, saying why not when it cannot.
+
+    log.php is a site page, not an API endpoint, so an API key does not open it. Without a
+    session cookie every request to it is bounced to login.php (#432).
+
+    Args:
+        gazelle_site: The tracker API instance.
+
+    Returns:
+        True if a session cookie is configured.
+    """
+    if gazelle_site.has_session_cookie:
+        return True
+    click.secho(
+        f"Skipping the {gazelle_site.site_string} log check for recent uploads: it needs a session cookie "
+        f"(tracker.{gazelle_site.site_code.lower()}.session), and none is set.",
+        fg="yellow",
+    )
+    return False
+
+
 async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[tuple]:
     """Check site log for recent uploads similar to ours.
 
@@ -179,7 +201,7 @@ async def check_existing_group(
         Group ID or None for new group.
     """
     results = await get_search_results(gazelle_site, searchstrs)
-    if not results and cfg.upload.requests.check_recent_uploads:
+    if not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
         recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
         group_id = await _prompt_for_recent_upload_results(
             gazelle_site, recent_uploads, " / ".join(searchstrs), offer_deletion

@@ -50,6 +50,7 @@ from salmon.tagger.retagger import rename_files, tag_files
 from salmon.tagger.review import review_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.uploader.dupe_checker import (
+    can_check_site_log,
     check_existing_group,
     dupe_check_recent_torrents,
     generate_dupe_check_searchstrs,
@@ -721,6 +722,8 @@ async def last_min_dupe_check(gazelle_site, searchstrs):
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking.
     """
+    if not can_check_site_log(gazelle_site):
+        return
     # Should really avoid asking if already shown the same releases from the log.
     click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
     recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)

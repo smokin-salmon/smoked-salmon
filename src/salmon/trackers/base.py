@@ -201,6 +201,11 @@ class BaseGazelleApi:
             self._session = None
 
     @property
+    def has_session_cookie(self) -> bool:
+        """Whether a session cookie is configured. Site pages outside the API need one."""
+        return bool(self.cookie.strip())
+
+    @property
     def announce(self) -> str:
         """Get the announce URL."""
         return f"{self.tracker_url}/{self.passkey}/announce"
