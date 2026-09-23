@@ -127,7 +127,7 @@ class TidalBase(BaseScraper):
             if obj["type"] == "artworks" and obj["attributes"]["mediaType"] == "IMAGE":
                 files = obj["attributes"].get("files", [])
                 if files:
-                    cover = max(files, key=lambda f: f["meta"].get("width", 0))["href"]
+                    cover = max(files, key=lambda f: f.get("meta", {}).get("width", 0))["href"]
                 break
 
         tracklist = []
@@ -209,11 +209,14 @@ class TidalBase(BaseScraper):
         cc = rls_id[0] if isinstance(rls_id, tuple) else cfg.metadata.tidal.regions[0].upper()
         try:
             doc = await self._get_album_resources(album_id, cc)
-            items = doc["data"]["relationships"]["items"]["data"]
+            # JSON:API omits `links` on a single page and may omit an empty relationship;
+            # index with .get so a one-page album doesn't KeyError into a scrape failure.
+            items_rel = doc["data"].get("relationships", {}).get("items", {})
+            items = items_rel.get("data", [])
             tracks = {obj["id"]: obj for obj in doc.get("included", []) if obj["type"] == "tracks"}
             album_artists = self._parse_resource_artists(doc["data"], doc.get("included", []))
 
-            cursor = doc["data"]["relationships"]["items"]["links"].get("meta", {}).get("nextCursor")
+            cursor = items_rel.get("links", {}).get("meta", {}).get("nextCursor")
             pages = 0
             while cursor and pages < 50:  # cap paging so a malformed nextCursor can't loop forever
                 pages += 1

@@ -113,7 +113,7 @@ class Scraper(TidalBase, MetadataMixin):
             remixers.add(unescape(remixer_str[1]).strip())
         if version and re.search(r"[Rr]emix(es)?$", version):
             remixers.add(re.sub(r"[Rr]emix(es)?$", "", version).strip())
-        remix_str = f" {' '.join(norm(r) for r in remixers)} "
+        remixer_names = {norm(r) for r in remixers}
 
         feat = RE_FEAT.search(title)
         if feat:
@@ -133,7 +133,7 @@ class Scraper(TidalBase, MetadataMixin):
                 name = unescape(a)
                 if norm(name) in artist_set:
                     continue
-                if norm(name) in remix_str:
+                if norm(name) in remixer_names:
                     result.append((name, "remixer"))
                 elif compilation or not album_artist_names or norm(name) in album_artist_names:
                     result.append((name, "main"))

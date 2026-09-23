@@ -51,7 +51,7 @@ class Searcher(TidalBase, SearchMixin):
         search function.
         """
         resp = await self.get_json(
-            f"/searchResults/{quote(searchstr)}",
+            f"/searchResults/{quote(searchstr, safe='')}",
             params={
                 "countryCode": country_code,
                 "include": SEARCH_INCLUDES,
@@ -156,7 +156,7 @@ class Searcher(TidalBase, SearchMixin):
 
     async def _search_artists_country(self, artiststr, country_code):
         resp = await self.get_json(
-            f"/searchResults/{quote(artiststr)}",
+            f"/searchResults/{quote(artiststr, safe='')}",
             params={
                 "countryCode": country_code,
                 "include": "artists",
