@@ -11,6 +11,7 @@ from salmon.constants import (
     TAG_ENCODINGS,
 )
 from salmon.errors import InvalidMetadataError, ScrapeError
+from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.cover import download_cover_if_nonexistent
 from salmon.tagger.foldername import rename_folder
@@ -84,7 +85,25 @@ def validate_encoding(ctx, param, value):
     is_flag=True,
     help="Rename files and folders automatically",
 )
-async def tag(path: str, source: str, encoding: str | None, overwrite: bool, auto_rename: bool) -> None:
+@click.option(
+    "--skip-initial-review",
+    is_flag=True,
+    help="Skip the initial manual metadata review before AI review.",
+)
+@click.option(
+    "--apply-ai-suggestions",
+    is_flag=True,
+    help="Automatically apply AI review suggestions when AI review is enabled.",
+)
+async def tag(
+    path: str,
+    source: str,
+    encoding: str | None,
+    overwrite: bool,
+    auto_rename: bool,
+    skip_initial_review: bool,
+    apply_ai_suggestions: bool,
+) -> None:
     """Interactively tag an album.
 
     Args:
@@ -93,6 +112,8 @@ async def tag(path: str, source: str, encoding: str | None, overwrite: bool, aut
         encoding: Audio encoding string or None if not specified.
         overwrite: Whether to overwrite metadata.
         auto_rename: Whether to auto-rename files.
+        skip_initial_review: Skip the first manual metadata review before AI review.
+        apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     standardize_tags(path)
@@ -100,8 +121,16 @@ async def tag(path: str, source: str, encoding: str | None, overwrite: bool, aut
     audio_info = gather_audio_info(path)
     rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
-    metadata, _ = await get_metadata(path, tags, rls_data)
-    metadata = await review_metadata(metadata, metadata_validator_base)
+    metadata, source_url = await get_metadata(path, tags, rls_data)
+    metadata = await review_metadata_with_ai(
+        metadata,
+        rls_data,
+        source_url,
+        metadata_validator_base,
+        review_metadata,
+        skip_initial_review=skip_initial_review,
+        apply_suggestions=apply_ai_suggestions,
+    )
     tag_files(path, tags, metadata, auto_rename)
 
     await download_cover_if_nonexistent(path, metadata["cover"])

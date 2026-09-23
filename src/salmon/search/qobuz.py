@@ -12,7 +12,7 @@ from salmon.sources.qobuz import QobuzBase
 
 class Searcher(QobuzBase, SearchMixin):
     async def search_releases(self, searchstr, limit):
-        if not cfg.metadata.qobuz:
+        if not cfg.metadata.qobuz.app_id:
             return "Qobuz", {}
 
         releases = {}

@@ -187,8 +187,15 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
     elif cambia_output.parsed.parsed_logs[0].checksum.integrity == cambia.Integrity.Unknown:
         click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
 
-    # Get list of CRCs from the log file
-    copy_crc_set = {track.test_and_copy.copy_hash for track in cambia_output.parsed.parsed_logs[0].tracks}
+    # Appended rerip logs: last log per (disc, track) wins. Key on the disc's TOC id
+    # so a second disc's track numbers don't overwrite the first's (#358).
+    parsed_logs = cambia_output.parsed.parsed_logs
+    last_copy_hash: dict[tuple[str, int], str] = {}
+    for parsed_log in parsed_logs:
+        disc_id = parsed_log.toc.accurip_tocid.hash
+        for track in parsed_log.tracks:
+            last_copy_hash[(disc_id, track.num)] = track.test_and_copy.copy_hash
+    copy_crc_set = set(last_copy_hash.values())
 
     # Get list of files to check
     files_to_check: list[str] = []
@@ -201,8 +208,16 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
         raise ValueError("No audio files found!")
 
     click.secho("\nVerifying audio file CRC values...", fg="cyan", bold=True)
-    if cambia_output.parsed.parsed_logs[0].tracks[0].is_range:
-        toc_entries = cambia_output.parsed.parsed_logs[0].toc.raw.entries
+    if parsed_logs[0].tracks[0].is_range:
+        # A multi-disc range rip rebuilds only one range from parsed_logs[0]'s TOC, which is
+        # ambiguous once other discs are involved. A multi-disc track rip is unaffected: it
+        # still verifies each per-(disc, track) hash against the CRC of every audio file
+        # under the release folder, so only the range-rip path is skipped here (#358).
+        if len({pl.toc.accurip_tocid.hash for pl in parsed_logs}) > 1:
+            click.secho("Multi-disc range rip log: skipping combined CRC file verification.", fg="yellow")
+            return
+
+        toc_entries = parsed_logs[0].toc.raw.entries
 
         # Log contains range rip CRC, but we have individual track files
         # Concatenate track files to recreate the original range rip for CRC verification

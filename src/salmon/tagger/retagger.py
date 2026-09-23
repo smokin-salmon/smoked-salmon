@@ -106,6 +106,16 @@ def create_track_changes(tags, metadata):
         if old_artist_str != new_artist_str:
             changes[filename].append(Change("artist", old_artist_str, new_artist_str))
 
+        old_composer = getattr(tagset, "composer", None) or "None"
+        new_composer = create_composer_str(trackmeta["artists"])
+        if new_composer and old_composer != new_composer:
+            changes[filename].append(Change("composer", old_composer, new_composer))
+
+        old_conductor = getattr(tagset, "conductor", None) or "None"
+        new_conductor = create_conductor_str(trackmeta["artists"])
+        if new_conductor and old_conductor != new_conductor:
+            changes[filename].append(Change("conductor", old_conductor, new_conductor))
+
         if cfg.upload.formatting.guests_in_track_title:
             trackmeta["title"] = append_guests_to_track_titles(trackmeta)
 
@@ -163,20 +173,48 @@ def _compare_tag(tagfield, metafield, tagset, trackmeta):
 
 
 def create_artist_str(artists):
-    """Create the artist string from the metadata. It can contain main and guests."""
-    main_artists = [a for a, i in artists if i == "main"]
-    c = ", " if len(main_artists) > 2 and "&" not in "".join(main_artists) else " & "
-    artist_str = c.join(sorted(main_artists))
+    """Create the artist string from the metadata.
+
+    For classical-friendly tagging, conductor roles are included in the ARTIST
+    tag after the main performer list, while composer roles are excluded and
+    written to their own COMPOSER tag.
+    """
+    main_artists = _ordered_unique(a for a, i in artists if i == "main")
+    conductors = _ordered_unique(a for a, i in artists if i == "conductor")
+    lead_artists = _ordered_unique([*main_artists, *conductors])
+
+    if conductors:
+        artist_str = ", ".join(lead_artists)
+    else:
+        c = ", " if len(lead_artists) > 2 and "&" not in "".join(lead_artists) else " & "
+        artist_str = c.join(lead_artists)
 
     if not cfg.upload.formatting.guests_in_track_title:
-        guest_artists = [a for a, i in artists if i == "guest"]
+        guest_artists = _ordered_unique(a for a, i in artists if i == "guest")
         if len(guest_artists) >= cfg.upload.formatting.various_artist_threshold:
             artist_str += f" (feat. {cfg.upload.formatting.various_artist_word})"
         elif guest_artists:
             c = ", " if len(guest_artists) > 2 and "&" not in "".join(guest_artists) else " & "
-            artist_str += f" (feat. {c.join(sorted(guest_artists))})"
+            artist_str += f" (feat. {c.join(guest_artists)})"
 
     return artist_str
+
+
+def create_composer_str(artists):
+    """Create the composer string from the metadata."""
+    composers = _ordered_unique(a for a, i in artists if i == "composer")
+    return ", ".join(composers)
+
+
+def create_conductor_str(artists):
+    """Create the conductor string from the metadata."""
+    conductors = _ordered_unique(a for a, i in artists if i == "conductor")
+    return ", ".join(conductors)
+
+
+def _ordered_unique(values):
+    """Preserve the first-seen order while removing duplicates."""
+    return list(dict.fromkeys(values))
 
 
 def print_changes(album_changes, track_changes, a_track):

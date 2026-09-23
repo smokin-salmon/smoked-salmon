@@ -20,6 +20,7 @@ from salmon.common.files import process_files
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
+    UnknownOutcomeError,
     UploadError,
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
@@ -495,7 +496,9 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
                     '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
                     fg="magenta",
                 ),
-                default="*" if lossy_master else "+",
+                default=cfg.image.default_spectral_ids
+                if cfg.image.default_spectral_ids is not None
+                else ("*" if lossy_master else "+"),
             )
         )
         if ids.strip() == "+":
@@ -576,7 +579,18 @@ async def report_lossy_master(
     if source is None:
         click.secho("Cannot report lossy master without source.", fg="red")
         return
-    await gazelle_site.report_lossy_master(torrent_id, comment, source)
+    try:
+        await gazelle_site.report_lossy_master(torrent_id, comment, source)
+    except UnknownOutcomeError as err:
+        # The upload itself went through, so the rest of the flow (seeding above all) goes on.
+        click.secho(
+            f"\nCould not tell whether {gazelle_site.site_string} took the lossy master report ({err}): it may "
+            f"have been filed. Check {gazelle_site.base_url}/torrents.php?torrentid={torrent_id} before reporting "
+            "it again.",
+            fg="red",
+            bold=True,
+        )
+        return
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 

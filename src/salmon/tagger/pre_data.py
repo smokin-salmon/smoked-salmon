@@ -104,9 +104,8 @@ def construct_artists_li(tags):
     """Create a list of artists from the artist string."""
     artists = []
     for track in tags.values():
-        if track.artist:
-            artists += parse_artists(track.artist)
-    return list(set(artists))
+        artists += construct_track_artists(track)
+    return list(dict.fromkeys(artists))
 
 
 def split_genres(genres_list):
@@ -164,7 +163,7 @@ def create_track_list(tags, overwrite):
             "disc#": discnumber,
             "tracktotal": track.tracktotal,
             "disctotal": track.disctotal,
-            "artists": parse_artists(track.artist),
+            "artists": construct_track_artists(track),
             "title": track.title,
             "replay_gain": track.replay_gain,
             "peak": track.peak,
@@ -202,6 +201,32 @@ def parse_artists(artist_list):
         for a in re_split(artist):
             artists.append((a, "main"))
     return artists
+
+
+def construct_track_artists(track):
+    """Build track artists from artist plus classical role tags when present."""
+    artists = parse_artists(track.artist)
+    conductors = _parse_role_names(getattr(track, "conductor", None))
+    composers = _parse_role_names(getattr(track, "composer", None))
+    excluded = {name.lower() for name in [*conductors, *composers]}
+    artists = [(name, role) for name, role in artists if name.lower() not in excluded]
+    artists += [(name, "conductor") for name in conductors]
+    artists += [(name, "composer") for name in composers]
+    return list(dict.fromkeys(artists))
+
+
+def _parse_role_names(role_value):
+    if not role_value:
+        return []
+    if isinstance(role_value, str):
+        role_value = [role_value]
+    names = []
+    for value in role_value:
+        for name in re_split(value):
+            clean = name.strip()
+            if clean:
+                names.append(clean)
+    return list(dict.fromkeys(names))
 
 
 def _prompt_encoding():

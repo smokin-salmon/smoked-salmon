@@ -16,6 +16,16 @@ STANDARDIZED_TAGS = {
     "disctotal": ["totaldiscs", "total discs"],
 }
 
+CLASSICAL_GENRES = {
+    "classical",
+    "baroque",
+    "chambermusic",
+    "choral",
+    "modernclassical",
+    "orchestral",
+    "opera",
+}
+
 
 async def check_tags(path: str) -> dict[str, TagFile]:
     """Get and then check the tags for problems. Offer user way to edit tags.
@@ -56,12 +66,14 @@ def check_required_tags(tags):
     """Verify that every track has the required tag fields."""
     offending_files = []
     for fln, tag_item in tags.items():
+        missing = []
         for t in ["title", "artist", "album", "tracknumber"]:
-            missing = []
             if not getattr(tag_item, t, False):
                 missing.append(t)
-            if missing:
-                offending_files.append(f"{fln} ({', '.join(missing)})")
+        if _requires_classical_composer(tag_item) and not getattr(tag_item, "composer", False):
+            missing.append("composer")
+        if missing:
+            offending_files.append(f"{fln} ({', '.join(missing)})")
 
     if offending_files:
         click.secho(
@@ -70,6 +82,15 @@ def check_required_tags(tags):
         )
     else:
         click.secho("Verified that all files contain the required tags.", fg="green")
+
+
+def _requires_classical_composer(tag_item) -> bool:
+    genres = getattr(tag_item, "genre", None)
+    if not genres:
+        return False
+    if isinstance(genres, str):
+        genres = [genres]
+    return any(str(genre).strip().lower().replace(" ", "") in CLASSICAL_GENRES for genre in genres)
 
 
 def print_a_tag(tags):

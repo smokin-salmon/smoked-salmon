@@ -72,6 +72,8 @@ def rename_folder(path, metadata, auto_rename, check=True):
                 click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
             except shutil.Error as _:
                 click.secho("Hardlinking didn't work, falling back to non-hardlink copy...", fg="red")
+                # A partially hardlinked tree makes the plain copy raise SameFileError (#356)
+                shutil.rmtree(new_path, ignore_errors=True)
                 shutil.copytree(path, new_path, dirs_exist_ok=True)
                 click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
         else:
@@ -97,6 +99,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
                     click.secho(f"Hardlinked temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
                 except shutil.Error as _:
                     click.secho("Hardlinking didn't work, falling back to non-hardlink copy...", fg="red")
+                    shutil.rmtree(tmp_new_specs_path, ignore_errors=True)
                     shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, dirs_exist_ok=True)
                     click.secho(f"Copied temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
             else:

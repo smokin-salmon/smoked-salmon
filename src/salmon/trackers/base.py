@@ -4,7 +4,7 @@ import re
 from contextlib import suppress
 from http import HTTPStatus
 from typing import Any, cast
-from urllib.parse import parse_qs, quote, unquote, urlparse
+from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
 
 import aiohttp
 import asyncclick as click
@@ -12,7 +12,8 @@ import msgspec
 from aiohttp import FormData
 from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_fixed
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
+from torf import TorfError, Torrent
 
 from salmon import cfg
 from salmon.common import UploadFiles
@@ -21,6 +22,7 @@ from salmon.errors import (
     LoginError,
     RequestError,
     RequestFailedError,
+    UnknownOutcomeError,
 )
 
 ARTIST_TYPES = [
@@ -161,8 +163,29 @@ class SearchReleaseData(msgspec.Struct, frozen=True):
     url: str
 
 
-class RetryableError(Exception):
-    """Exception for retryable network errors."""
+# Gazelle's own redirects take up to two hops: torrents.php?torrentid= to its group and
+# an upload POST to the group it created take one, and an upload that fills a request
+# takes two (upload.php to requests.php?action=takefill to requests.php?action=view).
+# The third is a margin: running out after a successful POST would report an upload
+# that went through as failed.
+_MAX_REDIRECTS = 3
+_REDIRECT_STATUSES = frozenset(
+    {
+        HTTPStatus.MOVED_PERMANENTLY,
+        HTTPStatus.FOUND,
+        HTTPStatus.SEE_OTHER,
+        HTTPStatus.TEMPORARY_REDIRECT,
+        HTTPStatus.PERMANENT_REDIRECT,
+    }
+)
+
+
+# A connection that was never made carried nothing to the tracker.
+_NOT_SENT_ERRORS = (aiohttp.ClientConnectorError, aiohttp.ConnectionTimeoutError)
+
+
+class RetryableError(RequestError):
+    """A failed request that may be sent again. Raised as is once the retries run out."""
 
     pass
 
@@ -204,10 +227,40 @@ class BaseGazelleApi:
         self.authkey: str | None = None
         self.passkey: str | None = None
         self._authenticated = False
+        self._session: aiohttp.ClientSession | None = None
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
         return _build_tracker_cookies(self.cookie, self.keeplogged)
+
+    def _http_session(self) -> aiohttp.ClientSession:
+        """Get the persistent HTTP session for this API instance."""
+        if self._session is None or self._session.closed:
+            # A small, reused pool, so gathered calls cannot burst one TLS handshake
+            # per request from one IP and read as scanner traffic to tracker edges.
+            # Two connections keep short batches from queueing behind a single one;
+            # long batches are paced by the rate limiter anyway.
+            # Per instance, as a ClientSession binds to the running loop.
+            # DummyCookieJar keeps nothing between requests, so an api-key request
+            # still goes out without a session cookie.
+            self._session = aiohttp.ClientSession(
+                connector=aiohttp.TCPConnector(limit=2),
+                cookie_jar=aiohttp.DummyCookieJar(),
+            )
+            with suppress(RuntimeError):
+                click.get_current_context().call_on_close(self.close)
+        return self._session
+
+    async def close(self) -> None:
+        """Close the persistent HTTP session."""
+        if self._session is not None:
+            await self._session.close()
+            self._session = None
+
+    @property
+    def has_session_cookie(self) -> bool:
+        """Whether a session cookie is configured. Site pages outside the API need one."""
+        return bool(self.cookie.strip())
 
     @property
     def announce(self) -> str:
@@ -237,10 +290,18 @@ class BaseGazelleApi:
         if not self._authenticated:
             await self.authenticate()
 
+    # The retry policy. A failed request is sent again only when that cannot do more on the
+    # tracker than sending it once: the request is idempotent, or the tracker cannot have
+    # acted on it (no connection was made, or it answered 429). A state-changing request
+    # that fails once it may have reached the tracker (a timeout, a dropped connection, a
+    # 5xx, or a failure on a redirect after it) raises UnknownOutcomeError instead, as
+    # sending it again could upload or report twice (#446).
     @retry(
         retry=retry_if_exception_type(RetryableError),
         stop=stop_after_attempt(5),
-        wait=wait_fixed(1),
+        # Backing off beats hammering at a fixed 1s, and the random term keeps a
+        # batch that fails together from retrying in one synchronized salvo.
+        wait=wait_exponential(multiplier=1, min=1, max=30) + wait_random(0, 2),
         reraise=True,
     )
     async def _request(
@@ -251,6 +312,7 @@ class BaseGazelleApi:
         data: Any = None,
         timeout_secs: int = 10,
         prefer_api_key: bool = False,
+        idempotent: bool | None = None,
     ) -> HttpResponse:
         """Authenticated HTTP request, returns response data.
 
@@ -263,12 +325,37 @@ class BaseGazelleApi:
             prefer_api_key: If True and api_key is set, use Authorization header
                 only (no cookie). If False or api_key is empty, use cookie only
                 (no Authorization header).
+            idempotent: Whether sending the request twice leaves the tracker as sending
+                it once. Defaults to False for POST and True otherwise.
+
+        Redirects within the site are followed, up to three hops, each one through the
+        rate limiter. A redirect to the login page raises LoginError without requesting it.
 
         Returns:
             HttpResponse with text, url, status, and headers.
+
+        Raises:
+            RetryableError: If the request still fails after its retries.
+            UnknownOutcomeError: If a request that is not idempotent fails after it may
+                have reached the tracker.
         """
         if not (params and params.get("action") == "index"):
             await self.ensure_authenticated()
+
+        if idempotent is None:
+            idempotent = method != "POST"
+        if not idempotent:
+            # A pooled connection may be one the tracker is closing as idle, and a request
+            # that fails on it cannot be told from one the tracker acted on. A new pool
+            # sends this one on a fresh connection.
+            await self.close()
+        # Once the tracker redirects, it has acted on the request, whatever happens next.
+        redirected = False
+
+        def failure(message: str, *, not_acted_on: bool = False) -> RequestError:
+            if idempotent or (not_acted_on and not redirected):
+                return RetryableError(message)
+            return UnknownOutcomeError(message)
 
         use_api_key = prefer_api_key and bool(self.api_key)
         headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
@@ -280,68 +367,107 @@ class BaseGazelleApi:
             click.secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
         try:
-            timeout = aiohttp.ClientTimeout(total=timeout_secs)
-            async with (
-                self._rate_limiter,
-                aiohttp.ClientSession(timeout=timeout, cookies=cookies, headers=headers) as session,
-                session.request(method, url, params=params, data=data) as resp,
-            ):
-                text = await resp.text()
+            # No total: it would also count the wait for a free pooled connection,
+            # so a request queued behind others could expire, be aborted and retried.
+            timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout_secs, sock_read=timeout_secs)
+            session = self._http_session()
+            # aiohttp would follow redirects within one rate limiter slot, and follow a
+            # bounce to the login page up to ten times (#432). Each hop goes out here
+            # instead, through the limiter, and the login page is never requested.
+            for _ in range(_MAX_REDIRECTS + 1):
+                async with (
+                    self._rate_limiter,
+                    session.request(
+                        method,
+                        url,
+                        params=params,
+                        data=data,
+                        headers=headers,
+                        cookies=cookies,
+                        timeout=timeout,
+                        allow_redirects=False,
+                    ) as resp,
+                ):
+                    text = await resp.text()
 
-                if cfg.upload.debug_tracker_connection:
-                    click.secho(f"[DEBUG] status: {resp.status}", fg="cyan")
-                    click.secho(
-                        f"[DEBUG] response headers: {_redact(msgspec.json.encode(dict(resp.headers)).decode())}",
-                        fg="cyan",
-                    )
-                    click.secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
-
-                if not resp.ok:
-                    error_msg = text
-                    with suppress(msgspec.DecodeError, ValueError):
-                        error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
-
-                    if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
-                        retry_after = float(resp.headers.get("Retry-After", "20"))
-                        click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
-                        await asyncio.sleep(retry_after)
-                        raise RetryableError("Rate limit exceeded")
-
-                    if resp.status == HTTPStatus.UNAUTHORIZED:
+                    if cfg.upload.debug_tracker_connection:
+                        click.secho(f"[DEBUG] status: {resp.status}", fg="cyan")
                         click.secho(
-                            f"Authentication to {self.site_string} failed: {error_msg}.\nYour API key may be invalid.",
+                            f"[DEBUG] response headers: {_redact(msgspec.json.encode(dict(resp.headers)).decode())}",
+                            fg="cyan",
+                        )
+                        click.secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
+
+                    if not resp.ok:
+                        error_msg = text
+                        with suppress(msgspec.DecodeError, ValueError):
+                            error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
+
+                        if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
+                            retry_after = float(resp.headers.get("Retry-After", "20"))
+                            click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
+                            await asyncio.sleep(retry_after)
+                            raise failure("Rate limit exceeded", not_acted_on=True)
+
+                        if resp.status == HTTPStatus.UNAUTHORIZED:
+                            click.secho(
+                                f"Authentication to {self.site_string} failed: {error_msg}.\n"
+                                "Your API key may be invalid.",
+                                fg="red",
+                            )
+                            raise LoginError(error_msg)
+
+                        if resp.status in (
+                            HTTPStatus.INTERNAL_SERVER_ERROR,
+                            HTTPStatus.BAD_GATEWAY,
+                            HTTPStatus.SERVICE_UNAVAILABLE,
+                            HTTPStatus.GATEWAY_TIMEOUT,
+                        ):
+                            raise failure(f"Server error {resp.status}")
+
+                        click.secho(
+                            f"Request to {self.site_string} failed ({resp.status}): {error_msg}",
                             fg="red",
                         )
-                        raise LoginError(error_msg)
+                        raise RequestFailedError(error_msg)
 
-                    if resp.status in (
-                        HTTPStatus.INTERNAL_SERVER_ERROR,
-                        HTTPStatus.BAD_GATEWAY,
-                        HTTPStatus.SERVICE_UNAVAILABLE,
-                        HTTPStatus.GATEWAY_TIMEOUT,
+                    location = resp.headers.get(aiohttp.hdrs.LOCATION)
+                    if resp.status not in _REDIRECT_STATUSES or not location:
+                        return HttpResponse(
+                            text=text,
+                            url=str(resp.url),
+                            status=resp.status,
+                        )
+
+                    current = urlparse(str(resp.url))
+                    target = urlparse(urljoin(str(resp.url), location))
+                    if target.path.endswith("/login.php"):
+                        click.secho(
+                            f"{self.site_string} sent this request to its login page: your session cookie is "
+                            f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
+                            fg="red",
+                            bold=True,
+                        )
+                        raise LoginError(f"{self.site_string} redirected to its login page")
+                    if (target.scheme, target.netloc) != (current.scheme, current.netloc):
+                        click.secho(
+                            f"{self.site_string} redirected to {target.scheme}://{target.netloc}, not following.",
+                            fg="red",
+                        )
+                        raise RequestFailedError(f"{self.site_string} redirected to another site")
+
+                    if resp.status == HTTPStatus.SEE_OTHER or (
+                        resp.status in (HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND) and method == "POST"
                     ):
-                        raise RetryableError(f"Server error {resp.status}, retrying...")
+                        # As browsers and aiohttp do, the target of a redirected POST is fetched with GET.
+                        method, data = "GET", None
+                    url, params = target._replace(fragment="").geturl(), None
+                    redirected = True
 
-                    click.secho(
-                        f"Request to {self.site_string} failed ({resp.status}): {error_msg}",
-                        fg="red",
-                    )
-                    raise RequestFailedError(error_msg)
-
-                return HttpResponse(
-                    text=text,
-                    url=str(resp.url),
-                    status=resp.status,
-                )
-        except aiohttp.TooManyRedirects as err:
-            click.secho(
-                "Too many redirects. Your cookies may be invalid or expired.",
-                fg="red",
-                bold=True,
-            )
-            raise LoginError from err
+            click.secho(f"Too many redirects from {self.site_string}, last to {urlparse(url).path}", fg="red")
+            raise RequestFailedError(f"Too many redirects from {self.site_string}")
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise RetryableError(f"Network error: {err}") from err
+            raise failure(f"Network error: {err}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
 
     async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.
@@ -540,9 +666,12 @@ class BaseGazelleApi:
         Returns:
             List of (torrent_id, artist, title) tuples.
         """
+        # Page 1 goes alone first: if the log cannot be read, that costs one request,
+        # not one per page (#432).
+        pages = [await self.fetch_log(1)]
+        pages += await asyncio.gather(*(self.fetch_log(i) for i in range(2, max_pages)))
         recent_uploads = []
-        tasks = [self.fetch_log(i) for i in range(1, max_pages)]
-        for page_text in await asyncio.gather(*tasks):
+        for page_text in pages:
             recent_uploads += self.parse_uploads_from_log_html(page_text)
         return recent_uploads
 
@@ -562,9 +691,12 @@ class BaseGazelleApi:
         url = self.base_url + "/ajax.php?action=upload"
         data["auth"] = self.authkey
 
-        response = await self._request(
-            "POST", url, data=_compose_form_data(files, data), timeout_secs=30, prefer_api_key=True
-        )
+        try:
+            response = await self._request(
+                "POST", url, data=_compose_form_data(files, data), timeout_secs=30, prefer_api_key=True
+            )
+        except UnknownOutcomeError as err:
+            return await self._find_lost_upload(files, err)
         try:
             resp = msgspec.json.decode(response.text)
         except (msgspec.DecodeError, ValueError) as e:
@@ -621,7 +753,10 @@ class BaseGazelleApi:
             url = self.base_url + "/upload.php"
         data["auth"] = self.authkey
 
-        response = await self._request("POST", url, data=_compose_form_data(files, data), timeout_secs=30)
+        try:
+            response = await self._request("POST", url, data=_compose_form_data(files, data), timeout_secs=30)
+        except UnknownOutcomeError as err:
+            return await self._find_lost_upload(files, err)
         resp_text = response.text
         resp_url = response.url
 
@@ -663,6 +798,34 @@ class BaseGazelleApi:
             return await self.api_key_upload(data, files)
 
         return await self.site_page_upload(data, files)
+
+    async def _find_lost_upload(self, files: UploadFiles, err: UnknownOutcomeError) -> tuple[int, int]:
+        """Look up, once, an upload whose answer was lost, by the torrent's infohash.
+
+        Args:
+            files: UploadFiles that were uploaded.
+            err: Why the outcome of the upload is unknown.
+
+        Returns:
+            Tuple of (torrent_id, group_id) if the tracker has the torrent.
+
+        Raises:
+            UnknownOutcomeError: If the torrent is not found: the upload may still have gone through.
+        """
+        click.secho(f"Could not tell whether {self.site_string} took the upload ({err}), looking it up...", fg="yellow")
+        try:
+            # Uppercase, as Gazelle's API documentation asks for the hash.
+            infohash = Torrent.read_stream(files.torrent_data).infohash.upper()
+            found = await self.api_call("torrent", params={"hash": infohash})
+            torrent_id, group_id = int(found["torrent"]["id"]), int(found["group"]["id"])
+        except (RequestError, TorfError, KeyError, TypeError, ValueError) as lookup_err:
+            raise UnknownOutcomeError(
+                f"Could not tell whether {self.site_string} took the upload ({err}), and looking the torrent up "
+                f"by its infohash did not find it ({lookup_err}). The upload may still have gone through: "
+                f"check your uploads on {self.site_string} before uploading it again."
+            ) from lookup_err
+        click.secho(f"Found the upload on {self.site_string}: torrent {torrent_id}.", fg="green")
+        return torrent_id, group_id
 
     async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
         """Report torrent for lossy master/web approval.
@@ -721,7 +884,9 @@ class BaseGazelleApi:
             "auth": self.authkey,
         }
         url = self.base_url + "/torrents.php"
-        resp = await self._request("POST", url, data=new_data)
+        # The form sets every field to a value computed above, so sending it twice leaves
+        # the torrent as sending it once.
+        resp = await self._request("POST", url, data=new_data, idempotent=True)
         resp_text = resp.text
 
         soup = BeautifulSoup(resp_text, "lxml")
