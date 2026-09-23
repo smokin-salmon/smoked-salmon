@@ -4,7 +4,7 @@ import re
 from contextlib import suppress
 from http import HTTPStatus
 from typing import Any, cast
-from urllib.parse import parse_qs, urljoin, urlparse
+from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
 
 import aiohttp
 import asyncclick as click
@@ -62,6 +62,23 @@ def _redact(text: str) -> str:
         The string with sensitive values replaced.
     """
     return _SENSITIVE_KEYS.sub(lambda m: f'"{m.group(1)}": "[REDACTED]"', text)
+
+
+def _normalize_session_cookie(cookie: str) -> str:
+    """Percent-encode a session cookie the way browsers send it.
+
+    Some cookie editors show the session in decoded form (`abc/def+ghi:jkl==`). aiohttp
+    quotes a value containing `/ + : =`, and PHP url-decodes cookies, so Gazelle would
+    read the quotes and a space for every `+` and reject the session. An already
+    encoded value is unchanged.
+
+    Args:
+        cookie: Session cookie value from config, decoded or encoded.
+
+    Returns:
+        The percent-encoded cookie value.
+    """
+    return quote(unquote(cookie.strip()), safe="")
 
 
 def _add_form_field(form: FormData, key: str, value: Any) -> None:
@@ -197,7 +214,7 @@ class BaseGazelleApi:
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
-        return {"session": self.cookie}
+        return {"session": _normalize_session_cookie(self.cookie)}
 
     def _http_session(self) -> aiohttp.ClientSession:
         """Get the persistent HTTP session for this API instance."""
