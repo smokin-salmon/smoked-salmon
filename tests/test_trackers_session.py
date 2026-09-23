@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import sys
 from pathlib import Path
 
@@ -6,9 +7,11 @@ import anyio
 import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
+from tenacity import wait_none
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import salmon.trackers.base as trackers_base
+from salmon.errors import UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi, RetryableError, hold_request_messages
 
 
@@ -27,7 +30,7 @@ class FakeApi(BaseGazelleApi):
 
 async def _serve(handler) -> web.AppRunner:
     app = web.Application()
-    app.router.add_get("/ajax.php", handler)
+    app.router.add_route("*", "/ajax.php", handler)
     runner = web.AppRunner(app)
     await runner.setup()
     await web.TCPSite(runner, "127.0.0.1", 0).start()
@@ -119,12 +122,94 @@ async def _queued_requests_do_not_time_out_while_waiting() -> None:
         await runner.cleanup()
 
 
+async def _queued_requests_do_not_time_out_while_reading_a_slow_answer() -> None:
+    hits = []
+
+    async def handle_ajax(request: web.Request) -> web.StreamResponse:
+        hits.append(request.path)
+        resp = web.StreamResponse()
+        await resp.prepare(request)
+        # The answer starts at once, and its body takes 0.4s to come.
+        for _ in range(4):
+            await asyncio.sleep(0.1)
+            await resp.write(b" ")
+        return resp
+
+    runner = await _serve(handle_ajax)
+    api = FakeApi(_url(runner))
+    try:
+        # As above, the last requests wait 0.8s for a free connection, then read for 0.4s: the
+        # bound on reading the whole body must not count the wait either.
+        await asyncio.gather(*(api._request("GET", api.base_url + "/ajax.php", timeout_secs=1) for _ in range(6)))
+        assert len(hits) == 6
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _trickled_answer_still_times_out(method: str) -> tuple[list[int], float]:
+    """Send a request whose answer trickles in, then one answered at once.
+
+    Returns the client port each request came from, and how long the first one took.
+    """
+    ports = []
+
+    async def handle_ajax(request: web.Request) -> web.StreamResponse:
+        await request.read()
+        assert request.transport is not None
+        ports.append(request.transport.get_extra_info("peername")[1])
+        if len(ports) > 1:
+            return _ok()
+        resp = web.StreamResponse()
+        await resp.prepare(request)
+        # Each byte lands well inside sock_read, so only a bound on the whole read stops it.
+        with contextlib.suppress(ConnectionResetError):
+            for _ in range(30):
+                await resp.write(b" ")
+                await asyncio.sleep(0.1)
+        return resp
+
+    runner = await _serve(handle_ajax)
+    api = FakeApi(_url(runner))
+    started = asyncio.get_running_loop().time()
+    try:
+        if method == "POST":
+            with pytest.raises(UnknownOutcomeError, match="no full answer within 1 s"):
+                await api._request(method, api.base_url + "/ajax.php", data={"file": "x"}, timeout_secs=1)
+        else:
+            await api._request(method, api.base_url + "/ajax.php", timeout_secs=1)
+        return ports, asyncio.get_running_loop().time() - started
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
 def test_gathered_requests_reuse_a_small_pool() -> None:
     anyio.run(_gathered_requests_reuse_a_small_pool)
 
 
 def test_queued_requests_do_not_time_out_while_waiting() -> None:
     anyio.run(_queued_requests_do_not_time_out_while_waiting)
+
+
+def test_queued_requests_do_not_time_out_while_reading_a_slow_answer() -> None:
+    anyio.run(_queued_requests_do_not_time_out_while_reading_a_slow_answer)
+
+
+def test_trickled_answer_to_a_post_is_an_unknown_outcome() -> None:
+    ports, took = anyio.run(_trickled_answer_still_times_out, "POST")
+    # Cut short after its 1s bound, not after the 3s the answer takes, and not sent again.
+    assert took < 2
+    assert len(ports) == 1
+
+
+def test_trickled_answer_to_a_get_is_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(BaseGazelleApi._send.retry, "wait", wait_none())  # type: ignore[attr-defined]
+    ports, took = anyio.run(_trickled_answer_still_times_out, "GET")
+    assert took < 2
+    # Sent again on a new connection: the one cut short mid-answer is not reused.
+    assert len(ports) == 2
+    assert ports[0] != ports[1]
 
 
 def test_api_key_requests_stay_cookie_free() -> None:

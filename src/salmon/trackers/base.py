@@ -379,7 +379,8 @@ class BaseGazelleApi:
             url: The URL to request.
             params: Query parameters.
             data: POST body data.
-            timeout_secs: Request timeout in seconds.
+            timeout_secs: How long, in seconds, connecting, each read and reading the whole
+                answer may take.
             prefer_api_key: If True and api_key is set, use Authorization header
                 only (no cookie). If False or api_key is empty, use cookie only
                 (no Authorization header).
@@ -478,7 +479,11 @@ class BaseGazelleApi:
                             allow_redirects=False,
                         ) as resp,
                     ):
-                        text = await resp.text()
+                        # sock_read restarts on every chunk, so a trickled body needs a bound of its
+                        # own. It starts once the answer has come, after any wait for a free pooled
+                        # connection, which must still not count.
+                        async with asyncio.timeout(timeout_secs):
+                            text = await resp.text()
 
                         if cfg.upload.debug_tracker_connection:
                             _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
@@ -574,7 +579,9 @@ class BaseGazelleApi:
                 # The tracker redirected at least once, so it has acted on the request.
                 raise RequestFailedError(message) if idempotent else UnknownOutcomeError(message)
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise failure(f"Network error: {err}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
+            # The body read's own timeout raises a TimeoutError with no message.
+            reason = str(err) or f"no full answer within {timeout_secs} s"
+            raise failure(f"Network error: {reason}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
 
     async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.
