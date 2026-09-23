@@ -58,6 +58,39 @@ def test_create_track_changes_matches_files_by_disc_and_track_number():
     assert Change("title", "Old Third", "New Third") in changes["2-01 Third.flac"]
 
 
+def test_create_track_changes_keeps_file_order_when_discnumber_tags_are_missing():
+    # A CD1/CD2 folder layout with no DISCNUMBER tag on any file: every file's disc
+    # defaults to 1, so (disc, track) pairs collide across discs (track 1 of CD1 and
+    # track 1 of CD2 both key as (1, 1)). Tags can't identify these files, so the
+    # existing file order (already correct, as get_audio_files gives it) must be kept
+    # instead of being reshuffled by an untrustworthy sort.
+    tags = {
+        "CD1/01.flac": _tagset("Old CD1 1", tracknumber="1", discnumber=None),
+        "CD1/02.flac": _tagset("Old CD1 2", tracknumber="2", discnumber=None),
+        "CD2/01.flac": _tagset("Old CD2 1", tracknumber="1", discnumber=None),
+        "CD2/02.flac": _tagset("Old CD2 2", tracknumber="2", discnumber=None),
+    }
+    metadata = {
+        "tracks": {
+            "1": {
+                "1": _trackmeta("New CD1 1", "1", "1"),
+                "2": _trackmeta("New CD1 2", "2", "1"),
+            },
+            "2": {
+                "1": _trackmeta("New CD2 1", "1", "2"),
+                "2": _trackmeta("New CD2 2", "2", "2"),
+            },
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old CD1 1", "New CD1 1") in changes["CD1/01.flac"]
+    assert Change("title", "Old CD1 2", "New CD1 2") in changes["CD1/02.flac"]
+    assert Change("title", "Old CD2 1", "New CD2 1") in changes["CD2/01.flac"]
+    assert Change("title", "Old CD2 2", "New CD2 2") in changes["CD2/02.flac"]
+
+
 def test_get_tag_number_reads_the_number_part_of_a_slash_pair():
     assert _get_tag_number(SimpleNamespace(discnumber="3/12"), "discnumber") == 3
 

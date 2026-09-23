@@ -95,15 +95,20 @@ def create_track_changes(tags, metadata):
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
 
-    sorted_tags = sorted(
-        tags.items(),
-        key=lambda item: (
-            _get_tag_number(item[1], "discnumber"),
-            _get_tag_number(item[1], "tracknumber"),
-        ),
-    )
+    def disc_track_key(tagset):
+        return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
 
-    for (filename, tagset), trackmeta in zip(sorted_tags, tracks, strict=False):
+    disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
+    if len(set(disc_track_keys)) == len(disc_track_keys):
+        # Every file has its own distinct disc/track pair, so its embedded tags can be
+        # trusted to identify it. Files without a discnumber tag (e.g. an untagged CD1/CD2
+        # folder layout) all default to disc 1 and collide here, so we fall back to the
+        # existing file order instead of mismatching them.
+        ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
+    else:
+        ordered_tags = list(tags.items())
+
+    for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False):
         changes[filename] = []
 
         try:
