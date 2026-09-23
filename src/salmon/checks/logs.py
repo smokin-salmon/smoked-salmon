@@ -159,12 +159,29 @@ async def _calculate_range_crc_async(track_files: list[str], toc_entries: list[c
     return await anyio.to_thread.run_sync(lambda: _crc32_from_chunks(_iter_range_pcm_chunks(track_files, toc_entries)))
 
 
+def _find_audio_files(path: str) -> list[str]:
+    """Return every audio file under a directory, recursively.
+
+    Args:
+        path: Directory to search.
+
+    Returns:
+        Paths of the .flac, .mp3 and .m4a files found.
+    """
+    audio_files: list[str] = []
+    for root, _folders, files_ in os.walk(path):
+        for f in files_:
+            if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}:
+                audio_files.append(os.path.join(root, f))
+    return audio_files
+
+
 async def check_log_cambia(logpath: str, basepath: str) -> None:
     """Check a log file using Cambia.
 
     Args:
         logpath: Path to the log file to check.
-        basepath: Base directory path containing audio files.
+        basepath: Release folder, checked when the log's own folder holds no audio files.
 
     Raises:
         ValueError: If log parsing fails, log is edited, or CRC mismatch detected.
@@ -197,14 +214,10 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
             last_copy_hash[(disc_id, track.num)] = track.test_and_copy.copy_hash
     copy_crc_set = set(last_copy_hash.values())
 
-    # Get list of files to check
-    files_to_check: list[str] = []
-    log_dir = os.path.dirname(logpath)
-    for root, _folders, files_ in os.walk(log_dir):
-        for f in files_:
-            if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}:
-                files_to_check.append(os.path.join(root, f))
-
+    # Check the log against the audio in its own folder, so a release with one log per disc
+    # folder decodes each disc once instead of once per log (#444). A log kept apart from the
+    # audio (Logs/CD1.log) has none in its folder: check it against the whole release then.
+    files_to_check = _find_audio_files(os.path.dirname(logpath)) or _find_audio_files(basepath)
     if not files_to_check:
         raise ValueError("No audio files found!")
 
