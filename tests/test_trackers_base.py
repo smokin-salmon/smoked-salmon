@@ -1,12 +1,22 @@
-import asyncio
+from urllib.parse import unquote_plus
 
-import aiohttp
-from yarl import URL
+import anyio
+from aiohttp import web
+from aiolimiter import AsyncLimiter
 
-from salmon.trackers.base import (
-    _build_tracker_cookies,
-    _normalize_session_cookie,
-)
+from salmon.trackers.base import BaseGazelleApi, _normalize_session_cookie
+
+DECODED_COOKIE = "NYzc/MwZ+4rK:Jcc5R/l9nvCJpY8hI7uKpA=="
+
+
+class FakeApi(BaseGazelleApi):
+    cookie = DECODED_COOKIE
+
+    def __init__(self, base_url: str) -> None:
+        self.base_url = base_url
+        super().__init__()
+        self._rate_limiter = AsyncLimiter(100, 1)
+        self._authenticated = True
 
 
 def test_normalize_session_cookie_encodes_decoded_red_style_values() -> None:
@@ -30,23 +40,30 @@ def test_normalize_session_cookie_is_idempotent_for_encoded_values() -> None:
     assert _normalize_session_cookie(encoded) == encoded
 
 
-def test_normalized_cookie_header_is_not_quoted() -> None:
-    loop = asyncio.new_event_loop()
+async def _decoded_cookie_reaches_php_intact() -> None:
+    sent_cookies = []
+
+    async def handle_ajax(request: web.Request) -> web.Response:
+        sent_cookies.append(request.headers.get("Cookie"))
+        return web.json_response({"status": "success", "response": {"authkey": "a", "passkey": "p"}})
+
+    app = web.Application()
+    app.router.add_get("/ajax.php", handle_ajax)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    await web.TCPSite(runner, "127.0.0.1", 0).start()
+    api = FakeApi(f"http://127.0.0.1:{runner.addresses[0][1]}")
     try:
-        jar = aiohttp.CookieJar(loop=loop)
-        url = URL("https://redacted.sh/ajax.php?action=index")
-        jar.update_cookies(
-            {"session": _normalize_session_cookie("abc/def+ghi:jkl==")},
-            response_url=url,
-        )
-
-        assert jar.filter_cookies(url).output(header="Cookie:") == "Cookie: session=abc%2Fdef%2Bghi%3Ajkl%3D%3D"
+        await api._request("GET", api.base_url + "/ajax.php", params={"action": "index"})
+        name, _, value = sent_cookies[0].partition("=")
+        assert name == "session"
+        assert '"' not in value
+        # PHP url-decodes $_COOKIE, so this is the session Gazelle looks up.
+        assert unquote_plus(value) == DECODED_COOKIE
     finally:
-        loop.close()
+        await api.close()
+        await runner.cleanup()
 
 
-def test_build_tracker_cookies_includes_optional_keeplogged() -> None:
-    assert _build_tracker_cookies("abc/def", "keep-me") == {
-        "session": "abc%2Fdef",
-        "keeplogged": "keep-me",
-    }
+def test_decoded_cookie_reaches_php_intact() -> None:
+    anyio.run(_decoded_cookie_reaches_php_intact)

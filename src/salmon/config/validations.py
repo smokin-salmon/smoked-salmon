@@ -130,7 +130,6 @@ class Metadata(BaseStruct):
 
 class GazelleTrackerSettings(BaseStruct):
     session: str
-    keeplogged: str | None = None
     api_key: str | None = None
     # TODO: validate this
     dottorrents_dir: str | None = None

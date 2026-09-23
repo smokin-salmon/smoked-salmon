@@ -1,9 +1,7 @@
-import asyncclick as click
 from bs4 import BeautifulSoup
 
 from salmon import cfg
 from salmon.common import UploadFiles
-from salmon.errors import LoginError
 from salmon.trackers.base import BaseGazelleApi
 
 
@@ -117,7 +115,6 @@ class RedApi(BaseGazelleApi):
             red_cfg = cfg.tracker.red
 
             self.cookie = red_cfg.session
-            self.keeplogged = red_cfg.keeplogged
             if red_cfg.api_key:
                 self.api_key = red_cfg.api_key
 
@@ -132,9 +129,7 @@ class RedApi(BaseGazelleApi):
         """Upload torrent, using site page upload when log files are present.
 
         Temporary patch: API key upload has a bug where log scores are not
-        announced in IRC. Prefer site page upload when cookie auth works, but
-        fall back to API upload if the cookie-backed path is unavailable and an
-        API key is configured.
+        announced in IRC. Force site page upload until it's fixed.
 
         Args:
             data: Upload form data.
@@ -144,18 +139,7 @@ class RedApi(BaseGazelleApi):
             Tuple of (torrent_id, group_id).
         """
         if files.log_files:
-            if not self.api_key:
-                return await self.site_page_upload(data, files)
-
-            try:
-                return await self.site_page_upload(data, files)
-            except LoginError:
-                click.secho(
-                    "RED cookie auth failed for upload.php; falling back to API upload. "
-                    "Log score IRC announcements may be incomplete on RED for this upload.",
-                    fg="yellow",
-                )
-                return await self.api_key_upload(data, files)
+            return await self.site_page_upload(data, files)
 
         return await super().upload(data, files)
 

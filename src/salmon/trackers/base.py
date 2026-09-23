@@ -65,36 +65,20 @@ def _redact(text: str) -> str:
 
 
 def _normalize_session_cookie(cookie: str) -> str:
-    """Normalize session cookies so aiohttp sends them in a browser-like form.
+    """Percent-encode a session cookie the way browsers send it.
 
-    RED-style session cookies often contain characters like `/`, `+`, `:`, and `=`.
-    If we pass the decoded value directly into aiohttp's cookie jar, it gets wrapped
-    in quotes when serialized into the Cookie header. Normalizing to a canonical
-    percent-encoded form keeps the header unquoted and matches what browsers send.
+    Some cookie editors show the session in decoded form (`abc/def+ghi:jkl==`). aiohttp
+    quotes a value containing `/ + : =`, and PHP url-decodes cookies, so Gazelle would
+    read the quotes and a space for every `+` and reject the session. An already
+    encoded value is unchanged.
 
     Args:
-        cookie: Raw or already-encoded session cookie value from config.
+        cookie: Session cookie value from config, decoded or encoded.
 
     Returns:
-        Canonical percent-encoded cookie value.
+        The percent-encoded cookie value.
     """
     return quote(unquote(cookie.strip()), safe="")
-
-
-def _build_tracker_cookies(session_cookie: str, keeplogged_cookie: str | None = None) -> dict[str, str]:
-    """Build the cookie payload for tracker requests.
-
-    Args:
-        session_cookie: The tracker session cookie value.
-        keeplogged_cookie: Optional persistent-login cookie value.
-
-    Returns:
-        Cookie mapping ready for aiohttp.
-    """
-    cookies = {"session": _normalize_session_cookie(session_cookie)}
-    if keeplogged_cookie:
-        cookies["keeplogged"] = keeplogged_cookie.strip()
-    return cookies
 
 
 def _add_form_field(form: FormData, key: str, value: Any) -> None:
@@ -208,7 +192,6 @@ class BaseGazelleApi:
     site_code: str
     site_string: str
     api_key: str = ""  # Optional, only for API key upload
-    keeplogged: str | None = None
 
     # Rate limiter: 5 requests per 10 seconds (shared across all instances)
     _rate_limiter = AsyncLimiter(5, 10)
@@ -231,7 +214,7 @@ class BaseGazelleApi:
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
-        return _build_tracker_cookies(self.cookie, self.keeplogged)
+        return {"session": _normalize_session_cookie(self.cookie)}
 
     def _http_session(self) -> aiohttp.ClientSession:
         """Get the persistent HTTP session for this API instance."""
