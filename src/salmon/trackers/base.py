@@ -165,8 +165,8 @@ def _compose_form_data(files: UploadFiles, data: dict[str, Any]) -> FormData:
 # Gazelle's own redirects take up to two hops: torrents.php?torrentid= to its group and
 # an upload POST to the group it created take one, and an upload that fills a request
 # takes two (upload.php to requests.php?action=takefill to requests.php?action=view).
-# The third is a margin: running out after a successful POST would report an upload
-# that went through as failed.
+# The third is a margin: running out after a POST leaves its outcome unknown, so an
+# upload that went through is only found by looking it up.
 _MAX_REDIRECTS = 3
 _REDIRECT_STATUSES = frozenset(
     {
@@ -378,7 +378,8 @@ class BaseGazelleApi:
                 fetches with an index call first. An api key request that sends no auth
                 field does not.
             expected_error_statuses: Error statuses the endpoint answers with a body the
-                caller reads itself: the response is returned instead of raising.
+                caller reads itself: the response is returned instead of raising. Not on a
+                later hop of a request that is not idempotent, which the tracker has acted on.
 
         Redirects within the site are followed, up to three hops, each one through the
         rate limiter. A redirect to the login page raises LoginError without requesting it.
@@ -475,6 +476,12 @@ class BaseGazelleApi:
                             _secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
 
                         if not resp.ok:
+                            # Checked before any status: the tracker acted on the request when it
+                            # redirected it, so a failed later hop leaves its outcome unknown. An
+                            # error status the caller expects answers that later hop, not the request.
+                            if redirected and not idempotent:
+                                raise UnknownOutcomeError(f"{self.site_string} answered {resp.status} on a later hop")
+
                             error_msg = text
                             with suppress(msgspec.DecodeError, ValueError):
                                 error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
@@ -526,6 +533,9 @@ class BaseGazelleApi:
                         current = urlparse(str(resp.url))
                         target = urlparse(urljoin(str(resp.url), location))
                         if target.path.endswith("/login.php"):
+                            if redirected and not idempotent:
+                                # As for an error status on a later hop: the tracker has acted.
+                                raise UnknownOutcomeError(f"{self.site_string} sent a later hop to its login page")
                             _secho(
                                 f"{self.site_string} sent this request to its login page: your session cookie is "
                                 f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
@@ -538,6 +548,8 @@ class BaseGazelleApi:
                                 f"{self.site_string} redirected to {target.scheme}://{target.netloc}, not following.",
                                 fg="red",
                             )
+                            if redirected and not idempotent:
+                                raise UnknownOutcomeError(f"{self.site_string} redirected a later hop to another site")
                             raise RequestFailedError(f"{self.site_string} redirected to another site")
 
                         if resp.status == HTTPStatus.SEE_OTHER or (
@@ -549,7 +561,9 @@ class BaseGazelleApi:
                         redirected = True
 
                 _secho(f"Too many redirects from {self.site_string}, last to {urlparse(url).path}", fg="red")
-                raise RequestFailedError(f"Too many redirects from {self.site_string}")
+                message = f"Too many redirects from {self.site_string}"
+                # The tracker redirected at least once, so it has acted on the request.
+                raise RequestFailedError(message) if idempotent else UnknownOutcomeError(message)
         except (TimeoutError, aiohttp.ClientError) as err:
             raise failure(f"Network error: {err}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
 

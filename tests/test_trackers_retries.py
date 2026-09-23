@@ -306,6 +306,97 @@ async def _server_error_after_the_upload_redirect_does_not_resend_it(tmp_path: P
         await runner.cleanup()
 
 
+async def _failure_after_the_upload_redirect_does_not_resend_it(tmp_path: Path, later_hop: int | str) -> list:
+    files, infohash = _upload_files(tmp_path)
+    hits = []
+
+    async def upload(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        raise web.HTTPFound("/torrents.php?id=5")
+
+    async def torrents(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path))
+        if later_hop == "login page":
+            raise web.HTTPFound("/login.php")
+        if later_hop == "another site":
+            raise web.HTTPFound("http://tracker.invalid/torrents.php?id=5")
+        if later_hop == "redirect loop":
+            raise web.HTTPFound(f"/torrents.php?id=5&hop={len(hits)}")
+        assert isinstance(later_hop, int)
+        # A 429 that would be waited for, then give up: the wait gains nothing.
+        return web.Response(status=later_hop, text="no", headers={"Retry-After": "10"})
+
+    async def ajax(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path))
+        assert request.query["hash"] == infohash
+        return _found(9, 5)
+
+    runner, url = await _serve(upload=upload, torrents=torrents, ajax=ajax)
+    api = FakeApi(url)
+    try:
+        # The redirect is the tracker's answer: whatever the pages after it do, the upload went through.
+        with anyio.fail_after(5):
+            assert await api.upload({"type": 0}, files) == (9, 5)
+        return hits
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _expected_error_status_after_a_redirect_is_an_unknown_outcome() -> None:
+    hits = []
+
+    async def ajax(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        raise web.HTTPFound("/torrents.php?id=5")
+
+    async def torrents(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path))
+        return web.json_response({"status": "failure", "error": "bad request"}, status=400)
+
+    runner, url = await _serve(ajax=ajax, torrents=torrents)
+    api = FakeApi(url, api_key="an-api-key")
+    try:
+        # The 400 RED answers an image it rejects with is expected, but here it answers the page
+        # the tracker sent the upload on to: it says nothing about the image.
+        with pytest.raises(UnknownOutcomeError):
+            await api._request(
+                "POST",
+                url + "/ajax.php",
+                params={"action": "upload_image"},
+                data={"file": "x"},
+                prefer_api_key=True,
+                expected_error_statuses=(400,),
+            )
+        assert hits == [("POST", "/ajax.php"), ("GET", "/torrents.php")]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _report_refused_after_its_redirect_is_not_filed_again() -> None:
+    posts = []
+
+    async def reportsv2(request: web.Request) -> web.Response:
+        await request.read()
+        posts.append(request.query["action"])
+        raise web.HTTPFound("/torrents.php?torrentid=9")
+
+    async def torrents(_request: web.Request) -> web.Response:
+        return web.Response(status=403, text="Forbidden")
+
+    runner, url = await _serve(reportsv2=reportsv2, torrents=torrents)
+    api = FakeApi(url)
+    try:
+        await spectrals.report_lossy_master(api, 9, None, None, "WEB", "a comment")
+        assert posts == ["takereport"]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
 async def _report_with_a_lost_answer_is_sent_once() -> None:
     posts = []
 
@@ -484,8 +575,31 @@ def test_server_error_after_the_upload_redirect_does_not_resend_it(tmp_path: Pat
     anyio.run(_server_error_after_the_upload_redirect_does_not_resend_it, tmp_path)
 
 
-def test_report_with_a_lost_answer_is_sent_once() -> None:
+@pytest.mark.parametrize("later_hop", [401, 403, 404, 429, "login page", "another site", "redirect loop"])
+def test_failure_after_the_upload_redirect_does_not_resend_it(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], later_hop: int | str
+) -> None:
+    hits = anyio.run(_failure_after_the_upload_redirect_does_not_resend_it, tmp_path, later_hop)
+    later_hops = 3 if later_hop == "redirect loop" else 1
+    assert hits == [("POST", "/upload.php")] + [("GET", "/torrents.php")] * later_hops + [("GET", "/ajax.php")]
+    # The session cookie did its job: the tracker took the upload.
+    assert "missing or expired" not in capsys.readouterr().out
+
+
+def test_expected_error_status_after_a_redirect_is_an_unknown_outcome() -> None:
+    anyio.run(_expected_error_status_after_a_redirect_is_an_unknown_outcome)
+
+
+def test_report_refused_after_its_redirect_is_not_filed_again(capsys: pytest.CaptureFixture[str]) -> None:
+    anyio.run(_report_refused_after_its_redirect_is_not_filed_again)
+    out = capsys.readouterr().out
+    assert "Could not tell whether RED took the lossy master report" in out
+    assert "Reported upload for Lossy Master/WEB Approval Request" not in out
+
+
+def test_report_with_a_lost_answer_is_sent_once(capsys: pytest.CaptureFixture[str]) -> None:
     anyio.run(_report_with_a_lost_answer_is_sent_once)
+    assert "Reported upload for Lossy Master/WEB Approval Request" not in capsys.readouterr().out
 
 
 def test_gets_are_still_retried() -> None:
