@@ -52,6 +52,7 @@ from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.uploader.dupe_checker import (
     can_check_site_log,
     check_existing_group,
+    describe_torrent,
     dupe_check_recent_torrents,
     generate_dupe_check_searchstrs,
     print_recent_upload_results,
@@ -84,7 +85,7 @@ if TYPE_CHECKING:
 @click.option(
     "--skip-flac-upload",
     is_flag=True,
-    help="Skip uploading the local FLAC torrent and only upload selected lower formats to --group-id.",
+    help="The FLAC is already in --group-id: do not upload it, only upload transcodes of it into that group.",
 )
 @click.option(
     "--source",
@@ -217,6 +218,10 @@ async def up(
     """Command to upload an album folder to a Gazelle Site."""
     if skip_flac_upload and group_id is None:
         raise click.UsageError("--skip-flac-upload requires --group-id.")
+    if skip_flac_upload and request:
+        raise click.UsageError("--skip-flac-upload cannot be used with --request.")
+    if skip_flac_upload and spectrals_after:
+        raise click.UsageError("--skip-flac-upload cannot be used with --spectrals-after.")
     if essential_only and scene:
         raise click.UsageError("--essential-only and --scene cannot be used together.")
     if yyy:
@@ -235,8 +240,11 @@ async def up(
         encoding,
         spectrals_after,
     )
+    flac_group = None
     if group_id:
-        await confirm_group_upload(gazelle_site, group_id, source)
+        group = await confirm_group_upload(gazelle_site, group_id, source)
+        if skip_flac_upload:
+            flac_group = group
     if source_url:
         source_url = source_url.strip()
     await upload(
@@ -259,7 +267,7 @@ async def up(
         skip_log_check=skip_log_check,
         skip_integrity_check=skip_integrity_check,
         essential_only=essential_only,
-        skip_flac_upload=skip_flac_upload,
+        flac_group=flac_group,
         skip_initial_review=skip_initial_review,
         apply_ai_suggestions=apply_ai_suggestions,
     )
@@ -355,6 +363,80 @@ async def resolve_cover_url(
             return False, None
 
 
+def find_source_flacs(group: dict[str, Any], media: str, encoding: str) -> list[dict[str, Any]]:
+    """Find the FLAC torrents of a group that a release with this media and encoding could be.
+
+    Args:
+        group: The group, as the tracker's torrentgroup API returns it.
+        media: The release's media, e.g. "WEB".
+        encoding: The release's encoding, "Lossless" or "24bit Lossless".
+
+    Returns:
+        The matching torrents, in the group's order.
+    """
+    return [
+        t
+        for t in group["torrents"]
+        if t.get("format") == "FLAC" and t.get("encoding") == encoding and t.get("media") == media
+    ]
+
+
+async def choose_source_flac(
+    gazelle_site: "BaseGazelleApi", group: dict[str, Any], media: str, encoding: str
+) -> str | None:
+    """Choose the FLAC torrent in an existing group that the transcodes to upload are made from.
+
+    The transcode descriptions link to it. With several matching FLACs the user picks one;
+    --yes-all stops instead of guessing.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        group: The group, as the tracker's torrentgroup API returns it.
+        media: The release's media, e.g. "WEB".
+        encoding: The release's encoding, "Lossless" or "24bit Lossless".
+
+    Returns:
+        The permalink of the chosen FLAC torrent, or None to stop.
+    """
+    group_id = group["group"]["id"]
+    flacs = find_source_flacs(group, media, encoding)
+    if not flacs:
+        click.secho(
+            f"\nGroup {group_id} has no {media} FLAC {encoding} matching this release to transcode from.",
+            fg="red",
+            bold=True,
+        )
+        return None
+
+    if len(flacs) == 1:
+        flac = flacs[0]
+    else:
+        click.secho(f"\nGroup {group_id} has several {media} FLAC {encoding} torrents:", fg="yellow", bold=True)
+        for i, t in enumerate(flacs, 1):
+            click.echo(f"{i:02d} >> {describe_torrent(t, group['group'])}")
+        if cfg.upload.yes_all:
+            click.secho(
+                "Not picking the FLAC the transcodes are made from with --yes-all. Run without it to choose.",
+                fg="red",
+                bold=True,
+            )
+            return None
+        while True:
+            choice = await click.prompt(
+                click.style(f"\nWhich one are these transcodes made from? [1-{len(flacs)}] or [a]bort", fg="magenta"),
+                default="",
+            )
+            choice = choice.strip().lower()
+            if choice.startswith("a"):
+                return None
+            if choice.isdigit() and 1 <= int(choice) <= len(flacs):
+                flac = flacs[int(choice) - 1]
+                break
+            click.secho(f"Enter a number from 1 to {len(flacs)}, or a to abort.", fg="red")
+
+    return f"{gazelle_site.base_url}/torrents.php?torrentid={flac['id']}"
+
+
 async def upload(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -376,7 +458,7 @@ async def upload(
     skip_log_check: bool = False,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
-    skip_flac_upload: bool = False,
+    flac_group: dict[str, Any] | None = None,
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
 ) -> None:
@@ -405,7 +487,9 @@ async def upload(
         skip_log_check: Skip log checking.
         skip_integrity_check: Skip integrity check.
         essential_only: If True, only essential extensions are allowed.
-        skip_flac_upload: Skip the source torrent and upload lower formats to the existing group.
+        flac_group: The existing group that already holds this release's FLAC, as the tracker's
+            torrentgroup API returns it. If given, the FLAC is not uploaded: only transcodes of it are,
+            into that group.
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
@@ -428,6 +512,19 @@ async def upload(
         prompt_encoding=True,
         hybrid=hybrid,
     )
+
+    flac_url = None
+    if flac_group is not None:
+        if rls_data["format"] != "FLAC" or rls_data["encoding"] not in ("Lossless", "24bit Lossless"):
+            return click.secho(
+                f"\n--skip-flac-upload only uploads transcodes of a lossless FLAC, "
+                f"and this release is {rls_data['format']} {rls_data['encoding']}.",
+                fg="red",
+                bold=True,
+            )
+        flac_url = await choose_source_flac(gazelle_site, flac_group, source, rls_data["encoding"])
+        if flac_url is None:
+            return click.secho("\nAborting upload...", fg="red")
 
     try:
         if not skip_mqa:
@@ -588,13 +685,13 @@ async def upload(
             if not scene and cfg.image.auto_compress_cover:
                 compress_pictures(path)
 
-            if not request_id and cfg.upload.requests.check_requests:
+            if not flac_url and not request_id and cfg.upload.requests.check_requests:
                 request_id = await check_requests(gazelle_site, searchstrs)
 
             try:
-                if skip_flac_upload:
-                    click.secho("Skipping FLAC upload; using the existing group.", fg="yellow")
-                    url = f"{gazelle_site.base_url}/torrents.php?id={group_id}"
+                if flac_url:
+                    click.secho(f"\nNot uploading the FLAC: transcoding from {flac_url}", fg="yellow")
+                    url = flac_url
                 else:
                     torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
                         gazelle_site,
@@ -618,9 +715,13 @@ async def upload(
 
                     await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
-                if cfg.upload.yes_all or click.confirm(
-                    click.style("\nWould you like to check downconversion options?", fg="magenta"),
-                    default=True,
+                if (
+                    flac_url
+                    or cfg.upload.yes_all
+                    or click.confirm(
+                        click.style("\nWould you like to check downconversion options?", fg="magenta"),
+                        default=True,
+                    )
                 ):
                     selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
                     if selected_tasks:
@@ -653,7 +754,7 @@ async def upload(
                 click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
 
             tracker = None
-            if skip_flac_upload or not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+            if flac_url or not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
                 click.secho("\nDone uploading this release.", fg="green")
                 break
 

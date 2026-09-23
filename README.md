@@ -290,6 +290,8 @@ select the lower formats to transcode and upload:
 ```bash
 salmon up /data/path/to/album -s WEB -g GROUP_ID --skip-flac-upload
 ```
+This only works from a lossless FLAC. The transcode descriptions link to the group's FLAC with the
+same media and encoding; if there are several, salmon asks which one (with `--yes-all` it stops).
 
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
