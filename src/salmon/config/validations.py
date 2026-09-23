@@ -24,7 +24,7 @@ class Directory(BaseStruct):
             raise ValueError("tmp_dir is not a valid directory")
 
 
-ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "red"]
+ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "red"]
 SpectralSelectionLiteral = Literal["*", "+", "0"]
 
 _TRACKER_CODES = ("red", "ops", "dic")
@@ -44,7 +44,6 @@ class ImageUploader(BaseStruct):
     image_uploader: ImgUploaderLiteral = "catbox"
     cover_uploader: ImgUploaderLiteral = "catbox"
     specs_uploader: ImgUploaderLiteral = "catbox"
-    ptpimg_key: str | None = None
     ptscreens_key: str | None = None
     oeimg_key: str | None = None
     imgbb_key: str | None = None
@@ -78,8 +77,6 @@ class ImageUploader(BaseStruct):
     def __post_init__(self):
         selections = self._selections()
         uploader_selections = {host for _, host in selections}
-        if ("ptpimg" in uploader_selections) and self.ptpimg_key is None:
-            raise ValueError("ptpimg key not specified")
         if "ptscreens" in uploader_selections and self.ptscreens_key is None:
             raise ValueError("PTScreens key not specified")
         if "oeimg" in uploader_selections and self.oeimg_key is None:
