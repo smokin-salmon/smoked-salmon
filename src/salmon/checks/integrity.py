@@ -12,6 +12,8 @@ FLAC_IMPORTANT_REGEXES = [
     re.compile(r"(.+\.flac:.+)\nok\s*", re.MULTILINE),
 ]
 
+FLAC_MD5_UNSET_RE = re.compile(r"WARNING.*MD5 signature.*STREAMINFO", re.IGNORECASE)
+
 MP3_IMPORTANT_REGEXES = [
     re.compile(r"WARNING: .*"),
     re.compile(r"INFO: .*"),
@@ -133,7 +135,10 @@ async def _check_flac_integrity(path: str) -> tuple[bool, str]:
         important_matches: list[str] = []
         for important_re in FLAC_IMPORTANT_REGEXES:
             important_matches.extend(m.strip() for m in important_re.findall(result_text))
-        passed = result.returncode == 0
+        md5_unset = FLAC_MD5_UNSET_RE.search(result_text)
+        if md5_unset:
+            important_matches.append(f"{os.path.basename(path)}: MD5 signature unset in STREAMINFO: sanitize to fix")
+        passed = result.returncode == 0 and not md5_unset
         return passed, "\n".join(important_matches)
     except Exception:
         return False, click.style(f"{os.path.basename(path)}: Failed integrity", fg="red", bold=True)
