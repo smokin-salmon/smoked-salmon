@@ -21,6 +21,7 @@ from salmon import cfg
 from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
+from salmon.sources.tidal import credentials_configured as tidal_credentials_configured
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
@@ -332,7 +333,7 @@ async def _test_metadata_sources() -> None:
         "Tidal": {
             "class": salmon.sources.TidalBase,
             "test_url": "http://www.tidal.com/album/75194842",
-            "config_check": lambda: bool(cfg.metadata.tidal.client_id and cfg.metadata.tidal.client_secret),
+            "config_check": tidal_credentials_configured,
         },
         "Qobuz": {
             "class": salmon.sources.QobuzBase,

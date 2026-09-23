@@ -58,13 +58,10 @@ class Scraper(TidalBase, MetadataMixin):
                 discno=track["volumeNumber"],
                 artists=artists,
                 title=self.parse_title(track["title"], track["version"]),
-                replay_gain=track["replayGain"],
-                peak=track["peak"],
                 isrc=track["isrc"],
                 explicit=track["explicit"],
                 format_=track["audioQuality"],
                 stream_id=track["id"],
-                streamable=track["allowStreaming"],
             )
         return dict(tracks)
 

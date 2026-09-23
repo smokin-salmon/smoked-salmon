@@ -99,6 +99,8 @@ class ImageUploader(BaseStruct):
 class TidalSettings(BaseStruct):
     client_id: str | None = None
     client_secret: str | None = None
+    # Only Tidal's retired API used this; kept to tell users to switch to client credentials.
+    token: str | None = None
     regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
 
 
