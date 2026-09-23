@@ -209,6 +209,14 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
 
     click.secho("\nVerifying audio file CRC values...", fg="cyan", bold=True)
     if parsed_logs[0].tracks[0].is_range:
+        # A multi-disc range rip rebuilds only one range from parsed_logs[0]'s TOC, which is
+        # ambiguous once other discs are involved. A multi-disc track rip is unaffected: it
+        # still verifies each per-(disc, track) hash against the CRC of every audio file
+        # under the release folder, so only the range-rip path is skipped here (#358).
+        if len({pl.toc.accurip_tocid.hash for pl in parsed_logs}) > 1:
+            click.secho("Multi-disc range rip log: skipping combined CRC file verification.", fg="yellow")
+            return
+
         toc_entries = parsed_logs[0].toc.raw.entries
 
         # Log contains range rip CRC, but we have individual track files
