@@ -89,8 +89,25 @@ def _patch_file_crcs(monkeypatch, crc_by_name: dict[str, str]) -> None:
 
 def _write_files(tmp_path, names: list[str]) -> str:
     for name in names:
+        (tmp_path / name).parent.mkdir(parents=True, exist_ok=True)
         (tmp_path / name).write_bytes(b"audio")
     return str(tmp_path)
+
+
+def _record_file_crcs(monkeypatch, crc_by_name: dict[str, str]) -> list[str]:
+    checked: list[str] = []
+
+    async def fake_calculate_file_crc_async(filepath: str, _: object = None) -> str:
+        checked.append(filepath)
+        return crc_by_name[filepath.rsplit("/", 1)[-1]]
+
+    monkeypatch.setattr(logs, "_calculate_file_crc_async", fake_calculate_file_crc_async)
+    return checked
+
+
+def _one_disc_log(*copy_hashes: str, is_range: bool = False) -> FakeCambiaOutput:
+    tracks = [FakeTrack(num=i, copy_hash=h, is_range=is_range) for i, h in enumerate(copy_hashes, 1)]
+    return FakeCambiaOutput(parsed=FakeParsedCombined(parsed_logs=[FakeParsedLog(tracks=tracks)]))
 
 
 def test_appended_rerip_replaces_the_stale_hash(tmp_path, monkeypatch) -> None:
@@ -163,3 +180,65 @@ def test_multi_disc_range_rip_is_skipped_with_a_notice(tmp_path, monkeypatch, ca
     anyio.run(logs.check_log_cambia, "log.log", basepath)
 
     assert "Multi-disc range rip" in capsys.readouterr().out
+
+
+TWO_DISC_CRCS = {"d1-01.flac": "D1-1", "d1-02.flac": "D1-2", "d2-01.flac": "D2-1", "d2-02.flac": "D2-2"}
+
+
+def test_a_log_in_a_disc_folder_checks_only_that_disc(tmp_path, monkeypatch) -> None:
+    # One log per disc folder: each log's CRCs are checked against its own disc's files, not
+    # against every file in the release, which decoded a 3-disc release three times (#444).
+    basepath = _write_files(
+        tmp_path, ["CD1/CD1.log", "CD1/d1-01.flac", "CD1/d1-02.flac", "CD2/CD2.log", "CD2/d2-01.flac", "CD2/d2-02.flac"]
+    )
+    _patch_cambia(monkeypatch, _one_disc_log("D1-1", "D1-2"))
+    checked = _record_file_crcs(monkeypatch, TWO_DISC_CRCS)
+
+    anyio.run(logs.check_log_cambia, str(tmp_path / "CD1" / "CD1.log"), basepath)
+
+    assert sorted(checked) == [str(tmp_path / "CD1" / "d1-01.flac"), str(tmp_path / "CD1" / "d1-02.flac")]
+
+
+def test_a_range_rip_log_in_a_disc_folder_rebuilds_only_that_disc(tmp_path, monkeypatch) -> None:
+    basepath = _write_files(
+        tmp_path, ["CD1/CD1.log", "CD1/d1-01.flac", "CD1/d1-02.flac", "CD2/CD2.log", "CD2/d2-01.flac", "CD2/d2-02.flac"]
+    )
+    _patch_cambia(monkeypatch, _one_disc_log("RANGE2", is_range=True))
+    rebuilt_from: list[str] = []
+
+    async def fake_range_crc(track_files: list[str], toc_entries: list) -> str:
+        rebuilt_from.extend(track_files)
+        return "RANGE2"
+
+    monkeypatch.setattr(logs, "_calculate_range_crc_async", fake_range_crc)
+
+    anyio.run(logs.check_log_cambia, str(tmp_path / "CD2" / "CD2.log"), basepath)
+
+    assert sorted(rebuilt_from) == [str(tmp_path / "CD2" / "d2-01.flac"), str(tmp_path / "CD2" / "d2-02.flac")]
+
+
+@pytest.mark.parametrize(
+    "audio",
+    [
+        pytest.param(["d1-01.flac", "d1-02.flac"], id="audio-in-root"),
+        pytest.param(["CD1/d1-01.flac", "CD1/d1-02.flac", "CD2/d2-01.flac", "CD2/d2-02.flac"], id="audio-in-discs"),
+    ],
+)
+def test_a_log_in_a_folder_without_audio_checks_the_whole_release(tmp_path, monkeypatch, audio) -> None:
+    basepath = _write_files(tmp_path, ["Logs/CD1.log", *audio])
+    _patch_cambia(monkeypatch, _one_disc_log("D1-1", "D1-2"))
+    checked = _record_file_crcs(monkeypatch, TWO_DISC_CRCS)
+
+    anyio.run(logs.check_log_cambia, str(tmp_path / "Logs" / "CD1.log"), basepath)
+
+    assert sorted(checked) == sorted(str(tmp_path / name) for name in audio)
+
+
+def test_a_single_folder_release_checks_its_files(tmp_path, monkeypatch) -> None:
+    basepath = _write_files(tmp_path, ["album.log", "d1-01.flac", "d1-02.flac"])
+    _patch_cambia(monkeypatch, _one_disc_log("D1-1", "D1-2"))
+    checked = _record_file_crcs(monkeypatch, TWO_DISC_CRCS)
+
+    anyio.run(logs.check_log_cambia, str(tmp_path / "album.log"), basepath)
+
+    assert sorted(checked) == [str(tmp_path / "d1-01.flac"), str(tmp_path / "d1-02.flac")]
