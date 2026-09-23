@@ -14,7 +14,7 @@ from torf import Torrent
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon.common import UploadFiles
-from salmon.errors import LoginError, RequestError, UnknownOutcomeError
+from salmon.errors import LoginError, RequestError, RequestFailedError, UnknownOutcomeError
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi, RetryableError
 from salmon.uploader import spectrals
@@ -147,7 +147,7 @@ async def _lost_upload_not_found_says_it_may_have_gone_through(tmp_path: Path) -
     try:
         with pytest.raises(
             UnknownOutcomeError,
-            match=r"did not find it \(bad parameters\)\. The upload may still have gone through: check your uploads",
+            match=r"did not confirm it \(bad parameters\)\. The upload may still have gone through: check your uploads",
         ):
             await api.upload({"type": 0}, files)
         assert posts == ["upload"]
@@ -215,6 +215,8 @@ async def _lost_upload_lookup_that_fails_otherwise_is_not_repeated(
         with pytest.raises(UnknownOutcomeError, match="may still have gone through") as caught:
             await api.upload({"type": 0}, files)
         assert isinstance(caught.value.__cause__, raised)
+        # The lookup failed, it did not come back empty.
+        assert "did not confirm it" in str(caught.value)
         assert posts == ["upload"]
         # Only a tracker saying it does not have the torrent is worth asking again later.
         assert len(lookups) == (5 if raised is RetryableError else 1)
@@ -248,6 +250,49 @@ async def _upload_after_a_kept_alive_connection_goes_on_a_fresh_one(tmp_path: Pa
         await api.api_call("index")
         assert await api.upload({"type": 0}, files) == (9, 5)
         assert posts == ["fresh"]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _upload_answered_with_any_5xx_is_looked_up_not_resent(tmp_path: Path, status: int) -> None:
+    files, infohash = _upload_files(tmp_path)
+    posts, lookups = [], []
+
+    async def ajax(request: web.Request) -> web.Response:
+        if request.method == "POST":
+            await request.read()
+            posts.append(request.query["action"])
+            # A 524 is Cloudflare saying the tracker got the upload and did not answer in time.
+            return web.Response(status=status, text="server error")
+        lookups.append(request.query["hash"])
+        return _found(9, 5)
+
+    runner, url = await _serve(ajax=ajax)
+    api = FakeApi(url, api_key="an-api-key")
+    try:
+        assert await api.upload({"type": 0}, files) == (9, 5)
+        assert posts == ["upload"]
+        assert lookups == [infohash]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _get_answered_with_an_unusual_5xx_is_not_retried(status: int) -> None:
+    hits = []
+
+    async def log(request: web.Request) -> web.Response:
+        hits.append(request.path)
+        return web.Response(status=status, text="server error")
+
+    runner, url = await _serve(log=log)
+    api = FakeApi(url)
+    try:
+        # Only a 500, 502, 503 or 504 is worth asking again.
+        with pytest.raises(RequestFailedError):
+            await api._request("GET", url + "/log.php", params={"page": 1})
+        assert len(hits) == 1
     finally:
         await api.close()
         await runner.cleanup()
@@ -565,6 +610,16 @@ def test_ctrl_c_while_waiting_for_a_lost_upload_sends_nothing_more(
 
 def test_upload_after_a_kept_alive_connection_goes_on_a_fresh_one(tmp_path: Path) -> None:
     anyio.run(_upload_after_a_kept_alive_connection_goes_on_a_fresh_one, tmp_path)
+
+
+@pytest.mark.parametrize("status", [501, 520, 522, 524])
+def test_upload_answered_with_any_5xx_is_looked_up_not_resent(tmp_path: Path, status: int) -> None:
+    anyio.run(_upload_answered_with_any_5xx_is_looked_up_not_resent, tmp_path, status)
+
+
+@pytest.mark.parametrize("status", [501, 522])
+def test_get_answered_with_an_unusual_5xx_is_not_retried(status: int) -> None:
+    anyio.run(_get_answered_with_an_unusual_5xx_is_not_retried, status)
 
 
 def test_rate_limited_upload_is_retried(tmp_path: Path) -> None:

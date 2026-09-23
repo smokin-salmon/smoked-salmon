@@ -182,6 +182,17 @@ _REDIRECT_STATUSES = frozenset(
 # A connection that was never made carried nothing to the tracker.
 _NOT_SENT_ERRORS = (aiohttp.ClientConnectorError, aiohttp.ConnectionTimeoutError)
 
+# The server errors an idempotent request is sent again on: the tracker, or a gateway in front
+# of it, may answer the next attempt.
+_TRANSIENT_5XX = frozenset(
+    {
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        HTTPStatus.BAD_GATEWAY,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        HTTPStatus.GATEWAY_TIMEOUT,
+    }
+)
+
 # How long to wait, in seconds, before looking up an upload whose answer was lost, and before
 # looking it up a second and last time if the tracker does not have it yet. When the upload timed
 # out (30 s without an answer), the tracker is likely still handling it, and the torrent only
@@ -508,11 +519,9 @@ class BaseGazelleApi:
                             if resp.status in expected_error_statuses:
                                 return HttpResponse(text=text, url=str(resp.url), status=resp.status)
 
-                            if resp.status in (
-                                HTTPStatus.INTERNAL_SERVER_ERROR,
-                                HTTPStatus.BAD_GATEWAY,
-                                HTTPStatus.SERVICE_UNAVAILABLE,
-                                HTTPStatus.GATEWAY_TIMEOUT,
+                            # Any 5xx may follow the tracker acting on a POST; a GET is resent only on these.
+                            if resp.status >= HTTPStatus.INTERNAL_SERVER_ERROR and (
+                                not idempotent or resp.status in _TRANSIENT_5XX
                             ):
                                 raise failure(f"Server error {resp.status}")
 
@@ -851,7 +860,7 @@ class BaseGazelleApi:
         except (RequestError, TorfError, KeyError, TypeError, ValueError) as lookup_err:
             raise UnknownOutcomeError(
                 f"Could not tell whether {self.site_string} took the upload ({err}), and looking the torrent up "
-                f"by its infohash did not find it ({lookup_err}). The upload may still have gone through: "
+                f"by its infohash did not confirm it ({lookup_err}). The upload may still have gone through: "
                 f"check your uploads on {self.site_string} before uploading it again."
             ) from lookup_err
         except asyncio.CancelledError:
