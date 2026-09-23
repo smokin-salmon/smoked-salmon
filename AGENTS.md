@@ -57,6 +57,10 @@ every directory it names must exist.
   what goes wrong: one check sends ~99 requests per upload.
 - **Retries multiply traffic.** A retried request counts against the user's rate limit too. Only
   retry on errors that are genuinely transient.
+- **Never re-send a request that changes state once it may have reached the tracker.** `_request`
+  treats a POST as not idempotent: it retries it only when the tracker cannot have acted on it,
+  and raises `UnknownOutcomeError` otherwise (#446). Pass `idempotent=True` only for a POST that
+  sets a fixed state.
 - **Never test against a live tracker from code or CI.** Use a local fake server; see
   `tests/test_trackers_session.py` for the pattern.
 - API-key requests must send no session cookie, and cookie requests no `Authorization` header.
