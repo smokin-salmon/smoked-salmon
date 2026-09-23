@@ -48,8 +48,8 @@ def test_red_image_host_is_refused_where_other_trackers_would_see_it(settings: d
 
 
 def test_a_host_set_only_in_an_override_still_needs_its_key() -> None:
-    with pytest.raises(msgspec.ValidationError, match="ptpimg key not specified"):
-        _image(ops={"cover_uploader": "ptpimg"})
+    with pytest.raises(msgspec.ValidationError, match="PTScreens key not specified"):
+        _image(ops={"cover_uploader": "ptscreens"})
 
 
 def _cfg(tmp_path, code: str, red: dict[str, Any]) -> dict[str, Any]:
