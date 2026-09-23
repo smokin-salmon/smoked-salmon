@@ -187,8 +187,12 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
     elif cambia_output.parsed.parsed_logs[0].checksum.integrity == cambia.Integrity.Unknown:
         click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
 
-    # Get list of CRCs from the log file
-    copy_crc_set = {track.test_and_copy.copy_hash for track in cambia_output.parsed.parsed_logs[0].tracks}
+    # Appended rerip logs: the last log per track carries the valid hash (#358)
+    last_copy_hash: dict[int, str] = {}
+    for parsed_log in cambia_output.parsed.parsed_logs:
+        for track in parsed_log.tracks:
+            last_copy_hash[track.num] = track.test_and_copy.copy_hash
+    copy_crc_set = set(last_copy_hash.values())
 
     # Get list of files to check
     files_to_check: list[str] = []
