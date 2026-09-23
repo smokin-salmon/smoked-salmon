@@ -386,6 +386,22 @@ def _parse_integer(value):
     return value
 
 
+def _get_tag_number(tracktags, field):
+    """Read a disc/track number off a tag object or dict, defaulting to 1."""
+    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
+
+    if isinstance(value, list) and value:
+        value = value[0]
+    if value is None:
+        return 1
+    if isinstance(value, str):
+        value = value.split("/")[0]
+        return int(value) if value.isdigit() else 1
+    if isinstance(value, int):
+        return value
+    return 1
+
+
 def move_non_audio_files(directory_move_pairs):
     for ext, old_dir, new_dir in directory_move_pairs:
         for file in os.listdir(old_dir):
