@@ -399,9 +399,7 @@ async def _test_seedbox_connections() -> None:
                     # Test access to the configured remote, not just local config presence.
                     try:
                         with anyio.fail_after(10):
-                            result = await anyio.run_process(
-                                ["rclone", "lsd", f"{seedbox_config.url}:"], check=False
-                            )
+                            result = await anyio.run_process(["rclone", "lsd", f"{seedbox_config.url}:"], check=False)
                         if result.returncode == 0:
                             click.secho(
                                 f"    ✔ Rclone remote '{seedbox_config.url}' is accessible", fg="green", bold=True
@@ -420,12 +418,6 @@ async def _test_seedbox_connections() -> None:
             click.secho(f"    ✖ Seedbox test failed: {e}", fg="red", bold=True)
 
     click.secho("-" * 50, fg="yellow")
-
-
-@commandgroup.command()
-async def seedboxhealth() -> None:
-    """Test configured seedbox torrent clients and rclone remotes."""
-    await _test_seedbox_connections()
 
 
 @commandgroup.command()
