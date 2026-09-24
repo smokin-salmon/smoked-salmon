@@ -1,7 +1,7 @@
 import asyncio
 import html
 import re
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from http import HTTPStatus
@@ -332,6 +332,8 @@ class BaseGazelleApi:
         timeout_secs: int = 10,
         prefer_api_key: bool = False,
         idempotent: bool | None = None,
+        needs_authkey: bool = True,
+        expected_error_statuses: Collection[int] = (),
     ) -> HttpResponse:
         """Authenticated HTTP request, returns response data.
 
@@ -346,6 +348,11 @@ class BaseGazelleApi:
                 (no Authorization header).
             idempotent: Whether sending the request twice leaves the tracker as sending
                 it once. Defaults to False for POST and True otherwise.
+            needs_authkey: Whether the request needs the authkey, which a fresh client
+                fetches with an index call first. An api key request that sends no auth
+                field does not.
+            expected_error_statuses: Error statuses the endpoint answers with a body the
+                caller reads itself: the response is returned instead of raising.
 
         Redirects within the site are followed, up to three hops, each one through the
         rate limiter. A redirect to the login page raises LoginError without requesting it.
@@ -358,7 +365,7 @@ class BaseGazelleApi:
             UnknownOutcomeError: If a request that is not idempotent fails after it may
                 have reached the tracker.
         """
-        if not (params and params.get("action") == "index"):
+        if needs_authkey and not (params and params.get("action") == "index"):
             await self.ensure_authenticated()
 
         if idempotent is None:
@@ -435,6 +442,9 @@ class BaseGazelleApi:
                                 fg="red",
                             )
                             raise LoginError(error_msg)
+
+                        if resp.status in expected_error_statuses:
+                            return HttpResponse(text=text, url=str(resp.url), status=resp.status)
 
                         if resp.status in (
                             HTTPStatus.INTERNAL_SERVER_ERROR,

@@ -8,6 +8,7 @@ from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, imgbb, imgbox, oeimg, ptscreens, ra, red
+from salmon.trackers.red import RedApi
 
 HOSTS = {
     "catbox": catbox,
@@ -94,12 +95,13 @@ def chunker(seq, size=4):
         yield seq[pos : pos + size]
 
 
-async def upload_cover(cover_path: str | None, host: str | None = None) -> str | None:
+async def upload_cover(cover_path: str | None, host: str | None = None, red_api: RedApi | None = None) -> str | None:
     """Upload cover image to an image host.
 
     Args:
         cover_path: Path to the cover image file.
         host: The image host to upload to. Defaults to the configured cover_uploader.
+        red_api: The RED client that RED's image host uploads through. Without one, it makes its own.
 
     Returns:
         The uploaded image URL, or None if upload failed.
@@ -110,7 +112,7 @@ async def upload_cover(cover_path: str | None, host: str | None = None) -> str |
     host = host or cfg.image.cover_uploader
     click.secho(f"Uploading cover to {host}...", fg="yellow", nl=False)
     try:
-        uploader = HOSTS[host].ImageUploader()
+        uploader = red.ImageUploader(red_api) if host == "red" else HOSTS[host].ImageUploader()
         url, _ = await uploader.upload_file(cover_path)
         click.secho(f" done! {url}", fg="yellow")
         return url

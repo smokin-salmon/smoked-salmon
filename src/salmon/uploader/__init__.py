@@ -2,6 +2,8 @@ import os
 import platform
 import re
 import shutil
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any
 
 import anyio
@@ -49,6 +51,7 @@ from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import rename_files, tag_files
 from salmon.tagger.review import review_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
+from salmon.trackers.red import RedApi
 from salmon.uploader.dupe_checker import (
     can_check_site_log,
     check_existing_group,
@@ -281,6 +284,7 @@ async def get_cover_url(
     path: str,
     cover_source: str | None,
     remove_downloaded: bool,
+    red_api: RedApi | None = None,
 ) -> str | None:
     """Get the cover URL for a new group on a tracker, uploading the cover if needed.
 
@@ -293,6 +297,7 @@ async def get_cover_url(
         path: The release folder.
         cover_source: URL to download the cover from if the folder has none.
         remove_downloaded: Delete the cover file after uploading, if it was downloaded.
+        red_api: The RED client that RED's image host uploads through.
 
     Returns:
         The cover URL, or None if the upload failed.
@@ -300,15 +305,41 @@ async def get_cover_url(
     host = cfg.image.cover_uploader_for(tracker)
     if not cover_urls.get(host):
         cover_path, is_downloaded = await download_cover_if_nonexistent(path, cover_source)
-        cover_urls[host] = await upload_cover(cover_path, host)
+        cover_urls[host] = await upload_cover(cover_path, host, red_api)
         if is_downloaded and remove_downloaded and cover_path:
             click.secho("Removing downloaded Cover Image File", fg="yellow")
             os.remove(cover_path)
     return cover_urls[host]
 
 
+@asynccontextmanager
+async def red_api_for_covers(gazelle_site: "BaseGazelleApi") -> AsyncIterator[RedApi | None]:
+    """Get the RED client that covers for gazelle_site's tracker go through, if they go to RED's image host.
+
+    That host authenticates with the RED API key, whichever tracker the cover is for. An upload
+    to RED uses its own client. An upload to another tracker gets one RED client of its own,
+    kept for any retry and closed afterwards.
+
+    Args:
+        gazelle_site: The tracker API instance the upload is to.
+
+    Yields:
+        The RED client, or None if the tracker's covers go to another host.
+    """
+    if isinstance(gazelle_site, RedApi):
+        yield gazelle_site
+    elif cfg.image.cover_uploader_for(gazelle_site.site_code) == "red":
+        red_api = RedApi()
+        try:
+            yield red_api
+        finally:
+            await red_api.close()
+    else:
+        yield None
+
+
 async def resolve_cover_url(
-    tracker: str,
+    gazelle_site: "BaseGazelleApi",
     group_id: int | None,
     cover_urls: dict[str, str | None],
     path: str,
@@ -321,7 +352,7 @@ async def resolve_cover_url(
     --yes-all stops the upload; otherwise the user can go on without one, retry, or stop.
 
     Args:
-        tracker: The tracker site code, e.g. "RED".
+        gazelle_site: The tracker API instance the upload is to.
         group_id: The existing group to upload to, or None for a new group.
         cover_urls: Cover URLs already uploaded in this run, by image host. Updated in place.
         path: The release folder.
@@ -331,38 +362,40 @@ async def resolve_cover_url(
     Returns:
         Whether to upload to this tracker, and the cover URL to upload with (None for none).
     """
+    tracker = gazelle_site.site_code
     if group_id:
         if not remove_downloaded:
             await download_cover_if_nonexistent(path, cover_source)
         return True, None
 
-    while True:
-        cover_url = await get_cover_url(tracker, cover_urls, path, cover_source, remove_downloaded)
-        if cover_url:
-            return True, cover_url
+    async with red_api_for_covers(gazelle_site) as red_api:
+        while True:
+            cover_url = await get_cover_url(tracker, cover_urls, path, cover_source, remove_downloaded, red_api)
+            if cover_url:
+                return True, cover_url
 
-        host = cfg.image.cover_uploader_for(tracker)
-        click.secho(
-            f"\nNo cover image for this new group on {tracker}: none was found, or the upload to {host} failed.",
-            fg="yellow",
-            bold=True,
-        )
-        if cfg.upload.yes_all:
-            click.secho("Not uploading a new group without a cover image with --yes-all.", fg="red", bold=True)
-            return False, None
+            host = cfg.image.cover_uploader_for(tracker)
+            click.secho(
+                f"\nNo cover image for this new group on {tracker}: none was found, or the upload to {host} failed.",
+                fg="yellow",
+                bold=True,
+            )
+            if cfg.upload.yes_all:
+                click.secho("Not uploading a new group without a cover image with --yes-all.", fg="red", bold=True)
+                return False, None
 
-        choice = await click.prompt(
-            click.style("Continue without a cover image? [y/N/r]", fg="magenta"),
-            default="n",
-            show_default=False,
-        )
-        choice = choice.strip().lower()
-        if choice in ("r", "retry"):
-            click.secho("Looking for a cover image again...", fg="cyan")
-        elif choice in ("y", "yes"):
-            return True, None
-        else:
-            return False, None
+            choice = await click.prompt(
+                click.style("Continue without a cover image? [y/N/r]", fg="magenta"),
+                default="n",
+                show_default=False,
+            )
+            choice = choice.strip().lower()
+            if choice in ("r", "retry"):
+                click.secho("Looking for a cover image again...", fg="cyan")
+            elif choice in ("y", "yes"):
+                return True, None
+            else:
+                return False, None
 
 
 def find_source_flacs(group: dict[str, Any], media: str, encoding: str) -> list[dict[str, Any]]:
@@ -685,7 +718,7 @@ async def upload(
 
             # Handle cover image for this tracker
             proceed, cover_url = await resolve_cover_url(
-                tracker, group_id, cover_urls, path, metadata["cover"], remove_downloaded_cover_image
+                gazelle_site, group_id, cover_urls, path, metadata["cover"], remove_downloaded_cover_image
             )
             if not proceed:
                 # Like a failed upload: skip this tracker, and offer the next one.
