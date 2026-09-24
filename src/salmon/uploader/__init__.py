@@ -50,7 +50,9 @@ from salmon.tagger.retagger import rename_files, tag_files
 from salmon.tagger.review import review_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.uploader.dupe_checker import (
+    can_check_site_log,
     check_existing_group,
+    describe_torrent,
     dupe_check_recent_torrents,
     generate_dupe_check_searchstrs,
     print_recent_upload_results,
@@ -80,6 +82,11 @@ if TYPE_CHECKING:
 @commandgroup.command()
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 @click.option("--group-id", "-g", default=None, help="Group ID to upload torrent to")
+@click.option(
+    "--skip-flac-upload",
+    is_flag=True,
+    help="The FLAC is already in --group-id: do not upload it, only upload transcodes of it into that group.",
+)
 @click.option(
     "--source",
     "-s",
@@ -186,6 +193,7 @@ if TYPE_CHECKING:
 async def up(
     path: str,
     group_id: int | None,
+    skip_flac_upload: bool,
     source: str | None,
     lossy: bool | None,
     spectrals: tuple[int, ...],
@@ -208,6 +216,12 @@ async def up(
     essential_only: bool,
 ) -> None:
     """Command to upload an album folder to a Gazelle Site."""
+    if skip_flac_upload and group_id is None:
+        raise click.UsageError("--skip-flac-upload requires --group-id.")
+    if skip_flac_upload and request:
+        raise click.UsageError("--skip-flac-upload cannot be used with --request.")
+    if skip_flac_upload and spectrals_after:
+        raise click.UsageError("--skip-flac-upload cannot be used with --spectrals-after.")
     if essential_only and scene:
         raise click.UsageError("--essential-only and --scene cannot be used together.")
     if yyy:
@@ -226,8 +240,11 @@ async def up(
         encoding,
         spectrals_after,
     )
+    flac_group = None
     if group_id:
-        await confirm_group_upload(gazelle_site, group_id, source)
+        group = await confirm_group_upload(gazelle_site, group_id, source)
+        if skip_flac_upload:
+            flac_group = group
     if source_url:
         source_url = source_url.strip()
     await upload(
@@ -250,9 +267,174 @@ async def up(
         skip_log_check=skip_log_check,
         skip_integrity_check=skip_integrity_check,
         essential_only=essential_only,
+        flac_group=flac_group,
         skip_initial_review=skip_initial_review,
         apply_ai_suggestions=apply_ai_suggestions,
     )
+
+
+async def get_cover_url(
+    tracker: str,
+    cover_urls: dict[str, str | None],
+    path: str,
+    cover_source: str | None,
+    remove_downloaded: bool,
+) -> str | None:
+    """Get the cover URL for a new group on a tracker, uploading the cover if needed.
+
+    Each tracker can have its own cover host, so a cover uploaded for one tracker is
+    only reused by trackers that share its host. A failed upload is retried next time.
+
+    Args:
+        tracker: The tracker site code, e.g. "RED".
+        cover_urls: Cover URLs already uploaded in this run, by image host. Updated in place.
+        path: The release folder.
+        cover_source: URL to download the cover from if the folder has none.
+        remove_downloaded: Delete the cover file after uploading, if it was downloaded.
+
+    Returns:
+        The cover URL, or None if the upload failed.
+    """
+    host = cfg.image.cover_uploader_for(tracker)
+    if not cover_urls.get(host):
+        cover_path, is_downloaded = await download_cover_if_nonexistent(path, cover_source)
+        cover_urls[host] = await upload_cover(cover_path, host)
+        if is_downloaded and remove_downloaded and cover_path:
+            click.secho("Removing downloaded Cover Image File", fg="yellow")
+            os.remove(cover_path)
+    return cover_urls[host]
+
+
+async def resolve_cover_url(
+    tracker: str,
+    group_id: int | None,
+    cover_urls: dict[str, str | None],
+    path: str,
+    cover_source: str | None,
+    remove_downloaded: bool,
+) -> tuple[bool, str | None]:
+    """Get the cover URL to upload to a tracker with, asking before a new group goes up without one.
+
+    An existing group already has its cover, so it needs none. For a new group with no cover,
+    --yes-all stops the upload; otherwise the user can go on without one, retry, or stop.
+
+    Args:
+        tracker: The tracker site code, e.g. "RED".
+        group_id: The existing group to upload to, or None for a new group.
+        cover_urls: Cover URLs already uploaded in this run, by image host. Updated in place.
+        path: The release folder.
+        cover_source: URL to download the cover from if the folder has none.
+        remove_downloaded: Delete the cover file after uploading, if it was downloaded.
+
+    Returns:
+        Whether to upload to this tracker, and the cover URL to upload with (None for none).
+    """
+    if group_id:
+        if not remove_downloaded:
+            await download_cover_if_nonexistent(path, cover_source)
+        return True, None
+
+    while True:
+        cover_url = await get_cover_url(tracker, cover_urls, path, cover_source, remove_downloaded)
+        if cover_url:
+            return True, cover_url
+
+        host = cfg.image.cover_uploader_for(tracker)
+        click.secho(
+            f"\nNo cover image for this new group on {tracker}: none was found, or the upload to {host} failed.",
+            fg="yellow",
+            bold=True,
+        )
+        if cfg.upload.yes_all:
+            click.secho("Not uploading a new group without a cover image with --yes-all.", fg="red", bold=True)
+            return False, None
+
+        choice = await click.prompt(
+            click.style("Continue without a cover image? [y/N/r]", fg="magenta"),
+            default="n",
+            show_default=False,
+        )
+        choice = choice.strip().lower()
+        if choice in ("r", "retry"):
+            click.secho("Looking for a cover image again...", fg="cyan")
+        elif choice in ("y", "yes"):
+            return True, None
+        else:
+            return False, None
+
+
+def find_source_flacs(group: dict[str, Any], media: str, encoding: str) -> list[dict[str, Any]]:
+    """Find the FLAC torrents of a group that a release with this media and encoding could be.
+
+    Args:
+        group: The group, as the tracker's torrentgroup API returns it.
+        media: The release's media, e.g. "WEB".
+        encoding: The release's encoding, "Lossless" or "24bit Lossless".
+
+    Returns:
+        The matching torrents, in the group's order.
+    """
+    return [
+        t
+        for t in group["torrents"]
+        if t.get("format") == "FLAC" and t.get("encoding") == encoding and t.get("media") == media
+    ]
+
+
+async def choose_source_flac(
+    gazelle_site: "BaseGazelleApi", group: dict[str, Any], media: str, encoding: str
+) -> str | None:
+    """Choose the FLAC torrent in an existing group that the transcodes to upload are made from.
+
+    The transcode descriptions link to it. With several matching FLACs the user picks one;
+    --yes-all stops instead of guessing.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        group: The group, as the tracker's torrentgroup API returns it.
+        media: The release's media, e.g. "WEB".
+        encoding: The release's encoding, "Lossless" or "24bit Lossless".
+
+    Returns:
+        The permalink of the chosen FLAC torrent, or None to stop.
+    """
+    group_id = group["group"]["id"]
+    flacs = find_source_flacs(group, media, encoding)
+    if not flacs:
+        click.secho(
+            f"\nGroup {group_id} has no {media} FLAC {encoding} matching this release to transcode from.",
+            fg="red",
+            bold=True,
+        )
+        return None
+
+    if len(flacs) == 1:
+        flac = flacs[0]
+    else:
+        click.secho(f"\nGroup {group_id} has several {media} FLAC {encoding} torrents:", fg="yellow", bold=True)
+        for i, t in enumerate(flacs, 1):
+            click.echo(f"{i:02d} >> {describe_torrent(t, group['group'])}")
+        if cfg.upload.yes_all:
+            click.secho(
+                "Not picking the FLAC the transcodes are made from with --yes-all. Run without it to choose.",
+                fg="red",
+                bold=True,
+            )
+            return None
+        while True:
+            choice = await click.prompt(
+                click.style(f"\nWhich one are these transcodes made from? [1-{len(flacs)}] or [a]bort", fg="magenta"),
+                default="",
+            )
+            choice = choice.strip().lower()
+            if choice.startswith("a"):
+                return None
+            if choice.isdigit() and 1 <= int(choice) <= len(flacs):
+                flac = flacs[int(choice) - 1]
+                break
+            click.secho(f"Enter a number from 1 to {len(flacs)}, or a to abort.", fg="red")
+
+    return f"{gazelle_site.base_url}/torrents.php?torrentid={flac['id']}"
 
 
 async def upload(
@@ -276,6 +458,7 @@ async def upload(
     skip_log_check: bool = False,
     skip_integrity_check: bool = False,
     essential_only: bool = False,
+    flac_group: dict[str, Any] | None = None,
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
 ) -> None:
@@ -304,6 +487,9 @@ async def upload(
         skip_log_check: Skip log checking.
         skip_integrity_check: Skip integrity check.
         essential_only: If True, only essential extensions are allowed.
+        flac_group: The existing group that already holds this release's FLAC, as the tracker's
+            torrentgroup API returns it. If given, the FLAC is not uploaded: only transcodes of it are,
+            into that group.
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
@@ -326,6 +512,19 @@ async def upload(
         prompt_encoding=True,
         hybrid=hybrid,
     )
+
+    flac_url = None
+    if flac_group is not None:
+        if rls_data["format"] != "FLAC" or rls_data["encoding"] not in ("Lossless", "24bit Lossless"):
+            return click.secho(
+                f"\n--skip-flac-upload only uploads transcodes of a lossless FLAC, "
+                f"and this release is {rls_data['format']} {rls_data['encoding']}.",
+                fg="red",
+                bold=True,
+            )
+        flac_url = await choose_source_flac(gazelle_site, flac_group, source, rls_data["encoding"])
+        if flac_url is None:
+            return click.secho("\nAborting upload...", fg="red")
 
     try:
         if not skip_mqa:
@@ -441,7 +640,7 @@ async def upload(
     tracker = gazelle_site.site_code
     torrent_id = None
     cover_url = None
-    stored_cover_url = None  # Store the cover URL for reuse across trackers
+    cover_urls: dict[str, str | None] = {}  # Uploaded cover URL per image host, reused across trackers
     # Regenerate searchstrs (will be used to search for requests)
     searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
 
@@ -472,54 +671,57 @@ async def upload(
             remaining_gazelle_sites.remove(tracker)
 
             # Handle cover image for this tracker
-            if group_id:
-                if not remove_downloaded_cover_image:
-                    await download_cover_if_nonexistent(path, metadata["cover"])
-                # Don't need cover URL for existing groups
-                cover_url = None
-            else:
-                # For new groups, we need a cover URL
-                # If we already uploaded it for a previous tracker, reuse that URL
-                if not stored_cover_url:
-                    cover_path, is_downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
-                    stored_cover_url = await upload_cover(cover_path)
-                    if is_downloaded and remove_downloaded_cover_image and cover_path:
-                        click.secho("Removing downloaded Cover Image File", fg="yellow")
-                        os.remove(cover_path)
-                cover_url = stored_cover_url
+            proceed, cover_url = await resolve_cover_url(
+                tracker, group_id, cover_urls, path, metadata["cover"], remove_downloaded_cover_image
+            )
+            if not proceed:
+                # Like a failed upload: skip this tracker, and offer the next one.
+                click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="red", bold=True)
+                tracker = None
+                if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+                    break
+                continue
 
             if not scene and cfg.image.auto_compress_cover:
                 compress_pictures(path)
 
-            if not request_id and cfg.upload.requests.check_requests:
+            if not flac_url and not request_id and cfg.upload.requests.check_requests:
                 request_id = await check_requests(gazelle_site, searchstrs)
 
             try:
-                torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
-                    gazelle_site,
-                    path,
-                    group_id,
-                    metadata,
-                    cover_url,
-                    track_data,
-                    hybrid,
-                    lossy_master,
-                    spectral_urls,
-                    spectral_ids,
-                    lossy_comment,
-                    request_id,
-                    source_url,
-                    seedbox_uploader,
-                    source=source,
-                )
+                if flac_url:
+                    click.secho(f"\nNot uploading the FLAC: transcoding from {flac_url}", fg="yellow")
+                    url = flac_url
+                else:
+                    torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
+                        gazelle_site,
+                        path,
+                        group_id,
+                        metadata,
+                        cover_url,
+                        track_data,
+                        hybrid,
+                        lossy_master,
+                        spectral_urls,
+                        spectral_ids,
+                        lossy_comment,
+                        request_id,
+                        source_url,
+                        seedbox_uploader,
+                        source=source,
+                    )
 
-                request_id = None
+                    request_id = None
 
-                await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+                    await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
-                if cfg.upload.yes_all or click.confirm(
-                    click.style("\nWould you like to check downconversion options?", fg="magenta"),
-                    default=True,
+                if (
+                    flac_url
+                    or cfg.upload.yes_all
+                    or click.confirm(
+                        click.style("\nWould you like to check downconversion options?", fg="magenta"),
+                        default=True,
+                    )
                 ):
                     selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
                     if selected_tasks:
@@ -552,7 +754,7 @@ async def upload(
                 click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
 
             tracker = None
-            if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+            if flac_url or not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
                 click.secho("\nDone uploading this release.", fg="green")
                 break
 
@@ -694,6 +896,8 @@ async def last_min_dupe_check(gazelle_site, searchstrs):
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking.
     """
+    if not can_check_site_log(gazelle_site):
+        return
     # Should really avoid asking if already shown the same releases from the log.
     click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
     recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)

@@ -66,6 +66,15 @@ class RequestFailedError(RequestError):
     pass
 
 
+class UnknownOutcomeError(RequestError):
+    """A request that changes state on the tracker failed after it may have reached it.
+
+    The tracker may or may not have acted on it, so it is not sent again.
+    """
+
+    pass
+
+
 class LoginError(RequestError):
     pass
 

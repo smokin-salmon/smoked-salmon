@@ -24,15 +24,26 @@ class Directory(BaseStruct):
             raise ValueError("tmp_dir is not a valid directory")
 
 
-ImgUploaderLiteral = Literal["ptpimg", "ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "ra"]
+ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "ra", "red"]
 SpectralSelectionLiteral = Literal["*", "+", "0"]
+
+_TRACKER_CODES = ("red", "ops", "dic")
+# Image hosts run by a tracker, mapped to the trackers whose pages can display their
+# images: RED's host serves only logged-in RED members, and OPS accepts RED-hosted images.
+# Each is valid solely as a cover host for those trackers.
+_TRACKER_ONLY_HOSTS = {"red": ("red", "ops")}
+
+
+class TrackerImageSettings(BaseStruct):
+    """Per-tracker image settings, overriding [image] for uploads to that tracker."""
+
+    cover_uploader: ImgUploaderLiteral | None = None
 
 
 class ImageUploader(BaseStruct):
     image_uploader: ImgUploaderLiteral = "catbox"
     cover_uploader: ImgUploaderLiteral = "catbox"
     specs_uploader: ImgUploaderLiteral = "catbox"
-    ptpimg_key: str | None = None
     ptscreens_key: str | None = None
     oeimg_key: str | None = None
     imgbb_key: str | None = None
@@ -40,11 +51,33 @@ class ImageUploader(BaseStruct):
     remove_auto_downloaded_cover_image: bool = False
     auto_compress_cover: bool = False
     default_spectral_ids: SpectralSelectionLiteral | None = None
+    red: TrackerImageSettings | None = None
+    ops: TrackerImageSettings | None = None
+    dic: TrackerImageSettings | None = None
+
+    def cover_uploader_for(self, site_code: str) -> str:
+        """Get the cover host for a tracker: its [image.<tracker>] override, else cover_uploader."""
+        override = getattr(self, site_code.lower(), None)
+        if override is not None and override.cover_uploader is not None:
+            return override.cover_uploader
+        return self.cover_uploader
+
+    def _selections(self) -> list[tuple[str, str]]:
+        """Get every configured (setting name, host) pair, per-tracker overrides included."""
+        selections = [
+            ("image_uploader", self.image_uploader),
+            ("cover_uploader", self.cover_uploader),
+            ("specs_uploader", self.specs_uploader),
+        ]
+        for code in _TRACKER_CODES:
+            override = getattr(self, code)
+            if override is not None and override.cover_uploader is not None:
+                selections.append((f"{code}.cover_uploader", override.cover_uploader))
+        return selections
 
     def __post_init__(self):
-        uploader_selections = set({self.image_uploader, self.cover_uploader, self.specs_uploader})
-        if ("ptpimg" in uploader_selections) and self.ptpimg_key is None:
-            raise ValueError("ptpimg key not specified")
+        selections = self._selections()
+        uploader_selections = {host for _, host in selections}
         if "ptscreens" in uploader_selections and self.ptscreens_key is None:
             raise ValueError("PTScreens key not specified")
         if "oeimg" in uploader_selections and self.oeimg_key is None:
@@ -53,12 +86,26 @@ class ImageUploader(BaseStruct):
             raise ValueError("imgbb key not specified")
         if "ra" in uploader_selections and self.ra_key is None:
             raise ValueError("ra key not specified")
-        # ra does not allow spectral uploads
+        # Ra's owner asks not to use it for spectrals; choose another specs_uploader
         if self.specs_uploader == "ra":
-            raise ValueError("Ra does not support spectral uploads")
+            raise ValueError("Ra's owner asks not to use it for spectrals; choose another specs_uploader")
+        # Covers, description images and spectrals set in [image] are shared by every
+        # tracker, and RED also forbids spectrals on its host.
+        for setting, host in selections:
+            trackers = _TRACKER_ONLY_HOSTS.get(host)
+            if trackers is not None and setting not in {f"{code}.cover_uploader" for code in trackers}:
+                sections = " or ".join(f"[image.{code}]" for code in trackers)
+                raise ValueError(
+                    f'image.{setting} = "{host}": the {host} image host only displays on '
+                    f"{'/'.join(code.upper() for code in trackers)}, so it can only be set as "
+                    f"cover_uploader under {sections}"
+                )
 
 
 class TidalSettings(BaseStruct):
+    client_id: str | None = None
+    client_secret: str | None = None
+    # Only Tidal's retired API used this; kept to tell users to switch to client credentials.
     token: str | None = None
     regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
 
@@ -260,3 +307,11 @@ class Cfg(BaseStruct):
     tracker: Tracker = msgspec.field(default_factory=Tracker)
     seedbox: list[Seedbox] = msgspec.field(default_factory=list)
     upload: Upload = msgspec.field(default_factory=Upload)
+
+    def __post_init__(self):
+        # Uploads to RED's image host authenticate with the RED API key, whichever tracker the cover is for.
+        red_host_users = [code for code in ("RED", "OPS", "DIC") if self.image.cover_uploader_for(code) == "red"]
+        if red_host_users and not (self.tracker.red and self.tracker.red.api_key):
+            raise ValueError(
+                f'image.{red_host_users[0].lower()}.cover_uploader = "red" needs tracker.red.api_key to be set'
+            )

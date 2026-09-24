@@ -7,16 +7,16 @@ import pyperclip
 from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
 from salmon.errors import ImageUploadFailed
-from salmon.images import catbox, imgbb, imgbox, oeimg, ptpimg, ptscreens, ra
+from salmon.images import catbox, imgbb, imgbox, oeimg, ptscreens, ra, red
 
 HOSTS = {
-    "ptpimg": ptpimg,
     "catbox": catbox,
     "ptscreens": ptscreens,
     "oeimg": oeimg,
     "imgbb": imgbb,
     "imgbox": imgbox,
     "ra": ra,
+    "red": red,
 }
 
 
@@ -94,11 +94,12 @@ def chunker(seq, size=4):
         yield seq[pos : pos + size]
 
 
-async def upload_cover(cover_path: str | None) -> str | None:
-    """Upload cover image to the configured image host.
+async def upload_cover(cover_path: str | None, host: str | None = None) -> str | None:
+    """Upload cover image to an image host.
 
     Args:
         cover_path: Path to the cover image file.
+        host: The image host to upload to. Defaults to the configured cover_uploader.
 
     Returns:
         The uploaded image URL, or None if upload failed.
@@ -106,9 +107,10 @@ async def upload_cover(cover_path: str | None) -> str | None:
     if not cover_path:
         click.secho("\nNo Cover Image Path was provided to upload...", fg="red", nl=False)
         return None
-    click.secho(f"Uploading cover to {cfg.image.cover_uploader}...", fg="yellow", nl=False)
+    host = host or cfg.image.cover_uploader
+    click.secho(f"Uploading cover to {host}...", fg="yellow", nl=False)
     try:
-        uploader = HOSTS[cfg.image.cover_uploader].ImageUploader()
+        uploader = HOSTS[host].ImageUploader()
         url, _ = await uploader.upload_file(cover_path)
         click.secho(f" done! {url}", fg="yellow")
         return url
@@ -172,7 +174,7 @@ async def _handle_failed_spectrals(spectrals, successful) -> dict:
                 fg="magenta",
                 bold=True,
             ),
-            default="ptpimg",
+            default=cfg.image.specs_uploader,
         )
         host = host_input.lower()
         if host not in HOSTS:

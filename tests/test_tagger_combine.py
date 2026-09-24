@@ -4,7 +4,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from salmon.tagger.combine import combine_metadatas, combine_tracks
+from salmon.tagger.combine import _extract_remixers_from_title, combine_metadatas, combine_tracks
 
 
 def make_metadata(title: str) -> dict:
@@ -113,3 +113,29 @@ def test_combine_tracks_sorts_multi_disc_provider_tracks_and_discs():
     assert combined["2"]["1"]["isrc"] == "ISRC 2-1"
     assert combined["2"]["2"]["isrc"] == "ISRC 2-2"
     assert combined["2"]["10"]["isrc"] == "ISRC 2-10"
+
+
+def test_extract_remixers_does_not_span_an_earlier_paren_group():
+    # Regression for #430: the old .*? was greedy across parens, pulling in the
+    # preceding group and half its parentheses as part of the remixer name.
+    title = "Still (I Got Summer On My Mind) (FORTELLA Remix)"
+
+    remixers = _extract_remixers_from_title(title)
+
+    assert remixers == [("FORTELLA", "remixer")]
+
+
+def test_extract_remixers_plain_title():
+    title = "Title (X Remix)"
+
+    remixers = _extract_remixers_from_title(title)
+
+    assert remixers == [("X", "remixer")]
+
+
+def test_extract_remixers_no_remix_in_title():
+    title = "Title With No Remix Marker"
+
+    remixers = _extract_remixers_from_title(title)
+
+    assert remixers == []

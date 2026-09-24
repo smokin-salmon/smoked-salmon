@@ -50,8 +50,8 @@ class QBittorrentClient(TorrentClient):
         except qbittorrentapi.LoginFailed:
             click.secho("INCORRECT QBIT LOGIN CREDENTIALS", fg="red", bold=True)
             return None
-        except qbittorrentapi.APIConnectionError:
-            click.secho("APIConnectionError: Incorrect host or port", fg="red", bold=True)
+        except qbittorrentapi.APIConnectionError as e:
+            click.secho(f"APIConnectionError: {e}", fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label):

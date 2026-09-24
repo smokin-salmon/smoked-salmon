@@ -169,7 +169,7 @@ def _extract_remixers_from_title(title):
 
     # Match patterns like (Remixer Remix), (Remixer Mix), (Remixer Radio Mix), etc.
     # Also matches compound mix types like "Vocal Mix", "Club Mix", etc.
-    match = re.search(r"\((.*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*(?:Remix|Mix|Edit)\)", title, re.IGNORECASE)
+    match = re.search(r"\(([^()]*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*(?:Remix|Mix|Edit)\)", title, re.IGNORECASE)
     if match:
         remixers = match.group(1).strip()
         # Split on common delimiters and strip each name
