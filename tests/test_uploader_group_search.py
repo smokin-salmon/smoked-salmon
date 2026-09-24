@@ -36,10 +36,10 @@ GROUP = {
 }
 # Two search strings, so the search is two gathered browse requests.
 SEARCHES = ["artist hits vol. 2", "artist hits volume 2"]
-# What master sends for this release: one index per gathered first request, the search, the
-# request search and the group shown after the upload (the upload itself is stubbed out).
+# What master sends for this release: one index, however many first requests go out together
+# (#468), the search, the request search and the group shown after the upload (the upload itself
+# is stubbed out).
 REQUESTS_WHEN_A_GROUP_IS_FOUND = [
-    "index",
     "index",
     *(f"browse {s}" for s in SEARCHES),
     *(f"requests {s}" for s in SEARCHES),

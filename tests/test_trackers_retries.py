@@ -33,7 +33,7 @@ class FakeApi(BaseGazelleApi):
 @pytest.fixture(autouse=True)
 def no_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
     """Retry without waiting, so the tests count attempts, not seconds."""
-    monkeypatch.setattr(BaseGazelleApi._request.retry, "wait", wait_none())  # type: ignore[attr-defined]
+    monkeypatch.setattr(BaseGazelleApi._send.retry, "wait", wait_none())  # type: ignore[attr-defined]
 
 
 async def _serve(**handlers) -> tuple[web.AppRunner, str]:
@@ -287,7 +287,7 @@ async def _upload_that_cannot_connect_is_retried() -> None:
         # Nothing reached the tracker, so sending the upload again is safe.
         with pytest.raises(RetryableError):
             await api._request("POST", api.base_url + "/ajax.php?action=upload", data={"file": "x"})
-        assert BaseGazelleApi._request.statistics["attempt_number"] == 5  # type: ignore[attr-defined]
+        assert BaseGazelleApi._send.statistics["attempt_number"] == 5  # type: ignore[attr-defined]
     finally:
         await api.close()
 
