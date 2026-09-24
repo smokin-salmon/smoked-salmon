@@ -1,13 +1,10 @@
-from typing import TYPE_CHECKING, cast
+from typing import get_args
 
 import asyncclick as click
 
 from salmon.common import commandgroup
-
-if TYPE_CHECKING:
-    from salmon.converter.transcoding import Bitrate
-
-BITRATES = ("V0", "320")
+from salmon.converter.downconverting import convert_folder
+from salmon.converter.transcoding import Bitrate, transcode_folder
 
 
 @commandgroup.command()
@@ -15,9 +12,9 @@ BITRATES = ("V0", "320")
 @click.option(
     "--bitrate",
     "-b",
-    type=click.Choice(BITRATES, case_sensitive=False),
+    type=click.Choice(get_args(Bitrate), case_sensitive=False),
     required=True,
-    help=f"Bitrate to transcode to ({', '.join(BITRATES)})",
+    help=f"Bitrate to transcode to ({', '.join(get_args(Bitrate))})",
 )
 @click.option(
     "--essential-only",
@@ -25,7 +22,7 @@ BITRATES = ("V0", "320")
     is_flag=True,
     help="Only keep music and image files; skip cues, logs and other extra files.",
 )
-async def transcode(path: str, bitrate: str, essential_only: bool) -> None:
+async def transcode(path: str, bitrate: Bitrate, essential_only: bool) -> None:
     """Transcode a dir of FLACs into "perfect" MP3.
 
     Args:
@@ -33,9 +30,7 @@ async def transcode(path: str, bitrate: str, essential_only: bool) -> None:
         bitrate: Target bitrate (V0 or 320).
         essential_only: Only keep music and image files.
     """
-    from salmon.converter.transcoding import transcode_folder
-
-    await transcode_folder(path, cast("Bitrate", bitrate), essential_only=essential_only)
+    await transcode_folder(path, bitrate, essential_only=essential_only)
 
 
 @commandgroup.command()
@@ -53,6 +48,4 @@ async def downconv(path: str, essential_only: bool) -> None:
         path: Path to the directory containing 24bit FLAC files.
         essential_only: Only keep music and image files.
     """
-    from salmon.converter.downconverting import convert_folder
-
     await convert_folder(path, essential_only=essential_only)

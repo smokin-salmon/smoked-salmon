@@ -1,17 +1,18 @@
 from os.path import dirname, join
-
-import aiohttp_jinja2
-import jinja2
-from aiohttp import web
-from aiohttp_jinja2 import render_template
+from typing import TYPE_CHECKING
 
 from salmon import cfg
 from salmon.web import spectrals
 
+# aiohttp.web and jinja2 take about 0.1 s to import, so they are imported when the server starts, which only
+# happens while spectrals are reviewed, not when salmon starts.
+if TYPE_CHECKING:
+    from aiohttp import web
+
 web_cfg = cfg.upload.web_interface
 
 
-async def create_app_async() -> web.AppRunner:
+async def create_app_async() -> "web.AppRunner":
     """Create and start the aiohttp web application.
 
     Returns:
@@ -20,6 +21,10 @@ async def create_app_async() -> web.AppRunner:
     Raises:
         OSError: If the port is already in use.
     """
+    import aiohttp_jinja2
+    import jinja2
+    from aiohttp import web
+
     app = web.Application()
     add_routes(app)
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates")))
@@ -30,7 +35,7 @@ async def create_app_async() -> web.AppRunner:
     return runner
 
 
-def add_routes(app: web.Application) -> None:
+def add_routes(app: "web.Application") -> None:
     """Add routes to the web application.
 
     Args:
@@ -42,7 +47,7 @@ def add_routes(app: web.Application) -> None:
     app["static_root_url"] = web_cfg.static_root_url
 
 
-async def handle_index(request: web.Request) -> web.Response:
+async def handle_index(request: "web.Request") -> "web.Response":
     """Handle the index page request.
 
     Args:
@@ -51,4 +56,6 @@ async def handle_index(request: web.Request) -> web.Response:
     Returns:
         The rendered index page response.
     """
+    from aiohttp_jinja2 import render_template
+
     return render_template("index.html", request, {})

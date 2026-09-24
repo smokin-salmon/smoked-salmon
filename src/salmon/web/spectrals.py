@@ -1,12 +1,16 @@
 import datetime
+from typing import TYPE_CHECKING
 
-from aiohttp import web
-from aiohttp_jinja2 import render_template
+if TYPE_CHECKING:
+    from aiohttp import web
 
 _active_spectrals: dict[int, str] = {}
 
 
-async def handle_spectrals(request: web.Request) -> web.Response:
+async def handle_spectrals(request: "web.Request") -> "web.Response":
+    from aiohttp import web
+    from aiohttp_jinja2 import render_template
+
     if not _active_spectrals:
         raise web.HTTPNotFound()
     context = {"spectrals": _active_spectrals, "now": datetime.datetime.now()}
