@@ -6,7 +6,7 @@ import pyperclip
 
 from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
-from salmon.config.validations import SPECS_FORBIDDEN_HOSTS
+from salmon.config import validations
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, imgbb, imgbox, oeimg, ptscreens, ra, red
 from salmon.trackers.red import RedApi
@@ -20,10 +20,6 @@ HOSTS = {
     "ra": ra,
     "red": red,
 }
-
-# Hosts the spectral retry prompt may offer: every host config validation would allow as
-# specs_uploader.
-SPECS_ALLOWED_HOSTS = [host for host in HOSTS if host not in SPECS_FORBIDDEN_HOSTS]
 
 
 def validate_image_host(ctx: click.Context, param: click.Parameter, value: str) -> Any:
@@ -174,18 +170,22 @@ async def _handle_failed_spectrals(spectrals, successful) -> dict:
         Dictionary of uploaded URLs.
     """
     while True:
+        # Recomputed every iteration (not cached at import time) so it always reflects the
+        # current HOSTS and the config-validation rules in specs_forbidden_hosts().
+        forbidden = validations.specs_forbidden_hosts()
+        allowed_hosts = [host for host in HOSTS if host not in forbidden]
         host_input: str = await click.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
-                f"with? (Options: {', '.join(SPECS_ALLOWED_HOSTS)})",
+                f"with? (Options: {', '.join(allowed_hosts)})",
                 fg="magenta",
                 bold=True,
             ),
             default=cfg.image.specs_uploader,
         )
         host = host_input.lower()
-        if host in SPECS_FORBIDDEN_HOSTS:
-            click.secho(f"{host} can't be used for spectrals: {SPECS_FORBIDDEN_HOSTS[host]}.", fg="red")
+        if host in forbidden:
+            click.secho(f"{host} can't be used for spectrals: {forbidden[host]}.", fg="red")
         elif host not in HOSTS:
             click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
         else:

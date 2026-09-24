@@ -34,13 +34,25 @@ _TRACKER_CODES = ("red", "ops", "dic")
 # Each is valid solely as a cover host for those trackers.
 _TRACKER_ONLY_HOSTS = {"red": ("red", "ops")}
 
-# Hosts that may never be used as specs_uploader, mapped to the reason why. Shared with the
-# spectral retry prompt (salmon.images._handle_failed_spectrals) so both refuse the same hosts
-# for the same reason instead of drifting apart.
-SPECS_FORBIDDEN_HOSTS: dict[str, str] = {
-    "red": "RED's rules forbid spectrals on its own image host, and its images only display on RED and OPS",
-    "ra": "Ra's owner asks not to use it for spectrals",
-}
+
+def specs_forbidden_hosts() -> dict[str, str]:
+    """Hosts that may never be used as specs_uploader, mapped to the reason why.
+
+    Built from _TRACKER_ONLY_HOSTS, so any host added there is automatically refused for
+    spectrals too, plus ra, which is refused outright rather than restricted to certain
+    trackers. Computed fresh on every call, not cached, so it always reflects the current
+    _TRACKER_ONLY_HOSTS. Shared by the specs_uploader validation below and the spectral retry
+    prompt (salmon.images._handle_failed_spectrals) so the two cannot drift apart.
+    """
+    forbidden = {}
+    for host, trackers in _TRACKER_ONLY_HOSTS.items():
+        codes = "/".join(code.upper() for code in trackers)
+        reason = f"its images only display on {codes}"
+        if host == "red":
+            reason = f"RED's rules forbid spectrals on its own image host, and {reason}"
+        forbidden[host] = reason
+    forbidden["ra"] = "Ra's owner asks not to use it for spectrals"
+    return forbidden
 
 
 class TrackerImageSettings(BaseStruct):
@@ -95,9 +107,12 @@ class ImageUploader(BaseStruct):
             raise ValueError("imgbb key not specified")
         if "ra" in uploader_selections and self.ra_key is None:
             raise ValueError("ra key not specified")
-        if self.specs_uploader in SPECS_FORBIDDEN_HOSTS and self.specs_uploader not in _TRACKER_ONLY_HOSTS:
-            # Hosts refused outright (not just restricted to certain trackers), such as ra.
-            raise ValueError(f"{SPECS_FORBIDDEN_HOSTS[self.specs_uploader]}; choose another specs_uploader")
+        forbidden = specs_forbidden_hosts()
+        if self.specs_uploader in forbidden and self.specs_uploader not in _TRACKER_ONLY_HOSTS:
+            # Hosts refused outright (not just restricted to certain trackers), such as ra. A
+            # tracker-only host (such as red) is instead refused by the loop below, which gives
+            # the fuller "can only be set as cover_uploader under [image.<tracker>]" message.
+            raise ValueError(f"{forbidden[self.specs_uploader]}; choose another specs_uploader")
         # Covers, description images and spectrals set in [image] are shared by every
         # tracker, and RED also forbids spectrals on its host.
         for setting, host in selections:
