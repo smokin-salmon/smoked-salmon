@@ -5,7 +5,7 @@ import asyncclick as click
 import humanfriendly
 
 from salmon import cfg
-from salmon.errors import RequestError
+from salmon.errors import RequestError, RequestFailedError
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -203,8 +203,11 @@ async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | 
         else:
             for a in req["musicInfo"]["artists"]:
                 req["artist"] += a["name"] + " "
-    except RequestError:
-        click.secho(f"{request_id} does not exist.", fg="red")
+    except RequestFailedError as err:
+        click.secho(f"{request_id} does not exist on {gazelle_site.site_string} ({err}).", fg="red")
+        raise click.Abort from None
+    except RequestError as err:
+        click.secho(f"Could not fetch request {request_id} from {gazelle_site.site_string}: {err}", fg="red")
         raise click.Abort from None
     _print_request_details(gazelle_site, req)
     if cfg.upload.yes_all:
