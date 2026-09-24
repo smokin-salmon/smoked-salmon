@@ -29,8 +29,8 @@ behaviour for every existing config and requires a RED API key users may not hav
 
 ## Consequences
 
-- Any future tracker-run image host is added the same way: map it to the trackers that can display
-  it in `_TRACKER_ONLY_HOSTS` (`config/validations.py`).
+- Any future tracker-run image host is added the same way: give it a row in `HOST_RULES`
+  (`images/rules.py`) mapping it to the trackers that can display it.
 - Only covers are per tracker. Description images and spectrals are uploaded once and appear on
   every tracker, so they must stay on a host every tracker can display.
 - Users who want RED's host must opt in explicitly.

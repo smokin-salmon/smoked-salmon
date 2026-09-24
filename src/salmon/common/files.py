@@ -6,7 +6,7 @@ from typing import TypeVar, cast
 import anyio
 from tqdm import tqdm
 
-from salmon import cfg
+import salmon
 
 T = TypeVar("T")
 
@@ -63,7 +63,7 @@ async def compress(filepath: str) -> None:
     await anyio.run_process(
         [
             "flac",
-            f"-{cfg.upload.compression.flac_compression_level}",
+            f"-{salmon.cfg.upload.compression.flac_compression_level}",
             "-V",
             filepath,
             "--force",
@@ -79,7 +79,7 @@ async def process_files(
 ) -> list[T]:
     """Process files concurrently using anyio with a capacity limiter."""
     results: list[T | None] = [None] * len(files)
-    limiter = anyio.CapacityLimiter(cfg.upload.simultaneous_threads)
+    limiter = anyio.CapacityLimiter(salmon.cfg.upload.simultaneous_threads)
 
     with tqdm(total=len(files), desc=desc, colour="cyan") as pbar:
 
