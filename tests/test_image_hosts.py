@@ -96,7 +96,7 @@ def test_each_cover_host_gets_its_own_upload_reused_across_trackers(monkeypatch)
     async def fake_download(path: str, cover_source: str | None) -> tuple[str, bool]:
         return "cover.jpg", False
 
-    async def fake_upload(cover_path: str | None, host: str | None = None) -> str | None:
+    async def fake_upload(cover_path: str | None, host: str | None = None, red_api: object = None) -> str | None:
         uploads.append(host)
         # The first RED upload fails, so the next RED upload must retry it.
         if host == "red" and uploads.count("red") == 1:

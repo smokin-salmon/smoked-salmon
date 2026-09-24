@@ -4,6 +4,8 @@ import pytest
 
 import salmon.uploader
 from salmon.config.validations import ImageUploader
+from salmon.trackers.ops import OpsApi
+from salmon.trackers.red import RedApi
 
 
 @pytest.fixture(autouse=True)
@@ -36,7 +38,7 @@ def _answers(monkeypatch, *answers: str) -> list[str]:
 
 
 def _resolve(group_id: int | None = None) -> tuple[bool, str | None]:
-    return anyio.run(salmon.uploader.resolve_cover_url, "RED", group_id, {}, "/release", None, False)
+    return anyio.run(salmon.uploader.resolve_cover_url, RedApi(), group_id, {}, "/release", None, False)
 
 
 def test_yes_all_does_not_upload_a_new_group_without_a_cover(monkeypatch) -> None:
@@ -106,7 +108,7 @@ def test_retry_does_not_upload_again_to_a_host_that_has_the_cover(monkeypatch) -
     async def fake_download(path: str, cover_source: str | None) -> tuple[str, bool]:
         return "cover.jpg", False
 
-    async def fake_upload(cover_path: str | None, host: str | None = None) -> str | None:
+    async def fake_upload(cover_path: str | None, host: str | None = None, red_api: object = None) -> str | None:
         uploads.append(host)
         return None if len(uploads) == 2 else f"https://{host}/cover.jpg"
 
@@ -119,8 +121,8 @@ def test_retry_does_not_upload_again_to_a_host_that_has_the_cover(monkeypatch) -
     async def run() -> list[tuple[bool, str | None]]:
         cover_urls: dict[str, str | None] = {}
         return [
-            await salmon.uploader.resolve_cover_url(tracker, None, cover_urls, "/release", None, False)
-            for tracker in ("OPS", "RED")
+            await salmon.uploader.resolve_cover_url(site, None, cover_urls, "/release", None, False)
+            for site in (OpsApi(), RedApi())
         ]
 
     # OPS gets its cover; the RED upload fails once and is retried, without uploading to imgbox again.
