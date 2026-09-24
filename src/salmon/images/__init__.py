@@ -1,56 +1,25 @@
 import asyncio
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import asyncclick as click
 import pyperclip
 
+from salmon import cfg
 from salmon.common import AliasedCommands, commandgroup
+from salmon.config.image_hosts import spectrals_refusal
 from salmon.errors import ImageUploadFailed
-from salmon.images import rules
+from salmon.images import catbox, imgbb, imgbox, oeimg, ptscreens, ra, red
+from salmon.trackers.red import RedApi
 
-if TYPE_CHECKING:
-    from salmon.trackers.red import RedApi
-
-_HOSTS: dict[str, Any] | None = None
-
-
-def _hosts() -> dict[str, Any]:
-    """Image host modules, imported lazily.
-
-    Several of these modules (and salmon.trackers.red, which images/red.py needs) read config
-    at their own import time. salmon.images.rules is a leaf module with no salmon imports, so
-    salmon.config.validations can import it to share host rules without pulling in cfg; but
-    that means this package's __init__ can run before cfg exists. Importing the host modules
-    only here, on first real use, keeps that early import safe while HOSTS still behaves like
-    a plain dict everywhere else in this module.
-    """
-    global _HOSTS
-    if _HOSTS is None:
-        from salmon.images import catbox, imgbb, imgbox, oeimg, ptscreens, ra, red
-
-        _HOSTS = {
-            "catbox": catbox,
-            "ptscreens": ptscreens,
-            "oeimg": oeimg,
-            "imgbb": imgbb,
-            "imgbox": imgbox,
-            "ra": ra,
-            "red": red,
-        }
-    return _HOSTS
-
-
-def __getattr__(name: str) -> Any:
-    """Module-level attribute access (PEP 562): HOSTS resolves to the lazily built dict."""
-    if name == "HOSTS":
-        return _hosts()
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
-def _default_image_uploader() -> str:
-    from salmon import cfg
-
-    return cfg.image.image_uploader
+HOSTS = {
+    "catbox": catbox,
+    "ptscreens": ptscreens,
+    "oeimg": oeimg,
+    "imgbb": imgbb,
+    "imgbox": imgbox,
+    "ra": ra,
+    "red": red,
+}
 
 
 def validate_image_host(ctx: click.Context, param: click.Parameter, value: str) -> Any:
@@ -68,7 +37,7 @@ def validate_image_host(ctx: click.Context, param: click.Parameter, value: str) 
         click.BadParameter: If the image host is invalid.
     """
     try:
-        return _hosts()[value]
+        return HOSTS[value]
     except KeyError:
         raise click.BadParameter(f"{value} is not a valid image host") from None
 
@@ -89,7 +58,7 @@ async def images() -> None:
     "--image-host",
     "-i",
     help="The name of the image host to upload to",
-    default=_default_image_uploader,
+    default=cfg.image.image_uploader,
     callback=validate_image_host,
 )
 async def up(filepaths: tuple[str, ...], image_host: Any) -> None:
@@ -107,8 +76,6 @@ async def upload_images(filepaths: tuple, image_host) -> list[str]:
     Returns:
         List of uploaded URLs.
     """
-    from salmon import cfg
-
     urls = []
     uploader = image_host.ImageUploader()
     try:
@@ -129,7 +96,7 @@ def chunker(seq, size=4):
         yield seq[pos : pos + size]
 
 
-async def upload_cover(cover_path: str | None, host: str | None = None, red_api: "RedApi | None" = None) -> str | None:
+async def upload_cover(cover_path: str | None, host: str | None = None, red_api: RedApi | None = None) -> str | None:
     """Upload cover image to an image host.
 
     Args:
@@ -140,15 +107,13 @@ async def upload_cover(cover_path: str | None, host: str | None = None, red_api:
     Returns:
         The uploaded image URL, or None if upload failed.
     """
-    from salmon import cfg
-
     if not cover_path:
         click.secho("\nNo Cover Image Path was provided to upload...", fg="red", nl=False)
         return None
     host = host or cfg.image.cover_uploader
     click.secho(f"Uploading cover to {host}...", fg="yellow", nl=False)
     try:
-        uploader = _hosts()[host].ImageUploader(red_api) if host == "red" else _hosts()[host].ImageUploader()
+        uploader = red.ImageUploader(red_api) if host == "red" else HOSTS[host].ImageUploader()
         url, _ = await uploader.upload_file(cover_path)
         click.secho(f" done! {url}", fg="yellow")
         return url
@@ -169,9 +134,7 @@ async def upload_spectrals(spectrals, uploader=None, successful=None) -> dict:
         Dictionary mapping spec_id to list of URLs.
     """
     if uploader is None:
-        from salmon import cfg
-
-        uploader = _hosts()[cfg.image.specs_uploader]
+        uploader = HOSTS[cfg.image.specs_uploader]
 
     response = {}
     successful = successful or set()
@@ -206,15 +169,12 @@ async def _handle_failed_spectrals(spectrals, successful) -> dict:
     Returns:
         Dictionary of uploaded URLs.
     """
-    from salmon import cfg
-
     while True:
-        # Recomputed every iteration (not cached) so it always reflects the current host
-        # modules and the rules in salmon.images.rules, the single source shared with config
-        # validation for specs_uploader.
-        hosts = _hosts()
-        forbidden = {host: reason for host in hosts if (reason := rules.spectrals_refusal(host)) is not None}
-        allowed_hosts = [host for host in hosts if host not in forbidden]
+        # Recomputed every iteration (not cached at import time) so it always reflects the
+        # rules in salmon.config.image_hosts, the single source shared with config validation
+        # for specs_uploader.
+        forbidden = {host: reason for host in HOSTS if (reason := spectrals_refusal(host)) is not None}
+        allowed_hosts = [host for host in HOSTS if host not in forbidden]
         host_input: str = await click.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
@@ -227,10 +187,10 @@ async def _handle_failed_spectrals(spectrals, successful) -> dict:
         host = host_input.lower()
         if host in forbidden:
             click.secho(f"{host} can't be used for spectrals: {forbidden[host]}.", fg="red")
-        elif host not in hosts:
+        elif host not in HOSTS:
             click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
         else:
-            return await upload_spectrals(spectrals, uploader=hosts[host], successful=successful)
+            return await upload_spectrals(spectrals, uploader=HOSTS[host], successful=successful)
 
 
 async def _spectrals_handler(spec_id, filename, spectral_paths, uploader_instance):

@@ -1,3 +1,11 @@
+"""Per-image-host rules, as data.
+
+A leaf module: no salmon imports, so it can be imported both from salmon.config.validations
+(which is still initialising when Cfg gets built) and from salmon.images (which needs cfg to
+be ready before it imports anything else), without either side pulling in the other's
+dependencies.
+"""
+
 from dataclasses import dataclass
 
 

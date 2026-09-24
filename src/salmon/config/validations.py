@@ -3,7 +3,7 @@ from typing import Annotated, Literal
 
 import msgspec
 
-from salmon.images.rules import spectrals_refusal, tracker_only_hosts
+from .image_hosts import spectrals_refusal, tracker_only_hosts
 
 
 class BaseStruct(msgspec.Struct, forbid_unknown_fields=False):

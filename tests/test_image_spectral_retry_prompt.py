@@ -8,8 +8,6 @@ import pytest
 
 import salmon.images as images
 from salmon.config.validations import ImageUploader, ImgUploaderLiteral
-from salmon.images import rules
-from salmon.images.rules import HOST_RULES, HostRules
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -68,12 +66,18 @@ def _run_retry_prompt(spectrals) -> dict:
     return anyio.run(run)
 
 
+# The tests below only reach salmon.images and salmon.config.validations, never
+# salmon.config.image_hosts directly, so on master's src/ (which has no such shared table)
+# they fail because red/ra actually receive the upload, not with an ImportError.
+
+
 def test_retry_prompt_refuses_red_and_ra_then_uploads_with_an_allowed_host(monkeypatch: pytest.MonkeyPatch) -> None:
     red_calls: list[str] = []
     ra_calls: list[str] = []
     allowed_calls: list[str] = []
-    # Real HOSTS dict, real HOST_RULES: only red, ra and the allowed host's modules are
-    # swapped for fakes, so no network happens and we can see which one is ever called.
+    # Real HOSTS dict: only red, ra and the allowed host's modules are swapped for fakes, so
+    # no network happens and we can see which one is ever called.
+    monkeypatch.setattr(images, "HOSTS", dict(images.HOSTS))
     monkeypatch.setitem(images.HOSTS, "red", _fake_host_module(red_calls))
     monkeypatch.setitem(images.HOSTS, "ra", _fake_host_module(ra_calls))
     monkeypatch.setitem(images.HOSTS, "catbox", _fake_host_module(allowed_calls))
@@ -87,10 +91,9 @@ def test_retry_prompt_refuses_red_and_ra_then_uploads_with_an_allowed_host(monke
     assert ra_calls == []
     assert allowed_calls == ["spec1.png"]
 
-    red_reason = rules.spectrals_refusal("red")
-    ra_reason = rules.spectrals_refusal("ra")
-    assert red_reason is not None and any(red_reason in message for message in printed)
-    assert ra_reason is not None and any(ra_reason in message for message in printed)
+    # The reasons printed are the ones users already see from config validation.
+    assert any("RED's rules forbid spectrals" in message for message in printed)
+    assert any("Ra's owner asks not to use it for spectrals" in message for message in printed)
 
     # The Options list offered by the prompt never includes red or ra.
     assert prompt_messages
@@ -103,6 +106,7 @@ def test_retry_prompt_refuses_red_and_ra_then_uploads_with_an_allowed_host(monke
 
 def test_retry_prompt_unknown_host_keeps_the_existing_message(monkeypatch: pytest.MonkeyPatch) -> None:
     allowed_calls: list[str] = []
+    monkeypatch.setattr(images, "HOSTS", dict(images.HOSTS))
     monkeypatch.setitem(images.HOSTS, "catbox", _fake_host_module(allowed_calls))
 
     _prompt_messages, printed = _capture_prompt(monkeypatch, ["notahost", "catbox"])
@@ -113,16 +117,26 @@ def test_retry_prompt_unknown_host_keeps_the_existing_message(monkeypatch: pytes
     assert any("notahost is an invalid image host" in message for message in printed)
 
 
+# The tests below exercise salmon.config.image_hosts (the shared table) directly. Imported
+# locally, not at module level, so a missing table only fails these two tests at call time
+# instead of an ImportError that would stop the whole module, including the tests above, from
+# collecting at all.
+
+
 def test_a_host_newly_added_to_host_rules_is_refused_by_both(monkeypatch: pytest.MonkeyPatch) -> None:
+    from salmon.config import image_hosts
+    from salmon.config.image_hosts import HostRules
+
     # Simulate two kinds of new rows in HOST_RULES: one tracker-only (like red), one refused
     # outright with no display restriction (like ra). Reuse imgbox and imgbb, which are
     # otherwise plain allowed hosts, so no other test is affected.
-    monkeypatch.setitem(rules.HOST_RULES, "imgbox", HostRules(displays_on=("dic",)))
-    monkeypatch.setitem(rules.HOST_RULES, "imgbb", HostRules(spectrals_refused="a made-up reason"))
+    monkeypatch.setitem(image_hosts.HOST_RULES, "imgbox", HostRules(displays_on=("dic",)))
+    monkeypatch.setitem(image_hosts.HOST_RULES, "imgbb", HostRules(spectrals_refused="a made-up reason"))
 
     catbox_calls: list[str] = []
     imgbox_calls: list[str] = []
     imgbb_calls: list[str] = []
+    monkeypatch.setattr(images, "HOSTS", dict(images.HOSTS))
     monkeypatch.setitem(images.HOSTS, "catbox", _fake_host_module(catbox_calls))
     monkeypatch.setitem(images.HOSTS, "imgbox", _fake_host_module(imgbox_calls))
     monkeypatch.setitem(images.HOSTS, "imgbb", _fake_host_module(imgbb_calls))
@@ -150,6 +164,8 @@ def test_a_host_newly_added_to_host_rules_is_refused_by_both(monkeypatch: pytest
 
 
 def test_every_host_rules_key_is_a_valid_image_host() -> None:
+    from salmon.config.image_hosts import HOST_RULES
+
     valid_hosts = set(get_args(ImgUploaderLiteral))
     for host in HOST_RULES:
         assert host in images.HOSTS
