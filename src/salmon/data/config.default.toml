@@ -258,39 +258,55 @@ session = 'get-from-site-cookie'
 # ===============================
 # PROXY SETTINGS
 # ===============================
-# # Supports HTTP, HTTPS, SOCKS4, SOCKS4A, SOCKS5. Auth is embedded in the URL.
-# # Format: scheme://[user:pass@]host:port
+# # Send requests through a proxy, for every service below or only for some. Without a [proxy]
+# # section, or with an empty one, salmon connects directly.
 # #
-# # To proxy only one service (e.g. qobuz):
-# #   [proxy.services]
-# #   qobuz = "https://host:port"
+# # Format: scheme://[user:password@]host:port, where scheme is http, socks4, socks4a, socks5 or
+# # socks5h. Percent-encode special characters in the user and password (@ is %40, / is %2F).
+# # The proxy resolves the names of the sites, so they are not looked up locally: socks4 works
+# # as socks4a, and socks5 as socks5h. An http proxy carries HTTPS through CONNECT; a proxy
+# # reached over TLS itself (https://) is not supported.
+# #
+# # [proxy] url applies to every service below without a setting of its own. A service's own
+# # setting overrides it, and an empty one ("") connects that service directly.
 # #
 # # To proxy everything:
 # #   [proxy]
-# #   url = "socks4://host:port"
+# #   url = "socks5://user:password@host:port"
 # #
-# # To proxy everything except one service (empty string disables):
+# # To proxy everything but one service:
 # #   [proxy]
 # #   url = "socks5://host:port"
 # #   [proxy.services]
 # #   bandcamp = ""
+# #
+# # To proxy one service only:
+# #   [proxy.services]
+# #   qobuz = "http://host:port"
+# #
+# # The RED image host uploads through the RED tracker client, so it uses the red setting.
+# # Not proxied: the imgbox image host, MusicBrainz, cover image downloads, the AI review,
+# # torrent clients and seedboxes, and the check for a new salmon version.
 
 # [proxy]
 # url = ""
 
 # [proxy.services]
-# red         = ""
-# ops         = ""
-# dic         = ""
-# qobuz       = ""
-# tidal       = ""
-# bandcamp    = ""
-# deezer      = ""
-# beatport    = ""
-# discogs     = ""
+# # Trackers
+# red = ""
+# ops = ""
+# dic = ""
+# # Metadata sources
+# qobuz = ""
+# tidal = ""
+# bandcamp = ""
+# deezer = ""
+# beatport = ""
+# discogs = ""
 # apple_music = ""
-# ptpimg      = ""
-# ptscreens   = ""
-# oeimg       = ""
-# imgbb       = ""
-# catbox      = ""
+# # Image hosts
+# catbox = ""
+# imgbb = ""
+# oeimg = ""
+# ptscreens = ""
+# ra = ""
