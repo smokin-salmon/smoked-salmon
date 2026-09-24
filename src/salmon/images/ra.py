@@ -7,21 +7,15 @@ import msgspec
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
-from salmon.proxy import session_kwargs
 
-HEADERS = {
-    "referer": "https://ptpimg.me/index.php",
-    "User-Agent": cfg.upload.user_agent,
-}
+UPLOAD_URL = "https://thesungod.xyz/api/image/upload"
 
 
 class ImageUploader(BaseImageUploader):
-    """Image uploader for ptpimg.me."""
-
-    proxy_service = "ptpimg"
+    """Image uploader for thesungod.xyz (Ra)."""
 
     async def upload_file(self, filename: str) -> tuple[str, None]:
-        """Upload image file to ptpimg.me.
+        """Upload image file to thesungod.xyz.
 
         Args:
             filename: Path to the image file.
@@ -36,19 +30,20 @@ class ImageUploader(BaseImageUploader):
             file_data = await f.read()
 
         data = aiohttp.FormData()
-        data.add_field("api_key", cfg.image.ptpimg_key)
-        data.add_field("file-upload[0]", file_data, filename=Path(filename).name)
+        data.add_field("api_key", cfg.image.ra_key)
+        data.add_field("image", file_data, filename=Path(filename).name)
 
-        url = "https://ptpimg.me/upload.php"
         try:
             async with (
-                aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session,
-                session.post(url, headers=HEADERS, data=data) as resp,
+                self._http_session() as session,
+                session.post(UPLOAD_URL, data=data) as resp,
             ):
-                resp.raise_for_status()
-                r = await resp.json(loads=msgspec.json.decode)
-                return f"https://ptpimg.me/{r[0]['code']}.{r[0]['ext']}", None
-        except (msgspec.DecodeError, KeyError, IndexError) as e:
+                body = await resp.text()
+                if resp.status >= 400:
+                    raise ImageUploadFailed(f"Ra returned {resp.status}: {body[:200]}")
+                resp_data = msgspec.json.decode(body)
+                return resp_data["links"][0], None
+        except (msgspec.DecodeError, KeyError, IndexError, TypeError) as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
         except aiohttp.ClientError as e:
             raise ImageUploadFailed(f"Network error: {e}") from e

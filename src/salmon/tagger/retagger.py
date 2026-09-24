@@ -94,7 +94,21 @@ def create_track_changes(tags, metadata):
     """
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
-    for (filename, tagset), trackmeta in zip(tags.items(), tracks, strict=False):
+
+    def disc_track_key(tagset):
+        return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
+
+    disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
+    if len(set(disc_track_keys)) == len(disc_track_keys):
+        # Every file has its own distinct disc/track pair, so its embedded tags can be
+        # trusted to identify it. Files without a discnumber tag (e.g. an untagged CD1/CD2
+        # folder layout) all default to disc 1 and collide here, so we fall back to the
+        # existing file order instead of mismatching them.
+        ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
+    else:
+        ordered_tags = list(tags.items())
+
+    for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False):
         changes[filename] = []
 
         try:
@@ -264,6 +278,10 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     multi_disc = len(metadata["tracks"]) > 1
     md_word = {"CD": "CD", "Vinyl": "LP"}.get(source or "", "Part")
     # "Part" is default if not CD or Vinyl
+    # Keep a multi-disc release in the release folder, its tracks numbered <disc>.<track>
+    single_folder = multi_disc and not cfg.upload.formatting.split_multi_disc_into_folders
+    # Disc numbers of the tracks in each folder that is emptied into the release folder
+    folder_discs = {}
 
     track_list = list(chain.from_iterable([d.values() for d in metadata["tracks"].values()]))
     multiple_artists = any(
@@ -271,11 +289,28 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
         for t in track_list[1:]
     )
 
+    # In one folder, every disc and track number is padded to the width of the largest, so the files sort by
+    # disc, then track
+    disc_digits = len(str(max((_get_tag_number(t, "discnumber") for t in tags.values()), default=1)))
+    track_digits = max(2, len(str(max((_get_tag_number(t, "tracknumber") for t in tags.values()), default=1))))
+
     for filename, tracktags in tags.items():
         ext = os.path.splitext(filename)[1].lower()
         new_name = generate_file_name(tracktags, ext, multiple_artists)
         disc_number = 1  # Default value
-        if multi_disc:
+        if single_folder:
+            disc_number = _get_tag_number(tracktags, "discnumber")
+            track_number = _get_tag_number(tracktags, "tracknumber")
+            new_name = generate_file_name(
+                tracktags,
+                ext,
+                multiple_artists,
+                trackno_or=f"{disc_number:0{disc_digits}d}.{track_number:0{track_digits}d}",
+            )
+            folder = os.path.dirname(os.path.join(path, filename))
+            if folder != path:
+                folder_discs.setdefault(folder, set()).add(disc_number)
+        elif multi_disc:
             if isinstance(tracktags, dict):
                 disc_number = int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
             else:
@@ -283,11 +318,16 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
             new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
-            if multi_disc:
+            if multi_disc and not single_folder:
                 folders_to_create.add(os.path.join(path, f"{md_word}{disc_number:02d}"))
 
     if to_rename:
         print_filenames(to_rename)
+        if single_folder and (clashes := _rename_clashes(path, to_rename)):
+            click.secho("\nNot renaming: these files would overwrite another file.", fg="red")
+            for name in clashes:
+                click.secho(f"   {name}", fg="red")
+            return
         if auto_rename or click.confirm(
             click.style("\nWould you like to rename the files?", fg="magenta"),
             default=True,
@@ -314,7 +354,9 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
                             if value == old_name:
                                 spectral_ids[key] = new_name
 
-            move_non_audio_files(directory_move_pairs)
+            # A folder holding one disc's tracks has its other files named for that disc (log.2.log)
+            disc_of_folder = {folder: discs.pop() for folder, discs in folder_discs.items() if len(discs) == 1}
+            move_non_audio_files(directory_move_pairs, disc_of_folder)
             delete_empty_folders(path)
     else:
         click.secho("\nNo file renaming is recommended.", fg="green")
@@ -377,11 +419,64 @@ def _parse_integer(value):
     return value
 
 
-def move_non_audio_files(directory_move_pairs):
-    for ext, old_dir, new_dir in directory_move_pairs:
-        for file in os.listdir(old_dir):
-            if not file.endswith(ext) or os.path.isdir(os.path.join(old_dir, file)):
-                shutil.move(os.path.join(old_dir, file), os.path.join(new_dir, file))
+def _get_tag_number(tracktags, field):
+    """Read a disc/track number off a tag object or dict, defaulting to 1."""
+    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
+
+    if isinstance(value, list) and value:
+        value = value[0]
+    if value is None:
+        return 1
+    if isinstance(value, str):
+        value = value.split("/")[0]
+        return int(value) if value.isdigit() else 1
+    if isinstance(value, int):
+        return value
+    return 1
+
+
+def _rename_clashes(path, to_rename):
+    """Return the new names that more than one file would get, or that another file already has."""
+    counts = {}
+    for _, new_name in to_rename:
+        counts[new_name] = counts.get(new_name, 0) + 1
+    clashes = []
+    for filename, new_name in to_rename:
+        old_path, new_path = os.path.join(path, filename), os.path.join(path, new_name)
+        # On a case-insensitive filesystem the new name can be the file itself
+        taken = os.path.lexists(new_path) and not (os.path.exists(new_path) and os.path.samefile(old_path, new_path))
+        if (counts[new_name] > 1 or taken) and new_name not in clashes:
+            clashes.append(new_name)
+    return clashes
+
+
+def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
+    """
+    Move the files other than the tracks (logs, cues, covers, scan folders) out of each folder the tracks
+    were moved out of, into the tracks' new folder. A file never replaces one already there: it stays where
+    it is, with a warning.
+
+    When the tracks of a multi-disc release are moved into the release folder, ``disc_of_folder`` gives the
+    disc number of each folder that held one disc: its files are named for that disc (``rip.log`` from disc 2
+    becomes ``rip.2.log``, ``Scans`` becomes ``Scans.2``), so several discs' files can sit side by side.
+    """
+    for ext, old_dir, new_dir in sorted(directory_move_pairs):
+        if old_dir == new_dir:
+            continue
+        disc_number = (disc_of_folder or {}).get(old_dir)
+        for file in sorted(os.listdir(old_dir)):
+            old_path = os.path.join(old_dir, file)
+            if file.endswith(ext) and not os.path.isdir(old_path):
+                continue
+            new_file = file
+            if disc_number is not None:
+                base, file_ext = (file, "") if os.path.isdir(old_path) else os.path.splitext(file)
+                new_file = f"{base}.{disc_number}{file_ext}"
+            new_path = os.path.join(new_dir, new_file)
+            if os.path.lexists(new_path):
+                click.secho(f"Left {old_path} where it is: {new_path} already exists.", fg="yellow")
+                continue
+            shutil.move(old_path, new_path)
 
 
 def delete_empty_folders(path):

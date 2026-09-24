@@ -1,6 +1,6 @@
 [project]
 name = "salmon"
-version = "0.10.1"
+version = "0.11.0"
 description = "An uploading script for Gazelle-based music trackers."
 license = "Apache-2.0"
 readme = "README.md"
@@ -22,14 +22,14 @@ dependencies = [
     "musicbrainzngs>=0.7.1",
     "mutagen>=1.47.0",
     "numpy>=2.4.2",
-    "openai>=2.32.0",
+    "openai>=2.36.0",
     "pillow>=11.3.0",
     "platformdirs>=4.3.8",
     "pycambia>=0.2.0",
     "pyimgbox>=1.0.7",
     "pyoxipng>=9.1.0",
     "pyperclip>=1.8.2",
-    "qbittorrent-api>=2025.2.0",
+    "qbittorrent-api>=2026.5.1",
     "requests>=2.31.0",
     "send2trash>=1.8.3",
     "tenacity>=9.1.2",
@@ -43,13 +43,13 @@ dependencies = [
 salmon = "salmon.run:main"
 
 [build-system]
-requires = ["uv_build>=0.11.7,<0.12.0"]
+requires = ["uv_build>=0.11.11,<0.12.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
-    "ruff>=0.15.11",
+    "ruff>=0.15.12",
 ]
 
 [tool.ruff]

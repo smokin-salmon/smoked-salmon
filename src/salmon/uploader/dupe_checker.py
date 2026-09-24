@@ -1,17 +1,43 @@
 import asyncio
 import re
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from difflib import SequenceMatcher
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from urllib import parse
 
+import anyio
 import asyncclick as click
 
 from salmon import cfg
 from salmon.common import RE_FEAT, make_searchstrs
 from salmon.errors import AbortAndDeleteFolder, RequestError
+from salmon.trackers.base import hold_request_messages
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
+
+
+def can_check_site_log(gazelle_site: "BaseGazelleApi") -> bool:
+    """Whether the site log can be read for recent uploads, saying why not when it cannot.
+
+    log.php is a site page, not an API endpoint, so an API key does not open it. Without a
+    session cookie every request to it is bounced to login.php (#432).
+
+    Args:
+        gazelle_site: The tracker API instance.
+
+    Returns:
+        True if a session cookie is configured.
+    """
+    if gazelle_site.has_session_cookie:
+        return True
+    click.secho(
+        f"Skipping the {gazelle_site.site_string} log check for recent uploads: it needs a session cookie "
+        f"(tracker.{gazelle_site.site_code.lower()}.session), and none is set.",
+        fg="yellow",
+    )
+    return False
 
 
 async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[tuple]:
@@ -163,26 +189,53 @@ async def _prompt_for_recent_upload_results(
             return None
 
 
-async def check_existing_group(
+async def fetch_existing_group_candidates(
     gazelle_site: "BaseGazelleApi",
     searchstrs: list[str],
-    offer_deletion: bool = True,
-) -> int | None:
-    """Check for existing group and prompt user for selection.
+) -> tuple[list[dict], list[tuple] | None]:
+    """Search the tracker for an existing group, without printing or prompting anything.
+
+    This is the part of check_existing_group that talks to the tracker, so it can run in the
+    background: see fetch_existing_group_candidates_in_background.
 
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking.
+
+    Returns:
+        Tuple of (search results, recent uploads from the site log, or None if it was not read).
+    """
+    results = await get_search_results(gazelle_site, searchstrs)
+    recent_uploads = None
+    # The test resolve_existing_group makes, with has_session_cookie for can_check_site_log: the notice
+    # that one prints when the log cannot be read is for resolve_existing_group to show.
+    if not results and cfg.upload.requests.check_recent_uploads and gazelle_site.has_session_cookie:
+        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
+    return results, recent_uploads
+
+
+async def resolve_existing_group(
+    gazelle_site: "BaseGazelleApi",
+    searchstrs: list[str],
+    results: list[dict],
+    recent_uploads: list[tuple] | None,
+    offer_deletion: bool = True,
+) -> int | None:
+    """Show the candidates fetch_existing_group_candidates found, and prompt the user for a group.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings for dupe checking.
+        results: Search results from fetch_existing_group_candidates.
+        recent_uploads: Recent uploads from fetch_existing_group_candidates, or None.
         offer_deletion: Whether to offer folder deletion option.
 
     Returns:
         Group ID or None for new group.
     """
-    results = await get_search_results(gazelle_site, searchstrs)
-    if not results and cfg.upload.requests.check_recent_uploads:
-        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
+    if not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
         group_id = await _prompt_for_recent_upload_results(
-            gazelle_site, recent_uploads, " / ".join(searchstrs), offer_deletion
+            gazelle_site, recent_uploads or [], " / ".join(searchstrs), offer_deletion
         )
     else:
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
@@ -193,6 +246,107 @@ async def check_existing_group(
             return group_id
         return None
     return group_id
+
+
+async def check_existing_group(
+    gazelle_site: "BaseGazelleApi",
+    searchstrs: list[str],
+    offer_deletion: bool = True,
+) -> int | None:
+    """Check for existing group and prompt user for selection.
+
+    fetch_existing_group_candidates, then resolve_existing_group.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings for dupe checking.
+        offer_deletion: Whether to offer folder deletion option.
+
+    Returns:
+        Group ID or None for new group.
+    """
+    results, recent_uploads = await fetch_existing_group_candidates(gazelle_site, searchstrs)
+    return await resolve_existing_group(gazelle_site, searchstrs, results, recent_uploads, offer_deletion)
+
+
+class GroupCandidatesFetch:
+    """fetch_existing_group_candidates, running in the background: see fetch_existing_group_candidates_in_background."""
+
+    def __init__(self, gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> None:
+        self._gazelle_site = gazelle_site
+        self._searchstrs = searchstrs
+        self._done = anyio.Event()
+        self._candidates: tuple[list[dict], list[tuple] | None] | None = None
+        self._error: Exception | None = None
+        self._messages: list[tuple[str, dict[str, Any]]] = []
+
+    async def _run(self) -> None:
+        with hold_request_messages() as messages:
+            self._messages = messages
+            try:
+                self._candidates = await fetch_existing_group_candidates(self._gazelle_site, self._searchstrs)
+            except Exception as e:
+                # Kept for result() to raise: raised here, it would cancel whatever the user is doing.
+                self._error = e
+        self._done.set()
+
+    async def result(self) -> tuple[list[dict], list[tuple] | None]:
+        """Wait for the fetch, print what it held back, then return what it found or raise its error.
+
+        Returns:
+            As fetch_existing_group_candidates.
+        """
+        await self._done.wait()
+        for message, styles in self._messages:
+            click.secho(message, **styles)
+        self._messages = []
+        if self._error is not None:
+            raise self._error
+        assert self._candidates is not None
+        return self._candidates
+
+
+@asynccontextmanager
+async def fetch_existing_group_candidates_in_background(
+    gazelle_site: "BaseGazelleApi",
+    searchstrs: list[str],
+) -> AsyncIterator[GroupCandidatesFetch | None]:
+    """Run fetch_existing_group_candidates in the background while the block runs.
+
+    The fetch only reads from the tracker, through the site's own client, so it shares the rate
+    limiter and connections of every other request. What its requests print is held back until the
+    block calls result(), so none of it lands in the middle of a prompt the block is showing.
+
+    Leaving the block, whichever way, cancels the fetch if it is still running: it never outlives
+    the block, and an error it had is dropped with it if result() was never called.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        searchstrs: Search strings for dupe checking. If empty, nothing is fetched.
+
+    Yields:
+        The running fetch, or None if there are no search strings.
+    """
+    if not searchstrs:
+        yield None
+        return
+    fetch = GroupCandidatesFetch(gazelle_site, searchstrs)
+    raised: BaseException | None = None
+    try:
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(fetch._run)
+            try:
+                yield fetch
+            finally:
+                tg.cancel_scope.cancel()
+    except BaseExceptionGroup as group:
+        # The fetch keeps its own error for result(), so the group only holds what the block raised.
+        # Raise that as it is, as the block would have without a task group around it.
+        if len(group.exceptions) != 1:
+            raise
+        raised = group.exceptions[0]
+    if raised is not None:
+        raise raised
 
 
 async def get_search_results(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[dict]:
@@ -382,48 +536,57 @@ async def print_torrents(
     click.secho("Torrents in this group:", fg="yellow", bold=True)
     # Pull group-level info once (optional fallback only)
     group_info = rset.get("group", {}) or {}
-    group_label = (group_info.get("recordLabel") or "").strip()
-    group_catno = (group_info.get("catalogueNumber") or "").strip()
 
     for t in rset["torrents"]:
         color = "yellow" if highlight_torrent_id and t.get("id") == highlight_torrent_id else None
+        click.secho(f"> {describe_torrent(t, group_info)}", fg=color)
 
-        # Robust across RED/OPS: don't assume `remastered` exists
-        is_remaster = bool(t.get("remastered")) or any(
-            (
-                t.get("remasterYear"),
-                (t.get("remasterTitle") or "").strip(),
-                (t.get("remasterRecordLabel") or "").strip(),
-                (t.get("remasterCatalogueNumber") or "").strip(),
-            )
+
+def describe_torrent(t: dict, group_info: dict) -> str:
+    """Describe a torrent of a group in one line: edition, media, format and encoding.
+
+    Args:
+        t: The torrent, from a search result or a torrentgroup response.
+        group_info: The group's own info, used for an original release's label and catalogue number.
+
+    Returns:
+        The description, e.g. "2020 / Label / CAT1 / WEB / FLAC / Lossless".
+    """
+    # Robust across RED/OPS: don't assume `remastered` exists
+    is_remaster = bool(t.get("remastered")) or any(
+        (
+            t.get("remasterYear"),
+            (t.get("remasterTitle") or "").strip(),
+            (t.get("remasterRecordLabel") or "").strip(),
+            (t.get("remasterCatalogueNumber") or "").strip(),
         )
+    )
 
-        label = ((t.get("remasterRecordLabel") or "").strip() if is_remaster else "") or group_label
-        catno = ((t.get("remasterCatalogueNumber") or "").strip() if is_remaster else "") or group_catno
+    group_label = (group_info.get("recordLabel") or "").strip()
+    group_catno = (group_info.get("catalogueNumber") or "").strip()
+    label = ((t.get("remasterRecordLabel") or "").strip() if is_remaster else "") or group_label
+    catno = ((t.get("remasterCatalogueNumber") or "").strip() if is_remaster else "") or group_catno
 
-        prefix_parts = []
-        if is_remaster:
-            if t.get("remasterYear"):
-                prefix_parts.append(str(t["remasterYear"]))
-            title = (t.get("remasterTitle") or "").strip()
-            if title:
-                prefix_parts.append(title)
-        else:
-            prefix_parts.append("OR")
+    prefix_parts = []
+    if is_remaster:
+        if t.get("remasterYear"):
+            prefix_parts.append(str(t["remasterYear"]))
+        title = (t.get("remasterTitle") or "").strip()
+        if title:
+            prefix_parts.append(title)
+    else:
+        prefix_parts.append("OR")
 
-        if label:
-            prefix_parts.append(label)
-        if catno:
-            prefix_parts.append(catno)
+    if label:
+        prefix_parts.append(label)
+    if catno:
+        prefix_parts.append(catno)
 
-        prefix = " / ".join(prefix_parts)
-        if prefix:
-            prefix += " / "
+    prefix = " / ".join(prefix_parts)
+    if prefix:
+        prefix += " / "
 
-        click.secho(
-            f"> {prefix}{t['media']} / {t['format']} / {t['encoding']}",
-            fg=color,
-        )
+    return f"{prefix}{t['media']} / {t['format']} / {t['encoding']}"
 
 
 async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict]) -> bool:

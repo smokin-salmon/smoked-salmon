@@ -7,15 +7,12 @@ import msgspec
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
-from salmon.proxy import session_kwargs
 
 HEADERS: dict[str, str] = {"X-API-Key": cfg.image.ptscreens_key or ""}
 
 
 class ImageUploader(BaseImageUploader):
     """Image uploader for ptscreens.com."""
-
-    proxy_service = "ptscreens"
 
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to ptscreens.com.
@@ -38,13 +35,15 @@ class ImageUploader(BaseImageUploader):
         url = "https://ptscreens.com/api/1/upload"
         try:
             async with (
-                aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session,
+                self._http_session() as session,
                 session.post(url, headers=HEADERS, data=data) as resp,
             ):
-                resp.raise_for_status()
-                r = await resp.json(loads=msgspec.json.decode)
+                body = await resp.text()
+                if resp.status >= 400:
+                    raise ImageUploadFailed(f"ptscreens returned {resp.status}: {body[:200]}")
+                r = msgspec.json.decode(body)
                 return r["image"]["url"], None
-        except (ValueError, KeyError) as e:
+        except (msgspec.DecodeError, ValueError, KeyError) as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
         except aiohttp.ClientError as e:
             raise ImageUploadFailed(f"Network error: {e}") from e

@@ -7,15 +7,12 @@ import msgspec
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
-from salmon.proxy import session_kwargs
 
 HEADERS = {"referer": "https://imgbb.com/", "User-Agent": cfg.upload.user_agent}
 
 
 class ImageUploader(BaseImageUploader):
     """Image uploader for imgbb.com."""
-
-    proxy_service = "imgbb"
 
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to imgbb.com.
@@ -39,11 +36,13 @@ class ImageUploader(BaseImageUploader):
         url = "https://api.imgbb.com/1/upload"
         try:
             async with (
-                aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session,
+                self._http_session() as session,
                 session.post(url, headers=HEADERS, data=data) as resp,
             ):
-                resp.raise_for_status()
-                resp_data = await resp.json(loads=msgspec.json.decode)
+                body = await resp.text()
+                if resp.status >= 400:
+                    raise ImageUploadFailed(f"imgbb returned {resp.status}: {body[:200]}")
+                resp_data = msgspec.json.decode(body)
                 return resp_data["data"]["url"], None
         except (msgspec.DecodeError, KeyError, TypeError) as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e

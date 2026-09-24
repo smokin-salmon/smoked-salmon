@@ -1,7 +1,12 @@
+from http import HTTPStatus
+
+import msgspec
+from aiohttp import FormData
 from bs4 import BeautifulSoup
 
 from salmon import cfg
 from salmon.common import UploadFiles
+from salmon.errors import RequestFailedError
 from salmon.trackers.base import BaseGazelleApi
 
 
@@ -181,3 +186,40 @@ class RedApi(BaseGazelleApi):
 
         soup = BeautifulSoup(resp.text, "lxml")
         _parse_upload_form(data, soup)
+
+    async def upload_image(self, filename: str, image: bytes) -> str:
+        """Upload an image to RED's image host.
+
+        Authenticated by the API key alone, so a fresh client makes no index call first.
+        Not sent again once it may have reached RED, as that could host the image twice.
+
+        Args:
+            filename: The image's file name.
+            image: The image file's content.
+
+        Returns:
+            The URL of the hosted image.
+
+        Raises:
+            RequestError: If the upload fails, with RED's reason when it rejects the image.
+        """
+        form = FormData()
+        form.add_field("file", image, filename=filename)
+        # RED answers a rejected image with HTTP 400 and a JSON body giving the reason.
+        resp = await self._request(
+            "POST",
+            self.base_url + "/ajax.php",
+            params={"action": "upload_image"},
+            data=form,
+            timeout_secs=30,
+            prefer_api_key=True,
+            needs_authkey=False,
+            expected_error_statuses=(HTTPStatus.BAD_REQUEST,),
+        )
+        try:
+            r = msgspec.json.decode(resp.text)
+            if r.get("status") != "success":
+                raise RequestFailedError(f"RED rejected the image: {r.get('error', 'unknown error')}")
+            return r["response"]["url"]
+        except (msgspec.DecodeError, ValueError, KeyError, TypeError, AttributeError) as e:
+            raise RequestFailedError(f"Failed decoding RED's answer ({resp.status}): {e}") from e

@@ -20,6 +20,7 @@ from salmon.common.files import process_files
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
+    UnknownOutcomeError,
     UploadError,
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
@@ -85,6 +86,8 @@ async def check_spectrals(
             check_lma,
             force_prompt_lossy_master=force_prompt_lossy_master,
         )
+        if spectral_ids and cfg.upload.compression.compress_spectrals:
+            await _compress_spectrals(spectrals_path, spectral_ids)
     else:
         spectral_ids = await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
 
@@ -128,7 +131,10 @@ async def generate_spectrals_all(path: str, spectrals_path: str, audio_info: dic
         Dictionary mapping track numbers to filenames.
     """
     files_li = get_audio_files(path, True)
-    return await _generate_spectrals(path, files_li, spectrals_path, audio_info)
+    # Compression happens after the user selects which spectrals to upload
+    # (see check_spectrals), not here, since most generated spectrals are
+    # only for viewing and are never uploaded.
+    return await _generate_spectrals(path, files_li, spectrals_path, audio_info, compress=False)
 
 
 async def generate_spectrals_ids(
@@ -232,7 +238,11 @@ async def _generate_spectral_for_file(
 
 
 async def _generate_spectrals(
-    path: str, files_li: list[str], spectrals_path: str, audio_info: dict[str, Any]
+    path: str,
+    files_li: list[str],
+    spectrals_path: str,
+    audio_info: dict[str, Any],
+    compress: bool = True,
 ) -> dict[int, str]:
     """Generate spectral images for a list of audio files.
 
@@ -241,6 +251,9 @@ async def _generate_spectrals(
         files_li: List of relative audio filenames.
         spectrals_path: Path to the spectrals output folder.
         audio_info: Audio file information dict.
+        compress: Whether to compress the generated spectrals immediately.
+            Set to False when the caller will compress only a subset later
+            (e.g. once the user has picked which spectrals to upload).
 
     Returns:
         Sorted dictionary mapping track numbers to filenames.
@@ -254,7 +267,7 @@ async def _generate_spectrals(
     )
 
     click.secho("Finished generating spectrals.", fg="green")
-    if cfg.upload.compression.compress_spectrals:
+    if compress and cfg.upload.compression.compress_spectrals:
         await _compress_spectrals(spectrals_path)
 
     for result in results:
@@ -278,13 +291,25 @@ async def _compress_single_spectral(filepath: str, _idx: int) -> None:
     return await anyio.to_thread.run_sync(func)
 
 
-async def _compress_spectrals(spectrals_path: str) -> None:
-    """Compress all spectral PNG images in a directory using oxipng.
+async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] | None = None) -> None:
+    """Compress spectral PNG images in a directory using oxipng.
 
     Args:
         spectrals_path: Path to the directory containing spectral PNG files.
+        spectral_ids: If provided, only compress the Full/Zoom images for
+            these track IDs instead of every PNG in the folder. This is used
+            to avoid compressing spectrals that were only generated for
+            viewing and were never selected for upload.
     """
-    files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
+    if spectral_ids:
+        files = [
+            fname
+            for sid in spectral_ids
+            for fname in (f"{sid:02d} Full.png", f"{sid:02d} Zoom.png")
+            if os.path.isfile(os.path.join(spectrals_path, fname))
+        ]
+    else:
+        files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
     if not files:
         return
 
@@ -483,6 +508,22 @@ async def upload_spectrals(
         return None
 
 
+def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool | None) -> str:
+    """Get the default answer to the spectral IDs prompt: default_spectral_ids, else one based on lossy_master.
+
+    Configured track IDs this release does not have are left out, and if none are left, the default is
+    the one used when nothing is configured.
+    """
+    context_default = "*" if lossy_master else "+"
+    configured = cfg.image.default_spectral_ids
+    if configured is None:
+        return context_default
+    if configured in ("*", "+", "0"):
+        return configured
+    track_ids = [i for i in configured.split() if int(i) in spectral_ids]
+    return " ".join(track_ids) if track_ids else context_default
+
+
 async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
     """Ask which spectral IDs the user wants to upload."""
     while True:
@@ -495,9 +536,7 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
                     '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
                     fg="magenta",
                 ),
-                default=cfg.image.default_spectral_ids
-                if cfg.image.default_spectral_ids is not None
-                else ("*" if lossy_master else "+"),
+                default=_default_spectral_selection(spectral_ids, lossy_master),
             )
         )
         if ids.strip() == "+":
@@ -578,7 +617,18 @@ async def report_lossy_master(
     if source is None:
         click.secho("Cannot report lossy master without source.", fg="red")
         return
-    await gazelle_site.report_lossy_master(torrent_id, comment, source)
+    try:
+        await gazelle_site.report_lossy_master(torrent_id, comment, source)
+    except UnknownOutcomeError as err:
+        # The upload itself went through, so the rest of the flow (seeding above all) goes on.
+        click.secho(
+            f"\nCould not tell whether {gazelle_site.site_string} took the lossy master report ({err}): it may "
+            f"have been filed. Check {gazelle_site.base_url}/torrents.php?torrentid={torrent_id} before reporting "
+            "it again.",
+            fg="red",
+            bold=True,
+        )
+        return
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 
