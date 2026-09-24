@@ -4,7 +4,6 @@ import asyncclick as click
 
 from salmon.checks.integrity import handle_integrity_check
 from salmon.checks.logs import check_log_cambia
-from salmon.checks.mqa import check_mqa
 from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
 from salmon.errors import CRCMismatchError, EditedLogError
@@ -77,6 +76,9 @@ async def integrity(path: str) -> None:
 @click.argument("path", type=click.Path(exists=True, resolve_path=True))
 async def mqa(path):
     """Check if a FLAC file is MQA"""
+    # salmon.checks.mqa loads numpy: import it when an MQA check runs, not when salmon starts.
+    from salmon.checks.mqa import check_mqa
+
     if os.path.isfile(path):
         if await check_mqa(path):
             click.secho("MQA syncword present", fg="red")
@@ -105,6 +107,8 @@ async def mqa_test(path: str) -> None:
     Raises:
         click.Abort: If MQA syncword is detected.
     """
+    from salmon.checks.mqa import check_mqa
+
     if os.path.isfile(path):
         filepath = path
     elif os.path.isdir(path):

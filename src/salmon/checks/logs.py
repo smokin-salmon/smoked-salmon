@@ -7,7 +7,6 @@ from typing import Any
 import anyio
 import anyio.to_thread
 import asyncclick as click
-import av
 import cambia
 
 from salmon.common.files import process_files
@@ -30,6 +29,9 @@ def _get_audio_duration_sectors(filepath: str) -> int:
     Raises:
         RuntimeError: If there's an error getting duration from the file.
     """
+    # PyAV is imported where it decodes, so that starting salmon does not load it.
+    import av
+
     try:
         with av.open(filepath) as container:
             audio_stream = container.streams.audio[0]
@@ -61,6 +63,8 @@ def _iter_pcm_chunks(filepath: str) -> Generator[bytes, None, None]:
     Raises:
         RuntimeError: If decoding fails.
     """
+    import av
+
     try:
         resampler = av.AudioResampler(format="s16", layout="stereo", rate=44100)
         with av.open(filepath) as container:
