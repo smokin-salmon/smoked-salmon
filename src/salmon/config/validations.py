@@ -25,10 +25,8 @@ class Directory(BaseStruct):
 
 
 ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "ra", "red"]
-SpectralSelectionLiteral = Annotated[
-    str,
-    msgspec.Meta(pattern=r"^(\*|\+|0|\d+(\s\d+)*)$")
-]
+# "*" (all), "+" (a random third), "0" (none), or track IDs separated by spaces, such as "3" or "1 5 9".
+SpectralSelection = Annotated[str, msgspec.Meta(pattern=r"^(\*|\+|0|0*[1-9]\d*( +0*[1-9]\d*)*)$")]
 
 _TRACKER_CODES = ("red", "ops", "dic")
 # Image hosts run by a tracker, mapped to the trackers whose pages can display their
@@ -53,7 +51,7 @@ class ImageUploader(BaseStruct):
     ra_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
     auto_compress_cover: bool = False
-    default_spectral_ids: SpectralSelectionLiteral | None = None
+    default_spectral_ids: SpectralSelection | None = None
     red: TrackerImageSettings | None = None
     ops: TrackerImageSettings | None = None
     dic: TrackerImageSettings | None = None

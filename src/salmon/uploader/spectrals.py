@@ -508,6 +508,22 @@ async def upload_spectrals(
         return None
 
 
+def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool | None) -> str:
+    """Get the default answer to the spectral IDs prompt: default_spectral_ids, else one based on lossy_master.
+
+    Configured track IDs this release does not have are left out, and if none are left, the default is
+    the one used when nothing is configured.
+    """
+    context_default = "*" if lossy_master else "+"
+    configured = cfg.image.default_spectral_ids
+    if configured is None:
+        return context_default
+    if configured in ("*", "+", "0"):
+        return configured
+    track_ids = [i for i in configured.split() if int(i) in spectral_ids]
+    return " ".join(track_ids) if track_ids else context_default
+
+
 async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
     """Ask which spectral IDs the user wants to upload."""
     while True:
@@ -520,9 +536,7 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
                     '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
                     fg="magenta",
                 ),
-                default=cfg.image.default_spectral_ids
-                if cfg.image.default_spectral_ids is not None
-                else ("*" if lossy_master else "+"),
+                default=_default_spectral_selection(spectral_ids, lossy_master),
             )
         )
         if ids.strip() == "+":

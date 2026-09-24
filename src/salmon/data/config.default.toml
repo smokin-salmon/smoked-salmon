@@ -37,8 +37,9 @@ cover_uploader = "catbox"
 specs_uploader = "catbox"
 
 # Default selection for "What spectral IDs would you like to upload?" prompt.
-# "*" = all, "+" = randomized selection, "0" = none. Leave unset to use context-based default.
-# default_spectral_ids = "*"
+# "*" = all, "+" = randomized selection, "0" = none, or track IDs separated by spaces, such as "3" or "1 5 9"
+# (IDs a release does not have are left out). Leave unset to use context-based default.
+# default_spectral_ids = "3"
 
 # catbox needs no API key.
 # ptscreens API key (log into ptscreens, settings, API)
