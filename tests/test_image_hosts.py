@@ -52,6 +52,27 @@ def test_a_host_set_only_in_an_override_still_needs_its_key() -> None:
         _image(ops={"cover_uploader": "ptscreens"})
 
 
+def test_ra_cover_uploader_needs_its_key() -> None:
+    with pytest.raises(msgspec.ValidationError, match="ra key not specified"):
+        _image(cover_uploader="ra")
+
+
+def test_ra_cover_uploader_loads_with_its_key() -> None:
+    image = _image(cover_uploader="ra", ra_key="key")
+    assert image.cover_uploader == "ra"
+
+
+def test_ra_specs_uploader_is_refused() -> None:
+    with pytest.raises(msgspec.ValidationError, match="Ra's owner asks not to use it for spectrals"):
+        _image(specs_uploader="ra", ra_key="key")
+
+
+def test_ra_may_be_used_as_a_per_tracker_cover_host() -> None:
+    image = _image(cover_uploader="imgbox", ra_key="key", red={"cover_uploader": "ra"})
+    assert image.cover_uploader_for("RED") == "ra"
+    assert image.cover_uploader_for("OPS") == "imgbox"
+
+
 def _cfg(tmp_path, code: str, red: dict[str, Any]) -> dict[str, Any]:
     return {
         "directory": {"dottorrents_dir": str(tmp_path), "download_directory": str(tmp_path)},

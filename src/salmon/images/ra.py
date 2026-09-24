@@ -38,10 +38,12 @@ class ImageUploader(BaseImageUploader):
                 aiohttp.ClientSession() as session,
                 session.post(UPLOAD_URL, data=data) as resp,
             ):
-                resp.raise_for_status()
-                r = await resp.json(loads=msgspec.json.decode)
-                return r["links"][0], None
-        except (msgspec.DecodeError, KeyError, IndexError) as e:
+                body = await resp.text()
+                if resp.status >= 400:
+                    raise ImageUploadFailed(f"Ra returned {resp.status}: {body[:200]}")
+                resp_data = msgspec.json.decode(body)
+                return resp_data["links"][0], None
+        except (msgspec.DecodeError, KeyError, IndexError, TypeError) as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
         except aiohttp.ClientError as e:
             raise ImageUploadFailed(f"Network error: {e}") from e
