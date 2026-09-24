@@ -22,6 +22,7 @@ class ImageUploader(BaseImageUploader):
         Args:
             api: The RED client to upload through. Without one, the uploader makes its own.
         """
+        super().__init__()
         self.api = api or RedApi()
 
     async def upload_file(self, filename: str) -> tuple[str, None]:
