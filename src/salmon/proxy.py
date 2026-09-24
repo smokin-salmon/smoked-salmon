@@ -78,8 +78,8 @@ class _ProxyConnector(ProxyConnector):
     aiohttp_socks raises errors of its own, and lets errors from the handshake with the site
     through as they are: none of them is an aiohttp.ClientError, so code catching aiohttp's errors
     would miss them. They all happen before the request is written, so each becomes the error a
-    direct connection failing at that step raises: a timeout, or a ClientConnectorError, which the
-    tracker client retries as a request the tracker never got.
+    direct connection failing at that step raises: a ConnectionTimeoutError or a
+    ClientConnectorError, which the tracker client retries as a request the tracker never got.
     """
 
     async def _wrap_create_connection(
@@ -95,10 +95,8 @@ class _ProxyConnector(ProxyConnector):
             return await super()._wrap_create_connection(
                 *args, addr_infos=addr_infos, req=req, timeout=timeout, client_error=client_error, **kwargs
             )
-        except TimeoutError:
-            raise
-        except ProxyTimeoutError as exc:
-            raise TimeoutError(str(exc)) from exc
+        except (ProxyTimeoutError, TimeoutError) as exc:
+            raise aiohttp.ConnectionTimeoutError(f"proxy: {exc}") from exc
         except ssl.CertificateError as exc:
             raise aiohttp.ClientConnectorCertificateError(req.connection_key, exc) from exc
         except ssl.SSLError as exc:

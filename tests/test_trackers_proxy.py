@@ -21,11 +21,13 @@ from aiohttp_socks import ProxyConnector
 from aiolimiter import AsyncLimiter
 from fake_proxy import FakeProxy
 from tenacity import stop_after_attempt, wait_none
+from yarl import URL
 
 from salmon import cfg
+from salmon import proxy as salmon_proxy
 from salmon.config.validations import ProxyCfg, ProxyServicesCfg
 from salmon.errors import UnknownOutcomeError
-from salmon.trackers.base import BaseGazelleApi, HttpResponse, RetryableError
+from salmon.trackers.base import _NOT_SENT_ERRORS, BaseGazelleApi, HttpResponse, RetryableError
 
 PASSWORD = "s3cr3t-proxy-pass"
 AUTH = ("salmon", PASSWORD)
@@ -344,3 +346,30 @@ def test_the_proxy_password_is_never_shown(
     shown.append("".join(capsys.readouterr()))
     assert "[DEBUG] POST" in shown[-1]
     assert not [text for text in shown if PASSWORD in text]
+
+
+@pytest.mark.parametrize("failure", ["proxy down", "proxy refuses", "wrong password", "proxy stalls"])
+def test_the_proxy_connector_itself_raises_errors_send_counts_as_never_sent(
+    monkeypatch: pytest.MonkeyPatch, failure: str
+) -> None:
+    """Without relying on ClientSession to turn a connect timeout into a ConnectionTimeoutError."""
+    proxy = FakeProxy("socks5", auth=AUTH, refuse=failure == "proxy refuses", stall=failure == "proxy stalls")
+
+    async def main() -> None:
+        url = await proxy.start()
+        if failure == "proxy down":
+            await proxy.stop()
+        if failure == "wrong password":
+            url = proxy.url(auth=("salmon", "not-the-password"))
+        _use_proxy(monkeypatch, url)
+        connector = salmon_proxy.connector("red")
+        request = aiohttp.ClientRequest("GET", URL("http://tracker.invalid:1/"), loop=asyncio.get_running_loop())
+        try:
+            with pytest.raises(_NOT_SENT_ERRORS):
+                await connector.connect(request, [], aiohttp.ClientTimeout(sock_connect=0.5))
+        finally:
+            await connector.close()
+            if failure != "proxy down":
+                await proxy.stop()
+
+    anyio.run(main)
