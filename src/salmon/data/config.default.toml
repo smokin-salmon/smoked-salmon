@@ -192,6 +192,9 @@ session = 'get-from-site-cookie'
 # folder_template = "{artists} - {title} ({year}) [{source} {format}]"
 # file_template = "{tracknumber}. {artist} - {title}"
 # remove_source_dir = false
+# # Multi-disc releases: true puts each disc's tracks in its own folder (CD01, CD02; LP01 for vinyl, Part01
+# # otherwise). false keeps every track in the release folder, numbered <disc>.<track> (1.01, 2.01) through
+# # {tracknumber}, and adds the disc number to the other files moved out of a disc folder (rip.2.log).
 # split_multi_disc_into_folders = true
 
 # # formatting options
