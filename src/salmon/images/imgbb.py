@@ -36,7 +36,7 @@ class ImageUploader(BaseImageUploader):
         url = "https://api.imgbb.com/1/upload"
         try:
             async with (
-                aiohttp.ClientSession() as session,
+                self._http_session() as session,
                 session.post(url, headers=HEADERS, data=data) as resp,
             ):
                 body = await resp.text()

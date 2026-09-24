@@ -8,6 +8,7 @@ import pytest
 
 import salmon.images as images
 from salmon.config.validations import ImageUploader, ImgUploaderLiteral
+from salmon.images.base import BaseImageUploader
 
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*m")
 
@@ -29,7 +30,7 @@ class _FakeUploader:
     def ImageUploader(self) -> Any:  # noqa: N802 - mirrors the real modules' API
         calls = self._calls
 
-        class _Instance:
+        class _Instance(BaseImageUploader):
             async def upload_file(self, filename: str) -> tuple[str, None]:
                 calls.append(filename)
                 return f"https://fake/{filename}", None

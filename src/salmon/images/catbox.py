@@ -35,7 +35,7 @@ class ImageUploader(BaseImageUploader):
         data.add_field("fileToUpload", file_data, filename=Path(filename).name)
         url = "https://catbox.moe/user/api.php"
         try:
-            async with aiohttp.ClientSession() as session, session.post(url, headers=HEADERS, data=data) as resp:
+            async with self._http_session() as session, session.post(url, headers=HEADERS, data=data) as resp:
                 resp.raise_for_status()
                 return await resp.text(), None
         except ValueError as e:
