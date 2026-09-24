@@ -252,6 +252,15 @@ class BaseGazelleApi:
         """Get cookies dict for requests."""
         return {"session": _normalize_session_cookie(self.cookie)}
 
+    def _new_session(self, connections: int) -> aiohttp.ClientSession:
+        """Make an HTTP session with a pool of at most `connections` connections."""
+        # DummyCookieJar keeps nothing between requests, so an api-key request
+        # still goes out without a session cookie.
+        return aiohttp.ClientSession(
+            connector=aiohttp.TCPConnector(limit=connections),
+            cookie_jar=aiohttp.DummyCookieJar(),
+        )
+
     def _http_session(self) -> aiohttp.ClientSession:
         """Get the persistent HTTP session for this API instance."""
         if self._session is None or self._session.closed:
@@ -260,12 +269,7 @@ class BaseGazelleApi:
             # Two connections keep short batches from queueing behind a single one;
             # long batches are paced by the rate limiter anyway.
             # Per instance, as a ClientSession binds to the running loop.
-            # DummyCookieJar keeps nothing between requests, so an api-key request
-            # still goes out without a session cookie.
-            self._session = aiohttp.ClientSession(
-                connector=aiohttp.TCPConnector(limit=2),
-                cookie_jar=aiohttp.DummyCookieJar(),
-            )
+            self._session = self._new_session(connections=2)
             with suppress(RuntimeError):
                 click.get_current_context().call_on_close(self.close)
         return self._session
@@ -370,11 +374,6 @@ class BaseGazelleApi:
 
         if idempotent is None:
             idempotent = method != "POST"
-        if not idempotent:
-            # A pooled connection may be one the tracker is closing as idle, and a request
-            # that fails on it cannot be told from one the tracker acted on. A new pool
-            # sends this one on a fresh connection.
-            await self.close()
         # Once the tracker redirects, it has acted on the request, whatever happens next.
         redirected = False
 
@@ -392,11 +391,16 @@ class BaseGazelleApi:
             _secho(f"[DEBUG] params: {_redact(msgspec.json.encode(params).decode())}", fg="cyan")
             _secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
+        # A pooled connection may be one the tracker is closing as idle, and a request that
+        # fails on it cannot be told from one the tracker acted on. A request that is not
+        # idempotent goes out on a new connection instead, in a session of its own that its
+        # redirect hops share and that is closed once they are done. Closing the shared pool
+        # for it would cut off the other requests in flight on it (#472).
+        session = self._http_session() if idempotent else self._new_session(connections=1)
         try:
             # No total: it would also count the wait for a free pooled connection,
             # so a request queued behind others could expire, be aborted and retried.
             timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout_secs, sock_read=timeout_secs)
-            session = self._http_session()
             # aiohttp would follow redirects within one rate limiter slot, and follow a
             # bounce to the login page up to ten times (#432). Each hop goes out here
             # instead, through the limiter, and the login page is never requested.
@@ -497,6 +501,9 @@ class BaseGazelleApi:
             raise RequestFailedError(f"Too many redirects from {self.site_string}")
         except (TimeoutError, aiohttp.ClientError) as err:
             raise failure(f"Network error: {err}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
+        finally:
+            if not idempotent:
+                await session.close()
 
     async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.

@@ -1,6 +1,5 @@
 from http import HTTPStatus
 
-import anyio
 import msgspec
 from aiohttp import FormData
 from bs4 import BeautifulSoup
@@ -130,9 +129,6 @@ class RedApi(BaseGazelleApi):
                 self.dot_torrents_dir = cfg.directory.dottorrents_dir
 
         super().__init__()
-        # A POST starts on a new connection pool, closing the client's current one (see
-        # _request), so image uploads through one client go one at a time.
-        self._image_upload_lock = anyio.Lock()
 
     async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent, using site page upload when log files are present.
@@ -207,18 +203,17 @@ class RedApi(BaseGazelleApi):
         """
         form = FormData()
         form.add_field("file", image, filename=filename)
-        async with self._image_upload_lock:
-            # RED answers a rejected image with HTTP 400 and a JSON body giving the reason.
-            resp = await self._request(
-                "POST",
-                self.base_url + "/ajax.php",
-                params={"action": "upload_image"},
-                data=form,
-                timeout_secs=30,
-                prefer_api_key=True,
-                needs_authkey=False,
-                expected_error_statuses=(HTTPStatus.BAD_REQUEST,),
-            )
+        # RED answers a rejected image with HTTP 400 and a JSON body giving the reason.
+        resp = await self._request(
+            "POST",
+            self.base_url + "/ajax.php",
+            params={"action": "upload_image"},
+            data=form,
+            timeout_secs=30,
+            prefer_api_key=True,
+            needs_authkey=False,
+            expected_error_statuses=(HTTPStatus.BAD_REQUEST,),
+        )
         try:
             r = msgspec.json.decode(resp.text)
             if r.get("status") != "success":
