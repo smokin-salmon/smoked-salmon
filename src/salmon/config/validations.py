@@ -3,6 +3,8 @@ from typing import Annotated, Literal
 
 import msgspec
 
+from .image_hosts import spectrals_refusal, tracker_only_hosts
+
 
 class BaseStruct(msgspec.Struct, forbid_unknown_fields=False):
     pass
@@ -29,10 +31,6 @@ ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", 
 SpectralSelection = Annotated[str, msgspec.Meta(pattern=r"^(\*|\+|0|0*[1-9]\d*( +0*[1-9]\d*)*)$")]
 
 _TRACKER_CODES = ("red", "ops", "dic")
-# Image hosts run by a tracker, mapped to the trackers whose pages can display their
-# images: RED's host serves only logged-in RED members, and OPS accepts RED-hosted images.
-# Each is valid solely as a cover host for those trackers.
-_TRACKER_ONLY_HOSTS = {"red": ("red", "ops")}
 
 
 class TrackerImageSettings(BaseStruct):
@@ -87,13 +85,17 @@ class ImageUploader(BaseStruct):
             raise ValueError("imgbb key not specified")
         if "ra" in uploader_selections and self.ra_key is None:
             raise ValueError("ra key not specified")
-        # Ra's owner asks not to use it for spectrals; choose another specs_uploader
-        if self.specs_uploader == "ra":
-            raise ValueError("Ra's owner asks not to use it for spectrals; choose another specs_uploader")
+        tracker_only = tracker_only_hosts()
+        refusal = spectrals_refusal(self.specs_uploader)
+        if refusal is not None and self.specs_uploader not in tracker_only:
+            # Hosts refused outright (not just restricted to certain trackers), such as ra. A
+            # tracker-only host (such as red) is instead refused by the loop below, which gives
+            # the fuller "can only be set as cover_uploader under [image.<tracker>]" message.
+            raise ValueError(f"{refusal}; choose another specs_uploader")
         # Covers, description images and spectrals set in [image] are shared by every
         # tracker, and RED also forbids spectrals on its host.
         for setting, host in selections:
-            trackers = _TRACKER_ONLY_HOSTS.get(host)
+            trackers = tracker_only.get(host)
             if trackers is not None and setting not in {f"{code}.cover_uploader" for code in trackers}:
                 sections = " or ".join(f"[image.{code}]" for code in trackers)
                 raise ValueError(
