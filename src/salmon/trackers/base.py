@@ -1,8 +1,8 @@
 import asyncio
 import html
 import re
-from collections.abc import Collection, Iterator
-from contextlib import contextmanager, suppress
+from collections.abc import AsyncIterator, Collection, Iterator
+from contextlib import asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
 from http import HTTPStatus
 from typing import Any, cast
@@ -247,6 +247,8 @@ class BaseGazelleApi:
         self.passkey: str | None = None
         self._authenticated = False
         self._session: aiohttp.ClientSession | None = None
+        # Held while a request that is not idempotent is in flight, on its own connection.
+        self._non_idempotent_lock = asyncio.Lock()
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
@@ -279,6 +281,29 @@ class BaseGazelleApi:
         if self._session is not None:
             await self._session.close()
             self._session = None
+
+    @asynccontextmanager
+    async def _session_for(self, idempotent: bool) -> AsyncIterator[aiohttp.ClientSession]:
+        """Get the HTTP session to send a request and its redirect hops through.
+
+        A pooled connection may be one the tracker is closing as idle, and a request that fails
+        on it cannot be told from one the tracker acted on. A request that is not idempotent
+        goes out on a new connection instead, in a session of its own, closed once the request
+        is done. Closing the shared pool for it would cut off the other requests in flight on
+        it (#472). Such requests go one at a time per client: gathered, each would open its
+        new connection at once, the burst of handshakes the pool's cap is there to prevent.
+
+        Args:
+            idempotent: Whether the request is idempotent.
+
+        Yields:
+            The shared session, or a session of the request's own.
+        """
+        if idempotent:
+            yield self._http_session()
+        else:
+            async with self._non_idempotent_lock, self._new_session(connections=1) as session:
+                yield session
 
     @property
     def has_session_cookie(self) -> bool:
@@ -391,119 +416,109 @@ class BaseGazelleApi:
             _secho(f"[DEBUG] params: {_redact(msgspec.json.encode(params).decode())}", fg="cyan")
             _secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
-        # A pooled connection may be one the tracker is closing as idle, and a request that
-        # fails on it cannot be told from one the tracker acted on. A request that is not
-        # idempotent goes out on a new connection instead, in a session of its own that its
-        # redirect hops share and that is closed once they are done. Closing the shared pool
-        # for it would cut off the other requests in flight on it (#472).
-        session = self._http_session() if idempotent else self._new_session(connections=1)
         try:
             # No total: it would also count the wait for a free pooled connection,
             # so a request queued behind others could expire, be aborted and retried.
             timeout = aiohttp.ClientTimeout(total=None, sock_connect=timeout_secs, sock_read=timeout_secs)
-            # aiohttp would follow redirects within one rate limiter slot, and follow a
-            # bounce to the login page up to ten times (#432). Each hop goes out here
-            # instead, through the limiter, and the login page is never requested.
-            for _ in range(_MAX_REDIRECTS + 1):
-                async with (
-                    self._rate_limiter,
-                    session.request(
-                        method,
-                        url,
-                        params=params,
-                        data=data,
-                        headers=headers,
-                        cookies=cookies,
-                        timeout=timeout,
-                        allow_redirects=False,
-                    ) as resp,
-                ):
-                    text = await resp.text()
+            async with self._session_for(idempotent) as session:
+                # aiohttp would follow redirects within one rate limiter slot, and follow a
+                # bounce to the login page up to ten times (#432). Each hop goes out here
+                # instead, through the limiter, and the login page is never requested.
+                for _ in range(_MAX_REDIRECTS + 1):
+                    async with (
+                        self._rate_limiter,
+                        session.request(
+                            method,
+                            url,
+                            params=params,
+                            data=data,
+                            headers=headers,
+                            cookies=cookies,
+                            timeout=timeout,
+                            allow_redirects=False,
+                        ) as resp,
+                    ):
+                        text = await resp.text()
 
-                    if cfg.upload.debug_tracker_connection:
-                        _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
-                        _secho(
-                            f"[DEBUG] response headers: {_redact(msgspec.json.encode(dict(resp.headers)).decode())}",
-                            fg="cyan",
-                        )
-                        _secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
+                        if cfg.upload.debug_tracker_connection:
+                            _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
+                            response_headers = msgspec.json.encode(dict(resp.headers)).decode()
+                            _secho(f"[DEBUG] response headers: {_redact(response_headers)}", fg="cyan")
+                            _secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
 
-                    if not resp.ok:
-                        error_msg = text
-                        with suppress(msgspec.DecodeError, ValueError):
-                            error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
+                        if not resp.ok:
+                            error_msg = text
+                            with suppress(msgspec.DecodeError, ValueError):
+                                error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
 
-                        if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
-                            retry_after = float(resp.headers.get("Retry-After", "20"))
-                            _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
-                            await asyncio.sleep(retry_after)
-                            raise failure("Rate limit exceeded", not_acted_on=True)
+                            if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
+                                retry_after = float(resp.headers.get("Retry-After", "20"))
+                                _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
+                                await asyncio.sleep(retry_after)
+                                raise failure("Rate limit exceeded", not_acted_on=True)
 
-                        if resp.status == HTTPStatus.UNAUTHORIZED:
+                            if resp.status == HTTPStatus.UNAUTHORIZED:
+                                _secho(
+                                    f"Authentication to {self.site_string} failed: {error_msg}.\n"
+                                    "Your API key may be invalid.",
+                                    fg="red",
+                                )
+                                raise LoginError(error_msg)
+
+                            if resp.status in expected_error_statuses:
+                                return HttpResponse(text=text, url=str(resp.url), status=resp.status)
+
+                            if resp.status in (
+                                HTTPStatus.INTERNAL_SERVER_ERROR,
+                                HTTPStatus.BAD_GATEWAY,
+                                HTTPStatus.SERVICE_UNAVAILABLE,
+                                HTTPStatus.GATEWAY_TIMEOUT,
+                            ):
+                                raise failure(f"Server error {resp.status}")
+
                             _secho(
-                                f"Authentication to {self.site_string} failed: {error_msg}.\n"
-                                "Your API key may be invalid.",
+                                f"Request to {self.site_string} failed ({resp.status}): {error_msg}",
                                 fg="red",
                             )
-                            raise LoginError(error_msg)
+                            raise RequestFailedError(error_msg)
 
-                        if resp.status in expected_error_statuses:
-                            return HttpResponse(text=text, url=str(resp.url), status=resp.status)
+                        location = resp.headers.get(aiohttp.hdrs.LOCATION)
+                        if resp.status not in _REDIRECT_STATUSES or not location:
+                            return HttpResponse(
+                                text=text,
+                                url=str(resp.url),
+                                status=resp.status,
+                            )
 
-                        if resp.status in (
-                            HTTPStatus.INTERNAL_SERVER_ERROR,
-                            HTTPStatus.BAD_GATEWAY,
-                            HTTPStatus.SERVICE_UNAVAILABLE,
-                            HTTPStatus.GATEWAY_TIMEOUT,
+                        current = urlparse(str(resp.url))
+                        target = urlparse(urljoin(str(resp.url), location))
+                        if target.path.endswith("/login.php"):
+                            _secho(
+                                f"{self.site_string} sent this request to its login page: your session cookie is "
+                                f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
+                                fg="red",
+                                bold=True,
+                            )
+                            raise LoginError(f"{self.site_string} redirected to its login page")
+                        if (target.scheme, target.netloc) != (current.scheme, current.netloc):
+                            _secho(
+                                f"{self.site_string} redirected to {target.scheme}://{target.netloc}, not following.",
+                                fg="red",
+                            )
+                            raise RequestFailedError(f"{self.site_string} redirected to another site")
+
+                        if resp.status == HTTPStatus.SEE_OTHER or (
+                            resp.status in (HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND) and method == "POST"
                         ):
-                            raise failure(f"Server error {resp.status}")
+                            # As browsers and aiohttp do, the target of a redirected POST is fetched with GET.
+                            method, data = "GET", None
+                        url, params = target._replace(fragment="").geturl(), None
+                        redirected = True
 
-                        _secho(
-                            f"Request to {self.site_string} failed ({resp.status}): {error_msg}",
-                            fg="red",
-                        )
-                        raise RequestFailedError(error_msg)
-
-                    location = resp.headers.get(aiohttp.hdrs.LOCATION)
-                    if resp.status not in _REDIRECT_STATUSES or not location:
-                        return HttpResponse(
-                            text=text,
-                            url=str(resp.url),
-                            status=resp.status,
-                        )
-
-                    current = urlparse(str(resp.url))
-                    target = urlparse(urljoin(str(resp.url), location))
-                    if target.path.endswith("/login.php"):
-                        _secho(
-                            f"{self.site_string} sent this request to its login page: your session cookie is "
-                            f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
-                            fg="red",
-                            bold=True,
-                        )
-                        raise LoginError(f"{self.site_string} redirected to its login page")
-                    if (target.scheme, target.netloc) != (current.scheme, current.netloc):
-                        _secho(
-                            f"{self.site_string} redirected to {target.scheme}://{target.netloc}, not following.",
-                            fg="red",
-                        )
-                        raise RequestFailedError(f"{self.site_string} redirected to another site")
-
-                    if resp.status == HTTPStatus.SEE_OTHER or (
-                        resp.status in (HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND) and method == "POST"
-                    ):
-                        # As browsers and aiohttp do, the target of a redirected POST is fetched with GET.
-                        method, data = "GET", None
-                    url, params = target._replace(fragment="").geturl(), None
-                    redirected = True
-
-            _secho(f"Too many redirects from {self.site_string}, last to {urlparse(url).path}", fg="red")
-            raise RequestFailedError(f"Too many redirects from {self.site_string}")
+                _secho(f"Too many redirects from {self.site_string}, last to {urlparse(url).path}", fg="red")
+                raise RequestFailedError(f"Too many redirects from {self.site_string}")
         except (TimeoutError, aiohttp.ClientError) as err:
             raise failure(f"Network error: {err}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
-        finally:
-            if not idempotent:
-                await session.close()
 
     async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.

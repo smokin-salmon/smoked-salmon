@@ -72,6 +72,9 @@ class FakeTracker:
         self.sent: list[tuple[str | None, str | None]] = []
         self.transports: list[asyncio.BaseTransport] = []
         self.arrived = asyncio.Event()
+        # Requests being answered now, and the most at once.
+        self.open = 0
+        self.peak = 0
 
     async def start(self, port: int = 0) -> str:
         app = web.Application()
@@ -91,6 +94,14 @@ class FakeTracker:
         return [port for _, port in self.hits]
 
     async def handle(self, request: web.Request) -> web.StreamResponse:
+        self.open += 1
+        self.peak = max(self.peak, self.open)
+        try:
+            return await self.answer(request)
+        finally:
+            self.open -= 1
+
+    async def answer(self, request: web.Request) -> web.StreamResponse:
         await request.read()
         what = request.query.get("action", request.match_info["page"])
         assert request.transport is not None
@@ -163,13 +174,36 @@ def test_a_post_leaves_a_request_in_flight_on_the_same_client_alone() -> None:
     _run(body)
 
 
-def test_gathered_posts_through_one_client_all_go_through() -> None:
+def test_gathered_posts_through_one_client_all_go_through_one_at_a_time() -> None:
     async def body(tracker: FakeTracker, api: FakeApi) -> None:
-        answers = await asyncio.gather(*(_post(api, "upload") for _ in range(3)))
+        answers = await asyncio.gather(*(_post(api, "slow") for _ in range(3)))
         assert [answer.status for answer in answers] == [200] * 3
-        assert tracker.requests == ["POST upload"] * 3
+        assert tracker.requests == ["POST slow"] * 3
+        # Each on a new connection, never two at once: no burst of handshakes.
         assert len(set(tracker.ports)) == 3
+        assert tracker.peak == 1
         assert api.limiter.acquired == 3
+
+    _run(body)
+
+
+def test_a_get_is_not_held_up_by_a_post_in_flight() -> None:
+    async def body(tracker: FakeTracker, api: FakeApi) -> None:
+        done: list[str] = []
+
+        async def post() -> None:
+            await _post(api, "slow")
+            done.append("POST")
+
+        async def get_while_the_post_is_held() -> None:
+            await tracker.arrived.wait()
+            await _get(api, "index")
+            done.append("GET")
+
+        await asyncio.gather(post(), get_while_the_post_is_held())
+        assert tracker.requests == ["POST slow", "GET index"]
+        assert done == ["GET", "POST"]
+        assert tracker.peak == 2
 
     _run(body)
 
@@ -279,5 +313,8 @@ def test_a_posts_own_connection_is_closed_however_the_post_ends(action: str, rai
         assert api._session is pool
         assert pool is not None and not pool.closed
         assert not tracker.transports[0].is_closing()
+        # The next POST does not wait for the one that ended.
+        with anyio.fail_after(1):
+            await _post(api, "upload")
 
     _run(body)
