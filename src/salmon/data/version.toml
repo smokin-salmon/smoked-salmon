@@ -1,4 +1,136 @@
-current = "0.10.1"
+current = "0.11.0"
+
+[[changelog]]
+version = "0.11.0"
+date = "2026-09-24"
+notes = """
+
+## ⚠️ Breaking Changes
+
+- **`salmon web` removed**: the spectrals web server now starts on its own during `up`, only while you review spectrals. If you kept a Docker container running with `command: web`, stop it and run each command on demand (`docker compose run --rm salmon up ...`), as the README shows. This also fixes `/spectrals` answering 404 (#426).
+- **Tidal needs new credentials**: Tidal metadata now uses Tidal's v2 API. Set `client_id` and `client_secret` under `[metadata.tidal]`; the old `token` is no longer used.
+- **ptpimg removed**: ptpimg.me has shut down. The default image host is now catbox, and a config still set to `ptpimg` stops at startup with a message asking you to choose another host.
+- **`--yes-all` no longer uploads a new group without a cover**: when no cover is found or its upload fails, salmon asks whether to retry, continue without a cover, or skip that tracker. With `--yes-all` it skips that tracker.
+
+## ✨ New Features & Improvements
+
+- Add RED's own image host (`red`) for covers, with per-tracker cover hosts: `[image.red]`, `[image.ops]` and `[image.dic]` can each set their own `cover_uploader`
+- Add the **Ra** (thesungod.xyz) image host (`ra`, needs `ra_key`), for covers and description images; Ra's owner asks that it not be used for spectrals
+- Add `--skip-flac-upload` to upload only transcodes into an existing group (`-g`) that already holds the FLAC; the transcode descriptions link to that FLAC
+- Add optional AI metadata review (`[upload.ai_review]`)
+- Add optional Beatport API scraping (`[metadata.beatport]` username and password)
+- Add the `default_spectral_ids` config option
+- `checkconf --seedbox` now logs in to the torrent client and lists the rclone remote, instead of only reading the config
+- Support classical composer and conductor tags
+- Map Qobuz `epmini` releases to EP
+- Check each log's CRCs against its own disc folder, so multi-disc releases are no longer decoded once per log
+
+## 🐛 Bug Fixes
+
+- Fix retagging writing tags to the wrong files when files are named `1-01`, `1-02`, ...
+- Fix Discogs multi-disc tracklists (`1-01`, `2-01` positions) collapsing into one disc
+- Fix tracks being lost when combining metadata
+- Fix Apple Music token extraction
+- Fix CRC verification of logs with an appended EAC re-rip
+- Fail the FLAC integrity check when the STREAMINFO MD5 is unset
+- Clear a partial hardlink tree before falling back to a plain copy
+- Keep remixer extraction inside one parenthesised group
+- Fix Bandcamp parsing for catno-prefixed and label-hosted releases
+- Fix Qobuz Open URLs in metadata source matching, and stop Qobuz search from running when Qobuz is not configured
+- Fix a Beatport scraper type error and artist names being split
+- Fix a serialization error when the Discogs token is missing
+- Fix a request checker crash when `logCue` is missing on OPS
+- Fix rclone progress output during seedbox uploads
+- Session cookies pasted in decoded form (as some cookie editors show them) now work
+- Show the image host's error message when an imgbb, ptscreens or Ra upload fails
+- Update the source icons used in descriptions (the ptpimg links were dead)
+
+## 🔒 Tracker & Security Improvements
+
+- The site log check no longer floods `login.php` when the session cookie is missing or expired: redirects are followed through the rate limiter, and a redirect to the login page stops with a clear message
+- An upload or report whose outcome is unknown (a timeout or dropped connection after it was sent) is never sent again: salmon looks the torrent up instead of risking a duplicate
+- Reuse one kept-alive connection pool per tracker instead of opening a connection per request
+- Update anyio, aiohttp, Pillow, soupsieve and idna to versions that fix known security vulnerabilities (the Docker images include them)
+- The test suite and formatting checks now run in CI
+
+## What's Changed
+* Bump ruff from 0.15.5 to 0.15.6 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/337
+* Remove web command and simplify config initialization by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/339
+* Fix request checker crash when logCue field is missing on OPS by @KyokoMiki in https://github.com/smokin-salmon/smoked-salmon/pull/340
+* Add optional AI metadata review workflow by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/342
+* Bump requests from 2.32.5 to 2.33.0 in the uv group across 1 directory by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/369
+* Bump ruff from 0.15.6 to 0.15.8 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/370
+* Bump anyio from 4.12.1 to 4.13.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/371
+* Update uv-build requirement from <0.11.0,>=0.10.7 to >=0.10.7,<0.12.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/372
+* Fix Bandcamp parsing for catno-prefixed and label-hosted releases by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/347
+* Add `default_spectral_ids` to config options  by @nironics in https://github.com/smokin-salmon/smoked-salmon/pull/350
+* Fix Qobuz Open URLs in metadata source matching by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/352
+* Fix rclone progress output during seedbox uploads by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/363
+* fix(tagger): support classical composer and conductor tags by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/374
+* Fix type error in Beatport scraper by @itll-be-alright in https://github.com/smokin-salmon/smoked-salmon/pull/376
+* Fix Qobuz search running when not configured by @itll-be-alright in https://github.com/smokin-salmon/smoked-salmon/pull/377
+* Bump ruff from 0.15.8 to 0.15.9 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/379
+* Bump aiohttp from 3.13.4 to 3.13.5 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/380
+* Bump pillow from 12.1.1 to 12.2.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/381
+* Bump requests from 2.33.0 to 2.33.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/382
+* Add optional Beatport API scraping by @itll-be-alright in https://github.com/smokin-salmon/smoked-salmon/pull/386
+* Bump platformdirs from 4.9.4 to 4.9.6 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/387
+* Bump ruff from 0.15.9 to 0.15.10 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/388
+* Bump openai from 2.30.0 to 2.31.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/389
+* Bump pytest from 9.0.2 to 9.0.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/390
+* Fix serialization error when discogs token is missing by @itll-be-alright in https://github.com/smokin-salmon/smoked-salmon/pull/392
+* Fix tracks being lost while combining by @itll-be-alright in https://github.com/smokin-salmon/smoked-salmon/pull/393
+* Fix beatport scraper splitting artist names by @itll-be-alright in https://github.com/smokin-salmon/smoked-salmon/pull/395
+* Update msgspec[toml] requirement from >=0.20.0 to >=0.21.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/397
+* Bump ruff from 0.15.10 to 0.15.11 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/398
+* Update aiohttp[speedups] requirement from >=3.8.5 to >=3.13.5 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/399
+* Update uv-build requirement from <0.12.0,>=0.10.7 to >=0.11.7,<0.12.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/400
+* Update beautifulsoup4[lxml] requirement from >=4.13.0 to >=4.14.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/401
+* Bump lxml from 6.0.2 to 6.1.0 in the uv group across 1 directory by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/403
+* Prevent missing tracks by fixing track ordering in combine_tracks() by @AllergicSquare in https://github.com/smokin-salmon/smoked-salmon/pull/402
+* Bump openai from 2.31.0 to 2.32.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/404
+* Bump av from 17.0.0 to 17.0.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/405
+* Bump actions/checkout from 6 to 7 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/423
+* Update uv-build requirement from <0.12.0,>=0.11.7 to >=0.11.11,<0.12.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/414
+* Bump openai, qbittorrent-api, ruff and urllib3 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/440
+* Run the test suite in CI by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/441
+* fix(qobuz): map epmini release type to EP by @KainoaM in https://github.com/smokin-salmon/smoked-salmon/pull/436
+* Update image URLs for icons/logos by @cy1der in https://github.com/smokin-salmon/smoked-salmon/pull/425
+* Reuse one kept-alive tracker connection per API instance by @KainoaM in https://github.com/smokin-salmon/smoked-salmon/pull/437
+* Add RED's internal image host as an image uploader by @aglowinthefield in https://github.com/smokin-salmon/smoked-salmon/pull/428
+* Add AGENTS.md and the first decision records by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/442
+* Stop the log scrape from flooding login.php by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/445
+* Check formatting in CI by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/447
+* Never re-send an upload or report whose outcome is unknown by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/448
+* Remove ptpimg, which has shut down, and default to catbox by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/449
+* Find Apple Music's token whatever its JWT header order by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/450
+* Fail FLAC integrity check when STREAMINFO MD5 is unset by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/451
+* Keep remixer extraction inside one paren group by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/455
+* Clear the partial hardlink tree before the plain-copy fallback by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/452
+* Fix appended EAC rerip log CRC verification by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/453
+* Surface imgbb and ptscreens error bodies on upload failure by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/454
+* Move Tidal metadata to Tidal's v2 API by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/456
+* Send session cookies pasted in decoded form the way browsers do by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/362
+* Match retag changes to files by disc and track number by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/459
+* Split Discogs multi-disc tracklists by their 1-01 positions by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/458
+* Test that spectral review serves the spectrals page by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/457
+* Check each log's CRCs against its own disc folder by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/460
+* Ask before uploading a new group without a cover by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/461
+* Test the seedbox connection in checkconf --seedbox by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/462
+* Add --skip-flac-upload to upload only transcodes into an existing group by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/463
+* Add Ra (thesungod.xyz) image host support by @kisiel92 in https://github.com/smokin-salmon/smoked-salmon/pull/409
+* Describe the release workflow in AGENTS.md by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/464
+* Bump anyio, aiohttp, pillow, soupsieve and idna for security fixes by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/465
+
+## New Contributors
+* @itll-be-alright made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/376
+* @AllergicSquare made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/402
+* @KainoaM made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/436
+* @cy1der made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/425
+* @aglowinthefield made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/428
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.10.1...0.11.0
+"""
 
 [[changelog]]
 version = "0.10.1"
