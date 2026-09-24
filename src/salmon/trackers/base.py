@@ -1,7 +1,9 @@
 import asyncio
 import html
 import re
-from contextlib import suppress
+from collections.abc import Iterator
+from contextlib import contextmanager, suppress
+from contextvars import ContextVar
 from http import HTTPStatus
 from typing import Any, cast
 from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
@@ -62,6 +64,40 @@ def _redact(text: str) -> str:
         The string with sensitive values replaced.
     """
     return _SENSITIVE_KEYS.sub(lambda m: f'"{m.group(1)}": "[REDACTED]"', text)
+
+
+# What _request prints goes here instead while hold_request_messages() is active: a request
+# sent in the background must not print over a prompt the user is answering meanwhile.
+_held_request_messages: ContextVar[list[tuple[str, dict[str, Any]]] | None] = ContextVar(
+    "held_request_messages", default=None
+)
+
+
+def _secho(message: str, **styles: Any) -> None:
+    """Print a message about a request, or hold it back while hold_request_messages() is active."""
+    held = _held_request_messages.get()
+    if held is None:
+        click.secho(message, **styles)
+    else:
+        held.append((message, styles))
+
+
+@contextmanager
+def hold_request_messages() -> Iterator[list[tuple[str, dict[str, Any]]]]:
+    """Hold back what requests sent from this context print, for the caller to show later.
+
+    The context is the running task's, and the tasks it starts inherit it: requests other tasks
+    send meanwhile still print as usual.
+
+    Yields:
+        The held messages, as (message, click.secho keyword arguments) pairs.
+    """
+    held: list[tuple[str, dict[str, Any]]] = []
+    token = _held_request_messages.set(held)
+    try:
+        yield held
+    finally:
+        _held_request_messages.reset(token)
 
 
 def _normalize_session_cookie(cookie: str) -> str:
@@ -345,9 +381,9 @@ class BaseGazelleApi:
         cookies = {} if use_api_key else self._get_cookies()
 
         if cfg.upload.debug_tracker_connection:
-            click.secho(f"[DEBUG] {method} {url}", fg="cyan")
-            click.secho(f"[DEBUG] params: {_redact(msgspec.json.encode(params).decode())}", fg="cyan")
-            click.secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
+            _secho(f"[DEBUG] {method} {url}", fg="cyan")
+            _secho(f"[DEBUG] params: {_redact(msgspec.json.encode(params).decode())}", fg="cyan")
+            _secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
         try:
             # No total: it would also count the wait for a free pooled connection,
@@ -374,12 +410,12 @@ class BaseGazelleApi:
                     text = await resp.text()
 
                     if cfg.upload.debug_tracker_connection:
-                        click.secho(f"[DEBUG] status: {resp.status}", fg="cyan")
-                        click.secho(
+                        _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
+                        _secho(
                             f"[DEBUG] response headers: {_redact(msgspec.json.encode(dict(resp.headers)).decode())}",
                             fg="cyan",
                         )
-                        click.secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
+                        _secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
 
                     if not resp.ok:
                         error_msg = text
@@ -388,12 +424,12 @@ class BaseGazelleApi:
 
                         if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
                             retry_after = float(resp.headers.get("Retry-After", "20"))
-                            click.secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
+                            _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
                             await asyncio.sleep(retry_after)
                             raise failure("Rate limit exceeded", not_acted_on=True)
 
                         if resp.status == HTTPStatus.UNAUTHORIZED:
-                            click.secho(
+                            _secho(
                                 f"Authentication to {self.site_string} failed: {error_msg}.\n"
                                 "Your API key may be invalid.",
                                 fg="red",
@@ -408,7 +444,7 @@ class BaseGazelleApi:
                         ):
                             raise failure(f"Server error {resp.status}")
 
-                        click.secho(
+                        _secho(
                             f"Request to {self.site_string} failed ({resp.status}): {error_msg}",
                             fg="red",
                         )
@@ -425,7 +461,7 @@ class BaseGazelleApi:
                     current = urlparse(str(resp.url))
                     target = urlparse(urljoin(str(resp.url), location))
                     if target.path.endswith("/login.php"):
-                        click.secho(
+                        _secho(
                             f"{self.site_string} sent this request to its login page: your session cookie is "
                             f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
                             fg="red",
@@ -433,7 +469,7 @@ class BaseGazelleApi:
                         )
                         raise LoginError(f"{self.site_string} redirected to its login page")
                     if (target.scheme, target.netloc) != (current.scheme, current.netloc):
-                        click.secho(
+                        _secho(
                             f"{self.site_string} redirected to {target.scheme}://{target.netloc}, not following.",
                             fg="red",
                         )
@@ -447,7 +483,7 @@ class BaseGazelleApi:
                     url, params = target._replace(fragment="").geturl(), None
                     redirected = True
 
-            click.secho(f"Too many redirects from {self.site_string}, last to {urlparse(url).path}", fg="red")
+            _secho(f"Too many redirects from {self.site_string}, last to {urlparse(url).path}", fg="red")
             raise RequestFailedError(f"Too many redirects from {self.site_string}")
         except (TimeoutError, aiohttp.ClientError) as err:
             raise failure(f"Network error: {err}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err

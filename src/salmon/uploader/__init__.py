@@ -1,4 +1,3 @@
-import asyncio
 import os
 import platform
 import re
@@ -55,7 +54,7 @@ from salmon.uploader.dupe_checker import (
     check_existing_group,
     describe_torrent,
     dupe_check_recent_torrents,
-    fetch_existing_group_candidates,
+    fetch_existing_group_candidates_in_background,
     generate_dupe_check_searchstrs,
     print_recent_upload_results,
     print_torrents,
@@ -529,111 +528,100 @@ async def upload(
         if flac_url is None:
             return click.secho("\nAborting upload...", fg="red")
 
-    # Kick off the existing-group dupe check's network lookup now, in the
-    # background, while we do log checks, integrity checks, spectral
-    # generation, etc. We only fetch here (no prompting) so it doesn't
-    # collide with output/prompts from those other steps; the interactive
-    # part (resolve_existing_group) runs later once that work is done.
-    dupe_check_searchstrs: list[str] | None = None
-    dupe_check_task = None
+    dupe_searchstrs: list[str] = []
     if group_id is None:
-        dupe_check_searchstrs = generate_dupe_check_searchstrs(
+        searchstrs = dupe_searchstrs = generate_dupe_check_searchstrs(
             rls_data["artists"], rls_data["title"], rls_data["catno"]
         )
-        if len(dupe_check_searchstrs) > 0:
-            dupe_check_task = asyncio.ensure_future(
-                fetch_existing_group_candidates(gazelle_site, dupe_check_searchstrs)
-            )
 
     try:
-        if not skip_mqa:
-            click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
-            await mqa_test(path)
-            click.secho("No MQA release detected", fg="green")
+        # The search for an existing group only reads from the tracker, so it runs in the background during
+        # the checks below, and what it found is shown once the spectrals are checked.
+        async with fetch_existing_group_candidates_in_background(gazelle_site, dupe_searchstrs) as group_fetch:
+            if not skip_mqa:
+                click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
+                await mqa_test(path)
+                click.secho("No MQA release detected", fg="green")
 
-        if rls_data["encoding"] == "24bit Lossless" and not skip_up:
-            if not cfg.upload.yes_all:
-                if click.confirm(
-                    click.style("\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"),
-                    default=True,
-                ):
+            if rls_data["encoding"] == "24bit Lossless" and not skip_up:
+                if not cfg.upload.yes_all:
+                    if click.confirm(
+                        click.style(
+                            "\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"
+                        ),
+                        default=True,
+                    ):
+                        await upload_upconvert_test(path)
+                else:
                     await upload_upconvert_test(path)
-            else:
-                await upload_upconvert_test(path)
 
-        if source == "CD" and not skip_log_check:
-            click.secho("\nChecking logs", fg="green")
-            for root, _, files in os.walk(path):
-                for f in files:
-                    if f.lower().endswith(".log"):
-                        filepath = os.path.join(root, f)
-                        click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
-                        try:
-                            await check_log_cambia(filepath, path)
-                        except EditedLogError as e:
-                            raise click.Abort() from e
-                        except CRCMismatchError as e:
-                            click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
-                            if not click.confirm(
-                                click.style(
-                                    "Log file CRC does not match audio files. Do you want to continue upload anyway?",
-                                    fg="magenta",
-                                ),
-                                default=False,
-                            ):
+            if source == "CD" and not skip_log_check:
+                click.secho("\nChecking logs", fg="green")
+                for root, _, files in os.walk(path):
+                    for f in files:
+                        if f.lower().endswith(".log"):
+                            filepath = os.path.join(root, f)
+                            click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
+                            try:
+                                await check_log_cambia(filepath, path)
+                            except EditedLogError as e:
                                 raise click.Abort() from e
-                        except Exception as e:
-                            click.secho(f"Error checking log: {e}", fg="red")
+                            except CRCMismatchError as e:
+                                click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+                                if not click.confirm(
+                                    click.style(
+                                        "Log file CRC does not match audio files. "
+                                        "Do you want to continue upload anyway?",
+                                        fg="magenta",
+                                    ),
+                                    default=False,
+                                ):
+                                    raise click.Abort() from e
+                            except Exception as e:
+                                click.secho(f"Error checking log: {e}", fg="red")
 
-        spectral_ids = None
-        lossy_master: bool = False
-        if spectrals_after:
-            # We tell the uploader not to worry about it being lossy until later.
-            pass
-        else:
-            lossy_result, spectral_ids = await check_spectrals(
-                path, audio_info, lossy, spectrals, format=rls_data["format"]
+            spectral_ids = None
+            lossy_master: bool = False
+            if spectrals_after:
+                # We tell the uploader not to worry about it being lossy until later.
+                pass
+            else:
+                lossy_result, spectral_ids = await check_spectrals(
+                    path, audio_info, lossy, spectrals, format=rls_data["format"]
+                )
+                lossy_master = lossy_result if lossy_result is not None else False
+
+            if group_fetch is not None:
+                results, recent_uploads = await group_fetch.result()
+                group_id = await resolve_existing_group(gazelle_site, dupe_searchstrs, results, recent_uploads)
+
+            metadata, new_source_url = await get_metadata(path, tags, rls_data)
+            if new_source_url is not None:
+                source_url = new_source_url
+                click.secho(f"New Source URL: {source_url}", fg="yellow")
+            path, metadata, tags, audio_info = await edit_metadata(
+                path,
+                tags,
+                metadata,
+                source_url,
+                source,
+                rls_data,
+                recompress,
+                auto_rename,
+                spectral_ids,
+                skip_integrity_check,
+                essential_only,
+                skip_initial_review,
+                apply_ai_suggestions,
             )
-            lossy_master = lossy_result if lossy_result is not None else False
 
-        if group_id is None and dupe_check_task is not None:
-            results, recent_uploads = await dupe_check_task
-            group_id = await resolve_existing_group(
-                gazelle_site, dupe_check_searchstrs, results, recent_uploads
-            )
-        searchstrs = dupe_check_searchstrs
-
-        metadata, new_source_url = await get_metadata(path, tags, rls_data)
-        if new_source_url is not None:
-            source_url = new_source_url
-            click.secho(f"New Source URL: {source_url}", fg="yellow")
-        path, metadata, tags, audio_info = await edit_metadata(
-            path,
-            tags,
-            metadata,
-            source_url,
-            source,
-            rls_data,
-            recompress,
-            auto_rename,
-            spectral_ids,
-            skip_integrity_check,
-            essential_only,
-            skip_initial_review,
-            apply_ai_suggestions,
-        )
-
-        if not group_id:
-            group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
-            click.echo()
-        track_data = concat_track_data(tags, audio_info)
+            if not group_id:
+                group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
+                click.echo()
+            track_data = concat_track_data(tags, audio_info)
     except click.Abort:
-        if dupe_check_task is not None and not dupe_check_task.done():
-            dupe_check_task.cancel()
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
-        if dupe_check_task is not None and not dupe_check_task.done():
-            dupe_check_task.cancel()
         if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
             try:
                 import send2trash
