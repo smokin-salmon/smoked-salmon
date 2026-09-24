@@ -88,8 +88,11 @@ Publishing it runs `.github/workflows/docker-image.yml`, which:
   github-actions and moves the tag onto that commit;
 - builds and pushes the Docker images (`X.Y.Z` and `latest`).
 
-The push uses the `BUMP_VERSION_TOKEN_ACTION` secret, a token whose owner can bypass the `master`
-ruleset; if it expires, the version bump and the Docker build fail.
+The workflow checks out and pushes with the `BUMP_VERSION_TOKEN_ACTION` secret, a token whose
+owner can bypass the `master` ruleset. If that token expires or is regenerated (which changes its
+value), store the new value with `gh secret set BUMP_VERSION_TOKEN_ACTION`; otherwise the whole
+workflow fails at checkout: no version bump, no Docker image. A failed run can be re-run once the
+secret is fixed.
 
 `release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
 new version exists, so that bump commit is the release announcement, and the release description
