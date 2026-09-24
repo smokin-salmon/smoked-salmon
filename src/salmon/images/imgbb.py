@@ -14,6 +14,8 @@ HEADERS = {"referer": "https://imgbb.com/", "User-Agent": cfg.upload.user_agent}
 class ImageUploader(BaseImageUploader):
     """Image uploader for imgbb.com."""
 
+    proxy_service = "imgbb"
+
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to imgbb.com.
 

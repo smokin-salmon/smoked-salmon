@@ -11,6 +11,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
+from salmon.proxy import session_kwargs
 from salmon.sources.base import BaseScraper
 
 # Tidal V2 mediaTags, best quality first.
@@ -110,7 +111,7 @@ class TidalBase(BaseScraper):
             timeout = aiohttp.ClientTimeout(total=10)
             try:
                 async with (
-                    aiohttp.ClientSession(timeout=timeout) as session,
+                    aiohttp.ClientSession(timeout=timeout, **session_kwargs(cls.proxy_service)) as session,
                     session.post(
                         cls.token_url,
                         data={

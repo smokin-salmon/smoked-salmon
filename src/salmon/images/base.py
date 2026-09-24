@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 
 import aiohttp
 
+from salmon import proxy
+
 mimetypes.init()
 
 # aiohttp's default: 5 minutes for a whole upload, 30 s to connect. It counts the wait for a
@@ -20,6 +22,10 @@ class BaseImageUploader:
     through the session from `_http_session()`.
     """
 
+    # The host's key in [proxy.services], whose proxy `_http_session()` goes through. None for a
+    # host that sends nothing through it.
+    proxy_service: str | None = None
+
     def __init__(self) -> None:
         self._session: aiohttp.ClientSession | None = None
 
@@ -30,7 +36,7 @@ class BaseImageUploader:
         The connections are reused from one upload to the next instead of opened for each image.
         """
         async with aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(limit=limit), timeout=UPLOAD_TIMEOUT
+            connector=proxy.connector(self.proxy_service, limit=limit), timeout=UPLOAD_TIMEOUT
         ) as session:
             self._session = session
             try:
@@ -44,7 +50,9 @@ class BaseImageUploader:
         if self._session is not None:
             yield self._session
         else:
-            async with aiohttp.ClientSession(timeout=UPLOAD_TIMEOUT) as session:
+            async with aiohttp.ClientSession(
+                timeout=UPLOAD_TIMEOUT, **proxy.session_kwargs(self.proxy_service)
+            ) as session:
                 yield session
 
     async def upload_file(self, filename: str) -> tuple[str, str | None]:

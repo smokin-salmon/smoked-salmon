@@ -14,6 +14,8 @@ HEADERS: dict[str, str] = {"X-API-Key": cfg.image.ptscreens_key or ""}
 class ImageUploader(BaseImageUploader):
     """Image uploader for ptscreens.com."""
 
+    proxy_service = "ptscreens"
+
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to ptscreens.com.
 

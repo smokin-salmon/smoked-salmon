@@ -33,7 +33,8 @@ class BaseScraper:
     release_format: str = ""
     get_params: dict[str, Any] | None = None
     is_json_api: bool = True
-    proxy_service: str = ""  # Set in subclasses to enable proxy routing
+    # The store's key in [proxy.services], whose proxy its sessions go through. None for no proxy.
+    proxy_service: str | None = None
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:

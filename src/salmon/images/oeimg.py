@@ -14,6 +14,8 @@ HEADERS: dict[str, str] = {"X-API-Key": cfg.image.oeimg_key or ""}
 class ImageUploader(BaseImageUploader):
     """Image uploader for imgoe.download (oeimg)."""
 
+    proxy_service = "oeimg"
+
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to oeimg.
 

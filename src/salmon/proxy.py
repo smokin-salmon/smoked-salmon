@@ -30,14 +30,16 @@ def is_valid_url(url: str) -> bool:
         return False
 
 
-def proxy_url(service: str) -> str | None:
+def proxy_url(service: str | None) -> str | None:
     """Get the URL of the proxy for `service`, or None to connect directly.
 
     The service's own setting wins, and an empty one connects it directly; else [proxy] url applies.
 
     Args:
-        service: The service's key in [proxy.services].
+        service: The service's key in [proxy.services], or None for traffic no proxy setting covers.
     """
+    if service is None:
+        return None
     # Not at import time: salmon.config imports this module to validate the config cfg is built from.
     from salmon import cfg
 
@@ -47,18 +49,18 @@ def proxy_url(service: str) -> str | None:
     return url or None
 
 
-def connector(service: str, **kwargs: Any) -> aiohttp.TCPConnector:
+def connector(service: str | None, **kwargs: Any) -> aiohttp.TCPConnector:
     """Make a connector for `service`'s requests: through its proxy, else a direct TCPConnector.
 
     Args:
-        service: The service's key in [proxy.services].
+        service: The service's key in [proxy.services], or None.
         **kwargs: TCPConnector arguments, such as limit, kept with a proxy too.
     """
     url = proxy_url(service)
     return aiohttp.TCPConnector(**kwargs) if url is None else _proxy_connector(url, **kwargs)
 
 
-def session_kwargs(service: str) -> dict[str, Any]:
+def session_kwargs(service: str | None) -> dict[str, Any]:
     """Get the ClientSession arguments sending `service`'s requests through its proxy: none without one."""
     url = proxy_url(service)
     return {} if url is None else {"connector": _proxy_connector(url)}
