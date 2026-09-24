@@ -34,6 +34,14 @@ _TRACKER_CODES = ("red", "ops", "dic")
 # Each is valid solely as a cover host for those trackers.
 _TRACKER_ONLY_HOSTS = {"red": ("red", "ops")}
 
+# Hosts that may never be used as specs_uploader, mapped to the reason why. Shared with the
+# spectral retry prompt (salmon.images._handle_failed_spectrals) so both refuse the same hosts
+# for the same reason instead of drifting apart.
+SPECS_FORBIDDEN_HOSTS: dict[str, str] = {
+    "red": "RED's rules forbid spectrals on its own image host, and its images only display on RED and OPS",
+    "ra": "Ra's owner asks not to use it for spectrals",
+}
+
 
 class TrackerImageSettings(BaseStruct):
     """Per-tracker image settings, overriding [image] for uploads to that tracker."""
@@ -87,9 +95,9 @@ class ImageUploader(BaseStruct):
             raise ValueError("imgbb key not specified")
         if "ra" in uploader_selections and self.ra_key is None:
             raise ValueError("ra key not specified")
-        # Ra's owner asks not to use it for spectrals; choose another specs_uploader
-        if self.specs_uploader == "ra":
-            raise ValueError("Ra's owner asks not to use it for spectrals; choose another specs_uploader")
+        if self.specs_uploader in SPECS_FORBIDDEN_HOSTS and self.specs_uploader not in _TRACKER_ONLY_HOSTS:
+            # Hosts refused outright (not just restricted to certain trackers), such as ra.
+            raise ValueError(f"{SPECS_FORBIDDEN_HOSTS[self.specs_uploader]}; choose another specs_uploader")
         # Covers, description images and spectrals set in [image] are shared by every
         # tracker, and RED also forbids spectrals on its host.
         for setting, host in selections:
