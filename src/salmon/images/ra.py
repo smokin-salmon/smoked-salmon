@@ -14,6 +14,8 @@ UPLOAD_URL = "https://thesungod.xyz/api/image/upload"
 class ImageUploader(BaseImageUploader):
     """Image uploader for thesungod.xyz (Ra)."""
 
+    proxy_service = "ra"
+
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to thesungod.xyz.
 

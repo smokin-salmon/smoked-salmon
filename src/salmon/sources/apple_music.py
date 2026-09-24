@@ -5,6 +5,7 @@ from urllib.parse import parse_qs, urlparse
 import aiohttp
 
 from salmon.errors import ScrapeError
+from salmon.proxy import session_kwargs
 
 from .base import BaseScraper
 
@@ -13,6 +14,7 @@ APPLE_MUSIC_URL = "https://music.apple.com"
 
 
 class AppleMusicBase(BaseScraper):
+    proxy_service = "apple_music"
     url = AMP_API_URL
     site_url = APPLE_MUSIC_URL
     search_url = "https://itunes.apple.com/search"
@@ -53,7 +55,7 @@ class AppleMusicBase(BaseScraper):
 
         timeout = aiohttp.ClientTimeout(total=15)
         try:
-            async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with aiohttp.ClientSession(timeout=timeout, **session_kwargs(cls.proxy_service)) as session:
                 async with session.get(APPLE_MUSIC_URL, allow_redirects=True) as resp:
                     if resp.status != 200:
                         raise ScrapeError("Failed to load Apple Music homepage")

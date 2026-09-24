@@ -11,6 +11,7 @@ from salmon.trackers.base import BaseGazelleApi
 
 
 class FakeApi(BaseGazelleApi):
+    site_code = "RED"
     cookie = "fake-cookie"
 
     def __init__(self, base_url: str) -> None:

@@ -17,7 +17,7 @@ from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
 from torf import TorfError, Torrent
 
-from salmon import cfg
+from salmon import cfg, proxy
 from salmon.common import UploadFiles
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
@@ -258,11 +258,11 @@ class BaseGazelleApi:
         return {"session": _normalize_session_cookie(self.cookie)}
 
     def _new_session(self, connections: int) -> aiohttp.ClientSession:
-        """Make an HTTP session with a pool of at most `connections` connections."""
+        """Make an HTTP session with a pool of at most `connections` connections, through the tracker's proxy if any."""
         # DummyCookieJar keeps nothing between requests, so an api-key request
         # still goes out without a session cookie.
         return aiohttp.ClientSession(
-            connector=aiohttp.TCPConnector(limit=connections),
+            connector=proxy.connector(self.site_code.lower(), limit=connections),
             cookie_jar=aiohttp.DummyCookieJar(),
         )
 

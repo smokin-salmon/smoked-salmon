@@ -169,6 +169,19 @@ wheels = [
 ]
 
 [[package]]
+name = "aiohttp-socks"
+version = "0.12.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "python-socks" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/18/1d/a306e0111222180e60f17131a3f5d9bc694dd999a8115959a7dd76c2238e/aiohttp_socks-0.12.0.tar.gz", hash = "sha256:3caf9f5a4164611122d412bc11b2f9114fd29c85e1ba27bb38060d3c236bdc8d", size = 12061, upload-time = "2026-08-12T04:43:15.791Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/86/64/ca6289632020523ea1841f01363f83ada10eeb0f21dd931fc1118dd85668/aiohttp_socks-0.12.0-py3-none-any.whl", hash = "sha256:ba6f95ec775c761d87f8578ab48f137d0457c676da104984202bf75e747d5ee6", size = 10693, upload-time = "2026-08-12T04:43:14.524Z" },
+]
+
+[[package]]
 name = "aiolimiter"
 version = "1.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1856,6 +1869,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-socks"
+version = "3.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/ad/484ffb79532517b11a90af38647c38652224650b31a7ae1cedd5a418d8ab/python_socks-3.1.1.tar.gz", hash = "sha256:8d3e817cdbe858dc0bb8c8fdc8e79b6ce37acce110d33374c6f57a675cc9029e", size = 232781, upload-time = "2026-09-08T13:03:31.058Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3b/23/2c2cef1b4313c55d1713201acd4ee2043fb2cf22e546ca9d36bf4317faea/python_socks-3.1.1-py3-none-any.whl", hash = "sha256:327e0d6378702c73a7790bf732e9f01392f17b48c7348a50b5bd1f710c2df1be", size = 49566, upload-time = "2026-09-08T13:03:29.604Z" },
+]
+
+[[package]]
 name = "qbittorrent-api"
 version = "2026.5.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1917,6 +1939,7 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiohttp", extra = ["speedups"], marker = "sys_platform != 'win32'" },
     { name = "aiohttp-jinja2" },
+    { name = "aiohttp-socks" },
     { name = "aiolimiter" },
     { name = "anyio" },
     { name = "asyncclick" },
@@ -1957,6 +1980,7 @@ requires-dist = [
     { name = "aiohttp", marker = "sys_platform == 'win32'", specifier = ">=3.8.5" },
     { name = "aiohttp", extras = ["speedups"], marker = "sys_platform != 'win32'", specifier = ">=3.13.5" },
     { name = "aiohttp-jinja2", specifier = ">=1.5.1" },
+    { name = "aiohttp-socks", specifier = ">=0.12.0" },
     { name = "aiolimiter", specifier = ">=1.2.1" },
     { name = "anyio", specifier = ">=4.12.1" },
     { name = "asyncclick", specifier = ">=8.1.7.2" },

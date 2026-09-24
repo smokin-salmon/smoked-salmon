@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
+from salmon.proxy import session_kwargs
 
 HEADERS = {"User-Agent": choice(UAGENTS)}
 
@@ -32,6 +33,8 @@ class BaseScraper:
     release_format: str = ""
     get_params: dict[str, Any] | None = None
     is_json_api: bool = True
+    # The store's key in [proxy.services], whose proxy its sessions go through. None for no proxy.
+    proxy_service: str | None = None
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
@@ -89,7 +92,7 @@ class BaseScraper:
         timeout = aiohttp.ClientTimeout(total=10)
         try:
             async with (
-                aiohttp.ClientSession(timeout=timeout) as session,
+                aiohttp.ClientSession(timeout=timeout, **session_kwargs(self.proxy_service)) as session,
                 session.get(full_url, params=params, headers=headers) as resp,
             ):
                 return await self.handle_json_response(resp)
@@ -119,7 +122,7 @@ class BaseScraper:
         timeout = aiohttp.ClientTimeout(total=7)
         try:
             async with (
-                aiohttp.ClientSession(timeout=timeout) as session,
+                aiohttp.ClientSession(timeout=timeout, **session_kwargs(self.proxy_service)) as session,
                 session.get(
                     url,
                     params=params,

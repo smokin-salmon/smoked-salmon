@@ -15,6 +15,7 @@ from salmon import cfg
 from salmon.common import handle_scrape_errors
 from salmon.config import get_user_cfg_path
 from salmon.errors import ScrapeError
+from salmon.proxy import session_kwargs
 from salmon.sources.base import BaseScraper
 
 
@@ -65,6 +66,7 @@ class TokenStorage(msgspec.Struct):
 
 
 class BeatportBase(BaseScraper):
+    proxy_service = "beatport"
     api_domain = "https://api.beatport.com"
     url = api_domain + "/v4"
     oauth_redirect_uri = url + "/auth/o/post-message/"
@@ -94,7 +96,7 @@ class BeatportBase(BaseScraper):
         :return: new TokenStorage with valid credentials.
         """
         click.secho("Refreshing Beatport token", fg="yellow")
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session:
             headers = token_storage.get_auth_header()
             payload = {
                 "client_id": token_storage.client_id,
@@ -133,7 +135,7 @@ class BeatportBase(BaseScraper):
         if not username or not password:  # Not configured
             return None
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session:
             click.secho("Logging into Beatport for the first time", fg="green")
 
             # Step 1: get client id from the docs. if this ever fails, we want it to fail first

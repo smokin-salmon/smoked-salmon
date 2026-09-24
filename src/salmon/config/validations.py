@@ -3,6 +3,8 @@ from typing import Annotated, Literal
 
 import msgspec
 
+from salmon import proxy
+
 from .image_hosts import spectrals_refusal, tracker_only_hosts
 
 
@@ -302,6 +304,46 @@ class Upload(BaseStruct):
     ai_review: UploadAiReview = msgspec.field(default_factory=UploadAiReview)
 
 
+class ProxyServicesCfg(BaseStruct):
+    """A proxy per service, over [proxy] url: None keeps that one, an empty string connects directly."""
+
+    # Trackers
+    red: str | None = None
+    ops: str | None = None
+    dic: str | None = None
+    # Metadata sources
+    qobuz: str | None = None
+    tidal: str | None = None
+    bandcamp: str | None = None
+    deezer: str | None = None
+    beatport: str | None = None
+    discogs: str | None = None
+    apple_music: str | None = None
+    # Image hosts
+    catbox: str | None = None
+    imgbb: str | None = None
+    oeimg: str | None = None
+    ptscreens: str | None = None
+    ra: str | None = None
+
+
+class ProxyCfg(BaseStruct):
+    url: str | None = None
+    services: ProxyServicesCfg = msgspec.field(default_factory=ProxyServicesCfg)
+
+    def __post_init__(self):
+        settings = {"url": self.url} | {
+            f"services.{name}": getattr(self.services, name) for name in self.services.__struct_fields__
+        }
+        for key, url in settings.items():
+            if url and not proxy.is_valid_url(url):
+                # Without the URL itself: it may hold the proxy's password.
+                raise ValueError(
+                    f"proxy.{key} must be scheme://[user:password@]host:port, "
+                    f"with scheme one of {', '.join(proxy.SCHEMES)}"
+                )
+
+
 class Cfg(BaseStruct):
     "This class defines the schema that msgspec uses to parse the config"
 
@@ -311,6 +353,7 @@ class Cfg(BaseStruct):
     tracker: Tracker = msgspec.field(default_factory=Tracker)
     seedbox: list[Seedbox] = msgspec.field(default_factory=list)
     upload: Upload = msgspec.field(default_factory=Upload)
+    proxy: ProxyCfg = msgspec.field(default_factory=ProxyCfg)
 
     def __post_init__(self):
         # Uploads to RED's image host authenticate with the RED API key, whichever tracker the cover is for.

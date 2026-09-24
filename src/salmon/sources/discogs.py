@@ -9,6 +9,7 @@ from salmon.sources.base import BaseScraper
 
 
 class DiscogsBase(BaseScraper):
+    proxy_service = "discogs"
     url = "https://api.discogs.com"
     site_url = "https://www.discogs.com"
     regex = re.compile(r"^https?://(?:www\.)?discogs\.com/(?:.+?/)?release/(\d+)")

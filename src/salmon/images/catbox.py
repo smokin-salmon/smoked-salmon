@@ -15,6 +15,8 @@ HEADERS = {
 
 
 class ImageUploader(BaseImageUploader):
+    proxy_service = "catbox"
+
     async def upload_file(self, filename: str) -> tuple[str, None]:
         """Upload image file to catbox.moe.
 
