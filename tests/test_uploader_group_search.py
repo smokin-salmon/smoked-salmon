@@ -1,9 +1,10 @@
-"""The search for an existing group runs in the background while the spectrals are checked.
+"""The search for an existing group runs in the background during the checks before the dupe prompt.
 
 upload() runs against a local fake tracker through a real BaseGazelleApi, with the steps that do not
-talk to the tracker stubbed out. The spectral check stub is where the user would be looking at
-spectrals and answering prompts, so nothing may print meanwhile, and the search must be over or
-cancelled whichever way upload() ends.
+talk to the tracker stubbed out. The MQA check stub stands for the checks the search overlaps (MQA,
+upconvert, log), where the user may be answering prompts, so nothing may print meanwhile, and the
+search must be over or cancelled whichever way upload() ends. The dupe prompt comes after those
+checks and before the spectral step, as on master.
 """
 
 import asyncio
@@ -141,8 +142,8 @@ class Flow:
         # How the background search ended: "finished", "failed" or "cancelled".
         self.search = "not started"
         self.search_task: asyncio.Task | None = None
-        # The spectral step: by default the user takes long enough for the search to be over.
-        self.spectral_step = self.wait_for_the_search_to_end
+        # The checks the search overlaps: by default they take long enough for the search to be over.
+        self.checks = self.wait_for_the_search_to_end
         self.api: FakeApi | None = None
         self.returned_at = 0.0
 
@@ -188,10 +189,13 @@ class Flow:
 
             return fake
 
+        async def checks(*_args, **_kwargs) -> None:
+            flow.echo("checks start")
+            await flow.checks()
+            flow.echo("checks end")
+
         async def check_spectrals(*_args, **_kwargs):
-            flow.echo("spectral step starts")
-            await flow.spectral_step()
-            flow.echo("spectral step ends")
+            flow.echo("spectral step")
             return False, None
 
         async def upload_and_report(*_args, **_kwargs):
@@ -215,7 +219,7 @@ class Flow:
             "standardize_tags": returning(),
             "gather_tags": returning({}),
             "construct_rls_data": returning(rls_data),
-            "mqa_test": returning_async(),
+            "mqa_test": checks,
             "check_spectrals": check_spectrals,
             "get_metadata": returning_async((metadata, None)),
             "edit_metadata": returning_async((path, metadata, {}, {})),
@@ -253,26 +257,27 @@ def _fast_limiter(monkeypatch: pytest.MonkeyPatch) -> CountingLimiter:
     return limiter
 
 
-def _during_the_spectral_step(out: str) -> str:
-    return out.split("<<spectral step starts>>\n", 1)[1].split("<<spectral step ends>>", 1)[0]
+def _during_the_checks(out: str) -> str:
+    return out.split("<<checks start>>\n", 1)[1].split("<<checks end>>", 1)[0]
 
 
-def _after_the_spectral_step(out: str) -> str:
-    return out.split("<<spectral step ends>>", 1)[1]
+def _before_the_spectral_step(out: str) -> str:
+    return out.split("<<checks end>>", 1)[1].split("<<spectral step>>", 1)[0]
 
 
-def test_the_search_runs_during_the_spectral_step_and_sends_what_master_sends(monkeypatch, capsys) -> None:
+def test_the_search_runs_during_the_checks_and_sends_what_master_sends(monkeypatch, capsys) -> None:
     tracker = FakeTracker()
     flow = Flow(monkeypatch, tracker)
 
     anyio.run(flow.run)
 
-    # The spectral step only ended once the search was over: the two overlapped.
-    assert flow.events[:4] == ["spectral step starts", "spectral step ends", "group prompt", "upload"]
+    # The checks only ended once the search was over: the two overlapped. The dupe prompt then comes
+    # before the spectral step, as on master.
+    assert flow.events == ["checks start", "checks end", "group prompt", "spectral step", "upload"]
     assert Counter(tracker.hits) == Counter(REQUESTS_WHEN_A_GROUP_IS_FOUND)
     out = capsys.readouterr().out
-    assert _during_the_spectral_step(out) == ""
-    assert "Results matching this release were found on RED" in _after_the_spectral_step(out)
+    assert _during_the_checks(out) == ""
+    assert "Results matching this release were found on RED" in _before_the_spectral_step(out)
 
 
 def test_the_site_log_is_read_as_before_when_the_search_finds_nothing(monkeypatch, capsys) -> None:
@@ -282,10 +287,11 @@ def test_the_site_log_is_read_as_before_when_the_search_finds_nothing(monkeypatc
     anyio.run(flow.run)
 
     assert Counter(tracker.hits) == Counter(REQUESTS_WHEN_A_GROUP_IS_FOUND + LOG_PAGES)
-    assert _during_the_spectral_step(capsys.readouterr().out) == ""
+    assert flow.events == ["checks start", "checks end", "group prompt", "spectral step", "upload"]
+    assert _during_the_checks(capsys.readouterr().out) == ""
 
 
-def test_the_skipped_site_log_is_reported_after_the_spectral_step(monkeypatch, capsys) -> None:
+def test_the_skipped_site_log_is_reported_before_the_spectral_step(monkeypatch, capsys) -> None:
     tracker = FakeTracker(browse_results=[])
     flow = Flow(monkeypatch, tracker)
 
@@ -293,8 +299,8 @@ def test_the_skipped_site_log_is_reported_after_the_spectral_step(monkeypatch, c
 
     assert Counter(tracker.hits) == Counter(REQUESTS_WHEN_A_GROUP_IS_FOUND)
     out = capsys.readouterr().out
-    assert _during_the_spectral_step(out) == ""
-    assert "needs a session cookie" in _after_the_spectral_step(out)
+    assert _during_the_checks(out) == ""
+    assert "needs a session cookie" in _before_the_spectral_step(out)
 
 
 def test_requests_sent_meanwhile_share_the_rate_limiter_and_the_pool(monkeypatch, _fast_limiter) -> None:
@@ -302,7 +308,7 @@ def test_requests_sent_meanwhile_share_the_rate_limiter_and_the_pool(monkeypatch
     flow = Flow(monkeypatch, tracker)
 
     async def tracker_requests_meanwhile() -> None:
-        # Anything else that talks to the tracker during the spectral step: on the upload's own
+        # Anything else that talks to the tracker during the checks: on the upload's own
         # client, and on another one, as the code builds a client per tracker where it needs one.
         assert flow.api is not None
         other = FakeApi(flow.api.base_url, "good", instance="other")
@@ -316,7 +322,7 @@ def test_requests_sent_meanwhile_share_the_rate_limiter_and_the_pool(monkeypatch
             await other.close()
         await flow.wait_for_the_search_to_end()
 
-    flow.spectral_step = tracker_requests_meanwhile
+    flow.checks = tracker_requests_meanwhile
     started = time.monotonic()
 
     anyio.run(flow.run)
@@ -332,20 +338,20 @@ def test_requests_sent_meanwhile_share_the_rate_limiter_and_the_pool(monkeypatch
     assert len(tracker.peers["upload"]) <= 2
 
 
-def test_a_failed_search_is_reported_after_the_spectral_step_as_before(monkeypatch, capsys) -> None:
+def test_a_failed_search_is_reported_before_the_spectral_step_as_before(monkeypatch, capsys) -> None:
     tracker = FakeTracker(browse_status=400)
     flow = Flow(monkeypatch, tracker)
 
     with pytest.raises(RequestFailedError, match="bad search"):
         anyio.run(flow.run)
 
-    assert flow.events == ["spectral step starts", "spectral step ends"]
+    assert flow.events == ["checks start", "checks end"]
     out = capsys.readouterr().out
-    assert _during_the_spectral_step(out) == ""
-    assert "Request to RED failed (400)" in _after_the_spectral_step(out)
+    assert _during_the_checks(out) == ""
+    assert "Request to RED failed (400)" in _before_the_spectral_step(out)
 
 
-def test_an_expired_cookie_is_reported_after_the_spectral_step_as_before(monkeypatch, capsys) -> None:
+def test_an_expired_cookie_is_reported_before_the_spectral_step_as_before(monkeypatch, capsys) -> None:
     tracker = FakeTracker(browse_results=[])
     flow = Flow(monkeypatch, tracker)
 
@@ -355,8 +361,9 @@ def test_an_expired_cookie_is_reported_after_the_spectral_step_as_before(monkeyp
     assert tracker.hits.count("log 1") == 1
     assert "login" not in tracker.hits
     out = capsys.readouterr().out
-    assert _during_the_spectral_step(out) == ""
-    assert "sent this request to its login page" in _after_the_spectral_step(out)
+    assert flow.events == ["checks start", "checks end"]
+    assert _during_the_checks(out) == ""
+    assert "sent this request to its login page" in _before_the_spectral_step(out)
 
 
 async def _leaves_nothing_behind(flow: Flow, run) -> None:
@@ -373,7 +380,7 @@ async def _leaves_nothing_behind(flow: Flow, run) -> None:
 
 
 @pytest.mark.parametrize("exc", [salmon.uploader.click.Abort(), UploadError("Spectral IDs out of range.")])
-def test_leaving_during_the_spectral_step_cancels_the_search(monkeypatch, capsys, exc: BaseException) -> None:
+def test_leaving_during_the_checks_cancels_the_search(monkeypatch, capsys, exc: BaseException) -> None:
     tracker = FakeTracker(browse_delay=30)
     flow = Flow(monkeypatch, tracker)
 
@@ -381,7 +388,7 @@ def test_leaving_during_the_spectral_step_cancels_the_search(monkeypatch, capsys
         await flow.wait_for_the_search_to_arrive()
         raise exc
 
-    flow.spectral_step = leave
+    flow.checks = leave
     started = time.monotonic()
 
     if isinstance(exc, UploadError):
@@ -396,10 +403,10 @@ def test_leaving_during_the_spectral_step_cancels_the_search(monkeypatch, capsys
     # upload() did not wait for the slow search: it cancelled it.
     assert flow.returned_at - started < 5
     assert flow.search == "cancelled"
-    assert "group prompt" not in flow.events
+    assert flow.events == ["checks start"]
 
 
-def test_deleting_the_folder_during_the_spectral_step_cancels_the_search(monkeypatch, tmp_path: Path) -> None:
+def test_deleting_the_folder_during_the_checks_cancels_the_search(monkeypatch, tmp_path: Path) -> None:
     release = tmp_path / "release"
     release.mkdir()
     tracker = FakeTracker(browse_delay=30)
@@ -410,7 +417,7 @@ def test_deleting_the_folder_during_the_spectral_step_cancels_the_search(monkeyp
         await flow.wait_for_the_search_to_arrive()
         raise AbortAndDeleteFolder
 
-    flow.spectral_step = delete
+    flow.checks = delete
 
     anyio.run(_leaves_nothing_behind, flow, lambda: flow.run(path=str(release)))
 
@@ -426,7 +433,7 @@ def test_aborting_after_the_search_failed_leaves_no_unretrieved_error(monkeypatc
         await flow.wait_for_the_search_to_end()
         raise salmon.uploader.click.Abort
 
-    flow.spectral_step = abort_once_it_failed
+    flow.checks = abort_once_it_failed
 
     anyio.run(_leaves_nothing_behind, flow, flow.run)
 

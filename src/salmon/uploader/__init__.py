@@ -536,7 +536,7 @@ async def upload(
 
     try:
         # The search for an existing group only reads from the tracker, so it runs in the background during
-        # the checks below, and what it found is shown once the spectrals are checked.
+        # the MQA, upconvert and log checks below, and what it found is shown once they are done.
         async with fetch_existing_group_candidates_in_background(gazelle_site, dupe_searchstrs) as group_fetch:
             if not skip_mqa:
                 click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
@@ -580,6 +580,10 @@ async def upload(
                             except Exception as e:
                                 click.secho(f"Error checking log: {e}", fg="red")
 
+            if group_fetch is not None:
+                results, recent_uploads = await group_fetch.result()
+                group_id = await resolve_existing_group(gazelle_site, dupe_searchstrs, results, recent_uploads)
+
             spectral_ids = None
             lossy_master: bool = False
             if spectrals_after:
@@ -590,10 +594,6 @@ async def upload(
                     path, audio_info, lossy, spectrals, format=rls_data["format"]
                 )
                 lossy_master = lossy_result if lossy_result is not None else False
-
-            if group_fetch is not None:
-                results, recent_uploads = await group_fetch.result()
-                group_id = await resolve_existing_group(gazelle_site, dupe_searchstrs, results, recent_uploads)
 
             metadata, new_source_url = await get_metadata(path, tags, rls_data)
             if new_source_url is not None:
