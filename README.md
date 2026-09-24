@@ -136,7 +136,7 @@ A Docker image is generated per release.
 
    > The examples below use the `latest` tag. Replace with `alpha` to use the latest development version.
 
-2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server.
+2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/src/salmon/data/config.default.toml) to a location on your host server.
    Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
 3. Configure rclone if needed. The Docker Compose configuration expects an rclone configuration file. You can get the path to your rclone config file by running `rclone config file` on your host system.
