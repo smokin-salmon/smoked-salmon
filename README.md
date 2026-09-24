@@ -11,7 +11,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 - **Upconvert Detection** – Checks 24-bit flac files for potential upconverts.
 - **MQA Detection** – Checks files for common MQA markers.
 - **Duplicate Upload Detection** – Prevents redundant uploads.  
-- **Spectral Analysis** – Generates, compresses, and verifies spectrals, exposed via a web interface.  
+- **Spectral Analysis** – Generates, compresses, and verifies spectrals, shown on a web page during upload.  
 - **Spectral Upload** – Can generate spectrals for an existing upload (based on local files), and update the release description.  
 - **Lossy Master Report Generation** – Supports lossy master reports during upload.
 - **Metadata Retrieval** – Fetches metadata from:
@@ -121,8 +121,8 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 
 ### 🐳 Docker Installation
 
-A Docker image is generated per release.  
-**Disclaimer**: I am not actively using the docker image myself, feedback is appreciated regarding that guide.
+A Docker image is generated per release (`:latest`) and on every push to `master` (`:alpha`).  
+Feedback on this guide is welcome.
 
 1. Pull the image:
 
@@ -136,7 +136,7 @@ A Docker image is generated per release.
 
    > The examples below use the `latest` tag. Replace with `alpha` to use the latest development version.
 
-2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/data/config.default.toml) to a location on your host server.
+2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/src/salmon/data/config.default.toml) to a location on your host server.
    Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
 3. Configure rclone if needed. The Docker Compose configuration expects an rclone configuration file. You can get the path to your rclone config file by running `rclone config file` on your host system.
@@ -195,7 +195,7 @@ salmon up "/app/.music/path/to/album" -s WEB
 ### ⚠️ Notes
 
 - **Permission Issues**  
-  The container currently **able to handle permissions** properly.  
+  The container does not manage file ownership for you.  
   If your torrent client is not run as root, or if new uploads are inaccessible, you may need to:
   - Manually adjust file/folder ownership (`chown`) or permissions (`chmod`)
   - Ensure the container and torrent client users are compatible
@@ -207,8 +207,11 @@ salmon up "/app/.music/path/to/album" -s WEB
       - PGID=100
      ```
 
+- **Hardlinks**  
+  With `hardlinks = true` (the default), salmon hardlinks the release into `download_directory` instead of copying it. A hardlink cannot cross mounts, even two bind mounts of the same disk, so point `download_directory` at a folder inside the music mount (e.g. `/app/.music/seeding`). Otherwise salmon falls back to a full copy.
+
 - **.torrent Directory Mapping**  
-  Depending on how you've set the `DOTTORRENTS_DIR` in your `config.toml`, you may need to map an additional directory for `.torrent` file output. Add:
+  Depending on how you've set `dottorrents_dir` in your `config.toml`, you may need to map an additional directory for `.torrent` file output. Add:
 
   ```bash
   -v /your/host/torrent/output:/app/.torrents
@@ -296,13 +299,13 @@ same media and encoding; if there are several, salmon asks which one (with `--ye
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
 ### 🌐 Spectral Web Interface
-Spectrals are viewable via a built-in web server. By default, access it at: http://localhost:55110/spectrals
+When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. There is no separate `web` command since 0.11.0. If salmon runs on another machine or in Docker, set `display_host` under `[upload.web_interface]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead.
 
 ## 🔄 Updating
 
 For **normal installs**:
 ```bash
-uv tool update salmon
+uv tool upgrade salmon
 ```
 
 For **manual installs**:
