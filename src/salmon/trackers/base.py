@@ -246,6 +246,9 @@ class BaseGazelleApi:
         self.authkey: str | None = None
         self.passkey: str | None = None
         self._authenticated = False
+        # The authentication in progress, shared by the requests waiting for it, and how many they are.
+        self._authentication: asyncio.Task[None] | None = None
+        self._authentication_waiters = 0
         self._session: aiohttp.ClientSession | None = None
         # Held while a request that is not idempotent is in flight, on its own connection.
         self._non_idempotent_lock = asyncio.Lock()
@@ -334,24 +337,29 @@ class BaseGazelleApi:
         self._authenticated = True
 
     async def ensure_authenticated(self) -> None:
-        """Ensure we are authenticated before making requests."""
-        if not self._authenticated:
-            await self.authenticate()
+        """Ensure we are authenticated before making requests.
 
-    # The retry policy. A failed request is sent again only when that cannot do more on the
-    # tracker than sending it once: the request is idempotent, or the tracker cannot have
-    # acted on it (no connection was made, or it answered 429). A state-changing request
-    # that fails once it may have reached the tracker (a timeout, a dropped connection, a
-    # 5xx, or a failure on a redirect after it) raises UnknownOutcomeError instead, as
-    # sending it again could upload or report twice (#446).
-    @retry(
-        retry=retry_if_exception_type(RetryableError),
-        stop=stop_after_attempt(5),
-        # Backing off beats hammering at a fixed 1s, and the random term keeps a
-        # batch that fails together from retrying in one synchronized salvo.
-        wait=wait_exponential(multiplier=1, min=1, max=30) + wait_random(0, 2),
-        reraise=True,
-    )
+        Requests that go out together on a fresh client share one authentication attempt,
+        so one index call, instead of each sending its own (#468). If it fails, each of them
+        gets its error; none tries again for itself. A call made once it is over tries again.
+        The attempt runs on its own, so cancelling one request leaves it to the others, and
+        is cancelled only when no request waits for it any more.
+        """
+        if self._authenticated:
+            return
+        if self._authentication is None or self._authentication.done():
+            self._authentication = asyncio.create_task(self.authenticate())
+        attempt = self._authentication
+        self._authentication_waiters += 1
+        try:
+            await asyncio.shield(attempt)
+        finally:
+            self._authentication_waiters -= 1
+            if not self._authentication_waiters and not attempt.done():
+                attempt.cancel()
+                # A request arriving meanwhile must not wait on an attempt being cancelled.
+                self._authentication = None
+
     async def _request(
         self,
         method: str,
@@ -394,9 +402,40 @@ class BaseGazelleApi:
             UnknownOutcomeError: If a request that is not idempotent fails after it may
                 have reached the tracker.
         """
+        # Before the retries, not within them: the index call has retries of its own, and
+        # authenticating again on each retry would send up to 25 index calls per request.
         if needs_authkey and not (params and params.get("action") == "index"):
             await self.ensure_authenticated()
+        return await self._send(
+            method, url, params, data, timeout_secs, prefer_api_key, idempotent, expected_error_statuses
+        )
 
+    # The retry policy. A failed request is sent again only when that cannot do more on the
+    # tracker than sending it once: the request is idempotent, or the tracker cannot have
+    # acted on it (no connection was made, or it answered 429). A state-changing request
+    # that fails once it may have reached the tracker (a timeout, a dropped connection, a
+    # 5xx, or a failure on a redirect after it) raises UnknownOutcomeError instead, as
+    # sending it again could upload or report twice (#446).
+    @retry(
+        retry=retry_if_exception_type(RetryableError),
+        stop=stop_after_attempt(5),
+        # Backing off beats hammering at a fixed 1s, and the random term keeps a
+        # batch that fails together from retrying in one synchronized salvo.
+        wait=wait_exponential(multiplier=1, min=1, max=30) + wait_random(0, 2),
+        reraise=True,
+    )
+    async def _send(
+        self,
+        method: str,
+        url: str,
+        params: dict[str, Any] | None,
+        data: Any,
+        timeout_secs: int,
+        prefer_api_key: bool,
+        idempotent: bool | None,
+        expected_error_statuses: Collection[int],
+    ) -> HttpResponse:
+        """Send a request with the retry policy. _request authenticates first; see it for the arguments."""
         if idempotent is None:
             idempotent = method != "POST"
         # Once the tracker redirects, it has acted on the request, whatever happens next.

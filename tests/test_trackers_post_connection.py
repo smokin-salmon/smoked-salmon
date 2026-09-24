@@ -124,7 +124,7 @@ class FakeTracker:
 @pytest.fixture(autouse=True)
 def no_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
     """Retry without waiting, so the tests count attempts, not seconds."""
-    monkeypatch.setattr(BaseGazelleApi._request.retry, "wait", wait_none())  # type: ignore[attr-defined]
+    monkeypatch.setattr(BaseGazelleApi._send.retry, "wait", wait_none())  # type: ignore[attr-defined]
 
 
 def _run(body: Callable[[FakeTracker, FakeApi], Awaitable[None]], port: int = 0) -> None:
@@ -280,7 +280,7 @@ def test_a_post_that_could_not_connect_is_sent_again_and_goes_through() -> None:
         resp = await _post(api, "upload")
         assert resp.status == 200
         assert tracker.requests == ["POST upload"]
-        assert BaseGazelleApi._request.statistics["attempt_number"] == 2  # type: ignore[attr-defined]
+        assert BaseGazelleApi._send.statistics["attempt_number"] == 2  # type: ignore[attr-defined]
         assert api.limiter.acquired == 2
         # A new connection of its own for each attempt, each closed once it was done.
         assert len(api.own_sessions) == 2
