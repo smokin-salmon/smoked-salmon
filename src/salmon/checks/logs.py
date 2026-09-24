@@ -1,4 +1,5 @@
 import os
+import re
 import zlib
 from collections.abc import Generator, Iterable
 from typing import Any
@@ -11,6 +12,7 @@ import cambia
 
 from salmon.common.files import process_files
 from salmon.errors import CRCMismatchError, EditedLogError
+from salmon.tagger.tagfile import TagFile
 
 
 def _get_audio_duration_sectors(filepath: str) -> int:
@@ -176,6 +178,49 @@ def _find_audio_files(path: str) -> list[str]:
     return audio_files
 
 
+def _disc_number(path: str) -> int | None:
+    """Read an audio file's disc number tag.
+
+    Args:
+        path: Path to the audio file.
+
+    Returns:
+        The disc number, or None if the file has none or cannot be read.
+    """
+    try:
+        value = TagFile(path).discnumber
+    except Exception:
+        return None
+    number = str(value).split("/")[0].strip() if value is not None else ""
+    return int(number) if number.isdigit() else None
+
+
+def _audio_files_of_disc(audio_files: list[str], logpath: str) -> list[str]:
+    """Keep the tracks of the log's disc when the files hold several discs.
+
+    A multi-disc release kept in one folder (split_multi_disc_into_folders = false) has every
+    disc's tracks next to every disc's log, each log named for its disc: rip.2.log. Checking
+    that log against every track would rebuild a range rip from all discs and decode each
+    disc once per log, so only the tracks tagged with the log's disc are kept.
+
+    Args:
+        audio_files: The audio files the log would be checked against.
+        logpath: Path to the log file.
+
+    Returns:
+        The tracks of the log's disc, or ``audio_files`` unchanged when the log is not named
+        for a disc, a file has no disc number, or the files are all of one disc.
+    """
+    named_for_disc = re.search(r"\.(\d+)\.log$", os.path.basename(logpath), flags=re.IGNORECASE)
+    if not named_for_disc:
+        return audio_files
+    disc_numbers = {path: _disc_number(path) for path in audio_files}
+    if None in disc_numbers.values() or len(set(disc_numbers.values())) < 2:
+        return audio_files
+    disc = int(named_for_disc[1])
+    return [path for path, number in disc_numbers.items() if number == disc] or audio_files
+
+
 async def check_log_cambia(logpath: str, basepath: str) -> None:
     """Check a log file using Cambia.
 
@@ -220,6 +265,7 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
     files_to_check = _find_audio_files(os.path.dirname(logpath)) or _find_audio_files(basepath)
     if not files_to_check:
         raise ValueError("No audio files found!")
+    files_to_check = await anyio.to_thread.run_sync(_audio_files_of_disc, files_to_check, logpath)
 
     click.secho("\nVerifying audio file CRC values...", fg="cyan", bold=True)
     if parsed_logs[0].tracks[0].is_range:
