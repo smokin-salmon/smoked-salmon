@@ -79,10 +79,21 @@ every directory it names must exist.
 
 ## Releases
 
-`release_notification.py` fetches `src/salmon/data/version.toml` **from `master` on GitHub** to
-tell every user a new version exists. Changing `current` there on `master` is therefore the
-release announcement itself. Only bump it in a dedicated release commit, together with
-`version` in `pyproject.toml` and a new `[[changelog]]` entry.
+A release is cut by publishing a GitHub release (tag `X.Y.Z`), never by bumping versions by hand.
+Publishing it runs `.github/workflows/docker-image.yml`, which:
+
+- sets `current` in `src/salmon/data/version.toml` and adds a `[[changelog]]` entry whose notes
+  are the release's description;
+- sets `version` in `pyproject.toml`, refreshes `uv.lock`, commits all three to `master` as
+  github-actions and moves the tag onto that commit;
+- builds and pushes the Docker images (`X.Y.Z` and `latest`).
+
+The push uses the `BUMP_VERSION_TOKEN_ACTION` secret, a token whose owner can bypass the `master`
+ruleset; if it expires, the version bump and the Docker build fail.
+
+`release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
+new version exists, so that bump commit is the release announcement, and the release description
+is the changelog users read. A PR must never change `current` or add a `[[changelog]]` entry.
 
 ## Scratch work
 
