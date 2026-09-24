@@ -28,26 +28,44 @@ dottorrents_dir = '.torrents'
 # ===============================
 # IMAGE UPLOAD SETTINGS
 # ===============================
-# Image hosters: ptpimg, ptscreens, oeimg, imgbb, catbox, imgbox
+# Image hosters: ptscreens, oeimg, imgbb, catbox, imgbox, ra, red
+# ra (thesungod.xyz) is invite-only but images it hosts are public; it cannot be used as specs_uploader.
+# red is RED's own image host: see [image.red] below.
 [image]
-image_uploader = "ptpimg"
-cover_uploader = "ptpimg"
-specs_uploader = "ptpimg"
+image_uploader = "catbox"
+cover_uploader = "catbox"
+specs_uploader = "catbox"
 
-# ptpimg API key (log into ptpimg, developpers tools, go to the Elements tab, and search for 'api_key')
-ptpimg_key = 'api_key'
+# Default selection for "What spectral IDs would you like to upload?" prompt.
+# "*" = all, "+" = randomized selection, "0" = none, or track IDs separated by spaces, such as "3" or "1 5 9"
+# (IDs a release does not have are left out). Leave unset to use context-based default.
+# default_spectral_ids = "3"
+
+# catbox needs no API key.
 # ptscreens API key (log into ptscreens, settings, API)
 ptscreens_key = 'api_key'
 # oeimg API key (log into imgoe, settings, API)
 oeimg_key = 'api_key'
 # imgbb API key (log into imgbb, about, API)
 imgbb_key = 'api_key'
+# ra API key (log into ra, settings, API keys)
+ra_key = 'api_key'
 
 # Set to true to remove downloaded cover images that are created in source folder, when one does not exist
 # remove_auto_downloaded_cover_image = false
 
 # Set to true to automatically process cover image sizes, including embedded covers in audio files
 # auto_compress_cover = false
+
+# Per-tracker cover host (optional). Unset trackers use cover_uploader above.
+# red (RED's own image host) only displays on RED and OPS, so it is only allowed here,
+# under [image.red] or [image.ops]. It always authenticates with tracker.red.api_key.
+# [image.red]
+# cover_uploader = "red"
+# [image.ops]
+# cover_uploader = "red"
+# [image.dic]
+# cover_uploader = "imgbox"
 
 # ===============================
 # METADATA SERVICES
@@ -56,9 +74,11 @@ imgbb_key = 'api_key'
 # Discogs API Token (from https://www.discogs.com/settings/developers)
 discogs_token = 'discogs-token'
 
-# remove if not using tidal (see wiki to see how to get your tidal token)
-[metadata.tidal]
-token = 'your-token'
+# Tidal (optional). Register a client at https://developer.tidal.com and copy its
+# client ID and client secret here. The token used by Tidal's old API no longer works.
+# [metadata.tidal]
+# client_id = 'your-client-id'
+# client_secret = 'your-client-secret'
 # regions = ["de", "nz", "us", "gb"]
 
 # Apple Music storefronts for searching and fetching metadata.
@@ -68,13 +88,17 @@ token = 'your-token'
 # [metadata.apple_music]
 # storefronts = ["us:en-US", "jp:ja", "cn:zh-Hans-CN"]
 
-# remove if not using qobuz (see wiki to see how to get your tidal token)
+# remove if not using qobuz
 [metadata.qobuz]
 app_id = 'app-id'
 user_auth_token = 'user_auth_token'
 # if you are using salmon from a non-english country, set this to true to avoid retrieving non-english genres
 # no_genres_from_qobuz = False
 
+# remove if not using beatport
+[metadata.beatport]
+username = 'username'
+password = 'password'
 
 # ===============================
 # TRACKER SETTINGS
@@ -214,3 +238,15 @@ session = 'get-from-site-cookie'
 # compress_spectrals = true
 # lma_comment_in_t_desc = false
 # use_upc_as_catno = true
+
+# [upload.ai_review]
+# # Optional AI-assisted metadata verification after Salmon combines sources
+# enabled = false
+# api_key = "sk-..."
+# base_url = "https://api.openai.com/v1"
+# model = "gpt-5.4-2026-03-05"
+# reasoning_effort = "medium"
+# use_web_search = true
+# # Increase this for slower reviews, especially with high/xhigh reasoning and web search.
+# timeout_seconds = 45
+# background = false

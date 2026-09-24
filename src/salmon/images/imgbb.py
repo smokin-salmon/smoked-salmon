@@ -36,11 +36,13 @@ class ImageUploader(BaseImageUploader):
         url = "https://api.imgbb.com/1/upload"
         try:
             async with (
-                aiohttp.ClientSession() as session,
+                self._http_session() as session,
                 session.post(url, headers=HEADERS, data=data) as resp,
             ):
-                resp.raise_for_status()
-                resp_data = await resp.json(loads=msgspec.json.decode)
+                body = await resp.text()
+                if resp.status >= 400:
+                    raise ImageUploadFailed(f"imgbb returned {resp.status}: {body[:200]}")
+                resp_data = msgspec.json.decode(body)
                 return resp_data["data"]["url"], None
         except (msgspec.DecodeError, KeyError, TypeError) as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e

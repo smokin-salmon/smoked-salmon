@@ -169,7 +169,7 @@ def _extract_remixers_from_title(title):
 
     # Match patterns like (Remixer Remix), (Remixer Mix), (Remixer Radio Mix), etc.
     # Also matches compound mix types like "Vocal Mix", "Club Mix", etc.
-    match = re.search(r"\((.*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*(?:Remix|Mix|Edit)\)", title, re.IGNORECASE)
+    match = re.search(r"\(([^()]*?)\s+(?:Club|Radio|Vocal|Dub|Extended)?\s*(?:Remix|Mix|Edit)\)", title, re.IGNORECASE)
     if match:
         remixers = match.group(1).strip()
         # Split on common delimiters and strip each name
@@ -179,9 +179,24 @@ def _extract_remixers_from_title(title):
     return []
 
 
+def _natural_track_key(value):
+    """Sort keys numerically while still handling mixed values like A1/B2."""
+    return tuple(
+        (0, int(part)) if part.isdigit() else (1, part.lower()) for part in re.split(r"(\d+)", str(value)) if part
+    )
+
+
+def _sorted_naturally(items):
+    return sorted(items, key=lambda item: _natural_track_key(item[0]))
+
+
 def combine_tracks(base, meta, update_track_numbers):
     """Combine the metadata for the tracks of two different sources."""
-    btracks = iter(chain.from_iterable([list(d.values()) for d in base.values()]))
+    # Track dictionaries reflect discovery order, so sort discs and tracks naturally before pairing.
+    btracks_sorted = [
+        [track for _, track in _sorted_naturally(disc.items())] for _, disc in _sorted_naturally(base.items())
+    ]
+    btracks = iter(chain.from_iterable(btracks_sorted))
 
     # If the source already provides remixer credits, skip title-based inference
     # to avoid adding spurious artists from mix names like "Attitude Dub Mix".
@@ -189,8 +204,8 @@ def combine_tracks(base, meta, update_track_numbers):
         role == "remixer" for tracks in meta.values() for track in tracks.values() for _, role in track["artists"]
     )
 
-    for disc, tracks in meta.items():
-        for num, track in tracks.items():
+    for disc, tracks in _sorted_naturally(meta.items()):
+        for num, track in _sorted_naturally(tracks.items()):
             try:
                 btrack = next(btracks)
             except StopIteration:

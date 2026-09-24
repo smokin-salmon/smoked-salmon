@@ -3,7 +3,8 @@ import contextlib
 import platform
 import sys
 import traceback
-from typing import Any
+from collections.abc import Awaitable
+from typing import TypeVar
 
 import aiohttp
 import asyncclick as click
@@ -162,7 +163,18 @@ def str_to_int_if_int(string: str, zpad: bool = False) -> str | int:
     return string
 
 
-async def handle_scrape_errors(task: Any, mute: bool = False) -> Any | None:
+def _format_scrape_error_message(error: BaseException) -> str:
+    """Format expected scrape failures without a traceback wall of text."""
+    message = str(error).strip()
+    if message:
+        return message
+    return error.__class__.__name__
+
+
+ReturnType = TypeVar("ReturnType")
+
+
+async def handle_scrape_errors(task: Awaitable[ReturnType], mute: bool = False) -> ReturnType | None:
     """Handle errors during scraping tasks.
 
     Args:
@@ -176,7 +188,7 @@ async def handle_scrape_errors(task: Any, mute: bool = False) -> Any | None:
         return await task
     except (ScrapeError, aiohttp.ClientError, TimeoutError, KeyError) as e:
         if not mute:
-            click.secho(f"Error message: {e}\n{''.join(traceback.format_exception(e))}", fg="red", bold=True)
+            click.secho(f"Scrape error: {_format_scrape_error_message(e)}", fg="red", bold=True)
     except Exception as e:
         # Catch any unexpected errors too
         if not mute:
