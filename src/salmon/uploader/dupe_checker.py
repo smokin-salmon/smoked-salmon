@@ -11,7 +11,7 @@ import asyncclick as click
 
 from salmon import cfg
 from salmon.common import RE_FEAT, make_searchstrs
-from salmon.errors import AbortAndDeleteFolder, RequestError
+from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError
 from salmon.trackers.base import hold_request_messages
 
 if TYPE_CHECKING:
@@ -523,8 +523,11 @@ async def print_torrents(
             fetched_rset["groupId"] = fetched_rset["group"]["id"]
             fetched_rset["groupYear"] = fetched_rset["group"]["year"]
             rset = fetched_rset
-        except RequestError:
-            click.secho(f"{group_id} does not exist.", fg="red")
+        except RequestFailedError as err:
+            click.secho(f"{group_id} does not exist on {gazelle_site.site_string} ({err}).", fg="red")
+            raise click.Abort from None
+        except RequestError as err:
+            click.secho(f"Could not fetch group {group_id} from {gazelle_site.site_string}: {err}", fg="red")
             raise click.Abort from None
 
     # At this point rset is guaranteed to be non-None
