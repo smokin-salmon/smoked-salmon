@@ -24,7 +24,7 @@ class Directory(BaseStruct):
             raise ValueError("tmp_dir is not a valid directory")
 
 
-ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "red"]
+ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", "ra", "red"]
 SpectralSelectionLiteral = Literal["*", "+", "0"]
 
 _TRACKER_CODES = ("red", "ops", "dic")
@@ -47,6 +47,7 @@ class ImageUploader(BaseStruct):
     ptscreens_key: str | None = None
     oeimg_key: str | None = None
     imgbb_key: str | None = None
+    ra_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
     auto_compress_cover: bool = False
     default_spectral_ids: SpectralSelectionLiteral | None = None
@@ -83,6 +84,11 @@ class ImageUploader(BaseStruct):
             raise ValueError("oeimage key not specified")
         if "imgbb" in uploader_selections and self.imgbb_key is None:
             raise ValueError("imgbb key not specified")
+        if "ra" in uploader_selections and self.ra_key is None:
+            raise ValueError("ra key not specified")
+        # Ra's owner asks not to use it for spectrals; choose another specs_uploader
+        if self.specs_uploader == "ra":
+            raise ValueError("Ra's owner asks not to use it for spectrals; choose another specs_uploader")
         # Covers, description images and spectrals set in [image] are shared by every
         # tracker, and RED also forbids spectrals on its host.
         for setting, host in selections:
