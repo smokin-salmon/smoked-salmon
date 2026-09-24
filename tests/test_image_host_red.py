@@ -27,6 +27,8 @@ API_KEY = "red-api-key"
 USER_AGENT = "salmon-test-agent"
 COVER_URL = "https://redacted.sh/image/cover.jpg"
 REASON = "The image is too large"
+BARE_URL = "https://redacted.sh/i/abc123.jpg"
+QUERY_URL = "https://redacted.sh/i/abc123.jpg?imgauth=deadbeef&size=large"
 
 
 class CountingLimiter(AsyncLimiter):
@@ -42,12 +44,14 @@ class CountingLimiter(AsyncLimiter):
 class FakeRed:
     """A local RED answering the index, a search and image uploads, with a log of what it received."""
 
-    def __init__(self, *uploads: str) -> None:
+    def __init__(self, *uploads: str, url: str = COVER_URL) -> None:
         # How each image upload in turn is answered: "ok", "reject" or "drop".
         self.uploads = list(uploads) or ["ok"]
         self.hits: list[str] = []
         # (User-Agent, Authorization, Cookie) of each request.
         self.sent: set[tuple[str | None, str | None, str | None]] = set()
+        # The URL returned by a successful upload.
+        self.url = url
 
     async def start(self) -> str:
         app = web.Application()
@@ -76,7 +80,7 @@ class FakeRed:
                 # RED has the image, but the connection drops before its answer.
                 assert request.transport is not None
                 request.transport.close()
-            response = {"url": COVER_URL}
+            response = {"url": self.url}
         return web.json_response({"status": "success", "response": response})
 
 
@@ -221,3 +225,21 @@ def test_a_dropped_connection_after_the_upload_is_not_retried(monkeypatch, relea
 
     anyio.run(run)
     assert fake.hits == ["POST upload_image"]
+
+
+@pytest.mark.parametrize("url", [BARE_URL, QUERY_URL])
+def test_the_url_red_returns_is_passed_through_unchanged(monkeypatch, release, url: str) -> None:
+    # Pins what #428 promised: RED's response.url comes back exactly as RED sent it, bare or
+    # with a query string, with nothing added or stripped (no imgauth appended, for example).
+    fake = FakeRed("ok", url=url)
+
+    async def run() -> tuple[str, None]:
+        _point_red_at(monkeypatch, await fake.start())
+        api = RedApi()
+        try:
+            return await red.ImageUploader(api).upload_file(str(release / "cover.jpg"))
+        finally:
+            await api.close()
+            await fake.runner.cleanup()
+
+    assert anyio.run(run) == (url, None)
