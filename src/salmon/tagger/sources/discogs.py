@@ -49,6 +49,28 @@ SOURCES = {
 }
 
 
+def _clean_discogs_position(position: str, default_disc: int) -> tuple[str, str]:
+    """Parse raw Discogs position string into clean disc and track numbers.
+
+    Examples:
+        '1-01' -> ('1', '1')
+        '2-15' -> ('2', '15')
+        '01'   -> ('1', '1')
+    """
+    pos = str(position).strip().upper()
+
+    # Handles "1-01", "2-15" multi-disc format
+    match = re.match(r"^(\d+)-(\d+)$", pos)
+    if match:
+        return str(int(match[1])), str(int(match[2]))
+
+    # Handles "01", "02", "1"
+    if pos.isdigit():
+        return str(default_disc), str(int(pos))
+
+    return str(default_disc), pos
+
+
 class Scraper(DiscogsBase, MetadataMixin):
     def parse_release_title(self, soup):
         return soup["title"]
@@ -99,10 +121,13 @@ class Scraper(DiscogsBase, MetadataMixin):
             if track["type_"] == "heading" and tracks:
                 cur_disc += 1
             elif track["type_"] == "track":
-                track_num = track["position"].upper()
-                tracks[str(cur_disc)][track_num] = self.generate_track(
+                raw_pos = track.get("position", "")
+                disc_str, track_num = _clean_discogs_position(raw_pos, cur_disc)
+                disc_num = int(disc_str)
+
+                tracks[disc_str][track_num] = self.generate_track(
                     trackno=track_num,
-                    discno=cur_disc,
+                    discno=disc_num,
                     artists=parse_artists(soup["artists"], track),
                     title=track["title"],
                 )
@@ -127,10 +152,6 @@ def parse_artists(artist_soup, track):
         for name, role in artists:
             if role != "main" and (name, "main") in artists:
                 artists.remove((name, "main"))
-    #        for a, i in [
-    #            (a, i) for a, i in artists if i != "main" and (a, "main") in artists
-    #        ]:
-    #            artists.remove((a, "main"))
     return artists
 
 

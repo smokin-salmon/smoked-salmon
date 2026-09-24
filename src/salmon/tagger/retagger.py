@@ -94,7 +94,21 @@ def create_track_changes(tags, metadata):
     """
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
-    for (filename, tagset), trackmeta in zip(tags.items(), tracks, strict=False):
+
+    def disc_track_key(tagset):
+        return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
+
+    disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
+    if len(set(disc_track_keys)) == len(disc_track_keys):
+        # Every file has its own distinct disc/track pair, so its embedded tags can be
+        # trusted to identify it. Files without a discnumber tag (e.g. an untagged CD1/CD2
+        # folder layout) all default to disc 1 and collide here, so we fall back to the
+        # existing file order instead of mismatching them.
+        ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
+    else:
+        ordered_tags = list(tags.items())
+
+    for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False):
         changes[filename] = []
 
         try:
@@ -375,6 +389,22 @@ def _parse_integer(value):
     if isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
         return f"{int(value):02d}"
     return value
+
+
+def _get_tag_number(tracktags, field):
+    """Read a disc/track number off a tag object or dict, defaulting to 1."""
+    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
+
+    if isinstance(value, list) and value:
+        value = value[0]
+    if value is None:
+        return 1
+    if isinstance(value, str):
+        value = value.split("/")[0]
+        return int(value) if value.isdigit() else 1
+    if isinstance(value, int):
+        return value
+    return 1
 
 
 def move_non_audio_files(directory_move_pairs):

@@ -1,13 +1,14 @@
 import shutil
 import sys
 from pathlib import Path
+from typing import get_args
 
 import asyncclick as click
 import msgspec
 import requests
 from platformdirs import user_config_dir
 
-from .validations import Cfg
+from .validations import Cfg, ImgUploaderLiteral
 
 APPNAME = "smoked-salmon"
 
@@ -46,7 +47,27 @@ def get_default_config_path() -> Path:
 
 
 def _parse_config(config_path: Path) -> Cfg:
-    return msgspec.toml.decode(config_path.read_bytes(), type=Cfg)
+    try:
+        return msgspec.toml.decode(config_path.read_bytes(), type=Cfg)
+    except msgspec.ValidationError as e:
+        raise _ptpimg_removed_error(e) from e
+
+
+def _ptpimg_removed_error(e: msgspec.ValidationError) -> Exception:
+    """Turn msgspec's generic Literal error into a plain message when it is caused by ptpimg.
+
+    ptpimg.me has shut down, so it was dropped from the valid image hosts. A config that
+    still names it (image_uploader, cover_uploader, specs_uploader, or a per-tracker
+    [image.<tracker>] cover_uploader) would otherwise fail with msgspec's opaque
+    "Invalid enum value" message.
+    """
+    if "'ptpimg'" not in str(e):
+        return e
+    hosts = ", ".join(get_args(ImgUploaderLiteral))
+    return ValueError(
+        "ptpimg has shut down and is no longer a supported image host. Choose another one "
+        f"in your config ({hosts}); catbox needs no API key."
+    )
 
 
 def _try_creating_config(src: Path, dest: Path) -> None:

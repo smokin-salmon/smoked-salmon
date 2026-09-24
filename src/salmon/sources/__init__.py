@@ -22,12 +22,12 @@ __all__ = [
 ]
 
 SOURCE_ICONS = {
-    "Bandcamp": "https://ptpimg.me/91oo89.png",
-    "Beatport": "https://ptpimg.me/5hwjpv.png",
-    "Deezer": "https://ptpimg.me/m265v2.png",
-    "Discogs": "https://ptpimg.me/mt4ql3.png",
-    "Apple Music": "https://ptpimg.me/0z2x90.png",
-    "MusicBrainz": "https://ptpimg.me/56plwd.png",
-    "Qobuz": "https://ptpimg.me/e4d045.png",
-    "Tidal": "https://ptpimg.me/5vxo23.png",
+    "Bandcamp": "https://i.ibb.co/jd8Ysrm/bandcamp.png",
+    "Beatport": "https://i.ibb.co/fdbp8V7S/beatport.png",
+    "Deezer": "https://i.ibb.co/zHbd0GMm/deezer.png",
+    "Discogs": "https://i.ibb.co/TMPGqrKj/discogs.png",
+    "Apple Music": "https://i.ibb.co/KpqNkPn2/applemusic.png",
+    "MusicBrainz": "https://i.ibb.co/Y42MftV1/musicbrainz.png",
+    "Qobuz": "https://i.ibb.co/39M2cBx9/qobuz.png",
+    "Tidal": "https://i.ibb.co/bjnnJcFm/tidal.png",
 }

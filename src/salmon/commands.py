@@ -21,6 +21,7 @@ from salmon import cfg
 from salmon.common import commandgroup, str_to_int_if_int
 from salmon.common import compress as recompress
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
+from salmon.sources.tidal import credentials_configured as tidal_credentials_configured
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
@@ -332,7 +333,7 @@ async def _test_metadata_sources() -> None:
         "Tidal": {
             "class": salmon.sources.TidalBase,
             "test_url": "http://www.tidal.com/album/75194842",
-            "config_check": lambda: bool(cfg.metadata.tidal.token),
+            "config_check": tidal_credentials_configured,
         },
         "Qobuz": {
             "class": salmon.sources.QobuzBase,
@@ -386,20 +387,28 @@ async def _test_seedbox_connections() -> None:
 
         try:
             # Test the torrent client initialization
-            TorrentClientGenerator.parse_libtc_url(seedbox_config.torrent_client)
+            torrent_client = TorrentClientGenerator.parse_libtc_url(seedbox_config.torrent_client)
+            if torrent_client.client is None:
+                click.secho("    ✖ Torrent client connection failed", fg="red", bold=True)
+            else:
+                click.secho("    ✔ Torrent client connection successful", fg="green", bold=True)
 
             if seedbox_config.type == "rclone":
                 if shutil.which("rclone"):
                     click.secho("    ✔ Rclone executable found", fg="green")
-                    # Test rclone config
+                    # Test access to the configured remote, not just local config presence.
                     try:
                         with anyio.fail_after(10):
-                            result = await anyio.run_process(["rclone", "listremotes"])
-                        stdout = result.stdout.decode()
-                        if seedbox_config.url + ":" in stdout:
-                            click.secho(f"    ✔ Rclone remote '{seedbox_config.url}' found", fg="green", bold=True)
+                            result = await anyio.run_process(["rclone", "lsd", f"{seedbox_config.url}:"], check=False)
+                        if result.returncode == 0:
+                            click.secho(
+                                f"    ✔ Rclone remote '{seedbox_config.url}' is accessible", fg="green", bold=True
+                            )
                         else:
-                            click.secho(f"    ✖ Rclone remote '{seedbox_config.url}' not found", fg="red", bold=True)
+                            error = result.stderr.decode().strip() or f"exit code {result.returncode}"
+                            click.secho(
+                                f"    ✖ Rclone remote '{seedbox_config.url}' failed: {error}", fg="red", bold=True
+                            )
                     except Exception as rclone_e:
                         click.secho(f"    ✖ Rclone test failed: {rclone_e}", fg="red", bold=True)
                 else:
