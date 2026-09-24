@@ -60,11 +60,38 @@ def test_without_a_proxy_every_service_connects_as_before(
     anyio.run(main)
 
 
-def test_the_shipped_proxy_section_uncommented_is_valid_and_names_every_service(tmp_path: Path) -> None:
-    shipped = _DEFAULT_CONFIG.read_text(encoding="utf-8").split("# PROXY SETTINGS", 1)[1]
-    # The commented-out tables and settings, without the comments explaining them.
-    section = "\n".join(line[2:] for line in shipped.splitlines() if re.match(r"# (\[|\w+ = )", line))
-    assert _parse(tmp_path, section) == ProxyCfg(url="", services=ProxyServicesCfg(**dict.fromkeys(SERVICES, "")))
+_SHIPPED_PROXY_SECTION = _DEFAULT_CONFIG.read_text(encoding="utf-8").split("# PROXY SETTINGS", 1)[1]
+
+
+def _uncommented_proxy_section() -> str:
+    """What a user uncomments: the tables and settings, not the comments explaining them."""
+    lines = _SHIPPED_PROXY_SECTION.splitlines()
+    return "\n".join(line[2:] for line in lines if re.match(r"# (\[|\w+ = )", line))
+
+
+def test_the_shipped_proxy_section_uncommented_with_a_url_proxies_every_service(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The user sets the url to their proxy, and leaves the rest as shipped.
+    section, count = re.subn(
+        r"^url = .*$", 'url = "socks5://127.0.0.1:1080"', _uncommented_proxy_section(), flags=re.MULTILINE
+    )
+    assert count == 1
+    monkeypatch.setattr(cfg, "proxy", _parse(tmp_path, section))
+    assert {service: proxy.proxy_url(service) for service in SERVICES} == dict.fromkeys(
+        SERVICES, "socks5://127.0.0.1:1080"
+    )
+
+
+def test_the_shipped_proxy_section_uncommented_as_is_is_refused(tmp_path: Path) -> None:
+    # Its url is a placeholder: forgetting to set it fails loudly instead of connecting directly.
+    with pytest.raises(msgspec.ValidationError, match="proxy.url"):
+        _parse(tmp_path, _uncommented_proxy_section())
+
+
+def test_the_shipped_proxy_section_names_every_service() -> None:
+    services = _SHIPPED_PROXY_SECTION.split("# [proxy.services]", 1)[1]
+    assert [service for service in SERVICES if not re.search(rf"\b{service}\b", services)] == []
 
 
 def test_a_services_own_proxy_wins_and_an_empty_one_connects_it_directly(monkeypatch: pytest.MonkeyPatch) -> None:

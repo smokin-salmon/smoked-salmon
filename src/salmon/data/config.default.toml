@@ -289,24 +289,10 @@ session = 'get-from-site-cookie'
 # # torrent clients and seedboxes, and the check for a new salmon version.
 
 # [proxy]
-# url = ""
+# url = "socks5://user:password@host:port"
 
 # [proxy.services]
-# # Trackers
-# red = ""
-# ops = ""
-# dic = ""
-# # Metadata sources
-# qobuz = ""
-# tidal = ""
-# bandcamp = ""
-# deezer = ""
-# beatport = ""
-# discogs = ""
-# apple_music = ""
-# # Image hosts
-# catbox = ""
-# imgbb = ""
-# oeimg = ""
-# ptscreens = ""
-# ra = ""
+# # One key per service, set as in the examples above. Unset, a service uses [proxy] url.
+# # Trackers: red, ops, dic
+# # Metadata sources: qobuz, tidal, bandcamp, deezer, beatport, discogs, apple_music
+# # Image hosts: catbox, imgbb, oeimg, ptscreens, ra
