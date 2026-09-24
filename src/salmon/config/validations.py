@@ -190,6 +190,7 @@ class UploadFormatting(BaseStruct):
     folder_template: str = "{artists} - {title} ({year}) [{source} {format}]"
     file_template: str = "{tracknumber}. {artist} - {title}"
     remove_source_dir: bool = False
+    split_multi_disc_into_folders: bool = True
 
     # formatting options
     no_artist_in_filename_if_only_one_album_artist: bool = True
