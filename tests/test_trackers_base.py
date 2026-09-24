@@ -10,6 +10,7 @@ DECODED_COOKIE = "NYzc/MwZ+4rK:Jcc5R/l9nvCJpY8hI7uKpA=="
 
 
 class FakeApi(BaseGazelleApi):
+    site_code = "RED"
     cookie = DECODED_COOKIE
 
     def __init__(self, base_url: str) -> None:
