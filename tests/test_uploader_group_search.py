@@ -232,7 +232,6 @@ class Flow:
         }.items():
             self.monkeypatch.setattr(salmon.uploader, name, fake)
         self.monkeypatch.setattr(dupe_checker, "fetch_existing_group_candidates", watched_search)
-        self.monkeypatch.setattr(salmon.uploader, "fetch_existing_group_candidates", watched_search, raising=False)
         self.monkeypatch.setattr(dupe_checker.click, "prompt", prompt)
         self.monkeypatch.setattr(salmon.uploader.click, "confirm", returning(False))
         self.monkeypatch.setattr(salmon.trackers, "choose_tracker", returning_async(None))
