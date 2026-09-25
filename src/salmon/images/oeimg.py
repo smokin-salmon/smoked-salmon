@@ -6,6 +6,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.errors import ImageUploadFailed
+from salmon.images import base as images_base
 from salmon.images.base import BaseImageUploader
 
 HEADERS: dict[str, str] = {"X-API-Key": cfg.image.oeimg_key or ""}
@@ -45,5 +46,7 @@ class ImageUploader(BaseImageUploader):
                 return r["image"]["url"], None
         except (ValueError, KeyError) as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
-        except (aiohttp.ClientError, TimeoutError) as e:
-            raise ImageUploadFailed(f"Upload timed out or network error: {e}") from e
+        except TimeoutError as e:
+            raise ImageUploadFailed(f"Upload timed out after {images_base.UPLOAD_TIMEOUT.total}s") from e
+        except aiohttp.ClientError as e:
+            raise ImageUploadFailed(f"Network error: {e}") from e
