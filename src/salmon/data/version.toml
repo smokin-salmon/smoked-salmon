@@ -1,4 +1,64 @@
-current = "0.11.0"
+current = "0.12.0"
+
+[[changelog]]
+version = "0.12.0"
+date = "2026-09-25"
+notes = """
+
+## ✨ New Features & Improvements
+
+- **Proxy support** (opt-in): a new `[proxy]` section sends tracker, metadata source and image host requests through an HTTP, SOCKS4 or SOCKS5 proxy, with one URL for everything and an override per service. Hostnames are always resolved by the proxy. Without a `[proxy]` section nothing changes. See the commented `[proxy]` block in `config.default.toml` for what is and is not covered (imgbox, MusicBrainz, cover downloads and torrent clients connect directly). Thanks @x4714
+- **Multi-disc releases in one folder** (opt-in): `split_multi_disc_into_folders = false` under `[upload.formatting]` keeps every disc's tracks in the release folder, numbered `1.01`, `2.01`, ..., instead of `CD01/`, `CD02/` folders. Logs and other files from each disc folder get the disc number (`rip.2.log`), and each disc's log is checked against that disc's tracks. The default layout is unchanged. Thanks @Constrat
+- `default_spectral_ids` also accepts track IDs, such as `"3"` or `"1 5 9"`. IDs a release does not have are left out of the default. Thanks @Constrat
+- Only the spectrals picked for upload are compressed, not every generated one. Thanks @Constrat
+- The search for an existing group now runs in the background during the MQA, upconvert and log checks, so the dupe prompt is ready sooner. It still comes before the spectral check, and it sends the same requests as before.
+- Spectral uploads reuse up to 8 connections to the image host instead of opening a new one for every image, and a slow image no longer holds up the others. Measured no slower than before, and faster on a limited upload link.
+- `salmon` starts about twice as fast (`salmon --help`: 0.76 s to 0.37 s): heavy libraries such as openai, numpy and PyAV are only loaded when a feature needs them. Thanks @tomerh2001
+- When the answer to an upload is lost, salmon now waits 10 s before looking the torrent up, and 30 s more before a last lookup, so an upload the tracker was still processing is found instead of reported as unknown.
+
+## 🐛 Bug Fixes
+
+- An image upload that times out no longer crashes the upload: a spectral goes to the retry prompt, and a cover is reported as failed, as for any other upload error. The message says whether the connection or the upload timed out.
+- The spectral retry prompt no longer offers the `red` and `ra` hosts, which are not allowed for spectrals (RED's rules, and Ra's owner's request), and refuses them with the reason.
+- A group or request ID typed at a prompt is only reported as "does not exist" when the tracker says so. A network or login failure now says it could not be fetched.
+- Renaming a release never overwrites a file any more: when two folders' files would end up with the same name (two `cover.jpg` going into `CD01/`), the second one stays where it was, with a warning.
+
+## 🔒 Tracker & Security Improvements
+
+- Covers uploaded to RED's image host now go through the RED tracker client: they count against the rate limit like every other RED request and send the configured user agent.
+- A fresh tracker client authenticates once, however many requests wait for it. Before, a dupe search with two search strings sent two `index` calls, and an `index` that kept failing could be sent up to 25 times for one request.
+- An upload or report no longer closes the connections other requests to the same tracker are using: it goes out on a connection of its own.
+- Dependency updates: beautifulsoup4, mutagen, requests, tqdm, ruff.
+
+## What's Changed
+* Update README.md by @Kygies27 in https://github.com/smokin-salmon/smoked-salmon/pull/407
+* Bring the README up to date for 0.11.0 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/466
+* Default spectral IDs by track, compress only picked spectrals, search for the group in the background by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/467
+* Send RED image host uploads through the tracker client and its rate limiter by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/470
+* Send a state-changing request on a connection of its own, leaving the client's pool alone by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/473
+* Refuse red and ra in the spectral retry prompt by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/474
+* Authenticate once per client, however many requests wait for it by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/476
+* Upload a batch of images over at most 8 reused connections by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/477
+* Optionally keep a multi-disc release in one folder by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/479
+* Opt-in proxy for tracker, metadata source and image host requests by @x4714 in https://github.com/smokin-salmon/smoked-salmon/pull/406
+* Import heavy libraries where they are used, halving `salmon --help` startup by @tomerh2001 in https://github.com/smokin-salmon/smoked-salmon/pull/368
+* Do not say a group or request does not exist on a network or login failure by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/480
+* Catch a timed-out image upload, and pin RED's bare image URL by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/481
+* Update beautifulsoup4[lxml] requirement from >=4.14.3 to >=4.15.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/482
+* Bump ruff from 0.15.12 to 0.16.8 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/483
+* Bump mutagen from 1.47.0 to 1.48.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/484
+* Bump requests from 2.33.1 to 2.34.2 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/485
+* Bump tqdm from 4.67.3 to 4.70.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/486
+* Wait before looking up an upload whose answer was lost by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/487
+* Polish: leftovers from #467, #481 and dead tracker code by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/489
+
+## New Contributors
+* @Kygies27 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/407
+* @x4714 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/406
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.11.0...0.12.0
+
+"""
 
 [[changelog]]
 version = "0.11.0"
