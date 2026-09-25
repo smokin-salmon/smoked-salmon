@@ -203,6 +203,16 @@ _REDIRECT_STATUSES = frozenset(
 # A connection that was never made carried nothing to the tracker.
 _NOT_SENT_ERRORS = (aiohttp.ClientConnectorError, aiohttp.ConnectionTimeoutError)
 
+# How long to wait, in seconds, before looking up an upload whose answer was lost, and before
+# looking it up a second and last time if the tracker does not have it yet. When the upload timed
+# out (30 s without an answer), the tracker is likely still handling it, and the torrent only
+# shows up once it is done. The first wait lets an upload that was nearly done land, and costs
+# little when the answer was lost after the tracker was done. The second covers a slow tracker,
+# up to about 70 s after the upload was sent. The user waits 40 s at most, on top of the timeout
+# they already sat through.
+_LOST_UPLOAD_FIRST_WAIT = 10
+_LOST_UPLOAD_SECOND_WAIT = 30
+
 
 class RetryableError(RequestError):
     """A failed request that may be sent again. Raised as is once the retries run out."""
@@ -890,7 +900,11 @@ class BaseGazelleApi:
         return await self.site_page_upload(data, files)
 
     async def _find_lost_upload(self, files: UploadFiles, err: UnknownOutcomeError) -> tuple[int, int]:
-        """Look up, once, an upload whose answer was lost, by the torrent's infohash.
+        """Look up an upload whose answer was lost, by the torrent's infohash.
+
+        The tracker may still be handling the upload, so the lookup waits for it first. If the
+        tracker answers that it does not have the torrent, it is looked up once more after a
+        second wait, and no more.
 
         Args:
             files: UploadFiles that were uploaded.
@@ -902,11 +916,27 @@ class BaseGazelleApi:
         Raises:
             UnknownOutcomeError: If the torrent is not found: the upload may still have gone through.
         """
-        click.secho(f"Could not tell whether {self.site_string} took the upload ({err}), looking it up...", fg="yellow")
         try:
             # Uppercase, as Gazelle's API documentation asks for the hash.
             infohash = Torrent.read_stream(files.torrent_data).infohash.upper()
-            found = await self.api_call("torrent", params={"hash": infohash})
+            click.secho(
+                f"Could not tell whether {self.site_string} took the upload ({err}). "
+                f"Waiting {_LOST_UPLOAD_FIRST_WAIT} s for {self.site_string} to finish processing it, "
+                "then looking it up...",
+                fg="yellow",
+            )
+            await asyncio.sleep(_LOST_UPLOAD_FIRST_WAIT)
+            try:
+                found = await self.api_call("torrent", params={"hash": infohash})
+            except RequestFailedError as not_found:
+                # The tracker answered, without the torrent. Any other failure is not worth another request.
+                click.secho(
+                    f"{self.site_string} does not have it yet ({not_found}). "
+                    f"Waiting {_LOST_UPLOAD_SECOND_WAIT} s more, then looking it up one last time...",
+                    fg="yellow",
+                )
+                await asyncio.sleep(_LOST_UPLOAD_SECOND_WAIT)
+                found = await self.api_call("torrent", params={"hash": infohash})
             torrent_id, group_id = int(found["torrent"]["id"]), int(found["group"]["id"])
         except (RequestError, TorfError, KeyError, TypeError, ValueError) as lookup_err:
             raise UnknownOutcomeError(
@@ -914,6 +944,14 @@ class BaseGazelleApi:
                 f"by its infohash did not find it ({lookup_err}). The upload may still have gone through: "
                 f"check your uploads on {self.site_string} before uploading it again."
             ) from lookup_err
+        except asyncio.CancelledError:
+            # Ctrl-C while waiting: still warn before the user uploads it again.
+            click.secho(
+                f"Stopped before finding out. The upload may still have gone through: check your uploads on "
+                f"{self.site_string} before uploading it again.",
+                fg="yellow",
+            )
+            raise
         click.secho(f"Found the upload on {self.site_string}: torrent {torrent_id}.", fg="green")
         return torrent_id, group_id
 

@@ -1,3 +1,6 @@
+import asyncio
+import gc
+import signal
 import socket
 import sys
 from pathlib import Path
@@ -11,7 +14,8 @@ from torf import Torrent
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon.common import UploadFiles
-from salmon.errors import RequestError, UnknownOutcomeError
+from salmon.errors import LoginError, RequestError, UnknownOutcomeError
+from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi, RetryableError
 from salmon.uploader import spectrals
 
@@ -36,6 +40,18 @@ def no_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(BaseGazelleApi._send.retry, "wait", wait_none())  # type: ignore[attr-defined]
 
 
+def _wait_before_lookups(monkeypatch: pytest.MonkeyPatch, first: float, second: float) -> None:
+    """Set how long a lost upload is waited for before its first and its second lookup."""
+    monkeypatch.setattr(base, "_LOST_UPLOAD_FIRST_WAIT", first)
+    monkeypatch.setattr(base, "_LOST_UPLOAD_SECOND_WAIT", second)
+
+
+@pytest.fixture(autouse=True)
+def no_lost_upload_wait(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Look a lost upload up without waiting, except in the tests that time the waits."""
+    _wait_before_lookups(monkeypatch, 0, 0)
+
+
 async def _serve(**handlers) -> tuple[web.AppRunner, str]:
     app = web.Application()
     for path, handler in handlers.items():
@@ -57,6 +73,10 @@ def _found(torrent_id: int, group_id: int) -> web.Response:
     return web.json_response(
         {"status": "success", "response": {"group": {"id": group_id}, "torrent": {"id": torrent_id}}}
     )
+
+
+def _not_found() -> web.Response:
+    return web.json_response({"status": "failure", "error": "bad parameters"})
 
 
 def _upload_files(tmp_path: Path) -> tuple[UploadFiles, str]:
@@ -120,15 +140,84 @@ async def _lost_upload_not_found_says_it_may_have_gone_through(tmp_path: Path) -
             posts.append(request.query["action"])
             return await _drop(request)
         lookups.append(request.query["hash"])
-        return web.json_response({"status": "failure", "error": "bad parameters"})
+        return _not_found()
 
     runner, url = await _serve(ajax=ajax)
     api = FakeApi(url, api_key="an-api-key")
     try:
-        with pytest.raises(RequestError, match="may still have gone through"):
+        with pytest.raises(
+            UnknownOutcomeError,
+            match=r"did not find it \(bad parameters\)\. The upload may still have gone through: check your uploads",
+        ):
             await api.upload({"type": 0}, files)
         assert posts == ["upload"]
-        assert len(lookups) == 1
+        # Looked up once more after the second wait, and no more.
+        assert len(lookups) == 2
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+# Each wait before a lookup, in the tests that time them. The torrent appears half a wait away from
+# any lookup, so these tests hold as long as each lookup goes out less than half a wait late.
+WAIT = 0.4
+
+
+async def _upload_whose_torrent_appears_later(tmp_path: Path, appears_after: float) -> tuple[list[str], list[float]]:
+    """Upload to a tracker that loses the answer, and has the torrent `appears_after` seconds after it.
+
+    Returns the uploads the tracker got and when each lookup came, in seconds after the upload.
+    """
+    files, infohash = _upload_files(tmp_path)
+    posts: list[str] = []
+    lookups: list[float] = []
+    uploaded_at = 0.0
+
+    async def ajax(request: web.Request) -> web.Response:
+        nonlocal uploaded_at
+        now = asyncio.get_running_loop().time()
+        if request.method == "POST":
+            await request.read()
+            posts.append(request.query["action"])
+            uploaded_at = now
+            return await _drop(request)
+        assert request.query["hash"] == infohash
+        lookups.append(now - uploaded_at)
+        return _found(9, 5) if now - uploaded_at >= appears_after else _not_found()
+
+    runner, url = await _serve(ajax=ajax)
+    api = FakeApi(url, api_key="an-api-key")
+    try:
+        assert await api.upload({"type": 0}, files) == (9, 5)
+        return posts, lookups
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _lost_upload_lookup_that_fails_otherwise_is_not_repeated(
+    tmp_path: Path, status: int, raised: type[RequestError]
+) -> None:
+    files, _ = _upload_files(tmp_path)
+    posts, lookups = [], []
+
+    async def ajax(request: web.Request) -> web.Response:
+        if request.method == "POST":
+            await request.read()
+            posts.append(request.query["action"])
+            return await _drop(request)
+        lookups.append(request.query["hash"])
+        return web.json_response({"status": "failure", "error": "no"}, status=status)
+
+    runner, url = await _serve(ajax=ajax)
+    api = FakeApi(url, api_key="an-api-key")
+    try:
+        with pytest.raises(UnknownOutcomeError, match="may still have gone through") as caught:
+            await api.upload({"type": 0}, files)
+        assert isinstance(caught.value.__cause__, raised)
+        assert posts == ["upload"]
+        # Only a tracker saying it does not have the torrent is worth asking again later.
+        assert len(lookups) == (5 if raised is RetryableError else 1)
     finally:
         await api.close()
         await runner.cleanup()
@@ -302,6 +391,85 @@ def test_lost_upload_found_by_infohash(tmp_path: Path) -> None:
 
 def test_lost_upload_not_found_says_it_may_have_gone_through(tmp_path: Path) -> None:
     anyio.run(_lost_upload_not_found_says_it_may_have_gone_through, tmp_path)
+
+
+def test_lost_upload_that_appears_during_the_first_wait_is_found_on_the_first_lookup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _wait_before_lookups(monkeypatch, WAIT, WAIT)
+    # Looked up at once, as it used to be, the tracker does not have it yet.
+    posts, lookups = anyio.run(_upload_whose_torrent_appears_later, tmp_path, WAIT / 2)
+    assert posts == ["upload"]
+    assert len(lookups) == 1
+    assert lookups[0] >= WAIT
+
+
+def test_lost_upload_that_appears_during_the_second_wait_is_found_on_the_second_lookup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _wait_before_lookups(monkeypatch, WAIT, WAIT)
+    posts, lookups = anyio.run(_upload_whose_torrent_appears_later, tmp_path, WAIT * 1.5)
+    assert posts == ["upload"]
+    assert len(lookups) == 2
+    assert lookups[0] >= WAIT
+    assert lookups[1] >= WAIT * 2
+
+
+@pytest.mark.parametrize(("status", "raised"), [(503, RetryableError), (401, LoginError)])
+def test_lost_upload_lookup_that_fails_otherwise_is_not_repeated(
+    tmp_path: Path, status: int, raised: type[RequestError]
+) -> None:
+    anyio.run(_lost_upload_lookup_that_fails_otherwise_is_not_repeated, tmp_path, status, raised)
+
+
+def test_ctrl_c_while_waiting_for_a_lost_upload_sends_nothing_more(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _wait_before_lookups(monkeypatch, 30, 30)
+    files, _ = _upload_files(tmp_path)
+    posts, lookups, unclosed = [], [], []
+
+    async def ajax(request: web.Request) -> web.Response:
+        if request.method == "POST":
+            await request.read()
+            posts.append(request.query["action"])
+            # The user presses Ctrl-C a moment later, once salmon waits to look the upload up.
+            asyncio.get_running_loop().call_later(0.5, signal.raise_signal, signal.SIGINT)
+            return await _drop(request)
+        lookups.append(request.query["hash"])
+        return _found(9, 5)
+
+    async def main() -> None:
+        asyncio.get_running_loop().set_exception_handler(lambda _loop, context: unclosed.append(context["message"]))
+        runner, url = await _serve(ajax=ajax)
+        api = FakeApi(url, api_key="an-api-key")
+        try:
+            with anyio.fail_after(5):
+                await api.upload({"type": 0}, files)
+        finally:
+            await api.close()
+            await runner.cleanup()
+            # A little longer, for a lookup sent anyway to arrive.
+            await anyio.sleep(0.2)
+            del runner, api
+            # An unclosed session or connector is only reported once it is collected.
+            gc.collect()
+            await anyio.sleep(0.05)
+
+    # Ctrl-C as in a terminal, also when the tests were started in the background, where it is ignored.
+    previous = signal.signal(signal.SIGINT, signal.default_int_handler)
+    try:
+        # As in salmon itself: anyio.run turns Ctrl-C into cancelling the run, then raises KeyboardInterrupt.
+        with pytest.raises(KeyboardInterrupt):
+            anyio.run(main)
+    finally:
+        signal.signal(signal.SIGINT, previous)
+    out = capsys.readouterr().out
+    assert "Waiting 30 s for RED to finish processing it" in out
+    assert "may still have gone through: check your uploads on RED" in out
+    assert posts == ["upload"]
+    assert lookups == []
+    assert unclosed == []
 
 
 def test_upload_after_a_kept_alive_connection_goes_on_a_fresh_one(tmp_path: Path) -> None:
