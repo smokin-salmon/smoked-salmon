@@ -44,6 +44,6 @@ class ImageUploader(BaseImageUploader):
         except ValueError as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
         except TimeoutError as e:
-            raise ImageUploadFailed(f"Upload timed out after {images_base.UPLOAD_TIMEOUT.total}s") from e
+            raise ImageUploadFailed(images_base.describe_upload_timeout(e)) from e
         except aiohttp.ClientError as e:
             raise ImageUploadFailed(f"Network error: {e}") from e

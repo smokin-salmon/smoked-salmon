@@ -143,6 +143,31 @@ def test_a_client_error_becomes_a_network_error_message(
     anyio.run(run)
 
 
+@pytest.mark.parametrize("name", sorted(TIMEOUT_MODULES))
+def test_a_connect_timeout_gives_the_connection_wording(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, name: str
+) -> None:
+    """A connect timeout must not be reported as the (much longer) overall upload timeout.
+
+    aiohttp.ConnectionTimeoutError is both an aiohttp.ClientError and a TimeoutError, and fires
+    at UPLOAD_TIMEOUT's sock_connect (30s), well before its total (300s) ever could.
+    """
+    module, _real_host = TIMEOUT_MODULES[name]
+    path = tmp_path / "image.png"
+    path.write_bytes(b"png")
+
+    def failing_post(self: aiohttp.ClientSession, *_args: Any, **_kwargs: Any) -> Any:
+        raise aiohttp.ConnectionTimeoutError("Connection timeout to host")
+
+    monkeypatch.setattr(aiohttp.ClientSession, "post", failing_post)
+
+    async def run() -> None:
+        with pytest.raises(ImageUploadFailed, match=r"^Connection to the host timed out after 30s$"):
+            await module.ImageUploader().upload_file(str(path))
+
+    anyio.run(run)
+
+
 def test_a_timed_out_spectral_reaches_the_retry_prompt(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(images.click, "secho", lambda *args, **kwargs: None)
     monkeypatch.setattr(images, "UPLOAD_CONNECTIONS", 3, raising=False)

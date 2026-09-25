@@ -15,6 +15,25 @@ mimetypes.init()
 UPLOAD_TIMEOUT = aiohttp.ClientTimeout(total=300, sock_connect=30)
 
 
+def describe_upload_timeout(e: TimeoutError) -> str:
+    """Word a timed-out upload's error message.
+
+    aiohttp.ServerTimeoutError (raised for a connection that never gets accepted, and its
+    subclasses) is a connection-level timeout, told apart from the plain TimeoutError raised
+    once the overall upload timeout expires: each is worded with the number it actually hit, so
+    neither prints a duration the failure did not wait out.
+
+    Args:
+        e: The timeout that was caught.
+
+    Returns:
+        The message to raise ImageUploadFailed with.
+    """
+    if isinstance(e, aiohttp.ServerTimeoutError):
+        return f"Connection to the host timed out after {UPLOAD_TIMEOUT.sock_connect}s"
+    return f"Upload timed out after {UPLOAD_TIMEOUT.total}s"
+
+
 class BaseImageUploader:
     """Base class for image uploaders.
 
