@@ -3,11 +3,13 @@ import sys
 from pathlib import Path
 
 import anyio
+import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from salmon.trackers.base import BaseGazelleApi
+import salmon.trackers.base as trackers_base
+from salmon.trackers.base import BaseGazelleApi, RetryableError, hold_request_messages
 
 
 class FakeApi(BaseGazelleApi):
@@ -127,3 +129,63 @@ def test_queued_requests_do_not_time_out_while_waiting() -> None:
 
 def test_api_key_requests_stay_cookie_free() -> None:
     anyio.run(_api_key_requests_stay_cookie_free)
+
+
+async def _rate_limited(handler) -> tuple[web.AppRunner, FakeApi]:
+    runner = await _serve(handler)
+    api = FakeApi(_url(runner))
+    return runner, api
+
+
+def _rate_limit_response() -> web.Response:
+    return web.json_response(
+        {"status": "failure", "error": "rate limit exceeded"},
+        status=429,
+        headers={"Retry-After": "0"},
+    )
+
+
+async def _rate_limit_message_prints_while_not_held(monkeypatch: pytest.MonkeyPatch) -> None:
+    # No real wait: the tenacity retry backoff also sleeps through asyncio.sleep.
+    monkeypatch.setattr(trackers_base.asyncio, "sleep", lambda _seconds, _real_sleep=asyncio.sleep: _real_sleep(0))
+
+    async def handle_ajax(_request: web.Request) -> web.Response:
+        return _rate_limit_response()
+
+    runner, api = await _rate_limited(handle_ajax)
+    try:
+        with pytest.raises(RetryableError):
+            await api._request("GET", api.base_url + "/ajax.php", params={"action": "index"})
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+def test_rate_limit_message_prints_while_not_held(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    anyio.run(lambda: _rate_limit_message_prints_while_not_held(monkeypatch))
+    out = capsys.readouterr().out
+    assert "Rate limit exceeded, waiting 0.0 seconds..." in out
+    assert "waited" not in out
+
+
+async def _rate_limit_message_reads_past_tense_when_held(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(trackers_base.asyncio, "sleep", lambda _seconds, _real_sleep=asyncio.sleep: _real_sleep(0))
+
+    async def handle_ajax(_request: web.Request) -> web.Response:
+        return _rate_limit_response()
+
+    runner, api = await _rate_limited(handle_ajax)
+    try:
+        with hold_request_messages() as messages, pytest.raises(RetryableError):
+            await api._request("GET", api.base_url + "/ajax.php", params={"action": "index"})
+        assert any("Rate limit exceeded, waited 0.0 seconds" in message for message, _styles in messages)
+        assert not any("waiting" in message for message, _styles in messages)
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+def test_rate_limit_message_reads_past_tense_when_held(monkeypatch: pytest.MonkeyPatch) -> None:
+    anyio.run(lambda: _rate_limit_message_reads_past_tense_when_held(monkeypatch))

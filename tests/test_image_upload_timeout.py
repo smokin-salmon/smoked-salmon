@@ -115,10 +115,55 @@ def test_a_timeout_becomes_image_upload_failed(monkeypatch: pytest.MonkeyPatch, 
         host.hanging = {"image.png"}
         _redirect(monkeypatch, {real_host: local})
         try:
-            with pytest.raises(ImageUploadFailed, match="(?i)timed out"):
+            with pytest.raises(ImageUploadFailed, match=r"^Upload timed out after 0\.1s$"):
                 await module.ImageUploader().upload_file(str(path))
         finally:
             await host.stop()
+
+    anyio.run(run)
+
+
+@pytest.mark.parametrize("name", sorted(TIMEOUT_MODULES))
+def test_a_client_error_becomes_a_network_error_message(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, name: str
+) -> None:
+    module, _real_host = TIMEOUT_MODULES[name]
+    path = tmp_path / "image.png"
+    path.write_bytes(b"png")
+
+    def failing_post(self: aiohttp.ClientSession, *_args: Any, **_kwargs: Any) -> Any:
+        raise aiohttp.ClientConnectionError("connection reset")
+
+    monkeypatch.setattr(aiohttp.ClientSession, "post", failing_post)
+
+    async def run() -> None:
+        with pytest.raises(ImageUploadFailed, match="^Network error: connection reset$"):
+            await module.ImageUploader().upload_file(str(path))
+
+    anyio.run(run)
+
+
+@pytest.mark.parametrize("name", sorted(TIMEOUT_MODULES))
+def test_a_connect_timeout_gives_the_connection_wording(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, name: str
+) -> None:
+    """A connect timeout must not be reported as the (much longer) overall upload timeout.
+
+    aiohttp.ConnectionTimeoutError is both an aiohttp.ClientError and a TimeoutError, and fires
+    at UPLOAD_TIMEOUT's sock_connect (30s), well before its total (300s) ever could.
+    """
+    module, _real_host = TIMEOUT_MODULES[name]
+    path = tmp_path / "image.png"
+    path.write_bytes(b"png")
+
+    def failing_post(self: aiohttp.ClientSession, *_args: Any, **_kwargs: Any) -> Any:
+        raise aiohttp.ConnectionTimeoutError("Connection timeout to host")
+
+    monkeypatch.setattr(aiohttp.ClientSession, "post", failing_post)
+
+    async def run() -> None:
+        with pytest.raises(ImageUploadFailed, match=r"^Connection to the host timed out after 30s$"):
+            await module.ImageUploader().upload_file(str(path))
 
     anyio.run(run)
 

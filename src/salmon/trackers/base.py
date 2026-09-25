@@ -1,5 +1,4 @@
 import asyncio
-import html
 import re
 from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
@@ -36,14 +35,6 @@ ARTIST_TYPES = [
     "djcompiler",
     "producer",
 ]
-
-INVERTED_RELEASE_TYPES = {
-    **dict(zip(RELEASE_TYPES.values(), RELEASE_TYPES.keys(), strict=False)),
-    1024: "Guest Appearance",
-    1023: "Remixed By",
-    1022: "Composition",
-    1021: "Produced By",
-}
 
 _SENSITIVE_KEYS = re.compile(
     r'"(authkey|passkey|auth|api_key|Authorization)"\s*:\s*"[^"]*"',
@@ -169,18 +160,6 @@ def _compose_form_data(files: UploadFiles, data: dict[str, Any]) -> FormData:
         else:
             _add_form_field(form, key, value)
     return form
-
-
-class SearchReleaseData(msgspec.Struct, frozen=True):
-    """Data structure for search release results."""
-
-    lossless: bool
-    lossless_web: bool
-    year: int | None
-    artist: str
-    album: str
-    release_type: str | int
-    url: str
 
 
 # Gazelle's own redirects take up to two hops: torrents.php?torrentid= to its group and
@@ -502,7 +481,12 @@ class BaseGazelleApi:
 
                             if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
                                 retry_after = float(resp.headers.get("Retry-After", "20"))
-                                _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
+                                if _held_request_messages.get() is not None:
+                                    # This is only printed after the wait is over (once the held
+                                    # messages are flushed), so word it in the past.
+                                    _secho(f"Rate limit exceeded, waited {retry_after} seconds", fg="yellow")
+                                else:
+                                    _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
                                 await asyncio.sleep(retry_after)
                                 raise failure("Rate limit exceeded", not_acted_on=True)
 
@@ -642,94 +626,6 @@ class BaseGazelleApi:
             The request data.
         """
         return await self.api_call("request", params={"id": id})
-
-    async def artist_rls(self, artist: str):
-        """Get all torrent groups belonging to an artist.
-
-        Args:
-            artist: The artist name.
-
-        Returns:
-            Tuple of (artist_id, list of releases).
-        """
-        resp = await self.api_call("artist", params={"artistname": artist})
-        releases = []
-        for group in resp["torrentgroup"]:
-            # We do not put compilations or guest appearances in this list.
-            if not group["artists"]:
-                continue
-            if group["releaseType"] == 7 and (
-                not group["extendedArtists"]["6"]
-                or artist.lower() not in {a["name"].lower() for a in group["extendedArtists"]["6"]}
-            ):
-                continue
-            if group["releaseType"] in {1023, 1021, 1022, 1024}:
-                continue
-
-            releases.append(
-                SearchReleaseData(
-                    lossless=any(t["format"] == "FLAC" for t in group["torrent"]),
-                    lossless_web=any(t["format"] == "FLAC" and t["media"] == "WEB" for t in group["torrent"]),
-                    year=group["groupYear"],
-                    artist=html.unescape(compile_artists(group["artists"], group["releaseType"])),
-                    album=html.unescape(group["groupName"]),
-                    release_type=INVERTED_RELEASE_TYPES[group["releaseType"]],
-                    url=f"{self.base_url}/torrents.php?id={group['groupId']}",
-                )
-            )
-
-        releases = list({r.url: r for r in releases}.values())  # Dedupe
-
-        return resp["id"], releases
-
-    async def label_rls(self, label, year=None):
-        """
-        Get all the torrent groups from a label on site.
-        All groups without a FLAC will be highlighted.
-        """
-        browse_params = {"remasterrecordlabel": label}
-        if year:
-            browse_params["year"] = year
-        first_request = await self.api_call("browse", params=browse_params)
-        if "pages" in first_request:
-            pages = first_request["pages"]
-        else:
-            return []
-        all_results = first_request["results"]
-        # Three is an arbitrary (low) number.
-        # Hits to the site are slow because of rate limiting.
-        # Should probably be spun out into its own pagnation function at some point.
-        for i in range(2, max(3, pages)):
-            browse_params["page"] = str(i)
-            new_results = await self.api_call("browse", params=browse_params)
-            all_results += new_results["results"]
-        browse_params["page"] = "1"
-        resp2 = await self.api_call("browse", params=browse_params)
-        all_results = all_results + resp2["results"]
-        releases = []
-        for group in all_results:
-            if not group["artist"]:
-                if "artists" in group:
-                    artist = html.unescape(compile_artists(group["artists"], group["releaseType"]))
-                else:
-                    artist = ""
-            else:
-                artist = group["artist"]
-            releases.append(
-                SearchReleaseData(
-                    lossless=any(t["format"] == "FLAC" for t in group["torrents"]),
-                    lossless_web=any(t["format"] == "FLAC" and t["media"] == "WEB" for t in group["torrents"]),
-                    year=group["groupYear"],
-                    artist=artist,
-                    album=html.unescape(group["groupName"]),
-                    release_type=group["releaseType"],
-                    url=f"{self.base_url}/torrents.php?id={group['groupId']}",
-                )
-            )
-
-        releases = list({r.url: r for r in releases}.values())  # Dedupe
-
-        return releases
 
     async def fetch_log(self, page: int) -> str:
         """Fetch a page of the site log.
@@ -1096,10 +992,3 @@ class BaseGazelleApi:
                 title = torrent_string[0]
             log_uploads.append((torrent_id, artist, title))
         return log_uploads
-
-
-def compile_artists(artists, release_type):
-    """Generate a string to represent the artists."""
-    if release_type == 7 or len(artists) > 3:
-        return cfg.upload.formatting.various_artist_word
-    return " & ".join([a["name"] for a in artists])
