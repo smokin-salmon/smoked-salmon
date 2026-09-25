@@ -471,7 +471,12 @@ class BaseGazelleApi:
 
                             if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
                                 retry_after = float(resp.headers.get("Retry-After", "20"))
-                                _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
+                                if _held_request_messages.get() is not None:
+                                    # This is only printed after the wait is over (once the held
+                                    # messages are flushed), so word it in the past.
+                                    _secho(f"Rate limit exceeded, waited {retry_after} seconds", fg="yellow")
+                                else:
+                                    _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
                                 await asyncio.sleep(retry_after)
                                 raise failure("Rate limit exceeded", not_acted_on=True)
 
