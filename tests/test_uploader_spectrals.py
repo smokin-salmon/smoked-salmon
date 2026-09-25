@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import anyio
@@ -69,7 +70,12 @@ def test_selections_behave_as_before(monkeypatch, configured: str, expected) -> 
     assert offers == [configured]
 
 
-MULTI_DISC = ["CD1/01 a.flac", "CD1/02 b.flac", "CD2/01 c.flac", "CD2/02 d.flac"]
+MULTI_DISC = [
+    os.path.join("CD1", "01 a.flac"),
+    os.path.join("CD1", "02 b.flac"),
+    os.path.join("CD2", "01 c.flac"),
+    os.path.join("CD2", "02 d.flac"),
+]
 
 
 @pytest.fixture
@@ -124,7 +130,7 @@ def test_only_the_picked_spectrals_are_compressed(monkeypatch, release) -> None:
     _lossy, picked = anyio.run(spectrals.check_spectrals, path, audio_info)
 
     # Track 3 is the first track of the second disc: its images are numbered on from disc one's.
-    assert picked == {3: "CD2/01 c.flac"}
+    assert picked == {3: os.path.join("CD2", "01 c.flac")}
     assert sorted(compressed) == _images(3)
 
 
@@ -161,7 +167,7 @@ def test_spectrals_checked_after_upload_are_compressed_before_they_are_uploaded(
 
     result = anyio.run(check_after_upload)
 
-    assert result[3] == {2: "CD1/02 b.flac", 4: "CD2/02 d.flac"}
+    assert result[3] == {2: os.path.join("CD1", "02 b.flac"), 4: os.path.join("CD2", "02 d.flac")}
     assert sorted(compressed_when_uploaded) == _images(2, 4)
 
 
