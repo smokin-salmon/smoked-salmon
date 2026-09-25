@@ -42,5 +42,5 @@ class ImageUploader(BaseImageUploader):
                 return await resp.text(), None
         except ValueError as e:
             raise ImageUploadFailed(f"Failed decoding body: {e}") from e
-        except aiohttp.ClientError as e:
-            raise ImageUploadFailed(f"Network error: {e}") from e
+        except (aiohttp.ClientError, TimeoutError) as e:
+            raise ImageUploadFailed(f"Upload timed out or network error: {e}") from e
