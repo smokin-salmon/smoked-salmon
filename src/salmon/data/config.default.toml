@@ -130,9 +130,11 @@ session = 'get-from-site-cookie'
 # ===============================
 # [[seedbox]]
 # name = ""
-# enabled = true
+# enabled = true # false skips this seedbox
 # url = "nas" # Name of remote in rclone
-# type = "local" # "local" or "rclone"
+# # "local": salmon copies nothing, the client reads the files where salmon left them.
+# # "rclone": salmon copies the release to the remote with rclone, then adds the torrent.
+# type = "local"
 # flac_only = false # if true, only upload FLAC files
 # extra_args = [ "--checksum", "-P", "--sftp-path-override", "@/volume3" ] # pass these arguments to rclone
 
@@ -141,7 +143,10 @@ session = 'get-from-site-cookie'
 # # deluge://username:password@127.0.0.1:58664
 # # qbittorrent+http://username:password@127.0.0.1:8080
 # torrent_client = ""
-# directory = "" # Directory when adding torrent to download client
+# # Save path given to the torrent client. For "rclone", also the folder the release is copied to on the
+# # remote (--sftp-path-override in extra_args changes the path given to the client). For "local", leave
+# # empty to use download_directory.
+# directory = ""
 # label = "smoked-salmon" # Label to apply to torrents in download client
 # add_paused = false # If true, add torrents to client in paused state
 

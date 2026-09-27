@@ -1,6 +1,7 @@
 import subprocess
 
 import anyio
+import msgspec
 
 from salmon.config.validations import Seedbox
 from salmon.uploader import seedbox
@@ -50,3 +51,82 @@ def test_rclone_upload_folder_reports_nonzero_exit_code(monkeypatch) -> None:
     )
 
     assert "Rclone upload failed with exit code 7" in messages
+
+
+class _RecordingClient:
+    def __init__(self) -> None:
+        self.save_paths: list[str] = []
+
+    def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> None:
+        self.save_paths.append(remote_folder)
+
+
+def _run_upload(monkeypatch, tmp_path, seedboxes: list[Seedbox]) -> tuple[dict[str, _RecordingClient], list[list[str]]]:
+    """Queue one release on the given seedboxes and run the upload with a fake client and rclone.
+
+    Returns:
+        The torrent clients salmon logged in to, by URL, and the rclone commands it ran.
+    """
+    clients: dict[str, _RecordingClient] = {}
+    rclone_calls: list[list[str]] = []
+
+    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        rclone_calls.append(commands)
+        return subprocess.CompletedProcess(commands, 0)
+
+    monkeypatch.setattr(seedbox.cfg, "seedbox", seedboxes)
+    monkeypatch.setattr(
+        seedbox.TorrentClientGenerator,
+        "parse_libtc_url",
+        staticmethod(lambda url: clients.setdefault(url, _RecordingClient())),
+    )
+    monkeypatch.setattr(seedbox.anyio, "run_process", fake_run_process)
+    monkeypatch.setattr(seedbox.click, "secho", lambda *args, **kwargs: None)
+
+    release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
+    release.mkdir()
+    torrent = tmp_path / "Artist - Album.torrent"
+    torrent.write_bytes(b"d4:infod4:name5:Albumee")
+
+    manager = seedbox.UploadManager()
+    manager.add_upload_task(str(release), task_type="folder", is_flac=True)
+    manager.add_upload_task(str(torrent), task_type="seed", is_flac=True)
+    anyio.run(manager.execute_upload)
+    return clients, rclone_calls
+
+
+def test_disabled_seedbox_is_skipped(monkeypatch, tmp_path) -> None:
+    # A disabled local entry listed before the rclone one used to add the torrent first, with the
+    # local download_directory as its save path (#478).
+    clients, rclone_calls = _run_upload(
+        monkeypatch,
+        tmp_path,
+        [
+            Seedbox(type="local", enabled=False, torrent_client="qbittorrent+http://local:8080"),
+            Seedbox(type="rclone", enabled=False, url="old", torrent_client="qbittorrent+http://old:8080"),
+            Seedbox(
+                type="rclone",
+                enabled=True,
+                url="box",
+                directory="/home/user/files",
+                torrent_client="qbittorrent+http://box:8080",
+            ),
+        ],
+    )
+
+    assert list(clients) == ["qbittorrent+http://box:8080"]
+    assert clients["qbittorrent+http://box:8080"].save_paths == ["/home/user/files"]
+    assert [call[3] for call in rclone_calls] == ["box:/home/user/files/Artist - Album (2020) [WEB FLAC]"]
+
+
+def test_seedbox_without_enabled_key_is_used(monkeypatch, tmp_path) -> None:
+    # Configs written before enabled was honoured often leave it out; they must keep uploading.
+    entry = msgspec.toml.decode(
+        b'type = "rclone"\nurl = "box"\ndirectory = "/files"\ntorrent_client = "qbittorrent+http://box:8080"\n',
+        type=Seedbox,
+    )
+
+    clients, rclone_calls = _run_upload(monkeypatch, tmp_path, [entry])
+
+    assert clients["qbittorrent+http://box:8080"].save_paths == ["/files"]
+    assert len(rclone_calls) == 1
