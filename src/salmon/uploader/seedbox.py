@@ -77,6 +77,11 @@ async def _add_to_downloader(
         click.secho(f"Failed to add torrent to client: {e}", fg="red")
 
 
+def _enabled_seedboxes() -> list[Seedbox]:
+    """Return the configured seedboxes that are not disabled with `enabled = false`."""
+    return [seedbox for seedbox in cfg.seedbox if seedbox.enabled]
+
+
 class UploadManager:
     """Collects upload and seed tasks during a session and executes them all at once.
 
@@ -87,7 +92,7 @@ class UploadManager:
     def __init__(self) -> None:
         click.secho("Initializing upload managers", fg="cyan")
         self._client_cache: dict[str, TorrentClient] = {}
-        for seedbox in cfg.seedbox:
+        for seedbox in _enabled_seedboxes():
             try:
                 if seedbox.torrent_client not in self._client_cache:
                     self._client_cache[seedbox.torrent_client] = TorrentClientGenerator.parse_libtc_url(
@@ -120,7 +125,7 @@ class UploadManager:
             is_flac: Whether the release is FLAC; skips seedboxes with flac_only=True if False.
         """
         click.secho(f"Preparing upload tasks for: {directory}", fg="cyan")
-        for seedbox in cfg.seedbox:
+        for seedbox in _enabled_seedboxes():
             if seedbox.torrent_client not in self._client_cache:
                 continue
             if seedbox.flac_only and not is_flac:

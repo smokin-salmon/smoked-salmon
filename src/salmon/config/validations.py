@@ -166,7 +166,7 @@ class Tracker(BaseStruct):
 
 class Seedbox(BaseStruct):
     name: str = ""
-    enabled: bool = False
+    enabled: bool = True  # false skips this seedbox
     url: str = ""  # Name of remote in rclone
     type: Literal["local", "rclone"] = "local"
     directory: str = ""  # Directory when adding torrent to download client
