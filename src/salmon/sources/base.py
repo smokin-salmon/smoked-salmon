@@ -100,6 +100,9 @@ class BaseScraper:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
         except msgspec.DecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
+        except (TimeoutError, aiohttp.ClientError) as e:
+            # aiohttp repeats the request URL, query params included; name the type only.
+            raise ScrapeError(f"{self.__class__.__name__}: Request failed ({type(e).__name__}).") from e
 
     async def fetch_page(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
