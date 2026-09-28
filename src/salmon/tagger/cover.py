@@ -1,3 +1,4 @@
+import contextlib
 import io
 import os
 import re
@@ -120,6 +121,9 @@ def compress_to_target_size(image, target_size):
     buffer = io.BytesIO()
 
     while True:
+        # Each attempt replaces the last one, or the sizes add up and no quality ever fits.
+        buffer.seek(0)
+        buffer.truncate()
         image.save(buffer, "jpeg", optimize=True, quality=quality)
 
         file_size = len(buffer.getvalue())
@@ -194,7 +198,9 @@ def _write_whole_file(dest: str, data: bytes) -> None:
             file.write(data)
         os.replace(partial, dest)
     except BaseException:
-        os.remove(partial)
+        # The write's own error is the one to report, not a failed cleanup.
+        with contextlib.suppress(OSError):
+            os.remove(partial)
         raise
 
 
@@ -323,6 +329,9 @@ def compress_pictures(path):
                 image = Image.open(cover_file)
                 image.thumbnail((1000, 1000))
                 data = compress_to_target_size(image, max_picture_block_size - len(picture.write()))
+                if data is None:
+                    click.secho(f"Could not shrink {cover_file} enough to embed it; leaving it out.", fg="red")
+                    continue
 
             picture.data = data
             picture.type = PictureType.COVER_FRONT

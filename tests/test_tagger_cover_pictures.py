@@ -1,6 +1,7 @@
 """FLACs whose embedded pictures plus padding exceed RED's 1 MiB limit: stripped, or only listed on opt-out."""
 
 import io
+import random
 import struct
 from pathlib import Path
 
@@ -229,6 +230,50 @@ def test_auto_compress_cover_embeds_within_the_limit_counting_the_picture_block(
     audio = FLAC(tmp_path / "01.flac")
     assert len(audio.pictures) == 1
     assert cover.pictures_and_padding_size(audio) <= MIB
+
+
+def test_a_failed_cleanup_does_not_hide_the_write_error(tmp_path, monkeypatch) -> None:
+    class DiskFull(io.FileIO):
+        def write(self, data) -> int:
+            raise OSError(28, "No space left on device")
+
+    def cannot_remove(_path) -> None:
+        raise PermissionError("cannot remove")
+
+    monkeypatch.setattr(cover, "open", DiskFull, raising=False)
+    monkeypatch.setattr(cover.os, "remove", cannot_remove)
+
+    with pytest.raises(OSError, match="No space left"):
+        cover._write_whole_file(str(tmp_path / "cover.jpg"), FRONT)
+
+
+def test_compression_tries_each_quality_afresh() -> None:
+    noise = Image.frombytes("RGB", (300, 300), random.Random(0).randbytes(300 * 300 * 3))
+    sizes = {}
+    for quality in (95, 90):
+        buffer = io.BytesIO()
+        noise.save(buffer, "jpeg", optimize=True, quality=quality)
+        sizes[quality] = len(buffer.getvalue())
+    # Too big at quality 95, small enough at 90.
+    target = (sizes[95] + sizes[90]) // 2
+
+    data = cover.compress_to_target_size(noise, target)
+
+    assert data is not None
+    assert len(data) == sizes[90]
+    with Image.open(io.BytesIO(data)) as image:
+        assert image.format == "JPEG"
+
+
+def test_a_cover_that_cannot_be_shrunk_is_not_embedded(tmp_path, monkeypatch, capsys) -> None:
+    (tmp_path / "cover.jpg").write_bytes(_image("jpeg", 2 * MIB))
+    _write_flac(tmp_path / "01.flac")
+    monkeypatch.setattr(cover, "compress_to_target_size", lambda _image, _target: None)
+
+    cover.compress_pictures(str(tmp_path))
+
+    assert FLAC(tmp_path / "01.flac").pictures == []
+    assert "Could not shrink" in capsys.readouterr().out
 
 
 def test_nothing_is_said_or_changed_within_the_limit(tmp_path, capsys) -> None:
