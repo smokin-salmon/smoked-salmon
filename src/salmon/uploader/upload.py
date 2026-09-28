@@ -308,6 +308,24 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, To
     return tpath, t
 
 
+def format_tracklist_artists(artists: list[str]) -> str:
+    """Format a track's artist list for the group description's tracklist.
+
+    Args:
+        artists: Track artist names.
+
+    Returns:
+        The joined artist names, wrapped in [artist][/artist] BBCode when the
+        `artist_tags_in_tracklist` setting is on. A name containing "[" or "]" is
+        left plain, since wrapping it could break the tag.
+    """
+    if not cfg.upload.description.artist_tags_in_tracklist:
+        return ", ".join(artists)
+    return ", ".join(
+        f"[artist]{artist}[/artist]" if "[" not in artist and "]" not in artist else artist for artist in artists
+    )
+
+
 def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -> str:
     """Generate group description with tracklist.
 
@@ -339,7 +357,7 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
         else:
             description += f"[b]{str_to_int_if_int(track['t'].tracknumber, zpad=True)}.[/b] "
 
-        description += f"{', '.join(track['t'].artist)} - {track['t'].title} [i]({length})[/i]\n"
+        description += f"{format_tracklist_artists(track['t'].artist)} - {track['t'].title} [i]({length})[/i]\n"
 
     if len(track_data.values()) > 1:
         description += f"\n[b]Total length: [/b]{total_duration // 60}:{total_duration % 60:02d}\n"

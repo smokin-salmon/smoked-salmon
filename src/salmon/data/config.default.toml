@@ -223,6 +223,9 @@ session = 'get-from-site-cookie'
 # fullwidth_replacements = false
 # empty_track_comment_tag = true
 
+# Wrap artist names in [artist][/artist] BBCode in the group description's tracklist.
+# artist_tags_in_tracklist = false
+
 # [upload.web_interface]
 # # web interface settings
 # host = "0.0.0.0"
