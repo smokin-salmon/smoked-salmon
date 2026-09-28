@@ -608,8 +608,8 @@ def _edition_catno(torrent: dict, group: dict) -> str:
 def matching_torrents(group: dict, release: dict) -> list[dict]:
     """Find the group's torrents in the release's edition with its media, format and encoding.
 
-    The edition is the year, catalogue number and edition title. A catalogue number or edition title
-    missing on either side still matches.
+    The edition is the year, catalogue number and edition title. Any of them missing on either side
+    still matches.
 
     Args:
         group: The group, as the tracker's torrentgroup API returns it.
@@ -629,7 +629,8 @@ def matching_torrents(group: dict, release: dict) -> list[dict]:
     for torrent in group.get("torrents") or []:
         if (torrent.get("media"), torrent.get("format"), torrent.get("encoding")) != wanted:
             continue
-        edition_year = str(torrent.get("remasterYear") or group_year or "")
+        # Only an original release takes the group's year; a remaster with no year of its own matches any.
+        edition_year = str((torrent.get("remasterYear") if _is_remaster(torrent) else group_year) or "")
         if year and edition_year and edition_year != year:
             continue
         held_catno = comparable(_edition_catno(torrent, group))

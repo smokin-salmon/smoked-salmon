@@ -170,6 +170,14 @@ def test_an_edition_field_missing_on_either_side_still_matches() -> None:
     assert _choose(_group(_torrent(11)), catno=None) == 11
 
 
+def test_a_remaster_with_no_year_matches_any_year() -> None:
+    """The group's year is the original release's; a remaster missing its own year does not take it."""
+    group = _group(_torrent(11, year=0))
+    group["group"]["year"] = 2011
+
+    assert _choose(group) == 11
+
+
 def test_several_matching_flacs_ask_which_one(monkeypatch) -> None:
     asked = _answers(monkeypatch, "3", "x", "2")
     group = _group(_torrent(11), _torrent(10, format_="MP3", encoding="320"), _torrent(12))
