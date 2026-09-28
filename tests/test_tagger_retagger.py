@@ -140,6 +140,30 @@ def test_create_track_changes_trusts_continuous_track_numbers_with_no_discnumber
     assert Change("title", "Old 4", "New 2-1") in changes["04.flac"]
 
 
+def test_create_track_changes_falls_back_when_tag_pairs_do_not_match_the_metadata_discs():
+    # Every file carries a distinct, parseable DISCNUMBER/TRACKNUMBER pair, so the tags look
+    # trustworthy by uniqueness alone: (1, 1), (1, 2), (1, 3), (2, 1). But the metadata gives each
+    # of two discs two tracks, so disc 1 has no track "3" and disc 2's second track has no file at
+    # all. Trusting the unique-looking pairs would zip the file tagged (1, 3) onto disc 2's first
+    # track. The tag pairs must match the metadata's real disc/track pairs, not just be unique
+    # among themselves; the files aren't in a folder per disc either, so this must refuse.
+    tags = {
+        "a.flac": _tagset("Old a", tracknumber="1", discnumber="1"),
+        "b.flac": _tagset("Old b", tracknumber="2", discnumber="1"),
+        "c.flac": _tagset("Old c", tracknumber="3", discnumber="1"),
+        "d.flac": _tagset("Old d", tracknumber="1", discnumber="2"),
+    }
+    metadata = {
+        "tracks": {
+            "1": {"1": _trackmeta("New 1-1", "1", "1"), "2": _trackmeta("New 1-2", "2", "1")},
+            "2": {"1": _trackmeta("New 2-1", "1", "2"), "2": _trackmeta("New 2-2", "2", "2")},
+        }
+    }
+
+    with pytest.raises(AmbiguousTrackOrderError, match="DISCNUMBER"):
+        create_track_changes(tags, metadata)
+
+
 def test_create_track_changes_orders_ten_plus_discs_naturally():
     # gather_tags lists CD10 before CD2 (a path with no leading number sorts as text). With no
     # DISCNUMBER tags every file collides on (1, 1), so the fallback must order the disc folders

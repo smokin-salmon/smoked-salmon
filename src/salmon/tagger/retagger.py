@@ -105,24 +105,32 @@ def create_track_changes(tags, metadata):
         return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
 
     # An unparseable tag reads as 1 via _get_tag_number, so it can't vouch for a file's place: only
-    # a disc/track pair built from tags we actually trust identifies a file. TRACKNUMBER must be
-    # present and parseable everywhere. DISCNUMBER is trusted only when every file has it, and it
-    # parses everywhere too (a flat single-disc folder with no DISCNUMBER tag on any file is the
-    # common case, and correctly reads as "everyone defaults to disc 1"); when some files have it
-    # and others don't, or it doesn't parse, a missing tag's default (1, N) is not guaranteed to
-    # collide with anything, so we can't tell whether the resulting keys are trustworthy or just
-    # coincidentally unique, and fall back below instead.
-    discnumber_tags = [_has_tag(tagset, "discnumber") for tagset in tags.values()]
-    discnumber_trusted = not any(discnumber_tags) or (
-        all(discnumber_tags) and all(_parse_tag_number(tagset, "discnumber") is not None for tagset in tags.values())
-    )
-    readable = discnumber_trusted and all(
-        _parse_tag_number(tagset, "tracknumber") is not None for tagset in tags.values()
-    )
+    # a disc/track pair built from tags we actually trust identifies a file, and TRACKNUMBER must
+    # be present and parseable everywhere either way.
+    tracknumber_readable = all(_parse_tag_number(tagset, "tracknumber") is not None for tagset in tags.values())
     disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
-    if readable and len(set(disc_track_keys)) == len(disc_track_keys):
-        # Every file has its own distinct disc/track pair, so its embedded tags can be
-        # trusted to identify it.
+    keys_unique = len(set(disc_track_keys)) == len(disc_track_keys)
+    discnumber_tags = [_has_tag(tagset, "discnumber") for tagset in tags.values()]
+
+    if tracknumber_readable and keys_unique and not any(discnumber_tags):
+        # No file carries a DISCNUMBER tag, so every key defaults to (1, track) and uniqueness
+        # among them is really uniqueness of the track numbers alone (a flat single-disc folder,
+        # or one whose TRACKNUMBER counts straight through every disc instead of restarting at
+        # each one). Nothing here vouches for *which* disc a file belongs to, but the positional
+        # zip below only needs the track order right, which this does give us.
+        ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
+    elif (
+        tracknumber_readable
+        and keys_unique
+        and all(discnumber_tags)
+        and all(_parse_tag_number(tagset, "discnumber") is not None for tagset in tags.values())
+        and set(disc_track_keys) == _metadata_track_keys(metadata["tracks"])
+    ):
+        # DISCNUMBER is present and parseable on every file, and the resulting pairs are not just
+        # unique among themselves but are exactly the metadata's real disc/track pairs: a pair
+        # that happens to be unique but that the metadata doesn't have (an extra track number a
+        # disc's real tracklist doesn't include, say) would otherwise still get trusted and zipped
+        # onto the wrong track.
         ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
     else:
         ordered_tags = _order_by_disc_folders(tags, metadata["tracks"])
@@ -190,6 +198,17 @@ def append_guests_to_track_titles(track):
 def metadata_to_track_list(metadata):
     """Turn the double nested dictionary of tracks into a flat list of tracks, discs in natural order."""
     return list(chain.from_iterable(metadata[disc].values() for disc in sorted(metadata, key=_disc_track_sort_key)))
+
+
+def _metadata_track_keys(discs):
+    """The metadata's real (disc, track) pairs, numbers read the same way a tag's are."""
+    return {(_to_number(disc), _to_number(track)) for disc, disc_tracks in discs.items() for track in disc_tracks}
+
+
+def _to_number(value):
+    """A digit string read as an int, so it compares equal to the number a tag parses to; anything else as is."""
+    s = str(value)
+    return int(s) if s.isdigit() else s
 
 
 def _order_by_disc_folders(tags, discs):
