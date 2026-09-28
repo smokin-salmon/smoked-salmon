@@ -206,9 +206,13 @@ def _metadata_track_keys(discs):
 
 
 def _to_number(value):
-    """A digit string read as an int, so it compares equal to the number a tag parses to; anything else as is."""
+    """A digit string read as an int, so it compares equal to the number a tag parses to; anything else as is.
+
+    ``str.isdecimal()``, not ``str.isdigit()``: ``isdigit()`` accepts some Unicode digits (superscript "2")
+    that ``int()`` then rejects, while ``isdecimal()`` is true for exactly what ``int()`` accepts.
+    """
     s = str(value)
-    return int(s) if s.isdigit() else s
+    return int(s) if s.isdecimal() else s
 
 
 def _order_by_disc_folders(tags, discs):
@@ -263,14 +267,19 @@ def _ambiguous_tracks() -> AmbiguousTrackOrderError:
 
 
 def _natural_key(path: str) -> list[int | str]:
-    """Sort key that compares the digit runs in a path as numbers, so CD2 sorts before CD10."""
-    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", path)]
+    """Sort key that compares the digit runs in a path as numbers, so CD2 sorts before CD10.
+
+    Uses ``str.isdecimal()``, not ``str.isdigit()``: ``\\d+`` in the regex only matches ASCII-like decimal
+    digits, but a lone non-decimal digit character next to them (superscript "2" in "01²2.flac") still ends
+    up as its own split segment, where ``isdigit()`` would accept it and ``int()`` would then reject it.
+    """
+    return [int(part) if part.isdecimal() else part.lower() for part in re.split(r"(\d+)", path)]
 
 
 def _disc_track_sort_key(value):
     """Sort key that treats a numeric string as a number, so disc "10" sorts after "2"."""
     s = str(value)
-    return (0, int(s)) if s.isdigit() else (1, s.lower())
+    return (0, int(s)) if s.isdecimal() else (1, s.lower())
 
 
 def _compare_tag(tagfield, metafield, tagset, trackmeta):
@@ -535,14 +544,9 @@ def _parse_tag_number(tracktags, field):
         return None
     if isinstance(value, str):
         value = value.split("/")[0]
-        if not value.isdigit():
-            return None
-        try:
-            # str.isdigit() accepts some Unicode digits int() then rejects (e.g. superscript "2"),
-            # so the conversion can still fail even once isdigit() has passed.
-            return int(value)
-        except ValueError:
-            return None
+        # str.isdecimal(), not str.isdigit(): isdigit() accepts some Unicode digits (superscript
+        # "2") that int() then rejects, while isdecimal() is true for exactly what int() accepts.
+        return int(value) if value.isdecimal() else None
     if isinstance(value, int):
         return value
     return None

@@ -307,6 +307,30 @@ def test_create_track_changes_orders_a_single_disc_single_folder_with_no_track_t
     assert Change("title", "Old Second", "New Second") in changes["02 Second.flac"]
 
 
+def test_create_track_changes_orders_by_file_name_when_a_name_holds_a_digit_int_cannot_parse():
+    # Same no-track-tag, single-disc, single-folder fallback as above, but one file's name has a
+    # superscript "2" next to ordinary digits ("01²2.flac"): str.isdigit() accepts it as a
+    # split segment on its own, and int() then rejects it. The natural-order file-name fallback
+    # must not raise out of retagging over a file name like that.
+    tags = {
+        "01²2.flac": _tagset("Old First", tracknumber=None, discnumber=None),
+        "02.flac": _tagset("Old Second", tracknumber=None, discnumber=None),
+    }
+    metadata = {
+        "tracks": {
+            "1": {
+                "1": _trackmeta("New First", "1", "1"),
+                "2": _trackmeta("New Second", "2", "1"),
+            }
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old First", "New First") in changes["01²2.flac"]
+    assert Change("title", "Old Second", "New Second") in changes["02.flac"]
+
+
 def test_tag_files_skips_retagging_when_one_disc_folder_is_genuinely_ambiguous(capsys):
     # A two-disc release with a proper folder per disc: CD1's files have no track tags and tie
     # under natural file-name order too (same name, different case), so CD1 alone can't be
