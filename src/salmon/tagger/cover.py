@@ -14,6 +14,9 @@ from PIL import Image
 from salmon import cfg
 from salmon.common import get_audio_files
 
+# RED trumps a FLAC whose embedded pictures plus padding exceed 1 MiB.
+MAX_PICTURES_AND_PADDING = humanfriendly.parse_size("1MiB")
+
 
 def get_cover_from_path(path):
     """
@@ -135,6 +138,104 @@ def get_8kib_padding(info: PaddingInfo):
     return humanfriendly.parse_size("8KiB")
 
 
+def pictures_and_padding_size(audio: FLAC) -> int:
+    """Get the bytes a FLAC spends on embedded pictures and padding, which RED's 1 MiB limit counts."""
+    padding_size = sum(block.length for block in audio.metadata_blocks if block.code == 1)
+    return padding_size + sum(len(picture.data) for picture in audio.pictures)
+
+
+def find_oversized_pictures(path: str) -> dict[str, int]:
+    """Find the FLACs in a folder whose embedded pictures plus padding exceed RED's 1 MiB limit.
+
+    Args:
+        path: The release folder.
+
+    Returns:
+        The size of the pictures plus padding, by file path relative to the folder.
+    """
+    oversized = {}
+    for filename in get_audio_files(path):
+        if not filename.lower().endswith(".flac"):
+            continue
+        size = pictures_and_padding_size(FLAC(os.path.join(path, filename)))
+        if size > MAX_PICTURES_AND_PADDING:
+            oversized[filename] = size
+    return oversized
+
+
+def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | None:
+    """Remove a FLAC's pictures and padding, keeping 8 KiB of padding.
+
+    Its front cover is written to the folder first if the folder has no cover file.
+
+    Args:
+        path: The release folder.
+        audio: The FLAC to strip.
+        cover_file: The folder's cover file, or None if it has none.
+
+    Returns:
+        The folder's cover file afterwards, or None if it still has none.
+    """
+    for picture in audio.pictures:
+        if picture.type == PictureType.COVER_FRONT and not cover_file:
+            extension = "png" if picture.mime == "image/png" else "jpg"
+            cover_file = os.path.join(path, f"cover.{extension}")
+            with open(cover_file, "wb") as img:
+                img.write(picture.data)
+            click.secho(f"Extracted cover to: {cover_file}", fg="green")
+
+    audio.clear_pictures()
+    audio.save(padding=get_8kib_padding)
+    return cover_file
+
+
+def check_embedded_pictures(path: str) -> None:
+    """Warn about FLACs whose embedded pictures plus padding exceed RED's 1 MiB limit, and strip them if asked.
+
+    Stripping removes every embedded picture and all but 8 KiB of padding, keeping the front cover as the
+    folder's cover file if it has none. It only happens with image.strip_oversized_pictures, or when the user
+    says yes at the prompt, which --yes-all never does.
+
+    Args:
+        path: The release folder, which must be safe to change.
+    """
+    oversized = find_oversized_pictures(path)
+    if not oversized:
+        return
+    click.secho(
+        "\nEmbedded pictures plus padding exceed 1 MiB in these files, which is a trump reason on RED:",
+        fg="yellow",
+        bold=True,
+    )
+    for filename, size in oversized.items():
+        excess = humanfriendly.format_size(size - MAX_PICTURES_AND_PADDING, binary=True)
+        click.secho(f"  {filename}: {humanfriendly.format_size(size, binary=True)} ({excess} over)", fg="yellow")
+
+    if cfg.image.auto_compress_cover:
+        click.secho("auto_compress_cover is on: they will be removed before the upload.", fg="yellow")
+        return
+    if not cfg.image.strip_oversized_pictures:
+        if cfg.upload.yes_all:
+            click.secho(
+                "Leaving the files as they are. Set strip_oversized_pictures under [image] to remove them.",
+                fg="yellow",
+            )
+            return
+        if not click.confirm(
+            click.style(
+                "Remove the embedded pictures and padding from these files? The front cover is kept as a file.",
+                fg="magenta",
+            ),
+            default=False,
+        ):
+            return
+
+    cover_file = get_cover_from_path(path)
+    for filename in oversized:
+        cover_file = _strip_pictures(path, FLAC(os.path.join(path, filename)), cover_file)
+    click.secho(f"Removed the embedded pictures from {len(oversized)} file(s).", fg="green")
+
+
 def compress_pictures(path):
     for filename in get_audio_files(path):
         if not filename.lower().endswith(".flac"):
@@ -155,29 +256,12 @@ def compress_pictures(path):
 
         cover_file = get_cover_from_path(path)
 
-        if padding_size + cover_sizes > humanfriendly.parse_size("1MiB"):
+        if padding_size + cover_sizes > MAX_PICTURES_AND_PADDING:
             click.secho(
                 f"Total size ({humanfriendly.format_size(padding_size + cover_sizes, binary=True)}) exceeds 1MiB!",
                 fg="yellow",
             )
-
-            for picture in audio.pictures:
-                if picture.type == PictureType.COVER_FRONT:
-                    if picture.mime == "image/jpeg":
-                        extension = "jpg"
-                    elif picture.mime == "image/png":
-                        extension = "png"
-                    else:
-                        extension = "jpg"  # Default fallback
-
-                    if not cover_file:
-                        cover_file = os.path.join(path, f"cover.{extension}")
-                        with open(cover_file, "wb") as img:
-                            img.write(picture.data)
-                        click.secho(f"Extracted cover to: {cover_file}", fg="green")
-
-            audio.clear_pictures()
-            audio.save(padding=get_8kib_padding)
+            cover_file = _strip_pictures(path, audio, cover_file)
 
         if audio.pictures == []:
             click.secho("Attempting to add external cover...", fg="magenta")
@@ -188,7 +272,7 @@ def compress_pictures(path):
             with open(cover_file, "rb") as c:
                 data = c.read()
 
-            max_embedded_image_size = humanfriendly.parse_size("1MiB") - humanfriendly.parse_size("8KiB")
+            max_embedded_image_size = MAX_PICTURES_AND_PADDING - humanfriendly.parse_size("8KiB")
 
             picture = Picture()
 

@@ -51,6 +51,7 @@ class ImageUploader(BaseStruct):
     ra_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
     auto_compress_cover: bool = False
+    strip_oversized_pictures: bool = False
     default_spectral_ids: SpectralSelection | None = None
     red: TrackerImageSettings | None = None
     ops: TrackerImageSettings | None = None
