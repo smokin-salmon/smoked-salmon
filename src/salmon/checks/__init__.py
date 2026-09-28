@@ -6,6 +6,7 @@ from salmon.checks.integrity import handle_integrity_check
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
+from salmon.common.files import process_files
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 
 
@@ -100,9 +101,9 @@ async def mqa(path):
 
 
 async def mqa_test(path: str) -> None:
-    """Check if a FLAC file or directory contains MQA content.
+    """Check if a FLAC file or any FLAC file in a directory contains MQA content.
 
-    For directories, only the first audio file is checked.
+    The files are checked concurrently, like the integrity check.
 
     Args:
         path: Path to the FLAC file or directory to check.
@@ -113,20 +114,20 @@ async def mqa_test(path: str) -> None:
     from salmon.checks.mqa import check_mqa
 
     if os.path.isfile(path):
-        filepath = path
+        filepaths = [path]
     elif os.path.isdir(path):
-        filepath = next(
-            (
-                os.path.join(root, f)
-                for root, _, files in os.walk(path)
-                for f in files
-                if f.lower().endswith((".mp3", ".flac"))
-            ),
-            None,
+        filepaths = sorted(
+            os.path.join(root, f) for root, _, files in os.walk(path) for f in files if f.lower().endswith(".flac")
         )
     else:
         return
 
-    if filepath and await check_mqa(filepath):
+    async def check(filepath: str, _: int) -> bool:
+        return await check_mqa(filepath)
+
+    detected = await process_files(filepaths, check, "Checking for MQA")
+    hits = [filepath for filepath, found in zip(filepaths, detected, strict=True) if found]
+    for filepath in hits:
         click.secho(f"MQA syncword present in '{filepath}'", fg="red", bold=True)
+    if hits:
         raise click.Abort

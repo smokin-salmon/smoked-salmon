@@ -2,6 +2,7 @@ import subprocess
 from importlib import import_module
 
 import anyio
+import asyncclick as click
 import pytest
 
 from salmon.checks.integrity import IntegrityResult
@@ -24,8 +25,9 @@ def test_unset_streaminfo_md5_fails_the_check(monkeypatch) -> None:
     result = anyio.run(integrity._check_flac_integrity, "track01.flac")
 
     assert result.passed is False
-    assert "MD5 signature unset in STREAMINFO" in result.details
-    assert "\u2014" not in result.details
+    assert result.md5_unset == ("track01.flac",)
+    assert "no MD5 signature stored" in integrity.format_integrity(result)
+    assert "\u2014" not in integrity.format_integrity(result)
 
 
 def test_clean_flac_output_still_passes(monkeypatch) -> None:
@@ -38,6 +40,96 @@ def test_clean_flac_output_still_passes(monkeypatch) -> None:
 
     assert result.passed is True
     assert "MD5" not in result.details
+
+
+# flac -wt's real output (on stderr) for an album of files with no MD5 in STREAMINFO. flac 1.3 draws its
+# progress with backspaces even when its output is a pipe; 1.4 and later print no progress there.
+FLAC_13_MD5_UNSET = (
+    b"%s: testing, 26%% complete"
+    + b"\x08" * 21
+    + b"testing, 53%% complete"
+    + b"\x08" * 21
+    + b"testing, 79%% complete"
+    + b"\x08" * 21
+    + b"WARNING, cannot check MD5 signature since it was unset in the STREAMINFO\nok                    \n"
+)
+FLAC_15_MD5_UNSET = (
+    b"%s: WARNING, cannot check MD5 signature since it was unset in the STREAMINFO\nok                    \n"
+)
+FLAC_15_CLEAN = b"%s: ok                    \n"
+FLAC_15_TRUNCATED = (
+    b"%s: *** Got error code 0:FLAC__STREAM_DECODER_ERROR_STATUS_LOST_SYNC after processing 77824 samples\n\n\n"
+    b"%s: ERROR during decoding\n        state = FLAC__STREAM_DECODER_END_OF_STREAM\n"
+)
+
+
+def _fake_flac(monkeypatch, outputs: dict[str, bytes]) -> None:
+    """Answer `flac -wt <file>` with the output given for the file's name; exit 1 unless it is a clean one."""
+
+    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        assert commands[:2] == ["flac", "-wt"]
+        name = commands[2].rsplit("/", 1)[-1].encode()
+        output = outputs[name.decode()]
+        stderr = output % ((name,) * output.count(b"%s"))
+        return subprocess.CompletedProcess(commands, 0 if output is FLAC_15_CLEAN else 1, stdout=b"", stderr=stderr)
+
+    monkeypatch.setattr(integrity.anyio, "run_process", fake_run_process)
+
+
+def _album(tmp_path, names) -> str:
+    for name in names:
+        (tmp_path / name).write_bytes(b"fLaC")
+    return str(tmp_path)
+
+
+@pytest.mark.parametrize("output", [FLAC_13_MD5_UNSET, FLAC_15_MD5_UNSET], ids=["flac-1.3", "flac-1.5"])
+def test_an_album_with_no_md5_is_reported_once_per_file_without_backspaces(
+    monkeypatch, tmp_path, output: bytes
+) -> None:
+    names = [f"{n:02d}.flac" for n in range(1, 13)]
+    _fake_flac(monkeypatch, dict.fromkeys(names, output))
+
+    result = anyio.run(integrity.check_integrity, _album(tmp_path, names))
+    rendered = click.unstyle(integrity.format_integrity(result))
+
+    assert "\x08" not in rendered
+    assert "% complete" not in rendered
+    assert sorted(result.md5_unset) == names
+    assert result.decode_failures == ()
+    assert result.checked == 12
+    # Once for the album, not once or twice per file.
+    assert result.details == ""
+    assert ".flac" not in rendered
+    assert "12 of 12 file(s) have no MD5 signature stored" in rendered
+    assert rendered.splitlines()[0].endswith("Integrity check not passed: no MD5 signature stored")
+
+
+def test_a_few_files_with_no_md5_are_named(monkeypatch, tmp_path) -> None:
+    _fake_flac(monkeypatch, {"01.flac": FLAC_15_MD5_UNSET, "02.flac": FLAC_15_CLEAN, "03.flac": FLAC_15_CLEAN})
+
+    result = anyio.run(integrity.check_integrity, _album(tmp_path, ["01.flac", "02.flac", "03.flac"]))
+
+    assert "1 of 3 file(s) have no MD5 signature stored: 01.flac" in integrity.format_integrity(result)
+    assert "1 of 3 file(s)" in integrity.sanitize_prompt(result)
+
+
+def test_a_file_that_does_not_decode_is_a_decode_failure_even_beside_md5_unset_files(monkeypatch, tmp_path) -> None:
+    _fake_flac(monkeypatch, {"01.flac": FLAC_15_MD5_UNSET, "02.flac": FLAC_15_TRUNCATED})
+
+    result = anyio.run(integrity.check_integrity, _album(tmp_path, ["01.flac", "02.flac"]))
+    rendered = click.unstyle(integrity.format_integrity(result))
+
+    assert result.md5_unset == ("01.flac",)
+    assert result.decode_failures == ("02.flac",)
+    assert rendered.splitlines()[0].endswith("Failed integrity check")
+    assert "02.flac: ERROR during decoding" in rendered
+    assert integrity.sanitize_prompt(result) == "Do you want to sanitize this upload?"
+
+
+def test_resolve_overstrikes() -> None:
+    assert integrity._resolve_overstrikes("abc\x08\x08d") == "ad"
+    assert integrity._resolve_overstrikes("a\nb\x08\x08c") == "a\nc"
+    assert integrity._resolve_overstrikes("50%\rok") == "ok"
 
 
 # mp3val 0.1.8's real output for files damaged in different ways (the full path it prints replaced by
