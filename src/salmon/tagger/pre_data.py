@@ -110,10 +110,10 @@ def construct_artists_li(tags):
 
 def split_genres(genres_list):
     """Create a list of genres from splitting the string."""
-    genres = set()
-    if genres_list:
-        for g in genres_list:
-            genres.update(split_genre(g))
+    # A dict, not a set, so the order follows the file tags rather than the hash seed.
+    genres: dict[str, None] = {}
+    for g in genres_list or []:
+        genres.update(dict.fromkeys(split_genre(g)))
     return list(genres)
 
 

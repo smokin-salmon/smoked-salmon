@@ -3,6 +3,7 @@
 from salmon.common import split_genre
 from salmon.tagger.ai_review import apply_ai_metadata_result
 from salmon.tagger.pre_data import split_genres
+from salmon.tagger.sources import beatport, qobuz
 from salmon.tagger.sources.base import standardize_genres
 from salmon.uploader import convert_genres
 
@@ -111,13 +112,59 @@ def test_standardize_genres_preserves_input_order():
     assert standardize_genres(["Electronic", "Deep House"]) == ["Electronic", "Deep House"]
     assert standardize_genres(["Deep House", "Electronic"]) == ["Deep House", "Electronic"]
     assert standardize_genres(["Dance / Pop", "House"]) == ["Dance", "Pop", "House"]
+    # Six genres: a set happening to keep this order under some seed is unlikely enough to rely on.
+    many = ["Techno", "Ambient", "Jazz", "Folk", "Electronic", "Rock"]
+    assert standardize_genres(many) == many
+
+
+def test_file_tag_genres_keep_their_order():
+    assert split_genres(["Techno; Ambient", "Jazz / Folk", "Electronic, Rock"]) == [
+        "Techno",
+        "Ambient",
+        "Jazz",
+        "Folk",
+        "Electronic",
+        "Rock",
+    ]
+    assert split_genres(["Rock", "Pop; Rock"]) == ["Rock", "Pop"]
+    assert split_genres(None) == []
+
+
+def _tags(genres):
+    """What reaches the tracker's tags field for genres read from a source."""
+    return convert_genres(standardize_genres(genres)).split(",")
+
+
+def test_source_genres_reach_the_tracker_as_valid_tags():
+    assert _tags(["Drum & Bass"]) == ["Drum.and.Bass"]
+    assert _tags(["Drum and Bass"]) == ["Drum.and.Bass"]
+    assert _tags(["R&B"]) == ["Rhythm.and.Blues"]
+    assert _tags(["Rock & Roll"]) == ["Rock.and.Roll"]
+    assert _tags(["Dance / Pop"]) == ["Dance", "Pop"]
+    assert _tags(["Dance", "Dance / Pop"]) == ["Dance", "Pop"]
+    assert _tags(["\u00c9lectronique\u2192Dance"]) == ["Electronic", "Dance"]
+
+
+def test_store_split_tables_still_yield_valid_tags():
+    for table in (beatport.SPLIT_GENRES, qobuz.SPLIT_GENRES):
+        for source_genre, genres in table.items():
+            for tag in _tags(sorted(genres)) if genres else []:
+                assert tag, source_genre
+                assert not set(tag) & set("&/;, "), (source_genre, tag)
 
 
 def _md():
     return {
-        "artists": [("Real Artist", "main")], "title": "Real Title", "group_year": "2004",
-        "year": "2004", "edition_title": "Deluxe", "label": "Real Label", "catno": "CAT-1",
-        "upc": "123456789012", "genres": ["Electronic"], "urls": [],
+        "artists": [("Real Artist", "main")],
+        "title": "Real Title",
+        "group_year": "2004",
+        "year": "2004",
+        "edition_title": "Deluxe",
+        "label": "Real Label",
+        "catno": "CAT-1",
+        "upc": "123456789012",
+        "genres": ["Electronic"],
+        "urls": [],
     }
 
 
