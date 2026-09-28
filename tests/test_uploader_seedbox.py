@@ -1,10 +1,76 @@
+import os
 import subprocess
+import sys
 
 import anyio
 import msgspec
+import pytest
 
 from salmon.config.validations import Seedbox
 from salmon.uploader import seedbox
+
+
+def _fake_rclone(monkeypatch, tmp_path, *, stdout: str = "", stderr: str = "", exit_code: int = 0) -> None:
+    """Put an `rclone` first on PATH that prints the given text and exits with exit_code."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    script = bin_dir / "rclone"
+    script.write_text(
+        f"#!{sys.executable}\n"
+        "import sys\n"
+        f"sys.stdout.write({stdout!r})\n"
+        f"sys.stderr.write({stderr!r})\n"
+        f"sys.exit({exit_code})\n"
+    )
+    script.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+
+
+def _upload_with_fake_rclone(seedbox_config: Seedbox) -> bool:
+    return anyio.run(seedbox._rclone_upload_folder, seedbox_config, "/music", "/tmp/Artist - Album")
+
+
+needs_posix = pytest.mark.skipif(sys.platform == "win32", reason="the fake rclone is a script with a shebang")
+
+
+@needs_posix
+@pytest.mark.parametrize(
+    ("url", "extra_args"),
+    [
+        ("sbox", ["--sftp-pass", "UNIQUESECRET"]),
+        ("sbox", ["--sftp-pass=UNIQUESECRET"]),
+        ("sbox", ["--sftp-key-pem", "-----BEGIN KEY----- UNIQUESECRET -----END KEY-----"]),
+        ("sbox", ["--sftp-key-pem=BEGIN KEY UNIQUESECRET DATA"]),
+        ("web", ["--http-headers", "Authorization,Bearer UNIQUESECRET"]),
+        ("web", ["--webdav-url", "https://dean:UNIQUESECRET@dav.example/remote.php"]),
+        (":sftp,host=box,user=dean,pass=UNIQUESECRET", []),
+    ],
+    ids=["flag value", "equals form", "quoted with spaces", "equals form with spaces", "comma list", "url", "remote"],
+)
+def test_the_rclone_command_salmon_prints_hides_the_seedbox_secrets(
+    monkeypatch, tmp_path, capfd, url: str, extra_args: list[str]
+) -> None:
+    _fake_rclone(monkeypatch, tmp_path)
+
+    assert _upload_with_fake_rclone(Seedbox(url=url, extra_args=extra_args)) is True
+
+    out, err = capfd.readouterr()
+    assert "Executing: rclone copy" in out
+    assert "Rclone upload successful" in out
+    assert "UNIQUESECRET" not in out + err
+
+
+@needs_posix
+def test_the_rclone_command_salmon_prints_keeps_harmless_values(monkeypatch, tmp_path, capfd) -> None:
+    _fake_rclone(monkeypatch, tmp_path)
+    extra_args = ["--checksum", "-P", "--sftp-path-override", "@/volume3", "--transfers", "4", "--bwlimit=8M"]
+
+    _upload_with_fake_rclone(Seedbox(url="sbox", extra_args=extra_args))
+
+    assert (
+        "Executing: rclone copy '/tmp/Artist - Album' 'sbox:/music/Artist - Album' "
+        "--checksum -P --sftp-path-override @/volume3 --transfers 4 --bwlimit=8M"
+    ) in capfd.readouterr().out
 
 
 def test_rclone_upload_folder_streams_progress_output(monkeypatch) -> None:
