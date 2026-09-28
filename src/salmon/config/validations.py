@@ -217,6 +217,7 @@ class UploadDescription(BaseStruct):
     fullwidth_replacements: bool = False
     # TODO: should this be in description?
     empty_track_comment_tag: bool = True
+    artist_tags_in_tracklist: bool = False
 
 
 class UploadWebInterface(BaseStruct):

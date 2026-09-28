@@ -1,5 +1,87 @@
+from types import SimpleNamespace
+from typing import Any
+
 from salmon import cfg
-from salmon.uploader.upload import generate_source_links, generate_t_description
+from salmon.uploader.upload import generate_description, generate_source_links, generate_t_description
+
+
+def _two_track_data() -> dict[str, dict[str, Any]]:
+    return {
+        "01. Track One.flac": {
+            "duration": 200,
+            "t": SimpleNamespace(
+                discnumber="1/1",
+                tracknumber="1",
+                artist=["Artist A", "Artist B"],
+                title="Track One",
+            ),
+        },
+        "02. Track Two.flac": {
+            "duration": 180,
+            "t": SimpleNamespace(
+                discnumber="1/1",
+                tracknumber="2",
+                artist=["Artist A"],
+                title="Track Two",
+            ),
+        },
+    }
+
+
+def _base_metadata() -> dict[str, Any]:
+    return {"comment": None, "urls": None}
+
+
+def test_generate_description_wraps_artists_in_bbcode_when_enabled() -> None:
+    original = cfg.upload.description.artist_tags_in_tracklist
+    try:
+        cfg.upload.description.artist_tags_in_tracklist = True
+        description = generate_description(_two_track_data(), _base_metadata())
+    finally:
+        cfg.upload.description.artist_tags_in_tracklist = original
+
+    assert "[artist]Artist A[/artist], [artist]Artist B[/artist] - Track One" in description
+    assert "[artist]Artist A[/artist] - Track Two" in description
+
+
+def test_generate_description_leaves_artists_plain_by_default() -> None:
+    original = cfg.upload.description.artist_tags_in_tracklist
+    try:
+        cfg.upload.description.artist_tags_in_tracklist = False
+        description = generate_description(_two_track_data(), _base_metadata())
+    finally:
+        cfg.upload.description.artist_tags_in_tracklist = original
+
+    assert "[artist]" not in description
+    assert "Artist A, Artist B - Track One" in description
+    assert "Artist A - Track Two" in description
+
+
+def test_generate_description_does_not_wrap_artist_with_brackets() -> None:
+    original = cfg.upload.description.artist_tags_in_tracklist
+    try:
+        cfg.upload.description.artist_tags_in_tracklist = True
+        track_data = {
+            "01. Track One.flac": {
+                "duration": 200,
+                "t": SimpleNamespace(
+                    discnumber="1/1",
+                    tracknumber="1",
+                    artist=["A [B]"],
+                    title="Track One",
+                ),
+            }
+        }
+        description = generate_description(track_data, _base_metadata())
+    finally:
+        cfg.upload.description.artist_tags_in_tracklist = original
+
+    assert "A [B] - Track One" in description
+    assert "[artist]A [B][/artist]" not in description
+
+
+def test_upload_description_default_config_has_artist_tags_off() -> None:
+    assert cfg.upload.description.artist_tags_in_tracklist is False
 
 
 def test_generate_source_links_excludes_source_url() -> None:
