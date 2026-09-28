@@ -4,6 +4,7 @@ from pathlib import Path
 import anyio
 import pytest
 
+from salmon.errors import RequestFailedError
 from salmon.uploader import spectrals
 
 FOUR_TRACKS = {1: "01 a.flac", 2: "02 b.flac", 3: "03 c.flac", 4: "04 d.flac"}
@@ -178,3 +179,69 @@ def test_spectrals_given_on_the_command_line_are_compressed(release) -> None:
 
     assert picked is not None
     assert sorted(compressed) == _images(*picked)
+
+
+class _FailingDescriptionEditSite:
+    """A fake site whose description edit always fails, to prove the flow survives it."""
+
+    base_url = "https://fake.test"
+    site_string = "Fake"
+
+    def __init__(self) -> None:
+        self.description_edit_calls = 0
+        self.lossy_master_reports: list[tuple[int, str, str]] = []
+
+    async def append_to_torrent_description(self, _torrent_id: int, _description_addition: str) -> None:
+        self.description_edit_calls += 1
+        raise RequestFailedError("the edit form could not be read")
+
+    async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
+        self.lossy_master_reports.append((torrent_id, comment, source))
+        return True
+
+
+def test_a_failed_description_edit_still_prints_the_bbcode_and_reports_lossy_master(
+    monkeypatch, release, capsys
+) -> None:
+    path, audio_info, _compressed = release
+    _pick(monkeypatch, "2")
+
+    async def lossy(*_args, **_kwargs) -> bool:
+        return True
+
+    monkeypatch.setattr(spectrals, "prompt_lossy_master", lossy)
+
+    async def upload(_spectrals_path, spectral_ids) -> dict[int, list[str]]:
+        return {spec_id: [f"{spec_id}-full.png", f"{spec_id}-zoom.png"] for spec_id in spectral_ids}
+
+    monkeypatch.setattr(spectrals, "handle_spectrals_upload_and_deletion", upload)
+
+    site = _FailingDescriptionEditSite()
+
+    async def check_after_upload():
+        return await spectrals.post_upload_spectral_check(
+            site,  # type: ignore[arg-type]  # a fake site is enough: only append_to_torrent_description/report_lossy_master are called
+            path,
+            1,
+            None,
+            audio_info,
+            "WEB",
+            "https://store.test/album",
+        )
+
+    lossy_master, _comment, spectral_urls, _spectral_ids = anyio.run(check_after_upload)
+
+    assert lossy_master is True
+    assert spectral_urls is not None
+
+    # The edit was attempted exactly once: no retry.
+    assert site.description_edit_calls == 1
+
+    # The lossy master report still went out, as if the edit had worked.
+    assert len(site.lossy_master_reports) == 1
+
+    output = capsys.readouterr().out
+    assert "was not updated" in output
+    assert "https://fake.test/torrents.php?torrentid=1" in output
+    # The bbcode itself is printed plainly so it can be pasted in by hand.
+    assert "[hide=Spectrals]" in output
