@@ -90,7 +90,9 @@ def test_a_failed_metadata_cleanup_puts_the_original_back(fake_flac, tmp_path) -
     fake = fake_flac({"01.flac": "md5_unset"})
     fake.metaflac_fails.add("01.flac")
 
-    assert anyio.run(integrity.sanitize_integrity, str(tmp_path / "01.flac")) is False
+    sanitized = anyio.run(integrity.sanitize_integrity, str(tmp_path / "01.flac"))
+
+    assert sanitized is False
 
     assert sorted(os.listdir(tmp_path)) == ["01.flac"]
     assert (tmp_path / "01.flac").read_bytes() == b"fLaC 01.flac"
