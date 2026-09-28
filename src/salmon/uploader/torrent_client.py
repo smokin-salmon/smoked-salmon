@@ -8,6 +8,8 @@ import qbittorrentapi
 import transmission_rpc
 from deluge_client import DelugeRPCClient
 
+from salmon.common.redaction import redact_secrets
+
 
 class TorrentClient:
     def __init__(
@@ -28,6 +30,10 @@ class TorrentClient:
 
         click.secho(f"Initializing {self.__class__.__name__} client...", fg="cyan")
         self.client = self.login()
+
+    def _redact(self, text: str) -> str:
+        """Mask this client's password wherever an error repeats it, then the usual patterns."""
+        return redact_secrets(text, known=[self.password])
 
     def login(self):
         raise NotImplementedError
@@ -51,7 +57,7 @@ class QBittorrentClient(TorrentClient):
             click.secho("INCORRECT QBIT LOGIN CREDENTIALS", fg="red", bold=True)
             return None
         except qbittorrentapi.APIConnectionError as e:
-            click.secho(f"APIConnectionError: {e}", fg="red", bold=True)
+            click.secho(f"APIConnectionError: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label):
@@ -65,7 +71,7 @@ class QBittorrentClient(TorrentClient):
             )
             click.secho("Torrent added successfully", fg="green")
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
             return
 
 
@@ -88,7 +94,7 @@ class TransmissionClient(TorrentClient):
             click.secho("Successfully connected to Transmission", fg="green")
             return trt
         except Exception as e:
-            click.secho(f"Connect to Transmission failed: {e}", fg="red", bold=True)
+            click.secho(f"Connect to Transmission failed: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label):
@@ -106,7 +112,7 @@ class TransmissionClient(TorrentClient):
             click.secho("Torrent added successfully", fg="green")
             return result
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
 
@@ -126,7 +132,7 @@ class DelugeClient(TorrentClient):
                 click.secho("Deluge connection failed: Not connected", fg="red", bold=True)
                 return None
         except Exception as e:
-            click.secho(f"Connect to Deluge failed: {e}", fg="red", bold=True)
+            click.secho(f"Connect to Deluge failed: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label):
@@ -167,7 +173,7 @@ class DelugeClient(TorrentClient):
             click.secho("Torrent added successfully", fg="green")
             return result
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
 
@@ -180,7 +186,7 @@ class RuTorrentClient(TorrentClient):
             click.secho(f"Successfully connected to ruTorrent, version: {version}", fg="green")
             return rt_client
         except Exception as e:
-            click.secho(f"Connect to ruTorrent failed: {e}", fg="red", bold=True)
+            click.secho(f"Connect to ruTorrent failed: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label):
@@ -203,7 +209,7 @@ class RuTorrentClient(TorrentClient):
 
             click.secho("Torrent added successfully", fg="green")
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
 
 
 TORRENT_CLIENT_MAPPING = {

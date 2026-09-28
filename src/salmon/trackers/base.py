@@ -22,6 +22,7 @@ from torf import TorfError, Torrent
 
 from salmon import cfg, proxy
 from salmon.common import UploadFiles
+from salmon.common.redaction import redact_tracker_headers, redact_tracker_text
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
     LoginError,
@@ -40,27 +41,6 @@ ARTIST_TYPES = [
     "producer",
     "arranger",
 ]
-
-_SENSITIVE_KEYS = re.compile(
-    r'"(authkey|passkey|auth|api_key|Authorization)"\s*:\s*"[^"]*"',
-    re.IGNORECASE,
-)
-
-
-def _redact(text: str) -> str:
-    """Redact sensitive keys from debug output strings.
-
-    Replaces values of known sensitive fields (authkey, passkey, auth, etc.)
-    with [REDACTED] to prevent accidental exposure in logs.
-
-    Args:
-        text: The string to redact.
-
-    Returns:
-        The string with sensitive values replaced.
-    """
-    return _SENSITIVE_KEYS.sub(lambda m: f'"{m.group(1)}": "[REDACTED]"', text)
-
 
 # What _request prints goes here instead while hold_request_messages() is active: a request
 # sent in the background must not print over a prompt the user is answering meanwhile.
@@ -480,6 +460,19 @@ class BaseGazelleApi:
         """Whether a session cookie is configured. Site pages outside the API need one."""
         return bool(self.cookie.strip())
 
+    def _secrets(self) -> list[str | None]:
+        """This tracker's secrets, as what it sends back may repeat them.
+
+        The session cookie as configured, decoded and as sent, the api key, and the authkey and
+        passkey once authenticated.
+        """
+        cookie = self.cookie.strip()
+        return [cookie, unquote(cookie), _normalize_session_cookie(cookie), self.api_key, self.authkey, self.passkey]
+
+    def _redact(self, text: str) -> str:
+        """Mask this tracker's secrets in text about to be printed or raised."""
+        return redact_tracker_text(text, self._secrets())
+
     @property
     def announce(self) -> str:
         """Get the announce URL."""
@@ -624,8 +617,8 @@ class BaseGazelleApi:
         cookies = {} if use_api_key else self._get_cookies()
 
         if cfg.upload.debug_tracker_connection:
-            _secho(f"[DEBUG] {method} {url}", fg="cyan")
-            _secho(f"[DEBUG] params: {_redact(msgspec.json.encode(params).decode())}", fg="cyan")
+            _secho(f"[DEBUG] {method} {self._redact(url)}", fg="cyan")
+            _secho(f"[DEBUG] params: {self._redact(msgspec.json.encode(params).decode())}", fg="cyan")
             _secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
 
         try:
@@ -658,9 +651,11 @@ class BaseGazelleApi:
 
                         if cfg.upload.debug_tracker_connection:
                             _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
-                            response_headers = msgspec.json.encode(dict(resp.headers)).decode()
-                            _secho(f"[DEBUG] response headers: {_redact(response_headers)}", fg="cyan")
-                            _secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
+                            headers_shown = redact_tracker_headers(resp.headers.items(), self._secrets())
+                            _secho(
+                                f"[DEBUG] response headers: {msgspec.json.encode(headers_shown).decode()}", fg="cyan"
+                            )
+                            _secho(f"[DEBUG] response body: {self._redact(text)}", fg="green")
 
                         if not resp.ok:
                             # Checked before any status: the tracker acted on the request when it
@@ -672,6 +667,8 @@ class BaseGazelleApi:
                             error_msg = text
                             with suppress(msgspec.DecodeError, ValueError):
                                 error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
+                            # Printed and raised: an error page carries the authkey in its links and forms.
+                            error_msg = self._redact(error_msg)
 
                             if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
                                 retry_after = float(resp.headers.get("Retry-After", "20"))
@@ -757,7 +754,7 @@ class BaseGazelleApi:
                 raise RequestFailedError(message) if idempotent else UnknownOutcomeError(message)
         except (TimeoutError, aiohttp.ClientError) as err:
             # The body read's own timeout raises a TimeoutError with no message.
-            reason = str(err) or f"no full answer within {timeout_secs} s"
+            reason = self._redact(str(err)) or f"no full answer within {timeout_secs} s"
             raise failure(f"Network error: {reason}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
 
     async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
@@ -786,7 +783,7 @@ class BaseGazelleApi:
             resp_json = {"status": "error", "error": resp.text}
 
         if resp_json.get("status") != "success":
-            raise RequestFailedError(str(resp_json.get("error", resp.text)))
+            raise RequestFailedError(self._redact(str(resp_json.get("error", resp.text))))
         return cast("dict", resp_json["response"])
 
     async def torrentgroup(self, group_id: int) -> dict:
@@ -905,12 +902,12 @@ class BaseGazelleApi:
         except (msgspec.DecodeError, ValueError) as e:
             click.secho("❌ Failed to decode JSON response", fg="red", err=True)
             click.secho(f"Status code: {response.status}", fg="red", err=True)
-            click.secho(f"Response text: {repr(response.text)}", fg="red", err=True)
+            click.secho(f"Response text: {repr(self._redact(response.text))}", fg="red", err=True)
             raise click.Abort from e
 
         try:
             if resp["status"] != "success":
-                raise RequestError(f"API upload failed: {resp['error']}")
+                raise RequestError(f"API upload failed: {self._redact(str(resp['error']))}")
             if ("requestid" in resp["response"] and resp["response"]["requestid"]) or (
                 "fillRequest" in resp["response"]
                 and resp["response"]["fillRequest"]
@@ -935,7 +932,7 @@ class BaseGazelleApi:
                 group_id = resp["response"]["groupId"]
             return torrent_id, group_id
         except TypeError as err:
-            raise RequestError(f"API upload failed, response: {resp}") from err
+            raise RequestError(f"API upload failed, response: {self._redact(str(resp))}") from err
 
     async def site_page_upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via upload.php.
@@ -966,7 +963,7 @@ class BaseGazelleApi:
         if self.announce in resp_text:
             match = re.search(r'<p style="color: red; text-align: center;">(.+)<\/p>', resp_text)
             if match:
-                raise RequestError(f"Site upload failed: {match[1]} ({response.status})")
+                raise RequestError(f"Site upload failed: {self._redact(match[1])} ({response.status})")
         if "requests.php" in resp_url:
             try:
                 torrent_id = self.parse_torrent_id_from_filled_request_page(resp_text)
@@ -981,11 +978,11 @@ class BaseGazelleApi:
                     p_tag = error.parent.parent.find("p")
                     if p_tag:
                         error_message = p_tag.text
-                raise RequestError(f"Request fill failed: {error_message}") from err
+                raise RequestError(f"Request fill failed: {self._redact(error_message)}") from err
         try:
             return self.parse_most_recent_torrent_and_group_id_from_group_page(resp_text)
         except TypeError as err:
-            raise RequestError(f"Site upload failed, response text: {resp_text}") from err
+            raise RequestError(f"Site upload failed, response text: {self._redact(resp_text)}") from err
 
     async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via API or upload.php.

@@ -1,56 +1,166 @@
-import subprocess
+import os
+import sys
+import time
 
 import anyio
 import msgspec
+import pytest
 
 from salmon.config.validations import Seedbox
 from salmon.uploader import seedbox
+from salmon.uploader.torrent_client import QBittorrentClient
 
 
-def test_rclone_upload_folder_streams_progress_output(monkeypatch) -> None:
-    run_process_calls: list[tuple[list[str], dict[str, object]]] = []
-    messages: list[str] = []
-
-    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
-        run_process_calls.append((commands, kwargs))
-        return subprocess.CompletedProcess(commands, 0)
-
-    monkeypatch.setattr(seedbox.anyio, "run_process", fake_run_process)
-    monkeypatch.setattr(seedbox.click, "secho", lambda message, **kwargs: messages.append(message))
-
-    anyio.run(
-        seedbox._rclone_upload_folder,
-        Seedbox(url="seedbox", extra_args=["--checksum", "-P"]),
-        "/music",
-        "/tmp/Artist - Album",
+def _fake_rclone(
+    monkeypatch, tmp_path, *, stdout: str = "", stderr: str = "", exit_code: int = 0, code: str = ""
+) -> None:
+    """Put an `rclone` first on PATH that runs `code`, prints the given text and exits with exit_code."""
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    script = bin_dir / "rclone"
+    script.write_text(
+        f"#!{sys.executable}\n"
+        "import os, sys, time\n"
+        f"{code}\n"
+        f"sys.stdout.write({stdout!r})\n"
+        f"sys.stderr.write({stderr!r})\n"
+        f"sys.exit({exit_code})\n"
     )
+    script.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
 
-    assert run_process_calls == [
+
+def _upload_with_fake_rclone(seedbox_config: Seedbox) -> bool:
+    return anyio.run(seedbox._rclone_upload_folder, seedbox_config, "/music", "/tmp/Artist - Album")
+
+
+needs_posix = pytest.mark.skipif(sys.platform == "win32", reason="the fake rclone is a script with a shebang")
+
+
+@needs_posix
+@pytest.mark.parametrize(
+    ("url", "extra_args"),
+    [
+        ("sbox", ["--sftp-pass", "UNIQUESECRET"]),
+        ("sbox", ["--sftp-pass=UNIQUESECRET"]),
+        ("sbox", ["--sftp-key-pem", "-----BEGIN KEY----- UNIQUESECRET -----END KEY-----"]),
+        ("sbox", ["--sftp-key-pem=BEGIN KEY UNIQUESECRET DATA"]),
+        ("web", ["--http-headers", "Authorization,Bearer UNIQUESECRET"]),
+        ("web", ["--webdav-url", "https://dean:UNIQUESECRET@dav.example/remote.php"]),
+        (":sftp,host=box,user=dean,pass=UNIQUESECRET", []),
+    ],
+    ids=["flag value", "equals form", "quoted with spaces", "equals form with spaces", "comma list", "url", "remote"],
+)
+def test_the_rclone_command_salmon_prints_hides_the_seedbox_secrets(
+    monkeypatch, tmp_path, capfd, url: str, extra_args: list[str]
+) -> None:
+    _fake_rclone(monkeypatch, tmp_path)
+
+    assert _upload_with_fake_rclone(Seedbox(url=url, extra_args=extra_args)) is True
+
+    out, err = capfd.readouterr()
+    assert "Executing: rclone copy" in out
+    assert "Rclone upload successful" in out
+    assert "UNIQUESECRET" not in out + err
+
+
+@needs_posix
+def test_the_rclone_command_salmon_prints_keeps_harmless_values(monkeypatch, tmp_path, capfd) -> None:
+    _fake_rclone(monkeypatch, tmp_path)
+    extra_args = ["--checksum", "-P", "--sftp-path-override", "@/volume3", "--transfers", "4", "--bwlimit=8M"]
+
+    _upload_with_fake_rclone(Seedbox(url="sbox", extra_args=extra_args))
+
+    assert (
+        "Executing: rclone copy '/tmp/Artist - Album' 'sbox:/music/Artist - Album' "
+        "--checksum -P --sftp-path-override @/volume3 --transfers 4 --bwlimit=8M"
+    ) in capfd.readouterr().out
+
+
+@needs_posix
+def test_rclone_writes_its_progress_straight_to_salmons_stdout(monkeypatch, tmp_path, capfd) -> None:
+    # -P draws live progress on rclone's stdout, which only renders if it is salmon's own (the
+    # terminal), not a pipe salmon reads.
+    _fake_rclone(monkeypatch, tmp_path, code="print(sys.argv[1:], os.fstat(1).st_dev, os.fstat(1).st_ino)")
+    salmons_stdout = f"{os.fstat(1).st_dev} {os.fstat(1).st_ino}"
+
+    assert _upload_with_fake_rclone(Seedbox(url="seedbox", extra_args=["--checksum", "-P"])) is True
+
+    out = capfd.readouterr().out
+    assert f"{['copy', '/tmp/Artist - Album', 'seedbox:/music/Artist - Album', '--checksum', '-P']} " in out
+    assert salmons_stdout in out
+    assert "Rclone upload successful" in out
+
+
+@needs_posix
+def test_rclone_upload_folder_reports_nonzero_exit_code(monkeypatch, tmp_path, capfd) -> None:
+    _fake_rclone(monkeypatch, tmp_path, exit_code=7)
+
+    assert _upload_with_fake_rclone(Seedbox(url="seedbox", extra_args=["-P"])) is False
+
+    assert "Rclone upload failed with exit code 7" in capfd.readouterr().out
+
+
+@needs_posix
+@pytest.mark.parametrize(
+    ("url", "extra_args", "echo"),
+    [
         (
-            ["rclone", "copy", "/tmp/Artist - Album", "seedbox:/music/Artist - Album", "--checksum", "-P"],
-            {"stdout": None, "stderr": None, "check": False},
-        )
-    ]
-    assert any("Rclone upload successful" in message for message in messages)
+            ":sftp,host=box,user=dean,pass=UNIQUESECRET",
+            [],
+            'CRITICAL: Failed to create file system for ":sftp,host=box,user=dean,pass=UNIQUESECRET:/music": '
+            "couldn't connect SSH",
+        ),
+        (
+            ":webdav,url='https://dean:UNIQUESECRET@dav.example/'",
+            [],
+            "CRITICAL: Failed to create file system for \":webdav,url='https://dean:UNIQUESECRET@dav.example/':\": 401",
+        ),
+        (
+            "sbox",
+            ["-vv", "--sftp-pass", "UNIQUESECRET"],
+            'DEBUG : rclone: Version "v1.75.1" starting with parameters ["rclone" "copy" "-vv" "--sftp-pass" '
+            '"UNIQUESECRET"]',
+        ),
+        ("sbox", ["--sftp-pass", "UNIQUESECRET"], "ERROR : authentication failed for UNIQUESECRET"),
+        (
+            "web",
+            ["--http-headers", "Authorization,Bearer UNIQUESECRET"],
+            "ERROR : webdav answered 401 for Bearer UNIQUESECRET",
+        ),
+        # rclone --dump auth, with a token from rclone's own config that salmon never sees.
+        ("web", ["--dump", "auth"], "DEBUG : HTTP REQUEST\nAuthorization: Bearer UNIQUESECRET\nUser-Agent: rclone"),
+        ("sbox", ["--sftp-pass", "UNIQUESECRET"], "ERROR : no newline after UNIQUESECRET"),
+    ],
+    ids=["remote", "url in remote", "-vv command line", "flag value", "comma list", "dumped header", "last line"],
+)
+def test_what_rclone_echoes_on_stderr_is_masked(
+    monkeypatch, tmp_path, capfd, url: str, extra_args: list[str], echo: str
+) -> None:
+    _fake_rclone(monkeypatch, tmp_path, stderr=echo if "no newline" in echo else echo + "\n", exit_code=1)
+
+    assert _upload_with_fake_rclone(Seedbox(url=url, extra_args=extra_args)) is False
+
+    out, err = capfd.readouterr()
+    # rclone's own line is still shown, only its secret is masked.
+    assert echo[:20] in err
+    assert "[REDACTED]" in err
+    assert "UNIQUESECRET" not in out + err
 
 
-def test_rclone_upload_folder_reports_nonzero_exit_code(monkeypatch) -> None:
-    messages: list[str] = []
-
-    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
-        return subprocess.CompletedProcess(commands, 7)
-
-    monkeypatch.setattr(seedbox.anyio, "run_process", fake_run_process)
-    monkeypatch.setattr(seedbox.click, "secho", lambda message, **kwargs: messages.append(message))
-
-    anyio.run(
-        seedbox._rclone_upload_folder,
-        Seedbox(url="seedbox", extra_args=["-P"]),
-        "/music",
-        "/tmp/Artist - Album",
+@needs_posix
+def test_rclone_errors_are_printed_as_they_come(monkeypatch, tmp_path) -> None:
+    printed: list[tuple[float, str]] = []
+    monkeypatch.setattr(seedbox.click, "echo", lambda message, **kwargs: printed.append((time.monotonic(), message)))
+    _fake_rclone(
+        monkeypatch, tmp_path, code="sys.stderr.write('early\\n'); sys.stderr.flush(); time.sleep(1)", stderr="late\n"
     )
 
-    assert "Rclone upload failed with exit code 7" in messages
+    _upload_with_fake_rclone(Seedbox(url="sbox"))
+
+    assert [message for _, message in printed] == ["early", "late"]
+    # Not held back until rclone exits: an error or a prompt during a long copy shows at once.
+    assert printed[1][0] - printed[0][0] > 0.5
 
 
 class _RecordingClient:
@@ -82,11 +192,11 @@ def _run_upload(
     rclone_calls: list[list[str]] = []
     rclone_exit_codes = rclone_exit_codes or {}
 
-    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+    async def fake_run_rclone(commands: list[str], secrets: list[str]) -> int:
         rclone_calls.append(commands)
         # commands[3] is "<url>:<remote_path>"; recover the seedbox url to look up its exit code.
         url = commands[3].split(":", 1)[0]
-        return subprocess.CompletedProcess(commands, rclone_exit_codes.get(url, 0))
+        return rclone_exit_codes.get(url, 0)
 
     monkeypatch.setattr(seedbox.cfg, "seedbox", seedboxes)
     monkeypatch.setattr(
@@ -94,7 +204,7 @@ def _run_upload(
         "parse_libtc_url",
         staticmethod(lambda url: clients.setdefault(url, _RecordingClient())),
     )
-    monkeypatch.setattr(seedbox.anyio, "run_process", fake_run_process)
+    monkeypatch.setattr(seedbox, "_run_rclone", fake_run_rclone)
     monkeypatch.setattr(seedbox.click, "secho", lambda *args, **kwargs: None)
 
     release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
@@ -218,11 +328,11 @@ def test_failed_copy_only_skips_seeding_its_own_folder(monkeypatch, tmp_path) ->
     clients: dict[str, _RecordingClient] = {}
     rclone_calls: list[list[str]] = []
 
-    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+    async def fake_run_rclone(commands: list[str], secrets: list[str]) -> int:
         rclone_calls.append(commands)
         local_path = commands[2]
         returncode = 1 if "Album2" in local_path else 0
-        return subprocess.CompletedProcess(commands, returncode)
+        return returncode
 
     monkeypatch.setattr(
         seedbox.cfg,
@@ -234,7 +344,7 @@ def test_failed_copy_only_skips_seeding_its_own_folder(monkeypatch, tmp_path) ->
         "parse_libtc_url",
         staticmethod(lambda url: clients.setdefault(url, _RecordingClient())),
     )
-    monkeypatch.setattr(seedbox.anyio, "run_process", fake_run_process)
+    monkeypatch.setattr(seedbox, "_run_rclone", fake_run_rclone)
     monkeypatch.setattr(seedbox.click, "secho", lambda *args, **kwargs: None)
 
     release1 = tmp_path / "Artist - Album1 (2020) [WEB FLAC]"
@@ -264,9 +374,9 @@ def test_failed_copy_skips_both_torrents_of_multi_tracker_upload(monkeypatch, tm
     clients: dict[str, _RecordingClient] = {}
     rclone_calls: list[list[str]] = []
 
-    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+    async def fake_run_rclone(commands: list[str], secrets: list[str]) -> int:
         rclone_calls.append(commands)
-        return subprocess.CompletedProcess(commands, 1)
+        return 1
 
     monkeypatch.setattr(
         seedbox.cfg,
@@ -278,7 +388,7 @@ def test_failed_copy_skips_both_torrents_of_multi_tracker_upload(monkeypatch, tm
         "parse_libtc_url",
         staticmethod(lambda url: clients.setdefault(url, _RecordingClient())),
     )
-    monkeypatch.setattr(seedbox.anyio, "run_process", fake_run_process)
+    monkeypatch.setattr(seedbox, "_run_rclone", fake_run_rclone)
     monkeypatch.setattr(seedbox.click, "secho", lambda *args, **kwargs: None)
 
     release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
@@ -304,7 +414,7 @@ def test_rclone_not_installed_skips_seeding(monkeypatch, tmp_path) -> None:
     # failed copy too, not just a logged and forgotten "critical error".
     clients: dict[str, _RecordingClient] = {}
 
-    async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+    async def fake_run_rclone(commands: list[str], secrets: list[str]) -> int:
         raise FileNotFoundError("rclone")
 
     monkeypatch.setattr(
@@ -317,7 +427,7 @@ def test_rclone_not_installed_skips_seeding(monkeypatch, tmp_path) -> None:
         "parse_libtc_url",
         staticmethod(lambda url: clients.setdefault(url, _RecordingClient())),
     )
-    monkeypatch.setattr(seedbox.anyio, "run_process", fake_run_process)
+    monkeypatch.setattr(seedbox, "_run_rclone", fake_run_rclone)
     monkeypatch.setattr(seedbox.click, "secho", lambda *args, **kwargs: None)
 
     release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
@@ -332,3 +442,87 @@ def test_rclone_not_installed_skips_seeding(monkeypatch, tmp_path) -> None:
 
     client = clients["qbittorrent+http://box:8080"]
     assert client.torrents == []
+
+
+def _queue_one_release(tmp_path) -> "seedbox.UploadManager":
+    release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
+    release.mkdir()
+    torrent = tmp_path / "Album.torrent"
+    torrent.write_bytes(b"d4:infod4:name5:Albumee")
+    manager = seedbox.UploadManager()
+    manager.add_upload_task(str(release), task_type="folder", is_flac=True)
+    manager.add_upload_task(str(torrent), task_type="seed", is_flac=True, folder=str(release))
+    return manager
+
+
+@needs_posix
+def test_the_upload_run_never_prints_a_remotes_password(monkeypatch, tmp_path, capfd) -> None:
+    # The remote is named when the uploader is configured and when a failed copy skips the seed.
+    _fake_rclone(monkeypatch, tmp_path, exit_code=1)
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", url=":sftp,host=box,pass=UNIQUESECRET", torrent_client="qbittorrent+http://box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out, err = capfd.readouterr()
+    assert "Configured rclone uploader to :sftp,host=box,pass=[REDACTED]" in out
+    assert "Skipping seed on :sftp,host=box,pass=[REDACTED]" in out
+    assert "UNIQUESECRET" not in out + err
+
+
+def test_a_torrent_client_that_fails_to_configure_never_prints_its_password(monkeypatch, capsys) -> None:
+    def refuse(url):
+        raise ValueError(f"cannot parse {url}, password UNIQUESECRET")
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="local", torrent_client="qbittorrent+http://dean:UNIQUESECRET@box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(refuse))
+
+    seedbox.UploadManager()
+
+    out = capsys.readouterr().out
+    assert "Failed to configure local uploader" in out
+    assert "UNIQUESECRET" not in out
+
+
+def test_a_failed_task_never_prints_the_seedbox_secrets(monkeypatch, tmp_path, capsys) -> None:
+    async def refuse(commands: list[str], secrets: list[str]) -> int:
+        raise OSError(f"could not start {' '.join(commands)}")
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", url="box", extra_args=["--sftp-pass", "UNIQUESECRET"], torrent_client="x")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+    monkeypatch.setattr(seedbox, "_run_rclone", refuse)
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Critical error during task: could not start rclone copy" in out
+    assert "UNIQUESECRET" not in out
+
+
+def test_a_torrent_the_client_refuses_never_prints_its_password(monkeypatch, tmp_path, capsys) -> None:
+    class Refusing:
+        def torrents_add(self, **kwargs):
+            raise RuntimeError("POST http://dean:UNIQUESECRET@box:8080/api/v2/torrents/add failed for UNIQUESECRET")
+
+    monkeypatch.setattr(seedbox.cfg, "seedbox", [Seedbox(type="local", torrent_client="unused")])
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: client))
+    monkeypatch.setattr(QBittorrentClient, "login", lambda self: Refusing())
+    client = QBittorrentClient(username="dean", password="UNIQUESECRET", url="http://box:8080")
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Failed to add torrent" in out
+    assert "UNIQUESECRET" not in out
