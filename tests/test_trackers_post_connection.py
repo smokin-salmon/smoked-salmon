@@ -9,8 +9,11 @@ local fake tracker.
 
 import asyncio
 import gc
+import json
 import socket
 from collections.abc import Awaitable, Callable
+from pathlib import Path
+from typing import Any
 
 import aiohttp
 import anyio
@@ -18,8 +21,11 @@ import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
 from tenacity import wait_none
+from torf import Torrent
 
+from salmon.common import UploadFiles
 from salmon.errors import RequestFailedError, UnknownOutcomeError
+from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi, HttpResponse
 
 # How long the fake tracker holds a slow answer.
@@ -316,5 +322,140 @@ def test_a_posts_own_connection_is_closed_however_the_post_ends(action: str, rai
         # The next POST does not wait for the one that ended.
         with anyio.fail_after(1):
             await _post(api, "upload")
+
+    _run(body)
+
+
+class RawTracker:
+    """A local tracker on a bare socket, so it can stop reading a request, or read it slowly (#492).
+
+    It never reads the first request it gets when `stall_first` is set, as a tracker whose worker hung, and
+    reads the others `burst` bytes at a time, pausing `pause` seconds after each, through a small receive
+    buffer. It answers each request it read in full with `answer`, or else the number of body bytes it got.
+    """
+
+    def __init__(
+        self, stall_first: bool = False, burst: int = 1 << 20, pause: float = 0.0, answer: bytes | None = None
+    ) -> None:
+        self.stall_first = stall_first
+        self.burst = burst
+        self.pause = pause
+        self.answer = answer
+        self.connections = 0
+        self.released = asyncio.Event()
+
+    async def start(self) -> str:
+        sock = socket.socket()
+        # A small receive buffer, so the tracker's pace reaches the client.
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 64 * 1024)
+        sock.bind(("127.0.0.1", 0))
+        self.server = await asyncio.start_server(self.handle, sock=sock)
+        return f"http://127.0.0.1:{sock.getsockname()[1]}"
+
+    async def handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        self.connections += 1
+        if self.stall_first and self.connections == 1:
+            await self.released.wait()
+        else:
+            head = await reader.readuntil(b"\r\n\r\n")
+            lines = head.lower().split(b"\r\n")
+            lengths = [line.split(b":")[1] for line in lines if line.startswith(b"content-length:")]
+            length = int(lengths[0]) if lengths else 0
+            left = length
+            while left:
+                left -= len(await reader.readexactly(min(self.burst, left)))
+                await asyncio.sleep(self.pause)
+            answer = self.answer or str(length).encode()
+            writer.write(b"HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: %d\r\n\r\n" % len(answer) + answer)
+            await writer.drain()
+        writer.close()
+
+    async def stop(self) -> None:
+        self.released.set()
+        self.server.close()
+        await self.server.wait_closed()
+
+
+# Far more than a stalled connection's socket buffers take in.
+LARGE_BODY = 64 << 20
+
+
+def test_a_post_the_tracker_stops_reading_is_an_unknown_outcome() -> None:
+    async def body(_tracker: FakeTracker, api: FakeApi) -> None:
+        raw = RawTracker(stall_first=True)
+        api.base_url = await raw.start()
+        try:
+            started = asyncio.get_running_loop().time()
+            with anyio.fail_after(5), pytest.raises(UnknownOutcomeError, match="sending the request stalled for 1 s"):
+                await api._request("POST", api.base_url + "/upload.php", data=b"x" * LARGE_BODY, timeout_secs=1)
+            # Given up once nothing went out for a second, and not sent again.
+            assert asyncio.get_running_loop().time() - started < 3
+            assert raw.connections == 1
+            assert api.limiter.acquired == 1
+            assert api.own_sessions[0].closed
+            # The next POST of the client does not wait for the stalled one.
+            with anyio.fail_after(2):
+                resp = await api._request("POST", api.base_url + "/upload.php", data=b"x" * 10, timeout_secs=1)
+            assert resp.text == "10"
+            assert raw.connections == 2
+        finally:
+            await raw.stop()
+
+    _run(body)
+
+
+@pytest.mark.skipif(base._TCP_NOTSENT_LOWAT is None, reason="the kernel keeps its whole send buffer here")
+def test_a_slow_but_moving_post_goes_through() -> None:
+    async def body(_tracker: FakeTracker, api: FakeApi) -> None:
+        # 640 KiB/s, as a slow uplink: sending takes several times the timeout, but never stops for as long as it.
+        # Without a limit on what the kernel holds unsent, it signals progress only once a third of its send
+        # buffer (megabytes) has gone, and still holds seconds of the body once all of it is handed over,
+        # while the answer can only come after.
+        raw = RawTracker(burst=64 << 10, pause=0.1)
+        api.base_url = await raw.start()
+        try:
+            started = asyncio.get_running_loop().time()
+            resp = await api._request("POST", api.base_url + "/upload.php", data=b"x" * (4 << 20), timeout_secs=2)
+            assert resp.text == str(4 << 20)
+            assert asyncio.get_running_loop().time() - started > 4
+            assert raw.connections == 1
+        finally:
+            await raw.stop()
+
+    _run(body)
+
+
+def test_an_upload_the_tracker_stops_reading_is_looked_up_not_resent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(base, "_LOST_UPLOAD_FIRST_WAIT", 0)
+    album = tmp_path / "album"
+    album.mkdir()
+    (album / "01.flac").write_bytes(b"not really audio" * 64)
+    torrent = Torrent(album, trackers=["http://tracker.invalid/announce"], private=True, source="RED")
+    torrent.generate()
+    # A log this big is unlikely, but it makes the upload more than the socket buffers take in.
+    files = UploadFiles(torrent_data=torrent.dump(), log_files=[("rip.log", b"x" * LARGE_BODY)])
+    found = {"status": "success", "response": {"group": {"id": 5}, "torrent": {"id": 9}}}
+
+    async def body(_tracker: FakeTracker, api: FakeApi) -> None:
+        raw = RawTracker(stall_first=True, answer=json.dumps(found).encode())
+        api.base_url = await raw.start()
+        api.api_key = "an-api-key"
+        request = api._request
+
+        async def within_a_second(*args: Any, **kwargs: Any) -> HttpResponse:
+            # The upload's 30 s timeout, cut short so the test does not wait for it.
+            return await request(*args, **{**kwargs, "timeout_secs": 1})
+
+        monkeypatch.setattr(api, "_request", within_a_second)
+        try:
+            with anyio.fail_after(5):
+                assert await api.upload({"type": 0}, files) == (9, 5)
+            # The upload once, then the lookup by its infohash.
+            assert raw.connections == 2
+            assert api.limiter.acquired == 2
+        finally:
+            await raw.stop()
 
     _run(body)

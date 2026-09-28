@@ -1,5 +1,7 @@
 import asyncio
 import re
+import socket
+import sys
 from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
@@ -11,6 +13,8 @@ import aiohttp
 import asyncclick as click
 import msgspec
 from aiohttp import FormData
+from aiohttp.abc import AbstractStreamWriter
+from aiohttp.http import StreamWriter
 from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
@@ -203,6 +207,80 @@ _TRANSIENT_5XX = frozenset(
 _LOST_UPLOAD_FIRST_WAIT = 10
 _LOST_UPLOAD_SECOND_WAIT = 30
 
+# A request body goes out in slices this big, each within the request's timeout. Once more than
+# 64 KiB wait to go out, aiohttp holds the next slice until the connection takes most of them, so
+# a slice times out only when the connection took next to nothing for that long.
+_SEND_SLICE = 64 * 1024
+
+# How much of a body not sent yet the kernel may hold (TCP_NOTSENT_LOWAT), and the option's number
+# where the platform has it: Python's socket module does not always export it.
+_UNSENT_LIMIT = 128 * 1024
+_TCP_NOTSENT_LOWAT = {"linux": 25, "darwin": 0x201}.get(sys.platform)
+
+
+def _keep_little_unsent(writer: AbstractStreamWriter) -> None:
+    """Let the kernel hold only a little of the body that is not sent yet.
+
+    sock_read starts once the last of the body is handed to the kernel, whose send buffer grows to
+    megabytes. On a slow uplink, sending what it still holds could take longer than the timeout,
+    while the tracker can only answer once it has it all. What is in flight is not limited, so a
+    fast link keeps its speed. Where the option is missing (Windows), the kernel keeps its buffer.
+    """
+    transport = writer.transport if isinstance(writer, StreamWriter) else None
+    sock = transport.get_extra_info("socket") if transport is not None else None
+    if sock is not None and _TCP_NOTSENT_LOWAT is not None:
+        with suppress(OSError):
+            sock.setsockopt(socket.IPPROTO_TCP, _TCP_NOTSENT_LOWAT, _UNSENT_LIMIT)
+
+
+class _StallBoundBody(aiohttp.payload.Payload):
+    """A request body sent in slices, failing once one does not go out within `stall_secs`.
+
+    aiohttp bounds no part of sending a body: sock_read only starts once all of it is sent. A
+    tracker that stops reading would hold the request for good, and with it every later request
+    of the client that is not idempotent, as those go one at a time. A slow but moving upload
+    goes through, however long it takes.
+
+    The kernel is also kept from holding much of the body not sent yet (_keep_little_unsent), so
+    sock_read starts once little of it is left to send.
+    """
+
+    _value: bytes
+    _autoclose = True
+
+    def __init__(self, value: bytes, content_type: str, stall_secs: int) -> None:
+        super().__init__(value, content_type=content_type)
+        self._size = len(value)
+        self._stall_secs = stall_secs
+
+    def decode(self, encoding: str = "utf-8", errors: str = "strict") -> str:
+        return self._value.decode(encoding, errors)
+
+    async def write(self, writer: AbstractStreamWriter) -> None:
+        await self.write_with_length(writer, None)
+
+    async def write_with_length(self, writer: AbstractStreamWriter, content_length: int | None) -> None:
+        _keep_little_unsent(writer)
+        body = memoryview(self._value)[:content_length]
+        for start in range(0, len(body), _SEND_SLICE):
+            try:
+                async with asyncio.timeout(self._stall_secs):
+                    await writer.write(body[start : start + _SEND_SLICE])
+            except TimeoutError:
+                raise TimeoutError(f"sending the request stalled for {self._stall_secs} s") from None
+
+
+async def _stall_bound_body(data: Any, stall_secs: int) -> _StallBoundBody:
+    """Turn request data into a body sent within a stall bound, as aiohttp would turn it into a payload."""
+    if isinstance(data, FormData):
+        data = data()
+    try:
+        body = aiohttp.payload.get_payload(data)
+    except aiohttp.payload.LookupError:
+        # A dict or a list of fields, sent as a form.
+        body = FormData(data)()
+    return _StallBoundBody(await body.as_bytes(), body.content_type, stall_secs)
+
 
 class RetryableError(RequestError):
     """A failed request that may be sent again. Raised as is once the retries run out."""
@@ -380,7 +458,7 @@ class BaseGazelleApi:
             params: Query parameters.
             data: POST body data.
             timeout_secs: How long, in seconds, connecting, each read and reading the whole
-                answer may take.
+                answer may take, and how long sending the body may stall.
             prefer_api_key: If True and api_key is set, use Authorization header
                 only (no cookie). If False or api_key is empty, use cookie only
                 (no Authorization header).
@@ -447,6 +525,10 @@ class BaseGazelleApi:
             if idempotent or (not_acted_on and not redirected):
                 return RetryableError(message)
             return UnknownOutcomeError(message)
+
+        if data is not None:
+            # Nothing else bounds sending a body.
+            data = await _stall_bound_body(data, timeout_secs)
 
         use_api_key = prefer_api_key and bool(self.api_key)
         headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
@@ -571,6 +653,12 @@ class BaseGazelleApi:
                         ):
                             # As browsers and aiohttp do, the target of a redirected POST is fetched with GET.
                             method, data = "GET", None
+                        elif not idempotent and method != "GET":
+                            # A 307 or 308 asks for the request to be sent again as it is, body and all.
+                            # The tracker may have acted on it already, so it is not sent again.
+                            raise UnknownOutcomeError(
+                                f"{self.site_string} asked for the request to be sent again to {target.path}"
+                            )
                         url, params = target._replace(fragment="").geturl(), None
                         redirected = True
 

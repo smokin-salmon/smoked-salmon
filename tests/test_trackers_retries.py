@@ -421,6 +421,35 @@ async def _expected_error_status_after_a_redirect_is_an_unknown_outcome() -> Non
         await runner.cleanup()
 
 
+async def _upload_asked_to_be_sent_again_elsewhere_is_looked_up(tmp_path: Path) -> list:
+    files, infohash = _upload_files(tmp_path)
+    hits = []
+
+    async def upload(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        raise web.HTTPTemporaryRedirect("/upload2.php")
+
+    async def upload2(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        return web.Response(text="group page")
+
+    async def ajax(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path))
+        assert request.query["hash"] == infohash
+        return _found(9, 5)
+
+    runner, url = await _serve(upload=upload, upload2=upload2, ajax=ajax)
+    api = FakeApi(url)
+    try:
+        assert await api.upload({"type": 0}, files) == (9, 5)
+        return hits
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
 async def _report_refused_after_its_redirect_is_not_filed_again() -> None:
     posts = []
 
@@ -639,6 +668,12 @@ def test_failure_after_the_upload_redirect_does_not_resend_it(
     assert hits == [("POST", "/upload.php")] + [("GET", "/torrents.php")] * later_hops + [("GET", "/ajax.php")]
     # The session cookie did its job: the tracker took the upload.
     assert "missing or expired" not in capsys.readouterr().out
+
+
+def test_upload_asked_to_be_sent_again_elsewhere_is_looked_up(tmp_path: Path) -> None:
+    hits = anyio.run(_upload_asked_to_be_sent_again_elsewhere_is_looked_up, tmp_path)
+    # Not sent again to where the 307 points: looked up by its infohash instead.
+    assert hits == [("POST", "/upload.php"), ("GET", "/ajax.php")]
 
 
 def test_expected_error_status_after_a_redirect_is_an_unknown_outcome() -> None:
