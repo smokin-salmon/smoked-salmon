@@ -207,7 +207,7 @@ async def resolve_integrity_for_upload(path: str, *, scene: bool, assume_yes: bo
 
     if scene:
         click.secho(
-            "Some files failed sanitization, and this a scene release. "
+            "Some files failed the integrity check, and this is a scene release. "
             "You need to sanitize and de-scene before uploading. Aborting.",
             fg="red",
             bold=True,

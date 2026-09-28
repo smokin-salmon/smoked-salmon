@@ -148,14 +148,19 @@ def test_declining_to_sanitize_a_file_that_does_not_decode_stops_the_upload(fake
     assert fake.states["01.flac"] == "md5_unset", "nothing is re-encoded when the user declines"
 
 
-def test_a_scene_release_stops_before_the_sanitize_offer(fake_flac, monkeypatch, tmp_path) -> None:
+def test_a_scene_release_stops_before_the_sanitize_offer(fake_flac, monkeypatch, tmp_path, capsys) -> None:
     from salmon.checks.integrity import resolve_integrity_for_upload
 
-    fake_flac({"01.flac": "md5_unset"})
+    fake = fake_flac({"01.flac": "md5_unset"})
     monkeypatch.setattr(click, "confirm", lambda *args, **kwargs: pytest.fail("no sanitize offer for a scene release"))
 
     with pytest.raises(click.Abort):
         anyio.run(lambda: resolve_integrity_for_upload(str(tmp_path), scene=True, assume_yes=True))
+
+    assert fake.states["01.flac"] == "md5_unset", "nothing was sanitized"
+    output = click.unstyle(capsys.readouterr().out)
+    assert "Some files failed the integrity check, and this is a scene release." in output
+    assert "failed sanitization" not in output
 
 
 def test_sanitize_and_verify_reports_the_recheck_not_the_sanitize_return(monkeypatch) -> None:
