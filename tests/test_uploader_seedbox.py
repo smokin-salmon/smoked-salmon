@@ -8,6 +8,7 @@ import pytest
 
 from salmon.config.validations import Seedbox
 from salmon.uploader import seedbox
+from salmon.uploader.torrent_client import QBittorrentClient
 
 
 def _fake_rclone(
@@ -441,3 +442,87 @@ def test_rclone_not_installed_skips_seeding(monkeypatch, tmp_path) -> None:
 
     client = clients["qbittorrent+http://box:8080"]
     assert client.torrents == []
+
+
+def _queue_one_release(tmp_path) -> "seedbox.UploadManager":
+    release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
+    release.mkdir()
+    torrent = tmp_path / "Album.torrent"
+    torrent.write_bytes(b"d4:infod4:name5:Albumee")
+    manager = seedbox.UploadManager()
+    manager.add_upload_task(str(release), task_type="folder", is_flac=True)
+    manager.add_upload_task(str(torrent), task_type="seed", is_flac=True, folder=str(release))
+    return manager
+
+
+@needs_posix
+def test_the_upload_run_never_prints_a_remotes_password(monkeypatch, tmp_path, capfd) -> None:
+    # The remote is named when the uploader is configured and when a failed copy skips the seed.
+    _fake_rclone(monkeypatch, tmp_path, exit_code=1)
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", url=":sftp,host=box,pass=UNIQUESECRET", torrent_client="qbittorrent+http://box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out, err = capfd.readouterr()
+    assert "Configured rclone uploader to :sftp,host=box,pass=[REDACTED]" in out
+    assert "Skipping seed on :sftp,host=box,pass=[REDACTED]" in out
+    assert "UNIQUESECRET" not in out + err
+
+
+def test_a_torrent_client_that_fails_to_configure_never_prints_its_password(monkeypatch, capsys) -> None:
+    def refuse(url):
+        raise ValueError(f"cannot parse {url}, password UNIQUESECRET")
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="local", torrent_client="qbittorrent+http://dean:UNIQUESECRET@box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(refuse))
+
+    seedbox.UploadManager()
+
+    out = capsys.readouterr().out
+    assert "Failed to configure local uploader" in out
+    assert "UNIQUESECRET" not in out
+
+
+def test_a_failed_task_never_prints_the_seedbox_secrets(monkeypatch, tmp_path, capsys) -> None:
+    async def refuse(commands: list[str], secrets: list[str]) -> int:
+        raise OSError(f"could not start {' '.join(commands)}")
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", url="box", extra_args=["--sftp-pass", "UNIQUESECRET"], torrent_client="x")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+    monkeypatch.setattr(seedbox, "_run_rclone", refuse)
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Critical error during task: could not start rclone copy" in out
+    assert "UNIQUESECRET" not in out
+
+
+def test_a_torrent_the_client_refuses_never_prints_its_password(monkeypatch, tmp_path, capsys) -> None:
+    class Refusing:
+        def torrents_add(self, **kwargs):
+            raise RuntimeError("POST http://dean:UNIQUESECRET@box:8080/api/v2/torrents/add failed for UNIQUESECRET")
+
+    monkeypatch.setattr(seedbox.cfg, "seedbox", [Seedbox(type="local", torrent_client="unused")])
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: client))
+    monkeypatch.setattr(QBittorrentClient, "login", lambda self: Refusing())
+    client = QBittorrentClient(username="dean", password="UNIQUESECRET", url="http://box:8080")
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Failed to add torrent" in out
+    assert "UNIQUESECRET" not in out

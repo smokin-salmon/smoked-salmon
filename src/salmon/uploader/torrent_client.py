@@ -71,7 +71,7 @@ class QBittorrentClient(TorrentClient):
             )
             click.secho("Torrent added successfully", fg="green")
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
             return
 
 
@@ -112,7 +112,7 @@ class TransmissionClient(TorrentClient):
             click.secho("Torrent added successfully", fg="green")
             return result
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
 
@@ -173,7 +173,7 @@ class DelugeClient(TorrentClient):
             click.secho("Torrent added successfully", fg="green")
             return result
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
             return None
 
 
@@ -209,7 +209,7 @@ class RuTorrentClient(TorrentClient):
 
             click.secho("Torrent added successfully", fg="green")
         except Exception as e:
-            click.secho(f"Failed to add torrent: {e}", fg="red", bold=True)
+            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
 
 
 TORRENT_CLIENT_MAPPING = {

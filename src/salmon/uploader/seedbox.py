@@ -3,6 +3,7 @@ import collections
 import os
 import posixpath
 import subprocess
+from urllib.parse import unquote, urlparse
 
 import anyio
 import asyncclick as click
@@ -35,8 +36,16 @@ def _resolve_shell_path(remote_folder: str, extra_args: list[str]) -> str:
 
 
 def seedbox_secrets(seedbox: Seedbox) -> list[str]:
-    """The secrets a seedbox's rclone remote and extra_args carry, masked wherever rclone echoes them."""
-    return secret_values(seedbox.extra_args, seedbox.url)
+    """The secrets a seedbox's rclone remote, extra_args and torrent client URL carry, to mask wherever echoed."""
+    secrets = secret_values(seedbox.extra_args, seedbox.url)
+    try:
+        password = urlparse(seedbox.torrent_client).password
+    except ValueError:
+        password = None
+    if password:
+        # Written percent-encoded in the URL, and decoded by the time a client error repeats it.
+        secrets += [password, unquote(password)]
+    return secrets
 
 
 async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str) -> bool:
@@ -103,6 +112,7 @@ async def _add_to_downloader(
     torrent_path: str,
     label: str,
     add_paused: bool,
+    secrets: list[str],
 ) -> None:
     """Read a torrent file and add it to the download client.
 
@@ -112,6 +122,7 @@ async def _add_to_downloader(
         torrent_path: Local path to the .torrent file.
         label: Label to apply in the download client.
         add_paused: Whether to add the torrent in paused state.
+        secrets: Values to mask in an error, from seedbox_secrets.
     """
     async with await anyio.open_file(torrent_path, "rb") as f:
         torrent = await f.read()
@@ -119,7 +130,7 @@ async def _add_to_downloader(
         client.add_to_downloader(shell_path, torrent, is_paused=add_paused, label=label)
         click.secho("Torrent added to client successfully", fg="green")
     except Exception as e:
-        click.secho(f"Failed to add torrent to client: {e}", fg="red")
+        click.secho(f"Failed to add torrent to client: {redact_secrets(str(e), secrets)}", fg="red")
 
 
 def _enabled_seedboxes() -> list[Seedbox]:
@@ -138,14 +149,17 @@ class UploadManager:
         click.secho("Initializing upload managers", fg="cyan")
         self._client_cache: dict[str, TorrentClient] = {}
         for seedbox in _enabled_seedboxes():
+            secrets = seedbox_secrets(seedbox)
             try:
                 if seedbox.torrent_client not in self._client_cache:
                     self._client_cache[seedbox.torrent_client] = TorrentClientGenerator.parse_libtc_url(
                         seedbox.torrent_client
                     )
-                click.secho(f"Configured {seedbox.type} uploader to {seedbox.url}", fg="yellow")
+                click.secho(
+                    redact_secrets(f"Configured {seedbox.type} uploader to {seedbox.url}", secrets), fg="yellow"
+                )
             except Exception as e:
-                click.secho(f"Failed to configure {seedbox.type} uploader: {e}", fg="red")
+                click.secho(f"Failed to configure {seedbox.type} uploader: {redact_secrets(str(e), secrets)}", fg="red")
 
         # Each task: (seedbox, local_path, task_type, folder). `folder` is the release folder the
         # task belongs to: itself for a "folder" task, and the folder its torrent was built from
@@ -208,6 +222,7 @@ class UploadManager:
                 f"\nTask {i}/{len(self.tasks)}: {task_type.upper()} - {os.path.basename(local_path)}",
                 fg="cyan",
             )
+            secrets = seedbox_secrets(seedbox)
             try:
                 if task_type == "folder":
                     if seedbox.type == "rclone":
@@ -217,9 +232,12 @@ class UploadManager:
                 elif task_type == "seed":
                     if (id(seedbox), folder) in failed_folders:
                         click.secho(
-                            f"Skipping seed on {seedbox.url}: the Rclone upload of {folder} failed, "
-                            f"so {local_path} was not added to the client there. Add it by hand once "
-                            "the files have been copied.",
+                            redact_secrets(
+                                f"Skipping seed on {seedbox.url}: the Rclone upload of {folder} failed, "
+                                f"so {local_path} was not added to the client there. Add it by hand once "
+                                "the files have been copied.",
+                                secrets,
+                            ),
                             fg="red",
                         )
                         continue
@@ -228,9 +246,9 @@ class UploadManager:
                         shell_path = _resolve_shell_path(seedbox.directory, seedbox.extra_args)
                     else:
                         shell_path = seedbox.directory or os.path.abspath(cfg.directory.download_directory)
-                    await _add_to_downloader(client, shell_path, local_path, seedbox.label, seedbox.add_paused)
+                    await _add_to_downloader(client, shell_path, local_path, seedbox.label, seedbox.add_paused, secrets)
             except Exception as e:
-                click.secho(f"Critical error during task: {e}", fg="red")
+                click.secho(f"Critical error during task: {redact_secrets(str(e), secrets)}", fg="red")
                 if task_type == "folder":
                     # A folder task that raised (rclone missing, unexpected I/O error, ...) is a
                     # failed copy too: the seed task must not add a torrent for files that may not

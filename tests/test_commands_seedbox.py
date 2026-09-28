@@ -99,7 +99,8 @@ def test_seedboxhealth_command_does_not_exist() -> None:
 
 def test_a_credential_bearing_remote_is_not_printed(monkeypatch, capsys) -> None:
     # rclone accepts a connection string as the remote, so the url itself can carry a password.
-    monkeypatch.setattr(cfg, "seedbox", [_seedbox(url=":sftp,host=box,user=dean,pass=hunter2")])
+    remote = ":sftp,host=box,user=dean,pass=hunter2"
+    monkeypatch.setattr(cfg, "seedbox", [_seedbox(url=remote, torrent_client="qbittorrent+http://127.0.0.1:8080")])
     monkeypatch.setattr(QBittorrentClient, "login", lambda self: object())
     monkeypatch.setattr(commands_module.shutil, "which", lambda name: "/usr/bin/rclone")
 
