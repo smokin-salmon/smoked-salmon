@@ -5,6 +5,7 @@ import msgspec
 import pytest
 
 import salmon.uploader
+from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import Cfg, ImageUploader
 
 SHARED_HOST_ERROR = r"can only be set as cover_uploader under \[image\.red\] or \[image\.ops\]"
@@ -109,10 +110,11 @@ def test_each_cover_host_gets_its_own_upload_reused_across_trackers(monkeypatch)
 
     async def run() -> list[str | None]:
         cover_urls: dict[str, str | None] = {}
-        return [
-            await salmon.uploader.get_cover_url(tracker, cover_urls, "/release", None, False)
-            for tracker in ("OPS", "RED", "DIC", "RED")
-        ]
+        results = []
+        for tracker in ("OPS", "RED", "DIC", "RED"):
+            url, _ = await salmon.uploader.get_cover_url(tracker, cover_urls, "/release", None, False)
+            results.append(url)
+        return results
 
     assert anyio.run(run) == [
         "https://imgbox/cover.jpg",
@@ -121,3 +123,16 @@ def test_each_cover_host_gets_its_own_upload_reused_across_trackers(monkeypatch)
         "https://red/cover.jpg",
     ]
     assert uploads == ["imgbox", "red", "red"]
+
+
+@pytest.mark.parametrize("tracker", ["RED", "OPS", "red", "ops"])
+def test_red_is_offered_as_a_cover_host_for_red_and_ops(tracker: str) -> None:
+    assert cover_refusal("red", tracker) is None
+
+
+def test_red_is_not_offered_as_a_cover_host_for_dic() -> None:
+    assert cover_refusal("red", "DIC") is not None
+
+
+def test_a_host_with_no_display_restriction_is_never_refused_as_a_cover_host() -> None:
+    assert cover_refusal("catbox", "DIC") is None
