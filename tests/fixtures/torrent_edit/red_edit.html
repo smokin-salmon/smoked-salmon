@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!-- RED torrents.php?action=edit page, from a real page (2026-09-28), sanitized: ids, names, label,
+     catalogue number, auth and the description body replaced; structure, field names, attributes and
+     option lists kept exactly. The real page also has GET search forms. -->
+<html>
+<head><title>Edit torrent :: Redacted</title></head>
+<body>
+<div id="content">
+<div class="thin">
+<form class="create_form" name="torrent" action="" enctype="multipart/form-data" method="post" id="upload_table" onsubmit="$(':disabled').prop('disabled', false); $('#post').raw().disabled = 'disabled';">
+    <div>
+        <input type="hidden" name="submit" value="true"/>
+        <input type="hidden" name="auth" value="XXXX"/>
+        <input type="hidden" name="action" value="takeedit"/>
+        <input type="hidden" name="torrentid" value="2001"/>
+        <input type="hidden" name="type" value="1"/>
+    </div>
+    <div id="dynamic_form">
+    <table cellpadding="3" cellspacing="1" border="0" class="layout border" width="100%">
+        <tr><td class="label">Unknown Release:</td><td>
+            <input type="checkbox" id="unknown" name="unknown"  onclick="WarnUnknown();ToggleUnknown();"/> Careful! ...
+        </td></tr>
+        <tr><td class="label">Existing edition information:</td><td>
+            <input type="hidden" id="json_remasters"
+                   value="[{&quot;0&quot;:&quot;2000&quot;,&quot;ID&quot;:&quot;2000&quot;,&quot;1&quot;:&quot;2021&quot;,&quot;RemasterYear&quot;:&quot;2021&quot;,&quot;2&quot;:&quot;&quot;,&quot;RemasterTitle&quot;:&quot;&quot;,&quot;3&quot;:&quot;Label&quot;,&quot;RemasterRecordLabel&quot;:&quot;Label&quot;,&quot;4&quot;:&quot;CAT001&quot;,&quot;RemasterCatalogueNumber&quot;:&quot;CAT001&quot;},{&quot;0&quot;:&quot;2001&quot;,&quot;ID&quot;:&quot;2001&quot;,&quot;1&quot;:&quot;2021&quot;,&quot;RemasterYear&quot;:&quot;2021&quot;,&quot;2&quot;:&quot;&quot;,&quot;RemasterTitle&quot;:&quot;&quot;,&quot;3&quot;:&quot;Label&quot;,&quot;RemasterRecordLabel&quot;:&quot;Label&quot;,&quot;4&quot;:&quot;CAT001&quot;,&quot;RemasterCatalogueNumber&quot;:&quot;CAT001&quot;}]"/>
+            <select id="groupremasters" name="groupremasters"
+                    onchange="GroupRemaster()">
+                <option value="">-------</option>
+                <option
+                  value="0"
+                  >2021 /  / Label / CAT001</option>
+            </select>
+        </td></tr>
+        <tr id="unknown_edition_year_tr"><td class="label">Unknown Edition Year:</td><td>
+            <input type="checkbox" id="unknown_edition_year" name="unknown_edition_year"
+                class="unknown-year-toggle"
+                data-year-selector="#remaster_year"
+                data-year-required="true"
+                 />
+            <label for="unknown_edition_year">Check this if the edition year is unknown (keeps other edition information)</label>
+        </td></tr>
+        <tr id="edition_year"><td class="label">Edition year:</td><td>
+            <input type="text" id="remaster_year" name="remaster_year" size="5"
+                    minlength="4" maxlength="4" pattern="[12]\d{3}" required
+                    onblur="CheckYear();" value="2021" /> ...
+        </td></tr>
+        <tr id="edition_title"><td class="label">Edition title:</td><td>
+            <input type="text" id="remaster_title" name="remaster_title" size="50"
+                    minlength="2" maxlength="80"
+                    value="" />
+        </td></tr>
+        <tr id="edition_record_label"><td class="label">Record label:</td><td>
+            <input type="text" id="remaster_record_label" name="remaster_record_label" size="50"
+                    minlength="2" maxlength="80"
+                    value="Label" />
+        </td></tr>
+        <tr id="edition_catalogue_number"><td class="label">Catalogue number:</td>
+            <td><input type="text" id="remaster_catalogue_number" name="remaster_catalogue_number" size="50"
+                    minlength="2" maxlength="80"
+                    value="CAT001" />
+        </tr>
+        <tr><td class="label">Scene:</td><td>
+            <input type="checkbox" id="scene" name="scene" />
+            <label for="scene">...</label>
+        </td></tr>
+        <tr><td class="label">Format:</td><td>
+            <select id="format" name="format" onchange="Format()" required>
+                <option></option>
+                <option value="MP3">MP3</option>
+                <option value="FLAC" selected="selected">FLAC</option>
+                <option value="AAC">AAC</option>
+                <option value="AC3">AC3</option>
+                <option value="DTS">DTS</option>
+                <option value="DSD">DSD</option>
+            </select>
+            <span id="format_warning" class="important_text"></span>
+        </td></tr>
+        <tr id="bitrate_row"><td class="label">Bitrate:</td><td>
+            <select id="bitrate" name="bitrate" onchange="Bitrate()" required>
+                <option value="">---</option>
+                <option value="192">192</option><option value="APS (VBR)">APS (VBR)</option><option value="V2 (VBR)">V2 (VBR)</option>
+                <option value="V1 (VBR)">V1 (VBR)</option><option value="256">256</option><option value="APX (VBR)">APX (VBR)</option>
+                <option value="V0 (VBR)">V0 (VBR)</option><option value="320">320</option>
+                <option value="Lossless" selected="selected">Lossless</option><option value="24bit Lossless">24bit Lossless</option>
+                <option value="DSD64">DSD64</option><option value="DSD128">DSD128</option><option value="DSD256">DSD256</option>
+                <option value="DSD512">DSD512</option><option value="Other">Other</option>
+            </select>
+            <span id="other_bitrate_span" class="hidden">
+                <input type="text" name="other_bitrate" size="5" id="other_bitrate" onchange="AltBitrate();"/>
+                <input type="checkbox" id="vbr" name="vbr" /><label for="vbr"> (VBR)</label>
+            </span>
+            <span id="itms_warning" class="important_text"></span>
+        </td></tr>
+        <tr><td class="label">Media:</td><td>
+            <select name="media" onchange="CheckYear();" id="media" required>
+                <option></option>
+                <option value="CD">CD</option><option value="DVD">DVD</option><option value="Vinyl">Vinyl</option>
+                <option value="Soundboard">Soundboard</option><option value="SACD">SACD</option><option value="DAT">DAT</option>
+                <option value="Cassette">Cassette</option><option value="WEB" selected="selected">WEB</option><option value="Blu-Ray">Blu-Ray</option>
+            </select>
+        </td></tr>
+        <tr><td class="label">Release description:</td><td>
+            <div id="textarea_wrap_0" class="field_div textarea_wrap">
+                <textarea name="release_desc" id="release_desc" cols="60" rows="8"  maxlength="1000000">[quote]Source [url=https://redacted.sh/torrents.php?id=1000&amp;torrentid=2000#torrent2000]FLAC 24bit Lossless[/url][/quote][hide][pre]    comment[18]: album=Title One &amp; Title Two
+[/pre][/hide]</textarea>
+            </div>
+            <div class="submit_div preview_submit"><input type="button" value="Preview" class="hidden button_preview_0" /></div>
+        </td></tr>
+    </table>
+    </div>
+    <table cellpadding="3" cellspacing="1" border="0" class="layout border slice" width="100%"><tr><td colspan="2" style="text-align: center;">
+        <input id="post" type="submit" value="Edit torrent" />
+    </td></tr></table>
+</form>
+
+<!-- Later on the same page. These change the torrent's group: never to be picked or submitted. -->
+<form class="edit_form" name="torrent_group" action="torrents.php" method="post">
+    <input type="hidden" name="action" value="editgroupid"/><input type="hidden" name="auth" value="XXXX"/>
+    <input type="hidden" name="torrentid" value="2001"/><input type="hidden" name="oldgroupid" value="1000"/>
+    <input type="text" name="groupid" value="1000" size="10"/><input type="submit" value="Change group ID"/>
+</form>
+<form class="split_form" name="torrent_group" action="torrents.php" method="post">
+    <input type="hidden" name="action" value="newgroup"/><input type="hidden" name="auth" value="XXXX"/>
+    <input type="hidden" name="torrentid" value="2001"/><input type="hidden" name="oldgroupid" value="1000"/>
+    <input type="text" name="artist" value="" size="50"/><input type="text" name="title" value="Title One &amp; Title Two" size="50"/>
+    <input type="text" id="year_split" name="year" value="2021" size="10"/>
+    <input type="checkbox" id="unknown_year_split" name="unknown_year" class="unknown-year-toggle" data-year-selector="#year_split" data-year-required="true" />
+    <input type="submit" value="Split into new group"/>
+</form>
+</div>
+</div>
+</body>
+</html>

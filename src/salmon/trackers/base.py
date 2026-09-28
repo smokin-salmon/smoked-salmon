@@ -12,7 +12,7 @@ import asyncclick as click
 import msgspec
 from aiohttp import FormData
 from aiolimiter import AsyncLimiter
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
 from torf import TorfError, Torrent
 
@@ -160,6 +160,90 @@ def _compose_form_data(files: UploadFiles, data: dict[str, Any]) -> FormData:
         else:
             _add_form_field(form, key, value)
     return form
+
+
+# Inputs a browser does not submit as text: a file input sends a file, and a button only
+# its own name, when it is the one clicked.
+_UNSUBMITTED_INPUT_TYPES = frozenset({"file", "submit", "button", "reset", "image"})
+
+
+def _submitted_fields(form: Tag) -> list[tuple[str, str]]:
+    """Get the fields a browser submits for a form as the page shows it, in page order.
+
+    An unchecked checkbox or radio is not sent, a checked one without a value sends "on".
+    A select sends its selected option, or its first one when none is, and an option
+    without a value sends its text. Entities are decoded once, as the tracker expects the
+    text itself. Disabled fields are sent too: RED's edit form enables them all before it
+    submits, and a field sent with the value it shows is left as it is.
+
+    Args:
+        form: The form element.
+
+    Returns:
+        The (name, value) pairs, in page order.
+    """
+    fields: list[tuple[str, str]] = []
+    for control in form.find_all(["input", "select", "textarea"]):
+        if not isinstance(control, Tag) or not control.get("name"):
+            continue
+        name = str(control["name"])
+        if control.name == "input":
+            input_type = str(control.get("type", "text")).lower()
+            if input_type in _UNSUBMITTED_INPUT_TYPES:
+                continue
+            if input_type not in ("checkbox", "radio"):
+                fields.append((name, str(control.get("value", ""))))
+            elif control.has_attr("checked"):
+                fields.append((name, str(control.get("value", "on"))))
+        elif control.name == "select":
+            options = [option for option in control.find_all("option") if isinstance(option, Tag)]
+            selected = [option for option in options if option.has_attr("selected")]
+            if not control.has_attr("multiple"):
+                # The last selected option wins; with none, the first one not disabled.
+                selected = selected[-1:] or [option for option in options if not option.has_attr("disabled")][:1]
+            for option in selected:
+                value = option.get("value")
+                fields.append((name, " ".join(option.get_text().split()) if value is None else str(value)))
+        else:
+            # A newline right after the opening tag is not part of the text.
+            fields.append((name, control.get_text().removeprefix("\n")))
+    return fields
+
+
+def _torrent_edit_fields(page: str, torrent_id: int) -> list[tuple[str, str]]:
+    """Read a torrent's edit form, as a browser would submit it.
+
+    The page also holds forms that move the torrent to another group. The edit form is
+    the one named "torrent" that posts action=takeedit, and it must be the only one.
+
+    Args:
+        page: The HTML of torrents.php?action=edit.
+        torrent_id: The torrent the form must edit.
+
+    Returns:
+        The form's (name, value) pairs, in page order.
+
+    Raises:
+        RequestError: If the page does not hold exactly one edit form for this torrent,
+            with a description and an auth field (a login or an error page, say).
+    """
+    soup = BeautifulSoup(page, "lxml")
+    forms = [
+        form
+        for form in soup.find_all("form", attrs={"name": "torrent"})
+        if isinstance(form, Tag) and form.find("input", attrs={"type": "hidden", "name": "action", "value": "takeedit"})
+    ]
+    if len(forms) != 1:
+        raise RequestError(f"expected one edit form on the page, found {len(forms)}")
+    fields = _submitted_fields(forms[0])
+    descriptions = [name for name, _ in fields].count("release_desc")
+    if descriptions != 1:
+        raise RequestError(f"expected one description field in the edit form, found {descriptions}")
+    if ("torrentid", str(torrent_id)) not in fields:
+        raise RequestError(f"the edit form is not for torrent {torrent_id}")
+    if not dict(fields).get("auth"):
+        raise RequestError("the edit form has no auth field")
+    return fields
 
 
 # Gazelle's own redirects take up to two hops: torrents.php?torrentid= to its group and
@@ -913,34 +997,32 @@ class BaseGazelleApi:
     async def append_to_torrent_description(self, torrent_id: int, description_addition: str) -> None:
         """Add text to start of torrent description.
 
+        The edit form sets every field of the torrent, and one it lacks is cleared or unset:
+        rebuilt from the API, it lost the edition, flags and marks the API does not give (#357).
+        So the tracker's own edit form is read and sent back as a browser would, with only the
+        description changed. It also holds the auth, so a fresh client needs no index call.
+
         Args:
             torrent_id: The torrent ID.
             description_addition: Text to prepend to description.
 
         Raises:
-            RequestError: If edit fails.
+            RequestError: If the edit form cannot be read, in which case nothing is sent,
+                or if the edit fails.
         """
-        current_details = await self.api_call("torrent", params={"id": torrent_id})
-        new_data = {
-            "action": "takeedit",
-            "torrentid": torrent_id,
-            "type": 1,
-            "groupremasters": 0,
-            "remaster_year": current_details["torrent"]["remasterYear"],
-            "remaster_title": current_details["torrent"]["remasterTitle"],
-            "remaster_record_label": current_details["torrent"]["remasterRecordLabel"],
-            "remaster_catalogue_number": current_details["torrent"]["remasterCatalogueNumber"],
-            "format": current_details["torrent"]["format"],
-            "bitrate": current_details["torrent"]["encoding"],
-            "other_bitrate": "",
-            "media": current_details["torrent"]["media"],
-            "release_desc": description_addition + current_details["torrent"]["description"],
-            "auth": self.authkey,
-        }
         url = self.base_url + "/torrents.php"
-        # The form sets every field to a value computed above, so sending it twice leaves
-        # the torrent as sending it once.
-        resp = await self._request("POST", url, data=new_data, idempotent=True)
+        page = await self._request("GET", url, params={"action": "edit", "id": torrent_id}, needs_authkey=False)
+        try:
+            fields = _torrent_edit_fields(page.text, torrent_id)
+        except RequestError as err:
+            raise RequestError(
+                f"Could not read the edit form of torrent {torrent_id} on {self.site_string} ({err}). "
+                "Nothing was sent: its description is unchanged."
+            ) from err
+        new_data = [(name, description_addition + value if name == "release_desc" else value) for name, value in fields]
+        # Every field is the one the form showed, or the description computed above, so sending
+        # it twice leaves the torrent as sending it once.
+        resp = await self._request("POST", url, data=new_data, idempotent=True, needs_authkey=False)
         resp_text = resp.text
 
         soup = BeautifulSoup(resp_text, "lxml")
