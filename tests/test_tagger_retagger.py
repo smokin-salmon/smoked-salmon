@@ -4,8 +4,8 @@ import msgspec
 import pytest
 
 from salmon import cfg
-from salmon.errors import UploadError
-from salmon.tagger.retagger import Change, _get_tag_number, create_track_changes, rename_files
+from salmon.errors import AmbiguousTrackOrderError
+from salmon.tagger.retagger import Change, _get_tag_number, create_track_changes, rename_files, tag_files
 
 
 def _trackmeta(title, track_no, disc_no):
@@ -130,8 +130,44 @@ def test_create_track_changes_refuses_a_flat_folder_without_disc_tags():
         }
     }
 
-    with pytest.raises(UploadError, match="DISCNUMBER"):
+    with pytest.raises(AmbiguousTrackOrderError, match="DISCNUMBER"):
         create_track_changes(tags, metadata)
+
+
+def test_tag_files_skips_retagging_a_flat_folder_without_disc_tags_instead_of_crashing(capsys):
+    # Same flat, disc-encoded-in-the-name layout as above, but exercised through tag_files, the
+    # entry point the uploader actually calls. It must print the refusal and return so the upload
+    # continues with the files' current tags, not raise out and abort the whole run.
+    tags = {
+        name: _tagset(f"Old {name}", tracknumber=track, discnumber=None)
+        for name, track in (
+            ("01-CD1.flac", "1"),
+            ("01-CD2.flac", "1"),
+            ("02-CD1.flac", "2"),
+            ("02-CD2.flac", "2"),
+        )
+    }
+    metadata = {
+        "title": "Some Album",
+        "edition_title": None,
+        "genres": [],
+        "group_year": None,
+        "label": None,
+        "catno": None,
+        "artists": [("Some Artist", "main")],
+        "upc": None,
+        "comment": None,
+        "tracks": {
+            str(disc): {str(track): _trackmeta(f"New {disc}-{track}", str(track), str(disc)) for track in (1, 2)}
+            for disc in (1, 2)
+        },
+    }
+
+    tag_files("/unused", tags, metadata, auto_rename=True)
+
+    output = capsys.readouterr().out
+    assert "DISCNUMBER" in output
+    assert "Skipping retagging procedure" in output
 
 
 def test_create_track_changes_refuses_disc_folders_whose_track_counts_differ_from_the_metadata():
@@ -150,8 +186,95 @@ def test_create_track_changes_refuses_disc_folders_whose_track_counts_differ_fro
         }
     }
 
-    with pytest.raises(UploadError, match="DISCNUMBER"):
+    with pytest.raises(AmbiguousTrackOrderError, match="DISCNUMBER"):
         create_track_changes(tags, metadata)
+
+
+def test_create_track_changes_orders_a_single_disc_single_folder_with_duplicate_track_tags_by_file_name():
+    # A single-disc release, one folder, every file tagged TRACKNUMBER=1 (the bad tags that are
+    # exactly why someone would retag). On master this falls back to file order and retags; the
+    # disc-folder fallback must keep doing that instead of refusing just because a single disc
+    # can't resolve any other way.
+    tags = {
+        "01 First.flac": _tagset("Old First", tracknumber="1", discnumber=None),
+        "02 Second.flac": _tagset("Old Second", tracknumber="1", discnumber=None),
+        "03 Third.flac": _tagset("Old Third", tracknumber="1", discnumber=None),
+    }
+    metadata = {
+        "tracks": {
+            "1": {
+                "1": _trackmeta("New First", "1", "1"),
+                "2": _trackmeta("New Second", "2", "1"),
+                "3": _trackmeta("New Third", "3", "1"),
+            }
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old First", "New First") in changes["01 First.flac"]
+    assert Change("title", "Old Second", "New Second") in changes["02 Second.flac"]
+    assert Change("title", "Old Third", "New Third") in changes["03 Third.flac"]
+
+
+def test_create_track_changes_orders_a_single_disc_single_folder_with_no_track_tags_by_file_name():
+    # No file in the folder carries a TRACKNUMBER tag at all: still not ambiguous when the file
+    # names are, so this must retag by file name order rather than refuse.
+    tags = {
+        "01 First.flac": _tagset("Old First", tracknumber=None, discnumber=None),
+        "02 Second.flac": _tagset("Old Second", tracknumber=None, discnumber=None),
+    }
+    metadata = {
+        "tracks": {
+            "1": {
+                "1": _trackmeta("New First", "1", "1"),
+                "2": _trackmeta("New Second", "2", "1"),
+            }
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old First", "New First") in changes["01 First.flac"]
+    assert Change("title", "Old Second", "New Second") in changes["02 Second.flac"]
+
+
+def test_tag_files_skips_retagging_when_one_disc_folder_is_genuinely_ambiguous(capsys):
+    # A two-disc release with a proper folder per disc: CD1's files have no track tags and tie
+    # under natural file-name order too (same name, different case), so CD1 alone can't be
+    # resolved. tag_files must print the refusal and return, leaving the upload to continue with
+    # the files' current tags, rather than raising out of tag_files and aborting the run.
+    tags = {
+        "CD1/Track.flac": _tagset("Old A", tracknumber=None, discnumber=None),
+        "CD1/track.flac": _tagset("Old B", tracknumber=None, discnumber=None),
+        "CD2/01.flac": _tagset("Old CD2 1", tracknumber="1", discnumber=None),
+    }
+    metadata = {
+        "title": "Some Album",
+        "edition_title": None,
+        "genres": [],
+        "group_year": None,
+        "label": None,
+        "catno": None,
+        "artists": [("Some Artist", "main")],
+        "upc": None,
+        "comment": None,
+        "tracks": {
+            "1": {
+                "1": _trackmeta("New CD1 1", "1", "1"),
+                "2": _trackmeta("New CD1 2", "2", "1"),
+            },
+            "2": {
+                "1": _trackmeta("New CD2 1", "1", "2"),
+            },
+        },
+    }
+
+    tag_files("/unused", tags, metadata, auto_rename=True)
+
+    output = capsys.readouterr().out
+    assert "DISCNUMBER" in output
+    assert "Skipping retagging procedure" in output
 
 
 def test_create_track_changes_handles_the_one_folder_disc_dot_track_layout():

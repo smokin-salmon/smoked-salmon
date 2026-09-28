@@ -14,7 +14,7 @@ from salmon.constants import (
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
-from salmon.errors import UploadError
+from salmon.errors import AmbiguousTrackOrderError
 from salmon.tagger.tagfile import TagFile
 
 
@@ -35,7 +35,12 @@ def tag_files(path, tags, metadata, auto_rename):
     if not check_whether_to_tag(tags, metadata):
         return
     album_changes = collect_album_data(metadata)
-    track_changes = create_track_changes(tags, metadata)
+    try:
+        track_changes = create_track_changes(tags, metadata)
+    except AmbiguousTrackOrderError as e:
+        click.secho(str(e), fg="red")
+        click.secho("Skipping retagging procedure...", fg="red")
+        return
     print_changes(album_changes, track_changes, next(iter(tags.values())))
     if auto_rename or click.confirm(
         click.style("\nWould you like to auto-tag the files with the updated metadata?", fg="magenta"),
@@ -203,15 +208,18 @@ def _order_by_disc_folders(tags, discs):
 
 
 def _order_within_disc(group):
-    """Order one disc folder's files: by track tag when every file has its own, else by file name."""
-    if all(not _has_tag(tagset, "tracknumber") for _, tagset in group):
-        if not _names_distinct(filename for filename, _ in group):
-            raise _ambiguous_tracks()
-        return group
+    """Order one disc folder's files: by track tag when every file has its own distinct one, else by file name.
+
+    This is also the path a single-disc, single-folder release takes, so a folder full of duplicate or
+    missing TRACKNUMBER tags (exactly why someone would retag) still resolves by file name instead of being
+    refused. Only raise when neither the tags nor the file names can tell the files apart.
+    """
     numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in group]
-    if None in numbers or len(set(numbers)) != len(numbers):
-        raise _ambiguous_tracks()
-    return sorted(group, key=lambda item: _get_tag_number(item[1], "tracknumber"))
+    if None not in numbers and len(set(numbers)) == len(numbers):
+        return sorted(group, key=lambda item: _get_tag_number(item[1], "tracknumber"))
+    if _names_distinct(filename for filename, _ in group):
+        return sorted(group, key=lambda item: _natural_key(item[0]))
+    raise _ambiguous_tracks()
 
 
 def _names_distinct(names) -> bool:
@@ -220,9 +228,9 @@ def _names_distinct(names) -> bool:
     return len(set(keys)) == len(keys)
 
 
-def _ambiguous_tracks() -> UploadError:
+def _ambiguous_tracks() -> AmbiguousTrackOrderError:
     """The error for a retag whose files the tags and folders can't pair with tracks."""
-    return UploadError(
+    return AmbiguousTrackOrderError(
         "Can't tell which file is which track: some files share a disc and track number, or lack one, and "
         "neither the tags nor a folder per disc sort them out. Fix their DISCNUMBER and TRACKNUMBER tags, or "
         "put each disc in its own folder, before retagging."

@@ -95,3 +95,9 @@ class LogCheckSkipped(Exception):
     """Raised when a log's CRCs can't be checked against the audio; not a verdict on the rip."""
 
     pass
+
+
+class AmbiguousTrackOrderError(Exception):
+    """Raised when retagging can't tell which file is which track from tags or folder layout."""
+
+    pass
