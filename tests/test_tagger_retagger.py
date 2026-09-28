@@ -96,6 +96,30 @@ def test_create_track_changes_keeps_file_order_when_discnumber_tags_are_missing(
     assert Change("title", "Old CD2 2", "New CD2 2") in changes["CD2/02.flac"]
 
 
+def test_create_track_changes_falls_back_when_only_some_files_carry_a_discnumber_tag():
+    # CD1's file has a (nonstandard) DISCNUMBER/TRACKNUMBER pair that reads as a high track
+    # number; CD2's file has no DISCNUMBER tag at all, so it defaults to disc 1 with its own low
+    # track number. Neither pair collides, so a plain sort by (disc, track) would trust them: it
+    # would put CD2's file first and CD1's file second, backwards from the actual CD1/CD2 layout.
+    # Tags can't be trusted at all unless every file carries both a disc and a track number, so
+    # this must fall back to pairing by folder instead of mispairing off that sort.
+    tags = {
+        "CD1/01.flac": _tagset("Old CD1", tracknumber="5", discnumber="1"),
+        "CD2/01.flac": _tagset("Old CD2", tracknumber="1", discnumber=None),
+    }
+    metadata = {
+        "tracks": {
+            "1": {"1": _trackmeta("New CD1", "1", "1")},
+            "2": {"1": _trackmeta("New CD2", "1", "2")},
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old CD1", "New CD1") in changes["CD1/01.flac"]
+    assert Change("title", "Old CD2", "New CD2") in changes["CD2/01.flac"]
+
+
 def test_create_track_changes_orders_ten_plus_discs_naturally():
     # gather_tags lists CD10 before CD2 (a path with no leading number sorts as text). With no
     # DISCNUMBER tags every file collides on (1, 1), so the fallback must order the disc folders

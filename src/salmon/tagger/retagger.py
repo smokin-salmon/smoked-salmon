@@ -104,19 +104,19 @@ def create_track_changes(tags, metadata):
     def disc_track_key(tagset):
         return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
 
-    # An unparseable tag reads as 1 via _get_tag_number, so it can't vouch for a file's place:
-    # only a disc/track pair that is both present and parseable identifies a file by its tags.
+    # An unparseable or missing tag reads as 1 via _get_tag_number, so it can't vouch for a file's
+    # place: only a disc/track pair that is both present and parseable on every file identifies it
+    # by its tags. A file missing DISCNUMBER usually collides with another file's default (1, N)
+    # and falls back below on its own, but not always (its track number could happen not to
+    # collide), so we don't trust the tags at all unless every file actually carries both.
     readable = all(
-        _parse_tag_number(tagset, "tracknumber") is not None
-        and (not _has_tag(tagset, "discnumber") or _parse_tag_number(tagset, "discnumber") is not None)
+        _parse_tag_number(tagset, "tracknumber") is not None and _parse_tag_number(tagset, "discnumber") is not None
         for tagset in tags.values()
     )
     disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
     if readable and len(set(disc_track_keys)) == len(disc_track_keys):
         # Every file has its own distinct disc/track pair, so its embedded tags can be
-        # trusted to identify it. Files without a discnumber tag (e.g. an untagged CD1/CD2
-        # folder layout) all default to disc 1 and collide here, so we fall back to pairing
-        # them one disc folder at a time instead of mismatching them.
+        # trusted to identify it.
         ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
     else:
         ordered_tags = _order_by_disc_folders(tags, metadata["tracks"])
@@ -514,12 +514,6 @@ def _parse_tag_number(tracktags, field):
     if isinstance(value, int):
         return value
     return None
-
-
-def _has_tag(tracktags, field):
-    """Whether a tag object or dict carries a (possibly malformed) value for ``field``."""
-    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
-    return value is not None
 
 
 def _rename_clashes(path, to_rename):
