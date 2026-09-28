@@ -7,7 +7,7 @@ from itertools import chain
 from typing import Any
 
 from salmon import cfg
-from salmon.common import fetch_genre, less_uppers, normalize_accents
+from salmon.common import fetch_genre, less_uppers, normalize_accents, split_genre
 from salmon.errors import GenreNotInWhitelist
 
 
@@ -446,20 +446,18 @@ def _is_separate_word_in_combination(generic, combined):
     return generic in combined_parts
 
 
-def standardize_genres(genre_set):
-    new_set = set()
-    for g in genre_set:
-        try:
-            new_set |= fetch_genre(g)
-        except GenreNotInWhitelist:
-            new_set.add(g)
+def standardize_genres(genres):
+    # Order follows the input: a set here would make the result depend on the hash seed.
+    ordered = []
+    for g in genres:
+        for part in split_genre(g):
+            try:
+                resolved = sorted(fetch_genre(part))
+            except GenreNotInWhitelist:
+                resolved = [part]
+            for item in resolved:
+                if item not in ordered:
+                    ordered.append(item)
 
     # Filter out generic genres if more specific combos exist
-    filtered = set(new_set)
-    for genre in new_set:
-        for other in new_set:
-            if genre != other and _is_separate_word_in_combination(genre, other):
-                filtered.discard(genre)
-                break
-
-    return list(filtered)
+    return [g for g in ordered if not any(g != o and _is_separate_word_in_combination(g, o) for o in ordered)]

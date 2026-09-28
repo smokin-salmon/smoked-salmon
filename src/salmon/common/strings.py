@@ -97,6 +97,23 @@ def fetch_genre(genre: str) -> set[str]:
         raise GenreNotInWhitelist from None
 
 
+# "\u2192" is Qobuz's hierarchy arrow. "&" separates only after one of these, as in Discogs's
+# "Folk, World, & Country"; never alone, since the whitelist stores "Drum & Bass" whole.
+_GENRE_SEPARATORS = re.compile(r"\s*[/;,\u2192]\s*(?:&\s*)?|\s+\\\s+")
+
+
+def split_genre(genre: str) -> list[str]:
+    """Split one genre string into the separate genres it names."""
+    return [part.strip() for part in _GENRE_SEPARATORS.split(genre) if part.strip()]
+
+
+def tagify(genre: str) -> str:
+    """One tracker tag: words joined by dots, "&" spelled out because it is not a tag character."""
+    tag = re.sub(r"\s*&\s*", ".and.", genre)
+    tag = re.sub(r"[-_ /]+", ".", tag)
+    return re.sub(r"\.+", ".", tag).strip(".")
+
+
 def truncate(string, length):
     if len(string) < length:
         return string

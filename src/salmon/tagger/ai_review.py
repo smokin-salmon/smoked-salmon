@@ -16,6 +16,7 @@ from bs4 import BeautifulSoup
 from salmon import cfg
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import InvalidMetadataError
+from salmon.tagger.sources.base import standardize_genres
 
 # openai takes about 0.3 s to import, so it is imported where a review runs, not when salmon starts.
 if TYPE_CHECKING:
@@ -37,6 +38,8 @@ TOP_LEVEL_PATCH_FIELDS = (
     "urls",
 )
 NORMALIZED_METADATA_FIELDS = {"genres", "urls"}
+# The tracker needs these, and nothing downstream validates them, so the model may not clear them.
+REQUIRED_PATCH_FIELDS = frozenset({"title", "group_year"})
 ARTIST_ROLE_VALUES = list(ARTIST_IMPORTANCES)
 ARTIST_SCHEMA = {
     "type": "object",
@@ -1001,12 +1004,23 @@ def _resolve_review_metadata_value(
 ) -> Any:
     if field == "artists":
         return _normalize_artist_tuples(value)
-    if field != "urls" or not source_url:
-        return _normalize_review_metadata_value(field, value)
-
-    merged_urls = _normalize_list(before)
-    merged_urls = _normalize_list([*merged_urls, source_url])
-    return _normalize_list([*merged_urls, *_normalize_list(value)])
+    if field == "genres":
+        if value == []:
+            return []  # only a literal empty list is a deliberate clear
+        normalized = _normalize_list(value)
+        if not normalized:
+            return _normalize_list(before)  # [" "] and [None] normalize away; they are not a clear
+        # Combined genres like "Dance / Pop" split here; junk that standardizes to nothing keeps what we had.
+        return standardize_genres(normalized) or _normalize_list(before)
+    if field == "urls" and source_url:
+        merged_urls = _normalize_list(before)
+        merged_urls = _normalize_list([*merged_urls, source_url])
+        return _normalize_list([*merged_urls, *_normalize_list(value)])
+    if isinstance(value, str) and not value.strip():
+        return before  # blank is not a value; null is how the model clears an optional field
+    if value is None and field in REQUIRED_PATCH_FIELDS:
+        return before
+    return _normalize_review_metadata_value(field, value)
 
 
 def apply_ai_metadata_result(

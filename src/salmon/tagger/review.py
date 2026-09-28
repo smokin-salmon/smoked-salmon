@@ -7,7 +7,7 @@ from salmon import cfg
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError
 from salmon.tagger.metadata import _print_metadata
-from salmon.tagger.sources.base import generate_artists
+from salmon.tagger.sources.base import generate_artists, standardize_genres
 
 _CLASSICAL_GENRES = {
     "classical",
@@ -329,7 +329,11 @@ async def _edit_years(metadata):
 async def _edit_genres(metadata):
     genres = click.edit("\n".join(metadata["genres"]), editor=cfg.upload.default_editor)
     if genres:
-        metadata["genres"] = [g for g in genres.split("\n") if g.strip()]
+        standardized = standardize_genres([g.strip() for g in genres.split("\n") if g.strip()])
+        if not standardized:
+            click.secho("Those genres normalize to nothing; keeping the previous ones.", fg="red")
+            return
+        metadata["genres"] = standardized
 
 
 async def _edit_urls(metadata):

@@ -27,7 +27,9 @@ from salmon.common.strings import (
     less_uppers,
     make_searchstrs,
     normalize_accents,
+    split_genre,
     strip_template_keys,
+    tagify,
     truncate,
 )
 from salmon.errors import ScrapeError
@@ -46,7 +48,9 @@ __all__ = [
     "less_uppers",
     "make_searchstrs",
     "normalize_accents",
+    "split_genre",
     "strip_template_keys",
+    "tagify",
     "truncate",
     "ScrapeError",
     "commandgroup",

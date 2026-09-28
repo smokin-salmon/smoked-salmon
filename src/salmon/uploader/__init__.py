@@ -1,6 +1,5 @@
 import os
 import platform
-import re
 import shutil
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
@@ -20,7 +19,7 @@ from salmon.checks.integrity import (
 )
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import upload_upconvert_test
-from salmon.common import commandgroup
+from salmon.common import commandgroup, tagify
 from salmon.config.image_hosts import cover_refusal
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.converter.downconverting import (
@@ -1466,7 +1465,7 @@ async def upload_and_report(
 
 def convert_genres(genres):
     """Convert the weirdly spaced genres to RED-compliant genres."""
-    return ",".join(re.sub("[-_ ]", ".", g).strip() for g in genres)
+    return ",".join(t for t in (tagify(g) for g in genres) if t)
 
 
 async def _prompt_source():

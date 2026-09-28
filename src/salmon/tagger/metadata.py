@@ -12,7 +12,7 @@ from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.search import SEARCHSOURCES, run_metasearch
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
-from salmon.tagger.sources.base import generate_artists
+from salmon.tagger.sources.base import generate_artists, standardize_genres
 
 
 async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
@@ -193,6 +193,8 @@ def _get_manual_metadata(rls_data):
             metadata_dict = msgspec.json.decode(metadata)
             if isinstance(metadata_dict["genres"], str):
                 metadata_dict["genres"] = [metadata_dict["genres"]]
+            # Typed genres go through the same splitting and whitelist as scraped ones.
+            metadata_dict["genres"] = standardize_genres(metadata_dict["genres"])
             return metadata_dict
         except (TypeError, msgspec.DecodeError):
             click.confirm(

@@ -7,7 +7,7 @@ from copy import deepcopy
 import asyncclick as click
 
 from salmon import cfg
-from salmon.common import RE_FEAT, re_split
+from salmon.common import RE_FEAT, re_split, split_genre
 from salmon.common.files import _tracknumber_sort_key
 from salmon.constants import FORMATS, TAG_ENCODINGS
 
@@ -110,11 +110,10 @@ def construct_artists_li(tags):
 
 def split_genres(genres_list):
     """Create a list of genres from splitting the string."""
-    genres = set()
-    if genres_list:
-        for g in genres_list:
-            for genre in re_split(g):
-                genres.add(genre.strip())
+    # A dict, not a set, so the order follows the file tags rather than the hash seed.
+    genres: dict[str, None] = {}
+    for g in genres_list or []:
+        genres.update(dict.fromkeys(split_genre(g)))
     return list(genres)
 
 
