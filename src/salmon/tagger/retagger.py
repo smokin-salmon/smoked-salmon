@@ -104,14 +104,20 @@ def create_track_changes(tags, metadata):
     def disc_track_key(tagset):
         return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
 
-    # An unparseable or missing tag reads as 1 via _get_tag_number, so it can't vouch for a file's
-    # place: only a disc/track pair that is both present and parseable on every file identifies it
-    # by its tags. A file missing DISCNUMBER usually collides with another file's default (1, N)
-    # and falls back below on its own, but not always (its track number could happen not to
-    # collide), so we don't trust the tags at all unless every file actually carries both.
-    readable = all(
-        _parse_tag_number(tagset, "tracknumber") is not None and _parse_tag_number(tagset, "discnumber") is not None
-        for tagset in tags.values()
+    # An unparseable tag reads as 1 via _get_tag_number, so it can't vouch for a file's place: only
+    # a disc/track pair built from tags we actually trust identifies a file. TRACKNUMBER must be
+    # present and parseable everywhere. DISCNUMBER is trusted only when every file has it, and it
+    # parses everywhere too (a flat single-disc folder with no DISCNUMBER tag on any file is the
+    # common case, and correctly reads as "everyone defaults to disc 1"); when some files have it
+    # and others don't, or it doesn't parse, a missing tag's default (1, N) is not guaranteed to
+    # collide with anything, so we can't tell whether the resulting keys are trustworthy or just
+    # coincidentally unique, and fall back below instead.
+    discnumber_tags = [_has_tag(tagset, "discnumber") for tagset in tags.values()]
+    discnumber_trusted = not any(discnumber_tags) or (
+        all(discnumber_tags) and all(_parse_tag_number(tagset, "discnumber") is not None for tagset in tags.values())
+    )
+    readable = discnumber_trusted and all(
+        _parse_tag_number(tagset, "tracknumber") is not None for tagset in tags.values()
     )
     disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
     if readable and len(set(disc_track_keys)) == len(disc_track_keys):
@@ -514,6 +520,12 @@ def _parse_tag_number(tracktags, field):
     if isinstance(value, int):
         return value
     return None
+
+
+def _has_tag(tracktags, field):
+    """Whether a tag object or dict carries a (possibly malformed) value for ``field``."""
+    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
+    return value is not None
 
 
 def _rename_clashes(path, to_rename):

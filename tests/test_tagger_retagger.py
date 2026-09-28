@@ -101,8 +101,8 @@ def test_create_track_changes_falls_back_when_only_some_files_carry_a_discnumber
     # number; CD2's file has no DISCNUMBER tag at all, so it defaults to disc 1 with its own low
     # track number. Neither pair collides, so a plain sort by (disc, track) would trust them: it
     # would put CD2's file first and CD1's file second, backwards from the actual CD1/CD2 layout.
-    # Tags can't be trusted at all unless every file carries both a disc and a track number, so
-    # this must fall back to pairing by folder instead of mispairing off that sort.
+    # A mix of files with and without a DISCNUMBER tag can't be trusted, so this must fall back to
+    # pairing by folder instead of mispairing off that sort.
     tags = {
         "CD1/01.flac": _tagset("Old CD1", tracknumber="5", discnumber="1"),
         "CD2/01.flac": _tagset("Old CD2", tracknumber="1", discnumber=None),
@@ -118,6 +118,26 @@ def test_create_track_changes_falls_back_when_only_some_files_carry_a_discnumber
 
     assert Change("title", "Old CD1", "New CD1") in changes["CD1/01.flac"]
     assert Change("title", "Old CD2", "New CD2") in changes["CD2/01.flac"]
+
+
+def test_create_track_changes_trusts_continuous_track_numbers_with_no_discnumber_tag_anywhere():
+    # A flat, single folder holding a two-disc release with no DISCNUMBER tag on any file, and
+    # TRACKNUMBER counting straight through both discs (1..6, not restarting at each disc). Every
+    # file defaults to disc 1, so the (disc, track) keys are unique on tracknumber alone and this
+    # has always retagged correctly by a plain tag sort, positionally against the metadata's
+    # flattened disc 1 then disc 2 track list. DISCNUMBER being absent on every file (not just
+    # some) is exactly the case the disc-folder fallback is not needed for.
+    tags = {f"{n:02d}.flac": _tagset(f"Old {n}", tracknumber=str(n), discnumber=None) for n in range(1, 7)}
+    metadata = {
+        "tracks": {
+            "1": {str(t): _trackmeta(f"New 1-{t}", str(t), "1") for t in range(1, 4)},
+            "2": {str(t): _trackmeta(f"New 2-{t}", str(t), "2") for t in range(1, 4)},
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old 4", "New 2-1") in changes["04.flac"]
 
 
 def test_create_track_changes_orders_ten_plus_discs_naturally():
