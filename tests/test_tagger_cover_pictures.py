@@ -14,6 +14,8 @@ from salmon.tagger import cover
 
 MIB = 1024 * 1024
 KIB = 1024
+# A PICTURE block holds 32 bytes of fields (type, lengths, dimensions) and the MIME type besides the image.
+BLOCK_FIELDS = 32 + len("image/jpeg")
 # Stands in for the audio frames, which follow the metadata blocks and must come out of a strip unchanged.
 AUDIO = b"\xff\xf8 not really audio " * 1000
 
@@ -34,6 +36,16 @@ def _write_flac(path: Path, *, pictures: tuple[tuple[int, bytes], ...] = (), pad
     audio.save(padding=lambda _info: padding)
 
 
+def _image(image_format: str, size: int = 0) -> bytes:
+    """A small real image, padded after its end to `size` bytes, which readers ignore."""
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), "green").save(buffer, image_format)
+    return buffer.getvalue().ljust(size, b"\0")
+
+
+FRONT = _image("jpeg", 1500 * KIB)
+
+
 def _snapshot(folder: Path) -> dict[str, bytes]:
     return {str(file.relative_to(folder)): file.read_bytes() for file in sorted(folder.rglob("*")) if file.is_file()}
 
@@ -44,7 +56,7 @@ def album(tmp_path) -> Path:
     folder = tmp_path / "Artist - Album (2020) [WEB FLAC]"
     _write_flac(
         folder / "01. One.flac",
-        pictures=((PictureType.COVER_FRONT, b"front" * (300 * KIB)), (PictureType.COVER_BACK, b"back")),
+        pictures=((PictureType.COVER_FRONT, FRONT), (PictureType.COVER_BACK, b"back")),
     )
     _write_flac(folder / "CD2" / "02. Two.flac", padding=2 * MIB)
     _write_flac(folder / "03. Three.flac", pictures=((PictureType.COVER_FRONT, b"small" * (100 * KIB)),))
@@ -52,10 +64,11 @@ def album(tmp_path) -> Path:
 
 
 def test_measures_pictures_and_padding(album) -> None:
-    assert cover.pictures_and_padding_size(FLAC(album / "01. One.flac")) == 1500 * KIB + 4 + 8 * KIB
+    pictures = 1500 * KIB + 4 + 2 * BLOCK_FIELDS
+    assert cover.pictures_and_padding_size(FLAC(album / "01. One.flac")) == pictures + 8 * KIB
     assert cover.pictures_and_padding_size(FLAC(album / "CD2" / "02. Two.flac")) == 2 * MIB
     assert cover.find_oversized_pictures(str(album)) == {
-        "01. One.flac": 1500 * KIB + 4 + 8 * KIB,
+        "01. One.flac": pictures + 8 * KIB,
         "CD2/02. Two.flac": 2 * MIB,
     }
 
@@ -66,6 +79,25 @@ def test_exactly_one_mib_is_within_the_limit(tmp_path) -> None:
     assert cover.find_oversized_pictures(str(tmp_path)) == {}
 
 
+def test_the_picture_block_counts_not_only_the_image(tmp_path) -> None:
+    # The image and the padding make 1 MiB less a byte; the PICTURE block's own fields put the file over.
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"x" * (MIB - 8 * KIB - 1)),))
+
+    assert cover.find_oversized_pictures(str(tmp_path)) == {"01.flac": MIB - 1 + BLOCK_FIELDS}
+
+
+def test_auto_compress_cover_strips_when_the_picture_block_is_over(tmp_path) -> None:
+    folder_cover = io.BytesIO()
+    Image.new("RGB", (10, 10), "blue").save(folder_cover, "jpeg")
+    (tmp_path / "cover.jpg").write_bytes(folder_cover.getvalue())
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"x" * (MIB - 8 * KIB - 1)),))
+
+    cover.compress_pictures(str(tmp_path))
+
+    # Stripped, then the folder's cover embedded in place of the oversized one.
+    assert [picture.data for picture in FLAC(tmp_path / "01.flac").pictures] == [folder_cover.getvalue()]
+
+
 def test_strips_by_default(album, capsys) -> None:
     before = _snapshot(album)
     assert cfg.image.strip_oversized_pictures is True
@@ -74,7 +106,7 @@ def test_strips_by_default(album, capsys) -> None:
 
     output = capsys.readouterr().out
     assert "exceed RED's 1 MiB limit" in output
-    assert "01. One.flac: 1.47 MiB (484 KiB over)" in output
+    assert "01. One.flac: 1.47 MiB (484.09 KiB over)" in output
     assert "CD2/02. Two.flac: 2 MiB (1 MiB over)" in output
     assert "03. Three.flac" not in output
     for name in ("01. One.flac", "CD2/02. Two.flac"):
@@ -83,7 +115,7 @@ def test_strips_by_default(album, capsys) -> None:
         assert cover.pictures_and_padding_size(audio) == 8 * KIB
         assert (album / name).read_bytes().endswith(AUDIO)
     # The front cover is kept as a file, and the file within the limit is left alone.
-    assert (album / "cover.jpg").read_bytes() == b"front" * (300 * KIB)
+    assert (album / "cover.jpg").read_bytes() == FRONT
     assert _snapshot(album)["03. Three.flac"] == before["03. Three.flac"]
 
 
@@ -109,6 +141,43 @@ def test_an_existing_cover_file_is_not_overwritten(album) -> None:
     assert not (album / "cover.jpg").exists()
 
 
+@pytest.mark.parametrize(
+    ("front", "kept_as"),
+    [
+        (_image("gif", 2 * MIB), "cover.png"),
+        (_image("png", 2 * MIB), "cover.png"),
+    ],
+    ids=["gif converted to png", "png labelled image/jpeg"],
+)
+def test_the_front_cover_is_kept_as_a_jpeg_or_png_file(tmp_path, front: bytes, kept_as: str) -> None:
+    # _write_flac labels every picture image/jpeg: the file's format comes from the data, not the label.
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, front),))
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert FLAC(tmp_path / "01.flac").pictures == []
+    assert sorted(file.name for file in tmp_path.iterdir()) == ["01.flac", kept_as]
+    with Image.open(tmp_path / kept_as) as image:
+        assert image.format == "PNG"
+        assert image.size == (10, 10)
+
+
+def test_a_front_cover_that_is_not_an_image_is_not_lost(tmp_path, capsys) -> None:
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"not an image" * (100 * KIB)),))
+    _write_flac(tmp_path / "02.flac", padding=2 * MIB)
+    unreadable = (tmp_path / "01.flac").read_bytes()
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    # The file whose cover cannot be kept as a file keeps it embedded; the others are still stripped.
+    output = capsys.readouterr().out
+    assert "01.flac as it is: its front cover could not be read" in output
+    assert "Removed the embedded pictures from 1 file(s)." in output
+    assert (tmp_path / "01.flac").read_bytes() == unreadable
+    assert cover.pictures_and_padding_size(FLAC(tmp_path / "02.flac")) == 8 * KIB
+    assert sorted(file.name for file in tmp_path.iterdir()) == ["01.flac", "02.flac"]
+
+
 def test_nothing_is_said_or_changed_within_the_limit(tmp_path, capsys) -> None:
     _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"x" * (900 * KIB)),))
     before = _snapshot(tmp_path)
@@ -130,5 +199,5 @@ def test_auto_compress_cover_still_strips_and_embeds_the_cover(tmp_path) -> None
     audio = FLAC(tmp_path / "01.flac")
     assert (tmp_path / "cover.jpg").read_bytes() == front.getvalue()
     assert [picture.data for picture in audio.pictures] == [front.getvalue()]
-    assert cover.pictures_and_padding_size(audio) == len(front.getvalue()) + 8 * KIB
+    assert cover.pictures_and_padding_size(audio) == len(front.getvalue()) + BLOCK_FIELDS + 8 * KIB
     assert (tmp_path / "01.flac").read_bytes().endswith(AUDIO)

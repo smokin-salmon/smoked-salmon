@@ -141,7 +141,7 @@ def get_8kib_padding(info: PaddingInfo):
 def pictures_and_padding_size(audio: FLAC) -> int:
     """Get the bytes a FLAC spends on embedded pictures and padding, which RED's 1 MiB limit counts."""
     padding_size = sum(block.length for block in audio.metadata_blocks if block.code == 1)
-    return padding_size + sum(len(picture.data) for picture in audio.pictures)
+    return padding_size + sum(len(picture.write()) for picture in audio.pictures)
 
 
 def find_oversized_pictures(path: str) -> dict[str, int]:
@@ -163,10 +163,30 @@ def find_oversized_pictures(path: str) -> dict[str, int]:
     return oversized
 
 
+def _as_cover_file(picture: Picture) -> tuple[str, bytes] | None:
+    """Get the extension and bytes to save an embedded picture as a cover file, which must be JPEG or PNG.
+
+    JPEG and PNG are kept as they are, whatever MIME type the picture claims; other formats are converted to PNG.
+
+    Returns:
+        The extension and bytes, or None if the picture is not an image PIL can read.
+    """
+    try:
+        with Image.open(io.BytesIO(picture.data)) as image:
+            if image.format in ("JPEG", "PNG"):
+                return ("jpg" if image.format == "JPEG" else "png"), picture.data
+            buffer = io.BytesIO()
+            image.convert("RGBA").save(buffer, "png")
+            return "png", buffer.getvalue()
+    except Exception:
+        return None
+
+
 def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | None:
     """Remove a FLAC's pictures and padding, keeping 8 KiB of padding.
 
-    Its front cover is written to the folder first if the folder has no cover file.
+    Its front cover is written to the folder first if the folder has no cover file. If that cover cannot be
+    saved as a JPEG or PNG file, the FLAC is left as it is, so the only copy of the artwork is not lost.
 
     Args:
         path: The release folder.
@@ -178,10 +198,17 @@ def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | Non
     """
     for picture in audio.pictures:
         if picture.type == PictureType.COVER_FRONT and not cover_file:
-            extension = "png" if picture.mime == "image/png" else "jpg"
+            cover = _as_cover_file(picture)
+            if cover is None:
+                click.secho(
+                    f"Left {audio.filename} as it is: its front cover could not be read as an image to keep it.",
+                    fg="red",
+                )
+                return cover_file
+            extension, data = cover
             cover_file = os.path.join(path, f"cover.{extension}")
             with open(cover_file, "wb") as img:
-                img.write(picture.data)
+                img.write(data)
             click.secho(f"Extracted cover to: {cover_file}", fg="green")
 
     audio.clear_pictures()
@@ -215,9 +242,12 @@ def check_embedded_pictures(path: str) -> None:
         return
 
     cover_file = get_cover_from_path(path)
+    stripped = 0
     for filename in oversized:
-        cover_file = _strip_pictures(path, FLAC(os.path.join(path, filename)), cover_file)
-    click.secho(f"Removed the embedded pictures from {len(oversized)} file(s).", fg="green")
+        audio = FLAC(os.path.join(path, filename))
+        cover_file = _strip_pictures(path, audio, cover_file)
+        stripped += not audio.pictures
+    click.secho(f"Removed the embedded pictures from {stripped} file(s).", fg="green")
 
 
 def compress_pictures(path):
@@ -229,7 +259,7 @@ def compress_pictures(path):
 
         padding_size = sum(block.length for block in audio.metadata_blocks if block.code == 1)
 
-        cover_sizes = sum(len(picture.data) for picture in audio.pictures)
+        cover_sizes = sum(len(picture.write()) for picture in audio.pictures)
         click.secho(
             (
                 f"Padding size: {humanfriendly.format_size(padding_size, binary=True)}, "
