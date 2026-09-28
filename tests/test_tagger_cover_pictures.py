@@ -172,10 +172,40 @@ def test_a_front_cover_that_is_not_an_image_is_not_lost(tmp_path, capsys) -> Non
     # The file whose cover cannot be kept as a file keeps it embedded; the others are still stripped.
     output = capsys.readouterr().out
     assert "01.flac as it is: its front cover could not be read" in output
-    assert "Removed the embedded pictures from 1 file(s)." in output
+    assert "Stripped 1 file(s) to no embedded pictures and 8 KiB of padding." in output
     assert (tmp_path / "01.flac").read_bytes() == unreadable
     assert cover.pictures_and_padding_size(FLAC(tmp_path / "02.flac")) == 8 * KIB
     assert sorted(file.name for file in tmp_path.iterdir()) == ["01.flac", "02.flac"]
+
+
+def test_a_failed_cover_write_leaves_no_partial_cover(tmp_path, monkeypatch) -> None:
+    # A partial cover.jpg would pass for the folder's cover next time, and the embedded one would be stripped.
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, FRONT),))
+    before = _snapshot(tmp_path)
+
+    class DiskFull(io.FileIO):
+        def write(self, data) -> int:
+            super().write(bytes(data)[:1000])
+            raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(cover, "open", DiskFull, raising=False)
+
+    with pytest.raises(OSError, match="No space left"):
+        cover.check_embedded_pictures(str(tmp_path))
+
+    assert _snapshot(tmp_path) == before
+
+
+def test_auto_compress_cover_embeds_within_the_limit_counting_the_picture_block(tmp_path) -> None:
+    # The image alone fits beside 8 KiB of padding; with the PICTURE block's own fields it would not.
+    (tmp_path / "cover.jpg").write_bytes(_image("jpeg", MIB - 8 * KIB - 1))
+    _write_flac(tmp_path / "01.flac")
+
+    cover.compress_pictures(str(tmp_path))
+
+    audio = FLAC(tmp_path / "01.flac")
+    assert len(audio.pictures) == 1
+    assert cover.pictures_and_padding_size(audio) <= MIB
 
 
 def test_nothing_is_said_or_changed_within_the_limit(tmp_path, capsys) -> None:

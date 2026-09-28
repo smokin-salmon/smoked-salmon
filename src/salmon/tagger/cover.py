@@ -207,8 +207,15 @@ def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | Non
                 return cover_file
             extension, data = cover
             cover_file = os.path.join(path, f"cover.{extension}")
-            with open(cover_file, "wb") as img:
-                img.write(data)
+            # Written aside first: a partial cover file would pass for the folder's cover on the next run.
+            partial = f"{cover_file}.part"
+            try:
+                with open(partial, "wb") as img:
+                    img.write(data)
+                os.replace(partial, cover_file)
+            finally:
+                if os.path.exists(partial):
+                    os.remove(partial)
             click.secho(f"Extracted cover to: {cover_file}", fg="green")
 
     audio.clear_pictures()
@@ -247,7 +254,7 @@ def check_embedded_pictures(path: str) -> None:
         audio = FLAC(os.path.join(path, filename))
         cover_file = _strip_pictures(path, audio, cover_file)
         stripped += not audio.pictures
-    click.secho(f"Removed the embedded pictures from {stripped} file(s).", fg="green")
+    click.secho(f"Stripped {stripped} file(s) to no embedded pictures and 8 KiB of padding.", fg="green")
 
 
 def compress_pictures(path):
@@ -286,25 +293,27 @@ def compress_pictures(path):
             with open(cover_file, "rb") as c:
                 data = c.read()
 
-            max_embedded_image_size = MAX_PICTURES_AND_PADDING - humanfriendly.parse_size("8KiB")
+            max_picture_block_size = MAX_PICTURES_AND_PADDING - humanfriendly.parse_size("8KiB")
 
+            # The PICTURE block's own fields (MIME type, dimensions, lengths) count against the limit too, so
+            # the image gets what is left once they are written with no data.
             picture = Picture()
+            picture.mime = Image.open(cover_file).get_format_mimetype()
 
-            if len(data) < max_embedded_image_size:
+            if len(data) <= max_picture_block_size - len(picture.write()):
                 click.secho(
                     f"Cover size ({humanfriendly.format_size(len(data), binary=True)}) within limit",
                     fg="bright_green",
                 )
-                picture.mime = Image.open(cover_file).get_format_mimetype()
             else:
                 click.secho(
                     f"Resizing oversized cover ({humanfriendly.format_size(len(data), binary=True)})...",
                     fg="yellow",
                 )
+                picture.mime = "image/jpeg"
                 image = Image.open(cover_file)
                 image.thumbnail((1000, 1000))
-                data = compress_to_target_size(image, max_embedded_image_size)
-                picture.mime = "image/jpeg"
+                data = compress_to_target_size(image, max_picture_block_size - len(picture.write()))
 
             picture.data = data
             picture.type = PictureType.COVER_FRONT
