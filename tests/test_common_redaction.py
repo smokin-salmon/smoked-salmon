@@ -117,3 +117,18 @@ def test_a_secret_value_that_looks_like_a_flag_is_still_masked() -> None:
 def test_embedded_credentials_are_collected_for_echoed_errors(args, remote, secret) -> None:
     assert secret in secret_values(args, remote)
     assert secret not in redact_secrets(f"401 for {secret}", secret_values(args, remote))
+
+
+def test_a_masked_known_value_keeps_what_follows_it() -> None:
+    # The remote's path after a connection string's password is what a support thread needs.
+    echo = 'Failed to create file system for ":sftp,host=box,pass=hunter2:/music/Album": 401'
+    assert redact_secrets(echo, known=["hunter2"]) == (
+        'Failed to create file system for ":sftp,host=box,pass=[REDACTED]:/music/Album": 401'
+    )
+    assert redact_command(["rclone", "copy", "a", ":sftp,pass=hunter2:/music/Album"], known=["hunter2"]) == (
+        "rclone copy a ':sftp,pass=[REDACTED]:/music/Album'"
+    )
+
+
+def test_a_value_only_partly_known_is_still_masked_whole() -> None:
+    assert redact_secrets("pass=hunter2xyz rest", known=["hunter2"]) == "pass=[REDACTED] rest"

@@ -7,9 +7,12 @@ _USERINFO_PASSWORD = re.compile(r"://[^/\s@:]*:([^/\s@']+)@")
 _SECRET_WORDS = r"(?:pass|password|token|secret|key|session|header|cookie|auth)"
 # A quoted value is masked whole, doubled quotes included: rclone quotes values with spaces (a PEM key).
 _SECRET_VALUE = r"""(?:'(?:[^']|'')*'|"(?:[^"]|"")*"|\S+)"""
-_SECRET_FLAG_NAME = re.compile(rf"--?[\w-]*{_SECRET_WORDS}[\w-]*", re.IGNORECASE)
-_SECRET_FLAG = re.compile(rf"(--?[\w-]*{_SECRET_WORDS}[\w-]*(?:=|[ \t]+)){_SECRET_VALUE}", re.IGNORECASE)
-_SECRET_ASSIGNMENT = re.compile(rf"\b([\w-]*{_SECRET_WORDS}[\w-]*)={_SECRET_VALUE}", re.IGNORECASE)
+# A value a known secret already masked whole is left alone, so what follows it (a remote's path) stays.
+_MASKED_VALUE = r"""\[REDACTED\](?=[\s,:'"]|$)"""
+_SECRET_FLAG = re.compile(
+    rf"(--?[\w-]*{_SECRET_WORDS}[\w-]*(?:=|[ \t]+))(?!{_MASKED_VALUE}){_SECRET_VALUE}", re.IGNORECASE
+)
+_SECRET_ASSIGNMENT = re.compile(rf"\b([\w-]*{_SECRET_WORDS}[\w-]*)=(?!{_MASKED_VALUE}){_SECRET_VALUE}", re.IGNORECASE)
 # Flags whose values are harmless to show; every other flag's value in a command is masked, since no
 # list of secret flag names ever covers them all (rclone takes credentials in headers, keys, tokens ...).
 _SHOWN_FLAGS = frozenset(
