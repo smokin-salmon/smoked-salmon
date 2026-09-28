@@ -106,8 +106,12 @@ class UploadManager:
             except Exception as e:
                 click.secho(f"Failed to configure {seedbox.type} uploader: {e}", fg="red")
 
-        # Each task: (seedbox, local_path, task_type)
-        self.tasks: collections.deque[tuple[Seedbox, str, str]] = collections.deque()
+        # Each task: (seedbox, local_path, task_type, folder). `folder` is the release folder the
+        # task belongs to: itself for a "folder" task, and the folder its torrent was built from
+        # for a "seed" task. It lets a failed copy skip only the seeds for its own folder, not
+        # every seed queued for that seedbox (a folder task's copy failing must not stop the seed
+        # of a different release, or a different format of the same release, on the same seedbox).
+        self.tasks: collections.deque[tuple[Seedbox, str, str, str]] = collections.deque()
 
     def _client(self, seedbox: Seedbox) -> TorrentClient:
         """Look up the cached torrent client for a seedbox entry.
@@ -120,21 +124,25 @@ class UploadManager:
         """
         return self._client_cache[seedbox.torrent_client]
 
-    def add_upload_task(self, directory: str, task_type: str, is_flac: bool) -> None:
+    def add_upload_task(self, directory: str, task_type: str, is_flac: bool, folder: str | None = None) -> None:
         """Queue upload tasks for a path across all configured seedboxes.
 
         Args:
             directory: Local folder path (for "folder" tasks) or .torrent file path (for "seed" tasks).
             task_type: Either "folder" to transfer files or "seed" to add to the download client.
             is_flac: Whether the release is FLAC; skips seedboxes with flac_only=True if False.
+            folder: For a "seed" task, the release folder its torrent was built from, so a failed
+                copy of that folder skips this seed. Ignored for a "folder" task, which always uses
+                its own path. Defaults to `directory` when omitted, matching the old behaviour.
         """
         click.secho(f"Preparing upload tasks for: {directory}", fg="cyan")
+        task_folder = directory if task_type == "folder" else (folder or directory)
         for seedbox in _enabled_seedboxes():
             if seedbox.torrent_client not in self._client_cache:
                 continue
             if seedbox.flac_only and not is_flac:
                 continue
-            task = (seedbox, directory, task_type)
+            task = (seedbox, directory, task_type, task_folder)
             if task in self.tasks:
                 continue
             if task_type == "seed":
@@ -151,8 +159,10 @@ class UploadManager:
             return
 
         click.secho(f"Executing {len(self.tasks)} upload tasks", fg="cyan")
-        failed_seedboxes: set[int] = set()
-        for i, (seedbox, local_path, task_type) in enumerate(self.tasks, 1):
+        # Keyed by (id(seedbox), folder): a failed copy of one folder must not skip the seed of a
+        # different folder queued for the same seedbox.
+        failed_folders: set[tuple[int, str]] = set()
+        for i, (seedbox, local_path, task_type, folder) in enumerate(self.tasks, 1):
             click.secho(
                 f"\nTask {i}/{len(self.tasks)}: {task_type.upper()} - {os.path.basename(local_path)}",
                 fg="cyan",
@@ -162,12 +172,12 @@ class UploadManager:
                     if seedbox.type == "rclone":
                         succeeded = await _rclone_upload_folder(seedbox, seedbox.directory, local_path)
                         if not succeeded:
-                            failed_seedboxes.add(id(seedbox))
+                            failed_folders.add((id(seedbox), folder))
                 elif task_type == "seed":
-                    if id(seedbox) in failed_seedboxes:
+                    if (id(seedbox), folder) in failed_folders:
                         click.secho(
-                            f"Skipping seed on {seedbox.url}: the Rclone upload failed, so "
-                            f"{local_path} was not added to the client there. Add it by hand once "
+                            f"Skipping seed on {seedbox.url}: the Rclone upload of {folder} failed, "
+                            f"so {local_path} was not added to the client there. Add it by hand once "
                             "the files have been copied.",
                             fg="red",
                         )
@@ -180,6 +190,11 @@ class UploadManager:
                     await _add_to_downloader(client, shell_path, local_path, seedbox.label, seedbox.add_paused)
             except Exception as e:
                 click.secho(f"Critical error during task: {e}", fg="red")
+                if task_type == "folder":
+                    # A folder task that raised (rclone missing, unexpected I/O error, ...) is a
+                    # failed copy too: the seed task must not add a torrent for files that may not
+                    # be on the remote.
+                    failed_folders.add((id(seedbox), folder))
 
         click.secho("\nAll upload tasks processed", fg="green")
         self.tasks.clear()
