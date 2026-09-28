@@ -6,6 +6,9 @@ from salmon.trackers.base import BaseGazelleApi
 
 
 class DICApi(BaseGazelleApi):
+    # DIC's upload form has no Arranger role (unconfirmed whether it ever will).
+    unsupported_artist_roles = frozenset({"arranger"})
+
     def __init__(self):
         self.site_code = "DIC"
         self.base_url = "https://dicmusic.com"

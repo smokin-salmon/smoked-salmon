@@ -37,6 +37,7 @@ ARTIST_IMPORTANCES = {
     "conductor": 5,
     "djcompiler": 6,
     "producer": 7,
+    "arranger": 8,
 }
 
 RELEASE_TYPES = {

@@ -29,6 +29,7 @@ ROLES = {
     "Vocals": "guest",
     "Featuring [Vocals]": "guest",
     "Remix": "remixer",
+    "Arranged By": "arranger",
 }
 
 RELEASE_TYPES = {

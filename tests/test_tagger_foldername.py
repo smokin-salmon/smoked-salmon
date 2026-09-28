@@ -5,6 +5,15 @@ from salmon import cfg
 from salmon.tagger import foldername
 
 
+def test_compile_artist_str_excludes_arranger() -> None:
+    # Only main artists appear in the folder name, exactly like producer already does.
+    artist_str = foldername._compile_artist_str(
+        [("Main Artist", "main"), ("Some Arranger", "arranger"), ("Some Producer", "producer")]
+    )
+
+    assert artist_str == "Main Artist"
+
+
 def test_hardlink_fallback_survives_a_partial_tree(tmp_path, monkeypatch) -> None:
     # Regression for #356: when os.link fails partway through copytree, the plain-copy
     # fallback used to hit SameFileError on the files that were already hardlinked.
