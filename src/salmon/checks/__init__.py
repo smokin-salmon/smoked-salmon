@@ -100,13 +100,14 @@ async def mqa(path):
                         click.secho("Did not find MQA syncword", fg="green")
 
 
-async def mqa_test(path: str) -> None:
+async def mqa_test(path: str, all_files: bool = True) -> None:
     """Check if a FLAC file or any FLAC file in a directory contains MQA content.
 
     The files are checked concurrently, like the integrity check.
 
     Args:
         path: Path to the FLAC file or directory to check.
+        all_files: Check every FLAC file in a directory; False checks only the first one by path.
 
     Raises:
         click.Abort: If MQA syncword is detected.
@@ -119,6 +120,8 @@ async def mqa_test(path: str) -> None:
         filepaths = sorted(
             os.path.join(root, f) for root, _, files in os.walk(path) for f in files if f.lower().endswith(".flac")
         )
+        if not all_files:
+            filepaths = filepaths[:1]
     else:
         return
 

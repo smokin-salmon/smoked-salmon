@@ -655,8 +655,10 @@ async def _upload_staged(
             gazelle_site, dupe_searchstrs, rls_data["title"]
         ) as group_fetch:
             if not skip_mqa:
-                click.secho("Checking for MQA release (every FLAC file)", fg="cyan", bold=True)
-                await mqa_test(path)
+                all_files = cfg.upload.mqa_check_all_tracks
+                checked = "every FLAC file" if all_files else "first FLAC file only"
+                click.secho(f"Checking for MQA release ({checked})", fg="cyan", bold=True)
+                await mqa_test(path, all_files=all_files)
                 click.secho("No MQA release detected", fg="green")
 
             if rls_data["encoding"] == "24bit Lossless" and not skip_up:

@@ -11,6 +11,7 @@ import numpy as np
 import pytest
 
 import salmon.checks.mqa as mqa
+from salmon import cfg
 from salmon.checks import mqa_test
 
 SAMPLE_RATE = 44100
@@ -73,6 +74,17 @@ def test_mqa_on_track_3_stops_the_upload(album, checked, capsys) -> None:
     reported = [line for line in click.unstyle(capsys.readouterr().out).splitlines() if "MQA syncword" in line]
     assert len(reported) == 1
     assert "03. Track.flac" in reported[0]
+
+
+def test_every_file_is_the_default() -> None:
+    assert cfg.upload.mqa_check_all_tracks is True
+
+
+def test_with_the_opt_out_only_the_first_file_is_read(album, checked) -> None:
+    """upload.mqa_check_all_tracks = false: faster, and MQA on track 3 is not caught."""
+    anyio.run(lambda: mqa_test(str(album), all_files=False))
+
+    assert checked == ["01. Track.flac"]
 
 
 def test_an_album_without_mqa_passes(tmp_path, checked) -> None:

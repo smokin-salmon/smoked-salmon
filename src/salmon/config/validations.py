@@ -293,6 +293,10 @@ class Upload(BaseStruct):
 
     yes_all: bool = False
 
+    # Check every FLAC file for an MQA marker before uploading. False checks only the first one: faster,
+    # but MQA on another track is not caught.
+    mqa_check_all_tracks: bool = True
+
     upload_to_seedbox: bool = True
 
     # Normalize file names in generated .torrent files to a fixed Unicode form.
