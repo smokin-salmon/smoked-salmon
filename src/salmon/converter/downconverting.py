@@ -55,13 +55,14 @@ def _resolve_sample_rate(sample_rate: int) -> int:
     raise InvalidSampleRate
 
 
-def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None) -> str:
+def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, output_dir: str | None = None) -> str:
     """Generate the output directory path based on source path and conversion params.
 
     Args:
         path: Source album directory path.
         bit_depth: Target bit depth.
         sample_rate: Target sample rate, or None.
+        output_dir: Directory the output goes into; the source's own directory by default.
 
     Returns:
         The output directory path string.
@@ -82,7 +83,7 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None) 
             flags=re.IGNORECASE,
         )
 
-    return os.path.join(os.path.dirname(path), foldername)
+    return os.path.join(output_dir or os.path.dirname(path), foldername)
 
 
 def _collect_convert_items(
@@ -226,6 +227,7 @@ async def convert_folder(
     bit_depth: BitDepth = 16,
     sample_rate: int | None = None,
     essential_only: bool = False,
+    output_dir: str | None = None,
 ) -> tuple[int | None, str]:
     """Convert a folder of 24-bit FLAC files to the target bit depth.
 
@@ -235,12 +237,13 @@ async def convert_folder(
         sample_rate: Target sample rate. None for automatic detection.
         essential_only: If True, only image files are copied; all other extra
             files (scans, cues, logs, etc.) are skipped.
+        output_dir: Directory the output goes into; the source's own directory by default.
 
     Returns:
         Tuple of (final_sample_rate, new_folder_path).
     """
     _validate_lossless(path)
-    new_path = _build_output_path(path, bit_depth, sample_rate)
+    new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
 
     if os.path.isdir(new_path):
         click.secho(f"{new_path} already exists.", fg="yellow")

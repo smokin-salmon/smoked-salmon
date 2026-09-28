@@ -16,7 +16,7 @@ from salmon.constants import (
 from salmon.errors import UploadError
 
 
-def rename_folder(path, metadata, auto_rename, check=True):
+def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     """
     Create a revised folder name from the new metadata and present it to the
     user. Have them decide whether or not to accept the folder name.
@@ -24,6 +24,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
     before the renaming occurs.
     For scene releases, the name of the original folder is kept untouched, and
     the folder is copied to the download folder.
+    `parent` replaces the download folder as the directory the renamed folder goes into.
     """
     old_base = os.path.basename(path)
     new_base = generate_folder_name(metadata)
@@ -42,7 +43,7 @@ def rename_folder(path, metadata, auto_rename, check=True):
 
         new_base = _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
 
-    new_path = os.path.join(cfg.directory.download_directory, new_base)
+    new_path = os.path.join(parent or cfg.directory.download_directory, new_base)
     if os.path.isdir(new_path) and not os.path.samefile(path, new_path):
         if not check or click.confirm(
             click.style(
