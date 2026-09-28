@@ -187,6 +187,10 @@ session = 'get-from-site-cookie'
 # # enable seedbox uploading
 # upload_to_seedbox = true
 
+# # Normalize file names in generated .torrent files to "NFC" or "NFD".
+# # Use this if you tag on macOS (NFD file names) and seed from Linux (NFC), or the reverse.
+# torrent_name_normalization = ""
+
 # [upload.search]
 # limit = 3
 # excluded_labels = ["edm comps"]

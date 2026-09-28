@@ -295,6 +295,10 @@ class Upload(BaseStruct):
 
     upload_to_seedbox: bool = True
 
+    # Normalize file names in generated .torrent files to a fixed Unicode form.
+    # "" (default): leave names as they are on disk. "NFC" or "NFD": normalize to that form.
+    torrent_name_normalization: str = ""
+
     # TODO: take these out of the upload struct!
     search: UploadSearch = msgspec.field(default_factory=UploadSearch)
     formatting: UploadFormatting = msgspec.field(default_factory=UploadFormatting)
@@ -303,6 +307,14 @@ class Upload(BaseStruct):
     requests: UploadRequests = msgspec.field(default_factory=UploadRequests)
     compression: UploadCompression = msgspec.field(default_factory=UploadCompression)
     ai_review: UploadAiReview = msgspec.field(default_factory=UploadAiReview)
+
+    def __post_init__(self):
+        valid_normalizations = ("", "none", "NFC", "NFD")
+        if self.torrent_name_normalization not in valid_normalizations:
+            raise ValueError(
+                "upload.torrent_name_normalization must be one of "
+                f"{valid_normalizations}, got {self.torrent_name_normalization!r}"
+            )
 
 
 class ProxyServicesCfg(BaseStruct):
