@@ -717,6 +717,10 @@ async def _upload_staged(
             if not group_id:
                 group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
                 click.echo()
+            # From here on, the review may have changed the artists, title or catno, so search strings and
+            # our title come from the reviewed metadata, not the pre-review rls_data.
+            searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
+            our_title = metadata["title"]
             track_data = concat_track_data(tags, audio_info)
             if flac_group is not None:
                 # Matched on the reviewed metadata, so an edited catalogue number or edition title moves the pick.
@@ -757,7 +761,7 @@ async def _upload_staged(
         spectrals_path = get_spectrals_path(path)
         spectral_urls = await handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
     if cfg.upload.requests.last_minute_dupe_check:
-        await last_min_dupe_check(gazelle_site, searchstrs, rls_data["title"])
+        await last_min_dupe_check(gazelle_site, searchstrs, our_title)
 
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
@@ -765,8 +769,6 @@ async def _upload_staged(
     torrent_id = None
     cover_url = None
     cover_urls: dict[str, str | None] = {}  # Uploaded cover URL per image host, reused across trackers
-    # Regenerate searchstrs (will be used to search for requests)
-    searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
 
     seedbox_uploader = UploadManager()
     flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={source_flac['id']}" if source_flac else None
@@ -790,8 +792,7 @@ async def _upload_staged(
                 gazelle_site = salmon.trackers.get_class(tracker)()
 
                 click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
-                searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
-                group_id = await check_existing_group(gazelle_site, searchstrs, our_title=rls_data["title"])
+                group_id = await check_existing_group(gazelle_site, searchstrs, our_title=our_title)
 
             remaining_gazelle_sites.remove(tracker)
 
