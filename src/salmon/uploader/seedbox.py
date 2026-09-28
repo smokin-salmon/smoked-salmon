@@ -2,6 +2,7 @@ import argparse
 import collections
 import os
 import posixpath
+import subprocess
 
 import anyio
 import asyncclick as click
@@ -54,15 +55,46 @@ async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str)
     secrets = seedbox_secrets(seedbox)
     click.secho(redact_secrets(f"Starting Rclone upload to {seedbox.url}:{remote_folder}", secrets), fg="cyan")
     click.secho(f"Executing: {redact_command(commands, secrets)}", fg="yellow")
-    # Let rclone write directly to the terminal so flags like -P can render live progress output.
-    result = await anyio.run_process(commands, stdout=None, stderr=None, check=False)
-    if result.returncode == 0:
+    returncode = await _run_rclone(commands, secrets)
+    if returncode == 0:
         click.secho(
             redact_secrets(f"Rclone upload successful: {path} to {seedbox.url}:{remote_path}", secrets), fg="green"
         )
         return True
-    click.secho(f"Rclone upload failed with exit code {result.returncode}", fg="red")
+    click.secho(f"Rclone upload failed with exit code {returncode}", fg="red")
     return False
+
+
+async def _run_rclone(commands: list[str], secrets: list[str]) -> int:
+    """Run rclone, printing its stderr with the seedbox's secrets masked.
+
+    rclone's stdout goes to the terminal as it is, so -P can render live progress. Its stderr is
+    printed a line at a time as it comes: that is where rclone names a remote it could not open
+    (a connection string with its password) and, with -vv, its whole command line. With -P, what
+    rclone logs once the copy has started goes to stdout, within the progress display, instead.
+
+    Args:
+        commands: The rclone command line.
+        secrets: Values to mask in what rclone prints, from seedbox_secrets.
+
+    Returns:
+        rclone's exit code.
+    """
+    async with await anyio.open_process(commands, stdin=None, stdout=None, stderr=subprocess.PIPE) as process:
+        assert process.stderr is not None
+        pending = b""
+        async for chunk in process.stderr:
+            *lines, pending = (pending + chunk).split(b"\n")
+            for line in lines:
+                _print_rclone_line(line, secrets)
+        if pending:
+            _print_rclone_line(pending, secrets)
+        return await process.wait()
+
+
+def _print_rclone_line(line: bytes, secrets: list[str]) -> None:
+    """Print a line rclone wrote to stderr, to salmon's stderr, with the seedbox's secrets masked."""
+    click.echo(redact_secrets(line.decode(errors="replace").rstrip("\r"), secrets), err=True)
 
 
 async def _add_to_downloader(
