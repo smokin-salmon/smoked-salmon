@@ -88,7 +88,7 @@ def test_warns_and_changes_nothing_by_default(album, monkeypatch, capsys) -> Non
     cover.check_embedded_pictures(str(album))
 
     output = capsys.readouterr().out
-    assert "trump reason on RED" in output
+    assert "RED does not allow (rule 2.3.19)" in output
     assert "01. One.flac: 1.47 MiB (484 KiB over)" in output
     assert "CD2/02. Two.flac: 2 MiB (1 MiB over)" in output
     assert "03. Three.flac" not in output

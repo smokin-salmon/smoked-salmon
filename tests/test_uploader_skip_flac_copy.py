@@ -300,6 +300,6 @@ def test_oversized_pictures_are_stripped_from_the_copy_only_when_asked(
     result, _site, _transcodes = _run_up(monkeypatch, release, args=args, transcode_folder=transcode)
 
     assert result.exit_code == 0, result.output
-    assert ("trump reason on RED" in result.output) is not ("--scene" in args)
+    assert ("RED does not allow (rule 2.3.19)" in result.output) is not ("--scene" in args)
     assert pictures_when_transcoded == [0 if stripped else 1] * 2
     assert _snapshot(release) == before
