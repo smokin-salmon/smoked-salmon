@@ -1,0 +1,99 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit review settings. The rules it enforces come from AGENTS.md; keep the two in step.
+language: en-US
+tone_instructions: "Terse and specific. Report correctness, security, data loss and tracker safety; skip style that ruff and basedpyright already enforce."
+reviews:
+  # chill is the default; assertive catches more real defects, and the "**" rule below keeps style nits out
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  collapse_walkthrough: true
+  poem: false
+  in_progress_fortune: false
+  sequence_diagrams: false
+  suggested_reviewers: false
+  auto_review:
+    enabled: true
+    # Draft PRs are not reviewed: open as draft, mark ready when the four checks pass.
+    drafts: false
+    auto_incremental_review: true
+    ignore_title_keywords: ["WIP", "DO NOT REVIEW"]
+    base_branches: ["^master$"]
+  finishing_touches:
+    # No bot commits on contributors' branches
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+  path_filters:
+    - "!uv.lock"
+    - "!src/salmon/web/static/**"
+    - "!tests/fixtures/**"
+  path_instructions:
+    - path: "src/salmon/trackers/**/*.py"
+      instructions: |-
+        Tracker clients (RED/OPS/DIC). A mistake here can get a user's account warned or IP banned.
+        - Every tracker request goes through BaseGazelleApi._request (shared limiter: 5 requests per 10 s,
+          kept-alive pool, retry policy). Flag any new aiohttp.ClientSession or direct request to a tracker.
+        - A loop issuing one request per item (torrent, group, page) must be bounded or opt-in.
+        - Retries count against the rate limit: only retry genuinely transient errors.
+        - A POST is not idempotent: it must never be re-sent once it may have reached the tracker
+          (UnknownOutcomeError). Flag idempotent=True on a POST that does not set a fixed state.
+        - API-key requests send no session cookie; cookie requests send no Authorization header.
+        - Never put an API key, cookie, authkey or passkey in a log line, exception message or printed URL.
+    - path: "src/salmon/uploader/**/*.py"
+      instructions: |-
+        Upload flow. The tracker POST is the point of no return.
+        - Nothing may reach a tracker upload or report without the user's explicit go (or --yes-all).
+        - Never modify or delete a folder the user did not ask salmon to change (a seeding folder, a
+          library); deletion on abort only targets what salmon created.
+        - A failure partway (seedbox copy, image upload, description edit) must not be reported as success,
+          and must not trigger a follow-up action that assumes it worked.
+    - path: "src/salmon/images/**/*.py"
+      instructions: |-
+        Image hosts. An image host that only displays for one tracker's members (RED's) must never be usable
+        through a setting shared by all trackers (ADR 0002, HOST_RULES in config/image_hosts.py).
+    - path: "src/salmon/config/**/*.py"
+      instructions: |-
+        Config schema. A new setting has a default, is validated in __post_init__, and is documented in
+        src/salmon/data/config.default.toml. It must not change behaviour for existing configs unless the PR
+        says that is the point.
+    - path: "src/salmon/data/version.toml"
+      instructions: |-
+        Only the release workflow changes this file. A PR must never change `current` or add a
+        [[changelog]] entry: flag any change here as a blocker.
+    - path: "tests/**/*.py"
+      instructions: |-
+        - Never contact a live tracker or upload endpoint; use a local fake server (tests/test_trackers_session.py).
+        - A bug-fix test must fail without the fix: flag a guard that cannot fail (vacuous assertion,
+          empty loop, assertion keyed on a name that may change).
+        - No side-effecting call inside an assert.
+    - path: ".github/workflows/**"
+      instructions: |-
+        - Never add write permissions or registry login to a pull_request workflow; keep persist-credentials false.
+        - Pin third-party actions; never interpolate untrusted input into run:, pass it through env.
+    - path: "**"
+      instructions: |-
+        - Report correctness, security, data loss and tracker safety. Do not flag style that is consistent
+          in the file (naming, quoting, import order, line length) or ask for docstrings.
+        - A comment, help text or message that disagrees with what the code does is a correctness finding.
+        - No em dashes in code, comments or messages.
+  tools:
+    # CI already runs ruff and basedpyright
+    ruff:
+      enabled: false
+    gitleaks:
+      enabled: true
+chat:
+  auto_reply: true
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "AGENTS.md"
+      - "CONTRIBUTING.md"
+      - "docs/adr/*.md"
