@@ -1,4 +1,6 @@
+import math
 import re
+from datetime import UTC
 from email.utils import parsedate_to_datetime
 from functools import cache
 from time import monotonic, time
@@ -65,23 +67,40 @@ def _notify_retired_token() -> None:
 
 
 def _parse_retry_after(value: str | None) -> float | None:
-    """Get the wait in seconds from a Retry-After header (delay-seconds or HTTP-date)."""
+    """Get the wait in seconds from a Retry-After header (delay-seconds or HTTP-date).
+
+    A non-finite delay (``nan``, ``inf``) and an HTTP-date already in the past both count as no
+    wait given, so the caller's normal backoff applies instead of hanging forever or retrying
+    immediately in a loop.
+    """
     if not value:
         return None
     try:
-        return max(float(value), 0.0)
+        seconds = float(value)
     except ValueError:
         pass
+    else:
+        return max(seconds, 0.0) if math.isfinite(seconds) else None
     try:
-        return max(parsedate_to_datetime(value).timestamp() - time(), 0.0)
+        when = parsedate_to_datetime(value)
     except (TypeError, ValueError):
         return None
+    if when.tzinfo is None:
+        # An HTTP-date with a "-0000" offset parses as naive; that means UTC, not local time.
+        when = when.replace(tzinfo=UTC)
+    wait = when.timestamp() - time()
+    return wait if wait > 0 else None
 
 
 class _RateLimitedError(ScrapeError):
     def __init__(self, retry_after: float | None):
         self.retry_after = retry_after
         super().__init__("Tidal rate limit exceeded (HTTP 429).")
+
+
+class _UnauthorizedError(ScrapeError):
+    def __init__(self):
+        super().__init__("Tidal rejected the access token (HTTP 401).")
 
 
 class TidalBase(BaseScraper):
@@ -138,15 +157,19 @@ class TidalBase(BaseScraper):
     async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
         if resp.status == 429:
             raise _RateLimitedError(_parse_retry_after(resp.headers.get("Retry-After")))
+        if resp.status == 401:
+            raise _UnauthorizedError()
         return await super().handle_json_response(resp)
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         """Make an authenticated request to the Tidal API.
 
         A rate-limited request is retried after the wait Tidal asks for (or a short
-        backoff when it names none), at most RATE_LIMIT_RETRIES times.
+        backoff when it names none), at most RATE_LIMIT_RETRIES times. A request rejected
+        for its token (HTTP 401) is retried once with a freshly fetched token.
         """
         retries = 0
+        token_replaced = False
         while True:
             token = await self._ensure_token()
             auth_headers = {
@@ -162,6 +185,14 @@ class TidalBase(BaseScraper):
                     raise
                 retries += 1
                 await anyio.sleep(wait)
+            except _UnauthorizedError:
+                if token_replaced:
+                    raise
+                token_replaced = True
+                # Another request may already have replaced this token; only drop it if it's
+                # still the one that was rejected.
+                if TidalBase._access_token == token:
+                    TidalBase._access_token = None
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
