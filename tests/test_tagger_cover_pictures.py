@@ -196,6 +196,29 @@ def test_a_failed_cover_write_leaves_no_partial_cover(tmp_path, monkeypatch) -> 
     assert _snapshot(tmp_path) == before
 
 
+def test_the_cover_write_never_touches_an_existing_file(tmp_path, monkeypatch) -> None:
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, FRONT),))
+    (tmp_path / "cover.jpg.part").write_bytes(b"the user's own file")
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert (tmp_path / "cover.jpg").read_bytes() == FRONT
+    assert (tmp_path / "cover.jpg.part").read_bytes() == b"the user's own file"
+    assert sorted(file.name for file in tmp_path.iterdir()) == ["01.flac", "cover.jpg", "cover.jpg.part"]
+
+    # Even a temporary name that is already taken raises rather than truncating or removing that file.
+    taken = tmp_path / "taken"
+    taken.mkdir()
+    (taken / f".{'0' * 32}.part").write_bytes(b"someone else's")
+    monkeypatch.setattr(cover.uuid, "uuid4", lambda: cover.uuid.UUID(int=0))
+
+    with pytest.raises(FileExistsError):
+        cover._write_whole_file(str(taken / "cover.jpg"), FRONT)
+
+    assert sorted(file.name for file in taken.iterdir()) == [f".{'0' * 32}.part"]
+    assert (taken / f".{'0' * 32}.part").read_bytes() == b"someone else's"
+
+
 def test_auto_compress_cover_embeds_within_the_limit_counting_the_picture_block(tmp_path) -> None:
     # The image alone fits beside 8 KiB of padding; with the PICTURE block's own fields it would not.
     (tmp_path / "cover.jpg").write_bytes(_image("jpeg", MIB - 8 * KIB - 1))

@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import uuid
 
 import aiohttp
 import anyio
@@ -182,6 +183,21 @@ def _as_cover_file(picture: Picture) -> tuple[str, bytes] | None:
         return None
 
 
+def _write_whole_file(dest: str, data: bytes) -> None:
+    """Write a file through a new temporary file beside it, so a failed write never leaves part of it at dest."""
+    partial = os.path.join(os.path.dirname(dest), f".{uuid.uuid4().hex}.part")
+    # "x" claims a new name: a file already there raises instead of being truncated, and is never removed.
+    with open(partial, "xb"):
+        pass
+    try:
+        with open(partial, "wb") as file:
+            file.write(data)
+        os.replace(partial, dest)
+    except BaseException:
+        os.remove(partial)
+        raise
+
+
 def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | None:
     """Remove a FLAC's pictures and padding, keeping 8 KiB of padding.
 
@@ -207,15 +223,8 @@ def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | Non
                 return cover_file
             extension, data = cover
             cover_file = os.path.join(path, f"cover.{extension}")
-            # Written aside first: a partial cover file would pass for the folder's cover on the next run.
-            partial = f"{cover_file}.part"
-            try:
-                with open(partial, "wb") as img:
-                    img.write(data)
-                os.replace(partial, cover_file)
-            finally:
-                if os.path.exists(partial):
-                    os.remove(partial)
+            # A partial cover file would pass for the folder's cover on the next run.
+            _write_whole_file(cover_file, data)
             click.secho(f"Extracted cover to: {cover_file}", fg="green")
 
     audio.clear_pictures()
