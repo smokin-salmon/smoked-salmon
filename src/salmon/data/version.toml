@@ -1,4 +1,60 @@
-current = "0.12.0"
+current = "0.13.0"
+
+[[changelog]]
+version = "0.13.0"
+date = "2026-09-28"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- A `[[seedbox]]` entry with `enabled = false` is now skipped. Before, the flag was ignored and a disabled entry still logged in to its client, ran rclone and added the torrent. Entries without `enabled` keep uploading as before.
+- The upload now stops when the log check cannot verify the audio (a file that cannot be read or decoded, a folder that cannot be scanned). Before, it printed the error and carried on unverified. Logs that cannot be checked at all (unparseable, no TOC, range rips salmon cannot rebuild) are shown as "Log not checked" and do not stop the upload. `--skip-log-check` skips the check as before.
+
+## ✨ New Features & Improvements
+
+- **Arranger role**: artists can be credited as Arranger (RED and OPS), and Discogs "Arranged By" credits map to it. DIC has no confirmed Arranger role, so arranger credits are left out of DIC uploads, with a warning naming them.
+- **Artist tags in the tracklist** (opt-in): `artist_tags_in_tracklist = true` under `[upload.description]` wraps each artist name in the group description's tracklist in `[artist][/artist]`. Thanks @jerkiz for the request
+- **File name normalization in torrents** (opt-in): `torrent_name_normalization = "NFC"` (or `"NFD"`) under `[upload]` normalizes the file names written into generated .torrent files. For tagging on macOS and seeding from Linux, where the client could not find the files. Thanks @zenermerps for the request
+- When a cover upload fails, answering `r` at the "Continue without a cover image?" prompt now asks which image host to retry with, as the spectral retry prompt does, instead of retrying the host that just failed. Thanks @NoelleTGS for the request
+- Multi-disc CD logs are checked properly (ported from @chodeus's fork, thanks @chodeus):
+  - a log covering several discs is checked against the whole release, even when kept in `CD1/`, instead of failing a good rip on disc 2's CRCs;
+  - a log with track-ripped and range-ripped discs no longer fails;
+  - a range replaced by an appended track rerip is checked per file;
+  - every track needs a file of its own, so two tracks sharing a CRC are both checked;
+  - the checksum of every appended log is checked, not only the first;
+  - `salmon check log <folder>` checks each log against the folder given, as the upload does.
+
+## 🐛 Bug Fixes
+
+- **Adding spectrals to a torrent's description no longer changes the torrent.** The edit (after an upload, and `salmon checkspecs`) sent only some of the edit form's fields, so it cleared the rest: on DIC the edition became "Unknown release", and on every tracker flags such as Scene, Unknown Release, Showcase or Missing Lineage were unset. On RED, each edit also turned every `&` in the description into `&amp;`. salmon now reads the tracker's own edit form and sends it back with only the description changed; if it cannot find that form, it changes nothing and says so. Thanks @Hades233 for the report and for testing on DIC
+- `prompt_puddletag = true` no longer crashes with `'NoneType' object is not callable` right after the tag check. Thanks @cy1der for the report
+- A catbox upload answered with an empty body is now a failed upload, instead of "done!" with an empty cover URL. Thanks @chodeus
+- A network error or timeout while fetching metadata from a store is reported as a scrape error instead of an unhandled exception. Thanks @chodeus
+
+## 🔒 Tracker & Security Improvements
+
+- **An upload or report is never sent twice** when the tracker answers it with a 307 or 308 redirect: salmon stops, and looks the upload up by its infohash.
+- More answers are treated as "the tracker may have acted on it", so an upload is looked up by its infohash instead of reported as failed: any 5xx (including Cloudflare's 520 to 524), and any error after the tracker redirected the upload (401, 403, 404, 429, login page, another site, too many redirects). A report in the same situation is not filed again. Thanks @chodeus
+- A tracker answer that trickles in no longer keeps a request open forever: the whole answer must arrive within the request timeout. Thanks @chodeus
+- A request body the tracker stops reading now fails after the request timeout, instead of hanging salmon and every later upload to that tracker.
+- Large uploads on a slow connection (for example a big cover sent to RED's image host) no longer fail while still being sent. On Windows, only the previous point applies.
+
+## What's Changed
+* Skip seedboxes set to enabled = false by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/490
+* Two error-handling fixes ported from chodeus's fork by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/491
+* Three tracker-safety fixes ported from chodeus's fork by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/492
+* Send request bodies safely: bound a stall, let slow uploads finish, never replay one by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/493
+* Keep a torrent's edition when adding spectrals to its description by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/494
+* Fix the crash when prompt_puddletag is on by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/495
+* Optionally tag artist names in the tracklist by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/496
+* Optionally normalize file names in generated torrents by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/497
+* Support the Arranger artist role by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/498
+* Let a failed cover upload be retried on another host by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/499
+* Verify multi-disc track rips instead of skipping them by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/500
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.12.0...0.13.0
+
+"""
 
 [[changelog]]
 version = "0.12.0"
