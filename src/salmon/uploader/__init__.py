@@ -3,7 +3,7 @@ import platform
 import re
 import shutil
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import TYPE_CHECKING, Any
 
 import anyio
@@ -21,6 +21,7 @@ from salmon.checks.integrity import (
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup
+from salmon.config.image_hosts import cover_refusal
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.converter.downconverting import (
     convert_folder,
@@ -31,7 +32,7 @@ from salmon.converter.transcoding import (
     transcode_folder,
 )
 from salmon.errors import AbortAndDeleteFolder, CRCMismatchError, EditedLogError, InvalidMetadataError, RequestError
-from salmon.images import upload_cover
+from salmon.images import HOSTS, upload_cover
 from salmon.tagger import (
     metadata_validator_base,
     validate_encoding,
@@ -285,7 +286,8 @@ async def get_cover_url(
     cover_source: str | None,
     remove_downloaded: bool,
     red_api: RedApi | None = None,
-) -> str | None:
+    host: str | None = None,
+) -> tuple[str | None, bool]:
     """Get the cover URL for a new group on a tracker, uploading the cover if needed.
 
     Each tracker can have its own cover host, so a cover uploaded for one tracker is
@@ -298,37 +300,43 @@ async def get_cover_url(
         cover_source: URL to download the cover from if the folder has none.
         remove_downloaded: Delete the cover file after uploading, if it was downloaded.
         red_api: The RED client that RED's image host uploads through.
+        host: Upload to this host instead of the tracker's configured one, for a retry on
+            another host. The URL is still cached in cover_urls under this host.
 
     Returns:
-        The cover URL, or None if the upload failed.
+        The cover URL (None if none is cached and the upload failed or no cover was found), and
+        whether a cover file was found: False means there is nothing to retry uploading, True
+        with a None URL means the upload itself failed.
     """
-    host = cfg.image.cover_uploader_for(tracker)
+    host = host or cfg.image.cover_uploader_for(tracker)
     if not cover_urls.get(host):
         cover_path, is_downloaded = await download_cover_if_nonexistent(path, cover_source)
         cover_urls[host] = await upload_cover(cover_path, host, red_api)
         if is_downloaded and remove_downloaded and cover_path:
             click.secho("Removing downloaded Cover Image File", fg="yellow")
             os.remove(cover_path)
-    return cover_urls[host]
+        return cover_urls[host], cover_path is not None
+    return cover_urls[host], True
 
 
 @asynccontextmanager
-async def red_api_for_covers(gazelle_site: "BaseGazelleApi") -> AsyncIterator[RedApi | None]:
-    """Get the RED client that covers for gazelle_site's tracker go through, if they go to RED's image host.
+async def red_api_for_covers(gazelle_site: "BaseGazelleApi", host: str | None = None) -> AsyncIterator[RedApi | None]:
+    """Get the RED client that a cover upload to `host` for gazelle_site's tracker goes through, if any.
 
-    That host authenticates with the RED API key, whichever tracker the cover is for. An upload
-    to RED uses its own client. An upload to another tracker gets one RED client of its own,
-    kept for any retry and closed afterwards.
+    RED's image host authenticates with the RED API key, whichever tracker the cover is for. An
+    upload to RED uses its own client. An upload to another tracker gets one RED client of its
+    own, closed once the upload it was made for is done.
 
     Args:
         gazelle_site: The tracker API instance the upload is to.
+        host: The image host the cover is going to. Defaults to the tracker's configured cover host.
 
     Yields:
-        The RED client, or None if the tracker's covers go to another host.
+        The RED client, or None if the cover is not going to RED's image host.
     """
     if isinstance(gazelle_site, RedApi):
         yield gazelle_site
-    elif cfg.image.cover_uploader_for(gazelle_site.site_code) == "red":
+    elif (host if host is not None else cfg.image.cover_uploader_for(gazelle_site.site_code)) == "red":
         red_api = RedApi()
         try:
             yield red_api
@@ -336,6 +344,37 @@ async def red_api_for_covers(gazelle_site: "BaseGazelleApi") -> AsyncIterator[Re
             await red_api.close()
     else:
         yield None
+
+
+async def _choose_cover_host(tracker: str, default_host: str) -> str:
+    """Ask which image host to retry a failed cover upload with.
+
+    Args:
+        tracker: The tracker site code the cover is for, e.g. "RED".
+        default_host: The host offered as the default answer.
+
+    Returns:
+        The chosen host, valid as a cover host for tracker.
+    """
+    while True:
+        forbidden = {host: reason for host in HOSTS if (reason := cover_refusal(host, tracker)) is not None}
+        allowed_hosts = [host for host in HOSTS if host not in forbidden]
+        host_input: str = await click.prompt(
+            click.style(
+                "Which image host would you like to retry the cover upload with? "
+                f"(Options: {', '.join(allowed_hosts)})",
+                fg="magenta",
+                bold=True,
+            ),
+            default=default_host,
+        )
+        host = host_input.strip().lower()
+        if host in forbidden:
+            click.secho(f"{host} can't be used as a cover host for {tracker}: {forbidden[host]}.", fg="red")
+        elif host not in HOSTS:
+            click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
+        else:
+            return host
 
 
 async def resolve_cover_url(
@@ -349,7 +388,9 @@ async def resolve_cover_url(
     """Get the cover URL to upload to a tracker with, asking before a new group goes up without one.
 
     An existing group already has its cover, so it needs none. For a new group with no cover,
-    --yes-all stops the upload; otherwise the user can go on without one, retry, or stop.
+    --yes-all stops the upload; otherwise the user can go on without one, retry, or stop. A retry
+    after a failed upload (a cover file was found) asks which host to retry with; a retry with no
+    cover found just looks at the folder again.
 
     Args:
         gazelle_site: The tracker API instance the upload is to.
@@ -368,13 +409,19 @@ async def resolve_cover_url(
             await download_cover_if_nonexistent(path, cover_source)
         return True, None
 
-    async with red_api_for_covers(gazelle_site) as red_api:
+    default_host = cfg.image.cover_uploader_for(tracker)
+    host = default_host
+    async with AsyncExitStack() as stack:
+        red_api: RedApi | None = None
         while True:
-            cover_url = await get_cover_url(tracker, cover_urls, path, cover_source, remove_downloaded, red_api)
+            if host == "red" and red_api is None:
+                red_api = await stack.enter_async_context(red_api_for_covers(gazelle_site, host))
+            cover_url, cover_found = await get_cover_url(
+                tracker, cover_urls, path, cover_source, remove_downloaded, red_api if host == "red" else None, host
+            )
             if cover_url:
                 return True, cover_url
 
-            host = cfg.image.cover_uploader_for(tracker)
             click.secho(
                 f"\nNo cover image for this new group on {tracker}: none was found, or the upload to {host} failed.",
                 fg="yellow",
@@ -391,7 +438,10 @@ async def resolve_cover_url(
             )
             choice = choice.strip().lower()
             if choice in ("r", "retry"):
-                click.secho("Looking for a cover image again...", fg="cyan")
+                if cover_found:
+                    host = await _choose_cover_host(tracker, default_host)
+                else:
+                    click.secho("Looking for a cover image again...", fg="cyan")
             elif choice in ("y", "yes"):
                 return True, None
             else:

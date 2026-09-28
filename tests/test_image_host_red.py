@@ -146,9 +146,11 @@ def test_a_cover_for_red_goes_up_through_the_runs_client(monkeypatch, release, l
 
 def test_a_cover_for_ops_goes_up_through_one_red_client_of_its_own(monkeypatch, release, limiter) -> None:
     fake = FakeRed("reject", "ok")
+    # "r" retries; asked which host, "red" keeps the same one (OPS's configured cover host).
+    answers = iter(["r", "red"])
 
     async def retry(*_args, **_kwargs) -> str:
-        return "r"
+        return next(answers)
 
     monkeypatch.setattr(salmon.uploader.click, "prompt", retry)
 

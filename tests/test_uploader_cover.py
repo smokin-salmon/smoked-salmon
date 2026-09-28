@@ -4,6 +4,7 @@ import pytest
 
 import salmon.uploader
 from salmon.config.validations import ImageUploader
+from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
 
@@ -14,12 +15,15 @@ def _interactive(monkeypatch) -> None:
 
 
 def _covers(monkeypatch, *urls: str | None) -> list[str | None]:
-    """Make get_cover_url return urls in turn. Returns what each call returned."""
+    """Make get_cover_url return urls in turn, each as if no cover file were found.
+
+    Returns what each call returned.
+    """
     returned: list[str | None] = []
 
-    async def fake_get_cover_url(*_args) -> str | None:
+    async def fake_get_cover_url(*_args) -> tuple[str | None, bool]:
         returned.append(urls[len(returned)])
-        return returned[-1]
+        return returned[-1], False
 
     monkeypatch.setattr(salmon.uploader, "get_cover_url", fake_get_cover_url)
     return returned
@@ -116,7 +120,7 @@ def test_retry_does_not_upload_again_to_a_host_that_has_the_cover(monkeypatch) -
     monkeypatch.setattr(salmon.uploader.cfg, "image", image)
     monkeypatch.setattr(salmon.uploader, "download_cover_if_nonexistent", fake_download)
     monkeypatch.setattr(salmon.uploader, "upload_cover", fake_upload)
-    _answers(monkeypatch, "r")
+    _answers(monkeypatch, "r", "red")
 
     async def run() -> list[tuple[bool, str | None]]:
         cover_urls: dict[str, str | None] = {}
@@ -128,3 +132,94 @@ def test_retry_does_not_upload_again_to_a_host_that_has_the_cover(monkeypatch) -
     # OPS gets its cover; the RED upload fails once and is retried, without uploading to imgbox again.
     assert anyio.run(run) == [(True, "https://imgbox/cover.jpg"), (True, "https://red/cover.jpg")]
     assert uploads == ["imgbox", "red", "red"]
+
+
+def test_retry_after_a_failed_upload_offers_another_host(monkeypatch) -> None:
+    uploads: list[str | None] = []
+
+    async def fake_download(path: str, cover_source: str | None) -> tuple[str, bool]:
+        return "cover.jpg", False
+
+    async def fake_upload(cover_path: str | None, host: str | None = None, red_api: object = None) -> str | None:
+        uploads.append(host)
+        return None if host == "catbox" else f"https://{host}/cover.jpg"
+
+    image = msgspec.convert({"cover_uploader": "catbox"}, ImageUploader)
+    monkeypatch.setattr(salmon.uploader.cfg, "image", image)
+    monkeypatch.setattr(salmon.uploader, "download_cover_if_nonexistent", fake_download)
+    monkeypatch.setattr(salmon.uploader, "upload_cover", fake_upload)
+    asked = _answers(monkeypatch, "r", "imgbox")
+
+    assert _resolve() == (True, "https://imgbox/cover.jpg")
+    assert uploads == ["catbox", "imgbox"]
+    assert len(asked) == 2
+    assert "Which image host" in asked[1]
+
+
+def test_invalid_cover_host_answer_is_refused_and_asked_again(monkeypatch) -> None:
+    uploads: list[str | None] = []
+
+    async def fake_download(path: str, cover_source: str | None) -> tuple[str, bool]:
+        return "cover.jpg", False
+
+    async def fake_upload(cover_path: str | None, host: str | None = None, red_api: object = None) -> str | None:
+        uploads.append(host)
+        return None if host == "catbox" else f"https://{host}/cover.jpg"
+
+    image = msgspec.convert({"cover_uploader": "catbox"}, ImageUploader)
+    monkeypatch.setattr(salmon.uploader.cfg, "image", image)
+    monkeypatch.setattr(salmon.uploader, "download_cover_if_nonexistent", fake_download)
+    monkeypatch.setattr(salmon.uploader, "upload_cover", fake_upload)
+    asked = _answers(monkeypatch, "r", "notahost", "imgbox")
+
+    assert _resolve() == (True, "https://imgbox/cover.jpg")
+    assert len(asked) == 3
+    assert uploads == ["catbox", "imgbox"]
+
+
+def test_dic_cover_retry_does_not_offer_red_and_refuses_it_if_typed(monkeypatch) -> None:
+    uploads: list[str | None] = []
+
+    async def fake_download(path: str, cover_source: str | None) -> tuple[str, bool]:
+        return "cover.jpg", False
+
+    async def fake_upload(cover_path: str | None, host: str | None = None, red_api: object = None) -> str | None:
+        uploads.append(host)
+        return None if host in ("catbox", "red") else f"https://{host}/cover.jpg"
+
+    image = msgspec.convert({"cover_uploader": "catbox"}, ImageUploader)
+    monkeypatch.setattr(salmon.uploader.cfg, "image", image)
+    monkeypatch.setattr(salmon.uploader, "download_cover_if_nonexistent", fake_download)
+    monkeypatch.setattr(salmon.uploader, "upload_cover", fake_upload)
+    asked = _answers(monkeypatch, "r", "red", "imgbox")
+
+    result = anyio.run(salmon.uploader.resolve_cover_url, DICApi(), None, {}, "/release", None, False)
+
+    assert result == (True, "https://imgbox/cover.jpg")
+    assert "red" not in uploads
+    assert len(asked) == 3
+    assert "red" not in asked[1]
+
+
+def test_retry_to_red_host_for_ops_uses_a_red_client(monkeypatch) -> None:
+    seen_red_apis: list[object] = []
+
+    async def fake_download(path: str, cover_source: str | None) -> tuple[str, bool]:
+        return "cover.jpg", False
+
+    async def fake_upload(cover_path: str | None, host: str | None = None, red_api: object = None) -> str | None:
+        if host == "red":
+            seen_red_apis.append(red_api)
+        return None if host == "catbox" else f"https://{host}/cover.jpg"
+
+    image = msgspec.convert({"cover_uploader": "catbox"}, ImageUploader)
+    monkeypatch.setattr(salmon.uploader.cfg, "image", image)
+    monkeypatch.setattr(salmon.uploader, "download_cover_if_nonexistent", fake_download)
+    monkeypatch.setattr(salmon.uploader, "upload_cover", fake_upload)
+    _answers(monkeypatch, "r", "red")
+
+    result = anyio.run(salmon.uploader.resolve_cover_url, OpsApi(), None, {}, "/release", None, False)
+
+    assert result == (True, "https://red/cover.jpg")
+    assert len(seen_red_apis) == 1
+    assert isinstance(seen_red_apis[0], RedApi)
