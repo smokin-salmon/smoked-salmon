@@ -46,3 +46,28 @@ def test_dupe_check_recent_torrents_ignores_shared_artist_prefix_only() -> None:
     assert false_positive_upload not in hits
     assert true_match_upload in hits
     assert second_artist_only_match_upload in hits
+
+
+def test_dupe_check_recent_torrents_requires_shared_title_word_not_just_shared_artist() -> None:
+    """A three-word shared artist can carry a high SequenceMatcher ratio and word-overlap fraction
+    on its own, even with a completely different one-word title ("john james smith sunrise" vs
+    "john james smith sunset" share 3 of 4 words). Passing our release's title makes
+    dupe_check_recent_torrents require the titles themselves to share a word, while a same-title
+    match (including a collab) still hits (#518 CodeRabbit follow-up).
+    """
+    artist = [["John James Smith", "main"]]
+    our_title = "Sunrise"
+    searchstrs = generate_dupe_check_searchstrs(artist, our_title)
+    different_title_upload = (1, "John James Smith", "Sunset")
+    same_title_upload = (2, "John James Smith", "Sunrise")
+    collab_title_upload = (3, "John James Smith & Someone Else", "Sunrise")
+    gazelle_site = cast(
+        "BaseGazelleApi",
+        cast("object", FakeGazelleSite([different_title_upload, same_title_upload, collab_title_upload])),
+    )
+
+    hits = anyio.run(dupe_check_recent_torrents, gazelle_site, searchstrs, our_title)
+
+    assert different_title_upload not in hits
+    assert same_title_upload in hits
+    assert collab_title_upload in hits

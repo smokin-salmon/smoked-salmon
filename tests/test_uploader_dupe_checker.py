@@ -7,6 +7,7 @@ from salmon.uploader import dupe_checker
 from salmon.uploader.dupe_checker import (
     _prompt_for_recent_upload_results,
     _recent_upload_matches,
+    _title_words,
     generate_dupe_check_searchstrs,
 )
 
@@ -63,4 +64,25 @@ def test_recent_upload_match_accepts_true_collab_title_match() -> None:
     searchstrs = generate_dupe_check_searchstrs([["Anna Zak", "main"], ["אביב גפן", "main"]], "מה נשאר לי ממך")
     comparisons = generate_dupe_check_searchstrs([["Anna Zak & אביב גפן", "main"]], "מה נשאר לי ממך")
 
+    assert _recent_upload_matches(searchstrs, comparisons, tolerance=0.5) is True
+
+
+def test_recent_upload_match_requires_shared_title_word_when_titles_given() -> None:
+    """A shared three-word artist alone can carry a high ratio and word-overlap fraction even with
+    a completely different one-word title. Passing normalized title words for both sides requires
+    the titles to share a word too (#518 CodeRabbit follow-up on #509)."""
+    searchstrs = generate_dupe_check_searchstrs([["John James Smith", "main"]], "Sunrise")
+    comparisons = generate_dupe_check_searchstrs([["John James Smith", "main"]], "Sunset")
+
+    assert (
+        _recent_upload_matches(
+            searchstrs,
+            comparisons,
+            tolerance=0.5,
+            our_title_words=_title_words("Sunrise"),
+            candidate_title_words=_title_words("Sunset"),
+        )
+        is False
+    )
+    # Without title words, the shared artist alone is still enough (the pre-existing behaviour).
     assert _recent_upload_matches(searchstrs, comparisons, tolerance=0.5) is True

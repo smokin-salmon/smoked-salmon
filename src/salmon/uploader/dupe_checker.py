@@ -10,7 +10,7 @@ import anyio
 import asyncclick as click
 
 from salmon import cfg
-from salmon.common import RE_FEAT, make_searchstrs
+from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
 from salmon.common.strings import comparable
 from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError
 from salmon.trackers.base import hold_request_messages
@@ -45,18 +45,24 @@ def can_check_site_log(gazelle_site: "BaseGazelleApi") -> bool:
     return False
 
 
-async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> list[tuple]:
+async def dupe_check_recent_torrents(
+    gazelle_site: "BaseGazelleApi", searchstrs: list[str], our_title: str | None = None
+) -> list[tuple]:
     """Check site log for recent uploads similar to ours.
 
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Search strings to match against.
+        our_title: Our release's title, used to require actual title overlap on top of the
+            search string comparison (see _recent_upload_matches). None skips that extra check,
+            for callers that cannot supply a title.
 
     Returns:
         List of matching upload tuples (id, artist, title).
     """
     recent_uploads = await gazelle_site.get_uploads_from_log()
     # Each upload in this list is best guess at (id,artist,title) from log
+    our_title_words = _title_words(our_title) if our_title is not None else None
     hits = []
     seen = []
     for upload in recent_uploads:
@@ -69,12 +75,42 @@ async def dupe_check_recent_torrents(gazelle_site: "BaseGazelleApi", searchstrs:
         title = upload[2]
         artist = [[artist, "main"]]
         possible_comparisons = generate_dupe_check_searchstrs(artist, title)
-        if _recent_upload_matches(searchstrs, possible_comparisons, cfg.upload.log_dupe_tolerance):
+        if _recent_upload_matches(
+            searchstrs, possible_comparisons, cfg.upload.log_dupe_tolerance, our_title_words, _title_words(title)
+        ):
             hits.append(upload)
     return hits
 
 
-def _recent_upload_matches(searchstrs: list[str], possible_comparisons: list[str], tolerance: float) -> bool:
+def _title_words(title: str | None) -> set[str]:
+    """Normalized words of a title, cleaned up the same way make_searchstrs cleans the album.
+
+    Two releases can share every artist word and still be unrelated if their titles have nothing
+    in common: comparing the full search strings alone lets a shared multi-word artist outweigh a
+    completely different one-word title, since SequenceMatcher and the word-overlap ratio both
+    look at artist and title text together. Comparing title words on their own closes that gap.
+
+    Args:
+        title: A release title, our own or a logged upload's.
+
+    Returns:
+        The set of normalized words in the title, empty if there is no title.
+    """
+    album = _sanitize_album_for_dupe_check(title)
+    album = re.sub(r" ?(- )? (EP|Single)", "", album)
+    album = re.sub(r"\(?[Ff]eat(\.|uring)? [^\)]+\)?", "", album)
+    normalized = re_strip(album, filter_nonscrape=False)
+    accented = normalize_accents(normalized)
+    return set(accented.split()) if isinstance(accented, str) else set()
+
+
+def _recent_upload_matches(
+    searchstrs: list[str],
+    possible_comparisons: list[str],
+    tolerance: float,
+    our_title_words: set[str] | None = None,
+    candidate_title_words: set[str] | None = None,
+) -> bool:
     """Return True when a logged upload is genuinely similar enough to be a likely dupe.
 
     Comparing against only the first search string, and on SequenceMatcher's ratio alone,
@@ -82,14 +118,24 @@ def _recent_upload_matches(searchstrs: list[str], possible_comparisons: list[str
     generated search string is checked, and a high ratio is also required to share enough words
     with the candidate to suggest actual title overlap, not just a shared artist.
 
+    A shared artist can still carry a high ratio and word-overlap fraction on its own when the
+    artist has more words than the title (#518): "A B C song" vs "A B C other" shares 3 of 4
+    words. Requiring the titles themselves to share at least one word, checked separately from the
+    artist, closes that gap while still matching same-title collab releases.
+
     Args:
         searchstrs: Search strings generated for our release.
         possible_comparisons: Search strings generated for the logged upload.
         tolerance: The configured similarity tolerance (cfg.upload.log_dupe_tolerance).
+        our_title_words: Normalized words of our release's title, or None to skip the title check.
+        candidate_title_words: Normalized words of the logged upload's title.
 
     Returns:
-        True if any pair of strings is similar enough and shares enough words.
+        True if any pair of strings is similar enough, shares enough words, and (when title words
+        are given) shares at least one title word.
     """
+    if our_title_words and candidate_title_words and not (our_title_words & candidate_title_words):
+        return False
     for searchstr in searchstrs:
         for comparison_string in possible_comparisons:
             ratio = SequenceMatcher(None, searchstr, comparison_string).ratio()
@@ -240,6 +286,7 @@ async def _prompt_for_recent_upload_results(
 async def fetch_existing_group_candidates(
     gazelle_site: "BaseGazelleApi",
     searchstrs: list[str],
+    our_title: str | None = None,
 ) -> tuple[list[dict], list[tuple] | None]:
     """Search the tracker for an existing group, without printing or prompting anything.
 
@@ -249,6 +296,7 @@ async def fetch_existing_group_candidates(
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking.
+        our_title: Our release's title, passed through to dupe_check_recent_torrents.
 
     Returns:
         Tuple of (search results, recent uploads from the site log, or None if it was not read).
@@ -258,7 +306,7 @@ async def fetch_existing_group_candidates(
     # The test resolve_existing_group makes, with has_session_cookie for can_check_site_log: the notice
     # that one prints when the log cannot be read is for resolve_existing_group to show.
     if not results and cfg.upload.requests.check_recent_uploads and gazelle_site.has_session_cookie:
-        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
+        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs, our_title)
     return results, recent_uploads
 
 
@@ -300,6 +348,7 @@ async def check_existing_group(
     gazelle_site: "BaseGazelleApi",
     searchstrs: list[str],
     offer_deletion: bool = True,
+    our_title: str | None = None,
 ) -> int | None:
     """Check for existing group and prompt user for selection.
 
@@ -309,20 +358,22 @@ async def check_existing_group(
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking.
         offer_deletion: Whether to offer folder deletion option.
+        our_title: Our release's title, passed through to fetch_existing_group_candidates.
 
     Returns:
         Group ID or None for new group.
     """
-    results, recent_uploads = await fetch_existing_group_candidates(gazelle_site, searchstrs)
+    results, recent_uploads = await fetch_existing_group_candidates(gazelle_site, searchstrs, our_title)
     return await resolve_existing_group(gazelle_site, searchstrs, results, recent_uploads, offer_deletion)
 
 
 class GroupCandidatesFetch:
     """fetch_existing_group_candidates, running in the background: see fetch_existing_group_candidates_in_background."""
 
-    def __init__(self, gazelle_site: "BaseGazelleApi", searchstrs: list[str]) -> None:
+    def __init__(self, gazelle_site: "BaseGazelleApi", searchstrs: list[str], our_title: str | None = None) -> None:
         self._gazelle_site = gazelle_site
         self._searchstrs = searchstrs
+        self._our_title = our_title
         self._done = anyio.Event()
         self._candidates: tuple[list[dict], list[tuple] | None] | None = None
         self._error: Exception | None = None
@@ -332,7 +383,9 @@ class GroupCandidatesFetch:
         with hold_request_messages() as messages:
             self._messages = messages
             try:
-                self._candidates = await fetch_existing_group_candidates(self._gazelle_site, self._searchstrs)
+                self._candidates = await fetch_existing_group_candidates(
+                    self._gazelle_site, self._searchstrs, self._our_title
+                )
             except Exception as e:
                 # Kept for result() to raise: raised here, it would cancel whatever the user is doing.
                 self._error = e
@@ -358,6 +411,7 @@ class GroupCandidatesFetch:
 async def fetch_existing_group_candidates_in_background(
     gazelle_site: "BaseGazelleApi",
     searchstrs: list[str],
+    our_title: str | None = None,
 ) -> AsyncIterator[GroupCandidatesFetch | None]:
     """Run fetch_existing_group_candidates in the background while the block runs.
 
@@ -371,6 +425,7 @@ async def fetch_existing_group_candidates_in_background(
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking. If empty, nothing is fetched.
+        our_title: Our release's title, passed through to fetch_existing_group_candidates.
 
     Yields:
         The running fetch, or None if there are no search strings.
@@ -378,7 +433,7 @@ async def fetch_existing_group_candidates_in_background(
     if not searchstrs:
         yield None
         return
-    fetch = GroupCandidatesFetch(gazelle_site, searchstrs)
+    fetch = GroupCandidatesFetch(gazelle_site, searchstrs, our_title)
     raised: BaseException | None = None
     try:
         async with anyio.create_task_group() as tg:
