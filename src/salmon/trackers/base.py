@@ -1,5 +1,7 @@
 import asyncio
 import re
+import socket
+import sys
 from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
@@ -12,6 +14,7 @@ import asyncclick as click
 import msgspec
 from aiohttp import FormData
 from aiohttp.abc import AbstractStreamWriter
+from aiohttp.http import StreamWriter
 from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
@@ -209,6 +212,26 @@ _LOST_UPLOAD_SECOND_WAIT = 30
 # a slice times out only when the connection took next to nothing for that long.
 _SEND_SLICE = 64 * 1024
 
+# How much of a body not sent yet the kernel may hold (TCP_NOTSENT_LOWAT), and the option's number
+# where the platform has it: Python's socket module does not always export it.
+_UNSENT_LIMIT = 128 * 1024
+_TCP_NOTSENT_LOWAT = {"linux": 25, "darwin": 0x201}.get(sys.platform)
+
+
+def _keep_little_unsent(writer: AbstractStreamWriter) -> None:
+    """Let the kernel hold only a little of the body that is not sent yet.
+
+    sock_read starts once the last of the body is handed to the kernel, whose send buffer grows to
+    megabytes. On a slow uplink, sending what it still holds could take longer than the timeout,
+    while the tracker can only answer once it has it all. What is in flight is not limited, so a
+    fast link keeps its speed. Where the option is missing (Windows), the kernel keeps its buffer.
+    """
+    transport = writer.transport if isinstance(writer, StreamWriter) else None
+    sock = transport.get_extra_info("socket") if transport is not None else None
+    if sock is not None and _TCP_NOTSENT_LOWAT is not None:
+        with suppress(OSError):
+            sock.setsockopt(socket.IPPROTO_TCP, _TCP_NOTSENT_LOWAT, _UNSENT_LIMIT)
+
 
 class _StallBoundBody(aiohttp.payload.Payload):
     """A request body sent in slices, failing once one does not go out within `stall_secs`.
@@ -217,6 +240,9 @@ class _StallBoundBody(aiohttp.payload.Payload):
     tracker that stops reading would hold the request for good, and with it every later request
     of the client that is not idempotent, as those go one at a time. A slow but moving upload
     goes through, however long it takes.
+
+    The kernel is also kept from holding much of the body not sent yet (_keep_little_unsent), so
+    sock_read starts once little of it is left to send.
     """
 
     _value: bytes
@@ -234,6 +260,7 @@ class _StallBoundBody(aiohttp.payload.Payload):
         await self.write_with_length(writer, None)
 
     async def write_with_length(self, writer: AbstractStreamWriter, content_length: int | None) -> None:
+        _keep_little_unsent(writer)
         body = memoryview(self._value)[:content_length]
         for start in range(0, len(body), _SEND_SLICE):
             try:

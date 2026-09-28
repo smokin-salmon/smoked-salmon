@@ -404,16 +404,20 @@ def test_a_post_the_tracker_stops_reading_is_an_unknown_outcome() -> None:
     _run(body)
 
 
+@pytest.mark.skipif(base._TCP_NOTSENT_LOWAT is None, reason="the kernel keeps its whole send buffer here")
 def test_a_slow_but_moving_post_goes_through() -> None:
     async def body(_tracker: FakeTracker, api: FakeApi) -> None:
-        # 2 MiB every half second: sending takes several times the timeout, but never stops for as long as it.
-        raw = RawTracker(burst=2 << 20, pause=0.5)
+        # 640 KiB/s, as a slow uplink: sending takes several times the timeout, but never stops for as long as it.
+        # Without a limit on what the kernel holds unsent, it signals progress only once a third of its send
+        # buffer (megabytes) has gone, and still holds seconds of the body once all of it is handed over,
+        # while the answer can only come after.
+        raw = RawTracker(burst=64 << 10, pause=0.1)
         api.base_url = await raw.start()
         try:
             started = asyncio.get_running_loop().time()
-            resp = await api._request("POST", api.base_url + "/upload.php", data=b"x" * (16 << 20), timeout_secs=2)
-            assert resp.text == str(16 << 20)
-            assert asyncio.get_running_loop().time() - started > 3
+            resp = await api._request("POST", api.base_url + "/upload.php", data=b"x" * (4 << 20), timeout_secs=2)
+            assert resp.text == str(4 << 20)
+            assert asyncio.get_running_loop().time() - started > 4
             assert raw.connections == 1
         finally:
             await raw.stop()
