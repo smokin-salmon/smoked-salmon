@@ -3,6 +3,7 @@
 import asyncio
 import time
 from collections.abc import Callable
+from email.utils import formatdate
 from typing import Any
 
 import anyio
@@ -128,7 +129,9 @@ class FakeTidal:
 
     async def _token(self, request: web.Request) -> web.Response:
         self.token_requests.append(dict(await request.post()))
-        return web.json_response({"access_token": "fake-token", "token_type": "Bearer", "expires_in": 86400})
+        # Each token is distinct, so a retry that reused a rejected one would show in its header.
+        token = "fake-token" if len(self.token_requests) == 1 else f"fake-token-{len(self.token_requests)}"
+        return web.json_response({"access_token": token, "token_type": "Bearer", "expires_in": 86400})
 
     async def _api(self, request: web.Request) -> web.Response:
         self.api_requests.append(request)
@@ -159,6 +162,20 @@ def tidal(monkeypatch: pytest.MonkeyPatch) -> FakeTidal:
     monkeypatch.setattr(TidalBase, "_access_token", None)
     monkeypatch.setattr(TidalBase, "_token_expiry", 0.0)
     return FakeTidal()
+
+
+@pytest.fixture
+def sleeps(monkeypatch: pytest.MonkeyPatch) -> list[float]:
+    """Record the waits a rate-limited request asks for instead of sleeping them for real."""
+    waits: list[float] = []
+    real_sleep = anyio.sleep
+
+    async def record(delay: float) -> None:
+        waits.append(delay)
+        await real_sleep(0)
+
+    monkeypatch.setattr(tidal_source.anyio, "sleep", record)
+    return waits
 
 
 def _run(fake: FakeTidal, monkeypatch: pytest.MonkeyPatch, body: Callable[[], Any]) -> Any:
@@ -256,6 +273,18 @@ def test_rate_limited_request_waits_for_retry_after(tidal: FakeTidal, monkeypatc
     assert elapsed >= 1
 
 
+def test_rate_limit_with_no_retry_after_header_uses_the_normal_backoff(
+    tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
+) -> None:
+    rate_limited = _json({}, 429)
+    responses = iter([rate_limited, _json({"data": []})])
+    tidal.routes["ping"] = lambda request: next(responses)(request)
+
+    result = _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
+    assert result == {"data": []}
+    assert sleeps == [1.0]
+
+
 def test_rate_limit_retries_are_bounded(tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch) -> None:
     tidal.routes["ping"] = _json({}, 429, {"Retry-After": "0"})
 
@@ -270,6 +299,83 @@ def test_rate_limit_asking_for_a_long_wait_is_not_retried(tidal: FakeTidal, monk
     with pytest.raises(ScrapeError):
         _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
     assert len(tidal.api_requests) == 1
+
+
+@pytest.mark.parametrize("retry_after", ["nan", "inf", "-inf"])
+def test_rate_limit_with_a_non_finite_wait_backs_off_instead_of_hanging_or_looping(
+    tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch, sleeps: list[float], retry_after: str
+) -> None:
+    rate_limited = _json({}, 429, {"Retry-After": retry_after})
+    responses = iter([rate_limited, _json({"data": []})])
+    tidal.routes["ping"] = lambda request: next(responses)(request)
+
+    result = _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
+    assert result == {"data": []}
+    # Falls back to the normal 1 s backoff step rather than sleeping nan or inf seconds.
+    assert sleeps == [1.0]
+
+
+def test_rate_limit_with_a_negative_wait_backs_off_instead_of_retrying_immediately(
+    tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
+) -> None:
+    rate_limited = _json({}, 429, {"Retry-After": "-5"})
+    responses = iter([rate_limited, _json({"data": []})])
+    tidal.routes["ping"] = lambda request: next(responses)(request)
+
+    result = _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
+    assert result == {"data": []}
+    # A negative Retry-After is invalid per RFC 9110, so it falls back to the normal backoff
+    # rather than being clamped to 0 and retried immediately.
+    assert sleeps == [1.0]
+
+
+def test_rate_limit_with_a_past_http_date_backs_off_instead_of_zero(
+    tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
+) -> None:
+    past = formatdate(time.time() - 10, usegmt=False)
+    rate_limited = _json({}, 429, {"Retry-After": past})
+    responses = iter([rate_limited, _json({"data": []})])
+    tidal.routes["ping"] = lambda request: next(responses)(request)
+
+    result = _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
+    assert result == {"data": []}
+    assert sleeps == [1.0]
+
+
+def test_rate_limit_with_a_future_naive_http_date_waits_as_utc(
+    tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
+) -> None:
+    # formatdate with usegmt=False produces a "-0000" offset, which parses as a naive datetime.
+    future = formatdate(time.time() + 10, usegmt=False)
+    assert future.endswith("-0000")
+    rate_limited = _json({}, 429, {"Retry-After": future})
+    responses = iter([rate_limited, _json({"data": []})])
+    tidal.routes["ping"] = lambda request: next(responses)(request)
+
+    result = _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
+    assert result == {"data": []}
+    assert len(sleeps) == 1
+    assert 5 < sleeps[0] <= 10
+
+
+def test_rejected_token_is_replaced_once(tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch) -> None:
+    responses = iter([_json({}, 401), _json({"data": []})])
+    tidal.routes["ping"] = lambda request: next(responses)(request)
+
+    result = _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
+    assert result == {"data": []}
+    assert len(tidal.token_requests) == 2
+    assert len(tidal.api_requests) == 2
+    assert [r.headers["Authorization"] for r in tidal.api_requests] == ["Bearer fake-token", "Bearer fake-token-2"]
+
+
+def test_token_rejected_twice_is_an_error(tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch) -> None:
+    tidal.routes["ping"] = _json({}, 401)
+
+    with pytest.raises(ScrapeError):
+        _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
+    assert len(tidal.token_requests) == 2
+    assert len(tidal.api_requests) == 2
 
 
 def test_search_uses_the_search_results_collection(tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch) -> None:
