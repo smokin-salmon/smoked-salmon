@@ -1,0 +1,81 @@
+{
+ "status": "success",
+ "response": {
+  "group": {
+   "wikiBody": "<strong>Tracklist</strong><br>\n...",
+   "wikiBBcode": "[b]Tracklist[/b]\n...",
+   "wikiImage": "https://ptpimg.me/xxxxxx.jpg",
+   "proxyImage": "https://imgcache.example/i/full/xxxx",
+   "id": 1000,
+   "name": "Title One & Title Two",
+   "year": 2021,
+   "releaseType": 9,
+   "releaseTypeName": "Single",
+   "categoryId": 1,
+   "categoryName": "Music",
+   "time": "2025-05-02 21:28:57",
+   "vanityHouse": false,
+   "isBookmarked": false,
+   "tags": [
+    "modern.era"
+   ],
+   "musicInfo": {
+    "artists": [
+     {
+      "id": 10,
+      "aliasid": 11,
+      "artist": {
+       "id": 10
+      },
+      "name": "Artist A"
+     }
+    ],
+    "with": [],
+    "remixedBy": [],
+    "composers": [],
+    "conductor": [],
+    "dj": [],
+    "producer": [],
+    "arranger": []
+   }
+  },
+  "torrent": {
+   "infoHash": "0000000000000000000000000000000000000000",
+   "id": 2001,
+   "media": "WEB",
+   "format": "FLAC",
+   "encoding": "Lossless",
+   "remasterYear": 2021,
+   "remasterTitle": "",
+   "remasterRecordLabel": "Label",
+   "remasterCatalogueNumber": "CAT001",
+   "scene": false,
+   "hasLog": false,
+   "hasCue": false,
+   "logScore": 0,
+   "logChecksum": false,
+   "logCount": 0,
+   "ripLogIds": [],
+   "fileCount": 3,
+   "size": 19874401,
+   "seeders": 1,
+   "leechers": 0,
+   "snatched": 0,
+   "freeTorrent": "Normal",
+   "freeReason": "Normal",
+   "reported": false,
+   "trumpable": false,
+   "trumpable_reasons": [],
+   "time": "2025-05-02 21:28:57",
+   "description": "[quote]Source [url=https://orpheus.network/torrents.php?id=1000&torrentid=2000#torrent2000]FLAC 24bit Lossless[/url][/quote][hide][pre]    comment[18]: album=Title One & Title Two\n[/pre][/hide]",
+   "fileList": "01. Track One.flac{{{10066462}}}|||02. Track Two.flac{{{9763674}}}|||cover.jpg{{{44265}}}",
+   "filePath": "Artist A - Title One & Title Two [2021] [WEB FLAC]",
+   "userId": 1,
+   "username": "uploader"
+  }
+ },
+ "info": {
+  "source": "Orpheus",
+  "version": 5
+ }
+}

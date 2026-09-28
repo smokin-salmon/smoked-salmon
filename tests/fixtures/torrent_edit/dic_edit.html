@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!-- DIC torrents.php?action=edit page, RECONSTRUCTED (no DIC access): the real RED and OPS forms, plus
+     what DIC is known to add or to have kept from older Gazelle: a "remaster" checkbox (older Gazelle's
+     edition toggle, unset by an edit that omits it: the "Unknown release" of #357), the Self-purchased,
+     Self-rip and Exclusive marks salmon sends at upload (buy, diy, jinzhuan) and a sample rate select
+     (#421). The sample rate field's name and values are guesses. To be checked against the real page. -->
+<html>
+<head><title>Edit torrent :: DICMusic</title></head>
+<body>
+<div id="content">
+<div class="thin">
+<form class="edit_form" name="torrent" action="" enctype="multipart/form-data" method="post" id="upload_table">
+    <div>
+        <input type="hidden" name="submit" value="true" />
+        <input type="hidden" name="auth" value="XXXX" />
+        <input type="hidden" name="action" value="takeedit" />
+        <input type="hidden" name="torrentid" value="3001" />
+        <input type="hidden" name="type" value="1" />
+    </div>
+    <div id="dynamic_form">
+    <table cellpadding="3" cellspacing="1" border="0" class="layout border" width="100%">
+        <tr id="edition_information"><td class="label">Edition information:</td><td>
+            <input type="checkbox" id="remaster" name="remaster" checked="checked" onclick="Remaster();" />
+            <label for="remaster">Check this box if this torrent is a different release to the original</label>
+            <div id="remaster_true">
+                <input type="checkbox" id="unknown" name="unknown" onclick="CheckYear();ToggleUnknown();" /> Unknown Release
+                <select id="groupremasters" name="groupremasters" onchange="GroupRemaster()">
+                    <option value="">-------</option>
+                    <option value="0">2000 / Deluxe &amp; Collector&#39;s Edition / Rock &#39;n&#39; Roll Records / XX-456</option>
+                </select>
+                <input type="text" id="remaster_year" name="remaster_year" size="5" value="2000" />
+                <input type="text" id="remaster_title" name="remaster_title" size="50" value="Deluxe &amp; Collector&#39;s Edition" />
+                <input type="text" id="remaster_record_label" name="remaster_record_label" size="50" value="Rock &#39;n&#39; Roll Records" />
+                <input type="text" id="remaster_catalogue_number" name="remaster_catalogue_number" size="50" value="XX-456" />
+            </div>
+        </td></tr>
+        <tr><td class="label">Scene:</td><td>
+            <input type="checkbox" id="scene" name="scene" />
+        </td></tr>
+        <tr><td class="label">Marks:</td><td>
+            <input type="checkbox" id="buy" name="buy" checked="checked" /> <label for="buy">Self-purchased</label>
+            <input type="checkbox" id="diy" name="diy" /> <label for="diy">Self-rip</label>
+            <input type="checkbox" id="jinzhuan" name="jinzhuan" /> <label for="jinzhuan">Exclusive</label>
+        </td></tr>
+        <tr><td class="label">Format:</td><td>
+            <select id="format" name="format" onchange="Format()">
+                <option>---</option>
+                <option value="MP3">MP3</option>
+                <option value="FLAC" selected="selected">FLAC</option>
+            </select>
+        </td></tr>
+        <tr id="bitrate_row"><td class="label">Bitrate:</td><td>
+            <select id="bitrate" name="bitrate" onchange="Bitrate()">
+                <option value="">---</option>
+                <option value="320">320</option><option value="V0 (VBR)">V0 (VBR)</option>
+                <option value="Lossless" selected="selected">Lossless</option><option value="24bit Lossless">24bit Lossless</option>
+                <option value="Other">Other</option>
+            </select>
+            <span id="other_bitrate_span" class="hidden">
+                <input type="text" name="other_bitrate" size="5" id="other_bitrate" onchange="AltBitrate();" />
+                <input type="checkbox" id="vbr" name="vbr" /><label for="vbr"> (VBR)</label>
+            </span>
+        </td></tr>
+        <tr id="sample_rate_row"><td class="label">Sample rate:</td><td>
+            <select id="sample_rate" name="sample_rate">
+                <option value="">---</option>
+                <option value="44100" selected="selected">44.1 kHz</option><option value="48000">48 kHz</option>
+                <option value="88200">88.2 kHz</option><option value="96000">96 kHz</option>
+            </select>
+        </td></tr>
+        <tr><td class="label">Media:</td><td>
+            <select name="media" id="media">
+                <option>---</option>
+                <option value="CD" selected="selected">CD</option><option value="WEB">WEB</option><option value="Vinyl">Vinyl</option>
+            </select>
+        </td></tr>
+        <tr id="upload_logs"><td class="label">Log files:</td><td>
+            <input id="file" type="file" multiple="multiple" name="logfiles[]" size="50" />
+        </td></tr>
+        <tr><td class="label">Release description:</td><td>
+            <textarea name="release_desc" id="release_desc" cols="60" rows="8">[size=4]Ripped by me &amp; checked with EAC[/size]
+Label&#39;s notes</textarea>
+        </td></tr>
+    </table>
+    </div>
+    <table cellpadding="3" cellspacing="1" border="0" class="layout border slice" width="100%"><tr><td colspan="2" style="text-align: center;">
+        <input id="post" type="submit" value="Edit torrent" />
+    </td></tr></table>
+</form>
+
+<form class="edit_form" name="torrent_group" action="torrents.php" method="post">
+    <input type="hidden" name="action" value="editgroupid" /><input type="hidden" name="auth" value="XXXX" />
+    <input type="hidden" name="torrentid" value="3001" /><input type="hidden" name="oldgroupid" value="3000" />
+    <input type="text" name="groupid" value="3000" size="10" /><input type="submit" value="Change group ID" />
+</form>
+</div>
+</div>
+</body>
+</html>

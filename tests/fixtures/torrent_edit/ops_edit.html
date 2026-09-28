@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<!-- OPS torrents.php?action=edit page, from a real page (2026-09-28), sanitized: ids, names, label,
+     catalogue number, auth and the description body replaced; structure, field names, attributes and
+     option lists kept exactly. The real page also has a hidden "extra-hidden" form and GET search forms. -->
+<html>
+<head><title>Edit torrent :: Orpheus</title></head>
+<body>
+<div id="content">
+<div class="thin">
+<form class="edit_form" name="torrent" action="" enctype="multipart/form-data" method="post" id="upload_table">
+    <input type="hidden" name="auth" value="XXXX">
+    <input type="hidden" name="action" value="takeedit">
+    <input type="hidden" name="torrentid" value="2001">
+    <div id="dynamic_form">
+    <table id="form-music-upload" cellpadding="3" cellspacing="1" border="0" class="layout border" width="100%">
+    <tr><td colspan="2"><h3>Edit <a href="artist.php?id=10">Artist A</a> – <a href="torrents.php?id=1000">Title One &amp; Title Two</a> [2021 Single]</h3></td></tr>
+    <tr><td class="label">Edition information:</td><td>
+        <div id="remaster_true">
+            <label><input type="checkbox" id="unknown" name="unknown" onchange="ToggleUnknown();"> Unknown Release</label>
+            <input type="hidden" id="json_remasters" value="[{&quot;0&quot;:&quot;2000,2001&quot;,&quot;id_concat&quot;:&quot;2000,2001&quot;,&quot;1&quot;:2021,&quot;year&quot;:2021,&quot;2&quot;:&quot;&quot;,&quot;title&quot;:&quot;&quot;,&quot;3&quot;:&quot;Label&quot;,&quot;record_label&quot;:&quot;Label&quot;,&quot;4&quot;:&quot;CAT001&quot;,&quot;catalogue_number&quot;:&quot;CAT001&quot;,&quot;id_list&quot;:[2000,2001]}]">
+            <select id="groupremasters" name="groupremasters" onchange="GroupRemaster()">
+                <option value="">---</option>
+                <option value="0" selected>2021 /  / Label / CAT001</option>
+            </select>
+            <table id="edition_information" class="layout border" border="0" width="100%"><tbody>
+                <tr id="edition_year"><td class="label">Edition Year:</td><td><input type="number" id="remaster_year" name="remaster_year" max="2027" size="5" value="2021"></td></tr>
+                <tr id="edition_title"><td class="label">Title:</td><td><input type="text" id="remaster_title" name="remaster_title" size="50" value=""></td></tr>
+                <tr id="edition_record_label"><td class="label">Record label:</td><td><input type="text" id="remaster_record_label" name="remaster_record_label" size="50" value="Label"></td></tr>
+                <tr id="edition_catalogue_number"><td class="label">Catalogue number:</td><td><input type="text" id="remaster_catalogue_number" name="remaster_catalogue_number" size="50" value="CAT001"></td></tr>
+            </tbody></table>
+        </div>
+    </td></tr>
+    <tr><td class="label">Scene:</td><td><label><input type="checkbox" id="scene" name="scene"> ...</label></td></tr>
+    <tr><td class="label">Showcase:</td><td><label><input type="checkbox" id="vanity_house" name="vanity_house"> ...</label></td></tr>
+    <tr><td class="label">Media:</td><td>
+        <select name="media" id="media">
+            <option>---</option>
+            <option value="CD">CD</option><option value="WEB" selected>WEB</option><option value="Vinyl">Vinyl</option>
+            <option value="DVD">DVD</option><option value="BD">BD</option><option value="Soundboard">Soundboard</option>
+            <option value="SACD">SACD</option><option value="DAT">DAT</option><option value="Cassette">Cassette</option>
+        </select></td></tr>
+    <tr><td class="label">Format:</td><td>
+        <select id="format" name="format">
+            <option value="">---</option><option value="MP3">MP3</option><option value="FLAC" selected>FLAC</option>
+            <option value="Ogg Vorbis">Ogg Vorbis</option><option value="AAC">AAC</option><option value="AC3">AC3</option><option value="DTS">DTS</option>
+        </select></td></tr>
+    <tr id="bitrate_row"><td class="label">Bitrate:</td><td>
+        <select id="bitrate" name="bitrate">
+            <option value="">---</option><option value="Lossless" selected>Lossless</option><option value="24bit Lossless">24bit Lossless</option>
+            <option value="V0 (VBR)">V0 (VBR)</option><option value="V1 (VBR)">V1 (VBR)</option><option value="V2 (VBR)">V2 (VBR)</option>
+            <option value="320">320</option><option value="256">256</option><option value="192">192</option><option value="160">160</option>
+            <option value="128">128</option><option value="96">96</option><option value="64">64</option><option value="APS (VBR)">APS (VBR)</option>
+            <option value="APX (VBR)">APX (VBR)</option><option value="q8.x (VBR)">q8.x (VBR)</option><option value="Other">Other</option>
+        </select>
+        <span id="other_bitrate_span" class="hidden">
+            <input type="text" name="other_bitrate" size="5" id="other_bitrate" onchange="AltBitrate()">
+            <label><input type="checkbox" id="vbr" name="vbr"> (VBR)</label>
+        </span></td></tr>
+    <tr id="upload_logs" class="hidden"><td class="label">Log files:</td><td id="logfields">
+        <input id="logfile_1" type="file" accept=".txt,.TXT,.log,.LOG" multiple name="logfiles[]" size="50"></td></tr>
+    <tr><td class="label">Missing Lineage:</td><td><label><input type="checkbox" id="missing_lineage" name="missing_lineage"> ...</label></td></tr>
+    <tr><td class="label">Release description (optional):</td><td>
+        <div id="textarea_wrap_1" class="field_div textarea_wrap"><textarea name="release_desc" id="release_desc" cols="60" rows="5">[quote]Source [url=https://orpheus.network/torrents.php?id=1000&amp;torrentid=2000#torrent2000]FLAC 24bit Lossless[/url][/quote][hide][pre]    comment[18]: album=Title One &amp; Title Two
+[/pre][/hide]</textarea></div>
+        <input type="button" class="hidden button_preview_1" value="Preview" title="Preview text"></td></tr>
+    </table>
+    </div>
+    <table cellpadding="3" cellspacing="1" border="0" class="layout border slice" width="100%"><tr><td colspan="2" style="text-align: center;">
+        <input type="hidden" id="workaround_broken_html_entities" name="workaround_broken_html_entities" value="0">
+        <input id="post" type="submit" value="Edit torrent">
+    </tr></table>
+</form>
+
+<!-- Later on the same page. These change the torrent's group: never to be picked or submitted. -->
+<form class="edit_form" name="torrent_group" action="torrents.php" method="post">
+    <input type="hidden" name="action" value="editgroupid"><input type="hidden" name="auth" value="XXXX">
+    <input type="hidden" name="torrentid" value="2001"><input type="hidden" name="oldgroupid" value="1000">
+    <input type="text" name="groupid" value="1000" size="10"><input type="submit" value="Change group ID">
+</form>
+<form class="split_form" name="torrent_group" action="torrents.php" method="post">
+    <input type="hidden" name="action" value="newgroup"><input type="hidden" name="auth" value="XXXX">
+    <input type="hidden" name="torrentid" value="2001"><input type="hidden" name="oldgroupid" value="1000">
+    <input type="text" name="artist" value="Artist A" size="50"><input type="text" name="title" value="Title One &amp; Title Two" size="50">
+    <input type="text" name="year" value="2021" size="10"><input type="submit" value="Split off into new group">
+</form>
+</div>
+</div>
+</body>
+</html>
