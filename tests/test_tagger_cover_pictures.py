@@ -1,4 +1,4 @@
-"""FLACs whose embedded pictures plus padding exceed RED's 1 MiB limit: warned about, stripped only when asked."""
+"""FLACs whose embedded pictures plus padding exceed RED's 1 MiB limit: stripped, or only listed on opt-out."""
 
 import io
 import struct
@@ -39,11 +39,8 @@ def _snapshot(folder: Path) -> dict[str, bytes]:
 
 
 @pytest.fixture
-def album(tmp_path, monkeypatch) -> Path:
+def album(tmp_path) -> Path:
     """A release with a 1.5 MiB front cover in one FLAC, 2 MiB of padding in another, one within the limit."""
-    monkeypatch.setattr(cfg.image, "strip_oversized_pictures", False)
-    monkeypatch.setattr(cfg.image, "auto_compress_cover", False)
-    monkeypatch.setattr(cfg.upload, "yes_all", False)
     folder = tmp_path / "Artist - Album (2020) [WEB FLAC]"
     _write_flac(
         folder / "01. One.flac",
@@ -52,18 +49,6 @@ def album(tmp_path, monkeypatch) -> Path:
     _write_flac(folder / "CD2" / "02. Two.flac", padding=2 * MIB)
     _write_flac(folder / "03. Three.flac", pictures=((PictureType.COVER_FRONT, b"small" * (100 * KIB)),))
     return folder
-
-
-def _answer(monkeypatch, answer: bool) -> list[str]:
-    """Answer the strip prompt, and record what it asked."""
-    asked: list[str] = []
-
-    def confirm(text: str, **_kwargs) -> bool:
-        asked.append(text)
-        return answer
-
-    monkeypatch.setattr(cover.click, "confirm", confirm)
-    return asked
 
 
 def test_measures_pictures_and_padding(album) -> None:
@@ -81,9 +66,9 @@ def test_exactly_one_mib_is_within_the_limit(tmp_path) -> None:
     assert cover.find_oversized_pictures(str(tmp_path)) == {}
 
 
-def test_warns_and_changes_nothing_by_default(album, monkeypatch, capsys) -> None:
+def test_strips_by_default(album, capsys) -> None:
     before = _snapshot(album)
-    asked = _answer(monkeypatch, False)
+    assert cfg.image.strip_oversized_pictures is True
 
     cover.check_embedded_pictures(str(album))
 
@@ -92,35 +77,6 @@ def test_warns_and_changes_nothing_by_default(album, monkeypatch, capsys) -> Non
     assert "01. One.flac: 1.47 MiB (484 KiB over)" in output
     assert "CD2/02. Two.flac: 2 MiB (1 MiB over)" in output
     assert "03. Three.flac" not in output
-    assert len(asked) == 1
-    assert _snapshot(album) == before
-
-
-def test_yes_all_never_strips_without_the_setting(album, monkeypatch, capsys) -> None:
-    before = _snapshot(album)
-    asked = _answer(monkeypatch, True)
-    monkeypatch.setattr(cfg.upload, "yes_all", True)
-
-    cover.check_embedded_pictures(str(album))
-
-    assert asked == []
-    assert "strip_oversized_pictures" in capsys.readouterr().out
-    assert _snapshot(album) == before
-
-
-def test_auto_compress_cover_is_left_to_strip_them_later(album, monkeypatch) -> None:
-    # compress_pictures already strips these files in the tracker loop; asking here would be a second question.
-    before = _snapshot(album)
-    asked = _answer(monkeypatch, True)
-    monkeypatch.setattr(cfg.image, "auto_compress_cover", True)
-
-    cover.check_embedded_pictures(str(album))
-
-    assert asked == []
-    assert _snapshot(album) == before
-
-
-def _assert_stripped(album: Path, before: dict[str, bytes]) -> None:
     for name in ("01. One.flac", "CD2/02. Two.flac"):
         audio = FLAC(album / name)
         assert audio.pictures == []
@@ -131,30 +87,20 @@ def _assert_stripped(album: Path, before: dict[str, bytes]) -> None:
     assert _snapshot(album)["03. Three.flac"] == before["03. Three.flac"]
 
 
-def test_the_setting_strips_without_asking(album, monkeypatch) -> None:
+def test_only_warns_with_the_setting_off(album, monkeypatch, capsys) -> None:
     before = _snapshot(album)
-    asked = _answer(monkeypatch, False)
-    monkeypatch.setattr(cfg.image, "strip_oversized_pictures", True)
-    monkeypatch.setattr(cfg.upload, "yes_all", True)
+    monkeypatch.setattr(cfg.image, "strip_oversized_pictures", False)
 
     cover.check_embedded_pictures(str(album))
 
-    assert asked == []
-    _assert_stripped(album, before)
+    output = capsys.readouterr().out
+    assert "CD2/02. Two.flac: 2 MiB (1 MiB over)" in output
+    assert "strip_oversized_pictures is off" in output
+    assert _snapshot(album) == before
 
 
-def test_yes_at_the_prompt_strips(album, monkeypatch) -> None:
-    before = _snapshot(album)
-    _answer(monkeypatch, True)
-
-    cover.check_embedded_pictures(str(album))
-
-    _assert_stripped(album, before)
-
-
-def test_an_existing_cover_file_is_not_overwritten(album, monkeypatch) -> None:
+def test_an_existing_cover_file_is_not_overwritten(album) -> None:
     (album / "folder.png").write_bytes(b"the folder's own cover")
-    monkeypatch.setattr(cfg.image, "strip_oversized_pictures", True)
 
     cover.check_embedded_pictures(str(album))
 
@@ -163,14 +109,14 @@ def test_an_existing_cover_file_is_not_overwritten(album, monkeypatch) -> None:
     assert not (album / "cover.jpg").exists()
 
 
-def test_nothing_is_said_or_asked_within_the_limit(tmp_path, monkeypatch, capsys) -> None:
+def test_nothing_is_said_or_changed_within_the_limit(tmp_path, capsys) -> None:
     _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"x" * (900 * KIB)),))
-    asked = _answer(monkeypatch, True)
+    before = _snapshot(tmp_path)
 
     cover.check_embedded_pictures(str(tmp_path))
 
-    assert asked == []
     assert capsys.readouterr().out == ""
+    assert _snapshot(tmp_path) == before
 
 
 def test_auto_compress_cover_still_strips_and_embeds_the_cover(tmp_path) -> None:

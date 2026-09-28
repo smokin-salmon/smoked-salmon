@@ -190,11 +190,10 @@ def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | Non
 
 
 def check_embedded_pictures(path: str) -> None:
-    """Warn about FLACs whose embedded pictures plus padding exceed RED's 1 MiB limit, and strip them if asked.
+    """Strip the FLACs whose embedded pictures plus padding exceed RED's 1 MiB limit, or only warn about them.
 
     Stripping removes every embedded picture and all but 8 KiB of padding, keeping the front cover as the
-    folder's cover file if it has none. It only happens with image.strip_oversized_pictures, or when the user
-    says yes at the prompt, which --yes-all never does.
+    folder's cover file if it has none. With image.strip_oversized_pictures off, the files are only listed.
 
     Args:
         path: The release folder, which must be safe to change.
@@ -211,24 +210,9 @@ def check_embedded_pictures(path: str) -> None:
         excess = humanfriendly.format_size(size - MAX_PICTURES_AND_PADDING, binary=True)
         click.secho(f"  {filename}: {humanfriendly.format_size(size, binary=True)} ({excess} over)", fg="yellow")
 
-    if cfg.image.auto_compress_cover:
-        click.secho("auto_compress_cover is on: they will be removed before the upload.", fg="yellow")
-        return
     if not cfg.image.strip_oversized_pictures:
-        if cfg.upload.yes_all:
-            click.secho(
-                "Leaving the files as they are. Set strip_oversized_pictures under [image] to remove them.",
-                fg="yellow",
-            )
-            return
-        if not click.confirm(
-            click.style(
-                "Remove the embedded pictures and padding from these files? The front cover is kept as a file.",
-                fg="magenta",
-            ),
-            default=False,
-        ):
-            return
+        click.secho("Leaving them as they are: strip_oversized_pictures is off.", fg="yellow")
+        return
 
     cover_file = get_cover_from_path(path)
     for filename in oversized:

@@ -276,19 +276,20 @@ def _embed_front_cover(path: Path, size: int) -> None:
 @pytest.mark.parametrize(
     ("strip", "args", "stripped"),
     [
+        (None, (), True),
         (False, (), False),
-        (True, (), True),
-        (True, ("--scene",), False),
+        (None, ("--scene",), False),
     ],
-    ids=["default", "strip_oversized_pictures", "scene"],
+    ids=["default", "strip_oversized_pictures off", "scene"],
 )
-def test_oversized_pictures_are_stripped_from_the_copy_only_when_asked(
-    monkeypatch, tmp_path, downloads, strip: bool, args: tuple[str, ...], stripped: bool
+def test_oversized_pictures_are_stripped_from_the_copy(
+    monkeypatch, tmp_path, downloads, strip: bool | None, args: tuple[str, ...], stripped: bool
 ) -> None:
     release = _release(tmp_path / "seeding" / "Album")
     _embed_front_cover(release / "01 - one.flac", 1024 * 1024)
     before = _snapshot(release)
-    monkeypatch.setattr(salmon.uploader.cfg.image, "strip_oversized_pictures", strip)
+    if strip is not None:
+        monkeypatch.setattr(salmon.uploader.cfg.image, "strip_oversized_pictures", strip)
     pictures_when_transcoded: list[int] = []
 
     async def transcode(path: str, bitrate: str, *_args: Any, output_dir: str | None = None, **_kw: Any) -> str:
