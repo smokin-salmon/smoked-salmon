@@ -38,6 +38,7 @@ ARTIST_TYPES = [
     "conductor",
     "djcompiler",
     "producer",
+    "arranger",
 ]
 
 _SENSITIVE_KEYS = re.compile(
@@ -390,6 +391,10 @@ class BaseGazelleApi:
     site_code: str
     site_string: str
     api_key: str = ""  # Optional, only for API key upload
+
+    # Artist roles (from ARTIST_IMPORTANCES) that this tracker's upload form does not offer.
+    # Uploads drop artists with these roles rather than send an unrecognised importance value.
+    unsupported_artist_roles: frozenset[str] = frozenset()
 
     # Rate limiter: 5 requests per 10 seconds (shared across all instances)
     _rate_limiter = AsyncLimiter(5, 10)

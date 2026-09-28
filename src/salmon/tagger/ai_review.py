@@ -150,7 +150,7 @@ When normalizing metadata, follow RED's upload, tagging, capitalization, and edi
   for the release, not merely as the release artist in a rights/licensing line.
 - Artists must follow RED's multiple-artists rules. List each credited release artist separately as
   a {name, role} entry. Use only supported roles: main, guest, remixer, composer, conductor,
-  djcompiler, producer.
+  djcompiler, producer, arranger.
 - Do not drop a supported release-level guest artist merely because that artist only appears on
   some tracks.
 - When individual artists are known on a compilation or split release, do not use "Various Artists"

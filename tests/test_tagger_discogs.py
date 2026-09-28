@@ -1,6 +1,6 @@
 import asyncio
 
-from salmon.tagger.sources.discogs import Scraper
+from salmon.tagger.sources.discogs import Scraper, parse_artists
 
 
 def make_soup(tracklist: list[dict]) -> dict:
@@ -16,6 +16,19 @@ def track(position: str, title: str, type_: str = "track") -> dict:
 
 def heading(title: str) -> dict:
     return {"type_": "heading", "position": "", "title": title}
+
+
+def test_discogs_arranged_by_maps_to_arranger() -> None:
+    artist_soup = [{"name": "Main Artist"}]
+    track = {
+        "artists": [{"name": "Main Artist"}],
+        "extraartists": [{"name": "Some Arranger", "role": "Arranged By"}],
+    }
+
+    artists = parse_artists(artist_soup, track)
+
+    assert ("Main Artist", "main") in artists
+    assert ("Some Arranger", "arranger") in artists
 
 
 def test_discogs_multi_disc_positions_without_headings_split_by_disc() -> None:

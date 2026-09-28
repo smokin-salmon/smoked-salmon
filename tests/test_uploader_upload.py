@@ -1,8 +1,16 @@
 from types import SimpleNamespace
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
 
 from salmon import cfg
-from salmon.uploader.upload import generate_description, generate_source_links, generate_t_description
+from salmon.uploader.upload import (
+    compile_data_new_group,
+    generate_description,
+    generate_source_links,
+    generate_t_description,
+)
+
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
 
 
 def _two_track_data() -> dict[str, dict[str, Any]]:
@@ -82,6 +90,88 @@ def test_generate_description_does_not_wrap_artist_with_brackets() -> None:
 
 def test_upload_description_default_config_has_artist_tags_off() -> None:
     assert cfg.upload.description.artist_tags_in_tracklist is False
+
+
+class _FakeGazelleSite:
+    def __init__(self, site_string: str, unsupported_artist_roles: frozenset[str] = frozenset()) -> None:
+        self.site_string = site_string
+        self.release_types = {"Album": 1}
+        self.unsupported_artist_roles = unsupported_artist_roles
+
+
+def _upload_group_metadata(**overrides):
+    metadata = {
+        "title": "Test Album",
+        "artists": [("Main Artist", "main"), ("Some Arranger", "arranger")],
+        "group_year": 2020,
+        "label": "Test Label",
+        "catno": None,
+        "rls_type": "Album",
+        "year": 2020,
+        "edition_title": None,
+        "format": "FLAC",
+        "encoding": "Lossless",
+        "encoding_vbr": False,
+        "source": "WEB",
+        "tags": ["electronic"],
+        "comment": None,
+        "urls": [],
+        "date": None,
+    }
+    metadata.update(overrides)
+    return metadata
+
+
+def test_compile_data_new_group_keeps_arranger_for_red(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.compression, "use_upc_as_catno", False)
+    gazelle_site = cast("BaseGazelleApi", cast("object", _FakeGazelleSite("RED")))
+    metadata = _upload_group_metadata()
+
+    data = compile_data_new_group(
+        gazelle_site=gazelle_site,
+        path="/tmp/does-not-exist",
+        metadata=metadata,
+        track_data={},
+        hybrid=True,
+        cover_url=None,
+        spectral_urls=None,
+        spectral_ids=None,
+        lossy_comment=None,
+    )
+
+    assert data["artists[]"] == ["Main Artist", "Some Arranger"]
+    assert data["importance[]"] == [1, 8]
+    assert len(data["artists[]"]) == len(data["importance[]"])
+
+
+def test_compile_data_new_group_drops_arranger_for_dic(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cfg.upload.compression, "use_upc_as_catno", False)
+    gazelle_site = cast(
+        "BaseGazelleApi",
+        cast("object", _FakeGazelleSite("DICMusic", unsupported_artist_roles=frozenset({"arranger"}))),
+    )
+    metadata = _upload_group_metadata(
+        artists=[("Main Artist", "main"), ("Some Arranger", "arranger"), ("Guest Artist", "guest")]
+    )
+
+    data = compile_data_new_group(
+        gazelle_site=gazelle_site,
+        path="/tmp/does-not-exist",
+        metadata=metadata,
+        track_data={},
+        hybrid=True,
+        cover_url=None,
+        spectral_urls=None,
+        spectral_ids=None,
+        lossy_comment=None,
+    )
+
+    assert data["artists[]"] == ["Main Artist", "Guest Artist"]
+    assert data["importance[]"] == [1, 2]
+    assert len(data["artists[]"]) == len(data["importance[]"])
+
+    captured = capsys.readouterr()
+    assert "DICMusic has no Arranger role: not crediting Some Arranger" in captured.out
 
 
 def test_generate_source_links_excludes_source_url() -> None:
