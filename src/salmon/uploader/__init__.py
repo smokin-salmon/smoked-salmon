@@ -961,7 +961,7 @@ async def edit_metadata(
             result = await check_integrity(path)
             click.echo(format_integrity(result))
 
-            if not result[0] and metadata["scene"]:
+            if not result.passed and metadata["scene"]:
                 click.secho(
                     "Some files failed sanitization, and this a scene release. "
                     "You need to sanitize and de-scene before uploading. Aborting.",
@@ -969,7 +969,7 @@ async def edit_metadata(
                     bold=True,
                 )
                 raise click.Abort()
-            if not result[0] and (
+            if not result.passed and (
                 cfg.upload.yes_all
                 or click.confirm(
                     click.style("\nDo you want to sanitize this upload?", fg="magenta"),
