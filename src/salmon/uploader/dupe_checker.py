@@ -11,8 +11,10 @@ import asyncclick as click
 
 from salmon import cfg
 from salmon.common import RE_FEAT, make_searchstrs
+from salmon.common.strings import comparable
 from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError
 from salmon.trackers.base import hold_request_messages
+from salmon.uploader.upload import generate_catno
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -555,15 +557,7 @@ def describe_torrent(t: dict, group_info: dict) -> str:
     Returns:
         The description, e.g. "2020 / Label / CAT1 / WEB / FLAC / Lossless".
     """
-    # Robust across RED/OPS: don't assume `remastered` exists
-    is_remaster = bool(t.get("remastered")) or any(
-        (
-            t.get("remasterYear"),
-            (t.get("remasterTitle") or "").strip(),
-            (t.get("remasterRecordLabel") or "").strip(),
-            (t.get("remasterCatalogueNumber") or "").strip(),
-        )
-    )
+    is_remaster = _is_remaster(t)
 
     group_label = (group_info.get("recordLabel") or "").strip()
     group_catno = (group_info.get("catalogueNumber") or "").strip()
@@ -590,6 +584,133 @@ def describe_torrent(t: dict, group_info: dict) -> str:
         prefix += " / "
 
     return f"{prefix}{t['media']} / {t['format']} / {t['encoding']}"
+
+
+def _is_remaster(torrent: dict) -> bool:
+    """Robust across RED/OPS: `remastered` is not always sent, so any edition field counts."""
+    return bool(torrent.get("remastered")) or any(
+        (
+            torrent.get("remasterYear"),
+            (torrent.get("remasterTitle") or "").strip(),
+            (torrent.get("remasterRecordLabel") or "").strip(),
+            (torrent.get("remasterCatalogueNumber") or "").strip(),
+        )
+    )
+
+
+def _edition_catno(torrent: dict, group: dict) -> str:
+    """Catalogue number of the torrent's edition; only an original release falls back to the group's."""
+    if _is_remaster(torrent):
+        return (torrent.get("remasterCatalogueNumber") or "").strip()
+    return ((group.get("group") or {}).get("catalogueNumber") or "").strip()
+
+
+def matching_torrents(group: dict, release: dict) -> list[dict]:
+    """Find the group's torrents in the release's edition with its media, format and encoding.
+
+    The edition is the year, catalogue number and edition title. Any of them missing on either side
+    still matches.
+
+    Args:
+        group: The group, as the tracker's torrentgroup API returns it.
+        release: The release metadata, with its source, format and encoding.
+
+    Returns:
+        The matching torrents, in the group's order.
+    """
+    wanted = (release.get("source"), release.get("format"), release.get("encoding"))
+    if not all(wanted):
+        return []
+    year = str(release.get("year") or "")
+    catno = comparable(generate_catno(release))
+    edition_title = comparable(release.get("edition_title"))
+    group_year = (group.get("group") or {}).get("year")
+    matches = []
+    for torrent in group.get("torrents") or []:
+        if (torrent.get("media"), torrent.get("format"), torrent.get("encoding")) != wanted:
+            continue
+        # Only an original release takes the group's year; a remaster with no year of its own matches any.
+        edition_year = str((torrent.get("remasterYear") if _is_remaster(torrent) else group_year) or "")
+        if year and edition_year and edition_year != year:
+            continue
+        held_catno = comparable(_edition_catno(torrent, group))
+        if catno and held_catno and held_catno != catno:
+            continue
+        held_title = comparable(torrent.get("remasterTitle"))
+        if edition_title and held_title and held_title != edition_title:
+            continue
+        matches.append(torrent)
+    return matches
+
+
+async def choose_source_flac(group: dict, release: dict) -> dict | None:
+    """Choose the FLAC in the release's edition of an existing group that the transcodes are made from.
+
+    With several matching FLACs the user picks one; --yes-all stops instead of guessing.
+
+    Args:
+        group: The group, as the tracker's torrentgroup API returns it.
+        release: The reviewed release metadata.
+
+    Returns:
+        The chosen torrent, or None to stop.
+    """
+    group_id = (group.get("group") or {}).get("id")
+    flacs = matching_torrents(group, release)
+    wanted = f"{release.get('source')} FLAC {release.get('encoding')}"
+    if not flacs:
+        click.secho(
+            f"\nGroup {group_id} has no {wanted} in this release's edition (year, catalogue number, edition title) "
+            "to transcode from.",
+            fg="red",
+            bold=True,
+        )
+        return None
+    if len(flacs) == 1:
+        return flacs[0]
+
+    click.secho(f"\nGroup {group_id} has several {wanted} torrents in this edition:", fg="yellow", bold=True)
+    group_info = group.get("group") or {}
+    for i, t in enumerate(flacs, 1):
+        click.echo(f"{i:02d} >> {describe_torrent(t, group_info)}")
+    if cfg.upload.yes_all:
+        click.secho(
+            "Not picking the FLAC the transcodes are made from with --yes-all. Run without it to choose.",
+            fg="red",
+            bold=True,
+        )
+        return None
+    while True:
+        choice = await click.prompt(
+            click.style(f"\nWhich one are these transcodes made from? [1-{len(flacs)}] or [a]bort", fg="magenta"),
+            default="",
+        )
+        choice = choice.strip().lower()
+        if choice.startswith("a"):
+            return None
+        if choice.isdigit() and 1 <= int(choice) <= len(flacs):
+            return flacs[int(choice) - 1]
+        click.secho(f"Enter a number from 1 to {len(flacs)}, or a to abort.", fg="red")
+
+
+def held_formats(group: dict, release: dict, source_flac: dict, formats: dict[str, tuple[str, str]]) -> set[str]:
+    """Find the formats that the release's edition in the group already holds, the source FLAC aside.
+
+    Args:
+        group: The group, as the tracker's torrentgroup API returns it.
+        release: The reviewed release metadata.
+        source_flac: The FLAC the transcodes are made from, which never counts as held.
+        formats: The format and encoding of each candidate, by name.
+
+    Returns:
+        The names of the candidates the edition already has.
+    """
+    held = set()
+    for name, (fmt, encoding) in formats.items():
+        in_edition = matching_torrents(group, {**release, "format": fmt, "encoding": encoding})
+        if any(t.get("id") != source_flac.get("id") for t in in_edition):
+            held.add(name)
+    return held
 
 
 async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict]) -> bool:

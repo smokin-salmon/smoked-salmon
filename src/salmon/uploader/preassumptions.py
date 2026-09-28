@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 import asyncclick as click
 
 from salmon import cfg
+from salmon.common import get_audio_files
 from salmon.errors import RequestError, UploadError
 
 if TYPE_CHECKING:
@@ -58,6 +59,31 @@ def print_preassumptions(
 
     if lossy and not spectrals:
         raise UploadError("\nYou cannot report a torrent for lossy master without spectrals.")
+
+
+def validate_skip_flac_source(path: str, rls_data: dict[str, Any] | None = None) -> str | None:
+    """Say why --skip-flac-upload refuses a release: from its files, or from its release data once known.
+
+    Args:
+        path: Path to the album folder.
+        rls_data: The release data, or None to check the file extensions only.
+
+    Returns:
+        The reason, or None when the release is a lossless FLAC.
+    """
+    if rls_data is None:
+        files = get_audio_files(path)
+        if not files:
+            return f"--skip-flac-upload found no audio files in {path}."
+        if all(f.lower().endswith(".flac") for f in files):
+            return None
+        return f"--skip-flac-upload only uploads transcodes of a lossless FLAC, and {path} holds other audio files."
+    if rls_data["format"] == "FLAC" and rls_data["encoding"] in ("Lossless", "24bit Lossless"):
+        return None
+    return (
+        "--skip-flac-upload only uploads transcodes of a lossless FLAC, "
+        f"and this release is {rls_data['format']} {rls_data['encoding']}."
+    )
 
 
 async def confirm_group_upload(gazelle_site: "BaseGazelleApi", group_id: int, source: str | None) -> dict[str, Any]:
