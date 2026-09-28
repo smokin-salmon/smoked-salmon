@@ -7,7 +7,7 @@ from aiohttp import web
 from aiolimiter import AsyncLimiter
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from salmon.errors import LoginError, RequestFailedError
+from salmon.errors import LoginError, RequestFailedError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi
 
 
@@ -189,6 +189,62 @@ async def _redirect_loop_is_cut_short() -> None:
         await runner.cleanup()
 
 
+def _send_again_elsewhere(status: int) -> web.HTTPException:
+    """A 307 or 308, asking for the request to be sent again as it is to upload2.php."""
+    if status == 307:
+        return web.HTTPTemporaryRedirect("/upload2.php")
+    return web.HTTPPermanentRedirect("/upload2.php")
+
+
+async def _post_asked_to_be_sent_again_elsewhere_is_not(status: int) -> None:
+    hits = []
+
+    async def upload(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        raise _send_again_elsewhere(status)
+
+    async def upload2(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        return web.Response(text="group page")
+
+    runner, url = await _serve(upload=upload, upload2=upload2)
+    api = FakeApi(url)
+    try:
+        with pytest.raises(UnknownOutcomeError, match="asked for the request to be sent again to /upload2.php"):
+            await api._request("POST", url + "/upload.php", data={"auth": "an-authkey"})
+        # The tracker may have taken it already: it is not sent again, here or anywhere.
+        assert hits == [("POST", "/upload.php")]
+        assert api._rate_limiter.slots == 1
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _idempotent_post_is_sent_again_where_a_307_asks() -> None:
+    received = []
+
+    async def upload(request: web.Request) -> web.Response:
+        received.append((request.method, request.path, (await request.post())["torrentid"]))
+        raise _send_again_elsewhere(307)
+
+    async def upload2(request: web.Request) -> web.Response:
+        received.append((request.method, request.path, (await request.post())["torrentid"]))
+        return web.Response(text="edited")
+
+    runner, url = await _serve(upload=upload, upload2=upload2)
+    api = FakeApi(url)
+    try:
+        # Sending it twice does no more than sending it once, so it goes where the tracker asks.
+        resp = await api._request("POST", url + "/upload.php", data={"torrentid": "9"}, idempotent=True)
+        assert resp.text == "edited"
+        assert received == [("POST", "/upload.php", "9"), ("POST", "/upload2.php", "9")]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
 def test_login_redirect_stops_before_the_login_page() -> None:
     anyio.run(_login_redirect_stops_before_the_login_page)
 
@@ -211,3 +267,12 @@ def test_redirect_to_another_site_is_not_followed() -> None:
 
 def test_redirect_loop_is_cut_short() -> None:
     anyio.run(_redirect_loop_is_cut_short)
+
+
+@pytest.mark.parametrize("status", [307, 308])
+def test_post_asked_to_be_sent_again_elsewhere_is_not(status: int) -> None:
+    anyio.run(_post_asked_to_be_sent_again_elsewhere_is_not, status)
+
+
+def test_idempotent_post_is_sent_again_where_a_307_asks() -> None:
+    anyio.run(_idempotent_post_is_sent_again_where_a_307_asks)

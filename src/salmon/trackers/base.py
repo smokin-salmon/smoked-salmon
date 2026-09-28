@@ -653,6 +653,12 @@ class BaseGazelleApi:
                         ):
                             # As browsers and aiohttp do, the target of a redirected POST is fetched with GET.
                             method, data = "GET", None
+                        elif not idempotent and method != "GET":
+                            # A 307 or 308 asks for the request to be sent again as it is, body and all.
+                            # The tracker may have acted on it already, so it is not sent again.
+                            raise UnknownOutcomeError(
+                                f"{self.site_string} asked for the request to be sent again to {target.path}"
+                            )
                         url, params = target._replace(fragment="").geturl(), None
                         redirected = True
 
