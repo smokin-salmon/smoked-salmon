@@ -32,13 +32,16 @@ def _resolve_shell_path(remote_folder: str, extra_args: list[str]) -> str:
     return override
 
 
-async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str) -> None:
+async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str) -> bool:
     """Upload a local folder to a rclone remote.
 
     Args:
         seedbox: Seedbox config providing the rclone remote URL and extra args.
         remote_folder: Destination directory on the remote.
         path: Local folder path to upload.
+
+    Returns:
+        True if rclone exited successfully, False otherwise.
     """
     remote_path = posixpath.join(remote_folder, os.path.basename(path))
     commands = ["rclone", "copy", path, f"{seedbox.url}:{remote_path}", *seedbox.extra_args]
@@ -48,8 +51,9 @@ async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str)
     result = await anyio.run_process(commands, stdout=None, stderr=None, check=False)
     if result.returncode == 0:
         click.secho(f"Rclone upload successful: {path} to {seedbox.url}:{remote_path}", fg="green")
-    else:
-        click.secho(f"Rclone upload failed with exit code {result.returncode}", fg="red")
+        return True
+    click.secho(f"Rclone upload failed with exit code {result.returncode}", fg="red")
+    return False
 
 
 async def _add_to_downloader(
@@ -147,6 +151,7 @@ class UploadManager:
             return
 
         click.secho(f"Executing {len(self.tasks)} upload tasks", fg="cyan")
+        failed_seedboxes: set[int] = set()
         for i, (seedbox, local_path, task_type) in enumerate(self.tasks, 1):
             click.secho(
                 f"\nTask {i}/{len(self.tasks)}: {task_type.upper()} - {os.path.basename(local_path)}",
@@ -155,8 +160,18 @@ class UploadManager:
             try:
                 if task_type == "folder":
                     if seedbox.type == "rclone":
-                        await _rclone_upload_folder(seedbox, seedbox.directory, local_path)
+                        succeeded = await _rclone_upload_folder(seedbox, seedbox.directory, local_path)
+                        if not succeeded:
+                            failed_seedboxes.add(id(seedbox))
                 elif task_type == "seed":
+                    if id(seedbox) in failed_seedboxes:
+                        click.secho(
+                            f"Skipping seed on {seedbox.url}: the Rclone upload failed, so "
+                            f"{local_path} was not added to the client there. Add it by hand once "
+                            "the files have been copied.",
+                            fg="red",
+                        )
+                        continue
                     client = self._client(seedbox)
                     if seedbox.type == "rclone":
                         shell_path = _resolve_shell_path(seedbox.directory, seedbox.extra_args)

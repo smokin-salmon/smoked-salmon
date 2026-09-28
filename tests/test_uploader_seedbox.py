@@ -61,18 +61,30 @@ class _RecordingClient:
         self.save_paths.append(remote_folder)
 
 
-def _run_upload(monkeypatch, tmp_path, seedboxes: list[Seedbox]) -> tuple[dict[str, _RecordingClient], list[list[str]]]:
+def _run_upload(
+    monkeypatch,
+    tmp_path,
+    seedboxes: list[Seedbox],
+    rclone_exit_codes: dict[str, int] | None = None,
+) -> tuple[dict[str, _RecordingClient], list[list[str]]]:
     """Queue one release on the given seedboxes and run the upload with a fake client and rclone.
+
+    Args:
+        rclone_exit_codes: Maps a seedbox URL to the exit code its rclone call should return.
+            Seedboxes not listed succeed (exit code 0).
 
     Returns:
         The torrent clients salmon logged in to, by URL, and the rclone commands it ran.
     """
     clients: dict[str, _RecordingClient] = {}
     rclone_calls: list[list[str]] = []
+    rclone_exit_codes = rclone_exit_codes or {}
 
     async def fake_run_process(commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
         rclone_calls.append(commands)
-        return subprocess.CompletedProcess(commands, 0)
+        # commands[3] is "<url>:<remote_path>"; recover the seedbox url to look up its exit code.
+        url = commands[3].split(":", 1)[0]
+        return subprocess.CompletedProcess(commands, rclone_exit_codes.get(url, 0))
 
     monkeypatch.setattr(seedbox.cfg, "seedbox", seedboxes)
     monkeypatch.setattr(
@@ -130,3 +142,68 @@ def test_seedbox_without_enabled_key_is_used(monkeypatch, tmp_path) -> None:
 
     assert clients["qbittorrent+http://box:8080"].save_paths == ["/files"]
     assert len(rclone_calls) == 1
+
+
+def test_failed_rclone_copy_skips_seeding_on_that_seedbox(monkeypatch, tmp_path) -> None:
+    # A failed rclone copy used to be reported but not acted on: the seed task still added
+    # the torrent, so the client checked or downloaded a folder that was never uploaded (#503).
+    clients, rclone_calls = _run_upload(
+        monkeypatch,
+        tmp_path,
+        [
+            Seedbox(
+                type="rclone",
+                url="box",
+                directory="/files",
+                torrent_client="qbittorrent+http://box:8080",
+            ),
+        ],
+        rclone_exit_codes={"box": 1},
+    )
+
+    assert len(rclone_calls) == 1
+    assert clients["qbittorrent+http://box:8080"].save_paths == []
+
+
+def test_failed_rclone_copy_does_not_affect_other_seedboxes(monkeypatch, tmp_path) -> None:
+    clients, rclone_calls = _run_upload(
+        monkeypatch,
+        tmp_path,
+        [
+            Seedbox(
+                type="rclone",
+                url="broken",
+                directory="/files",
+                torrent_client="qbittorrent+http://broken:8080",
+            ),
+            Seedbox(
+                type="rclone",
+                url="good",
+                directory="/files",
+                torrent_client="qbittorrent+http://good:8080",
+            ),
+        ],
+        rclone_exit_codes={"broken": 1},
+    )
+
+    assert len(rclone_calls) == 2
+    assert clients["qbittorrent+http://broken:8080"].save_paths == []
+    assert clients["qbittorrent+http://good:8080"].save_paths == ["/files"]
+
+
+def test_successful_rclone_copy_still_seeds(monkeypatch, tmp_path) -> None:
+    clients, rclone_calls = _run_upload(
+        monkeypatch,
+        tmp_path,
+        [
+            Seedbox(
+                type="rclone",
+                url="box",
+                directory="/files",
+                torrent_client="qbittorrent+http://box:8080",
+            ),
+        ],
+    )
+
+    assert len(rclone_calls) == 1
+    assert clients["qbittorrent+http://box:8080"].save_paths == ["/files"]
