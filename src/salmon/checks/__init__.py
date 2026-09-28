@@ -6,7 +6,7 @@ from salmon.checks.integrity import handle_integrity_check
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
-from salmon.errors import CRCMismatchError, EditedLogError
+from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 
 
 @commandgroup.group()
@@ -24,28 +24,31 @@ async def log(path: str) -> None:
         path: Path to a log file or directory containing log files.
     """
     if os.path.isfile(path):
-        await _check_log(path)
+        await _check_log(path, os.path.dirname(path))
     elif os.path.isdir(path):
         for root, _, files in os.walk(path):
             for f in files:
                 if f.lower().endswith(".log"):
                     filepath = os.path.join(root, f)
                     click.secho(f"\nScoring {filepath}...", fg="cyan")
-                    await _check_log(filepath)
+                    await _check_log(filepath, path)
 
 
-async def _check_log(path: str) -> None:
+async def _check_log(path: str, basepath: str) -> None:
     """Score a single log file and display the result.
 
     Args:
         path: Path to the log file to check.
+        basepath: Release folder to search for the log's audio, as the upload does.
     """
     try:
-        await check_log_cambia(path, os.path.dirname(path))
+        await check_log_cambia(path, basepath)
     except EditedLogError:
         click.secho("Error: Edited logs detected!", fg="red", bold=True)
     except CRCMismatchError:
         click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+    except LogCheckSkipped as e:
+        click.secho(f"Log not checked: {e}", fg="yellow")
     except Exception as e:
         click.secho(f"Error checking log: {e}", fg="red")
 

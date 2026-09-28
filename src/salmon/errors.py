@@ -89,3 +89,9 @@ class CRCMismatchError(Exception):
     """Raised when CRC values don't match between log and audio files."""
 
     pass
+
+
+class LogCheckSkipped(Exception):
+    """Raised when a log's CRCs can't be checked against the audio; not a verdict on the rip."""
+
+    pass

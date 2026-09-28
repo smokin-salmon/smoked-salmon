@@ -31,7 +31,14 @@ from salmon.converter.transcoding import (
     generate_transcode_description,
     transcode_folder,
 )
-from salmon.errors import AbortAndDeleteFolder, CRCMismatchError, EditedLogError, InvalidMetadataError, RequestError
+from salmon.errors import (
+    AbortAndDeleteFolder,
+    CRCMismatchError,
+    EditedLogError,
+    InvalidMetadataError,
+    LogCheckSkipped,
+    RequestError,
+)
 from salmon.images import HOSTS, upload_cover
 from salmon.tagger import (
     metadata_validator_base,
@@ -522,6 +529,51 @@ async def choose_source_flac(
     return f"{gazelle_site.base_url}/torrents.php?torrentid={flac['id']}"
 
 
+async def _check_logs(path: str) -> None:
+    """Score every rip log under the album and check its CRCs against the audio.
+
+    Args:
+        path: Album folder.
+
+    Raises:
+        click.Abort: If a log was edited, the audio could not be verified, or the user declines to
+            continue after a CRC mismatch.
+    """
+    click.secho("\nChecking logs", fg="green")
+
+    def _abort_on_scan_error(error: OSError) -> None:
+        # os.walk would otherwise skip the folder, and its log, silently.
+        click.secho(f"Could not scan {error.filename} for logs: {error}", fg="red")
+        raise click.Abort() from error
+
+    for root, _, files in os.walk(path, onerror=_abort_on_scan_error):
+        for f in files:
+            if not f.lower().endswith(".log"):
+                continue
+            filepath = os.path.join(root, f)
+            click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
+            try:
+                await check_log_cambia(filepath, path)
+            except EditedLogError as e:
+                raise click.Abort() from e
+            except CRCMismatchError as e:
+                click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+                if not click.confirm(
+                    click.style(
+                        "Log file CRC does not match audio files. Do you want to continue upload anyway?",
+                        fg="magenta",
+                    ),
+                    default=False,
+                ):
+                    raise click.Abort() from e
+            except LogCheckSkipped as e:
+                click.secho(f"Log not checked: {e}", fg="yellow")
+            except Exception as e:
+                # Any other failure is one while verifying the audio, which must not pass as verified.
+                click.secho(f"Could not verify the audio against {filepath}: {e}", fg="red")
+                raise click.Abort() from e
+
+
 async def upload(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -639,29 +691,7 @@ async def upload(
                     await upload_upconvert_test(path)
 
             if source == "CD" and not skip_log_check:
-                click.secho("\nChecking logs", fg="green")
-                for root, _, files in os.walk(path):
-                    for f in files:
-                        if f.lower().endswith(".log"):
-                            filepath = os.path.join(root, f)
-                            click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
-                            try:
-                                await check_log_cambia(filepath, path)
-                            except EditedLogError as e:
-                                raise click.Abort() from e
-                            except CRCMismatchError as e:
-                                click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
-                                if not click.confirm(
-                                    click.style(
-                                        "Log file CRC does not match audio files. "
-                                        "Do you want to continue upload anyway?",
-                                        fg="magenta",
-                                    ),
-                                    default=False,
-                                ):
-                                    raise click.Abort() from e
-                            except Exception as e:
-                                click.secho(f"Error checking log: {e}", fg="red")
+                await _check_logs(path)
 
             if group_fetch is not None:
                 results, recent_uploads = await group_fetch.result()
