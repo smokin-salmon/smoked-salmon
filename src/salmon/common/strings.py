@@ -97,8 +97,9 @@ def fetch_genre(genre: str) -> set[str]:
         raise GenreNotInWhitelist from None
 
 
-# "\u2192" is Qobuz's hierarchy arrow. Never "&": the whitelist stores "Drum & Bass" whole.
-_GENRE_SEPARATORS = re.compile(r"\s*[/;,\u2192]\s*|\s+\\\s+")
+# "\u2192" is Qobuz's hierarchy arrow. "&" separates only after one of these, as in Discogs's
+# "Folk, World, & Country"; never alone, since the whitelist stores "Drum & Bass" whole.
+_GENRE_SEPARATORS = re.compile(r"\s*[/;,\u2192]\s*(?:&\s*)?|\s+\\\s+")
 
 
 def split_genre(genre: str) -> list[str]:

@@ -1,5 +1,8 @@
 """Genre standardization: splitting combined genres without breaking whitelisted ones."""
 
+import json
+
+import salmon.tagger.metadata as metadata_module
 from salmon.common import split_genre
 from salmon.tagger.ai_review import apply_ai_metadata_result
 from salmon.tagger.pre_data import split_genres
@@ -63,6 +66,12 @@ def test_split_genre_splits_the_genre_separators():
     assert split_genre("Rock; Pop, Jazz") == ["Rock", "Pop", "Jazz"]
     assert split_genre("House") == ["House"]
     assert split_genre("  ") == []
+
+
+def test_split_genre_treats_an_ampersand_after_a_separator_as_part_of_it():
+    # Discogs's list style; "&" alone still never splits.
+    assert split_genre("Folk, World, & Country") == ["Folk", "World", "Country"]
+    assert split_genre("Funk, & Drum & Bass") == ["Funk", "Drum & Bass"]
 
 
 def test_file_tag_genres_keep_their_ampersands():
@@ -143,6 +152,18 @@ def test_source_genres_reach_the_tracker_as_valid_tags():
     assert _tags(["Dance / Pop"]) == ["Dance", "Pop"]
     assert _tags(["Dance", "Dance / Pop"]) == ["Dance", "Pop"]
     assert _tags(["\u00c9lectronique\u2192Dance"]) == ["Electronic", "Dance"]
+    # Discogs: the "&" used to survive as the junk tag "and.Country".
+    assert _tags(["Folk, World, & Country"]) == ["Folk", "World", "Country"]
+
+
+def test_manual_metadata_genres_are_standardized(monkeypatch):
+    rls_data = {"genres": [], "urls": []}
+    edited = {"genres": ["Dance / Pop", "Drum & Bass"], "urls": []}
+    monkeypatch.setattr(metadata_module.click, "edit", lambda *_a, **_k: json.dumps(edited))
+    assert metadata_module._get_manual_metadata(rls_data)["genres"] == ["Dance", "Pop", "Drum & Bass"]
+
+    edited["genres"] = "Folk, World, & Country"
+    assert metadata_module._get_manual_metadata(rls_data)["genres"] == ["Folk", "World", "Country"]
 
 
 def test_store_split_tables_still_yield_valid_tags():
