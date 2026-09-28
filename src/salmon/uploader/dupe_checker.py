@@ -169,10 +169,14 @@ async def _prompt_for_recent_upload_results(
 
     # Now prompt for user action
     while True:
-        prompt_text = (
+        prompt_header = (
             "\nThese are similar recent uploads from the site log, not exact group matches.\n"
             "Pick one only if it is actually the same group.\n"
-            f"{'Pick from recent uploads found, p' if recent_uploads else 'P'}aste a URL"
+            if recent_uploads
+            else "\nWould you like to upload to an existing group?\n"
+        )
+        prompt_text = (
+            prompt_header + f"{'Pick from recent uploads found, p' if recent_uploads else 'P'}aste a URL"
             f" or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}"
         )
 
