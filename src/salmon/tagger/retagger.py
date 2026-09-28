@@ -14,6 +14,7 @@ from salmon.constants import (
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
+from salmon.errors import UploadError
 from salmon.tagger.tagfile import TagFile
 
 
@@ -98,15 +99,22 @@ def create_track_changes(tags, metadata):
     def disc_track_key(tagset):
         return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
 
+    # An unparseable tag reads as 1 via _get_tag_number, so it can't vouch for a file's place:
+    # only a disc/track pair that is both present and parseable identifies a file by its tags.
+    readable = all(
+        _parse_tag_number(tagset, "tracknumber") is not None
+        and (not _has_tag(tagset, "discnumber") or _parse_tag_number(tagset, "discnumber") is not None)
+        for tagset in tags.values()
+    )
     disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
-    if len(set(disc_track_keys)) == len(disc_track_keys):
+    if readable and len(set(disc_track_keys)) == len(disc_track_keys):
         # Every file has its own distinct disc/track pair, so its embedded tags can be
         # trusted to identify it. Files without a discnumber tag (e.g. an untagged CD1/CD2
-        # folder layout) all default to disc 1 and collide here, so we fall back to the
-        # existing file order instead of mismatching them.
+        # folder layout) all default to disc 1 and collide here, so we fall back to pairing
+        # them one disc folder at a time instead of mismatching them.
         ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
     else:
-        ordered_tags = list(tags.items())
+        ordered_tags = _order_by_disc_folders(tags, metadata["tracks"])
 
     for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False):
         changes[filename] = []
@@ -169,8 +177,67 @@ def append_guests_to_track_titles(track):
 
 
 def metadata_to_track_list(metadata):
-    """Turn the double nested dictionary of tracks into a flat list of tracks."""
-    return list(chain.from_iterable([d.values() for d in metadata.values()]))
+    """Turn the double nested dictionary of tracks into a flat list of tracks, discs in natural order."""
+    return list(chain.from_iterable(metadata[disc].values() for disc in sorted(metadata, key=_disc_track_sort_key)))
+
+
+def _order_by_disc_folders(tags, discs):
+    """Pair files whose disc/track tags collide one folder per disc, or raise when that can't identify each file.
+
+    Files are grouped by the folder they are in, folders are taken as discs in natural order (CD2 before
+    CD10), and each folder is ordered against the corresponding disc by its files' track tags. If the folder
+    layout does not resolve to one folder per disc with the right number of tracks, we refuse rather than
+    guess: silently mispairing files with the wrong disc's titles is worse than stopping the retag.
+    """
+    by_path = sorted(tags.items(), key=lambda item: _natural_key(item[0]))
+    if len(by_path) != sum(len(tracks) for tracks in discs.values()):
+        return by_path  # the caller reports the track count mismatch
+    folders: dict[str, list] = {}
+    for item in by_path:
+        folders.setdefault(os.path.dirname(item[0]), []).append(item)
+    groups = [folders[folder] for folder in sorted(folders, key=_natural_key)]
+    disc_sizes = [len(discs[disc]) for disc in sorted(discs, key=_disc_track_sort_key)]
+    if not _names_distinct(folders) or [len(group) for group in groups] != disc_sizes:
+        raise _ambiguous_tracks()
+    return [item for group in groups for item in _order_within_disc(group)]
+
+
+def _order_within_disc(group):
+    """Order one disc folder's files: by track tag when every file has its own, else by file name."""
+    if all(not _has_tag(tagset, "tracknumber") for _, tagset in group):
+        if not _names_distinct(filename for filename, _ in group):
+            raise _ambiguous_tracks()
+        return group
+    numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in group]
+    if None in numbers or len(set(numbers)) != len(numbers):
+        raise _ambiguous_tracks()
+    return sorted(group, key=lambda item: _get_tag_number(item[1], "tracknumber"))
+
+
+def _names_distinct(names) -> bool:
+    """Whether natural order tells these names apart (``01.flac`` and ``1.flac`` tie, as do CD01 and CD1)."""
+    keys = [tuple(_natural_key(name)) for name in names]
+    return len(set(keys)) == len(keys)
+
+
+def _ambiguous_tracks() -> UploadError:
+    """The error for a retag whose files the tags and folders can't pair with tracks."""
+    return UploadError(
+        "Can't tell which file is which track: some files share a disc and track number, or lack one, and "
+        "neither the tags nor a folder per disc sort them out. Fix their DISCNUMBER and TRACKNUMBER tags, or "
+        "put each disc in its own folder, before retagging."
+    )
+
+
+def _natural_key(path: str) -> list[int | str]:
+    """Sort key that compares the digit runs in a path as numbers, so CD2 sorts before CD10."""
+    return [int(part) if part.isdigit() else part.lower() for part in re.split(r"(\d+)", path)]
+
+
+def _disc_track_sort_key(value):
+    """Sort key that treats a numeric string as a number, so disc "10" sorts after "2"."""
+    s = str(value)
+    return (0, int(s)) if s.isdigit() else (1, s.lower())
 
 
 def _compare_tag(tagfield, metafield, tagset, trackmeta):
@@ -421,18 +488,30 @@ def _parse_integer(value):
 
 def _get_tag_number(tracktags, field):
     """Read a disc/track number off a tag object or dict, defaulting to 1."""
+    number = _parse_tag_number(tracktags, field)
+    return 1 if number is None else number
+
+
+def _parse_tag_number(tracktags, field):
+    """The tag's number, or None when it is absent or not a number (unlike ``_get_tag_number``, no default)."""
     value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
 
     if isinstance(value, list) and value:
         value = value[0]
     if value is None:
-        return 1
+        return None
     if isinstance(value, str):
         value = value.split("/")[0]
-        return int(value) if value.isdigit() else 1
+        return int(value) if value.isdigit() else None
     if isinstance(value, int):
         return value
-    return 1
+    return None
+
+
+def _has_tag(tracktags, field):
+    """Whether a tag object or dict carries a (possibly malformed) value for ``field``."""
+    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
+    return value is not None
 
 
 def _rename_clashes(path, to_rename):

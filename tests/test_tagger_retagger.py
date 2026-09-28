@@ -4,6 +4,7 @@ import msgspec
 import pytest
 
 from salmon import cfg
+from salmon.errors import UploadError
 from salmon.tagger.retagger import Change, _get_tag_number, create_track_changes, rename_files
 
 
@@ -93,6 +94,92 @@ def test_create_track_changes_keeps_file_order_when_discnumber_tags_are_missing(
     assert Change("title", "Old CD1 2", "New CD1 2") in changes["CD1/02.flac"]
     assert Change("title", "Old CD2 1", "New CD2 1") in changes["CD2/01.flac"]
     assert Change("title", "Old CD2 2", "New CD2 2") in changes["CD2/02.flac"]
+
+
+def test_create_track_changes_orders_ten_plus_discs_naturally():
+    # gather_tags lists CD10 before CD2 (a path with no leading number sorts as text). With no
+    # DISCNUMBER tags every file collides on (1, 1), so the fallback must order the disc folders
+    # naturally (CD2 before CD10), not lexically.
+    tags = {f"CD{disc}/01.flac": _tagset(f"Old CD{disc}", tracknumber="1", discnumber=None) for disc in (1, 10, 2)}
+    metadata = {"tracks": {str(disc): {"1": _trackmeta(f"New CD{disc}", "1", str(disc))} for disc in (1, 2, 10)}}
+
+    changes = create_track_changes(tags, metadata)
+
+    for disc in (1, 2, 10):
+        assert Change("title", f"Old CD{disc}", f"New CD{disc}") in changes[f"CD{disc}/01.flac"]
+
+
+def test_create_track_changes_refuses_a_flat_folder_without_disc_tags():
+    # Track-first names in one flat folder (01-CD1, 01-CD2, 02-CD1, 02-CD2): no DISCNUMBER tags,
+    # and the file order interleaves the two discs while the metadata goes disc by disc. Neither
+    # the tags nor a folder per disc can sort this out, so retagging must refuse rather than
+    # silently write CD2's titles onto CD1's files.
+    tags = {
+        name: _tagset(f"Old {name}", tracknumber=track, discnumber=None)
+        for name, track in (
+            ("01-CD1.flac", "1"),
+            ("01-CD2.flac", "1"),
+            ("02-CD1.flac", "2"),
+            ("02-CD2.flac", "2"),
+        )
+    }
+    metadata = {
+        "tracks": {
+            str(disc): {str(track): _trackmeta(f"New {disc}-{track}", str(track), str(disc)) for track in (1, 2)}
+            for disc in (1, 2)
+        }
+    }
+
+    with pytest.raises(UploadError, match="DISCNUMBER"):
+        create_track_changes(tags, metadata)
+
+
+def test_create_track_changes_refuses_disc_folders_whose_track_counts_differ_from_the_metadata():
+    # Three files under CD1, one under CD2, against metadata that expects two tracks per disc.
+    # The folder split cannot be trusted to line files up with the right disc's tracks.
+    tags = {
+        "CD1/01.flac": _tagset("a", tracknumber="1", discnumber=None),
+        "CD1/02.flac": _tagset("b", tracknumber="2", discnumber=None),
+        "CD1/03.flac": _tagset("c", tracknumber="3", discnumber=None),
+        "CD2/01.flac": _tagset("d", tracknumber="1", discnumber=None),
+    }
+    metadata = {
+        "tracks": {
+            str(disc): {str(track): _trackmeta(f"New {disc}-{track}", str(track), str(disc)) for track in (1, 2)}
+            for disc in (1, 2)
+        }
+    }
+
+    with pytest.raises(UploadError, match="DISCNUMBER"):
+        create_track_changes(tags, metadata)
+
+
+def test_create_track_changes_handles_the_one_folder_disc_dot_track_layout():
+    # #479's one-folder layout keeps a multi-disc release flat, files named "<disc>.<track> ...".
+    # The tags already carry real DISCNUMBER/TRACKNUMBER values by that point, so this stays on
+    # the tag-sorted path rather than tripping the folder-collision fallback.
+    tags = {
+        "2.01 Third.flac": _tagset("Old Third", tracknumber="1", discnumber="2"),
+        "1.01 First.flac": _tagset("Old First", tracknumber="1", discnumber="1"),
+        "1.02 Second.flac": _tagset("Old Second", tracknumber="2", discnumber="1"),
+    }
+    metadata = {
+        "tracks": {
+            "1": {
+                "1": _trackmeta("New First", "1", "1"),
+                "2": _trackmeta("New Second", "2", "1"),
+            },
+            "2": {
+                "1": _trackmeta("New Third", "1", "2"),
+            },
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old First", "New First") in changes["1.01 First.flac"]
+    assert Change("title", "Old Second", "New Second") in changes["1.02 Second.flac"]
+    assert Change("title", "Old Third", "New Third") in changes["2.01 Third.flac"]
 
 
 def test_get_tag_number_reads_the_number_part_of_a_slash_pair():
