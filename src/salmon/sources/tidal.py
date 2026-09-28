@@ -69,9 +69,9 @@ def _notify_retired_token() -> None:
 def _parse_retry_after(value: str | None) -> float | None:
     """Get the wait in seconds from a Retry-After header (delay-seconds or HTTP-date).
 
-    A non-finite delay (``nan``, ``inf``) and an HTTP-date already in the past both count as no
-    wait given, so the caller's normal backoff applies instead of hanging forever or retrying
-    immediately in a loop.
+    A non-finite or negative delay (``nan``, ``inf``, ``-5``) and an HTTP-date already in the past
+    both count as no wait given, so the caller's normal backoff applies instead of hanging forever
+    or retrying immediately in a loop.
     """
     if not value:
         return None
@@ -80,7 +80,7 @@ def _parse_retry_after(value: str | None) -> float | None:
     except ValueError:
         pass
     else:
-        return max(seconds, 0.0) if math.isfinite(seconds) else None
+        return seconds if math.isfinite(seconds) and seconds >= 0 else None
     try:
         when = parsedate_to_datetime(value)
     except (TypeError, ValueError):

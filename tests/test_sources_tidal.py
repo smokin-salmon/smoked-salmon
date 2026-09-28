@@ -315,7 +315,7 @@ def test_rate_limit_with_a_non_finite_wait_backs_off_instead_of_hanging_or_loopi
     assert sleeps == [1.0]
 
 
-def test_rate_limit_with_a_negative_wait_is_clamped_to_zero(
+def test_rate_limit_with_a_negative_wait_backs_off_instead_of_retrying_immediately(
     tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch, sleeps: list[float]
 ) -> None:
     rate_limited = _json({}, 429, {"Retry-After": "-5"})
@@ -324,7 +324,9 @@ def test_rate_limit_with_a_negative_wait_is_clamped_to_zero(
 
     result = _run(tidal, monkeypatch, lambda: Scraper().get_json("/ping"))
     assert result == {"data": []}
-    assert sleeps == [0.0]
+    # A negative Retry-After is invalid per RFC 9110, so it falls back to the normal backoff
+    # rather than being clamped to 0 and retried immediately.
+    assert sleeps == [1.0]
 
 
 def test_rate_limit_with_a_past_http_date_backs_off_instead_of_zero(
