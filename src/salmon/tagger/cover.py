@@ -14,7 +14,7 @@ from PIL import Image
 from salmon import cfg
 from salmon.common import get_audio_files
 
-# RED rule 2.3.19: embedded images plus padding may not exceed 1024 KiB per file.
+# RED allows at most 1 MiB of embedded pictures plus padding per file.
 MAX_PICTURES_AND_PADDING = humanfriendly.parse_size("1MiB")
 
 
@@ -203,7 +203,7 @@ def check_embedded_pictures(path: str) -> None:
     if not oversized:
         return
     click.secho(
-        "\nEmbedded pictures plus padding exceed 1 MiB in these files, which RED does not allow (rule 2.3.19):",
+        "\nEmbedded pictures plus padding exceed RED's 1 MiB limit in these files:",
         fg="yellow",
         bold=True,
     )
