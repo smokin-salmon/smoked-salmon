@@ -655,7 +655,9 @@ async def _upload_staged(
     try:
         # The search for an existing group only reads from the tracker, so it runs in the background during
         # the MQA, upconvert and log checks below, and what it found is shown once they are done.
-        async with fetch_existing_group_candidates_in_background(gazelle_site, dupe_searchstrs) as group_fetch:
+        async with fetch_existing_group_candidates_in_background(
+            gazelle_site, dupe_searchstrs, rls_data["title"]
+        ) as group_fetch:
             if not skip_mqa:
                 click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
                 await mqa_test(path)
@@ -755,7 +757,7 @@ async def _upload_staged(
         spectrals_path = get_spectrals_path(path)
         spectral_urls = await handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
     if cfg.upload.requests.last_minute_dupe_check:
-        await last_min_dupe_check(gazelle_site, searchstrs)
+        await last_min_dupe_check(gazelle_site, searchstrs, rls_data["title"])
 
     # Shallow copy to avoid errors on multiple uploads in one session.
     remaining_gazelle_sites = list(salmon.trackers.tracker_list)
@@ -789,7 +791,7 @@ async def _upload_staged(
 
                 click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
                 searchstrs = generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
-                group_id = await check_existing_group(gazelle_site, searchstrs)
+                group_id = await check_existing_group(gazelle_site, searchstrs, our_title=rls_data["title"])
 
             remaining_gazelle_sites.remove(tracker)
 
@@ -1014,11 +1016,11 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
             bold=True,
             nl=False,
         )
-        return await check_existing_group(gazelle_site, new_searchstrs)
+        return await check_existing_group(gazelle_site, new_searchstrs, our_title=metadata["title"])
     return None
 
 
-async def last_min_dupe_check(gazelle_site, searchstrs):
+async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
     """Check for dupes in the log one last time before upload.
 
     Helpful if you are uploading something in race like conditions.
@@ -1026,12 +1028,13 @@ async def last_min_dupe_check(gazelle_site, searchstrs):
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Search strings for dupe checking.
+        our_title: Our release's title, passed through to dupe_check_recent_torrents.
     """
     if not can_check_site_log(gazelle_site):
         return
     # Should really avoid asking if already shown the same releases from the log.
     click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
-    recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs)
+    recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs, our_title)
     if recent_uploads:
         print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
         if not click.confirm(

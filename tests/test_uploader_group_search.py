@@ -203,7 +203,7 @@ class Flow:
             return 1, 5, None, None, "url"
 
         async def prompt(text: str, *_args, **_kwargs) -> str:
-            flow.echo("group prompt" if "existing group" in text else f"prompt: {text}")
+            flow.echo("group prompt" if "[N]ew group" in text else f"prompt: {text}")
             return "n"
 
         class FakeUploadManager:
