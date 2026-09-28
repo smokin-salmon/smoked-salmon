@@ -1429,7 +1429,7 @@ async def upload_and_report(
         # Check if it's a FLAC file
         is_flac = metadata.get("format", "").upper() == "FLAC"
         seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac)
-        seedbox_uploader.add_upload_task(torrent_path, task_type="seed", is_flac=is_flac)
+        seedbox_uploader.add_upload_task(torrent_path, task_type="seed", is_flac=is_flac, folder=path)
 
     return torrent_id, group_id, torrent_path, torrent_content, url
 
