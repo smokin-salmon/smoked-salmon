@@ -20,6 +20,7 @@ from salmon.common.files import process_files
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
+    RequestError,
     UnknownOutcomeError,
     UploadError,
 )
@@ -722,7 +723,26 @@ async def post_upload_spectral_check(
 
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)
-        await gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
+        permalink = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
+        try:
+            await gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
+        except UnknownOutcomeError as err:
+            click.secho(
+                f"\nCould not tell whether {gazelle_site.site_string} took the description edit for {permalink} "
+                f"({err}): it may not have been updated; check the description before pasting this in "
+                "by hand:",
+                fg="red",
+                bold=True,
+            )
+            click.echo(spectrals_bbcode)
+        except RequestError as err:
+            click.secho(
+                f"\nThe description for {permalink} was not updated on {gazelle_site.site_string} ({err}). "
+                "Paste this in by hand:",
+                fg="red",
+                bold=True,
+            )
+            click.echo(spectrals_bbcode)
 
     if lossy_master:
         await report_lossy_master(
