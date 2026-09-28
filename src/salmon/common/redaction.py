@@ -62,13 +62,19 @@ _CONNECTION_SECRET = re.compile(
 )
 
 
-def redact_secrets(text: str, known: Iterable[str | None] = ()) -> str:
-    """Mask known secret values, URL userinfo and password/token flags before text reaches a log."""
-    # Known values first: an error can repeat one in a shape no pattern expects.
+def _mask_known(text: str, known: Iterable[str | None]) -> str:
+    """Mask each known secret value, longest first."""
     for secret in sorted((s for s in known if s), key=len, reverse=True):
         # A short one only as a whole word, so "ab" doesn't eat "about".
         pattern = re.escape(secret) if len(secret) >= 3 else rf"(?<!\w){re.escape(secret)}(?!\w)"
         text = re.sub(pattern, "[REDACTED]", text)
+    return text
+
+
+def redact_secrets(text: str, known: Iterable[str | None] = ()) -> str:
+    """Mask known secret values, URL userinfo and password/token flags before text reaches a log."""
+    # Known values first: an error can repeat one in a shape no pattern expects.
+    text = _mask_known(text, known)
     text = _SECRET_HEADER.sub(r"\1 [REDACTED]", text)
     text = _URL_USERINFO.sub(r"\1[REDACTED]@", text)
     text = _SECRET_FLAG.sub(r"\1[REDACTED]", text)
@@ -122,3 +128,53 @@ def redact_command(args: list[str], known: Iterable[str | None] = ()) -> str:
             shown.append(redact_secrets(arg, known))
         hide_next = _takes_hidden_value(arg)
     return shlex.join(shown)
+
+
+# What a Gazelle tracker sends back carries its own secrets: the authkey (auth, authkey), the passkey
+# (passkey, torrent_pass), the session cookie and an api key.
+_TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|api_?key|authorization)"
+# "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script.
+_TRACKER_ASSIGNMENT = re.compile(rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2).)*\2""", re.IGNORECASE)
+# ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page.
+_TRACKER_QUERY = re.compile(rf"""([?&;]{_TRACKER_KEYS}=)[^&#\s"'<>]*""", re.IGNORECASE)
+# The passkey in an announce URL: https://tracker/<passkey>/announce.
+_ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]{16,}(?=/announce)")
+# A form field carrying one, <input name="auth" value="...">, its attributes in any order.
+_INPUT_TAG = re.compile(r"<input\b[^>]*>", re.IGNORECASE)
+_SECRET_FIELD_NAME = re.compile(rf"""\bname\s*=\s*(["']?){_TRACKER_KEYS}\1(?=[\s/>])""", re.IGNORECASE)
+_FIELD_VALUE = re.compile(r"""(\bvalue\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s"'>]+)""", re.IGNORECASE)
+# A response header naming a credential. A cookie keeps its name and attributes, only its value is masked.
+_SECRET_HEADER_NAME = re.compile(r"auth|token|key|session|pass", re.IGNORECASE)
+_COOKIE_VALUE = re.compile(r"^(\s*[^=;\s]+=)[^;]*")
+
+
+def _mask_secret_field(match: re.Match[str]) -> str:
+    tag = match[0]
+    if not _SECRET_FIELD_NAME.search(tag):
+        return tag
+    return _FIELD_VALUE.sub(r'\1"[REDACTED]"', tag)
+
+
+def redact_tracker_text(text: str, known: Iterable[str | None] = ()) -> str:
+    """Mask a tracker's secrets in a page, an API answer or a URL before it reaches the terminal."""
+    text = _mask_known(text, known)
+    text = _INPUT_TAG.sub(_mask_secret_field, text)
+    text = _TRACKER_ASSIGNMENT.sub(lambda m: f"{m[1]}{m[2]}[REDACTED]{m[2]}", text)
+    text = _TRACKER_QUERY.sub(r"\1[REDACTED]", text)
+    text = _ANNOUNCE_PASSKEY.sub("/[REDACTED]", text)
+    return _URL_USERINFO.sub(r"\1[REDACTED]@", text)
+
+
+def redact_tracker_headers(headers: Iterable[tuple[str, str]], known: Iterable[str | None] = ()) -> dict[str, str]:
+    """A tracker's response headers for the log, with credentials and cookie values masked."""
+    known = list(known)
+    shown: dict[str, str] = {}
+    for name, value in headers:
+        if "cookie" in name.lower():
+            value = _COOKIE_VALUE.sub(r"\1[REDACTED]", value)
+        elif _SECRET_HEADER_NAME.search(name):
+            value = "[REDACTED]"
+        value = redact_tracker_text(value, known)
+        # A header sent more than once (Set-Cookie) is shown once, its values joined as HTTP folds them.
+        shown[name] = f"{shown[name]}, {value}" if name in shown else value
+    return shown
