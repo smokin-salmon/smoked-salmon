@@ -3,10 +3,33 @@ import os
 import anyio
 import asyncclick as click
 from mutagen import File as MutagenFile
+from mutagen import flac, mp3, mp4
 
 from salmon import cfg
 from salmon.common import get_audio_files
-from salmon.tagger.tagfile import TagFile
+from salmon.tagger.tagfile import TAG_FIELDS, TagFile
+
+TAG_PRINT_ORDER = [
+    "title",
+    "artist",
+    "album",
+    "albumartist",
+    "date",
+    "genre",
+    "composer",
+    "conductor",
+    "tracknumber",
+    "tracktotal",
+    "discnumber",
+    "disctotal",
+    "label",
+    "catno",
+    "upc",
+    "isrc",
+    "replay_gain",
+    "peak",
+    "comment",
+]
 
 STANDARDIZED_TAGS = {
     "date": ["year"],
@@ -93,9 +116,31 @@ def _requires_classical_composer(tag_item) -> bool:
     return any(str(genre).strip().lower().replace(" ", "") in CLASSICAL_GENRES for genre in genres)
 
 
-def print_a_tag(tags):
-    """Print all tags in a tag set."""
-    for key, value in tags.items():
+def print_a_tag(tag_item: TagFile) -> None:
+    """Print the readable tags of a single file, skipping empty ones.
+
+    TagFile has no `items()`; its `__getattr__` returns None for any unknown
+    attribute instead of raising, so we read each of salmon's known field
+    names through getattr rather than trying to iterate the object itself.
+    """
+    mut = tag_item.mut
+    if isinstance(mut, flac.FLAC):
+        fields = TAG_FIELDS["FLAC"]
+    elif isinstance(mut, mp3.MP3):
+        fields = TAG_FIELDS["MP3"]
+    elif isinstance(mut, mp4.MP4):
+        fields = TAG_FIELDS["AAC"]
+    else:
+        return
+
+    for key in TAG_PRINT_ORDER:
+        if key not in fields:
+            continue
+        value = getattr(tag_item, key, None)
+        if not value:
+            continue
+        if isinstance(value, list):
+            value = "; ".join(str(v) for v in value)
         click.echo(f"> {key}: {value}")
 
 
