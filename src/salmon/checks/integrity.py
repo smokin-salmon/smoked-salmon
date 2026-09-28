@@ -458,7 +458,6 @@ async def _sanitize_flac(path: str) -> bool:
             stderr_text = result.stderr.decode() if result.stderr else ""
             stdout_text = result.stdout.decode() if result.stdout else ""
             raise Exception(f"FLAC encoding failed:\n{stdout_text}\n{stderr_text}")
-        os.remove(backup_path)
         result = await anyio.run_process(
             ["metaflac", "--dont-use-padding", "--remove", "--block-type=PADDING,PICTURE", path],
             check=False,
@@ -471,11 +470,12 @@ async def _sanitize_flac(path: str) -> bool:
         )
         if result.returncode != 0:
             raise Exception("Failed to add FLAC padding")
+        os.remove(backup_path)
         return True
     except Exception as e:
         click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
-        # flac deletes its output when the re-encode fails: put the original back, or the file is gone from
-        # the release and the check after sanitizing passes without it.
+        # Put the original back whichever step failed. flac deletes its output when the re-encode fails, so
+        # without this the file is gone from the release and the check after sanitizing passes without it.
         if os.path.exists(backup_path):
             os.replace(backup_path, path)
         return False

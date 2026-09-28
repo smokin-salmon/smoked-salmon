@@ -36,12 +36,14 @@ class FakeFlac:
         self.folder = folder
         self.states = dict(states)
         self.tested: list[str] = []
+        self.metaflac_fails: set[str] = set()
         for name in states:
             (folder / name).write_bytes(b"fLaC " + name.encode())
 
     async def run_process(self, commands: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
         if commands[0] == "metaflac":
-            return subprocess.CompletedProcess(commands, 0, b"", b"")
+            failed = os.path.basename(commands[-1]) in self.metaflac_fails
+            return subprocess.CompletedProcess(commands, int(failed), b"", b"")
         if commands[:2] == ["flac", "-wt"]:
             name = os.path.basename(commands[2])
             self.tested.append(name)
@@ -81,6 +83,17 @@ def test_check_command_checks_again_after_sanitizing(fake_flac, monkeypatch, tmp
     assert (tmp_path / "02.flac").read_bytes() == b"fLaC 02.flac", "the original must be put back"
     assert sorted(fake.tested) == ["01.flac", "01.flac", "02.flac", "02.flac"], "every file is checked again"
     assert "Sanitization did not clear the integrity check." in click.unstyle(capsys.readouterr().out)
+
+
+def test_a_failed_metadata_cleanup_puts_the_original_back(fake_flac, tmp_path) -> None:
+    """The re-encode succeeded but metaflac did not: the original is restored, not left half-sanitized."""
+    fake = fake_flac({"01.flac": "md5_unset"})
+    fake.metaflac_fails.add("01.flac")
+
+    assert anyio.run(integrity.sanitize_integrity, str(tmp_path / "01.flac")) is False
+
+    assert sorted(os.listdir(tmp_path)) == ["01.flac"]
+    assert (tmp_path / "01.flac").read_bytes() == b"fLaC 01.flac"
 
 
 def _edit_metadata_stubs(monkeypatch, scene: bool = False) -> None:
