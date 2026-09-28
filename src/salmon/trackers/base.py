@@ -165,8 +165,8 @@ def _compose_form_data(files: UploadFiles, data: dict[str, Any]) -> FormData:
 # Gazelle's own redirects take up to two hops: torrents.php?torrentid= to its group and
 # an upload POST to the group it created take one, and an upload that fills a request
 # takes two (upload.php to requests.php?action=takefill to requests.php?action=view).
-# The third is a margin: running out after a successful POST would report an upload
-# that went through as failed.
+# The third is a margin: running out after a POST leaves its outcome unknown, so an
+# upload that went through is only found by looking it up.
 _MAX_REDIRECTS = 3
 _REDIRECT_STATUSES = frozenset(
     {
@@ -181,6 +181,17 @@ _REDIRECT_STATUSES = frozenset(
 
 # A connection that was never made carried nothing to the tracker.
 _NOT_SENT_ERRORS = (aiohttp.ClientConnectorError, aiohttp.ConnectionTimeoutError)
+
+# The server errors an idempotent request is sent again on: the tracker, or a gateway in front
+# of it, may answer the next attempt.
+_TRANSIENT_5XX = frozenset(
+    {
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        HTTPStatus.BAD_GATEWAY,
+        HTTPStatus.SERVICE_UNAVAILABLE,
+        HTTPStatus.GATEWAY_TIMEOUT,
+    }
+)
 
 # How long to wait, in seconds, before looking up an upload whose answer was lost, and before
 # looking it up a second and last time if the tracker does not have it yet. When the upload timed
@@ -368,7 +379,8 @@ class BaseGazelleApi:
             url: The URL to request.
             params: Query parameters.
             data: POST body data.
-            timeout_secs: Request timeout in seconds.
+            timeout_secs: How long, in seconds, connecting, each read and reading the whole
+                answer may take.
             prefer_api_key: If True and api_key is set, use Authorization header
                 only (no cookie). If False or api_key is empty, use cookie only
                 (no Authorization header).
@@ -378,7 +390,8 @@ class BaseGazelleApi:
                 fetches with an index call first. An api key request that sends no auth
                 field does not.
             expected_error_statuses: Error statuses the endpoint answers with a body the
-                caller reads itself: the response is returned instead of raising.
+                caller reads itself: the response is returned instead of raising. Not on a
+                later hop of a request that is not idempotent, which the tracker has acted on.
 
         Redirects within the site are followed, up to three hops, each one through the
         rate limiter. A redirect to the login page raises LoginError without requesting it.
@@ -466,7 +479,11 @@ class BaseGazelleApi:
                             allow_redirects=False,
                         ) as resp,
                     ):
-                        text = await resp.text()
+                        # sock_read restarts on every chunk, so a trickled body needs a bound of its
+                        # own. It starts once the answer has come, after any wait for a free pooled
+                        # connection, which must still not count.
+                        async with asyncio.timeout(timeout_secs):
+                            text = await resp.text()
 
                         if cfg.upload.debug_tracker_connection:
                             _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
@@ -475,6 +492,12 @@ class BaseGazelleApi:
                             _secho(f"[DEBUG] response body: {_redact(text)}", fg="green")
 
                         if not resp.ok:
+                            # Checked before any status: the tracker acted on the request when it
+                            # redirected it, so a failed later hop leaves its outcome unknown. An
+                            # error status the caller expects answers that later hop, not the request.
+                            if redirected and not idempotent:
+                                raise UnknownOutcomeError(f"{self.site_string} answered {resp.status} on a later hop")
+
                             error_msg = text
                             with suppress(msgspec.DecodeError, ValueError):
                                 error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
@@ -501,11 +524,9 @@ class BaseGazelleApi:
                             if resp.status in expected_error_statuses:
                                 return HttpResponse(text=text, url=str(resp.url), status=resp.status)
 
-                            if resp.status in (
-                                HTTPStatus.INTERNAL_SERVER_ERROR,
-                                HTTPStatus.BAD_GATEWAY,
-                                HTTPStatus.SERVICE_UNAVAILABLE,
-                                HTTPStatus.GATEWAY_TIMEOUT,
+                            # Any 5xx may follow the tracker acting on a POST; a GET is resent only on these.
+                            if resp.status >= HTTPStatus.INTERNAL_SERVER_ERROR and (
+                                not idempotent or resp.status in _TRANSIENT_5XX
                             ):
                                 raise failure(f"Server error {resp.status}")
 
@@ -526,6 +547,9 @@ class BaseGazelleApi:
                         current = urlparse(str(resp.url))
                         target = urlparse(urljoin(str(resp.url), location))
                         if target.path.endswith("/login.php"):
+                            if redirected and not idempotent:
+                                # As for an error status on a later hop: the tracker has acted.
+                                raise UnknownOutcomeError(f"{self.site_string} sent a later hop to its login page")
                             _secho(
                                 f"{self.site_string} sent this request to its login page: your session cookie is "
                                 f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
@@ -538,6 +562,8 @@ class BaseGazelleApi:
                                 f"{self.site_string} redirected to {target.scheme}://{target.netloc}, not following.",
                                 fg="red",
                             )
+                            if redirected and not idempotent:
+                                raise UnknownOutcomeError(f"{self.site_string} redirected a later hop to another site")
                             raise RequestFailedError(f"{self.site_string} redirected to another site")
 
                         if resp.status == HTTPStatus.SEE_OTHER or (
@@ -549,9 +575,13 @@ class BaseGazelleApi:
                         redirected = True
 
                 _secho(f"Too many redirects from {self.site_string}, last to {urlparse(url).path}", fg="red")
-                raise RequestFailedError(f"Too many redirects from {self.site_string}")
+                message = f"Too many redirects from {self.site_string}"
+                # The tracker redirected at least once, so it has acted on the request.
+                raise RequestFailedError(message) if idempotent else UnknownOutcomeError(message)
         except (TimeoutError, aiohttp.ClientError) as err:
-            raise failure(f"Network error: {err}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
+            # The body read's own timeout raises a TimeoutError with no message.
+            reason = str(err) or f"no full answer within {timeout_secs} s"
+            raise failure(f"Network error: {reason}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
 
     async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.
@@ -837,7 +867,7 @@ class BaseGazelleApi:
         except (RequestError, TorfError, KeyError, TypeError, ValueError) as lookup_err:
             raise UnknownOutcomeError(
                 f"Could not tell whether {self.site_string} took the upload ({err}), and looking the torrent up "
-                f"by its infohash did not find it ({lookup_err}). The upload may still have gone through: "
+                f"by its infohash did not confirm it ({lookup_err}). The upload may still have gone through: "
                 f"check your uploads on {self.site_string} before uploading it again."
             ) from lookup_err
         except asyncio.CancelledError:

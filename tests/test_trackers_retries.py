@@ -14,7 +14,7 @@ from torf import Torrent
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon.common import UploadFiles
-from salmon.errors import LoginError, RequestError, UnknownOutcomeError
+from salmon.errors import LoginError, RequestError, RequestFailedError, UnknownOutcomeError
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi, RetryableError
 from salmon.uploader import spectrals
@@ -147,7 +147,7 @@ async def _lost_upload_not_found_says_it_may_have_gone_through(tmp_path: Path) -
     try:
         with pytest.raises(
             UnknownOutcomeError,
-            match=r"did not find it \(bad parameters\)\. The upload may still have gone through: check your uploads",
+            match=r"did not confirm it \(bad parameters\)\. The upload may still have gone through: check your uploads",
         ):
             await api.upload({"type": 0}, files)
         assert posts == ["upload"]
@@ -215,6 +215,8 @@ async def _lost_upload_lookup_that_fails_otherwise_is_not_repeated(
         with pytest.raises(UnknownOutcomeError, match="may still have gone through") as caught:
             await api.upload({"type": 0}, files)
         assert isinstance(caught.value.__cause__, raised)
+        # The lookup failed, it did not come back empty.
+        assert "did not confirm it" in str(caught.value)
         assert posts == ["upload"]
         # Only a tracker saying it does not have the torrent is worth asking again later.
         assert len(lookups) == (5 if raised is RetryableError else 1)
@@ -248,6 +250,49 @@ async def _upload_after_a_kept_alive_connection_goes_on_a_fresh_one(tmp_path: Pa
         await api.api_call("index")
         assert await api.upload({"type": 0}, files) == (9, 5)
         assert posts == ["fresh"]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _upload_answered_with_any_5xx_is_looked_up_not_resent(tmp_path: Path, status: int) -> None:
+    files, infohash = _upload_files(tmp_path)
+    posts, lookups = [], []
+
+    async def ajax(request: web.Request) -> web.Response:
+        if request.method == "POST":
+            await request.read()
+            posts.append(request.query["action"])
+            # A 524 is Cloudflare saying the tracker got the upload and did not answer in time.
+            return web.Response(status=status, text="server error")
+        lookups.append(request.query["hash"])
+        return _found(9, 5)
+
+    runner, url = await _serve(ajax=ajax)
+    api = FakeApi(url, api_key="an-api-key")
+    try:
+        assert await api.upload({"type": 0}, files) == (9, 5)
+        assert posts == ["upload"]
+        assert lookups == [infohash]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _get_answered_with_an_unusual_5xx_is_not_retried(status: int) -> None:
+    hits = []
+
+    async def log(request: web.Request) -> web.Response:
+        hits.append(request.path)
+        return web.Response(status=status, text="server error")
+
+    runner, url = await _serve(log=log)
+    api = FakeApi(url)
+    try:
+        # Only a 500, 502, 503 or 504 is worth asking again.
+        with pytest.raises(RequestFailedError):
+            await api._request("GET", url + "/log.php", params={"page": 1})
+        assert len(hits) == 1
     finally:
         await api.close()
         await runner.cleanup()
@@ -301,6 +346,97 @@ async def _server_error_after_the_upload_redirect_does_not_resend_it(tmp_path: P
         # The redirect is the tracker's answer: the upload went through, only the page after it failed.
         assert await api.upload({"type": 0}, files) == (9, 5)
         assert hits == [("POST", "/upload.php"), ("GET", "/torrents.php"), ("GET", "/ajax.php")]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _failure_after_the_upload_redirect_does_not_resend_it(tmp_path: Path, later_hop: int | str) -> list:
+    files, infohash = _upload_files(tmp_path)
+    hits = []
+
+    async def upload(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        raise web.HTTPFound("/torrents.php?id=5")
+
+    async def torrents(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path))
+        if later_hop == "login page":
+            raise web.HTTPFound("/login.php")
+        if later_hop == "another site":
+            raise web.HTTPFound("http://tracker.invalid/torrents.php?id=5")
+        if later_hop == "redirect loop":
+            raise web.HTTPFound(f"/torrents.php?id=5&hop={len(hits)}")
+        assert isinstance(later_hop, int)
+        # A 429 that would be waited for, then give up: the wait gains nothing.
+        return web.Response(status=later_hop, text="no", headers={"Retry-After": "10"})
+
+    async def ajax(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path))
+        assert request.query["hash"] == infohash
+        return _found(9, 5)
+
+    runner, url = await _serve(upload=upload, torrents=torrents, ajax=ajax)
+    api = FakeApi(url)
+    try:
+        # The redirect is the tracker's answer: whatever the pages after it do, the upload went through.
+        with anyio.fail_after(5):
+            assert await api.upload({"type": 0}, files) == (9, 5)
+        return hits
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _expected_error_status_after_a_redirect_is_an_unknown_outcome() -> None:
+    hits = []
+
+    async def ajax(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.path))
+        raise web.HTTPFound("/torrents.php?id=5")
+
+    async def torrents(request: web.Request) -> web.Response:
+        hits.append((request.method, request.path))
+        return web.json_response({"status": "failure", "error": "bad request"}, status=400)
+
+    runner, url = await _serve(ajax=ajax, torrents=torrents)
+    api = FakeApi(url, api_key="an-api-key")
+    try:
+        # The 400 RED answers an image it rejects with is expected, but here it answers the page
+        # the tracker sent the upload on to: it says nothing about the image.
+        with pytest.raises(UnknownOutcomeError):
+            await api._request(
+                "POST",
+                url + "/ajax.php",
+                params={"action": "upload_image"},
+                data={"file": "x"},
+                prefer_api_key=True,
+                expected_error_statuses=(400,),
+            )
+        assert hits == [("POST", "/ajax.php"), ("GET", "/torrents.php")]
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+async def _report_refused_after_its_redirect_is_not_filed_again() -> None:
+    posts = []
+
+    async def reportsv2(request: web.Request) -> web.Response:
+        await request.read()
+        posts.append(request.query["action"])
+        raise web.HTTPFound("/torrents.php?torrentid=9")
+
+    async def torrents(_request: web.Request) -> web.Response:
+        return web.Response(status=403, text="Forbidden")
+
+    runner, url = await _serve(reportsv2=reportsv2, torrents=torrents)
+    api = FakeApi(url)
+    try:
+        await spectrals.report_lossy_master(api, 9, None, None, "WEB", "a comment")
+        assert posts == ["takereport"]
     finally:
         await api.close()
         await runner.cleanup()
@@ -476,6 +612,16 @@ def test_upload_after_a_kept_alive_connection_goes_on_a_fresh_one(tmp_path: Path
     anyio.run(_upload_after_a_kept_alive_connection_goes_on_a_fresh_one, tmp_path)
 
 
+@pytest.mark.parametrize("status", [501, 520, 522, 524])
+def test_upload_answered_with_any_5xx_is_looked_up_not_resent(tmp_path: Path, status: int) -> None:
+    anyio.run(_upload_answered_with_any_5xx_is_looked_up_not_resent, tmp_path, status)
+
+
+@pytest.mark.parametrize("status", [501, 522])
+def test_get_answered_with_an_unusual_5xx_is_not_retried(status: int) -> None:
+    anyio.run(_get_answered_with_an_unusual_5xx_is_not_retried, status)
+
+
 def test_rate_limited_upload_is_retried(tmp_path: Path) -> None:
     anyio.run(_rate_limited_upload_is_retried, tmp_path)
 
@@ -484,8 +630,31 @@ def test_server_error_after_the_upload_redirect_does_not_resend_it(tmp_path: Pat
     anyio.run(_server_error_after_the_upload_redirect_does_not_resend_it, tmp_path)
 
 
-def test_report_with_a_lost_answer_is_sent_once() -> None:
+@pytest.mark.parametrize("later_hop", [401, 403, 404, 429, "login page", "another site", "redirect loop"])
+def test_failure_after_the_upload_redirect_does_not_resend_it(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], later_hop: int | str
+) -> None:
+    hits = anyio.run(_failure_after_the_upload_redirect_does_not_resend_it, tmp_path, later_hop)
+    later_hops = 3 if later_hop == "redirect loop" else 1
+    assert hits == [("POST", "/upload.php")] + [("GET", "/torrents.php")] * later_hops + [("GET", "/ajax.php")]
+    # The session cookie did its job: the tracker took the upload.
+    assert "missing or expired" not in capsys.readouterr().out
+
+
+def test_expected_error_status_after_a_redirect_is_an_unknown_outcome() -> None:
+    anyio.run(_expected_error_status_after_a_redirect_is_an_unknown_outcome)
+
+
+def test_report_refused_after_its_redirect_is_not_filed_again(capsys: pytest.CaptureFixture[str]) -> None:
+    anyio.run(_report_refused_after_its_redirect_is_not_filed_again)
+    out = capsys.readouterr().out
+    assert "Could not tell whether RED took the lossy master report" in out
+    assert "Reported upload for Lossy Master/WEB Approval Request" not in out
+
+
+def test_report_with_a_lost_answer_is_sent_once(capsys: pytest.CaptureFixture[str]) -> None:
     anyio.run(_report_with_a_lost_answer_is_sent_once)
+    assert "Reported upload for Lossy Master/WEB Approval Request" not in capsys.readouterr().out
 
 
 def test_gets_are_still_retried() -> None:
