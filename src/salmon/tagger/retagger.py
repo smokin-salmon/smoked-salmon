@@ -535,7 +535,14 @@ def _parse_tag_number(tracktags, field):
         return None
     if isinstance(value, str):
         value = value.split("/")[0]
-        return int(value) if value.isdigit() else None
+        if not value.isdigit():
+            return None
+        try:
+            # str.isdigit() accepts some Unicode digits int() then rejects (e.g. superscript "2"),
+            # so the conversion can still fail even once isdigit() has passed.
+            return int(value)
+        except ValueError:
+            return None
     if isinstance(value, int):
         return value
     return None

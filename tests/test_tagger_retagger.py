@@ -386,6 +386,12 @@ def test_get_tag_number_unwraps_a_list_value():
     assert _get_tag_number({"tracknumber": ["7"]}, "tracknumber") == 7
 
 
+def test_get_tag_number_defaults_a_digit_like_value_int_cannot_parse():
+    # "²" (superscript two) passes str.isdigit() but int() rejects it; a malformed
+    # TRACKNUMBER like this must read as unparseable rather than raise out of retagging.
+    assert _get_tag_number({"tracknumber": ["²"]}, "tracknumber") == 1
+
+
 def _formatting(**settings):
     """The formatting config with fixed file templates, plus ``settings``, built as a config file would be."""
     fields = msgspec.structs.asdict(cfg.upload.formatting)
