@@ -11,6 +11,7 @@ import aiohttp
 import asyncclick as click
 import msgspec
 from aiohttp import FormData
+from aiohttp.abc import AbstractStreamWriter
 from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
@@ -203,6 +204,56 @@ _TRANSIENT_5XX = frozenset(
 _LOST_UPLOAD_FIRST_WAIT = 10
 _LOST_UPLOAD_SECOND_WAIT = 30
 
+# A request body goes out in slices this big, each within the request's timeout. Once more than
+# 64 KiB wait to go out, aiohttp holds the next slice until the connection takes most of them, so
+# a slice times out only when the connection took next to nothing for that long.
+_SEND_SLICE = 64 * 1024
+
+
+class _StallBoundBody(aiohttp.payload.Payload):
+    """A request body sent in slices, failing once one does not go out within `stall_secs`.
+
+    aiohttp bounds no part of sending a body: sock_read only starts once all of it is sent. A
+    tracker that stops reading would hold the request for good, and with it every later request
+    of the client that is not idempotent, as those go one at a time. A slow but moving upload
+    goes through, however long it takes.
+    """
+
+    _value: bytes
+    _autoclose = True
+
+    def __init__(self, value: bytes, content_type: str, stall_secs: int) -> None:
+        super().__init__(value, content_type=content_type)
+        self._size = len(value)
+        self._stall_secs = stall_secs
+
+    def decode(self, encoding: str = "utf-8", errors: str = "strict") -> str:
+        return self._value.decode(encoding, errors)
+
+    async def write(self, writer: AbstractStreamWriter) -> None:
+        await self.write_with_length(writer, None)
+
+    async def write_with_length(self, writer: AbstractStreamWriter, content_length: int | None) -> None:
+        body = memoryview(self._value)[:content_length]
+        for start in range(0, len(body), _SEND_SLICE):
+            try:
+                async with asyncio.timeout(self._stall_secs):
+                    await writer.write(body[start : start + _SEND_SLICE])
+            except TimeoutError:
+                raise TimeoutError(f"sending the request stalled for {self._stall_secs} s") from None
+
+
+async def _stall_bound_body(data: Any, stall_secs: int) -> _StallBoundBody:
+    """Turn request data into a body sent within a stall bound, as aiohttp would turn it into a payload."""
+    if isinstance(data, FormData):
+        data = data()
+    try:
+        body = aiohttp.payload.get_payload(data)
+    except aiohttp.payload.LookupError:
+        # A dict or a list of fields, sent as a form.
+        body = FormData(data)()
+    return _StallBoundBody(await body.as_bytes(), body.content_type, stall_secs)
+
 
 class RetryableError(RequestError):
     """A failed request that may be sent again. Raised as is once the retries run out."""
@@ -380,7 +431,7 @@ class BaseGazelleApi:
             params: Query parameters.
             data: POST body data.
             timeout_secs: How long, in seconds, connecting, each read and reading the whole
-                answer may take.
+                answer may take, and how long sending the body may stall.
             prefer_api_key: If True and api_key is set, use Authorization header
                 only (no cookie). If False or api_key is empty, use cookie only
                 (no Authorization header).
@@ -447,6 +498,10 @@ class BaseGazelleApi:
             if idempotent or (not_acted_on and not redirected):
                 return RetryableError(message)
             return UnknownOutcomeError(message)
+
+        if data is not None:
+            # Nothing else bounds sending a body.
+            data = await _stall_bound_body(data, timeout_secs)
 
         use_api_key = prefer_api_key and bool(self.api_key)
         headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
