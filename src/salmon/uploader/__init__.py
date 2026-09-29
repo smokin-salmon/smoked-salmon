@@ -15,7 +15,7 @@ from salmon import cfg
 from salmon.checks import mqa_test
 from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
-from salmon.checks.tag_rules import collect_tag_warnings
+from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup, tagify
 from salmon.config.image_hosts import cover_refusal
@@ -989,12 +989,11 @@ async def edit_metadata(
             tag_files(path, tags, metadata, auto_rename)
 
         tags = await check_tags(path)
-        if not metadata["scene"]:
-            tag_warnings = collect_tag_warnings(path, gather_audio_info(path))
-            if tag_warnings:
-                click.secho("\nTag warnings:", fg="yellow", bold=True)
-                for warning in tag_warnings:
-                    click.secho(f"  - {warning}", fg="yellow")
+        tag_messages = process_tag_issues(path, gather_audio_info(path), scene=metadata["scene"], recompress=recompress)
+        if tag_messages:
+            click.secho("\nTag notes:", fg="yellow", bold=True)
+            for message in tag_messages:
+                click.secho(f"  - {message}", fg="yellow")
         if not metadata["scene"] and recompress:
             await recompress_path(path)
         path = rename_folder(path, metadata, auto_rename, parent=rename_into)
@@ -1343,7 +1342,9 @@ async def execute_downconversion_tasks(
             # Generate description for conversion
             description = generate_conversion_description(base_url, sample_rate, task["target_bitdepth"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(new_path, conversion_metadata["scene"])
+            await check_folder_structure(
+                new_path, conversion_metadata["scene"], max_path_length=_max_path_length_for_run(gazelle_site)
+            )
 
             # Upload the converted version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
@@ -1386,7 +1387,9 @@ async def execute_downconversion_tasks(
             # Generate description for transcode
             description = generate_transcode_description(base_url, task["encoding"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(transcoded_path, transcode_metadata["scene"])
+            await check_folder_structure(
+                transcoded_path, transcode_metadata["scene"], max_path_length=_max_path_length_for_run(gazelle_site)
+            )
 
             # Upload the transcoded version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(

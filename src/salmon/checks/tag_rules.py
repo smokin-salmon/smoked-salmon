@@ -1,12 +1,15 @@
-"""Warn about tagging problems that would otherwise go unnoticed until upload.
+"""Fix or warn about tagging problems that would otherwise go unnoticed until upload.
 
-None of the checks here block an upload; they only print a warning for the user to act on.
-Blocking checks (folder structure, decode integrity, required tags) live elsewhere.
+An ID3 tag inside a FLAC is stripped in place, the same way an oversized embedded picture is
+stripped by default; a scene release is never touched, so it only gets a warning instead. An
+uncompressed FLAC and an MP3 with a dual ID3 tag set are only ever warned about. Blocking checks
+(folder structure, decode integrity, required tags) live elsewhere.
 """
 
 import os
 
 from mutagen import MutagenError
+from mutagen.flac import FLAC
 from mutagen.id3 import ID3
 
 from salmon.common import get_audio_files
@@ -83,34 +86,48 @@ def in_torrent_path(folder_name: str, relative_path: str) -> str:
     return f"{folder_name}/{relative_path}"
 
 
-def collect_tag_warnings(path: str, audio_info: dict) -> list[str]:
-    """Warnings for tagging problems RED and OPS can act on, gathered from the files on disk.
+def process_tag_issues(path: str, audio_info: dict, *, scene: bool, recompress: bool) -> list[str]:
+    """Fix or warn about the tagging problems RED and OPS can act on.
+
+    A FLAC's ID3 tag is stripped in place, unless this is a scene release, which is never touched
+    and only gets a warning. An uncompressed FLAC is not worth warning about when the release is
+    about to be recompressed anyway (recompress). Neither the uncompressed-FLAC nor the dual-ID3
+    MP3 case is ever fixed automatically, only warned about.
 
     Args:
         path: Path to the release folder.
         audio_info: Mapping of filename to the technical info `gather_audio_info` collects.
+        scene: Whether this is a scene release: its files are never modified.
+        recompress: Whether the release is about to be recompressed, which also fixes an
+            uncompressed FLAC.
 
     Returns:
-        Human-readable warning strings; empty when nothing to report.
+        Lines to print, one per file fixed or warned about; empty when nothing to report.
     """
-    warnings: list[str] = []
+    messages: list[str] = []
     for filename in get_audio_files(path):
         filepath = os.path.join(path, filename)
         lower = filename.lower()
         if lower.endswith(".flac"):
             if has_id3_tag(filepath):
-                warnings.append(
-                    f"{filename}: FLAC file contains an ID3 tag "
-                    "(RED and OPS do not allow ID3 tags in FLAC files); sanitizing removes it."
-                )
-            track = audio_info.get(filename)
-            if track and is_uncompressed(track):
-                warnings.append(
-                    f"{filename}: FLAC file looks uncompressed (RED and OPS can trump it); "
-                    "recompress it with salmon up -c."
-                )
+                if scene:
+                    messages.append(
+                        f"{filename}: FLAC file contains an ID3 tag (RED and OPS do not allow ID3 tags in FLAC files)."
+                    )
+                else:
+                    FLAC(filepath).save(deleteid3=True)
+                    messages.append(
+                        f"Removed an ID3 tag from {filename} (RED and OPS do not allow ID3 tags in FLAC files)."
+                    )
+            if not recompress:
+                track = audio_info.get(filename)
+                if track and is_uncompressed(track):
+                    messages.append(
+                        f"{filename}: FLAC file looks uncompressed (RED and OPS can trump it); "
+                        "recompress it with salmon up -c."
+                    )
         elif lower.endswith(".mp3") and has_blank_id3v2_alongside_id3v1(filepath):
-            warnings.append(
+            messages.append(
                 f"{filename}: MP3 file has a filled-in ID3v1 tag and a blank ID3v2 tag (RED and OPS can trump it)."
             )
-    return warnings
+    return messages
