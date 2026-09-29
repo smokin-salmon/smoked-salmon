@@ -55,13 +55,18 @@ class Directory(BaseStruct):
             ):
                 if folder and _holds(entry, folder):
                     raise ValueError(f"library_dirs entry {entry} must not contain {name} ({folder})")
-            # clean_tmp_dir empties tmp_dir, and spectrals folders in it are replaced.
-            if self.tmp_dir and _holds(self.tmp_dir, entry):
-                raise ValueError(f"library_dirs entry {entry} must not be inside tmp_dir ({self.tmp_dir})")
+            # salmon replaces and deletes folders in these: renamed copies, conversions, spectrals, clean_tmp_dir.
+            for name, folder in (("download_directory", self.download_directory), ("tmp_dir", self.tmp_dir)):
+                if folder and _holds(folder, entry):
+                    raise ValueError(f"library_dirs entry {entry} must not be inside {name} ({folder})")
+
+    def library_of(self, path: str) -> str | None:
+        """The library_dirs entry path is or is inside, compared on resolved paths, or None."""
+        return next((entry for entry in self.library_dirs if _holds(entry, path)), None)
 
     def is_library_path(self, path: str) -> bool:
         """Whether path is a library_dirs entry or inside one, compared on resolved paths."""
-        return any(_holds(entry, path) for entry in self.library_dirs)
+        return self.library_of(path) is not None
 
     def library_inside(self, path: str) -> str | None:
         """A library_dirs entry that path is or holds, or None."""

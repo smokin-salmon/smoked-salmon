@@ -184,15 +184,21 @@ def test_a_library_entry_holding_a_folder_salmon_writes_in_is_refused(tmp_path, 
         )
 
 
-def test_a_library_entry_inside_tmp_dir_is_refused(tmp_path) -> None:
-    library = tmp_path / "tmp" / "music"
+@pytest.mark.parametrize("field", ["download_directory", "tmp_dir"])
+def test_a_library_entry_inside_a_folder_salmon_deletes_in_is_refused(tmp_path, field: str) -> None:
+    # salmon replaces and deletes folders there: a spectrals folder, a conversion, a renamed copy.
+    outer = tmp_path / "outer"
+    library = outer / "spectrals_Album"
     library.mkdir(parents=True)
+    (tmp_path / "elsewhere").mkdir()
+    folders: dict[str, str | None] = {"download_directory": str(tmp_path / "elsewhere"), "tmp_dir": None}
+    folders[field] = str(outer)
 
-    with pytest.raises(ValueError, match="must not be inside tmp_dir"):
+    with pytest.raises(ValueError, match=f"must not be inside {field}"):
         Directory(
-            dottorrents_dir=str(tmp_path),
-            download_directory=str(tmp_path),
-            tmp_dir=str(tmp_path / "tmp"),
+            dottorrents_dir=str(tmp_path / "elsewhere"),
+            download_directory=str(folders["download_directory"]),
+            tmp_dir=folders["tmp_dir"],
             library_dirs=[str(library)],
         )
 
@@ -485,7 +491,7 @@ def test_rename_folder_never_hardlinks_or_removes_a_library_album(monkeypatch, d
 
 
 def test_rename_folder_never_replaces_a_library_with_the_renamed_folder(monkeypatch, tmp_path) -> None:
-    # download_directory may hold a library: a renamed folder named like it must not replace it.
+    # The config refuses a library inside download_directory; rename_folder still never replaces one.
     downloads = tmp_path / "downloads"
     library = downloads / RENAMED
     _album(library / "Album")
@@ -585,9 +591,11 @@ def test_check_integrity_does_not_offer_to_sanitize_a_library_album(monkeypatch,
 
 
 @pytest.mark.parametrize("command", ["transcode", "downconv"])
-def test_conversions_of_a_library_album_go_to_download_directory(monkeypatch, dirs, command: str) -> None:
+def test_conversions_of_library_albums_go_to_their_own_folders_in_download_directory(
+    monkeypatch, dirs, command: str
+) -> None:
     library, downloads = dirs
-    album = _album(library / "Album")
+    albums = [_album(library / "Album"), _album(library / "A" / "Hits"), _album(library / "B" / "Hits")]
     output_dirs: list[str | None] = []
 
     async def convert(_path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> None:
@@ -595,15 +603,18 @@ def test_conversions_of_a_library_album_go_to_download_directory(monkeypatch, di
 
     monkeypatch.setattr(salmon.converter, "transcode_folder", convert)
     monkeypatch.setattr(salmon.converter, "convert_folder", convert)
-    args = [str(album), "-b", "V0"] if command == "transcode" else [str(album)]
 
-    async def run():
-        return await CliRunner().invoke(getattr(salmon.converter, command), args)
+    for album in albums:
+        args = [str(album), "-b", "V0"] if command == "transcode" else [str(album)]
 
-    result = anyio.run(run)
+        async def run(args=args):
+            return await CliRunner().invoke(getattr(salmon.converter, command), args)
 
-    assert result.exit_code == 0, result.output
-    assert output_dirs == [str(downloads)]
+        result = anyio.run(run)
+        assert result.exit_code == 0, result.output
+
+    # The album's place in the library is kept, so the two "Hits" do not convert into the same folder.
+    assert output_dirs == [str(downloads / "music"), str(downloads / "music" / "A"), str(downloads / "music" / "B")]
 
 
 def test_conversions_outside_a_library_still_go_beside_the_source(monkeypatch, dirs, tmp_path) -> None:

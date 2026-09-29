@@ -1,3 +1,4 @@
+import os
 from typing import get_args
 
 import asyncclick as click
@@ -53,11 +54,16 @@ async def downconv(path: str, essential_only: bool) -> None:
 
 
 def _output_dir(path: str) -> str | None:
-    """Where the converted folder goes: beside the source, or download_directory for a library album."""
-    if not cfg.directory.protects(path):
+    """Where the converted folder goes: beside the source, or for a library album, under download_directory.
+
+    The album's place in its library is kept (library/Artist/Album converts into download_directory/library/Artist),
+    so albums of the same name in different folders do not share an output folder.
+    """
+    library = cfg.directory.library_of(path)
+    if library is None:
         return None
-    click.secho(
-        f"{path} is in library_dirs, or holds one: writing the output to {cfg.directory.download_directory}.",
-        fg="yellow",
-    )
-    return cfg.directory.download_directory
+    library = os.path.realpath(library)
+    within = os.path.dirname(os.path.relpath(os.path.realpath(path), library))
+    output_dir = os.path.normpath(os.path.join(cfg.directory.download_directory, os.path.basename(library), within))
+    click.secho(f"{path} is in library_dirs: writing the output into {output_dir}.", fg="yellow")
+    return output_dir
