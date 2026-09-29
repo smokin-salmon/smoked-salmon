@@ -38,8 +38,9 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 #### Linux
 1. Install system packages:
     ```bash
-    sudo apt install sox flac mp3val curl lame
+    sudo apt install sox libsox-fmt-mp3 flac mp3val curl lame
     ```
+    Debian and Ubuntu's `sox` package reads MP3 files only when `libsox-fmt-mp3` is also installed.
 
 2. Install uv:
     ```bash
