@@ -17,6 +17,9 @@ from salmon.tagger.audio_info import gather_audio_info
 
 BitDepth = Literal[16, 24]
 
+# An existing {resolution} folder token, e.g. "24-96" or "16-48" (tagger/foldername.py).
+RESOLUTION_TOKEN_RE = re.compile(r"\s*\b(?:16|24)-\d{1,3}(?:\.\d+)?\b")
+
 SOX_DEPTH_ARGS: dict[BitDepth, list[str]] = {
     16: ["-R", "-G", "-b", "16"],
     24: ["-R", "-G"],
@@ -69,6 +72,9 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         The output directory path string.
     """
     foldername = os.path.basename(path)
+    # Drop a stale resolution token before deriving the new name: an untouched "24-96" would
+    # survive into a 16/44.1 or MP3 name that must not claim a resolution at all.
+    foldername = RESOLUTION_TOKEN_RE.sub("", foldername)
     if re.search(r"24 ?bit FLAC", foldername, flags=re.IGNORECASE):
         foldername = re.sub(r"24 ?bit FLAC", "FLAC", foldername, flags=re.IGNORECASE)
     elif re.search("FLAC", foldername, flags=re.IGNORECASE):

@@ -28,6 +28,8 @@ LAME_COMMAND_MAP: dict[Bitrate, list[str]] = {
 SKIP_EXTENSIONS = frozenset((".cue", ".log", ".m3u", ".m3u8", ".accurip"))
 FLAC_FOLDER_RE = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 LOSSLESS_FOLDER_RE = re.compile(r"Lossless", flags=re.IGNORECASE)
+# An existing {resolution} folder token, e.g. "24-96" or "16-48" (tagger/foldername.py).
+RESOLUTION_TOKEN_RE = re.compile(r"\s*\b(?:16|24)-\d{1,3}(?:\.\d+)?\b")
 
 # Vorbis comment → ID3v2 frame mapping
 VORBIS_TO_ID3_MAP: dict[str, str] = {
@@ -87,6 +89,9 @@ def _build_output_path(path: str, bitrate: Bitrate, output_dir: str | None = Non
     """
     to_append: list[str] = []
     foldername = os.path.basename(path)
+    # Drop a stale resolution token before deriving the new name: an MP3 transcode must not
+    # keep claiming a FLAC resolution such as "24-96".
+    foldername = RESOLUTION_TOKEN_RE.sub("", foldername)
 
     if FLAC_FOLDER_RE.search(foldername):
         if LOSSLESS_FOLDER_RE.search(foldername):
