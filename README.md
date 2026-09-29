@@ -155,11 +155,12 @@ Feedback on this guide is welcome.
    Run the container with the `checkconf` command to verify that the connection to the trackers is working:
 
    ```bash
+   # The -e RCLONE_CONFIG line is optional: only needed if you use rclone features.
    docker run --rm -it --network=host \
    -v /path/to/your/music:/app/.music \
    -v /path/to/your/config:/config \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
-   -e RCLONE_CONFIG=/config/rclone.conf  # Optional: only if using rclone features \
+   -e RCLONE_CONFIG=/config/rclone.conf \
    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
    ```
 
@@ -167,11 +168,12 @@ Feedback on this guide is welcome.
    Run the upload command directly (replace `checkconf` with any salmon command):
 
    ```bash
+   # The -e RCLONE_CONFIG line is optional: only needed if you use rclone features.
    docker run --rm -it --network=host \
    -v /path/to/your/music:/app/.music \
    -v /path/to/your/config:/config \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
-   -e RCLONE_CONFIG=/config/rclone.conf  # Optional: only if using rclone features \
+   -e RCLONE_CONFIG=/config/rclone.conf \
    ghcr.io/smokin-salmon/smoked-salmon:latest up "/app/.music/path/to/album" -s WEB
    ```
 

@@ -16,7 +16,8 @@ def test_config_dir_env_overrides_platform_dir(monkeypatch, tmp_path) -> None:
     # config.toml so the legacy-fallback path (tested separately) does not kick in.
     (tmp_path / "config.toml").write_text("", encoding="utf-8")
     monkeypatch.setenv(config.CONFIG_DIR_ENV, str(tmp_path))
-    assert config.get_user_cfg_path() == tmp_path / "config.toml"
+    path = config.get_user_cfg_path()
+    assert path == tmp_path / "config.toml"
 
 
 def test_config_dir_env_expands_user(monkeypatch, tmp_path) -> None:
@@ -25,7 +26,8 @@ def test_config_dir_env_expands_user(monkeypatch, tmp_path) -> None:
     (home / "salmon-cfg" / "config.toml").write_text("", encoding="utf-8")
     monkeypatch.setenv("HOME", str(home))
     monkeypatch.setenv(config.CONFIG_DIR_ENV, "~/salmon-cfg")
-    assert config.get_user_cfg_path() == home / "salmon-cfg" / "config.toml"
+    path = config.get_user_cfg_path()
+    assert path == home / "salmon-cfg" / "config.toml"
 
 
 def test_config_dir_env_falls_back_to_legacy_path_when_missing(monkeypatch, tmp_path) -> None:
@@ -39,7 +41,8 @@ def test_config_dir_env_falls_back_to_legacy_path_when_missing(monkeypatch, tmp_
     new_dir = tmp_path / "config"
     monkeypatch.setenv(config.CONFIG_DIR_ENV, str(new_dir))
 
-    assert config.get_user_cfg_path() == legacy_path
+    path = config.get_user_cfg_path()
+    assert path == legacy_path
 
 
 def test_config_dir_env_used_once_legacy_fallback_file_exists(monkeypatch, tmp_path) -> None:
@@ -53,4 +56,5 @@ def test_config_dir_env_used_once_legacy_fallback_file_exists(monkeypatch, tmp_p
     (new_dir / "config.toml").write_text("", encoding="utf-8")
     monkeypatch.setenv(config.CONFIG_DIR_ENV, str(new_dir))
 
-    assert config.get_user_cfg_path() == new_dir / "config.toml"
+    path = config.get_user_cfg_path()
+    assert path == new_dir / "config.toml"
