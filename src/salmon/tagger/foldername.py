@@ -151,6 +151,18 @@ def resolution_token(audio_info):
     return f"{bit_depth}-{sample_rate / 1000:g}"
 
 
+def drop_resolution_token(foldername, token):
+    """
+    Remove a resolution token, e.g. "24-96", from an already-formatted folder name. Only a
+    bracket group left holding nothing else comes with it; a group that still has other text
+    (like "[WEB FLAC]") stays untouched. The converters use this once a token is gone for good,
+    e.g. a 16/44.1 downconversion or an MP3 transcode that must not claim a resolution at all.
+    """
+    foldername = re.sub(r"\s*" + re.escape(token) + r"\b", "", foldername)
+    foldername = re.sub(r"[\[{(]\s*[\]})]", "", foldername)
+    return re.sub(r"\s+", " ", foldername).strip()
+
+
 def generate_folder_name(metadata):
     """
     Fill in the values from the folder template using the metadata, then strip

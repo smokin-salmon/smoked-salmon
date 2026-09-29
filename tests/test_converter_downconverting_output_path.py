@@ -101,6 +101,16 @@ def test_a_format_only_name_is_unaffected_by_the_resolution_swap(monkeypatch) ->
     assert downconverting._build_output_path(source, 16, 44100) == "/downloads/Artist - Album (2020) [WEB FLAC]"
 
 
+def test_a_bare_bracketed_token_leaves_no_empty_brackets(monkeypatch) -> None:
+    # "Album [24-192]" has nothing else in the brackets: a blank target token must take them too.
+    _stub_24_192(monkeypatch)
+    source = "/downloads/Album [24-192]"
+
+    new_path = downconverting._build_output_path(source, 16, 44100)
+
+    assert new_path == "/downloads/Album"
+
+
 def test_only_the_measured_token_is_removed_not_a_look_alike_in_the_title(monkeypatch) -> None:
     # A "24-96" in the album title is not a resolution token unless the files say so.
     monkeypatch.setattr(

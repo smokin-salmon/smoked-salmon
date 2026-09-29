@@ -14,7 +14,7 @@ from salmon.common.files import process_files
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
-from salmon.tagger.foldername import resolution_token
+from salmon.tagger.foldername import drop_resolution_token, resolution_token
 
 BitDepth = Literal[16, 24]
 
@@ -91,13 +91,13 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         if new_token:
             foldername = foldername.replace(current_token, new_token)
         else:
-            foldername = re.sub(r"\s*" + re.escape(current_token) + r"\b", "", foldername)
+            foldername = drop_resolution_token(foldername, current_token)
         return os.path.join(output_dir or os.path.dirname(path), foldername)
 
     if has_token:
         # A template pairing {format} and {resolution} (e.g. "24bit FLAC 24-96"): drop the stale
         # token so the FLAC/bit-depth rewriting below does not have to work around it.
-        foldername = re.sub(r"\s*" + re.escape(current_token) + r"\b", "", foldername)
+        foldername = drop_resolution_token(foldername, current_token)
 
     if re.search(r"24 ?bit FLAC", foldername, flags=re.IGNORECASE):
         foldername = re.sub(r"24 ?bit FLAC", "FLAC", foldername, flags=re.IGNORECASE)

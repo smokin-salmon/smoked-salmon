@@ -52,6 +52,21 @@ def test_a_resolution_only_name_transcodes_with_no_token(monkeypatch) -> None:
     assert transcoding._build_output_path(source, "V0") == "/downloads/Artist - Album (2020) [WEB MP3 V0]"
 
 
+def test_a_bare_bracketed_token_leaves_no_empty_brackets(monkeypatch) -> None:
+    # "Album [24-192]" has nothing else in the brackets: token removal must take them too.
+    monkeypatch.setattr(
+        transcoding,
+        "gather_audio_info",
+        lambda path: {"01.flac": {"precision": 24, "sample rate": 192000}},
+    )
+    source = "/downloads/Album [24-192]"
+
+    new_path = transcoding._build_output_path(source, "V0")
+
+    assert "[]" not in new_path
+    assert new_path == "/downloads/Album [MP3 V0]"
+
+
 def test_only_the_measured_token_is_removed_not_a_look_alike_in_the_title(monkeypatch) -> None:
     # A "24-96" in the album title is not a resolution token unless the files say so.
     monkeypatch.setattr(
