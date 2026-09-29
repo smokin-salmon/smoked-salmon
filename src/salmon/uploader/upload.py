@@ -182,6 +182,7 @@ def compile_data_new_group(
     Returns:
         Data dict for upload POST.
     """
+    tracker_fields = gazelle_site.upload_form_fields(metadata, track_data)
     artists = _filter_unsupported_artists(gazelle_site, metadata["artists"])
     return {
         "submit": True,
@@ -204,6 +205,7 @@ def compile_data_new_group(
         **({"scene": metadata["scene"]} if metadata.get("scene") else {}),
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
+        **tracker_fields,
         "tags": metadata["tags"],
         "image": cover_url,
         "album_desc": generate_description(track_data, metadata),
@@ -247,6 +249,7 @@ def compile_data_existing_group(
     Returns:
         Data dict for upload POST.
     """
+    tracker_fields = gazelle_site.upload_form_fields(metadata, track_data)
     return {
         "submit": True,
         "type": 0,
@@ -262,6 +265,7 @@ def compile_data_existing_group(
         "other_bitrate": None,
         "vbr": metadata["encoding_vbr"],
         "media": metadata["source"],
+        **tracker_fields,
         "release_desc": override_description
         if override_description
         else generate_t_description(

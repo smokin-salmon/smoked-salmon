@@ -90,6 +90,16 @@ class LoginError(RequestError):
     pass
 
 
+class UploadRefusedError(RequestError):
+    """The tracker's upload form has no value that describes this torrent.
+
+    Raised while the upload form data is built, before any request is sent, so the upload to
+    that tracker stops and other trackers are not affected.
+    """
+
+    pass
+
+
 class EditedLogError(Exception):
     """Raised when a log file has been edited."""
 

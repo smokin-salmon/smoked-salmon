@@ -1261,6 +1261,12 @@ async def execute_downconversion_tasks(
             )
             await anyio.sleep(0.1)
 
+            # The upload describes the converted files (their sample rate, for one), not the source's.
+            converted_info = gather_audio_info(new_path)
+            conversion_track_data = {
+                name: {**track, **converted_info.get(name, {})} for name, track in track_data.items()
+            }
+
             # Update metadata for this conversion
             conversion_metadata = metadata.copy()
             conversion_metadata["format"], conversion_metadata["encoding"] = downconversion_format(task)
@@ -1277,7 +1283,7 @@ async def execute_downconversion_tasks(
                 group_id,
                 conversion_metadata,
                 cover_url,
-                track_data,
+                conversion_track_data,
                 hybrid,
                 lossy_master,
                 spectral_urls,

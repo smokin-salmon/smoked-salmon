@@ -98,6 +98,9 @@ class _FakeGazelleSite:
         self.release_types = {"Album": 1}
         self.unsupported_artist_roles = unsupported_artist_roles
 
+    def upload_form_fields(self, metadata: dict[str, Any], track_data: dict[str, Any]) -> dict[str, str]:
+        return {}
+
 
 def _upload_group_metadata(**overrides):
     metadata = {
