@@ -1,3 +1,4 @@
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -12,11 +13,46 @@ from .validations import Cfg, ImgUploaderLiteral
 
 APPNAME = "smoked-salmon"
 
+# Containers mount a single directory for config; platformdirs would otherwise bury
+# config.toml under an app-name subdirectory of that mount.
+CONFIG_DIR_ENV = "SALMON_CONFIG_DIR"
+
 _PKG_DIR = Path(__file__).parent.parent
+
+_warned_legacy_config_fallback = False
+
+
+def _platform_cfg_path() -> Path:
+    return Path(user_config_dir(APPNAME)) / "config.toml"
 
 
 def get_user_cfg_path() -> Path:
-    return Path(user_config_dir(APPNAME)) / "config.toml"
+    """config.toml location: $SALMON_CONFIG_DIR when set, else the platform config dir.
+
+    If SALMON_CONFIG_DIR is set but no config.toml exists there yet, and the platform
+    config dir does have one, fall back to that older path instead. This keeps a
+    container upgraded from the old image (which mounted the platform config dir
+    directly) working without a config change.
+    """
+    global _warned_legacy_config_fallback
+
+    override = os.environ.get(CONFIG_DIR_ENV)
+    if not override:
+        return _platform_cfg_path()
+
+    override_path = Path(override).expanduser() / "config.toml"
+    legacy_path = _platform_cfg_path()
+    if not override_path.exists() and legacy_path.exists():
+        if not _warned_legacy_config_fallback:
+            click.secho(
+                f"{CONFIG_DIR_ENV} is set to {override!r} but {override_path} does not exist; "
+                f"using the existing config at {legacy_path} instead.",
+                fg="yellow",
+                err=True,
+            )
+            _warned_legacy_config_fallback = True
+        return legacy_path
+    return override_path
 
 
 def get_default_config_path() -> Path:
