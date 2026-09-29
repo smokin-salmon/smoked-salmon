@@ -989,7 +989,12 @@ async def edit_metadata(
             tag_files(path, tags, metadata, auto_rename)
 
         tags = await check_tags(path)
-        tag_messages = process_tag_issues(path, gather_audio_info(path), scene=metadata["scene"], recompress=recompress)
+        tag_messages = process_tag_issues(
+            path,
+            gather_audio_info(path),
+            scene=metadata["scene"],
+            recompress=recompress and not metadata["scene"],
+        )
         if tag_messages:
             click.secho("\nTag notes:", fg="yellow", bold=True)
             for message in tag_messages:

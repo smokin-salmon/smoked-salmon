@@ -6,6 +6,7 @@ import struct
 import subprocess
 
 import pytest
+from mutagen import MutagenError
 from mutagen.flac import FLAC
 from mutagen.id3 import TIT2, ID3UnsupportedVersionError
 from mutagen.mp3 import MP3
@@ -199,6 +200,27 @@ def test_stripping_removes_a_trailing_id3v1_block_but_keeps_the_stream_and_tags(
     assert has_id3_tag(str(path)) is False
     assert FLAC(str(path))["title"] == ["Hello"]
     assert messages == ["Removed an ID3 tag from 01.flac (RED and OPS do not allow ID3 tags in FLAC files)."]
+
+
+def test_a_failed_strip_is_warned_about_and_does_not_crash(tmp_path, monkeypatch) -> None:
+    """A fix must never raise either: a FLAC mutagen cannot re-save (a truncated file, a read-only
+    path) must be reported as not fixed, not propagated to abort the upload."""
+    path = tmp_path / "01.flac"
+    _write_flac(path, title="Hello")
+    _prepend_id3v2_header(path)
+
+    class _RaisingFlac:
+        def __init__(self, _filepath) -> None:
+            pass
+
+        def save(self, deleteid3: bool = False) -> None:
+            raise MutagenError("cannot re-save this file")
+
+    monkeypatch.setattr(tag_rules, "FLAC", _RaisingFlac)
+
+    messages = process_tag_issues(str(tmp_path), {}, scene=False, recompress=False)
+
+    assert messages == ["01.flac: could not remove its ID3 tag (cannot re-save this file); remove it by hand."]
 
 
 @pytest.mark.skipif(shutil.which("flac") is None, reason="flac is not installed")

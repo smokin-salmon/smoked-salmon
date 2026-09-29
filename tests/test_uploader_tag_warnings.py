@@ -80,6 +80,23 @@ def test_a_scene_release_is_only_warned_about_and_not_modified(monkeypatch, tmp_
     assert "Removed" not in out
 
 
+def test_a_scene_release_with_recompress_still_warns_about_an_uncompressed_flac(monkeypatch, tmp_path, capsys) -> None:
+    """recompress_path never runs for a scene release (it is guarded by `not scene`), so passing
+    the raw -c flag into process_tag_issues would wrongly suppress the warning for a file that is
+    never actually going to be recompressed."""
+    raw = 44100 * 16 * 2
+    path = tmp_path / "01.flac"
+    _write_flac(path)
+    audio_info = {"01.flac": {"sample rate": 44100, "precision": 16, "channels": 2, "bit rate": raw}}
+    _edit_metadata_stubs(monkeypatch, audio_info)
+    monkeypatch.setattr(uploader.cfg.upload, "yes_all", True)
+
+    anyio.run(lambda: _edit_metadata(str(tmp_path), scene=True, recompress=True))
+
+    out = click.unstyle(capsys.readouterr().out)
+    assert "FLAC file looks uncompressed" in out
+
+
 def test_a_clean_release_prints_no_tag_notes(monkeypatch, tmp_path, capsys) -> None:
     path = tmp_path / "01.flac"
     _write_flac(path)

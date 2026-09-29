@@ -115,10 +115,14 @@ def process_tag_issues(path: str, audio_info: dict, *, scene: bool, recompress: 
                         f"{filename}: FLAC file contains an ID3 tag (RED and OPS do not allow ID3 tags in FLAC files)."
                     )
                 else:
-                    FLAC(filepath).save(deleteid3=True)
-                    messages.append(
-                        f"Removed an ID3 tag from {filename} (RED and OPS do not allow ID3 tags in FLAC files)."
-                    )
+                    try:
+                        FLAC(filepath).save(deleteid3=True)
+                    except (MutagenError, OSError) as e:
+                        messages.append(f"{filename}: could not remove its ID3 tag ({e}); remove it by hand.")
+                    else:
+                        messages.append(
+                            f"Removed an ID3 tag from {filename} (RED and OPS do not allow ID3 tags in FLAC files)."
+                        )
             if not recompress:
                 track = audio_info.get(filename)
                 if track and is_uncompressed(track):
