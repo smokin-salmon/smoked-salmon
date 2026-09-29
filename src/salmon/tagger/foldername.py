@@ -44,7 +44,11 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
         new_base = _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
 
     new_path = os.path.join(parent or cfg.directory.download_directory, new_base)
-    if os.path.isdir(new_path) and not os.path.samefile(path, new_path):
+    same_location = os.path.isdir(new_path) and os.path.samefile(path, new_path)
+    # Checked whether or not new_path exists yet: a symlinked folder on the way can lead into a library.
+    if not same_location and cfg.directory.protects(new_path):
+        raise UploadError(f"Not renaming into {new_path}: it is in library_dirs, or holds one.")
+    if os.path.isdir(new_path) and not same_location:
         if not check or click.confirm(
             click.style(
                 f"A folder already exists with the new folder name '{new_path}', would you like to replace it?",
@@ -62,7 +66,9 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
 
     # Check if hardlinks can be used
     same_volume = os.stat(path).st_dev == os.stat(cfg.directory.download_directory).st_dev
-    use_hardlinks = same_volume and cfg.directory.hardlinks
+    # A hardlink shares the inode, so a later tag write on the new folder would reach a library album.
+    in_library = cfg.directory.protects(path)
+    use_hardlinks = same_volume and cfg.directory.hardlinks and not in_library
 
     if os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path):
         click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
@@ -81,7 +87,9 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
             shutil.copytree(path, new_path, dirs_exist_ok=True)
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
 
-        if cfg.upload.formatting.remove_source_dir:
+        if cfg.upload.formatting.remove_source_dir and in_library:
+            click.secho(f"Not removing {path}: it is in library_dirs, or holds one.", fg="yellow")
+        elif cfg.upload.formatting.remove_source_dir:
             shutil.rmtree(path)
 
     # Also rename spectrals folder in TMP_DIR if it exists

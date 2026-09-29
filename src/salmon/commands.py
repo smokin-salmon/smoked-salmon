@@ -106,6 +106,9 @@ async def descgen(urls: tuple[str, ...]) -> None:
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 async def compress(path: str) -> None:
     """Recompress a directory of FLACs to level 8."""
+    if cfg.directory.protects(path):
+        click.secho(f"Not recompressing {path}: it is in library_dirs, or holds one.", fg="red")
+        raise click.Abort
     for root, _, files in os.walk(path):
         for f in sorted(files):
             if os.path.splitext(f)[1].lower() == ".flac":

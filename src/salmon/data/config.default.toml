@@ -12,6 +12,12 @@ download_directory = '.music'
 # Hardlinks are enabled by default, set the option below to false to DISABLE hardlinks (and use standard copy files)
 # hardlinks = true
 
+# Curated music folders salmon must never change or delete (e.g. your library). An album inside one is copied
+# (a real copy, never a hardlink) into download_directory before anything touches it, and the upload uses the copy.
+# Each entry must exist, must not contain download_directory, dottorrents_dir or tmp_dir, and must not be inside
+# download_directory or tmp_dir (salmon replaces and deletes folders there).
+# library_dirs = ['/data/media/music']
+
 # Can be a watch folder for your torrent client, or a folder somewhere else where the .torrent files will be generated
 # You still need to have it set even if using direct torrent injection with qbittorrent
 dottorrents_dir = '.torrents'
