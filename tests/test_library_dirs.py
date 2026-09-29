@@ -640,3 +640,38 @@ def test_spectrals_of_a_library_album_are_made_outside_it(dirs, tmp_path) -> Non
 
     assert get_spectrals_path(str(library / "Album")) == str(downloads / "spectrals_Album")
     assert get_spectrals_path(str(tmp_path / "seeding" / "Album")) == str(tmp_path / "seeding" / "Album" / "Spectrals")
+
+
+def test_rename_folder_never_follows_a_symlink_into_a_library(monkeypatch, dirs, tmp_path) -> None:
+    # A folder template like "link/{title}" through a symlink in download_directory leads into the library.
+    library, downloads = dirs
+    (downloads / "link").symlink_to(library, target_is_directory=True)
+    before = _snapshot(library)
+    source = _album(tmp_path / "seeding" / "Album")
+    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning("link/Album"))
+
+    with pytest.raises(UploadError, match="library_dirs"):
+        salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
+
+    assert _snapshot(library) == before
+
+
+@pytest.mark.parametrize("converter", ["transcode_folder", "convert_folder"])
+def test_conversions_never_follow_a_symlink_into_a_library(monkeypatch, dirs, converter: str) -> None:
+    # download_directory/music, where a library album converts into, is a symlink to the library itself.
+    library, downloads = dirs
+    (downloads / "music").symlink_to(library, target_is_directory=True)
+    album = _album(library / "A" / "Hits")
+    (library / "A" / "Hits [MP3 V0]").mkdir()
+    before = _snapshot(library)
+
+    async def run() -> None:
+        if converter == "transcode_folder":
+            await salmon.converter.transcode_folder(str(album), "V0", output_dir=str(downloads / "music" / "A"))
+        else:
+            await salmon.converter.convert_folder(str(album), output_dir=str(downloads / "music" / "A"))
+
+    with pytest.raises(UploadError, match="library_dirs"):
+        anyio.run(run)
+
+    assert _snapshot(library) == before

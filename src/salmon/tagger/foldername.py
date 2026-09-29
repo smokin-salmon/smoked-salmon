@@ -44,9 +44,11 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
         new_base = _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
 
     new_path = os.path.join(parent or cfg.directory.download_directory, new_base)
-    if os.path.isdir(new_path) and not os.path.samefile(path, new_path):
-        if cfg.directory.protects(new_path):
-            raise UploadError(f"A folder named {new_path} already exists and is in library_dirs, or holds one.")
+    same_location = os.path.isdir(new_path) and os.path.samefile(path, new_path)
+    # Checked whether or not new_path exists yet: a symlinked folder on the way can lead into a library.
+    if not same_location and cfg.directory.protects(new_path):
+        raise UploadError(f"Not renaming into {new_path}: it is in library_dirs, or holds one.")
+    if os.path.isdir(new_path) and not same_location:
         if not check or click.confirm(
             click.style(
                 f"A folder already exists with the new folder name '{new_path}', would you like to replace it?",

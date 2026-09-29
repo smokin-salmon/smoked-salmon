@@ -8,9 +8,10 @@ import anyio
 import asyncclick as click
 import msgspec
 
+from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
-from salmon.errors import InvalidSampleRate
+from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 
@@ -244,6 +245,9 @@ async def convert_folder(
     """
     _validate_lossless(path)
     new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
+    # Resolved, so a symlink on the way cannot carry the output into a library.
+    if cfg.directory.is_library_path(new_path):
+        raise UploadError(f"Not converting into {new_path}: it is in library_dirs.")
 
     if os.path.isdir(new_path):
         click.secho(f"{new_path} already exists.", fg="yellow")

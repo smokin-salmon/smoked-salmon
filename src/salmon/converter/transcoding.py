@@ -11,8 +11,10 @@ from mutagen import flac, mp3
 from mutagen.flac import VCFLACDict
 from mutagen.id3 import APIC, TXXX, Frames
 
+from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
+from salmon.errors import UploadError
 from salmon.release_notification import get_version
 
 Bitrate = Literal["V0", "320"]
@@ -409,6 +411,9 @@ async def transcode_folder(
     """
     _validate_lossless(path)
     new_path = _build_output_path(path, bitrate, output_dir)
+    # Resolved, so a symlink on the way cannot carry the output, or the removal of an incomplete one, into a library.
+    if cfg.directory.is_library_path(new_path):
+        raise UploadError(f"Not transcoding into {new_path}: it is in library_dirs.")
 
     if os.path.isdir(new_path):
         expected_mp3s = {Path(item.dst).name for item in _collect_transcode_items(path, new_path)}
