@@ -196,7 +196,14 @@ class UploadManager:
         """
         return self._client_cache[seedbox.torrent_client]
 
-    def add_upload_task(self, directory: str, task_type: str, is_flac: bool, folder: str | None = None) -> None:
+    def add_upload_task(
+        self,
+        directory: str,
+        task_type: str,
+        is_flac: bool,
+        folder: str | None = None,
+        site_code: str | None = None,
+    ) -> None:
         """Queue upload tasks for a path across all configured seedboxes.
 
         Args:
@@ -206,6 +213,8 @@ class UploadManager:
             folder: For a "seed" task, the release folder its torrent was built from, so a failed
                 copy of that folder skips this seed. Ignored for a "folder" task, which always uses
                 its own path. Defaults to `directory` when omitted, matching the old behaviour.
+            site_code: Tracker this upload went to. Skips a seedbox whose `trackers` is set and
+                does not contain it; a seedbox with no `trackers` still matches every tracker.
         """
         click.secho(f"Preparing upload tasks for: {directory}", fg="cyan")
         task_folder = directory if task_type == "folder" else (folder or directory)
@@ -213,6 +222,8 @@ class UploadManager:
             if seedbox.torrent_client not in self._client_cache:
                 continue
             if seedbox.flac_only and not is_flac:
+                continue
+            if seedbox.trackers and (site_code or "").upper() not in seedbox.trackers:
                 continue
             task = (seedbox, directory, task_type, task_folder)
             if task in self.tasks:

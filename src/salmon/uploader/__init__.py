@@ -1465,8 +1465,11 @@ async def upload_and_report(
         click.secho("Add uploading task.", fg="green")
         # Check if it's a FLAC file
         is_flac = metadata.get("format", "").upper() == "FLAC"
-        seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac)
-        seedbox_uploader.add_upload_task(torrent_path, task_type="seed", is_flac=is_flac, folder=path)
+        site_code = gazelle_site.site_code
+        seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac, site_code=site_code)
+        seedbox_uploader.add_upload_task(
+            torrent_path, task_type="seed", is_flac=is_flac, folder=path, site_code=site_code
+        )
 
     return torrent_id, group_id, torrent_path, torrent_content, url
 

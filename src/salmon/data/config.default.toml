@@ -140,6 +140,7 @@ session = 'get-from-site-cookie'
 # # "local": salmon copies nothing, the client reads the files where salmon left them.
 # # "rclone": salmon copies the release to the remote with rclone, then adds the torrent.
 # type = "local"
+# trackers = ["RED"] # empty (the default) sends every tracker's uploads here; pin this seedbox to some trackers
 # flac_only = false # if true, only upload FLAC files
 # extra_args = [ "--checksum", "-P", "--sftp-path-override", "@/volume3" ] # pass these arguments to rclone
 
