@@ -11,13 +11,28 @@ on:
 
 jobs:
   build-and-smoke:
+    name: build-and-smoke (${{ matrix.platform }})
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Read the pinned rclone version from the Dockerfile
+        id: rclone
+        run: |
+          version=$(sed -n 's/^ARG SALMON_RCLONE_VERSION=//p' Dockerfile)
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "SALMON_RCLONE_VERSION in the Dockerfile is not X.Y.Z: '$version'" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -25,28 +40,24 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build multi-arch image (no push)
+      - name: Build the image for ${{ matrix.platform }} (no push)
         uses: docker/build-push-action@v7
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and load amd64 image for the smoke test
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          platforms: linux/amd64
+          platforms: ${{ matrix.platform }}
           load: true
           tags: salmon-docker-pr:smoke
-          cache-from: type=gha
+          cache-from: type=gha,scope=${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
 
       - name: Run smoke test in the built image
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          PINNED_VERSION: ${{ steps.rclone.outputs.version }}
+          WORKSPACE: ${{ github.workspace }}
         run: |
-          docker run --rm \
-            -v "${{ github.workspace }}/.github/docker-smoke.sh:/smoke.sh:ro" \
+          docker run --rm --platform "$PLATFORM" \
+            -v "$WORKSPACE/.github/docker-smoke.sh:/smoke.sh:ro" \
             --entrypoint sh \
             salmon-docker-pr:smoke \
-            /smoke.sh
+            /smoke.sh "$PINNED_VERSION"

@@ -4,6 +4,9 @@
 # workflow that calls it (.github/workflows/docker-pr.yml) just runs it.
 set -eu
 
+# Usage: docker-smoke.sh <expected rclone version, e.g. 1.75.1>
+expected_rclone=${1:?usage: docker-smoke.sh <expected rclone version>}
+
 workdir=$(mktemp -d)
 cleanup() {
     rm -rf "$workdir"
@@ -17,6 +20,13 @@ zoom_png="$workdir/zoom.png"
 
 echo "== flac --version =="
 flac --version
+
+echo "== rclone is the pinned version ($expected_rclone) =="
+actual_rclone=$(rclone version | sed -n '1s/^rclone v//p')
+if [ "$actual_rclone" != "$expected_rclone" ]; then
+    echo "rclone is '$actual_rclone', expected '$expected_rclone'" >&2
+    exit 1
+fi
 
 echo "== mp3val present =="
 command -v mp3val
