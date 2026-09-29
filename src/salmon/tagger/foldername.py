@@ -14,6 +14,7 @@ from salmon.constants import (
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import UploadError
+from salmon.tagger.audio_info import gather_audio_info
 
 
 def rename_folder(path, metadata, auto_rename, check=True, parent=None):
@@ -27,6 +28,9 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     `parent` replaces the download folder as the directory the renamed folder goes into.
     """
     old_base = os.path.basename(path)
+    template_fields = {fn for _, fn, _, _ in Formatter().parse(cfg.upload.formatting.folder_template) if fn}
+    if "resolution" in template_fields:
+        metadata = {**metadata, "resolution": _resolution(path)}
     new_base = generate_folder_name(metadata)
     if metadata["scene"]:
         new_base = old_base
@@ -121,6 +125,44 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     return new_path
 
 
+def _resolution(path):
+    """
+    "<bits>-<kHz>"-style bit depth and sample rate for the folder's tracks, e.g. "24-96" or
+    "24-44.1". Blank for lossy files, for plain 16-bit/44.1kHz, for a missing or zero bit depth,
+    and when the tracks do not all share one bit depth and sample rate: a folder name must not
+    claim a single resolution for a hybrid release.
+    """
+    return resolution_token(gather_audio_info(path))
+
+
+def resolution_token(audio_info):
+    """
+    Same as `_resolution`, from an already-gathered `gather_audio_info` mapping. The converters
+    use this to work out the exact token (if any) a source folder's name would carry, so they can
+    drop or replace it without guessing at a pattern that could also match unrelated text.
+    """
+    bits = {info["precision"] for info in audio_info.values()}
+    rates = {info["sample rate"] for info in audio_info.values()}
+    if len(bits) != 1 or len(rates) != 1:
+        return ""
+    (bit_depth,), (sample_rate,) = bits, rates
+    if not bit_depth or not sample_rate or (bit_depth == 16 and sample_rate == 44100):
+        return ""
+    return f"{bit_depth}-{sample_rate / 1000:g}"
+
+
+def drop_resolution_token(foldername, token):
+    """
+    Remove a resolution token, e.g. "24-96", from an already-formatted folder name. Only a
+    bracket group left holding nothing else comes with it; a group that still has other text
+    (like "[WEB FLAC]") stays untouched. The converters use this once a token is gone for good,
+    e.g. a 16/44.1 downconversion or an MP3 transcode that must not claim a resolution at all.
+    """
+    foldername = re.sub(r"\s*" + re.escape(token) + r"\b", "", foldername)
+    foldername = re.sub(r"[\[{(]\s*[\]})]", "", foldername)
+    return re.sub(r"\s+", " ", foldername).strip()
+
+
 def generate_folder_name(metadata):
     """
     Fill in the values from the folder template using the metadata, then strip
@@ -131,10 +173,27 @@ def generate_folder_name(metadata):
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
     for k in keys.copy():
         if not metadata.get(k):
-            template = strip_template_keys(template, k)
+            template = _strip_blank_resolution(template) if k == "resolution" else strip_template_keys(template, k)
             keys.remove(k)
     sub_metadata = _fix_format(metadata, keys)
     return template.format(**{k: _sub_illegal_characters(sub_metadata[k]) for k in keys})
+
+
+def _strip_blank_resolution(template):
+    """
+    Drop a blank {resolution} token from the template.
+
+    strip_template_keys assumes a token owns the whole bracket around it, which is right for a
+    token alone in its brackets but wrong for "[{source} FLAC {resolution}]": it would eat the
+    closing bracket and leave "FLAC" hanging open. Here only the placeholder (and one adjacent
+    separator space) goes; the bracket comes with it only if nothing else was left inside.
+    A placeholder can carry a format spec, as in "{resolution:>5}"; that goes too, or it would
+    survive into template.format() with no "resolution" key left to fill it.
+    """
+    template = re.sub(r"\s*\{resolution(?::[^}]*)?\}", "", template)
+    template = re.sub(r"[\[{(]\s*[\]})]", "", template)
+    template = re.sub(r"\s+", " ", template).strip()
+    return re.sub(r" *- *$", "", template)
 
 
 def _compile_artist_str(artist_data):
