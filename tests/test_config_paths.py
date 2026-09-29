@@ -1,5 +1,7 @@
 """Where salmon looks for config.toml, including the container single-mount case."""
 
+from pathlib import Path
+
 import salmon.config as config
 
 
@@ -64,3 +66,46 @@ def test_config_dir_env_used_once_legacy_fallback_file_exists(monkeypatch, tmp_p
 
     path = config.get_user_cfg_path()
     assert path == new_dir / "config.toml"
+
+
+def _fake_pkg_dir(tmp_path: Path) -> Path:
+    # find_config_path() looks for config.toml at _PKG_DIR.parent.parent; nest deep enough
+    # that _PKG_DIR itself never needs to exist.
+    return tmp_path / "repo" / "src" / "salmon"
+
+
+def test_config_dir_env_beats_repo_root_config(monkeypatch, tmp_path) -> None:
+    # An explicitly set SALMON_CONFIG_DIR is more specific than the repo-root config.toml
+    # dev convenience, so it should win even when both exist.
+    pkg_dir = _fake_pkg_dir(tmp_path)
+    root_config = pkg_dir.parent.parent / "config.toml"
+    root_config.parent.mkdir(parents=True)
+    root_config.write_text("root", encoding="utf-8")
+    monkeypatch.setattr(config, "_PKG_DIR", pkg_dir)
+
+    override_dir = tmp_path / "override"
+    override_dir.mkdir()
+    (override_dir / "config.toml").write_text("override", encoding="utf-8")
+    monkeypatch.setenv(config.CONFIG_DIR_ENV, str(override_dir))
+
+    path = config.find_config_path()
+    assert path == override_dir / "config.toml"
+
+
+def test_repo_root_config_wins_without_config_dir_env(monkeypatch, tmp_path) -> None:
+    # Unchanged behaviour: with no SALMON_CONFIG_DIR set, the repo-root config.toml still
+    # beats the platform config dir.
+    pkg_dir = _fake_pkg_dir(tmp_path)
+    root_config = pkg_dir.parent.parent / "config.toml"
+    root_config.parent.mkdir(parents=True)
+    root_config.write_text("root", encoding="utf-8")
+    monkeypatch.setattr(config, "_PKG_DIR", pkg_dir)
+    monkeypatch.delenv(config.CONFIG_DIR_ENV, raising=False)
+
+    platform_config = tmp_path / "platform" / "config.toml"
+    platform_config.parent.mkdir(parents=True)
+    platform_config.write_text("platform", encoding="utf-8")
+    monkeypatch.setattr(config, "_platform_cfg_path", lambda: platform_config)
+
+    path = config.find_config_path()
+    assert path == root_config

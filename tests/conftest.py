@@ -2,8 +2,15 @@
 
 ``salmon`` loads and validates its config at import time, and exits when none
 is found. Point it at a copy of the default config, with its directories moved
-into a temporary location, before any test module imports the package. This
-also keeps a developer's real config out of the test run.
+into a temporary location, before any test module imports the package.
+
+This also keeps a developer's real config out of the test run: it sets
+``SALMON_CONFIG_DIR`` to that temporary location, which ``find_config_path()``
+prefers over a repo-root ``config.toml`` (a documented dev convenience) since
+an explicitly set ``SALMON_CONFIG_DIR`` beats that implicit fallback. It also
+sets ``XDG_CONFIG_HOME`` for anything that reads the platform config dir
+directly, but that alone would not stop a repo-root ``config.toml`` or an
+already-set ``SALMON_CONFIG_DIR`` from winning.
 """
 
 import os
@@ -31,3 +38,4 @@ _config_dir.mkdir(parents=True)
 (_config_dir / "config.toml").write_text(_config, encoding="utf-8")
 
 os.environ["XDG_CONFIG_HOME"] = str(_root / "config")
+os.environ["SALMON_CONFIG_DIR"] = str(_config_dir)
