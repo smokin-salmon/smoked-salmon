@@ -301,6 +301,10 @@ def clean_metadata(metadata):
 
 
 def _dedupe_catno_against_upc(metadata: dict[str, Any]) -> None:
-    """Clear the catalogue number when it is really just the UPC repeated."""
-    if metadata["catno"] and metadata["catno"].replace(" ", "") == str(metadata["upc"]):
+    """Clear the catalogue number when it is really just the UPC repeated.
+
+    Uses `.get` rather than indexing: manually edited metadata can omit either key entirely.
+    """
+    catno = metadata.get("catno")
+    if catno and catno.replace(" ", "") == str(metadata.get("upc")):
         metadata["catno"] = None

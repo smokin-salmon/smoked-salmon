@@ -166,6 +166,42 @@ def test_fill_upc_from_deezer_makes_no_request_with_no_store_url(tmp_path, monke
     assert asked == []
 
 
+async def _fake_select_choice(_choices, _rls_data):
+    return {"upc": None, "catno": None, "tracks": {}, "genres": []}, None
+
+
+async def _fake_run_metasearch(*_args, **_kwargs):
+    return {}
+
+
+def test_get_metadata_fills_the_upc_from_the_files_deezer_album(tmp_path, monkeypatch) -> None:
+    """get_metadata itself must wire fill_upc_from_deezer in, not just the helper (CodeRabbit, #562)."""
+    (tmp_path / "01.flac").write_bytes(b"")
+    _tagged(monkeypatch, {"source": [DEEZER_URL]})
+    _deezer_answers(monkeypatch, {"upc": "0656465465801"})
+    monkeypatch.setattr(metadata_mod, "run_metasearch", _fake_run_metasearch)
+    monkeypatch.setattr(metadata_mod, "_select_choice", _fake_select_choice)
+
+    rls_data = {
+        "artists": [("An Artist", "main")],
+        "title": "A Title",
+        "tracks": {},
+        "group_year": 2024,
+        "year": 2024,
+        "edition_title": None,
+        "label": None,
+        "catno": None,
+        "upc": None,
+        "genres": [],
+        "rls_type": None,
+        "comment": None,
+        "urls": [],
+    }
+    metadata, _source_url = anyio.run(metadata_mod.get_metadata, str(tmp_path), {"01.flac": {}}, rls_data)
+
+    assert metadata["upc"] == "0656465465801"
+
+
 def test_a_deezer_upc_matching_the_catno_clears_the_catno(tmp_path, monkeypatch) -> None:
     """clean_metadata clears a catno that only repeats the UPC; a UPC filled in later must get the same treatment.
 
@@ -182,3 +218,11 @@ def test_a_deezer_upc_matching_the_catno_clears_the_catno(tmp_path, monkeypatch)
 
     assert metadata["upc"] == "0656465465801"
     assert metadata["catno"] is None
+
+
+@pytest.mark.parametrize("metadata", [{}, {"catno": "X"}, {"upc": "X"}])
+def test_dedupe_catno_against_upc_tolerates_missing_keys(metadata: dict) -> None:
+    """Manually edited metadata can omit either key entirely; this must not raise KeyError (CodeRabbit, #562)."""
+    metadata_mod._dedupe_catno_against_upc(metadata)
+
+    assert metadata.get("catno") != metadata.get("upc") or not metadata.get("catno")
