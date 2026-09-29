@@ -28,7 +28,10 @@ jobs:
         id: rclone
         run: |
           version=$(sed -n 's/^ARG SALMON_RCLONE_VERSION=//p' Dockerfile)
-          test -n "$version"
+          if ! printf '%s' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "SALMON_RCLONE_VERSION in the Dockerfile is not X.Y.Z: '$version'" >&2
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
@@ -48,9 +51,13 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
 
       - name: Run smoke test in the built image
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          PINNED_VERSION: ${{ steps.rclone.outputs.version }}
+          WORKSPACE: ${{ github.workspace }}
         run: |
-          docker run --rm --platform ${{ matrix.platform }} \
-            -v "${{ github.workspace }}/.github/docker-smoke.sh:/smoke.sh:ro" \
+          docker run --rm --platform "$PLATFORM" \
+            -v "$WORKSPACE/.github/docker-smoke.sh:/smoke.sh:ro" \
             --entrypoint sh \
             salmon-docker-pr:smoke \
-            /smoke.sh "${{ steps.rclone.outputs.version }}"
+            /smoke.sh "$PINNED_VERSION"
