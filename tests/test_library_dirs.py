@@ -592,10 +592,19 @@ def test_check_integrity_does_not_offer_to_sanitize_a_library_album(monkeypatch,
 
 @pytest.mark.parametrize("command", ["transcode", "downconv"])
 def test_conversions_of_library_albums_go_to_their_own_folders_in_download_directory(
-    monkeypatch, dirs, command: str
+    monkeypatch, dirs, tmp_path, command: str
 ) -> None:
     library, downloads = dirs
-    albums = [_album(library / "Album"), _album(library / "A" / "Hits"), _album(library / "B" / "Hits")]
+    # A second library with the same name, on another "disk".
+    other = tmp_path / "disk2" / "music"
+    other.mkdir(parents=True)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [str(library), str(other)])
+    albums = [
+        _album(library / "Album"),
+        _album(library / "A" / "Hits"),
+        _album(library / "B" / "Hits"),
+        _album(other / "A" / "Hits"),
+    ]
     output_dirs: list[str | None] = []
 
     async def convert(_path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> None:
@@ -613,8 +622,10 @@ def test_conversions_of_library_albums_go_to_their_own_folders_in_download_direc
         result = anyio.run(run)
         assert result.exit_code == 0, result.output
 
-    # The album's place in the library is kept, so the two "Hits" do not convert into the same folder.
-    assert output_dirs == [str(downloads / "music"), str(downloads / "music" / "A"), str(downloads / "music" / "B")]
+    # The album's resolved parent path is mirrored, so no two of the three "Hits" convert into the same folder.
+    mirrored = [downloads / str(album.resolve().parent).lstrip(os.sep) for album in albums]
+    assert output_dirs == [str(folder) for folder in mirrored]
+    assert len(set(output_dirs)) == 4
 
 
 def test_conversions_outside_a_library_still_go_beside_the_source(monkeypatch, dirs, tmp_path) -> None:
@@ -675,3 +686,31 @@ def test_conversions_never_follow_a_symlink_into_a_library(monkeypatch, dirs, co
         anyio.run(run)
 
     assert _snapshot(library) == before
+
+
+@pytest.mark.parametrize("converter", ["transcode_folder", "convert_folder"])
+def test_conversions_never_go_into_a_folder_holding_a_library(monkeypatch, dirs, converter: str) -> None:
+    # The config refuses a library inside download_directory; the converters still check what they write into.
+    _library, downloads = dirs
+    album = _album(downloads.parent / "seeding" / "Hits")
+    if converter == "transcode_folder":
+        destination = sys.modules["salmon.converter.transcoding"]._build_output_path(str(album), "V0", str(downloads))
+    else:
+        destination = sys.modules["salmon.converter.downconverting"]._build_output_path(
+            str(album), 16, None, str(downloads)
+        )
+    inner = Path(destination) / "music"
+    _album(inner / "Album")
+    before = _snapshot(inner)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [str(inner)])
+
+    async def run() -> None:
+        if converter == "transcode_folder":
+            await salmon.converter.transcode_folder(str(album), "V0", output_dir=str(downloads))
+        else:
+            await salmon.converter.convert_folder(str(album), output_dir=str(downloads))
+
+    with pytest.raises(UploadError, match="library_dirs"):
+        anyio.run(run)
+
+    assert _snapshot(inner) == before

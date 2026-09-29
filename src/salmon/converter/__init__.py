@@ -1,4 +1,6 @@
 import os
+import re
+from pathlib import Path
 from typing import get_args
 
 import asyncclick as click
@@ -56,14 +58,15 @@ async def downconv(path: str, essential_only: bool) -> None:
 def _output_dir(path: str) -> str | None:
     """Where the converted folder goes: beside the source, or for a library album, under download_directory.
 
-    The album's place in its library is kept (library/Artist/Album converts into download_directory/library/Artist),
-    so albums of the same name in different folders do not share an output folder.
+    The album's resolved parent path is mirrored there (/data/music/Artist/Album converts into
+    download_directory/data/music/Artist), so albums of the same name in different folders, or in different
+    libraries, never share an output folder, and a rerun finds its own.
     """
-    library = cfg.directory.library_of(path)
-    if library is None:
+    if not cfg.directory.is_library_path(path):
         return None
-    library = os.path.realpath(library)
-    within = os.path.dirname(os.path.relpath(os.path.realpath(path), library))
-    output_dir = os.path.normpath(os.path.join(cfg.directory.download_directory, os.path.basename(library), within))
+    parent = Path(os.path.realpath(path)).parent
+    # The drive or share on Windows, as a plain folder name; nothing on POSIX.
+    anchor = re.sub(r"\W", "", parent.anchor)
+    output_dir = os.path.join(cfg.directory.download_directory, anchor, *parent.parts[1:])
     click.secho(f"{path} is in library_dirs: writing the output into {output_dir}.", fg="yellow")
     return output_dir

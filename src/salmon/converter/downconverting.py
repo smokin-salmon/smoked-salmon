@@ -246,8 +246,8 @@ async def convert_folder(
     _validate_lossless(path)
     new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
     # Resolved, so a symlink on the way cannot carry the output into a library.
-    if cfg.directory.is_library_path(new_path):
-        raise UploadError(f"Not converting into {new_path}: it is in library_dirs.")
+    if cfg.directory.protects(new_path):
+        raise UploadError(f"Not converting into {new_path}: it is in library_dirs, or holds one.")
 
     if os.path.isdir(new_path):
         click.secho(f"{new_path} already exists.", fg="yellow")
