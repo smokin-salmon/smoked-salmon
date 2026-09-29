@@ -551,10 +551,10 @@ def test_compress_refuses_a_library_album(monkeypatch, dirs) -> None:
     album = _album(library / "Album")
     recompressed: list[str] = []
 
-    async def recompress(path: str) -> None:
+    async def fake_recompress_path(path: str) -> None:
         recompressed.append(path)
 
-    monkeypatch.setattr(salmon.commands, "recompress", recompress)
+    monkeypatch.setattr(salmon.commands, "recompress_path", fake_recompress_path)
 
     async def run():
         return await CliRunner().invoke(salmon.commands.compress, [str(album)])

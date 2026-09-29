@@ -1,6 +1,7 @@
 import os
 import re
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import TypeVar, cast
 
 import anyio
@@ -54,22 +55,43 @@ def create_relative_path(root, path, filename):
     return os.path.join(root.split(path, 1)[1][1:], filename)  # [1:] to get rid of the slash.
 
 
-async def compress(filepath: str) -> None:
+@dataclass
+class CompressResult:
+    """The outcome of re-compressing a single FLAC file."""
+
+    filepath: str
+    success: bool
+    error: str | None = None
+
+
+async def compress(filepath: str) -> CompressResult:
     """Re-compress a .flac file with the configured compression level.
+
+    flac writes to a temp file and only replaces the original once the encode,
+    and the verify pass (-V), succeed, so a failure here leaves the original
+    file untouched.
 
     Args:
         filepath: Path to the FLAC file to re-compress.
+
+    Returns:
+        Whether the re-encode succeeded, with flac's error message on failure.
     """
-    await anyio.run_process(
-        [
-            "flac",
-            f"-{cfg.upload.compression.flac_compression_level}",
-            "-V",
-            filepath,
-            "--force",
-        ],
-        check=False,
-    )
+    command = [
+        "flac",
+        f"-{cfg.upload.compression.flac_compression_level}",
+        "-V",
+        filepath,
+        "--force",
+    ]
+    try:
+        result = await anyio.run_process(command, check=False)
+    except FileNotFoundError as e:
+        return CompressResult(filepath, False, str(e))
+    if result.returncode != 0:
+        error = result.stderr.decode(errors="replace").strip() or f"flac exited with code {result.returncode}"
+        return CompressResult(filepath, False, error)
+    return CompressResult(filepath, True)
 
 
 async def process_files(
