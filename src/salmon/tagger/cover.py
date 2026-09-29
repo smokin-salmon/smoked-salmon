@@ -115,6 +115,25 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
     return cover_path
 
 
+def _flatten_to_rgb(image: Image.Image) -> Image.Image:
+    """Convert an image to RGB, the only mode JPEG can be saved as.
+
+    A mode with transparency (RGBA, LA, or P with a transparency entry) is flattened onto a white
+    background using its alpha channel as a mask, since `convert("RGB")` alone leaves transparent pixels
+    black or noisy instead. A 16- or 32-bit integer mode (I;16, I;16B, I;16L, I) is scaled down to 8 bits
+    first, since `convert("RGB")` alone clips instead of scaling: a typical 16-bit value like 32768 comes
+    out white (255) rather than mid-grey (measured on PIL). Any other mode is converted directly.
+    """
+    if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
+        rgba = image.convert("RGBA")
+        background = Image.new("RGB", rgba.size, (255, 255, 255))
+        background.paste(rgba, mask=rgba.getchannel("A"))
+        return background
+    if image.mode in ("I", "I;16", "I;16B", "I;16L"):
+        return image.convert("I").point(lambda v: v / 256).convert("RGB")
+    return image.convert("RGB")
+
+
 def compress_to_target_size(image, target_size):
     quality = 95
 
@@ -313,7 +332,11 @@ def compress_pictures(path):
             # The PICTURE block's own fields (MIME type, dimensions, lengths) count against the limit too, so
             # the image gets what is left once they are written with no data.
             picture = Picture()
-            picture.mime = Image.open(cover_file).get_format_mimetype()
+            try:
+                picture.mime = Image.open(cover_file).get_format_mimetype()
+            except (OSError, Image.DecompressionBombError) as e:
+                click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
+                continue
 
             if len(data) <= max_picture_block_size - len(picture.write()):
                 click.secho(
@@ -326,9 +349,14 @@ def compress_pictures(path):
                     fg="yellow",
                 )
                 picture.mime = "image/jpeg"
-                image = Image.open(cover_file)
-                image.thumbnail((1000, 1000))
-                data = compress_to_target_size(image, max_picture_block_size - len(picture.write()))
+                try:
+                    image = Image.open(cover_file)
+                    image.thumbnail((1000, 1000))
+                    image = _flatten_to_rgb(image)
+                    data = compress_to_target_size(image, max_picture_block_size - len(picture.write()))
+                except (OSError, ValueError, Image.DecompressionBombError) as e:
+                    click.secho(f"Could not convert cover file {cover_file} to a JPEG ({e}); leaving it out.", fg="red")
+                    continue
                 if data is None:
                     click.secho(f"Could not shrink {cover_file} enough to embed it; leaving it out.", fg="red")
                     continue
