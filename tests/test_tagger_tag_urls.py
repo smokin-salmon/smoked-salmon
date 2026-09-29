@@ -75,8 +75,22 @@ def test_m4a_freeform_source_key_is_read_as_a_sourced_url(tmp_path, monkeypatch)
     assert other == []
 
 
-def test_m4a_freeform_utf16_value_is_decoded_as_utf16(tmp_path, monkeypatch) -> None:
-    """A UTF-16 freeform value decoded as UTF-8 comes out mangled and fails the URL match (CodeRabbit, #562)."""
+def test_m4a_freeform_utf16be_value_is_decoded_as_utf16(tmp_path, monkeypatch) -> None:
+    """iTunes writes UTF-16 freeform data big-endian with no BOM; UTF-8 (or LE) decoding mangles it (#562)."""
+    (tmp_path / "01.m4a").write_bytes(b"")
+    fake_tags = {
+        "----:com.apple.iTunes:SOURCE": [MP4FreeForm(DEEZER_URL.encode("utf-16-be"), dataformat=AtomDataType.UTF16)]
+    }
+    monkeypatch.setattr(tag_urls_mod, "MutagenFile", lambda _path: _FakeM4a(fake_tags))
+
+    sourced, other = tag_urls(str(tmp_path))
+
+    assert sourced == [DEEZER_URL]
+    assert other == []
+
+
+def test_m4a_freeform_utf16_value_with_a_bom_is_still_decoded(tmp_path, monkeypatch) -> None:
+    """A freeform value that does carry a BOM (either byte order) must still round-trip."""
     (tmp_path / "01.m4a").write_bytes(b"")
     fake_tags = {
         "----:com.apple.iTunes:SOURCE": [MP4FreeForm(DEEZER_URL.encode("utf-16"), dataformat=AtomDataType.UTF16)]

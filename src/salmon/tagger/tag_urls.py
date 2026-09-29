@@ -44,9 +44,14 @@ def field_name(key) -> str:
 
 
 def _decode_bytes(item: bytes) -> str:
-    """Decode a raw tag value: an MP4 freeform's own `dataformat` when it says UTF-16, else UTF-8."""
+    """Decode a raw tag value: an MP4 freeform's own `dataformat` when it says UTF-16, else UTF-8.
+
+    iTunes writes UTF-16 freeform data big-endian with no BOM; only trust the "utf-16" codec's own
+    byte-order guess when a BOM is actually present, otherwise decode it as big-endian explicitly.
+    """
     if isinstance(item, MP4FreeForm) and item.dataformat == AtomDataType.UTF16:
-        return item.decode("utf-16", "ignore")
+        encoding = "utf-16" if item[:2] in (b"\xfe\xff", b"\xff\xfe") else "utf-16-be"
+        return item.decode(encoding, "ignore")
     return item.decode("utf-8", "ignore")
 
 
