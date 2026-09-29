@@ -8,7 +8,7 @@ import pytest
 
 from salmon.config.validations import Seedbox
 from salmon.uploader import seedbox
-from salmon.uploader.torrent_client import QBittorrentClient
+from salmon.uploader.torrent_client import DelugeClient, QBittorrentClient, TransmissionClient
 
 
 def _fake_rclone(
@@ -168,9 +168,10 @@ class _RecordingClient:
         self.save_paths: list[str] = []
         self.torrents: list[bytes] = []
 
-    def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> None:
+    def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> bool:
         self.save_paths.append(remote_folder)
         self.torrents.append(torrent)
+        return True
 
 
 def _run_upload(
@@ -526,3 +527,144 @@ def test_a_torrent_the_client_refuses_never_prints_its_password(monkeypatch, tmp
     out = capsys.readouterr().out
     assert "Failed to add torrent" in out
     assert "UNIQUESECRET" not in out
+
+
+def _connected_client(monkeypatch, cls, fake_client):
+    """Build a torrent client whose login() returns fake_client without touching a network."""
+    monkeypatch.setattr(cls, "login", lambda self: fake_client)
+    return cls(username="dean", password="UNIQUESECRET", url="http://box:8080", host="box", port=1)
+
+
+def test_qbittorrent_fails_response_is_reported_as_not_added(monkeypatch, capsys) -> None:
+    # qbittorrent-api's torrents_add returns "Fails." rather than raising, most commonly for a
+    # duplicate torrent already in the client.
+    class FakeApi:
+        def torrents_add(self, **kwargs):
+            return "Fails."
+
+    client = _connected_client(monkeypatch, QBittorrentClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is False
+    assert "successfully" not in capsys.readouterr().out.lower()
+
+
+def test_qbittorrent_ok_response_is_reported_as_added(monkeypatch, capsys) -> None:
+    class FakeApi:
+        def torrents_add(self, **kwargs):
+            return "Ok."
+
+    client = _connected_client(monkeypatch, QBittorrentClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is True
+    assert "Torrent added successfully" in capsys.readouterr().out
+
+
+def test_deluge_none_result_is_reported_as_not_added(monkeypatch, capsys) -> None:
+    # core.add_torrent_file returns None when the torrent is refused (already present).
+    class FakeApi:
+        def call(self, *args, **kwargs):
+            return None
+
+    client = _connected_client(monkeypatch, DelugeClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is False
+    assert "successfully" not in capsys.readouterr().out.lower()
+
+
+def test_deluge_torrent_id_is_reported_as_added(monkeypatch, capsys) -> None:
+    class FakeApi:
+        def call(self, *args, **kwargs):
+            return "abc123"
+
+    client = _connected_client(monkeypatch, DelugeClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is True
+    assert "Torrent added successfully" in capsys.readouterr().out
+
+
+def test_transmission_torrent_result_is_reported_as_added(monkeypatch, capsys) -> None:
+    class FakeApi:
+        def add_torrent(self, **kwargs):
+            return object()
+
+    client = _connected_client(monkeypatch, TransmissionClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is True
+    assert "Torrent added successfully" in capsys.readouterr().out
+
+
+def test_a_client_call_that_raises_is_reported_as_not_added(monkeypatch, capsys) -> None:
+    class FakeApi:
+        def torrents_add(self, **kwargs):
+            raise RuntimeError("connection reset")
+
+    client = _connected_client(monkeypatch, QBittorrentClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is False
+    assert "successfully" not in capsys.readouterr().out.lower()
+
+
+def test_a_client_that_never_connected_is_reported_as_not_added(monkeypatch, capsys) -> None:
+    client = _connected_client(monkeypatch, QBittorrentClient, None)
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is False
+    assert "successfully" not in capsys.readouterr().out.lower()
+
+
+class _RefusingClient:
+    """A torrent client the seedbox layer sees as connected, but that never adds the torrent."""
+
+    def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> bool:
+        return False
+
+
+def test_seedbox_reports_a_refused_torrent_plainly_by_name(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="local", name="My Box", torrent_client="unused")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RefusingClient()))
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Torrent added to client successfully" not in out
+    assert "Torrent was not added to the client on My Box" in out
+    assert "seed task" in out.lower()
+    assert "failed" in out.lower()
+
+
+def test_seedbox_reports_a_refused_torrent_by_masked_url_without_a_name(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", url=":sftp,host=box,pass=UNIQUESECRET", torrent_client="unused", directory="/x")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RefusingClient()))
+    monkeypatch.setattr(seedbox, "_rclone_upload_folder", lambda seedbox, remote, path: _async_true())
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Torrent added to client successfully" not in out
+    assert "Torrent was not added to the client on :sftp,host=box,pass=[REDACTED]" in out
+    assert "UNIQUESECRET" not in out
+
+
+async def _async_true() -> bool:
+    return True

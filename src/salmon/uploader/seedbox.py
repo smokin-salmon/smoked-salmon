@@ -113,7 +113,8 @@ async def _add_to_downloader(
     label: str,
     add_paused: bool,
     secrets: list[str],
-) -> None:
+    seedbox_name: str,
+) -> bool:
     """Read a torrent file and add it to the download client.
 
     Args:
@@ -123,14 +124,30 @@ async def _add_to_downloader(
         label: Label to apply in the download client.
         add_paused: Whether to add the torrent in paused state.
         secrets: Values to mask in an error, from seedbox_secrets.
+        seedbox_name: The seedbox's name (or its masked url) to name in a failure line.
+
+    Returns:
+        True if the client reported the torrent was added, False otherwise.
     """
     async with await anyio.open_file(torrent_path, "rb") as f:
         torrent = await f.read()
     try:
-        client.add_to_downloader(shell_path, torrent, is_paused=add_paused, label=label)
-        click.secho("Torrent added to client successfully", fg="green")
+        added = client.add_to_downloader(shell_path, torrent, is_paused=add_paused, label=label)
     except Exception as e:
         click.secho(f"Failed to add torrent to client: {redact_secrets(str(e), secrets)}", fg="red")
+        return False
+    if not added:
+        click.secho(f"Torrent was not added to the client on {seedbox_name}", fg="red")
+        return False
+    click.secho("Torrent added to client successfully", fg="green")
+    return True
+
+
+def _seedbox_display_name(seedbox: Seedbox, secrets: list[str]) -> str:
+    """The name to blame in a failure line: the seedbox's `name`, else its masked `url`."""
+    if seedbox.name:
+        return seedbox.name
+    return redact_secrets(seedbox.url, secrets)
 
 
 def _enabled_seedboxes() -> list[Seedbox]:
@@ -217,6 +234,7 @@ class UploadManager:
         # Keyed by (id(seedbox), folder): a failed copy of one folder must not skip the seed of a
         # different folder queued for the same seedbox.
         failed_folders: set[tuple[int, str]] = set()
+        failed_seeds = 0
         for i, (seedbox, local_path, task_type, folder) in enumerate(self.tasks, 1):
             click.secho(
                 f"\nTask {i}/{len(self.tasks)}: {task_type.upper()} - {os.path.basename(local_path)}",
@@ -246,7 +264,17 @@ class UploadManager:
                         shell_path = _resolve_shell_path(seedbox.directory, seedbox.extra_args)
                     else:
                         shell_path = seedbox.directory or os.path.abspath(cfg.directory.download_directory)
-                    await _add_to_downloader(client, shell_path, local_path, seedbox.label, seedbox.add_paused, secrets)
+                    added = await _add_to_downloader(
+                        client,
+                        shell_path,
+                        local_path,
+                        seedbox.label,
+                        seedbox.add_paused,
+                        secrets,
+                        _seedbox_display_name(seedbox, secrets),
+                    )
+                    if not added:
+                        failed_seeds += 1
             except Exception as e:
                 click.secho(f"Critical error during task: {redact_secrets(str(e), secrets)}", fg="red")
                 if task_type == "folder":
@@ -254,6 +282,11 @@ class UploadManager:
                     # failed copy too: the seed task must not add a torrent for files that may not
                     # be on the remote.
                     failed_folders.add((id(seedbox), folder))
+                elif task_type == "seed":
+                    failed_seeds += 1
 
-        click.secho("\nAll upload tasks processed", fg="green")
+        if failed_seeds:
+            click.secho(f"\n{failed_seeds} seed task(s) failed; see above for details", fg="red")
+        else:
+            click.secho("\nAll upload tasks processed", fg="green")
         self.tasks.clear()
