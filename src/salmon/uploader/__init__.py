@@ -1262,10 +1262,16 @@ async def execute_downconversion_tasks(
             await anyio.sleep(0.1)
 
             # The upload describes the converted files (their sample rate, for one), not the source's.
+            # A folder that was already there may hold other files: then it is not this conversion.
             converted_info = gather_audio_info(new_path)
-            conversion_track_data = {
-                name: {**track, **converted_info.get(name, {})} for name, track in track_data.items()
-            }
+            if converted_info.keys() != track_data.keys():
+                click.secho(
+                    f"  {new_path} does not hold the same audio files as the source: not uploading it.",
+                    fg="red",
+                    bold=True,
+                )
+                continue
+            conversion_track_data = {name: {**track, **converted_info[name]} for name, track in track_data.items()}
 
             # Update metadata for this conversion
             conversion_metadata = metadata.copy()

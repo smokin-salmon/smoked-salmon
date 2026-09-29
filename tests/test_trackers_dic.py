@@ -171,12 +171,16 @@ def _write_flac(path: Path, sample_rate: int, bits: int = 24) -> None:
     path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
 
 
-def test_downconversion_carries_the_rate_of_the_converted_files(monkeypatch, tmp_path: Path) -> None:
+def _downconvert_24bit(monkeypatch, tmp_path: Path, converted_names) -> list[dict[str, Any]]:
+    """Run the 24-bit downconversion of a 192 kHz source to DIC; give the upload data it sent.
+
+    The fake conversion writes the given file names into the output folder.
+    """
     source_track_data = _track_data(192000, 192000)
     converted = tmp_path / "converted"
 
     async def convert_folder(path, bit_depth, sample_rate, output_dir):
-        for name in source_track_data:
+        for name in converted_names(source_track_data):
             _write_flac(converted / name, sample_rate)
         return sample_rate, str(converted)
 
@@ -218,7 +222,19 @@ def test_downconversion_carries_the_rate_of_the_converted_files(monkeypatch, tmp
         None,
         "https://dicmusic.com/torrents.php?torrentid=1",
     )
+    return uploads
 
-    [data] = uploads
+
+def test_downconversion_carries_the_rate_of_the_converted_files(monkeypatch, tmp_path: Path) -> None:
+    [data] = _downconvert_24bit(monkeypatch, tmp_path, lambda source: list(source))
+
     assert data["bitrate"] == "24bit Lossless"
     assert data["sample_rate"] == "96kHz"
+
+
+def test_converted_folder_with_other_files_is_not_uploaded(monkeypatch, capsys, tmp_path: Path) -> None:
+    # An output folder that was already there, holding files of other names: nothing tells its rate.
+    uploads = _downconvert_24bit(monkeypatch, tmp_path, lambda source: ["01. Other.flac", "02. Other.flac"])
+
+    assert uploads == []
+    assert "does not hold the same audio files as the source: not uploading it" in capsys.readouterr().out

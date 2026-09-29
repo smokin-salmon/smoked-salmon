@@ -93,8 +93,9 @@ class LoginError(RequestError):
 class UploadRefusedError(RequestError):
     """The tracker's upload form has no value that describes this torrent.
 
-    Raised while the upload form data is built, before any request is sent, so the upload to
-    that tracker stops and other trackers are not affected.
+    Raised while the upload form data is built, before the upload request and the authentication
+    it needs, so the torrent is not uploaded to that tracker and other trackers are not affected.
+    Earlier requests to that tracker (group search, request check) may already have been sent.
     """
 
     pass
