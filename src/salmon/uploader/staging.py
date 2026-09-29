@@ -8,7 +8,7 @@ from contextlib import contextmanager
 
 import asyncclick as click
 
-from salmon import cfg
+from salmon import cfg, dryrun
 from salmon.errors import UploadError
 
 # Scratch copies live here, one directory per run, removed when the run ends.
@@ -41,7 +41,7 @@ def staged_source(path: str, scratch: bool) -> Iterator[tuple[str, str | None]]:
         return
     scratch_dir = _new_scratch_dir()
     try:
-        # With --skip-flac-upload, the scratch copy and every folder made from it go when the run ends.
+        # A scratch copy (--skip-flac-upload, --dry-run) and every folder made from it go when the run ends.
         yield _copy_into(path, scratch_dir, scratch), (scratch_dir if scratch else None)
     finally:
         _remove_scratch_dir(scratch_dir, path)
@@ -57,11 +57,12 @@ def _new_scratch_dir() -> str:
 def _copy_into(path: str, into: str, scratch: bool) -> str:
     """Copy the album folder into `into` and return the copy's path."""
     dest = os.path.join(into, os.path.basename(path.rstrip(os.sep)))
-    why = (
-        "--skip-flac-upload works on a copy, so the source is never modified."
-        if scratch
-        else "It is in library_dirs, so salmon works on a copy and never modifies the library album."
-    )
+    if not scratch:
+        why = "It is in library_dirs, so salmon works on a copy and never modifies the library album."
+    elif dryrun.active():
+        why = "A dry run works on a copy, so the source is never modified."
+    else:
+        why = "--skip-flac-upload works on a copy, so the source is never modified."
     size = sum(os.path.getsize(os.path.join(root, f)) for root, _, files in os.walk(path) for f in files)
     free = shutil.disk_usage(into).free
     if size > free:

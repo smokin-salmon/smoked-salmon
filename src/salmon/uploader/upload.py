@@ -7,7 +7,7 @@ import anyio
 import asyncclick as click
 from torf import Torrent
 
-from salmon import cfg
+from salmon import cfg, dryrun
 from salmon.common import UploadFiles, str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.release_notification import get_version
@@ -56,7 +56,9 @@ async def prepare_and_upload(
         override_description: Override torrent description.
 
     Returns:
-        Tuple of (torrent_id, group_id, torrent_path, torrent_content).
+        Tuple of (torrent_id, group_id, torrent_path, torrent_content). In a dry run, nothing is uploaded: the
+        IDs are dryrun.NEW_TORRENT_ID and the group's (dryrun.NEW_GROUP_ID for a new one), and the torrent
+        file is in the dry run's scratch directory.
 
     Raises:
         SystemExit: If upload fails.
@@ -94,8 +96,12 @@ async def prepare_and_upload(
     torrent_path, torrent_content = generate_torrent(gazelle_site, path)
     files = await compile_files(path, torrent_content, metadata)
 
-    click.secho("Uploading torrent...", fg="yellow")
+    if not dryrun.active():
+        click.secho("Uploading torrent...", fg="yellow")
     torrent_id, group_id = await gazelle_site.upload(data, files)
+    if dryrun.active():
+        # The group may be dryrun.NEW_GROUP_ID, which int() would turn into a plain -1.
+        return torrent_id, group_id, torrent_path, torrent_content
     # Ensure group_id is int (upload returns tuple[int, int])
     return torrent_id, int(group_id) if group_id else 0, torrent_path, torrent_content
 
@@ -359,8 +365,9 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, To
         source=gazelle_site.site_string,
     )
     t.generate()
+    # dot_torrents_dir is often a torrent client's watch folder: a dry run writes nothing there.
     tpath = os.path.join(
-        gazelle_site.dot_torrents_dir,
+        dryrun.scratch_dir() if dryrun.active() else gazelle_site.dot_torrents_dir,
         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
     )
 

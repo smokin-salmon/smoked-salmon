@@ -311,6 +311,16 @@ year, catalogue number and edition title, as reviewed); if there are several, sa
 (with `--yes-all` it stops). Formats the edition already has are flagged as a dupe risk and left out
 unless you pick them by number.
 
+To see what an upload would send, without sending anything, add `--dry-run`:
+```bash
+salmon up /data/path/to/album -s WEB --dry-run
+```
+salmon goes through the whole upload (checks, prompts, review, torrents, transcodes) on a copy of the album
+in `download_directory/.salmon-staging`, and prints each upload's form (secrets masked), the torrent's files
+and piece size instead of sending it. It only reads from the tracker (the login check and searches), uploads
+no image (the form shows a placeholder for each image URL), copies nothing to a seedbox and adds nothing to a
+torrent client. The copy, with its torrent files and transcodes, is removed when the run ends.
+
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
 ### 🌐 Spectral Web Interface
