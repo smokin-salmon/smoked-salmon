@@ -10,9 +10,11 @@ import msgspec
 from salmon import cfg
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.search import SEARCHSOURCES, run_metasearch
+from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists, standardize_genres
+from salmon.tagger.tag_urls import tag_urls
 
 
 async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
@@ -40,9 +42,32 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
     )
     choices = _print_search_results(search_results, rls_data)
     metadata, source_url = await _select_choice(choices, rls_data)
+    await fill_upc_from_deezer(metadata, path)
     remove_various_artists(metadata["tracks"])
     metadata = fix_hardcore_genre(metadata)
     return metadata, source_url
+
+
+def _first_deezer_album_url(urls: list[str]) -> str | None:
+    for url in urls:
+        match = DeezerBase.regex.search(url)
+        if match and match[1] == "album":
+            return url
+    return None
+
+
+async def fill_upc_from_deezer(metadata: dict[str, Any], path: str) -> None:
+    """Take a missing UPC from the files' own Deezer album; another store's release may carry a different barcode.
+
+    Makes one request, and only when the UPC is still empty and the files carry a Deezer album URL.
+    """
+    if metadata.get("upc"):
+        return
+    sourced, other = tag_urls(path)
+    url = _first_deezer_album_url(sourced) or _first_deezer_album_url(other)
+    if not url:
+        return
+    metadata["upc"] = await album_upc(url)
 
 
 def _print_search_results(results, rls_data=None):
