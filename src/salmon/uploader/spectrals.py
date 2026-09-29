@@ -327,10 +327,13 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
 
 def get_spectrals_path(path):
     """Get the path to the spectrals folder for an album."""
+    base_name = os.path.basename(path.rstrip("/"))
     if cfg.directory.tmp_dir and os.path.isdir(cfg.directory.tmp_dir):
         # Create a unique subfolder for this album
-        base_name = os.path.basename(path.rstrip("/"))
         return os.path.join(cfg.directory.tmp_dir, f"spectrals_{base_name}")
+    if cfg.directory.protects(path):
+        # Never inside a library album: the folder is replaced, then deleted.
+        return os.path.join(cfg.directory.download_directory, f"spectrals_{base_name}")
     return os.path.join(path, "Spectrals")
 
 

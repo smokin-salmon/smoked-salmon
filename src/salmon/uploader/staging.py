@@ -19,6 +19,9 @@ STAGING_DIR = ".salmon-staging"
 def staged_source(path: str, scratch: bool) -> Iterator[tuple[str, str | None]]:
     """Give the folder an upload works on, and the directory its folder rename stays in.
 
+    An album inside a library_dirs entry is always worked on as a copy in a run directory of its own, like a
+    scratch copy, but its rename goes into download_directory, where the renamed copy stays to be seeded.
+
     Args:
         path: The album folder the upload starts from.
         scratch: Work on a copy in a directory of this run's own under download_directory/.salmon-staging,
@@ -28,14 +31,18 @@ def staged_source(path: str, scratch: bool) -> Iterator[tuple[str, str | None]]:
         The folder to work on, and the directory its rename stays in (None for download_directory).
 
     Raises:
-        UploadError: If the copy does not fit on the disk or fails.
+        UploadError: If path holds a library_dirs entry, or the copy does not fit on the disk or fails.
     """
-    if not scratch:
+    in_library = cfg.directory.is_library_path(path)
+    if not in_library and (library := cfg.directory.library_inside(path)) is not None:
+        raise UploadError(f"{path} holds the library folder {library}: run salmon on one album folder of it.")
+    if not scratch and not in_library:
         yield path, None
         return
     scratch_dir = _new_scratch_dir()
     try:
-        yield _copy_into(path, scratch_dir), scratch_dir
+        # With --skip-flac-upload, the scratch copy and every folder made from it go when the run ends.
+        yield _copy_into(path, scratch_dir, scratch), (scratch_dir if scratch else None)
     finally:
         _remove_scratch_dir(scratch_dir, path)
 
@@ -47,17 +54,23 @@ def _new_scratch_dir() -> str:
     return tempfile.mkdtemp(dir=root, prefix="run-")
 
 
-def _copy_into(path: str, into: str) -> str:
+def _copy_into(path: str, into: str, scratch: bool) -> str:
     """Copy the album folder into `into` and return the copy's path."""
     dest = os.path.join(into, os.path.basename(path.rstrip(os.sep)))
+    why = (
+        "--skip-flac-upload works on a copy, so the source is never modified."
+        if scratch
+        else "It is in library_dirs, so salmon works on a copy and never modifies the library album."
+    )
     size = sum(os.path.getsize(os.path.join(root, f)) for root, _, files in os.walk(path) for f in files)
     free = shutil.disk_usage(into).free
     if size > free:
         raise UploadError(
-            f"Cannot copy {path} ({size / 1e6:.0f} MB) to {into}: only {free / 1e6:.0f} MB free there. "
-            "--skip-flac-upload works on a copy, so the source is never modified."
+            f"Cannot copy {path} ({size / 1e6:.0f} MB) to {into}: only {free / 1e6:.0f} MB free there. {why}"
         )
-    click.secho(f"\nCopying {path} ({size / 1e6:.0f} MB) to {dest}, so the source is never modified...", fg="cyan")
+    click.secho(f"\nCopying {path} ({size / 1e6:.0f} MB) to {dest}. {why}", fg="cyan")
+    if not scratch:
+        click.secho(f"The renamed copy goes into {cfg.directory.download_directory} and stays there.", fg="cyan")
     try:
         # A real copy: a hardlink shares the inode, so a later tag write would reach the source.
         shutil.copytree(path, dest)

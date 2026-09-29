@@ -2,6 +2,7 @@ from typing import get_args
 
 import asyncclick as click
 
+from salmon import cfg
 from salmon.common import commandgroup
 from salmon.converter.downconverting import convert_folder
 from salmon.converter.transcoding import Bitrate, transcode_folder
@@ -30,7 +31,7 @@ async def transcode(path: str, bitrate: Bitrate, essential_only: bool) -> None:
         bitrate: Target bitrate (V0 or 320).
         essential_only: Only keep music and image files.
     """
-    await transcode_folder(path, bitrate, essential_only=essential_only)
+    await transcode_folder(path, bitrate, essential_only=essential_only, output_dir=_output_dir(path))
 
 
 @commandgroup.command()
@@ -48,4 +49,15 @@ async def downconv(path: str, essential_only: bool) -> None:
         path: Path to the directory containing 24bit FLAC files.
         essential_only: Only keep music and image files.
     """
-    await convert_folder(path, essential_only=essential_only)
+    await convert_folder(path, essential_only=essential_only, output_dir=_output_dir(path))
+
+
+def _output_dir(path: str) -> str | None:
+    """Where the converted folder goes: beside the source, or download_directory for a library album."""
+    if not cfg.directory.protects(path):
+        return None
+    click.secho(
+        f"{path} is in library_dirs, or holds one: writing the output to {cfg.directory.download_directory}.",
+        fg="yellow",
+    )
+    return cfg.directory.download_directory

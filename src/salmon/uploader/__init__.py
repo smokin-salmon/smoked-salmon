@@ -559,6 +559,7 @@ async def upload(
     if flac_group is not None and (refusal := validate_skip_flac_source(path)):
         return click.secho(f"\n{refusal}", fg="red", bold=True)
     # The group's FLAC is most likely seeding from path, so with --skip-flac-upload everything works on a copy.
+    # So does an album in library_dirs: see staged_source.
     with staged_source(path, scratch=flac_group is not None) as (staged, rename_into):
         await _upload_staged(
             gazelle_site,
@@ -585,6 +586,7 @@ async def upload(
             skip_initial_review=skip_initial_review,
             apply_ai_suggestions=apply_ai_suggestions,
             rename_into=rename_into,
+            library_album=path if cfg.directory.is_library_path(path) else None,
         )
 
 
@@ -614,11 +616,13 @@ async def _upload_staged(
     skip_initial_review: bool,
     apply_ai_suggestions: bool,
     rename_into: str | None,
+    library_album: str | None,
 ) -> None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
     Args:
         rename_into: The directory the renamed folder goes into, instead of download_directory.
+        library_album: The folder path is a copy of, when that folder must be kept: "delete" deletes only the copy.
     """
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
@@ -739,6 +743,15 @@ async def _upload_staged(
                 bold=True,
             )
             return click.secho("\nAborting upload...", fg="red")
+        if cfg.directory.protects(path):
+            click.secho(f"\nNot deleting {path}: it is in library_dirs, or holds one.", fg="yellow", bold=True)
+            return click.secho("\nAborting upload...", fg="red")
+        if library_album is not None:
+            click.secho(
+                f"\nDeleting the copy the upload worked on. The library album {library_album} is kept.",
+                fg="yellow",
+                bold=True,
+            )
         if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
             try:
                 import send2trash
