@@ -12,6 +12,7 @@ import os
 import re
 
 from mutagen import File as MutagenFile
+from mutagen.mp4 import AtomDataType, MP4FreeForm
 
 from salmon.common.files import get_audio_files
 
@@ -42,10 +43,17 @@ def field_name(key) -> str:
     return _FRAME_FIELDS.get(name.split(":", 1)[0], name)
 
 
+def _decode_bytes(item: bytes) -> str:
+    """Decode a raw tag value: an MP4 freeform's own `dataformat` when it says UTF-16, else UTF-8."""
+    if isinstance(item, MP4FreeForm) and item.dataformat == AtomDataType.UTF16:
+        return item.decode("utf-16", "ignore")
+    return item.decode("utf-8", "ignore")
+
+
 def tag_texts(value) -> list[str]:
     """A tag value as plain strings, whether a list, an ID3 frame or MP4 freeform bytes."""
     items = value if isinstance(value, list) else [value]
-    return [(item.decode("utf-8", "ignore") if isinstance(item, bytes) else str(item)).strip() for item in items]
+    return [(_decode_bytes(item) if isinstance(item, bytes) else str(item)).strip() for item in items]
 
 
 def _tags(mut) -> list:

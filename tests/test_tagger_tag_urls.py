@@ -5,7 +5,7 @@ import struct
 from mutagen.flac import FLAC
 from mutagen.id3 import WOAS, WXXX
 from mutagen.mp3 import MP3
-from mutagen.mp4 import MP4FreeForm
+from mutagen.mp4 import AtomDataType, MP4FreeForm
 
 from salmon.tagger import tag_urls as tag_urls_mod
 from salmon.tagger.tag_urls import tag_urls
@@ -67,6 +67,20 @@ class _FakeM4a:
 def test_m4a_freeform_source_key_is_read_as_a_sourced_url(tmp_path, monkeypatch) -> None:
     (tmp_path / "01.m4a").write_bytes(b"")
     fake_tags = {"----:com.apple.iTunes:SOURCE": [MP4FreeForm(DEEZER_URL.encode())]}
+    monkeypatch.setattr(tag_urls_mod, "MutagenFile", lambda _path: _FakeM4a(fake_tags))
+
+    sourced, other = tag_urls(str(tmp_path))
+
+    assert sourced == [DEEZER_URL]
+    assert other == []
+
+
+def test_m4a_freeform_utf16_value_is_decoded_as_utf16(tmp_path, monkeypatch) -> None:
+    """A UTF-16 freeform value decoded as UTF-8 comes out mangled and fails the URL match (CodeRabbit, #562)."""
+    (tmp_path / "01.m4a").write_bytes(b"")
+    fake_tags = {
+        "----:com.apple.iTunes:SOURCE": [MP4FreeForm(DEEZER_URL.encode("utf-16"), dataformat=AtomDataType.UTF16)]
+    }
     monkeypatch.setattr(tag_urls_mod, "MutagenFile", lambda _path: _FakeM4a(fake_tags))
 
     sourced, other = tag_urls(str(tmp_path))

@@ -164,3 +164,21 @@ def test_fill_upc_from_deezer_makes_no_request_with_no_store_url(tmp_path, monke
 
     assert metadata["upc"] is None
     assert asked == []
+
+
+def test_a_deezer_upc_matching_the_catno_clears_the_catno(tmp_path, monkeypatch) -> None:
+    """clean_metadata clears a catno that only repeats the UPC; a UPC filled in later must get the same treatment.
+
+    `_select_choice` runs `clean_metadata` (and its catno/UPC dedupe) before the fill, so a Deezer
+    UPC that happens to equal the catno used to leave a duplicate catno on the release (#562).
+    """
+    (tmp_path / "01.flac").write_bytes(b"")
+    _tagged(monkeypatch, {"source": [DEEZER_URL]})
+    _deezer_answers(monkeypatch, {"upc": "0656465465801"})
+
+    metadata = {"upc": None, "catno": "0656465465801"}
+    anyio.run(metadata_mod.fill_upc_from_deezer, metadata, str(tmp_path))
+    metadata_mod._dedupe_catno_against_upc(metadata)
+
+    assert metadata["upc"] == "0656465465801"
+    assert metadata["catno"] is None

@@ -43,6 +43,7 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
     choices = _print_search_results(search_results, rls_data)
     metadata, source_url = await _select_choice(choices, rls_data)
     await fill_upc_from_deezer(metadata, path)
+    _dedupe_catno_against_upc(metadata)
     remove_various_artists(metadata["tracks"])
     metadata = fix_hardcore_genre(metadata)
     return metadata, source_url
@@ -295,6 +296,11 @@ def clean_metadata(metadata):
                     else:
                         metadata["tracks"][disc][num]["artists"].remove((artist, importance))
 
+    _dedupe_catno_against_upc(metadata)
+    return metadata
+
+
+def _dedupe_catno_against_upc(metadata: dict[str, Any]) -> None:
+    """Clear the catalogue number when it is really just the UPC repeated."""
     if metadata["catno"] and metadata["catno"].replace(" ", "") == str(metadata["upc"]):
         metadata["catno"] = None
-    return metadata
