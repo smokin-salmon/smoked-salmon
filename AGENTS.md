@@ -28,6 +28,11 @@ copy of `src/salmon/data/config.default.toml`. If you import `salmon` outside py
 config at `~/.config/smoked-salmon/config.toml` (Linux) or a `config.toml` at the repo root, and
 every directory it names must exist.
 
+`SALMON_CONFIG_DIR` (set to `/config` in the Docker image) selects `$SALMON_CONFIG_DIR/config.toml`
+when that file exists. If it is absent, salmon uses the existing platform config when available;
+otherwise, it checks the repo-root `config.toml`. `tests/conftest.py` creates the selected file, so
+the test run never reads a developer's config.
+
 ## Layout
 
 | Path | What lives there |
@@ -73,9 +78,20 @@ every directory it names must exist.
   `__post_init__`, and document them (commented out if optional) in `config.default.toml`. New
   settings must not change behaviour for existing configs unless that is the point of the change.
 - Every bug fix comes with a test that fails without the fix.
+- **Never change or delete a user's album in place when it may be in `library_dirs`.** Steps that
+  retag, rename, sanitize or delete work on the folder `staged_source` (`uploader/staging.py`)
+  returns, which is a real copy for `--skip-flac-upload` and for library albums. A new command or
+  step that writes into, or removes, a folder checks `cfg.directory.protects(path)` first (#531).
 - Keep PRs to one logical change. Maintainers squash-merge.
 - Image hosts that only display for one tracker's members (RED's) must never be usable through a
   setting shared by all trackers. See [ADR 0002](docs/adr/0002-per-tracker-cover-host.md).
+
+## Docker image
+
+A PR that touches the `Dockerfile` builds the image for `linux/amd64` and `linux/arm64`
+(`.github/workflows/docker-pr.yml`) and runs `.github/docker-smoke.sh` in it. An image change gets a
+smoke check that fails before it. rclone is pinned by `ARG` (version and one SHA-256 per arch, from
+the release's `SHA256SUMS`); Dependabot cannot bump it, so bump all three by hand.
 
 ## Releases
 
