@@ -54,6 +54,53 @@ def test_a_32_bit_source_token_is_also_dropped(monkeypatch) -> None:
     assert downconverting._build_output_path(source, 16, None) == "/downloads/Artist - Title (2024) [WEB FLAC]"
 
 
+def _stub_24_192(monkeypatch) -> None:
+    monkeypatch.setattr(
+        downconverting,
+        "gather_audio_info",
+        lambda path: {"01.flac": {"precision": 24, "sample rate": 192000}},
+    )
+
+
+# A pure {resolution} template ("[{source} FLAC {resolution}]"): no {format} bit-depth wording,
+# so the FLAC/bit-depth rewriting below never applies to it.
+SOURCE_24_192 = "/downloads/Artist - Album (2020) [WEB FLAC 24-192]"
+
+
+def test_a_resolution_only_name_gets_its_token_replaced_in_place_24_96(monkeypatch) -> None:
+    _stub_24_192(monkeypatch)
+
+    new_path = downconverting._build_output_path(SOURCE_24_192, 24, 96000)
+
+    assert new_path == "/downloads/Artist - Album (2020) [WEB FLAC 24-96]"
+
+
+def test_a_resolution_only_name_gets_its_token_replaced_in_place_24_48(monkeypatch) -> None:
+    _stub_24_192(monkeypatch)
+
+    new_path = downconverting._build_output_path(SOURCE_24_192, 24, 48000)
+
+    assert new_path == "/downloads/Artist - Album (2020) [WEB FLAC 24-48]"
+
+
+def test_a_resolution_only_name_strips_its_token_cleanly_for_16_44(monkeypatch) -> None:
+    _stub_24_192(monkeypatch)
+
+    new_path = downconverting._build_output_path(SOURCE_24_192, 16, 44100)
+
+    assert new_path == "/downloads/Artist - Album (2020) [WEB FLAC]"
+
+
+def test_a_format_only_name_is_unaffected_by_the_resolution_swap(monkeypatch) -> None:
+    # Same album, named the {format} way instead: outputs unchanged.
+    _stub_24_192(monkeypatch)
+    source = "/downloads/Artist - Album (2020) [WEB 24bit FLAC]"
+
+    assert downconverting._build_output_path(source, 24, 96000) == "/downloads/Artist - Album (2020) [WEB 24-96]"
+    assert downconverting._build_output_path(source, 24, 48000) == "/downloads/Artist - Album (2020) [WEB 24-48]"
+    assert downconverting._build_output_path(source, 16, 44100) == "/downloads/Artist - Album (2020) [WEB FLAC]"
+
+
 def test_only_the_measured_token_is_removed_not_a_look_alike_in_the_title(monkeypatch) -> None:
     # A "24-96" in the album title is not a resolution token unless the files say so.
     monkeypatch.setattr(

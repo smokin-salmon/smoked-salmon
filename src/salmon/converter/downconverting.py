@@ -70,13 +70,35 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         The output directory path string.
     """
     foldername = os.path.basename(path)
-    # Drop a stale resolution token before deriving the new name: an untouched "24-96" would
-    # survive into a 16/44.1 or MP3 name that must not claim a resolution at all. The token is
-    # computed from the source's actual files, not guessed at with a pattern, so it cannot also
-    # eat unrelated digits from the album title.
-    current_token = resolution_token(gather_audio_info(path))
-    if current_token:
+    # A stale resolution token, e.g. "24-192", is computed from the source's actual files, not
+    # guessed at with a pattern, so it cannot also eat unrelated digits from the album title. It
+    # only counts if that exact text is actually in the name; a folder that happens to be 24/96
+    # inside is not the same thing as one whose name says so.
+    audio_info = gather_audio_info(path)
+    current_token = resolution_token(audio_info)
+    has_token = bool(current_token) and re.search(r"\b" + re.escape(current_token) + r"\b", foldername)
+    # A {resolution}-only name (the recommended template does not pair it with {format}) has no
+    # "24bit"/"16bit FLAC" wording to rewrite: swap its token for the conversion's own one in
+    # place instead of running it through the FLAC/bit-depth rewriting below.
+    carries_bit_depth_wording = bool(re.search(r"\d+ ?bit FLAC", foldername, flags=re.IGNORECASE))
+
+    if has_token and not carries_bit_depth_wording:
+        target_rate = sample_rate
+        if target_rate is None:
+            (source_rate,) = {info["sample rate"] for info in audio_info.values()}
+            target_rate = _resolve_sample_rate(source_rate)
+        new_token = resolution_token({"_": {"precision": bit_depth, "sample rate": target_rate}})
+        if new_token:
+            foldername = foldername.replace(current_token, new_token)
+        else:
+            foldername = re.sub(r"\s*" + re.escape(current_token) + r"\b", "", foldername)
+        return os.path.join(output_dir or os.path.dirname(path), foldername)
+
+    if has_token:
+        # A template pairing {format} and {resolution} (e.g. "24bit FLAC 24-96"): drop the stale
+        # token so the FLAC/bit-depth rewriting below does not have to work around it.
         foldername = re.sub(r"\s*" + re.escape(current_token) + r"\b", "", foldername)
+
     if re.search(r"24 ?bit FLAC", foldername, flags=re.IGNORECASE):
         foldername = re.sub(r"24 ?bit FLAC", "FLAC", foldername, flags=re.IGNORECASE)
     elif re.search("FLAC", foldername, flags=re.IGNORECASE):

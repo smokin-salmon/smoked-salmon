@@ -40,6 +40,18 @@ def test_a_name_without_a_resolution_token_is_unaffected(monkeypatch) -> None:
     assert transcoding._build_output_path(SOURCE_NO_TOKEN, "320") == "/downloads/Artist - Title (2024) [WEB MP3 320]"
 
 
+def test_a_resolution_only_name_transcodes_with_no_token(monkeypatch) -> None:
+    # Same "[{source} FLAC {resolution}]" style source used in the downconverting tests.
+    monkeypatch.setattr(
+        transcoding,
+        "gather_audio_info",
+        lambda path: {"01.flac": {"precision": 24, "sample rate": 192000}},
+    )
+    source = "/downloads/Artist - Album (2020) [WEB FLAC 24-192]"
+
+    assert transcoding._build_output_path(source, "V0") == "/downloads/Artist - Album (2020) [WEB MP3 V0]"
+
+
 def test_only_the_measured_token_is_removed_not_a_look_alike_in_the_title(monkeypatch) -> None:
     # A "24-96" in the album title is not a resolution token unless the files say so.
     monkeypatch.setattr(
