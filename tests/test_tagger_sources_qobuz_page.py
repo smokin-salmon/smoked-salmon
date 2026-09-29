@@ -230,6 +230,27 @@ def test_fetch_data_rejects_a_page_without_album_data(monkeypatch) -> None:
         anyio.run(Scraper().fetch_data, QOBUZ_URL)
 
 
+def test_page_to_api_shape_rejects_an_invalid_release_date() -> None:
+    soup = BeautifulSoup(SINGLE_DISC.replace("Released on 24/5/22", "Released on 31/13/22"), "lxml")
+
+    with pytest.raises(ValueError):
+        page_to_api_shape(soup)
+
+
+def test_fetch_data_turns_an_invalid_page_date_into_a_scrape_error(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.metadata.qobuz, "app_id", None)
+    monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", None)
+    bad_date_page = SINGLE_DISC.replace("Released on 24/5/22", "Released on 31/13/22")
+
+    async def fake_page(_self, _url, *_args, **_kwargs):
+        return BeautifulSoup(bad_date_page, "lxml")
+
+    monkeypatch.setattr(qobuz_base.QobuzBase, "fetch_page", fake_page)
+
+    with pytest.raises(qobuz.ScrapeError, match="invalid release date"):
+        anyio.run(Scraper().fetch_data, QOBUZ_URL)
+
+
 def test_fetch_data_still_uses_the_api_when_configured(monkeypatch) -> None:
     monkeypatch.setattr(cfg.metadata.qobuz, "app_id", "app-123")
     monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", "token-456")

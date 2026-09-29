@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from datetime import date
 from html import unescape
 from typing import Any
 
@@ -134,7 +135,8 @@ def _released_on(text: str) -> str | None:
     day, month, year = (int(part) for part in match.groups())
     if year < 100:
         year += 2000
-    return f"{year:04d}-{month:02d}-{day:02d}"
+    # date() raises ValueError on an out-of-range day or month; let the caller turn that into a ScrapeError.
+    return date(year, month, day).isoformat()
 
 
 def _duration_seconds(text: str) -> int | None:
@@ -275,7 +277,10 @@ class Scraper(QobuzBase, MetadataMixin):
         """Album facts from the public web page, shaped like the API answer so the same parsers read them."""
         url = PUBLIC_PAGE.format(album_id=album_id)
         soup = await self.fetch_page(url)
-        data = page_to_api_shape(soup)
+        try:
+            data = page_to_api_shape(soup)
+        except ValueError as err:
+            raise ScrapeError(f"Qobuz page carries an invalid release date: {url}") from err
         if not data.get("title"):
             raise ScrapeError(f"Qobuz page holds no album data (is it an album URL?): {url}")
         return data
