@@ -116,7 +116,9 @@ def test_a_four_digit_year_reads_the_same() -> None:
 def test_smaller_cover_sizes_are_lifted_to_the_maximum() -> None:
     soup = BeautifulSoup(SINGLE_DISC.replace("_600.jpg", "_230.jpg"), "lxml")
 
-    assert page_to_api_shape(soup)["image"] == {"large": "https://static.qobuz.com/images/covers/rb/uq/ul39e7xjbuqrb_max.jpg"}
+    assert page_to_api_shape(soup)["image"] == {
+        "large": "https://static.qobuz.com/images/covers/rb/uq/ul39e7xjbuqrb_max.jpg"
+    }
 
 
 def test_a_disc_heading_moves_the_following_tracks_to_that_disc() -> None:
@@ -163,8 +165,7 @@ def test_each_track_credits_only_its_own_artists_when_the_header_joins_two() -> 
     )
     header = '<span class="artist-name">Gorgon City &amp; Jem Cooke</span>'
     links = (
-        '<a class="album-meta__link" href="/a1">Gorgon City</a> '
-        '<a class="album-meta__link" href="/a2">Jem Cooke</a>'
+        '<a class="album-meta__link" href="/a1">Gorgon City</a> <a class="album-meta__link" href="/a2">Jem Cooke</a>'
     )
     html = (
         _page(tracks_html, about_count="1 disc(s) - 3 track(s)")

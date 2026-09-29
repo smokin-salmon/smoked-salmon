@@ -181,9 +181,7 @@ def page_to_api_shape(soup: BeautifulSoup) -> dict[str, Any]:
     main_artists = _meta_item(soup, "Main artists:")
     # The "About" section lists every genre; the header shows only the first.
     genre_item = _meta_item(soup, "Genre:", ".album-about__item") or _meta_item(soup, "Genre:")
-    about_count = next(
-        (item for item in soup.select(".album-about__item") if _TRACK_COUNT.search(_text(item))), None
-    )
+    about_count = next((item for item in soup.select(".album-about__item") if _TRACK_COUNT.search(_text(item))), None)
     tracks = _page_tracks(soup)
     count_match = _TRACK_COUNT.search(_text(about_count)) if about_count else None
     cover = soup.find("meta", property="og:image")
