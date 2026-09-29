@@ -111,13 +111,17 @@ def test_an_existing_cover_file_wins_over_the_embedded_cover(tmp_path, monkeypat
 def test_no_front_cover_anywhere_is_no_cover(tmp_path) -> None:
     _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_BACK, FRONT),))
 
-    assert anyio.run(cover.download_cover_if_nonexistent, str(tmp_path), None) == (None, None)
+    result = anyio.run(cover.download_cover_if_nonexistent, str(tmp_path), None)
+
+    assert result == (None, None)
 
 
 def test_an_unreadable_embedded_picture_is_skipped_not_used(tmp_path) -> None:
     _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"not an image" * 100),))
 
-    assert anyio.run(cover.download_cover_if_nonexistent, str(tmp_path), None) == (None, None)
+    result = anyio.run(cover.download_cover_if_nonexistent, str(tmp_path), None)
+
+    assert result == (None, None)
     assert sorted(file.name for file in tmp_path.iterdir()) == ["01.flac"]
 
 

@@ -209,6 +209,7 @@ def _as_cover_file(picture: Picture) -> tuple[str, bytes] | None:
     try:
         with Image.open(io.BytesIO(picture.data)) as image:
             if image.format in ("JPEG", "PNG"):
+                image.load()
                 return ("jpg" if image.format == "JPEG" else "png"), picture.data
             buffer = io.BytesIO()
             image.convert("RGBA").save(buffer, "png")
