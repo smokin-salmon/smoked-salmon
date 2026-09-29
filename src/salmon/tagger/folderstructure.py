@@ -4,18 +4,24 @@ from pathlib import Path
 
 import asyncclick as click
 
-from salmon import cfg
+from salmon.checks.tag_rules import in_torrent_path
 from salmon.constants import ALLOWED_EXTENSIONS, ESSENTIAL_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
 
+# Used when no tracker is known yet (e.g. `salmon tag`), and as the fallback for trackers whose
+# own limit has not been set.
+DEFAULT_MAX_PATH_LENGTH = 180
 
-async def check_folder_structure(path: str, scene: bool, *, essential_only: bool = False) -> None:
+
+async def check_folder_structure(
+    path: str, scene: bool, *, essential_only: bool = False, max_path_length: int = DEFAULT_MAX_PATH_LENGTH
+) -> None:
     """Run through every filesystem check that causes uploads to violate the rules
     or be rejected on the upload form.
 
-    Verifies that path lengths are <180 characters, that there are no zero length
-    folders, and that the file extensions are valid. Loops until the user has fixed
-    all issues or the upload is aborted.
+    Verifies that path lengths are within max_path_length characters, that there are no zero
+    length folders, and that the file extensions are valid. Loops until the user has fixed all
+    issues or the upload is aborted.
 
     Args:
         path: Absolute path to the release folder being checked.
@@ -23,6 +29,8 @@ async def check_folder_structure(path: str, scene: bool, *, essential_only: bool
             automatically fixed and require manual intervention.
         essential_only: If True, only essential extensions are allowed;
             files like nfo, sfv, md5, txt, etc. are flagged for removal.
+        max_path_length: The longest in-torrent path (folder, sub-folders and file name)
+            this check allows. Defaults to the value used before this was per-tracker.
 
     Raises:
         click.Abort: If the user aborts, or if a scene release has structural issues.
@@ -31,7 +39,7 @@ async def check_folder_structure(path: str, scene: bool, *, essential_only: bool
         click.secho("\nChecking folder structure...", fg="cyan", bold=True)
         try:
             await _check_illegal_folders(path)
-            _check_path_lengths(path, scene)
+            _check_path_lengths(path, scene, max_path_length)
             _check_zero_len_folder(path)
             await _check_extensions(path, scene, essential_only=essential_only)
             return
@@ -88,46 +96,50 @@ async def _check_illegal_folders(path: str) -> None:
                         break
 
 
-def _check_path_lengths(path: str, scene: bool) -> None:
-    """Verify that all file and folder paths are no longer than 180 characters.
+def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
+    """Verify that all file and folder paths are no longer than max_path_length characters.
 
-    Paths are measured relative to the configured download directory. Files with
-    paths between 180 and 250 characters are automatically truncated. Paths
-    exceeding 250 characters cannot be safely truncated and raise immediately.
+    Paths are measured the same way the file will sit inside the torrent: the release folder
+    name, any sub-folders, and the file name. Files between max_path_length and
+    max_path_length + 70 characters are automatically truncated. Longer than that, they cannot
+    be safely truncated and raise immediately.
 
     Args:
         path: Absolute path to the release folder being checked.
         scene: Whether the release is a scene release. Scene releases are never
             auto-truncated; any offending path raises instead.
+        max_path_length: The longest in-torrent path this check allows.
 
     Raises:
-        NoncompliantFolderStructure: If any path exceeds the 180-character limit
+        NoncompliantFolderStructure: If any path exceeds max_path_length characters
             and cannot be (or should not be) automatically fixed.
     """
     offending_files, really_offending_files = [], []
-    root_len = len(cfg.directory.download_directory) + 1
+    folder_name = os.path.basename(os.path.normpath(path))
+    really_offending_cutoff = max_path_length + 70
     for root, _, files in os.walk(path):
-        if len(os.path.abspath(root)) - root_len > 180:
-            click.secho("A subfolder has a path length >180 characters.", fg="red")
+        subfolder_len = len(in_torrent_path(folder_name, os.path.relpath(root, path)))
+        if subfolder_len > max_path_length:
+            click.secho(f"A subfolder has a path length >{max_path_length} characters.", fg="red")
             raise NoncompliantFolderStructure
         for f in files:
-            filepath = os.path.abspath(os.path.join(root, f))
-            filepathlen = len(filepath) - root_len
-            if filepathlen > 180:
-                if filepathlen < 250:
+            filepath = os.path.join(root, f)
+            filepathlen = len(in_torrent_path(folder_name, os.path.relpath(filepath, path)))
+            if filepathlen > max_path_length:
+                if filepathlen < really_offending_cutoff:
                     offending_files.append(filepath)
                 else:
                     really_offending_files.append(filepath)
 
     if scene and (offending_files or really_offending_files):
-        click.secho("The following files exceed 180 characters in length.", fg="red", bold=True)
+        click.secho(f"The following files exceed {max_path_length} characters in length.", fg="red", bold=True)
         for f in offending_files + really_offending_files:
             click.echo(f" >> {f}")
         raise NoncompliantFolderStructure
 
     if really_offending_files:
         click.secho(
-            "The following files exceed 180 characters in length, but cannot "
+            f"The following files exceed {max_path_length} characters in length, but cannot "
             "be safely truncated (more than 70 characters above the limit):",
             fg="red",
             bold=True,
@@ -137,12 +149,18 @@ def _check_path_lengths(path: str, scene: bool) -> None:
         raise NoncompliantFolderStructure
 
     if not offending_files:
-        return click.secho("No paths exceed 180 characters in length.", fg="green")
+        return click.secho(f"No paths exceed {max_path_length} characters in length.", fg="green")
 
-    click.secho("The following exceed 180 characters in length, truncating...", fg="red")
+    click.secho(f"The following exceed {max_path_length} characters in length, truncating...", fg="red")
     for filepath in sorted(offending_files):
-        filename, ext = os.path.splitext(filepath)
-        newpath = filepath[: 178 - len(filename) - len(ext) * 2 + root_len] + ".." + ext
+        directory, base = os.path.split(filepath)
+        name, ext = os.path.splitext(base)
+        relative_len = len(in_torrent_path(folder_name, os.path.relpath(filepath, path)))
+        # Shorten the name so the in-torrent path lands exactly on max_path_length, the ".."
+        # marker included.
+        excess = relative_len - max_path_length + 2
+        new_name = name[: max(len(name) - excess, 0)] + ".."
+        newpath = os.path.join(directory, new_name + ext)
         os.rename(filepath, newpath)
         click.echo(f" >> {newpath}")
 

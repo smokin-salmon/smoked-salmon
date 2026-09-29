@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from salmon import cfg
 from salmon.common import UploadFiles
 from salmon.errors import RequestFailedError
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
 def _get_input_value(soup: BeautifulSoup, name: str) -> str | None:
@@ -111,6 +111,8 @@ def _parse_upload_form(data: dict, soup: BeautifulSoup) -> None:
 
 
 class RedApi(BaseGazelleApi):
+    TAG_RULES = TagRules(max_path_length=180)
+
     def __init__(self):
         self.site_code = "RED"
         self.base_url = "https://redacted.sh"
