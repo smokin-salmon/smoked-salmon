@@ -46,7 +46,7 @@ from salmon.tagger.audio_info import (
     gather_audio_info,
     recompress_path,
 )
-from salmon.tagger.cover import compress_pictures, download_cover_if_nonexistent
+from salmon.tagger.cover import check_embedded_pictures, compress_pictures, download_cover_if_nonexistent
 from salmon.tagger.foldername import rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
@@ -724,6 +724,9 @@ async def _upload_staged(
                 source_flac = await choose_source_flac(flac_group, metadata)
                 if source_flac is None:
                     raise click.Abort
+            if not scene:
+                # Before any torrent or transcode is made from the folder, so they all get the same files.
+                check_embedded_pictures(path)
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:

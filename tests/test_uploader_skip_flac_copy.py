@@ -9,7 +9,8 @@ import anyio
 import asyncclick as click
 import pytest
 from asyncclick.testing import CliRunner
-from mutagen.flac import FLAC
+from mutagen.flac import FLAC, Picture
+from mutagen.id3 import PictureType
 
 import salmon.tagger.foldername
 import salmon.trackers
@@ -131,12 +132,13 @@ def downloads(monkeypatch, tmp_path) -> Path:
 
 
 def _run_up(
-    monkeypatch, release: Path, remove_source_dir: bool = False, **fakes: Any
+    monkeypatch, release: Path, remove_source_dir: bool = False, args: tuple[str, ...] = (), **fakes: Any
 ) -> tuple[Any, FakeSite, list[tuple[str, str]]]:
     """Run `salmon up RELEASE -g 5 --skip-flac-upload` with the real copy, tagging and folder rename.
 
     The seams that need audio tools, a network or a reviewer are stubbed. Returns the result, the fake
-    site and the (source folder, output folder) of every transcode. `fakes` replace more seams.
+    site and the (source folder, output folder) of every transcode. `args` are added to the command
+    line, and `fakes` replace more seams.
     """
     site = FakeSite(_group())
     transcodes: list[tuple[str, str]] = []
@@ -199,7 +201,7 @@ def _run_up(
         return await CliRunner().invoke(
             salmon.uploader.up,
             [str(release), "-t", "RED", "-g", "5", "-s", "WEB", "--skip-flac-upload", "-n", "-yyy"]
-            + ["--skip-integrity-check", "--skip-up"],
+            + ["--skip-integrity-check", "--skip-up", *args],
             input="y\n",
         )
 
@@ -259,3 +261,46 @@ def test_a_run_that_fails_leaves_the_source_and_removes_the_copy(monkeypatch, tm
     assert isinstance(result.exception, RuntimeError)
     assert _snapshot(release) == before
     assert os.listdir(downloads / ".salmon-staging") == []
+
+
+def _embed_front_cover(path: Path, size: int) -> None:
+    audio = FLAC(path)
+    picture = Picture()
+    picture.type = PictureType.COVER_FRONT
+    picture.mime = "image/jpeg"
+    picture.data = b"x" * size
+    audio.add_picture(picture)
+    audio.save()
+
+
+@pytest.mark.parametrize(
+    ("strip", "args", "stripped"),
+    [
+        (None, (), True),
+        (False, (), False),
+        (None, ("--scene",), False),
+    ],
+    ids=["default", "strip_oversized_pictures off", "scene"],
+)
+def test_oversized_pictures_are_stripped_from_the_copy(
+    monkeypatch, tmp_path, downloads, strip: bool | None, args: tuple[str, ...], stripped: bool
+) -> None:
+    release = _release(tmp_path / "seeding" / "Album")
+    _embed_front_cover(release / "01 - one.flac", 1024 * 1024)
+    before = _snapshot(release)
+    if strip is not None:
+        monkeypatch.setattr(salmon.uploader.cfg.image, "strip_oversized_pictures", strip)
+    pictures_when_transcoded: list[int] = []
+
+    async def transcode(path: str, bitrate: str, *_args: Any, output_dir: str | None = None, **_kw: Any) -> str:
+        pictures_when_transcoded.append(len(FLAC(os.path.join(path, "01. one.flac")).pictures))
+        new_path = os.path.join(output_dir or os.path.dirname(path), f"{os.path.basename(path)} [{bitrate}]")
+        os.makedirs(new_path)
+        return new_path
+
+    result, _site, _transcodes = _run_up(monkeypatch, release, args=args, transcode_folder=transcode)
+
+    assert result.exit_code == 0, result.output
+    assert ("exceed RED's 1 MiB limit" in result.output) is not ("--scene" in args)
+    assert pictures_when_transcoded == [0 if stripped else 1] * 2
+    assert _snapshot(release) == before
