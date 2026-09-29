@@ -47,6 +47,38 @@ def _image(image_format: str, size: int = 0) -> bytes:
 FRONT = _image("jpeg", 1500 * KIB)
 
 
+def _png_bytes(
+    mode: str, size: tuple[int, int], seed: int, *, transparent_block: tuple[int, int, int, int] | None = None
+) -> bytes:
+    """A PNG in the given mode, large and effectively random so it compresses poorly and lands over the limit.
+
+    transparent_block, RGBA only: a (x0, y0, x1, y1) box set to a known color with alpha 0, to check later that
+    flattening onto white does not turn it black or noisy.
+    """
+    width, height = size
+    rand = random.Random(seed)
+    if mode == "RGBA":
+        image = Image.frombytes("RGBA", size, rand.randbytes(width * height * 4))
+        if transparent_block:
+            x0, y0, x1, y1 = transparent_block
+            for x in range(x0, x1):
+                for y in range(y0, y1):
+                    image.putpixel((x, y), (10, 20, 30, 0))
+    elif mode == "LA":
+        image = Image.frombytes("LA", size, rand.randbytes(width * height * 2))
+    elif mode == "P":
+        image = Image.frombytes("P", size, rand.randbytes(width * height))
+        image.putpalette([i for i in range(256) for _ in range(3)])
+        image.info["transparency"] = 5
+    elif mode == "I;16":
+        image = Image.frombytes("I;16", size, rand.randbytes(width * height * 2))
+    else:
+        raise ValueError(mode)
+    buffer = io.BytesIO()
+    image.save(buffer, "png")
+    return buffer.getvalue()
+
+
 def _snapshot(folder: Path) -> dict[str, bytes]:
     return {str(file.relative_to(folder)): file.read_bytes() for file in sorted(folder.rglob("*")) if file.is_file()}
 
@@ -299,3 +331,48 @@ def test_auto_compress_cover_still_strips_and_embeds_the_cover(tmp_path) -> None
     assert [picture.data for picture in audio.pictures] == [front.getvalue()]
     assert cover.pictures_and_padding_size(audio) == len(front.getvalue()) + BLOCK_FIELDS + 8 * KIB
     assert (tmp_path / "01.flac").read_bytes().endswith(AUDIO)
+
+
+@pytest.mark.parametrize(
+    ("mode", "size", "seed"),
+    [
+        ("RGBA", (1000, 1000), 1),
+        ("P", (1100, 1100), 2),
+        ("LA", (1000, 1000), 3),
+        ("I;16", (1000, 1000), 4),
+    ],
+)
+def test_auto_compress_cover_converts_unusual_modes_before_saving_as_jpeg(tmp_path, mode, size, seed) -> None:
+    # RGBA is real image data with a fully transparent 32x32 block at the top left corner.
+    transparent_block = (0, 0, 32, 32) if mode == "RGBA" else None
+    cover_bytes = _png_bytes(mode, size, seed, transparent_block=transparent_block)
+    (tmp_path / "cover.png").write_bytes(cover_bytes)
+    assert len(cover_bytes) > MIB
+    _write_flac(tmp_path / "01.flac")
+
+    cover.compress_pictures(str(tmp_path))
+
+    audio = FLAC(tmp_path / "01.flac")
+    assert len(audio.pictures) == 1
+    picture = audio.pictures[0]
+    assert picture.type == PictureType.COVER_FRONT
+    with Image.open(io.BytesIO(picture.data)) as embedded:
+        assert embedded.format == "JPEG"
+        if mode == "RGBA":
+            # Sampled away from the transparent block's edge, to allow for JPEG's block-based compression error.
+            pixel = embedded.convert("RGB").getpixel((16, 16))
+            assert isinstance(pixel, tuple)
+            assert all(channel > 240 for channel in pixel)
+    assert cover.pictures_and_padding_size(audio) <= MIB
+
+
+def test_a_cover_that_is_not_a_readable_image_is_skipped(tmp_path, capsys) -> None:
+    (tmp_path / "cover.png").write_bytes(b"not a real image, just garbage bytes" * 100)
+    _write_flac(tmp_path / "01.flac")
+
+    cover.compress_pictures(str(tmp_path))
+
+    audio = FLAC(tmp_path / "01.flac")
+    assert audio.pictures == []
+    output = capsys.readouterr().out
+    assert "Could not read cover file" in output
