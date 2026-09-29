@@ -736,3 +736,113 @@ def test_seedbox_reports_a_refused_torrent_by_masked_url_without_a_name(monkeypa
 
 async def _async_true() -> bool:
     return True
+
+
+def _manager_with_boxes(monkeypatch, seedboxes: list[Seedbox]) -> "seedbox.UploadManager":
+    """UploadManager with the given seedboxes and a stubbed torrent client (no network)."""
+    monkeypatch.setattr(seedbox.cfg, "seedbox", seedboxes)
+    monkeypatch.setattr(seedbox.click, "secho", lambda *args, **kwargs: None)
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+    return seedbox.UploadManager()
+
+
+def test_add_upload_task_skips_a_box_pinned_to_a_different_tracker(monkeypatch) -> None:
+    manager = _manager_with_boxes(
+        monkeypatch, [Seedbox(name="red-box", trackers=["RED"], torrent_client="qbittorrent+http://box:8080")]
+    )
+
+    manager.add_upload_task("/tmp/Artist - Album", task_type="folder", is_flac=True, site_code="OPS")
+
+    assert list(manager.tasks) == []
+
+
+def test_add_upload_task_reaches_an_unpinned_box_for_any_tracker(monkeypatch) -> None:
+    manager = _manager_with_boxes(monkeypatch, [Seedbox(name="any-box", torrent_client="qbittorrent+http://box:8080")])
+
+    manager.add_upload_task("/tmp/Artist - Album", task_type="folder", is_flac=True, site_code="RED")
+    manager.add_upload_task("/tmp/Artist - Album2", task_type="folder", is_flac=True, site_code="OPS")
+
+    assert len(manager.tasks) == 2
+
+
+def test_add_upload_task_reaches_a_box_pinned_to_both_trackers(monkeypatch) -> None:
+    manager = _manager_with_boxes(
+        monkeypatch,
+        [Seedbox(name="both-box", trackers=["RED", "OPS"], torrent_client="qbittorrent+http://box:8080")],
+    )
+
+    manager.add_upload_task("/tmp/Artist - Album", task_type="folder", is_flac=True, site_code="RED")
+    manager.add_upload_task("/tmp/Artist - Album2", task_type="folder", is_flac=True, site_code="OPS")
+
+    assert len(manager.tasks) == 2
+
+
+def test_red_and_ops_upload_seeds_only_the_pinned_box_for_each_and_copies_the_folder_once(
+    monkeypatch, tmp_path
+) -> None:
+    # One release uploaded to both RED and OPS, with a seedbox pinned to each: the folder must be
+    # copied once per box that serves either tracker, and each box's seed must be its own torrent.
+    clients: dict[str, _RecordingClient] = {}
+    rclone_calls: list[list[str]] = []
+
+    async def fake_run_rclone(commands: list[str], secrets: list[str]) -> int:
+        rclone_calls.append(commands)
+        return 0
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [
+            Seedbox(
+                name="red-box",
+                trackers=["RED"],
+                type="rclone",
+                url="red",
+                directory="/files/red",
+                torrent_client="qbittorrent+http://red:8080",
+            ),
+            Seedbox(
+                name="ops-box",
+                trackers=["OPS"],
+                type="rclone",
+                url="ops",
+                directory="/files/ops",
+                torrent_client="qbittorrent+http://ops:8080",
+            ),
+        ],
+    )
+    monkeypatch.setattr(
+        seedbox.TorrentClientGenerator,
+        "parse_libtc_url",
+        staticmethod(lambda url: clients.setdefault(url, _RecordingClient())),
+    )
+    monkeypatch.setattr(seedbox, "_run_rclone", fake_run_rclone)
+    monkeypatch.setattr(seedbox.click, "secho", lambda *args, **kwargs: None)
+
+    release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
+    release.mkdir()
+    torrent_red = tmp_path / "Album [RED].torrent"
+    torrent_red.write_bytes(b"d4:infod4:name5:Redeee")
+    torrent_ops = tmp_path / "Album [OPS].torrent"
+    torrent_ops.write_bytes(b"d4:infod4:name5:Opsxee")
+
+    manager = seedbox.UploadManager()
+    manager.add_upload_task(str(release), task_type="folder", is_flac=True, site_code="RED")
+    manager.add_upload_task(str(torrent_red), task_type="seed", is_flac=True, folder=str(release), site_code="RED")
+    manager.add_upload_task(str(release), task_type="folder", is_flac=True, site_code="OPS")
+    manager.add_upload_task(str(torrent_ops), task_type="seed", is_flac=True, folder=str(release), site_code="OPS")
+    anyio.run(manager.execute_upload)
+
+    # One rclone copy per box, not one per (box, tracker) pair.
+    assert len(rclone_calls) == 2
+    assert clients["qbittorrent+http://red:8080"].torrents == [torrent_red.read_bytes()]
+    assert clients["qbittorrent+http://ops:8080"].torrents == [torrent_ops.read_bytes()]
+
+
+def test_seedbox_trackers_are_uppercased() -> None:
+    assert Seedbox(trackers=["red", "ops"]).trackers == ["RED", "OPS"]
+
+
+def test_seedbox_rejects_unknown_tracker() -> None:
+    with pytest.raises(ValueError, match="Unknown tracker"):
+        Seedbox(name="typo-box", trackers=["REDD"])
