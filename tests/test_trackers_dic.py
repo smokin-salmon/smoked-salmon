@@ -184,7 +184,7 @@ def _downconvert_24bit(monkeypatch, tmp_path: Path, converted_names) -> list[dic
             _write_flac(converted / name, sample_rate)
         return sample_rate, str(converted)
 
-    async def check_folder_structure(path, scene):
+    async def check_folder_structure(path, scene, **_kwargs):
         pass
 
     uploads: list[dict[str, Any]] = []

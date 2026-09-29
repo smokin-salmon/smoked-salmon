@@ -9,10 +9,12 @@ from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import (
     RequestError,
 )
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
 class OpsApi(BaseGazelleApi):
+    TAG_RULES = TagRules(max_path_length=255)
+
     def __init__(self):
         self.site_code = "OPS"
         self.base_url = "https://orpheus.network"

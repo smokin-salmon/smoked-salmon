@@ -6,6 +6,7 @@ import sys
 from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
+from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, cast
 from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
@@ -34,6 +35,14 @@ from salmon.errors import (
     RequestFailedError,
     UnknownOutcomeError,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class TagRules:
+    """Per-tracker upload rules a release folder is checked against."""
+
+    max_path_length: int = 180
+
 
 ARTIST_TYPES = [
     "main",
@@ -382,6 +391,8 @@ class HttpResponse(msgspec.Struct, frozen=True):
 
 class BaseGazelleApi:
     """Base API client for Gazelle-based trackers."""
+
+    TAG_RULES: TagRules = TagRules()
 
     # Subclasses must set these attributes before calling __init__
     cookie: str

@@ -15,6 +15,7 @@ from salmon import cfg, dryrun
 from salmon.checks import mqa_test
 from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
+from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup, tagify
 from salmon.config.image_hosts import cover_refusal
@@ -57,6 +58,7 @@ from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import rename_files, tag_files
 from salmon.tagger.review import review_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
+from salmon.trackers.base import TagRules
 from salmon.trackers.red import RedApi
 from salmon.uploader.dupe_checker import (
     can_check_site_log,
@@ -625,6 +627,25 @@ async def upload(
         )
 
 
+def _max_path_length_for_run(gazelle_site: "BaseGazelleApi") -> int:
+    """The path limit to check the folder against: this tracker's, or the strictest among every
+    tracker configured, when the run might go on to upload to another of them afterward.
+
+    Which trackers a run actually reaches is only known one at a time: after each upload, the
+    user is offered a choice among the remaining configured trackers. The folder is checked once,
+    before the first upload, so it is checked against the strictest limit already knowable then.
+    """
+    own_limit = getattr(gazelle_site, "TAG_RULES", TagRules()).max_path_length
+    if not cfg.upload.multi_tracker_upload:
+        return own_limit
+    limits = [own_limit]
+    for code in salmon.trackers.tracker_list:
+        tracker_class = salmon.trackers.tracker_classes.get(code)
+        if tracker_class is not None:
+            limits.append(tracker_class.TAG_RULES.max_path_length)
+    return min(limits)
+
+
 async def _upload_staged(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -750,6 +771,7 @@ async def _upload_staged(
                 skip_initial_review,
                 apply_ai_suggestions,
                 rename_into=rename_into,
+                max_path_length=_max_path_length_for_run(gazelle_site),
             )
 
             if not group_id:
@@ -963,6 +985,7 @@ async def edit_metadata(
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
     rename_into: str | None = None,
+    max_path_length: int = 180,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
     """Edit release metadata in an interactive loop until the user confirms.
 
@@ -983,6 +1006,7 @@ async def edit_metadata(
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
         rename_into: The directory the renamed folder goes into, instead of download_directory.
+        max_path_length: The longest in-torrent path the folder structure check allows.
 
     Returns:
         A tuple of (path, metadata, tags, audio_info) after editing is complete.
@@ -1004,12 +1028,24 @@ async def edit_metadata(
             tag_files(path, tags, metadata, auto_rename)
 
         tags = await check_tags(path)
+        tag_messages = process_tag_issues(
+            path,
+            gather_audio_info(path),
+            scene=metadata["scene"],
+            recompress=recompress and not metadata["scene"],
+        )
+        if tag_messages:
+            click.secho("\nTag notes:", fg="yellow", bold=True)
+            for message in tag_messages:
+                click.secho(f"  - {message}", fg="yellow")
         if not metadata["scene"] and recompress:
             await recompress_path(path)
         path = rename_folder(path, metadata, auto_rename, parent=rename_into)
         if not metadata["scene"]:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
-        await check_folder_structure(path, metadata["scene"], essential_only=essential_only)
+        await check_folder_structure(
+            path, metadata["scene"], essential_only=essential_only, max_path_length=max_path_length
+        )
 
         if not skip_integrity_check:
             await resolve_integrity_for_upload(path, scene=metadata["scene"], assume_yes=cfg.upload.yes_all)
@@ -1352,7 +1388,9 @@ async def execute_downconversion_tasks(
             # Generate description for conversion
             description = generate_conversion_description(base_url, sample_rate, task["target_bitdepth"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(new_path, conversion_metadata["scene"])
+            await check_folder_structure(
+                new_path, conversion_metadata["scene"], max_path_length=_max_path_length_for_run(gazelle_site)
+            )
 
             # Upload the converted version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
@@ -1393,7 +1431,9 @@ async def execute_downconversion_tasks(
             # Generate description for transcode
             description = generate_transcode_description(base_url, task["encoding"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(transcoded_path, transcode_metadata["scene"])
+            await check_folder_structure(
+                transcoded_path, transcode_metadata["scene"], max_path_length=_max_path_length_for_run(gazelle_site)
+            )
 
             # Upload the transcoded version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(

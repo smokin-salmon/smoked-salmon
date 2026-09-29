@@ -72,7 +72,7 @@ def _fake_conversion(monkeypatch, tmp_path: Path, broken) -> list[tuple[str, int
                 _write_flac(folder / name, sample_rate, bit_depth)
         return sample_rate, str(folder)
 
-    async def check_folder_structure(path, scene):
+    async def check_folder_structure(path, scene, **_kwargs):
         pass
 
     uploads: list[tuple[str, int]] = []

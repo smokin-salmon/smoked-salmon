@@ -24,6 +24,7 @@ import salmon.uploader
 from salmon import cfg
 from salmon.config.validations import Directory
 from salmon.errors import AbortAndDeleteFolder, UploadError
+from salmon.trackers.base import TagRules
 from salmon.uploader import staging
 from salmon.uploader.spectrals import get_spectrals_path
 
@@ -253,6 +254,7 @@ class FakeSite:
     site_code = "RED"
     site_string = "RED"
     base_url = "https://tracker.test"
+    TAG_RULES = TagRules()
 
 
 def _returning(result: Any = None):
