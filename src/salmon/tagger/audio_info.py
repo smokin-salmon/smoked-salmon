@@ -50,21 +50,25 @@ def check_hybrid(tags):
     return False
 
 
-async def recompress_path(path: str) -> None:
-    """Recompress all flacs in the directory to the configured compression level.
+async def recompress_path(path: str, files: list[str] | None = None) -> None:
+    """Recompress flacs in the directory to the configured compression level.
 
     Files are re-encoded in parallel, capped by `cfg.upload.simultaneous_threads`.
     A file that fails to re-encode keeps its original content untouched.
 
     Args:
         path: Path to the directory containing FLAC files.
+        files: Relative paths (within `path`) of the FLAC files to recompress. When
+            omitted, every audio file under `path` is discovered, and the whole
+            folder is skipped if any of them is not a FLAC.
 
     Raises:
         UploadError: If one or more files failed to recompress.
     """
-    files = get_audio_files(path)
-    if not files or not all(".flac" in f for f in files):
-        return click.secho("No flacs found to recompress. Skipping...", fg="red")
+    if files is None:
+        files = get_audio_files(path)
+        if not files or not all(".flac" in f for f in files):
+            return click.secho("No flacs found to recompress. Skipping...", fg="red")
     filepaths = [os.path.join(path, filename) for filename in files]
 
     async def _compress_one(filepath: str, _idx: int) -> CompressResult:

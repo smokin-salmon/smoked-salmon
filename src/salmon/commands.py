@@ -18,7 +18,7 @@ import salmon.tagger
 import salmon.trackers
 import salmon.uploader
 from salmon import cfg
-from salmon.common import commandgroup, str_to_int_if_int
+from salmon.common import commandgroup, get_audio_files, str_to_int_if_int
 from salmon.common.redaction import redact_secrets
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.errors import UploadError
@@ -109,8 +109,12 @@ async def compress(path: str) -> None:
     if cfg.directory.protects(path):
         click.secho(f"Not recompressing {path}: it is in library_dirs, or holds one.", fg="red")
         raise click.Abort
+    flac_files = [f for f in get_audio_files(path) if f.lower().endswith(".flac")]
+    if not flac_files:
+        click.secho("No flacs found to recompress. Skipping...", fg="red")
+        return
     try:
-        await recompress_path(path)
+        await recompress_path(path, files=flac_files)
     except UploadError as e:
         click.secho(str(e), fg="red")
         raise click.exceptions.Exit(1) from e

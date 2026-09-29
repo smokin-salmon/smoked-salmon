@@ -86,7 +86,7 @@ async def compress(filepath: str) -> CompressResult:
     ]
     try:
         result = await anyio.run_process(command, check=False)
-    except FileNotFoundError as e:
+    except OSError as e:
         return CompressResult(filepath, False, str(e))
     if result.returncode != 0:
         error = result.stderr.decode(errors="replace").strip() or f"flac exited with code {result.returncode}"

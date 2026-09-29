@@ -4,7 +4,9 @@ import subprocess
 
 import anyio
 import pytest
+from asyncclick.testing import CliRunner
 
+import salmon.commands
 from salmon import cfg
 from salmon.common import files as files_module
 from salmon.common.files import CompressResult, compress
@@ -69,6 +71,20 @@ def test_compress_reports_missing_flac_binary(monkeypatch, tmp_path) -> None:
     assert "flac" in result.error
 
 
+def test_compress_reports_a_permission_error_starting_the_process(monkeypatch, tmp_path) -> None:
+    async def fake_run_process(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        raise PermissionError("[Errno 13] Permission denied: 'flac'")
+
+    monkeypatch.setattr(files_module.anyio, "run_process", fake_run_process)
+
+    filepath = str(tmp_path / "01.flac")
+    result = anyio.run(compress, filepath)
+
+    assert result.success is False
+    assert result.error is not None
+    assert "Permission denied" in result.error
+
+
 def test_recompress_path_reports_a_single_failure_and_still_processes_the_rest(monkeypatch, tmp_path) -> None:
     filenames = ["01.flac", "02.flac", "03.flac"]
     for name in filenames:
@@ -118,6 +134,45 @@ def test_recompress_path_succeeds_when_all_files_succeed(monkeypatch, tmp_path) 
     anyio.run(audio_info.recompress_path, str(tmp_path))
 
     assert sorted(processed) == sorted(str(tmp_path / name) for name in filenames)
+
+
+def test_recompress_path_takes_an_explicit_file_list(monkeypatch, tmp_path) -> None:
+    """A caller that already filtered to FLACs can bypass the all-FLAC guard."""
+    _write_flac(tmp_path / "01.flac")
+    (tmp_path / "01.mp3").write_bytes(b"not a flac")
+
+    processed: list[str] = []
+
+    async def fake_compress(filepath: str) -> CompressResult:
+        processed.append(filepath)
+        return CompressResult(filepath, True)
+
+    monkeypatch.setattr(audio_info, "compress", fake_compress)
+
+    anyio.run(audio_info.recompress_path, str(tmp_path), ["01.flac"])
+
+    assert processed == [str(tmp_path / "01.flac")]
+
+
+def test_compress_command_recompresses_flacs_in_a_mixed_directory(monkeypatch, tmp_path) -> None:
+    """salmon compress recompresses the FLACs in a folder that also has other formats."""
+    _write_flac(tmp_path / "01.flac")
+    (tmp_path / "01.mp3").write_bytes(b"not a flac")
+
+    recompressed: list[str] = []
+
+    async def fake_recompress_path(path: str, files: list[str] | None = None) -> None:
+        recompressed.extend(files or [])
+
+    monkeypatch.setattr(salmon.commands, "recompress_path", fake_recompress_path)
+
+    async def run():
+        return await CliRunner().invoke(salmon.commands.compress, [str(tmp_path)])
+
+    result = anyio.run(run)
+
+    assert result.exit_code == 0, result.output
+    assert recompressed == ["01.flac"]
 
 
 def test_recompress_path_caps_concurrency_at_simultaneous_threads(monkeypatch, tmp_path) -> None:
