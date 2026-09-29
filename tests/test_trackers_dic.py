@@ -237,4 +237,5 @@ def test_converted_folder_with_other_files_is_not_uploaded(monkeypatch, capsys, 
     uploads = _downconvert_24bit(monkeypatch, tmp_path, lambda source: ["01. Other.flac", "02. Other.flac"])
 
     assert uploads == []
-    assert "does not hold the same audio files as the source: not uploading it" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "does not hold the same audio files as the source: not uploading it" in out

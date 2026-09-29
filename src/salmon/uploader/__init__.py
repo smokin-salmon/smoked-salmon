@@ -1277,6 +1277,18 @@ async def execute_downconversion_tasks(
                     bold=True,
                 )
                 continue
+            # Nor is it this conversion if its files are not in the format the task makes.
+            expected = (task["target_bitdepth"], task["target_sample_rate"])
+            found = sorted({(info["precision"], info["sample rate"]) for info in converted_info.values()})
+            if found != [expected]:
+                found_formats = ", ".join(f"{bits} bit {rate / 1000:g} kHz" for bits, rate in found)
+                click.secho(
+                    f"  {new_path} holds {found_formats} files, not {expected[0]} bit {expected[1] / 1000:g} kHz: "
+                    "not uploading it.",
+                    fg="red",
+                    bold=True,
+                )
+                continue
             conversion_track_data = {name: {**track, **converted_info[name]} for name, track in track_data.items()}
 
             # Update metadata for this conversion

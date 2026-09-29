@@ -117,8 +117,46 @@ def test_unreadable_converted_folder_is_skipped_and_the_next_task_runs(
     monkeypatch, capsys, tmp_path: Path, broken, reason: str
 ) -> None:
     uploads = _fake_conversion(monkeypatch, tmp_path, broken)
+
+    _run_downconversions()
+
+    assert uploads == [(str(tmp_path / "converted 16"), 16)]
+    out = capsys.readouterr().out
+    assert f"Could not read {tmp_path / 'converted 24'}" in out
+    assert reason in out
+    assert "not uploading it" in out
+
+
+def _files_in(bits: int, rate: int):
+    def write(folder: Path) -> None:
+        for name in SOURCE_NAMES:
+            _write_flac(folder / name, rate, bits)
+
+    return write
+
+
+@pytest.mark.parametrize(
+    ("broken", "found"),
+    [(_files_in(16, 96000), "16 bit 96 kHz"), (_files_in(24, 48000), "24 bit 48 kHz")],
+    ids=["16-bit files", "48 kHz files"],
+)
+def test_converted_folder_in_another_format_is_skipped_and_the_next_task_runs(
+    monkeypatch, capsys, tmp_path: Path, broken, found: str
+) -> None:
+    # A folder already there under the name of the 24-bit 96 kHz conversion, with the right file names.
+    uploads = _fake_conversion(monkeypatch, tmp_path, broken)
+
+    _run_downconversions()
+
+    assert uploads == [(str(tmp_path / "converted 16"), 16)]
+    out = capsys.readouterr().out
+    assert f"{tmp_path / 'converted 24'} holds {found} files, not 24 bit 96 kHz: not uploading it." in out
+
+
+def _run_downconversions() -> None:
+    """Run the 24-bit 96 kHz and the 16-bit 48 kHz downconversions of the 24-bit 192 kHz source."""
     tasks = _downconversion_tasks()
-    assert [task["target_bitdepth"] for task in tasks] == [24, 16]
+    assert [(task["target_bitdepth"], task["target_sample_rate"]) for task in tasks] == [(24, 96000), (16, 48000)]
 
     anyio.run(
         uploader.execute_downconversion_tasks,
@@ -140,12 +178,6 @@ def test_unreadable_converted_folder_is_skipped_and_the_next_task_runs(
         "WEB",
         "https://tracker.test/torrents.php?torrentid=1",
     )
-
-    assert uploads == [(str(tmp_path / "converted 16"), 16)]
-    out = capsys.readouterr().out
-    assert f"Could not read {tmp_path / 'converted 24'}" in out
-    assert reason in out
-    assert "not uploading it" in out
 
 
 @contextlib.contextmanager
@@ -221,4 +253,5 @@ def test_unreadable_converted_folder_leaves_the_main_upload_seeded(monkeypatch, 
 
     assert uploads == [(str(tmp_path / "converted 16"), 16)]
     assert manager.executed == ["/release", str(tmp_path / "converted 16")]
-    assert f"Could not read {tmp_path / 'converted 24'}" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert f"Could not read {tmp_path / 'converted 24'}" in out
