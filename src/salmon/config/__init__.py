@@ -115,6 +115,11 @@ def find_config_path() -> Path:
     config_dir_path = get_user_cfg_path()
     root_config_path = _PKG_DIR.parent.parent / "config.toml"
 
+    # An explicitly set SALMON_CONFIG_DIR beats the repo-root config.toml: it says
+    # exactly where to look, so it should win over that implicit dev convenience.
+    if os.environ.get(CONFIG_DIR_ENV) and config_dir_path.exists():
+        return config_dir_path
+
     # You can put a config.toml in the root directory for development purposes
     if root_config_path.exists():
         return root_config_path
