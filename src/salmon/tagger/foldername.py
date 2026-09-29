@@ -132,7 +132,15 @@ def _resolution(path):
     and when the tracks do not all share one bit depth and sample rate: a folder name must not
     claim a single resolution for a hybrid release.
     """
-    audio_info = gather_audio_info(path)
+    return resolution_token(gather_audio_info(path))
+
+
+def resolution_token(audio_info):
+    """
+    Same as `_resolution`, from an already-gathered `gather_audio_info` mapping. The converters
+    use this to work out the exact token (if any) a source folder's name would carry, so they can
+    drop or replace it without guessing at a pattern that could also match unrelated text.
+    """
     bits = {info["precision"] for info in audio_info.values()}
     rates = {info["sample rate"] for info in audio_info.values()}
     if len(bits) != 1 or len(rates) != 1:
@@ -167,8 +175,10 @@ def _strip_blank_resolution(template):
     token alone in its brackets but wrong for "[{source} FLAC {resolution}]": it would eat the
     closing bracket and leave "FLAC" hanging open. Here only the placeholder (and one adjacent
     separator space) goes; the bracket comes with it only if nothing else was left inside.
+    A placeholder can carry a format spec, as in "{resolution:>5}"; that goes too, or it would
+    survive into template.format() with no "resolution" key left to fill it.
     """
-    template = re.sub(r"\s*\{resolution\}", "", template)
+    template = re.sub(r"\s*\{resolution(?::[^}]*)?\}", "", template)
     template = re.sub(r"[\[{(]\s*[\]})]", "", template)
     template = re.sub(r"\s+", " ", template).strip()
     return re.sub(r" *- *$", "", template)

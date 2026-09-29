@@ -16,6 +16,8 @@ from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.errors import UploadError
 from salmon.release_notification import get_version
+from salmon.tagger.audio_info import gather_audio_info
+from salmon.tagger.foldername import resolution_token
 
 Bitrate = Literal["V0", "320"]
 
@@ -28,8 +30,6 @@ LAME_COMMAND_MAP: dict[Bitrate, list[str]] = {
 SKIP_EXTENSIONS = frozenset((".cue", ".log", ".m3u", ".m3u8", ".accurip"))
 FLAC_FOLDER_RE = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
 LOSSLESS_FOLDER_RE = re.compile(r"Lossless", flags=re.IGNORECASE)
-# An existing {resolution} folder token, e.g. "24-96" or "16-48" (tagger/foldername.py).
-RESOLUTION_TOKEN_RE = re.compile(r"\s*\b(?:16|24)-\d{1,3}(?:\.\d+)?\b")
 
 # Vorbis comment → ID3v2 frame mapping
 VORBIS_TO_ID3_MAP: dict[str, str] = {
@@ -89,9 +89,12 @@ def _build_output_path(path: str, bitrate: Bitrate, output_dir: str | None = Non
     """
     to_append: list[str] = []
     foldername = os.path.basename(path)
-    # Drop a stale resolution token before deriving the new name: an MP3 transcode must not
-    # keep claiming a FLAC resolution such as "24-96".
-    foldername = RESOLUTION_TOKEN_RE.sub("", foldername)
+    # Drop a stale resolution token before deriving the new name: an MP3 transcode must not keep
+    # claiming a FLAC resolution such as "24-96". The token is computed from the source's actual
+    # files, not guessed at with a pattern, so it cannot also eat unrelated digits from the title.
+    current_token = resolution_token(gather_audio_info(path))
+    if current_token:
+        foldername = re.sub(r"\s*" + re.escape(current_token) + r"\b", "", foldername)
 
     if FLAC_FOLDER_RE.search(foldername):
         if LOSSLESS_FOLDER_RE.search(foldername):

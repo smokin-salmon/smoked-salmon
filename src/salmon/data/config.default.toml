@@ -216,9 +216,10 @@ session = 'get-from-site-cookie'
 # # templates for folder and file naming
 # folder_template = "{artists} - {title} ({year}) [{source} {format}]"
 # # {resolution} adds "24-96" / "16-48" for lossless files that are not 16bit/44.1kHz (blank for
-# # lossy files, for 16/44.1, and for a release with mixed bit depths or sample rates), e.g.
-# # "[{source} FLAC {resolution}]"; pair it with {source} rather than {format}, which already
-# # spells out "24bit FLAC" and would repeat the bit depth (e.g. "24bit FLAC 24-96")
+# # lossy files, for 16/44.1, and for a release with mixed bit depths or sample rates), e.g. a
+# # FLAC-only folder_template of "[{source} FLAC {resolution}]"; pair it with {source} rather
+# # than {format}, which already spells out "24bit FLAC" and would repeat the bit depth (e.g.
+# # "24bit FLAC 24-96")
 # file_template = "{tracknumber}. {artist} - {title}"
 # remove_source_dir = false
 # # Multi-disc releases: true puts each disc's tracks in its own folder (CD01, CD02; LP01 for vinyl, Part01

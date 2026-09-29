@@ -14,11 +14,9 @@ from salmon.common.files import process_files
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
+from salmon.tagger.foldername import resolution_token
 
 BitDepth = Literal[16, 24]
-
-# An existing {resolution} folder token, e.g. "24-96" or "16-48" (tagger/foldername.py).
-RESOLUTION_TOKEN_RE = re.compile(r"\s*\b(?:16|24)-\d{1,3}(?:\.\d+)?\b")
 
 SOX_DEPTH_ARGS: dict[BitDepth, list[str]] = {
     16: ["-R", "-G", "-b", "16"],
@@ -73,8 +71,12 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
     """
     foldername = os.path.basename(path)
     # Drop a stale resolution token before deriving the new name: an untouched "24-96" would
-    # survive into a 16/44.1 or MP3 name that must not claim a resolution at all.
-    foldername = RESOLUTION_TOKEN_RE.sub("", foldername)
+    # survive into a 16/44.1 or MP3 name that must not claim a resolution at all. The token is
+    # computed from the source's actual files, not guessed at with a pattern, so it cannot also
+    # eat unrelated digits from the album title.
+    current_token = resolution_token(gather_audio_info(path))
+    if current_token:
+        foldername = re.sub(r"\s*" + re.escape(current_token) + r"\b", "", foldername)
     if re.search(r"24 ?bit FLAC", foldername, flags=re.IGNORECASE):
         foldername = re.sub(r"24 ?bit FLAC", "FLAC", foldername, flags=re.IGNORECASE)
     elif re.search("FLAC", foldername, flags=re.IGNORECASE):

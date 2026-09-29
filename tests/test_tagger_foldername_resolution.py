@@ -44,7 +44,9 @@ def _stub_audio_info(monkeypatch, tracks):
 def test_resolution_of_a_uniform_release(monkeypatch, precision, sample_rate, expected) -> None:
     _stub_audio_info(monkeypatch, {"01.flac": {"precision": precision, "sample rate": sample_rate}})
 
-    assert foldername._resolution("/music/album") == expected
+    result = foldername._resolution("/music/album")
+
+    assert result == expected
 
 
 def test_mixed_sample_rates_are_blank(monkeypatch) -> None:
@@ -57,7 +59,9 @@ def test_mixed_sample_rates_are_blank(monkeypatch) -> None:
         },
     )
 
-    assert foldername._resolution("/music/album") == ""
+    result = foldername._resolution("/music/album")
+
+    assert result == ""
 
 
 def test_mixed_bit_depths_are_blank(monkeypatch) -> None:
@@ -69,7 +73,9 @@ def test_mixed_bit_depths_are_blank(monkeypatch) -> None:
         },
     )
 
-    assert foldername._resolution("/music/album") == ""
+    result = foldername._resolution("/music/album")
+
+    assert result == ""
 
 
 WITH_TOKEN = "{artists} - {title} ({year}) [{source} FLAC {resolution}]"
@@ -115,6 +121,23 @@ def test_the_default_template_is_unchanged_and_does_not_read_files(monkeypatch, 
 
     assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB 24bit FLAC]")
     assert calls == []
+
+
+def test_a_blank_token_with_a_format_spec_does_not_raise(monkeypatch, tmp_path) -> None:
+    # "{resolution:>5}" is still the resolution field to Formatter().parse; a blank value must
+    # not survive into template.format() with no "resolution" key left to fill it.
+    calls = _stub_audio_info(monkeypatch, {"01.flac": {"precision": 16, "sample rate": 44100}})
+    monkeypatch.setattr(
+        cfg.upload.formatting, "folder_template", "{artists} - {title} ({year}) [{source} FLAC {resolution:>5}]"
+    )
+    monkeypatch.setattr(cfg.directory, "download_directory", str(tmp_path))
+    album = tmp_path / "old name"
+    album.mkdir()
+
+    renamed = foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False)
+
+    assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB FLAC]")
+    assert calls == [str(album)]
 
 
 def test_an_escaped_token_does_not_read_the_files(monkeypatch, tmp_path) -> None:
