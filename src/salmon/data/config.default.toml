@@ -184,6 +184,10 @@ session = 'get-from-site-cookie'
 # # answers yes to all questions during upload. risky!
 # yes_all = false
 
+# # Check every FLAC file for an MQA marker before uploading (reads the first second of each).
+# # false checks only the first file: faster, but MQA on a track other than the first is not caught.
+# mqa_check_all_tracks = true
+
 # # enable seedbox uploading
 # upload_to_seedbox = true
 

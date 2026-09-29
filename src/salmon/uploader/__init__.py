@@ -12,11 +12,7 @@ import pyperclip
 import salmon.trackers
 from salmon import cfg
 from salmon.checks import mqa_test
-from salmon.checks.integrity import (
-    check_integrity,
-    format_integrity,
-    sanitize_integrity,
-)
+from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup, tagify
@@ -186,7 +182,7 @@ if TYPE_CHECKING:
 @click.option(
     "--skip-mqa",
     is_flag=True,
-    help="Skip check for MQA marker (on first file only)",
+    help="Skip the check for an MQA marker",
 )
 @click.option(
     "--skip-log-check",
@@ -658,8 +654,10 @@ async def _upload_staged(
             gazelle_site, dupe_searchstrs, rls_data["title"]
         ) as group_fetch:
             if not skip_mqa:
-                click.secho("Checking for MQA release (first file only)", fg="cyan", bold=True)
-                await mqa_test(path)
+                all_files = cfg.upload.mqa_check_all_tracks
+                checked = "every FLAC file" if all_files else "first FLAC file only"
+                click.secho(f"Checking for MQA release ({checked})", fg="cyan", bold=True)
+                await mqa_test(path, all_files=all_files)
                 click.secho("No MQA release detected", fg="green")
 
             if rls_data["encoding"] == "24bit Lossless" and not skip_up:
@@ -933,7 +931,7 @@ async def edit_metadata(
         A tuple of (path, metadata, tags, audio_info) after editing is complete.
 
     Raises:
-        click.Abort: If a scene release fails sanitization.
+        click.Abort: If a scene release fails the integrity check, or a file does not decode.
     """
     while True:
         metadata = await review_metadata_with_ai(
@@ -957,30 +955,7 @@ async def edit_metadata(
         await check_folder_structure(path, metadata["scene"], essential_only=essential_only)
 
         if not skip_integrity_check:
-            click.secho("\nChecking integrity of audio files...", fg="cyan", bold=True)
-            result = await check_integrity(path)
-            click.echo(format_integrity(result))
-
-            if not result[0] and metadata["scene"]:
-                click.secho(
-                    "Some files failed sanitization, and this a scene release. "
-                    "You need to sanitize and de-scene before uploading. Aborting.",
-                    fg="red",
-                    bold=True,
-                )
-                raise click.Abort()
-            if not result[0] and (
-                cfg.upload.yes_all
-                or click.confirm(
-                    click.style("\nDo you want to sanitize this upload?", fg="magenta"),
-                    default=True,
-                )
-            ):
-                click.secho("\nSanitizing files...", fg="cyan", bold=True)
-                if await sanitize_integrity(path):
-                    click.secho("Sanitization complete", fg="green")
-                else:
-                    click.secho("Some files failed sanitization", fg="red", bold=True)
+            await resolve_integrity_for_upload(path, scene=metadata["scene"], assume_yes=cfg.upload.yes_all)
 
         if cfg.upload.yes_all or click.confirm(
             click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
