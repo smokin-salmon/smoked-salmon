@@ -1,9 +1,10 @@
 """ID3 tags inside FLACs, uncompressed FLACs, the dual-ID3-tag MP3 case, and the shared
 in-torrent path helper."""
 
-from mutagen.id3 import TIT2
+from mutagen.id3 import TIT2, ID3UnsupportedVersionError
 from mutagen.mp3 import MP3
 
+from salmon.checks import tag_rules
 from salmon.checks.tag_rules import (
     collect_tag_warnings,
     has_blank_id3v2_alongside_id3v1,
@@ -131,6 +132,20 @@ def test_dual_id3_is_flagged_only_for_a_filled_v1_next_to_a_blank_v2(tmp_path) -
     assert has_blank_id3v2_alongside_id3v1(str(v2_only)) is False
     assert has_blank_id3v2_alongside_id3v1(str(v1_and_blank_v2)) is True
     assert has_blank_id3v2_alongside_id3v1(str(v1_and_good_v2)) is False
+
+
+def test_a_tag_mutagen_cannot_parse_is_not_flagged_and_does_not_crash(tmp_path, monkeypatch) -> None:
+    """A warning check must never raise: a malformed ID3v2 tag mutagen refuses to parse (not just a
+    missing one) must be treated as not the flagged case, not propagated to abort the upload."""
+    path = tmp_path / "a.mp3"
+    path.write_bytes(b"ID3\x02\x00\x00\x00\x00\x00\x00" + b"\x00" * 300 + b"TAG" + b"\x00" * 125)
+
+    def raise_unsupported(_filepath):
+        raise ID3UnsupportedVersionError("mutagen cannot parse this ID3v2 version")
+
+    monkeypatch.setattr(tag_rules, "ID3", raise_unsupported)
+
+    assert has_blank_id3v2_alongside_id3v1(str(path)) is False
 
 
 def test_collect_tag_warnings_flags_id3_and_uncompressed_flacs_and_dual_id3_mp3s(tmp_path) -> None:

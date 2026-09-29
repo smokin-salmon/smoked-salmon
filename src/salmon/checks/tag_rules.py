@@ -6,7 +6,8 @@ Blocking checks (folder structure, decode integrity, required tags) live elsewhe
 
 import os
 
-from mutagen.id3 import ID3, ID3NoHeaderError
+from mutagen import MutagenError
+from mutagen.id3 import ID3
 
 from salmon.common import get_audio_files
 
@@ -51,7 +52,7 @@ def has_blank_id3v2_alongside_id3v1(filepath: str) -> bool:
         return False
     try:
         tags = ID3(filepath)
-    except ID3NoHeaderError:
+    except (MutagenError, OSError):
         return False
     return not any(tags.getall(key) for key in tags)
 

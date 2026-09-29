@@ -85,3 +85,16 @@ def test_dic_keeps_the_180_default_pending_confirmation(monkeypatch) -> None:
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["DIC"])
 
     assert uploader._max_path_length_for_run(DICApi()) == 180
+
+
+def test_truncation_that_cannot_fit_raises_instead_of_leaving_the_path_too_long(tmp_path) -> None:
+    """A deep sub-folder can already sit right at the limit, leaving no room to shorten a short
+    file name into: truncating it down to just ".." plus its extension can still be too long."""
+    max_path_length = 20
+    folder = tmp_path / "F"
+    subfolder = folder / ("S" * 16)  # "F/SSSSSSSSSSSSSSSS" is 18 chars, within the limit.
+    subfolder.mkdir(parents=True)
+    (subfolder / "x.flac").write_bytes(b"fLaC")  # the full path is 25 chars, over the limit.
+
+    with pytest.raises(NoncompliantFolderStructure):
+        _check_path_lengths(str(folder), scene=False, max_path_length=max_path_length)
