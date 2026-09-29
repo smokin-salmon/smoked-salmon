@@ -48,19 +48,19 @@ FRONT = _image("jpeg", 1500 * KIB)
 
 
 def _png_bytes(
-    mode: str, size: tuple[int, int], seed: int, *, transparent_block: tuple[int, int, int, int] | None = None
+    mode: str, size: tuple[int, int], seed: int, *, known_block: tuple[int, int, int, int] | None = None
 ) -> bytes:
     """A PNG in the given mode, large and effectively random so it compresses poorly and lands over the limit.
 
-    transparent_block, RGBA only: a (x0, y0, x1, y1) box set to a known color with alpha 0, to check later that
-    flattening onto white does not turn it black or noisy.
+    known_block: a (x0, y0, x1, y1) box set to a known value, to check later how flattening to RGB treats it.
+    RGBA gets full transparency there (alpha 0); I;16 gets a mid-grey 16-bit value (32768).
     """
     width, height = size
     rand = random.Random(seed)
     if mode == "RGBA":
         image = Image.frombytes("RGBA", size, rand.randbytes(width * height * 4))
-        if transparent_block:
-            x0, y0, x1, y1 = transparent_block
+        if known_block:
+            x0, y0, x1, y1 = known_block
             for x in range(x0, x1):
                 for y in range(y0, y1):
                     image.putpixel((x, y), (10, 20, 30, 0))
@@ -72,6 +72,11 @@ def _png_bytes(
         image.info["transparency"] = 5
     elif mode == "I;16":
         image = Image.frombytes("I;16", size, rand.randbytes(width * height * 2))
+        if known_block:
+            x0, y0, x1, y1 = known_block
+            for x in range(x0, x1):
+                for y in range(y0, y1):
+                    image.putpixel((x, y), 32768)
     else:
         raise ValueError(mode)
     buffer = io.BytesIO()
@@ -343,9 +348,9 @@ def test_auto_compress_cover_still_strips_and_embeds_the_cover(tmp_path) -> None
     ],
 )
 def test_auto_compress_cover_converts_unusual_modes_before_saving_as_jpeg(tmp_path, mode, size, seed) -> None:
-    # RGBA is real image data with a fully transparent 32x32 block at the top left corner.
-    transparent_block = (0, 0, 32, 32) if mode == "RGBA" else None
-    cover_bytes = _png_bytes(mode, size, seed, transparent_block=transparent_block)
+    # RGBA gets a fully transparent 32x32 block; I;16 gets a mid-grey (32768) 32x32 block, both top left.
+    known_block = (0, 0, 32, 32) if mode in ("RGBA", "I;16") else None
+    cover_bytes = _png_bytes(mode, size, seed, known_block=known_block)
     (tmp_path / "cover.png").write_bytes(cover_bytes)
     assert len(cover_bytes) > MIB
     _write_flac(tmp_path / "01.flac")
@@ -358,11 +363,16 @@ def test_auto_compress_cover_converts_unusual_modes_before_saving_as_jpeg(tmp_pa
     assert picture.type == PictureType.COVER_FRONT
     with Image.open(io.BytesIO(picture.data)) as embedded:
         assert embedded.format == "JPEG"
+        # Sampled away from the known block's edge, to allow for JPEG's block-based compression error.
         if mode == "RGBA":
-            # Sampled away from the transparent block's edge, to allow for JPEG's block-based compression error.
             pixel = embedded.convert("RGB").getpixel((16, 16))
             assert isinstance(pixel, tuple)
             assert all(channel > 240 for channel in pixel)
+        if mode == "I;16":
+            # A 16-bit value of 32768 scales to 128 in 8 bits; convert("RGB") alone clips it to 255 (white).
+            pixel = embedded.convert("L").getpixel((16, 16))
+            assert isinstance(pixel, int)
+            assert 100 <= pixel <= 156
     assert cover.pictures_and_padding_size(audio) <= MIB
 
 

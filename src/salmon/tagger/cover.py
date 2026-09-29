@@ -120,13 +120,17 @@ def _flatten_to_rgb(image: Image.Image) -> Image.Image:
 
     A mode with transparency (RGBA, LA, or P with a transparency entry) is flattened onto a white
     background using its alpha channel as a mask, since `convert("RGB")` alone leaves transparent pixels
-    black or noisy instead. Any other mode (16-bit grayscale I;16 included) is converted directly.
+    black or noisy instead. A 16- or 32-bit integer mode (I;16, I;16B, I;16L, I) is scaled down to 8 bits
+    first, since `convert("RGB")` alone clips instead of scaling: a typical 16-bit value like 32768 comes
+    out white (255) rather than mid-grey (measured on PIL). Any other mode is converted directly.
     """
     if image.mode in ("RGBA", "LA") or (image.mode == "P" and "transparency" in image.info):
         rgba = image.convert("RGBA")
         background = Image.new("RGB", rgba.size, (255, 255, 255))
         background.paste(rgba, mask=rgba.getchannel("A"))
         return background
+    if image.mode in ("I", "I;16", "I;16B", "I;16L"):
+        return image.convert("I").point(lambda v: v / 256).convert("RGB")
     return image.convert("RGB")
 
 
