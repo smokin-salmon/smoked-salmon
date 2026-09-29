@@ -4,7 +4,7 @@ import msgspec
 from aiohttp import FormData
 from bs4 import BeautifulSoup
 
-from salmon import cfg
+from salmon import cfg, dryrun
 from salmon.common import UploadFiles
 from salmon.errors import RequestFailedError
 from salmon.trackers.base import BaseGazelleApi
@@ -164,7 +164,9 @@ class RedApi(BaseGazelleApi):
             Tuple of (torrent_id, group_id).
         """
         group_id = data.get("groupid")
-        if group_id:
+        if isinstance(group_id, dryrun.Pending):
+            dryrun.say(f"not reading the new group's fields from {self.site_string}'s upload page: it creates none.")
+        elif group_id:
             await self._enrich_data_from_group(data, int(group_id))
         return await super().site_page_upload(data, files)
 

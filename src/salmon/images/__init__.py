@@ -5,7 +5,7 @@ import anyio
 import asyncclick as click
 import pyperclip
 
-from salmon import cfg
+from salmon import cfg, dryrun
 from salmon.common import AliasedCommands, commandgroup
 from salmon.config.image_hosts import spectrals_refusal
 from salmon.errors import ImageUploadFailed
@@ -125,7 +125,13 @@ async def _upload_groups(
 
     Returns:
         Each group's URLs, in the order of its paths, or None if the group failed or never started.
+
+    Raises:
+        DryRunRefused: In a dry run, before any upload starts.
     """
+    # Here as well as in upload_file: refused in several workers at once, it would come out as a group.
+    if dryrun.active():
+        dryrun.refuse(f"upload {sum(len(paths) for paths in groups)} image(s) to {uploader.host}")
     queue = iter([(index, position, path) for index, paths in enumerate(groups) for position, path in enumerate(paths)])
     urls: list[list[str]] = [[""] * len(paths) for paths in groups]
     started: set[int] = set()

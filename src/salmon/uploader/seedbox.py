@@ -8,7 +8,7 @@ from urllib.parse import unquote, urlparse
 import anyio
 import asyncclick as click
 
-from salmon import cfg
+from salmon import cfg, dryrun
 from salmon.common.redaction import redact_command, redact_secrets, secret_values
 from salmon.config.validations import Seedbox
 from salmon.uploader.torrent_client import TorrentClient, TorrentClientGenerator
@@ -215,7 +215,11 @@ class UploadManager:
                 its own path. Defaults to `directory` when omitted, matching the old behaviour.
             site_code: Tracker this upload went to. Skips a seedbox whose `trackers` is set and
                 does not contain it; a seedbox with no `trackers` still matches every tracker.
+
+        Raises:
+            DryRunRefused: In a dry run, which copies nothing to a seedbox and adds nothing to a client.
         """
+        dryrun.refuse(f"queue {directory} for a seedbox copy or a torrent client")
         click.secho(f"Preparing upload tasks for: {directory}", fg="cyan")
         task_folder = directory if task_type == "folder" else (folder or directory)
         for seedbox in _enabled_seedboxes():

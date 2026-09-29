@@ -101,6 +101,15 @@ class UploadRefusedError(RequestError):
     pass
 
 
+class DryRunRefused(Exception):
+    """A step that would send something ran during a dry run, and was stopped before it sent anything.
+
+    Not a RequestError: the upload flow reads those as a failed upload and goes on to the next one.
+    """
+
+    pass
+
+
 class EditedLogError(Exception):
     """Raised when a log file has been edited."""
 

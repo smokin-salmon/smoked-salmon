@@ -11,7 +11,7 @@ import pyperclip
 from mutagen import MutagenError
 
 import salmon.trackers
-from salmon import cfg
+from salmon import cfg, dryrun
 from salmon.checks import mqa_test
 from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
@@ -30,6 +30,7 @@ from salmon.converter.transcoding import (
 from salmon.errors import (
     AbortAndDeleteFolder,
     CRCMismatchError,
+    DryRunRefused,
     EditedLogError,
     InvalidMetadataError,
     LogCheckSkipped,
@@ -202,6 +203,13 @@ if TYPE_CHECKING:
     is_flag=True,
     help="Only keep essential files; strip nfo, sfv, md5, txt, and other extras.",
 )
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Go through the whole upload on a copy of the album and send nothing: print what each upload would "
+    "send instead. Nothing is posted to a tracker or uploaded to an image host, copied to a seedbox or added "
+    "to a torrent client.",
+)
 async def up(
     path: str,
     group_id: int | None,
@@ -226,6 +234,7 @@ async def up(
     skip_log_check: bool,
     skip_integrity_check: bool,
     essential_only: bool,
+    dry_run: bool,
 ) -> None:
     """Command to upload an album folder to a Gazelle Site."""
     if skip_flac_upload and group_id is None:
@@ -236,53 +245,70 @@ async def up(
         raise click.UsageError("--skip-flac-upload cannot be used with --spectrals-after.")
     if essential_only and scene:
         raise click.UsageError("--essential-only and --scene cannot be used together.")
+    if dry_run and spectrals_after:
+        raise click.UsageError(
+            "--dry-run cannot be used with --spectrals-after: that step edits the uploaded torrent, and a dry run "
+            "uploads none."
+        )
     if yyy:
         cfg.upload.yes_all = True
-    gazelle_site = salmon.trackers.get_class(tracker)()
-    if request:
-        request = salmon.trackers.validate_request(gazelle_site, request)
-        # This is isn't handled by click because we need the tracker sorted first.
-    print_preassumptions(
-        gazelle_site,
-        path,
-        group_id,
-        source,
-        lossy,
-        spectrals,
-        encoding,
-        spectrals_after,
-    )
-    flac_group = None
-    if group_id:
-        group = await confirm_group_upload(gazelle_site, group_id, source)
-        if skip_flac_upload:
-            flac_group = group
-    if source_url:
-        source_url = source_url.strip()
-    await upload(
-        gazelle_site,
-        path,
-        group_id,
-        source,
-        lossy,
-        spectrals,
-        encoding,
-        source_url=source_url,
-        scene=scene,
-        overwrite_meta=overwrite,
-        recompress=compress,
-        request_id=request,
-        spectrals_after=spectrals_after,
-        auto_rename=auto_rename,
-        skip_up=skip_up,
-        skip_mqa=skip_mqa,
-        skip_log_check=skip_log_check,
-        skip_integrity_check=skip_integrity_check,
-        essential_only=essential_only,
-        flac_group=flac_group,
-        skip_initial_review=skip_initial_review,
-        apply_ai_suggestions=apply_ai_suggestions,
-    )
+    with dryrun.mode(dry_run):
+        if dry_run:
+            dryrun.say(
+                "the upload runs on a copy of the album and sends nothing. Each upload's form is printed instead."
+            )
+        try:
+            gazelle_site = salmon.trackers.get_class(tracker)()
+            if request:
+                request = salmon.trackers.validate_request(gazelle_site, request)
+                # This is isn't handled by click because we need the tracker sorted first.
+            print_preassumptions(
+                gazelle_site,
+                path,
+                group_id,
+                source,
+                lossy,
+                spectrals,
+                encoding,
+                spectrals_after,
+            )
+            flac_group = None
+            if group_id:
+                group = await confirm_group_upload(gazelle_site, group_id, source)
+                if skip_flac_upload:
+                    flac_group = group
+            if source_url:
+                source_url = source_url.strip()
+            await upload(
+                gazelle_site,
+                path,
+                group_id,
+                source,
+                lossy,
+                spectrals,
+                encoding,
+                source_url=source_url,
+                scene=scene,
+                overwrite_meta=overwrite,
+                recompress=compress,
+                request_id=request,
+                spectrals_after=spectrals_after,
+                auto_rename=auto_rename,
+                skip_up=skip_up,
+                skip_mqa=skip_mqa,
+                skip_log_check=skip_log_check,
+                skip_integrity_check=skip_integrity_check,
+                essential_only=essential_only,
+                flac_group=flac_group,
+                skip_initial_review=skip_initial_review,
+                apply_ai_suggestions=apply_ai_suggestions,
+            )
+        except* DryRunRefused as refused:
+            # except*: a refusal in a task group comes out in an exception group.
+            click.secho(f"\n{refused.exceptions[0]}", fg="red", bold=True)
+            raise click.exceptions.Exit(1) from refused
+        if dry_run:
+            dryrun.say(f"done. Nothing was sent, and {path} is unchanged.")
 
 
 async def get_cover_url(
@@ -312,12 +338,17 @@ async def get_cover_url(
     Returns:
         The cover URL (None if none is cached and the upload failed or no cover was found), and
         whether a cover file was found: False means there is nothing to retry uploading, True
-        with a None URL means the upload itself failed.
+        with a None URL means the upload itself failed. A dry run uploads nothing: the URL is
+        what stands in for it.
     """
     host = host or cfg.image.cover_uploader_for(tracker)
     if not cover_urls.get(host):
         cover_path, is_downloaded = await download_cover_if_nonexistent(path, cover_source)
-        cover_urls[host] = await upload_cover(cover_path, host, red_api)
+        if dryrun.active() and cover_path:
+            dryrun.say(f"not uploading the cover {os.path.basename(cover_path)} to {host}.")
+            cover_urls[host] = dryrun.image_url(cover_path, host)
+        else:
+            cover_urls[host] = await upload_cover(cover_path, host, red_api)
         if is_downloaded and remove_downloaded and cover_path:
             click.secho("Removing downloaded Cover Image File", fg="yellow")
             os.remove(cover_path)
@@ -559,8 +590,11 @@ async def upload(
     if flac_group is not None and (refusal := validate_skip_flac_source(path)):
         return click.secho(f"\n{refusal}", fg="red", bold=True)
     # The group's FLAC is most likely seeding from path, so with --skip-flac-upload everything works on a copy.
-    # So does an album in library_dirs: see staged_source.
-    with staged_source(path, scratch=flac_group is not None) as (staged, rename_into):
+    # So does a dry run, which changes nothing, and an album in library_dirs: see staged_source.
+    with staged_source(path, scratch=flac_group is not None or dryrun.active()) as (staged, rename_into):
+        if dryrun.active() and rename_into is not None:
+            # A scratch copy's run directory, removed when the run ends.
+            dryrun.use_scratch_dir(rename_into)
         await _upload_staged(
             gazelle_site,
             staged,
@@ -736,6 +770,9 @@ async def _upload_staged(
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
+        if dryrun.active():
+            dryrun.say("not deleting the music folder.")
+            return click.secho("\nAborting upload...", fg="red")
         if flac_group is not None:
             click.secho(
                 "\nNot deleting the music folder: with --skip-flac-upload the source is never modified.",
@@ -860,7 +897,8 @@ async def _upload_staged(
 
                     request_id = None
 
-                    await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+                    if not dryrun.active():
+                        await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
                 if (
                     flac_url
@@ -1256,6 +1294,8 @@ async def execute_downconversion_tasks(
     """
 
     base_path = path
+    # A dry run's go into its scratch directory, removed with it.
+    output_dir = dryrun.scratch_dir() if dryrun.active() else cfg.directory.download_directory
 
     override_lossy_comment = (
         f"Transcode of {base_url}\n[hide=Lossy comment of original torrent]{lossy_comment}[/hide]\n"
@@ -1272,7 +1312,7 @@ async def execute_downconversion_tasks(
                 base_path,
                 bit_depth=task["target_bitdepth"],
                 sample_rate=task["target_sample_rate"],
-                output_dir=cfg.directory.download_directory,
+                output_dir=output_dir,
             )
             await anyio.sleep(0.1)
 
@@ -1341,9 +1381,7 @@ async def execute_downconversion_tasks(
             click.secho(f"  Target encoding: {task['encoding']}", fg="white")
 
             # Execute transcoding
-            transcoded_path = await transcode_folder(
-                base_path, task["encoding"], output_dir=cfg.directory.download_directory
-            )
+            transcoded_path = await transcode_folder(base_path, task["encoding"], output_dir=output_dir)
             await anyio.sleep(0.1)
 
             # Update metadata for this transcode
@@ -1421,7 +1459,8 @@ async def upload_and_report(
         override_lossy_comment: Override lossy comment.
 
     Returns:
-        Tuple of (torrent_id, group_id, torrent_path, torrent_content, url).
+        Tuple of (torrent_id, group_id, torrent_path, torrent_content, url). In a dry run, what
+        prepare_and_upload gives: nothing is reported, seeded or copied.
     """
     # Prepare upload parameters
     upload_kwargs = {
@@ -1458,6 +1497,11 @@ async def upload_and_report(
 
     # Generate URL
     url = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
+    if dryrun.active():
+        # Nothing was uploaded: nothing to seed, and no URL to copy.
+        if cfg.upload.upload_to_seedbox:
+            dryrun.say("not copying it to a seedbox or adding it to a torrent client.")
+        return torrent_id, group_id, torrent_path, torrent_content, url
 
     torrent_content.comment = url
     torrent_content.write(torrent_path, overwrite=True)

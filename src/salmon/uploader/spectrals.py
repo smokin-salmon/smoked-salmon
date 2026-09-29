@@ -4,6 +4,7 @@ import platform
 import random
 import re
 import shutil
+import textwrap
 from functools import partial
 from os.path import dirname, join
 from pathlib import Path
@@ -14,7 +15,7 @@ import anyio.to_thread
 import asyncclick as click
 import oxipng
 
-from salmon import cfg
+from salmon import cfg, dryrun
 from salmon.common import flush_stdin, get_audio_files, prompt_async
 from salmon.common.files import process_files
 from salmon.errors import (
@@ -487,7 +488,8 @@ async def upload_spectrals(
         spectral_ids: Dict mapping spectral IDs to filenames.
 
     Returns:
-        Dict mapping spectral IDs to uploaded URLs, or None.
+        Dict mapping spectral IDs to uploaded URLs, or None. A dry run uploads nothing: the URLs are what stands
+        in for them.
     """
     if not spectral_ids:
         return None
@@ -505,6 +507,10 @@ async def upload_spectrals(
             )
         )
 
+    if dryrun.active():
+        host = cfg.image.specs_uploader
+        dryrun.say(f"not uploading the spectrals of {len(spectrals_list)} track(s) to {host}.")
+        return {sid: [dryrun.image_url(path, host) for path in paths] for sid, _filename, paths in spectrals_list}
     try:
         return await upload_spectral_imgs(spectrals_list)
     except ImageUploadFailed as e:
@@ -606,7 +612,7 @@ async def report_lossy_master(
     comment: str | None,
     source_url: str | None = None,
 ) -> None:
-    """Report torrent for lossy WEB/master approval.
+    """Report torrent for lossy WEB/master approval. A dry run prints the report instead.
 
     Args:
         gazelle_site: The tracker API instance.
@@ -620,6 +626,10 @@ async def report_lossy_master(
     comment = _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids)
     if source is None:
         click.secho("Cannot report lossy master without source.", fg="red")
+        return
+    if dryrun.active():
+        dryrun.say(f"not reporting the torrent to {gazelle_site.site_string} for lossy master approval. The report:")
+        click.echo(textwrap.indent(comment, "  "))
         return
     try:
         await gazelle_site.report_lossy_master(torrent_id, comment, source)
