@@ -137,10 +137,15 @@ Feedback on this guide is welcome.
 
    > The examples below use the `latest` tag. Replace with `alpha` to use the latest development version.
 
-2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/src/salmon/data/config.default.toml) to a location on your host server.
+2. Copy the content of the file [`config.toml`](https://github.com/smokin-salmon/smoked-salmon/blob/master/src/salmon/data/config.default.toml) to `config.toml` in a directory on your host server; this directory gets mounted at `/config` in the container.
    Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
-3. Configure rclone if needed. The Docker Compose configuration expects an rclone configuration file. You can get the path to your rclone config file by running `rclone config file` on your host system.
+3. Configure rclone if needed by copying your host's rclone config (`rclone config file` prints its path) into the same directory, as `/config/rclone.conf`.
+
+> The image sets `SALMON_CONFIG_DIR=/config`, so a single mount holds `config.toml`
+> (and `rclone.conf`). If you are upgrading an image that mounted
+> `/root/.config/smoked-salmon/` directly, that old mount still works, but move
+> `config.toml` into the new `/config` mount when you can.
 
 ---
 
@@ -150,11 +155,12 @@ Feedback on this guide is welcome.
    Run the container with the `checkconf` command to verify that the connection to the trackers is working:
 
    ```bash
+   # The -e RCLONE_CONFIG line is optional: only needed if you use rclone features.
    docker run --rm -it --network=host \
    -v /path/to/your/music:/app/.music \
-   -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
+   -v /path/to/your/config:/config \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
-   -v /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features \
+   -e RCLONE_CONFIG=/config/rclone.conf \
    ghcr.io/smokin-salmon/smoked-salmon:latest checkconf
    ```
 
@@ -162,11 +168,12 @@ Feedback on this guide is welcome.
    Run the upload command directly (replace `checkconf` with any salmon command):
 
    ```bash
+   # The -e RCLONE_CONFIG line is optional: only needed if you use rclone features.
    docker run --rm -it --network=host \
    -v /path/to/your/music:/app/.music \
-   -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
+   -v /path/to/your/config:/config \
    -v /path/to/your/generated/dottorrents:/app/.torrents \
-   -v /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features \
+   -e RCLONE_CONFIG=/config/rclone.conf \
    ghcr.io/smokin-salmon/smoked-salmon:latest up "/app/.music/path/to/album" -s WEB
    ```
 
@@ -177,9 +184,9 @@ To avoid repeating the long `docker run` command, add the following alias to you
 ```bash
 alias salmon='docker run --rm -it --network=host \
   -v /path/to/your/music:/app/.music \
-  -v /path/to/your/config.toml/directory:/root/.config/smoked-salmon/ \
+  -v /path/to/your/config:/config \
   -v /path/to/your/generated/dottorrents:/app/.torrents \
-  -v /path/to/your/rclone.conf:/root/.config/rclone/rclone.conf \
+  -e RCLONE_CONFIG=/config/rclone.conf \
   ghcr.io/smokin-salmon/smoked-salmon:latest'
 ```
 
@@ -219,10 +226,10 @@ salmon up "/app/.music/path/to/album" -s WEB
   ```
 
 - **rclone Configuration**  
-  If you're using rclone features, make sure to map your rclone configuration file. This is optional and only needed if you plan to use rclone functionality. You can find your rclone config file location by running `rclone config file` on your host system:
+  If you're using rclone features, put your rclone config file (`rclone config file` prints its path on your host system) in the `/config` mount, alongside `config.toml`, and point rclone at it:
 
   ```bash
-  -v /path/to/your/rclone.conf:/root/.config/rclone/rclone.conf
+  -e RCLONE_CONFIG=/config/rclone.conf
   ```
 
 ---
@@ -236,11 +243,12 @@ services:
   salmon:
     image: ghcr.io/smokin-salmon/smoked-salmon:latest
     network_mode: host
+    environment:
+      - RCLONE_CONFIG=/config/rclone.conf  # Optional: only if using rclone features
     volumes:
       - /path/to/your/music:/app/.music
-      - /path/to/your/config.toml/directory:/root/.config/smoked-salmon/
+      - /path/to/your/config:/config
       - /path/to/your/generated/dottorrents:/app/.torrents
-      - /get/this/from/"rclone config file":/root/.config/rclone/rclone.conf  # Optional: only if using rclone features
 
 ```
 

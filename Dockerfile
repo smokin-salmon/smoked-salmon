@@ -82,9 +82,21 @@ COPY --from=builder /app/.venv /app/.venv
 
 # Set environment variables for Python virtual environment
 ENV PATH="/app/.venv/bin:$PATH"
+# Single mount for config.toml (and rclone.conf, see README); the old
+# /root/.config/smoked-salmon/ mount still works as a fallback.
+ENV SALMON_CONFIG_DIR=/config
+ENV PYTHONDONTWRITEBYTECODE=1
 
-# Ensure app directory and its contents are writable by any user
-RUN mkdir -p /app/.music /app/.torrents && chmod -R 777 /app
+# Only .music and .torrents need writing by an arbitrary uid; config lives in /config.
+# Sticky+writable (1777) so a uid can still create a configured relative dir under /app,
+# but cannot remove another uid's files. Scoped to these three paths, not recursive, so
+# the venv copied in above is not rewritten into a new layer. The build fails if
+# anything under /app is not world-readable, since a rootless uid could not run it.
+RUN set -e; \
+    mkdir -p /app/.music /app/.torrents; \
+    chmod 1777 /app /app/.music /app/.torrents; \
+    unreadable="$(find /app \( -type f ! -perm -0004 \) -o \( -type d ! -perm -0005 \) | head -20)"; \
+    if [ -n "$unreadable" ]; then echo "not world-readable:"; echo "$unreadable"; exit 1; fi
 
 # Expose port for web interface
 EXPOSE 55110

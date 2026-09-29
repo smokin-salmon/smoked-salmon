@@ -18,6 +18,21 @@ mp3="$workdir/tone.mp3"
 full_png="$workdir/full.png"
 zoom_png="$workdir/zoom.png"
 
+echo "== SALMON_CONFIG_DIR is /config =="
+if [ "${SALMON_CONFIG_DIR:-}" != "/config" ]; then
+    echo "SALMON_CONFIG_DIR is '${SALMON_CONFIG_DIR:-}', expected '/config'" >&2
+    exit 1
+fi
+
+echo "== /app, /app/.music and /app/.torrents are mode 1777 =="
+for dir in /app /app/.music /app/.torrents; do
+    mode=$(stat -c '%a' "$dir")
+    if [ "$mode" != "1777" ]; then
+        echo "$dir is mode $mode, expected 1777" >&2
+        exit 1
+    fi
+done
+
 echo "== flac --version =="
 flac --version
 
