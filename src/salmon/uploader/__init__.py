@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any
 import anyio
 import asyncclick as click
 import pyperclip
+from mutagen import MutagenError
 
 import salmon.trackers
 from salmon import cfg
@@ -33,6 +34,7 @@ from salmon.errors import (
     InvalidMetadataError,
     LogCheckSkipped,
     RequestError,
+    UploadError,
 )
 from salmon.images import HOSTS, upload_cover
 from salmon.tagger import (
@@ -1263,7 +1265,11 @@ async def execute_downconversion_tasks(
 
             # The upload describes the converted files (their sample rate, for one), not the source's.
             # A folder that was already there may hold other files: then it is not this conversion.
-            converted_info = gather_audio_info(new_path)
+            try:
+                converted_info = gather_audio_info(new_path)
+            except (UploadError, MutagenError) as e:
+                click.secho(f"  Could not read {new_path} ({e}): not uploading it.", fg="red", bold=True)
+                continue
             if converted_info.keys() != track_data.keys():
                 click.secho(
                     f"  {new_path} does not hold the same audio files as the source: not uploading it.",
