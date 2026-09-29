@@ -1,4 +1,63 @@
-current = "0.13.0"
+current = "0.14.0"
+
+[[changelog]]
+version = "0.14.0"
+date = "2026-09-29"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- **`--skip-flac-upload` no longer touches the folder you give it.** salmon copies it into `download_directory/.salmon-staging/` and works on the copy, which is removed when the run ends. The run needs free space for one copy of the album in `download_directory`. The FLAC the transcodes point to must now match the release's edition (year, catalogue number, edition title); with several matches salmon asks, and `--yes-all` stops. Thanks @chodeus
+- **The MQA check reads every FLAC file**, not only the first one. On an SSD it adds under half a second, even on a 30-track 24-bit album. `mqa_check_all_tracks = false` under `[upload]` goes back to checking the first file only, faster but MQA on another track is then missed. Thanks @chodeus
+- **Embedded pictures over RED's 1 MiB limit are removed before upload.** When a FLAC's embedded pictures plus padding exceed 1 MiB, salmon removes its pictures, keeps 8 KiB of padding and saves the front cover as `cover.jpg`/`cover.png` if the folder has no cover file (that file is then used as the cover). The audio is not changed, scene releases are never touched, and files under the limit are left as they are. `strip_oversized_pictures = false` under `[image]` only lists the files. Thanks @chodeus
+- **The upload stops on a file that does not decode**, even when you decline to sanitize and with `yes_all`. A FLAC whose only problem is a missing MD5 still uploads after you decline, as before. Thanks @chodeus
+- **MP3s with stream damage now fail the integrity check** (truncated file, stream errors, garbage before or after the audio, bad CRCs, a wrong VBR header) and get the sanitize offer (`mp3val -f`). You can decline and go on. A file that is not MPEG audio at all stops the upload. Notes about tags or a missing VBR header are shown but pass. Thanks @chodeus
+- **A tracker that asks salmon to wait more than a minute is no longer waited for**: the request stops with "try again later" instead. See Tracker & Security below.
+
+## ✨ New Features & Improvements
+
+- When the folder has no cover and the source has no cover URL (or the download fails), salmon now uses the front cover embedded in the FLACs. It is removed after upload like a downloaded cover when `remove_auto_downloaded_cover_image` is on, and for scene uploads.
+- An album with no MD5 stored in its FLACs is reported once ("12 of 12 file(s) have no MD5 signature stored"), with what it means, instead of two lines per file full of flac's progress characters. The sanitize question says why it is asked. Thanks @chodeus
+- After sanitizing, the files are checked again, in the upload and in `salmon check integrity`, so a sanitize that did not work is caught. Thanks @chodeus
+- With `--skip-flac-upload`, a downconversion format the edition already has is marked `DUPE RISK`, left out of the default choice and of `--yes-all`, and can still be picked by number. Thanks @chodeus
+
+## 🐛 Bug Fixes
+
+- **Genre tags reach the tracker valid.** `Drum & Bass` went out as `drum.&.bass` and `Dance / Pop` as `dance./.pop`; they now go out as `drum.and.bass`, and `dance` plus `pop`. Qobuz's `Electronic → House` and Discogs's `Folk, World, & Country` are split too, genres typed in the review editor or the JSON editor go through the same cleanup, and the AI review can no longer empty the genres or other fields with blank values. Tag order no longer changes from run to run. Thanks @chodeus
+- **Retagging writes to the right files** on releases with 10 or more disc folders (`CD10` was taken before `CD2`) and on a flat folder whose file names carry the disc (`01-CD1.flac`, `01-CD2.flac`). When salmon cannot tell which file is which track, it skips retagging and says why, instead of writing titles to the wrong files. Thanks @chodeus
+- A failed rclone copy to a seedbox no longer adds the torrent to that seedbox's client anyway. Other seedboxes and other folders of the same run are not affected.
+- When adding spectrals to the torrent description fails, salmon now prints the spectrals BBCode so it can be pasted by hand, and still files the lossy master report.
+- The recent uploads dupe check no longer flags releases that only share an artist with yours. Thanks @tomerh2001
+- The dupe checks after the metadata review (the last-minute check, the request search and the group search on a second tracker) now use the title, artists and catalogue number as edited, not as they were before the review.
+- Sanitizing a FLAC that flac cannot re-encode no longer loses it: the file used to be left renamed to `.corrupted`, and the check afterwards passed without it.
+- `auto_compress_cover` no longer crashes on a transparent, palette or 16-bit PNG cover it has to shrink. Transparency becomes white, and a cover that cannot be read is left out with a message.
+- Tidal: a `Retry-After` of `nan`, `inf`, a negative value or a past date now backs off normally instead of crashing or hanging, and a token Tidal rejects is fetched again once. Thanks @chodeus
+
+## 🔒 Tracker & Security Improvements
+
+- **Secrets stay out of salmon's output.** Seedbox passwords and connection strings in rclone commands and rclone's own errors, torrent client passwords, and the tracker's session cookie, API key, authkey and passkey are now shown as `[REDACTED]` in normal and debug output (`debug_tracker_connection`, `salmon checkconf`). Output you paste in a support thread no longer carries them. Thanks @chodeus
+- **A tracker's `Retry-After` is read safely.** A date, `nan` or an unreadable value no longer crashes the request, and `inf` or a huge value no longer hangs it. salmon waits at least 2 seconds, so `0` cannot trigger a burst of retries, and at most 60 seconds in total per request; a tracker asking for more gets "try again later" and no further request. An upload answered with an error that mentions the rate limit, other than a 429, is looked up by its infohash instead of sent again. Thanks @chodeus
+
+## What's Changed
+* Skip a seedbox's seed task when its rclone copy fails by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/512
+* Add a CodeRabbit config based on AGENTS.md by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/513
+* Keep secrets out of salmon's output by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/515
+* Work on a scratch copy and match the edition with --skip-flac-upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/514
+* Tidal: handle a non-finite Retry-After and replace a rejected token by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/516
+* Keep the spectrals bbcode and lossy master report on a failed description edit by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/517
+* Fix recent upload false positives on a shared artist prefix by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/518
+* Use the reviewed metadata for dupe checks after the review by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/524
+* Pair retag disc/track pairs one folder per disc, or refuse by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/520
+* Fix malformed genre tags with & or / and guard the AI review's genres by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/523
+* Integrity checks: MQA on every file, re-check after sanitizing, mp3val damage by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/525
+* Strip embedded pictures over RED's 1 MiB limit before upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/522
+* Fix compress_pictures crash on RGBA, P, LA and I;16 covers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/528
+* Fall back to an embedded FLAC front cover when the folder has none by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/530
+* Bound the wait for a tracker's Retry-After, and stop on a long one by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/527
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.13.0...0.14.0
+
+"""
 
 [[changelog]]
 version = "0.13.0"
