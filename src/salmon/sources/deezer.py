@@ -3,6 +3,7 @@ from random import choice
 from typing import Any
 
 import aiohttp
+import asyncclick as click
 import msgspec
 
 from salmon.constants import UAGENTS
@@ -20,13 +21,31 @@ HEADERS = {
 }
 
 
+async def album_upc(url: str) -> str | None:
+    """The UPC of the Deezer album at `url`; None for any other URL or when Deezer cannot be read."""
+    match = DeezerBase.regex.search(url)
+    if not match or match[1] != "album":
+        return None
+    try:
+        data = await DeezerBase().get_json(f"/album/{match[2]}", headers=HEADERS)
+    except (ScrapeError, aiohttp.ClientError, msgspec.DecodeError, TimeoutError) as error:
+        # The barcode is an optional extra, so a Deezer outage must not stop the upload, but say
+        # so: otherwise a blank catalogue number looks like "this release has no barcode".
+        click.secho(f"Could not read the barcode from Deezer ({type(error).__name__}); leaving it blank.", fg="yellow")
+        return None
+    upc = data.get("upc") if isinstance(data, dict) else None
+    return str(upc) if upc else None
+
+
 class DeezerBase(BaseScraper):
     """Base scraper for Deezer metadata."""
 
     proxy_service = "deezer"
     url = "https://api.deezer.com"
     site_url = "https://www.deezer.com"
-    regex = re.compile(r"^https*:\/\/.*?deezer\.com.*?\/(?:[a-z]+\/)?(album|playlist|track)\/([0-9]+)")
+    regex = re.compile(
+        r"^https?:\/\/(?:[a-z0-9-]+\.)*deezer\.com\/(?:[a-z]+\/)?(album|playlist|track)\/([0-9]+)(?=$|[/?#])"
+    )
     release_format = "/album/{rls_id}"
 
     def __init__(self) -> None:
