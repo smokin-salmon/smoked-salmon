@@ -703,6 +703,10 @@ class BaseGazelleApi:
                             error_msg = self._redact(error_msg)
 
                             if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
+                                if resp.status != HTTPStatus.TOO_MANY_REQUESTS and not idempotent:
+                                    # Only a 429 says the tracker did not act: another error status naming
+                                    # the rate limit may come after it did, so the outcome is unknown.
+                                    raise failure(f"Rate limit exceeded ({resp.status})")
                                 wait = _rate_limit_wait(resp.headers.get(aiohttp.hdrs.RETRY_AFTER))
                                 waited = sum(rate_limit_waits)
                                 if waited + wait > _MAX_RATE_LIMIT_WAITS:

@@ -21,7 +21,7 @@ from aiolimiter import AsyncLimiter
 from tenacity import wait_none
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from salmon.errors import RateLimitedError, RequestError, RequestFailedError
+from salmon.errors import RateLimitedError, RequestError, RequestFailedError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi, RetryableError
 
 
@@ -64,6 +64,8 @@ def waits(monkeypatch: pytest.MonkeyPatch) -> list[float]:
 @pytest.fixture
 def far_from_utc() -> Iterator[None]:
     """Local time 9 hours ahead of UTC, so a date without a zone read as local time is 9 hours off."""
+    if not hasattr(time, "tzset"):
+        pytest.skip("time.tzset is Unix only")
     before = os.environ.get("TZ")
     os.environ["TZ"] = "JST-9"
     time.tzset()
@@ -81,9 +83,9 @@ def _in(seconds: float, *, usegmt: bool = True) -> str:
 
 
 async def _rate_limited(
-    retry_after: Callable[[], str | None], method: str = "GET"
+    retry_after: Callable[[], str | None], method: str = "GET", status: int = 429
 ) -> tuple[list[str], BaseException | None]:
-    """Send one request to a tracker that rate limits every request.
+    """Send one request to a tracker that rate limits every request, answering `status`.
 
     Returns:
         The requests the tracker got, and what the request raised.
@@ -95,7 +97,7 @@ async def _rate_limited(
         hits.append(request.method)
         value = retry_after()
         headers = {} if value is None else {"Retry-After": value}
-        return web.json_response({"status": "failure", "error": "Rate limit exceeded"}, status=429, headers=headers)
+        return web.json_response({"status": "failure", "error": "Rate limit exceeded"}, status=status, headers=headers)
 
     app = web.Application()
     app.router.add_route("*", "/ajax.php", ajax)
@@ -215,3 +217,21 @@ def test_rate_limited_upload_waits_before_it_is_sent_again(waits: list[float]) -
     assert waits == [2] * 5
     assert hits == ["POST"] * 5
     assert isinstance(err, RetryableError)
+
+
+@pytest.mark.parametrize("status", [400, 500])
+def test_upload_answered_another_status_naming_the_rate_limit_is_an_unknown_outcome(
+    waits: list[float], status: int
+) -> None:
+    hits, err = anyio.run(_rate_limited, lambda: "0", "POST", status)
+    # Only a 429 says the tracker did not act: another error may come after it took the upload.
+    assert waits == []
+    assert hits == ["POST"]
+    assert isinstance(err, UnknownOutcomeError)
+
+
+def test_get_answered_another_status_naming_the_rate_limit_is_waited_for(waits: list[float]) -> None:
+    hits, err = anyio.run(_rate_limited, lambda: None, "GET", 500)
+    assert waits == [20, 20, 20]
+    assert len(hits) == 4
+    assert isinstance(err, RateLimitedError)

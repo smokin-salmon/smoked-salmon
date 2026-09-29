@@ -78,7 +78,9 @@ class UnknownOutcomeError(RequestError):
 class RateLimitedError(RequestError):
     """The tracker rate limited a request and asks to wait longer than salmon waits for one request.
 
-    The tracker did not act on the request. It is not sent again: the user tries again later.
+    Raised on a 429, which the tracker answers without acting on the request, or for an idempotent
+    request, on another error status naming the rate limit. It is not sent again: the user tries
+    again later.
     """
 
     pass

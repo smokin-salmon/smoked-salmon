@@ -14,6 +14,8 @@ from salmon.common.urls import parse_retry_after
 @pytest.fixture
 def far_from_utc() -> Iterator[None]:
     """Local time 9 hours ahead of UTC, so a date without a zone read as local time is 9 hours off."""
+    if not hasattr(time, "tzset"):
+        pytest.skip("time.tzset is Unix only")
     before = os.environ.get("TZ")
     os.environ["TZ"] = "JST-9"
     time.tzset()
