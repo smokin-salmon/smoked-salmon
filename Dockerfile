@@ -41,6 +41,9 @@ FROM python:3.13-slim-trixie
 # Set working directory
 WORKDIR /app
 
+# rclone version the image must ship; .github/docker-smoke.sh checks it.
+ARG SALMON_RCLONE_VERSION=1.75.1
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     sox libsox-fmt-mp3 flac mp3val curl nano vim rclone \
