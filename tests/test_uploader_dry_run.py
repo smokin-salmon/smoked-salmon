@@ -30,6 +30,7 @@ import salmon.trackers
 import salmon.uploader
 from salmon import cfg, dryrun
 from salmon.common.redaction import redact_tracker_text
+from salmon.config.validations import Seedbox
 from salmon.errors import DryRunRefused
 from salmon.images.base import BaseImageUploader
 from salmon.trackers.base import BaseGazelleApi
@@ -38,6 +39,7 @@ from salmon.trackers.red import RedApi
 from salmon.uploader import staging
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import get_spectrals_path
+from salmon.uploader.torrent_client import QBittorrentClient
 
 RENAMED = "Artist - Album (2020) [WEB FLAC]"
 AUTHKEY = "authkey-0123456789"
@@ -268,6 +270,7 @@ class Run:
     result: Any
     tracker: FakeTracker
     queued: list[tuple[Any, ...]]
+    logins: list[str | None]
 
 
 def _run_up(
@@ -329,6 +332,10 @@ def _run_up(
     monkeypatch.setattr(cfg.image, "auto_compress_cover", False)
     queued: list[tuple[Any, ...]] = []
     monkeypatch.setattr(UploadManager, "add_upload_task", lambda _self, *task, **_kw: queued.append(task))
+    # A seedbox whose torrent client is logged into when the upload manager is set up.
+    monkeypatch.setattr(cfg, "seedbox", [Seedbox(name="box", torrent_client="qbittorrent+http://127.0.0.1:9")])
+    logins: list[str | None] = []
+    monkeypatch.setattr(QBittorrentClient, "login", lambda client: logins.append(client.url))
     tracker = FakeTracker()
     classes = {"RED": RedApi, "OPS": OpsApi}
     monkeypatch.setattr(salmon.trackers, "get_class", lambda code: lambda: _client(classes[code], tracker, torrents))
@@ -342,7 +349,7 @@ def _run_up(
                 input=input,
             )
 
-    return Run(anyio.run(run), tracker, queued)
+    return Run(anyio.run(run), tracker, queued, logins)
 
 
 @pytest.fixture
@@ -432,6 +439,8 @@ def test_a_dry_run_sends_nothing_and_leaves_nothing_behind(monkeypatch, dirs, im
     }
     assert image_uploads == []
     assert run.queued == []
+    assert run.logins == []
+    assert "Dry run: not connecting to the seedboxes' torrent clients." in run.result.output
     assert _snapshot(album) == before
     # No torrent file where a client could pick it up, and nothing left in download_directory: the scratch copy,
     # its torrents and its transcodes went with its run directory.
@@ -459,11 +468,14 @@ def test_a_dry_run_prints_the_forms_the_real_run_sends(monkeypatch, tmp_path, di
     _library, _downloads, torrents = dirs
     real = _run_up(monkeypatch, _album(tmp_path / "real" / "Album"), torrents)
     assert real.result.exit_code == 0, real.result.output
+    # The real run logs into the torrent client and queues its seedbox tasks; the dry run does neither.
+    assert real.logins and real.queued
     real_images = list(image_uploads)
     image_uploads.clear()
 
     dry = _run_up(monkeypatch, _album(tmp_path / "dry" / "Album"), torrents, args=("--dry-run",))
     assert dry.result.exit_code == 0, dry.result.output
+    assert dry.logins == dry.queued == []
 
     def as_printed(value: str) -> str:
         """A value the real run sent, as the dry run shows it: redacted, with what only a real upload gets
@@ -669,6 +681,16 @@ def test_the_guard_refuses_a_seedbox_task() -> None:
         manager.add_upload_task("/music/Album", task_type="folder", is_flac=True, site_code="RED")
 
     assert not manager.tasks
+
+
+def test_the_guard_refuses_to_log_into_a_torrent_client(monkeypatch) -> None:
+    logins: list[str | None] = []
+    monkeypatch.setattr(QBittorrentClient, "login", lambda client: logins.append(client.url))
+
+    with dryrun.mode(), pytest.raises(DryRunRefused, match="log into the torrent client"):
+        QBittorrentClient(url="http://127.0.0.1:9", username="user", password="secret-password")
+
+    assert logins == []
 
 
 def test_the_dry_run_flag_is_seen_by_the_tasks_it_starts_and_ends_with_its_block() -> None:

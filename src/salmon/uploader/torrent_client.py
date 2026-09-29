@@ -9,6 +9,7 @@ import qbittorrentapi
 import transmission_rpc
 from deluge_client import DelugeRPCClient
 
+from salmon import dryrun
 from salmon.common.redaction import redact_secrets
 
 
@@ -29,6 +30,9 @@ class TorrentClient:
         self.host = host
         self.port = port
 
+        # Logging in reaches the client: a dry run neither logs in nor adds anything.
+        if dryrun.active():
+            dryrun.refuse(f"log into the torrent client at {redact_secrets(url or host or '', known=[password])}")
         click.secho(f"Initializing {self.__class__.__name__} client...", fg="cyan")
         self.client = self.login()
 

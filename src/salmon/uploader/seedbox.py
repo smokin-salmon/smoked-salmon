@@ -11,6 +11,7 @@ import asyncclick as click
 from salmon import cfg, dryrun
 from salmon.common.redaction import redact_command, redact_secrets, secret_values
 from salmon.config.validations import Seedbox
+from salmon.errors import DryRunRefused
 from salmon.uploader.torrent_client import TorrentClient, TorrentClientGenerator
 
 
@@ -163,8 +164,20 @@ class UploadManager:
     """
 
     def __init__(self) -> None:
-        click.secho("Initializing upload managers", fg="cyan")
         self._client_cache: dict[str, TorrentClient] = {}
+        # Each task: (seedbox, local_path, task_type, folder). `folder` is the release folder the
+        # task belongs to: itself for a "folder" task, and the folder its torrent was built from
+        # for a "seed" task. It lets a failed copy skip only the seeds for its own folder, not
+        # every seed queued for that seedbox (a folder task's copy failing must not stop the seed
+        # of a different release, or a different format of the same release, on the same seedbox).
+        self.tasks: collections.deque[tuple[Seedbox, str, str, str]] = collections.deque()
+        if dryrun.active():
+            # Setting up a torrent client logs into it. A dry run queues nothing, so it needs none.
+            if _enabled_seedboxes():
+                dryrun.say("not connecting to the seedboxes' torrent clients.")
+            return
+
+        click.secho("Initializing upload managers", fg="cyan")
         for seedbox in _enabled_seedboxes():
             secrets = seedbox_secrets(seedbox)
             try:
@@ -175,15 +188,12 @@ class UploadManager:
                 click.secho(
                     redact_secrets(f"Configured {seedbox.type} uploader to {seedbox.url}", secrets), fg="yellow"
                 )
+            except DryRunRefused:
+                # Were the skip above missed, the client's refusal to log in must stop the run, not read as
+                # a seedbox that failed to configure.
+                raise
             except Exception as e:
                 click.secho(f"Failed to configure {seedbox.type} uploader: {redact_secrets(str(e), secrets)}", fg="red")
-
-        # Each task: (seedbox, local_path, task_type, folder). `folder` is the release folder the
-        # task belongs to: itself for a "folder" task, and the folder its torrent was built from
-        # for a "seed" task. It lets a failed copy skip only the seeds for its own folder, not
-        # every seed queued for that seedbox (a folder task's copy failing must not stop the seed
-        # of a different release, or a different format of the same release, on the same seedbox).
-        self.tasks: collections.deque[tuple[Seedbox, str, str, str]] = collections.deque()
 
     def _client(self, seedbox: Seedbox) -> TorrentClient:
         """Look up the cached torrent client for a seedbox entry.
