@@ -4,7 +4,8 @@ import hashlib
 import os
 import struct
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
+from types import SimpleNamespace
 from typing import Any
 
 import anyio
@@ -623,8 +624,13 @@ def test_conversions_of_library_albums_go_to_their_own_folders_in_download_direc
         assert result.exit_code == 0, result.output
 
     # The album's resolved parent path is mirrored, so no two of the three "Hits" convert into the same folder.
-    mirrored = [downloads / str(album.resolve().parent).lstrip(os.sep) for album in albums]
-    assert output_dirs == [str(folder) for folder in mirrored]
+    # A drive letter (Windows) becomes a folder of its own; POSIX has none.
+    mirrored: list[str] = []
+    for album in albums:
+        parent = album.resolve().parent
+        drive = [parent.drive.rstrip(":")] if parent.drive else []
+        mirrored.append(str(downloads.joinpath(*drive, *parent.parts[1:])))
+    assert output_dirs == mirrored
     assert len(set(output_dirs)) == 4
 
 
@@ -714,3 +720,17 @@ def test_conversions_never_go_into_a_folder_holding_a_library(monkeypatch, dirs,
         anyio.run(run)
 
     assert _snapshot(inner) == before
+
+
+def test_conversions_from_two_windows_shares_go_to_different_folders(monkeypatch, tmp_path) -> None:
+    # \\server\music-1 and \\server\music1 are two shares: squashing the anchor to word characters merged them.
+    monkeypatch.setattr(salmon.converter, "Path", PureWindowsPath)
+    monkeypatch.setattr(salmon.converter.os.path, "realpath", lambda path: path)
+    directory = SimpleNamespace(is_library_path=lambda _path: True, download_directory=str(tmp_path))
+    monkeypatch.setattr(salmon.converter, "cfg", SimpleNamespace(directory=directory))
+
+    first = salmon.converter._output_dir(r"\\server\music-1\A\Album")
+    second = salmon.converter._output_dir(r"\\server\music1\A\Album")
+
+    assert first == os.path.join(str(tmp_path), "UNC", "server", "music-1", "A")
+    assert second == os.path.join(str(tmp_path), "UNC", "server", "music1", "A")

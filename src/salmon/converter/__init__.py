@@ -1,6 +1,5 @@
 import os
-import re
-from pathlib import Path
+from pathlib import Path, PurePath
 from typing import get_args
 
 import asyncclick as click
@@ -64,9 +63,26 @@ def _output_dir(path: str) -> str | None:
     """
     if not cfg.directory.is_library_path(path):
         return None
-    parent = Path(os.path.realpath(path)).parent
-    # The drive or share on Windows, as a plain folder name; nothing on POSIX.
-    anchor = re.sub(r"\W", "", parent.anchor)
-    output_dir = os.path.join(cfg.directory.download_directory, anchor, *parent.parts[1:])
+    output_dir = os.path.join(cfg.directory.download_directory, *_mirror_parts(Path(os.path.realpath(path)).parent))
     click.secho(f"{path} is in library_dirs: writing the output into {output_dir}.", fg="yellow")
     return output_dir
+
+
+def _mirror_parts(folder: PurePath) -> list[str]:
+    """The folder names that mirror an absolute path, its drive or share included, below another folder.
+
+    POSIX "/" gives nothing, a drive "C:" gives "C", and a share \\\\server\\share gives "UNC", "server", "share",
+    so two paths that differ only in their anchor never mirror to the same folder.
+    """
+    drive = folder.drive
+    if drive.startswith("\\\\?\\"):  # A long path: \\?\C: or \\?\UNC\server\share.
+        drive = drive[4:]
+        if drive.upper().startswith("UNC\\"):
+            drive = "\\\\" + drive[4:]
+    if drive.startswith(("\\\\", "//")):
+        head = ["UNC", *drive.replace("/", "\\").strip("\\").split("\\")]
+    elif drive:
+        head = [drive.rstrip(":")]
+    else:
+        head = []
+    return [*head, *folder.parts[1:]]
