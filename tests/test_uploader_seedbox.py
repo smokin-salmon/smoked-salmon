@@ -278,6 +278,25 @@ def test_failed_rclone_copy_skips_seeding_on_that_seedbox(monkeypatch, tmp_path)
     assert clients["qbittorrent+http://box:8080"].save_paths == []
 
 
+@needs_posix
+def test_a_failed_copy_and_its_skipped_seed_are_reported_not_all_processed(monkeypatch, tmp_path, capfd) -> None:
+    # A failed rclone copy used to still end with the green "All upload tasks processed" line,
+    # because only add_to_downloader failures were counted towards the summary.
+    _fake_rclone(monkeypatch, tmp_path, exit_code=1)
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", url="box", directory="/files", torrent_client="qbittorrent+http://box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capfd.readouterr().out
+    assert "All upload tasks processed" not in out
+    assert "1 copy and 1 seed task failed" in out
+
+
 def test_failed_rclone_copy_does_not_affect_other_seedboxes(monkeypatch, tmp_path) -> None:
     clients, rclone_calls = _run_upload(
         monkeypatch,
@@ -526,6 +545,28 @@ def test_a_torrent_the_client_refuses_never_prints_its_password(monkeypatch, tmp
 
     out = capsys.readouterr().out
     assert "Failed to add torrent" in out
+    assert "UNIQUESECRET" not in out
+
+
+class _RaisingClient:
+    """A torrent client whose own add_to_downloader raises instead of catching its error."""
+
+    def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> bool:
+        raise RuntimeError("connection reset for UNIQUESECRET")
+
+
+def test_seedbox_names_itself_when_the_client_raises_unexpectedly(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="local", name="My Box", torrent_client="qbittorrent+http://dean:UNIQUESECRET@box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RaisingClient()))
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Failed to add torrent to client on My Box" in out
     assert "UNIQUESECRET" not in out
 
 
