@@ -75,6 +75,15 @@ class UnknownOutcomeError(RequestError):
     pass
 
 
+class RateLimitedError(RequestError):
+    """The tracker rate limited a request and asks to wait longer than salmon waits for one request.
+
+    The tracker did not act on the request. It is not sent again: the user tries again later.
+    """
+
+    pass
+
+
 class LoginError(RequestError):
     pass
 

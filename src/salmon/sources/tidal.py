@@ -1,9 +1,6 @@
-import math
 import re
-from datetime import UTC
-from email.utils import parsedate_to_datetime
 from functools import cache
-from time import monotonic, time
+from time import monotonic
 from typing import Any, ClassVar
 
 import aiohttp
@@ -12,6 +9,7 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg
+from salmon.common.urls import parse_retry_after
 from salmon.errors import ScrapeError
 from salmon.proxy import session_kwargs
 from salmon.sources.base import BaseScraper
@@ -64,32 +62,6 @@ def _notify_retired_token() -> None:
         "Register a client at https://developer.tidal.com and set client_id and client_secret instead.",
         fg="yellow",
     )
-
-
-def _parse_retry_after(value: str | None) -> float | None:
-    """Get the wait in seconds from a Retry-After header (delay-seconds or HTTP-date).
-
-    A non-finite or negative delay (``nan``, ``inf``, ``-5``) and an HTTP-date already in the past
-    both count as no wait given, so the caller's normal backoff applies instead of hanging forever
-    or retrying immediately in a loop.
-    """
-    if not value:
-        return None
-    try:
-        seconds = float(value)
-    except ValueError:
-        pass
-    else:
-        return seconds if math.isfinite(seconds) and seconds >= 0 else None
-    try:
-        when = parsedate_to_datetime(value)
-    except (TypeError, ValueError):
-        return None
-    if when.tzinfo is None:
-        # An HTTP-date with a "-0000" offset parses as naive; that means UTC, not local time.
-        when = when.replace(tzinfo=UTC)
-    wait = when.timestamp() - time()
-    return wait if wait > 0 else None
 
 
 class _RateLimitedError(ScrapeError):
@@ -156,7 +128,7 @@ class TidalBase(BaseScraper):
 
     async def handle_json_response(self, resp: aiohttp.ClientResponse) -> dict:
         if resp.status == 429:
-            raise _RateLimitedError(_parse_retry_after(resp.headers.get("Retry-After")))
+            raise _RateLimitedError(parse_retry_after(resp.headers.get("Retry-After")))
         if resp.status == 401:
             raise _UnauthorizedError()
         return await super().handle_json_response(resp)
