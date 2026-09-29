@@ -251,7 +251,7 @@ def test_rate_limit_message_prints_while_not_held(
 ) -> None:
     anyio.run(lambda: _rate_limit_message_prints_while_not_held(monkeypatch))
     out = capsys.readouterr().out
-    assert "Rate limit exceeded, waiting 0.0 seconds..." in out
+    assert "Rate limit exceeded, waiting 2 seconds..." in out
     assert "waited" not in out
 
 
@@ -265,7 +265,7 @@ async def _rate_limit_message_reads_past_tense_when_held(monkeypatch: pytest.Mon
     try:
         with hold_request_messages() as messages, pytest.raises(RetryableError):
             await api._request("GET", api.base_url + "/ajax.php", params={"action": "index"})
-        assert any("Rate limit exceeded, waited 0.0 seconds" in message for message, _styles in messages)
+        assert any("Rate limit exceeded, waited 2 seconds" in message for message, _styles in messages)
         assert not any("waiting" in message for message, _styles in messages)
     finally:
         await api.close()

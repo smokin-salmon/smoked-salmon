@@ -1,4 +1,5 @@
 import asyncio
+import math
 import re
 import socket
 import sys
@@ -23,9 +24,11 @@ from torf import TorfError, Torrent
 from salmon import cfg, proxy
 from salmon.common import UploadFiles
 from salmon.common.redaction import redact_tracker_headers, redact_tracker_text
+from salmon.common.urls import parse_retry_after
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
     LoginError,
+    RateLimitedError,
     RequestError,
     RequestFailedError,
     UnknownOutcomeError,
@@ -262,6 +265,16 @@ _TRANSIENT_5XX = frozenset(
     }
 )
 
+# How long to wait, in seconds, before sending again a request the tracker rate limited (a 429, or
+# an error naming its rate limit): what its Retry-After asks for, rounded up to whole seconds, or
+# the default when it names no valid wait. Never less than the rate limiter's own spacing (5
+# requests per 10 s), so a Retry-After of 0 does not send the retries in a burst. The waits of one
+# request add up to the maximum at most, however many times it is retried: a tracker asking for
+# more is not waited for, and the request fails with RateLimitedError instead.
+_RATE_LIMIT_WAIT = 20
+_MIN_RATE_LIMIT_WAIT = 2
+_MAX_RATE_LIMIT_WAITS = 60
+
 # How long to wait, in seconds, before looking up an upload whose answer was lost, and before
 # looking it up a second and last time if the tracker does not have it yet. When the upload timed
 # out (30 s without an answer), the tracker is likely still handling it, and the torrent only
@@ -351,6 +364,18 @@ class RetryableError(RequestError):
     """A failed request that may be sent again. Raised as is once the retries run out."""
 
     pass
+
+
+def _rate_limit_wait(retry_after: str | None) -> int:
+    """How long to wait, in whole seconds, before sending a rate limited request again.
+
+    Args:
+        retry_after: The Retry-After header of the tracker's answer, if any.
+    """
+    wait = parse_retry_after(retry_after)
+    if wait is None:
+        return _RATE_LIMIT_WAIT
+    return max(math.ceil(wait), _MIN_RATE_LIMIT_WAIT)
 
 
 class HttpResponse(msgspec.Struct, frozen=True):
@@ -561,6 +586,8 @@ class BaseGazelleApi:
 
         Raises:
             RetryableError: If the request still fails after its retries.
+            RateLimitedError: If the tracker rate limits the request and asks to wait
+                longer than the request's rate limit waits may add up to.
             UnknownOutcomeError: If a request that is not idempotent fails after it may
                 have reached the tracker.
         """
@@ -568,8 +595,9 @@ class BaseGazelleApi:
         # authenticating again on each retry would send up to 25 index calls per request.
         if needs_authkey and not (params and params.get("action") == "index"):
             await self.ensure_authenticated()
+        # One list for every attempt, so the rate limit waits add up across the retries.
         return await self._send(
-            method, url, params, data, timeout_secs, prefer_api_key, idempotent, expected_error_statuses
+            method, url, params, data, timeout_secs, prefer_api_key, idempotent, expected_error_statuses, []
         )
 
     # The retry policy. A failed request is sent again only when that cannot do more on the
@@ -596,8 +624,12 @@ class BaseGazelleApi:
         prefer_api_key: bool,
         idempotent: bool | None,
         expected_error_statuses: Collection[int],
+        rate_limit_waits: list[int],
     ) -> HttpResponse:
-        """Send a request with the retry policy. _request authenticates first; see it for the arguments."""
+        """Send a request with the retry policy. _request authenticates first; see it for the arguments.
+
+        rate_limit_waits holds the rate limit waits of the attempts before this one, and gets this one's.
+        """
         if idempotent is None:
             idempotent = method != "POST"
         # Once the tracker redirects, it has acted on the request, whatever happens next.
@@ -671,14 +703,29 @@ class BaseGazelleApi:
                             error_msg = self._redact(error_msg)
 
                             if resp.status == HTTPStatus.TOO_MANY_REQUESTS or "rate limit" in error_msg.lower():
-                                retry_after = float(resp.headers.get("Retry-After", "20"))
+                                if resp.status != HTTPStatus.TOO_MANY_REQUESTS and not idempotent:
+                                    # Only a 429 says the tracker did not act: another error status naming
+                                    # the rate limit may come after it did, so the outcome is unknown.
+                                    raise failure(f"Rate limit exceeded ({resp.status})")
+                                wait = _rate_limit_wait(resp.headers.get(aiohttp.hdrs.RETRY_AFTER))
+                                waited = sum(rate_limit_waits)
+                                if waited + wait > _MAX_RATE_LIMIT_WAITS:
+                                    # Raised as is: tenacity retries only a RetryableError.
+                                    already = f" more (after {waited} s already)" if waited else ""
+                                    message = (
+                                        f"{self.site_string} asks to wait {wait} s{already} before the next "
+                                        "request; try again later"
+                                    )
+                                    _secho(message, fg="red")
+                                    raise RateLimitedError(message)
+                                rate_limit_waits.append(wait)
                                 if _held_request_messages.get() is not None:
                                     # This is only printed after the wait is over (once the held
                                     # messages are flushed), so word it in the past.
-                                    _secho(f"Rate limit exceeded, waited {retry_after} seconds", fg="yellow")
+                                    _secho(f"Rate limit exceeded, waited {wait} seconds", fg="yellow")
                                 else:
-                                    _secho(f"Rate limit exceeded, waiting {retry_after} seconds...", fg="yellow")
-                                await asyncio.sleep(retry_after)
+                                    _secho(f"Rate limit exceeded, waiting {wait} seconds...", fg="yellow")
+                                await asyncio.sleep(wait)
                                 raise failure("Rate limit exceeded", not_acted_on=True)
 
                             if resp.status == HTTPStatus.UNAUTHORIZED:
