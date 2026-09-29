@@ -28,9 +28,10 @@ copy of `src/salmon/data/config.default.toml`. If you import `salmon` outside py
 config at `~/.config/smoked-salmon/config.toml` (Linux) or a `config.toml` at the repo root, and
 every directory it names must exist.
 
-`SALMON_CONFIG_DIR` (set to `/config` in the Docker image) selects
-`$SALMON_CONFIG_DIR/config.toml`. If that file is absent and the platform config exists, salmon
-falls back to the platform config. A `config.toml` at the repo root takes precedence over both.
+`SALMON_CONFIG_DIR` (set to `/config` in the Docker image) selects `$SALMON_CONFIG_DIR/config.toml`,
+and when set it beats a repo-root `config.toml`. If that file is absent and the platform config
+exists, salmon falls back to the platform config. `tests/conftest.py` sets it, so the test run
+never reads a developer's config.
 
 ## Layout
 
