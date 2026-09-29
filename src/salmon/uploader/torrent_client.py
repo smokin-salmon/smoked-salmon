@@ -1,6 +1,7 @@
 import base64
 import os
 import xmlrpc.client
+from collections.abc import Mapping
 from urllib.parse import unquote, urlparse
 
 import asyncclick as click
@@ -42,6 +43,22 @@ class TorrentClient:
         raise NotImplementedError
 
 
+def _qbittorrent_add_succeeded(result: object) -> bool:
+    """Whether qBittorrent's torrents_add answer means the torrent was added.
+
+    Web API v2.14.0+ (qBittorrent 5.1+) answers with a JSON object carrying success_count,
+    failure_count, pending_count and added_torrent_ids; a pre-5.1 server still answers the plain
+    string "Ok." (success) or "Fails." (failure), which qbittorrent-api falls back to whenever the
+    body is not JSON.
+    """
+    if isinstance(result, Mapping):
+        success_count = result.get("success_count", 0)
+        failure_count = result.get("failure_count", 0)
+        pending_count = result.get("pending_count", 0)
+        return failure_count == 0 and (success_count + pending_count) >= 1
+    return result == "Ok."
+
+
 class QBittorrentClient(TorrentClient):
     def login(self):
         try:
@@ -69,8 +86,10 @@ class QBittorrentClient(TorrentClient):
             result = self.client.torrents_add(
                 torrent_files=torrent, save_path=remote_folder, is_paused=is_paused, category=label
             )
-            if result != "Ok.":
-                click.secho(f"Failed to add torrent: qBittorrent returned {result!r}", fg="red", bold=True)
+            if not _qbittorrent_add_succeeded(result):
+                click.secho(
+                    f"Failed to add torrent: qBittorrent returned {self._redact(repr(result))}", fg="red", bold=True
+                )
                 return False
             click.secho("Torrent added successfully", fg="green")
             return True

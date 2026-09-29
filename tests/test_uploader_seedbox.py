@@ -563,6 +563,33 @@ def test_qbittorrent_ok_response_is_reported_as_added(monkeypatch, capsys) -> No
     assert "Torrent added successfully" in capsys.readouterr().out
 
 
+def test_qbittorrent_5_1_metadata_success_is_reported_as_added(monkeypatch, capsys) -> None:
+    # Web API v2.14.0+ (qBittorrent 5.1+) answers with a JSON object instead of "Ok."/"Fails.".
+    class FakeApi:
+        def torrents_add(self, **kwargs):
+            return {"success_count": 1, "failure_count": 0, "pending_count": 0, "added_torrent_ids": ["abc"]}
+
+    client = _connected_client(monkeypatch, QBittorrentClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is True
+    assert "Torrent added successfully" in capsys.readouterr().out
+
+
+def test_qbittorrent_5_1_metadata_failure_is_reported_as_not_added(monkeypatch, capsys) -> None:
+    class FakeApi:
+        def torrents_add(self, **kwargs):
+            return {"success_count": 0, "failure_count": 1, "pending_count": 0, "added_torrent_ids": []}
+
+    client = _connected_client(monkeypatch, QBittorrentClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="")
+
+    assert added is False
+    assert "successfully" not in capsys.readouterr().out.lower()
+
+
 def test_deluge_none_result_is_reported_as_not_added(monkeypatch, capsys) -> None:
     # core.add_torrent_file returns None when the torrent is refused (already present).
     class FakeApi:
