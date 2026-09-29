@@ -6,6 +6,7 @@ and prints the form each upload would send instead of sending it. Each step that
 refuse() stops any that was missed: tracker requests other than GET, and image host uploads, call it.
 
 The flag lives in a context variable, set for the length of mode(), so it never outlives the run that set it.
+The scratch directory an upload writes into is one too, set for the length of that upload's scratch copy.
 """
 
 import os
@@ -18,17 +19,9 @@ import asyncclick as click
 
 from salmon.errors import DryRunRefused
 
-
-class _DryRun:
-    """The running dry run."""
-
-    def __init__(self) -> None:
-        # Where the run writes what an upload would leave behind (torrent files, transcodes): its scratch copy's
-        # run directory, removed when the run ends.
-        self.scratch_dir: str | None = None
-
-
-_running: ContextVar[_DryRun | None] = ContextVar("dry_run", default=None)
+_running: ContextVar[bool] = ContextVar("dry_run", default=False)
+# Where an upload in a dry run writes what it would leave behind (torrent files, transcodes).
+_scratch_dir: ContextVar[str | None] = ContextVar("dry_run_scratch_dir", default=None)
 
 
 @contextmanager
@@ -37,7 +30,7 @@ def mode(on: bool = True) -> Iterator[None]:
     if not on:
         yield
         return
-    token = _running.set(_DryRun())
+    token = _running.set(True)
     try:
         yield
     finally:
@@ -46,7 +39,7 @@ def mode(on: bool = True) -> Iterator[None]:
 
 def active() -> bool:
     """Whether a dry run is running."""
-    return _running.get() is not None
+    return _running.get()
 
 
 def refuse(action: str) -> None:
@@ -70,27 +63,35 @@ def say(message: str) -> None:
     click.secho(f"Dry run: {message}", fg="cyan")
 
 
-def use_scratch_dir(path: str) -> None:
-    """Set the directory the running dry run writes into: see scratch_dir()."""
-    running = _running.get()
-    if running is None:
-        raise RuntimeError("no dry run is running")
-    running.scratch_dir = path
+@contextmanager
+def writing_into(path: str | None) -> Iterator[None]:
+    """Make path the directory an upload in a dry run writes into (see scratch_dir()), for the block only.
+
+    Each upload sets its own, in its own context, so two uploads never write into one another's.
+
+    Args:
+        path: The run directory of the upload's scratch copy, removed when the upload ends; None for none.
+    """
+    token = _scratch_dir.set(path)
+    try:
+        yield
+    finally:
+        _scratch_dir.reset(token)
 
 
 def scratch_dir() -> str:
-    """The directory the running dry run writes torrent files and transcodes into, instead of the configured ones.
+    """The directory an upload in a dry run writes torrent files and transcodes into, instead of the configured ones.
 
-    It is the run directory of the album's scratch copy, removed when the run ends, so a dry run leaves no
+    It is the run directory of the album's scratch copy, removed when the upload ends, so a dry run leaves no
     torrent file where a torrent client could pick it up.
 
     Raises:
-        RuntimeError: If no dry run is running, or it has no scratch copy yet.
+        RuntimeError: If no dry run is running, or its upload has no scratch copy.
     """
-    running = _running.get()
-    if running is None or running.scratch_dir is None:
-        raise RuntimeError("no dry run with a scratch copy is running")
-    return running.scratch_dir
+    path = _scratch_dir.get()
+    if not active() or path is None:
+        raise RuntimeError("no dry run upload with a scratch copy is running")
+    return path
 
 
 class Pending(int):

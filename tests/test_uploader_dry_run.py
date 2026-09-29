@@ -687,3 +687,25 @@ def test_the_dry_run_flag_is_seen_by_the_tasks_it_starts_and_ends_with_its_block
 
     assert seen == [True, False]
     assert not dryrun.active()
+
+
+def test_each_upload_writes_into_its_own_scratch_directory_for_as_long_as_it_runs() -> None:
+    seen: dict[str, str] = {}
+
+    async def upload(scratch: str) -> None:
+        with dryrun.writing_into(scratch):
+            # Both uploads are inside their block at once.
+            await anyio.sleep(0.01)
+            seen[scratch] = dryrun.scratch_dir()
+
+    async def run() -> None:
+        with dryrun.mode():
+            async with anyio.create_task_group() as tg:
+                tg.start_soon(upload, "/scratch/run-a")
+                tg.start_soon(upload, "/scratch/run-b")
+            with pytest.raises(RuntimeError):
+                dryrun.scratch_dir()
+
+    anyio.run(run)
+
+    assert seen == {"/scratch/run-a": "/scratch/run-a", "/scratch/run-b": "/scratch/run-b"}

@@ -591,10 +591,11 @@ async def upload(
         return click.secho(f"\n{refusal}", fg="red", bold=True)
     # The group's FLAC is most likely seeding from path, so with --skip-flac-upload everything works on a copy.
     # So does a dry run, which changes nothing, and an album in library_dirs: see staged_source.
-    with staged_source(path, scratch=flac_group is not None or dryrun.active()) as (staged, rename_into):
-        if dryrun.active() and rename_into is not None:
-            # A scratch copy's run directory, removed when the run ends.
-            dryrun.use_scratch_dir(rename_into)
+    with (
+        staged_source(path, scratch=flac_group is not None or dryrun.active()) as (staged, rename_into),
+        # A scratch copy's run directory, removed when the run ends: where a dry run writes.
+        dryrun.writing_into(rename_into),
+    ):
         await _upload_staged(
             gazelle_site,
             staged,
