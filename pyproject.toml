@@ -78,6 +78,9 @@ select = [
 # run.py imports command modules for their side effects (registering CLI commands)
 "src/salmon/run.py" = ["F401"]
 
+[tool.ruff.format]
+line-ending = "lf"
+
 [tool.pyright]
 typeCheckingMode = "standard"
 reportPossiblyUnboundVariable = "warning"
