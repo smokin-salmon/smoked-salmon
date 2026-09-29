@@ -966,7 +966,10 @@ async def edit_metadata(
 
         tags = await check_tags(path)
         if not metadata["scene"] and recompress:
-            await recompress_path(path)
+            try:
+                await recompress_path(path)
+            except UploadError as e:
+                raise UploadError(f"{e} Rerun without -c.") from e
         path = rename_folder(path, metadata, auto_rename, parent=rename_into)
         if not metadata["scene"]:
             rename_files(path, tags, metadata, auto_rename, spectral_ids, source)

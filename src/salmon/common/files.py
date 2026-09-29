@@ -81,6 +81,7 @@ async def compress(filepath: str) -> CompressResult:
         "flac",
         f"-{cfg.upload.compression.flac_compression_level}",
         "-V",
+        "-s",
         filepath,
         "--force",
     ]

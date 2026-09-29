@@ -79,4 +79,4 @@ async def recompress_path(path: str, files: list[str] | None = None) -> None:
     if failures:
         for failure in failures:
             click.secho(f"Failed to recompress {failure.filepath}: {failure.error}", fg="red")
-        raise UploadError(f"Failed to recompress {len(failures)} file(s). Rerun without -c.")
+        raise UploadError(f"Failed to recompress {len(failures)} file(s).")

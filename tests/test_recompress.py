@@ -36,6 +36,7 @@ def test_compress_success_runs_the_expected_command(monkeypatch, tmp_path) -> No
             "flac",
             f"-{cfg.upload.compression.flac_compression_level}",
             "-V",
+            "-s",
             filepath,
             "--force",
         ]
@@ -173,6 +174,24 @@ def test_compress_command_recompresses_flacs_in_a_mixed_directory(monkeypatch, t
 
     assert result.exit_code == 0, result.output
     assert recompressed == ["01.flac"]
+
+
+def test_compress_command_failure_output_does_not_suggest_a_nonexistent_flag(monkeypatch, tmp_path) -> None:
+    """salmon compress has no -c flag, so its failure message must not tell the user to rerun without one."""
+    _write_flac(tmp_path / "01.flac")
+
+    async def failing_recompress_path(path: str, files: list[str] | None = None) -> None:
+        raise UploadError("Failed to recompress 1 file(s).")
+
+    monkeypatch.setattr(salmon.commands, "recompress_path", failing_recompress_path)
+
+    async def run():
+        return await CliRunner().invoke(salmon.commands.compress, [str(tmp_path)])
+
+    result = anyio.run(run)
+
+    assert result.exit_code != 0
+    assert "-c" not in result.output
 
 
 def test_recompress_path_caps_concurrency_at_simultaneous_threads(monkeypatch, tmp_path) -> None:
