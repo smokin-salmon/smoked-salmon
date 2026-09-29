@@ -53,8 +53,38 @@ async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tup
         cover_path = await _download_cover(path, cover_url)
         if cover_path:
             return cover_path, True
+    # fall back to an embedded FLAC front cover
+    embedded = _find_embedded_front_cover(path)
+    if embedded:
+        extension, data = embedded
+        cover_path = os.path.join(path, f"cover.{extension}")
+        _write_whole_file(cover_path, data)
+        click.secho(f"Extracted embedded cover to: {cover_path}", fg="yellow")
+        return cover_path, True
     click.secho("\nNo existing Cover Image found in Source Folder, no Cover Image downloaded", fg="red")
     return None, None
+
+
+def _find_embedded_front_cover(path: str) -> tuple[str, bytes] | None:
+    """Find the first FLAC (by `get_audio_files` order) with an embedded front cover.
+
+    Only the first FLAC that has a front cover picture is considered; if that picture cannot be
+    read as an image, no fallback to another FLAC is attempted.
+
+    Args:
+        path: The release folder.
+
+    Returns:
+        The extension and bytes to save the cover as a file, or None if no FLAC has a usable one.
+    """
+    for filename in get_audio_files(path):
+        if not filename.lower().endswith(".flac"):
+            continue
+        audio = FLAC(os.path.join(path, filename))
+        for picture in audio.pictures:
+            if picture.type == PictureType.COVER_FRONT:
+                return _as_cover_file(picture)
+    return None
 
 
 def _is_valid_cover(cover_path: str) -> bool:
@@ -198,6 +228,7 @@ def _as_cover_file(picture: Picture) -> tuple[str, bytes] | None:
     try:
         with Image.open(io.BytesIO(picture.data)) as image:
             if image.format in ("JPEG", "PNG"):
+                image.load()
                 return ("jpg" if image.format == "JPEG" else "png"), picture.data
             buffer = io.BytesIO()
             image.convert("RGBA").save(buffer, "png")
