@@ -330,7 +330,7 @@ def compress_pictures(path):
             picture = Picture()
             try:
                 picture.mime = Image.open(cover_file).get_format_mimetype()
-            except OSError as e:
+            except (OSError, Image.DecompressionBombError) as e:
                 click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
                 continue
 
@@ -350,7 +350,7 @@ def compress_pictures(path):
                     image.thumbnail((1000, 1000))
                     image = _flatten_to_rgb(image)
                     data = compress_to_target_size(image, max_picture_block_size - len(picture.write()))
-                except (OSError, ValueError) as e:
+                except (OSError, ValueError, Image.DecompressionBombError) as e:
                     click.secho(f"Could not convert cover file {cover_file} to a JPEG ({e}); leaving it out.", fg="red")
                     continue
                 if data is None:

@@ -376,3 +376,17 @@ def test_a_cover_that_is_not_a_readable_image_is_skipped(tmp_path, capsys) -> No
     assert audio.pictures == []
     output = capsys.readouterr().out
     assert "Could not read cover file" in output
+
+
+def test_a_cover_pil_refuses_as_a_decompression_bomb_is_skipped(tmp_path, monkeypatch, capsys) -> None:
+    # PIL raises Image.DecompressionBombError, not an OSError, for an image it judges too large to open safely.
+    monkeypatch.setattr(cover.Image, "MAX_IMAGE_PIXELS", 10)
+    (tmp_path / "cover.png").write_bytes(_image("png"))
+    _write_flac(tmp_path / "01.flac")
+
+    cover.compress_pictures(str(tmp_path))
+
+    audio = FLAC(tmp_path / "01.flac")
+    assert audio.pictures == []
+    output = capsys.readouterr().out
+    assert "Could not read cover file" in output
