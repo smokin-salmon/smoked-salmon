@@ -235,7 +235,8 @@ def music_like(seconds=10, high_level=0.0005):
 def test_a_128_kbps_transcode_of_quiet_highs_carries_both_marks_and_its_original_none(tmp_path):
     """LAME at 128 kbps lowpasses at ~16.5 kHz and, short of bits, drops the quiet highs to digital silence."""
     original = music_like()
-    assert fq.classify(_analyse(tmp_path, "original.flac", original)) == "clean"
+    clean = _analyse(tmp_path, "original.flac", original)
+    assert fq.classify(clean) == "clean"
     transcode = fq._analyse_one(str(tmp_path), mp3_decode(tmp_path, original, 128_000), None)
     assert fq.has_lossy_wall(transcode), transcode
     assert transcode.digital_floor, transcode

@@ -208,8 +208,10 @@ def asked(monkeypatch):
 
 
 def test_the_default_follows_the_analysis(asked):
-    assert run(sp.prompt_lossy_master, marks_found=True) is True
-    assert run(sp.prompt_lossy_master, marks_found=False) is False
+    answer = run(sp.prompt_lossy_master, marks_found=True)
+    assert answer is True
+    answer = run(sp.prompt_lossy_master, marks_found=False)
+    assert answer is False
     assert [default for _text, default in asked] == ["y", "n"]
     assert "[Y]es, [n]o" in asked[0][0]
     assert "[y]es, [N]o" in asked[1][0]
@@ -217,9 +219,11 @@ def test_the_default_follows_the_analysis(asked):
 
 def test_yes_all_asks_when_the_marks_are_found_and_answers_no_unasked_otherwise(monkeypatch, asked):
     monkeypatch.setattr(sp.cfg.upload, "yes_all", True)
-    assert run(sp.prompt_lossy_master) is False
+    answer = run(sp.prompt_lossy_master)
+    assert answer is False
     assert asked == []
-    assert run(sp.prompt_lossy_master, marks_found=True) is True
+    answer = run(sp.prompt_lossy_master, marks_found=True)
+    assert answer is True
     assert len(asked) == 1
 
 
@@ -243,8 +247,10 @@ def test_yes_all_asks_for_the_lossy_comment_when_there_is_no_source_url(monkeypa
 
     monkeypatch.setattr(sp.click, "secho", refuse)
     monkeypatch.setattr(sp.click, "prompt", fake_prompt)
-    assert run(sp.generate_lossy_approval_comment, None, ["01.flac"]) == "Bought on the label's site."
-    assert run(sp.generate_lossy_approval_comment, "https://store.test/album", ["01.flac"]) == ""
+    comment = run(sp.generate_lossy_approval_comment, None, ["01.flac"])
+    assert comment == "Bought on the label's site."
+    comment = run(sp.generate_lossy_approval_comment, "https://store.test/album", ["01.flac"])
+    assert comment == ""
 
 
 # The real analysis, on files
@@ -259,7 +265,8 @@ def test_the_real_analysis_writes_a_plot_per_track_and_finds_a_transcode(tmp_pat
     write_flac(album / "02 b.flac", lowpass(noise(4, tilt_db_per_octave=-3), 21_300))
     (album / "t128000.mp3").unlink()
 
-    assert run(sp.print_frequency_analysis, str(album), str(specs), {1: "01 a.flac", 2: "02 b.flac"}) is True
+    marks_found = run(sp.print_frequency_analysis, str(album), str(specs), {1: "01 a.flac", 2: "02 b.flac"})
+    assert marks_found is True
 
     assert sorted(p.name for p in specs.iterdir()) == ["01 Spectrum.png", "02 Spectrum.png"]
     out = capsys.readouterr().out
@@ -313,7 +320,8 @@ def test_the_real_analysis_of_a_clean_album_keeps_the_default(tmp_path, capsys):
     specs = tmp_path / "Spectrals"
     specs.mkdir()
 
-    assert run(sp.print_frequency_analysis, str(tmp_path), str(specs), {1: "01 a.flac"}) is False
+    marks_found = run(sp.print_frequency_analysis, str(tmp_path), str(specs), {1: "01 a.flac"})
+    assert marks_found is False
     assert "Frequency analysis: no mark of a lossy encoder" in capsys.readouterr().out
 
 
@@ -323,7 +331,8 @@ def test_the_real_analysis_of_unreadable_files_does_not_raise(tmp_path, capsys):
     specs = tmp_path / "Spectrals"
     specs.mkdir()
 
-    assert run(sp.print_frequency_analysis, str(tmp_path), str(specs), {1: "01 a.flac", 2: "02 b.flac"}) is False
+    marks_found = run(sp.print_frequency_analysis, str(tmp_path), str(specs), {1: "01 a.flac", 2: "02 b.flac"})
+    assert marks_found is False
     out = capsys.readouterr().out
     assert "Frequency analysis: nothing could be measured" in out
     assert "No file could be analysed" in out
