@@ -1,0 +1,98 @@
+name: Scan image
+description: >-
+  Scan a built image with Trivy: list fixable HIGH and CRITICAL vulnerabilities in the job summary,
+  then fail on a fixable CRITICAL one. Every workflow that builds the image calls this, so the policy
+  lives here only.
+
+inputs:
+  image-ref:
+    description: >-
+      Image to scan: a tag loaded into the local Docker daemon, or a registry reference
+      (localhost:5000/...@sha256:... for the image a publishing workflow built but has not pushed).
+    required: true
+  platform:
+    description: Platform to scan when image-ref is a multi-platform index (linux/amd64, linux/arm64).
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    # Trivy reads .trivyignore from the repository root. An entry there hides a vulnerability from
+    # both tiers, so each one needs a reason and an end date: a "# reason" comment line directly above
+    # it and "exp:YYYY-MM-DD" on it, after which Trivy stops honouring it.
+    - name: Check the scan allowlist
+      shell: bash
+      run: |
+        [ -f .trivyignore ] || { echo "No .trivyignore: nothing is allowlisted."; exit 0; }
+        status=0
+        # Trivy drops an entry whose date does not parse, so the shape alone is not enough.
+        for d in $(grep -oE '[[:space:]]exp:[0-9]{4}-[0-9]{2}-[0-9]{2}([[:space:]]|$)' .trivyignore | cut -d: -f2); do
+          if [ "$(date -ud "$d" +%F 2>/dev/null)" != "$d" ]; then
+            echo ".trivyignore: exp:$d is not a real date"; status=1
+          fi
+        done
+        awk '
+          /^[[:space:]]*$/ { prev = ""; next }
+          /^[[:space:]]*#[[:space:]]*$/ { prev = ""; next }
+          /^[[:space:]]*#/ { prev = $0; next }
+          {
+            if (prev == "") { print ".trivyignore:" NR ": no \"# reason\" comment line above: " $0; bad = 1 }
+            if ($0 !~ /[[:space:]]exp:[0-9]{4}-[0-9]{2}-[0-9]{2}([[:space:]]|$)/) {
+              print ".trivyignore:" NR ": no exp:YYYY-MM-DD: " $0; bad = 1
+            }
+            prev = ""
+          }
+          END { exit bad }
+        ' .trivyignore || status=1
+        exit "$status"
+
+    # Report tier: the wide net, written to the job summary, never fails the job. ignore-unfixed on
+    # both tiers: a CVE with no fixed package yet cannot be fixed by a rebuild, and would otherwise
+    # block every build until Debian ships one.
+    - name: Scan image (report fixable HIGH and CRITICAL)
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      env:
+        TRIVY_PLATFORM: ${{ inputs.platform }}
+      with:
+        # The action installs an older Trivy by default; pin the scanner itself too.
+        version: v0.74.0
+        scan-type: image
+        image-ref: ${{ inputs.image-ref }}
+        severity: HIGH,CRITICAL
+        ignore-unfixed: true
+        exit-code: '0'
+        format: table
+        output: ${{ runner.temp }}/trivy-report.txt
+
+    - name: Publish the scan report
+      if: always()
+      shell: bash
+      env:
+        IMAGE_REF: ${{ inputs.image-ref }}
+        PLATFORM: ${{ inputs.platform }}
+        REPORT: ${{ runner.temp }}/trivy-report.txt
+      run: |
+        {
+          echo "### Image scan: fixable HIGH and CRITICAL"
+          echo
+          echo "\`$IMAGE_REF\`${PLATFORM:+ ($PLATFORM)}"
+          echo
+          echo '```'
+          if [ -s "$REPORT" ]; then cat "$REPORT"; else echo '(no report produced)'; fi
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+        rm -f "$REPORT"
+
+    # Gate tier: fails the job on a fixable CRITICAL, before any workflow calling this pushes.
+    - name: Scan image (fail on fixable CRITICAL)
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+      env:
+        TRIVY_PLATFORM: ${{ inputs.platform }}
+      with:
+        # The report step above installed Trivy.
+        skip-setup-trivy: true
+        scan-type: image
+        image-ref: ${{ inputs.image-ref }}
+        severity: CRITICAL
+        ignore-unfixed: true
+        exit-code: '1'

@@ -12,6 +12,14 @@ jobs:
       contents: read
       packages: write
 
+    # A registry that lives only as long as this job. The image is built into it, scanned there, and
+    # the scanned digest is then copied to ghcr.io, so what publishes is the bytes the scan passed.
+    services:
+      registry:
+        image: registry:3@sha256:ddf754342cfc8acc51a56d5d0ab6af06826461864460636d8bd5c546dab2a7b8
+        ports:
+          - 5000:5000
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -21,20 +29,16 @@ jobs:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
+      # network=host lets the builder container reach the job's registry on localhost:5000.
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+        with:
+          driver-opts: network=host
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -48,13 +52,47 @@ jobs:
             type=raw,value=alpha
             type=sha,prefix=alpha-
 
-      - name: Build and push alpha Docker image
+      - name: Build the alpha image into the job's registry
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: localhost:5000/smoked-salmon:scan
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan the linux/amd64 image
+        uses: ./.github/actions/scan-image
+        with:
+          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
+          platform: linux/amd64
+
+      - name: Scan the linux/arm64 image
+        uses: ./.github/actions/scan-image
+        with:
+          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
+          platform: linux/arm64
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # skopeo reads the login above from ~/.docker/config.json. --preserve-digests makes the copy
+      # fail rather than push anything but the scanned manifests and layers.
+      - name: Push the scanned alpha image
+        env:
+          SOURCE: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            skopeo copy --all --preserve-digests --src-tls-verify=false "docker://$SOURCE" "docker://$tag"
+            echo "pushed $tag (${SOURCE#*@})"
+          done <<< "$TAGS"

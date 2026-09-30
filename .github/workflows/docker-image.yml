@@ -17,6 +17,17 @@ jobs:
       contents: write
       packages: write
 
+    # A registry that lives only as long as this job. The image is built into it, scanned there, and
+    # the scanned digest is then copied to ghcr.io, so what publishes is the bytes the scan passed.
+    services:
+      registry:
+        image: registry:3@sha256:ddf754342cfc8acc51a56d5d0ab6af06826461864460636d8bd5c546dab2a7b8
+        ports:
+          - 5000:5000
+
+    # Order matters for a release: the image is built from master plus the version bump and scanned
+    # before anything leaves this job. The bump commit on master is what tells users a new version
+    # exists (release_notification.py), so it is pushed only once there is a scanned image to ship.
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -26,31 +37,6 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Get lowercase repo name
-        id: get_lowercase_repo_name
-        run: |
-          REPO_NAME=${{ env.IMAGE_NAME }} 
-          echo "LOWER_CASE_REPO_NAME=${REPO_NAME,,}" >> $GITHUB_ENV
 
       - name: Get release version or branch name
         id: get_version_or_branch
@@ -85,13 +71,49 @@ jobs:
         env:
           RELEASE_NOTES: ${{ github.event.release.body }}
 
+      # The bump commit goes on top of master, and the tag is moved onto it, so the image is built
+      # from that same tree: master with the bumped files.
+      - name: Check out master for the version bump (only on release)
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        run: git checkout master
+
+      # Skipped when version.toml is already at this version: a re-run after the bump was pushed
+      # (say the image push failed) must not add the changelog entry twice.
       - name: Update version files
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: |
           PYPROJECT_FILE="pyproject.toml"
 
           # Prepend new changelog entry and update current version
-          uv run --with tomlkit python -c $'import os, tomlkit\n\nfrom datetime import date\n\nversion = os.environ["VERSION"]\nrelease_date = date.today().strftime("%Y-%m-%d")\nnotes = os.environ["RELEASE_NOTES"]\npath = "src/salmon/data/version.toml"\n\nwith open(path, "r", encoding="utf-8") as f:\n    data = tomlkit.load(f)\n\ndata["current"] = version\n\nentry = tomlkit.table()\nentry.add("version", version)\nentry.add("date", release_date)\nentry.add("notes", tomlkit.string("\\n" + notes + "\\n", multiline=True))\nentry.add(tomlkit.nl())\n\ndata["changelog"].insert(0, entry)\n\nwith open(path, "w", encoding="utf-8") as f:\n    tomlkit.dump(data, f)\n'
+          uv run --with tomlkit python - <<'PY'
+          import os
+          from datetime import date
+
+          import tomlkit
+
+          version = os.environ["VERSION"]
+          path = "src/salmon/data/version.toml"
+
+          with open(path, "r", encoding="utf-8") as f:
+              data = tomlkit.load(f)
+
+          if data["current"] == version:
+              print(f"{path} is already at {version}; not bumping it again")
+              raise SystemExit(0)
+
+          data["current"] = version
+
+          entry = tomlkit.table()
+          entry.add("version", version)
+          entry.add("date", date.today().strftime("%Y-%m-%d"))
+          entry.add("notes", tomlkit.string("\n" + os.environ["RELEASE_NOTES"] + "\n", multiline=True))
+          entry.add(tomlkit.nl())
+
+          data["changelog"].insert(0, entry)
+
+          with open(path, "w", encoding="utf-8") as f:
+              tomlkit.dump(data, f)
+          PY
 
           # Update version in pyproject.toml
           sed -i "s/^version = \".*\"/version = \"${{ env.VERSION }}\"/" "$PYPROJECT_FILE"
@@ -101,37 +123,97 @@ jobs:
         env:
           RELEASE_NOTES: ${{ env.RELEASE_NOTES }}
 
-      - name: Commit and push version update (only on release)
-        env:
-          PAT_TOKEN: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
-        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
-        run: |
-          git checkout master  # Ensure we're on master branch
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add src/salmon/data/version.toml pyproject.toml uv.lock
-          git commit -m "Update version.toml/pyproject.toml to ${{ env.VERSION }} with changelog"
-          git push origin master
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
 
-      - name: Move tag to version bump commit and push
+      # network=host lets the builder container reach the job's registry on localhost:5000.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          driver-opts: network=host
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Get lowercase repo name
+        id: get_lowercase_repo_name
         run: |
-          git tag -f ${{ env.VERSION }}
-          git push origin "refs/tags/${{ env.VERSION }}" --force
+          REPO_NAME=${{ env.IMAGE_NAME }}
+          echo "LOWER_CASE_REPO_NAME=${REPO_NAME,,}" >> $GITHUB_ENV
 
       - name: Debug VERSION and UPDATE_VERSION
         run: |
           echo "VERSION=${{ env.VERSION }}"
           echo "UPDATE_VERSION=${{ env.UPDATE_VERSION }}"
 
-      - name: Build and push Docker image
+      - name: Build the image into the job's registry
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.LOWER_CASE_REPO_NAME }}:${{ env.VERSION }}
-            ${{ steps.meta.outputs.tags }}
+          tags: localhost:5000/smoked-salmon:scan
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # A fixable CRITICAL stops the run here, before master, the tag or ghcr.io change.
+      - name: Scan the linux/amd64 image
+        uses: ./.github/actions/scan-image
+        with:
+          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
+          platform: linux/amd64
+
+      - name: Scan the linux/arm64 image
+        uses: ./.github/actions/scan-image
+        with:
+          image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
+          platform: linux/arm64
+
+      - name: Commit and push version update (only on release)
+        env:
+          PAT_TOKEN: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/salmon/data/version.toml pyproject.toml uv.lock
+          if git diff --cached --quiet; then
+            echo "master already has the $VERSION bump"
+          else
+            git commit -m "Update version.toml/pyproject.toml to $VERSION with changelog"
+            git push origin master
+          fi
+
+      - name: Move tag to version bump commit and push (only on release)
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        run: |
+          git tag -f "$VERSION"
+          git push origin "refs/tags/$VERSION" --force
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # skopeo reads the login above from ~/.docker/config.json. --preserve-digests makes the copy
+      # fail rather than push anything but the scanned manifests and layers.
+      - name: Push the scanned image
+        env:
+          SOURCE: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
+          TAGS: |
+            ${{ env.REGISTRY }}/${{ env.LOWER_CASE_REPO_NAME }}:${{ env.VERSION }}
+            ${{ steps.meta.outputs.tags }}
+        run: |
+          set -euo pipefail
+          sort -u <<< "$TAGS" | while IFS= read -r tag; do
+            [ -n "$tag" ] || continue
+            skopeo copy --all --preserve-digests --src-tls-verify=false "docker://$SOURCE" "docker://$tag"
+            echo "pushed $tag (${SOURCE#*@})"
+          done

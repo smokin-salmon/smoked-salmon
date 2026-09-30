@@ -6,7 +6,9 @@ on:
       - Dockerfile
       - pyproject.toml
       - uv.lock
+      - .trivyignore
       - .github/docker-smoke.sh
+      - .github/actions/scan-image/**
       - .github/workflows/docker-pr.yml
 
 jobs:
@@ -61,3 +63,10 @@ jobs:
             --entrypoint sh \
             salmon-docker-pr:smoke \
             /smoke.sh "$PINNED_VERSION"
+
+      # Same scan and threshold as the workflows that publish the image, so a PR that would
+      # block a release fails here first.
+      - name: Scan the built image
+        uses: ./.github/actions/scan-image
+        with:
+          image-ref: salmon-docker-pr:smoke

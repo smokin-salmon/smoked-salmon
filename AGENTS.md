@@ -93,16 +93,31 @@ A PR that touches the `Dockerfile` builds the image for `linux/amd64` and `linux
 smoke check that fails before it. rclone is pinned by `ARG` (version and one SHA-256 per arch, from
 the release's `SHA256SUMS`); Dependabot cannot bump it, so bump all three by hand.
 
+Every workflow that builds the image scans it with `.github/actions/scan-image` (Trivy): fixable
+HIGH and CRITICAL vulnerabilities are listed in the job summary, and a fixable CRITICAL fails the
+job. `build-alpha.yml` and `docker-image.yml` build both arches into a registry local to the job,
+scan that image, then copy the scanned digest to ghcr.io, so the published image is the one scanned,
+never a rebuild. An allowlist entry goes in `.trivyignore` with a `# reason` line above it and an
+`exp:YYYY-MM-DD` end date on it; the scan action refuses entries without both.
+
 ## Releases
 
 A release is cut by publishing a GitHub release (tag `X.Y.Z`), never by bumping versions by hand.
 Publishing it runs `.github/workflows/docker-image.yml`, which:
 
-- sets `current` in `src/salmon/data/version.toml` and adds a `[[changelog]]` entry whose notes
-  are the release's description;
-- sets `version` in `pyproject.toml`, refreshes `uv.lock`, commits all three to `master` as
-  github-actions and moves the tag onto that commit;
-- builds and pushes the Docker images (`X.Y.Z` and `latest`).
+1. checks out `master` (not the tagged commit), sets `current` in `src/salmon/data/version.toml`,
+   adds a `[[changelog]]` entry whose notes are the release's description, sets `version` in
+   `pyproject.toml` and refreshes `uv.lock`, without committing yet;
+2. builds the Docker image from that tree for both arches and scans it (see Docker image above);
+3. commits the three files to `master` as github-actions and moves the tag onto that commit;
+4. pushes the scanned image to ghcr.io as `X.Y.Z` and `latest`.
+
+If the scan fails (step 2), nothing has left the job: the GitHub release exists, but `master`, the
+tag and ghcr.io are unchanged and no user is told. Fix the image on `master` (a base image or package
+bump), then re-run the failed run: it rebuilds from the new `master`. There is no need to delete the
+release. If the run fails after step 3, `master` already announces a version that has no image;
+re-run it as soon as possible: step 1 sees `current` already at `X.Y.Z` and skips the bump, and the
+run builds, scans and pushes again.
 
 The workflow checks out and pushes with the `BUMP_VERSION_TOKEN_ACTION` secret, a token whose
 owner can bypass the `master` ruleset. If that token expires or is regenerated (which changes its
