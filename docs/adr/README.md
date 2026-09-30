@@ -14,6 +14,7 @@ than a good PR description.
 |---|---|---|
 | [0001](0001-tracker-connection-pool.md) | Tracker requests share a pool of two kept-alive connections, timed per socket | Accepted |
 | [0002](0002-per-tracker-cover-host.md) | Cover hosts are chosen per tracker; a tracker's own image host is opt-in and confined to it | Accepted |
+| [0003](0003-per-tracker-spectrals-host.md) | Spectrals and description image hosts are chosen per tracker too; spectrals are uploaded once per host | Accepted |
 
 ## Template
 

@@ -158,7 +158,7 @@ def test_a_host_newly_added_to_host_rules_is_refused_by_both(monkeypatch: pytest
         assert "imgbb" not in offered
 
     # Config validation refuses the same hosts, for the same reasons.
-    with pytest.raises(msgspec.ValidationError, match=r"can only be set as cover_uploader under \[image\.dic\]"):
+    with pytest.raises(msgspec.ValidationError, match="its images only display on DIC"):
         msgspec.convert({"specs_uploader": "imgbox"}, ImageUploader)
     with pytest.raises(msgspec.ValidationError, match="a made-up reason"):
         msgspec.convert({"specs_uploader": "imgbb", "imgbb_key": "key"}, ImageUploader)
@@ -171,3 +171,44 @@ def test_every_host_rules_key_is_a_valid_image_host() -> None:
     for host in HOST_RULES:
         assert host in images.HOSTS
         assert host in valid_hosts
+
+
+def _run_retry_prompt_for(spectrals, tracker: str) -> dict:
+    async def run() -> dict:
+        return await images._handle_failed_spectrals(spectrals, set(), tracker)
+
+    return anyio.run(run)
+
+
+def test_retry_prompt_for_a_tracker_offers_its_hosts_and_defaults_to_its_own(monkeypatch: pytest.MonkeyPatch) -> None:
+    from salmon.config import image_hosts
+    from salmon.config.image_hosts import HostRules
+
+    # A host that only displays on OPS and may host spectrals: offered for OPS's spectrals, not for RED's.
+    monkeypatch.setitem(image_hosts.HOST_RULES, "imgbox", HostRules(displays_on=("ops",)))
+    imgbox_calls: list[str] = []
+    monkeypatch.setattr(images, "HOSTS", dict(images.HOSTS))
+    monkeypatch.setitem(images.HOSTS, "imgbox", _fake_host_module(imgbox_calls))
+    monkeypatch.setitem(images.HOSTS, "catbox", _fake_host_module([]))
+    image = msgspec.convert({"ops": {"specs_uploader": "oeimg"}, "oeimg_key": "key"}, ImageUploader)
+    monkeypatch.setattr(images.cfg, "image", image)
+    defaults: list[object] = []
+    prompt_messages, printed = _capture_prompt(monkeypatch, ["imgbox", "imgbox", "catbox"])
+    record_prompt = images.click.prompt
+
+    async def prompt(message: str = "", **kwargs: Any) -> str:
+        defaults.append(kwargs.get("default"))
+        return await record_prompt(message, **kwargs)
+
+    monkeypatch.setattr(images.click, "prompt", prompt)
+
+    assert _run_retry_prompt_for([(1, "track1.flac", ["spec1.png"])], "OPS") == {1: ["https://fake/spec1.png"]}
+    assert imgbox_calls == ["spec1.png"]
+    assert "imgbox" in _offered_hosts(prompt_messages[0])
+    assert "red" not in _offered_hosts(prompt_messages[0])
+
+    assert _run_retry_prompt_for([(1, "track1.flac", ["spec1.png"])], "RED") == {1: ["https://fake/spec1.png"]}
+    assert imgbox_calls == ["spec1.png"]
+    assert "imgbox" not in _offered_hosts(prompt_messages[1])
+    assert any("its images only display on OPS" in message for message in printed)
+    assert defaults == ["oeimg", "catbox", "catbox"]

@@ -224,8 +224,6 @@ class Flow:
             "get_metadata": returning_async((metadata, None)),
             "edit_metadata": returning_async((path, metadata, {}, {})),
             "concat_track_data": returning({}),
-            "get_spectrals_path": returning("/spectrals"),
-            "handle_spectrals_upload_and_deletion": returning_async(),
             "resolve_cover_url": returning_async((True, None)),
             "UploadManager": FakeUploadManager,
             "upload_and_report": upload_and_report,

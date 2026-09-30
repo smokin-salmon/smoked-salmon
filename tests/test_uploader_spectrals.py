@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import anyio
 import pytest
@@ -150,14 +151,14 @@ def test_spectrals_checked_after_upload_are_compressed_before_they_are_uploaded(
     _pick(monkeypatch, "2 4")
     compressed_when_uploaded: list[str] = []
 
-    async def upload(_spectrals_path, _spectral_ids) -> None:
+    async def upload(_spectrals_path, _spectral_ids, _tracker) -> None:
         compressed_when_uploaded.extend(compressed)
 
-    monkeypatch.setattr(spectrals, "handle_spectrals_upload_and_deletion", upload)
+    monkeypatch.setattr(spectrals, "upload_spectrals", upload)
 
     async def check_after_upload():
         return await spectrals.post_upload_spectral_check(
-            None,  # type: ignore[arg-type]  # the site is only needed once spectrals are uploaded, stubbed here
+            SimpleNamespace(site_code="RED"),  # type: ignore[arg-type]  # only its code is read when nothing is uploaded
             path,
             1,
             None,
@@ -186,6 +187,7 @@ class _FailingDescriptionEditSite:
 
     base_url = "https://fake.test"
     site_string = "Fake"
+    site_code = "RED"
 
     def __init__(self) -> None:
         self.description_edit_calls = 0
@@ -211,10 +213,10 @@ def test_a_failed_description_edit_still_prints_the_bbcode_and_reports_lossy_mas
 
     monkeypatch.setattr(spectrals, "prompt_lossy_master", lossy)
 
-    async def upload(_spectrals_path, spectral_ids) -> dict[int, list[str]]:
+    async def upload(_spectrals_path, spectral_ids, _tracker) -> dict[int, list[str]]:
         return {spec_id: [f"{spec_id}-full.png", f"{spec_id}-zoom.png"] for spec_id in spectral_ids}
 
-    monkeypatch.setattr(spectrals, "handle_spectrals_upload_and_deletion", upload)
+    monkeypatch.setattr(spectrals, "upload_spectrals", upload)
 
     site = _FailingDescriptionEditSite()
 
@@ -245,3 +247,28 @@ def test_a_failed_description_edit_still_prints_the_bbcode_and_reports_lossy_mas
     assert "https://fake.test/torrents.php?torrentid=1" in output
     # The bbcode itself is printed plainly so it can be pasted in by hand.
     assert "[hide=Spectrals]" in output
+
+
+def test_spectrals_checked_after_upload_are_deleted_when_none_is_picked(monkeypatch, release) -> None:
+    path, audio_info, _compressed = release
+    _pick(monkeypatch, "0")
+
+    async def not_lossy(*_args, **_kwargs) -> bool:
+        return False
+
+    monkeypatch.setattr(spectrals, "prompt_lossy_master", not_lossy)
+
+    async def check_after_upload():
+        return await spectrals.post_upload_spectral_check(
+            SimpleNamespace(site_code="RED"),  # type: ignore[arg-type]  # only its code is read when nothing is uploaded
+            path,
+            1,
+            None,
+            audio_info,
+            "WEB",
+            "https://store.test/album",
+        )
+
+    assert anyio.run(check_after_upload) == (False, None, None, None)
+    # Not left in the folder, where the torrent of the next tracker would take them.
+    assert not os.path.exists(spectrals.get_spectrals_path(path))
