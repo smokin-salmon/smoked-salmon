@@ -12,6 +12,7 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     _album,
     _run_up,
     _torrent_lines,
+    image_uploads,  # noqa: F401 (a fixture: see the tests that use it)
 )
 
 import salmon.uploader as uploader
@@ -418,6 +419,7 @@ def _flac_uploads(run) -> list[dict]:
 NOTE = "[b]Transcode process:[/b]"
 
 
+@pytest.mark.usefixtures("image_uploads")
 def test_a_converted_folder_uploaded_on_its_own_describes_the_conversion(monkeypatch, tmp_path, dirs) -> None:
     _library, downloads, torrents = dirs
     album = _album(tmp_path / "seeding" / "Album [WEB FLAC]")
@@ -438,6 +440,7 @@ def test_a_converted_folder_uploaded_on_its_own_describes_the_conversion(monkeyp
         assert not any("salmon-conversions" in line or ".json" in line for line in lines), lines
 
 
+@pytest.mark.usefixtures("image_uploads")
 def test_a_transcode_uploaded_on_its_own_describes_the_transcode(monkeypatch, tmp_path, dirs) -> None:
     _library, _downloads, torrents = dirs
     album = _album(tmp_path / "seeding" / "Album [WEB FLAC]")
@@ -449,6 +452,7 @@ def test_a_transcode_uploaded_on_its_own_describes_the_transcode(monkeypatch, tm
     assert "lame" in _flac_uploads(run)[0]["release_desc"].lower()
 
 
+@pytest.mark.usefixtures("image_uploads")
 def test_an_upload_without_a_record_has_no_conversion_note(monkeypatch, tmp_path, dirs) -> None:
     _library, _downloads, torrents = dirs
     album = _album(tmp_path / "seeding" / "Album [WEB FLAC]")
@@ -459,6 +463,7 @@ def test_an_upload_without_a_record_has_no_conversion_note(monkeypatch, tmp_path
     assert all(NOTE not in upload["release_desc"] for upload in _flac_uploads(run) if upload["format"] == "FLAC")
 
 
+@pytest.mark.usefixtures("image_uploads")
 @pytest.mark.parametrize("record", ["malformed", "foreign"])
 def test_a_malformed_or_foreign_record_is_ignored_and_the_upload_goes_on(
     monkeypatch, tmp_path, dirs, record: str
@@ -479,6 +484,7 @@ def test_a_malformed_or_foreign_record_is_ignored_and_the_upload_goes_on(
     assert all(NOTE not in upload["release_desc"] for upload in _flac_uploads(run) if upload["format"] == "FLAC")
 
 
+@pytest.mark.usefixtures("image_uploads")
 def test_a_dry_run_describes_the_conversion_and_leaves_no_record_behind(monkeypatch, tmp_path, dirs) -> None:
     _library, downloads, torrents = dirs
     album = _album(tmp_path / "seeding" / "Album [WEB FLAC]")
