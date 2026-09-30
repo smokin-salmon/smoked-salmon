@@ -41,11 +41,8 @@ class LabelRlsData(msgspec.Struct, frozen=True):
 
 class SearchMixin(ABC):
     @abstractmethod
-    async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any]]:
-        """
-        Search the metadata site for a release string and return a dictionary
-        of release IDs and search results strings.
-        """
+    async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any] | None]:
+        """Return (source name, {release id: result}); None instead of the dict means inactive (no credentials)."""
         pass
 
     @staticmethod
