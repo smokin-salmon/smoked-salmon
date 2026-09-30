@@ -6,6 +6,7 @@ on:
   schedule:
     - cron: "17 6 * * 1"
   workflow_dispatch:
+  pull_request: # TEMPORARY, reverted before merge
 
 permissions:
   contents: read
