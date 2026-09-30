@@ -337,7 +337,7 @@ async def resolve_existing_group(
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
         group_id = await _prompt_for_group_id(gazelle_site, results, offer_deletion)
     if group_id:
-        confirmation = await _confirm_group_id(gazelle_site, group_id, results)
+        confirmation = await _confirm_group_id(gazelle_site, group_id, results, offer_deletion)
         if confirmation is True:
             return group_id
         return None
@@ -814,13 +814,16 @@ def held_formats(group: dict, release: dict, source_flac: dict, formats: dict[st
     return held
 
 
-async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict]) -> bool:
+async def _confirm_group_id(
+    gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict], offer_deletion: bool = True
+) -> bool:
     """Confirm upload to a torrent group.
 
     Args:
         gazelle_site: The tracker API instance.
         group_id: The group ID.
         results: Search results.
+        offer_deletion: Whether to offer folder deletion option.
 
     Returns:
         True if confirmed, False otherwise.
@@ -837,7 +840,7 @@ async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, resul
             await click.prompt(
                 click.style(
                     "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
-                    "[n]ew group, [a]bort, [d]elete music folder",
+                    f"[n]ew group, [a]bort{', [d]elete music folder' if offer_deletion else ''}",
                     fg="magenta",
                 ),
                 default="Y",
@@ -845,7 +848,7 @@ async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, resul
         )[0].lower()
         if resp == "a":
             raise click.Abort
-        elif resp == "d":
+        elif resp == "d" and offer_deletion:
             raise AbortAndDeleteFolder
         elif resp == "y":
             return True

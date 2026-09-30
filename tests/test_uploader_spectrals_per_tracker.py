@@ -276,13 +276,15 @@ def test_spectrals_checked_after_the_first_upload_go_to_each_trackers_host(
     ]
     red_urls, ops_urls = _spectral_urls(hosts, "imgbox"), _spectral_urls(hosts, "catbox")
     uploads, reports = _uploads(run), _reports(run)
-    # RED's torrents went up before the check; OPS's FLAC carries OPS's URLs.
-    assert not any(_has_any(upload["release_desc"], red_urls + ops_urls) for upload in uploads[:3])
+    # RED's FLAC went up before the check; OPS's FLAC carries OPS's URLs.
+    assert not _has_any(uploads[0]["release_desc"], red_urls + ops_urls)
     assert _has_all(uploads[3]["release_desc"], ops_urls)
     assert not _has_any(uploads[3]["release_desc"], red_urls)
-    # RED's lossy master report, sent by the check, has RED's URLs; OPS's have OPS's.
-    assert _has_all(reports[0], red_urls)
-    assert all(_has_all(report, ops_urls) and not _has_any(report, red_urls) for report in reports[1:])
+    # The check runs right after RED's FLAC: its report, and those of RED's transcodes, have RED's URLs; OPS's
+    # have OPS's.
+    assert len(reports) == 6
+    assert all(_has_all(report, red_urls) and not _has_any(report, ops_urls) for report in reports[:3])
+    assert all(_has_all(report, ops_urls) and not _has_any(report, red_urls) for report in reports[3:])
     assert len(listings) == 6 and all("Spectrals" not in listing for listing in listings)
     assert _left_behind(downloads, scratch) == []
 
