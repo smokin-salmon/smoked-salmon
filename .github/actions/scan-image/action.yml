@@ -24,6 +24,13 @@ runs:
       shell: bash
       run: |
         [ -f .trivyignore ] || { echo "No .trivyignore: nothing is allowlisted."; exit 0; }
+        status=0
+        # Trivy drops an entry whose date does not parse, so the shape alone is not enough.
+        for d in $(grep -oE '[[:space:]]exp:[0-9]{4}-[0-9]{2}-[0-9]{2}([[:space:]]|$)' .trivyignore | cut -d: -f2); do
+          if [ "$(date -ud "$d" +%F 2>/dev/null)" != "$d" ]; then
+            echo ".trivyignore: exp:$d is not a real date"; status=1
+          fi
+        done
         awk '
           /^[[:space:]]*$/ { prev = ""; next }
           /^[[:space:]]*#[[:space:]]*$/ { prev = ""; next }
@@ -36,7 +43,8 @@ runs:
             prev = ""
           }
           END { exit bad }
-        ' .trivyignore
+        ' .trivyignore || status=1
+        exit "$status"
 
     # Report tier: the wide net, written to the job summary, never fails the job. ignore-unfixed on
     # both tiers: a CVE with no fixed package yet cannot be fixed by a rebuild, and would otherwise
