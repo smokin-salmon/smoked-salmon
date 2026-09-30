@@ -1,11 +1,50 @@
 version: 2
+
+# Every ecosystem: a release is only proposed once it has been public for 7 days (cooldown applies to
+# version updates only; security updates are not delayed). Minor and patch updates come in one PR per
+# ecosystem per week, and each major update in its own PR. A dependency goes to the first group it
+# matches, so the uv dev tools are listed before the minor-and-patch group.
 updates:
-  - package-ecosystem: "uv" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "uv"
+    directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      dev-tools:
+        patterns:
+          - "pytest"
+          - "pytest-*"
+          - "ruff"
+          - "basedpyright"
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # The Dockerfile's base and uv images, pinned by tag and digest. rclone is pinned by ARG, which
+  # Dependabot cannot see; .github/workflows/rclone-check.yml watches it instead.
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

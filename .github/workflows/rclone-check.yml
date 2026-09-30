@@ -1,0 +1,54 @@
+name: rclone version check
+
+# The Dockerfile pins rclone by ARG (version and one SHA-256 per arch), which Dependabot cannot bump.
+# This fails when a newer rclone release exists; a failed scheduled run is the reminder.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rclone-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compare the pinned rclone with its latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          pinned=$(sed -n 's/^ARG SALMON_RCLONE_VERSION=//p' Dockerfile)
+          if ! printf '%s' "$pinned" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::SALMON_RCLONE_VERSION in the Dockerfile is not X.Y.Z: '$pinned'"
+            exit 1
+          fi
+          tag=$(gh api repos/rclone/rclone/releases/latest --jq .tag_name)
+          latest=${tag#v}
+          if ! printf '%s' "$latest" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::rclone's latest release tag is not vX.Y.Z: '$tag'"
+            exit 1
+          fi
+          echo "Dockerfile pins rclone $pinned; latest release is $latest"
+          if [ "$pinned" = "$latest" ]; then
+            exit 0
+          fi
+          if [ "$(printf '%s\n%s\n' "$pinned" "$latest" | sort -V | tail -n1)" = "$pinned" ]; then
+            echo "::error::the Dockerfile pins rclone $pinned, newer than the latest release $latest"
+            exit 1
+          fi
+          {
+            echo "rclone $latest is out; the Dockerfile pins $pinned."
+            echo "Set SALMON_RCLONE_VERSION=$latest and both SALMON_RCLONE_SHA256_* from"
+            echo "https://downloads.rclone.org/v$latest/SHA256SUMS (rclone-v$latest-linux-amd64.zip and"
+            echo "-linux-arm64.zip; verify its PGP signature per https://rclone.org/downloads/)."
+            echo "Release notes: https://github.com/rclone/rclone/releases/tag/$tag"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "::error::rclone $latest is out; the Dockerfile pins $pinned (see the job summary)"
+          exit 1

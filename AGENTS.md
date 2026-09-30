@@ -92,6 +92,13 @@ A PR that touches the `Dockerfile` builds the image for `linux/amd64` and `linux
 (`.github/workflows/docker-pr.yml`) and runs `.github/docker-smoke.sh` in it. An image change gets a
 smoke check that fails before it. rclone is pinned by `ARG` (version and one SHA-256 per arch, from
 the release's `SHA256SUMS`); Dependabot cannot bump it, so bump all three by hand.
+`.github/workflows/rclone-check.yml` runs weekly and fails when rclone has a newer release, naming
+it and where its `SHA256SUMS` are.
+
+Everything CI and the image run is pinned: each `uses:` to a full commit SHA with its version in a
+comment, the `Dockerfile`'s base and uv images by tag and digest, Python packages by `uv.lock`.
+Dependabot (`.github/dependabot.yml`) proposes every update to them as a PR. Pin a new action or
+image the same way, checking that the SHA is the commit its release tag points to.
 
 Every workflow that builds the image scans it with `.github/actions/scan-image` (Trivy): fixable
 HIGH and CRITICAL vulnerabilities are listed in the job summary, and a fixable CRITICAL fails the
