@@ -84,6 +84,10 @@ def test_a_corrupt_sidecar_is_ignored_and_replaced(tmp_path) -> None:
         {"source": "/x", "kind": "downconvert", "bit_depth": 32, "sample_rate": 44100},
         {"source": "/x", "kind": "downconvert", "bit_depth": 16, "sample_rate": "44100"},
         {"source": "/x", "kind": "downconvert", "bit_depth": 16, "sample_rate": []},
+        {"source": "/x", "kind": ["transcode"], "bitrate": "V0"},
+        {"source": "/x", "kind": "transcode", "bitrate": ["V0"]},
+        {"source": "/x", "kind": "downconvert", "bit_depth": [16], "sample_rate": 44100},
+        {"source": "/x", "kind": {"a": 1}, "bit_depth": 16, "sample_rate": 44100},
     ],
 )
 def test_an_unusable_entry_reads_as_no_conversion(tmp_path, entry) -> None:
@@ -496,3 +500,15 @@ def test_a_dry_run_describes_the_conversion_and_leaves_no_record_behind(monkeypa
     assert "Encode Specifics: 16 bit 44.1 kHz" in run.result.output
     assert _records_under(downloads) == []
     assert _facts(str(album)) == DOWNCONVERT
+
+
+def test_a_failed_write_leaves_no_temporary_file_behind(tmp_path, monkeypatch) -> None:
+    def full_disk(*_args, **_kwargs):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(conversions.json, "dump", full_disk)
+
+    with pytest.raises(OSError):
+        conversions.record_conversion(str(tmp_path / "Album [WEB FLAC]"), **DOWNCONVERT)
+
+    assert list((tmp_path / conversions.REGISTRY_DIR).iterdir()) == []

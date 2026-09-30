@@ -49,9 +49,14 @@ def record_conversion(output: str, **facts: Any) -> None:
     facts = {**facts, "output": os.path.basename(os.path.abspath(output))}
     os.makedirs(record_dir, exist_ok=True)
     handle, temp = tempfile.mkstemp(dir=record_dir, prefix=os.path.basename(sidecar), suffix=".tmp")
-    with os.fdopen(handle, "w", encoding="utf-8") as fh:
-        json.dump(facts, fh, indent=2, sort_keys=True)
-    os.replace(temp, sidecar)
+    try:
+        with os.fdopen(handle, "w", encoding="utf-8") as fh:
+            json.dump(facts, fh, indent=2, sort_keys=True)
+        os.replace(temp, sidecar)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.remove(temp)
+        raise
 
 
 def conversion_of(folder: str) -> dict[str, Any] | None:
@@ -87,13 +92,15 @@ def _usable(data: Any, name: str) -> bool:
     from salmon.converter.downconverting import SOX_DEPTH_ARGS  # local: both converters import this module
     from salmon.converter.transcoding import LAME_COMMAND_MAP
 
-    if not isinstance(data, dict) or data.get("kind") not in KINDS or not isinstance(data.get("source"), str):
+    if not isinstance(data, dict) or not isinstance(data.get("source"), str) or data.get("output") != name:
         return False
-    if data.get("output") != name:
+    # Hashable before any membership test: a list or object from a hand-edited file must read as unusable.
+    kind, bitrate, bit_depth = data.get("kind"), data.get("bitrate"), data.get("bit_depth")
+    if not isinstance(kind, str) or kind not in KINDS:
         return False
-    if data["kind"] == "transcode":
-        return data.get("bitrate") in LAME_COMMAND_MAP
-    return data.get("bit_depth") in SOX_DEPTH_ARGS and _usable_rates(data.get("sample_rate"))
+    if kind == "transcode":
+        return isinstance(bitrate, str) and bitrate in LAME_COMMAND_MAP
+    return _positive_int(bit_depth) and bit_depth in SOX_DEPTH_ARGS and _usable_rates(data.get("sample_rate"))
 
 
 def _usable_rates(rates: Any) -> bool:
