@@ -267,3 +267,23 @@ def test_fetch_data_still_uses_the_api_when_configured(monkeypatch) -> None:
     data = anyio.run(Scraper().fetch_data, QOBUZ_URL)
 
     assert data == {"title": "from the api"}
+
+
+def test_fetch_data_reads_the_page_with_the_shipped_default_placeholders(monkeypatch) -> None:
+    # config.default.toml ships app_id = 'app-id' and user_auth_token = 'user_auth_token'; a user
+    # who never set up Qobuz still has both, and they must count as unset, not as real credentials.
+    monkeypatch.setattr(cfg.metadata.qobuz, "app_id", "app-id")
+    monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", "user_auth_token")
+
+    async def fake_page(_self, url, *_args, **_kwargs):
+        return BeautifulSoup(SINGLE_DISC, "lxml")
+
+    async def no_api(*_args, **_kwargs):
+        raise AssertionError("the API must not be called with the shipped placeholder credentials")
+
+    monkeypatch.setattr(qobuz_base.QobuzBase, "fetch_page", fake_page)
+    monkeypatch.setattr(qobuz_base.QobuzBase, "get_json", no_api)
+
+    data = anyio.run(Scraper().fetch_data, QOBUZ_URL)
+
+    assert data["title"] == "journaling"

@@ -7,6 +7,9 @@ from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.sources.base import BaseScraper
 
+_PLACEHOLDER_APP_ID = "app-id"
+_PLACEHOLDER_USER_AUTH_TOKEN = "user_auth_token"
+
 
 class QobuzBase(BaseScraper):
     proxy_service = "qobuz"
@@ -20,15 +23,24 @@ class QobuzBase(BaseScraper):
 
     @staticmethod
     def configured() -> bool:
-        """Qobuz refuses every API call without both an app id and a user token, so either missing means inactive."""
-        return bool(cfg.metadata.qobuz.app_id and cfg.metadata.qobuz.user_auth_token)
+        """Qobuz refuses every API call without both a real app id and a real user token.
+
+        The shipped config.default.toml carries placeholder values for both, so a user who never
+        set up Qobuz still has two truthy strings; treat those placeholders as unset too.
+        """
+        app_id = cfg.metadata.qobuz.app_id
+        user_auth_token = cfg.metadata.qobuz.user_auth_token
+        if app_id == _PLACEHOLDER_APP_ID or user_auth_token == _PLACEHOLDER_USER_AUTH_TOKEN:
+            return False
+        return bool(app_id and user_auth_token)
 
     @property
     def headers(self) -> dict[str, str]:
-        """Auth headers from the live config; unset values are left out rather than sent as None."""
+        """Auth headers from the live config; unset or placeholder values are left out."""
         qobuz = cfg.metadata.qobuz
         candidates = {"X-App-Id": qobuz.app_id, "X-User-Auth-Token": qobuz.user_auth_token}
-        return {key: value for key, value in candidates.items() if value}
+        placeholders = {"X-App-Id": _PLACEHOLDER_APP_ID, "X-User-Auth-Token": _PLACEHOLDER_USER_AUTH_TOKEN}
+        return {key: value for key, value in candidates.items() if value and value != placeholders[key]}
 
     def require_configured(self) -> None:
         """Raise the ScrapeError the metadata step shows when a Qobuz URL is used without credentials."""

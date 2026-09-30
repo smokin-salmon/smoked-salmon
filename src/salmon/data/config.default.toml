@@ -99,10 +99,11 @@ discogs_token = 'discogs-token'
 # [metadata.apple_music]
 # storefronts = ["us:en-US", "jp:ja", "cn:zh-Hans-CN"]
 
-# remove if not using qobuz
+# Qobuz metadata works without an account: salmon reads the public album page. Set both app_id and
+# user_auth_token below to use the Qobuz API instead (faster, and needed for Qobuz search).
 [metadata.qobuz]
-app_id = 'app-id'
-user_auth_token = 'user_auth_token'
+# app_id = 'app-id'
+# user_auth_token = 'user_auth_token'
 # if you are using salmon from a non-english country, set this to true to avoid retrieving non-english genres
 # no_genres_from_qobuz = False
 
