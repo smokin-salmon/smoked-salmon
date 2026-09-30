@@ -16,7 +16,7 @@ uv sync                          # install, including dev dependencies
 uv run pytest                    # tests
 uv run ruff check .              # lint
 uv run ruff format --check .     # formatting
-uv run basedpyright              # type check (uv run --with basedpyright basedpyright if not installed)
+uv run basedpyright              # type check (the version locked in the dev group, as in CI)
 ```
 
 `ruff`, `pyright` and `pytest` are required checks on `master`; a PR cannot merge unless all three
@@ -96,7 +96,8 @@ the release's `SHA256SUMS`); Dependabot cannot bump it, so bump all three by han
 it and where its `SHA256SUMS` are.
 
 Everything CI and the image run is pinned: each `uses:` to a full commit SHA with its version in a
-comment, the `Dockerfile`'s base and uv images by tag and digest, Python packages by `uv.lock`.
+comment, the `Dockerfile`'s base and uv images by tag and digest, Python packages and the dev tools
+(ruff, pytest, basedpyright) by `uv.lock`.
 Dependabot (`.github/dependabot.yml`) proposes every update to them as a PR, except the job-local
 `registry:3` service in the publishing workflows, whose digest is bumped by hand. Pin a new action or
 image the same way, checking that the SHA is the commit its release tag points to.

@@ -41,8 +41,9 @@ jobs:
         with:
           enable-cache: true
 
+      # basedpyright is in the dev group, so CI runs the version locked in uv.lock.
       - name: Install dependencies
-        run: uv sync && uv pip install basedpyright
+        run: uv sync --locked
 
       - name: Run Pyright Type Check
-        run: uv run basedpyright
+        run: uv run --frozen basedpyright
