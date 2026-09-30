@@ -27,6 +27,9 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     the folder is copied to the download folder.
     `parent` replaces the download folder as the directory the renamed folder goes into.
     """
+    # Imported here: the uploader package imports this module.
+    from salmon.uploader.spectrals import get_spectrals_path
+
     old_base = os.path.basename(path)
     template_fields = {fn for _, fn, _, _ in Formatter().parse(cfg.upload.formatting.folder_template) if fn}
     if "resolution" in template_fields:
@@ -74,22 +77,32 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     in_library = cfg.directory.protects(path)
     use_hardlinks = same_volume and cfg.directory.hardlinks and not in_library
 
+    # The spectrals are salmon's own scratch files, made before this rename and looked up by the new name
+    # afterwards. They move with the album (or stay out of the copy) whatever remove_source_dir says.
+    specs_path = get_spectrals_path(path)
+    specs_in_source = not in_library and _is_direct_child(specs_path, path) and os.path.isdir(specs_path)
+    ignore = _ignoring_top_level(path, os.path.basename(specs_path)) if specs_in_source else None
+
     if os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path):
         click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
     else:
         if use_hardlinks:
             try:
-                shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True)
+                shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True, ignore=ignore)
                 click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
             except shutil.Error as _:
                 click.secho("Hardlinking didn't work, falling back to non-hardlink copy...", fg="red")
                 # A partially hardlinked tree makes the plain copy raise SameFileError (#356)
                 shutil.rmtree(new_path, ignore_errors=True)
-                shutil.copytree(path, new_path, dirs_exist_ok=True)
+                shutil.copytree(path, new_path, dirs_exist_ok=True, ignore=ignore)
                 click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
         else:
-            shutil.copytree(path, new_path, dirs_exist_ok=True)
+            shutil.copytree(path, new_path, dirs_exist_ok=True, ignore=ignore)
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
+
+        if specs_in_source:
+            # Moved, not copied: the source must not keep a Spectrals folder the upload never deletes.
+            _move_folder(specs_path, get_spectrals_path(new_path))
 
         if cfg.upload.formatting.remove_source_dir and in_library:
             click.secho(f"Not removing {path}: it is in library_dirs, or holds one.", fg="yellow")
@@ -104,25 +117,34 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
         if not os.path.exists(tmp_old_specs_path):
             pass  # No spectrals folder exists, nothing to rename
         elif os.path.exists(tmp_new_specs_path) and os.path.samefile(tmp_old_specs_path, tmp_new_specs_path):
-            click.secho(f"Skipping copy, same location already for '{tmp_new_specs_path}'", fg="yellow")
+            click.secho(f"Skipping move, same location already for '{tmp_new_specs_path}'", fg="yellow")
         else:
-            if use_hardlinks:
-                try:
-                    shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, copy_function=os.link, dirs_exist_ok=True)
-                    click.secho(f"Hardlinked temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
-                except shutil.Error as _:
-                    click.secho("Hardlinking didn't work, falling back to non-hardlink copy...", fg="red")
-                    shutil.rmtree(tmp_new_specs_path, ignore_errors=True)
-                    shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, dirs_exist_ok=True)
-                    click.secho(f"Copied temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
-            else:
-                shutil.copytree(tmp_old_specs_path, tmp_new_specs_path, dirs_exist_ok=True)
-                click.secho(f"Copied temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
-
-            if cfg.upload.formatting.remove_source_dir:
-                shutil.rmtree(tmp_old_specs_path)
+            _move_folder(tmp_old_specs_path, tmp_new_specs_path)
+            click.secho(f"Moved temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
 
     return new_path
+
+
+def _is_direct_child(child, parent):
+    """Whether `child` is an entry directly inside `parent`."""
+    return os.path.dirname(os.path.abspath(child)) == os.path.abspath(parent)
+
+
+def _ignoring_top_level(top, name):
+    """A copytree `ignore` that skips the entry `name` of `top` only, not one of that name further down."""
+    top = os.path.abspath(top)
+
+    def ignore(directory, names):
+        return {name} & set(names) if os.path.abspath(directory) == top else set()
+
+    return ignore
+
+
+def _move_folder(src, dst):
+    """Move a folder to `dst`, replacing a stale one there. Works across volumes."""
+    if os.path.isdir(dst):
+        shutil.rmtree(dst)
+    shutil.move(src, dst)
 
 
 def _resolution(path):

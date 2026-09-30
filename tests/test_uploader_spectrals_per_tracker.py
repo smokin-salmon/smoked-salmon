@@ -322,3 +322,34 @@ def test_a_run_that_can_only_reach_one_host_deletes_the_spectrals_after_its_uplo
     assert anyio.run(run) == {1: _spectral_urls(hosts, "catbox")}
     assert not spectrals.exists()
     assert list(scratch.iterdir()) == []
+
+
+def _entries(album: Path) -> list[str]:
+    """What the album holds. Its tracks are retagged in place before the rename, so only the names count."""
+    return [str(entry.relative_to(album)) for entry in sorted(album.rglob("*"))]
+
+
+@pytest.mark.parametrize("with_tmp_dir", [False, True])
+def test_a_renamed_album_leaves_no_spectrals_in_the_source_or_tmp_dir(
+    monkeypatch, tmp_path, dirs, hosts, scratch, with_tmp_dir: bool
+) -> None:
+    # #569 and #573: the spectrals are made under the old name, the folder is renamed, and none may stay behind.
+    _library, downloads, torrents = dirs
+    _image_settings(monkeypatch)
+    tmp_dir = tmp_path / "salmon-tmp"
+    if with_tmp_dir:
+        tmp_dir.mkdir()
+        monkeypatch.setattr(cfg.directory, "tmp_dir", str(tmp_dir))
+    album = _album(tmp_path / "seeding" / "Album")
+    before = _entries(album)
+
+    run = _run_up(monkeypatch, album, torrents)
+
+    assert run.result.exit_code == 0, run.result.output
+    assert _spectral_uploads(hosts) == [("catbox", name) for name in SPECTRALS]
+    assert (downloads / RENAMED).is_dir()
+    assert _left_behind(downloads, scratch) == []
+    assert not (album / "Spectrals").exists()
+    assert _entries(album) == before
+    if with_tmp_dir:
+        assert list(tmp_dir.iterdir()) == []
