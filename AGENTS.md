@@ -97,7 +97,8 @@ it and where its `SHA256SUMS` are.
 
 Everything CI and the image run is pinned: each `uses:` to a full commit SHA with its version in a
 comment, the `Dockerfile`'s base and uv images by tag and digest, Python packages by `uv.lock`.
-Dependabot (`.github/dependabot.yml`) proposes every update to them as a PR. Pin a new action or
+Dependabot (`.github/dependabot.yml`) proposes every update to them as a PR, except the job-local
+`registry:3` service in the publishing workflows, whose digest is bumped by hand. Pin a new action or
 image the same way, checking that the SHA is the commit its release tag points to.
 
 Every workflow that builds the image scans it with `.github/actions/scan-image` (Trivy): fixable
