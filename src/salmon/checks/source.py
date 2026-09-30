@@ -18,17 +18,17 @@ from salmon.tagger.tag_urls import field_name, tag_pairs, tag_texts, tag_url_fie
 
 # Enough of a log to hold the ripper's banner.
 _LOG_HEAD_BYTES = 4096
-_RIPPERS = re.compile(
-    r"exact audio copy|\bxld\b|x lossless decoder|whipper|morituri|dbpoweramp|cueripper|accuraterip",
-    re.IGNORECASE,
-)
+# CD rippers only: a verification log (CUETools, an AccurateRip check) can be made from any files.
+_RIPPERS = re.compile(r"exact audio copy|x lossless decoder|whipper|morituri|dbpoweramp|cueripper", re.IGNORECASE)
 # Fields only a store writes. Not ASIN (Picard copies it from MusicBrainz), and not the
 # com.apple.iTunes namespace as such (every tagger files custom M4A fields under it).
 _ITUNES_PURCHASE_FIELDS = frozenset({"apid", "purd", "purchase date", "purchase_date", "purchasedate"})
 # The comment Bandcamp writes into its downloads.
 _BANDCAMP_COMMENT = re.compile(r"visit https?://[a-z0-9-]+\.bandcamp\.com\b")
+# Apple only by its music stores: the rest of apple.com sells no albums.
 _STORE_URL = re.compile(
-    r"https?://(?:[a-z0-9-]+\.)*(qobuz|deezer|tidal|bandcamp|beatport|7digital|hdtracks|apple)\.com(?:[/:?#]|$)",
+    r"https?://(?:(?:[a-z0-9-]+\.)*(qobuz|deezer|tidal|bandcamp|beatport|7digital|hdtracks)|(?:music|itunes)\.(apple))"
+    r"\.com(?:[/:?#]|$)",
     re.IGNORECASE,
 )
 _STORE_NAMES = {
@@ -42,7 +42,7 @@ _STORE_NAMES = {
     "apple": "Apple",
 }
 _MEDIA_FIELDS = frozenset({"media", "sourcemedia", "tmed"})
-_MEDIA_WORD = re.compile(r"[a-z0-9 ]+")
+# A media tag's whole value, so that "CD/Vinyl" names no source.
 _MEDIA_VALUES = {
     "cd": "CD",
     "compact disc": "CD",
@@ -52,7 +52,9 @@ _MEDIA_VALUES = {
     "digital": "WEB",
     "vinyl": "Vinyl",
     "lp": "Vinyl",
-    "12": "Vinyl",
+    '7" vinyl': "Vinyl",
+    '10" vinyl': "Vinyl",
+    '12" vinyl': "Vinyl",
     "cassette": "Cassette",
     "sacd": "SACD",
     "dvd": "DVD",
@@ -143,7 +145,7 @@ def _tag_proofs(mut) -> dict[str, str]:
         field = field_name(key)
         for text in tag_texts(value):
             lowered = text.lower()
-            if field in _MEDIA_FIELDS and (media := _media(lowered)):
+            if field in _MEDIA_FIELDS and (media := _MEDIA_VALUES.get(lowered)):
                 proofs[f'media tag says "{text}"'] = media
             elif field in _ITUNES_PURCHASE_FIELDS:
                 proofs["iTunes purchase tags"] = "WEB"
@@ -153,14 +155,9 @@ def _tag_proofs(mut) -> dict[str, str]:
                 proofs["Bandcamp comment in the tags"] = "WEB"
     for _field, url in tag_url_fields(mut):
         if match := _STORE_URL.match(url):
-            proofs[f"{_STORE_NAMES[match.group(1).lower()]} URL in the tags"] = "WEB"
+            store = (match.group(1) or match.group(2)).lower()
+            proofs[f"{_STORE_NAMES[store]} URL in the tags"] = "WEB"
     return proofs
-
-
-def _media(value: str) -> str | None:
-    """The source a media tag's value names ("12\\" Vinyl", "CD", "Digital Media"), if any."""
-    match = _MEDIA_WORD.match(value)
-    return _MEDIA_VALUES.get(match.group(0).strip()) if match else None
 
 
 def _tracknumbers(mut) -> list[str]:

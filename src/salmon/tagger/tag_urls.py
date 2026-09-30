@@ -12,6 +12,7 @@ import os
 import re
 
 from mutagen import File as MutagenFile
+from mutagen.id3 import TextFrame
 from mutagen.mp4 import AtomDataType, MP4FreeForm
 
 from salmon.common.files import get_audio_files
@@ -56,7 +57,13 @@ def _decode_bytes(item: bytes) -> str:
 
 
 def tag_texts(value) -> list[str]:
-    """A tag value as plain strings, whether a list, an ID3 frame or MP4 freeform bytes."""
+    """A tag value as plain strings, whether a list, an ID3 frame or MP4 freeform bytes.
+
+    An ID3 text frame gives each of its values: as one string, they would be joined with NULs.
+    """
+    if isinstance(value, TextFrame):
+        # mutagen sets a frame's attributes from its spec at runtime, so its types do not know `text`.
+        value = getattr(value, "text", [])
     items = value if isinstance(value, list) else [value]
     return [(_decode_bytes(item) if isinstance(item, bytes) else str(item)).strip() for item in items]
 

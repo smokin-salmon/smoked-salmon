@@ -96,14 +96,28 @@ def test_a_log_that_is_not_a_rip_log_proves_nothing(tmp_path) -> None:
     assert detect_source(str(album)) is None
 
 
+def test_a_verification_log_proves_nothing(tmp_path) -> None:
+    """CUETools can verify any files against AccurateRip, so its log says nothing about where they came from."""
+    album = _album(tmp_path)
+    (album / "album.accurip.log").write_text(
+        "[CUETools log; Date: 1/1/2024 10:00:00 AM; Version: 2.1.6]\r\n"
+        "[AccurateRip ID: 0012ab34-00c5d6e7-8f09a1b2-3] found.\r\n"
+        "Track   [  CRC   |   V2   ] Status\r\n"
+        " 01     [a1b2c3d4|e5f6a7b8] (00+00/00) No match\r\n"
+    )
+
+    assert detect_source(str(album)) is None
+
+
 @pytest.mark.parametrize(
     ("tags", "reason"),
     [
         ({"PURCHASE_LINK": QOBUZ_URL}, "Qobuz URL in the tags"),
         ({"COMMENT": "https://listen.tidal.com/album/2468665"}, "Tidal URL in the tags"),
         ({"MY OWN KEY": "https://artist.bandcamp.com/album/y"}, "Bandcamp URL in the tags"),
+        ({"SOURCE": "https://itunes.apple.com/us/album/y/123"}, "Apple URL in the tags"),
     ],
-    ids=["qobuz-custom-key", "tidal-comment", "bandcamp-custom-key"],
+    ids=["qobuz-custom-key", "tidal-comment", "bandcamp-custom-key", "itunes-store"],
 )
 def test_a_store_url_proves_web_whatever_tag_holds_it(tmp_path, tags, reason) -> None:
     album = _album(tmp_path, tags)
@@ -155,6 +169,18 @@ def test_a_media_tag_in_an_m4a_is_taken_at_its_word(tmp_path, monkeypatch) -> No
     assert detect_source(str(tmp_path)) == DetectedSource("Vinyl", 'media tag says "12" Vinyl"')
 
 
+def test_a_media_tag_naming_two_media_proves_nothing(tmp_path) -> None:
+    album = _album(tmp_path, {"MEDIA": "CD/Vinyl"})
+
+    assert detect_source(str(album)) is None
+
+
+def test_the_values_of_a_multi_value_media_frame_conflict(tmp_path) -> None:
+    _write_mp3(tmp_path / "01.mp3", TMED(encoding=3, text=["CD", "Vinyl"]))
+
+    assert detect_source(str(tmp_path)) is None
+
+
 def test_every_source_the_detector_names_is_a_valid_answer_to_the_prompt() -> None:
     valid = set(SOURCES.values())
     assert set(source_mod._MEDIA_VALUES.values()).issubset(valid)
@@ -191,6 +217,7 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         {"WEBSITE": "https://www.artist-homepage.com/"},
         {"COMMENT": "Bought on Qobuz, tagged by hand"},
         {"COMMENT": "bought on bandcamp.com"},
+        {"WEBSITE": "https://www.apple.com/logic-pro/"},
     ],
     ids=[
         "picard-asin",
@@ -199,6 +226,7 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         "artist-homepage",
         "hand-written-comment",
         "hand-written-bandcamp-comment",
+        "apple-but-not-its-store",
     ],
 )
 def test_tags_a_user_or_a_tagger_writes_do_not_prove_web(tmp_path, tags) -> None:
@@ -302,24 +330,30 @@ def test_the_prompt_offers_the_detected_source_and_says_why(monkeypatch, capsys)
     asked = _prompt(monkeypatch, "")
 
     source = anyio.run(salmon.uploader._prompt_source, DetectedSource("WEB", "Qobuz URL in the tags"))
+    out = capsys.readouterr().out
 
     assert source == "WEB"
     assert asked["default"] == "WEB"
-    assert "Qobuz URL in the tags" in capsys.readouterr().out
+    assert "Qobuz URL in the tags" in out
 
 
 def test_the_user_can_still_answer_another_source(monkeypatch) -> None:
     _prompt(monkeypatch, "cd")
 
-    assert anyio.run(salmon.uploader._prompt_source, DetectedSource("WEB", "Qobuz URL in the tags")) == "CD"
+    source = anyio.run(salmon.uploader._prompt_source, DetectedSource("WEB", "Qobuz URL in the tags"))
+
+    assert source == "CD"
 
 
 def test_without_a_detection_the_prompt_is_unchanged(monkeypatch, capsys) -> None:
     asked = _prompt(monkeypatch, "vinyl")
 
-    assert anyio.run(salmon.uploader._prompt_source, None) == "Vinyl"
+    source = anyio.run(salmon.uploader._prompt_source, None)
+    out = capsys.readouterr().out
+
+    assert source == "Vinyl"
     assert asked["default"] == ""
-    assert "The files say" not in capsys.readouterr().out
+    assert "The files say" not in out
 
 
 class _SourceSettled(Exception):
