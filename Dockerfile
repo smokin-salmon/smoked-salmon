@@ -53,7 +53,7 @@ WORKDIR /app
 # .github/docker-smoke.sh checks the image reports this version. The ARGs have no RCLONE_ prefix
 # because rclone reads every RCLONE_* environment variable as a flag.
 ARG TARGETARCH
-ARG SALMON_RCLONE_VERSION=1.75.1
+ARG SALMON_RCLONE_VERSION=1.75.0
 ARG SALMON_RCLONE_SHA256_AMD64=982b5aa772841168f8e380f139e9e787b2a105403e32b94da8676a0e1c0a13ab
 ARG SALMON_RCLONE_SHA256_ARM64=03f2504174034b6d004152ed7369251c9a9ec1f7e0836eda420f5c7a5ec0dff9
 
