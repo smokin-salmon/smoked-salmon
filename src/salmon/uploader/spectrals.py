@@ -738,6 +738,16 @@ async def report_lossy_master(
             bold=True,
         )
         return
+    except RequestError as err:
+        # Not a failed upload: the torrent is up, and the rest of the flow goes on.
+        click.secho(
+            f"\n{gazelle_site.site_string} did not take the lossy master report for "
+            f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id} ({err}). Report it by hand with this text:",
+            fg="red",
+            bold=True,
+        )
+        click.echo(comment)
+        return
     click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
 
 

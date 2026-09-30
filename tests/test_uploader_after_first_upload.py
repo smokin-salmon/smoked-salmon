@@ -212,6 +212,35 @@ def test_when_the_first_upload_fails_the_next_trackers_upload_gets_the_check(mon
     assert [(site, torrent_id) for site, torrent_id, _text in edits] == [("OPS", FIRST_TORRENT_ID)]
 
 
+def test_a_refused_lossy_master_report_is_not_a_failed_upload(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    checks, edits = _checks(monkeypatch), _description_edits(monkeypatch)
+    refused: list[int] = []
+
+    async def report_lossy_master(_self, torrent_id: int, _comment: str, _source: str) -> bool:
+        refused.append(torrent_id)
+        raise RequestError("Failed to report the torrent for lossy master, code 500.")
+
+    for cls in (BaseGazelleApi, OpsApi):
+        monkeypatch.setattr(cls, "report_lossy_master", report_lossy_master)
+
+    # RED: a new group, no lossy master comment. OPS: a new group.
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, args=("-a",), input="\n\nOPS\n\n")
+
+    assert run.result.exit_code == 0, run.result.output
+    output = run.result.output
+    assert "Upload to RED failed" not in output and "Upload to OPS failed" not in output
+    # The check's report, then the transcodes' on RED; then OPS's three, which carry the check's result too.
+    assert checks == [("RED", FIRST_TORRENT_ID)]
+    assert len(edits) == 1
+    assert refused == list(range(FIRST_TORRENT_ID, FIRST_TORRENT_ID + 6)), output
+    assert len(_uploads(run)) == 6
+    # Each refused report is printed, to be filed by hand, with the spectral links.
+    assert output.count("did not take the lossy master report") == 6
+    assert output.count("[hide=Spectrals]") >= 6
+
+
 # Never offering to delete the uploaded folder (#568)
 
 
