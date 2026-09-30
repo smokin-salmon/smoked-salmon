@@ -61,6 +61,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Install Trivy for the platform check
+        uses: aquasecurity/setup-trivy@3fb12ec12f41e471780db15c232d5dd185dcb514 # v0.2.6
+        with:
+          version: v0.74.0
+
+      - name: Show which platform image Trivy reads for each TRIVY_PLATFORM
+        env:
+          REF: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          for p in linux/amd64 linux/arm64; do
+            TRIVY_PLATFORM=$p trivy image --quiet --format json --scanners vuln "$REF" \
+              | jq -r --arg p "$p" '"TRIVY_PLATFORM=\($p): scanned \(.Metadata.ImageConfig.architecture) image, config \(.Metadata.ImageID)"'
+          done
+
       - name: Scan the linux/amd64 image
         uses: ./.github/actions/scan-image
         with:
