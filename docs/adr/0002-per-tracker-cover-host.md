@@ -32,5 +32,6 @@ behaviour for every existing config and requires a RED API key users may not hav
 - Any future tracker-run image host is added the same way: give it a row in `HOST_RULES`
   (`config/image_hosts.py`) mapping it to the trackers that can display it.
 - Only covers are per tracker. Description images and spectrals are uploaded once and appear on
-  every tracker, so they must stay on a host every tracker can display.
+  every tracker, so they must stay on a host every tracker can display. *Amended by
+  [0003](0003-per-tracker-spectrals-host.md): spectrals and description images are per tracker too.*
 - Users who want RED's host must opt in explicitly.

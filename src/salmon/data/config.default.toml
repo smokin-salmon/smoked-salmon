@@ -68,15 +68,22 @@ ra_key = 'api_key'
 # Set to false to only list those files and upload them as they are.
 # strip_oversized_pictures = true
 
-# Per-tracker cover host (optional). Unset trackers use cover_uploader above.
-# red (RED's own image host) only displays on RED and OPS, so it is only allowed here,
-# under [image.red] or [image.ops]. It always authenticates with tracker.red.api_key.
+# Per-tracker image hosts (optional). Each one overrides the setting of the same name above,
+# for uploads to that tracker only; unset ones use the settings above.
+# - cover_uploader: the cover of the tracker's upload.
+# - specs_uploader: the spectrals in the tracker's description and lossy master reports. They are
+#   uploaded once per host, and trackers sharing a host reuse that upload.
+# - image_uploader: description images for the tracker. salmon up uploads none yet, so for now
+#   this setting has no effect.
+# red (RED's own image host) only displays on RED and OPS, so it is only allowed here, under
+# [image.red] or [image.ops], and never for spectrals. It always authenticates with tracker.red.api_key.
 # [image.red]
 # cover_uploader = "red"
 # [image.ops]
 # cover_uploader = "red"
 # [image.dic]
 # cover_uploader = "imgbox"
+# specs_uploader = "imgbox"
 
 # ===============================
 # METADATA SERVICES

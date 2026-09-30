@@ -107,8 +107,6 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         "get_metadata": _returning_async((dict(rls_data, cover=None), None)),
         "edit_metadata": _returning_async((path, metadata, {}, {})),
         "concat_track_data": _returning({}),
-        "get_spectrals_path": _returning("/spectrals"),
-        "handle_spectrals_upload_and_deletion": _returning_async(None),
         "resolve_cover_url": _returning_async((True, None)),
         "print_torrents": _returning_async(None),
         "UploadManager": FakeUploadManager,

@@ -1,5 +1,5 @@
 import os
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 
 import msgspec
 
@@ -83,11 +83,17 @@ SpectralSelection = Annotated[str, msgspec.Meta(pattern=r"^(\*|\+|0|0*[1-9]\d*( 
 
 _TRACKER_CODES = ("red", "ops", "dic")
 
+# The settings that choose an image host: for description images (salmon images up), covers and spectrals.
+ImageKind = Literal["image_uploader", "cover_uploader", "specs_uploader"]
+_IMAGE_KINDS: tuple[ImageKind, ...] = get_args(ImageKind)
+
 
 class TrackerImageSettings(BaseStruct):
     """Per-tracker image settings, overriding [image] for uploads to that tracker."""
 
+    image_uploader: ImgUploaderLiteral | None = None
     cover_uploader: ImgUploaderLiteral | None = None
+    specs_uploader: ImgUploaderLiteral | None = None
 
 
 class ImageUploader(BaseStruct):
@@ -106,29 +112,29 @@ class ImageUploader(BaseStruct):
     ops: TrackerImageSettings | None = None
     dic: TrackerImageSettings | None = None
 
-    def cover_uploader_for(self, site_code: str) -> str:
-        """Get the cover host for a tracker: its [image.<tracker>] override, else cover_uploader."""
-        override = getattr(self, site_code.lower(), None)
-        if override is not None and override.cover_uploader is not None:
-            return override.cover_uploader
-        return self.cover_uploader
+    def host_for(self, site_code: str | None, kind: ImageKind) -> str:
+        """Get a tracker's image host for one kind of image: its [image.<tracker>] setting, else the [image] one.
 
-    def _selections(self) -> list[tuple[str, str]]:
-        """Get every configured (setting name, host) pair, per-tracker overrides included."""
-        selections = [
-            ("image_uploader", self.image_uploader),
-            ("cover_uploader", self.cover_uploader),
-            ("specs_uploader", self.specs_uploader),
-        ]
+        A site_code of None, for images that are not for one tracker, gets the [image] setting.
+        """
+        override: TrackerImageSettings | None = getattr(self, site_code.lower(), None) if site_code else None
+        host = getattr(override, kind) if override is not None else None
+        return host if host is not None else getattr(self, kind)
+
+    def selections(self) -> list[tuple[str, ImageKind, str]]:
+        """Get every configured (setting name, kind, host), per-tracker ones included (as "red.cover_uploader")."""
+        selections: list[tuple[str, ImageKind, str]] = [(kind, kind, getattr(self, kind)) for kind in _IMAGE_KINDS]
         for code in _TRACKER_CODES:
-            override = getattr(self, code)
-            if override is not None and override.cover_uploader is not None:
-                selections.append((f"{code}.cover_uploader", override.cover_uploader))
+            override: TrackerImageSettings | None = getattr(self, code)
+            if override is not None:
+                for kind in _IMAGE_KINDS:
+                    if (host := getattr(override, kind)) is not None:
+                        selections.append((f"{code}.{kind}", kind, host))
         return selections
 
     def __post_init__(self):
-        selections = self._selections()
-        uploader_selections = {host for _, host in selections}
+        selections = self.selections()
+        uploader_selections = {host for _, _, host in selections}
         if "ptscreens" in uploader_selections and self.ptscreens_key is None:
             raise ValueError("PTScreens key not specified")
         if "oeimg" in uploader_selections and self.oeimg_key is None:
@@ -138,22 +144,17 @@ class ImageUploader(BaseStruct):
         if "ra" in uploader_selections and self.ra_key is None:
             raise ValueError("ra key not specified")
         tracker_only = tracker_only_hosts()
-        refusal = spectrals_refusal(self.specs_uploader)
-        if refusal is not None and self.specs_uploader not in tracker_only:
-            # Hosts refused outright (not just restricted to certain trackers), such as ra. A
-            # tracker-only host (such as red) is instead refused by the loop below, which gives
-            # the fuller "can only be set as cover_uploader under [image.<tracker>]" message.
-            raise ValueError(f"{refusal}; choose another specs_uploader")
-        # Covers, description images and spectrals set in [image] are shared by every
-        # tracker, and RED also forbids spectrals on its host.
-        for setting, host in selections:
+        for setting, kind, host in selections:
+            # The tracker a per-tracker setting is for; None for the [image] ones, which every tracker shares.
+            tracker = setting.rpartition(".")[0] or None
+            if kind == "specs_uploader" and (refusal := spectrals_refusal(host, tracker)) is not None:
+                raise ValueError(f'image.{setting} = "{host}": {refusal}; choose another specs_uploader')
             trackers = tracker_only.get(host)
-            if trackers is not None and setting not in {f"{code}.cover_uploader" for code in trackers}:
+            if trackers is not None and tracker not in trackers:
                 sections = " or ".join(f"[image.{code}]" for code in trackers)
                 raise ValueError(
                     f'image.{setting} = "{host}": the {host} image host only displays on '
-                    f"{'/'.join(code.upper() for code in trackers)}, so it can only be set as "
-                    f"cover_uploader under {sections}"
+                    f"{'/'.join(code.upper() for code in trackers)}, so it can only be set under {sections}"
                 )
 
 
@@ -429,9 +430,7 @@ class Cfg(BaseStruct):
     proxy: ProxyCfg = msgspec.field(default_factory=ProxyCfg)
 
     def __post_init__(self):
-        # Uploads to RED's image host authenticate with the RED API key, whichever tracker the cover is for.
-        red_host_users = [code for code in ("RED", "OPS", "DIC") if self.image.cover_uploader_for(code) == "red"]
+        # Uploads to RED's image host authenticate with the RED API key, whichever tracker the image is for.
+        red_host_users = [setting for setting, _kind, host in self.image.selections() if host == "red"]
         if red_host_users and not (self.tracker.red and self.tracker.red.api_key):
-            raise ValueError(
-                f'image.{red_host_users[0].lower()}.cover_uploader = "red" needs tracker.red.api_key to be set'
-            )
+            raise ValueError(f'image.{red_host_users[0]} = "red" needs tracker.red.api_key to be set')

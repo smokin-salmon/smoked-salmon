@@ -406,8 +406,6 @@ def _flow(
             "get_metadata": _returning_async((metadata, None)),
             "edit_metadata": _returning_async(("/release", metadata, {}, {})),
             "concat_track_data": _returning(track_data),
-            "get_spectrals_path": _returning("/spectrals"),
-            "handle_spectrals_upload_and_deletion": _returning_async(),
             "resolve_cover_url": _returning_async((True, None)),
             "UploadManager": FakeUploadManager,
             "check_requests": _returning_async(None, calls, "check_requests"),

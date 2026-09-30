@@ -4,7 +4,9 @@ import platform
 import random
 import re
 import shutil
+import tempfile
 import textwrap
+from collections.abc import Sequence
 from functools import partial
 from os.path import dirname, join
 from pathlib import Path
@@ -40,6 +42,7 @@ async def check_spectrals(
     check_lma: bool = True,
     force_prompt_lossy_master: bool = False,
     format: str = "FLAC",
+    hosts: str | None = None,
 ) -> tuple[bool | None, dict[int, str] | None]:
     """Run spectral checker functions.
 
@@ -54,6 +57,8 @@ async def check_spectrals(
         check_lma: Whether to check for lossy master.
         force_prompt_lossy_master: Force lossy master prompt.
         format: Audio format.
+        hosts: Where the spectrals go, as the prompt names them: see specs_hosts_text. Defaults to
+            the shared specs_uploader.
 
     Returns:
         Tuple of (lossy_master, spectral_ids).
@@ -87,6 +92,7 @@ async def check_spectrals(
             lossy_master,
             check_lma,
             force_prompt_lossy_master=force_prompt_lossy_master,
+            hosts=hosts,
         )
         if spectral_ids and cfg.upload.compression.compress_spectrals:
             await _compress_spectrals(spectrals_path, spectral_ids)
@@ -112,13 +118,92 @@ async def handle_spectrals_upload_and_deletion(
         Dict mapping spectral IDs to uploaded URLs.
     """
     spectral_urls = await upload_spectrals(spectrals_path, spectral_ids)
-    if delete_spectrals and os.path.isdir(spectrals_path):
+    if delete_spectrals:
+        await _delete_spectrals(spectrals_path)
+    return spectral_urls
+
+
+async def _delete_spectrals(spectrals_path: str) -> None:
+    """Delete a spectrals folder, trying twice: on Windows, a viewer may still hold its files."""
+    if os.path.isdir(spectrals_path):
         shutil.rmtree(spectrals_path, ignore_errors=True)
         await anyio.sleep(0.5)
         if os.path.isdir(spectrals_path):
             shutil.rmtree(spectrals_path)
             await anyio.sleep(0.5)
-    return spectral_urls
+
+
+def specs_hosts_text(trackers: Sequence[str]) -> str:
+    """Name where these trackers' spectrals go: "catbox", or "catbox (RED), imgbox (OPS/DIC)" when hosts differ."""
+    trackers_by_host: dict[str, list[str]] = {}
+    for tracker in trackers:
+        trackers_by_host.setdefault(cfg.image.host_for(tracker, "specs_uploader"), []).append(tracker)
+    if len(trackers_by_host) == 1:
+        return next(iter(trackers_by_host))
+    return ", ".join(f"{host} ({'/'.join(codes)})" for host, codes in trackers_by_host.items())
+
+
+class SpectralUploads:
+    """A release's spectrals in an upload run, uploaded once per image host and reused by the trackers sharing it.
+
+    A tracker's spectrals go to its specs host: image.<tracker>.specs_uploader, else image.specs_uploader.
+    Once every tracker the run may upload to has its upload, the spectral files are deleted. Until then,
+    they are kept, outside the album folder so that no torrent made from it holds them, and close()
+    deletes them.
+    """
+
+    def __init__(self, album_path: str, trackers: Sequence[str]) -> None:
+        """Set up the uploads for an album.
+
+        Args:
+            album_path: The album folder, as the spectrals were made from it.
+            trackers: The site codes of every tracker the run may upload to.
+        """
+        self._album_path = album_path
+        self._path = get_spectrals_path(album_path)
+        self._trackers = list(trackers)
+        self._hosts = {cfg.image.host_for(tracker, "specs_uploader") for tracker in self._trackers}
+        self._urls: dict[str, dict[int, list[str]] | None] = {}
+        self._scratch: str | None = None
+
+    def hosts_text(self) -> str:
+        """Name where the spectrals go, for prompts: see specs_hosts_text."""
+        return specs_hosts_text(self._trackers)
+
+    async def urls_for(self, tracker: str, spectral_ids: dict[int, str] | None) -> dict[int, list[str]] | None:
+        """Get the spectral URLs for a tracker, uploading them to its host if no tracker of the run did yet.
+
+        Args:
+            tracker: The tracker's site code.
+            spectral_ids: The spectrals to upload, by track ID.
+
+        Returns:
+            The URLs of each spectral by track ID, or None if there are none: see upload_spectrals.
+        """
+        host = cfg.image.host_for(tracker, "specs_uploader")
+        if host not in self._urls:
+            self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker)
+            if not spectral_ids or self._hosts <= self._urls.keys():
+                await self.close()
+            else:
+                self._keep_out_of_album()
+        return self._urls[host]
+
+    def _keep_out_of_album(self) -> None:
+        """Move the spectrals folder out of the album folder, if it is inside it, to where close() deletes it."""
+        if self._scratch is not None or not os.path.isdir(self._path):
+            return
+        if not Path(self._path).resolve().is_relative_to(Path(self._album_path).resolve()):
+            return
+        self._scratch = tempfile.mkdtemp(prefix="salmon-spectrals-")
+        self._path = shutil.move(self._path, os.path.join(self._scratch, "Spectrals"))
+
+    async def close(self) -> None:
+        """Delete the spectral files, if they are still there."""
+        await _delete_spectrals(self._path)
+        if self._scratch is not None:
+            shutil.rmtree(self._scratch, ignore_errors=True)
+            self._scratch = None
 
 
 async def generate_spectrals_all(path: str, spectrals_path: str, audio_info: dict[str, Any]) -> dict[int, str]:
@@ -480,12 +565,15 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
 async def upload_spectrals(
     spectrals_path: str,
     spectral_ids: dict[int, str] | None,
+    tracker: str | None = None,
 ) -> dict[int, list[str]] | None:
     """Upload spectral images to image host.
 
     Args:
         spectrals_path: Path to spectrals folder.
         spectral_ids: Dict mapping spectral IDs to filenames.
+        tracker: The site code of the tracker the spectrals are for, whose specs host they go to. None
+            uploads them to the shared specs_uploader.
 
     Returns:
         Dict mapping spectral IDs to uploaded URLs, or None. A dry run uploads nothing: the URLs are what stands
@@ -508,11 +596,11 @@ async def upload_spectrals(
         )
 
     if dryrun.active():
-        host = cfg.image.specs_uploader
+        host = cfg.image.host_for(tracker, "specs_uploader")
         dryrun.say(f"not uploading the spectrals of {len(spectrals_list)} track(s) to {host}.")
         return {sid: [dryrun.image_url(path, host) for path in paths] for sid, _filename, paths in spectrals_list}
     try:
-        return await upload_spectral_imgs(spectrals_list)
+        return await upload_spectral_imgs(spectrals_list, tracker=tracker)
     except ImageUploadFailed as e:
         click.secho(f"Failed to upload spectral: {e}", fg="red")
         return None
@@ -534,15 +622,16 @@ def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool
     return " ".join(track_ids) if track_ids else context_default
 
 
-async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False):
-    """Ask which spectral IDs the user wants to upload."""
+async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False, hosts=None):
+    """Ask which spectral IDs the user wants to upload, to hosts (see check_spectrals)."""
+    hosts = hosts or cfg.image.specs_uploader
     while True:
         ids = (
             "*"
             if cfg.upload.yes_all and not force_prompt_lossy_master
             else await click.prompt(
                 click.style(
-                    f"What spectral IDs would you like to upload to {cfg.image.specs_uploader}? "
+                    f"What spectral IDs would you like to upload to {hosts}? "
                     '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
                     fg="magenta",
                 ),
@@ -700,6 +789,7 @@ async def post_upload_spectral_check(
     source: str | None,
     source_url: str | None,
     format: str = "FLAC",
+    uploads: SpectralUploads | None = None,
 ) -> tuple[bool, str | None, dict[int, list[str]] | None, dict[int, str] | None]:
     """Generate and add spectrals after upload.
 
@@ -714,14 +804,20 @@ async def post_upload_spectral_check(
         source: Media source.
         source_url: Source URL.
         format: Audio format.
+        uploads: The spectral uploads of the upload run this check is part of, for its other trackers to reuse.
+            Without one, the spectrals are only for this tracker.
 
     Returns:
         Tuple of (lossy_master, lossy_comment, spectral_urls, spectral_ids).
     """
+    if uploads is None:
+        uploads = SpectralUploads(path, [gazelle_site.site_code])
     lossy_master, spectral_ids = await check_spectrals(
-        path, track_data, None, spectral_ids, force_prompt_lossy_master=True, format=format
+        path, track_data, None, spectral_ids, force_prompt_lossy_master=True, format=format, hosts=uploads.hosts_text()
     )
     if not lossy_master and not spectral_ids:
+        # Nothing to upload, for any tracker: the spectrals made for the check go, before a torrent could take them.
+        await uploads.close()
         return False, None, None, None
 
     lossy_comment = None
@@ -731,8 +827,7 @@ async def post_upload_spectral_check(
         )
         click.echo()
 
-    spectrals_path = get_spectrals_path(path)
-    spectral_urls = await handle_spectrals_upload_and_deletion(spectrals_path, spectral_ids)
+    spectral_urls = await uploads.urls_for(gazelle_site.site_code, spectral_ids)
 
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)

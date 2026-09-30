@@ -342,7 +342,6 @@ def _run_up(monkeypatch, album: Path, **fakes: Any) -> tuple[Any, list[str], lis
         "rename_files": _rename_files,
         "check_folder_structure": _returning_async(),
         "concat_track_data": _returning({"01. one.flac": {"sample rate": 44100}}),
-        "handle_spectrals_upload_and_deletion": _returning_async(),
         "resolve_cover_url": _returning_async((True, None)),
         "print_torrents": _returning_async(),
         "UploadManager": FakeUploadManager,

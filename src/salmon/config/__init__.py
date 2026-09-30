@@ -93,8 +93,8 @@ def _ptpimg_removed_error(e: msgspec.ValidationError) -> Exception:
     """Turn msgspec's generic Literal error into a plain message when it is caused by ptpimg.
 
     ptpimg.me has shut down, so it was dropped from the valid image hosts. A config that
-    still names it (image_uploader, cover_uploader, specs_uploader, or a per-tracker
-    [image.<tracker>] cover_uploader) would otherwise fail with msgspec's opaque
+    still names it (image_uploader, cover_uploader or specs_uploader, in [image] or a
+    per-tracker [image.<tracker>]) would otherwise fail with msgspec's opaque
     "Invalid enum value" message.
     """
     if "'ptpimg'" not in str(e):

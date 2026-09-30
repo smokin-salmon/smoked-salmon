@@ -183,7 +183,6 @@ def _run_up(
         "rename_files": _rename_files,
         "check_folder_structure": _returning_async(),
         "concat_track_data": _returning({"01. one.flac": {"sample rate": 44100}}),
-        "handle_spectrals_upload_and_deletion": _returning_async(),
         "resolve_cover_url": _returning_async((True, None)),
         "UploadManager": FakeUploadManager,
         "transcode_folder": fake_transcode,

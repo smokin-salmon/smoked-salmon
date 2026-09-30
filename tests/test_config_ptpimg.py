@@ -55,10 +55,11 @@ def test_top_level_ptpimg_uploader_fails_with_a_clear_message(tmp_path: Path, re
         _parse_config(path)
 
 
-def test_per_tracker_ptpimg_cover_uploader_fails_with_a_clear_message(tmp_path: Path) -> None:
+@pytest.mark.parametrize("field", ["cover_uploader", "specs_uploader", "image_uploader"])
+def test_per_tracker_ptpimg_uploader_fails_with_a_clear_message(tmp_path: Path, field: str) -> None:
     text = _base_config(tmp_path).replace(
         '# [image.red]\n# cover_uploader = "red"',
-        '[image.red]\ncover_uploader = "ptpimg"',
+        f'[image.red]\n{field} = "ptpimg"',
     )
     path = _write_config(tmp_path, text)
     with pytest.raises(ValueError, match="ptpimg has shut down"):
