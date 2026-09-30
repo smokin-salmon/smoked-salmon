@@ -26,6 +26,7 @@ runs:
         [ -f .trivyignore ] || { echo "No .trivyignore: nothing is allowlisted."; exit 0; }
         awk '
           /^[[:space:]]*$/ { prev = ""; next }
+          /^[[:space:]]*#[[:space:]]*$/ { prev = ""; next }
           /^[[:space:]]*#/ { prev = $0; next }
           {
             if (prev == "") { print ".trivyignore:" NR ": no \"# reason\" comment line above: " $0; bad = 1 }
