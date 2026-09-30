@@ -76,19 +76,17 @@ async def check_spectrals(
     all_spectral_ids: dict[int, str] = {}
     if not spectral_ids:
         all_spectral_ids = await generate_spectrals_all(path, spectrals_path, audio_info)
+        marks_found = False
+        if lossy_master is None and check_lma:
+            marks_found = await print_frequency_analysis(path, spectrals_path)
         while True:
             await view_spectrals(spectrals_path, all_spectral_ids)
             if lossy_master is None and check_lma:
-                lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion)
+                lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion, marks_found)
                 if lossy_master is not None:
                     break
             else:
                 break
-    else:
-        if lossy_master is None:
-            lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion)
-
-    if not spectral_ids:
         spectral_ids = await prompt_spectrals(
             all_spectral_ids,
             lossy_master,
@@ -99,9 +97,53 @@ async def check_spectrals(
         if spectral_ids and cfg.upload.compression.compress_spectrals:
             await _compress_spectrals(spectrals_path, spectral_ids)
     else:
+        # Before the plots are written: this compresses every image in the folder.
         spectral_ids = await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
+        if lossy_master is None:
+            marks_found = await print_frequency_analysis(path, spectrals_path) if check_lma else False
+            lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion, marks_found)
 
     return lossy_master, spectral_ids
+
+
+_FREQUENCY_HEADINGS = {
+    "suspect": ("the marks of a lossy encoder", "red"),
+    "look": ("one mark of a lossy encoder, not both", "yellow"),
+    "ok": ("no mark of a lossy encoder", "green"),
+    "none": ("nothing could be measured", "yellow"),
+}
+
+
+async def print_frequency_analysis(path: str, spectrals_path: str) -> bool:
+    """Measure the marks a lossy encoder leaves in each track and print them, for the lossy-master question.
+
+    Each track's averaged-spectrum plot is written next to its spectrals, as "NN Spectrum.png". Never raises: a
+    failed analysis prints one line.
+
+    Args:
+        path: Path to the album folder.
+        spectrals_path: Path to the spectrals folder.
+
+    Returns:
+        Whether a track carries the marks, which makes "yes" the question's default.
+    """
+    try:
+        # numpy, PyAV and Pillow: loaded when the analysis runs, not when salmon starts.
+        from salmon.uploader import frequency
+
+        results = await frequency.generate_frequency_plots(path, get_audio_files(path, True), spectrals_path)
+        level, notes = frequency.assess(results)
+    except Exception as e:
+        click.secho(f"\nFrequency analysis failed, so it says nothing about this release: {e!r}", fg="yellow")
+        return False
+    heading, colour = _FREQUENCY_HEADINGS[level]
+    click.secho(f"\nFrequency analysis: {heading}", fg=colour, bold=True)
+    for note in notes:
+        click.echo(f"  {note}")
+    if any(result.image for result in results):
+        click.echo(f'  Averaged spectrum of each track: "NN Spectrum.png" in {spectrals_path}')
+    click.secho("  A measurement, not a verdict: read the spectrals before answering.", fg="cyan")
+    return level == "suspect"
 
 
 async def handle_spectrals_upload_and_deletion(
@@ -507,7 +549,10 @@ def _open_specs_in_windows(spectrals_path):
 
 
 async def _open_specs_in_web_server(specs_path, all_spectral_ids):
-    spectrals.set_active_spectrals(all_spectral_ids)
+    spectrals.set_active_spectrals(
+        all_spectral_ids,
+        [sid for sid in all_spectral_ids if os.path.isfile(os.path.join(specs_path, f"{sid:02d} Spectrum.png"))],
+    )
     symlink_path = join(dirname(dirname(__file__)), "web", "static", "specs")
 
     runner = None
@@ -664,25 +709,29 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
         )
 
 
-async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=True):
+async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=True, marks_found=False):
     """Ask whether the release is lossy mastered: True, False, or None to reopen the spectrals.
 
     offer_deletion: Whether to offer deleting the music folder, which an uploaded torrent may seed from.
+    marks_found: Whether the frequency analysis found a lossy encoder's marks. It makes "yes" the default, and
+        the question is then asked even with yes_all, which otherwise answers "no" without asking.
     """
     while True:
         flush_stdin()
         r = (
             "n"
-            if cfg.upload.yes_all and not force_prompt_lossy_master
+            if cfg.upload.yes_all and not force_prompt_lossy_master and not marks_found
             else (
                 await click.prompt(
                     click.style(
-                        "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, [a]bort"
+                        "\nIs this release lossy mastered? "
+                        + ("[Y]es, [n]o" if marks_found else "[y]es, [N]o")
+                        + ", [r]eopen spectrals, [a]bort"
                         + (", [d]elete music folder" if offer_deletion else ""),
                         fg="magenta",
                     ),
                     type=click.STRING,
-                    default="n",
+                    default="y" if marks_found else "n",
                 )
             )[0].lower()
         )
@@ -755,7 +804,8 @@ async def generate_lossy_approval_comment(source_url, filenames, force_prompt_lo
     while True:
         comment = (
             ""
-            if cfg.upload.yes_all and not force_prompt_lossy_master
+            # Without a source URL, an empty comment is refused: yes_all would refuse it forever.
+            if cfg.upload.yes_all and not force_prompt_lossy_master and source_url
             else await click.prompt(
                 click.style(
                     "Do you have a comment for the lossy approval report? It is appropriate to "

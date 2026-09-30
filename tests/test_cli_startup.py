@@ -4,8 +4,9 @@ import json
 import subprocess
 import sys
 
-# Each of these adds from 30 ms (av) to 300 ms (openai) to every salmon start.
-HEAVY_MODULES = ("openai", "numpy", "av", "aiohttp.web", "jinja2")
+# Each of these adds from 30 ms (av) to 300 ms (openai) to every salmon start. salmon.uploader.frequency loads
+# numpy and av.
+HEAVY_MODULES = ("openai", "numpy", "av", "aiohttp.web", "jinja2", "salmon.uploader.frequency")
 
 # Runs --help through the real command group, as salmon.run.main() does, but without main()'s
 # release notification, which would fetch version.toml from GitHub.

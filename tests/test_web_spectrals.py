@@ -118,6 +118,34 @@ async def _answers_404_with_no_active_spectrals() -> None:
         assert not _SYMLINK_PATH.is_symlink()
 
 
+async def _shows_each_tracks_frequency_plot_under_its_spectrals() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        specs_path = _make_specs_dir(Path(tmp))
+        (specs_path / "01 Spectrum.png").write_bytes(b"fake frequency plot bytes")
+        (specs_path / "02 Full.png").write_bytes(_FULL_BYTES)
+        (specs_path / "02 Zoom.png").write_bytes(_ZOOM_BYTES)
+
+        async def requests_fn(port: int) -> None:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"http://127.0.0.1:{port}/spectrals") as resp:
+                    body = await resp.text()
+                    assert "specs/01 Spectrum.png" in body
+                    # Track 2 was not measured (a failed analysis writes no plot): no broken image.
+                    assert "specs/02 Full.png" in body
+                    assert "02 Spectrum.png" not in body
+                async with session.get(f"http://127.0.0.1:{port}/static/specs/01%20Spectrum.png") as resp:
+                    assert resp.status == 200
+
+        await _drive_server(specs_path, {1: "01 Track.flac", 2: "02 Track.flac"}, requests_fn)
+
+
+def test_shows_each_tracks_frequency_plot_under_its_spectrals() -> None:
+    try:
+        anyio.run(_shows_each_tracks_frequency_plot_under_its_spectrals)
+    finally:
+        web_spectrals.set_active_spectrals({})
+
+
 def test_serves_the_spectrals_page_and_static_images() -> None:
     try:
         anyio.run(_serves_the_spectrals_page_and_static_images)

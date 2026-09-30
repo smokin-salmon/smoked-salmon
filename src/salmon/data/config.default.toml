@@ -201,7 +201,8 @@ session = 'get-from-site-cookie'
 # update_notification = true
 # update_notification_verbose = true
 
-# # answers yes to all questions during upload. risky!
+# # answers yes to all questions during upload. risky! the lossy-master question is
+# # still asked when the frequency analysis finds a lossy encoder's marks.
 # yes_all = false
 
 # # Check every FLAC file for an MQA marker before uploading (reads the first second of each).
