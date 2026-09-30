@@ -11,6 +11,7 @@ This module loads numpy, PyAV and Pillow: import it when the analysis runs, not 
 import contextlib
 import math
 import os
+from collections.abc import Mapping
 from typing import Any, NamedTuple
 
 import anyio.to_thread
@@ -356,16 +357,8 @@ def render_plot(
     img.save(out_path)
 
 
-def plot_filename(index: int) -> str:
-    """The name of the plot of the file at this zero-based index.
-
-    It sorts between the file's "NN Full.png" and "NN Zoom.png" spectrals, so a viewer that opens a folder's
-    first image still opens a spectral.
-    """
-    return f"{index + 1:02d} Spectrum.png"
-
-
-def _analyse_one(album_path: str, filename: str, out_dir: str, index: int) -> SpectrumResult:
+def _analyse_one(album_path: str, filename: str, out_path: str | None) -> SpectrumResult:
+    """Measure a file, and draw its averaged spectrum to out_path unless it is None."""
     try:
         samples, sample_rate = decode_mono(os.path.join(album_path, filename))
         freqs, db, windows = average_spectrum(samples, sample_rate)
@@ -378,20 +371,19 @@ def _analyse_one(album_path: str, filename: str, out_dir: str, index: int) -> Sp
         )
     wall = measure_wall(freqs, db)
     gating = measure_gating(samples, sample_rate)
-    image = plot_filename(index)
-    out_path = os.path.join(out_dir, image)
-    try:
-        render_plot(freqs, db, sample_rate, out_path, filename, wall)
-    except Exception as e:
-        # A half-written PNG would still show in the spectrals viewer.
-        with contextlib.suppress(OSError):
-            os.remove(out_path)
-        return SpectrumResult(
-            file=filename, image="", sample_rate=sample_rate, windows=windows, error=str(e) or type(e).__name__
-        )
+    if out_path is not None:
+        try:
+            render_plot(freqs, db, sample_rate, out_path, filename, wall)
+        except Exception as e:
+            # A half-written PNG would still show in the spectrals viewer.
+            with contextlib.suppress(OSError):
+                os.remove(out_path)
+            return SpectrumResult(
+                file=filename, image="", sample_rate=sample_rate, windows=windows, error=str(e) or type(e).__name__
+            )
     return SpectrumResult(
         file=filename,
-        image=image,
+        image=os.path.basename(out_path) if out_path is not None else "",
         sample_rate=sample_rate,
         windows=windows,
         reach_hz=wall.reach_hz,
@@ -561,13 +553,15 @@ def assess(results: list[SpectrumResult]) -> tuple[str, list[str]]:
     return level, notes + summary
 
 
-async def generate_frequency_plots(album_path: str, files: list[str], out_dir: str) -> list[SpectrumResult]:
-    """Measure each file and write its averaged-spectrum plot into out_dir, an existing folder.
+async def generate_frequency_plots(
+    album_path: str, files: list[str], plot_paths: Mapping[str, str]
+) -> list[SpectrumResult]:
+    """Measure each file, and write the averaged-spectrum plot of each file in plot_paths to its path there.
 
     Each file is decoded once, up to MAX_SAMPLES. A file that cannot be measured gets a result with its error.
     """
     return await process_files(
         files,
-        lambda filename, index: anyio.to_thread.run_sync(_analyse_one, album_path, filename, out_dir, index),
+        lambda filename, _index: anyio.to_thread.run_sync(_analyse_one, album_path, filename, plot_paths.get(filename)),
         "Frequency analysis",
     )

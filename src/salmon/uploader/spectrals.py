@@ -78,7 +78,7 @@ async def check_spectrals(
         all_spectral_ids = await generate_spectrals_all(path, spectrals_path, audio_info)
         marks_found = False
         if lossy_master is None and check_lma:
-            marks_found = await print_frequency_analysis(path, spectrals_path)
+            marks_found = await print_frequency_analysis(path, spectrals_path, all_spectral_ids)
         while True:
             await view_spectrals(spectrals_path, all_spectral_ids)
             if lossy_master is None and check_lma:
@@ -100,7 +100,7 @@ async def check_spectrals(
         # Before the plots are written: this compresses every image in the folder.
         spectral_ids = await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
         if lossy_master is None:
-            marks_found = await print_frequency_analysis(path, spectrals_path) if check_lma else False
+            marks_found = await print_frequency_analysis(path, spectrals_path, spectral_ids) if check_lma else False
             lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion, marks_found)
 
     return lossy_master, spectral_ids
@@ -114,15 +114,25 @@ _FREQUENCY_HEADINGS = {
 }
 
 
-async def print_frequency_analysis(path: str, spectrals_path: str) -> bool:
+def spectrum_plot_name(spectral_id: int) -> str:
+    """The name of a track's averaged-spectrum plot in the spectrals folder.
+
+    It sorts between the track's "NN Full.png" and "NN Zoom.png", so a viewer that opens a folder's first image
+    still opens a spectral.
+    """
+    return f"{spectral_id:02d} Spectrum.png"
+
+
+async def print_frequency_analysis(path: str, spectrals_path: str, spectral_ids: dict[int, str]) -> bool:
     """Measure the marks a lossy encoder leaves in each track and print them, for the lossy-master question.
 
-    Each track's averaged-spectrum plot is written next to its spectrals, as "NN Spectrum.png". Never raises: a
-    failed analysis prints one line.
+    Each track with spectrals gets its averaged-spectrum plot next to them, under the same spectral ID: see
+    spectrum_plot_name. Never raises: a failed analysis prints one line.
 
     Args:
         path: Path to the album folder.
         spectrals_path: Path to the spectrals folder.
+        spectral_ids: The spectrals in that folder, by spectral ID.
 
     Returns:
         Whether a track carries the marks, which makes "yes" the question's default.
@@ -131,7 +141,10 @@ async def print_frequency_analysis(path: str, spectrals_path: str) -> bool:
         # numpy, PyAV and Pillow: loaded when the analysis runs, not when salmon starts.
         from salmon.uploader import frequency
 
-        results = await frequency.generate_frequency_plots(path, get_audio_files(path, True), spectrals_path)
+        plot_paths = {
+            filename: os.path.join(spectrals_path, spectrum_plot_name(sid)) for sid, filename in spectral_ids.items()
+        }
+        results = await frequency.generate_frequency_plots(path, get_audio_files(path, True), plot_paths)
         level, notes = frequency.assess(results)
     except Exception as e:
         click.secho(f"\nFrequency analysis failed, so it says nothing about this release: {e!r}", fg="yellow")
@@ -141,7 +154,7 @@ async def print_frequency_analysis(path: str, spectrals_path: str) -> bool:
     for note in notes:
         click.echo(f"  {note}")
     if any(result.image for result in results):
-        click.echo(f'  Averaged spectrum of each track: "NN Spectrum.png" in {spectrals_path}')
+        click.echo(f'  Averaged spectra: "NN Spectrum.png", next to the spectrals in {spectrals_path}')
     click.secho("  A measurement, not a verdict: read the spectrals before answering.", fg="cyan")
     return level == "suspect"
 
@@ -551,7 +564,7 @@ def _open_specs_in_windows(spectrals_path):
 async def _open_specs_in_web_server(specs_path, all_spectral_ids):
     spectrals.set_active_spectrals(
         all_spectral_ids,
-        [sid for sid in all_spectral_ids if os.path.isfile(os.path.join(specs_path, f"{sid:02d} Spectrum.png"))],
+        [sid for sid in all_spectral_ids if os.path.isfile(os.path.join(specs_path, spectrum_plot_name(sid)))],
     )
     symlink_path = join(dirname(dirname(__file__)), "web", "static", "specs")
 

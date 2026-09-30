@@ -80,7 +80,7 @@ def flow(monkeypatch, tmp_path):
         events.append("spectrograms-all")
         return {1: "01.flac"}
 
-    async def measure(path, files, out_dir):
+    async def measure(path, files, plot_paths):
         events.append("measure")
         return state["spectra"]
 
@@ -177,7 +177,7 @@ def test_a_pre_answered_question_skips_the_measurement(flow):
 def test_a_failed_measurement_prints_one_line_and_asks_as_before(flow, monkeypatch):
     events, printed, state = flow
 
-    async def boom(path, files, out_dir):
+    async def boom(path, files, plot_paths):
         raise RuntimeError("decoder exploded")
 
     monkeypatch.setattr(frequency, "generate_frequency_plots", boom)
@@ -259,7 +259,7 @@ def test_the_real_analysis_writes_a_plot_per_track_and_finds_a_transcode(tmp_pat
     write_flac(album / "02 b.flac", lowpass(noise(4, tilt_db_per_octave=-3), 21_300))
     (album / "t128000.mp3").unlink()
 
-    assert run(sp.print_frequency_analysis, str(album), str(specs)) is True
+    assert run(sp.print_frequency_analysis, str(album), str(specs), {1: "01 a.flac", 2: "02 b.flac"}) is True
 
     assert sorted(p.name for p in specs.iterdir()) == ["01 Spectrum.png", "02 Spectrum.png"]
     out = capsys.readouterr().out
@@ -268,12 +268,52 @@ def test_the_real_analysis_writes_a_plot_per_track_and_finds_a_transcode(tmp_pat
     assert "02 b.flac" not in out, "a clean track gets no line of its own"
 
 
+def test_with_spectral_ids_given_each_plot_is_named_after_its_own_tracks_spectrals(monkeypatch, tmp_path):
+    """-s 3 makes "01 Full.png" of track 3: its plot must be "01 Spectrum.png" too, not track 1's."""
+    album = tmp_path / "album"
+    album.mkdir()
+    names = ["01 a.flac", "02 b.flac", "03 c.flac"]
+    for name in names:
+        write_flac(album / name, noise(2))
+
+    async def fake_sox(args, **_kwargs):
+        for i, arg in enumerate(args):
+            if arg == "-o":
+                with open(args[i + 1], "w") as image:
+                    image.write(os.path.basename(args[2]))  # the image says which track it is of
+
+    async def not_lossy(*_a, **_k):
+        return False
+
+    plotted: list = []
+    real_generate = frequency.generate_frequency_plots
+
+    async def spy(path, files, plot_paths):
+        results = await real_generate(path, files, plot_paths)
+        plotted.extend((r.file, r.image) for r in results if r.image)
+        return results
+
+    monkeypatch.setattr(sp.anyio, "run_process", fake_sox)
+    monkeypatch.setattr(sp.cfg.directory, "tmp_dir", None)
+    monkeypatch.setattr(sp.cfg.upload.compression, "compress_spectrals", False)
+    monkeypatch.setattr(sp, "prompt_lossy_master", not_lossy)
+    monkeypatch.setattr(frequency, "generate_frequency_plots", spy)
+
+    _lossy, ids = run(sp.check_spectrals, str(album), {name: {"duration": 2} for name in names}, None, (3,))
+
+    assert ids == {1: "03 c.flac"}
+    specs = album / "Spectrals"
+    assert (specs / "01 Full.png").read_text() == "03 c.flac"
+    assert plotted == [("03 c.flac", "01 Spectrum.png")]
+    assert sorted(p.name for p in specs.iterdir()) == ["01 Full.png", "01 Spectrum.png", "01 Zoom.png"]
+
+
 def test_the_real_analysis_of_a_clean_album_keeps_the_default(tmp_path, capsys):
     write_flac(tmp_path / "01 a.flac", noise(4, tilt_db_per_octave=-3, rate=RATE))
     specs = tmp_path / "Spectrals"
     specs.mkdir()
 
-    assert run(sp.print_frequency_analysis, str(tmp_path), str(specs)) is False
+    assert run(sp.print_frequency_analysis, str(tmp_path), str(specs), {1: "01 a.flac"}) is False
     assert "Frequency analysis: no mark of a lossy encoder" in capsys.readouterr().out
 
 
@@ -283,7 +323,7 @@ def test_the_real_analysis_of_unreadable_files_does_not_raise(tmp_path, capsys):
     specs = tmp_path / "Spectrals"
     specs.mkdir()
 
-    assert run(sp.print_frequency_analysis, str(tmp_path), str(specs)) is False
+    assert run(sp.print_frequency_analysis, str(tmp_path), str(specs), {1: "01 a.flac", 2: "02 b.flac"}) is False
     out = capsys.readouterr().out
     assert "Frequency analysis: nothing could be measured" in out
     assert "No file could be analysed" in out

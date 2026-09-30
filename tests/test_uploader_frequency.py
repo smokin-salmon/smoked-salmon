@@ -7,6 +7,7 @@ import math
 
 import av
 import av.audio.stream
+import msgspec
 import numpy as np
 import pytest
 
@@ -71,7 +72,7 @@ def gated(seconds=6, floor=None, seed=1):
 
 def _analyse(tmp_path, name, samples):
     write_flac(tmp_path / name, samples)
-    return fq._analyse_one(str(tmp_path), name, str(tmp_path), 0)
+    return fq._analyse_one(str(tmp_path), name, str(tmp_path / "01 Spectrum.png"))
 
 
 def mp3_decode(tmp_path, samples, bit_rate, name=None):
@@ -216,7 +217,7 @@ def test_a_decoded_mp3_shows_the_wall_where_lame_puts_it_and_the_original_does_n
     original = noise(8, tilt_db_per_octave=-4)
     clean = _analyse(tmp_path, "original.flac", original)
     assert fq.classify(clean) == "clean"
-    transcode = fq._analyse_one(str(tmp_path), mp3_decode(tmp_path, original, bit_rate), str(tmp_path), 1)
+    transcode = fq._analyse_one(str(tmp_path), mp3_decode(tmp_path, original, bit_rate), None)
     assert fq.has_lossy_wall(transcode), transcode
     assert hint in fq.describe(transcode)
     assert fq.classify(transcode) in ("look", "lossy")
@@ -235,7 +236,7 @@ def test_a_128_kbps_transcode_of_quiet_highs_carries_both_marks_and_its_original
     """LAME at 128 kbps lowpasses at ~16.5 kHz and, short of bits, drops the quiet highs to digital silence."""
     original = music_like()
     assert fq.classify(_analyse(tmp_path, "original.flac", original)) == "clean"
-    transcode = fq._analyse_one(str(tmp_path), mp3_decode(tmp_path, original, 128_000), str(tmp_path), 1)
+    transcode = fq._analyse_one(str(tmp_path), mp3_decode(tmp_path, original, 128_000), None)
     assert fq.has_lossy_wall(transcode), transcode
     assert transcode.digital_floor, transcode
     assert fq.classify(transcode) == "lossy"
@@ -347,7 +348,7 @@ def test_silence_measures_no_reach_rather_than_the_whole_spectrum(tmp_path):
 
 def test_a_file_that_is_not_audio_gives_an_error_not_an_exception(tmp_path):
     (tmp_path / "broken.flac").write_bytes(b"fLaC not really")
-    result = fq._analyse_one(str(tmp_path), "broken.flac", str(tmp_path), 0)
+    result = fq._analyse_one(str(tmp_path), "broken.flac", str(tmp_path / "01 Spectrum.png"))
     assert result.error
     assert fq.assess([result])[0] == "none"
 
@@ -374,11 +375,17 @@ def test_a_failed_plot_costs_only_its_own_file(tmp_path, monkeypatch):
     assert not (tmp_path / "01 Spectrum.png").exists(), "a half-written plot would still show in the viewer"
 
 
-def test_a_plot_is_written_next_to_the_spectrals_of_its_track(tmp_path):
+def test_a_plot_is_written_where_it_is_asked_for_and_only_there(tmp_path):
     write_flac(tmp_path / "03 c.flac", lowpass(noise(3), 16_500))
-    result = fq._analyse_one(str(tmp_path), "03 c.flac", str(tmp_path), 2)
-    assert result.image == "03 Spectrum.png"
-    assert (tmp_path / "03 Spectrum.png").read_bytes().startswith(b"\x89PNG")
+    result = fq._analyse_one(str(tmp_path), "03 c.flac", str(tmp_path / "01 Spectrum.png"))
+    assert result.image == "01 Spectrum.png"
+    assert (tmp_path / "01 Spectrum.png").read_bytes().startswith(b"\x89PNG")
+
+    (tmp_path / "01 Spectrum.png").unlink()
+    unplotted = fq._analyse_one(str(tmp_path), "03 c.flac", None)
+    assert unplotted.image == ""
+    assert unplotted == fq.SpectrumResult(**{**msgspec.structs.asdict(result), "image": ""})
+    assert not list(tmp_path.glob("*.png"))
 
 
 def test_plotting_an_impossible_sample_rate_fails_clearly():
