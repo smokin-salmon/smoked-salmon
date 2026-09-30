@@ -147,6 +147,18 @@ def test_an_album_without_spectrals_is_copied_as_before(dirs) -> None:
     assert _listing(new_path) == before
 
 
+@pytest.mark.parametrize("remove_source_dir", [False, True])
+def test_a_plain_file_named_spectrals_is_copied_like_any_other(monkeypatch, dirs, remove_source_dir: bool) -> None:
+    _downloads, seeding = dirs
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", remove_source_dir)
+    album = _album(seeding / "Old Name")
+    (album / "Spectrals").write_bytes(b"not a folder")
+
+    new_path = Path(foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False))
+
+    assert (new_path / "Spectrals").read_bytes() == b"not a folder"
+
+
 def test_the_spectrals_of_a_library_album_are_never_inside_it(monkeypatch, dirs) -> None:
     downloads, _seeding = dirs
     library = downloads.parent / "library"

@@ -80,7 +80,7 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     # The spectrals are salmon's own scratch files, made before this rename and looked up by the new name
     # afterwards. They move with the album (or stay out of the copy) whatever remove_source_dir says.
     specs_path = get_spectrals_path(path)
-    specs_in_source = not in_library and _is_direct_child(specs_path, path)
+    specs_in_source = not in_library and _is_direct_child(specs_path, path) and os.path.isdir(specs_path)
     ignore = _ignoring_top_level(path, os.path.basename(specs_path)) if specs_in_source else None
 
     if os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path):
@@ -100,7 +100,7 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
             shutil.copytree(path, new_path, dirs_exist_ok=True, ignore=ignore)
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
 
-        if specs_in_source and os.path.isdir(specs_path):
+        if specs_in_source:
             # Moved, not copied: the source must not keep a Spectrals folder the upload never deletes.
             _move_folder(specs_path, get_spectrals_path(new_path))
 
