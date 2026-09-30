@@ -380,7 +380,7 @@ def _flow(
     calls: list[str] = []
     transcoded: list[tuple] = []
 
-    async def fake_execute(tasks, _path, *args) -> None:
+    async def fake_execute(tasks, _path, *args, **_kwargs) -> None:
         transcoded.append(([t["name"] for t in tasks], args[-1]))
 
     class FakeUploadManager:

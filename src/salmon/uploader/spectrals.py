@@ -43,6 +43,7 @@ async def check_spectrals(
     force_prompt_lossy_master: bool = False,
     format: str = "FLAC",
     hosts: str | None = None,
+    offer_deletion: bool = True,
 ) -> tuple[bool | None, dict[int, str] | None]:
     """Run spectral checker functions.
 
@@ -59,6 +60,7 @@ async def check_spectrals(
         format: Audio format.
         hosts: Where the spectrals go, as the prompt names them: see specs_hosts_text. Defaults to
             the shared specs_uploader.
+        offer_deletion: Whether the lossy master prompt offers to delete the music folder.
 
     Returns:
         Tuple of (lossy_master, spectral_ids).
@@ -77,14 +79,14 @@ async def check_spectrals(
         while True:
             await view_spectrals(spectrals_path, all_spectral_ids)
             if lossy_master is None and check_lma:
-                lossy_master = await prompt_lossy_master(force_prompt_lossy_master)
+                lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion)
                 if lossy_master is not None:
                     break
             else:
                 break
     else:
         if lossy_master is None:
-            lossy_master = await prompt_lossy_master(force_prompt_lossy_master)
+            lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion)
 
     if not spectral_ids:
         spectral_ids = await prompt_spectrals(
@@ -662,7 +664,11 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
         )
 
 
-async def prompt_lossy_master(force_prompt_lossy_master=False):
+async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=True):
+    """Ask whether the release is lossy mastered: True, False, or None to reopen the spectrals.
+
+    offer_deletion: Whether to offer deleting the music folder, which an uploaded torrent may seed from.
+    """
     while True:
         flush_stdin()
         r = (
@@ -671,8 +677,8 @@ async def prompt_lossy_master(force_prompt_lossy_master=False):
             else (
                 await click.prompt(
                     click.style(
-                        "\nIs this release lossy mastered? "
-                        "[y]es, [N]o, [r]eopen spectrals, [a]bort, [d]elete music folder",
+                        "\nIs this release lossy mastered? [y]es, [N]o, [r]eopen spectrals, [a]bort"
+                        + (", [d]elete music folder" if offer_deletion else ""),
                         fg="magenta",
                     ),
                     type=click.STRING,
@@ -688,7 +694,7 @@ async def prompt_lossy_master(force_prompt_lossy_master=False):
             return None
         elif r == "a":
             raise click.Abort
-        elif r == "d":
+        elif r == "d" and offer_deletion:
             raise AbortAndDeleteFolder
 
 
@@ -812,8 +818,16 @@ async def post_upload_spectral_check(
     """
     if uploads is None:
         uploads = SpectralUploads(path, [gazelle_site.site_code])
+    # The uploaded torrent seeds from path: the check must not offer to delete it.
     lossy_master, spectral_ids = await check_spectrals(
-        path, track_data, None, spectral_ids, force_prompt_lossy_master=True, format=format, hosts=uploads.hosts_text()
+        path,
+        track_data,
+        None,
+        spectral_ids,
+        force_prompt_lossy_master=True,
+        format=format,
+        hosts=uploads.hosts_text(),
+        offer_deletion=False,
     )
     if not lossy_master and not spectral_ids:
         # Nothing to upload, for any tracker: the spectrals made for the check go, before a torrent could take them.

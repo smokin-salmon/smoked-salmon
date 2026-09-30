@@ -275,11 +275,20 @@ class Run:
 
 
 def _run_up(
-    monkeypatch, album: Path, torrents: Path, args: tuple[str, ...] = (), input: str = TWO_TRACKERS, **fakes: Any
+    monkeypatch,
+    album: Path,
+    torrents: Path,
+    args: tuple[str, ...] = (),
+    input: str = TWO_TRACKERS,
+    *,
+    classes: dict[str, type[BaseGazelleApi]] | None = None,
+    multi_tracker_upload: bool = True,
+    **fakes: Any,
 ) -> Run:
     """Run `salmon up ALBUM -t RED` against the fake tracker, with the real staging, torrents and upload forms.
 
     The seams that need audio tools, a metadata source or a reviewer are stubbed, `fakes` replace more of them.
+    `classes` gives the client class of each site code, RED and OPS by default.
     """
     rls_data = {
         "format": "FLAC",
@@ -326,7 +335,7 @@ def _run_up(
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
     # -yyy sets yes_all: patched, so it is put back after the test.
     monkeypatch.setattr(cfg.upload, "yes_all", False)
-    monkeypatch.setattr(cfg.upload, "multi_tracker_upload", True)
+    monkeypatch.setattr(cfg.upload, "multi_tracker_upload", multi_tracker_upload)
     monkeypatch.setattr(cfg.upload, "upload_to_seedbox", True)
     monkeypatch.setattr(cfg.upload.requests, "check_requests", True)
     monkeypatch.setattr(cfg.upload.requests, "last_minute_dupe_check", False)
@@ -338,7 +347,7 @@ def _run_up(
     logins: list[str | None] = []
     monkeypatch.setattr(QBittorrentClient, "login", lambda client: logins.append(client.url))
     tracker = FakeTracker()
-    classes = {"RED": RedApi, "OPS": OpsApi}
+    classes = classes or {"RED": RedApi, "OPS": OpsApi}
     monkeypatch.setattr(salmon.trackers, "get_class", lambda code: lambda: _client(classes[code], tracker, torrents))
 
     async def run():
