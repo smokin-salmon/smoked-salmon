@@ -4,8 +4,8 @@ Ported from chodeus's fork (`checks/source.py`), narrowed to just the tag-URL re
 `tagger/metadata.py` needs to find the files' Deezer album (#545). The media/log source detection
 that lived alongside it in the fork is out of scope here.
 
-Kept as its own module so the later source-detection and metadata pre-fill work (#537, #536) can
-import this instead of re-porting it.
+Kept as its own module so the source detection (`checks/source.py`, #537) and the metadata
+pre-fill work (#536) import this instead of re-porting it.
 """
 
 import os
@@ -61,7 +61,7 @@ def tag_texts(value) -> list[str]:
     return [(_decode_bytes(item) if isinstance(item, bytes) else str(item)).strip() for item in items]
 
 
-def _tags(mut) -> list:
+def tag_pairs(mut) -> list:
     """The file's (key, value) tag pairs, database links left out."""
     pairs = dict(mut.tags or {}).items()
     return [(key, value) for key, value in pairs if not field_name(key).startswith(_DATABASE_KEYS)]
@@ -71,7 +71,7 @@ def tag_url_fields(mut) -> list[tuple[str, str]]:
     """(field name, URL) for every tag whose whole value is one URL."""
     return [
         (field_name(key), text)
-        for key, value in _tags(mut)
+        for key, value in tag_pairs(mut)
         for text in tag_texts(value)
         if _URL_VALUE.fullmatch(text) and not _DATABASE_URL.match(text)
     ]

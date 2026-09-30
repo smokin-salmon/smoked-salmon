@@ -15,6 +15,7 @@ from salmon import cfg, dryrun
 from salmon.checks import mqa_test
 from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
+from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup, tagify
@@ -692,7 +693,7 @@ async def _upload_staged(
     """
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
-        source = await _prompt_source()
+        source = await _prompt_source(detect_source(path))
     audio_info = gather_audio_info(path)
     hybrid = check_hybrid(audio_info)
     if not scene:
@@ -1633,12 +1634,15 @@ def convert_genres(genres):
     return ",".join(t for t in (tagify(g) for g in genres) if t)
 
 
-async def _prompt_source():
+async def _prompt_source(detected: DetectedSource | None = None) -> str:
+    """Ask for the release's media source. An empty answer takes the detected one, when there is one."""
     click.echo(f"\nValid sources: {', '.join(SOURCES.values())}")
+    if detected:
+        click.secho(f"The files say {detected.source}: {detected.reason}.", fg="cyan")
     while True:
         sauce = await click.prompt(
             click.style("What is the source of this release? [a]bort", fg="magenta"),
-            default="",
+            default=detected.source if detected else "",
         )
         try:
             return SOURCES[sauce.lower()]
