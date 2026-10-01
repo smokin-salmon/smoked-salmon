@@ -203,9 +203,11 @@ def test_conversion_note_is_the_in_run_description_without_specifics_and_footer(
     note = uploader.converted_from_note(DOWNCONVERT, url)
     assert note is not None and note in dc.generate_conversion_description(url, 44100, 16)
     assert footer not in note and "Encode Specifics" not in note
-    assert uploader.converted_from_note(transcode, url) == tc.transcode_note(url, "V0")
+    transcode_from_note = uploader.converted_from_note(transcode, url)
+    assert transcode_from_note == tc.transcode_note(url, "V0")
     assert tc.generate_transcode_description(url, "V0").startswith(tc.transcode_note(url, "V0") + footer)
-    assert uploader.converted_from_note(None, url) is None
+    no_note = uploader.converted_from_note(None, url)
+    assert no_note is None
 
 
 def test_the_conversion_note_goes_before_the_footer_and_changes_nothing_else() -> None:
