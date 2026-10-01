@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -11,6 +12,7 @@ import msgspec
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
+from salmon.converter.conversions import record_conversion
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -289,28 +291,46 @@ async def convert_folder(
     await _convert_audio_files(items, bit_depth)
 
     final_rate = items[-1].target_rate if items else None
+    target_rates = sorted({item.target_rate for item in items})
+    if items:
+        record_conversion(
+            new_path,
+            source=path,
+            kind="downconvert",
+            bit_depth=bit_depth,
+            sample_rate=target_rates[0] if len(target_rates) == 1 else target_rates,
+        )
     return final_rate or sample_rate, new_path
 
 
-def generate_conversion_description(url: str, sample_rate: int | None, bit_depth: BitDepth = 16) -> str:
+def conversion_note(url: str, sample_rate: int | Sequence[int] | None, bit_depth: BitDepth = 16) -> str:
+    """The source and the sox commands of a conversion, without the specifics line or the footer."""
+    if not sample_rate:
+        return ""
+    rates = [sample_rate] if isinstance(sample_rate, int) else list(sample_rate)
+    depth_args = " ".join(SOX_DEPTH_ARGS[bit_depth])
+    sox_cmds = "\n".join(f"sox input.flac {depth_args} output.flac rate -v -L {rate} dither" for rate in rates)
+    return f"[b]Source:[/b] {url}\n[b]Transcode process:[/b] [code]{sox_cmds}[/code]\n"
+
+
+def generate_conversion_description(url: str, sample_rate: int | Sequence[int] | None, bit_depth: BitDepth = 16) -> str:
     """Generate a BBCode description for the conversion process.
 
     Args:
         url: Source URL for attribution.
-        sample_rate: The sample rate used in conversion.
+        sample_rate: The sample rate used in conversion; several when a mixed-family folder kept each track's family.
         bit_depth: Target bit depth (16 or 24).
 
     Returns:
         Formatted description string.
     """
-    if sample_rate is None:
+    if not sample_rate:
         return ""
-    depth_args = " ".join(SOX_DEPTH_ARGS[bit_depth])
-    sox_cmd = f"sox input.flac {depth_args} output.flac rate -v -L {sample_rate} dither"
+    rates = [sample_rate] if isinstance(sample_rate, int) else list(sample_rate)
+    specifics = " / ".join(f"{rate / 1000:.01f}" for rate in rates)
     return (
-        f"Encode Specifics: {bit_depth} bit {sample_rate / 1000:.01f} kHz\n"
-        f"[b]Source:[/b] {url}\n"
-        f"[b]Transcode process:[/b] [code]{sox_cmd}[/code]\n"
+        f"Encode Specifics: {bit_depth} bit {specifics} kHz\n"
+        f"{conversion_note(url, sample_rate, bit_depth)}"
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )

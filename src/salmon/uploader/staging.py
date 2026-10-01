@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import asyncclick as click
 
 from salmon import cfg, dryrun
+from salmon.converter.conversions import carry_conversion
 from salmon.errors import UploadError
 
 # Scratch copies live here, one directory per run, removed when the run ends.
@@ -77,6 +78,8 @@ def _copy_into(path: str, into: str, scratch: bool) -> str:
         shutil.copytree(path, dest)
     except OSError as error:
         raise UploadError(f"Could not copy {path} to {dest}: {error}") from error
+    # The record lives beside the album, not in it, so the copy would otherwise leave it behind.
+    carry_conversion(path, dest)
     return dest
 
 

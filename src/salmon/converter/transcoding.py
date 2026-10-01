@@ -14,6 +14,7 @@ from mutagen.id3 import APIC, TXXX, Frames
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
+from salmon.converter.conversions import record_conversion
 from salmon.errors import UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -439,7 +440,19 @@ async def transcode_folder(
     _copy_extra_files(path, new_path, essential_only=essential_only)
     await _transcode_audio_files(items, bitrate)
 
+    if items:
+        record_conversion(new_path, source=path, kind="transcode", bitrate=bitrate)
     return new_path
+
+
+def transcode_note(url: str, bitrate: Bitrate) -> str:
+    """The source and the lame command of a transcode, without the footer."""
+    lame_command = " ".join(LAME_COMMAND_MAP[bitrate])
+    return (
+        f"[b]Source:[/b] {url}\n"
+        f"[b]Transcode process:[/b] "
+        f"[code]flac -Vdsc -- input.flac | lame -S {lame_command} --ignore-tag-errors - output.mp3[/code]\n"
+    )
 
 
 def generate_transcode_description(url: str, bitrate: Bitrate) -> str:
@@ -452,12 +465,8 @@ def generate_transcode_description(url: str, bitrate: Bitrate) -> str:
     Returns:
         BBCode formatted description string.
     """
-    lame_command = " ".join(LAME_COMMAND_MAP[bitrate])
-
     return (
-        f"[b]Source:[/b] {url}\n"
-        f"[b]Transcode process:[/b] "
-        f"[code]flac -Vdsc -- input.flac | lame -S {lame_command} --ignore-tag-errors - output.mp3[/code]\n"
+        f"{transcode_note(url, bitrate)}"
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )
