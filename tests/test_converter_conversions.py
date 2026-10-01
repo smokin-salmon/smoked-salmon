@@ -22,6 +22,7 @@ from salmon.converter import downconverting as dc
 from salmon.converter import transcoding as tc
 from salmon.errors import UploadError
 from salmon.tagger import foldername
+from salmon.uploader.upload import generate_t_description
 
 DOWNCONVERT = {"source": "/x/src", "kind": "downconvert", "bit_depth": 16, "sample_rate": 44100}
 
@@ -194,13 +195,37 @@ def test_transcode_of_nothing_records_nothing(tmp_path, monkeypatch) -> None:
     assert conversions.conversion_of(str(out)) is None
 
 
-def test_conversion_description_uses_the_in_run_wording() -> None:
+def test_conversion_note_is_the_in_run_description_without_specifics_and_footer() -> None:
     url = "https://redacted.sh/torrents.php?id=2855221"
     transcode = {"source": "/x", "kind": "transcode", "bitrate": "V0"}
+    footer = "[hr]Uploaded with"
 
-    assert uploader.conversion_description(DOWNCONVERT, url) == dc.generate_conversion_description(url, 44100, 16)
-    assert uploader.conversion_description(transcode, url) == tc.generate_transcode_description(url, "V0")
-    assert uploader.conversion_description(None, url) is None
+    note = uploader.converted_from_note(DOWNCONVERT, url)
+    assert note is not None and note in dc.generate_conversion_description(url, 44100, 16)
+    assert footer not in note and "Encode Specifics" not in note
+    assert uploader.converted_from_note(transcode, url) == tc.transcode_note(url, "V0")
+    assert tc.generate_transcode_description(url, "V0").startswith(tc.transcode_note(url, "V0") + footer)
+    assert uploader.converted_from_note(None, url) is None
+
+
+def test_the_conversion_note_goes_before_the_footer_and_changes_nothing_else() -> None:
+    args = {
+        "metadata": {"date": "2025-07-25", "urls": []},
+        "track_data": {"01. One.flac": {"duration": 60, "bit rate": 0, "precision": 16, "sample rate": 44100}},
+        "hybrid": False,
+        "metadata_urls": [],
+        "spectral_urls": None,
+        "spectral_ids": None,
+        "lossy_comment": None,
+        "source_url": None,
+    }
+    plain = generate_t_description(**args)
+    note = tc.transcode_note("https://tracker.test/torrents.php?id=1", "V0")
+
+    assert generate_t_description(**args, conversion_note=None) == plain
+    with_note = generate_t_description(**args, conversion_note=note)
+    assert with_note == plain.replace("[hr]Uploaded", note + "[hr]Uploaded")
+    assert with_note.count("Uploaded with") == 1
 
 
 def test_a_mixed_family_description_lists_one_sox_command_per_rate() -> None:
@@ -435,7 +460,10 @@ def test_a_converted_folder_uploaded_on_its_own_describes_the_conversion(monkeyp
     uploads = _flac_uploads(run)
     assert len(uploads) == 6
     for upload in (uploads[0], uploads[3]):
-        assert "Encode Specifics: 16 bit 44.1 kHz" in upload["release_desc"]
+        # The note is added to the normal description: its spectral links and its one footer stay.
+        assert "[b]Transcode process:[/b]" in upload["release_desc"]
+        assert "[img=https://images.test/" in upload["release_desc"]
+        assert upload["release_desc"].count("Uploaded with") == 1
         assert "sox input.flac -R -G -b 16 output.flac rate -v -L 44100 dither" in upload["release_desc"]
     # The renamed folder carries the record along, and no torrent holds it.
     assert _facts(str(downloads / RENAMED)) == DOWNCONVERT
@@ -453,7 +481,9 @@ def test_a_transcode_uploaded_on_its_own_describes_the_transcode(monkeypatch, tm
     run = _run_up(monkeypatch, album, torrents)
 
     assert run.result.exit_code == 0, run.result.output
-    assert "lame" in _flac_uploads(run)[0]["release_desc"].lower()
+    description = _flac_uploads(run)[0]["release_desc"]
+    assert "lame -S -V 0" in description and "[img=https://images.test/" in description
+    assert description.count("Uploaded with") == 1
 
 
 @pytest.mark.usefixtures("image_uploads")
@@ -497,7 +527,7 @@ def test_a_dry_run_describes_the_conversion_and_leaves_no_record_behind(monkeypa
     run = _run_up(monkeypatch, album, torrents, args=("--dry-run",))
 
     assert run.result.exit_code == 0, run.result.output
-    assert "Encode Specifics: 16 bit 44.1 kHz" in run.result.output
+    assert "[b]Transcode process:[/b]" in run.result.output
     assert _records_under(downloads) == []
     assert _facts(str(album)) == DOWNCONVERT
 

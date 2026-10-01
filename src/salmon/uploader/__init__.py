@@ -23,6 +23,7 @@ from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.converter.conversions import conversion_of
 from salmon.converter.downconverting import (
     BitDepth,
+    conversion_note,
     convert_folder,
     generate_conversion_description,
 )
@@ -30,6 +31,7 @@ from salmon.converter.transcoding import (
     Bitrate,
     generate_transcode_description,
     transcode_folder,
+    transcode_note,
 )
 from salmon.errors import (
     AbortAndDeleteFolder,
@@ -633,16 +635,14 @@ async def upload(
         )
 
 
-def conversion_description(conversion: dict[str, Any] | None, url: str | None) -> str | None:
-    """The conversion note for a folder a converter made, worded exactly as the in-run conversion upload."""
+def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
+    """The conversion note for a folder a converter made, worded as the in-run conversion upload's."""
     if not conversion:
         return None
     click.secho(f"\nThis folder was converted from {conversion.get('source')}; describing the conversion.", fg="cyan")
     if conversion.get("kind") == "transcode":
-        return generate_transcode_description(url or "", cast("Bitrate", conversion.get("bitrate")))
-    return generate_conversion_description(
-        url or "", conversion.get("sample_rate"), cast("BitDepth", conversion.get("bit_depth", 16))
-    )
+        return transcode_note(url or "", cast("Bitrate", conversion.get("bitrate")))
+    return conversion_note(url or "", conversion.get("sample_rate"), cast("BitDepth", conversion.get("bit_depth", 16)))
 
 
 def _trackers_for_run(first_tracker: str, flac_group: dict[str, Any] | None) -> list[str]:
@@ -954,7 +954,7 @@ async def _upload_staged(
                             source_url,
                             seedbox_uploader,
                             source=source,
-                            override_description=conversion_description(conversion, group_link),
+                            conversion_note=converted_from_note(conversion, group_link),
                         )
 
                         request_id = None
@@ -1555,6 +1555,7 @@ async def upload_and_report(
     source: str | None = None,
     override_description: str | None = None,
     override_lossy_comment: str | None = None,
+    conversion_note: str | None = None,
 ) -> tuple[int, int, str, Any, str]:
     """Upload torrent and report lossy master if needed.
 
@@ -1576,6 +1577,7 @@ async def upload_and_report(
         source: Media source.
         override_description: Override torrent description.
         override_lossy_comment: Override lossy comment.
+        conversion_note: How the folder was converted, added to the generated description.
 
     Returns:
         Tuple of (torrent_id, group_id, torrent_path, torrent_content, url). In a dry run, what
@@ -1597,6 +1599,7 @@ async def upload_and_report(
         "request_id": request_id,
         "source_url": source_url,
         **({"override_description": override_description} if override_description else {}),
+        **({"conversion_note": conversion_note} if conversion_note else {}),
     }
 
     # Execute upload

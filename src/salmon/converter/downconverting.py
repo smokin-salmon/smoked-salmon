@@ -303,6 +303,16 @@ async def convert_folder(
     return final_rate or sample_rate, new_path
 
 
+def conversion_note(url: str, sample_rate: int | Sequence[int] | None, bit_depth: BitDepth = 16) -> str:
+    """The source and the sox commands of a conversion, without the specifics line or the footer."""
+    if not sample_rate:
+        return ""
+    rates = [sample_rate] if isinstance(sample_rate, int) else list(sample_rate)
+    depth_args = " ".join(SOX_DEPTH_ARGS[bit_depth])
+    sox_cmds = "\n".join(f"sox input.flac {depth_args} output.flac rate -v -L {rate} dither" for rate in rates)
+    return f"[b]Source:[/b] {url}\n[b]Transcode process:[/b] [code]{sox_cmds}[/code]\n"
+
+
 def generate_conversion_description(url: str, sample_rate: int | Sequence[int] | None, bit_depth: BitDepth = 16) -> str:
     """Generate a BBCode description for the conversion process.
 
@@ -317,13 +327,10 @@ def generate_conversion_description(url: str, sample_rate: int | Sequence[int] |
     if not sample_rate:
         return ""
     rates = [sample_rate] if isinstance(sample_rate, int) else list(sample_rate)
-    depth_args = " ".join(SOX_DEPTH_ARGS[bit_depth])
-    sox_cmds = "\n".join(f"sox input.flac {depth_args} output.flac rate -v -L {rate} dither" for rate in rates)
     specifics = " / ".join(f"{rate / 1000:.01f}" for rate in rates)
     return (
         f"Encode Specifics: {bit_depth} bit {specifics} kHz\n"
-        f"[b]Source:[/b] {url}\n"
-        f"[b]Transcode process:[/b] [code]{sox_cmds}[/code]\n"
+        f"{conversion_note(url, sample_rate, bit_depth)}"
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )

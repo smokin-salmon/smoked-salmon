@@ -445,6 +445,16 @@ async def transcode_folder(
     return new_path
 
 
+def transcode_note(url: str, bitrate: Bitrate) -> str:
+    """The source and the lame command of a transcode, without the footer."""
+    lame_command = " ".join(LAME_COMMAND_MAP[bitrate])
+    return (
+        f"[b]Source:[/b] {url}\n"
+        f"[b]Transcode process:[/b] "
+        f"[code]flac -Vdsc -- input.flac | lame -S {lame_command} --ignore-tag-errors - output.mp3[/code]\n"
+    )
+
+
 def generate_transcode_description(url: str, bitrate: Bitrate) -> str:
     """Generate a BBCode description for a transcoded upload.
 
@@ -455,12 +465,8 @@ def generate_transcode_description(url: str, bitrate: Bitrate) -> str:
     Returns:
         BBCode formatted description string.
     """
-    lame_command = " ".join(LAME_COMMAND_MAP[bitrate])
-
     return (
-        f"[b]Source:[/b] {url}\n"
-        f"[b]Transcode process:[/b] "
-        f"[code]flac -Vdsc -- input.flac | lame -S {lame_command} --ignore-tag-errors - output.mp3[/code]\n"
+        f"{transcode_note(url, bitrate)}"
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )
