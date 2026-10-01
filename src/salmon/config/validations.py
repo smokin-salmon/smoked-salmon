@@ -81,7 +81,7 @@ ImgUploaderLiteral = Literal["ptscreens", "oeimg", "catbox", "imgbb", "imgbox", 
 # "*" (all), "+" (a random third), "0" (none), or track IDs separated by spaces, such as "3" or "1 5 9".
 SpectralSelection = Annotated[str, msgspec.Meta(pattern=r"^(\*|\+|0|0*[1-9]\d*( +0*[1-9]\d*)*)$")]
 
-_TRACKER_CODES = ("red", "ops", "dic")
+_TRACKER_CODES = ("red", "ops", "dic", "lib")
 
 # The settings that choose an image host: for description images (salmon images up), covers and spectrals.
 ImageKind = Literal["image_uploader", "cover_uploader", "specs_uploader"]
@@ -111,6 +111,7 @@ class ImageUploader(BaseStruct):
     red: TrackerImageSettings | None = None
     ops: TrackerImageSettings | None = None
     dic: TrackerImageSettings | None = None
+    lib: TrackerImageSettings | None = None
 
     def host_for(self, site_code: str | None, kind: ImageKind) -> str:
         """Get a tracker's image host for one kind of image: its [image.<tracker>] setting, else the [image] one.
@@ -201,10 +202,11 @@ class Tracker(BaseStruct):
     red: GazelleTrackerSettings | None = None
     ops: GazelleTrackerSettings | None = None
     dic: GazelleTrackerSettings | None = None
-    default_tracker: Literal["RED", "OPS", "DIC"] | None = None
+    lib: GazelleTrackerSettings | None = None
+    default_tracker: Literal["RED", "OPS", "DIC", "LIB"] | None = None
 
     def __post_init__(self):
-        if (self.red is None) and (self.ops is None) and (self.dic is None):
+        if (self.red is None) and (self.ops is None) and (self.dic is None) and (self.lib is None):
             raise ValueError("You need a tracker session cookie in your config!")
 
         if self.ops is None and self.default_tracker == "OPS":
@@ -212,6 +214,8 @@ class Tracker(BaseStruct):
         if self.red is None and self.default_tracker == "RED":
             raise ValueError("Default tracker is invalid!")
         if self.dic is None and self.default_tracker == "DIC":
+            raise ValueError("Default tracker is invalid!")
+        if self.lib is None and self.default_tracker == "LIB":
             raise ValueError("Default tracker is invalid!")
 
 
@@ -233,7 +237,7 @@ class Seedbox(BaseStruct):
         if self.type not in ("local", "rclone"):
             raise ValueError("Invalid seedbox type specified")
         self.trackers = [t.upper() for t in self.trackers]
-        unknown = sorted(set(self.trackers) - {"RED", "OPS", "DIC"})
+        unknown = sorted(set(self.trackers) - {"RED", "OPS", "DIC", "LIB"})
         if unknown:
             raise ValueError(f"Unknown tracker(s) for seedbox '{self.name}': {', '.join(unknown)}")
 
@@ -385,6 +389,7 @@ class ProxyServicesCfg(BaseStruct):
     red: str | None = None
     ops: str | None = None
     dic: str | None = None
+    lib: str | None = None
     # Metadata sources
     qobuz: str | None = None
     tidal: str | None = None

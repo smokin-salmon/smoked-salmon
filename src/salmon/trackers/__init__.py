@@ -3,12 +3,17 @@ from urllib import parse
 import asyncclick as click
 
 from salmon import cfg
-from salmon.trackers import dic, ops, red
+from salmon.trackers import dic, libble, ops, red
 from salmon.trackers.base import BaseGazelleApi
 
 # hard coded as it needs to reflect the imports anyway.
-tracker_classes = {"RED": red.RedApi, "OPS": ops.OpsApi, "DIC": dic.DICApi}
-tracker_url_code_map = {"redacted.sh": "RED", "orpheus.network": "OPS", "dicmusic.com": "DIC"}
+tracker_classes = {"RED": red.RedApi, "OPS": ops.OpsApi, "DIC": dic.DICApi, "LIB": libble.LibbleApi}
+tracker_url_code_map = {
+    "redacted.sh": "RED",
+    "orpheus.network": "OPS",
+    "dicmusic.com": "DIC",
+    "libble.me": "LIB",
+}
 
 # tracker_list is used to offer the user choices. Generated if not specified in the config.
 tracker_cfg = cfg.tracker
@@ -19,6 +24,8 @@ if tracker_cfg.ops:
     tracker_list.append("OPS")
 if tracker_cfg.dic:
     tracker_list.append("DIC")
+if tracker_cfg.lib:
+    tracker_list.append("LIB")
 
 
 def get_class(site_code) -> type[BaseGazelleApi]:

@@ -84,6 +84,8 @@ ra_key = 'api_key'
 # [image.dic]
 # cover_uploader = "imgbox"
 # specs_uploader = "imgbox"
+# [image.lib]
+# cover_uploader = "catbox"
 
 # ===============================
 # METADATA SERVICES
@@ -143,6 +145,12 @@ session = 'get-from-site-cookie'
 # api_key = 'dic-api-key'          # DIC does not support API key authentication for now
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to dic dir'
+
+[tracker.lib]
+session = 'get-from-site-cookie'
+# Libble is cookie-only for now (no API key upload support)
+# In case you want separate output folders for .torrent files
+# dottorrents_dir = 'path to lib dir'
 
 # ===============================
 # SEEDING SETTINGS
@@ -335,6 +343,6 @@ session = 'get-from-site-cookie'
 
 # [proxy.services]
 # # One key per service, set as in the examples above. Unset, a service uses [proxy] url.
-# # Trackers: red, ops, dic
+# # Trackers: red, ops, dic, lib
 # # Metadata sources: qobuz, tidal, bandcamp, deezer, beatport, discogs, apple_music
 # # Image hosts: catbox, imgbb, oeimg, ptscreens, ra
