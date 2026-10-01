@@ -67,7 +67,10 @@ the test run never reads a developer's config.
   and raises `UnknownOutcomeError` otherwise (#446). Pass `idempotent=True` only for a POST that
   sets a fixed state.
 - **Never test against a live tracker from code or CI.** Use a local fake server; see
-  `tests/test_trackers_session.py` for the pattern.
+  `tests/test_trackers_session.py` for the pattern. The test suite refuses every non-loopback
+  connection (`tests/conftest.py`): a test that misses its fake fails with `NetworkBlockedError`
+  naming the address. A test that really needs the network opts out with `@pytest.mark.network`,
+  and CI deselects it; never use that for a tracker.
 - API-key requests must send no session cookie, and cookie requests no `Authorization` header.
   `_request` enforces this; keep it that way.
 
