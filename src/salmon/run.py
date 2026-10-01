@@ -5,6 +5,7 @@ import asyncclick as click
 
 import salmon.commands
 import salmon.converter
+import salmon.cross_upload
 import salmon.images
 import salmon.search
 import salmon.tagger
