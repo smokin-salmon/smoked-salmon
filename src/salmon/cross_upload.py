@@ -29,7 +29,7 @@ import salmon.trackers
 from salmon import cfg, dryrun
 from salmon.common import commandgroup
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
-from salmon.errors import DryRunRefused, ImageUploadFailed, RequestError, UploadError
+from salmon.errors import DryRunRefused, ImageUploadFailed, RequestError, RequestFailedError, UploadError
 from salmon.images import HOSTS, image_host_for_tracker
 from salmon.images import red as red_images
 from salmon.tagger.audio_info import gather_audio_info
@@ -192,7 +192,8 @@ async def cross_upload(
 
     source_site = salmon.trackers.get_class(source)()
     target_site = salmon.trackers.get_class(target)()
-    items = [_input_item(value, source_site) for value in inputs]
+    # The same ID or file given twice is read once.
+    items = list(dict.fromkeys(_input_item(value, source_site) for value in inputs))
     with dryrun.mode(dry_run):
         if dry_run:
             dryrun.say("reading from both trackers and sending nothing. Each upload's form is printed instead.")
@@ -261,6 +262,7 @@ async def _run(
 ) -> None:
     """Check every release against SOURCE and the disk, confirm the plan, then upload each to TARGET."""
     releases: list[Release] = []
+    seen: set[int] = set()
     for item in items:
         label = str(item)
         click.secho(f"\nReading {source.site_string} torrent {label}...", fg="cyan", bold=True)
@@ -270,15 +272,22 @@ async def _run(
                     item,
                     source,
                     target,
+                    seen,
                     path=path,
                     transcodes=transcodes,
                     downconvert=downconvert,
                     all_formats=all_formats,
                 )
             )
-        except (CrossUploadRefused, RequestError, click.Abort) as error:
+        except (CrossUploadRefused, RequestFailedError, click.Abort) as error:
+            # Only this release: SOURCE answered, about it.
             reason = str(error) or "stopped"
             click.secho(f"Not cross-uploading {label}: {reason}", fg="red", bold=True)
+        except RequestError as error:
+            # SOURCE itself (a rate limit, an outage, the login, TLS): every later release would fail the same way,
+            # after sending its own requests. Nothing has gone to TARGET yet.
+            click.secho(f"\nStopping: {source.site_string} could not be read ({error}).", fg="red", bold=True)
+            raise click.exceptions.Exit(1) from error
 
     if not releases:
         click.secho("\nNothing to cross-upload.", fg="red")
@@ -318,6 +327,7 @@ async def _prepare(
     item: int | Path,
     source: "BaseGazelleApi",
     target: "BaseGazelleApi",
+    seen: set[int],
     *,
     path: str | None,
     transcodes: tuple[str, ...],
@@ -326,12 +336,20 @@ async def _prepare(
 ) -> Release:
     """Read a release from SOURCE and check everything that needs no TARGET request.
 
+    Args:
+        seen: The IDs of the torrents already in the run: one given again (as an ID and as its .torrent file)
+            is dropped. This one's is added.
+
     Raises:
         CrossUploadRefused: If the release cannot go, saying why.
         RequestError: If SOURCE could not be read.
         click.Abort: If a check stopped and the user chose to stop.
     """
     response = await _source_response(item, source)
+    torrent_id = int(response["torrent"]["id"])
+    if torrent_id in seen:
+        raise CrossUploadRefused(f"torrent {torrent_id} is already in this run")
+    seen.add(torrent_id)
     release = Release(label=str(item), response=response, path=Path(), data={})
     _check_torrent(response, source, target)
     release.data = compile_data(response, source, target)
@@ -695,7 +713,9 @@ async def _lossy_approval(release: Release, source: "BaseGazelleApi") -> bool | 
     # user's passkey and authkey: it is only parsed, never printed or kept.
     try:
         page = await source._request("GET", f"{source.base_url}/torrents.php", params={"id": release.group["id"]})
-    except RequestError:
+    except RequestFailedError:
+        # An answer about this group: no page to read the label from. Any other failure is SOURCE's own and
+        # stops the run.
         return None
     return lossy_label(page.text, int(torrent["id"]))
 
