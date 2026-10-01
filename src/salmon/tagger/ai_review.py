@@ -440,10 +440,14 @@ def _extract_reasoning_summary(response: "Response") -> str | None:
 
 def _describe_web_search_action(item: "ResponseFunctionWebSearch") -> str:
     action = item.action
-    if action.type == "search" and action.query.strip():
-        return f"search | {action.query.strip()}"
-    if action.type == "open_page" and action.url and action.url.strip():
-        return f"open page | {action.url.strip()}"
+    if action.type == "search":
+        query = (action.query or "").strip()
+        if query:
+            return f"search | {query}"
+    elif action.type == "open_page":
+        url = (action.url or "").strip()
+        if url:
+            return f"open page | {url}"
     return ""
 
 
