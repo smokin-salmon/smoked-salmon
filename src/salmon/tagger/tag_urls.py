@@ -4,14 +4,15 @@ Ported from chodeus's fork (`checks/source.py`), narrowed to just the tag-URL re
 `tagger/metadata.py` needs to find the files' Deezer album (#545). The media/log source detection
 that lived alongside it in the fork is out of scope here.
 
-Kept as its own module so the later source-detection and metadata pre-fill work (#537, #536) can
-import this instead of re-porting it.
+Kept as its own module so the source detection (`checks/source.py`, #537) and the metadata
+pre-fill work (#536) import this instead of re-porting it.
 """
 
 import os
 import re
 
 from mutagen import File as MutagenFile
+from mutagen.id3 import TextFrame
 from mutagen.mp4 import AtomDataType, MP4FreeForm
 
 from salmon.common.files import get_audio_files
@@ -56,12 +57,18 @@ def _decode_bytes(item: bytes) -> str:
 
 
 def tag_texts(value) -> list[str]:
-    """A tag value as plain strings, whether a list, an ID3 frame or MP4 freeform bytes."""
+    """A tag value as plain strings, whether a list, an ID3 frame or MP4 freeform bytes.
+
+    An ID3 text frame gives each of its values: as one string, they would be joined with NULs.
+    """
+    if isinstance(value, TextFrame):
+        # mutagen sets a frame's attributes from its spec at runtime, so its types do not know `text`.
+        value = getattr(value, "text", [])
     items = value if isinstance(value, list) else [value]
     return [(_decode_bytes(item) if isinstance(item, bytes) else str(item)).strip() for item in items]
 
 
-def _tags(mut) -> list:
+def tag_pairs(mut) -> list:
     """The file's (key, value) tag pairs, database links left out."""
     pairs = dict(mut.tags or {}).items()
     return [(key, value) for key, value in pairs if not field_name(key).startswith(_DATABASE_KEYS)]
@@ -71,7 +78,7 @@ def tag_url_fields(mut) -> list[tuple[str, str]]:
     """(field name, URL) for every tag whose whole value is one URL."""
     return [
         (field_name(key), text)
-        for key, value in _tags(mut)
+        for key, value in tag_pairs(mut)
         for text in tag_texts(value)
         if _URL_VALUE.fullmatch(text) and not _DATABASE_URL.match(text)
     ]
