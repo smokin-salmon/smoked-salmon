@@ -24,4 +24,4 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
-        run: uv run pytest -q
+        run: uv run pytest -q -m "not network"

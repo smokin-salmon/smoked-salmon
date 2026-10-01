@@ -91,3 +91,8 @@ reportUnsafeMultipleInheritance = "warning"
 reportImplicitAbstractClass = "warning"
 reportInvalidAbstractMethod = "warning"
 reportPrivateImportUsage = "none"
+
+[tool.pytest.ini_options]
+markers = [
+    "network: the test needs the real network. Every other test refuses non-loopback connections; CI deselects these.",
+]
