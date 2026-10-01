@@ -52,7 +52,8 @@ def test_loopback_still_works() -> None:
         finally:
             await runner.cleanup()
 
-    assert asyncio.run(run()) == "ok"
+    result = asyncio.run(run())
+    assert result == "ok"
 
 
 @pytest.mark.network
