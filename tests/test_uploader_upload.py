@@ -177,6 +177,28 @@ def test_compile_data_new_group_drops_arranger_for_dic(monkeypatch, capsys) -> N
     assert "DICMusic has no Arranger role: not crediting Some Arranger" in captured.out
 
 
+def test_compile_data_new_group_falls_back_to_unknown_release_type(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.compression, "use_upc_as_catno", False)
+    site = _FakeGazelleSite("RED")
+    site.release_types["Unknown"] = 21
+    gazelle_site = cast("BaseGazelleApi", cast("object", site))
+    metadata = _upload_group_metadata(rls_type="Anthology")
+
+    data = compile_data_new_group(
+        gazelle_site=gazelle_site,
+        path="/tmp/does-not-exist",
+        metadata=metadata,
+        track_data={},
+        hybrid=True,
+        cover_url=None,
+        spectral_urls=None,
+        spectral_ids=None,
+        lossy_comment=None,
+    )
+
+    assert data["releasetype"] == 21
+
+
 def test_generate_source_links_excludes_source_url() -> None:
     source_url = "https://gammenterprises.bandcamp.com/album/cry-fi-dem"
     metadata_urls = [

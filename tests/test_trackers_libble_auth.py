@@ -19,6 +19,16 @@ def _api() -> LibbleApi:
     return api
 
 
+def test_release_types_map_types_missing_on_libble() -> None:
+    api = _api()
+
+    assert api.release_types["Anthology"] == api.release_types["Compilation"]
+    assert api.release_types["DJ Mix"] == api.release_types["Mixtape"]
+    assert api.release_types["Concert Recording"] == api.release_types["Live album"]
+    assert api.release_types["Demo"] == api.release_types["Unknown"]
+    assert api.release_types["Split"] == api.release_types["Unknown"]
+
+
 def test_authenticate_scrape_bypasses_ensure_authenticated(monkeypatch: pytest.MonkeyPatch) -> None:
     api = _api()
     seen: dict = {}
