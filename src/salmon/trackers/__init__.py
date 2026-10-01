@@ -82,6 +82,24 @@ async def validate_tracker(ctx, param, value):
         ) from None
 
 
+async def validate_trackers(ctx, param, value):
+    """Validate every tracker given with -t, in the order given; none given runs the first-time choice.
+
+    Each -t takes one tracker or a comma-separated list, and may be repeated: `-t RED,OPS` and
+    `-t RED -t OPS` both give ("RED", "OPS"). A tracker named twice counts once.
+    """
+    entries = [entry.strip() for item in value or () for entry in item.split(",") if entry.strip()]
+    if not entries:
+        codes = [await choose_tracker_first_time()]
+    else:
+        codes = [await validate_tracker(ctx, param, entry) for entry in entries]
+    chosen = tuple(dict.fromkeys(code for code in codes if code))
+    if not chosen:
+        click.secho("No tracker selected.", fg="red")
+        raise click.Abort
+    return chosen
+
+
 def validate_request(gazelle_site, request):
     """Check the request id is a url or number. and return the number.
     Should it check more? Currently not checking it is the right tracker.

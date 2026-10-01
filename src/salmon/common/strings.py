@@ -12,6 +12,17 @@ def comparable(text: object) -> str:
     return "".join(char for char in plain if char.isalnum())
 
 
+def artist_keys(artists) -> set[str]:
+    """comparable() forms a listing may name a release's artists by: each main artist, and all of them together.
+
+    Args:
+        artists: (name, importance) pairs. Without a main artist, every artist counts.
+    """
+    pairs = list(artists or [])
+    names = [name for name, importance in pairs if importance == "main"] or [name for name, _ in pairs]
+    return ({comparable(name) for name in names} | {comparable("".join(names))}) - {""}
+
+
 def make_searchstrs(artists, album, normalize=False) -> list[str]:
     """Generate search strings from artists and album name.
 

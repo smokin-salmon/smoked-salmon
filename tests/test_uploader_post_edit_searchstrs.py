@@ -77,7 +77,7 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         recorder.check_requests_calls.append((gazelle_site, list(searchstrs)))
         return None
 
-    async def fake_check_existing_group(gazelle_site, searchstrs, offer_deletion=True, our_title=None):
+    async def fake_check_existing_group(gazelle_site, searchstrs, offer_deletion=True, our_title=None, release=None):
         recorder.check_existing_group_calls.append((gazelle_site, list(searchstrs), our_title))
         return None
 

@@ -1,3 +1,4 @@
+import functools
 import os
 import platform
 import shutil
@@ -62,7 +63,7 @@ from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
 from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import rename_files, tag_files
-from salmon.tagger.review import review_metadata
+from salmon.tagger.review import review_metadata, suggest_release_type
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.trackers.base import TagRules
 from salmon.trackers.red import RedApi
@@ -151,8 +152,11 @@ if TYPE_CHECKING:
 @click.option(
     "--tracker",
     "-t",
-    callback=salmon.trackers.validate_tracker,
-    help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)})",
+    "trackers",
+    multiple=True,
+    callback=salmon.trackers.validate_trackers,
+    help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)}). Name several, comma-separated or "
+    "with -t repeated, to upload to each in that order without being asked for another tracker.",
 )
 @click.option("--request", "-r", default=None, help="Pass a request URL or ID")
 @click.option(
@@ -228,7 +232,7 @@ async def up(
     overwrite: bool,
     encoding: str | None,
     compress: bool,
-    tracker: str,
+    trackers: tuple[str, ...],
     request: str | None,
     spectrals_after: bool,
     auto_rename: bool,
@@ -253,6 +257,8 @@ async def up(
         raise click.UsageError("--skip-flac-upload cannot be used with --spectrals-after.")
     if essential_only and scene:
         raise click.UsageError("--essential-only and --scene cannot be used together.")
+    if skip_flac_upload and trackers[1:]:
+        raise click.UsageError("--skip-flac-upload uploads to one tracker: give -t a single tracker.")
     if dry_run and spectrals_after:
         raise click.UsageError(
             "--dry-run cannot be used with --spectrals-after: that step edits the uploaded torrent, and a dry run "
@@ -266,7 +272,7 @@ async def up(
                 "the upload runs on a copy of the album and sends nothing. Each upload's form is printed instead."
             )
         try:
-            gazelle_site = salmon.trackers.get_class(tracker)()
+            gazelle_site = salmon.trackers.get_class(trackers[0])()
             if request:
                 request = salmon.trackers.validate_request(gazelle_site, request)
                 # This is isn't handled by click because we need the tracker sorted first.
@@ -310,6 +316,7 @@ async def up(
                 flac_group=flac_group,
                 skip_initial_review=skip_initial_review,
                 apply_ai_suggestions=apply_ai_suggestions,
+                trackers=list(trackers) if len(trackers) > 1 else None,
             )
         except* DryRunRefused as refused:
             # except*: a refusal in a task group comes out in an exception group.
@@ -562,10 +569,11 @@ async def upload(
     flac_group: dict[str, Any] | None = None,
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
+    trackers: list[str] | None = None,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
-    Offer the choice to upload to another tracker after completion.
+    Offer the choice to upload to another tracker after completion, unless `trackers` names them.
 
     Args:
         gazelle_site: The tracker API instance.
@@ -593,6 +601,8 @@ async def upload(
             into that group.
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
+        trackers: The site codes to upload to, in order, gazelle_site's first: the run uploads to each and
+            asks about no other. None asks after each upload, as configured.
     """
     path = os.path.abspath(path)
     # Read before staging and renaming: the record knows the folder by the name the converter gave it.
@@ -633,6 +643,7 @@ async def upload(
             rename_into=rename_into,
             library_album=path if cfg.directory.is_library_path(path) else None,
             conversion=conversion,
+            trackers=trackers,
         )
 
 
@@ -646,29 +657,37 @@ def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> s
     return conversion_note(url or "", conversion.get("sample_rate"), cast("BitDepth", conversion.get("bit_depth", 16)))
 
 
-def _trackers_for_run(first_tracker: str, flac_group: dict[str, Any] | None) -> list[str]:
+def _trackers_for_run(
+    first_tracker: str, flac_group: dict[str, Any] | None, trackers: list[str] | None = None
+) -> list[str]:
     """Get the site codes of every tracker an upload run may upload to, first_tracker first.
 
     With --skip-flac-upload, or without multi_tracker_upload, the run stops after the first tracker.
+    Trackers named with -t are the run's, whatever multi_tracker_upload says.
     """
-    if flac_group is not None or not cfg.upload.multi_tracker_upload:
+    if flac_group is not None:
+        return [first_tracker]
+    if trackers:
+        return list(trackers)
+    if not cfg.upload.multi_tracker_upload:
         return [first_tracker]
     return [first_tracker, *(code for code in salmon.trackers.tracker_list if code != first_tracker)]
 
 
-def _max_path_length_for_run(gazelle_site: "BaseGazelleApi") -> int:
+def _max_path_length_for_run(gazelle_site: "BaseGazelleApi", trackers: list[str] | None = None) -> int:
     """The path limit to check the folder against: this tracker's, or the strictest among every
     tracker configured, when the run might go on to upload to another of them afterward.
 
     Which trackers a run actually reaches is only known one at a time: after each upload, the
     user is offered a choice among the remaining configured trackers. The folder is checked once,
     before the first upload, so it is checked against the strictest limit already knowable then.
+    Trackers named with -t are known up front: the strictest of theirs.
     """
     own_limit = getattr(gazelle_site, "TAG_RULES", TagRules()).max_path_length
-    if not cfg.upload.multi_tracker_upload:
+    if not trackers and not cfg.upload.multi_tracker_upload:
         return own_limit
     limits = [own_limit]
-    for code in salmon.trackers.tracker_list:
+    for code in trackers or salmon.trackers.tracker_list:
         tracker_class = salmon.trackers.tracker_classes.get(code)
         if tracker_class is not None:
             limits.append(tracker_class.TAG_RULES.max_path_length)
@@ -703,6 +722,7 @@ async def _upload_staged(
     rename_into: str | None,
     library_album: str | None,
     conversion: dict[str, Any] | None = None,
+    trackers: list[str] | None = None,
 ) -> None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
@@ -770,7 +790,9 @@ async def _upload_staged(
 
             if group_fetch is not None:
                 results, recent_uploads = await group_fetch.result()
-                group_id = await resolve_existing_group(gazelle_site, dupe_searchstrs, results, recent_uploads)
+                group_id = await resolve_existing_group(
+                    gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
+                )
 
             spectral_ids = None
             lossy_master: bool = False
@@ -784,7 +806,7 @@ async def _upload_staged(
                     lossy,
                     spectrals,
                     format=rls_data["format"],
-                    hosts=specs_hosts_text(_trackers_for_run(gazelle_site.site_code, flac_group)),
+                    hosts=specs_hosts_text(_trackers_for_run(gazelle_site.site_code, flac_group, trackers)),
                 )
                 lossy_master = lossy_result if lossy_result is not None else False
 
@@ -807,7 +829,10 @@ async def _upload_staged(
                 skip_initial_review,
                 apply_ai_suggestions,
                 rename_into=rename_into,
-                max_path_length=_max_path_length_for_run(gazelle_site),
+                max_path_length=_max_path_length_for_run(gazelle_site, trackers),
+                rls_type_hint=suggest_release_type(
+                    rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
+                ),
             )
 
             if not group_id:
@@ -862,7 +887,7 @@ async def _upload_staged(
             return click.secho("\nDeleted folder, aborting upload...", fg="red")
 
     # Uploaded once per specs host; the files are deleted once no tracker of the run can need them.
-    spectral_uploads = SpectralUploads(path, _trackers_for_run(gazelle_site.site_code, flac_group))
+    spectral_uploads = SpectralUploads(path, _trackers_for_run(gazelle_site.site_code, flac_group, trackers))
     try:
         lossy_comment = None
         spectral_urls = None
@@ -875,8 +900,11 @@ async def _upload_staged(
         if cfg.upload.requests.last_minute_dupe_check:
             await last_min_dupe_check(gazelle_site, searchstrs, our_title)
 
-        # Shallow copy to avoid errors on multiple uploads in one session.
-        remaining_gazelle_sites = list(salmon.trackers.tracker_list)
+        # Shallow copy to avoid errors on multiple uploads in one session. Trackers named with -t are
+        # uploaded to in their order, without asking.
+        remaining_gazelle_sites = list(trackers or salmon.trackers.tracker_list)
+        # Whether the run goes on after a tracker: always for named ones, until none is left.
+        go_on = bool(trackers) or cfg.upload.multi_tracker_upload
         tracker = gazelle_site.site_code
         torrent_id = None
         cover_url = None
@@ -890,8 +918,12 @@ async def _upload_staged(
             while True:
                 # Loop until we don't want to upload to any more sites.
                 if not tracker:
-                    click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
-                    tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
+                    if trackers:
+                        tracker = remaining_gazelle_sites[0]
+                        click.secho(f"\nNext tracker: {tracker}", fg="magenta")
+                    else:
+                        click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
+                        tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
                     if not tracker:
                         click.secho("\nDone with this release.", fg="green")
                         break
@@ -899,8 +931,9 @@ async def _upload_staged(
 
                     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
                     # A torrent already seeds from the folder: never offer to delete it.
+                    # Matched on the reviewed metadata: the review may have changed the artists, title or year.
                     group_id = await check_existing_group(
-                        gazelle_site, searchstrs, offer_deletion=False, our_title=our_title
+                        gazelle_site, searchstrs, offer_deletion=False, our_title=our_title, release=metadata
                     )
 
                 remaining_gazelle_sites.remove(tracker)
@@ -913,7 +946,7 @@ async def _upload_staged(
                     # Like a failed upload: skip this tracker, and offer the next one.
                     click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="red", bold=True)
                     tracker = None
-                    if not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+                    if not remaining_gazelle_sites or not go_on:
                         break
                     continue
 
@@ -980,7 +1013,8 @@ async def _upload_staged(
                                 uploads=spectral_uploads,
                             )
 
-                    if (
+                    # Nothing to convert (an MP3 upload) asks nothing.
+                    if get_downconversion_options(rls_data, track_data) and (
                         flac_url
                         or cfg.upload.yes_all
                         or click.confirm(
@@ -1022,7 +1056,7 @@ async def _upload_staged(
                     click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
 
                 tracker = None
-                if flac_url or not remaining_gazelle_sites or not cfg.upload.multi_tracker_upload:
+                if flac_url or not remaining_gazelle_sites or not go_on:
                     click.secho("\nDone uploading this release.", fg="green")
                     break
 
@@ -1055,6 +1089,7 @@ async def edit_metadata(
     apply_ai_suggestions: bool = False,
     rename_into: str | None = None,
     max_path_length: int = 180,
+    rls_type_hint: str | None = None,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
     """Edit release metadata in an interactive loop until the user confirms.
 
@@ -1076,6 +1111,7 @@ async def edit_metadata(
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
         rename_into: The directory the renamed folder goes into, instead of download_directory.
         max_path_length: The longest in-torrent path the folder structure check allows.
+        rls_type_hint: The release type prompt's default, when the release type has to be asked.
 
     Returns:
         A tuple of (path, metadata, tags, audio_info) after editing is complete.
@@ -1089,7 +1125,7 @@ async def edit_metadata(
             rls_data,
             source_url,
             metadata_validator,
-            review_metadata,
+            functools.partial(review_metadata, rls_type_hint=rls_type_hint),
             skip_initial_review=skip_initial_review,
             apply_suggestions=apply_ai_suggestions,
         )
@@ -1156,7 +1192,7 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
             bold=True,
             nl=False,
         )
-        return await check_existing_group(gazelle_site, new_searchstrs, our_title=metadata["title"])
+        return await check_existing_group(gazelle_site, new_searchstrs, our_title=metadata["title"], release=metadata)
     return None
 
 

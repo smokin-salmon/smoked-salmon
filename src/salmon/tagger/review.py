@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from collections.abc import Sequence
 
 import asyncclick as click
 
@@ -27,13 +28,15 @@ _DEFERRED_PRE_AI_METADATA_ERRORS = {
 }
 
 
-async def review_metadata(metadata, validator, enforce_required_fields: bool = True):
+async def review_metadata(metadata, validator, enforce_required_fields: bool = True, rls_type_hint: str | None = None):
     """
     Validate that the metadata is per the user's wishes and then offer the user
     the ability to edit it.
+
+    rls_type_hint (suggest_release_type) is the default answer when the release type has to be asked.
     """
     if enforce_required_fields:
-        await _check_for_empty_release_type(metadata)
+        await _check_for_empty_release_type(metadata, rls_type_hint)
         await _check_for_empty_genre_list(metadata)
 
     break_ = False
@@ -88,9 +91,9 @@ async def review_metadata(metadata, validator, enforce_required_fields: bool = T
     return metadata
 
 
-async def _check_for_empty_release_type(metadata):
+async def _check_for_empty_release_type(metadata, hint: str | None = None):
     if not metadata["rls_type"]:
-        await _edit_release_type(metadata)
+        await _edit_release_type(metadata, default=hint)
 
 
 async def _check_for_empty_genre_list(metadata):
@@ -263,7 +266,45 @@ async def _alias_artists(metadata):
                     metadata["tracks"][dnum][tnum]["artists"].pop(i)
 
 
-async def _edit_release_type(metadata):
+# Where the track count stops meaning a single, then an EP. Past 30 minutes, any release is an album.
+_SINGLE_MAX_TRACKS = 3
+_EP_MAX_TRACKS = 6
+_ALBUM_MIN_SECONDS = 30 * 60
+# A single's track past this length makes it an EP.
+_SINGLE_TRACK_MAX_SECONDS = 10 * 60
+_TITLE_SAYS_EP = re.compile(r"\bE\.?P\b\.?", re.IGNORECASE)
+_TITLE_SAYS_SINGLE = re.compile(r"\bsingle\b", re.IGNORECASE)
+
+
+def suggest_release_type(title: str | None, durations: Sequence[float]) -> str | None:
+    """The release type the files' track count and length imply, as the release type prompt's default.
+
+    1 to 3 tracks are a single, 4 to 6 an EP, more an album; past 30 minutes in all, an album, and a
+    single with a track past 10 minutes, an EP. A title that names another type ("... EP", "(Single)")
+    contradicts it: then there is no default.
+
+    Args:
+        title: The release title from the tags.
+        durations: Each audio file's length in seconds; unknown lengths are 0.
+    """
+    if not durations:
+        return None
+    total = sum(durations)
+    if total >= _ALBUM_MIN_SECONDS or len(durations) > _EP_MAX_TRACKS:
+        rls_type = "Album"
+    elif len(durations) > _SINGLE_MAX_TRACKS or max(durations) > _SINGLE_TRACK_MAX_SECONDS:
+        rls_type = "EP"
+    else:
+        rls_type = "Single"
+    title = title or ""
+    if _TITLE_SAYS_EP.search(title) and rls_type != "EP":
+        return None
+    if _TITLE_SAYS_SINGLE.search(title) and rls_type != "Single":
+        return None
+    return rls_type
+
+
+async def _edit_release_type(metadata, default: str | None = None):
     _print_release_types()
     types = {r.lower(): r for r in RELEASE_TYPES}
     while True:
@@ -272,6 +313,7 @@ async def _edit_release_type(metadata):
                 await click.prompt(
                     click.style("\nWhich release type corresponds to this release? (case insensitive)", fg="magenta"),
                     type=click.STRING,
+                    default=default,
                 )
             )
             .strip()

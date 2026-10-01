@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 from copy import copy
 from itertools import islice
 from typing import Any
@@ -8,7 +9,9 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg
+from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
+from salmon.common.strings import artist_keys, comparable
 from salmon.search import SEARCHSOURCES, run_metasearch
 from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
@@ -41,7 +44,8 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
         searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
     )
     choices = _print_search_results(search_results, rls_data)
-    metadata, source_url = await _select_choice(choices, rls_data)
+    default = suggest_choice(choices, search_results, rls_data, len(tags), files_store_url(path))
+    metadata, source_url = await _select_choice(choices, rls_data, default=default)
     await fill_upc_from_deezer(metadata, path)
     _dedupe_catno_against_upc(metadata)
     remove_various_artists(metadata["tracks"])
@@ -111,8 +115,97 @@ def _print_search_results(results, rls_data=None):
     return choices
 
 
+# A store's page for one track or a playlist: not the album's.
+_NOT_ALBUM_PAGE = re.compile(r"/(?:track|playlist)/", re.IGNORECASE)
+# What a store appends to a title to say the release type: "Title - EP", "Title (Single)".
+_TYPE_SUFFIX = re.compile(r"\s*(?:-\s*(?:EP|Single)|[(\[](?:EP|Single)[)\]])\s*$", re.IGNORECASE)
+
+
+def _metasource_of(url: str) -> str | None:
+    """The metadata source that scrapes this URL, if any."""
+    return next((name for name, source in METASOURCES.items() if source.Scraper.regex.match(url)), None)
+
+
+def files_store_url(path: str) -> str | None:
+    """The store album URL the files' own tags give under a source key (SOURCE, URL, WWW, ...).
+
+    Only a URL of a store a metadata source scrapes counts, and only when it is the only store album
+    URL the tags hold, under any key: two different ones give none.
+    """
+    sourced, other = tag_urls(path)
+
+    def album(url: str) -> bool:
+        return is_store_url(url) and not _NOT_ALBUM_PAGE.search(url) and _metasource_of(url) is not None
+
+    if len({url.rstrip("/") for url in sourced + other if album(url)}) != 1:
+        return None
+    return next((url for url in sourced if album(url)), None)
+
+
+def _comparable_title(title: object) -> str:
+    return comparable(_TYPE_SUFFIX.sub("", str(title or "")))
+
+
+def _matching_choice(
+    choices: dict[int, tuple[str, str]], search_results: dict[str, Any], rls_data: dict[str, Any], track_count: int
+) -> int | None:
+    """The search result whose artist, title, track count and year agree with the files' own tags.
+
+    A count or year a result does not give is not held against it. Two matching results from the same
+    source (an explicit and a clean version, say) give none from that source.
+    """
+    title = _comparable_title(rls_data.get("title"))
+    artists = artist_keys(rls_data.get("artists"))
+    year = str(rls_data.get("year") or "")[:4]
+    if not title or not artists:
+        return None
+    matches = []
+    for choice_id, (source, rls_id) in choices.items():
+        ident = ((search_results.get(source) or {}).get(rls_id) or (None,))[0]
+        if ident is None or _comparable_title(ident.album) != title or comparable(ident.artist) not in artists:
+            continue
+        if ident.track_count not in (None, track_count):
+            continue
+        if year and ident.year and str(ident.year)[:4] != year:
+            continue
+        matches.append(choice_id)
+    for choice_id in matches:
+        if sum(choices[other][0] == choices[choice_id][0] for other in matches) == 1:
+            return choice_id
+    return None
+
+
+def suggest_choice(
+    choices: dict[int, tuple[str, str]],
+    search_results: dict[str, Any],
+    rls_data: dict[str, Any],
+    track_count: int,
+    url: str | None,
+) -> str | None:
+    """The metadata prompt's default: the files' store URL, and the search result that matches them.
+
+    The URL is starred (the release's source) only for a WEB release. The matching result is left
+    out when it is from the URL's own store, which already gives that source's metadata.
+
+    Args:
+        choices: The numbered search results, as printed.
+        search_results: What the search returned, by source and release ID.
+        rls_data: The release data built from the tags.
+        track_count: The number of audio files.
+        url: The files' store URL (files_store_url), or None.
+
+    Returns:
+        The answer an empty reply gives, or None for no default.
+    """
+    parts = [f"{'*' if rls_data.get('source') == 'WEB' else ''}{url}"] if url else []
+    match = _matching_choice(choices, search_results, rls_data, track_count)
+    if match is not None and (url is None or choices[match][0] != _metasource_of(url)):
+        parts.append(str(match))
+    return " ".join(parts) or None
+
+
 async def _select_choice(
-    choices: dict[int, tuple[str, str]], rls_data: dict[str, Any] | None
+    choices: dict[int, tuple[str, str]], rls_data: dict[str, Any] | None, default: str | None = None
 ) -> tuple[dict[str, Any], str | None]:
     """Allow the user to select a metadata choice.
 
@@ -121,6 +214,7 @@ async def _select_choice(
     Args:
         choices: Dictionary of choice ID to (source, release_id) tuples.
         rls_data: Release data dictionary.
+        default: The answer an empty reply gives (suggest_choice), or None to require one.
 
     Returns:
         Tuple of (metadata dict, source URL or None).
@@ -140,6 +234,7 @@ async def _select_choice(
                     fg="magenta",
                 ),
                 type=click.STRING,
+                default=default,
             )
         else:
             res = await click.prompt(
@@ -149,6 +244,7 @@ async def _select_choice(
                     fg="magenta",
                 ),
                 type=click.STRING,
+                default=default,
             )
 
         if res.lower().startswith("m"):
