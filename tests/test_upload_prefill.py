@@ -308,7 +308,7 @@ def test_names_match_as_the_tracker_escapes_them_and_credits_joint_artists() -> 
     ("results", "release"),
     [
         ([_result(1, year=2015)], _rls_data()),  # The group's year differs.
-        ([_result(1)], _rls_data(year=None)),  # Our year is unknown.
+        ([_result(1)], _rls_data(year=None, group_year=None)),  # Our year is unknown.
         ([_result(1), _result(2)], _rls_data()),  # Two groups match.
         ([_result(1, artist="Guest")], _rls_data()),
         ([{**_result(1), "groupId": None}], _rls_data()),
@@ -318,6 +318,29 @@ def test_names_match_as_the_tracker_escapes_them_and_credits_joint_artists() -> 
 )
 def test_no_single_matching_group_leaves_a_new_group_the_default(results, release) -> None:
     assert dupe_checker.suggest_group(results, release) == ""
+
+
+def test_a_remaster_defaults_to_the_group_of_its_original_year() -> None:
+    results = [_result(1, year=2023), _result(2, year=2018)]
+
+    assert dupe_checker.suggest_group(results, _rls_data(year="2023", group_year="2018")) == "2"
+
+
+def test_without_a_group_year_the_year_is_compared_as_before() -> None:
+    # Regression guard: a release with no group_year keeps the old behaviour.
+    release = _rls_data(year="2020")
+    del release["group_year"]
+
+    assert dupe_checker.suggest_group([_result(1, year=2015), _result(2)], release) == "2"
+    assert dupe_checker.suggest_group([_result(1, year=2018)], release) == ""
+
+
+def test_a_group_of_another_year_than_our_group_year_is_no_default() -> None:
+    release = _rls_data(year="2018", group_year="2018")
+
+    assert dupe_checker.suggest_group([_result(1, year=2017)], release) == ""
+    # The edition year alone does not match when the group year says otherwise.
+    assert dupe_checker.suggest_group([_result(1, year=2023)], _rls_data(year="2023", group_year="2018")) == ""
 
 
 def _site(**kw: Any) -> Any:
@@ -395,6 +418,18 @@ def test_a_group_without_our_format_in_our_edition_keeps_yes_the_default(monkeyp
     group_id = anyio.run(dupe_checker.resolve_existing_group, _site(), ["s"], results, None, True, release)
     assert group_id == 200
     assert defaults[1] == "Y"
+    assert "DUPE RISK" not in capsys.readouterr().out
+
+
+def test_a_remaster_of_a_group_holding_the_original_flac_is_no_dupe_risk(monkeypatch, capsys) -> None:
+    # The group (2018) holds a 2018 FLAC: our 2023 remaster is another edition, still offered that group.
+    defaults = _prompts(monkeypatch, "", "")
+    results = [_result(200, year=2018, torrents=[_torrent()])]
+    release = _rls_data(year="2023", group_year="2018")
+
+    group_id = anyio.run(dupe_checker.resolve_existing_group, _site(), ["s"], results, None, True, release)
+    assert group_id == 200
+    assert defaults == ["1", "Y"]
     assert "DUPE RISK" not in capsys.readouterr().out
 
 

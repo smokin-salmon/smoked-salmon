@@ -556,11 +556,12 @@ def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
     """The group prompt's default: the number of the one search result with our artist, title and year.
 
     No result, or several, leaves the default empty (a new group). Names are compared loosely (case,
-    accents and punctuation aside); the year must be the same on both sides, and present.
+    accents and punctuation aside); the year must be the same on both sides, and present. A group is keyed on the
+    original year, so our group year is compared when we have one, and our (edition) year otherwise.
 
     Args:
         results: The tracker's search results, in the order printed.
-        release: Our release, with its artists, title and year.
+        release: Our release, with its artists, title, and group year or year.
 
     Returns:
         The result's number as printed (1-based), or "" for none.
@@ -569,7 +570,7 @@ def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
         return ""
     title = comparable(release.get("title"))
     artists = artist_keys(release.get("artists"))
-    year = str(release.get("year") or "").strip()
+    year = str(release.get("group_year") or release.get("year") or "").strip()
     if not title or not artists or not year:
         return ""
     matches = [
