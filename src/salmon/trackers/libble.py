@@ -124,6 +124,12 @@ class LibbleApi(BaseGazelleApi):
             "Box Set": 18,
             "Collection": 19,
             "Unknown": 21,
+            # Aliases for types valid elsewhere but missing on Libble, mapped to closest equivalent.
+            "Anthology": 7,  # single-artist compilation -> Compilation
+            "DJ Mix": 16,  # mixed set -> Mixtape
+            "Concert Recording": 11,  # live recording -> Live album
+            "Demo": 21,
+            "Split": 21,
         }
 
     async def authenticate(self) -> None:

@@ -199,7 +199,9 @@ def compile_data_new_group(
         "year": metadata["group_year"],
         "record_label": metadata["label"],
         "catalogue_number": generate_catno(metadata),
-        "releasetype": gazelle_site.release_types[metadata["rls_type"]],
+        "releasetype": gazelle_site.release_types.get(
+            metadata["rls_type"], gazelle_site.release_types["Unknown"]
+        ),
         "remaster": True,
         "remaster_year": metadata["year"],
         "remaster_title": metadata["edition_title"],
