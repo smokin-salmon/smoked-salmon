@@ -76,8 +76,9 @@ async def check_spectrals(
     all_spectral_ids: dict[int, str] = {}
     if not spectral_ids:
         all_spectral_ids = await generate_spectrals_all(path, spectrals_path, audio_info)
+        # Printed whether or not the question follows: salmon specs prints it and asks nothing.
         marks_found = False
-        if lossy_master is None and check_lma:
+        if lossy_master is None:
             marks_found = await print_frequency_analysis(path, spectrals_path, all_spectral_ids)
         while True:
             await view_spectrals(spectrals_path, all_spectral_ids)
@@ -100,7 +101,7 @@ async def check_spectrals(
         # Before the plots are written: this compresses every image in the folder.
         spectral_ids = await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
         if lossy_master is None:
-            marks_found = await print_frequency_analysis(path, spectrals_path, spectral_ids) if check_lma else False
+            marks_found = await print_frequency_analysis(path, spectrals_path, spectral_ids)
             lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion, marks_found)
 
     return lossy_master, spectral_ids
@@ -124,7 +125,9 @@ def spectrum_plot_name(spectral_id: int) -> str:
 
 
 async def print_frequency_analysis(path: str, spectrals_path: str, spectral_ids: dict[int, str]) -> bool:
-    """Measure the marks a lossy encoder leaves in each track and print them, for the lossy-master question.
+    """Measure the marks a lossy encoder leaves in each track and print them.
+
+    Printed before the lossy-master question, or alone where none is asked (salmon specs).
 
     Each track with spectrals gets its averaged-spectrum plot next to them, under the same spectral ID: see
     spectrum_plot_name. Never raises: a failed analysis prints one line.

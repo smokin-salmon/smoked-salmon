@@ -159,12 +159,12 @@ def test_the_check_after_upload_is_measured_too_and_never_offers_deletion(flow):
     assert state["offer_deletion"] is False
 
 
-def test_no_lossy_check_means_no_measurement_and_no_question(flow):
-    events, _printed, _state = flow
+def test_without_the_lossy_check_the_measurement_is_printed_and_nothing_is_asked(flow):
+    events, printed, _state = flow
     lossy, _ids = run(sp.check_spectrals, "/album", {"01.flac": {}}, None, None, check_lma=False)
     assert lossy is None
-    assert "measure" not in events
-    assert "prompt" not in events
+    assert events == ["spectrograms-all", "measure", "view"]
+    assert any(line.startswith("\nFrequency analysis: ") for line in printed)
 
 
 def test_a_pre_answered_question_skips_the_measurement(flow):
