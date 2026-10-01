@@ -4,19 +4,20 @@ import asyncio
 import socket
 
 import aiohttp
+import conftest  # pyright: ignore[reportMissingImports]
 import pytest
 from aiohttp import web
 from conftest import NetworkBlockedError  # pyright: ignore[reportMissingImports]
 
 
 def test_a_public_address_is_refused_and_named() -> None:
-    with socket.socket() as sock, pytest.raises(NetworkBlockedError, match=r"93\.184\.215\.14:80"):
-        sock.connect(("93.184.215.14", 80))
+    with socket.socket() as sock, pytest.raises(NetworkBlockedError, match=r"192\.0\.2\.1:80"):
+        sock.connect(("192.0.2.1", 80))
 
 
 def test_connect_ex_is_refused_too() -> None:
-    with socket.socket() as sock, pytest.raises(NetworkBlockedError, match=r"93\.184\.215\.14:80"):
-        sock.connect_ex(("93.184.215.14", 80))
+    with socket.socket() as sock, pytest.raises(NetworkBlockedError, match=r"192\.0\.2\.1:80"):
+        sock.connect_ex(("192.0.2.1", 80))
 
 
 def test_an_ipv6_public_address_is_refused() -> None:
@@ -27,12 +28,17 @@ def test_an_ipv6_public_address_is_refused() -> None:
 def test_an_aiohttp_request_to_a_public_url_is_refused() -> None:
     async def run() -> None:
         async with aiohttp.ClientSession() as session:
-            await session.get("http://93.184.215.14/")
+            await session.get("http://198.51.100.7/")
 
     with pytest.raises(aiohttp.ClientConnectionError) as excinfo:
         asyncio.run(run())
-    assert isinstance(excinfo.value.__cause__ or excinfo.value, (NetworkBlockedError, aiohttp.ClientConnectorError))
-    assert "93.184.215.14" in str(excinfo.value)
+    chain = []
+    error: BaseException | None = excinfo.value
+    while error is not None and error not in chain:
+        chain.append(error)
+        error = error.__cause__ or error.__context__
+    assert any(isinstance(err, NetworkBlockedError) for err in chain), chain
+    assert "198.51.100.7" in str(excinfo.value)
 
 
 def test_loopback_still_works() -> None:
@@ -57,12 +63,12 @@ def test_loopback_still_works() -> None:
 
 
 @pytest.mark.network
-def test_the_network_marker_opts_out() -> None:
+def test_the_network_marker_opts_out(monkeypatch) -> None:
+    # Stub the real connect: the opt-out is proven without sending a packet.
+    seen = []
+    monkeypatch.setattr(conftest, "_real_connect", lambda sock, address: seen.append(address))
+    monkeypatch.setattr(conftest, "_real_connect_ex", lambda sock, address: seen.append(address) or 0)
     with socket.socket() as sock:
-        sock.settimeout(0.01)
-        try:
-            sock.connect(("192.0.2.1", 80))  # TEST-NET-1: never answers
-        except NetworkBlockedError:
-            pytest.fail("the network marker did not lift the guard")
-        except OSError:
-            pass
+        sock.connect(("203.0.113.9", 80))
+        assert sock.connect_ex(("203.0.113.9", 81)) == 0
+    assert seen == [("203.0.113.9", 80), ("203.0.113.9", 81)]

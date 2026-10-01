@@ -13,9 +13,14 @@ directly, but that alone would not stop a repo-root ``config.toml`` or an
 already-set ``SALMON_CONFIG_DIR`` from winning.
 """
 
+import ipaddress
 import os
+import socket
 import tempfile
 from pathlib import Path
+from typing import Any
+
+import pytest
 
 _DEFAULT_CONFIG = Path(__file__).parent.parent / "src" / "salmon" / "data" / "config.default.toml"
 
@@ -51,12 +56,6 @@ os.environ["SALMON_CONFIG_DIR"] = str(_config_dir)
 # ``socket.getaddrinfo`` is not guarded on purpose: a name only a local fake
 # proxy resolves (tests/test_trackers_proxy.py) must keep working, aiohttp may
 # resolve through c-ares instead, and the connect guard names the address anyway.
-
-import ipaddress  # noqa: E402
-import socket  # noqa: E402
-from typing import Any  # noqa: E402
-
-import pytest  # noqa: E402
 
 
 class NetworkBlockedError(OSError):
