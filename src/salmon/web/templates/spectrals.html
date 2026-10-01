@@ -23,6 +23,12 @@
             onclick="show_lightbox({{ id }});">
     </div>
 </div>
+{% if id in frequency_plots %}
+<div class="frequency_plot">
+    <img src="{{ static('/specs') }}/{{ '%02d' | format(id) }} Spectrum.png?{{ now }}"
+        alt="Averaged spectrum for {{ filename }}">
+</div>
+{% endif %}
 {% endfor %}
 </div>
 
