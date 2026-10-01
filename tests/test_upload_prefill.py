@@ -14,6 +14,7 @@ import anyio
 import asyncclick as click
 import pytest
 from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+    API_KEYS,
     _album,
     _returning,
     _returning_async,
@@ -30,6 +31,8 @@ from salmon.errors import RequestError
 from salmon.search.base import IdentData
 from salmon.tagger import metadata as metadata_mod
 from salmon.tagger import review
+from salmon.trackers.ops import OpsApi
+from salmon.trackers.red import RedApi
 from salmon.uploader import dupe_checker
 
 # Covers and spectrals go to the fake image host.
@@ -536,6 +539,43 @@ def test_a_failed_named_tracker_moves_on_to_the_next(monkeypatch, tmp_path, dirs
     assert run.result.exit_code == 0, run.result.output
     assert "Upload to RED failed: refused" in run.result.output
     assert sites == ["OPS"]
+
+
+class ThirdApi(OpsApi):
+    """A third tracker, DIC by its site code, that uploads the way OPS does, so the fake tracker takes its uploads."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.site_code = "DIC"
+        self.site_string = "DIC"
+
+
+def test_a_named_tracker_whose_group_search_fails_moves_on_to_the_next(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS", "DIC"])
+    monkeypatch.setitem(API_KEYS, "DIC", "dic-api-key")
+    sites = _uploads_by_tracker(monkeypatch)
+    real = salmon.uploader.check_existing_group
+
+    async def ops_search_fails(gazelle_site, *args: Any, **kwargs: Any) -> int | None:
+        if gazelle_site.site_code == "OPS":
+            raise RequestError("search failed")
+        return await real(gazelle_site, *args, **kwargs)
+
+    monkeypatch.setattr(salmon.uploader, "check_existing_group", ops_search_fails)
+
+    run = _run_up(
+        monkeypatch,
+        _album(tmp_path / "Album"),
+        torrents,
+        args=("-t", "OPS,DIC"),
+        input="\n\n",
+        classes={"RED": RedApi, "OPS": OpsApi, "DIC": ThirdApi},
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Upload to OPS failed: search failed" in run.result.output
+    assert sites == ["RED", "DIC"]
 
 
 def test_aborting_at_a_named_tracker_keeps_what_is_up(monkeypatch, tmp_path, dirs) -> None:

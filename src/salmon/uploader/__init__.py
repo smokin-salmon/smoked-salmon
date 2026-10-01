@@ -932,9 +932,18 @@ async def _upload_staged(
                     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
                     # A torrent already seeds from the folder: never offer to delete it.
                     # Matched on the reviewed metadata: the review may have changed the artists, title or year.
-                    group_id = await check_existing_group(
-                        gazelle_site, searchstrs, offer_deletion=False, our_title=our_title, release=metadata
-                    )
+                    try:
+                        group_id = await check_existing_group(
+                            gazelle_site, searchstrs, offer_deletion=False, our_title=our_title, release=metadata
+                        )
+                    except RequestError as e:
+                        # Like a failed upload: skip this tracker, and offer the next one.
+                        click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                        remaining_gazelle_sites.remove(tracker)
+                        tracker = None
+                        if not remaining_gazelle_sites or not go_on:
+                            break
+                        continue
 
                 remaining_gazelle_sites.remove(tracker)
 
