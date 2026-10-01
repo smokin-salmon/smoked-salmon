@@ -376,12 +376,13 @@ def _normalize_torrent_names(t: Torrent, form: Literal["NFC", "NFD"]) -> None:
             fileinfo["path"] = [unicodedata.normalize(form, part) for part in fileinfo["path"]]
 
 
-def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, Torrent]:
+def generate_torrent(gazelle_site: "BaseGazelleApi", path: str, normalize: bool = True) -> tuple[str, Torrent]:
     """Generate torrent file for the album.
 
     Args:
         gazelle_site: The tracker API instance.
         path: Path to the album folder.
+        normalize: Apply torrent_name_normalization. False names the files exactly as on disk.
 
     Returns:
         Tuple of (torrent_path, torrent_object).
@@ -400,7 +401,7 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, To
         f"{os.path.basename(path)} - {gazelle_site.site_string}.torrent",
     )
 
-    normalization = cfg.upload.torrent_name_normalization
+    normalization = cfg.upload.torrent_name_normalization if normalize else ""
     if normalization in ("", "none"):
         t.write(tpath, overwrite=True)
     else:
@@ -561,13 +562,31 @@ def generate_t_description(
     more_info_links = generate_source_links(metadata_urls, source_url) if metadata_urls else ""
     more_info = f"[b]More info:[/b] {more_info_links}\n" if more_info_links else ""
 
-    footer = (
+    conversion = conversion_note or ""
+    return (
+        f"{spectrals}{encode_specifics}{release_date}{tracklist}{lossy_notes}{source}{more_info}{conversion}"
+        f"{upload_footer()}"
+    )
+
+
+# The footer's whole shape, any version and any fork's: a bare link to a repository whose path ends in
+# /smoked-salmon, around the bold name.
+_FOOTER = re.compile(
+    r"Uploaded with \[url=https://github\.com/[\w.-]+/smoked-salmon\]\[b\]smoked-salmon\[/b\][^\[]*\[/url\]"
+)
+
+
+def upload_footer() -> str:
+    """The line every torrent description salmon writes ends with."""
+    return (
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )
 
-    conversion = conversion_note or ""
-    return f"{spectrals}{encode_specifics}{release_date}{tracklist}{lossy_notes}{source}{more_info}{conversion}{footer}"
+
+def has_upload_footer(description: str) -> bool:
+    """Whether a description already carries a smoked-salmon footer, of any version or fork, anywhere in it."""
+    return _FOOTER.search(description) is not None
 
 
 def generate_source_links(metadata_urls: list[str], source_url: str | None = None) -> str:
