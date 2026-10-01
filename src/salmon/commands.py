@@ -80,7 +80,7 @@ async def descgen(urls: tuple[str, ...]) -> None:
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
     remove_various_artists(metadata["tracks"])
 
-    description = "[b][size=4]Tracklist[/b]\n\n"
+    description = "[b][size=4]Tracklist[/size][/b]\n\n"
     multi_disc = len(metadata["tracks"]) > 1
     for dnum, disc in metadata["tracks"].items():
         for tnum, track in disc.items():
