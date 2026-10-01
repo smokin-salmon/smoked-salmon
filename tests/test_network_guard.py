@@ -70,5 +70,6 @@ def test_the_network_marker_opts_out(monkeypatch) -> None:
     monkeypatch.setattr(conftest, "_real_connect_ex", lambda sock, address: seen.append(address) or 0)
     with socket.socket() as sock:
         sock.connect(("203.0.113.9", 80))
-        assert sock.connect_ex(("203.0.113.9", 81)) == 0
+        code = sock.connect_ex(("203.0.113.9", 81))
+    assert code == 0
     assert seen == [("203.0.113.9", 80), ("203.0.113.9", 81)]
