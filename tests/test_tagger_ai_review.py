@@ -1011,6 +1011,8 @@ def test_client_with_custom_base_url_reaches_a_local_server_and_maps_404() -> No
                 pass
             else:
                 raise AssertionError("expected NotFoundError")
+            finally:
+                await client.close()
         finally:
             await runner.cleanup()
 
