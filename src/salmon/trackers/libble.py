@@ -128,20 +128,12 @@ class LibbleApi(BaseGazelleApi):
 
     async def authenticate(self) -> None:
         """Scrape authkey/passkey from upload.php HTML (no ajax API)."""
-        # Pre-set so _request skips ensure_authenticated (no recursion).
-        self._authenticated = True
-        try:
-            resp = await self._request("GET", self.base_url + "/upload.php", timeout_secs=10)
-        except Exception:
-            self._authenticated = False
-            raise
+        resp = await self._request("GET", self.base_url + "/upload.php", timeout_secs=10, needs_authkey=False)
         if "userinfo" not in resp.text or "login.php" in resp.url:
-            self._authenticated = False
             raise LoginError("Logged out of Libble (session cookie missing/expired)")
         authkey = _AUTHKEY_RE.search(resp.text)
         passkey = _PASSKEY_RE.search(resp.text)
         if not authkey or not passkey:
-            self._authenticated = False
             raise LoginError("Could not scrape authkey/passkey from Libble upload page")
         self.authkey = authkey.group(1)
         self.passkey = passkey.group(1)
