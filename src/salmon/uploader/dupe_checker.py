@@ -1,4 +1,5 @@
 import asyncio
+import html
 import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -11,7 +12,7 @@ import asyncclick as click
 
 from salmon import cfg
 from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
-from salmon.common.strings import comparable
+from salmon.common.strings import artist_keys, comparable
 from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError
 from salmon.trackers.base import hold_request_messages
 from salmon.uploader.upload import generate_catno
@@ -316,6 +317,7 @@ async def resolve_existing_group(
     results: list[dict],
     recent_uploads: list[tuple] | None,
     offer_deletion: bool = True,
+    release: dict[str, Any] | None = None,
 ) -> int | None:
     """Show the candidates fetch_existing_group_candidates found, and prompt the user for a group.
 
@@ -325,6 +327,8 @@ async def resolve_existing_group(
         results: Search results from fetch_existing_group_candidates.
         recent_uploads: Recent uploads from fetch_existing_group_candidates, or None.
         offer_deletion: Whether to offer folder deletion option.
+        release: Our release (artists, title, year, source, format, encoding, edition), for the answers
+            the prompts offer: the one result it matches, and abort when the group already holds it.
 
     Returns:
         Group ID or None for new group.
@@ -335,9 +339,11 @@ async def resolve_existing_group(
         )
     else:
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
-        group_id = await _prompt_for_group_id(gazelle_site, results, offer_deletion)
+        group_id = await _prompt_for_group_id(
+            gazelle_site, results, offer_deletion, default=suggest_group(results, release)
+        )
     if group_id:
-        confirmation = await _confirm_group_id(gazelle_site, group_id, results, offer_deletion)
+        confirmation = await _confirm_group_id(gazelle_site, group_id, results, offer_deletion, release)
         if confirmation is True:
             return group_id
         return None
@@ -349,6 +355,7 @@ async def check_existing_group(
     searchstrs: list[str],
     offer_deletion: bool = True,
     our_title: str | None = None,
+    release: dict[str, Any] | None = None,
 ) -> int | None:
     """Check for existing group and prompt user for selection.
 
@@ -359,12 +366,13 @@ async def check_existing_group(
         searchstrs: Search strings for dupe checking.
         offer_deletion: Whether to offer folder deletion option.
         our_title: Our release's title, passed through to fetch_existing_group_candidates.
+        release: Our release, passed through to resolve_existing_group.
 
     Returns:
         Group ID or None for new group.
     """
     results, recent_uploads = await fetch_existing_group_candidates(gazelle_site, searchstrs, our_title)
-    return await resolve_existing_group(gazelle_site, searchstrs, results, recent_uploads, offer_deletion)
+    return await resolve_existing_group(gazelle_site, searchstrs, results, recent_uploads, offer_deletion, release)
 
 
 class GroupCandidatesFetch:
@@ -544,10 +552,42 @@ def print_search_results(gazelle_site: "BaseGazelleApi", results: list[dict], se
                 continue
 
 
+def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
+    """The group prompt's default: the number of the one search result with our artist, title and year.
+
+    No result, or several, leaves the default empty (a new group). Names are compared loosely (case,
+    accents and punctuation aside); the year must be the same on both sides, and present.
+
+    Args:
+        results: The tracker's search results, in the order printed.
+        release: Our release, with its artists, title and year.
+
+    Returns:
+        The result's number as printed (1-based), or "" for none.
+    """
+    if not results or not release:
+        return ""
+    title = comparable(release.get("title"))
+    artists = artist_keys(release.get("artists"))
+    year = str(release.get("year") or "").strip()
+    if not title or not artists or not year:
+        return ""
+    matches = [
+        str(number)
+        for number, result in enumerate(results, 1)
+        if result.get("groupId") is not None
+        and comparable(html.unescape(str(result.get("groupName") or ""))) == title
+        and comparable(html.unescape(str(result.get("artist") or ""))) in artists
+        and str(result.get("groupYear") or "").strip() == year
+    ]
+    return matches[0] if len(matches) == 1 else ""
+
+
 async def _prompt_for_group_id(
     gazelle_site: "BaseGazelleApi",
     results: list[dict],
     offer_deletion: bool,
+    default: str = "",
 ) -> int | None:
     """Prompt user to choose a group ID.
 
@@ -555,6 +595,7 @@ async def _prompt_for_group_id(
         gazelle_site: The tracker API instance.
         results: Search results to choose from.
         offer_deletion: Whether to offer folder deletion option.
+        default: The answer an empty reply gives: a result's number, or "" for a new group.
 
     Returns:
         Group ID or None for new group.
@@ -567,7 +608,7 @@ async def _prompt_for_group_id(
                 f"or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}",
                 fg="magenta",
             ),
-            default="",
+            default=default,
         )
         if group_id.strip().isdigit():
             raw_input = int(group_id)
@@ -605,7 +646,7 @@ async def print_torrents(
     group_id: int,
     rset: dict | None = None,
     highlight_torrent_id: int | None = None,
-) -> None:
+) -> dict:
     """Print torrents in a torrent group.
 
     Args:
@@ -613,6 +654,9 @@ async def print_torrents(
         group_id: The group ID.
         rset: Optional pre-fetched group data.
         highlight_torrent_id: Torrent ID to highlight.
+
+    Returns:
+        The group data printed: rset, or what was fetched.
     """
     # If rset is not provided, fetch it from the API
     if rset is None:
@@ -646,6 +690,7 @@ async def print_torrents(
     for t in rset["torrents"]:
         color = "yellow" if highlight_torrent_id and t.get("id") == highlight_torrent_id else None
         click.secho(f"> {describe_torrent(t, group_info)}", fg=color)
+    return rset
 
 
 def describe_torrent(t: dict, group_info: dict) -> str:
@@ -814,16 +859,35 @@ def held_formats(group: dict, release: dict, source_flac: dict, formats: dict[st
     return held
 
 
+def _held_in_group(rset: dict, release: dict[str, Any] | None) -> list[dict]:
+    """The torrents of a printed group that already hold our release's edition, media, format and encoding.
+
+    rset is a search result or a fetched group: a search result has the group's year as groupYear.
+    """
+    if not release:
+        return []
+    group = rset if "group" in rset else {**rset, "group": {"year": rset.get("groupYear")}}
+    return matching_torrents(group, release)
+
+
 async def _confirm_group_id(
-    gazelle_site: "BaseGazelleApi", group_id: int, results: list[dict], offer_deletion: bool = True
+    gazelle_site: "BaseGazelleApi",
+    group_id: int,
+    results: list[dict],
+    offer_deletion: bool = True,
+    release: dict[str, Any] | None = None,
 ) -> bool:
     """Confirm upload to a torrent group.
+
+    When the group's edition already holds our media, format and encoding, that torrent is named and
+    the default answer is abort. It is not refused: a trump is a legitimate upload.
 
     Args:
         gazelle_site: The tracker API instance.
         group_id: The group ID.
         results: Search results.
         offer_deletion: Whether to offer folder deletion option.
+        release: Our release, with its source, format, encoding and edition.
 
     Returns:
         True if confirmed, False otherwise.
@@ -834,7 +898,16 @@ async def _confirm_group_id(
             rset = r
             break
 
-    await print_torrents(gazelle_site, group_id, rset)
+    # The match reads the group just printed: it sends no request of its own.
+    rset = await print_torrents(gazelle_site, group_id, rset)
+    held = _held_in_group(rset, release)
+    for torrent in held:
+        click.secho(
+            f"\nDUPE RISK: this edition already has {describe_torrent(torrent, rset.get('group') or {})}; "
+            "the site removes exact duplicates unless this upload trumps it.",
+            fg="red",
+            bold=True,
+        )
     while True:
         resp = (
             await click.prompt(
@@ -843,7 +916,7 @@ async def _confirm_group_id(
                     f"[n]ew group, [a]bort{', [d]elete music folder' if offer_deletion else ''}",
                     fg="magenta",
                 ),
-                default="Y",
+                default="a" if held else "Y",
             )
         )[0].lower()
         if resp == "a":

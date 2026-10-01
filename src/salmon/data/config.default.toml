@@ -192,6 +192,8 @@ session = 'get-from-site-cookie'
 # windows_use_recycle_bin = true
 
 # # multi_tracker support
+# # offer another tracker after each upload. Trackers named with `salmon up -t RED,OPS` are each
+# # uploaded to, in that order and without asking, whatever this says.
 # multi_tracker_upload = true
 
 # # debugging & logging

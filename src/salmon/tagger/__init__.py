@@ -1,3 +1,4 @@
+import functools
 from itertools import chain
 from pprint import pprint
 
@@ -19,7 +20,7 @@ from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
 from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import rename_files, tag_files
-from salmon.tagger.review import review_metadata
+from salmon.tagger.review import review_metadata, suggest_release_type
 from salmon.tagger.sources import run_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 
@@ -127,12 +128,13 @@ async def tag(
         rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
         metadata, source_url = await get_metadata(path, tags, rls_data)
+        durations = [info.get("duration") or 0 for info in audio_info.values()]
         metadata = await review_metadata_with_ai(
             metadata,
             rls_data,
             source_url,
             metadata_validator_base,
-            review_metadata,
+            functools.partial(review_metadata, rls_type_hint=suggest_release_type(rls_data.get("title"), durations)),
             skip_initial_review=skip_initial_review,
             apply_suggestions=apply_ai_suggestions,
         )

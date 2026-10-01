@@ -65,6 +65,11 @@ _VINYL_SIDE = re.compile(r"[A-H][0-9]{1,2}", re.IGNORECASE)
 _VINYL_SIDE_SOURCES = frozenset({"Vinyl", "Cassette", "WEB"})
 
 
+def is_store_url(url: str) -> bool:
+    """Whether the URL is a page of a store that sells downloads (Qobuz, Deezer, Bandcamp, Apple Music, ...)."""
+    return bool(_STORE_URL.match(url))
+
+
 @dataclass(frozen=True)
 class DetectedSource:
     source: str
