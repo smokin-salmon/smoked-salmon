@@ -10,7 +10,7 @@ import os
 import re
 import struct
 from collections import Counter
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import AsyncExitStack, asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -158,6 +158,8 @@ class FakeTracker:
         self.uploads: list[str] = []  # How each upload POST is answered: "ok", "drop" or an error message
         self.images: dict[str, bytes] = {}  # Images on the tracker's own host, by path
         self.next_torrent_id = 700001
+        # Answers that replace the usual one for a step, e.g. {"GET torrents.php": rate_limited}.
+        self.answers: dict[str, Callable[[], web.Response]] = {}
 
     async def _handle(self, request: web.Request) -> web.StreamResponse:
         fields: dict[str, Any] = {}
@@ -174,6 +176,8 @@ class FakeTracker:
                 fields,
             )
         )
+        if self.sent[-1].step in self.answers:
+            return self.answers[self.sent[-1].step]()
         action = request.query.get("action")
         if request.path == "/ajax.php":
             if action == "index":
@@ -659,6 +663,51 @@ def test_a_library_album_is_read_where_it_is_and_never_written(monkeypatch, dirs
     assert (dirs.downloads / f"{FOLDER} [V0]").is_dir()
     # The FLAC's torrent is made from the library album itself, with no copy.
     assert run.seeded[0] == ("/seed", FOLDER)
+
+
+def test_the_same_release_given_twice_is_read_and_uploaded_once(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    torrent = Torrent(album, trackers=["https://home.opsfet.ch/passkey/announce"], private=True, source="OPS")
+    torrent.generate()
+    torrent_file = dirs.torrents.parent / "source.torrent"
+    torrent.write(torrent_file)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID] = {**_ops_answer(album), "hash": torrent.infohash.upper()}
+
+    args = [str(TORRENT_ID), str(TORRENT_ID), str(torrent_file), "-yyy"]
+    run = _cross_upload(monkeypatch, dirs, args, input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    # The repeated ID is not read again; the .torrent file is looked up, then dropped as the same torrent.
+    assert run.source.steps() == {
+        "GET ajax.php?action=index": 1,
+        "GET ajax.php?action=torrent": 2,
+        "GET torrents.php": 1,
+    }
+    assert f"torrent {TORRENT_ID} is already in this run" in run.output
+    assert len(run.target.posts()) == 1
+
+
+def _rate_limited() -> web.Response:
+    return web.Response(status=429, headers={"Retry-After": "3600"})
+
+
+@pytest.mark.parametrize("step", ["GET ajax.php?action=torrent", "GET torrents.php"])
+def test_a_source_failure_that_is_not_about_one_release_stops_the_run(monkeypatch, dirs, step: str) -> None:
+    albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(2)]
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(*albums)(source, target)
+        source.answers[step] = _rate_limited
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), str(TORRENT_ID + 1), "-yyy"], prepare=prepare)
+
+    assert run.result.exit_code == 1
+    assert "Stopping: OPS could not be read" in run.output
+    # The second release sends nothing, and nothing goes to the target.
+    assert run.source.steps()[step] == 1
+    assert run.target.sent == []
 
 
 # The seedbox
