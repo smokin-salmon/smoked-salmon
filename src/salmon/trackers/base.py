@@ -301,6 +301,10 @@ _SEND_SLICE = 64 * 1024
 _UNSENT_LIMIT = 128 * 1024
 _TCP_NOTSENT_LOWAT = {"linux": 25, "darwin": 0x201}.get(sys.platform)
 
+# The most a binary answer (an image on the tracker's own host) may hold. Reading stops there.
+_MAX_BINARY_BODY = 25 * 1024 * 1024
+_BINARY_READ_CHUNK = 64 * 1024
+
 
 def _keep_little_unsent(writer: AbstractStreamWriter) -> None:
     """Let the kernel hold only a little of the body that is not sent yet.
@@ -409,6 +413,8 @@ class HttpResponse(msgspec.Struct, frozen=True):
     text: str
     url: str
     status: int
+    # The body as bytes, for a request made with binary=True (its text is then empty).
+    content: bytes = b""
 
 
 class BaseGazelleApi:
@@ -525,6 +531,24 @@ class BaseGazelleApi:
         """Mask this tracker's secrets in text about to be printed or raised."""
         return redact_tracker_text(text, self._secrets())
 
+    async def _read_capped(self, resp: aiohttp.ClientResponse) -> bytes:
+        """Read an answer's body as bytes, as it comes, and stop once it holds more than _MAX_BINARY_BODY.
+
+        Raises:
+            RequestFailedError: If the body is larger: the tracker would send the same answer again.
+        """
+        too_large = RequestFailedError(
+            f"{self.site_string} sent more than {_MAX_BINARY_BODY // (1024 * 1024)} MiB: not reading the rest"
+        )
+        if resp.content_length is not None and resp.content_length > _MAX_BINARY_BODY:
+            raise too_large
+        body = bytearray()
+        async for chunk in resp.content.iter_chunked(_BINARY_READ_CHUNK):
+            body += chunk
+            if len(body) > _MAX_BINARY_BODY:
+                raise too_large
+        return bytes(body)
+
     @property
     def announce(self) -> str:
         """Get the announce URL."""
@@ -583,6 +607,7 @@ class BaseGazelleApi:
         idempotent: bool | None = None,
         needs_authkey: bool = True,
         expected_error_statuses: Collection[int] = (),
+        binary: bool = False,
     ) -> HttpResponse:
         """Authenticated HTTP request, returns response data.
 
@@ -604,6 +629,9 @@ class BaseGazelleApi:
             expected_error_statuses: Error statuses the endpoint answers with a body the
                 caller reads itself: the response is returned instead of raising. Not on a
                 later hop of a request that is not idempotent, which the tracker has acted on.
+            binary: Read a successful answer as bytes, into the response's content, streamed and
+                stopped once it holds more than 25 MiB. Its text is then empty. Error and redirect
+                answers are read as text, as without it.
 
         Redirects within the site are followed, up to three hops, each one through the
         rate limiter. A redirect to the login page raises LoginError without requesting it.
@@ -619,6 +647,7 @@ class BaseGazelleApi:
                 have reached the tracker.
             TLSCertificateError: If the TLS certificate of the host does not verify. Not retried.
             DryRunRefused: If the request is not a GET and a dry run is running. Nothing is sent.
+            RequestFailedError: With binary, if the answer holds more than 25 MiB. Not retried.
         """
         # A dry run only reads from the tracker. Each step that would send something skips itself; this
         # stops any that was missed, before anything goes out.
@@ -630,7 +659,7 @@ class BaseGazelleApi:
             await self.ensure_authenticated()
         # One list for every attempt, so the rate limit waits add up across the retries.
         return await self._send(
-            method, url, params, data, timeout_secs, prefer_api_key, idempotent, expected_error_statuses, []
+            method, url, params, data, timeout_secs, prefer_api_key, idempotent, expected_error_statuses, [], binary
         )
 
     # The retry policy. A failed request is sent again only when that cannot do more on the
@@ -661,6 +690,7 @@ class BaseGazelleApi:
         idempotent: bool | None,
         expected_error_statuses: Collection[int],
         rate_limit_waits: list[int],
+        binary: bool = False,
     ) -> HttpResponse:
         """Send a request with the retry policy. _request authenticates first; see it for the arguments.
 
@@ -714,8 +744,13 @@ class BaseGazelleApi:
                         # sock_read restarts on every chunk, so a trickled body needs a bound of its
                         # own. It starts once the answer has come, after any wait for a free pooled
                         # connection, which must still not count.
+                        content = b""
                         async with asyncio.timeout(timeout_secs):
-                            text = await resp.text()
+                            if binary and resp.ok and resp.status not in _REDIRECT_STATUSES:
+                                content = await self._read_capped(resp)
+                                text = ""
+                            else:
+                                text = await resp.text()
 
                         if cfg.upload.debug_tracker_connection:
                             _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
@@ -723,7 +758,8 @@ class BaseGazelleApi:
                             _secho(
                                 f"[DEBUG] response headers: {msgspec.json.encode(headers_shown).decode()}", fg="cyan"
                             )
-                            _secho(f"[DEBUG] response body: {self._redact(text)}", fg="green")
+                            body_shown = f"<{len(content)} bytes>" if binary and not text else self._redact(text)
+                            _secho(f"[DEBUG] response body: {body_shown}", fg="green")
 
                         if not resp.ok:
                             # Checked before any status: the tracker acted on the request when it
@@ -793,6 +829,7 @@ class BaseGazelleApi:
                                 text=text,
                                 url=str(resp.url),
                                 status=resp.status,
+                                content=content,
                             )
 
                         current = urlparse(str(resp.url))
