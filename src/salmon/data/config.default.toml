@@ -73,8 +73,8 @@ ra_key = 'api_key'
 # - cover_uploader: the cover of the tracker's upload.
 # - specs_uploader: the spectrals in the tracker's description and lossy master reports. They are
 #   uploaded once per host, and trackers sharing a host reuse that upload.
-# - image_uploader: description images for the tracker. salmon up uploads none yet, so for now
-#   this setting has no effect.
+# - image_uploader: description images for the tracker. salmon up uploads none yet; for now it is the
+#   default host of `salmon images up -t <tracker>`.
 # red (RED's own image host) only displays on RED and OPS, so it is only allowed here, under
 # [image.red] or [image.ops], and never for spectrals. It always authenticates with tracker.red.api_key.
 # [image.red]
