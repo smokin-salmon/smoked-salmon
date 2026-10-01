@@ -2,6 +2,7 @@ import asyncio
 import math
 import re
 import socket
+import ssl
 import sys
 from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import asynccontextmanager, contextmanager, suppress
@@ -33,6 +34,7 @@ from salmon.errors import (
     RateLimitedError,
     RequestError,
     RequestFailedError,
+    TLSCertificateError,
     UnknownOutcomeError,
 )
 
@@ -257,6 +259,7 @@ _REDIRECT_STATUSES = frozenset(
 # A connection that was never made carried nothing to the tracker.
 _NOT_SENT_ERRORS = (aiohttp.ClientConnectorError, aiohttp.ConnectionTimeoutError)
 
+
 # The server errors an idempotent request is sent again on: the tracker, or a gateway in front
 # of it, may answer the next attempt.
 _TRANSIENT_5XX = frozenset(
@@ -367,6 +370,25 @@ class RetryableError(RequestError):
     """A failed request that may be sent again. Raised as is once the retries run out."""
 
     pass
+
+
+def _failed_certificate_check(err: BaseException) -> ssl.SSLCertVerificationError | None:
+    """The certificate verification failure behind `err`, if it is one.
+
+    aiohttp raises it as a ClientConnectorCertificateError wrapping the ssl error, as does the proxy
+    connector; anything else that failed on it has it as its cause.
+    """
+    cause: BaseException | None = err
+    while cause is not None:
+        if isinstance(cause, aiohttp.ClientConnectorCertificateError) and isinstance(
+            cause.certificate_error, ssl.SSLCertVerificationError
+        ):
+            return cause.certificate_error
+        # Also aiohttp's wrapper, which is one too, should it wrap anything else.
+        if isinstance(cause, ssl.SSLCertVerificationError):
+            return cause
+        cause = cause.__cause__
+    return None
 
 
 def _rate_limit_wait(retry_after: str | None) -> int:
@@ -595,6 +617,7 @@ class BaseGazelleApi:
                 longer than the request's rate limit waits may add up to.
             UnknownOutcomeError: If a request that is not idempotent fails after it may
                 have reached the tracker.
+            TLSCertificateError: If the TLS certificate of the host does not verify. Not retried.
             DryRunRefused: If the request is not a GET and a dry run is running. Nothing is sent.
         """
         # A dry run only reads from the tracker. Each step that would send something skips itself; this
@@ -615,7 +638,10 @@ class BaseGazelleApi:
     # acted on it (no connection was made, or it answered 429). A state-changing request
     # that fails once it may have reached the tracker (a timeout, a dropped connection, a
     # 5xx, or a failure on a redirect after it) raises UnknownOutcomeError instead, as
-    # sending it again could upload or report twice (#446).
+    # sending it again could upload or report twice (#446). A TLS certificate that does not
+    # verify is never sent again: it would fail the same way (#581). Other failed TLS
+    # handshakes are, as any connection that was not made: aiohttp raises the same error
+    # for one that cannot work and for the alert a TLS terminator sends under load.
     @retry(
         retry=retry_if_exception_type(RetryableError),
         stop=stop_after_attempt(5),
@@ -809,7 +835,15 @@ class BaseGazelleApi:
                 message = f"Too many redirects from {self.site_string}"
                 # The tracker redirected at least once, so it has acted on the request.
                 raise RequestFailedError(message) if idempotent else UnknownOutcomeError(message)
-        except (TimeoutError, aiohttp.ClientError) as err:
+        except (TimeoutError, aiohttp.ClientError, ssl.SSLCertVerificationError) as err:
+            certificate = _failed_certificate_check(err)
+            # Not sent again: the certificate is checked against the CA certificates and the clock of this
+            # machine, which give the same answer each time. It fails before the request is written, so the
+            # tracker has not acted on it, unless it is a later hop of a request that is not idempotent.
+            if certificate is not None and (idempotent or not redirected):
+                reason = getattr(certificate, "verify_message", None) or str(certificate)
+                host = urlparse(url).hostname or url
+                raise TLSCertificateError(host, self._redact(reason), self.site_code) from err
             # The body read's own timeout raises a TimeoutError with no message.
             reason = self._redact(str(err)) or f"no full answer within {timeout_secs} s"
             raise failure(f"Network error: {reason}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err

@@ -79,7 +79,8 @@ class _ProxyConnector(ProxyConnector):
     through as they are: none of them is an aiohttp.ClientError, so code catching aiohttp's errors
     would miss them. They all happen before the request is written, so each becomes the error a
     direct connection failing at that step raises: a ConnectionTimeoutError or a
-    ClientConnectorError, which the tracker client retries as a request the tracker never got.
+    ClientConnectorError, which the tracker client retries as a request the tracker never got,
+    except a ClientConnectorCertificateError, which it does not retry.
     """
 
     async def _wrap_create_connection(

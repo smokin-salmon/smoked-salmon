@@ -2,6 +2,8 @@ import asyncio
 import html
 import os
 import shutil
+import ssl
+import sys
 from typing import Any
 from urllib import parse
 
@@ -21,7 +23,7 @@ from salmon import cfg
 from salmon.common import commandgroup, get_audio_files, str_to_int_if_int
 from salmon.common.redaction import redact_secrets
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
-from salmon.errors import UploadError
+from salmon.errors import TLSCertificateError, UploadError
 from salmon.sources.tidal import credentials_configured as tidal_credentials_configured
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
 from salmon.tagger.combine import combine_metadatas
@@ -261,6 +263,7 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
             failed_checks: list[str] = []
 
             tracker_instance = salmon.trackers.get_class(t)()
+            certificate_err: TLSCertificateError | None = None
 
             # Test session cookie (independent of API key auth)
             try:
@@ -272,6 +275,8 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
                     prefer_api_key=False,
                 )
                 click.secho("  ✔ Session cookie OK", fg="green")
+            except TLSCertificateError as err:
+                certificate_err = err
             except Exception as cookie_err:
                 click.secho(
                     f"  ✖ Session cookie check failed: {cookie_err}",
@@ -280,7 +285,17 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
                 )
                 failed_checks.append("session cookie")
 
-            if tracker_instance.api_key:
+            if certificate_err is not None:
+                # The API key check goes to the same host, and would fail the same way.
+                click.secho(f"  ✖ {certificate_err}", fg="red", bold=True)
+                click.secho(
+                    "    This fails before anything is sent: your session cookie and API key are not the cause,"
+                    " and were not checked.",
+                    fg="red",
+                )
+                _print_ca_certificates_hint()
+                failed_checks.append("TLS certificate")
+            elif tracker_instance.api_key:
                 # Test API key authentication
                 try:
                     await tracker_instance._request(
@@ -312,6 +327,35 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
     # Test seedbox connections
     if seedbox or not (tracker or metadata):
         await _test_seedbox_connections()
+
+
+def _print_ca_certificates_hint() -> None:
+    """Print where Python gets the CA certificates it verifies certificates with, and to check the clock.
+
+    Nothing else from the environment: only SSL_CERT_FILE and SSL_CERT_DIR, and what
+    ssl.get_default_verify_paths() makes of them.
+    """
+    paths = ssl.get_default_verify_paths()
+    click.secho(
+        "\n  Where Python gets its CA certificates (browsers ignore SSL_CERT_FILE and SSL_CERT_DIR):", fg="yellow"
+    )
+    for env in (paths.openssl_cafile_env, paths.openssl_capath_env):
+        value = os.environ.get(env)
+        click.secho(f"    {env}: {'not set' if value is None else value or 'set, but empty'}", fg="yellow")
+    # Either one is None when what OpenSSL would load is missing: the variable's path, else the default.
+    for label, found, env, default in (
+        ("CA file", paths.cafile, paths.openssl_cafile_env, paths.openssl_cafile),
+        ("CA directory", paths.capath, paths.openssl_capath_env, paths.openssl_capath),
+    ):
+        looked_at = os.environ.get(env, default) or "an empty path"
+        click.secho(f"    {label}: {found or f'none, nothing at {looked_at}'}", fg="yellow")
+    if sys.platform == "win32":
+        click.secho("    and the Windows certificate store", fg="yellow")
+    click.secho(
+        "  Check the system clock and time zone too: a clock that is off makes a valid certificate look expired or"
+        " not yet valid. It happens in Docker, WSL, on a NAS or a seedbox.",
+        fg="yellow",
+    )
 
 
 def _iter_which(deps: list[str]) -> None:
