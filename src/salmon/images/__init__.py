@@ -101,7 +101,10 @@ async def images() -> None:
 @click.option(
     "--image-host",
     "-i",
-    help="The name of the image host to upload to. Defaults to image_uploader in the [image] config section",
+    help=(
+        "The image host to upload to. With --tracker, defaults to that tracker's image_uploader; "
+        "otherwise [image] image_uploader"
+    ),
     default=None,
     callback=validate_image_host,
 )

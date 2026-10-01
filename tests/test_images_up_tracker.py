@@ -108,8 +108,10 @@ def test_without_a_tracker_nothing_changes(monkeypatch, tmp_path, uploads) -> No
     # Regression guard: [image.<tracker>] settings are not read, the default is
     # [image] image_uploader, and -i is accepted as is, red included (there is no tracker to refuse it for).
     _config(monkeypatch, image_uploader="imgbox", ops={"image_uploader": "catbox"})
-    assert _up(tmp_path).exit_code == 0
-    assert _up(tmp_path, "-i", "red").exit_code == 0
+    default_result = _up(tmp_path)
+    explicit_result = _up(tmp_path, "-i", "red")
+    assert default_result.exit_code == 0, default_result.output
+    assert explicit_result.exit_code == 0, explicit_result.output
     assert uploads == ["imgbox", "red"]
     result = _up(tmp_path, "-i", "nope")
     assert result.exit_code == 2
