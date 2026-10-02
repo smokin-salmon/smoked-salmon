@@ -848,6 +848,31 @@ def test_an_image_only_the_source_shows_is_fetched_through_its_client_and_rehost
     assert run.source.url not in json.dumps(post.fields)
 
 
+def test_an_image_that_is_both_the_cover_and_in_the_description_is_fetched_once(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        source.images = {"/static/cover.jpg": JPEG}
+        answer = _ops_hosted_images(source.url)
+
+        def same_image(folder: Path, torrent_id: int) -> dict[str, Any]:
+            response = answer(folder, torrent_id)
+            response["group"]["wikiBBcode"] = f"Notes [img]{source.url}/static/cover.jpg[/img]"
+            return response
+
+        _source_has(album, answer=same_image)(source, target)
+        # RED's cover host and description image host differ: the image goes to both.
+        hosts = SimpleNamespace(cover_uploader="redhost", image_uploader="testhost", specs_uploader=None)
+        monkeypatch.setattr(cfg.image, "red", hosts)
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert run.source.steps()["GET static/cover.jpg"] == 1
+    assert run.images == [("redhost", "image.jpg"), ("testhost", "image.jpg")]
+    assert "images to rehost: 1, each fetched once from OPS" in run.output
+
+
 def test_an_image_on_another_host_is_neither_fetched_nor_changed(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
     run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
