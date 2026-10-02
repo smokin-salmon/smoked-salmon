@@ -28,6 +28,7 @@ from torf import TorfError, Torrent
 import salmon.trackers
 from salmon import cfg, dryrun
 from salmon.common import commandgroup
+from salmon.config.image_hosts import HOST_RULES
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
 from salmon.errors import DryRunRefused, ImageUploadFailed, RequestError, RequestFailedError, UploadError
 from salmon.images import HOSTS, image_host_for_tracker
@@ -71,8 +72,6 @@ MAX_REHOSTED_IMAGES = 10
 # Behaviours that wait for redusys to check the trackers' rules. Until then, each stays on its safe side.
 # Whether a transcode or downconversion of the cross-uploaded torrent may go up on TARGET too.
 CONVERSIONS_CONFIRMED = False
-# Whether an image on RED's host, with no query, shows on OPS for every member, as a cover and in descriptions.
-RED_IMAGES_SHOW_ON_OPS_CONFIRMED = False
 
 # The Gazelle musicInfo key of each artist role, in the order the form gets them.
 ARTIST_FIELDS = {
@@ -88,6 +87,9 @@ ARTIST_FIELDS = {
 
 # The hosts each tracker serves its site, its images and its announces from (and their subdomains).
 TRACKER_HOSTS = {"RED": ("redacted.sh", "flacsfor.me"), "OPS": ("orpheus.network", "opsfet.ch")}
+# The HOST_RULES row of a tracker's own image host, which says where its images show. A tracker with none shows
+# only its own images.
+TRACKER_IMAGE_HOSTS = {"RED": "red"}
 
 # The one known broken shape an album description salmon wrote used to have (#597).
 _BROKEN_TRACKLIST_HEADER = "[b][size=4]Tracklist[/b]"
@@ -605,10 +607,11 @@ def _tracker_of(url: str, sites: tuple["BaseGazelleApi", ...]) -> str | None:
 
 
 def _shows_on(tracker: str, target: str) -> bool:
-    """Whether an image on tracker's own host shows on target's pages."""
+    """Whether an image on tracker's own host shows on target's pages, as its bare URL (cover and descriptions)."""
     if tracker == target:
         return True
-    return tracker == "RED" and target == "OPS" and RED_IMAGES_SHOW_ON_OPS_CONFIRMED
+    rules = HOST_RULES.get(TRACKER_IMAGE_HOSTS.get(tracker, ""))
+    return rules is not None and (rules.displays_on is None or target.lower() in rules.displays_on)
 
 
 def _bare(url: str) -> str:
