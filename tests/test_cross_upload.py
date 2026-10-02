@@ -985,6 +985,22 @@ def _result(torrents: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def test_a_remaster_gets_its_group_as_the_default_answer(monkeypatch, dirs) -> None:
+    # The fixture's edition is from 2023, its group from 2018: the group is found on the group's year (#600).
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.results = [_result([])]
+
+    # The default answer to "which group?", then to "upload to this group?".
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    (post,) = run.target.posts()
+    assert post.fields["groupid"] == [str(TARGET_GROUP_ID)]
+
+
 def test_the_same_edition_and_format_in_the_target_group_is_flagged_and_abort_is_the_default(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
     held = {
