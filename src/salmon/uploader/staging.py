@@ -48,6 +48,23 @@ def staged_source(path: str, scratch: bool) -> Iterator[tuple[str, str | None]]:
         _remove_scratch_dir(scratch_dir, path)
 
 
+@contextmanager
+def run_directory(source: str) -> Iterator[str]:
+    """Give a directory of this run's own under download_directory/.salmon-staging, removed when the run ends.
+
+    For a run that works on the album where it is, but still needs somewhere to write (a dry run's torrents
+    and conversions).
+
+    Args:
+        source: The album folder the run reads from, which the removal never touches.
+    """
+    scratch_dir = _new_scratch_dir()
+    try:
+        yield scratch_dir
+    finally:
+        _remove_scratch_dir(scratch_dir, source)
+
+
 def _new_scratch_dir() -> str:
     """Make a directory of this run's own under download_directory/.salmon-staging; other runs' stay put."""
     root = os.path.join(cfg.directory.download_directory, STAGING_DIR)
