@@ -884,9 +884,12 @@ async def _rehost_images(
 ) -> None:
     """Fetch each SOURCE image TARGET cannot show through SOURCE's client, upload it to TARGET's host, swap the URL.
 
+    Each URL is fetched once, even when it is both the cover and a description image going to two hosts.
+
     Raises:
         CrossUploadRefused: If a fetch or an upload fails, or a host gives no usable URL.
     """
+    images: dict[str, tuple[bytes, str]] = {}
     new_urls: dict[tuple[str, str], str] = {}
     for field_name, url in rehost:
         host = (
@@ -894,17 +897,24 @@ async def _rehost_images(
             if field_name == "image"
             else image_host_for_tracker(target.site_code)
         )
+        if url not in images:
+            images[url] = await _fetch_source_image(url, source)
         key = (host, url)
         if key not in new_urls:
-            new_urls[key] = await _rehost_image(url, source, target, host)
+            new_urls[key] = await _upload_image(*images[url], _bare(url), target, host)
         data[field_name] = data[field_name].replace(url, new_urls[key])
 
 
-async def _rehost_image(url: str, source: "BaseGazelleApi", target: "BaseGazelleApi", host: str) -> str:
+async def _fetch_source_image(url: str, source: "BaseGazelleApi") -> tuple[bytes, str]:
+    """Fetch an image from SOURCE's own site through SOURCE's client: its content and its file suffix.
+
+    Raises:
+        CrossUploadRefused: If it is not on SOURCE's site, cannot be fetched, or is not an image.
+    """
     shown = _bare(url)  # The URL may carry SOURCE's per-viewer signature: never printed.
-    click.secho(f"Rehosting {shown} to {host}...", fg="yellow")
     if not _same_origin(url, source.base_url):
         raise CrossUploadRefused(f"{shown} is not on {source.site_string}'s own site")
+    click.secho(f"Fetching {shown} from {source.site_string}...", fg="yellow")
     try:
         # Through SOURCE's client: its rate limit, retries and redirect rules, and its credentials only ever
         # go to its own site.
@@ -918,9 +928,19 @@ async def _rehost_image(url: str, source: "BaseGazelleApi", target: "BaseGazelle
         suffix = ".webp"
     if suffix is None:
         raise CrossUploadRefused(f"{shown} is not an image")
+    return response.content, suffix
+
+
+async def _upload_image(content: bytes, suffix: str, shown: str, target: "BaseGazelleApi", host: str) -> str:
+    """Upload an image fetched from SOURCE (shown as its bare URL) to one of TARGET's hosts, and give its URL.
+
+    Raises:
+        CrossUploadRefused: If the upload fails or the host gives no usable URL.
+    """
+    click.secho(f"Rehosting {shown} to {host}...", fg="yellow")
     with TemporaryDirectory() as directory:
         image_path = Path(directory) / f"image{suffix}"
-        await anyio.Path(image_path).write_bytes(response.content)
+        await anyio.Path(image_path).write_bytes(content)
         if dryrun.active():
             dryrun.say(f"not uploading {shown} to {host}.")
             return dryrun.image_url(str(image_path), host)
