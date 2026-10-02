@@ -323,13 +323,14 @@ def _cross_upload(
 
         return SimpleNamespace(ImageUploader=ImageUploader)
 
-    for name in ("testhost", "ophost"):
+    for name in ("testhost", "opshost", "redhost"):
         monkeypatch.setitem(salmon.images.HOSTS, name, image_host(name))
     monkeypatch.setattr(cfg.image, "cover_uploader", "testhost")
     monkeypatch.setattr(cfg.image, "image_uploader", "testhost")
-    # [image.ops]: OPS's own hosts, which an image for OPS goes to.
-    ops_hosts = SimpleNamespace(cover_uploader="ophost", image_uploader="ophost", specs_uploader=None)
-    monkeypatch.setattr(cfg.image, "ops", ops_hosts)
+    # [image.ops] and [image.red]: each tracker's own hosts, which an image for that tracker goes to.
+    for code in ("ops", "red"):
+        hosts = SimpleNamespace(cover_uploader=f"{code}host", image_uploader=f"{code}host", specs_uploader=None)
+        monkeypatch.setattr(cfg.image, code, hosts)
 
     monkeypatch.setattr(
         cfg,
@@ -790,33 +791,8 @@ def _red_answer(red_url: str):
     return answer
 
 
-def test_a_red_only_image_is_fetched_through_reds_client_and_rehosted_to_the_targets_host(monkeypatch, dirs) -> None:
-    album = _album(dirs.downloads / FOLDER)
-
-    def prepare(source: FakeTracker, target: FakeTracker) -> None:
-        source.images = {"/i/cover.jpg": JPEG, "/i/inline.png": PNG}
-        _source_has(album, answer=_red_answer(source.url))(source, target)
-
-    run = _cross_upload(
-        monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", source="RED", target="OPS", prepare=prepare
-    )
-
-    assert run.result.exit_code == 0, run.output
-    fetched = [sent for sent in run.source.sent if sent.path.startswith("/i/")]
-    assert [sent.path for sent in fetched] == ["/i/cover.jpg", "/i/inline.png"]
-    # Through RED's client: its API key (no session cookie is set), and only ever to RED itself.
-    assert all(sent.authorization and not sent.cookie for sent in fetched)
-    # Uploaded to OPS's own hosts: [image.ops] cover_uploader and image_uploader.
-    assert run.images == [("ophost", "image.jpg"), ("ophost", "image.png")]
-    (post,) = run.target.posts()
-    assert post.fields["image"] == ["https://ophost.images.test/1.png"]
-    assert post.fields["album_desc"] == ["Notes [img]https://ophost.images.test/2.png[/img]"]
-    sent = json.dumps(post.fields)
-    assert run.source.url not in sent and "u=12345" not in sent
-
-
-def test_a_red_image_goes_to_ops_as_its_bare_url_once_ops_is_confirmed_to_show_it(monkeypatch, dirs) -> None:
-    monkeypatch.setattr(cross_upload_module, "RED_IMAGES_SHOW_ON_OPS_CONFIRMED", True)
+def test_a_red_image_goes_to_ops_as_its_bare_url_and_is_never_fetched(monkeypatch, dirs) -> None:
+    # OPS shows RED-hosted images, as a cover and in descriptions (HOST_RULES, confirmed by redusys).
     album = _album(dirs.downloads / FOLDER)
 
     def prepare(source: FakeTracker, target: FakeTracker) -> None:
@@ -831,6 +807,45 @@ def test_a_red_image_goes_to_ops_as_its_bare_url_once_ops_is_confirmed_to_show_i
     assert run.images == []
     (post,) = run.target.posts()
     assert post.fields["image"] == [f"{run.source.url}/i/cover.jpg"]
+    assert post.fields["album_desc"] == [f"Notes [img]{run.source.url}/i/inline.png[/img]"]
+    # RED signs the URLs it hands out per viewer, with their user id: none of that reaches OPS.
+    assert "u=12345" not in json.dumps(post.fields)
+
+
+def _ops_hosted_images(ops_url: str):
+    """An OPS torrent answer for the album whose cover and album description are on OPS's own site."""
+
+    def answer(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = _ops_answer(folder, torrent_id)
+        response["group"]["wikiImage"] = f"{ops_url}/static/cover.jpg"
+        response["group"]["wikiBBcode"] = f"Notes [img]{ops_url}/static/inline.png[/img]"
+        return response
+
+    return answer
+
+
+def test_an_image_only_the_source_shows_is_fetched_through_its_client_and_rehosted_to_the_targets_host(
+    monkeypatch, dirs
+) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        source.images = {"/static/cover.jpg": JPEG, "/static/inline.png": PNG}
+        _source_has(album, answer=_ops_hosted_images(source.url))(source, target)
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    fetched = [sent for sent in run.source.sent if sent.path.startswith("/static/")]
+    assert [sent.path for sent in fetched] == ["/static/cover.jpg", "/static/inline.png"]
+    # Through OPS's client, with its session cookie, and only ever to OPS itself.
+    assert all(sent.cookie and not sent.authorization for sent in fetched)
+    # Uploaded to RED's own hosts: [image.red] cover_uploader and image_uploader.
+    assert run.images == [("redhost", "image.jpg"), ("redhost", "image.png")]
+    (post,) = run.target.posts()
+    assert post.fields["image"] == ["https://redhost.images.test/1.png"]
+    assert post.fields["album_desc"] == ["Notes [img]https://redhost.images.test/2.png[/img]"]
+    assert run.source.url not in json.dumps(post.fields)
 
 
 def test_an_image_on_another_host_is_neither_fetched_nor_changed(monkeypatch, dirs) -> None:
