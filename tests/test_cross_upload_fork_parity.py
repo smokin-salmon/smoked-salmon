@@ -66,12 +66,14 @@ DIFFERENCES: dict[str, tuple[str, Callable[[Any, str], Any]]] = {
         "[thread]; [user] and [rule] keep their text), are taken out of the source description, their text kept: "
         "on the target they would name the source tracker's pages. Upstream's footer instead of the fork's. The "
         "header, the description (trimmed of white space at its ends) and the footer are one blank line apart, "
-        "and an empty description (or one emptied by the link removal) leaves no blank lines in their place.",
+        "and an empty description (or one emptied by the link removal) leaves no blank lines in their place. The "
+        "fork decodes HTML entities in every source description; only RED's comes escaped, so OPS's, the text as "
+        "written, is not decoded (no OPS sample holds an entity: test_cross_upload.py shows it).",
         _upstream_credit_no_tracker_links_and_our_footer,
     ),
     "album_desc": (
-        "RED's comes HTML-escaped (bbBody): HTML entities decoded, as the fork does for the torrent description. "
-        "OPS's (wikiBBcode) is the text as written and is not decoded. Links to either tracker's site and Gazelle's "
+        "RED's comes HTML-escaped (bbBody): its HTML entities are decoded, as in release_desc. OPS's (wikiBBcode) "
+        "is the text as written and is not decoded. Links to either tracker's site and Gazelle's "
         "site tags are taken out, as in release_desc. The one broken shape the old description generator left, "
         "[b][size=4]Tracklist[/b] with no [/size], is repaired (design section 10, #597). Nothing else in it is "
         "rewritten.",
