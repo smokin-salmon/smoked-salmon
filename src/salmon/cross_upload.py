@@ -113,6 +113,8 @@ _LINK_TOKEN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 _LOSSY_CLASSES = ("tl_lossymaster_approved", "tl_lossyweb_approved")
+# The lossy report comment offered when the torrent description shows spectrals, which a cross-upload does not make.
+SPECTRALS_COMMENT = "Spectrals are in the torrent description."
 _LOSSY_TITLES = ("lossy master approved", "lossy web approved")
 _IMAGE_MAGIC = {b"\xff\xd8\xff": ".jpg", b"\x89PNG\r\n\x1a\n": ".png", b"GIF87a": ".gif", b"GIF89a": ".gif"}
 
@@ -756,7 +758,9 @@ async def _check_lossy_approval(release: Release, source: "BaseGazelleApi", targ
     """Decide whether TARGET gets a lossy report after the upload: SOURCE's lossy approval does not carry over.
 
     Approved on SOURCE (lossy master or lossy WEB): the report goes, with the user's comment if they give one.
-    Unknown: the user is asked, and no report goes by default.
+    Unknown: the user is asked, and no report goes by default. A cross-upload makes no spectrals: when the torrent
+    description shows some, the comment says so by default; otherwise the user is told the report should say where
+    TARGET's staff can check.
     """
     page = f"{source.base_url}/torrents.php?torrentid={release.torrent['id']}"
     approved = await _lossy_approval(release, source)
@@ -779,7 +783,14 @@ async def _check_lossy_approval(release: Release, source: "BaseGazelleApi", targ
         )
     if not approved:
         return
-    comment = ""
+    spectrals = _shows_spectrals(release.data["release_desc"])
+    if not spectrals:
+        click.secho(
+            f"The torrent description shows no spectrals, so the lossy report on {target.site_string} should say "
+            "where its staff can check the files.",
+            fg="yellow",
+        )
+    comment = SPECTRALS_COMMENT if spectrals else ""
     if not cfg.upload.yes_all:
         comment = await click.prompt(
             click.style(
@@ -788,14 +799,19 @@ async def _check_lossy_approval(release: Release, source: "BaseGazelleApi", targ
                 fg="cyan",
                 bold=True,
             ),
-            default="",
-            show_default=False,
+            default=comment,
+            show_default=spectrals,
         )
     note = f"Approved as lossy on {source.site_string}: {page}"
     release.lossy_report = f"{comment}\n\n{note}" if comment else note
     release.notes.append(
         f"approved as lossy on {source.site_string}: a lossy report goes to {target.site_string} after the upload"
     )
+
+
+def _shows_spectrals(description: str) -> bool:
+    """Whether a torrent description shows spectrals: it names them and has an image."""
+    return "spectral" in description.lower() and _IMAGE_TAG.search(description) is not None
 
 
 async def _lossy_approval(release: Release, source: "BaseGazelleApi") -> bool | None:

@@ -68,6 +68,8 @@ TARGET_GROUP_ID = 900001
 FOLDER = "sample3000 - SAMPLE VOL. I (RMX) (2023) [WEB FLAC]"
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
 JPEG = b"\xff\xd8\xff\xe0" + b"\x00" * 64
+# The lossy report comment a cross-upload offers when the torrent description shows spectrals.
+SPECTRALS_COMMENT = "Spectrals are in the torrent description."
 
 
 def _fixture(name: str) -> dict[str, Any]:
@@ -1261,10 +1263,8 @@ def test_a_lossy_approved_torrent_goes_up_then_is_reported_once_on_the_target(mo
     # RED's report type for a WEB torrent, as `up` sends it, about the torrent just uploaded.
     assert report.fields["type"] == ["lossywebapproval"]
     assert report.fields["torrentid"] == ["700001"]
-    assert (
-        report.fields["extra"][0].rstrip()
-        == f"Approved as lossy on OPS: {run.source.url}/torrents.php?torrentid=600011"
-    )
+    page = f"{run.source.url}/torrents.php?torrentid=600011"
+    assert report.fields["extra"][0].rstrip() == f"{SPECTRALS_COMMENT}\n\nApproved as lossy on OPS: {page}"
     assert _within_the_plans_bound(run)
     assert run.seeded == [("/seed", FOLDER)]
 
@@ -1289,7 +1289,7 @@ def test_each_conversion_of_a_lossy_approved_torrent_is_reported_too_as_up_does(
     ]
     flac, mp3 = run.target.reports()
     assert mp3.fields["torrentid"] == ["700002"]
-    note = f"Approved as lossy on OPS: {run.source.url}/torrents.php?torrentid=600011"
+    note = f"{SPECTRALS_COMMENT}\n\nApproved as lossy on OPS: {run.source.url}/torrents.php?torrentid=600011"
     assert flac.fields["extra"][0].rstrip() == note
     assert mp3.fields["extra"][0].startswith(
         f"Transcode of {run.target.url}/torrents.php?torrentid=700001\n[hide=Lossy comment of original torrent]{note}"
@@ -1322,7 +1322,8 @@ def test_a_dry_run_prints_the_lossy_report_it_would_send(monkeypatch, dirs) -> N
     assert run.result.exit_code == 0, run.output
     assert run.target.posts() == []
     assert "Dry run: not reporting the torrent to RED for lossy master approval. The report:" in run.output
-    assert f"  Approved as lossy on OPS: {run.source.url}/torrents.php?torrentid=600011" in run.output
+    page = f"{run.source.url}/torrents.php?torrentid=600011"
+    assert f"  {SPECTRALS_COMMENT}\n\n  Approved as lossy on OPS: {page}" in run.output
 
 
 def _source_has_id(torrent_id: int, album: Path):
@@ -1375,6 +1376,58 @@ def test_the_lossy_report_comment_question_is_about_the_cross_upload(monkeypatch
     (report,) = run.target.reports()
     page = f"{run.source.url}/torrents.php?torrentid=600011"
     assert report.fields["extra"][0].rstrip() == f"Ripped from the store\n\nApproved as lossy on OPS: {page}"
+
+
+@pytest.mark.parametrize(
+    ("args", "answer", "comment"),
+    [([], "\n", SPECTRALS_COMMENT), ([], "Ripped from the store\n", "Ripped from the store"), (["-yyy"], "", None)],
+    ids=["enter", "typed", "yes to all"],
+)
+def test_spectrals_in_the_description_prefill_the_lossy_report_comment(
+    monkeypatch, dirs, args: list[str], answer: str, comment: str | None
+) -> None:
+    # The fixture's description has its spectrals in [hide=Spectrals]: the target's staff can check them there.
+    album = _album(dirs.downloads / FOLDER)
+    run = _cross_upload(
+        monkeypatch, dirs, ["600011", *args], input=f"{answer}y\n\n", prepare=_source_has_id(600011, album)
+    )
+
+    assert run.result.exit_code == 0, run.output
+    # The default is shown in the question, which -yyy does not ask.
+    assert (f"[{SPECTRALS_COMMENT}]: " in run.output) is not bool(args)
+    assert "shows no spectrals" not in run.output
+    (report,) = run.target.reports()
+    page = f"{run.source.url}/torrents.php?torrentid=600011"
+    assert report.fields["extra"][0].rstrip() == f"{comment or SPECTRALS_COMMENT}\n\nApproved as lossy on OPS: {page}"
+    # Nothing is made or fetched for them: no image upload, no request beyond the usual ones.
+    assert run.images == []
+    assert _within_the_plans_bound(run)
+
+
+@pytest.mark.parametrize(
+    "description",
+    ["Notes only", "Spectrals on request.", "[img]https://ptpimg.me/x00099.png[/img]"],
+    ids=["no spectrals", "the word only", "an image only"],
+)
+@pytest.mark.parametrize("args", [[], ["-yyy"]], ids=["asked", "yes to all"])
+def test_a_description_without_spectrals_says_so_and_sends_the_link_only(
+    monkeypatch, dirs, description: str, args: list[str]
+) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, _target: FakeTracker) -> None:
+        source.torrents[600011] = _ops_answer(album, 600011)
+        source.torrents[600011]["torrent"]["description"] = description
+
+    run = _cross_upload(monkeypatch, dirs, ["600011", *args], input="\ny\n\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    said = "The torrent description shows no spectrals, so the lossy report on RED should say where its staff can check"
+    assert said in run.output
+    assert SPECTRALS_COMMENT not in run.output
+    (report,) = run.target.reports()
+    page = f"{run.source.url}/torrents.php?torrentid=600011"
+    assert report.fields["extra"][0].rstrip() == f"Approved as lossy on OPS: {page}"
 
 
 def test_with_yes_all_an_unknown_approval_goes_up_unreported_and_names_the_page_to_check(monkeypatch, dirs) -> None:
@@ -1473,7 +1526,7 @@ def test_a_red_lossy_web_approval_goes_to_ops_as_one_lossy_approval_report(monke
     (report,) = run.target.reports()
     assert report.fields["type"] == ["lossyapproval"]
     assert report.fields["extra"][0].rstrip() == (
-        f"Approved as lossy on RED: {run.source.url}/torrents.php?torrentid={TORRENT_ID}"
+        f"{SPECTRALS_COMMENT}\n\nApproved as lossy on RED: {run.source.url}/torrents.php?torrentid={TORRENT_ID}"
     )
     assert _within_the_plans_bound(run, "OPS")
 
