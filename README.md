@@ -308,9 +308,10 @@ one seeding that FLAC: salmon copies it into `download_directory/.salmon-staging
 and removes the copy when the run ends. The transcodes land in `download_directory` as usual.
 
 The transcode descriptions link to the group's FLAC in this release's edition (same media, encoding,
-year, catalogue number and edition title, as reviewed); if there are several, salmon asks which one
-(with `--yes-all` it stops). Formats the edition already has are flagged as a dupe risk and left out
-unless you pick them by number.
+year and edition title, as reviewed; the catalogue number is not compared, since sites and uploaders
+write it in different conventions); if there are several, salmon asks which one (with `--yes-all` it
+stops). Formats the edition already has are flagged as a dupe risk and left out unless you pick them
+by number.
 
 To see what an upload would send, without sending anything, add `--dry-run`:
 ```bash
