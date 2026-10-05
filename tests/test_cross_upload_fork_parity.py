@@ -6,6 +6,7 @@ DIFFERENCES is applied: a field the fork sends that we drop, one we add, or a va
 fails.
 """
 
+import html
 import json
 from collections.abc import Callable
 from pathlib import Path
@@ -36,7 +37,7 @@ FORK_FOOTER = (
 SITES = (OpsApi(), RedApi())
 
 
-def _upstream_credit_no_tracker_links_and_our_footer(value: str) -> str:
+def _upstream_credit_no_tracker_links_and_our_footer(value: str, _sample: str) -> str:
     header, _, description = value.partition("[/align]\n\n")
     credit = (
         f"Cross-uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]smoked-salmon[/url] v{get_version()}"
@@ -47,13 +48,13 @@ def _upstream_credit_no_tracker_links_and_our_footer(value: str) -> str:
     return f"{header.replace(FORK_CREDIT, credit)}[/align]\n\n{without_tracker_links(description, SITES)}{footer}"
 
 
-def _no_tracker_links_and_size_closed(value: str) -> str:
-    value = without_tracker_links(value, SITES)
+def _reds_unescaped_no_tracker_links_and_size_closed(value: str, sample: str) -> str:
+    value = without_tracker_links(html.unescape(value) if sample.startswith("red-") else value, SITES)
     return value.replace("[b][size=4]Tracklist[/b]", "[b][size=4]Tracklist[/size][/b]")
 
 
-# field: (why ours differs from the fork's, what turns the fork's value into ours)
-DIFFERENCES: dict[str, tuple[str, Callable[[Any], Any]]] = {
+# field: (why ours differs from the fork's, what turns the fork's value for a sample into ours)
+DIFFERENCES: dict[str, tuple[str, Callable[[Any, str], Any]]] = {
     "release_desc": (
         'The fork\'s header, but its credit line links to upstream, with no "(chodeus fork)". Links to either '
         "tracker's site, and Gazelle's tags that open the site's own pages ([torrent], [pl], [collage], [forum], "
@@ -62,10 +63,12 @@ DIFFERENCES: dict[str, tuple[str, Callable[[Any], Any]]] = {
         _upstream_credit_no_tracker_links_and_our_footer,
     ),
     "album_desc": (
-        "Links to either tracker's site and Gazelle's site tags are taken out, as in release_desc. The one "
-        "broken shape the old description generator left, [b][size=4]Tracklist[/b] with no [/size], is repaired "
-        "(design section 10, #597). Nothing else in it is rewritten.",
-        _no_tracker_links_and_size_closed,
+        "RED's comes HTML-escaped (bbBody): HTML entities decoded, as the fork does for the torrent description. "
+        "OPS's (wikiBBcode) is the text as written and is not decoded. Links to either tracker's site and Gazelle's "
+        "site tags are taken out, as in release_desc. The one broken shape the old description generator left, "
+        "[b][size=4]Tracklist[/b] with no [/size], is repaired (design section 10, #597). Nothing else in it is "
+        "rewritten.",
+        _reds_unescaped_no_tracker_links_and_size_closed,
     ),
 }
 
@@ -85,7 +88,7 @@ def test_the_form_is_the_forks_but_for_the_differences_listed(name: str) -> None
     ours = _ours(name)
 
     assert list(ours) == list(fork)
-    expected = {key: DIFFERENCES[key][1](value) if key in DIFFERENCES else value for key, value in fork.items()}
+    expected = {key: DIFFERENCES[key][1](value, name) if key in DIFFERENCES else value for key, value in fork.items()}
     assert ours == expected
 
 

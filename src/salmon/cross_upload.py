@@ -482,7 +482,10 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
     description = without_tracker_links(html.unescape(torrent.get("description") or ""), sites)
     # The source description is the other tracker's, so it may already end with a footer.
     footer = "" if has_upload_footer(description) else f"\n\n{upload_footer()}"
-    album_desc = without_tracker_links(group.get("bbBody") or group.get("wikiBBcode") or "", sites)
+    # RED's album description (bbBody) is HTML-escaped, as its torrent description is. OPS's (wikiBBcode) is the text
+    # as written: unescaping it would turn a link's "&region=" into "®ion=".
+    album_desc = html.unescape(group["bbBody"]) if group.get("bbBody") else group.get("wikiBBcode") or ""
+    album_desc = without_tracker_links(album_desc, sites)
 
     return {
         "submit": True,

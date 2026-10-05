@@ -1531,7 +1531,7 @@ def test_a_red_lossy_web_approval_goes_to_ops_as_one_lossy_approval_report(monke
     assert _within_the_plans_bound(run, "OPS")
 
 
-def test_reds_html_entities_are_unescaped_where_the_fork_unescapes_them(monkeypatch, dirs) -> None:
+def test_reds_html_entities_are_unescaped_in_the_names_and_both_descriptions(monkeypatch, dirs) -> None:
     run = _red_to_ops(monkeypatch, dirs, "red-torrent-web-lossy-web-approved.json")
 
     assert run.result.exit_code == 0, run.output
@@ -1542,9 +1542,31 @@ def test_reds_html_entities_are_unescaped_where_the_fork_unescapes_them(monkeypa
     post = _upload_post(run)
     assert "[b]01. ทะเลสีคราม.flac Full[/b]" in post.fields["release_desc"][0]
     assert "&#" not in post.fields["release_desc"][0]
-    # The album description goes as RED gives it, entities and all, as the fork sends it; its broken header is fixed.
-    album_desc = _fixture("red-torrent-web-lossy-web-approved.json")["group"]["bbBody"]
+    # So does the album description, whose broken header is fixed.
+    album_desc = html.unescape(_fixture("red-torrent-web-lossy-web-approved.json")["group"]["bbBody"])
+    assert "[b]01.[/b] Sample Garden - ทะเลสีคราม [i](5:20)[/i]" in album_desc
     assert post.fields["album_desc"] == [album_desc.replace("Tracklist[/b]", "Tracklist[/size][/b]", 1)]
+
+
+def test_reds_album_description_is_unescaped_before_its_tracker_links_go() -> None:
+    response = _fixture("red-torrent-cd-log.json")
+    response["group"]["bbBody"] += (
+        "\n1999 &ndash; 2023 [url=https://redacted.sh/torrents.php?id=1&amp;torrentid=2]the CD[/url] "
+        "[url=https://example.com/album?id=1&amp;region=us]the shop[/url]"
+    )
+    album_desc = compile_data(response, RedApi(), OpsApi())["album_desc"]
+    assert "Genre: Devotional, Example's Ragas/Classical, World" in album_desc
+    assert "&#39;" not in album_desc
+    assert "&bull;" not in album_desc
+    assert album_desc.endswith("\n1999 – 2023 the CD [url=https://example.com/album?id=1&region=us]the shop[/url]")
+
+
+def test_ops_album_description_is_the_text_as_written_and_is_not_unescaped() -> None:
+    # OPS's answers are not HTML-escaped (a bare "&" in its descriptions): unescaping would make "&region=" "®ion=".
+    text = "R&B [url=https://example.com/album?id=1&region=us]the shop[/url], &amp; as typed"
+    response = _fixture("ops-torrent-cd-log.json")
+    response["group"]["wikiBBcode"] = text
+    assert compile_data(response, OpsApi(), RedApi())["album_desc"] == text
 
 
 def test_a_red_cover_goes_to_ops_as_its_bare_url_and_is_never_fetched(monkeypatch, dirs) -> None:
