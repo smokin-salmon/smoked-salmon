@@ -1144,6 +1144,24 @@ def test_a_remaster_gets_its_group_as_the_default_answer(monkeypatch, dirs) -> N
     assert post.fields["groupid"] == [str(TARGET_GROUP_ID)]
 
 
+@pytest.mark.parametrize(("edition", "shown"), [(2023, "(group 2018, edition 2023)"), (2018, "(2018)")])
+def test_the_plan_shows_the_group_year_when_the_edition_has_another(monkeypatch, dirs, edition, shown) -> None:
+    # Which year the dupe check looks for the group on, before its question.
+    album = _album(dirs.downloads / FOLDER)
+
+    def answer(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = _ops_answer(folder, torrent_id)
+        response["torrent"]["remasterYear"] = edition
+        return response
+
+    run = _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album, answer=answer)
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert f"1. sample3000 - SAMPLE VOL. I (RMX) {shown}, WEB\n" in run.output
+
+
 def test_the_same_edition_and_format_in_the_target_group_is_flagged_and_abort_is_the_default(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
     held = {

@@ -854,7 +854,11 @@ def _print_plan(
         data, torrent = release.data, release.torrent
         artists = ", ".join(data["artists[]"][:3]) + (" ..." if len(data["artists[]"]) > 3 else "")
         formats = [f"{data['format']} {data['bitrate']}", *(task["name"] for task in release.tasks)]
-        click.echo(f"{number}. {artists} - {data['title']} ({data['remaster_year']}), {data['media']}")
+        # The dupe check finds the group on the group's year: say it when the edition's differs.
+        years = data["remaster_year"]
+        if str(data["year"]) != str(data["remaster_year"]):
+            years = f"group {data['year']}, edition {data['remaster_year']}"
+        click.echo(f"{number}. {artists} - {data['title']} ({years}), {data['media']}")
         click.echo(f"   from {source.base_url}/torrents.php?torrentid={torrent['id']}")
         click.echo(f"   files: {release.path}")
         click.echo(f"   uploads: {', '.join(formats)}")
