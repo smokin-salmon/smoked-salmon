@@ -1162,7 +1162,15 @@ def test_the_plan_shows_the_group_year_when_the_edition_has_another(monkeypatch,
     assert f"1. sample3000 - SAMPLE VOL. I (RMX) {shown}, WEB\n" in run.output
 
 
-def test_the_same_edition_and_format_in_the_target_group_is_flagged_and_abort_is_the_default(monkeypatch, dirs) -> None:
+@pytest.mark.parametrize(
+    ("catno", "said"),
+    [("000000000002", ""), ("SG-002", " (catalogue number differs: ours 000000000002)")],
+    ids=["same catalogue number", "another catalogue number"],
+)
+def test_the_same_edition_and_format_in_the_target_group_is_flagged_and_abort_is_the_default(
+    monkeypatch, dirs, catno: str, said: str
+) -> None:
+    # The trackers often write another catalogue number for the same release (#607).
     album = _album(dirs.downloads / FOLDER)
     held = {
         "torrentId": 1,
@@ -1172,7 +1180,7 @@ def test_the_same_edition_and_format_in_the_target_group_is_flagged_and_abort_is
         "remasterYear": 2023,
         "remasterTitle": "",
         "remasterRecordLabel": "SAMPLE GARDEN",
-        "remasterCatalogueNumber": "000000000002",
+        "remasterCatalogueNumber": catno,
     }
 
     def prepare(source: FakeTracker, target: FakeTracker) -> None:
@@ -1182,7 +1190,7 @@ def test_the_same_edition_and_format_in_the_target_group_is_flagged_and_abort_is
     # Pick the group, then take the default answer to "upload to this group?".
     run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="1\n\n", prepare=prepare)
 
-    assert "DUPE RISK: this edition already has 2023 / SAMPLE GARDEN / 000000000002 / WEB / FLAC / Lossless" in (
+    assert f"DUPE RISK: this edition already has 2023 / SAMPLE GARDEN / {catno} / WEB / FLAC / Lossless{said};" in (
         run.output
     )
     assert run.result.exit_code == 1
