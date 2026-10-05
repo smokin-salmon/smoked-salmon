@@ -1248,6 +1248,34 @@ def test_a_lossy_approved_torrent_goes_up_then_is_reported_once_on_the_target(mo
     assert run.seeded == [("/seed", FOLDER)]
 
 
+def test_each_conversion_of_a_lossy_approved_torrent_is_reported_too_as_up_does(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    run = _cross_upload(
+        monkeypatch,
+        dirs,
+        ["600011", "-yyy", "--transcode", "320"],
+        input="\n",
+        prepare=_source_has_id(600011, album),
+        transcode=_transcode,
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert [sent.step for sent in run.target.posts()] == [
+        "POST ajax.php?action=upload",
+        "POST reportsv2.php?action=takereport",
+        "POST ajax.php?action=upload",
+        "POST reportsv2.php?action=takereport",
+    ]
+    flac, mp3 = run.target.reports()
+    assert mp3.fields["torrentid"] == ["700002"]
+    note = f"Approved as lossy on OPS: {run.source.url}/torrents.php?torrentid=600011"
+    assert flac.fields["extra"][0].rstrip() == note
+    assert mp3.fields["extra"][0].startswith(
+        f"Transcode of {run.target.url}/torrents.php?torrentid=700001\n[hide=Lossy comment of original torrent]{note}"
+    )
+    assert _within_the_plans_bound(run)
+
+
 def test_a_report_the_target_refuses_leaves_the_upload_and_says_how_to_report_it(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
 

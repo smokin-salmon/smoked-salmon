@@ -835,8 +835,8 @@ def most_requests(release: Release, target: "BaseGazelleApi", group_id: int | No
     gets += 2  # Looking up an upload whose answer was lost (then the run stops)
     posts = uploads
     if release.lossy_report is not None:
-        posts += 1  # The lossy report, never sent again
-        gets += 2  # The pages it redirects to
+        posts += uploads  # The lossy report of each upload, never sent again
+        gets += 2 * uploads  # The pages each redirects to
     return gets, posts, len({url for _, url in release.rehost})
 
 
@@ -1085,10 +1085,11 @@ async def _upload_conversions(
         cover_url=None,
         track_data=_track_data(release),
         hybrid=False,
-        lossy_master=False,
+        # As `up` does, each conversion of a torrent reported as lossy is reported too, quoting that report.
+        lossy_master=release.lossy_report is not None,
         spectral_urls=None,
         spectral_ids=None,
-        lossy_comment=None,
+        lossy_comment=release.lossy_report,
         request_id=None,
         source_url=None,
         seedbox_uploader=seedbox,
