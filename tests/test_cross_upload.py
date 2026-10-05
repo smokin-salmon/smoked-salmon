@@ -916,6 +916,27 @@ def test_links_to_either_tracker_leave_the_descriptions_and_keep_their_text(text
     assert without_tracker_links(text, (OpsApi(), RedApi())) == (text if kept is None else kept)
 
 
+@pytest.mark.parametrize(
+    ("text", "kept"),
+    [
+        # Gazelle's tags that open the site's own pages by id: on the target, the target's pages with these ids.
+        ("See [torrent]123[/torrent] too", "See  too"),
+        ("[torrent=noartist]https://orpheus.network/torrents.php?id=5[/torrent]", ""),
+        ("[TORRENT]https://redacted.sh/torrents.php?id=5&torrentid=6[/TORRENT]", ""),
+        ("Permalink: [pl]4567[/pl].", "Permalink: ."),
+        ("[collage]12[/collage] [forum]3[/forum] [thread]45:678[/thread]", "  "),
+        # A user or a rule of the source's site: the name or number stays, as text.
+        ("Thanks [user]someone[/user], see [RULE]2.3.1[/RULE]", "Thanks someone, see 2.3.1"),
+        # Inside a link to the tracker, whose text is kept.
+        ("[url=https://redacted.sh/x]by [user]someone[/user][/url]", "by someone"),
+        # An artist is found by name, the same on both trackers.
+        ("[artist]Example Artist[/artist]", None),
+    ],
+)
+def test_gazelle_tags_that_open_the_source_sites_pages_leave_the_descriptions(text: str, kept: str | None) -> None:
+    assert without_tracker_links(text, (OpsApi(), RedApi())) == (text if kept is None else kept)
+
+
 def test_a_link_wrapping_an_image_keeps_the_image() -> None:
     text = "[url=https://redacted.sh/torrents.php?id=1][img]https://ptpimg.me/x.png[/img][/url]"
     assert without_tracker_links(text, (RedApi(), OpsApi())) == "[img]https://ptpimg.me/x.png[/img]"

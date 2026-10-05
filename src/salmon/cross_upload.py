@@ -99,12 +99,16 @@ _TRACKLIST_HEADER = "[b][size=4]Tracklist[/size][/b]"
 _FILE_ENTRY = re.compile(r"(.+)\{\{\{(\d+)\}\}\}$", re.DOTALL)
 _IMAGE_TAG = re.compile(r"\[img\]\s*(https?://[^\[\]\s]+?)\s*\[/img\]|\[img=(https?://[^\]\s]+)\]", re.IGNORECASE)
 # What a description can link with, in the order it is read: an image (never a link), a link with its text, a
-# link that is its own text, a link left open, a bare URL.
+# link that is its own text, a link left open, one of Gazelle's tags that open the site's own pages by id (a torrent
+# group, a torrent, a collage, a forum, a thread) or by name (a user, a rule of that site), a bare URL. An artist
+# tag is left: it finds the artist by name, the same on both trackers.
 _LINK_TOKEN = re.compile(
     r"(?P<image>\[img\][^\[\]]*\[/img\]|\[img=[^\]]*\])"
     r"|\[url=(?P<target>[^\]]*)\](?P<text>(?:(?!\[/?url[=\]]).)*?)\[/url\]"
     r"|\[url\](?P<own_target>[^\[\]]*)\[/url\]"
     r"|\[url=(?P<open_target>[^\]]*)\]"
+    r"|\[(?P<by_id>torrent|pl|collage|forum|thread)(?:=[^\]]*)?\][^\[\]]*\[/(?P=by_id)\]"
+    r"|\[(?P<by_name>user|rule)\](?P<name>[^\[\]]*)\[/(?P=by_name)\]"
     r"|(?P<url>https?://[^\s\[\]<>\"']+)",
     re.IGNORECASE | re.DOTALL,
 )
@@ -525,7 +529,8 @@ def without_tracker_links(text: str, sites: tuple["BaseGazelleApi", ...]) -> str
 
     A link keeps its text; a bare URL, or a link that is its own text, goes. A link with no scheme is one to the
     tracker's own pages (Gazelle's relative links): on TARGET it would point at TARGET's pages with SOURCE's ids,
-    so it goes too. Images are not links: they are left to the image rules.
+    so it goes too, and so do Gazelle's tags that open the site's own pages by id. A user or rule tag keeps its
+    text. Images are not links: they are left to the image rules.
     """
 
     def to_tracker(url: str) -> bool:
@@ -541,6 +546,10 @@ def without_tracker_links(text: str, sites: tuple["BaseGazelleApi", ...]) -> str
             return "" if to_tracker(match["own_target"]) else match[0]
         if match["open_target"] is not None:
             return "" if to_tracker(match["open_target"]) else match[0]
+        if match["by_id"] is not None:
+            return ""
+        if match["by_name"] is not None:
+            return match["name"]
         return "" if _tracker_of(match["url"], sites) is not None else match[0]
 
     return _LINK_TOKEN.sub(replace, text)

@@ -56,14 +56,15 @@ def _no_tracker_links_and_size_closed(value: str) -> str:
 DIFFERENCES: dict[str, tuple[str, Callable[[Any], Any]]] = {
     "release_desc": (
         'The fork\'s header, but its credit line links to upstream, with no "(chodeus fork)". Links to either '
-        "tracker's site are taken out of the source description, their text kept: on the target they would name "
-        "the source tracker's pages. Upstream's footer instead of the fork's.",
+        "tracker's site, and Gazelle's tags that open the site's own pages ([torrent], [pl], [collage], [forum], "
+        "[thread]; [user] and [rule] keep their text), are taken out of the source description, their text kept: "
+        "on the target they would name the source tracker's pages. Upstream's footer instead of the fork's.",
         _upstream_credit_no_tracker_links_and_our_footer,
     ),
     "album_desc": (
-        "Links to either tracker's site are taken out, their text kept, as in release_desc. The one broken shape "
-        "the old description generator left, [b][size=4]Tracklist[/b] with no [/size], is repaired (design "
-        "section 10, #597). Nothing else in it is rewritten.",
+        "Links to either tracker's site and Gazelle's site tags are taken out, as in release_desc. The one "
+        "broken shape the old description generator left, [b][size=4]Tracklist[/b] with no [/size], is repaired "
+        "(design section 10, #597). Nothing else in it is rewritten.",
         _no_tracker_links_and_size_closed,
     ),
 }
