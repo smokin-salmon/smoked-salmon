@@ -54,10 +54,13 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
 	```
 
 #### Windows
+Run these commands in **PowerShell** (Start menu, "Windows PowerShell"), not in Command Prompt (`cmd`). They fail in Command Prompt.
+
 1. Install required system packages using winget:
     ```powershell
     winget install -e ChrisBagwell.SoX Xiph.FLAC LAME.LAME ring0.MP3val.WF
     ```
+    Then close PowerShell and open a new window, so it finds the new programs.
 
 2. Fix sox Unicode filename handling issue on Windows:
     ```powershell
@@ -73,6 +76,7 @@ Installing with pip is not recommended because uv (and pipx) manage python versi
     ```powershell
     powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
     ```
+    Then close PowerShell and open a new window, so it finds `uv`.
 
 4. Install smoked-salmon package from github:
 	```powershell
