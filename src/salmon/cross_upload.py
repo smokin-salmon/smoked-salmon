@@ -51,7 +51,7 @@ from salmon.uploader.dupe_checker import (
     held_formats,
 )
 from salmon.uploader.seedbox import UploadManager
-from salmon.uploader.spectrals import generate_lossy_approval_comment, report_lossy_master
+from salmon.uploader.spectrals import report_lossy_master
 from salmon.uploader.staging import run_directory
 from salmon.uploader.upload import (
     compile_files,
@@ -755,8 +755,8 @@ def _same_origin(url: str, base_url: str) -> bool:
 async def _check_lossy_approval(release: Release, source: "BaseGazelleApi", target: "BaseGazelleApi") -> None:
     """Decide whether TARGET gets a lossy report after the upload: SOURCE's lossy approval does not carry over.
 
-    Approved on SOURCE (lossy master or lossy WEB): the report goes, with master's comment question. Unknown: the
-    user is asked, and no report goes by default.
+    Approved on SOURCE (lossy master or lossy WEB): the report goes, with the user's comment if they give one.
+    Unknown: the user is asked, and no report goes by default.
     """
     page = f"{source.base_url}/torrents.php?torrentid={release.torrent['id']}"
     approved = await _lossy_approval(release, source)
@@ -779,7 +779,18 @@ async def _check_lossy_approval(release: Release, source: "BaseGazelleApi", targ
         )
     if not approved:
         return
-    comment = await generate_lossy_approval_comment(page, list(_file_list(release.torrent)))
+    comment = ""
+    if not cfg.upload.yes_all:
+        comment = await click.prompt(
+            click.style(
+                f"Comment for the lossy report on {target.site_string} (it already links the torrent on "
+                f"{source.site_string})",
+                fg="cyan",
+                bold=True,
+            ),
+            default="",
+            show_default=False,
+        )
     note = f"Approved as lossy on {source.site_string}: {page}"
     release.lossy_report = f"{comment}\n\n{note}" if comment else note
     release.notes.append(

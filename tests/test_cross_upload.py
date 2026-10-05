@@ -1358,6 +1358,25 @@ def test_a_torrent_with_no_row_on_the_group_page_asks_whether_to_report_it(
     assert reports == ([f"Ripped from the store\n\nApproved as lossy on OPS: {page}"] if reported else [])
 
 
+def test_the_lossy_report_comment_question_is_about_the_cross_upload(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    run = _cross_upload(
+        monkeypatch,
+        dirs,
+        ["600011"],
+        input="Ripped from the store\ny\n\n",  # The comment, the plan, the group
+        prepare=_source_has_id(600011, album),
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert "Comment for the lossy report on RED (it already links the torrent on OPS)" in run.output
+    # Not `up`'s question, which is about go, gos and the queue.
+    assert "queue" not in run.output
+    (report,) = run.target.reports()
+    page = f"{run.source.url}/torrents.php?torrentid=600011"
+    assert report.fields["extra"][0].rstrip() == f"Ripped from the store\n\nApproved as lossy on OPS: {page}"
+
+
 def test_with_yes_all_an_unknown_approval_goes_up_unreported_and_names_the_page_to_check(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
     run = _cross_upload(monkeypatch, dirs, ["600099", "-yyy"], input="\n", prepare=_source_has_id(600099, album))
