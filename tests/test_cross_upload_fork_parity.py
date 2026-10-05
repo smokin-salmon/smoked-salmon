@@ -44,8 +44,13 @@ def _upstream_credit_no_tracker_links_and_our_footer(value: str, _sample: str) -
     )
     footer = ""
     if description.endswith(FORK_FOOTER):
-        description, footer = description.removesuffix(FORK_FOOTER), f"\n\n{upload_footer()}"
-    return f"{header.replace(FORK_CREDIT, credit)}[/align]\n\n{without_tracker_links(description, SITES)}{footer}"
+        description, footer = description.removesuffix(FORK_FOOTER), upload_footer()
+    parts = (
+        f"{header.replace(FORK_CREDIT, credit)}[/align]",
+        without_tracker_links(description, SITES).strip(),
+        footer,
+    )
+    return "\n\n".join(part for part in parts if part)
 
 
 def _reds_unescaped_no_tracker_links_and_size_closed(value: str, sample: str) -> str:
@@ -59,7 +64,9 @@ DIFFERENCES: dict[str, tuple[str, Callable[[Any, str], Any]]] = {
         'The fork\'s header, but its credit line links to upstream, with no "(chodeus fork)". Links to either '
         "tracker's site, and Gazelle's tags that open the site's own pages ([torrent], [pl], [collage], [forum], "
         "[thread]; [user] and [rule] keep their text), are taken out of the source description, their text kept: "
-        "on the target they would name the source tracker's pages. Upstream's footer instead of the fork's.",
+        "on the target they would name the source tracker's pages. Upstream's footer instead of the fork's. The "
+        "header, the description (trimmed of white space at its ends) and the footer are one blank line apart, "
+        "and an empty description (or one emptied by the link removal) leaves no blank lines in their place.",
         _upstream_credit_no_tracker_links_and_our_footer,
     ),
     "album_desc": (

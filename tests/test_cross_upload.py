@@ -1175,7 +1175,25 @@ def test_the_header_links_the_uploader_to_their_profile_when_the_source_names_th
         f"[url={ops.base_url}/user.php?id=4321]Some & One[/url]",
         f"{ops.base_url}/torrents.php?torrentid=600005",
     )
-    assert compile_data(response, ops, RedApi())["release_desc"] == f"{header}\n\n\n\n{upload_footer()}"
+    assert compile_data(response, ops, RedApi())["release_desc"] == f"{header}\n\n{upload_footer()}"
+
+
+@pytest.mark.parametrize(
+    ("description", "kept"),
+    [
+        ("", ""),
+        ("\r\n \r\n", ""),
+        # Emptied by the tracker link removal.
+        ("https://orpheus.network/torrents.php?id=1\r\n", ""),
+        ("\r\nNotes\r\n\r\n", "Notes\n\n"),
+    ],
+    ids=["empty", "blank", "only a tracker link", "blank lines around"],
+)
+def test_the_header_the_description_and_the_footer_are_one_blank_line_apart(description: str, kept: str) -> None:
+    response = _fixture("ops-torrent-cd-log.json")
+    response["torrent"]["description"] = description
+    header = _header("OPS", "RED", "uploader", f"{OpsApi().base_url}/torrents.php?torrentid=600005")
+    assert compile_data(response, OpsApi(), RedApi())["release_desc"] == f"{header}\n\n{kept}{upload_footer()}"
 
 
 def test_a_description_that_already_has_a_footer_does_not_get_a_second() -> None:

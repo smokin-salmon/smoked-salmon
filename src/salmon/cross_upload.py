@@ -479,9 +479,9 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
         raise CrossUploadRefused(f"its edition is unknown on {source.site_string}")
 
     sites = (source, target)
-    description = without_tracker_links(html.unescape(torrent.get("description") or ""), sites)
+    description = without_tracker_links(html.unescape(torrent.get("description") or ""), sites).strip()
     # The source description is the other tracker's, so it may already end with a footer.
-    footer = "" if has_upload_footer(description) else f"\n\n{upload_footer()}"
+    footer = "" if has_upload_footer(description) else upload_footer()
     # RED's album description (bbBody) is HTML-escaped, as its torrent description is. OPS's (wikiBBcode) is the text
     # as written: unescaping it would turn a link's "&region=" into "®ion=".
     album_desc = html.unescape(group["bbBody"]) if group.get("bbBody") else group.get("wikiBBcode") or ""
@@ -514,7 +514,10 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
         "tags": ",".join(group.get("tags") or []),
         "image": html.unescape(group.get("wikiImage") or ""),
         "album_desc": album_desc.replace(_BROKEN_TRACKLIST_HEADER, _TRACKLIST_HEADER),
-        "release_desc": f"{_source_header(torrent, source, target)}\n\n{description}{footer}",
+        # One blank line between the parts, and none for an empty description.
+        "release_desc": "\n\n".join(
+            part for part in (_source_header(torrent, source, target), description, footer) if part
+        ),
         **({"scene": True} if torrent.get("scene") else {}),
     }
 
