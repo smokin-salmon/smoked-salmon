@@ -5,6 +5,7 @@ reaches a real tracker or service. The OPS answers come from tests/fixtures/cros
 """
 
 import copy
+import html
 import json
 import os
 import re
@@ -16,6 +17,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
+from urllib.parse import unquote
 
 import anyio
 import asyncclick as click
@@ -420,9 +422,9 @@ def _searchstrs() -> list[str]:
     return generate_dupe_check_searchstrs([("sample3000", "main")], "SAMPLE VOL. I (RMX)", "000000000002")
 
 
-def _within_the_plans_bound(run: Run) -> bool:
+def _within_the_plans_bound(run: Run, target: str = "RED") -> bool:
     """Whether TARGET got no more than the plan said it could: its index call aside, once per run."""
-    match = re.search(r"at most (\d+) GET and (\d+) POST to RED", run.output)
+    match = re.search(rf"at most (\d+) GET and (\d+) POST to {target}", run.output)
     assert match is not None, run.output
     gets = sum(1 for sent in run.target.sent if sent.method == "GET" and sent.query.get("action") != "index")
     return gets <= int(match[1]) and len(run.target.posts()) <= int(match[2])
@@ -1317,6 +1319,153 @@ def test_with_yes_all_an_unknown_approval_goes_up_unreported_and_names_the_page_
     assert f"Not reporting it as lossy on RED: check {page}" in run.output
     assert len(run.target.posts()) == 1
     assert run.target.reports() == []
+
+
+# RED as the source, from RED's answers (tests/fixtures/cross_upload/red-*.json)
+
+
+def _red_escaped(text: str) -> str:
+    """A file name as RED's fileList gives it: & and anything outside ASCII as HTML entities."""
+    return "".join(char if ord(char) < 128 else f"&#{ord(char)};" for char in text.replace("&", "&amp;"))
+
+
+def _red_album(name: str, root: Path) -> Path:
+    """The album of a RED fixture on disk: its folder and file names, unescaped, each file a few bytes."""
+    torrent = _fixture(name)["torrent"]
+    folder = root / html.unescape(torrent["filePath"])
+    for entry in torrent["fileList"].split("|||"):
+        match = re.fullmatch(r"(.+)\{\{\{\d+\}\}\}", entry)
+        assert match is not None
+        path = folder / html.unescape(match[1])
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(path.name.encode())
+    return folder
+
+
+def _red_fixture_answer(name: str):
+    """RED's answer for a fixture's album on disk: the fixture, with the files' sizes, escaped as RED does."""
+
+    def answer(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = copy.deepcopy(_fixture(name))
+        files = sorted(entry for entry in folder.rglob("*") if entry.is_file())
+        listing = "|||".join(
+            f"{_red_escaped(entry.relative_to(folder).as_posix())}{{{{{{{entry.stat().st_size}}}}}}}" for entry in files
+        )
+        response["torrent"].update(id=torrent_id, fileList=listing)
+        return response
+
+    return answer
+
+
+def _red_to_ops(monkeypatch, dirs, name: str, prepare=None) -> Run:
+    album = _red_album(name, dirs.downloads)
+
+    def prepared(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album, answer=_red_fixture_answer(name))(source, target)
+        if prepare is not None:
+            prepare(source, target)
+
+    return _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", source="RED", target="OPS", prepare=prepared
+    )
+
+
+def _upload_post(run: Run) -> Sent:
+    (post,) = [sent for sent in run.target.posts() if sent.path == "/ajax.php"]
+    return post
+
+
+def test_a_red_cd_with_a_100_log_and_no_checksum_key_goes_up(monkeypatch, dirs) -> None:
+    assert "logChecksum" not in _fixture("red-torrent-cd-log.json")["torrent"]
+    run = _red_to_ops(monkeypatch, dirs, "red-torrent-cd-log.json")
+
+    assert run.result.exit_code == 0, run.output
+    assert "   log score 100 on RED\n" in run.output
+    assert "checksum" not in run.output
+    post = _upload_post(run)
+    assert (post.fields["media"], post.fields["releasetype"]) == (["CD"], [str(OpsApi().release_types["Live album"])])
+    # Both discs' logs go with it.
+    assert sorted(unquote(name) for name in post.fields["logfiles[]"]) == [
+        "Example Devotional Ensemble - Sample Devotions - CD 1.log",
+        "Example Devotional Ensemble - Sample Devotions - CD 2.log",
+    ]
+    assert run.source.steps() == {"GET ajax.php?action=index": 1, "GET ajax.php?action=torrent": 1}
+    assert _within_the_plans_bound(run, "OPS")
+
+
+def test_a_red_lossy_web_approval_goes_to_ops_as_one_lossy_approval_report(monkeypatch, dirs) -> None:
+    run = _red_to_ops(monkeypatch, dirs, "red-torrent-web-lossy-web-approved.json")
+
+    assert run.result.exit_code == 0, run.output
+    assert [sent.step for sent in run.target.posts()] == [
+        "POST ajax.php?action=upload",
+        "POST reportsv2.php?action=takereport",
+    ]
+    # OPS has no lossy WEB approval: its one lossy report type.
+    (report,) = run.target.reports()
+    assert report.fields["type"] == ["lossyapproval"]
+    assert report.fields["extra"][0].rstrip() == (
+        f"Approved as lossy on RED: {run.source.url}/torrents.php?torrentid={TORRENT_ID}"
+    )
+    assert _within_the_plans_bound(run, "OPS")
+
+
+def test_reds_html_entities_are_unescaped_where_the_fork_unescapes_them(monkeypatch, dirs) -> None:
+    run = _red_to_ops(monkeypatch, dirs, "red-torrent-web-lossy-web-approved.json")
+
+    assert run.result.exit_code == 0, run.output
+    # The Thai file names matched the files on disk, and the torrent description names them in Thai.
+    assert (
+        dirs.downloads / "Sample Garden - SAMPLE TUNES FROM THE COAST (2018) [WEB FLAC]" / "01. ทะเลสีคราม.flac"
+    ).is_file()
+    post = _upload_post(run)
+    assert "[b]01. ทะเลสีคราม.flac Full[/b]" in post.fields["release_desc"][0]
+    assert "&#" not in post.fields["release_desc"][0]
+    # The album description goes as RED gives it, entities and all, as the fork sends it; its broken header is fixed.
+    album_desc = _fixture("red-torrent-web-lossy-web-approved.json")["group"]["bbBody"]
+    assert post.fields["album_desc"] == [album_desc.replace("Tracklist[/b]", "Tracklist[/size][/b]", 1)]
+
+
+def test_a_red_cover_goes_to_ops_as_its_bare_url_and_is_never_fetched(monkeypatch, dirs) -> None:
+    run = _red_to_ops(monkeypatch, dirs, "red-torrent-cd-log.json")
+
+    assert run.result.exit_code == 0, run.output
+    assert _upload_post(run).fields["image"] == ["https://redacted.sh/i/x00011.jpg"]
+    assert run.images == []
+    assert "Fetching" not in run.output
+
+
+@pytest.mark.parametrize(("red", "ops"), [("Live album", "Live album"), ("DJ Mix", "DJ Mix"), ("Demo", "Demo")])
+def test_a_red_release_type_is_read_from_its_id(red: str, ops: str) -> None:
+    response = _fixture("red-torrent-cd-log.json")
+    assert "releaseTypeName" not in response["group"]
+    response["group"]["releaseType"] = RedApi().release_types[red]
+    assert compile_data(response, RedApi(), OpsApi())["releasetype"] == OpsApi().release_types[ops]
+
+
+def test_a_red_group_given_by_id_shows_its_held_cd_as_a_dupe(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def cd_2008(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = _ops_answer(folder, torrent_id)
+        response["torrent"].update(
+            media="CD", remasterYear=2008, remasterRecordLabel="Example Music", remasterCatalogueNumber="EX 00001 2"
+        )
+        response["torrent"].update(hasLog=False)
+        return response
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album, answer=cd_2008)(source, target)
+        target.groups[510001] = _fixture("red-torrentgroup.json")
+
+    # The default answer to "upload to this group?".
+    run = _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "--group-id", "510001"], input="\n", prepare=prepare
+    )
+
+    assert "DUPE RISK: this edition already has 2008 / Example Music / EX 00001 2 / CD / FLAC / Lossless" in run.output
+    assert run.result.exit_code == 1
+    assert run.target.posts() == []
 
 
 # The command line

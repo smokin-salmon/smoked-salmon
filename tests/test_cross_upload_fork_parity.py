@@ -1,8 +1,9 @@
 """The cross-upload form is the one chodeus's fork sends on the live trackers, but for the differences listed here.
 
-tests/fixtures/cross_upload/fork-compiled.json holds what the fork's _compile_data gave for each OPS fixture (OPS
-to RED). Our form must equal it field for field, once each difference listed in DIFFERENCES is applied: a field
-the fork sends that we drop, one we add, or a value we change without listing it here fails.
+tests/fixtures/cross_upload/fork-compiled.json holds what the fork's _compile_data gave for each torrent fixture: the
+OPS ones OPS to RED, the RED ones RED to OPS. Our form must equal it field for field, once each difference listed in
+DIFFERENCES is applied: a field the fork sends that we drop, one we add, or a value we change without listing it here
+fails.
 """
 
 import json
@@ -73,7 +74,8 @@ def _response(name: str) -> dict[str, Any]:
 
 
 def _ours(name: str) -> dict[str, Any]:
-    return compile_data(_response(name), OpsApi(), RedApi())
+    source, target = (OpsApi(), RedApi()) if name.startswith("ops-") else (RedApi(), OpsApi())
+    return compile_data(_response(name), source, target)
 
 
 @pytest.mark.parametrize("name", SAMPLES)
@@ -93,6 +95,6 @@ def test_each_listed_difference_shows_in_some_sample(key: str) -> None:
     assert differing
 
 
-def test_the_samples_cover_a_cd_with_a_log_and_web_editions() -> None:
-    media = sorted(_response(name)["torrent"]["media"] for name in SAMPLES)
-    assert media == ["CD", "WEB", "WEB"]
+def test_the_samples_cover_both_directions_with_a_cd_with_a_log_and_web_editions() -> None:
+    media = sorted((name[:3], _response(name)["torrent"]["media"]) for name in SAMPLES)
+    assert media == [("ops", "CD"), ("ops", "WEB"), ("ops", "WEB"), ("red", "CD"), ("red", "WEB")]
