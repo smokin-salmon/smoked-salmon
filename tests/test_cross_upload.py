@@ -1026,6 +1026,54 @@ def test_ops_bd_and_red_blu_ray_are_the_same_media(media: str, source, target, s
     assert notes == ([] if media == sent else [said])
 
 
+@pytest.mark.parametrize(
+    ("fixture", "source", "target", "edition", "sent"),
+    [
+        # A 2023 WEB remaster with no label of its own: the group's are the original release's (RED 4847651).
+        ("red-torrent-cd-log.json", RedApi, OpsApi, {"remastered": True, "remasterYear": 2023}, ("", "")),
+        (
+            "red-torrent-cd-log.json",
+            RedApi,
+            OpsApi,
+            {"remastered": False, "remasterYear": 0},
+            ("Example Music", "EX 00001 2"),
+        ),
+        # OPS has no flag: it shows its original release as an edition of the group's year with no title.
+        (
+            "ops-torrent-cd-log.json",
+            OpsApi,
+            RedApi,
+            {"remasterYear": 2006, "remasterTitle": ""},
+            ("Group Label", "GRP-1"),
+        ),
+        (
+            "ops-torrent-cd-log.json",
+            OpsApi,
+            RedApi,
+            {"remasterYear": 2006, "remasterTitle": "Store Exclusive"},
+            ("", ""),
+        ),
+        ("ops-torrent-cd-log.json", OpsApi, RedApi, {"remasterYear": 2026, "remasterTitle": ""}, ("", "")),
+    ],
+    ids=["red remaster", "red original", "ops original", "ops titled edition", "ops later edition"],
+)
+def test_only_the_original_release_takes_the_groups_label_and_catalogue_number(
+    fixture: str, source, target, edition: dict[str, Any], sent: tuple[str, str]
+) -> None:
+    response = _fixture(fixture)
+    # OPS's group answers carry no label or catalogue number: the test gives the group some.
+    response["group"].setdefault("recordLabel", "Group Label")
+    response["group"].setdefault("catalogueNumber", "GRP-1")
+    response["torrent"].update(remasterRecordLabel="", remasterCatalogueNumber="", **edition)
+
+    data = compile_data(response, source(), target())
+    release = Release(label="1", response=response, path=Path(), data=data)
+    dupe_check_edition = cross_upload_module._edition(release)
+
+    assert (data["remaster_record_label"], data["remaster_catalogue_number"]) == sent
+    assert (dupe_check_edition["label"], dupe_check_edition["catno"]) == sent
+
+
 def test_a_media_salmon_cannot_map_stops_the_release() -> None:
     response = _fixture("ops-torrent-cd-log.json")
     response["torrent"]["media"] = "Floppy"

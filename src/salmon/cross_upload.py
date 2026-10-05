@@ -486,6 +486,10 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
     # as written: unescaping it would turn a link's "&region=" into "®ion=".
     album_desc = html.unescape(group["bbBody"]) if group.get("bbBody") else group.get("wikiBBcode") or ""
     album_desc = without_tracker_links(album_desc, sites)
+    # The group's label and catalogue number are the original release's: a remaster with none of its own sends none.
+    original = _is_original_release(group, torrent)
+    edition_label = torrent.get("remasterRecordLabel") or (group.get("recordLabel") if original else "") or ""
+    edition_catno = torrent.get("remasterCatalogueNumber") or (group.get("catalogueNumber") if original else "") or ""
 
     return {
         "submit": True,
@@ -500,10 +504,8 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
         "remaster": True,
         "remaster_year": torrent.get("remasterYear") or group["year"],
         "remaster_title": html.unescape(torrent.get("remasterTitle") or ""),
-        "remaster_record_label": html.unescape(torrent.get("remasterRecordLabel") or group.get("recordLabel") or ""),
-        "remaster_catalogue_number": html.unescape(
-            torrent.get("remasterCatalogueNumber") or group.get("catalogueNumber") or ""
-        ),
+        "remaster_record_label": html.unescape(edition_label),
+        "remaster_catalogue_number": html.unescape(edition_catno),
         "format": torrent["format"],
         "bitrate": torrent["encoding"],
         "other_bitrate": None,
@@ -515,6 +517,16 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
         "release_desc": f"{_source_header(torrent, source, target)}\n\n{description}{footer}",
         **({"scene": True} if torrent.get("scene") else {}),
     }
+
+
+def _is_original_release(group: dict[str, Any], torrent: dict[str, Any]) -> bool:
+    """Whether the torrent is the group's original release: RED says so (remastered: false).
+
+    OPS has no flag: it shows its original release as an edition of the group's year with no title.
+    """
+    if torrent.get("remastered") is not None:
+        return not torrent["remastered"]
+    return str(torrent.get("remasterYear")) == str(group.get("year")) and not torrent.get("remasterTitle")
 
 
 def _source_header(torrent: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi") -> str:
