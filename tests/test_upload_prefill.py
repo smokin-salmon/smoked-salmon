@@ -433,6 +433,61 @@ def test_a_remaster_of_a_group_holding_the_original_flac_is_no_dupe_risk(monkeyp
     assert "DUPE RISK" not in capsys.readouterr().out
 
 
+def _edition(**kw: Any) -> dict[str, Any]:
+    """A held torrent of a 2020 edition, the release's label, with its own catalogue number."""
+    edition = {"remastered": True, "remasterYear": 2020, "remasterRecordLabel": "Label", "remasterCatalogueNumber": ""}
+    return _torrent(**{**edition, **kw})
+
+
+def test_a_held_torrent_with_another_catalogue_number_is_a_dupe_risk(monkeypatch, capsys) -> None:
+    """Trackers write catalogue numbers in different conventions (a label's number, a UPC): one that differs
+    does not clear the dupe."""
+    defaults = _prompts(monkeypatch, "200", "")
+    results = [_result(200, torrents=[_edition(remasterCatalogueNumber="0123456789012")])]
+
+    with pytest.raises(click.Abort):
+        anyio.run(dupe_checker.resolve_existing_group, _site(), ["s"], results, None, True, _rls_data(catno="CAT-100"))
+    assert defaults[1] == "a"
+    assert (
+        "DUPE RISK: this edition already has 2020 / Label / 0123456789012 / WEB / FLAC / Lossless "
+        "(catalogue number differs: ours CAT-100); the site removes exact duplicates"
+    ) in capsys.readouterr().out
+
+
+def test_a_held_torrent_with_our_catalogue_number_is_a_dupe_risk(monkeypatch, capsys) -> None:
+    """Regression guard: this already held before catalogue numbers stopped telling editions apart."""
+    defaults = _prompts(monkeypatch, "200", "")
+    results = [_result(200, torrents=[_edition(remasterCatalogueNumber="cat 100")])]
+
+    with pytest.raises(click.Abort):
+        anyio.run(dupe_checker.resolve_existing_group, _site(), ["s"], results, None, True, _rls_data(catno="CAT-100"))
+    assert defaults[1] == "a"
+    out = capsys.readouterr().out
+    assert "DUPE RISK: this edition already has 2020 / Label / cat 100 / WEB / FLAC / Lossless;" in out
+    assert "catalogue number differs" not in out
+
+
+@pytest.mark.parametrize(
+    ("torrent", "release"),
+    [
+        (_edition(remasterYear=2015, remasterCatalogueNumber="0123456789012"), {}),
+        (_edition(remasterTitle="Deluxe", remasterCatalogueNumber="0123456789012"), {"edition_title": "Remastered"}),
+    ],
+    ids=["year", "edition title"],
+)
+def test_another_edition_with_another_catalogue_number_is_no_dupe_risk(monkeypatch, capsys, torrent, release) -> None:
+    """Regression guard: the year and the edition title still tell editions apart."""
+    defaults = _prompts(monkeypatch, "200", "")
+    results = [_result(200, torrents=[torrent])]
+
+    group_id = anyio.run(
+        dupe_checker.resolve_existing_group, _site(), ["s"], results, None, True, _rls_data(catno="CAT-100", **release)
+    )
+    assert group_id == 200
+    assert defaults[1] == "Y"
+    assert "DUPE RISK" not in capsys.readouterr().out
+
+
 def test_a_pasted_group_is_checked_against_the_group_fetched_to_print_it(monkeypatch, capsys) -> None:
     fetched: list[int] = []
 

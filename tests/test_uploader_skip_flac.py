@@ -136,11 +136,10 @@ def test_no_matching_flac_stops(monkeypatch) -> None:
 @pytest.mark.parametrize(
     ("other", "release"),
     [
-        ({"catno": "OTHER-9"}, {}),
         ({"year": 2011}, {}),
         ({"title": "Deluxe"}, {"edition_title": "Remastered"}),
     ],
-    ids=["catalogue number", "year", "edition title"],
+    ids=["year", "edition title"],
 )
 def test_the_flac_of_this_edition_is_picked_over_one_of_another(
     monkeypatch, other: dict[str, Any], release: dict[str, Any]
@@ -154,20 +153,25 @@ def test_the_flac_of_this_edition_is_picked_over_one_of_another(
     assert asked == []
 
 
-def test_catalogue_numbers_match_loosely() -> None:
-    assert _choose(_group(_torrent(11, catno="OTHER-9"), _torrent(12, catno="cat 1")), catno="CAT-1") == 12
+def test_flacs_differing_only_by_catalogue_number_are_both_offered(monkeypatch) -> None:
+    """Catalogue numbers come in different conventions (a label's number, a UPC): they never tell editions apart."""
+    asked = _answers(monkeypatch, "2")
+    group = _group(_torrent(11, catno="0123456789012"), _torrent(12))
+
+    assert _choose(group) == 12
+    assert len(asked) == 1
 
 
 def test_a_flac_of_another_edition_only_stops(monkeypatch) -> None:
     asked = _answers(monkeypatch)
 
-    assert _choose(_group(_torrent(11, catno="OTHER-9"))) is None
+    assert _choose(_group(_torrent(11, year=2011))) is None
     assert asked == []
 
 
 def test_an_edition_field_missing_on_either_side_still_matches() -> None:
-    assert _choose(_group(_torrent(11, catno=""))) == 11
-    assert _choose(_group(_torrent(11)), catno=None) == 11
+    assert _choose(_group(_torrent(11)), edition_title="Deluxe") == 11
+    assert _choose(_group(_torrent(11, title="Deluxe"))) == 11
 
 
 def test_a_remaster_with_no_year_matches_any_year() -> None:
@@ -443,7 +447,7 @@ def _flow(
 
 def test_transcodes_are_uploaded_as_transcodes_of_the_chosen_flac(monkeypatch) -> None:
     _answers(monkeypatch, "*")
-    group = _group(_torrent(10, format_="MP3", encoding="320", catno="OTHER-9"), _torrent(11))
+    group = _group(_torrent(10, format_="MP3", encoding="320", year=2011), _torrent(11))
 
     calls, transcoded = _flow(monkeypatch, group)
 
@@ -454,15 +458,15 @@ def test_transcodes_are_uploaded_as_transcodes_of_the_chosen_flac(monkeypatch) -
 
 def test_the_source_flac_is_picked_on_the_reviewed_metadata(monkeypatch) -> None:
     _answers(monkeypatch, "*")
-    group = _group(_torrent(11), _torrent(12, catno="CAT2"))
+    group = _group(_torrent(11), _torrent(12, year=2021))
 
-    _calls, transcoded = _flow(monkeypatch, group, reviewed={"catno": "CAT2"})
+    _calls, transcoded = _flow(monkeypatch, group, reviewed={"year": 2021})
 
     assert transcoded == [(["MP3 320", "MP3 V0"], "https://tracker.test/torrents.php?torrentid=12")]
 
 
 def test_no_source_flac_in_the_edition_stops_before_any_upload(monkeypatch) -> None:
-    calls, transcoded = _flow(monkeypatch, _group(_torrent(11, catno="OTHER-9")))
+    calls, transcoded = _flow(monkeypatch, _group(_torrent(11, year=2011)))
 
     assert transcoded == []
     assert "upload_and_report" not in calls
@@ -527,11 +531,18 @@ def test_a_held_format_can_still_be_picked_by_number(monkeypatch) -> None:
 
 def test_a_held_format_of_another_edition_is_offered(monkeypatch) -> None:
     monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", True)
-    group = _group(_torrent(11), _torrent(12, format_="MP3", encoding="320", catno="OTHER-9"))
+    group = _group(_torrent(11), _torrent(12, format_="MP3", encoding="320", year=2011))
 
     _calls, transcoded = _flow(monkeypatch, group)
 
     assert transcoded == [(["MP3 320", "MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
+
+
+def test_a_held_format_with_another_catalogue_number_is_held() -> None:
+    group = _group(_torrent(11), _torrent(12, format_="MP3", encoding="320", catno="0123456789012"))
+    formats = {"MP3 320": ("MP3", "320"), "MP3 V0": ("MP3", "V0 (VBR)")}
+
+    assert dupe_checker.held_formats(group, _release(), group["torrents"][0], formats) == {"MP3 320"}
 
 
 def test_the_16bit_flac_of_the_edition_is_held_for_a_24bit_source(monkeypatch) -> None:

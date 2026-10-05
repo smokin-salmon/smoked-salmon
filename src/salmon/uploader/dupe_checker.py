@@ -755,8 +755,9 @@ def _edition_catno(torrent: dict, group: dict) -> str:
 def matching_torrents(group: dict, release: dict) -> list[dict]:
     """Find the group's torrents in the release's edition with its media, format and encoding.
 
-    The edition is the year, catalogue number and edition title. Any of them missing on either side
-    still matches.
+    The edition is the year and edition title. Either missing on either side still matches. The catalogue
+    number is not compared: trackers and uploaders write it in different conventions (the label's number,
+    a UPC, a store id), so the same release often carries a different one on each side.
 
     Args:
         group: The group, as the tracker's torrentgroup API returns it.
@@ -769,7 +770,6 @@ def matching_torrents(group: dict, release: dict) -> list[dict]:
     if not all(wanted):
         return []
     year = str(release.get("year") or "")
-    catno = comparable(generate_catno(release))
     edition_title = comparable(release.get("edition_title"))
     group_year = (group.get("group") or {}).get("year")
     matches = []
@@ -780,14 +780,20 @@ def matching_torrents(group: dict, release: dict) -> list[dict]:
         edition_year = str((torrent.get("remasterYear") if _is_remaster(torrent) else group_year) or "")
         if year and edition_year and edition_year != year:
             continue
-        held_catno = comparable(_edition_catno(torrent, group))
-        if catno and held_catno and held_catno != catno:
-            continue
         held_title = comparable(torrent.get("remasterTitle"))
         if edition_title and held_title and held_title != edition_title:
             continue
         matches.append(torrent)
     return matches
+
+
+def _catno_note(torrent: dict, group: dict, release: dict) -> str:
+    """Say when a matching torrent's catalogue number differs from ours, naming ours, or give ""."""
+    ours = generate_catno(release)
+    held = comparable(_edition_catno(torrent, group))
+    if comparable(ours) and held and held != comparable(ours):
+        return f" (catalogue number differs: ours {ours})"
+    return ""
 
 
 async def choose_source_flac(group: dict, release: dict) -> dict | None:
@@ -807,8 +813,7 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
     wanted = f"{release.get('source')} FLAC {release.get('encoding')}"
     if not flacs:
         click.secho(
-            f"\nGroup {group_id} has no {wanted} in this release's edition (year, catalogue number, edition title) "
-            "to transcode from.",
+            f"\nGroup {group_id} has no {wanted} in this release's edition (year, edition title) to transcode from.",
             fg="red",
             bold=True,
         )
@@ -903,8 +908,9 @@ async def _confirm_group_id(
     rset = await print_torrents(gazelle_site, group_id, rset)
     held = _held_in_group(rset, release)
     for torrent in held:
+        note = _catno_note(torrent, rset, release or {})
         click.secho(
-            f"\nDUPE RISK: this edition already has {describe_torrent(torrent, rset.get('group') or {})}; "
+            f"\nDUPE RISK: this edition already has {describe_torrent(torrent, rset.get('group') or {})}{note}; "
             "the site removes exact duplicates unless this upload trumps it.",
             fg="red",
             bold=True,
