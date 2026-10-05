@@ -33,6 +33,7 @@ from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
 from salmon.errors import DryRunRefused, ImageUploadFailed, RequestError, RequestFailedError, UploadError
 from salmon.images import HOSTS, image_host_for_tracker
 from salmon.images import red as red_images
+from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.tags import gather_tags
 from salmon.uploader import (
@@ -50,6 +51,7 @@ from salmon.uploader.dupe_checker import (
     held_formats,
 )
 from salmon.uploader.seedbox import UploadManager
+from salmon.uploader.spectrals import generate_lossy_approval_comment, report_lossy_master
 from salmon.uploader.staging import run_directory
 from salmon.uploader.upload import (
     compile_files,
@@ -69,10 +71,6 @@ MAX_RELEASES = 5
 # The most images one release may need fetched from SOURCE and uploaded again.
 MAX_REHOSTED_IMAGES = 10
 
-# Behaviours that wait for redusys to check the trackers' rules. Until then, each stays on its safe side.
-# Whether a transcode or downconversion of the cross-uploaded torrent may go up on TARGET too.
-CONVERSIONS_CONFIRMED = False
-
 # The Gazelle musicInfo key of each artist role, in the order the form gets them.
 ARTIST_FIELDS = {
     "artists": "main",
@@ -90,6 +88,9 @@ TRACKER_HOSTS = {"RED": ("redacted.sh", "flacsfor.me"), "OPS": ("orpheus.network
 # The HOST_RULES row of a tracker's own image host, which says where its images show. A tracker with none shows
 # only its own images.
 TRACKER_IMAGE_HOSTS = {"RED": "red"}
+# The media a tracker names otherwise than SOURCES does: OPS's BD is RED's Blu-Ray.
+TRACKER_MEDIA = {"OPS": {"Blu-Ray": "BD"}, "RED": {"BD": "Blu-Ray"}}
+UPSTREAM_URL = "https://github.com/smokin-salmon/smoked-salmon"
 
 # The one known broken shape an album description salmon wrote used to have (#597).
 _BROKEN_TRACKLIST_HEADER = "[b][size=4]Tracklist[/b]"
@@ -97,6 +98,16 @@ _TRACKLIST_HEADER = "[b][size=4]Tracklist[/size][/b]"
 
 _FILE_ENTRY = re.compile(r"(.+)\{\{\{(\d+)\}\}\}$", re.DOTALL)
 _IMAGE_TAG = re.compile(r"\[img\]\s*(https?://[^\[\]\s]+?)\s*\[/img\]|\[img=(https?://[^\]\s]+)\]", re.IGNORECASE)
+# What a description can link with, in the order it is read: an image (never a link), a link with its text, a
+# link that is its own text, a link left open, a bare URL.
+_LINK_TOKEN = re.compile(
+    r"(?P<image>\[img\][^\[\]]*\[/img\]|\[img=[^\]]*\])"
+    r"|\[url=(?P<target>[^\]]*)\](?P<text>(?:(?!\[/?url[=\]]).)*?)\[/url\]"
+    r"|\[url\](?P<own_target>[^\[\]]*)\[/url\]"
+    r"|\[url=(?P<open_target>[^\]]*)\]"
+    r"|(?P<url>https?://[^\s\[\]<>\"']+)",
+    re.IGNORECASE | re.DOTALL,
+)
 _LOSSY_CLASSES = ("tl_lossymaster_approved", "tl_lossyweb_approved")
 _LOSSY_TITLES = ("lossy master approved", "lossy web approved")
 _IMAGE_MAGIC = {b"\xff\xd8\xff": ".jpg", b"\x89PNG\r\n\x1a\n": ".png", b"GIF87a": ".gif", b"GIF89a": ".gif"}
@@ -118,6 +129,7 @@ class Release:
     tasks: list[dict[str, Any]] = field(default_factory=list)  # The conversions asked for, as `up` makes them
     track_data: dict[str, Any] = field(default_factory=dict)  # Read from the files, when needed
     notes: list[str] = field(default_factory=list)  # What the plan says about it
+    lossy_report: str | None = None  # The lossy report TARGET gets after the upload, if any
 
     @property
     def torrent(self) -> dict[str, Any]:
@@ -186,9 +198,6 @@ async def cross_upload(
         raise click.UsageError(f"At most {MAX_RELEASES} releases per run, not {len(inputs)}.")
     if (path or group_id) and len(inputs) > 1:
         raise click.UsageError("--path and --group-id go with a single INPUT.")
-    wants_conversions = bool(transcodes or downconvert or all_formats)
-    if wants_conversions and not CONVERSIONS_CONFIRMED:
-        raise click.UsageError("A cross-upload does not upload conversions yet: upload them with `salmon up`.")
     if yyy:
         cfg.upload.yes_all = True
 
@@ -353,7 +362,7 @@ async def _prepare(
         raise CrossUploadRefused(f"torrent {torrent_id} is already in this run")
     seen.add(torrent_id)
     release = Release(label=str(item), response=response, path=Path(), data={})
-    _check_torrent(response, source, target)
+    release.notes = _check_torrent(response, source, target)
     release.data = compile_data(response, source, target)
     release.path = _release_path(response, path)
     _verify_release_files(response, release.path, target)
@@ -369,7 +378,7 @@ async def _prepare(
         release.data["album_desc"] = generate_description(_track_data(release), {"comment": None, "urls": []})
         release.notes.append(f"{source.site_string} has no album description: sending the tracklist from the tags")
     release.rehost = _images_to_rehost(release.data, source, target)
-    await _check_lossy_approval(release, source)
+    await _check_lossy_approval(release, source, target)
     return release
 
 
@@ -387,35 +396,59 @@ async def _source_response(item: int | Path, source: "BaseGazelleApi") -> dict[s
     return await source.api_call("torrent", params={"hash": torrent.infohash.upper()})
 
 
-def _check_torrent(response: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi") -> None:
-    """Stop on what TARGET has no value for, and on what the trackers' rules are not checked for yet.
+def _check_torrent(response: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi") -> list[str]:
+    """Stop on what TARGET has no value for, and say what the plan should show about the rest.
+
+    RED and OPS accept a CD with no log or a log under 100, and a torrent the other one flags as trumpable or
+    reported: those go up as they are, and the plan says so.
+
+    Returns:
+        The plan's notes about the torrent.
 
     Raises:
-        CrossUploadRefused: Naming the value or the flag.
+        CrossUploadRefused: Naming the value.
     """
     group, torrent = response["group"], response["torrent"]
     media, format_, encoding = torrent.get("media"), torrent.get("format"), torrent.get("encoding")
-    if media not in SOURCES.values():
+    target_media = _target_media(media, target)
+    if target_media not in SOURCES.values() and target_media not in TRACKER_MEDIA[target.site_code].values():
         raise CrossUploadRefused(f"salmon does not know {target.site_string} has the media {media!r}")
     if format_ not in FORMATS.values() or encoding not in ENCODINGS:
         raise CrossUploadRefused(f"salmon does not cross-upload {format_} {encoding}")
-    if group.get("vanityHouse"):
-        raise CrossUploadRefused(f"it is a Vanity House release, which {target.site_string} has no flag for")
-    for flag in ("trumpable", "reported"):
-        if torrent.get(flag):
-            raise CrossUploadRefused(f"it is {flag} on {source.site_string}")
+
+    on_source = f"on {source.site_string}"
+    notes = []
+    if target_media != media:
+        notes.append(f"media {media} {on_source} is {target_media} on {target.site_string}")
     if media == "CD":
         if not torrent.get("hasLog"):
-            raise CrossUploadRefused("it is a CD with no rip log")
-        if torrent.get("logScore") != 100 or not torrent.get("logChecksum"):
-            raise CrossUploadRefused(
-                f"its log scores {torrent.get('logScore')}"
-                f"{'' if torrent.get('logChecksum') else ', with no valid checksum'} on {source.site_string}"
-            )
+            notes.append(f"a CD with no rip log {on_source}")
+        else:
+            # RED's answer has no checksum key: only OPS's says whether the checksum is good.
+            checksum = ""
+            if "logChecksum" in torrent:
+                checksum = ", checksum good" if torrent["logChecksum"] else ", checksum missing or bad"
+            notes.append(f"log score {torrent.get('logScore')} {on_source}{checksum}")
+    if torrent.get("trumpable"):
+        reasons = ", ".join(str(reason) for reason in torrent.get("trumpable_reasons") or [])
+        notes.append(f"trumpable {on_source}{f': {reasons}' if reasons else ''}")
+    if torrent.get("reported"):
+        notes.append(f"reported {on_source}")
+    if group.get("vanityHouse"):
+        notes.append(f"Vanity House {on_source}: sent to {target.site_string} without the flag")
+    return notes
+
+
+def _target_media(media: Any, target: "BaseGazelleApi") -> Any:
+    """The media as TARGET names it."""
+    return TRACKER_MEDIA[target.site_code].get(media, media)
 
 
 def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi") -> dict[str, Any]:
     """Give TARGET's upload form for SOURCE's torrent: the fork's form, field for field, but for what it stops on.
+
+    The torrent description is the fork's: a header naming SOURCE, the uploader and the source torrent, then
+    SOURCE's description and the footer. Links to either tracker's site are taken out of the copied descriptions.
 
     Raises:
         CrossUploadRefused: If a value has no counterpart on TARGET.
@@ -435,12 +468,11 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
     if not torrent.get("remasterYear") and torrent.get("remastered") is not False:
         raise CrossUploadRefused(f"its edition is unknown on {source.site_string}")
 
-    description = html.unescape(torrent.get("description") or "")
-    if has_upload_footer(description):
-        release_desc = description
-    else:
-        release_desc = f"{description}\n\n{upload_footer()}" if description else upload_footer()
-    album_desc = group.get("bbBody") or group.get("wikiBBcode") or ""
+    sites = (source, target)
+    description = without_tracker_links(html.unescape(torrent.get("description") or ""), sites)
+    # The source description is the other tracker's, so it may already end with a footer.
+    footer = "" if has_upload_footer(description) else f"\n\n{upload_footer()}"
+    album_desc = without_tracker_links(group.get("bbBody") or group.get("wikiBBcode") or "", sites)
 
     return {
         "submit": True,
@@ -463,13 +495,51 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
         "bitrate": torrent["encoding"],
         "other_bitrate": None,
         "vbr": "VBR" in torrent["encoding"],
-        "media": torrent["media"],
+        "media": _target_media(torrent["media"], target),
         "tags": ",".join(group.get("tags") or []),
         "image": html.unescape(group.get("wikiImage") or ""),
         "album_desc": album_desc.replace(_BROKEN_TRACKLIST_HEADER, _TRACKLIST_HEADER),
-        "release_desc": release_desc,
+        "release_desc": f"{_source_header(torrent, source, target)}\n\n{description}{footer}",
         **({"scene": True} if torrent.get("scene") else {}),
     }
+
+
+def _source_header(torrent: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi") -> str:
+    """The fork's header: SOURCE to TARGET, who uploaded it there (linked to their profile), and its torrent."""
+    name = html.unescape(torrent.get("username") or "the original uploader")
+    uploader = f"[url={source.base_url}/user.php?id={torrent['userId']}]{name}[/url]" if torrent.get("userId") else name
+    source_url = f"{source.base_url}/torrents.php?torrentid={torrent['id']}"
+    return (
+        f"[align=center][size=3][b]{source.site_code} → {target.site_code}[/b][/size]\n"
+        f"[size=1]Original upload by {uploader} · [url={source_url}]View source torrent[/url]\n"
+        f"Cross-uploaded with [url={UPSTREAM_URL}]smoked-salmon[/url] v{get_version()}[/size][/align]"
+    )
+
+
+def without_tracker_links(text: str, sites: tuple["BaseGazelleApi", ...]) -> str:
+    """The description without its links to either tracker's site, which name SOURCE's pages and ids.
+
+    A link keeps its text; a bare URL, or a link that is its own text, goes. A link with no scheme is one to the
+    tracker's own pages (Gazelle's relative links): on TARGET it would point at TARGET's pages with SOURCE's ids,
+    so it goes too. Images are not links: they are left to the image rules.
+    """
+
+    def to_tracker(url: str) -> bool:
+        url = url.strip().strip("\"'")
+        return not urlparse(url).scheme or _tracker_of(url, sites) is not None
+
+    def replace(match: re.Match[str]) -> str:
+        if match["image"] is not None:
+            return match[0]
+        if match["target"] is not None:
+            return without_tracker_links(match["text"], sites) if to_tracker(match["target"]) else match[0]
+        if match["own_target"] is not None:
+            return "" if to_tracker(match["own_target"]) else match[0]
+        if match["open_target"] is not None:
+            return "" if to_tracker(match["open_target"]) else match[0]
+        return "" if _tracker_of(match["url"], sites) is not None else match[0]
+
+    return _LINK_TOKEN.sub(replace, text)
 
 
 def _artists(group: dict[str, Any], target: "BaseGazelleApi") -> list[tuple[str, str]]:
@@ -635,7 +705,7 @@ def _images(data: dict[str, Any]) -> list[tuple[str, str]]:
 def _images_to_rehost(
     data: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi"
 ) -> list[tuple[str, str]]:
-    """Decide what happens to each tracker image, and stop on any other mention of SOURCE.
+    """Decide what happens to each tracker image.
 
     An image on a host that is no tracker's stays as it is. One on a tracker's host that TARGET shows goes as
     its bare URL (rewritten in data here). One on SOURCE's own site that TARGET cannot show is rehosted.
@@ -644,7 +714,7 @@ def _images_to_rehost(
         The (field, URL) of each image to rehost, in order.
 
     Raises:
-        CrossUploadRefused: For an image no client can fetch, too many to rehost, or a link to SOURCE.
+        CrossUploadRefused: For an image no client can fetch, or too many to rehost.
     """
     rehost: list[tuple[str, str]] = []
     for field_name, url in _images(data):
@@ -661,14 +731,6 @@ def _images_to_rehost(
         rehost.append((field_name, url))
     if len({url for _, url in rehost}) > MAX_REHOSTED_IMAGES:
         raise CrossUploadRefused(f"more than {MAX_REHOSTED_IMAGES} images would need rehosting")
-
-    # What is left of SOURCE once its images are set aside: a link to it, or its name as a host.
-    for field_name in ("album_desc", "release_desc"):
-        text = _IMAGE_TAG.sub("", data.get(field_name) or "").lower()
-        for host in (*TRACKER_HOSTS[source.site_code], urlparse(source.base_url).netloc.lower()):
-            if host in text:
-                where = "album" if field_name == "album_desc" else "torrent"
-                raise CrossUploadRefused(f"its {where} description links to {host}")
     return rehost
 
 
@@ -677,31 +739,39 @@ def _same_origin(url: str, base_url: str) -> bool:
     return (left.scheme, left.hostname, left.port) == (right.scheme, right.hostname, right.port)
 
 
-async def _check_lossy_approval(release: Release, source: "BaseGazelleApi") -> None:
-    """Stop on a torrent that SOURCE approved as lossy master or lossy WEB, or that cannot be told apart from one.
+async def _check_lossy_approval(release: Release, source: "BaseGazelleApi", target: "BaseGazelleApi") -> None:
+    """Decide whether TARGET gets a lossy report after the upload: SOURCE's lossy approval does not carry over.
 
-    TARGET would need a lossy report of its own, which a cross-upload does not send yet.
-
-    Raises:
-        CrossUploadRefused: If it is approved, or unknown and the user (or --yes-all) stops.
+    Approved on SOURCE (lossy master or lossy WEB): the report goes, with master's comment question. Unknown: the
+    user is asked, and no report goes by default.
     """
+    page = f"{source.base_url}/torrents.php?torrentid={release.torrent['id']}"
     approved = await _lossy_approval(release, source)
-    if approved is False:
-        return
-    if approved:
-        raise CrossUploadRefused(
-            f"{source.site_string} approved it as lossy, and a cross-upload does not send the lossy report "
-            "the other tracker would need"
+    if approved is None:
+        click.secho(
+            f"Could not tell whether {source.site_string} approved torrent {release.torrent['id']} as lossy master or "
+            f"lossy WEB.",
+            fg="yellow",
         )
-    click.secho(
-        f"Could not tell whether {source.site_string} approved torrent {release.torrent['id']} as lossy master or "
-        "lossy WEB.",
-        fg="yellow",
+        if cfg.upload.yes_all:
+            click.secho(
+                f"Not reporting it as lossy on {target.site_string}: check {page}, and if it is approved, report the "
+                f"new torrent on {target.site_string} by hand.",
+                fg="yellow",
+            )
+            release.notes.append(f"lossy approval unknown on {source.site_string}: no lossy report, check {page}")
+            return
+        approved = click.confirm(
+            click.style(f"Report it as lossy on {target.site_string} after the upload?", fg="magenta"), default=False
+        )
+    if not approved:
+        return
+    comment = await generate_lossy_approval_comment(page, list(_file_list(release.torrent)))
+    note = f"Approved as lossy on {source.site_string}: {page}"
+    release.lossy_report = f"{comment}\n\n{note}" if comment else note
+    release.notes.append(
+        f"approved as lossy on {source.site_string}: a lossy report goes to {target.site_string} after the upload"
     )
-    if cfg.upload.yes_all or not click.confirm(
-        click.style("Go on as not approved? (check its page on the site)", fg="magenta"), default=False
-    ):
-        raise CrossUploadRefused(f"it may be approved as lossy on {source.site_string}")
 
 
 async def _lossy_approval(release: Release, source: "BaseGazelleApi") -> bool | None:
@@ -759,7 +829,11 @@ def most_requests(release: Release, target: "BaseGazelleApi", group_id: int | No
     if target.site_code == "RED":
         gets += uploads  # RED's upload page, for an upload into an existing group through it
     gets += 2  # Looking up an upload whose answer was lost (then the run stops)
-    return gets, uploads, len({url for _, url in release.rehost})
+    posts = uploads
+    if release.lossy_report is not None:
+        posts += 1  # The lossy report, never sent again
+        gets += 2  # The pages it redirects to
+    return gets, posts, len({url for _, url in release.rehost})
 
 
 def _searchstrs(data: dict[str, Any]) -> list[str]:
@@ -780,7 +854,7 @@ def _print_plan(
         data, torrent = release.data, release.torrent
         artists = ", ".join(data["artists[]"][:3]) + (" ..." if len(data["artists[]"]) > 3 else "")
         formats = [f"{data['format']} {data['bitrate']}", *(task["name"] for task in release.tasks)]
-        click.echo(f"{number}. {artists} - {data['title']} ({data['remaster_year']}), {torrent['media']}")
+        click.echo(f"{number}. {artists} - {data['title']} ({data['remaster_year']}), {data['media']}")
         click.echo(f"   from {source.base_url}/torrents.php?torrentid={torrent['id']}")
         click.echo(f"   files: {release.path}")
         click.echo(f"   uploads: {', '.join(formats)}")
@@ -841,6 +915,9 @@ async def _upload(
     if not dryrun.active():
         click.secho(f"Uploading {release.path.name} to {target.site_string}...", fg="yellow")
     torrent_id, group_id = await target.upload(dict(data), files)
+    if release.lossy_report is not None:
+        # Sent once; a report TARGET does not take is printed for reporting by hand, and the upload stands.
+        await report_lossy_master(target, torrent_id, None, None, data["media"], release.lossy_report)
     url = finish_upload(
         target, str(release.path), torrent_id, torrent_path, torrent, data["format"], seedbox, copy_folder=False
     )

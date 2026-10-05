@@ -6,14 +6,14 @@ the fork sends that we drop, one we add, or a value we change without listing it
 """
 
 import json
-import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from salmon.cross_upload import compile_data
+from salmon.cross_upload import compile_data, without_tracker_links
+from salmon.release_notification import get_version
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
 from salmon.uploader.upload import upload_footer
@@ -22,36 +22,48 @@ FIXTURES = Path(__file__).parent / "fixtures" / "cross_upload"
 FORK = json.loads((FIXTURES / "fork-compiled.json").read_text(encoding="utf-8"))
 SAMPLES = sorted(FORK["compiled"])
 
-# The fork's header, before the source description, and its footer, after it.
-FORK_HEADER = re.compile(r"\A\[align=center\].*?\[/align\]\n\n", re.DOTALL)
+# The fork's credit line in its header, and its footer, after the source description.
+FORK_CREDIT = (
+    "Cross-uploaded with [url=https://github.com/chodeus/smoked-salmon]smoked-salmon[/url] "
+    f"v{FORK['fork_version']} (chodeus fork)"
+)
 FORK_FOOTER = (
     f"\n\n[hr]Uploaded with [url=https://github.com/chodeus/smoked-salmon][b]smoked-salmon[/b] "
     f"v{FORK['fork_version']} (chodeus fork)[/url] of [url=https://github.com/smokin-salmon/smoked-salmon]"
     "smokin-salmon[/url]"
 )
+SITES = (OpsApi(), RedApi())
 
 
-def _without_header_and_with_our_footer(value: str) -> str:
-    description = FORK_HEADER.sub("", value, count=1).removesuffix(FORK_FOOTER)
-    return f"{description}\n\n{upload_footer()}" if description else upload_footer()
+def _upstream_credit_no_tracker_links_and_our_footer(value: str) -> str:
+    header, _, description = value.partition("[/align]\n\n")
+    credit = (
+        f"Cross-uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]smoked-salmon[/url] v{get_version()}"
+    )
+    footer = ""
+    if description.endswith(FORK_FOOTER):
+        description, footer = description.removesuffix(FORK_FOOTER), f"\n\n{upload_footer()}"
+    return f"{header.replace(FORK_CREDIT, credit)}[/align]\n\n{without_tracker_links(description, SITES)}{footer}"
 
 
-def _with_size_closed(value: str) -> str:
+def _no_tracker_links_and_size_closed(value: str) -> str:
+    value = without_tracker_links(value, SITES)
     return value.replace("[b][size=4]Tracklist[/b]", "[b][size=4]Tracklist[/size][/b]")
 
 
 # field: (why ours differs from the fork's, what turns the fork's value into ours)
 DIFFERENCES: dict[str, tuple[str, Callable[[Any], Any]]] = {
     "release_desc": (
-        "No header naming the source tracker, linking to the source torrent or naming its uploader: it is not "
-        "confirmed yet that a description may (design claim R9, kept on its safe side). Upstream's footer instead "
-        "of the fork's, and no blank lines before it when the source description is empty.",
-        _without_header_and_with_our_footer,
+        'The fork\'s header, but its credit line links to upstream, with no "(chodeus fork)". Links to either '
+        "tracker's site are taken out of the source description, their text kept: on the target they would name "
+        "the source tracker's pages. Upstream's footer instead of the fork's.",
+        _upstream_credit_no_tracker_links_and_our_footer,
     ),
     "album_desc": (
-        "The one broken shape the old description generator left, [b][size=4]Tracklist[/b] with no [/size], "
-        "is repaired (design section 10, #597). Nothing else in it is rewritten.",
-        _with_size_closed,
+        "Links to either tracker's site are taken out, their text kept, as in release_desc. The one broken shape "
+        "the old description generator left, [b][size=4]Tracklist[/b] with no [/size], is repaired (design "
+        "section 10, #597). Nothing else in it is rewritten.",
+        _no_tracker_links_and_size_closed,
     ),
 }
 

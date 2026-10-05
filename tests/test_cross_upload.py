@@ -42,8 +42,10 @@ from salmon.cross_upload import (
     compile_data,
     is_torrent_reference,
     lossy_label,
+    without_tracker_links,
 )
 from salmon.images.base import BaseImageUploader
+from salmon.release_notification import get_version
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
@@ -191,8 +193,12 @@ class FakeTracker:
                 return _success(group) if group else _failure("bad id parameter")
             if action == "upload" and request.method == "POST":
                 return self._upload(request, fields)
+        if request.path == "/reportsv2.php" and request.method == "POST":
+            raise web.HTTPFound(f"/torrents.php?torrentid={fields['torrentid'][0]}")
         if request.path == "/torrents.php" and "id" in request.query:
             return web.Response(text=self.group_page, content_type="text/html")
+        if request.path == "/torrents.php":
+            return web.Response(text="<html></html>", content_type="text/html")
         if request.path == "/log.php":
             return web.Response(text="<html><body></body></html>", content_type="text/html")
         if request.path in self.images:
@@ -238,6 +244,9 @@ class FakeTracker:
 
     def posts(self) -> list[Sent]:
         return [sent for sent in self.sent if sent.method == "POST"]
+
+    def reports(self) -> list[Sent]:
+        return [sent for sent in self.posts() if sent.path == "/reportsv2.php"]
 
 
 def _client(code: str, tracker: FakeTracker, torrents: Path) -> BaseGazelleApi:
@@ -457,7 +466,6 @@ def test_the_site_log_is_read_when_the_search_is_empty_and_a_cookie_is_set(monke
 
 
 def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> None:
-    monkeypatch.setattr(cross_upload_module, "CONVERSIONS_CONFIRMED", True)
     album = _album(dirs.downloads / FOLDER)
 
     def prepare(source: FakeTracker, target: FakeTracker) -> None:
@@ -497,7 +505,6 @@ def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> 
 
 
 def test_a_new_group_with_transcodes_needs_no_group_fetch(monkeypatch, dirs) -> None:
-    monkeypatch.setattr(cross_upload_module, "CONVERSIONS_CONFIRMED", True)
     album = _album(dirs.downloads / FOLDER)
     run = _cross_upload(
         monkeypatch,
@@ -548,7 +555,6 @@ def test_a_sixth_release_is_refused_before_any_request(monkeypatch, dirs) -> Non
 
 
 def test_a_dry_run_reads_both_trackers_and_sends_nothing(monkeypatch, dirs) -> None:
-    monkeypatch.setattr(cross_upload_module, "CONVERSIONS_CONFIRMED", True)
     album = _album(dirs.downloads / FOLDER)
     before = _snapshot(album)
     run = _cross_upload(
@@ -646,7 +652,6 @@ def test_a_path_longer_than_the_targets_limit_stops_the_release(monkeypatch, dir
 
 
 def test_a_library_album_is_read_where_it_is_and_never_written(monkeypatch, dirs) -> None:
-    monkeypatch.setattr(cross_upload_module, "CONVERSIONS_CONFIRMED", True)
     album = _album(dirs.library / "sample3000" / FOLDER)
     before = _snapshot(album)
     run = _cross_upload(
@@ -750,7 +755,6 @@ def test_an_upload_whose_answer_is_lost_is_looked_up_and_never_sent_again(monkey
 
 
 def test_a_failed_second_format_stops_the_run_and_says_what_is_up(monkeypatch, dirs) -> None:
-    monkeypatch.setattr(cross_upload_module, "CONVERSIONS_CONFIRMED", True)
     album = _album(dirs.downloads / FOLDER)
 
     def prepare(source: FakeTracker, target: FakeTracker) -> None:
@@ -845,7 +849,7 @@ def test_an_image_only_the_source_shows_is_fetched_through_its_client_and_rehost
     (post,) = run.target.posts()
     assert post.fields["image"] == ["https://redhost.images.test/1.png"]
     assert post.fields["album_desc"] == ["Notes [img]https://redhost.images.test/2.png[/img]"]
-    assert run.source.url not in json.dumps(post.fields)
+    assert f"{run.source.url}/static/" not in json.dumps(post.fields)
 
 
 def test_an_image_that_is_both_the_cover_and_in_the_description_is_fetched_once(monkeypatch, dirs) -> None:
@@ -887,10 +891,57 @@ def _release_data(**changes: Any) -> dict[str, Any]:
     return {**data, **changes}
 
 
-def test_a_link_to_the_source_tracker_in_a_description_stops_the_release() -> None:
-    data = _release_data(release_desc="Transcode of [url=https://orpheus.network/torrents.php?torrentid=1]it[/url]")
-    with pytest.raises(CrossUploadRefused, match="torrent description links to orpheus.network"):
-        _images_to_rehost(data, OpsApi(), RedApi())
+@pytest.mark.parametrize(
+    ("text", "kept"),
+    [
+        ("See [url=https://orpheus.network/torrents.php?id=1]the CD[/url].", "See the CD."),
+        ("See [URL=https://redacted.sh/artist.php?id=2]them[/URL].", "See them."),
+        ("[url=torrents.php?id=1&torrentid=2]the other edition[/url]", "the other edition"),
+        ("[url=/artist.php?artistname=x]the artist[/url]", "the artist"),
+        ("[url=artist.php?id=3]the artist[/url] and [url=#top]top[/url]", "the artist and top"),
+        ("Transcode of [url=https://orpheus.network/t?id=1]https://orpheus.network/t?id=1[/url]\n", "Transcode of \n"),
+        ("[url]https://redacted.sh/torrents.php?id=1[/url] seen", " seen"),
+        ("From https://redacted.sh/torrents.php?id=1&torrentid=2 and https://www.redacted.sh/x", "From  and "),
+        ("[url=https://redacted.sh/forums.php]a thread", "a thread"),
+        # Kept: other sites, and images, which are not links.
+        ("[url=https://www.qobuz.com/album/x]Qobuz[/url] https://bandcamp.com/x", None),
+        ("[url=https://www.qobuz.com/album/x][img]https://redacted.sh/i/q.png[/img] Qobuz[/url]", None),
+        ("[img]https://redacted.sh/i/a.png[/img] [img=https://redacted.sh/i/b.png]", None),
+        ("[url=mailto:someone@example.com]mail[/url]", None),
+    ],
+)
+def test_links_to_either_tracker_leave_the_descriptions_and_keep_their_text(text: str, kept: str | None) -> None:
+    assert without_tracker_links(text, (OpsApi(), RedApi())) == (text if kept is None else kept)
+
+
+def test_a_link_wrapping_an_image_keeps_the_image() -> None:
+    text = "[url=https://redacted.sh/torrents.php?id=1][img]https://ptpimg.me/x.png[/img][/url]"
+    assert without_tracker_links(text, (RedApi(), OpsApi())) == "[img]https://ptpimg.me/x.png[/img]"
+
+
+def test_an_album_description_linking_to_red_goes_to_ops_with_the_link_text_only(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        answer = _red_answer(source.url)
+
+        def linked(folder: Path, torrent_id: int) -> dict[str, Any]:
+            response = answer(folder, torrent_id)
+            response["group"]["bbBody"] = (
+                "Also in [url=https://redacted.sh/torrents.php?id=7]the deluxe edition[/url], "
+                f"by [url=artist.php?id=8]the same artist[/url], [url={source.url}/collages.php?id=9]listed[/url]."
+            )
+            return response
+
+        _source_has(album, answer=linked)(source, target)
+
+    run = _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", source="RED", target="OPS", prepare=prepare
+    )
+
+    assert run.result.exit_code == 0, run.output
+    (post,) = [sent for sent in run.target.posts() if sent.path == "/ajax.php"]
+    assert post.fields["album_desc"] == ["Also in the deluxe edition, by the same artist, listed."]
 
 
 def test_an_image_on_the_source_trackers_proxy_is_refused_rather_than_fetched() -> None:
@@ -937,29 +988,72 @@ def test_an_unknown_artist_role_stops_the_release_and_an_arranger_is_credited() 
         compile_data(response, OpsApi(), RedApi())
 
 
-@pytest.mark.parametrize("media", ["BD", "Blu-Ray"])
-def test_a_media_salmon_cannot_map_stops_the_release(media: str) -> None:
+@pytest.mark.parametrize(
+    ("media", "source", "target", "sent"),
+    [("BD", OpsApi, RedApi, "Blu-Ray"), ("Blu-Ray", RedApi, OpsApi, "BD"), ("Vinyl", OpsApi, RedApi, "Vinyl")],
+)
+def test_ops_bd_and_red_blu_ray_are_the_same_media(media: str, source, target, sent: str) -> None:
     response = _fixture("ops-torrent-cd-log.json")
     response["torrent"]["media"] = media
-    with pytest.raises(CrossUploadRefused, match=f"has the media '{media}'"):
+    notes = cross_upload_module._check_torrent(response, source(), target())
+    assert compile_data(response, source(), target())["media"] == sent
+    said = f"media {media} on {source().site_string} is {sent} on {target().site_string}"
+    assert notes == ([] if media == sent else [said])
+
+
+def test_a_media_salmon_cannot_map_stops_the_release() -> None:
+    response = _fixture("ops-torrent-cd-log.json")
+    response["torrent"]["media"] = "Floppy"
+    with pytest.raises(CrossUploadRefused, match="has the media 'Floppy'"):
         cross_upload_module._check_torrent(response, OpsApi(), RedApi())
+
+
+def _change_torrent(**changes: Any) -> Callable[[dict[str, Any]], None]:
+    return lambda response: response["torrent"].update(changes)
+
+
+def _like_red_cd(response: dict[str, Any]) -> None:
+    # RED's answer has no checksum key at all.
+    response["torrent"].update(media="CD", hasLog=True, logScore=100)
+    response["torrent"].pop("logChecksum")
 
 
 @pytest.mark.parametrize(
     ("change", "said"),
     [
-        ({"logScore": 95}, "its log scores 95"),
-        ({"logChecksum": False}, "with no valid checksum"),
-        ({"hasLog": False}, "a CD with no rip log"),
-        ({"trumpable": True}, "it is trumpable on OPS"),
-        ({"reported": True}, "it is reported on OPS"),
+        (_change_torrent(media="CD", hasLog=True, logScore=95, logChecksum=True), "log score 95 on OPS, checksum good"),
+        (
+            _change_torrent(media="CD", hasLog=True, logScore=100, logChecksum=False),
+            "log score 100 on OPS, checksum missing or bad",
+        ),
+        (_like_red_cd, "log score 100 on OPS\n"),
+        (_change_torrent(media="CD", hasLog=False, logScore=0), "a CD with no rip log on OPS"),
+        (_change_torrent(trumpable=True, trumpable_reasons=["Bad tags"]), "trumpable on OPS: Bad tags"),
+        (_change_torrent(trumpable=True, trumpable_reasons=[]), "trumpable on OPS\n"),
+        (_change_torrent(reported=True), "reported on OPS"),
+        (
+            lambda response: response["group"].update(vanityHouse=True),
+            "Vanity House on OPS: sent to RED without the flag",
+        ),
     ],
+    ids=["log 95", "bad checksum", "no checksum key", "no log", "trumpable", "trumpable no reason", "reported", "vh"],
 )
-def test_a_flag_not_confirmed_safe_stops_the_release(change: dict[str, Any], said: str) -> None:
-    response = _fixture("ops-torrent-cd-log.json")
-    response["torrent"].update(change)
-    with pytest.raises(CrossUploadRefused, match=said):
-        cross_upload_module._check_torrent(response, OpsApi(), RedApi())
+def test_what_both_trackers_accept_goes_up_and_the_plan_says_it(monkeypatch, dirs, change, said: str) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def answer(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = _ops_answer(folder, torrent_id)
+        change(response)
+        return response
+
+    run = _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album, answer=answer)
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert f"   {said}" in run.output
+    (post,) = run.target.posts()
+    assert "vanity_house" not in post.fields
 
 
 def test_an_empty_album_description_gets_the_tracklist_from_the_tags(monkeypatch, dirs) -> None:
@@ -979,20 +1073,44 @@ def test_an_empty_album_description_gets_the_tracklist_from_the_tags(monkeypatch
     assert post.fields["album_desc"][0].startswith("[b][size=4]Tracklist[/size][/b]\n[b]01.[/b] sample3000 - ALFA")
 
 
-def test_the_torrent_description_is_the_sources_with_our_footer(monkeypatch, dirs) -> None:
+def _header(source: str, target: str, uploader: str, source_url: str) -> str:
+    return (
+        f"[align=center][size=3][b]{source} → {target}[/b][/size]\n"
+        f"[size=1]Original upload by {uploader} · [url={source_url}]View source torrent[/url]\n"
+        "Cross-uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]smoked-salmon[/url] "
+        f"v{get_version()}[/size][/align]"
+    )
+
+
+def test_the_torrent_description_is_the_forks_header_then_the_sources_and_our_footer(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
     run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
 
     (post,) = run.target.posts()
     source_description = _ops_answer(album)["torrent"]["description"]
-    assert post.fields["release_desc"] == [f"{source_description}\n\n{upload_footer()}"]
+    header = _header("OPS", "RED", "uploader", f"{run.source.url}/torrents.php?torrentid={TORRENT_ID}")
+    assert post.fields["release_desc"] == [f"{header}\n\n{source_description}\n\n{upload_footer()}"]
+
+
+def test_the_header_links_the_uploader_to_their_profile_when_the_source_names_them() -> None:
+    response = _fixture("ops-torrent-cd-log.json")
+    response["torrent"].update(userId=4321, username="Some &amp; One", description="")
+    ops = OpsApi()
+    header = _header(
+        "OPS",
+        "RED",
+        f"[url={ops.base_url}/user.php?id=4321]Some & One[/url]",
+        f"{ops.base_url}/torrents.php?torrentid=600005",
+    )
+    assert compile_data(response, ops, RedApi())["release_desc"] == f"{header}\n\n\n\n{upload_footer()}"
 
 
 def test_a_description_that_already_has_a_footer_does_not_get_a_second() -> None:
     footer = "[hr]Uploaded with [url=https://github.com/chodeus/smoked-salmon][b]smoked-salmon[/b] v0.11.0[/url]"
     response = _fixture("ops-torrent-cd-log.json")
     response["torrent"]["description"] = f"Notes\n{footer}"
-    assert compile_data(response, OpsApi(), RedApi())["release_desc"] == f"Notes\n{footer}"
+    release_desc = compile_data(response, OpsApi(), RedApi())["release_desc"]
+    assert release_desc.endswith(f"[/align]\n\nNotes\n{footer}")
 
 
 # The dupe check
@@ -1080,13 +1198,54 @@ def test_either_the_class_or_the_title_of_the_label_says_approved(label: str) ->
     assert approved is True
 
 
-def test_a_lossy_approved_torrent_stops_before_any_target_request(monkeypatch, dirs) -> None:
+def test_a_lossy_approved_torrent_goes_up_then_is_reported_once_on_the_target(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
-    run = _cross_upload(monkeypatch, dirs, ["600011", "-yyy"], prepare=_source_has_id(600011, album))
+    run = _cross_upload(monkeypatch, dirs, ["600011", "-yyy"], input="\n", prepare=_source_has_id(600011, album))
 
-    assert "OPS approved it as lossy" in run.output
-    assert run.result.exit_code == 1
-    assert run.target.sent == []
+    assert run.result.exit_code == 0, run.output
+    assert "approved as lossy on OPS: a lossy report goes to RED after the upload" in run.output
+    assert [sent.step for sent in run.target.posts()] == [
+        "POST ajax.php?action=upload",
+        "POST reportsv2.php?action=takereport",
+    ]
+    (report,) = run.target.reports()
+    # RED's report type for a WEB torrent, as `up` sends it, about the torrent just uploaded.
+    assert report.fields["type"] == ["lossywebapproval"]
+    assert report.fields["torrentid"] == ["700001"]
+    assert (
+        report.fields["extra"][0].rstrip()
+        == f"Approved as lossy on OPS: {run.source.url}/torrents.php?torrentid=600011"
+    )
+    assert _within_the_plans_bound(run)
+    assert run.seeded == [("/seed", FOLDER)]
+
+
+def test_a_report_the_target_refuses_leaves_the_upload_and_says_how_to_report_it(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has_id(600011, album)(source, target)
+        target.answers["POST reportsv2.php?action=takereport"] = lambda: web.Response(text="<html>No</html>")
+
+    run = _cross_upload(monkeypatch, dirs, ["600011", "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert len(run.target.reports()) == 1
+    assert f"did not take the lossy master report for {run.target.url}/torrents.php?torrentid=700001" in run.output
+    assert "Approved as lossy on OPS" in run.output.split("Report it by hand with this text:")[1]
+    assert run.seeded == [("/seed", FOLDER)]
+
+
+def test_a_dry_run_prints_the_lossy_report_it_would_send(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    run = _cross_upload(
+        monkeypatch, dirs, ["600011", "-yyy", "--dry-run"], input="\n", prepare=_source_has_id(600011, album)
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert run.target.posts() == []
+    assert "Dry run: not reporting the torrent to RED for lossy master approval. The report:" in run.output
+    assert f"  Approved as lossy on OPS: {run.source.url}/torrents.php?torrentid=600011" in run.output
 
 
 def _source_has_id(torrent_id: int, album: Path):
@@ -1096,28 +1255,42 @@ def _source_has_id(torrent_id: int, album: Path):
     return prepare
 
 
-@pytest.mark.parametrize(("answer", "goes"), [("\n", False), ("y\n", True)], ids=["default", "yes"])
-def test_a_torrent_with_no_row_on_the_group_page_asks_and_stops_by_default(monkeypatch, dirs, answer, goes) -> None:
+@pytest.mark.parametrize(
+    ("answers", "reported"),
+    [("\n", False), ("y\nRipped from the store\n", True)],
+    ids=["default", "yes, with a comment"],
+)
+def test_a_torrent_with_no_row_on_the_group_page_asks_whether_to_report_it(
+    monkeypatch, dirs, answers, reported
+) -> None:
     album = _album(dirs.downloads / FOLDER)
     run = _cross_upload(
         monkeypatch,
         dirs,
         ["600099"],
-        input=f"{answer}y\n\n",  # The approval question, the plan, the group
+        input=f"{answers}y\n\n",  # The report question (and its comment), the plan, the group
         prepare=_source_has_id(600099, album),
     )
 
+    assert run.result.exit_code == 0, run.output
     assert "Could not tell whether OPS approved torrent 600099" in run.output
-    assert len(run.target.posts()) == (1 if goes else 0)
+    assert "Report it as lossy on RED after the upload?" in run.output
+    assert len([sent for sent in run.target.posts() if sent.path == "/ajax.php"]) == 1
+    reports = [report.fields["extra"][0].rstrip() for report in run.target.reports()]
+    page = f"{run.source.url}/torrents.php?torrentid=600099"
+    assert reports == ([f"Ripped from the store\n\nApproved as lossy on OPS: {page}"] if reported else [])
 
 
-def test_with_yes_all_an_unknown_approval_stops_without_asking(monkeypatch, dirs) -> None:
+def test_with_yes_all_an_unknown_approval_goes_up_unreported_and_names_the_page_to_check(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
-    run = _cross_upload(monkeypatch, dirs, ["600099", "-yyy"], prepare=_source_has_id(600099, album))
+    run = _cross_upload(monkeypatch, dirs, ["600099", "-yyy"], input="\n", prepare=_source_has_id(600099, album))
 
-    assert "Go on as not approved?" not in run.output
-    assert "it may be approved as lossy on OPS" in run.output
-    assert run.target.sent == []
+    assert run.result.exit_code == 0, run.output
+    assert "Report it as lossy" not in run.output
+    page = f"{run.source.url}/torrents.php?torrentid=600099"
+    assert f"Not reporting it as lossy on RED: check {page}" in run.output
+    assert len(run.target.posts()) == 1
+    assert run.target.reports() == []
 
 
 # The command line
@@ -1162,7 +1335,6 @@ def test_a_torrent_file_is_looked_up_by_its_infohash(monkeypatch, dirs) -> None:
         (["1", "RED", "RED"], "must be different trackers"),
         (["1", "OPS", "DIC"], "Invalid value for 'TARGET_TRACKER': 'DIC' is not one of"),
         (["1", "2", "--path", ".", "OPS", "RED"], "--path and --group-id go with a single INPUT"),
-        (["1", "--transcode", "320", "OPS", "RED"], "does not upload conversions yet"),
     ],
 )
 def test_the_command_line_is_checked_before_any_request(monkeypatch, args: list[str], said: str) -> None:
