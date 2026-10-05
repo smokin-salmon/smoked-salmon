@@ -391,7 +391,11 @@ async def _source_response(item: int | Path, source: "BaseGazelleApi") -> dict[s
         raise CrossUploadRefused(f"{item} is not a readable .torrent file ({error})") from None
     source_host = urlparse(source.tracker_url).hostname
     announce_hosts = {urlparse(url).hostname for tier in torrent.trackers for url in tier}
-    if source_host not in announce_hosts:
+    # qBittorrent saves a .torrent without its announce URL (it keeps trackers elsewhere): its source flag, which
+    # the tracker (and salmon's own torrents) set, then says whose it is.
+    if not announce_hosts and torrent.source != source.site_string:
+        raise CrossUploadRefused(f"{item} has no announce URL and no {source.site_string} source flag")
+    if announce_hosts and source_host not in announce_hosts:
         raise CrossUploadRefused(f"{item} does not announce to {source.site_string}")
     return await source.api_call("torrent", params={"hash": torrent.infohash.upper()})
 

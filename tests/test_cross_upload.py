@@ -1348,6 +1348,45 @@ def test_a_torrent_file_is_looked_up_by_its_infohash(monkeypatch, dirs) -> None:
 
 
 @pytest.mark.parametrize(
+    ("trackers", "source_flag", "refused"),
+    [
+        ([], "OPS", None),
+        ([], "RED", "has no announce URL and no OPS source flag"),
+        ([], None, "has no announce URL and no OPS source flag"),
+        (["https://flacsfor.me/passkey/announce"], "OPS", "does not announce to OPS"),
+    ],
+    ids=["no announce, OPS flag", "no announce, RED flag", "no announce, no flag", "announces to RED, OPS flag"],
+)
+def test_a_torrent_file_with_no_announce_is_known_by_its_source_flag(
+    monkeypatch, dirs, trackers: list[str], source_flag: str | None, refused: str | None
+) -> None:
+    # qBittorrent keeps the trackers in its .fastresume and saves the .torrent without them.
+    album = _album(dirs.downloads / FOLDER)
+    torrent = Torrent(album, trackers=trackers, private=True, source=source_flag, created_by="qBittorrent v5.1.2")
+    torrent.generate()
+    torrent_file = dirs.torrents.parent / "source.torrent"
+    torrent.write(torrent_file)
+    if not trackers:
+        assert set(Torrent.read(torrent_file).metainfo) == {"created by", "info"}
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID] = {**_ops_answer(album), "hash": torrent.infohash.upper()}
+
+    run = _cross_upload(monkeypatch, dirs, [str(torrent_file), "-yyy"], input="\n", prepare=prepare)
+
+    lookups = [sent for sent in run.source.sent if sent.query.get("action") == "torrent"]
+    if refused is None:
+        assert run.result.exit_code == 0, run.output
+        assert [sent.query["hash"] for sent in lookups] == [torrent.infohash.upper()]
+        assert len(run.target.posts()) == 1
+    else:
+        assert run.result.exit_code == 1
+        assert f"{torrent_file} {refused}" in run.output
+        assert lookups == []
+        assert run.target.sent == []
+
+
+@pytest.mark.parametrize(
     ("args", "said"),
     [
         (["1", "RED", "RED"], "must be different trackers"),
