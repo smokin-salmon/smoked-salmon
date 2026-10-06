@@ -99,6 +99,12 @@ def test_case_accents_punctuation_and_ampersands_do_not_count() -> None:
     assert do_not_upload_reason("RED", _release("Green Day", title="Cigarettes")) is None
 
 
+@pytest.mark.parametrize("tracker", ["RED", "OPS"])
+def test_odds_and_sods_is_matched_on_both_trackers(tracker: str) -> None:
+    # RED's article writes "Odds and Sod": its entry is spelled as the bootleg is.
+    assert do_not_upload_reason(tracker, _release("Bruce Springsteen", title="Odds & Sods")) is not None
+
+
 def test_the_album_words_may_be_in_the_edition_title() -> None:
     assert do_not_upload_reason("RED", _release("Fleet Foxes", title="Shore", edition_title="Stems Edition"))
     assert do_not_upload_reason("RED", _release("Fleet Foxes", title="Shore")) is None

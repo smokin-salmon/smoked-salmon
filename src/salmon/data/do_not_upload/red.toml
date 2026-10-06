@@ -12,7 +12,8 @@
 # Case, accents and punctuation do not count, and "&" is "and". The artist must be one of the release's main
 # artists exactly ("Viper" is not "Viper UK"). Every word of the album must be in the release's title or edition
 # title, and every word of the label in its label.
-# One wiki line naming several albums is one entry per album. Names are spelled as the article spells them.
+# One wiki line naming several albums is one entry per album. Names are spelled as the article spells them,
+# but for a typo, which a comment over its entry points out.
 
 [[entry]]
 artist = "Ayesha Erotica"
@@ -131,9 +132,10 @@ note = "Bootleg web label: its releases are not official."
 artist = "Prof Stoned"
 note = "Fan compilations and fan remasters, not official releases."
 
+# The article writes "Odds and Sod", which would not match the bootleg's title.
 [[entry]]
 artist = "Bruce Springsteen"
-album = "Odds and Sod"
+album = "Odds and Sods"
 note = "Bootleg from the internet, never sold in shops."
 
 [[entry]]
