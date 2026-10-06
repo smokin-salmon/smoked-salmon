@@ -14,6 +14,7 @@ from mutagen import MutagenError
 import salmon.trackers
 from salmon import cfg, dryrun
 from salmon.checks import mqa_test
+from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.provenance import gather_provenance
@@ -546,6 +547,17 @@ async def _check_logs(path: str) -> None:
                 raise click.Abort() from e
 
 
+def _on_do_not_upload_list(tracker: str, metadata: dict[str, Any]) -> bool:
+    """Whether the tracker's Do-Not-Upload list forbids the release, saying why when it does.
+
+    Nothing skips it, -yyy included.
+    """
+    reason = do_not_upload_reason(tracker, Candidate.from_metadata(metadata))
+    if reason is not None:
+        click.secho(f"\nNot uploading to {tracker}: {reason}", fg="red", bold=True)
+    return reason is not None
+
+
 def _warn_about_provenance(path: str) -> None:
     """Print each ripper or store marker in the tags that the audio contradicts.
 
@@ -907,13 +919,16 @@ async def _upload_staged(
     try:
         lossy_comment = None
         spectral_urls = None
+        # Before anything is made or sent for the first tracker: its spectrals, its cover, its upload.
+        first_listed = _on_do_not_upload_list(gazelle_site.site_code, metadata)
         if not spectrals_after:
             if lossy_master:
                 lossy_comment = await generate_lossy_approval_comment(source_url, list(track_data.keys()))
                 click.echo()
 
-            spectral_urls = await spectral_uploads.urls_for(gazelle_site.site_code, spectral_ids)
-        if cfg.upload.requests.last_minute_dupe_check:
+            if not first_listed:
+                spectral_urls = await spectral_uploads.urls_for(gazelle_site.site_code, spectral_ids)
+        if cfg.upload.requests.last_minute_dupe_check and not first_listed:
             await last_min_dupe_check(gazelle_site, searchstrs, our_title)
 
         # Shallow copy to avoid errors on multiple uploads in one session. Trackers named with -t are
@@ -922,6 +937,9 @@ async def _upload_staged(
         # Whether the run goes on after a tracker: always for named ones, until none is left.
         go_on = bool(trackers) or cfg.upload.multi_tracker_upload
         tracker = gazelle_site.site_code
+        if first_listed:
+            remaining_gazelle_sites.remove(tracker)
+            tracker = None
         torrent_id = None
         cover_url = None
         cover_urls: dict[str, str | None] = {}  # Uploaded cover URL per image host, reused across trackers
@@ -934,6 +952,9 @@ async def _upload_staged(
             while True:
                 # Loop until we don't want to upload to any more sites.
                 if not tracker:
+                    # After a tracker whose Do-Not-Upload list forbids the release: the run may have none left.
+                    if flac_url or not remaining_gazelle_sites or not go_on:
+                        break
                     if trackers:
                         tracker = remaining_gazelle_sites[0]
                         click.secho(f"\nNext tracker: {tracker}", fg="magenta")
@@ -944,6 +965,11 @@ async def _upload_staged(
                         click.secho("\nDone with this release.", fg="green")
                         break
                     gazelle_site = salmon.trackers.get_class(tracker)()
+                    # Before its dupe check, which may ask which group to upload into.
+                    if _on_do_not_upload_list(tracker, metadata):
+                        remaining_gazelle_sites.remove(tracker)
+                        tracker = None
+                        continue
 
                     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
                     # A torrent already seeds from the folder: never offer to delete it.

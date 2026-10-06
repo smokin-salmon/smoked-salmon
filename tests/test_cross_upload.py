@@ -27,6 +27,7 @@ from aiohttp import web
 from aiolimiter import AsyncLimiter
 from asyncclick.testing import CliRunner
 from mutagen.flac import FLAC
+from test_checks_do_not_upload import write_lists  # pyright: ignore[reportMissingImports]
 from torf import Torrent
 
 import salmon.cross_upload as cross_upload_module
@@ -657,6 +658,51 @@ def test_files_that_are_not_the_torrents_stop_it_before_any_target_request(monke
     assert run.result.exit_code == 1
     assert said in run.output
     assert run.target.sent == []
+
+
+def test_a_release_on_the_targets_do_not_upload_list_stops_before_any_target_request(monkeypatch, dirs, tmp_path):
+    album = _album(dirs.downloads / FOLDER)
+    write_lists(monkeypatch, tmp_path / "lists", RED="[[entry]]\nartist = 'sample3000'\nnote = 'Fakes only.'\n")
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], prepare=_source_has(album))
+
+    assert run.result.exit_code == 1
+    assert (
+        f"Not cross-uploading {TORRENT_ID}: sample3000 (the whole discography) is on RED's Do-Not-Upload list: Fakes "
+        "only. If yours is a legitimate copy, RED wants a message to its staff, with proof, before it is uploaded."
+    ) in run.output
+    assert "Nothing to cross-upload." in run.output
+    assert run.target.sent == []
+
+
+def test_a_listed_release_is_dropped_and_the_others_go(monkeypatch, dirs, tmp_path) -> None:
+    albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(2)]
+    # The SOURCE's list does not count: only TARGET's.
+    write_lists(
+        monkeypatch,
+        tmp_path / "lists",
+        RED="[[entry]]\nlabel = 'Bootleg Label'\nnote = 'Bootlegs.'\n",
+        OPS="[[entry]]\nartist = 'sample3000'\nnote = 'Fakes only.'\n",
+    )
+
+    def answer(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = _ops_answer(folder, torrent_id)
+        if torrent_id == TORRENT_ID + 1:
+            response["torrent"]["remasterRecordLabel"] = "Bootleg Label"
+        return response
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(*albums, answer=answer)(source, target)
+        source.group_page = "".join(
+            source.group_page.replace(str(TORRENT_ID), str(TORRENT_ID + number)) for number in range(2)
+        )
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), str(TORRENT_ID + 1), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert f"Not cross-uploading {TORRENT_ID + 1}: the label Bootleg Label is on RED's Do-Not-Upload list" in run.output
+    assert len(re.findall(r"^\d\. ", run.output, re.MULTILINE)) == 1
+    assert run.target.steps()["POST ajax.php?action=upload"] == 1
 
 
 def test_a_folder_name_with_dots_out_of_download_directory_is_refused(monkeypatch, dirs) -> None:

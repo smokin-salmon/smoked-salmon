@@ -1,0 +1,72 @@
+# OPS's Do-Not-Upload list: OPS wiki article 767, revision 17 of 2026-08-18 (the list dates from 2026-07-03).
+# Checked against that article on 2026-10-06. The maintainers update this file with salmon's releases.
+#
+# salmon refuses to upload a release that matches an entry to OPS (other trackers are not affected).
+# Each [[entry]] names:
+#   artist        that artist's whole discography;
+#   artist, album that one release;
+#   album         that release whatever the artist (Various Artists compilations);
+#   label         every release on that label;
+#   media         (optional) only the releases from that media, such as "WEB";
+#   note          why, in a few words.
+# Case, accents and punctuation do not count, and "&" is "and". The artist must be one of the release's main
+# artists exactly ("Viper" is not "Viper UK"). Every word of the album must be in the release's title or edition
+# title, and every word of the label in its label.
+# One wiki line naming several albums is one entry per album. Names are spelled as the article spells them.
+
+[[entry]]
+artist = "Bruce Springsteen"
+album = "Odds and Sods"
+note = "Bootleg from the internet, never sold in shops."
+
+[[entry]]
+artist = "Dr. Dre"
+album = "Detox"
+note = "Cancelled album; the leaks around are fakes."
+
+[[entry]]
+artist = "Green Day"
+album = "Cigarettes and Valentines"
+note = "Never released (its masters were stolen)."
+
+[[entry]]
+artist = "Jean-Michel Jarre"
+album = "Music for Supermarkets"
+note = "A single copy was made and its masters destroyed; every rip comes from a radio broadcast."
+
+[[entry]]
+artist = "Michael Jackson"
+album = "Super Mix"
+note = "A fake made with AI: Michael Jackson does not sing on it."
+
+[[entry]]
+artist = "Pink Floyd"
+album = "Tree Full of Secrets"
+note = "Bootleg from the internet, never sold in shops."
+
+[[entry]]
+label = "Sandero Classic Sound"
+note = "Spam label: its releases are not official."
+
+[[entry]]
+label = "Sip It & Trip It Records"
+note = "Not a real label: rips from the internet put on streaming services."
+
+[[entry]]
+artist = "The Beatles"
+album = "Carnival of Light"
+note = "Never released; the copies around are fakes."
+
+[[entry]]
+artist = "The Upholsterers"
+album = "Your Furniture Was Always Dead… I Was Just Afraid To Tell You"
+note = "Rare early Jack White project."
+
+[[entry]]
+album = "The Ultimate 500 CD Jazz Collection"
+note = "The copies around are of uneven quality."
+
+[[entry]]
+artist = "Wu-Tang Clan"
+album = "Once Upon a Time in Shaolin"
+note = "A single copy exists and its masters were destroyed."

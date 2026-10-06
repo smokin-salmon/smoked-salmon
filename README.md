@@ -11,6 +11,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 - **Upconvert Detection** – Checks 24-bit flac files for potential upconverts.
 - **MQA Detection** – Checks files for common MQA markers.
 - **Duplicate Upload Detection** – Prevents redundant uploads.  
+- **Do-Not-Upload Lists** – salmon ships a copy of RED's and OPS's Do-Not-Upload lists (fakes, unreleased albums, bootlegs, some whole discographies and labels; some entries only for one media, such as WEB), and never uploads a listed release to that tracker, with or without `--yes-all`: it says which entry matched and why, and the run goes on to the other trackers. A legitimate copy needs that tracker's staff approval first. The maintainers update the lists with salmon's releases; `cross-upload` checks the target's list too.  
 - **Spectral Analysis** – Generates, compresses, and verifies spectrals, shown on a web page during upload.  
 - **Frequency Analysis** – Before the lossy-master question, measures the two marks a lossy encoder leaves in each track: a brick-wall lowpass where MP3 and AAC encoders cut, and highs that flip between content and digital silence. It prints what it measured, shows an averaged-spectrum plot next to each track's spectrals (kept local, never uploaded), and makes "yes" the question's default when a track carries the marks. It is a measurement, not a verdict: high-bitrate AAC can leave neither mark.  
 - **Spectral Upload** – Can generate spectrals for an existing upload (based on local files), and update the release description.  
