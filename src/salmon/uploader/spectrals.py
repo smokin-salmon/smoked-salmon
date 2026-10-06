@@ -14,7 +14,14 @@ from typing import TYPE_CHECKING, Any
 import anyio
 import anyio.to_thread
 import asyncclick as click
-import oxipng
+
+# pyoxipng 9.1.1 has wheels up to CPython 3.13 only, and building it needs Rust (and MSVC on Windows), so
+# pyproject.toml installs it below 3.14 only and spectrals are re-saved with Pillow on newer Pythons. Drop the marker
+# and this fallback once pyoxipng ships 3.14 or abi3 wheels.
+try:
+    import oxipng
+except ImportError:
+    oxipng = None
 
 from salmon import cfg, dryrun
 from salmon.common import flush_stdin, get_audio_files, prompt_async
@@ -426,19 +433,36 @@ async def _generate_spectrals(
     return sorted_spectrals
 
 
+def _resave_png(filepath: str) -> None:
+    """Re-save a PNG with Pillow at its best zlib compression, without metadata chunks. Lossless.
+
+    Args:
+        filepath: Path to the PNG file to compress in place.
+    """
+    from PIL import Image
+
+    with Image.open(filepath) as image:
+        image.load()
+    # Pillow writes an ICC profile or EXIF chunk back from info; transparency is part of the pixels and stays.
+    image.info = {key: value for key, value in image.info.items() if key == "transparency"}
+    image.save(filepath, format="PNG", optimize=True)
+
+
 async def _compress_single_spectral(filepath: str, _idx: int) -> None:
-    """Compress a single spectral PNG image using oxipng in a thread.
+    """Compress a single spectral PNG image in a thread, with oxipng when it is installed.
 
     Args:
         filepath: Path to the PNG file to compress.
         _idx: Unused index parameter for process_files compatibility.
     """
+    if oxipng is None:
+        return await anyio.to_thread.run_sync(_resave_png, filepath)
     func = partial(oxipng.optimize, filepath, level=2, strip=oxipng.StripChunks.all())
     return await anyio.to_thread.run_sync(func)
 
 
 async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] | None = None) -> None:
-    """Compress spectral PNG images in a directory using oxipng.
+    """Compress spectral PNG images in a directory.
 
     Args:
         spectrals_path: Path to the directory containing spectral PNG files.
