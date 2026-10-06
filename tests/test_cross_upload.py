@@ -1,7 +1,8 @@
 """salmon cross-upload (#548): the requests it sends, the files it accepts, and what it does when a step fails.
 
 Both trackers are local fakes on 127.0.0.1, and the image hosts and seedbox are in-process fakes: nothing here
-reaches a real tracker or service. The OPS answers come from tests/fixtures/cross_upload (made-up release).
+reaches a real tracker or service. The OPS and RED answers come from tests/fixtures/cross_upload (made-up release).
+DIC's are made up entirely, shaped like RED's: no DIC answer has been seen.
 """
 
 import copy
@@ -50,17 +51,18 @@ from salmon.images.base import BaseImageUploader
 from salmon.release_notification import get_version
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs
 from salmon.uploader.torrent_client import QBittorrentClient
-from salmon.uploader.upload import upload_footer
+from salmon.uploader.upload import generate_torrent, upload_footer
 
 FIXTURES = Path(__file__).parent / "fixtures" / "cross_upload"
 AUTHKEY = "authkey-0123456789"
 PASSKEY = "passkey-9876543210"
 API_KEYS = {"RED": "red-api-key-0001", "OPS": "ops-api-key-0001"}
-SESSIONS = {"RED": "red-session-cookie", "OPS": "ops-session-cookie"}
+SESSIONS = {"RED": "red-session-cookie", "OPS": "ops-session-cookie", "DIC": "dic-session-cookie"}
 # Torrent 600012 has a row on the fixture group page with no lossy label; 600011's says lossy master approved.
 TORRENT_ID = 600012
 GROUP_ID = 500002
@@ -79,10 +81,10 @@ def _fixture(name: str) -> dict[str, Any]:
 # The album on disk
 
 
-def _write_flac(path: Path, **tags: str) -> None:
-    """Write a 16-bit 44.1 kHz FLAC with no audio, and the given tags."""
+def _write_flac(path: Path, *, rate: int = 44100, bits: int = 16, **tags: str) -> None:
+    """Write a stereo FLAC with no audio (16-bit 44.1 kHz by default), and the given tags."""
     streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
-    streaminfo += ((44100 << 44) | (1 << 41) | (15 << 36)).to_bytes(8, "big") + bytes(16)
+    streaminfo += ((rate << 44) | (1 << 41) | ((bits - 1) << 36)).to_bytes(8, "big") + bytes(16)
     path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
     tagged = FLAC(path)
     for key, value in tags.items():
@@ -90,10 +92,14 @@ def _write_flac(path: Path, **tags: str) -> None:
     tagged.save()
 
 
-def _album(folder: Path) -> Path:
+def _album(folder: Path, *rates: int, bits: int = 16) -> Path:
+    """The album: two FLACs at the given sample rates (44.1 kHz by default; the last one given goes on), a cover."""
+    rates = rates or (44100,)
     folder.mkdir(parents=True)
-    _write_flac(folder / "01. ALFA.flac", title="ALFA", artist="sample3000", tracknumber="1")
-    _write_flac(folder / "02. BRAVO.flac", title="BRAVO", artist="sample3000", tracknumber="2")
+    _write_flac(folder / "01. ALFA.flac", rate=rates[0], bits=bits, title="ALFA", artist="sample3000", tracknumber="1")
+    _write_flac(
+        folder / "02. BRAVO.flac", rate=rates[-1], bits=bits, title="BRAVO", artist="sample3000", tracknumber="2"
+    )
     (folder / "cover.jpg").write_bytes(JPEG)
     for entry in folder.rglob("*"):
         os.utime(entry, ns=(1_000_000_000, 1_000_000_000))
@@ -163,6 +169,7 @@ class FakeTracker:
         self.groups: dict[int, dict[str, Any]] = {}  # TARGET torrentgroup answers
         self.uploads: list[str] = []  # How each upload POST is answered: "ok", "drop" or an error message
         self.images: dict[str, bytes] = {}  # Images on the tracker's own host, by path
+        self.group_pages: dict[str, str] = {}  # The page each upload through upload.php redirects to, by torrent id
         self.next_torrent_id = 700001
         # Answers that replace the usual one for a step, e.g. {"GET torrents.php": rate_limited}.
         self.answers: dict[str, Callable[[], web.Response]] = {}
@@ -197,6 +204,10 @@ class FakeTracker:
                 return _success(group) if group else _failure("bad id parameter")
             if action == "upload" and request.method == "POST":
                 return self._upload(request, fields)
+        if request.path == "/upload.php" and request.method == "POST":
+            return self._site_upload(request, fields)
+        if request.path == "/torrents.php" and request.query.get("torrentid") in self.group_pages:
+            return web.Response(text=self.group_pages[request.query["torrentid"]], content_type="text/html")
         if request.path == "/reportsv2.php" and request.method == "POST":
             raise web.HTTPFound(f"/torrents.php?torrentid={fields['torrentid'][0]}")
         if request.path == "/torrents.php" and "id" in request.query:
@@ -230,6 +241,24 @@ class FakeTracker:
         group_id = int(fields["groupid"][0]) if "groupid" in fields else TARGET_GROUP_ID
         return _success({"torrentid": torrent_id, "groupid": group_id})
 
+    def _site_upload(self, request: web.Request, fields: dict[str, Any]) -> web.StreamResponse:
+        """upload.php, as Gazelle's site answers it: a redirect to the new torrent on its group page."""
+        outcome = self.uploads.pop(0) if self.uploads else "ok"
+        if outcome == "drop":
+            assert request.transport is not None
+            request.transport.close()
+            return web.Response()
+        if outcome != "ok":
+            # The upload form again, with the error.
+            return web.Response(text=f"<html><p>{outcome}</p></html>", content_type="text/html")
+        torrent_id, self.next_torrent_id = self.next_torrent_id, self.next_torrent_id + 1
+        group_id = int(fields["groupid"][0]) if "groupid" in fields else TARGET_GROUP_ID
+        self.group_pages[str(torrent_id)] = (
+            f'<html><a class="tooltip" href="torrents.php?torrentid={torrent_id}">DL</a>'
+            f'<a class="brackets" href="upload.php?groupid={group_id}">Add format</a></html>'
+        )
+        raise web.HTTPFound(f"/torrents.php?id={group_id}&torrentid={torrent_id}")
+
     @asynccontextmanager
     async def serving(self) -> AsyncIterator["FakeTracker"]:
         app = web.Application()
@@ -254,10 +283,11 @@ class FakeTracker:
 
 
 def _client(code: str, tracker: FakeTracker, torrents: Path) -> BaseGazelleApi:
-    site = {"RED": RedApi, "OPS": OpsApi}[code]()
+    site = {"RED": RedApi, "OPS": OpsApi, "DIC": DICApi}[code]()
     site.base_url = tracker.url
-    site.api_key = API_KEYS[code]
-    site.cookie = SESSIONS[code] if code == "OPS" else ""
+    # RED with its API key only, OPS with both, DIC with its session cookie only (it has no API key).
+    site.api_key = API_KEYS.get(code, "")
+    site.cookie = SESSIONS[code] if code != "RED" else ""
     site.dot_torrents_dir = str(torrents)
     site._rate_limiter = AsyncLimiter(1000, 1)
     return site
@@ -336,12 +366,12 @@ def _cross_upload(
 
         return SimpleNamespace(ImageUploader=ImageUploader)
 
-    for name in ("testhost", "opshost", "redhost"):
+    for name in ("testhost", "opshost", "redhost", "dichost"):
         monkeypatch.setitem(salmon.images.HOSTS, name, image_host(name))
     monkeypatch.setattr(cfg.image, "cover_uploader", "testhost")
     monkeypatch.setattr(cfg.image, "image_uploader", "testhost")
-    # [image.ops] and [image.red]: each tracker's own hosts, which an image for that tracker goes to.
-    for code in ("ops", "red"):
+    # [image.ops], [image.red] and [image.dic]: each tracker's own hosts, which an image for that tracker goes to.
+    for code in ("ops", "red", "dic"):
         hosts = SimpleNamespace(cover_uploader=f"{code}host", image_uploader=f"{code}host", specs_uploader=None)
         monkeypatch.setattr(cfg.image, code, hosts)
 
@@ -451,6 +481,26 @@ def test_one_release_sends_what_the_budget_says(monkeypatch, dirs) -> None:
         "GET ajax.php?action=browse": len(_searchstrs()),
         "POST ajax.php?action=upload": 1,
     }
+    assert _within_the_plans_bound(run)
+
+
+def test_a_red_upload_with_a_log_goes_through_its_upload_page_and_the_budget_counts_its_redirect(
+    monkeypatch, dirs
+) -> None:
+    name = "ops-torrent-cd-log.json"
+    album = _red_album(name, dirs.downloads)
+    prepare = _source_has(album, answer=_red_fixture_answer(name))
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert run.target.steps() == {
+        "GET ajax.php?action=index": 1,
+        "GET ajax.php?action=browse": 1,
+        "POST upload.php": 1,
+        "GET torrents.php": 1,  # The new torrent's page, which the upload redirects to
+    }
+    # The search, a group pasted at its prompt, RED's upload page for an existing group, the redirect, a lost upload.
+    assert "at most 6 GET and 1 POST to RED" in run.output
     assert _within_the_plans_bound(run)
 
 
@@ -907,6 +957,9 @@ def _release_data(**changes: Any) -> dict[str, Any]:
         ("[url]https://redacted.sh/torrents.php?id=1[/url] seen", " seen"),
         ("From https://redacted.sh/torrents.php?id=1&torrentid=2 and https://www.redacted.sh/x", "From  and "),
         ("[url=https://redacted.sh/forums.php]a thread", "a thread"),
+        # DIC's site and its announce domain, whichever trackers the release goes between.
+        ("See [url=https://dicmusic.com/torrents.php?id=1]the CD[/url].", "See the CD."),
+        ("[url]https://www.dicmusic.com/x[/url]Seed https://tracker.52dic.vip/abc/announce now", "Seed  now"),
         # Kept: other sites, and images, which are not links.
         ("[url=https://www.qobuz.com/album/x]Qobuz[/url] https://bandcamp.com/x", None),
         ("[url=https://www.qobuz.com/album/x][img]https://redacted.sh/i/q.png[/img] Qobuz[/url]", None),
@@ -1015,9 +1068,16 @@ def test_an_unknown_artist_role_stops_the_release_and_an_arranger_is_credited() 
 
 @pytest.mark.parametrize(
     ("media", "source", "target", "sent"),
-    [("BD", OpsApi, RedApi, "Blu-Ray"), ("Blu-Ray", RedApi, OpsApi, "BD"), ("Vinyl", OpsApi, RedApi, "Vinyl")],
+    [
+        ("BD", OpsApi, RedApi, "Blu-Ray"),
+        ("Blu-Ray", RedApi, OpsApi, "BD"),
+        ("Vinyl", OpsApi, RedApi, "Vinyl"),
+        ("BD", OpsApi, DICApi, "Blu-Ray"),
+        ("Blu-Ray", DICApi, OpsApi, "BD"),
+        ("Blu-Ray", DICApi, RedApi, "Blu-Ray"),
+    ],
 )
-def test_ops_bd_and_red_blu_ray_are_the_same_media(media: str, source, target, sent: str) -> None:
+def test_ops_bd_and_red_and_dic_blu_ray_are_the_same_media(media: str, source, target, sent: str) -> None:
     response = _fixture("ops-torrent-cd-log.json")
     response["torrent"]["media"] = media
     notes = cross_upload_module._check_torrent(response, source(), target())
@@ -1688,6 +1748,258 @@ def test_a_red_group_given_by_id_shows_its_held_cd_as_a_dupe(monkeypatch, dirs) 
     assert run.target.posts() == []
 
 
+# DIC, from made-up answers (tests/fixtures/cross_upload/dic-torrent-web-24bit.json): no DIC answer has been seen
+
+DIC_FIXTURE = "dic-torrent-web-24bit.json"
+# What DIC's upload form takes on top of the usual fields, for the uploader's own purchase or rip.
+DIC_MARKS = ("buy", "diy", "jinzhuan")
+
+
+def _dic_album(root: Path, *rates: int) -> Path:
+    """The DIC fixture's album on disk: its FLACs 24-bit at the given rates (96 kHz by default), its cover."""
+    folder = _red_album(DIC_FIXTURE, root)
+    rates = rates or (96000,)
+    for number, path in enumerate(sorted(folder.glob("*.flac"))):
+        _write_flac(path, rate=rates[min(number, len(rates) - 1)], bits=24, title=path.stem, artist="Example")
+    return folder
+
+
+def _from_dic(monkeypatch, dirs, target: str, *, args=("-yyy",), input="\n", change=None) -> Run:
+    album = _dic_album(dirs.downloads)
+    answer = _red_fixture_answer(DIC_FIXTURE)
+
+    def changed(folder: Path, torrent_id: int) -> dict[str, Any]:
+        response = answer(folder, torrent_id)
+        if change is not None:
+            change(response)
+        return response
+
+    return _cross_upload(
+        monkeypatch,
+        dirs,
+        [str(TORRENT_ID), *args],
+        input=input,
+        source="DIC",
+        target=target,
+        prepare=_source_has(album, answer=changed),
+    )
+
+
+@pytest.mark.parametrize("target", ["RED", "OPS"])
+def test_a_dic_torrent_goes_with_its_entities_decoded_and_its_links_to_dic_out(monkeypatch, dirs, target) -> None:
+    run = _from_dic(monkeypatch, dirs, target)
+
+    assert run.result.exit_code == 0, run.output
+    # DIC's answer says nothing of a lossy approval, and its group page is not read for one.
+    assert run.source.steps() == {"GET ajax.php?action=index": 1, "GET ajax.php?action=torrent": 1}
+    post = _upload_post(run)
+    assert post.fields["title"] == ["SAMPLE 春 & SONGS"]
+    assert post.fields["album_desc"] == [
+        "[b][size=4]Tracklist[/size][/b]\n[b]01.[/b] Example Ensemble - 春の星 [i](4:00)[/i]\n"
+        "[b]02.[/b] Example Ensemble - Bravo & Charlie [i](3:30)[/i]\n\nAlso in the CD edition and the vinyl."
+    ]
+    header = _header("DIC", target, "uploader", f"{run.source.url}/torrents.php?torrentid={TORRENT_ID}")
+    description = (
+        "购买自 an example store & tagged by hand.\nThanks to a friend, see the thread and \n"
+        "[url=https://www.qobuz.com/album/x00041]Qobuz[/url]"
+    )
+    assert post.fields["release_desc"] == [f"{header}\n\n{description}\n\n{upload_footer()}"]
+    assert (post.fields["remaster_catalogue_number"], post.fields["bitrate"]) == (["EX-0041HR"], ["24bit Lossless"])
+    assert "sample_rate" not in post.fields
+    assert "lossy approval unknown on DICMusic: no lossy report" in run.output
+    assert run.target.reports() == []
+    assert _within_the_plans_bound(run, target)
+
+
+@pytest.mark.parametrize(
+    ("keys", "reported"),
+    [({"lossyWebApproved": True, "lossyMasterApproved": False}, True), ({}, False)],
+    ids=["RED's keys", "no keys"],
+)
+def test_a_dic_lossy_approval_is_read_from_reds_keys_and_otherwise_asked_for(
+    monkeypatch, dirs, keys: dict[str, bool], reported: bool
+) -> None:
+    run = _from_dic(
+        monkeypatch,
+        dirs,
+        "OPS",
+        args=(),
+        input="\ny\n\n",  # The report question or comment, the plan, the group
+        change=lambda response: response["torrent"].update(keys),
+    )
+
+    assert run.result.exit_code == 0, run.output
+    asked = "Report it as lossy on OPS after the upload?" in run.output
+    assert asked is not reported
+    assert ("Could not tell whether DICMusic approved" in run.output) is not reported
+    assert len(run.target.reports()) == int(reported)
+
+
+def _to_dic(monkeypatch, dirs, source: str = "OPS", *, album=None, args=("-yyy",), prepare=None, **kwargs) -> Run:
+    album = album or _album(dirs.downloads / FOLDER)
+
+    def prepared(source_tracker: FakeTracker, target_tracker: FakeTracker) -> None:
+        answer = _red_answer(source_tracker.url) if source == "RED" else _ops_answer
+        _source_has(album, answer=answer)(source_tracker, target_tracker)
+        if prepare is not None:
+            prepare(source_tracker, target_tracker)
+
+    return _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), *args], source=source, target="DIC", prepare=prepared, **kwargs
+    )
+
+
+def _site_uploads(run: Run) -> list[Sent]:
+    return [sent for sent in run.target.posts() if sent.path == "/upload.php"]
+
+
+@pytest.mark.parametrize("source", ["OPS", "RED"])
+def test_an_upload_to_dic_goes_through_its_upload_page_with_its_session_and_no_marks(monkeypatch, dirs, source) -> None:
+    def prepare(source_tracker: FakeTracker, _target: FakeTracker) -> None:
+        # RED's own images do not show on DIC: they are fetched from RED and rehosted.
+        source_tracker.images = {"/i/cover.jpg": JPEG, "/i/inline.png": PNG}
+
+    run = _to_dic(monkeypatch, dirs, source, input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    # Measured: the upload and the group page it redirects to. DIC has a session cookie: its site log is read
+    # when the search finds nothing.
+    assert run.target.steps() == {
+        "GET ajax.php?action=index": 1,
+        "GET ajax.php?action=browse": len(_searchstrs()),
+        "GET log.php": 9,
+        "POST upload.php": 1,
+        "GET torrents.php": 1,
+    }
+    assert all(sent.cookie and not sent.authorization for sent in run.target.sent)
+    # The bound counts each: the search, a group pasted at its prompt, the site log, the page the upload redirects
+    # to, and looking up an upload whose answer was lost.
+    assert f"at most {len(_searchstrs()) + 1 + 9 + 1 + 2} GET and 1 POST to DICMusic" in run.output
+    assert _within_the_plans_bound(run, "DICMusic")
+    (post,) = _site_uploads(run)
+    assert not set(DIC_MARKS) & set(post.fields)
+    assert "Self-purchased" not in run.output
+    assert post.fields["release_desc"][0].startswith(f"[align=center][size=3][b]{source} → DIC[/b]")
+    # A 16-bit torrent: no sample rate.
+    assert "sample_rate" not in post.fields
+    assert run.images == ([("dichost", "image.jpg"), ("dichost", "image.png")] if source == "RED" else [])
+    assert run.seeded == [("/seed", FOLDER)]
+    torrent = Torrent.read(dirs.torrents / f"{FOLDER} - DICMusic.torrent")
+    assert (torrent.source, torrent.trackers) == ("DICMusic", [[f"https://tracker.52dic.vip/{PASSKEY}/announce"]])
+    assert torrent.comment == f"{run.target.url}/torrents.php?torrentid=700001"
+
+
+async def _converted(path: str, *, bit_depth: int, sample_rate: int, output_dir: str | None = None, **_kw: Any):
+    """Stands in for convert_folder: the album's FLACs in the format asked for, where the real one writes them."""
+    new_path = Path(output_dir or os.path.dirname(path), f"{os.path.basename(path)} [{bit_depth}-{sample_rate}]")
+    new_path.mkdir(exist_ok=True)
+    for flac in sorted(Path(path).glob("*.flac")):
+        _write_flac(new_path / flac.name, rate=sample_rate, bits=bit_depth, title=flac.stem, artist="sample3000")
+    return sample_rate, str(new_path)
+
+
+def test_a_24bit_torrent_to_dic_and_its_downconversions_each_send_their_own_sample_rate(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER, 192000, bits=24)
+    monkeypatch.setattr(salmon.uploader, "convert_folder", _converted)
+
+    def prepare(source: FakeTracker, _target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID]["torrent"]["encoding"] = "24bit Lossless"
+
+    run = _to_dic(monkeypatch, dirs, album=album, args=("-yyy", "--downconvert"), input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    uploads = _site_uploads(run)
+    assert [(post.fields["bitrate"], post.fields.get("sample_rate")) for post in uploads] == [
+        (["24bit Lossless"], ["192kHz"]),
+        (["24bit Lossless"], ["96kHz"]),
+        (["Lossless"], None),
+    ]
+    # The downconversions go into the group the first upload made, through the upload page too.
+    assert [sent.query.get("groupid") for sent in uploads] == [None, str(TARGET_GROUP_ID), str(TARGET_GROUP_ID)]
+    assert not any(set(DIC_MARKS) & set(post.fields) for post in uploads)
+    assert run.target.steps()["GET torrents.php"] == 3
+    # As for one upload, with the group read for the formats it has, and a redirect per upload.
+    assert f"at most {len(_searchstrs()) + 1 + 9 + 1 + 3 + 2} GET and 3 POST to DICMusic" in run.output
+    assert _within_the_plans_bound(run, "DICMusic")
+
+
+@pytest.mark.parametrize(
+    ("rates", "said"),
+    [
+        ((44100, 48000), "DICMusic takes one sample rate per torrent, and the files of this one have 44.1 kHz, 48 kHz"),
+        ((32000,), "The files of this torrent are 32 kHz, and DICMusic's upload form has no sample rate option for it"),
+    ],
+    ids=["mixed", "not on the form"],
+)
+def test_a_24bit_torrent_dics_form_has_no_sample_rate_for_stops_before_any_request_to_dic(
+    monkeypatch, dirs, rates: tuple[int, ...], said: str
+) -> None:
+    album = _album(dirs.downloads / FOLDER, *rates, bits=24)
+
+    def prepare(source: FakeTracker, _target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID]["torrent"]["encoding"] = "24bit Lossless"
+
+    run = _to_dic(monkeypatch, dirs, album=album, input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}: {said}" in run.output
+    assert run.target.sent == []
+
+
+def test_a_24bit_torrent_to_a_tracker_with_no_fields_of_its_own_has_its_files_read_for_none(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER, 96000, bits=24)
+
+    def unread(_path: str) -> dict[str, Any]:
+        raise AssertionError("the files were read")
+
+    def prepare(source: FakeTracker, _target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID] = _ops_answer(album)
+        source.torrents[TORRENT_ID]["torrent"]["encoding"] = "24bit Lossless"
+
+    monkeypatch.setattr(cross_upload_module, "gather_audio_info", unread)
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    (post,) = run.target.posts()
+    assert "sample_rate" not in post.fields
+
+
+def test_a_release_crediting_an_arranger_stops_before_any_request_to_dic(monkeypatch, dirs) -> None:
+    def prepare(source: FakeTracker, _target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID]["group"]["musicInfo"]["arranger"] = [{"id": 1, "name": "Someone"}]
+
+    run = _to_dic(monkeypatch, dirs, input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}: DICMusic has no arranger role" in run.output
+    assert run.target.sent == []
+
+
+def test_a_dic_upload_salmon_makes_without_cross_upload_still_asks_for_the_marks(monkeypatch) -> None:
+    asked: list[str] = []
+    sent: list[dict[str, Any]] = []
+
+    async def prompt(text: str, **_kwargs: Any) -> str:
+        asked.append(text)
+        return "p" if len(asked) == 1 else "n"
+
+    async def upload(_site: BaseGazelleApi, data: dict[str, Any], _files: Any) -> tuple[int, int]:
+        sent.append(data)
+        return 1, 2
+
+    monkeypatch.setattr(salmon.trackers.dic.click, "prompt", prompt)
+    monkeypatch.setattr(BaseGazelleApi, "upload", upload)
+    files: Any = None  # Never read: the upload itself is the fake above
+    reposting = DICApi()
+    reposting.skip_upload_marks()
+
+    anyio.run(reposting.upload, {"title": "x"}, files)
+    assert (asked, sent) == ([], [{"title": "x"}])
+    anyio.run(DICApi().upload, {"title": "x"}, files)
+    assert len(asked) == 2
+    assert sent[-1] == {"title": "x", "buy": "on"}
+
+
 # The command line
 
 
@@ -1763,11 +2075,50 @@ def test_a_torrent_file_with_no_announce_is_known_by_its_source_flag(
         assert run.target.sent == []
 
 
+@pytest.mark.parametrize(("source", "target"), [("OPS", "DIC"), ("RED", "OPS"), ("DIC", "RED")])
+def test_a_torrent_salmon_made_for_the_source_and_saved_with_no_announce_is_known_by_its_flag(
+    monkeypatch, dirs, source: str, target: str
+) -> None:
+    # The source flag salmon gives each tracker's torrents, which DIC's are assumed to carry too: no DIC torrent seen.
+    album = _album(dirs.downloads / FOLDER)
+    site = salmon.trackers.tracker_classes[source]()
+    site.passkey, site.dot_torrents_dir = PASSKEY, str(dirs.torrents)
+    _, made = generate_torrent(site, str(album), normalize=False)
+    assert made.source == {"OPS": "OPS", "RED": "RED", "DIC": "DICMusic"}[source]
+    made.trackers = []
+    torrent_file = dirs.torrents.parent / "source.torrent"
+    made.write(torrent_file)
+    # Another tracker's torrent of the same files.
+    other = Torrent(album, private=True, source={"OPS": "RED", "RED": "DICMusic", "DIC": "OPS"}[source])
+    other.generate()
+    other_file = dirs.torrents.parent / "other.torrent"
+    other.write(other_file)
+
+    def prepare(source_tracker: FakeTracker, _target: FakeTracker) -> None:
+        source_tracker.torrents[TORRENT_ID] = {**_ops_answer(album), "hash": made.infohash.upper()}
+
+    run = _cross_upload(
+        monkeypatch,
+        dirs,
+        [str(torrent_file), str(other_file), "-yyy"],
+        input="\n",
+        source=source,
+        target=target,
+        prepare=prepare,
+    )
+
+    assert run.result.exit_code == 0, run.output
+    lookups = [sent.query["hash"] for sent in run.source.sent if sent.query.get("action") == "torrent"]
+    assert lookups == [made.infohash.upper()]
+    assert f"{other_file} has no announce URL and no {site.site_string} source flag" in run.output
+    assert len([sent for sent in run.target.posts() if sent.path in ("/ajax.php", "/upload.php")]) == 1
+
+
 @pytest.mark.parametrize(
     ("args", "said"),
     [
         (["1", "RED", "RED"], "must be different trackers"),
-        (["1", "OPS", "DIC"], "Invalid value for 'TARGET_TRACKER': 'DIC' is not one of"),
+        (["1", "OPS", "MTV"], "Invalid value for 'TARGET_TRACKER': 'MTV' is not one of"),
         (["1", "2", "--path", ".", "OPS", "RED"], "--path and --group-id go with a single INPUT"),
     ],
 )

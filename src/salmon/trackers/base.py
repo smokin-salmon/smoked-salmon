@@ -1165,6 +1165,12 @@ class BaseGazelleApi:
         """
         return {}
 
+    def skip_upload_marks(self) -> None:
+        """Ask for none of the marks this tracker's upload form has for the uploader's own work, and send none.
+
+        For a re-post, such as a cross-upload. A tracker whose form has no such marks has nothing to skip.
+        """
+
     async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via API or upload.php.
 

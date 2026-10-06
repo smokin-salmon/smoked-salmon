@@ -1,9 +1,9 @@
 """The cross-upload form is the one chodeus's fork sends on the live trackers, but for the differences listed here.
 
 tests/fixtures/cross_upload/fork-compiled.json holds what the fork's _compile_data gave for each torrent fixture: the
-OPS ones OPS to RED, the RED ones RED to OPS. Our form must equal it field for field, once each difference listed in
-DIFFERENCES is applied: a field the fork sends that we drop, one we add, or a value we change without listing it here
-fails.
+OPS ones OPS to RED, the RED ones RED to OPS, and the made-up DIC one and some others to and from DIC as their key says.
+Our form must equal it field for field, once each difference listed in DIFFERENCES is applied: a field the fork sends
+that we drop, one we add, or a value we change without listing it here fails.
 """
 
 import html
@@ -14,8 +14,10 @@ from typing import Any
 
 import pytest
 
-from salmon.cross_upload import compile_data, without_tracker_links
+from salmon.cross_upload import ESCAPED_DESCRIPTIONS, compile_data, without_tracker_links
 from salmon.release_notification import get_version
+from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
 from salmon.uploader.upload import upload_footer
@@ -34,7 +36,17 @@ FORK_FOOTER = (
     f"v{FORK['fork_version']} (chodeus fork)[/url] of [url=https://github.com/smokin-salmon/smoked-salmon]"
     "smokin-salmon[/url]"
 )
-SITES = (OpsApi(), RedApi())
+SITES = (OpsApi(), RedApi(), DICApi())
+CLASSES: dict[str, type[BaseGazelleApi]] = {"OPS": OpsApi, "RED": RedApi, "DIC": DICApi}
+
+
+def _direction(sample: str) -> tuple[str, str, str]:
+    """The fixture a sample of fork-compiled.json is from, and its SOURCE and TARGET."""
+    name, *direction = sample.split(" ")
+    if direction:
+        source, target = direction
+        return name, source, target
+    return (name, "OPS", "RED") if name.startswith("ops-") else (name, "RED", "OPS")
 
 
 def _upstream_credit_no_tracker_links_and_our_footer(value: str, _sample: str) -> str:
@@ -53,8 +65,9 @@ def _upstream_credit_no_tracker_links_and_our_footer(value: str, _sample: str) -
     return "\n\n".join(part for part in parts if part)
 
 
-def _reds_unescaped_no_tracker_links_and_size_closed(value: str, sample: str) -> str:
-    value = without_tracker_links(html.unescape(value) if sample.startswith("red-") else value, SITES)
+def _escaped_ones_unescaped_no_tracker_links_and_size_closed(value: str, sample: str) -> str:
+    escaped = _direction(sample)[1] in ESCAPED_DESCRIPTIONS
+    value = without_tracker_links(html.unescape(value) if escaped else value, SITES)
     return value.replace("[b][size=4]Tracklist[/b]", "[b][size=4]Tracklist[/size][/b]")
 
 
@@ -67,28 +80,29 @@ DIFFERENCES: dict[str, tuple[str, Callable[[Any, str], Any]]] = {
         "on the target they would name the source tracker's pages. Upstream's footer instead of the fork's. The "
         "header, the description (trimmed of white space at its ends) and the footer are one blank line apart, "
         "and an empty description (or one emptied by the link removal) leaves no blank lines in their place. The "
-        "fork decodes HTML entities in every source description; only RED's comes escaped, so OPS's, the text as "
-        "written, is not decoded (no OPS sample holds an entity: test_cross_upload.py shows it).",
+        "fork decodes HTML entities in every source description; only RED's comes escaped (and DIC's, it is "
+        "assumed), so OPS's, the text as written, is not decoded (no OPS sample holds an entity: test_cross_upload.py "
+        "shows it).",
         _upstream_credit_no_tracker_links_and_our_footer,
     ),
     "album_desc": (
-        "RED's comes HTML-escaped (bbBody): its HTML entities are decoded, as in release_desc. OPS's (wikiBBcode) "
-        "is the text as written and is not decoded. Links to either tracker's site and Gazelle's "
-        "site tags are taken out, as in release_desc. The one broken shape the old description generator left, "
-        "[b][size=4]Tracklist[/b] with no [/size], is repaired (design section 10, #597). Nothing else in it is "
-        "rewritten.",
-        _reds_unescaped_no_tracker_links_and_size_closed,
+        "RED's comes HTML-escaped (bbBody): its HTML entities are decoded, as in release_desc, and so are DIC's "
+        "(assumed escaped as RED's). OPS's (wikiBBcode) is the text as written and is not decoded. Links to either "
+        "tracker's site and Gazelle's site tags are taken out, as in release_desc. The one broken shape the old "
+        "description generator left, [b][size=4]Tracklist[/b] with no [/size], is repaired (design section 10, #597). "
+        "Nothing else in it is rewritten.",
+        _escaped_ones_unescaped_no_tracker_links_and_size_closed,
     ),
 }
 
 
-def _response(name: str) -> dict[str, Any]:
-    return json.loads((FIXTURES / name).read_text(encoding="utf-8"))["response"]
+def _response(sample: str) -> dict[str, Any]:
+    return json.loads((FIXTURES / _direction(sample)[0]).read_text(encoding="utf-8"))["response"]
 
 
-def _ours(name: str) -> dict[str, Any]:
-    source, target = (OpsApi(), RedApi()) if name.startswith("ops-") else (RedApi(), OpsApi())
-    return compile_data(_response(name), source, target)
+def _ours(sample: str) -> dict[str, Any]:
+    _, source, target = _direction(sample)
+    return compile_data(_response(sample), CLASSES[source](), CLASSES[target]())
 
 
 @pytest.mark.parametrize("name", SAMPLES)
@@ -108,6 +122,15 @@ def test_each_listed_difference_shows_in_some_sample(key: str) -> None:
     assert differing
 
 
-def test_the_samples_cover_both_directions_with_a_cd_with_a_log_and_web_editions() -> None:
-    media = sorted((name[:3], _response(name)["torrent"]["media"]) for name in SAMPLES)
-    assert media == [("ops", "CD"), ("ops", "WEB"), ("ops", "WEB"), ("red", "CD"), ("red", "WEB")]
+def test_the_samples_cover_every_direction_with_a_cd_with_a_log_and_web_editions() -> None:
+    media = sorted((*_direction(sample)[1:], _response(sample)["torrent"]["media"]) for sample in SAMPLES)
+    assert media == [
+        ("DIC", "OPS", "WEB"),
+        ("OPS", "DIC", "WEB"),
+        ("OPS", "RED", "CD"),
+        ("OPS", "RED", "WEB"),
+        ("OPS", "RED", "WEB"),
+        ("RED", "DIC", "CD"),
+        ("RED", "OPS", "CD"),
+        ("RED", "OPS", "WEB"),
+    ]
