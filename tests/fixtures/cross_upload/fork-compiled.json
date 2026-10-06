@@ -1,0 +1,151 @@
+{
+  "about": "The forms chodeus's fork (x-chodeus/master at edf0758, cross_upload._compile_data) compiled from each *-torrent-*.json fixture here, OPS to RED for the ops- ones and RED to OPS for the red- ones, run once in a scratch checkout with no network.",
+  "fork_version": "0.11.0",
+  "compiled": {
+    "ops-torrent-cd-log.json": {
+      "submit": true,
+      "type": 0,
+      "title": "Example Album",
+      "artists[]": [
+        "Example Artist"
+      ],
+      "importance[]": [
+        1
+      ],
+      "year": 2006,
+      "record_label": "",
+      "catalogue_number": "",
+      "releasetype": 1,
+      "remaster": true,
+      "remaster_year": 2006,
+      "remaster_title": "Store Exclusive",
+      "remaster_record_label": "Example Records",
+      "remaster_catalogue_number": "EX-0002",
+      "format": "FLAC",
+      "bitrate": "Lossless",
+      "other_bitrate": null,
+      "vbr": false,
+      "media": "CD",
+      "tags": "acoustic,country,rock,contemporary.country",
+      "image": "https://ptpimg.me/x00001.jpg",
+      "album_desc": "[url=http://www.amazon.com/exec/obidos/ASIN/B000EXAMPL]Amazon[/url]\r\n[url=https://musicbrainz.org/release-group/00000000-0000-4000-8000-000000000001]MusicBrainz[/url]\r\n\r\nCountry: CA\r\nBarcode: 000000000017\r\nTracks: 14\r\n\r\nTrack list:\r\n[#]Opening Road\r\n[#]Quiet Hours\r\n[#]Not Done Yet\r\n[#]Everyone Says\r\n[#]Last Stop\r\n[#]Night Song\r\n[#]Leave It Here\r\n[#]Empty Rooms\r\n[#]Best Year\r\n[#]Inner Voice\r\n[#]Like That\r\n[#]Hold Steady\r\n[#]Hard Times\r\n[#]Hope Again",
+      "release_desc": "[align=center][size=3][b]OPS → RED[/b][/size]\n[size=1]Original upload by uploader · [url=https://orpheus.network/torrents.php?torrentid=600005]View source torrent[/url]\nCross-uploaded with [url=https://github.com/chodeus/smoked-salmon]smoked-salmon[/url] v0.11.0 (chodeus fork)[/size][/align]\n\n\n\n[hr]Uploaded with [url=https://github.com/chodeus/smoked-salmon][b]smoked-salmon[/b] v0.11.0 (chodeus fork)[/url] of [url=https://github.com/smokin-salmon/smoked-salmon]smokin-salmon[/url]"
+    },
+    "ops-torrent-web-lossy-demos.json": {
+      "submit": true,
+      "type": 0,
+      "title": "Example Album",
+      "artists[]": [
+        "Example Artist"
+      ],
+      "importance[]": [
+        1
+      ],
+      "year": 2006,
+      "record_label": "",
+      "catalogue_number": "",
+      "releasetype": 1,
+      "remaster": true,
+      "remaster_year": 2026,
+      "remaster_title": "Anniversary Edition",
+      "remaster_record_label": "Example",
+      "remaster_catalogue_number": "",
+      "format": "FLAC",
+      "bitrate": "Lossless",
+      "other_bitrate": null,
+      "vbr": false,
+      "media": "WEB",
+      "tags": "acoustic,country,rock,contemporary.country",
+      "image": "https://ptpimg.me/x00001.jpg",
+      "album_desc": "[url=http://www.amazon.com/exec/obidos/ASIN/B000EXAMPL]Amazon[/url]\r\n[url=https://musicbrainz.org/release-group/00000000-0000-4000-8000-000000000001]MusicBrainz[/url]\r\n\r\nCountry: CA\r\nBarcode: 000000000017\r\nTracks: 14\r\n\r\nTrack list:\r\n[#]Opening Road\r\n[#]Quiet Hours\r\n[#]Not Done Yet\r\n[#]Everyone Says\r\n[#]Last Stop\r\n[#]Night Song\r\n[#]Leave It Here\r\n[#]Empty Rooms\r\n[#]Best Year\r\n[#]Inner Voice\r\n[#]Like That\r\n[#]Hold Steady\r\n[#]Hard Times\r\n[#]Hope Again",
+      "release_desc": "[align=center][size=3][b]OPS → RED[/b][/size]\n[size=1]Original upload by uploader · [url=https://orpheus.network/torrents.php?torrentid=600006]View source torrent[/url]\nCross-uploaded with [url=https://github.com/chodeus/smoked-salmon]smoked-salmon[/url] v0.11.0 (chodeus fork)[/size][/align]\n\n3 demo tracks are lossy\r\n15-example_artist-not_done_yet_(demo_version)-0a1b2c3d.flac\r\n[img]https://files.catbox.moe/x00002.png[/img] [hide=Zoomed][img]https://files.catbox.moe/x00003.png[/img][/hide]\r\n17-example_artist-hard_times_(demo_version)-4e5f6a7b.flac\r\n[img]https://files.catbox.moe/x00004.png[/img] [hide=Zoomed][img]https://files.catbox.moe/x00005.png[/img][/hide]\r\n19-example_artist-blossoms_(demo)-8c9d0e1f.flac\r\n[img]https://files.catbox.moe/x00006.png[/img] [hide=Zoomed][img]https://files.catbox.moe/x00007.png[/img][/hide]\n\n[hr]Uploaded with [url=https://github.com/chodeus/smoked-salmon][b]smoked-salmon[/b] v0.11.0 (chodeus fork)[/url] of [url=https://github.com/smokin-salmon/smoked-salmon]smokin-salmon[/url]"
+    },
+    "ops-torrent-web-lossy-master-approved.json": {
+      "submit": true,
+      "type": 0,
+      "title": "SAMPLE VOL. I (RMX)",
+      "artists[]": [
+        "sample3000"
+      ],
+      "importance[]": [
+        1
+      ],
+      "year": 2018,
+      "record_label": "",
+      "catalogue_number": "",
+      "releasetype": 1,
+      "remaster": true,
+      "remaster_year": 2023,
+      "remaster_title": "",
+      "remaster_record_label": "SAMPLE GARDEN",
+      "remaster_catalogue_number": "000000000002",
+      "format": "FLAC",
+      "bitrate": "Lossless",
+      "other_bitrate": null,
+      "vbr": false,
+      "media": "WEB",
+      "tags": "latin,latin.american",
+      "image": "https://ptpimg.me/x00012.jpg",
+      "album_desc": "[b][size=4]Tracklist[/b]\n[b]01.[/b] sample3000 - ALFA [i](3:04)[/i]\n[b]02.[/b] sample3000 - BRAVO [i](2:06)[/i]\n[b]03.[/b] sample3000 - charlietango [i](2:08)[/i]\n[b]04.[/b] sample3000 - DELTAWAVE [i](2:10)[/i]\n[b]05.[/b] sample3000 - ÉCHO [i](2:01)[/i]\n[b]06.[/b] sample3000 - FOXTROT [i](2:53)[/i]\n[b]07.[/b] sample3000 - golf.funk3O00 [i](2:09)[/i]\n[b]08.[/b] sample3000 - HOTEL PLANET [i](2:39)[/i]\n[b]09.[/b] sample3000 - india51 [i](3:43)[/i]\n\n[b]Total length: [/b]22:53\n\n[b]More info:[/b] [pad=0|3][url=https://listen.tidal.com/album/100000001][img]https://ptpimg.me/x00008.png[/img] Tidal[/url][/pad] [pad=0|3][url=https://www.deezer.com/album/100000002][img]https://ptpimg.me/x00009.png[/img] Deezer[/url][/pad] [pad=0|3][url=https://www.qobuz.com/album/-/exampleqobuz1][img]https://ptpimg.me/x00010.png[/img] Qobuz[/url][/pad] [pad=0|3][url=https://music.apple.com/album/sample-vol-i/100000003][img]https://ptpimg.me/x00011.png[/img] iTunes[/url][/pad]",
+      "release_desc": "[align=center][size=3][b]OPS → RED[/b][/size]\n[size=1]Original upload by uploader · [url=https://orpheus.network/torrents.php?torrentid=600011]View source torrent[/url]\nCross-uploaded with [url=https://github.com/chodeus/smoked-salmon]smoked-salmon[/url] v0.11.0 (chodeus fork)[/size][/align]\n\n[hide=Spectrals][b]01. ALFA.flac Full[/b]\n[img=https://ptpimg.me/x00013.png]\n[hide=Zoomed][img=https://ptpimg.me/x00014.png][/hide]\n\n[b]02. BRAVO.flac Full[/b]\n[img=https://ptpimg.me/x00015.png]\n[hide=Zoomed][img=https://ptpimg.me/x00016.png][/hide]\n\n[b]03. charlietango.flac Full[/b]\n[img=https://ptpimg.me/x00017.png]\n[hide=Zoomed][img=https://ptpimg.me/x00018.png][/hide]\n\n[b]04. DELTAWAVE.flac Full[/b]\n[img=https://ptpimg.me/x00019.png]\n[hide=Zoomed][img=https://ptpimg.me/x00020.png][/hide]\n\n[b]05. ÉCHO.flac Full[/b]\n[img=https://ptpimg.me/x00021.png]\n[hide=Zoomed][img=https://ptpimg.me/x00022.png][/hide]\n\n[b]06. FOXTROT.flac Full[/b]\n[img=https://ptpimg.me/x00023.png]\n[hide=Zoomed][img=https://ptpimg.me/x00024.png][/hide]\n\n[b]07. golf.funk3O00.flac Full[/b]\n[img=https://ptpimg.me/x00025.png]\n[hide=Zoomed][img=https://ptpimg.me/x00026.png][/hide]\n\n[b]08. HOTEL PLANET.flac Full[/b]\n[img=https://ptpimg.me/x00027.png]\n[hide=Zoomed][img=https://ptpimg.me/x00028.png][/hide]\n\n[b]09. india51.flac Full[/b]\n[img=https://ptpimg.me/x00029.png]\n[hide=Zoomed][img=https://ptpimg.me/x00030.png][/hide]\n\n[/hide]\n[img]https://ptpimg.me/x00031.png[/img] [b]16 bit [color=#2E86C1]44.1[/color] kHz[/b]\nReleased on [b]2023-05-26[/b]\n[b]Source:[/b] [pad=0|3][url=https://listen.tidal.com/album/100000001][img]https://ptpimg.me/x00008.png[/img] Tidal[/url][/pad]\n\n[b]More info:[/b] [pad=0|3][url=https://listen.tidal.com/album/100000001][img]https://ptpimg.me/x00008.png[/img] Tidal[/url][/pad] [pad=0|3][url=https://www.deezer.com/album/100000002][img]https://ptpimg.me/x00009.png[/img] Deezer[/url][/pad] [pad=0|3][url=https://www.qobuz.com/album/-/exampleqobuz1][img]https://ptpimg.me/x00010.png[/img] Qobuz[/url][/pad] [pad=0|3][url=https://music.apple.com/album/sample-vol-i/100000003][img]https://ptpimg.me/x00011.png[/img] iTunes[/url][/pad]\n\n[hr]Uploaded with [url=https://github.com/chodeus/smoked-salmon][b]smoked-salmon[/b] v0.11.0 (chodeus fork)[/url] of [url=https://github.com/smokin-salmon/smoked-salmon]smokin-salmon[/url]"
+    },
+    "red-torrent-cd-log.json": {
+      "submit": true,
+      "type": 0,
+      "title": "Sample Devotions",
+      "artists[]": [
+        "Example Devotional Ensemble"
+      ],
+      "importance[]": [
+        1
+      ],
+      "year": 2008,
+      "record_label": "Example Music",
+      "catalogue_number": "EX 00001 2",
+      "releasetype": 11,
+      "remaster": true,
+      "remaster_year": 2008,
+      "remaster_title": "",
+      "remaster_record_label": "Example Music",
+      "remaster_catalogue_number": "EX 00001 2",
+      "format": "FLAC",
+      "bitrate": "Lossless",
+      "other_bitrate": null,
+      "vbr": false,
+      "media": "CD",
+      "tags": "devotional,raga,world.music,live",
+      "image": "https://redacted.sh/i/x00011.jpg",
+      "album_desc": "Artist: Example Devotional Ensemble\r\nAlbum: Sample Devotions: Live At An Example Hall, 1989 (Remastered)\r\nGenre: Devotional, Example&#39;s Ragas/Classical, World\r\nLabel/Source: Example Music/Sample Records\r\nCatalog Number: EX 00001 2 (Released As SR0001 On Sample Records)\r\nPackage: Box Set\r\nRecording Year: 1989\r\nCD release Year: 2008\r\nCodec: Flac - Level 6\r\nCovers: Complete Scans 300 dpi PNG\r\nExtra Contents: Cues, info, m3u....\r\n\r\n\r\n\r\nFor More Info:\r\n&bull; The ensemble - http://en.wikipedia.org/wiki/Example\r\n&bull; Devotional music - http://en.wikipedia.org/wiki/Sample\r\n\r\nUploader&#39;s comments: an example concert of devotional songs, recorded live over one long night. One of the &#39;outstanding&#39; examples of the form.  \r\n\r\n[img]https://i.imgur.com/x00001.jpg[/img]",
+      "release_desc": "[align=center][size=3][b]RED → OPS[/b][/size]\n[size=1]Original upload by uploader · [url=https://redacted.sh/torrents.php?torrentid=610005]View source torrent[/url]\nCross-uploaded with [url=https://github.com/chodeus/smoked-salmon]smoked-salmon[/url] v0.11.0 (chodeus fork)[/size][/align]\n\n\n\n[hr]Uploaded with [url=https://github.com/chodeus/smoked-salmon][b]smoked-salmon[/b] v0.11.0 (chodeus fork)[/url] of [url=https://github.com/smokin-salmon/smoked-salmon]smokin-salmon[/url]"
+    },
+    "red-torrent-web-lossy-web-approved.json": {
+      "submit": true,
+      "type": 0,
+      "title": "SAMPLE TUNES FROM THE COAST",
+      "artists[]": [
+        "Sample Garden"
+      ],
+      "importance[]": [
+        1
+      ],
+      "year": 2016,
+      "record_label": "",
+      "catalogue_number": "",
+      "releasetype": 1,
+      "remaster": true,
+      "remaster_year": 2018,
+      "remaster_title": "",
+      "remaster_record_label": "Example One Holding",
+      "remaster_catalogue_number": "0000000000031",
+      "format": "FLAC",
+      "bitrate": "Lossless",
+      "other_bitrate": null,
+      "vbr": false,
+      "media": "WEB",
+      "tags": "pop,rock,world.music",
+      "image": "https://redacted.sh/i/x00021.png",
+      "album_desc": "[b][size=4]Tracklist[/b]\n[b]01.[/b] Sample Garden - &#3607;&#3632;&#3648;&#3621;&#3626;&#3637;&#3588;&#3619;&#3634;&#3617; [i](5:20)[/i]\n[b]02.[/b] Sample Garden - &#3621;&#3617;&#3627;&#3609;&#3634;&#3623; [i](4:10)[/i]\n[b]03.[/b] Sample Garden - &#3613;&#3609;&#3605;&#3585;&#3607;&#3637;&#3656;&#3610;&#3657;&#3634;&#3609;&#3648;&#3619;&#3634; [i](5:42)[/i]\n[b]04.[/b] Sample Garden - &#3604;&#3634;&#3623;&#3648;&#3627;&#3609;&#3639;&#3629; [i](4:06)[/i]\n[b]05.[/b] Sample Garden - &#3607;&#3634;&#3591;&#3585;&#3621;&#3633;&#3610;&#3610;&#3657;&#3634;&#3609; [i](4:38)[/i]\n[b]06.[/b] Sample Garden - Sample Tune [i](4:40)[/i]\n[b]07.[/b] Sample Garden - &#3649;&#3626;&#3591;&#3592;&#3633;&#3609;&#3607;&#3619;&#3660; [i](5:05)[/i]\n[b]08.[/b] Sample Garden - &#3604;&#3629;&#3585;&#3652;&#3617;&#3657; (&#3648;&#3623;&#3629;&#3619;&#3660;&#3594;&#3633;&#3609; &quot;&#3629;&#3632;&#3588;&#3641;&#3626;&#3605;&#3636;&#3585;&quot;) [i](4:00)[/i]\n[b]09.[/b] Sample Garden - &#3611;&#3621;&#3634;&#3618;&#3615;&#3657;&#3634; [i](4:45)[/i]\n\n[b]Total length: [/b]42:16\n\n[b]More info:[/b] [pad=0|3][url=https://www.qobuz.com/album/-/x00001][img]https://redacted.sh/i/x00031.png[/img] Qobuz[/url][/pad] [pad=0|3][url=https://www.deezer.com/album/00000002][img]https://redacted.sh/i/x00032.png[/img] Deezer[/url][/pad] [pad=0|3][url=https://www.discogs.com/release/00000003][img]https://redacted.sh/i/x00033.png[/img] Discogs[/url][/pad] [pad=0|3][url=https://itunes.apple.com/us/album/0000000004][img]https://redacted.sh/i/x00034.png[/img] iTunes[/url][/pad]",
+      "release_desc": "[align=center][size=3][b]RED → OPS[/b][/size]\n[size=1]Original upload by uploader · [url=https://redacted.sh/torrents.php?torrentid=610011]View source torrent[/url]\nCross-uploaded with [url=https://github.com/chodeus/smoked-salmon]smoked-salmon[/url] v0.11.0 (chodeus fork)[/size][/align]\n\n[hide=Spectrals][b]01. ทะเลสีคราม.flac Full[/b]\n[img=https://ptpimg.me/x00202.png]\n[hide=Zoomed][img=https://ptpimg.me/x00203.png][/hide]\n\n[b]02. ลมหนาว.flac Full[/b]\n[img=https://ptpimg.me/x00204.png]\n[hide=Zoomed][img=https://ptpimg.me/x00205.png][/hide]\n\n[b]03. ฝนตกที่บ้านเรา.flac Full[/b]\n[img=https://ptpimg.me/x00206.png]\n[hide=Zoomed][img=https://ptpimg.me/x00207.png][/hide]\n\n[b]04. ดาวเหนือ.flac Full[/b]\n[img=https://ptpimg.me/x00208.png]\n[hide=Zoomed][img=https://ptpimg.me/x00209.png][/hide]\n\n[b]05. ทางกลับบ้าน.flac Full[/b]\n[img=https://ptpimg.me/x00210.png]\n[hide=Zoomed][img=https://ptpimg.me/x00211.png][/hide]\n\n[b]06. Sample Tune.flac Full[/b]\n[img=https://ptpimg.me/x00212.png]\n[hide=Zoomed][img=https://ptpimg.me/x00213.png][/hide]\n\n[b]07. แสงจันทร์.flac Full[/b]\n[img=https://ptpimg.me/x00214.png]\n[hide=Zoomed][img=https://ptpimg.me/x00215.png][/hide]\n\n[b]08. ดอกไม้ (เวอร์ชัน _อะคูสติก_).flac Full[/b]\n[img=https://ptpimg.me/x00216.png]\n[hide=Zoomed][img=https://ptpimg.me/x00217.png][/hide]\n\n[b]09. ปลายฟ้า.flac Full[/b]\n[img=https://ptpimg.me/x00218.png]\n[hide=Zoomed][img=https://ptpimg.me/x00219.png][/hide]\n\n[/hide]\n[img]https://ptpimg.me/x00300.png[/img] [b]16 bit [color=#2E86C1]44.1[/color] kHz[/b]\nReleased on [b]2018-01-01[/b]\n[b]Source:[/b] [pad=0|3][url=https://www.qobuz.com/album/-/x00001][img]https://ptpimg.me/x00301.png[/img] Qobuz[/url][/pad]\n\n[b]More info:[/b] [pad=0|3][url=https://www.qobuz.com/album/-/x00001][img]https://ptpimg.me/x00301.png[/img] Qobuz[/url][/pad] [pad=0|3][url=https://www.deezer.com/album/00000002][img]https://ptpimg.me/x00302.png[/img] Deezer[/url][/pad] [pad=0|3][url=https://www.discogs.com/release/00000003][img]https://ptpimg.me/x00303.png[/img] Discogs[/url][/pad] [pad=0|3][url=https://itunes.apple.com/us/album/0000000004][img]https://ptpimg.me/x00304.png[/img] iTunes[/url][/pad]\n\n[hr]Uploaded with [url=https://github.com/chodeus/smoked-salmon][b]smoked-salmon[/b] v0.11.0 (chodeus fork)[/url] of [url=https://github.com/smokin-salmon/smoked-salmon]smokin-salmon[/url]"
+    }
+  }
+}

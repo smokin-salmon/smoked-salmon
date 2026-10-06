@@ -1663,13 +1663,45 @@ async def upload_and_report(
             source_url=source_url,
         )
 
-    # Generate URL
+    url = finish_upload(
+        gazelle_site, path, torrent_id, torrent_path, torrent_content, metadata.get("format", ""), seedbox_uploader
+    )
+    return torrent_id, group_id, torrent_path, torrent_content, url
+
+
+def finish_upload(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    torrent_id: int,
+    torrent_path: str,
+    torrent_content: Any,
+    format: str,
+    seedbox_uploader: UploadManager,
+    *,
+    copy_folder: bool = True,
+) -> str:
+    """Write the uploaded torrent with its URL, and queue it for the seedboxes.
+
+    Args:
+        gazelle_site: The tracker it was uploaded to.
+        path: The folder the torrent was made from.
+        torrent_id: The uploaded torrent's ID.
+        torrent_path: Where the .torrent file is.
+        torrent_content: The torrent.
+        format: The torrent's format, e.g. "FLAC".
+        seedbox_uploader: Seedbox upload manager.
+        copy_folder: Copy the folder to the seedboxes before adding the torrent. False when they already have
+            it, as for a cross-upload, whose files already seed the other tracker's torrent.
+
+    Returns:
+        The uploaded torrent's URL. In a dry run, nothing is written, seeded or copied.
+    """
     url = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
     if dryrun.active():
         # Nothing was uploaded: nothing to seed, and no URL to copy.
         if cfg.upload.upload_to_seedbox:
             dryrun.say("not copying it to a seedbox or adding it to a torrent client.")
-        return torrent_id, group_id, torrent_path, torrent_content, url
+        return url
 
     torrent_content.comment = url
     torrent_content.write(torrent_path, overwrite=True)
@@ -1688,15 +1720,15 @@ async def upload_and_report(
     # Add to seedbox upload queue
     if cfg.upload.upload_to_seedbox:
         click.secho("Add uploading task.", fg="green")
-        # Check if it's a FLAC file
-        is_flac = metadata.get("format", "").upper() == "FLAC"
+        is_flac = format.upper() == "FLAC"
         site_code = gazelle_site.site_code
-        seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac, site_code=site_code)
+        if copy_folder:
+            seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac, site_code=site_code)
         seedbox_uploader.add_upload_task(
             torrent_path, task_type="seed", is_flac=is_flac, folder=path, site_code=site_code
         )
 
-    return torrent_id, group_id, torrent_path, torrent_content, url
+    return url
 
 
 def convert_genres(genres):
