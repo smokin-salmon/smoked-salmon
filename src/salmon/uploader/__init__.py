@@ -16,6 +16,7 @@ from salmon import cfg, dryrun
 from salmon.checks import mqa_test
 from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
+from salmon.checks.provenance import gather_provenance
 from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
@@ -545,6 +546,19 @@ async def _check_logs(path: str) -> None:
                 raise click.Abort() from e
 
 
+def _warn_about_provenance(path: str) -> None:
+    """Print each ripper or store marker in the tags that the audio contradicts.
+
+    Read before the files are retagged, which can blank or replace their comments. Only warns: it never
+    stops the upload or changes an answer, and prints nothing when no marker contradicts the audio.
+    """
+    contradictions = gather_provenance(path)["contradictions"]
+    if contradictions:
+        click.secho("\nTag markers the audio contradicts:", fg="yellow", bold=True)
+        for note in contradictions:
+            click.secho(f"  - {note}", fg="yellow")
+
+
 async def upload(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -787,6 +801,8 @@ async def _upload_staged(
 
             if source == "CD" and not skip_log_check:
                 await _check_logs(path)
+
+            _warn_about_provenance(path)
 
             if group_fetch is not None:
                 results, recent_uploads = await group_fetch.result()
