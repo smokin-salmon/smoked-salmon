@@ -83,6 +83,11 @@ class DICApi(BaseGazelleApi):
             )
         return {"sample_rate": SAMPLE_RATES[rate]}
 
+    def skip_upload_marks(self) -> None:
+        """Send none of the Self-purchased, Self-rip and Exclusive marks, and do not ask for them."""
+        self.specific_params = {}
+        self._marks_prompted = True
+
     async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Attempt to upload a torrent to the site using the upload.php.
 

@@ -327,7 +327,7 @@ and piece size instead of sending it. It only reads from the tracker (the login 
 no image (the form shows a placeholder for each image URL), copies nothing to a seedbox and adds nothing to a
 torrent client. The copy, with its torrent files and transcodes, is removed when the run ends.
 
-To upload a torrent that is on RED to OPS, or the reverse, from the files you already have:
+To upload a torrent that is on RED, OPS or DIC to another of them, from the files you already have:
 ```bash
 salmon cross-upload 123456 RED OPS
 ```
@@ -337,7 +337,9 @@ with `--path`). salmon first reads each torrent and checks its files, its log an
 plan; then, for each release, it checks the target for duplicates as `up` does and uploads it with the
 source's group and torrent data. The album folder is never changed: the new torrent seeds from the same files,
 and a seedbox only gets the new torrent, not another copy. `--dry-run` reads from both trackers and sends
-nothing.
+nothing. A cross-upload to DIC is never marked Self-purchased, Self-rip or Exclusive (it is a re-post, so it is
+not asked), and a 24-bit one gets its sample rate as `up` sends it. DIC's support follows chodeus's fork: its
+rules and answers have not been checked against DIC itself.
 
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 

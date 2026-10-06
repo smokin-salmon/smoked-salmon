@@ -1,0 +1,78 @@
+{
+ "about": "Made up: no DIC answer has been seen. Shaped like RED's (red-*.json): its keys but the lossy approval ones, HTML entities in the text, with links to DIC's site.",
+ "status": "success",
+ "response": {
+  "group": {
+   "wikiBody": "<strong><span class=\"size4\">Tracklist</span></strong><br />\n<strong>01.</strong> Example Ensemble - &#26149;&#12398;&#26143; <span style=\"font-style: italic;\">(4:00)</span><br />\n<strong>02.</strong> Example Ensemble - Bravo &amp; Charlie <span style=\"font-style: italic;\">(3:30)</span><br />",
+   "bbBody": "[b][size=4]Tracklist[/size][/b]\n[b]01.[/b] Example Ensemble - &#26149;&#12398;&#26143; [i](4:00)[/i]\n[b]02.[/b] Example Ensemble - Bravo &amp; Charlie [i](3:30)[/i]\n\nAlso in [url=https://dicmusic.com/torrents.php?id=520001]the CD edition[/url] and [url=torrents.php?id=520002]the vinyl[/url].",
+   "wikiImage": "https://ptpimg.me/x00041.jpg",
+   "id": 520003,
+   "name": "SAMPLE &#26149; &amp; SONGS",
+   "year": 2019,
+   "recordLabel": "Example Records",
+   "catalogueNumber": "EX-0041",
+   "releaseType": 1,
+   "categoryId": 1,
+   "categoryName": "Music",
+   "time": "2025-01-02 03:04:05",
+   "collages": null,
+   "personalCollages": null,
+   "vanityHouse": false,
+   "isBookmarked": false,
+   "musicInfo": {
+    "composers": [],
+    "dj": [],
+    "artists": [
+     {
+      "id": 10041,
+      "name": "Example Ensemble"
+     }
+    ],
+    "with": [],
+    "conductor": [],
+    "remixedBy": [],
+    "producer": []
+   },
+   "tags": [
+    "classical",
+    "chinese"
+   ]
+  },
+  "torrent": {
+   "id": 620041,
+   "infoHash": "0000000000000000000000000000000000000000",
+   "media": "WEB",
+   "format": "FLAC",
+   "encoding": "24bit Lossless",
+   "remastered": true,
+   "remasterYear": 2020,
+   "remasterTitle": "Hi-Res",
+   "remasterRecordLabel": "Example Records",
+   "remasterCatalogueNumber": "EX-0041HR",
+   "scene": false,
+   "hasLog": false,
+   "hasCue": false,
+   "logScore": 0,
+   "ripLogIds": [],
+   "fileCount": 3,
+   "size": 113300006,
+   "canUseToken": false,
+   "seeders": 1,
+   "leechers": 0,
+   "snatched": 1,
+   "has_snatched": false,
+   "trumpable": false,
+   "trumpable_reasons": [],
+   "freeTorrent": false,
+   "isNeutralleech": false,
+   "isFreeload": false,
+   "reported": false,
+   "time": "2025-01-02 03:04:05",
+   "description": "&#36141;&#20080;&#33258; an example store &amp; tagged by hand.\nThanks to [url=https://dicmusic.com/user.php?id=7]a friend[/url], see [url=forums.php?action=viewthread&amp;threadid=8]the thread[/url] and https://dicmusic.com/torrents.php?id=520001\n[url=https://www.qobuz.com/album/x00041]Qobuz[/url]",
+   "fileList": "01. &#26149;&#12398;&#26143;.flac{{{61000001}}}|||02. Bravo &amp; Charlie.flac{{{52000002}}}|||cover.jpg{{{300003}}}",
+   "filePath": "Example Ensemble - SAMPLE &#26149; &amp; SONGS (2020) [WEB 24-96 FLAC]",
+   "userId": 0,
+   "username": "uploader"
+  }
+ }
+}

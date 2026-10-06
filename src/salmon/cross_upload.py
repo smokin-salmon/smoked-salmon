@@ -1,4 +1,4 @@
-"""`salmon cross-upload`: upload a torrent that is on RED to OPS, or the reverse, from the files already on disk.
+"""`salmon cross-upload`: upload a torrent that is on RED, OPS or DIC to another of them, from the files on disk.
 
 The run reads every release's torrent from SOURCE and checks it locally first (the data the form gets, the
 files on disk, the log, the images), shows the plan, and only then sends anything to TARGET: per release, the
@@ -7,7 +7,8 @@ there stops the run, and says what is already up.
 
 Ported from chodeus's fork (cross_upload.py), the version used on the live trackers: the form, the order of
 the steps around the upload and the description are the fork's, apart from the differences
-tests/test_cross_upload_fork_parity.py lists.
+tests/test_cross_upload_fork_parity.py lists. DIC goes as the fork sends it, but for the same differences; what
+DIC's rules and API answers are is not checked against DIC itself: where it matters, the code says what is assumed.
 """
 
 import html
@@ -17,7 +18,7 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import anyio
@@ -30,12 +31,20 @@ from salmon import cfg, dryrun
 from salmon.common import commandgroup
 from salmon.config.image_hosts import HOST_RULES
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
-from salmon.errors import DryRunRefused, ImageUploadFailed, RequestError, RequestFailedError, UploadError
+from salmon.errors import (
+    DryRunRefused,
+    ImageUploadFailed,
+    RequestError,
+    RequestFailedError,
+    UploadError,
+    UploadRefusedError,
+)
 from salmon.images import HOSTS, image_host_for_tracker
 from salmon.images import red as red_images
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.tags import gather_tags
+from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import (
     _check_logs,
     downconversion_format,
@@ -62,11 +71,8 @@ from salmon.uploader.upload import (
     upload_footer,
 )
 
-if TYPE_CHECKING:
-    from salmon.trackers.base import BaseGazelleApi
-
-# The trackers a release can go between. DIC is not one: its rules and API answers are not checked.
-TRACKERS = ("RED", "OPS")
+# The trackers a release can go between.
+TRACKERS = ("RED", "OPS", "DIC")
 MAX_RELEASES = 5
 # The most images one release may need fetched from SOURCE and uploaded again.
 MAX_REHOSTED_IMAGES = 10
@@ -84,14 +90,20 @@ ARTIST_FIELDS = {
 }
 
 # The hosts each tracker serves its site, its images and its announces from (and their subdomains).
-TRACKER_HOSTS = {"RED": ("redacted.sh", "flacsfor.me"), "OPS": ("orpheus.network", "opsfet.ch")}
+TRACKER_HOSTS = {
+    "RED": ("redacted.sh", "flacsfor.me"),
+    "OPS": ("orpheus.network", "opsfet.ch"),
+    # DIC's site, and the domain its announces are on (tracker.52dic.vip).
+    "DIC": ("dicmusic.com", "52dic.vip"),
+}
 # The HOST_RULES row of a tracker's own image host, which says where its images show. A tracker with none shows
 # only its own images.
 TRACKER_IMAGE_HOSTS = {"RED": "red"}
-# The media a tracker names otherwise than SOURCES does: OPS's BD is RED's Blu-Ray.
-TRACKER_MEDIA = {"OPS": {"Blu-Ray": "BD"}, "RED": {"BD": "Blu-Ray"}}
-# The trackers whose API gives descriptions HTML-escaped.
-ESCAPED_DESCRIPTIONS = ("RED",)
+# The media a tracker names otherwise than SOURCES does: OPS's BD is RED's and DIC's Blu-Ray.
+TRACKER_MEDIA = {"OPS": {"Blu-Ray": "BD"}, "RED": {"BD": "Blu-Ray"}, "DIC": {"BD": "Blu-Ray"}}
+# The trackers whose API gives descriptions HTML-escaped. DIC is assumed to be like RED: no sample of its answers
+# shows it either way.
+ESCAPED_DESCRIPTIONS = ("RED", "DIC")
 UPSTREAM_URL = "https://github.com/smokin-salmon/smoked-salmon"
 
 # The one known broken shape an album description salmon wrote used to have (#597).
@@ -211,6 +223,8 @@ async def cross_upload(
 
     source_site = salmon.trackers.get_class(source)()
     target_site = salmon.trackers.get_class(target)()
+    # A cross-upload is a re-post: it is never marked as the user's own purchase or rip.
+    target_site.skip_upload_marks()
     # The same ID or file given twice is read once.
     items = list(dict.fromkeys(_input_item(value, source_site) for value in inputs))
     with dryrun.mode(dry_run):
@@ -374,6 +388,7 @@ async def _prepare(
     release.data = compile_data(response, source, target)
     release.path = _release_path(response, path)
     _verify_release_files(response, release.path, target)
+    release.data.update(_target_form_fields(release, target))
 
     if release.torrent["media"] == "CD":
         try:
@@ -411,8 +426,8 @@ async def _source_response(item: int | Path, source: "BaseGazelleApi") -> dict[s
 def _check_torrent(response: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi") -> list[str]:
     """Stop on what TARGET has no value for, and say what the plan should show about the rest.
 
-    RED and OPS accept a CD with no log or a log under 100, and a torrent the other one flags as trumpable or
-    reported: those go up as they are, and the plan says so.
+    A CD with no log or a log under 100, and a torrent SOURCE flags as trumpable or reported, go up as they are
+    (RED and OPS accept them; DIC is assumed to), and the plan says so.
 
     Returns:
         The plan's notes about the torrent.
@@ -436,7 +451,7 @@ def _check_torrent(response: dict[str, Any], source: "BaseGazelleApi", target: "
         if not torrent.get("hasLog"):
             notes.append(f"a CD with no rip log {on_source}")
         else:
-            # RED's answer has no checksum key: only OPS's says whether the checksum is good.
+            # RED's answer has no checksum key (nor, presumably, DIC's): only OPS's says whether the checksum is good.
             checksum = ""
             if "logChecksum" in torrent:
                 checksum = ", checksum good" if torrent["logChecksum"] else ", checksum missing or bad"
@@ -449,6 +464,24 @@ def _check_torrent(response: dict[str, Any], source: "BaseGazelleApi", target: "
     if group.get("vanityHouse"):
         notes.append(f"Vanity House {on_source}: sent to {target.site_string} without the flag")
     return notes
+
+
+def _target_form_fields(release: Release, target: "BaseGazelleApi") -> dict[str, str]:
+    """The fields only TARGET's upload form has, as `up` sends them: DIC's sample rate for 24bit Lossless.
+
+    The files are read for them only for a tracker that has some, and only a 24-bit torrent's: no tracker's own
+    fields depend on the files of any other.
+
+    Raises:
+        CrossUploadRefused: If TARGET's form has no value that describes the files.
+    """
+    if type(target).upload_form_fields is BaseGazelleApi.upload_form_fields:
+        return {}
+    track_data = _track_data(release) if release.torrent["encoding"] == "24bit Lossless" else {}
+    try:
+        return target.upload_form_fields(_edition(release), track_data)
+    except UploadRefusedError as error:
+        raise CrossUploadRefused(str(error)) from None
 
 
 def _target_media(media: Any, target: "BaseGazelleApi") -> Any:
@@ -525,8 +558,8 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
 def _as_written(description: str, source: "BaseGazelleApi") -> str:
     """A description from SOURCE's API as it was written.
 
-    RED's comes HTML-escaped (&#39;, &amp;, anything outside ASCII as a numeric entity). OPS's is the text as written:
-    unescaping it would turn a link's "&section=" into "§ion=".
+    RED's comes HTML-escaped (&#39;, &amp;, anything outside ASCII as a numeric entity), and DIC's is assumed to (no
+    sample of it). OPS's is the text as written: unescaping it would turn a link's "&section=" into "§ion=".
     """
     return html.unescape(description) if source.site_code in ESCAPED_DESCRIPTIONS else description
 
@@ -895,6 +928,10 @@ def most_requests(release: Release, target: "BaseGazelleApi", group_id: int | No
         gets += 1  # The group, for the formats it already has
     if target.site_code == "RED":
         gets += uploads  # RED's upload page, for an upload into an existing group through it
+    if target.site_code == "RED" or not target.api_key:
+        # The new torrent's page, which an upload through the upload page redirects to: DIC's (it has no API key),
+        # RED's with a log.
+        gets += uploads
     gets += 2  # Looking up an upload whose answer was lost (then the run stops)
     posts = uploads
     if release.lossy_report is not None:
