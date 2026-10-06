@@ -29,7 +29,7 @@ from salmon.tagger.audio_info import gather_audio_info, recompress_path
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
 from salmon.tagger.retagger import create_artist_str
-from salmon.tagger.sources import run_metadata
+from salmon.tagger.sources import METASOURCES, run_metadata
 from salmon.uploader.seedbox import seedbox_secrets
 from salmon.uploader.spectrals import (
     check_spectrals,
@@ -76,6 +76,21 @@ async def descgen(urls: tuple[str, ...]) -> None:
     if not urls:
         click.secho("You must specify at least one URL", fg="red")
         return
+
+    # Checked before any scrape starts, so a bad argument sends no request and ends without a traceback.
+    unsupported = [url for url in urls if not any(source.Scraper.regex.match(url) for source in METASOURCES.values())]
+    if unsupported:
+        sources = ", ".join(METASOURCES)
+        for url in unsupported:
+            if os.path.isdir(url):
+                click.secho(
+                    f"{url} is a folder; descgen takes store URLs ({sources}), `salmon up` writes the description "
+                    "itself.",
+                    fg="red",
+                )
+            else:
+                click.secho(f"{url} is not a release URL descgen supports. It takes URLs from {sources}.", fg="red")
+        raise click.exceptions.Exit(1)
 
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
     metadatas = await asyncio.gather(*tasks)
