@@ -30,9 +30,10 @@ MARKER_FIELDS = (
 
 # A bare domain has to swallow its port and path too, or "hd24bit.com/24bit"
 # leaves "/24bit" behind and the leftover reads as a claim about the audio.
+# Any all-letter suffix counts as a domain ("hd24bit.de"), not only a known list.
 _URL_RE = re.compile(
     r"(?:https?://|www\.)\S+"
-    r"|\b[\w-]+\.(?:com|net|org|io|co|me|ru|to|cc|sh)\b(?::\d+)?(?:[/?#]\S*)?",
+    r"|\b[\w-]+\.[a-z]{2,24}\b(?::\d+)?(?:[/?#]\S*)?",
     re.IGNORECASE,
 )
 _DEPTH_CLAIM_RE = re.compile(r"(\d{2})\s*-?\s*bit", re.IGNORECASE)

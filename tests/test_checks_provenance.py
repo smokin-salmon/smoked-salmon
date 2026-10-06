@@ -61,22 +61,32 @@ def test_a_24bit_claim_on_a_16bit_file_is_reported_with_its_file_field_and_both_
 
 
 def test_a_matching_claim_is_not_a_contradiction(tmp_path) -> None:
-    assert pv.gather_provenance(_album(tmp_path, bits=24, rate=96000, comment="24-bit master"))["contradictions"] == []
+    album = _album(tmp_path, bits=24, rate=96000, comment="24-bit master")
+
+    assert pv.gather_provenance(album)["contradictions"] == []
 
 
 @pytest.mark.parametrize(
     "marker",
-    ["hd24bit.com", "hd24bit.com/24bit", "hd24bit.com:8080/24bit", "from hd24bit.com/releases/24bit-master"],
+    [
+        "hd24bit.com",
+        "hd24bit.de",
+        "hd24bit.com/24bit",
+        "hd24bit.com:8080/24bit",
+        "from hd24bit.com/releases/24bit-master",
+    ],
 )
 def test_a_depth_inside_a_domain_is_a_name_not_a_claim(tmp_path, marker: str) -> None:
-    provenance = pv.gather_provenance(_album(tmp_path, bits=16, comment=marker))
+    album = _album(tmp_path, bits=16, comment=marker)
+
+    provenance = pv.gather_provenance(album)
 
     assert provenance["contradictions"] == []
     assert provenance["markers"] == [f"comment: {marker}"], "the marker is still read, only not as a claim"
 
 
 def test_a_real_claim_beside_a_domain_is_still_caught(tmp_path) -> None:
-    for marker in ("24bit master from hd24bit.com", "hd24bit.com, 24bit master"):
+    for marker in ("24bit master from hd24bit.com", "hd24bit.com, 24bit master", "hd24bit.de 24bit master"):
         _write_flac(tmp_path / "01.flac", bits=16, comment=marker)
         assert len(pv.gather_provenance(str(tmp_path))["contradictions"]) == 1, marker
 
@@ -106,9 +116,9 @@ def test_eac_on_a_24bit_96khz_flac_is_reported(tmp_path) -> None:
 
 
 def test_eac_on_a_16bit_44khz_flac_is_ordinary(tmp_path) -> None:
-    assert (
-        pv.gather_provenance(_album(tmp_path, **{"encoded-by": "EAC"}, comment="EAC FLAC -8"))["contradictions"] == []
-    )
+    album = _album(tmp_path, **{"encoded-by": "EAC"}, comment="EAC FLAC -8")
+
+    assert pv.gather_provenance(album)["contradictions"] == []
 
 
 @pytest.mark.parametrize(
@@ -116,7 +126,9 @@ def test_eac_on_a_16bit_44khz_flac_is_ordinary(tmp_path) -> None:
     ["Exact Audio Copy V1.6", "eac", "whipper 0.10.0", "morituri", "Rubyripper", "CUERipper v2.2.6"],
 )
 def test_every_pure_cd_ripper_is_recognised_as_a_word(tmp_path, marker: str) -> None:
-    assert len(pv.gather_provenance(_album(tmp_path, bits=16, rate=48000, encoder=marker))["contradictions"]) == 1
+    album = _album(tmp_path, bits=16, rate=48000, encoder=marker)
+
+    assert len(pv.gather_provenance(album)["contradictions"]) == 1
 
 
 @pytest.mark.parametrize(
@@ -124,12 +136,16 @@ def test_every_pure_cd_ripper_is_recognised_as_a_word(tmp_path, marker: str) -> 
 )
 def test_a_ripper_that_also_converts_downloads_is_not_a_cd_claim(tmp_path, marker: str) -> None:
     """These also convert hi-res downloads: their marker on a clean 24/96 WEB release must not warn."""
-    assert pv.gather_provenance(_album(tmp_path, bits=24, rate=96000, **{"encoded-by": marker}))["contradictions"] == []
+    album = _album(tmp_path, bits=24, rate=96000, **{"encoded-by": marker})
+
+    assert pv.gather_provenance(album)["contradictions"] == []
 
 
 @pytest.mark.parametrize("marker", ["PEACE", "E-AC-3", "eac3to", "teacher"])
 def test_eac_inside_another_word_is_not_a_ripper(tmp_path, marker: str) -> None:
-    assert pv.gather_provenance(_album(tmp_path, bits=24, rate=96000, comment=marker))["contradictions"] == []
+    album = _album(tmp_path, bits=24, rate=96000, comment=marker)
+
+    assert pv.gather_provenance(album)["contradictions"] == []
 
 
 # MP3 and M4A frames, read by their field names
