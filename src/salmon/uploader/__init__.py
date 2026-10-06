@@ -547,15 +547,21 @@ async def _check_logs(path: str) -> None:
                 raise click.Abort() from e
 
 
-def _on_do_not_upload_list(tracker: str, metadata: dict[str, Any]) -> bool:
-    """Whether the tracker's Do-Not-Upload list forbids the release, saying why when it does.
+def _do_not_upload_refusal(tracker: str, release: dict[str, Any], said: str | None = None) -> str | None:
+    """Why the tracker's Do-Not-Upload list forbids the release, if it does, saying it unless it was said already.
 
     Nothing skips it, -yyy included.
+
+    Args:
+        release: The release's rls_data or metadata.
+        said: The reason a check of the same tracker gave before the review, if any.
     """
-    reason = do_not_upload_reason(tracker, Candidate.from_metadata(metadata))
-    if reason is not None:
+    reason = do_not_upload_reason(tracker, Candidate.from_metadata(release))
+    if reason is not None and reason != said:
         click.secho(f"\nNot uploading to {tracker}: {reason}", fg="red", bold=True)
-    return reason is not None
+    elif reason is None and said is not None:
+        click.secho(f"\nAs reviewed, the release is not on {tracker}'s Do-Not-Upload list.", fg="yellow")
+    return reason
 
 
 def _warn_about_provenance(path: str) -> None:
@@ -781,9 +787,15 @@ async def _upload_staged(
     source_flac = None
 
     dupe_searchstrs: list[str] = []
+    # A release the first tracker's list forbids gets no group search there, so no prompt to pick a group. The
+    # review may change the names: the list is checked again after it.
+    tags_refusal = _do_not_upload_refusal(gazelle_site.site_code, rls_data)
     if group_id is None:
-        searchstrs = dupe_searchstrs = generate_dupe_check_searchstrs(
-            rls_data["artists"], rls_data["title"], rls_data["catno"]
+        # Left empty for a listed release: if the review takes it off the list, recheck_dupe then searches.
+        searchstrs = dupe_searchstrs = (
+            []
+            if tags_refusal
+            else generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
         )
 
     try:
@@ -863,7 +875,9 @@ async def _upload_staged(
                 ),
             )
 
-            if not group_id:
+            # Before anything is made or sent for the first tracker: its group, spectrals, cover and upload.
+            first_listed = _do_not_upload_refusal(gazelle_site.site_code, metadata, said=tags_refusal) is not None
+            if not group_id and not first_listed:
                 group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
                 click.echo()
             # From here on, the review may have changed the artists, title or catno, so search strings and
@@ -919,8 +933,6 @@ async def _upload_staged(
     try:
         lossy_comment = None
         spectral_urls = None
-        # Before anything is made or sent for the first tracker: its spectrals, its cover, its upload.
-        first_listed = _on_do_not_upload_list(gazelle_site.site_code, metadata)
         if not spectrals_after:
             if lossy_master:
                 lossy_comment = await generate_lossy_approval_comment(source_url, list(track_data.keys()))
@@ -966,7 +978,7 @@ async def _upload_staged(
                         break
                     gazelle_site = salmon.trackers.get_class(tracker)()
                     # Before its dupe check, which may ask which group to upload into.
-                    if _on_do_not_upload_list(tracker, metadata):
+                    if _do_not_upload_refusal(tracker, metadata) is not None:
                         remaining_gazelle_sites.remove(tracker)
                         tracker = None
                         continue

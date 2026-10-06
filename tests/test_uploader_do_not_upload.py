@@ -97,11 +97,71 @@ def test_a_listed_last_tracker_ends_the_run_cleanly(monkeypatch, tmp_path, dirs,
     assert run.result.exit_code == 0, run.result.output
     assert "Not uploading to RED: Artist (the whole discography)" in run.result.output
     assert "Traceback" not in run.result.output
-    # Nothing was sent or uploaded for RED: only the reads made before the review.
+    # Nothing was sent or uploaded for RED, and it was not even searched.
     assert run.tracker.not_gets() == []
-    assert {sent.query.get("action") for sent in run.tracker.sent} <= {"index", "browse"}
+    assert "browse" not in {sent.query.get("action") for sent in run.tracker.sent}
     assert images == []
     assert run.queued == []
+
+
+def _announcing(name: str):
+    """A stand-in for a check that only says it ran, and finds nothing."""
+
+    async def fake(*_args, **_kwargs):
+        print(f"{name} ran")
+        return False, None
+
+    return fake
+
+
+def test_a_release_listed_by_its_tags_is_refused_before_the_group_search_and_its_prompt(
+    monkeypatch, tmp_path, dirs
+) -> None:
+    downloads, torrents = dirs
+    write_lists(monkeypatch, tmp_path / "lists", RED=ARTIST)
+    groups_resolved: list[object] = []
+
+    async def resolve_existing_group(*args, **_kwargs):
+        groups_resolved.append(args)
+        return None
+
+    run = _run_up(
+        monkeypatch,
+        _album(downloads.parent / "seeding" / "Album"),
+        torrents,
+        multi_tracker_upload=False,
+        resolve_existing_group=resolve_existing_group,
+        check_spectrals=_announcing("check_spectrals"),
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    # Said once, before the checks that follow the tags (the spectrals here), and not again after the review.
+    assert run.result.output.count("Not uploading to RED: Artist (the whole discography)") == 1
+    assert run.result.output.index("Not uploading to RED") < run.result.output.index("check_spectrals ran")
+    assert groups_resolved == []
+    assert "browse" not in {sent.query.get("action") for sent in run.tracker.sent}
+
+
+def test_a_release_the_review_takes_off_the_list_is_searched_and_uploaded(monkeypatch, tmp_path, dirs) -> None:
+    downloads, torrents = dirs
+    write_lists(monkeypatch, tmp_path / "lists", RED="[[entry]]\nartist = 'Tagged Wrong'\nnote = 'Fakes only.'\n")
+    # The tags name a listed artist; the review corrects it to "Artist".
+    tags = {"format": "FLAC", "encoding": "Lossless", "artists": [("Tagged Wrong", "main")], "title": "Album"}
+
+    run = _run_up(
+        monkeypatch,
+        _album(downloads.parent / "seeding" / "Album"),
+        torrents,
+        multi_tracker_upload=False,
+        construct_rls_data=lambda *_args, **_kwargs: {**tags, "catno": "CAT1"},
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Not uploading to RED: Tagged Wrong (the whole discography)" in run.result.output
+    assert "As reviewed, the release is not on RED's Do-Not-Upload list." in run.result.output
+    # The group search skipped for the tags runs on the reviewed names, then the upload.
+    assert "browse" in {sent.query.get("action") for sent in run.tracker.sent}
+    assert _uploaded_to(run) == ["RED"] * 3
 
 
 def test_a_list_salmon_cannot_read_stops_that_tracker_only(monkeypatch, tmp_path, dirs) -> None:
