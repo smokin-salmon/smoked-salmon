@@ -8,7 +8,6 @@ import tempfile
 import textwrap
 from collections.abc import Sequence
 from functools import partial
-from os.path import dirname, join
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -569,17 +568,11 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
         all_spectral_ids,
         [sid for sid in all_spectral_ids if os.path.isfile(os.path.join(specs_path, spectrum_plot_name(sid)))],
     )
-    symlink_path = join(dirname(dirname(__file__)), "web", "static", "specs")
 
     runner = None
     try:
         try:
-            os.symlink(specs_path, symlink_path)
-        except FileExistsError:
-            os.unlink(symlink_path)
-            os.symlink(specs_path, symlink_path)
-        try:
-            runner = await create_app_async()
+            runner = await create_app_async(specs_path)
         except OSError as e:
             port = cfg.upload.web_interface.port
             if e.errno == errno.EADDRINUSE:
@@ -622,7 +615,6 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
     finally:
         if runner is not None:
             await runner.cleanup()
-        os.unlink(symlink_path)
 
 
 async def upload_spectrals(

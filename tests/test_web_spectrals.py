@@ -4,9 +4,13 @@
 ``_open_specs_in_web_server`` (src/salmon/uploader/spectrals.py), started while
 reviewing spectrals during ``up``. That change shipped with no test. This drives
 the real function end to end: it must serve the review page and the spectral
-image files over HTTP, and it must clean up its symlink and its server when done.
+image files over HTTP, and it must stop its server when done. It serves the spectrals
+folder in place: nothing is linked or written into the installed package (a directory
+symlink there failed on Windows with WinError 1314).
 """
 
+import errno
+import os
 import tempfile
 from pathlib import Path
 
@@ -20,14 +24,18 @@ from salmon.web import spectrals as web_spectrals
 
 _FULL_BYTES = b"fake full spectral bytes"
 _ZOOM_BYTES = b"fake zoom spectral bytes"
-_SYMLINK_PATH = Path(web_module.__file__).parent / "static" / "specs"
+_STATIC_DIR = Path(web_module.__file__).parent / "static"
 
 
-def _make_specs_dir(tmp_path: Path) -> Path:
-    specs_dir = tmp_path / "specs"
+def _static_tree() -> set[str]:
+    return {str(p.relative_to(_STATIC_DIR)) for p in _STATIC_DIR.rglob("*")}
+
+
+def _make_specs_dir(tmp_path: Path, name: str = "specs", full: bytes = _FULL_BYTES, zoom: bytes = _ZOOM_BYTES) -> Path:
+    specs_dir = tmp_path / name
     specs_dir.mkdir()
-    (specs_dir / "01 Full.png").write_bytes(_FULL_BYTES)
-    (specs_dir / "01 Zoom.png").write_bytes(_ZOOM_BYTES)
+    (specs_dir / "01 Full.png").write_bytes(full)
+    (specs_dir / "01 Zoom.png").write_bytes(zoom)
     return specs_dir
 
 
@@ -41,8 +49,8 @@ async def _drive_server(specs_path: Path, ids: dict[int, str], requests_fn) -> i
     original_host = web_module.web_cfg.host
     captured: dict[str, web.AppRunner | int] = {}
 
-    async def capturing_create_app_async() -> web.AppRunner:
-        runner = await original_create_app_async()
+    async def capturing_create_app_async(*args: str) -> web.AppRunner:
+        runner = await original_create_app_async(*args)
         captured["runner"] = runner
         return runner
 
@@ -74,8 +82,11 @@ async def _drive_server(specs_path: Path, ids: dict[int, str], requests_fn) -> i
 async def _serves_the_spectrals_page_and_static_images() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         specs_path = _make_specs_dir(Path(tmp))
+        static_before = _static_tree()
 
         async def requests_fn(port: int) -> None:
+            # Nothing is written into the installed package, not even while the server runs.
+            assert _static_tree() == static_before
             async with aiohttp.ClientSession() as session:
                 async with session.get(f"http://127.0.0.1:{port}/spectrals") as resp:
                     assert resp.status == 200
@@ -87,9 +98,7 @@ async def _serves_the_spectrals_page_and_static_images() -> None:
                     assert await resp.read() == _FULL_BYTES
 
         port = await _drive_server(specs_path, {1: "01 Track.flac"}, requests_fn)
-
-        assert not _SYMLINK_PATH.exists()
-        assert not _SYMLINK_PATH.is_symlink()
+        assert _static_tree() == static_before
 
         # Nothing should still be listening: a fresh connection must fail.
         connect_failed = False
@@ -113,9 +122,6 @@ async def _answers_404_with_no_active_spectrals() -> None:
                 assert resp.status == 404
 
         await _drive_server(specs_path, {}, requests_fn)
-
-        assert not _SYMLINK_PATH.exists()
-        assert not _SYMLINK_PATH.is_symlink()
 
 
 async def _shows_each_tracks_frequency_plot_under_its_spectrals() -> None:
@@ -156,5 +162,63 @@ def test_serves_the_spectrals_page_and_static_images() -> None:
 def test_answers_404_with_no_active_spectrals() -> None:
     try:
         anyio.run(_answers_404_with_no_active_spectrals)
+    finally:
+        web_spectrals.set_active_spectrals({})
+
+
+async def _serves_the_images_where_symlinks_are_not_allowed() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        specs_path = _make_specs_dir(Path(tmp))
+        static_before = _static_tree()
+
+        async def requests_fn(port: int) -> None:
+            assert _static_tree() == static_before
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"http://127.0.0.1:{port}/spectrals") as resp:
+                    assert resp.status == 200
+                async with session.get(f"http://127.0.0.1:{port}/static/specs/01%20Full.png") as resp:
+                    assert resp.status == 200
+                    assert await resp.read() == _FULL_BYTES
+                async with session.get(f"http://127.0.0.1:{port}/static/specs/01%20Zoom.png") as resp:
+                    assert resp.status == 200
+                    assert await resp.read() == _ZOOM_BYTES
+
+        await _drive_server(specs_path, {1: "01 Track.flac"}, requests_fn)
+        assert _static_tree() == static_before
+        assert sorted(os.listdir(specs_path)) == ["01 Full.png", "01 Zoom.png"]
+
+
+def test_serves_the_images_where_symlinks_are_not_allowed(monkeypatch) -> None:
+    def no_symlink(*args, **kwargs):
+        # What Windows raises for a directory symlink without admin rights or Developer Mode.
+        raise OSError(errno.EPERM, "A required privilege is not held by the client")
+
+    monkeypatch.setattr(os, "symlink", no_symlink)
+    try:
+        anyio.run(_serves_the_images_where_symlinks_are_not_allowed)
+    finally:
+        web_spectrals.set_active_spectrals({})
+
+
+async def _serves_each_folder_its_own_images() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        first = _make_specs_dir(Path(tmp), "first", b"first full", b"first zoom")
+        second = _make_specs_dir(Path(tmp), "second", b"second full", b"second zoom")
+
+        for specs_path, full, zoom in ((first, b"first full", b"first zoom"), (second, b"second full", b"second zoom")):
+
+            async def requests_fn(port: int, full: bytes = full, zoom: bytes = zoom) -> None:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f"http://127.0.0.1:{port}/static/specs/01%20Full.png") as resp:
+                        assert await resp.read() == full
+                    async with session.get(f"http://127.0.0.1:{port}/static/specs/01%20Zoom.png") as resp:
+                        assert await resp.read() == zoom
+
+            await _drive_server(specs_path, {1: "01 Track.flac"}, requests_fn)
+
+
+def test_serves_each_folder_its_own_images() -> None:
+    try:
+        anyio.run(_serves_each_folder_its_own_images)
     finally:
         web_spectrals.set_active_spectrals({})
