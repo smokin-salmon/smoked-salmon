@@ -164,6 +164,21 @@ def test_a_release_the_review_takes_off_the_list_is_searched_and_uploaded(monkey
     assert _uploaded_to(run) == ["RED"] * 3
 
 
+def test_the_request_of_a_listed_first_tracker_is_not_sent_to_the_next(monkeypatch, tmp_path, dirs) -> None:
+    downloads, torrents = dirs
+    write_lists(monkeypatch, tmp_path / "lists", RED=ARTIST)
+
+    run = _run_up(monkeypatch, _album(downloads.parent / "seeding" / "Album"), torrents, args=("--request", "4242"))
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Not filling request 4242: it is RED's." in run.result.output
+    uploads = [dict(sent.fields) for sent in run.tracker.sent if sent.query.get("action") == "upload"]
+    assert len(uploads) == 3
+    assert all(upload.get("requestid") != "4242" for upload in uploads)
+    # OPS's own requests are searched instead.
+    assert "requests" in {sent.query.get("action") for sent in run.tracker.sent}
+
+
 def test_a_list_salmon_cannot_read_stops_that_tracker_only(monkeypatch, tmp_path, dirs) -> None:
     downloads, torrents = dirs
     write_lists(monkeypatch, tmp_path / "lists", RED="[[entry]]\nartist = 'Someone'\n")

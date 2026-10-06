@@ -951,6 +951,10 @@ async def _upload_staged(
         tracker = gazelle_site.site_code
         if first_listed:
             remaining_gazelle_sites.remove(tracker)
+            if request_id is not None:
+                # --request names a request of this tracker: another tracker's request with that ID is another one.
+                click.secho(f"\nNot filling request {request_id}: it is {tracker}'s.", fg="yellow")
+                request_id = None
             tracker = None
         torrent_id = None
         cover_url = None
