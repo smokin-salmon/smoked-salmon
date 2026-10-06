@@ -82,6 +82,8 @@ Run these commands in **PowerShell** (Start menu, "Windows PowerShell"), not in 
 	```powershell
 	uv tool install git+https://github.com/smokin-salmon/smoked-salmon
 	```
+    smoked-salmon has no window or Start menu entry: you type `salmon` in PowerShell (see Initial Setup below).
+    If PowerShell says `salmon` is not recognized, run `uv tool update-shell`, then open a new PowerShell window.
 
 #### macOS
 1. Install Homebrew (if you haven't already):
@@ -105,7 +107,9 @@ Run these commands in **PowerShell** (Start menu, "Windows PowerShell"), not in 
 	```
 
 ### 🔹  Initial Setup
-1. Run salmon for the first time and follow the instructions to create a default configuration:
+smoked-salmon is a command-line program: run every `salmon` command in a terminal (PowerShell on Windows).
+
+1. Run salmon for the first time. It offers to create a default configuration file and prints where it is:
 	```
 	salmon-user@salmon:~$ salmon
 	Could not find configuration path at /home/salmon-user/.config/smoked-salmon/config.toml.
