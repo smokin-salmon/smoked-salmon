@@ -1627,7 +1627,10 @@ def _red_escaped(text: str) -> str:
 
 
 def _red_album(name: str, root: Path) -> Path:
-    """The album of a RED fixture on disk: its folder and file names, unescaped, each file a few bytes."""
+    """The album of a RED fixture on disk: its folder and file names, unescaped, each file a few bytes.
+
+    A FLAC is a FLAC with no audio at 16-bit 44.1 kHz: the files are read for their sample rate.
+    """
     torrent = _fixture(name)["torrent"]
     folder = root / html.unescape(torrent["filePath"])
     for entry in torrent["fileList"].split("|||"):
@@ -1635,7 +1638,10 @@ def _red_album(name: str, root: Path) -> Path:
         assert match is not None
         path = folder / html.unescape(match[1])
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(path.name.encode())
+        if path.suffix == ".flac":
+            _write_flac(path, title=path.stem, artist="Artist")
+        else:
+            path.write_bytes(path.name.encode())
     return folder
 
 
@@ -2183,3 +2189,60 @@ def test_a_release_object_names_its_torrent_and_group() -> None:
     response = _fixture("ops-torrent-cd-log.json")
     release = Release(label="1", response=response, path=Path(), data={})
     assert (release.torrent["id"], release.group["id"]) == (600005, 500001)
+
+
+def _to_ops(monkeypatch, dirs, album: Path, prepare=None) -> Run:
+    """A cross-upload from RED to OPS of the album, the torrent described as RED does."""
+
+    def prepared(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album, answer=_red_answer(source.url))(source, target)
+        if prepare is not None:
+            prepare(source, target)
+
+    return _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", source="RED", target="OPS", prepare=prepared
+    )
+
+
+def test_a_16bit_torrent_above_48khz_is_refused_for_ops_before_any_request_to_it(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER, 96000)
+
+    run = _to_ops(monkeypatch, dirs, album)
+
+    assert run.result.exit_code == 1
+    assert (
+        f"Not cross-uploading {TORRENT_ID}: 2 16bit file(s) above 48 kHz: 01. ALFA.flac (96 kHz); "
+        "02. BRAVO.flac (96 kHz). OPS refuses them."
+    ) in run.output
+    assert run.target.sent == []
+    assert run.images == []
+
+
+def test_a_16bit_torrent_above_48khz_goes_to_red_and_the_plan_says_it_can_be_trumped(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER, 44100, 96000)
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
+
+    assert run.result.exit_code == 0, run.output
+    assert "   1 16bit file(s) above 48 kHz: 02. BRAVO.flac (96 kHz). RED can trump them." in run.output
+    assert len(run.target.posts()) == 1
+
+
+@pytest.mark.parametrize(
+    ("rate", "bits", "encoding"),
+    [(48000, 16, "Lossless"), (96000, 24, "24bit Lossless")],
+    ids=["16/48", "24/96"],
+)
+def test_a_torrent_that_is_not_16bit_above_48khz_goes_to_ops_unremarked(
+    monkeypatch, dirs, rate, bits, encoding
+) -> None:
+    album = _album(dirs.downloads / FOLDER, rate, bits=bits)
+
+    def prepare(source: FakeTracker, _target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID]["torrent"]["encoding"] = encoding
+
+    run = _to_ops(monkeypatch, dirs, album, prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert "16bit file(s) above 48 kHz" not in run.output
+    assert len(run.target.posts()) == 1

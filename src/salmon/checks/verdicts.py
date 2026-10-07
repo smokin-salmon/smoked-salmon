@@ -13,6 +13,7 @@ from typing import Any, Literal
 
 import asyncclick as click
 
+from salmon.checks.high_rate import sixteen_bit_above_48khz
 from salmon.checks.integrity import IntegrityResult, md5_unset_summary
 from salmon.checks.source import DetectedSource
 from salmon.uploader.dupe_checker import describe_torrent, held_in_group
@@ -184,11 +185,7 @@ def sample_rate_row(audio_info: Mapping[str, dict[str, Any]]) -> Row:
 def sixteen_bit_rows(audio_info: Mapping[str, dict[str, Any]], rules: Mapping[str, str]) -> list[Row]:
     """rules: each tracker's TagRules.sixteen_bit_above_48khz, by site code."""
     check = "16bit above 48 kHz"
-    files = [
-        name
-        for name, info in audio_info.items()
-        if info.get("precision") == 16 and (info.get("sample rate") or 0) > 48000
-    ]
+    files = list(sixteen_bit_above_48khz(audio_info))
     if not files:
         return [Row("OK", check, "No 16bit file above 48 kHz.")]
     found = f"{len(files)} 16bit file(s) above 48 kHz"

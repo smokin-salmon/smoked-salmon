@@ -29,6 +29,7 @@ from torf import TorfError, Torrent
 import salmon.trackers
 from salmon import cfg, dryrun
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
+from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.common import commandgroup
 from salmon.config.image_hosts import HOST_RULES
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
@@ -391,6 +392,13 @@ async def _prepare(
         raise CrossUploadRefused(reason)
     release.path = _release_path(response, path)
     _verify_release_files(response, release.path, target)
+    rule = target.TAG_RULES.sixteen_bit_above_48khz
+    # Only a 16bit FLAC can break the rule, and no tracker's torrent says its sample rate: the files do.
+    sixteen_bit = release.torrent["format"] == "FLAC" and release.torrent["encoding"] == "Lossless"
+    if rule and sixteen_bit and (notice := sixteen_bit_notice(target.site_code, rule, _track_data(release))):
+        if rule == "refused":
+            raise CrossUploadRefused(notice)
+        release.notes.append(notice)
     release.data.update(_target_form_fields(release, target))
 
     if release.torrent["media"] == "CD":
