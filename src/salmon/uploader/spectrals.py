@@ -454,23 +454,31 @@ def _notify_spectrals_not_compressed() -> None:
 OXIPNG_PROGRAM_TIMEOUT = 60
 
 
-async def _compress_with_oxipng_program(program: str, filepath: str) -> None:
-    """Compress a spectral in place with the oxipng program; on any failure leave the file as it was."""
+async def _compress_with_oxipng_program(program: str, filepath: str) -> bool:
+    """Compress a spectral with the oxipng program on a copy, replacing the original only on success.
+
+    Returns False, after printing one line, when the file was left as it was.
+    """
+    tmp_path = f"{filepath}.tmp.png"
     try:
+        shutil.copyfile(filepath, tmp_path)
         with anyio.fail_after(OXIPNG_PROGRAM_TIMEOUT):
             result = await anyio.run_process(
-                [program, "-o", "2", "--strip", "all", filepath], check=False, stdout=DEVNULL, stderr=DEVNULL
+                [program, "-o", "2", "--strip", "all", tmp_path], check=False, stdout=DEVNULL, stderr=DEVNULL
             )
-        failed = result.returncode != 0
+        if result.returncode == 0:
+            os.replace(tmp_path, filepath)
+            return True
     except (TimeoutError, OSError):
-        failed = True
-    if failed:
-        click.secho(
-            f"Could not compress {os.path.basename(filepath)} with oxipng; it is uploaded as it is.", fg="yellow"
-        )
+        pass
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+    click.secho(f"Could not compress {os.path.basename(filepath)} with oxipng; it is uploaded as it is.", fg="yellow")
+    return False
 
 
-async def _compress_single_spectral(filepath: str, _idx: int, program: str | None = None) -> None:
+async def _compress_single_spectral(filepath: str, _idx: int, program: str | None = None) -> bool | None:
     """Compress a single spectral PNG image with pyoxipng in a thread, or with the oxipng program.
 
     Args:
@@ -515,13 +523,16 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
 
     filepaths = [os.path.join(spectrals_path, f) for f in files]
 
-    await process_files(
+    results = await process_files(
         filepaths,
         partial(_compress_single_spectral, program=program) if program else _compress_single_spectral,
         "Compressing spectral images",
     )
 
-    click.secho("Finished compressing spectrals.", fg="green")
+    if any(result is False for result in results):
+        click.secho("Some spectrals could not be compressed.", fg="yellow")
+    else:
+        click.secho("Finished compressing spectrals.", fg="green")
 
 
 def get_spectrals_path(path):

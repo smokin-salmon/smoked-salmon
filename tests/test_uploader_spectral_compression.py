@@ -92,38 +92,50 @@ def test_without_pyoxipng_the_oxipng_program_compresses_each_file(monkeypatch, t
 
     anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
 
-    assert sorted(log.read_text().splitlines()) == [
-        f"-o 2 --strip all {path / '01 Full.png'}",
-        f"-o 2 --strip all {path / '01 Zoom.png'}",
-    ]
+    calls = sorted(log.read_text().splitlines())
+    assert len(calls) == 2
+    assert all(call.startswith("-o 2 --strip all ") and call.endswith(".png") for call in calls)
+    assert "01 Full.png" in calls[0]
+    assert "01 Zoom.png" in calls[1]
     assert (path / "01 Full.png").read_text().strip() == "small"
     assert (path / "02 Full.png").read_bytes() == b"png 2 Full"
+    assert sorted(p.name for p in path.iterdir()) == sorted(
+        f"{s:02d} {k}.png" for s in (1, 2) for k in ("Full", "Zoom")
+    )
 
 
 @posix_only
 def test_a_failing_oxipng_program_leaves_the_file_and_prints_a_line(monkeypatch, tmp_path, capsys) -> None:
     _hide_pyoxipng(monkeypatch)
-    _fake_program(monkeypatch, tmp_path, "exit 1")
+    # A program that damages its input before failing must not touch the original.
+    _fake_program(monkeypatch, tmp_path, 'for last; do :; done; echo broken > "$last"; exit 1')
     path = _spectrals_dir(tmp_path)
 
     anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
 
     assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
+    assert sorted(p.name for p in path.iterdir()) == sorted(
+        f"{s:02d} {k}.png" for s in (1, 2) for k in ("Full", "Zoom")
+    )
     out = capsys.readouterr().out
     assert "Could not compress 01 Full.png" in out
     assert "Could not compress 01 Zoom.png" in out
+    assert "Finished compressing" not in out
 
 
 @posix_only
 def test_an_oxipng_program_that_hangs_is_given_up_on(monkeypatch, tmp_path, capsys) -> None:
     _hide_pyoxipng(monkeypatch)
     monkeypatch.setattr(spectrals, "OXIPNG_PROGRAM_TIMEOUT", 0.3)
-    _fake_program(monkeypatch, tmp_path, "exec sleep 30")
+    _fake_program(monkeypatch, tmp_path, 'for last; do :; done; echo broken > "$last"; exec sleep 30')
     path = _spectrals_dir(tmp_path)
 
     anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
 
     assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
+    assert sorted(p.name for p in path.iterdir()) == sorted(
+        f"{s:02d} {k}.png" for s in (1, 2) for k in ("Full", "Zoom")
+    )
     assert "Could not compress 01 Full.png" in capsys.readouterr().out
 
 
