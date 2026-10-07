@@ -190,6 +190,11 @@ async def _dupe_row(tracker: str, release: dict[str, Any]) -> Row:
         return verdicts.dupe_error_row(tracker, f"unexpected answer ({e!r})")
     finally:
         await site.close()
+    if not all(
+        isinstance(group, dict) and all(isinstance(torrent, dict) for torrent in group.get("torrents") or [])
+        for group in results
+    ):
+        return verdicts.dupe_error_row(tracker, "unexpected answer (a result that is not a group)")
     return verdicts.dupe_row(tracker, release, results)
 
 
