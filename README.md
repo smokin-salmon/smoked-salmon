@@ -340,7 +340,11 @@ salmon cross-upload 123456 RED OPS
 Give the source torrent's ID, URL or `.torrent` file, up to 5 per run, then the source and target trackers.
 The files must be exactly the torrent's, in `download_directory/<the torrent's folder>` (or give the folder
 with `--path`). salmon first reads each torrent and checks its files, its log and its images, and shows the
-plan; then, for each release, it checks the target for duplicates as `up` does and uploads it with the
+plan. The files are checked against the source torrent's pieces, so an album still downloading (its files
+already at full size) is not uploaded: for an ID or URL, salmon downloads the source `.torrent` once (never
+with a freeleech token). When pieces differ, salmon says how many and asks whether to go on (default no;
+`--yes-all` stops). From DIC, only a `.torrent` file INPUT gets this check; by ID or URL its files are checked
+by size only, and the plan says so. Then, for each release, it checks the target for duplicates as `up` does and uploads it with the
 source's group and torrent data. The album folder is never changed: the new torrent seeds from the same files,
 and a seedbox only gets the new torrent, not another copy. `--dry-run` reads from both trackers and sends
 nothing. A cross-upload to DIC is never marked Self-purchased, Self-rip or Exclusive (it is a re-post, so it is

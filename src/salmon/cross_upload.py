@@ -18,13 +18,14 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import monotonic
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 import anyio
 import asyncclick as click
 from bs4 import BeautifulSoup
-from torf import TorfError, Torrent
+from torf import TorfError, Torrent, VerifyContentError
 
 import salmon.trackers
 from salmon import cfg, dryrun
@@ -36,6 +37,7 @@ from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
 from salmon.errors import (
     DryRunRefused,
     ImageUploadFailed,
+    LoginError,
     RequestError,
     RequestFailedError,
     UploadError,
@@ -380,7 +382,7 @@ async def _prepare(
         RequestError: If SOURCE could not be read.
         click.Abort: If a check stopped and the user chose to stop.
     """
-    response = await _source_response(item, source)
+    response, given = await _source_response(item, source)
     torrent_id = int(response["torrent"]["id"])
     if torrent_id in seen:
         raise CrossUploadRefused(f"torrent {torrent_id} is already in this run")
@@ -392,6 +394,7 @@ async def _prepare(
         raise CrossUploadRefused(reason)
     release.path = _release_path(response, path)
     _verify_release_files(response, release.path, target)
+    await _check_pieces(release, given, source)
     rule = target.TAG_RULES.sixteen_bit_above_48khz
     # Only a 16bit FLAC can break the rule, and no tracker's torrent says its sample rate: the files do.
     sixteen_bit = release.torrent["format"] == "FLAC" and release.torrent["encoding"] == "Lossless"
@@ -416,9 +419,10 @@ async def _prepare(
     return release
 
 
-async def _source_response(item: int | Path, source: "BaseGazelleApi") -> dict[str, Any]:
+async def _source_response(item: int | Path, source: "BaseGazelleApi") -> tuple[dict[str, Any], Torrent | None]:
+    """SOURCE's torrent answer, and the .torrent file read if the INPUT is one."""
     if isinstance(item, int):
-        return await source.api_call("torrent", params={"id": item})
+        return await source.api_call("torrent", params={"id": item}), None
     try:
         torrent = Torrent.read(item)
     except TorfError as error:
@@ -431,7 +435,7 @@ async def _source_response(item: int | Path, source: "BaseGazelleApi") -> dict[s
         raise CrossUploadRefused(f"{item} has no announce URL and no {source.site_string} source flag")
     if announce_hosts and source_host not in announce_hosts:
         raise CrossUploadRefused(f"{item} does not announce to {source.site_string}")
-    return await source.api_call("torrent", params={"hash": torrent.infohash.upper()})
+    return await source.api_call("torrent", params={"hash": torrent.infohash.upper()}), torrent
 
 
 def _check_torrent(response: dict[str, Any], source: "BaseGazelleApi", target: "BaseGazelleApi") -> list[str]:
@@ -718,6 +722,98 @@ def _verify_release_files(response: dict[str, Any], folder: Path, target: "BaseG
     too_long = [name for name in expected if len(f"{folder.name}/{name}") > limit]
     if too_long:
         raise CrossUploadRefused(f"{len(too_long)} path(s) are longer than {target.site_string}'s {limit} characters")
+
+
+async def _check_pieces(release: Release, given: Torrent | None, source: "BaseGazelleApi") -> None:
+    """Check the files against the source torrent's pieces: a download in progress has every file at its full size.
+
+    Args:
+        given: The .torrent file the INPUT is, if it is one. Otherwise SOURCE's is downloaded, once.
+
+    Raises:
+        CrossUploadRefused: If the torrent cannot be had or read, or pieces differ and the user does not go on.
+        RequestError: If SOURCE could not be read.
+    """
+    torrent = given
+    if torrent is None:
+        if source.site_code == "DIC":
+            # Where DIC's .torrent downloads from is not known: no DIC answer or page has been seen.
+            release.notes.append(f"files checked by size only: give the {source.site_string} .torrent to check pieces")
+            return
+        torrent = await _download_torrent(release.response, source)
+    started = monotonic()
+
+    def checking() -> tuple[int, TorfError | None]:
+        differing: set[int] = set()
+        failure: list[TorfError] = []
+
+        def progress(_torrent, _path, done, total, index, _hash, error) -> bool | None:
+            if isinstance(error, VerifyContentError):
+                differing.add(index)
+            elif error is not None:
+                failure.append(error)
+                return True  # Stops the check
+            # A small album is checked within the second, without a progress line.
+            if monotonic() - started >= 1:
+                click.echo(f"\rChecking pieces: {done} of {total}", nl=False)
+            return None
+
+        torrent.verify(str(release.path), callback=progress, interval=0.5)
+        if monotonic() - started >= 1:
+            click.echo()
+        return len(differing), failure[0] if failure else None
+
+    differing, failure = await anyio.to_thread.run_sync(checking)
+    if failure is not None:
+        raise CrossUploadRefused(f"its pieces could not be checked ({failure})")
+    if not differing:
+        return
+    differ = f"{differing} of {torrent.pieces} pieces differ from the {source.site_string} torrent"
+    click.secho(f"{differ}: is the download complete?", fg="yellow", bold=True)
+    if cfg.upload.yes_all or not click.confirm(click.style("Cross-upload it anyway?", fg="magenta"), default=False):
+        raise CrossUploadRefused(differ)
+    release.notes.append(f"{differ}: going anyway")
+
+
+async def _download_torrent(response: dict[str, Any], source: "BaseGazelleApi") -> Torrent:
+    """SOURCE's .torrent of the torrent in its answer, with one GET, and never with a freeleech token.
+
+    Raises:
+        CrossUploadRefused: If SOURCE gives something else, or another torrent's.
+        RequestError: If SOURCE could not be read.
+    """
+    torrent_id = response["torrent"]["id"]
+    await source.ensure_authenticated()
+    try:
+        answer = await source._request(
+            "GET",
+            f"{source.base_url}/torrents.php",
+            # The passkey, as in the site's own download link; the authkey too, as in a link from RED's feeds.
+            params={"action": "download", "id": torrent_id, "authkey": source.authkey, "torrent_pass": source.passkey},
+            timeout_secs=30,
+            prefer_api_key=not source.has_session_cookie,
+            binary=True,
+        )
+    except LoginError:
+        raise CrossUploadRefused(
+            f"{source.site_string} did not give its .torrent: give the .torrent file as INPUT"
+        ) from None
+    try:
+        torrent = Torrent.read_stream(answer.content)
+    except TorfError:
+        # Its text could hold the passkey: it is not shown.
+        raise CrossUploadRefused(f"what {source.site_string} gave for its .torrent is not one") from None
+    if not _is_the_torrent(torrent, response["torrent"]):
+        raise CrossUploadRefused(f"the .torrent {source.site_string} gave is not this torrent's")
+    return torrent
+
+
+def _is_the_torrent(torrent: Torrent, answer: dict[str, Any]) -> bool:
+    """Whether a .torrent is the one SOURCE's answer is about: the same infohash, or else the same files."""
+    if answer.get("infoHash"):
+        return str(answer["infoHash"]).upper() == torrent.infohash.upper()
+    files = {unicodedata.normalize("NFC", "/".join(file.parts[1:])): file.size for file in torrent.files}
+    return torrent.name == html.unescape(answer.get("filePath") or "") and files == _file_list(answer)
 
 
 def _track_data(release: Release) -> dict[str, Any]:
