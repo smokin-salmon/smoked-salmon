@@ -319,20 +319,21 @@ def test_named_trackers_get_ups_dupe_search_and_their_do_not_upload_list(album, 
 
 
 @pytest.mark.parametrize(
-    ("browse", "said"),
+    "browse",
     [
-        ({}, "unexpected answer (KeyError('results'))"),
-        ({"results": [None]}, "unexpected answer (a result that is not a group)"),
-        ({"results": [{**GROUP, "torrents": [None]}]}, "unexpected answer (a result that is not a group)"),
+        {},
+        {"results": [None]},
+        {"results": [{**GROUP, "torrents": [None]}]},
+        {"results": [{**GROUP, "torrents": 42}]},
     ],
 )
-def test_a_malformed_search_answer_is_a_warning_and_the_other_checks_go_on(album, monkeypatch, tmp_path, browse, said):
+def test_a_malformed_search_answer_is_a_warning_and_the_other_checks_go_on(album, monkeypatch, tmp_path, browse):
     trackers = {"RED": FakeTracker([]), "OPS": FakeTracker([], browse=browse)}
     result = _run_with_trackers(monkeypatch, tmp_path, album, trackers, "")
     assert result.exit_code == 0, result.output
     rows = _rows(result.output)
     assert (rows["Dupe (RED)"], rows["Dupe (OPS)"]) == ("OK", "WARN")
-    assert f"Could not search OPS: {said}" in result.output
+    assert "Could not search OPS: unexpected answer (" in result.output
 
 
 def _write_aac(path: Path) -> None:
