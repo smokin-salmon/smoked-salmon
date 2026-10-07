@@ -483,6 +483,8 @@ def test_one_release_sends_what_the_budget_says(monkeypatch, dirs) -> None:
         "POST ajax.php?action=upload": 1,
     }
     assert _within_the_plans_bound(run)
+    # Nothing is left to fetch from OPS: the reads it already served are not part of the plan's count.
+    assert ", no more GET to OPS" in run.output
 
 
 def test_a_red_upload_with_a_log_goes_through_its_upload_page_and_the_budget_counts_its_redirect(
@@ -950,6 +952,8 @@ def test_an_image_only_the_source_shows_is_fetched_through_its_client_and_rehost
     assert post.fields["image"] == ["https://redhost.images.test/1.png"]
     assert post.fields["album_desc"] == ["Notes [img]https://redhost.images.test/2.png[/img]"]
     assert f"{run.source.url}/static/" not in json.dumps(post.fields)
+    assert ", 2 image GET to OPS" in run.output
+    assert "no more GET" not in run.output
 
 
 def test_an_image_that_is_both_the_cover_and_in_the_description_is_fetched_once(monkeypatch, dirs) -> None:
