@@ -2469,3 +2469,23 @@ def test_a_dic_torrent_by_id_is_checked_by_size_only_and_the_plan_says_so(monkey
     assert run.result.exit_code == 0, run.output
     assert "GET ajax.php?action=download" not in run.source.steps()
     assert "   files checked by size only: give the DICMusic .torrent to check pieces\n" in run.output
+
+
+def test_the_pieces_are_checked_before_the_audio_is_read_for_the_16bit_rule(monkeypatch, dirs) -> None:
+    # A file still downloading may not even read as audio: the 16bit rule must only see complete files.
+    album = _album(dirs.downloads / FOLDER, 96000)
+
+    def unfinished(_source: FakeTracker, _target: FakeTracker) -> None:
+        flac = album / "01. ALFA.flac"
+        flac.write_bytes(bytes(flac.stat().st_size))
+
+    def unread(_path: str) -> dict[str, Any]:
+        raise AssertionError("the files were read")
+
+    monkeypatch.setattr(cross_upload_module, "gather_audio_info", unread)
+    run = _to_ops(monkeypatch, dirs, album, unfinished)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}: 1 of 1 pieces differ from the RED torrent\n" in run.output
+    assert "16bit file(s) above 48 kHz" not in run.output
+    assert run.target.sent == []
