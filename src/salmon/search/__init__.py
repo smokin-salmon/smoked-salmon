@@ -53,7 +53,7 @@ async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int)
         if releases:
             click.secho(f"\nResults from {source}:", fg="yellow", bold=True)
             for rls_id, release in releases.items():
-                rls_name = release[0][1]
+                rls_name = release[0].album
                 url = SEARCHSOURCES[source].Searcher.format_url(rls_id, rls_name)
                 click.echo(f"> {release[1]} {url}")
         elif source:

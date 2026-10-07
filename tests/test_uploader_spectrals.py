@@ -107,6 +107,8 @@ def release(tmp_path, monkeypatch):
 
     monkeypatch.setattr(spectrals.anyio, "run_process", fake_sox)
     monkeypatch.setattr(spectrals, "_compress_single_spectral", record_compression)
+    # Compression runs only where oxipng is installed (not on Python 3.14); this checks which files it gets.
+    monkeypatch.setattr(spectrals, "oxipng", object())
     monkeypatch.setattr(spectrals, "prompt_lossy_master", not_lossy)
     monkeypatch.setattr(spectrals, "view_spectrals", no_viewer)
     monkeypatch.setattr(spectrals.cfg.upload.compression, "compress_spectrals", True)

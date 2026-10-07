@@ -8,14 +8,20 @@ import tempfile
 import textwrap
 from collections.abc import Sequence
 from functools import partial
-from os.path import dirname, join
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import anyio
 import anyio.to_thread
 import asyncclick as click
-import oxipng
+
+# pyoxipng 9.1.1 has wheels up to CPython 3.13 only, and building it needs Rust (and MSVC on Windows), so
+# pyproject.toml installs it below 3.14 only and spectrals are left uncompressed on newer Pythons (re-saving them with
+# Pillow made them bigger). Drop the marker and this fallback once pyoxipng ships 3.14 or abi3 wheels.
+try:
+    import oxipng
+except ImportError:
+    oxipng = None
 
 from salmon import cfg, dryrun
 from salmon.common import flush_stdin, get_audio_files, prompt_async
@@ -427,6 +433,22 @@ async def _generate_spectrals(
     return sorted_spectrals
 
 
+_not_compressed_notice_shown = False
+
+
+def _notify_spectrals_not_compressed() -> None:
+    """Say, once per run, that spectrals go up uncompressed because oxipng is not installed."""
+    global _not_compressed_notice_shown
+    if _not_compressed_notice_shown:
+        return
+    _not_compressed_notice_shown = True
+    click.secho(
+        "Spectrals are not compressed: oxipng is not available for this Python version. Installing salmon with "
+        '"uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" compresses them.',
+        fg="yellow",
+    )
+
+
 async def _compress_single_spectral(filepath: str, _idx: int) -> None:
     """Compress a single spectral PNG image using oxipng in a thread.
 
@@ -434,12 +456,13 @@ async def _compress_single_spectral(filepath: str, _idx: int) -> None:
         filepath: Path to the PNG file to compress.
         _idx: Unused index parameter for process_files compatibility.
     """
+    assert oxipng is not None
     func = partial(oxipng.optimize, filepath, level=2, strip=oxipng.StripChunks.all())
     return await anyio.to_thread.run_sync(func)
 
 
 async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] | None = None) -> None:
-    """Compress spectral PNG images in a directory using oxipng.
+    """Compress spectral PNG images in a directory.
 
     Args:
         spectrals_path: Path to the directory containing spectral PNG files.
@@ -458,6 +481,9 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
     else:
         files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
     if not files:
+        return
+    if oxipng is None:
+        _notify_spectrals_not_compressed()
         return
 
     filepaths = [os.path.join(spectrals_path, f) for f in files]
@@ -569,17 +595,11 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
         all_spectral_ids,
         [sid for sid in all_spectral_ids if os.path.isfile(os.path.join(specs_path, spectrum_plot_name(sid)))],
     )
-    symlink_path = join(dirname(dirname(__file__)), "web", "static", "specs")
 
     runner = None
     try:
         try:
-            os.symlink(specs_path, symlink_path)
-        except FileExistsError:
-            os.unlink(symlink_path)
-            os.symlink(specs_path, symlink_path)
-        try:
-            runner = await create_app_async()
+            runner = await create_app_async(specs_path)
         except OSError as e:
             port = cfg.upload.web_interface.port
             if e.errno == errno.EADDRINUSE:
@@ -622,7 +642,6 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
     finally:
         if runner is not None:
             await runner.cleanup()
-        os.unlink(symlink_path)
 
 
 async def upload_spectrals(
