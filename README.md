@@ -35,6 +35,7 @@ Manual installation instructions can be found on the [Wiki](https://github.com/s
 ### 🔹  Install smoked-salmon 
 These steps use [`uv`](https://github.com/astral-sh/uv) for installing the *smoked-salmon* package. [`pipx`](https://github.com/pypa/pipx) also works.
 Installing with pip is not recommended because uv (and pipx) manage python versions and isolate the *smoked-salmon* installation from the system python installation.
+uv picks the newest Python (3.14 today), where spectral images are uploaded uncompressed because oxipng is not available for it yet; to have them compressed, install with `uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon` instead.
 
 #### Linux
 1. Install system packages:

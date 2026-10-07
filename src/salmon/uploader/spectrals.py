@@ -16,8 +16,8 @@ import anyio.to_thread
 import asyncclick as click
 
 # pyoxipng 9.1.1 has wheels up to CPython 3.13 only, and building it needs Rust (and MSVC on Windows), so
-# pyproject.toml installs it below 3.14 only and spectrals are re-saved with Pillow on newer Pythons. Drop the marker
-# and this fallback once pyoxipng ships 3.14 or abi3 wheels.
+# pyproject.toml installs it below 3.14 only and spectrals are left uncompressed on newer Pythons (re-saving them with
+# Pillow made them bigger). Drop the marker and this fallback once pyoxipng ships 3.14 or abi3 wheels.
 try:
     import oxipng
 except ImportError:
@@ -433,30 +433,30 @@ async def _generate_spectrals(
     return sorted_spectrals
 
 
-def _resave_png(filepath: str) -> None:
-    """Re-save a PNG with Pillow at its best zlib compression, without metadata chunks. Lossless.
+_not_compressed_notice_shown = False
 
-    Args:
-        filepath: Path to the PNG file to compress in place.
-    """
-    from PIL import Image
 
-    with Image.open(filepath) as image:
-        image.load()
-    # Pillow writes an ICC profile or EXIF chunk back from info; transparency is part of the pixels and stays.
-    image.info = {key: value for key, value in image.info.items() if key == "transparency"}
-    image.save(filepath, format="PNG", optimize=True)
+def _notify_spectrals_not_compressed() -> None:
+    """Say, once per run, that spectrals go up uncompressed because oxipng is not installed."""
+    global _not_compressed_notice_shown
+    if _not_compressed_notice_shown:
+        return
+    _not_compressed_notice_shown = True
+    click.secho(
+        "Spectrals are not compressed: oxipng is not available for this Python version. Installing salmon with "
+        '"uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" compresses them.',
+        fg="yellow",
+    )
 
 
 async def _compress_single_spectral(filepath: str, _idx: int) -> None:
-    """Compress a single spectral PNG image in a thread, with oxipng when it is installed.
+    """Compress a single spectral PNG image using oxipng in a thread.
 
     Args:
         filepath: Path to the PNG file to compress.
         _idx: Unused index parameter for process_files compatibility.
     """
-    if oxipng is None:
-        return await anyio.to_thread.run_sync(_resave_png, filepath)
+    assert oxipng is not None
     func = partial(oxipng.optimize, filepath, level=2, strip=oxipng.StripChunks.all())
     return await anyio.to_thread.run_sync(func)
 
@@ -481,6 +481,9 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
     else:
         files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
     if not files:
+        return
+    if oxipng is None:
+        _notify_spectrals_not_compressed()
         return
 
     filepaths = [os.path.join(spectrals_path, f) for f in files]

@@ -1,63 +1,37 @@
-"""Spectral PNGs are compressed losslessly, with oxipng where it installs and Pillow where it does not (Python 3.14)."""
+"""Spectral PNGs are compressed with oxipng where it installs, and left as sox wrote them where it does not (3.14)."""
 
-import struct
-import zlib
 from functools import partial
 from pathlib import Path
 
 import anyio
-from PIL import Image, PngImagePlugin
 
 from salmon.uploader import spectrals
 
 
-def _chunk_types(path: Path) -> list[bytes]:
-    data = path.read_bytes()
-    assert data[:8] == b"\x89PNG\r\n\x1a\n"
-    types, pos = [], 8
-    while pos < len(data):
-        (length,) = struct.unpack(">I", data[pos : pos + 4])
-        types.append(data[pos + 4 : pos + 8])
-        pos += 12 + length
-    return types
+def _spectrals_dir(tmp_path: Path) -> Path:
+    path = tmp_path / "Spectrals"
+    path.mkdir()
+    for sid in (1, 2):
+        for kind in ("Full", "Zoom"):
+            (path / f"{sid:02d} {kind}.png").write_bytes(f"png {sid} {kind}".encode())
+    return path
 
 
-def _spectral_like_png(path: Path) -> None:
-    """A palette PNG with metadata chunks, like sox writes, plus an ICC profile and EXIF."""
-    image = Image.new("P", (200, 120))
-    image.putpalette([v for i in range(256) for v in (i, (i * 3) % 256, 255 - i)])
-    image.putdata([(x * y + x) % 256 for y in range(120) for x in range(200)])
-    info = PngImagePlugin.PngInfo()
-    info.add_text("Software", "SoX")
-    info.add_text("Comment", "a" * 500, zip=True)
-    image.save(path, pnginfo=info, icc_profile=b"\0" * 200, exif=b"Exif\0\0" + b"\0" * 20, compress_level=1)
-
-
-def _pixels(path: Path) -> tuple[str, bytes, list[int] | None]:
-    with Image.open(path) as image:
-        return image.mode, image.tobytes(), image.getpalette()
-
-
-def test_without_oxipng_pillow_keeps_the_pixels_and_drops_metadata(monkeypatch, tmp_path) -> None:
+def test_without_oxipng_spectrals_are_left_as_is_and_the_notice_is_printed_once(monkeypatch, tmp_path, capsys) -> None:
     monkeypatch.setattr(spectrals, "oxipng", None)
-    png = tmp_path / "01 Full.png"
-    _spectral_like_png(png)
-    before = _pixels(png)
-    size_before = png.stat().st_size
-    assert {b"tEXt", b"zTXt", b"iCCP", b"eXIf"} <= set(_chunk_types(png))
+    monkeypatch.setattr(spectrals, "_not_compressed_notice_shown", False, raising=False)
+    path = _spectrals_dir(tmp_path)
+    before = {p.name: p.read_bytes() for p in path.iterdir()}
 
-    anyio.run(partial(spectrals._compress_single_spectral, str(png), 0))
+    # Twice in one run, as when spectrals are compressed for more than one upload.
+    anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
+    anyio.run(partial(spectrals._compress_spectrals, str(path)))
 
-    assert _pixels(png) == before
-    assert set(_chunk_types(png)) <= {b"IHDR", b"PLTE", b"tRNS", b"IDAT", b"IEND"}
-    assert png.stat().st_size < size_before
-    # Every chunk's CRC is valid: the result is a well-formed PNG, not only something Pillow tolerates.
-    data, pos = png.read_bytes(), 8
-    while pos < len(data):
-        (length,) = struct.unpack(">I", data[pos : pos + 4])
-        (crc,) = struct.unpack(">I", data[pos + 8 + length : pos + 12 + length])
-        assert zlib.crc32(data[pos + 4 : pos + 8 + length]) == crc
-        pos += 12 + length
+    assert {p.name: p.read_bytes() for p in path.iterdir()} == before
+    out = capsys.readouterr().out
+    assert out.count("Spectrals are not compressed") == 1
+    assert "uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" in out
+    assert "Finished compressing" not in out
 
 
 def test_with_oxipng_it_is_used(monkeypatch, tmp_path) -> None:
@@ -73,14 +47,15 @@ def test_with_oxipng_it_is_used(monkeypatch, tmp_path) -> None:
 
         @staticmethod
         def optimize(path, **kwargs) -> None:
-            calls.append((path, kwargs))
+            calls.append((Path(path).name, kwargs))
 
     monkeypatch.setattr(spectrals, "oxipng", FakeOxipng)
-    png = tmp_path / "01 Full.png"
-    _spectral_like_png(png)
-    contents = png.read_bytes()
+    monkeypatch.setattr(spectrals, "_not_compressed_notice_shown", False, raising=False)
+    path = _spectrals_dir(tmp_path)
 
-    anyio.run(partial(spectrals._compress_single_spectral, str(png), 0))
+    anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
 
-    assert calls == [(str(png), {"level": 2, "strip": "all"})]
-    assert png.read_bytes() == contents
+    assert sorted(calls) == [
+        ("01 Full.png", {"level": 2, "strip": "all"}),
+        ("01 Zoom.png", {"level": 2, "strip": "all"}),
+    ]
