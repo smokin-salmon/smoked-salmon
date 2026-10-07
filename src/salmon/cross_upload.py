@@ -974,9 +974,11 @@ def _print_plan(
             click.echo(f"   images to rehost: {image_gets}, each fetched once from {source.site_string}")
         for note in release.notes:
             click.echo(f"   {note}")
-        click.echo(
-            f"   at most {gets} GET and {posts} POST to {target.site_string}, {image_gets} GET to {source.site_string}"
+        # The reads of SOURCE done so far are not counted: only the images still to fetch are.
+        source_gets = (
+            f"{image_gets} image GET to {source.site_string}" if image_gets else f"no more GET to {source.site_string}"
         )
+        click.echo(f"   at most {gets} GET and {posts} POST to {target.site_string}, {source_gets}")
     if cfg.upload.torrent_name_normalization not in ("", "none"):
         click.secho(
             "torrent_name_normalization is not applied: each new torrent names the files as they are on disk, so it "
