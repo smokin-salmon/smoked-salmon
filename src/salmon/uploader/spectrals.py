@@ -9,6 +9,7 @@ import textwrap
 from collections.abc import Sequence
 from functools import partial
 from pathlib import Path
+from subprocess import DEVNULL
 from typing import TYPE_CHECKING, Any
 
 import anyio
@@ -444,19 +445,42 @@ def _notify_spectrals_not_compressed() -> None:
     _not_compressed_notice_shown = True
     click.secho(
         "Spectrals are not compressed: oxipng is not available for this Python version. Installing salmon with "
-        '"uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" compresses them.',
+        '"uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" compresses them, '
+        "and so does installing the oxipng program (winget, scoop, brew, apt, or its GitHub releases).",
         fg="yellow",
     )
 
 
-async def _compress_single_spectral(filepath: str, _idx: int) -> None:
-    """Compress a single spectral PNG image using oxipng in a thread.
+OXIPNG_PROGRAM_TIMEOUT = 60
+
+
+async def _compress_with_oxipng_program(program: str, filepath: str) -> None:
+    """Compress a spectral in place with the oxipng program; on any failure leave the file as it was."""
+    try:
+        with anyio.fail_after(OXIPNG_PROGRAM_TIMEOUT):
+            result = await anyio.run_process(
+                [program, "-o", "2", "--strip", "all", filepath], check=False, stdout=DEVNULL, stderr=DEVNULL
+            )
+        failed = result.returncode != 0
+    except (TimeoutError, OSError):
+        failed = True
+    if failed:
+        click.secho(
+            f"Could not compress {os.path.basename(filepath)} with oxipng; it is uploaded as it is.", fg="yellow"
+        )
+
+
+async def _compress_single_spectral(filepath: str, _idx: int, program: str | None = None) -> None:
+    """Compress a single spectral PNG image with pyoxipng in a thread, or with the oxipng program.
 
     Args:
         filepath: Path to the PNG file to compress.
         _idx: Unused index parameter for process_files compatibility.
+        program: Path to the oxipng program, used when pyoxipng is not installed.
     """
-    assert oxipng is not None
+    if oxipng is None:
+        assert program is not None
+        return await _compress_with_oxipng_program(program, filepath)
     func = partial(oxipng.optimize, filepath, level=2, strip=oxipng.StripChunks.all())
     return await anyio.to_thread.run_sync(func)
 
@@ -482,15 +506,18 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
         files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
     if not files:
         return
+    program = None
     if oxipng is None:
-        _notify_spectrals_not_compressed()
-        return
+        program = shutil.which("oxipng")
+        if program is None:
+            _notify_spectrals_not_compressed()
+            return
 
     filepaths = [os.path.join(spectrals_path, f) for f in files]
 
     await process_files(
         filepaths,
-        _compress_single_spectral,
+        partial(_compress_single_spectral, program=program) if program else _compress_single_spectral,
         "Compressing spectral images",
     )
 
