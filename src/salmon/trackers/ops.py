@@ -13,7 +13,7 @@ from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
 class OpsApi(BaseGazelleApi):
-    TAG_RULES = TagRules(max_path_length=255)
+    TAG_RULES = TagRules(max_path_length=255, sixteen_bit_above_48khz="refused")
 
     def __init__(self):
         self.site_code = "OPS"

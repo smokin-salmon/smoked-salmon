@@ -54,6 +54,10 @@ class UpconvertCheckError(Exception):
     pass
 
 
+class UpconvertCheckNotApplicable(UpconvertCheckError):
+    """Raised for a file the upconvert check does not apply to (a 16bit FLAC): out of scope, not a failure."""
+
+
 class NoncompliantFolderStructure(Exception):
     pass
 

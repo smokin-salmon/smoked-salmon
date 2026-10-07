@@ -113,7 +113,7 @@ async def check_spectrals(
     return lossy_master, spectral_ids
 
 
-_FREQUENCY_HEADINGS = {
+FREQUENCY_HEADINGS = {
     "suspect": ("the marks of a lossy encoder", "red"),
     "look": ("one mark of a lossy encoder, not both", "yellow"),
     "ok": ("no mark of a lossy encoder", "green"),
@@ -158,7 +158,7 @@ async def print_frequency_analysis(path: str, spectrals_path: str, spectral_ids:
     except Exception as e:
         click.secho(f"\nFrequency analysis failed, so it says nothing about this release: {e!r}", fg="yellow")
         return False
-    heading, colour = _FREQUENCY_HEADINGS[level]
+    heading, colour = FREQUENCY_HEADINGS[level]
     click.secho(f"\nFrequency analysis: {heading}", fg=colour, bold=True)
     for note in notes:
         click.echo(f"  {note}")

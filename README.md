@@ -347,6 +347,18 @@ nothing. A cross-upload to DIC is never marked Self-purchased, Self-rip or Exclu
 not asked), and a 24-bit one gets its sample rate as `up` sends it. DIC's support follows chodeus's fork: its
 rules and answers have not been checked against DIC itself.
 
+To run every check on an album folder before uploading it, without starting an upload:
+```bash
+salmon check all /data/path/to/album
+salmon check all /data/path/to/album -t RED,OPS --report
+```
+It prints one row per check (integrity, MQA, upconvert, rip logs, tags, sample rate, path length, provenance,
+frequency analysis, the Do-Not-Upload lists, and with `-t` a dupe search): `OK`, `WARN`, `BLOCK`, or `INFO` when
+the check does not apply. It exits with 1 when a row is `BLOCK`, so it can be scripted. It only reads: nothing in
+the folder is changed, even in `library_dirs`. Without `-t` it contacts no tracker and applies RED's and OPS's
+rules; with `-t`, each named tracker gets the dupe search `up` sends. `--report` adds a plain-text summary to paste
+into a tracker help thread; it names the album folder and no other path. It is advisory: `up` runs its own checks.
+
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
 ### 🌐 Spectral Web Interface
