@@ -97,11 +97,15 @@ async def _upload_paths() -> list[str]:
 
 
 def test_dic_uploads_go_through_the_site_page() -> None:
-    assert anyio.run(_upload_paths) == ["/upload.php"]
+    paths = anyio.run(_upload_paths)
+
+    assert paths == ["/upload.php"]
 
 
 def test_dic_never_has_an_api_key() -> None:
-    assert not DICApi().api_key
+    api = DICApi()
+
+    assert not api.api_key
 
 
 def test_the_ignored_key_is_warned_about_once_per_run(capsys: pytest.CaptureFixture[str]) -> None:
