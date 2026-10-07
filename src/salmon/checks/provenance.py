@@ -46,7 +46,7 @@ _CD_DEPTH = 16
 _CD_RATE = 44100
 
 
-def _lossless_depth(info: Any) -> int | None:
+def lossless_depth(info: Any) -> int | None:
     """The bit depth of a FLAC or ALAC file; None for a lossy one, whose depth says nothing about its source."""
     if isinstance(info, FlacStreamInfo) or getattr(info, "codec", None) == "alac":
         return getattr(info, "bits_per_sample", None) or None
@@ -71,7 +71,7 @@ def _file_provenance(filename: str, tagfile: Any) -> dict[str, Any]:
         "file": filename,
         "vendor": getattr(tags, "vendor", None),
         "markers": markers,
-        "bitdepth": _lossless_depth(info),
+        "bitdepth": lossless_depth(info),
         "samplerate": getattr(info, "sample_rate", None) or None,
     }
 

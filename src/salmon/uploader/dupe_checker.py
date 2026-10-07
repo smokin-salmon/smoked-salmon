@@ -865,7 +865,7 @@ def held_formats(group: dict, release: dict, source_flac: dict, formats: dict[st
     return held
 
 
-def _held_in_group(rset: dict, release: dict[str, Any] | None) -> list[dict]:
+def held_in_group(rset: dict, release: dict[str, Any] | None) -> list[dict]:
     """The torrents of a printed group that already hold our release's edition, media, format and encoding.
 
     rset is a search result or a fetched group: a search result has the group's year as groupYear.
@@ -906,7 +906,7 @@ async def _confirm_group_id(
 
     # The match reads the group just printed: it sends no request of its own.
     rset = await print_torrents(gazelle_site, group_id, rset)
-    held = _held_in_group(rset, release)
+    held = held_in_group(rset, release)
     for torrent in held:
         note = _catno_note(torrent, rset, release or {})
         click.secho(

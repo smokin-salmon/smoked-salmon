@@ -252,30 +252,75 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
         CRCMismatchError: If the audio doesn't match the log's CRCs.
         Exception: Any other error means the audio could not be verified.
     """
+    cambia_output = parse_log(logpath)
+
+    score = log_score(cambia_output)
+    if score is None:
+        click.secho("Could not read the log score; checking its CRCs anyway.", fg="yellow")
+    elif score < 100:
+        click.secho(f"Log Score: {score} (The torrent will be trumpable)", fg="yellow", bold=True)
+    else:
+        click.secho(f"Log Score: {score}", fg="green")
+
+    integrity = log_checksum(cambia_output)
+    if integrity == cambia.Integrity.Mismatch:
+        raise EditedLogError("Edited logs")
+    elif integrity == cambia.Integrity.Unknown:
+        click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
+
+    await verify_log_crcs(cambia_output, logpath, basepath)
+    click.secho("All CRC values match the log file.", fg="green")
+
+
+def parse_log(logpath: str) -> Any:
+    """Parse a rip log with cambia.
+
+    Raises:
+        LogCheckSkipped: If cambia cannot parse it.
+        OSError: If it cannot be read.
+    """
     # cambia raises ValueError for a log it can't parse; an OSError reading it propagates.
     try:
-        cambia_output = cambia.parse_log_file(logpath)
+        return cambia.parse_log_file(logpath)
     except ValueError as e:
         raise LogCheckSkipped(f"Could not parse {logpath}: {e}") from e
 
+
+def log_score(cambia_output: Any) -> int | None:
+    """The log's combined score, or None if cambia gave none."""
     try:
-        score = int(cambia_output.evaluation_combined[0].combined_score)
+        return int(cambia_output.evaluation_combined[0].combined_score)
     except (IndexError, ValueError):
-        click.secho("Could not read the log score; checking its CRCs anyway.", fg="yellow")
-    else:
-        if score < 100:
-            click.secho(f"Log Score: {score} (The torrent will be trumpable)", fg="yellow", bold=True)
-        else:
-            click.secho(f"Log Score: {score}", fg="green")
+        return None
 
-    # Every appended log carries its own checksum; an edited rerip log must not pass on the first one's.
-    parsed_logs = cambia_output.parsed.parsed_logs
-    integrities = [parsed_log.checksum.integrity for parsed_log in parsed_logs]
+
+def log_checksum(cambia_output: Any) -> cambia.Integrity:
+    """Mismatch if any appended log's checksum fails, else Unknown if any has none, else Match.
+
+    Every appended log carries its own checksum; an edited rerip log must not pass on the first one's.
+    """
+    integrities = [parsed_log.checksum.integrity for parsed_log in cambia_output.parsed.parsed_logs]
     if cambia.Integrity.Mismatch in integrities:
-        raise EditedLogError("Edited logs")
-    elif cambia.Integrity.Unknown in integrities:
-        click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
+        return cambia.Integrity.Mismatch
+    if cambia.Integrity.Unknown in integrities:
+        return cambia.Integrity.Unknown
+    return cambia.Integrity.Match
 
+
+async def verify_log_crcs(cambia_output: Any, logpath: str, basepath: str) -> None:
+    """Check the audio against the CRCs of a parsed log.
+
+    Args:
+        cambia_output: What parse_log returned for the log.
+        logpath: Path to the log file.
+        basepath: Release folder, as for check_log_cambia.
+
+    Raises:
+        LogCheckSkipped: If the log's CRCs can't be checked against the audio (see each raise).
+        CRCMismatchError: If the audio doesn't match the log's CRCs.
+        Exception: Any other error means the audio could not be verified.
+    """
+    parsed_logs = cambia_output.parsed.parsed_logs
     # A log without a TOC has an empty disc id, so appended logs of different discs would merge.
     if len(parsed_logs) > 1 and not all(pl.toc.accurip_tocid.hash for pl in parsed_logs):
         raise LogCheckSkipped("Appended logs without a TOC: can't tell which disc each track is on.")
@@ -336,5 +381,3 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
 
     if expected_crcs - found_crcs:
         raise CRCMismatchError("CRC Mismatch")
-
-    click.secho("All CRC values match the log file.", fg="green")

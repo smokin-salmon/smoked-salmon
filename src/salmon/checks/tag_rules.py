@@ -86,6 +86,43 @@ def in_torrent_path(folder_name: str, relative_path: str) -> str:
     return f"{folder_name}/{relative_path}"
 
 
+def _id3_in_flac(filename: str) -> str:
+    return f"{filename}: FLAC file contains an ID3 tag (RED and OPS do not allow ID3 tags in FLAC files)."
+
+
+def _uncompressed(filename: str) -> str:
+    return f"{filename}: FLAC file looks uncompressed (RED and OPS can trump it); recompress it with salmon up -c."
+
+
+def _dual_id3(filename: str) -> str:
+    return f"{filename}: MP3 file has a filled-in ID3v1 tag and a blank ID3v2 tag (RED and OPS can trump it)."
+
+
+def find_tag_issues(path: str, audio_info: dict) -> list[str]:
+    """The tagging problems process_tag_issues fixes or warns about, without fixing any: it changes no file.
+
+    Args:
+        path: Path to the release folder.
+        audio_info: Mapping of filename to the technical info `gather_audio_info` collects.
+
+    Returns:
+        One line per problem found; empty when there is none.
+    """
+    messages: list[str] = []
+    for filename in get_audio_files(path):
+        filepath = os.path.join(path, filename)
+        lower = filename.lower()
+        if lower.endswith(".flac"):
+            if has_id3_tag(filepath):
+                messages.append(_id3_in_flac(filename))
+            track = audio_info.get(filename)
+            if track and is_uncompressed(track):
+                messages.append(_uncompressed(filename))
+        elif lower.endswith(".mp3") and has_blank_id3v2_alongside_id3v1(filepath):
+            messages.append(_dual_id3(filename))
+    return messages
+
+
 def process_tag_issues(path: str, audio_info: dict, *, scene: bool, recompress: bool) -> list[str]:
     """Fix or warn about the tagging problems RED and OPS can act on.
 
@@ -111,9 +148,7 @@ def process_tag_issues(path: str, audio_info: dict, *, scene: bool, recompress: 
         if lower.endswith(".flac"):
             if has_id3_tag(filepath):
                 if scene:
-                    messages.append(
-                        f"{filename}: FLAC file contains an ID3 tag (RED and OPS do not allow ID3 tags in FLAC files)."
-                    )
+                    messages.append(_id3_in_flac(filename))
                 else:
                     try:
                         FLAC(filepath).save(deleteid3=True)
@@ -126,12 +161,7 @@ def process_tag_issues(path: str, audio_info: dict, *, scene: bool, recompress: 
             if not recompress:
                 track = audio_info.get(filename)
                 if track and is_uncompressed(track):
-                    messages.append(
-                        f"{filename}: FLAC file looks uncompressed (RED and OPS can trump it); "
-                        "recompress it with salmon up -c."
-                    )
+                    messages.append(_uncompressed(filename))
         elif lower.endswith(".mp3") and has_blank_id3v2_alongside_id3v1(filepath):
-            messages.append(
-                f"{filename}: MP3 file has a filled-in ID3v1 tag and a blank ID3v2 tag (RED and OPS can trump it)."
-            )
+            messages.append(_dual_id3(filename))
     return messages

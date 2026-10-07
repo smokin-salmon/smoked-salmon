@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, cast
+from typing import Any, Literal, cast
 from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
 
 import aiohttp
@@ -44,6 +44,8 @@ class TagRules:
     """Per-tracker upload rules a release folder is checked against."""
 
     max_path_length: int = 180
+    # What the tracker does with a 16-bit file above 48 kHz: "trumpable", "refused", or "" when not known.
+    sixteen_bit_above_48khz: Literal["", "trumpable", "refused"] = ""
 
 
 ARTIST_TYPES = [

@@ -111,7 +111,7 @@ def _parse_upload_form(data: dict, soup: BeautifulSoup) -> None:
 
 
 class RedApi(BaseGazelleApi):
-    TAG_RULES = TagRules(max_path_length=180)
+    TAG_RULES = TagRules(max_path_length=180, sixteen_bit_above_48khz="trumpable")
 
     def __init__(self):
         self.site_code = "RED"
