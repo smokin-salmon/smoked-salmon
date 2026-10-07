@@ -1,0 +1,166 @@
+# RED's Do-Not-Upload list, music only: RED wiki article 476, which says "Last updated 2024-06-07".
+# Checked against that article on 2026-10-06. The maintainers update this file with salmon's releases.
+#
+# salmon refuses to upload a release that matches an entry to RED (other trackers are not affected).
+# Each [[entry]] names:
+#   artist        that artist's whole discography;
+#   artist, album that one release;
+#   album         that release whatever the artist (Various Artists compilations);
+#   label         every release on that label;
+#   media         (optional) only the releases from that media, such as "WEB";
+#   note          why, in a few words.
+# Case, accents and punctuation do not count, and "&" is "and". The artist must be one of the release's main
+# artists exactly ("Viper" is not "Viper UK"). Every word of the album must be in the release's title or edition
+# title, and every word of the label in its label.
+# One wiki line naming several albums is one entry per album. Names are spelled as the article spells them,
+# but for a typo, which a comment over its entry points out.
+
+[[entry]]
+artist = "Ayesha Erotica"
+note = "Most releases on streaming services are fakes uploaded by impersonators."
+
+[[entry]]
+artist = "The Beatles"
+album = "Carnival of Light"
+note = "Never released; the copies around are fakes."
+
+[[entry]]
+artist = "Boards of Canada"
+album = "Catalog 3"
+note = "Early release only friends and family of the band have; fakes are common. Contact staff first."
+
+[[entry]]
+artist = "Boards of Canada"
+album = "Acid Memories"
+note = "Early release only friends and family of the band have; fakes are common. Contact staff first."
+
+[[entry]]
+artist = "Boards of Canada"
+album = "Closes Vol. 1"
+note = "Early release only friends and family of the band have; fakes are common. Contact staff first."
+
+[[entry]]
+artist = "Boards of Canada"
+album = "Play by Numbers"
+note = "Early release only friends and family of the band have; fakes are common. Contact staff first."
+
+[[entry]]
+artist = "Boards of Canada"
+album = "Hooper Bay"
+note = "Early release only friends and family of the band have; fakes are common. Contact staff first."
+
+[[entry]]
+artist = "Boards of Canada"
+album = "Boc Maxima"
+note = "Early release only friends and family of the band have; fakes are common. Contact staff first."
+
+[[entry]]
+artist = "Boards of Canada"
+album = "Old Tunes"
+note = "Early release only friends and family of the band have; fakes are common. Contact staff first."
+
+[[entry]]
+artist = "Death Cab For Yeezy"
+note = "Fan-made mixes, not an official release."
+
+[[entry]]
+artist = "Dr. Dre"
+album = "Detox"
+note = "Cancelled album; the leaks around are fakes."
+
+[[entry]]
+artist = "Fleet Foxes"
+album = "Shore (Stems Edition)"
+note = "Stems are refused, even official ones."
+
+[[entry]]
+artist = "Green Day"
+album = "Cigarettes & Valentines"
+note = "Never released (its masters were stolen); the copies around are fakes."
+
+[[entry]]
+artist = "Jean-Michel Jarre"
+album = "Music for Supermarkets"
+note = "A single copy was made and its masters destroyed; every rip comes from a radio broadcast."
+
+[[entry]]
+artist = "Madlib"
+album = "Recycled Records: The Album"
+media = "WEB"
+note = "The copies around are rips from its promotional website; another source needs staff approval first."
+
+[[entry]]
+artist = "Nicole 12"
+note = "The whole discography is refused because of its imagery, with or without the images."
+
+[[entry]]
+artist = "Nine Inch Nails"
+album = "Strobe Light"
+note = "Fan-made mashup of an April Fools' joke album."
+
+[[entry]]
+artist = "Nirvana"
+album = "Live In Japan Pacific Rim Tour"
+note = "Bootleg made from audience recordings."
+
+[[entry]]
+artist = "Nirvana"
+album = "Under the Covers"
+note = "Bootleg made from FM broadcasts, with skips from faulty pressings."
+
+[[entry]]
+artist = "Pink Floyd"
+album = "Dawn of the Piper"
+note = "Bootleg from the internet, never sold in shops."
+
+[[entry]]
+artist = "Pink Floyd"
+album = "Tree Full of Secrets"
+note = "Bootleg from the internet, never sold in shops."
+
+[[entry]]
+artist = "Glen Porter"
+album = "Blessed by a Young Death"
+media = "WEB"
+note = "The streaming version has a track with a stretch of silence."
+
+[[entry]]
+label = "Sandero Classic Sound"
+note = "Bootleg web label: its releases are not official."
+
+[[entry]]
+artist = "Prof Stoned"
+note = "Fan compilations and fan remasters, not official releases."
+
+# The article writes "Odds and Sod", which would not match the bootleg's title.
+[[entry]]
+artist = "Bruce Springsteen"
+album = "Odds and Sods"
+note = "Bootleg from the internet, never sold in shops."
+
+[[entry]]
+artist = "The Upholsterers"
+album = "Your Furniture Was Always Dead… I Was Just Afraid To Tell You"
+note = "Rare early Jack White project; the copies around are fakes."
+
+[[entry]]
+artist = "Wu-Tang Clan"
+album = "Once Upon a Time in Shaolin"
+note = "A single copy exists and its masters were destroyed; the copies around are fakes."
+
+[[entry]]
+album = "Encyclopedia of Jazz: The World's Greatest Jazz Collection"
+note = "The copies around miss tracks, and its 100-disc boxes are not releases of their own."
+
+[[entry]]
+album = "Yes Means Nein"
+media = "WEB"
+note = "The streaming and Beatport version has a blank track 10."
+
+[[entry]]
+label = "Sip It & Trip It Records"
+note = "Not a real label: rips from the internet put on streaming services."
+
+[[entry]]
+artist = "Viper"
+note = "Mostly recycled or slowed and sped up releases; any new upload needs staff approval first."

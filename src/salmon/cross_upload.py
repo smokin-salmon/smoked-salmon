@@ -1,9 +1,9 @@
 """`salmon cross-upload`: upload a torrent that is on RED, OPS or DIC to another of them, from the files on disk.
 
-The run reads every release's torrent from SOURCE and checks it locally first (the data the form gets, the
-files on disk, the log, the images), shows the plan, and only then sends anything to TARGET: per release, the
-dupe check as `up` makes it, the upload of the source format, and the conversions asked for. The first failure
-there stops the run, and says what is already up.
+The run reads every release's torrent from SOURCE and checks it locally first (the data the form gets, TARGET's
+Do-Not-Upload list, the files on disk, the log, the images), shows the plan, and only then sends anything to TARGET:
+per release, the dupe check as `up` makes it, the upload of the source format, and the conversions asked for. The
+first failure there stops the run, and says what is already up.
 
 Ported from chodeus's fork (cross_upload.py), the version used on the live trackers: the form, the order of
 the steps around the upload and the description are the fork's, apart from the differences
@@ -28,6 +28,7 @@ from torf import TorfError, Torrent
 
 import salmon.trackers
 from salmon import cfg, dryrun
+from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.common import commandgroup
 from salmon.config.image_hosts import HOST_RULES
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
@@ -386,6 +387,8 @@ async def _prepare(
     release = Release(label=str(item), response=response, path=Path(), data={})
     release.notes = _check_torrent(response, source, target)
     release.data = compile_data(response, source, target)
+    if reason := do_not_upload_reason(target.site_code, Candidate.from_form(release.data)):
+        raise CrossUploadRefused(reason)
     release.path = _release_path(response, path)
     _verify_release_files(response, release.path, target)
     release.data.update(_target_form_fields(release, target))
