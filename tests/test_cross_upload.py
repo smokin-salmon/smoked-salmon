@@ -497,7 +497,7 @@ def test_one_release_sends_what_the_budget_says(monkeypatch, dirs) -> None:
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 1,
-        "GET torrents.php?action=download": 1,  # The .torrent, whose pieces the files are checked against
+        "GET ajax.php?action=download": 1,  # The .torrent, whose pieces the files are checked against
         "GET torrents.php": 1,  # OPS's group page, for its lossy approval label
     }
     # RED has no session cookie here, so its site log is not read when the search finds nothing.
@@ -567,7 +567,7 @@ def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> 
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 1,
-        "GET torrents.php?action=download": 1,
+        "GET ajax.php?action=download": 1,
         "GET torrents.php": 1,
     }
     assert run.target.steps() == {
@@ -619,7 +619,7 @@ def test_five_releases_go_up_one_after_the_other(monkeypatch, dirs) -> None:
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 5,
-        "GET torrents.php?action=download": 5,
+        "GET ajax.php?action=download": 5,
         "GET torrents.php": 5,
     }
     assert run.target.steps() == {
@@ -817,7 +817,7 @@ def test_the_same_release_given_twice_is_read_and_uploaded_once(monkeypatch, dir
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 2,
-        "GET torrents.php?action=download": 1,
+        "GET ajax.php?action=download": 1,
         "GET torrents.php": 1,
     }
     assert f"torrent {TORRENT_ID} is already in this run" in run.output
@@ -828,9 +828,7 @@ def _rate_limited() -> web.Response:
     return web.Response(status=429, headers={"Retry-After": "3600"})
 
 
-@pytest.mark.parametrize(
-    "step", ["GET ajax.php?action=torrent", "GET torrents.php?action=download", "GET torrents.php"]
-)
+@pytest.mark.parametrize("step", ["GET ajax.php?action=torrent", "GET ajax.php?action=download", "GET torrents.php"])
 def test_a_source_failure_that_is_not_about_one_release_stops_the_run(monkeypatch, dirs, step: str) -> None:
     albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(2)]
 
@@ -2302,7 +2300,38 @@ def _source_has_unfinished(album: Path):
     return prepare
 
 
-def test_the_files_are_checked_against_the_torrent_salmon_downloads_once_without_a_token(monkeypatch, dirs) -> None:
+def _download(run: Run) -> Sent:
+    (download,) = [sent for sent in run.source.sent if sent.query.get("action") == "download"]
+    return download
+
+
+# Measured on RED and OPS: each one's API gives the .torrent for the API key, and its download page for the session
+# cookie. RED's download page answers the API key with a 401, and the passkey alone with its login page.
+
+
+@pytest.mark.parametrize("source", ["RED", "OPS"], ids=["RED, API key only", "OPS, API key and cookie"])
+def test_with_an_api_key_the_torrent_is_downloaded_through_the_api_without_a_token(
+    monkeypatch, dirs, source: str
+) -> None:
+    if source == "RED":
+        run = _red_to_ops(monkeypatch, dirs, "red-torrent-web-lossy-web-approved.json")
+    else:
+        album = _album(dirs.downloads / FOLDER)
+        run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
+
+    assert run.result.exit_code == 0, run.output
+    download = _download(run)
+    assert (download.method, download.path, download.query) == (
+        "GET",
+        "/ajax.php",
+        {"action": "download", "id": str(TORRENT_ID)},
+    )
+    assert (download.authorization, download.cookie) == (True, False)
+    assert "pieces differ" not in run.output
+
+
+def test_with_a_session_cookie_only_the_torrent_is_downloaded_through_the_site_link(monkeypatch, dirs) -> None:
+    monkeypatch.setitem(API_KEYS, "OPS", "")
     album = _album(dirs.downloads / FOLDER)
     # Every request is printed, secrets masked.
     monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
@@ -2311,43 +2340,15 @@ def test_the_files_are_checked_against_the_torrent_salmon_downloads_once_without
     )
 
     assert run.result.exit_code == 0, run.output
-    (download,) = [sent for sent in run.source.sent if sent.query.get("action") == "download"]
-    assert download.method == "GET"
-    assert download.query == {"action": "download", "id": str(TORRENT_ID), "torrent_pass": PASSKEY}
-    # The site's own download link, with the session cookie OPS has here.
-    assert (download.path, download.cookie, download.authorization) == ("/torrents.php", True, False)
-    assert "pieces differ" not in run.output
-    assert PASSKEY not in run.output
-    assert AUTHKEY not in run.output
-    assert '"torrent_pass":"[REDACTED]"' in run.output  # The download was printed, masked
-
-
-def test_red_with_its_api_key_gives_the_torrent_through_its_api(monkeypatch, dirs) -> None:
-    # Measured on RED: its download page answers the API key with a 401, and the passkey alone with its login page.
-    run = _red_to_ops(monkeypatch, dirs, "red-torrent-web-lossy-web-approved.json")
-
-    assert run.result.exit_code == 0, run.output
-    (download,) = [sent for sent in run.source.sent if sent.query.get("action") == "download"]
+    download = _download(run)
     assert (download.method, download.path, download.query) == (
         "GET",
-        "/ajax.php",
-        {"action": "download", "id": str(TORRENT_ID)},
+        "/torrents.php",
+        {"action": "download", "id": str(TORRENT_ID), "torrent_pass": PASSKEY},
     )
-    assert (download.authorization, download.cookie) == (True, False)
-
-
-def test_a_source_with_no_session_cookie_and_no_api_download_is_refused_without_a_request(monkeypatch, dirs) -> None:
-    monkeypatch.setitem(SESSIONS, "OPS", "")
-    album = _album(dirs.downloads / FOLDER)
-    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], prepare=_source_has(album))
-
-    assert run.result.exit_code == 1
-    assert (
-        f"Not cross-uploading {TORRENT_ID}: salmon gets OPS's .torrent with the session cookie, and none is set: "
-        "give the .torrent file as INPUT\n"
-    ) in run.output
-    assert "download" not in {sent.query.get("action") for sent in run.source.sent}
-    assert run.target.sent == []
+    assert (download.authorization, download.cookie) == (False, True)
+    assert PASSKEY not in run.output
+    assert '"torrent_pass":"[REDACTED]"' in run.output  # The download was printed, masked
 
 
 @pytest.mark.parametrize("args", [["-yyy"], []], ids=["yes to all", "asked, default"])
@@ -2386,7 +2387,7 @@ def test_a_torrent_file_input_is_checked_against_itself_with_no_download(monkeyp
 
     assert run.result.exit_code == 1
     assert "1 of 1 pieces differ from the OPS torrent" in run.output
-    assert "GET torrents.php?action=download" not in run.source.steps()
+    assert "GET ajax.php?action=download" not in run.source.steps()
     assert run.target.sent == []
 
 
@@ -2427,25 +2428,25 @@ def test_a_downloaded_torrent_that_is_another_ones_stops_the_release(monkeypatch
             "<html>Not found, [REDACTED]</html>",
         ),
         (
-            lambda: web.Response(status=302, headers={"Location": "/login.php"}),
+            lambda: web.json_response({"status": "failure", "error": "bad credentials"}, status=401),
             "OPS did not give its .torrent: give the .torrent file as INPUT",
         ),
     ],
-    ids=["a page", "not found", "the login page"],
+    ids=["a page", "not found", "401"],
 )
 def test_a_download_that_gives_no_torrent_stops_only_that_release(monkeypatch, dirs, answer, said: str) -> None:
     albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(2)]
 
     def prepare(source: FakeTracker, target: FakeTracker) -> None:
         _source_has(*albums)(source, target)
-        source.answers["GET torrents.php?action=download"] = answer
+        source.answers["GET ajax.php?action=download"] = answer
 
     run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), str(TORRENT_ID + 1), "-yyy"], prepare=prepare)
 
     assert run.result.exit_code == 1
     assert f"Not cross-uploading {TORRENT_ID}: {said}\n" in run.output
     assert f"Not cross-uploading {TORRENT_ID + 1}: {said}\n" in run.output
-    assert run.source.steps()["GET torrents.php?action=download"] == 2
+    assert run.source.steps()["GET ajax.php?action=download"] == 2
     assert PASSKEY not in run.output
     assert run.target.sent == []
 
@@ -2466,5 +2467,5 @@ def test_a_dic_torrent_by_id_is_checked_by_size_only_and_the_plan_says_so(monkey
     run = _from_dic(monkeypatch, dirs, "RED")
 
     assert run.result.exit_code == 0, run.output
-    assert "GET torrents.php?action=download" not in run.source.steps()
+    assert "GET ajax.php?action=download" not in run.source.steps()
     assert "   files checked by size only: give the DICMusic .torrent to check pieces\n" in run.output
