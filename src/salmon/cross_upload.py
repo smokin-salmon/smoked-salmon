@@ -80,6 +80,8 @@ TRACKERS = ("RED", "OPS", "DIC")
 MAX_RELEASES = 5
 # The most images one release may need fetched from SOURCE and uploaded again.
 MAX_REHOSTED_IMAGES = 10
+# The trackers whose API gives a torrent's .torrent for the API key (ajax.php?action=download).
+_API_DOWNLOADS = ("RED",)
 
 # The Gazelle musicInfo key of each artist role, in the order the form gets them.
 ARTIST_FIELDS = {
@@ -783,16 +785,23 @@ async def _download_torrent(response: dict[str, Any], source: "BaseGazelleApi") 
         RequestError: If SOURCE could not be read.
     """
     torrent_id = response["torrent"]["id"]
-    await source.ensure_authenticated()
+    # Measured on RED: with the API key, only its API gives the .torrent; its download page answers the key with a
+    # 401, and sends a request with the passkey alone to its login page.
+    if source.api_key and source.site_code in _API_DOWNLOADS:
+        url, params = f"{source.base_url}/ajax.php", {"action": "download", "id": torrent_id}
+    elif source.has_session_cookie:
+        # The site's own download link, with the session cookie.
+        await source.ensure_authenticated()
+        url = f"{source.base_url}/torrents.php"
+        params = {"action": "download", "id": torrent_id, "torrent_pass": source.passkey}
+    else:
+        raise CrossUploadRefused(
+            f"salmon gets {source.site_string}'s .torrent with the session cookie, and none is set: give the .torrent "
+            "file as INPUT"
+        )
     try:
         answer = await source._request(
-            "GET",
-            f"{source.base_url}/torrents.php",
-            # The passkey, as in the site's own download link; the authkey too, as in a link from RED's feeds.
-            params={"action": "download", "id": torrent_id, "authkey": source.authkey, "torrent_pass": source.passkey},
-            timeout_secs=30,
-            prefer_api_key=not source.has_session_cookie,
-            binary=True,
+            "GET", url, params=params, timeout_secs=30, prefer_api_key=url.endswith("/ajax.php"), binary=True
         )
     except LoginError:
         raise CrossUploadRefused(
