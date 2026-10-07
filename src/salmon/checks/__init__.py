@@ -139,7 +139,7 @@ async def all_checks(path: str, trackers: list[str], report: bool) -> None:
     Each row is OK, WARN, BLOCK or INFO (not applicable). Advisory only: salmon up runs its own checks and
     stays the authority. Nothing in PATH is changed.
 
-    Exits with 1 when a check BLOCKs, 0 otherwise.
+    Exits with 1 when a check BLOCKs, 2 on a usage error (such as a tracker not in the config), 0 otherwise.
     """
     # numpy, PyAV and the tracker clients: loaded when the checks run, not when salmon starts.
     from salmon.checks.album import check_album

@@ -13,7 +13,10 @@ from pathlib import Path
 from typing import Any
 
 import anyio
+import av
+import av.audio.stream
 import cambia
+import numpy as np
 import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
@@ -231,8 +234,9 @@ def test_a_tracker_not_in_the_config_is_refused(album):
 class FakeTracker:
     """A local Gazelle tracker: answers index and browse, and records each request."""
 
-    def __init__(self, results: list[dict]) -> None:
-        self.results = results
+    def __init__(self, results: list[dict], browse: dict | None = None) -> None:
+        # browse: the whole answer to a browse, instead of one listing results.
+        self.browse = browse if browse is not None else {"results": results}
         self.sent: list[tuple[str, str, dict[str, str]]] = []
         self.url = ""
 
@@ -241,7 +245,7 @@ class FakeTracker:
         if request.query.get("action") == "index":
             return web.json_response({"status": "success", "response": {"authkey": "a", "passkey": "p"}})
         if request.query.get("action") == "browse":
-            return web.json_response({"status": "success", "response": {"results": self.results}})
+            return web.json_response({"status": "success", "response": self.browse})
         return web.Response(status=404)
 
     @asynccontextmanager
@@ -267,13 +271,15 @@ GROUP = {
 }
 
 
-def test_named_trackers_get_ups_dupe_search_and_their_do_not_upload_list(album, monkeypatch, tmp_path):
+def _run_with_trackers(
+    monkeypatch, tmp_path: Path, album: Path, trackers: dict[str, FakeTracker], red_list: str
+) -> Any:
+    """Run check all ALBUM -t RED,OPS against the fake trackers, with red_list as RED's Do-Not-Upload list."""
     lists = tmp_path / "lists"
     lists.mkdir()
-    (lists / "red.toml").write_text('[[entry]]\nartist = "Artist"\nnote = "Fakes."\n')
+    (lists / "red.toml").write_text(red_list)
     (lists / "ops.toml").write_text("")
     monkeypatch.setattr(do_not_upload, "LISTS_DIR", lists)
-    trackers = {"RED": FakeTracker([]), "OPS": FakeTracker([GROUP])}
 
     def client(code: str) -> BaseGazelleApi:
         site = salmon.trackers.tracker_classes[code]()
@@ -287,7 +293,14 @@ def test_named_trackers_get_ups_dupe_search_and_their_do_not_upload_list(album, 
         async with trackers["RED"].serving(), trackers["OPS"].serving():
             return await CliRunner().invoke(all_checks, [str(album), "-t", "RED,OPS"])
 
-    result = anyio.run(run)
+    return anyio.run(run)
+
+
+def test_named_trackers_get_ups_dupe_search_and_their_do_not_upload_list(album, monkeypatch, tmp_path):
+    trackers = {"RED": FakeTracker([]), "OPS": FakeTracker([GROUP])}
+    result = _run_with_trackers(
+        monkeypatch, tmp_path, album, trackers, '[[entry]]\nartist = "Artist"\nnote = "Fakes."\n'
+    )
     assert result.exit_code == 1, result.output
     rows = _rows(result.output)
     assert rows["Do-Not-Upload (RED)"] == "BLOCK"
@@ -303,3 +316,37 @@ def test_named_trackers_get_ups_dupe_search_and_their_do_not_upload_list(album, 
         ("GET", "/ajax.php", {"action": "index"}),
         *(("GET", "/ajax.php", {"action": "browse", "searchstr": s}) for s in searchstrs),
     ]
+
+
+def test_a_search_answer_without_results_is_a_warning_and_the_other_checks_go_on(album, monkeypatch, tmp_path):
+    trackers = {"RED": FakeTracker([]), "OPS": FakeTracker([], browse={})}
+    result = _run_with_trackers(monkeypatch, tmp_path, album, trackers, "")
+    assert result.exit_code == 0, result.output
+    rows = _rows(result.output)
+    assert (rows["Dupe (RED)"], rows["Dupe (OPS)"]) == ("OK", "WARN")
+    assert "Could not search OPS: unexpected answer (KeyError('results'))" in result.output
+
+
+def _write_aac(path: Path) -> None:
+    """One second of stereo noise as AAC in an MP4 container, which mutagen says has 16 bits per sample."""
+    with av.open(str(path), "w", format="ipod") as out:
+        stream = out.add_stream("aac", rate=44100, layout="stereo")
+        assert isinstance(stream, av.audio.stream.AudioStream)
+        noise = np.random.default_rng(0).normal(0, 0.1, (2, 44100)).astype(np.float32)
+        frame = av.AudioFrame.from_ndarray(noise, format="fltp", layout="stereo")
+        frame.sample_rate = 44100
+        for packet in [*stream.encode(frame), *stream.encode(None)]:
+            out.mux(packet)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_an_aac_album_is_lossy_and_gets_no_frequency_analysis(tmp_path):
+    album = tmp_path / "Artist - Album (2020) [WEB AAC]"
+    album.mkdir()
+    for number in (1, 2):
+        _write_aac(album / f"{number:02d} Track {number}.m4a")
+    result = _run(str(album), "--report")
+    assert result.exit_code == 0, result.output
+    assert _rows(result.output)["Frequency analysis"] == "INFO"
+    assert "No lossless file" in result.output
+    assert "1. Lossless or lossy\n   Lossy." in result.output

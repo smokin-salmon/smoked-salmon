@@ -24,7 +24,7 @@ from salmon.checks.do_not_upload import LISTS, Candidate, do_not_upload_reason
 from salmon.checks.integrity import check_integrity
 from salmon.checks.logs import log_checksum, log_score, parse_log, verify_log_crcs
 from salmon.checks.mqa import check_mqa
-from salmon.checks.provenance import gather_provenance
+from salmon.checks.provenance import gather_provenance, lossless_depth
 from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import find_tag_issues, in_torrent_path
 from salmon.checks.upconverts import check_upconvert
@@ -61,7 +61,10 @@ class AlbumChecks:
 
 
 def _audio_info(path: str) -> dict[str, dict[str, Any]]:
-    """gather_audio_info's, leaving out a file mutagen cannot read: the integrity check reports that one."""
+    """gather_audio_info's, leaving out a file mutagen cannot read: the integrity check reports that one.
+
+    The precision is set for a lossless file only: an AAC stream reports 16 bits per sample too.
+    """
     info = {}
     for filename in get_audio_files(path, True):
         try:
@@ -75,7 +78,7 @@ def _audio_info(path: str) -> dict[str, dict[str, Any]]:
             "channels": stream.channels,
             "sample rate": stream.sample_rate,
             "bit rate": stream.bitrate,
-            "precision": getattr(stream, "bits_per_sample", None),
+            "precision": lossless_depth(stream),
         }
     return info
 
@@ -182,6 +185,9 @@ async def _dupe_row(tracker: str, release: dict[str, Any]) -> Row:
         results = await get_search_results(site, searchstrs)
     except RequestError as e:
         return verdicts.dupe_error_row(tracker, str(e))
+    except (KeyError, TypeError) as e:
+        # An answer without the fields a search returns: say so in the row rather than stop every check.
+        return verdicts.dupe_error_row(tracker, f"unexpected answer ({e!r})")
     finally:
         await site.close()
     return verdicts.dupe_row(tracker, release, results)
