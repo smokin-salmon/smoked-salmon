@@ -284,9 +284,10 @@ def _run_up(
     classes: dict[str, type[BaseGazelleApi]] | None = None,
     multi_tracker_upload: bool = True,
     yes_all: bool = True,
+    trackers: tuple[str, ...] = ("RED",),
     **fakes: Any,
 ) -> Run:
-    """Run `salmon up ALBUM -t RED` against the fake tracker, with the real staging, torrents and upload forms.
+    """Run `salmon up ALBUM -t RED` (or the `trackers`) against the fake tracker: real staging, torrents and forms.
 
     The seams that need audio tools, a metadata source or a reviewer are stubbed, `fakes` replace more of them.
     `classes` gives the client class of each site code, RED and OPS by default. `yes_all=False` leaves out -yyy.
@@ -355,7 +356,8 @@ def _run_up(
         async with tracker.serving():
             return await CliRunner().invoke(
                 salmon.uploader.up,
-                [str(album), "-t", "RED", "-s", "WEB", "-n", *(["-yyy"] if yes_all else [])]
+                [str(album), *(arg for code in trackers for arg in ("-t", code)), "-s", "WEB", "-n"]
+                + (["-yyy"] if yes_all else [])
                 + ["--skip-integrity-check", "--skip-up"]
                 + ["--source-url", SOURCE_URL, *args],
                 input=input,

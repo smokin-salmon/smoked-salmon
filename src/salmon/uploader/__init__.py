@@ -15,6 +15,7 @@ import salmon.trackers
 from salmon import cfg, dryrun
 from salmon.checks import mqa_test
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
+from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.checks.integrity import resolve_integrity_for_upload
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.provenance import gather_provenance
@@ -564,6 +565,23 @@ def _do_not_upload_refusal(tracker: str, release: dict[str, Any], said: str | No
     return reason
 
 
+def _sixteen_bit_refusal(tracker: str, audio_info: dict[str, Any]) -> bool:
+    """Say what the tracker's rule on 16bit files above 48 kHz means for the files, and whether it refuses them.
+
+    A tracker that only trumps them gets a warning and the upload goes on. Nothing skips a refusal, -yyy included.
+    """
+    site_class = salmon.trackers.tracker_classes.get(tracker)
+    rule = site_class.TAG_RULES.sixteen_bit_above_48khz if site_class else ""
+    notice = sixteen_bit_notice(tracker, rule, audio_info)
+    if notice is None:
+        return False
+    if rule == "refused":
+        click.secho(f"\nNot uploading to {tracker}: {notice}", fg="red", bold=True)
+        return True
+    click.secho(f"\n{notice}", fg="yellow")
+    return False
+
+
 def _warn_about_provenance(path: str) -> None:
     """Print each ripper or store marker in the tags that the audio contradicts.
 
@@ -790,11 +808,13 @@ async def _upload_staged(
     # A release the first tracker's list forbids gets no group search there, so no prompt to pick a group. The
     # review may change the names: the list is checked again after it.
     tags_refusal = _do_not_upload_refusal(gazelle_site.site_code, rls_data)
+    # The files never change in the review. With --skip-flac-upload only transcodes go up: no FLAC to refuse.
+    rate_refused = flac_group is None and _sixteen_bit_refusal(gazelle_site.site_code, audio_info)
     if group_id is None:
         # Left empty for a listed release: if the review takes it off the list, recheck_dupe then searches.
         searchstrs = dupe_searchstrs = (
             []
-            if tags_refusal
+            if tags_refusal or rate_refused
             else generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
         )
 
@@ -876,7 +896,9 @@ async def _upload_staged(
             )
 
             # Before anything is made or sent for the first tracker: its group, spectrals, cover and upload.
-            first_listed = _do_not_upload_refusal(gazelle_site.site_code, metadata, said=tags_refusal) is not None
+            first_listed = (
+                rate_refused or _do_not_upload_refusal(gazelle_site.site_code, metadata, said=tags_refusal) is not None
+            )
             if not group_id and not first_listed:
                 group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
                 click.echo()
@@ -982,7 +1004,9 @@ async def _upload_staged(
                         break
                     gazelle_site = salmon.trackers.get_class(tracker)()
                     # Before its dupe check, which may ask which group to upload into.
-                    if _do_not_upload_refusal(tracker, metadata) is not None:
+                    if _do_not_upload_refusal(tracker, metadata) is not None or (
+                        flac_group is None and _sixteen_bit_refusal(tracker, audio_info)
+                    ):
                         remaining_gazelle_sites.remove(tracker)
                         tracker = None
                         continue
