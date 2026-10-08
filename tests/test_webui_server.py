@@ -371,10 +371,12 @@ def test_committed_build_is_served_at_the_root_and_for_unknown_paths() -> None:
     index = (STATIC / "index.html").read_bytes()
 
     async def test(client: TestClient) -> None:
-        for path in ("/", "/jobs", "/some/app/route", "/favicon.ico"):
+        for path in ("/", "/index.html", "/jobs", "/some/app/route", "/favicon.ico"):
             response = await client.get(path)
             assert response.status == 200, path
             assert await response.read() == index, path
+            # It names the current assets: never from a cache without asking.
+            assert response.headers["Cache-Control"] == "no-cache"
             assert response.headers["Content-Type"].startswith("text/html")
             assert response.headers["X-Content-Type-Options"] == "nosniff"
             assert response.headers["X-Frame-Options"] == "DENY"

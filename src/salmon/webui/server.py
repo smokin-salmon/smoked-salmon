@@ -27,6 +27,7 @@ AUTH = web.AppKey("auth", Auth)
 BIND_HOST = web.AppKey("bind_host", str)
 ALLOWED_HOSTS = web.AppKey("allowed_hosts", list[str])
 DEV = web.AppKey("dev", bool)
+BUILD_FILES = web.AppKey("build_files", dict[str, Path])
 
 
 class LoginRequest(msgspec.Struct):
@@ -133,19 +134,25 @@ async def api_not_found(_request: web.Request) -> web.Response:
     return _error(404, "Not found.")
 
 
+def build_files(root: Path) -> dict[str, Path]:
+    """The build's files by URL path. Requests are looked up here: no path is made from what a request asks for."""
+    return {path.relative_to(root).as_posix(): path for path in root.rglob("*") if path.is_file()}
+
+
 async def front_end(request: web.Request) -> web.StreamResponse:
     """A file of the build, else ``index.html``: the app routes the other paths itself."""
-    root = STATIC_DIR.resolve()
-    path = (root / request.match_info["tail"]).resolve()
-    if path.is_relative_to(root) and path.is_file():
+    files = request.app[BUILD_FILES]
+    name = request.match_info["tail"]
+    path = files.get(name)
+    if path is not None and name != "index.html":
         response = web.FileResponse(path)
-        if path.parent == root / "assets":
+        if name.startswith("assets/"):
             # Vite names these after their content.
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
         return response
-    if request.match_info["tail"].startswith("assets/"):
+    if name.startswith("assets/"):
         raise web.HTTPNotFound()
-    response = web.FileResponse(root / "index.html")
+    response = web.FileResponse(files["index.html"])
     response.headers["Cache-Control"] = "no-cache"
     return response
 
@@ -156,6 +163,7 @@ def create_app(token: str, bind_host: str, allowed_hosts: list[str], dev: bool =
     app[BIND_HOST] = bind_host
     app[ALLOWED_HOSTS] = list(allowed_hosts)
     app[DEV] = dev
+    app[BUILD_FILES] = build_files(STATIC_DIR)
     app.on_response_prepare.append(security_headers)
     app.router.add_post("/api/login", login)
     app.router.add_post("/api/logout", logout)
