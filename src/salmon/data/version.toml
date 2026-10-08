@@ -1,4 +1,121 @@
-current = "0.14.0"
+current = "0.15.0"
+
+[[changelog]]
+version = "0.15.0"
+date = "2026-10-08"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- **Releases on a tracker's Do-Not-Upload list are not uploaded there.** salmon now ships a copy of RED's and OPS's Do-Not-Upload lists (fakes, unreleased albums, bootlegs, some whole discographies and labels; some entries only for WEB). A listed release is skipped for that tracker, with or without `--yes-all`: salmon names the entry and why, and the run goes on to the other trackers. A legitimate copy needs that tracker's staff approval first. The lists are updated with salmon's releases. There is no setting to turn this off. Thanks @chodeus
+- **16-bit files above 48 kHz are no longer uploaded to OPS**, which refuses them; the run goes on to the other trackers. RED, which can trump them, gets a warning and the upload goes on. DIC is not affected.
+- **An ID3 tag inside a FLAC is removed before upload** (the audio is not changed). Scene releases are never touched and only get a warning. Uncompressed FLACs and MP3s with a filled-in ID3v1 tag next to a blank ID3v2 tag get a warning. Thanks @0rkag and @chodeus
+- **Path lengths are checked against each tracker's own limit**: 180 characters for RED, 255 for OPS (180 before, for every tracker). A run that may go on to several trackers uses the strictest one.
+- **A torrent in the same edition with a different catalogue number is now flagged as a dupe risk.** Sites and uploaders write catalogue numbers differently, so they no longer hide a dupe. With `--skip-flac-upload`, the FLAC the transcodes point to is matched on media, year and edition title, without the catalogue number.
+- **With `--yes-all`, the lossy-master question is still asked** when the new frequency analysis finds a lossy encoder's marks in a track (see below). Thanks @chodeus
+- **salmon no longer offers to delete the album folder** once a torrent seeding from it has been uploaded.
+- **Docker: the config now lives in one `/config` mount.** The image sets `SALMON_CONFIG_DIR=/config`. A mount at `/root/.config/smoked-salmon/` still works, with a warning; move `config.toml` into a `/config` mount when you can, and put `rclone.conf` next to it with `-e RCLONE_CONFIG=/config/rclone.conf`. Thanks @chodeus
+- **`[tracker.dic] api_key` is ignored**, with a warning: DIC takes no API keys, and a key set there used to make every DIC request fail. DIC uses the session cookie.
+
+## ✨ New Features & Improvements
+
+- **`salmon cross-upload`** uploads a torrent that is on RED, OPS or DIC to another of them, from the files you already have: `salmon cross-upload 123456 RED OPS`. Give the source torrent's ID, URL or `.torrent` file (up to 5 per run). salmon checks the files against the source torrent's pieces (so an album still downloading is not uploaded), its log and its images, shows a plan, checks the target for dupes, and uploads with the source's group and torrent data and description (links to the source tracker removed). Images the target cannot display are rehosted, and a lossy master or lossy WEB approval on the source is followed by a lossy report on the target. `--transcode V0`, `--downconvert` or `--all` also upload conversions; the album folder is never changed. For an ID or URL, salmon downloads the source `.torrent` once, never with a freeleech token. It was tested with `--dry-run` against RED and OPS; DIC support follows chodeus's fork and has not been checked against DIC itself. Thanks @chodeus
+- **`salmon check all /path/to/album`** runs every check on a folder without uploading and prints one row per check (`OK`, `WARN`, `BLOCK`, `INFO`): integrity, MQA, upconvert, rip logs, tags, sample rate, path length, ripper and store markers, frequency analysis, the Do-Not-Upload lists, and with `-t RED,OPS` a dupe search per tracker. `--report` adds a plain-text summary to paste in a tracker help thread. It exits with 1 when a row is `BLOCK`, and never changes the folder. Thanks @chodeus
+- **`salmon up --dry-run`** goes through the whole upload on a copy of the album and sends nothing: it prints each upload's form (secrets masked), the torrent's files and piece size. It only reads from the tracker, uploads no image, copies nothing to a seedbox and adds nothing to a torrent client.
+- **`-t RED,OPS`** (or `-t RED -t OPS`) uploads to each tracker in that order without asking. One `-t`, or none, works as before. Thanks @chodeus
+- **Prompts default to what the files already say**: the source (from a rip log, a store URL or a store-only tag), the metadata result (the store album URL in the tags), the release type (from the track count and length), and the existing group (the one search result with your artist, title and original year). When the files contradict themselves there is no default, and every prompt is still asked. The group prompt defaults to abort when the group's edition already holds your media, format and encoding. Thanks @chodeus
+- **Frequency analysis**: before the lossy-master question, each track is measured for the marks a lossy encoder leaves (a brick-wall lowpass, highs that flip between content and silence). salmon prints what it measured, shows an averaged-spectrum plot next to the spectrals (kept local, never uploaded), and makes "yes" the default when a track carries the marks. It is a measurement, not a verdict. `salmon specs` prints it too. Thanks @chodeus
+- **Ripper and store markers**: a warning when a file's tags name a ripper or a store that its audio contradicts (a "24-bit" store tag on 16-bit audio, for example). It never stops the upload. Thanks @chodeus
+- **`library_dirs`** under `[directory]`: folders salmon never changes or deletes. An album inside one is copied into `download_directory` (a real copy, never a hardlink) and the upload uses the copy. Thanks @chodeus
+- **`trackers`** in a `[[seedbox]]`: send only some trackers' uploads to that seedbox, e.g. `trackers = ["RED"]`. Empty (the default) sends all of them. Thanks @chodeus
+- **Per-tracker spectrals and description image hosts**: `specs_uploader` and `image_uploader` under `[image.red]`, `[image.ops]` or `[image.dic]`, like `cover_uploader`. Spectrals are uploaded once per host and reused. `salmon images up -t RED` uses that tracker's host.
+- **`{resolution}`** folder name key: `24-96`, `16-48` and so on for lossless files that are not 16bit/44.1kHz, e.g. `[{source} FLAC {resolution}]`. Thanks @chodeus
+- **Qobuz works without an account**: salmon reads the public album page. With `app_id` and `user_auth_token` set, it uses the API as before (and Qobuz search needs them). Thanks @chodeus
+- A missing UPC is taken from a Deezer album link in the files' tags. Thanks @chodeus
+- A converted folder uploaded on its own gets a description of its source and the conversion. Thanks @chodeus
+- On Python 3.14, which `pyoxipng` does not support, spectrals are compressed with the `oxipng` program when it is installed (winget, scoop, brew, apt, or its GitHub releases); otherwise they are uploaded uncompressed, with a notice. A fresh install no longer needs a Rust or Visual Studio build.
+- Docker: the image has a current rclone (1.75.1) and sox's MP3 support, so spectrals of MP3s work in the container. Thanks @chodeus
+- The README and wiki explain the Windows install step by step: use PowerShell, reopen it after installs, and what to do when `salmon` is not recognized.
+
+## 🐛 Bug Fixes
+
+- **DICMusic 24-bit uploads failed** ("You must choose..."): salmon now sends the sample rate DIC requires, and stops before sending a release with mixed or unsupported rates. Thanks @mlnl221
+- A torrent the client did not add (a duplicate in qBittorrent, for example) is reported as a failure instead of "added successfully". Thanks @chodeus
+- The spectrals check runs after the first upload even with one tracker, and the uploaded URLs are shown if a run stops after some uploads succeeded. When the automatic lossy report fails, its text and the torrent link are printed to file it by hand.
+- Spectrals are no longer left behind when the album folder is renamed.
+- `salmon compress` reports files it could not recompress and recompresses in parallel.
+- The existing group is suggested on the original release year, so a remaster finds its group.
+- `descgen`'s Tracklist header closes its `[size]` tag. Thanks @mlnl221
+- `salmon metas` no longer crashes when a source returns a result, `descgen` with a folder no longer ends in a traceback, and the spectrals page works on Windows without symlink rights.
+- The AI review no longer errors on a web search with no query or URL.
+
+## 🔒 Tracker & Security Improvements
+
+- **A TLS certificate failure is not retried**, and salmon says what it is (an expired or missing certificate authority, or the system clock).
+- **`cross-upload` downloads the source `.torrent` without spending a freeleech token**, sends one request per torrent through salmon's rate limiter, and keeps the passkey out of its output.
+- DIC requests never send an API key header.
+- The Docker image is scanned for vulnerabilities before it is published, and a fixable critical one stops the release. Every action and image the build uses is pinned.
+
+## What's Changed
+* Report a torrent the client did not add as a failure by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/554
+* Install sox's MP3 support in the Docker image by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/553
+* Send the sample rate DICMusic now requires by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/552
+* Install a current rclone in the Docker image by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/555
+* Pin a seedbox to some trackers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/556
+* Never modify or delete an album inside library_dirs by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/558
+* Docker: one /config mount and no world-writable /app by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/557
+* Keep a developer's config out of the test run by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/561
+* Use LF line endings everywhere by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/559
+* AGENTS.md: config dir, library safety and the Docker image by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/560
+* Take a missing UPC from the files own Deezer album by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/562
+* Add an optional {resolution} folder name token by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/563
+* Add --dry-run: build the whole upload and send nothing by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/564
+* Strip ID3 tags from FLACs, warn about uncompressed FLACs, and measure path limits per tracker by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/565
+* Report recompression failures and recompress in parallel by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/570
+* Read Qobuz metadata from the public album page when no account is configured by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/571
+* Per-tracker spectrals and description image hosts by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/572
+* Never leave spectrals behind when the album folder is renamed by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/576
+* Check spectrals after the first upload even with one tracker, and never offer to delete an uploaded folder by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/578
+* Scan the Docker image before publishing it by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/577
+* Pin actions and image inputs, and let Dependabot propose every update by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/579
+* Detect the media source from the files and offer it as the default by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/588
+* Measure a lossy encoder's marks before the lossy-master question by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/589
+* Describe a converted folder uploaded on its own by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/587
+* Print the frequency analysis in salmon specs by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/593
+* Bump astral-sh/setup-uv from 7.6.0 to 10.2.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/583
+* Bump urllib3 from 2.7.0 to 2.8.0 in the uv group across 1 directory by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/580
+* Bump pytest from 9.0.3 to 9.1.1 in the dev-tools group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/582
+* Bump the minor-and-patch group with 6 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/584
+* Update aiohttp[speedups] requirement from >=3.13.5 to >=3.14.3 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/586
+* Move to openai 3 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/596
+* Fail any test request that leaves the machine by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/594
+* Do not retry TLS certificate failures, and say what they are by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/598
+* Pre-fill the answers the files already imply by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/595
+* Fix descgen Tracklist header missing its [/size] close tag by @mlnl221 in https://github.com/smokin-salmon/smoked-salmon/pull/597
+* Let salmon images up use a tracker's image host by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/599
+* Suggest the group on the original year, not the edition's by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/600
+* Bump ruff from 0.16.8 to 0.16.9 in the dev-tools group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/602
+* Bump astral-sh/uv from 0.12.21 to 0.12.22 in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/603
+* Bump av from 17.0.1 to 18.1.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/604
+* Update uv-build requirement from <0.12.0,>=0.11.11 to >=0.12.19,<0.13.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/605
+* Tell Windows users to use PowerShell and reopen it after installs by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/606
+* Do not let a different catalogue number hide a dupe by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/607
+* Cross-upload a release between RED and OPS by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/601
+* Warn when a file's ripper or store markers contradict its audio by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/609
+* Cross-upload to and from DIC by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/608
+* Stop uploads the trackers' Do-Not-Upload lists forbid by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/610
+* Fix first-run problems found by a new Windows user by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/611
+* Say what the cross-upload plan's SOURCE count covers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/619
+* Add salmon check all: every check, a verdict and a report by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/613
+* Compress spectrals with the oxipng program when pyoxipng is missing by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/620
+* Ignore tracker.dic.api_key: DIC takes no API keys by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/621
+* Refuse 16-bit audio above 48 kHz for OPS, warn for RED by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/623
+* Check cross-uploaded files against the source torrent's pieces by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/622
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.14.0...0.15.0
+
+"""
 
 [[changelog]]
 version = "0.14.0"
