@@ -2,3 +2,6 @@
 
 *.png binary
 *.ico binary
+
+# The front-end build, made from webui/ by npm run build; CI checks it matches the source.
+src/salmon/webui/static/** linguist-generated=true
