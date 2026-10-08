@@ -32,7 +32,8 @@ class FakeApi(BaseGazelleApi):
         self.base_url = base_url
         super().__init__()
         # Per instance, as each test runs on its own event loop.
-        self._rate_limiter = CountingLimiter()
+        self.limiter = CountingLimiter()
+        self._rate_limiter = self.limiter
         self._authenticated = True
 
 
@@ -83,7 +84,7 @@ async def _redirect_hops_take_a_rate_limiter_slot() -> None:
     try:
         assert await api.get_redirect_torrentgroupid(1) == 2
         assert hits == ["/torrents.php?torrentid=1", "/torrents.php?id=2&torrentid=1"]
-        assert api._rate_limiter.slots == len(hits)
+        assert api.limiter.slots == len(hits)
     finally:
         await api.close()
         await runner.cleanup()
@@ -216,7 +217,7 @@ async def _post_asked_to_be_sent_again_elsewhere_is_not(status: int) -> None:
             await api._request("POST", url + "/upload.php", data={"auth": "an-authkey"})
         # The tracker may have taken it already: it is not sent again, here or anywhere.
         assert hits == [("POST", "/upload.php")]
-        assert api._rate_limiter.slots == 1
+        assert api.limiter.slots == 1
     finally:
         await api.close()
         await runner.cleanup()

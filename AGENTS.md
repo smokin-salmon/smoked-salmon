@@ -55,8 +55,9 @@ the test run never reads a developer's config.
 ## Tracker safety rules
 
 - **All tracker requests go through `BaseGazelleApi._request`.** It applies the shared rate
-  limiter (5 requests per 10 s), the kept-alive connection pool and the retry policy. Do not open
-  a new `aiohttp.ClientSession` to a tracker anywhere else.
+  limiter (at most 5 requests in any 10 s, one budget per tracker), the tracker's kept-alive
+  connection pool and the retry policy (`trackers/account.py`). Do not open a new
+  `aiohttp.ClientSession` to a tracker anywhere else.
 - **Do not add request loops without a bound.** A feature that issues one request per item (per
   torrent, per group, per page) must cap the count or make it opt-in. Issue #432 is the example of
   what goes wrong: one check sends ~99 requests per upload.
