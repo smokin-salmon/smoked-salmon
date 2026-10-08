@@ -156,10 +156,15 @@ jobs in threads, every tracker request on one loop
 
 - `salmon web` binds `127.0.0.1:55155` by default.
 - A token is always required, on loopback too. It comes from `SALMON_WEB_TOKEN`, else `[web] token`. On
-  loopback with neither, salmon makes one at each start and prints a login link carrying it. Any other bind
-  refuses to start without a configured token. A configured token has at least 32 characters.
+  loopback with neither, salmon makes one at each start and prints a login link carrying it in the URL
+  fragment (`#token=...`), which a browser never sends to the server. Any other bind refuses to start
+  without a configured token. A configured token has at least 32 characters.
 - The browser trades the token for a cookie once (`HttpOnly`, `SameSite=Strict`, `Path=/`, and `Secure`
-  over HTTPS). Scripts send `Authorization: Bearer`.
+  over HTTPS); a login link's page then drops the fragment from the address bar and the history
+  (`history.replaceState`). Scripts send `Authorization: Bearer`.
+- salmon serves plain HTTP and terminates no TLS. On any bind but loopback, the token and the cookie cross
+  that network in clear: salmon says so when it starts, and the documentation tells users to reach it
+  through a TLS reverse proxy, an SSH tunnel or a VPN unless they trust the network.
 - A request other than GET or HEAD must be sent as JSON (`Content-Type: application/json`, `{}` at least)
   and, when the browser sends an `Origin`, come from the server's own origin. The websocket checks its
   `Origin` the same way. GET routes change nothing and send nothing to a tracker.
