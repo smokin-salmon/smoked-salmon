@@ -44,3 +44,5 @@ Long batches are paced by the rate limiter, not the pool: 15 requests took 21.2 
   shape.
 - `tests/test_trackers_session.py` pins the pool cap, the cookie isolation and the queued-timeout
   behaviour.
+- *Amended by [0004](0004-web-interface.md): the pool, the rate limit and the lock for requests that
+  are not idempotent are per tracker account, shared by every client of it.*
