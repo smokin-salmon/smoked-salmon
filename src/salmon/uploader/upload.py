@@ -297,6 +297,7 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str) -> tuple[str, To
         trackers=[gazelle_site.announce],
         private=True,
         source=gazelle_site.site_string,
+        exclude_regexs=(r".*/info\.txt$",),
     )
     t.generate()
     tpath = os.path.join(

@@ -346,10 +346,10 @@ def filter_artists(artists, tracks=None):
                 seen_normalized = set()
 
                 for art, imp in track["artists"]:
-                    normalized_art = normalize_accents(art.lower())  # Normalize and make lowercase
-                    if normalized_art not in seen_normalized:
+                    normalized_key = (normalize_accents(art.lower()), imp)  # Normalize and make lowercase
+                    if normalized_key not in seen_normalized:
                         deduplicated_artists.append((art, imp))  # Add the original artist with the importance
-                        seen_normalized.add(normalized_art)
+                        seen_normalized.add(normalized_key)
 
                 track["artists"] = fix_artists_list(
                     [(artist_pool[normalize_accents(art.lower())], imp) for art, imp in deduplicated_artists],

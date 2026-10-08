@@ -11,6 +11,7 @@ from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import determine_label_type, generate_artists, standardize_genres
 
 PREFERENCES = [
+    "InfoTxt",
     "Tidal",
     "Deezer",
     "Qobuz",
@@ -219,7 +220,16 @@ def combine_tracks(base, meta, update_track_numbers):
                 btrack["title"]
                 and track["title"]
                 # Allow replacement if the base title is part of the meta title (e.g., remix scenario)
-                and re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))
+                and (
+                    re_strip(unidecode(btrack["title"])) in re_strip(unidecode(track["title"]))
+                    # The preferred source may also replace a decorated base title
+                    # with a clean meta title (e.g., clean info.txt titles win over
+                    # decorated tag titles). Non-preferred sources keep old behavior.
+                    or (
+                        update_track_numbers
+                        and re_strip(unidecode(track["title"])) in re_strip(unidecode(btrack["title"]))
+                    )
+                )
             ):
                 btrack["title"] = track["title"]
 

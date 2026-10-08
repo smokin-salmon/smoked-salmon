@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 from copy import copy
 from itertools import islice
 from typing import Any
@@ -11,6 +12,7 @@ from salmon import cfg
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.search import SEARCHSOURCES, run_metasearch
 from salmon.tagger.combine import combine_metadatas
+from salmon.tagger.info_txt import find_info_txt, parse_info_txt
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import generate_artists
 
@@ -31,18 +33,44 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
     if not rls_data:
         raise ValueError("rls_data cannot be None")
+    info_metadata = await _maybe_load_info_txt(path, rls_data)
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
     click.secho(f"Searching for '{searchstrs}' releases...")
     artists_list = [a for a, _ in rls_data["artists"]]
     album_title = rls_data["title"]
     search_results = await run_metasearch(
-        searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
+        searchstrs,
+        filter=False,
+        track_count=len(tags),
+        artists=artists_list,
+        album=album_title,
+        sources={"Discogs": SEARCHSOURCES["Discogs"]} if info_metadata is not None else None,
     )
     choices = _print_search_results(search_results, rls_data)
-    metadata, source_url = await _select_choice(choices, rls_data)
+    metadata, source_url = await _select_choice(choices, rls_data, info_metadata)
     remove_various_artists(metadata["tracks"])
     metadata = fix_hardcore_genre(metadata)
     return metadata, source_url
+
+
+async def _maybe_load_info_txt(path: str, rls_data: dict[str, Any]) -> dict[str, Any] | None:
+    """Offer a neighbouring info.txt as preferred metadata; delete it once parsed."""
+    info_path = find_info_txt(path)
+    if not info_path:
+        return None
+    if not await click.confirm("Found info.txt - use it?", default=True):
+        return None
+    try:
+        metadata = parse_info_txt(info_path)
+    except Exception as e:
+        click.secho(f"Failed to parse info.txt: {e}", fg="red")
+        return None
+    os.remove(info_path)
+    for key in ("source", "scene", "encoding", "format"):
+        if metadata.get(key) is None:
+            metadata[key] = rls_data.get(key)
+    metadata["urls"] = rls_data.get("urls", [])
+    return metadata
 
 
 def _print_search_results(results, rls_data=None):
@@ -86,15 +114,20 @@ def _print_search_results(results, rls_data=None):
 
 
 async def _select_choice(
-    choices: dict[int, tuple[str, str]], rls_data: dict[str, Any] | None
+    choices: dict[int, tuple[str, str]],
+    rls_data: dict[str, Any] | None,
+    info_metadata: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], str | None]:
     """Allow the user to select a metadata choice.
 
     Then, if the metadata came from a scraper, run the scrape(s) and return combined metadata.
+    When info.txt metadata is given, pasted non-Discogs URLs are kept as description
+    links only, and the InfoTxt metadata is prepended as the preferred source.
 
     Args:
         choices: Dictionary of choice ID to (source, release_id) tuples.
         rls_data: Release data dictionary.
+        info_metadata: Parsed info.txt metadata, or None for the normal flow.
 
     Returns:
         Tuple of (metadata dict, source URL or None).
@@ -126,6 +159,9 @@ async def _select_choice(
             )
 
         if res.lower().startswith("m"):
+            if info_metadata is not None:
+                info_metadata["urls"] = rls_data.get("urls", [])
+                return _get_manual_metadata(info_metadata), None
             return _get_manual_metadata(rls_data), None
         elif res.lower().startswith("a"):
             raise click.Abort
@@ -148,6 +184,8 @@ async def _select_choice(
 
                 # Try to scrape if it matches a metadata source
                 for name, source in METASOURCES.items():
+                    if info_metadata is not None and name != "Discogs":
+                        continue
                     if source.Scraper.regex.match(stripped):
                         sources.append(name)
                         tasks.append(source.Scraper().scrape_release(stripped))
@@ -164,7 +202,11 @@ async def _select_choice(
         if not tasks:
             # Go to manual mode only if we have any URLs
             if rls_data["urls"]:
-                meta = _get_manual_metadata(rls_data)
+                if info_metadata is not None:
+                    info_metadata["urls"] = rls_data["urls"]
+                    meta = _get_manual_metadata(info_metadata)
+                else:
+                    meta = _get_manual_metadata(rls_data)
                 meta["urls"] = meta.get("urls", [])
                 # If we have a source_url (from a starred URL), make sure it's included
                 if source_url and source_url not in meta["urls"]:
@@ -173,9 +215,10 @@ async def _select_choice(
             continue
 
         metadatas = await asyncio.gather(*tasks)
-        meta = combine_metadatas(
-            *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data, source_url=source_url
-        )
+        pairs = [(s, m) for s, m in zip(sources, metadatas, strict=False) if m]
+        if info_metadata is not None:
+            pairs.insert(0, ("InfoTxt", info_metadata))
+        meta = combine_metadatas(*pairs, base=rls_data, source_url=source_url)
         meta = clean_metadata(meta)
         meta["artists"], meta["tracks"] = generate_artists(meta["tracks"])
         return meta, source_url
