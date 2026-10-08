@@ -64,4 +64,21 @@ for png in "$full_png" "$zoom_png"; do
     fi
 done
 
+echo "== salmon web --help runs, with the front-end build and without Node =="
+# salmon reads its config at import: a copy of the default one, whose .music and .torrents are
+# relative to the working directory, /app, with the release check (a request to GitHub) off.
+package=$(python3 -c "import importlib.util; print(importlib.util.find_spec('salmon').submodule_search_locations[0])")
+mkdir "$workdir/config"
+cp "$package/data/config.default.toml" "$workdir/config/config.toml"
+printf '\n[upload]\nupdate_notification = false\n' >> "$workdir/config/config.toml"
+SALMON_CONFIG_DIR="$workdir/config" salmon web --help | grep -q 'Start the web interface'
+if [ ! -s "$package/webui/static/index.html" ]; then
+    echo "the front-end build is missing: $package/webui/static/index.html" >&2
+    exit 1
+fi
+if command -v node >/dev/null 2>&1 || [ -n "$(find / -xdev -name node_modules -type d -print -quit)" ]; then
+    echo "the image carries Node or a node_modules folder" >&2
+    exit 1
+fi
+
 echo "== smoke test passed =="
