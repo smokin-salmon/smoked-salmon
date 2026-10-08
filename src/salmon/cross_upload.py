@@ -843,6 +843,8 @@ def _conversion_tasks(
         return options
     tasks = [option for option in options if option["action"] == "downconvert"] if downconvert else []
     if downconvert and not tasks:
+        if len({track["sample rate"] for track in _track_data(release).values()}) > 1:
+            raise CrossUploadRefused("--downconvert: the files have different sample rates")
         raise CrossUploadRefused("--downconvert: there is no lossless downconversion of this FLAC")
     tasks += [option for option in options if option["action"] == "transcode" and option["encoding"] in transcodes]
     return tasks

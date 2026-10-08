@@ -19,11 +19,12 @@ if TYPE_CHECKING:
 SOURCE_NAMES = ("01. Track.flac", "02. Track.flac")
 
 
-def _track_data() -> dict[str, Any]:
+def _track_data(*rates: int) -> dict[str, Any]:
+    rates = rates or (192000, 192000)
     return {
         name: {
             "channels": 2,
-            "sample rate": 192000,
+            "sample rate": rates[i - 1],
             "bit rate": 4_000_000,
             "precision": 24,
             "duration": 200,
@@ -201,8 +202,43 @@ def _returning_async(result: Any = None):
 
 def test_unreadable_converted_folder_leaves_the_main_upload_seeded(monkeypatch, capsys, tmp_path: Path) -> None:
     """The upload flow goes on past the broken conversion, and the seedbox step gets every upload that was made."""
+    uploads, manager = _run_up(monkeypatch, tmp_path, _unreadable_flac, _track_data())
+
+    assert uploads == [(str(tmp_path / "converted 16"), 16)]
+    assert manager.executed == ["/release", str(tmp_path / "converted 16")]
+    out = capsys.readouterr().out
+    assert f"Could not read {tmp_path / 'converted 24'}" in out
+
+
+def test_a_hybrid_release_is_offered_no_downconversion_and_no_file_is_converted(
+    monkeypatch, capsys, tmp_path: Path
+) -> None:
+    converted: list[Any] = []
+
+    async def convert_folder(*args, **kwargs):
+        converted.append(args)
+        raise AssertionError("a file was converted")
+
+    async def transcode_folder(path, encoding, output_dir=None):
+        return str(tmp_path / f"mp3 {encoding}")
+
+    monkeypatch.setattr(uploader, "transcode_folder", transcode_folder)
+    uploads, manager = _run_up(
+        monkeypatch, tmp_path, _unreadable_flac, _track_data(96000, 44100), convert_folder=convert_folder, choice="*"
+    )
+
+    assert converted == []
+    assert [path for path, _ in uploads] == [str(tmp_path / "mp3 320"), str(tmp_path / "mp3 V0")]
+    assert (
+        "No lossless downconversion: the files have different sample rates (44.1, 96 kHz)." in capsys.readouterr().out
+    )
+
+
+def _run_up(monkeypatch, tmp_path: Path, broken, track_data, convert_folder=None, choice="1 2"):
     read_audio_info = uploader.gather_audio_info
-    uploads = _fake_conversion(monkeypatch, tmp_path, _unreadable_flac)
+    uploads = _fake_conversion(monkeypatch, tmp_path, broken)
+    if convert_folder is not None:
+        monkeypatch.setattr(uploader, "convert_folder", convert_folder)
     conversion_upload = uploader.upload_and_report
 
     async def main_upload_then_conversions(gazelle_site, path, *args, **kwargs):
@@ -229,7 +265,7 @@ def test_unreadable_converted_folder_leaves_the_main_upload_seeded(monkeypatch, 
         "check_spectrals": _returning_async((False, None)),
         "get_metadata": _returning_async((metadata, None)),
         "edit_metadata": _returning_async(("/release", metadata, {}, {})),
-        "concat_track_data": _returning(_track_data()),
+        "concat_track_data": _returning(track_data),
         "check_embedded_pictures": _returning(),
         "resolve_cover_url": _returning_async((True, None)),
         "UploadManager": lambda: manager,
@@ -242,14 +278,32 @@ def test_unreadable_converted_folder_leaves_the_main_upload_seeded(monkeypatch, 
     monkeypatch.setattr(uploader.cfg.upload.requests, "last_minute_dupe_check", False)
     monkeypatch.setattr(uploader.cfg.image, "auto_compress_cover", False)
     monkeypatch.setattr(uploader.click, "confirm", _returning(True))
-    monkeypatch.setattr(uploader.click, "prompt", _returning_async("1 2"))
+    monkeypatch.setattr(uploader.click, "prompt", _returning_async(choice))
     monkeypatch.setattr(salmon.trackers, "choose_tracker", _returning_async(None))
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED"])
     site = SimpleNamespace(site_code="RED", site_string="RED", base_url="https://tracker.test")
 
     anyio.run(lambda: uploader.upload(site, "/release", 5, "WEB", None, (), None))  # type: ignore[arg-type]
+    return uploads, manager
 
-    assert uploads == [(str(tmp_path / "converted 16"), 16)]
-    assert manager.executed == ["/release", str(tmp_path / "converted 16")]
-    out = capsys.readouterr().out
-    assert f"Could not read {tmp_path / 'converted 24'}" in out
+
+@pytest.mark.parametrize("rates", [(96000, 44100), (192000, 44100), (96000, 48000)])
+def test_a_release_with_mixed_sample_rates_gets_only_the_transcodes(capsys, rates: tuple[int, ...]) -> None:
+    options = uploader.get_downconversion_options(_metadata(), _track_data(*rates))
+
+    assert [option["name"] for option in options] == ["MP3 320", "MP3 V0"]
+    listed = ", ".join(f"{rate / 1000:g}" for rate in sorted(rates))
+    message = f"No lossless downconversion: the files have different sample rates ({listed} kHz)."
+    assert capsys.readouterr().out.count(message) == 1
+
+
+@pytest.mark.parametrize(
+    ("rate", "names"),
+    [(96000, ["16bit 48.0 kHz"]), (192000, ["24bit 96.0 kHz", "16bit 48.0 kHz"])],
+)
+def test_a_release_at_one_sample_rate_still_gets_its_downconversions(capsys, rate: int, names: list[str]) -> None:
+    options = uploader.get_downconversion_options(_metadata(), _track_data(rate, rate))
+
+    assert [o["name"] for o in options if o["action"] == "downconvert"] == names
+    assert [o["name"] for o in options if o["action"] == "transcode"] == ["MP3 320", "MP3 V0"]
+    assert "different sample rates" not in capsys.readouterr().out

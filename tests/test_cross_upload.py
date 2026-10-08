@@ -2489,3 +2489,19 @@ def test_the_pieces_are_checked_before_the_audio_is_read_for_the_16bit_rule(monk
     assert f"Not cross-uploading {TORRENT_ID}: 1 of 1 pieces differ from the RED torrent\n" in run.output
     assert "16bit file(s) above 48 kHz" not in run.output
     assert run.target.sent == []
+
+
+def test_downconvert_of_a_release_with_mixed_sample_rates_is_refused_before_any_request_to_target(
+    monkeypatch, dirs
+) -> None:
+    album = _album(dirs.downloads / FOLDER, 96000, 44100, bits=24)
+
+    def prepare(source: FakeTracker, _target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID] = _ops_answer(album)
+        source.torrents[TORRENT_ID]["torrent"]["encoding"] = "24bit Lossless"
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "--downconvert"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}: --downconvert: the files have different sample rates" in run.output
+    assert run.target.sent == []

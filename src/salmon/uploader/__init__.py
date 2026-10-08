@@ -1058,7 +1058,7 @@ async def _upload_staged(
                         url = flac_url
                         formats = {
                             option["name"]: downconversion_format(option)
-                            for option in get_downconversion_options(rls_data, track_data)
+                            for option in get_downconversion_options(rls_data, track_data, quiet=True)
                         }
                         held = held_formats(flac_group or {}, metadata, source_flac, formats)
                     else:
@@ -1105,7 +1105,7 @@ async def _upload_staged(
                             )
 
                     # Nothing to convert (an MP3 upload) asks nothing.
-                    if get_downconversion_options(rls_data, track_data) and (
+                    if get_downconversion_options(rls_data, track_data, quiet=True) and (
                         flac_url
                         or cfg.upload.yes_all
                         or click.confirm(
@@ -1328,7 +1328,7 @@ def metadata_validator(metadata):
     return metadata
 
 
-def get_downconversion_options(rls_data, track_data):
+def get_downconversion_options(rls_data, track_data, quiet: bool = False):
     """
     Determine available downconversion options based on current format.
     Returns a list of downconversion tasks
@@ -1339,18 +1339,26 @@ def get_downconversion_options(rls_data, track_data):
     3. 16bit 44.1 ~ 48 kHz
     4. mp3 320
     5. mp3 v0
+
+    A release whose files differ in sample rate gets only the MP3 transcodes: a lossless
+    downconversion has one target rate, and would upsample the files below it.
+    `quiet` leaves out the message saying so, for a caller that only asks whether there are options.
     """
     if not track_data:
         return []
 
-    # Get sample rate from first track
-    sample_rate = next(iter(track_data.values()))["sample rate"]
+    rates = sorted({track["sample rate"] for track in track_data.values()})
+    sample_rate = rates[0]
     encoding = rls_data["encoding"]
+    mixed = len(rates) > 1
+    if mixed and not quiet and encoding == "24bit Lossless":
+        listed = ", ".join(f"{rate / 1000:g}" for rate in rates)
+        click.secho(f"No lossless downconversion: the files have different sample rates ({listed} kHz).", fg="yellow")
 
     options = []
 
     # Tier 1: 24bit 176.4~192 kHz
-    if encoding == "24bit Lossless" and sample_rate >= 176400:
+    if encoding == "24bit Lossless" and not mixed and sample_rate >= 176400:
         # Can downconvert to 24bit lower sample rate
         target_rate = 96000 if sample_rate % 48000 == 0 else 88200
         options.append(
@@ -1363,7 +1371,7 @@ def get_downconversion_options(rls_data, track_data):
         )
 
     # Tier 2: 24bit 44.1~96 kHz
-    if encoding == "24bit Lossless" and sample_rate >= 44100:
+    if encoding == "24bit Lossless" and not mixed and sample_rate >= 44100:
         # Can downconvert to 16bit
         target_rate = 48000 if sample_rate % 48000 == 0 else 44100
         options.append(
