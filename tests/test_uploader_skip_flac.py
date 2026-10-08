@@ -240,8 +240,11 @@ def test_a_release_that_is_not_all_flac_stops_before_the_copy(monkeypatch, tmp_p
     _stub(
         monkeypatch,
         {
-            name: _returning(None, calls, name)
-            for name in ("staged_source", "gather_audio_info", "standardize_tags", "construct_rls_data")
+            **{
+                name: _returning(None, calls, name)
+                for name in ("staged_source", "gather_audio_info", "standardize_tags")
+            },
+            "construct_rls_data": _returning_async(None, calls, "construct_rls_data"),
         },
     )
     site = FakeSite(_group(_torrent(11)))
@@ -285,7 +288,7 @@ def test_lossy_release_stops_before_any_check_or_upload(monkeypatch, tmp_path, f
             "check_hybrid": _returning(False, calls, "check_hybrid"),
             "standardize_tags": _returning(None, calls, "standardize_tags"),
             "gather_tags": _returning({}, calls, "gather_tags"),
-            "construct_rls_data": _returning({"format": format_, "encoding": encoding}, calls, "rls_data"),
+            "construct_rls_data": _returning_async({"format": format_, "encoding": encoding}, calls, "rls_data"),
             **{
                 name: _returning_async(None, calls, name)
                 for name in ("mqa_test", "choose_source_flac", "check_existing_group", "upload_and_report")
@@ -403,7 +406,7 @@ def _flow(
             "check_hybrid": _returning(False),
             "standardize_tags": _returning(),
             "gather_tags": _returning({}),
-            "construct_rls_data": _returning(rls_data),
+            "construct_rls_data": _returning_async(rls_data),
             "mqa_test": _returning_async(None, calls, "mqa_test"),
             "_check_logs": _returning_async(None, calls, "log_check"),
             "check_spectrals": _returning_async((False, None), calls, "check_spectrals"),
@@ -552,7 +555,7 @@ def test_the_16bit_flac_of_the_edition_is_held_for_a_24bit_source(monkeypatch) -
     _calls, transcoded = _flow(
         monkeypatch,
         group,
-        construct_rls_data=_returning(_release(encoding="24bit Lossless")),
+        construct_rls_data=_returning_async(_release(encoding="24bit Lossless")),
         get_metadata=_returning_async(({**_release(encoding="24bit Lossless"), "cover": None}, None)),
         edit_metadata=_returning_async(("/release", {**_release(encoding="24bit Lossless"), "cover": None}, {}, {})),
         concat_track_data=_returning({"01.flac": {"sample rate": 96000}}),

@@ -148,12 +148,15 @@ def test_a_release_the_review_takes_off_the_list_is_searched_and_uploaded(monkey
     # The tags name a listed artist; the review corrects it to "Artist".
     tags = {"format": "FLAC", "encoding": "Lossless", "artists": [("Tagged Wrong", "main")], "title": "Album"}
 
+    async def construct_rls_data(*_args, **_kwargs):
+        return {**tags, "catno": "CAT1"}
+
     run = _run_up(
         monkeypatch,
         _album(downloads.parent / "seeding" / "Album"),
         torrents,
         multi_tracker_upload=False,
-        construct_rls_data=lambda *_args, **_kwargs: {**tags, "catno": "CAT1"},
+        construct_rls_data=construct_rls_data,
     )
 
     assert run.result.exit_code == 0, run.result.output

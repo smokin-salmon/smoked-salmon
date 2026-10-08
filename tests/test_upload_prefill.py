@@ -183,7 +183,7 @@ def test_the_metadata_prompt_offers_the_files_store_url_and_the_matching_result(
     album = _tagged_album(tmp_path / "a", {"SOURCE": QOBUZ_URL}, {"SOURCE": QOBUZ_URL})
     choices_found = {"Deezer": {"dz": (_ident(), "Artist - Album")}}
     monkeypatch.setattr(metadata_mod, "run_metasearch", _returning_async(choices_found))
-    monkeypatch.setattr(metadata_mod, "_get_manual_metadata", _returning({"tracks": {}, "genres": []}))
+    monkeypatch.setattr(metadata_mod, "_get_manual_metadata", _returning_async({"tracks": {}, "genres": []}))
     # A [m]anual answer: what the prompt offered is all this checks.
     defaults = _prompts(monkeypatch, "m")
 
@@ -195,7 +195,7 @@ def test_with_no_store_url_and_no_match_the_metadata_prompt_has_no_default(monke
     album = _tagged_album(tmp_path / "a", {"SOURCE": QOBUZ_URL}, {"SOURCE": DEEZER_URL})
     choices_found = {"Deezer": {"dz": (_ident(tracks=9), "Artist - Album")}}
     monkeypatch.setattr(metadata_mod, "run_metasearch", _returning_async(choices_found))
-    monkeypatch.setattr(metadata_mod, "_get_manual_metadata", _returning({"tracks": {}, "genres": []}))
+    monkeypatch.setattr(metadata_mod, "_get_manual_metadata", _returning_async({"tracks": {}, "genres": []}))
     defaults = _prompts(monkeypatch, "m")
 
     anyio.run(metadata_mod.get_metadata, str(album), {"01.flac": None, "02.flac": None}, _rls_data())
@@ -206,7 +206,7 @@ def test_one_store_url_gives_both_the_media_default_and_the_metadata_default(mon
     # The source prompt's default is #537's detection; the metadata prompt's comes from the same tag.
     album = _tagged_album(tmp_path / "a", {"SOURCE": QOBUZ_URL}, {"SOURCE": QOBUZ_URL})
     monkeypatch.setattr(metadata_mod, "run_metasearch", _returning_async({}))
-    monkeypatch.setattr(metadata_mod, "_get_manual_metadata", _returning({"tracks": {}, "genres": []}))
+    monkeypatch.setattr(metadata_mod, "_get_manual_metadata", _returning_async({"tracks": {}, "genres": []}))
     defaults = _prompts(monkeypatch, "", "m")
 
     source = anyio.run(salmon.uploader._prompt_source, detect_source(str(album)))
@@ -726,7 +726,7 @@ def test_no_downconversion_question_when_nothing_can_be_converted(monkeypatch, t
         torrents,
         input="\ny\ny\n\n",
         yes_all=False,
-        construct_rls_data=_returning(mp3),
+        construct_rls_data=_returning_async(mp3),
     )
 
     assert run.result.exit_code == 0, run.result.output

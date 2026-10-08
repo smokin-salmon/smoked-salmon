@@ -227,7 +227,7 @@ def _returning_async(result: Any = None):
     return fake
 
 
-def _retag(path: str, *_args: Any) -> None:
+async def _retag(path: str, *_args: Any) -> None:
     """Stands in for tag_files: rewrites a tag in every FLAC of the folder it is given."""
     for name in os.listdir(path):
         if name.endswith(".flac"):
@@ -236,7 +236,7 @@ def _retag(path: str, *_args: Any) -> None:
             tagged.save()
 
 
-def _rename_files(path: str, *_args: Any) -> None:
+async def _rename_files(path: str, *_args: Any) -> None:
     """Stands in for rename_files: renames the tracks of the folder it is given."""
     for name in os.listdir(path):
         if name.endswith(".flac"):
@@ -320,7 +320,7 @@ def _run_up(
         "gather_audio_info": _returning({}),
         "check_hybrid": _returning(False),
         "gather_tags": _returning({}),
-        "construct_rls_data": _returning(rls_data),
+        "construct_rls_data": _returning_async(rls_data),
         "mqa_test": _returning_async(),
         "check_spectrals": _lossy_with_spectrals,
         "get_metadata": _returning_async((metadata, None)),
@@ -335,7 +335,7 @@ def _run_up(
     }.items():
         monkeypatch.setattr(salmon.uploader, name, fake)
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
-    # -yyy sets yes_all: patched, so it is put back after the test.
+    # A config with yes_all on would answer the questions the run is meant to ask.
     monkeypatch.setattr(cfg.upload, "yes_all", False)
     monkeypatch.setattr(cfg.upload, "multi_tracker_upload", multi_tracker_upload)
     monkeypatch.setattr(cfg.upload, "upload_to_seedbox", True)

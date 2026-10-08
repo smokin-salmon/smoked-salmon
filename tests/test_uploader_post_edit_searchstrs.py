@@ -102,7 +102,7 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         "check_hybrid": _returning(False),
         "standardize_tags": _returning(),
         "gather_tags": _returning({}),
-        "construct_rls_data": _returning(rls_data),
+        "construct_rls_data": _returning_async(rls_data),
         "check_spectrals": _returning_async((False, None)),
         "get_metadata": _returning_async((dict(rls_data, cover=None), None)),
         "edit_metadata": _returning_async((path, metadata, {}, {})),

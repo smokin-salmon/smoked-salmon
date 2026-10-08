@@ -19,7 +19,7 @@ import salmon.sources
 import salmon.tagger
 import salmon.trackers
 import salmon.uploader
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import commandgroup, get_audio_files, str_to_int_if_int
 from salmon.common.redaction import redact_secrets
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
@@ -165,7 +165,7 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     torrent_id_input: str = torrent_id or ""
     if not torrent_id_input:
         click.secho("No torrent id provided.", fg="red")
-        torrent_id_input = await click.prompt(
+        torrent_id_input = await interaction.prompt(
             click.style(
                 """Input a torrent id or a URL containing one.
                 Tracker in a URL will override -t flag.""",

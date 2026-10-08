@@ -4,7 +4,7 @@ from urllib import parse
 import asyncclick as click
 import humanfriendly
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.errors import RequestError, RequestFailedError
 
 if TYPE_CHECKING:
@@ -164,7 +164,7 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
         The selected request ID, or None if the user declines.
     """
     while True:
-        request_id = await click.prompt(
+        request_id = await interaction.prompt(
             click.style("\nFill a request? Choose from results, paste a url, or do[n]t.", fg="magenta"),
             default="N",
         )
@@ -210,12 +210,12 @@ async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | 
         click.secho(f"Could not fetch request {request_id} from {gazelle_site.site_string}: {err}", fg="red")
         raise click.Abort from None
     _print_request_details(gazelle_site, req)
-    if cfg.upload.yes_all:
+    if await interaction.assume_defaults():
         return True
 
     while True:
         resp = (
-            await click.prompt(
+            await interaction.prompt(
                 click.style("\nAre you sure you would you like to fill this request [Y]es, [n]o", fg="magenta"),
                 default="Y",
             )

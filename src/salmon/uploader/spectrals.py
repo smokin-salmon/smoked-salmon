@@ -6,7 +6,7 @@ import re
 import shutil
 import tempfile
 import textwrap
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from functools import partial
 from pathlib import Path
 from subprocess import DEVNULL
@@ -24,8 +24,8 @@ try:
 except ImportError:
     oxipng = None
 
-from salmon import cfg, dryrun
-from salmon.common import flush_stdin, get_audio_files, prompt_async
+from salmon import cfg, dryrun, interaction
+from salmon.common import flush_stdin, get_audio_files
 from salmon.common.files import process_files
 from salmon.errors import (
     AbortAndDeleteFolder,
@@ -88,7 +88,7 @@ async def check_spectrals(
         if lossy_master is None:
             marks_found = await print_frequency_analysis(path, spectrals_path, all_spectral_ids)
         while True:
-            await view_spectrals(spectrals_path, all_spectral_ids)
+            await interaction.show_spectrals(spectrals_path, all_spectral_ids)
             if lossy_master is None and check_lma:
                 lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion, marks_found)
                 if lossy_master is not None:
@@ -566,15 +566,21 @@ def calculate_zoom_startpoint(track_data):
     return 0
 
 
-async def view_spectrals(spectrals_path: str, all_spectral_ids: dict[int, str]) -> None:
-    """Open the generated spectrals in an image viewer.
+async def view_spectrals(
+    spectrals_path: str,
+    all_spectral_ids: dict[int, str],
+    wait_for_enter: Callable[[str], Awaitable[None]],
+) -> None:
+    """Open the generated spectrals in an image viewer: the terminal's way of showing them.
 
     Args:
         spectrals_path: Path to spectrals folder.
         all_spectral_ids: Dict mapping spectral IDs to filenames.
+        wait_for_enter: Shows the text it is given and returns once the user pressed enter, for the viewer
+            that runs in the browser.
     """
     if not cfg.upload.native_spectrals_viewer:
-        await _open_specs_in_web_server(spectrals_path, all_spectral_ids)
+        await _open_specs_in_web_server(spectrals_path, all_spectral_ids, wait_for_enter)
     elif platform.system() == "Darwin":
         await _open_specs_in_preview(spectrals_path)
     elif platform.system() == "Windows":
@@ -628,7 +634,11 @@ def _open_specs_in_windows(spectrals_path):
     os.startfile(png_files[0])
 
 
-async def _open_specs_in_web_server(specs_path, all_spectral_ids):
+async def _open_specs_in_web_server(
+    specs_path: str,
+    all_spectral_ids: dict[int, str],
+    wait_for_enter: Callable[[str], Awaitable[None]],
+):
     spectrals.set_active_spectrals(
         all_spectral_ids,
         [sid for sid in all_spectral_ids if os.path.isfile(os.path.join(specs_path, spectrum_plot_name(sid)))],
@@ -662,7 +672,7 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
                 )
             return
         url = f"http://{cfg.upload.web_interface.effective_host}:{cfg.upload.web_interface.port}/spectrals"
-        await prompt_async(
+        await wait_for_enter(
             click.style(
                 f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"
                 f"""{
@@ -674,8 +684,6 @@ async def _open_specs_in_web_server(specs_path, all_spectral_ids):
                 }""",
                 fg="magenta",
             ),
-            end=" ",
-            flush=True,
         )
     finally:
         if runner is not None:
@@ -748,8 +756,8 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
     while True:
         ids = (
             "*"
-            if cfg.upload.yes_all and not force_prompt_lossy_master
-            else await click.prompt(
+            if await interaction.assume_defaults() and not force_prompt_lossy_master
+            else await interaction.prompt(
                 click.style(
                     f"What spectral IDs would you like to upload to {hosts}? "
                     '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
@@ -793,9 +801,9 @@ async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=Tr
         flush_stdin()
         r = (
             "n"
-            if cfg.upload.yes_all and not force_prompt_lossy_master and not marks_found
+            if await interaction.assume_defaults() and not force_prompt_lossy_master and not marks_found
             else (
-                await click.prompt(
+                await interaction.prompt(
                     click.style(
                         "\nIs this release lossy mastered? "
                         + ("[Y]es, [n]o" if marks_found else "[y]es, [N]o")
@@ -878,8 +886,8 @@ async def generate_lossy_approval_comment(source_url, filenames, force_prompt_lo
         comment = (
             ""
             # Without a source URL, an empty comment is refused: yes_all would refuse it forever.
-            if cfg.upload.yes_all and not force_prompt_lossy_master and source_url
-            else await click.prompt(
+            if await interaction.assume_defaults() and not force_prompt_lossy_master and source_url
+            else await interaction.prompt(
                 click.style(
                     "Do you have a comment for the lossy approval report? It is appropriate to "
                     "make a note about the source here. Source information from go, gos, and the "

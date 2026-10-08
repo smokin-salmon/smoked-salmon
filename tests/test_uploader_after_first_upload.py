@@ -21,7 +21,7 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
 
 import salmon.trackers
 import salmon.uploader
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.errors import RequestError
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
@@ -305,7 +305,7 @@ def test_the_check_after_the_upload_does_not_offer_to_delete_the_folder_and_abor
     monkeypatch.setattr(salmon.uploader, "post_upload_spectral_check", recording)
     # The real check and its lossy master prompt, on spectrals made up without sox.
     monkeypatch.setattr(spectrals_module, "generate_spectrals_all", generate_spectrals_all)
-    monkeypatch.setattr(spectrals_module, "view_spectrals", no_viewer)
+    monkeypatch.setattr(interaction, "show_spectrals", no_viewer)
 
     # RED: a new group. The lossy master prompt: "d" is no answer, then abort.
     run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, args=("-a",), input="\nd\na\n")

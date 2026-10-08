@@ -19,7 +19,7 @@ from test_uploader_frequency import (  # pyright: ignore[reportMissingImports]
 )
 
 import salmon.images
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.commands import specs
 from salmon.images.base import BaseImageUploader
 from salmon.uploader import frequency, spectrals
@@ -50,7 +50,7 @@ def album(tmp_path, monkeypatch) -> str:
         return spectral_ids
 
     monkeypatch.setattr(spectrals.anyio, "run_process", fake_sox)
-    monkeypatch.setattr(spectrals, "view_spectrals", no_viewer)
+    monkeypatch.setattr(interaction, "show_spectrals", no_viewer)
     monkeypatch.setattr(spectrals, "prompt_lossy_master", no_question)
     monkeypatch.setattr(spectrals, "prompt_spectrals", pick_all)
     monkeypatch.setattr(spectrals.cfg.upload, "yes_all", False)

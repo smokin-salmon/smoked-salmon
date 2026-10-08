@@ -2,7 +2,7 @@ from urllib import parse
 
 import asyncclick as click
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.trackers import dic, ops, red
 from salmon.trackers.base import BaseGazelleApi
 
@@ -30,7 +30,7 @@ async def choose_tracker(choices):
     """Allows the user to choose a tracker from choices."""
     while True:
         # Loop until we have chosen a tracker or aborted.
-        tracker_input = await click.prompt(
+        tracker_input = await interaction.prompt(
             click.style(f"Your choices are {' , '.join(choices)} or [n]one.", fg="magenta"),
             default=choices[0],
         )

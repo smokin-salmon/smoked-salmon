@@ -12,7 +12,7 @@ import pyperclip
 from mutagen import MutagenError
 
 import salmon.trackers
-from salmon import cfg, dryrun
+from salmon import cfg, dryrun, interaction
 from salmon.checks import mqa_test
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
@@ -267,9 +267,7 @@ async def up(
             "--dry-run cannot be used with --spectrals-after: that step edits the uploaded torrent, and a dry run "
             "uploads none."
         )
-    if yyy:
-        cfg.upload.yes_all = True
-    with dryrun.mode(dry_run):
+    with dryrun.mode(dry_run), interaction.assuming_defaults(yyy):
         if dry_run:
             dryrun.say(
                 "the upload runs on a copy of the album and sends nothing. Each upload's form is printed instead."
@@ -414,7 +412,7 @@ async def _choose_cover_host(tracker: str, default_host: str) -> str:
     while True:
         forbidden = {host: reason for host in HOSTS if (reason := cover_refusal(host, tracker)) is not None}
         allowed_hosts = [host for host in HOSTS if host not in forbidden]
-        host_input: str = await click.prompt(
+        host_input: str = await interaction.prompt(
             click.style(
                 "Which image host would you like to retry the cover upload with? "
                 f"(Options: {', '.join(allowed_hosts)})",
@@ -482,11 +480,11 @@ async def resolve_cover_url(
                 fg="yellow",
                 bold=True,
             )
-            if cfg.upload.yes_all:
+            if await interaction.assume_defaults():
                 click.secho("Not uploading a new group without a cover image with --yes-all.", fg="red", bold=True)
                 return False, None
 
-            choice = await click.prompt(
+            choice = await interaction.prompt(
                 click.style("Continue without a cover image? [y/N/r]", fg="magenta"),
                 default="n",
                 show_default=False,
@@ -532,7 +530,7 @@ async def _check_logs(path: str) -> None:
                 raise click.Abort() from e
             except CRCMismatchError as e:
                 click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
-                if not click.confirm(
+                if not await interaction.confirm(
                     click.style(
                         "Log file CRC does not match audio files. Do you want to continue upload anyway?",
                         fg="magenta",
@@ -789,7 +787,7 @@ async def _upload_staged(
     if not scene:
         standardize_tags(path)
     tags = gather_tags(path)
-    rls_data = construct_rls_data(
+    rls_data = await construct_rls_data(
         tags,
         audio_info,
         source,
@@ -832,8 +830,8 @@ async def _upload_staged(
                 click.secho("No MQA release detected", fg="green")
 
             if rls_data["encoding"] == "24bit Lossless" and not skip_up:
-                if not cfg.upload.yes_all:
-                    if click.confirm(
+                if not await interaction.assume_defaults():
+                    if await interaction.confirm(
                         click.style(
                             "\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"
                         ),
@@ -1107,8 +1105,8 @@ async def _upload_staged(
                     # Nothing to convert (an MP3 upload) asks nothing.
                     if get_downconversion_options(rls_data, track_data, quiet=True) and (
                         flac_url
-                        or cfg.upload.yes_all
-                        or click.confirm(
+                        or await interaction.assume_defaults()
+                        or await interaction.confirm(
                             click.style("\nWould you like to check downconversion options?", fg="magenta"),
                             default=True,
                         )
@@ -1221,7 +1219,7 @@ async def edit_metadata(
             apply_suggestions=apply_ai_suggestions,
         )
         if not metadata["scene"]:
-            tag_files(path, tags, metadata, auto_rename)
+            await tag_files(path, tags, metadata, auto_rename)
 
         tags = await check_tags(path)
         tag_messages = process_tag_issues(
@@ -1239,17 +1237,19 @@ async def edit_metadata(
                 await recompress_path(path)
             except UploadError as e:
                 raise UploadError(f"{e} Rerun without -c.") from e
-        path = rename_folder(path, metadata, auto_rename, parent=rename_into)
+        path = await rename_folder(path, metadata, auto_rename, parent=rename_into)
         if not metadata["scene"]:
-            rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
+            await rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
         await check_folder_structure(
             path, metadata["scene"], essential_only=essential_only, max_path_length=max_path_length
         )
 
         if not skip_integrity_check:
-            await resolve_integrity_for_upload(path, scene=metadata["scene"], assume_yes=cfg.upload.yes_all)
+            await resolve_integrity_for_upload(
+                path, scene=metadata["scene"], assume_yes=await interaction.assume_defaults()
+            )
 
-        if cfg.upload.yes_all or click.confirm(
+        if await interaction.assume_defaults() or await interaction.confirm(
             click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
             default=True,
         ):
@@ -1304,7 +1304,7 @@ async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
     recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs, our_title)
     if recent_uploads:
         print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
-        if not click.confirm(
+        if not await interaction.confirm(
             click.style(
                 "\nWould you still like to upload?",
                 fg="red",
@@ -1420,7 +1420,7 @@ async def prompt_downconversion_choice(rls_data, track_data, held: set[str] | fr
             f"\nDUPE RISK: this edition already has {name}; the site removes exact duplicates.", fg="red", bold=True
         )
     unheld = [option for option in options if option["name"] not in held]
-    if cfg.upload.yes_all:
+    if await interaction.assume_defaults():
         return unheld
 
     click.secho("\nDownconversion Options", fg="cyan", bold=True)
@@ -1452,7 +1452,7 @@ async def prompt_downconversion_choice(rls_data, track_data, held: set[str] | fr
 
     while True:
         try:
-            choices = await click.prompt(
+            choices = await interaction.prompt(
                 click.style(
                     '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)', fg="magenta"
                 ),
@@ -1484,7 +1484,7 @@ async def prompt_downconversion_choice(rls_data, track_data, held: set[str] | fr
             if selected_tasks:
                 display_names = [task["name"] for task in selected_tasks]
                 click.secho(f"\nSelected formats: {', '.join(display_names)}", fg="green")
-                if click.confirm(click.style("Confirm selection?", fg="magenta"), default=True):
+                if await interaction.confirm(click.style("Confirm selection?", fg="magenta"), default=True):
                     break
             else:
                 break
@@ -1832,7 +1832,7 @@ async def _prompt_source(detected: DetectedSource | None = None) -> str:
     if detected:
         click.secho(f"The files say {detected.source}: {detected.reason}.", fg="cyan")
     while True:
-        sauce = await click.prompt(
+        sauce = await interaction.prompt(
             click.style("What is the source of this release? [a]bort", fg="magenta"),
             default=detected.source if detected else "",
         )

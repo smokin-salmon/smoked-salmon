@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+import anyio
 import msgspec
 import pytest
 
@@ -231,7 +232,7 @@ def test_tag_files_skips_retagging_a_flat_folder_without_disc_tags_instead_of_cr
         },
     }
 
-    tag_files("/unused", tags, metadata, auto_rename=True)
+    anyio.run(lambda: tag_files("/unused", tags, metadata, auto_rename=True))
 
     output = capsys.readouterr().out
     assert "DISCNUMBER" in output
@@ -362,7 +363,7 @@ def test_tag_files_skips_retagging_when_one_disc_folder_is_genuinely_ambiguous(c
         },
     }
 
-    tag_files("/unused", tags, metadata, auto_rename=True)
+    anyio.run(lambda: tag_files("/unused", tags, metadata, auto_rename=True))
 
     output = capsys.readouterr().out
     assert "DISCNUMBER" in output
@@ -533,7 +534,7 @@ def test_rename_files_names_are_unchanged_by_default(tmp_path, monkeypatch, case
     monkeypatch.setattr(cfg.upload, "formatting", _formatting(**setting))
     tags, metadata = _release(tmp_path, tracks, others)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source=source)
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source=source))
 
     assert [name for name, _ in _tree(tmp_path)] == expected
 
@@ -544,7 +545,7 @@ def test_rename_files_single_folder_setting_leaves_single_disc_releases_alone(tm
     _single_folder(monkeypatch)
     tags, metadata = _release(tmp_path, tracks, others)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source=source)
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source=source))
 
     assert [name for name, _ in _tree(tmp_path)] == expected
 
@@ -553,7 +554,7 @@ def test_rename_files_can_keep_a_multi_disc_release_in_one_folder(tmp_path, monk
     _single_folder(monkeypatch)
     tags, metadata = _release(tmp_path, _two_discs())
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     assert _tree(tmp_path) == [
         ("1.01. Title 1-1.flac", "Disc 1/a001.flac"),
@@ -566,7 +567,7 @@ def test_rename_files_single_folder_pads_numbers_to_the_largest(tmp_path, monkey
     _single_folder(monkeypatch)
     tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 100), "c.flac": (10, 1)})
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     assert [name for name, _ in _tree(tmp_path)] == [
         "01.001. Title 1-1.flac",
@@ -585,7 +586,7 @@ def test_rename_files_single_folder_names_each_disc_folders_files_for_its_disc(t
     tags, metadata = _release(tmp_path, _two_discs(), [*others, "cover.jpg"])
     before = _contents(tmp_path)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     assert _contents(tmp_path) == before
     assert _tree(tmp_path) == [
@@ -615,7 +616,7 @@ def test_rename_files_single_folder_leaves_a_file_whose_new_name_is_taken(tmp_pa
     tags, metadata = _release(tmp_path, _two_discs(), ["Disc 1/cover.jpg", "Disc 2/cover.jpg", "cover.1.jpg"])
     before = _contents(tmp_path)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     tree = _tree(tmp_path)
     assert _contents(tmp_path) == before
@@ -632,7 +633,7 @@ def test_rename_files_single_folder_keeps_the_names_from_a_folder_of_several_dis
     tags, metadata = _release(tmp_path, _two_discs(folder="Audio"), ["Audio/rip.log", "Audio/cover.jpg", "cover.jpg"])
     before = _contents(tmp_path)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     tree = _tree(tmp_path)
     assert _contents(tmp_path) == before
@@ -659,7 +660,7 @@ def test_rename_files_single_folder_renames_nothing_when_two_tracks_get_one_name
         tagset.title = "Intro"
     before = _tree(tmp_path)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     assert _tree(tmp_path) == before
 
@@ -669,7 +670,7 @@ def test_rename_files_single_folder_renames_nothing_over_an_existing_file(tmp_pa
     tags, metadata = _release(tmp_path, _two_discs(), ["2.01. Title 2-1.flac"])
     before = _tree(tmp_path)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     assert _tree(tmp_path) == before
 
@@ -679,7 +680,9 @@ def test_rename_files_single_folder_updates_the_spectral_file_names(tmp_path, mo
     tags, metadata = _release(tmp_path, _two_discs())
     spectral_ids = {1: "Disc 1/a001.flac", 2: "Disc 1/a002.flac", 3: "Disc 2/b001.flac"}
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=spectral_ids, source="CD")
+    anyio.run(
+        lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=spectral_ids, source="CD")
+    )
 
     assert spectral_ids == {1: "1.01. Title 1-1.flac", 2: "1.02. Title 1-2.flac", 3: "2.01. Title 2-1.flac"}
 
@@ -691,7 +694,7 @@ def test_rename_files_never_replaces_a_file_when_two_folders_go_to_one_disc_fold
     tags, metadata = _release(tmp_path, tracks, ["Disc 1/cover.jpg", "Disc 1 bonus/cover.jpg"])
     before = _contents(tmp_path)
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     tree = _tree(tmp_path)
     assert _contents(tmp_path) == before

@@ -10,7 +10,7 @@ from urllib import parse
 import anyio
 import asyncclick as click
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
 from salmon.common.strings import artist_keys, comparable
 from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError
@@ -227,7 +227,7 @@ async def _prompt_for_recent_upload_results(
             f" or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}"
         )
 
-        group_id = await click.prompt(
+        group_id = await interaction.prompt(
             click.style(prompt_text, fg="magenta"),
             default="",
         )
@@ -602,7 +602,7 @@ async def _prompt_for_group_id(
         Group ID or None for new group.
     """
     while True:
-        group_id = await click.prompt(
+        group_id = await interaction.prompt(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
                 f"Paste a URL{', pick from groups found ' if results is not None else ''}"
@@ -825,7 +825,7 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
     group_info = group.get("group") or {}
     for i, t in enumerate(flacs, 1):
         click.echo(f"{i:02d} >> {describe_torrent(t, group_info)}")
-    if cfg.upload.yes_all:
+    if await interaction.assume_defaults():
         click.secho(
             "Not picking the FLAC the transcodes are made from with --yes-all. Run without it to choose.",
             fg="red",
@@ -833,7 +833,7 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
         )
         return None
     while True:
-        choice = await click.prompt(
+        choice = await interaction.prompt(
             click.style(f"\nWhich one are these transcodes made from? [1-{len(flacs)}] or [a]bort", fg="magenta"),
             default="",
         )
@@ -917,7 +917,7 @@ async def _confirm_group_id(
         )
     while True:
         resp = (
-            await click.prompt(
+            await interaction.prompt(
                 click.style(
                     "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
                     f"[n]ew group, [a]bort{', [d]elete music folder' if offer_deletion else ''}",

@@ -4,6 +4,7 @@ from pathlib import Path
 
 import asyncclick as click
 
+from salmon import interaction
 from salmon.checks.tag_rules import in_torrent_path
 from salmon.constants import ALLOWED_EXTENSIONS, ESSENTIAL_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
@@ -52,7 +53,7 @@ async def check_folder_structure(
                     bold=True,
                 )
                 raise click.Abort() from None
-            click.confirm(
+            await interaction.confirm(
                 click.style(
                     "You need to manually fix the issues present in the upload's folder? "
                     "Send a [Y] once you have done so, or a [N] to abort.",
@@ -82,7 +83,7 @@ async def _check_illegal_folders(path: str) -> None:
                 target_dir = os.path.join(root, dirname)
                 while True:
                     resp = (
-                        await click.prompt(
+                        await interaction.prompt(
                             f"Dirname {target_dir} is illegal. [D]elete, [A]bort, or [C]ontinue?",
                             default="D",
                         )
@@ -256,7 +257,7 @@ async def _handle_bad_extension(filepath: str) -> None:
     """
     while True:
         resp = (
-            await click.prompt(
+            await interaction.prompt(
                 f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?",
                 default="D",
             )
@@ -280,7 +281,7 @@ async def _handle_multiple_audio_exts() -> None:
     """
     while True:
         resp = (
-            await click.prompt(
+            await interaction.prompt(
                 "There are multiple audio codecs in this folder. [A]bort or [c]ontinue?",
                 default="A",
             )
