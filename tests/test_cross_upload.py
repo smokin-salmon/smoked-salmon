@@ -122,11 +122,22 @@ def _snapshot(folder: Path) -> dict[str, tuple[bytes, int]]:
     }
 
 
+def _dot_torrent(folder: Path) -> Torrent:
+    """SOURCE's .torrent of the album at folder, as it is now."""
+    torrent = Torrent(folder, trackers=["https://home.opsfet.ch/passkey/announce"], private=True, source="OPS")
+    torrent.generate()
+    return torrent
+
+
 def _ops_answer(folder: Path, torrent_id: int = TORRENT_ID) -> dict[str, Any]:
-    """OPS's torrent answer for the album at folder: the fixture's WEB FLAC, with this album's files."""
+    """OPS's torrent answer for the album at folder: the fixture's WEB FLAC, with this album's files.
+
+    It has no infoHash: the .torrent OPS gives for it, made from the files as they are now, is known by its files.
+    """
     response = copy.deepcopy(_fixture("ops-torrent-web-lossy-master-approved.json"))
     response["torrent"].update(id=torrent_id, filePath=folder.name, fileList=_file_list(folder))
     response["torrent"].pop("infoHash")
+    response["dot_torrent"] = _dot_torrent(folder).dump()
     return response
 
 
@@ -174,6 +185,8 @@ class FakeTracker:
         self.next_torrent_id = 700001
         # Answers that replace the usual one for a step, e.g. {"GET torrents.php": rate_limited}.
         self.answers: dict[str, Callable[[], web.Response]] = {}
+        # Each torrent's .torrent, by torrent id: an answer's "dot_torrent" unless set here.
+        self.dot_torrents: dict[int, bytes] = {}
 
     async def _handle(self, request: web.Request) -> web.StreamResponse:
         fields: dict[str, Any] = {}
@@ -200,6 +213,8 @@ class FakeTracker:
                 return self._torrent(request.query)
             if action == "browse":
                 return _success({"results": self.results})
+            if action == "download":
+                return self._download(int(request.query["id"]))
             if action == "torrentgroup":
                 group = self.groups.get(int(request.query["id"]))
                 return _success(group) if group else _failure("bad id parameter")
@@ -207,6 +222,8 @@ class FakeTracker:
                 return self._upload(request, fields)
         if request.path == "/upload.php" and request.method == "POST":
             return self._site_upload(request, fields)
+        if request.path == "/torrents.php" and action == "download":
+            return self._download(int(request.query["id"]))
         if request.path == "/torrents.php" and request.query.get("torrentid") in self.group_pages:
             return web.Response(text=self.group_pages[request.query["torrentid"]], content_type="text/html")
         if request.path == "/reportsv2.php" and request.method == "POST":
@@ -228,7 +245,13 @@ class FakeTracker:
             answer = next((a for a in self.torrents.values() if a.get("hash") == query.get("hash")), None)
         if answer is None:
             return _failure("bad id parameter")
-        return _success({key: value for key, value in answer.items() if key != "hash"})
+        return _success({key: value for key, value in answer.items() if key not in ("hash", "dot_torrent")})
+
+    def _download(self, torrent_id: int) -> web.Response:
+        content = self.dot_torrents.get(torrent_id) or self.torrents.get(torrent_id, {}).get("dot_torrent")
+        if content is None:
+            return web.Response(status=404, text="<html>Torrent not found</html>", content_type="text/html")
+        return web.Response(body=content, content_type="application/x-bittorrent")
 
     def _upload(self, request: web.Request, fields: dict[str, Any]) -> web.StreamResponse:
         outcome = self.uploads.pop(0) if self.uploads else "ok"
@@ -474,6 +497,7 @@ def test_one_release_sends_what_the_budget_says(monkeypatch, dirs) -> None:
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 1,
+        "GET ajax.php?action=download": 1,  # The .torrent, whose pieces the files are checked against
         "GET torrents.php": 1,  # OPS's group page, for its lossy approval label
     }
     # RED has no session cookie here, so its site log is not read when the search finds nothing.
@@ -543,6 +567,7 @@ def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> 
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 1,
+        "GET ajax.php?action=download": 1,
         "GET torrents.php": 1,
     }
     assert run.target.steps() == {
@@ -594,6 +619,7 @@ def test_five_releases_go_up_one_after_the_other(monkeypatch, dirs) -> None:
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 5,
+        "GET ajax.php?action=download": 5,
         "GET torrents.php": 5,
     }
     assert run.target.steps() == {
@@ -791,6 +817,7 @@ def test_the_same_release_given_twice_is_read_and_uploaded_once(monkeypatch, dir
     assert run.source.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=torrent": 2,
+        "GET ajax.php?action=download": 1,
         "GET torrents.php": 1,
     }
     assert f"torrent {TORRENT_ID} is already in this run" in run.output
@@ -801,7 +828,7 @@ def _rate_limited() -> web.Response:
     return web.Response(status=429, headers={"Retry-After": "3600"})
 
 
-@pytest.mark.parametrize("step", ["GET ajax.php?action=torrent", "GET torrents.php"])
+@pytest.mark.parametrize("step", ["GET ajax.php?action=torrent", "GET ajax.php?action=download", "GET torrents.php"])
 def test_a_source_failure_that_is_not_about_one_release_stops_the_run(monkeypatch, dirs, step: str) -> None:
     albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(2)]
 
@@ -1654,7 +1681,9 @@ def _red_fixture_answer(name: str):
         listing = "|||".join(
             f"{_red_escaped(entry.relative_to(folder).as_posix())}{{{{{{{entry.stat().st_size}}}}}}}" for entry in files
         )
-        response["torrent"].update(id=torrent_id, fileList=listing)
+        torrent = _dot_torrent(folder)
+        response["torrent"].update(id=torrent_id, fileList=listing, infoHash=torrent.infohash.upper())
+        response["dot_torrent"] = torrent.dump()
         return response
 
     return answer
@@ -1692,7 +1721,11 @@ def test_a_red_cd_with_a_100_log_and_no_checksum_key_goes_up(monkeypatch, dirs) 
         "Example Devotional Ensemble - Sample Devotions - CD 1.log",
         "Example Devotional Ensemble - Sample Devotions - CD 2.log",
     ]
-    assert run.source.steps() == {"GET ajax.php?action=index": 1, "GET ajax.php?action=torrent": 1}
+    assert run.source.steps() == {
+        "GET ajax.php?action=index": 1,
+        "GET ajax.php?action=torrent": 1,
+        "GET ajax.php?action=download": 1,  # RED, with its API key only
+    }
     assert _within_the_plans_bound(run, "OPS")
 
 
@@ -2246,3 +2279,213 @@ def test_a_torrent_that_is_not_16bit_above_48khz_goes_to_ops_unremarked(
     assert run.result.exit_code == 0, run.output
     assert "16bit file(s) above 48 kHz" not in run.output
     assert len(run.target.posts()) == 1
+
+
+# The pieces (#617): a download in progress has every file at its full size, with pieces still zeroed
+
+
+def _zero_a_piece(album: Path) -> None:
+    """The album as a client leaves it mid-download: the cover at its full size, its data not there yet."""
+    cover = album / "cover.jpg"
+    cover.write_bytes(bytes(cover.stat().st_size))
+
+
+def _source_has_unfinished(album: Path):
+    """prepare: SOURCE has the album's torrent, made before one of its pieces was zeroed on disk."""
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        _zero_a_piece(album)
+
+    return prepare
+
+
+def _download(run: Run) -> Sent:
+    (download,) = [sent for sent in run.source.sent if sent.query.get("action") == "download"]
+    return download
+
+
+# Measured on RED and OPS: each one's API gives the .torrent for the API key, and its download page for the session
+# cookie. RED's download page answers the API key with a 401, and the passkey alone with its login page.
+
+
+@pytest.mark.parametrize("source", ["RED", "OPS"], ids=["RED, API key only", "OPS, API key and cookie"])
+def test_with_an_api_key_the_torrent_is_downloaded_through_the_api_without_a_token(
+    monkeypatch, dirs, source: str
+) -> None:
+    if source == "RED":
+        run = _red_to_ops(monkeypatch, dirs, "red-torrent-web-lossy-web-approved.json")
+    else:
+        album = _album(dirs.downloads / FOLDER)
+        run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
+
+    assert run.result.exit_code == 0, run.output
+    download = _download(run)
+    assert (download.method, download.path, download.query) == (
+        "GET",
+        "/ajax.php",
+        {"action": "download", "id": str(TORRENT_ID)},
+    )
+    assert (download.authorization, download.cookie) == (True, False)
+    assert "pieces differ" not in run.output
+
+
+def test_with_a_session_cookie_only_the_torrent_is_downloaded_through_the_site_link(monkeypatch, dirs) -> None:
+    monkeypatch.setitem(API_KEYS, "OPS", "")
+    album = _album(dirs.downloads / FOLDER)
+    # Every request is printed, secrets masked.
+    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
+    run = _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "--dry-run"], input="\n", prepare=_source_has(album)
+    )
+
+    assert run.result.exit_code == 0, run.output
+    download = _download(run)
+    assert (download.method, download.path, download.query) == (
+        "GET",
+        "/torrents.php",
+        {"action": "download", "id": str(TORRENT_ID), "torrent_pass": PASSKEY},
+    )
+    assert (download.authorization, download.cookie) == (False, True)
+    assert PASSKEY not in run.output
+    assert '"torrent_pass":"[REDACTED]"' in run.output  # The download was printed, masked
+
+
+@pytest.mark.parametrize("args", [["-yyy"], []], ids=["yes to all", "asked, default"])
+def test_a_zeroed_piece_stops_the_release_before_any_target_request(monkeypatch, dirs, args: list[str]) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), *args], input="\n", prepare=_source_has_unfinished(album))
+
+    assert run.result.exit_code == 1
+    assert "1 of 1 pieces differ from the OPS torrent: is the download complete?" in run.output
+    assert f"Not cross-uploading {TORRENT_ID}: 1 of 1 pieces differ from the OPS torrent\n" in run.output
+    assert ("Cross-upload it anyway?\x1b[0m [y/N]" in run.output) == (not args)
+    assert run.target.sent == []
+
+
+def test_the_user_can_cross_upload_a_release_whose_pieces_differ(monkeypatch, dirs) -> None:
+    # A copy retagged within its tag padding has the torrent's sizes and other pieces.
+    album = _album(dirs.downloads / FOLDER)
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID)], input="y\n\n\n", prepare=_source_has_unfinished(album))
+
+    assert run.result.exit_code == 0, run.output
+    assert "   1 of 1 pieces differ from the OPS torrent: going anyway\n" in run.output
+    assert run.target.steps()["POST ajax.php?action=upload"] == 1
+
+
+def test_a_torrent_file_input_is_checked_against_itself_with_no_download(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    torrent = _dot_torrent(album)
+    torrent_file = dirs.torrents.parent / "source.torrent"
+    torrent.write(torrent_file)
+    _zero_a_piece(album)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        source.torrents[TORRENT_ID] = {**_ops_answer(album), "hash": torrent.infohash.upper()}
+
+    run = _cross_upload(monkeypatch, dirs, [str(torrent_file), "-yyy"], prepare=prepare)
+
+    assert run.result.exit_code == 1
+    assert "1 of 1 pieces differ from the OPS torrent" in run.output
+    assert "GET ajax.php?action=download" not in run.source.steps()
+    assert run.target.sent == []
+
+
+@pytest.mark.parametrize("source", ["OPS", "RED"], ids=["by its files", "by its infohash"])
+def test_a_downloaded_torrent_that_is_another_ones_stops_the_release(monkeypatch, dirs, source: str) -> None:
+    # OPS's answers here have no infoHash, RED's have one.
+    name = "red-torrent-web-lossy-web-approved.json"
+    album = _album(dirs.downloads / FOLDER) if source == "OPS" else _red_album(name, dirs.downloads)
+    answer = _ops_answer if source == "OPS" else _red_fixture_answer(name)
+    # Another release's .torrent, with a file of another size; RED's, another torrent of these same files.
+    other_album = _album(dirs.torrents.parent / "other" / FOLDER)
+    (other_album / "cover.jpg").write_bytes(JPEG * 2)
+    other = _dot_torrent(other_album if source == "OPS" else album)
+    other.source = "another"
+
+    def prepare(source_tracker: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album, answer=answer)(source_tracker, target)
+        other.generate()
+        source_tracker.dot_torrents[TORRENT_ID] = other.dump()
+
+    target = "OPS" if source == "RED" else "RED"
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], source=source, target=target, prepare=prepare)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}: the .torrent {source} gave is not this torrent's" in run.output
+    assert run.target.sent == []
+
+
+@pytest.mark.parametrize(
+    ("answer", "said"),
+    [
+        (
+            lambda: web.Response(text=f"<html>Not a torrent, {PASSKEY}</html>", content_type="text/html"),
+            "what OPS gave for its .torrent is not one",
+        ),
+        (
+            lambda: web.Response(status=404, text=f"<html>Not found, {PASSKEY}</html>", content_type="text/html"),
+            "<html>Not found, [REDACTED]</html>",
+        ),
+        (
+            lambda: web.json_response({"status": "failure", "error": "bad credentials"}, status=401),
+            "OPS did not give its .torrent: give the .torrent file as INPUT",
+        ),
+    ],
+    ids=["a page", "not found", "401"],
+)
+def test_a_download_that_gives_no_torrent_stops_only_that_release(monkeypatch, dirs, answer, said: str) -> None:
+    albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(2)]
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(*albums)(source, target)
+        source.answers["GET ajax.php?action=download"] = answer
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), str(TORRENT_ID + 1), "-yyy"], prepare=prepare)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}: {said}\n" in run.output
+    assert f"Not cross-uploading {TORRENT_ID + 1}: {said}\n" in run.output
+    assert run.source.steps()["GET ajax.php?action=download"] == 2
+    assert PASSKEY not in run.output
+    assert run.target.sent == []
+
+
+def test_a_check_that_takes_more_than_a_second_shows_its_progress(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    seconds = iter(range(1000))
+    monkeypatch.setattr(cross_upload_module, "monotonic", lambda: next(seconds))
+    run = _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "--dry-run"], input="\n", prepare=_source_has(album)
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert "\rChecking pieces: 1 of 1\n" in run.output
+
+
+def test_a_dic_torrent_by_id_is_checked_by_size_only_and_the_plan_says_so(monkeypatch, dirs) -> None:
+    run = _from_dic(monkeypatch, dirs, "RED")
+
+    assert run.result.exit_code == 0, run.output
+    assert "GET ajax.php?action=download" not in run.source.steps()
+    assert "   files checked by size only: give the DICMusic .torrent to check pieces\n" in run.output
+
+
+def test_the_pieces_are_checked_before_the_audio_is_read_for_the_16bit_rule(monkeypatch, dirs) -> None:
+    # A file still downloading may not even read as audio: the 16bit rule must only see complete files.
+    album = _album(dirs.downloads / FOLDER, 96000)
+
+    def unfinished(_source: FakeTracker, _target: FakeTracker) -> None:
+        flac = album / "01. ALFA.flac"
+        flac.write_bytes(bytes(flac.stat().st_size))
+
+    def unread(_path: str) -> dict[str, Any]:
+        raise AssertionError("the files were read")
+
+    monkeypatch.setattr(cross_upload_module, "gather_audio_info", unread)
+    run = _to_ops(monkeypatch, dirs, album, unfinished)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}: 1 of 1 pieces differ from the RED torrent\n" in run.output
+    assert "16bit file(s) above 48 kHz" not in run.output
+    assert run.target.sent == []
