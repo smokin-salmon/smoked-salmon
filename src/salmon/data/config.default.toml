@@ -340,3 +340,33 @@ session = 'get-from-site-cookie'
 # # Trackers: red, ops, dic
 # # Metadata sources: qobuz, tidal, bandcamp, deezer, beatport, discogs, apple_music
 # # Image hosts: catbox, imgbb, oeimg, ptscreens, ra
+
+# ===============================
+# WEB INTERFACE SETTINGS
+# ===============================
+# # salmon web: salmon in the browser. Every setting is optional.
+# #
+# # The token logs a browser in, and lets scripts send "Authorization: Bearer <token>". The
+# # SALMON_WEB_TOKEN environment variable overrides it. Bound to 127.0.0.1 without either, salmon
+# # web makes a new token at each start and prints a login link carrying it; any other bind needs
+# # one set here or in SALMON_WEB_TOKEN. At least 32 characters; to make one:
+# #   python -c "import secrets; print(secrets.token_urlsafe(32))"
+# #
+# # salmon web serves plain HTTP. Bound to anything but 127.0.0.1, the token and the login cookie
+# # cross that network in clear: unless you trust the network, reach salmon web through a TLS
+# # reverse proxy (passing the Host header through), an SSH tunnel or a VPN.
+# #
+# # allowed_hosts: the names the browser may use in the address bar besides localhost, 127.0.0.1,
+# # [::1] and the bind address, e.g. the seedbox's name or LAN address. This stops DNS rebinding.
+# # Bound to 0.0.0.0, every name but the loopback ones must be listed here.
+# #
+# # The [upload.web_interface] section above is the spectrals viewer that salmon upload opens, not
+# # this.
+
+# [web]
+# host = "127.0.0.1"
+# port = 55155
+# token = "a-random-string-of-at-least-32-characters"
+# allowed_hosts = ["seedbox.lan", "192.168.1.20"]
+# # How many jobs run at once; the others wait in a queue.
+# max_jobs = 2
