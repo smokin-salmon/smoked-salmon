@@ -69,6 +69,26 @@ _held_request_messages: ContextVar[list[tuple[str, dict[str, Any]]] | None] = Co
 )
 
 
+# Whether requests sent from this context print their dumps, as `debug_tracker_connection` makes every request do.
+# A run's own setting, so that one run (salmon checkconf) can show them without changing the config, which a
+# server would share with every job.
+_request_dumps: ContextVar[bool] = ContextVar("request_dumps", default=False)
+
+
+@contextmanager
+def request_dumps() -> Iterator[None]:
+    """Print the dump of every request sent from this context, and of the tasks it starts, in the block."""
+    token = _request_dumps.set(True)
+    try:
+        yield
+    finally:
+        _request_dumps.reset(token)
+
+
+def _dumping() -> bool:
+    return cfg.upload.debug_tracker_connection or _request_dumps.get()
+
+
 def _secho(message: str, **styles: Any) -> None:
     """Print a message about a request, or hold it back while hold_request_messages() is active."""
     held = _held_request_messages.get()
@@ -811,7 +831,7 @@ class BaseGazelleApi:
         headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
         cookies = {} if use_api_key else self._get_cookies()
 
-        if cfg.upload.debug_tracker_connection:
+        if _dumping():
             _secho(f"[DEBUG] {method} {self._redact(url)}", fg="cyan")
             _secho(f"[DEBUG] params: {self._redact(msgspec.json.encode(params).decode())}", fg="cyan")
             _secho(f"[DEBUG] use_api_key: {use_api_key}", fg="cyan")
@@ -849,7 +869,7 @@ class BaseGazelleApi:
                             else:
                                 text = await resp.text()
 
-                        if cfg.upload.debug_tracker_connection:
+                        if _dumping():
                             _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
                             headers_shown = redact_tracker_headers(resp.headers.items(), self._secrets())
                             _secho(

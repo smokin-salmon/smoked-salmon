@@ -153,8 +153,6 @@ async def _checkconf_dic(monkeypatch: pytest.MonkeyPatch) -> list[str | None]:
 def test_checkconf_says_the_key_is_ignored_and_tests_only_the_cookie(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    # checkconf turns it on for the rest of the run: undone after the test.
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", False)
 
     authorizations = anyio.run(_checkconf_dic, monkeypatch)
 

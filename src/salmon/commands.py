@@ -24,13 +24,22 @@ from salmon.common import commandgroup, get_audio_files, str_to_int_if_int
 from salmon.common.redaction import redact_secrets
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS
-from salmon.errors import TLSCertificateError, UploadError
+from salmon.errors import UploadError
 from salmon.sources.tidal import credentials_configured as tidal_credentials_configured
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
 from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources import METASOURCES, run_metadata
+from salmon.trackers.base import request_dumps
+from salmon.trackers.connection import (
+    check_connection,
+    print_certificate_failure,
+    print_session_cookie_header,
+    print_step,
+    print_tracker_header,
+    print_verdict,
+)
 from salmon.uploader.seedbox import seedbox_secrets
 from salmon.uploader.spectrals import (
     check_spectrals,
@@ -290,73 +299,24 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
         )
         return
 
-    cfg.upload.debug_tracker_connection = True
-
     # Test trackers if no specific test type is requested or if tracker is specified
     if not (metadata or seedbox) or tracker:
         trackers = [tracker] if tracker else salmon.trackers.tracker_list
 
-        for t in trackers:
-            click.secho(f"\n[ Testing Tracker: {t} ]", fg="cyan", bold=True)
-            failed_checks: list[str] = []
+        # The request dumps are this run's own: the config is not changed (a server shares it with its jobs).
+        with request_dumps():
+            for t in trackers:
+                print_tracker_header(t)
+                tracker_instance = salmon.trackers.get_class(t)()
+                print_session_cookie_header()
+                found = await check_connection(t, tracker_instance, print_step)
 
-            tracker_instance = salmon.trackers.get_class(t)()
-            certificate_err: TLSCertificateError | None = None
+                if found.tls_error is not None:
+                    print_certificate_failure(found)
+                    _print_ca_certificates_hint()
+                print_verdict(found)
 
-            # Test session cookie (independent of API key auth)
-            try:
-                click.secho("\n[ Testing Session Cookie ]", fg="cyan", bold=True)
-                await tracker_instance._request(
-                    "GET",
-                    f"{tracker_instance.base_url}/ajax.php",
-                    params={"action": "index"},
-                    prefer_api_key=False,
-                )
-                click.secho("  ✔ Session cookie OK", fg="green")
-            except TLSCertificateError as err:
-                certificate_err = err
-            except Exception as cookie_err:
-                click.secho(
-                    f"  ✖ Session cookie check failed: {cookie_err}",
-                    fg="red",
-                    bold=True,
-                )
-                failed_checks.append("session cookie")
-
-            if certificate_err is not None:
-                # The API key check goes to the same host, and would fail the same way.
-                click.secho(f"  ✖ {certificate_err}", fg="red", bold=True)
-                click.secho(
-                    "    This fails before anything is sent: your session cookie and API key are not the cause,"
-                    " and were not checked.",
-                    fg="red",
-                )
-                _print_ca_certificates_hint()
-                failed_checks.append("TLS certificate")
-            elif tracker_instance.api_key:
-                # Test API key authentication
-                try:
-                    await tracker_instance._request(
-                        "GET",
-                        f"{tracker_instance.base_url}/ajax.php",
-                        params={"action": "index"},
-                        prefer_api_key=True,
-                    )
-                    click.secho("  ✔ API authentication OK", fg="green")
-                except Exception as e:
-                    click.secho(f"  ✖ API authentication failed: {e}", fg="red", bold=True)
-                    failed_checks.append("API key")
-
-            if failed_checks:
-                click.secho(
-                    f"\n✖ Error testing {t} ({', '.join(failed_checks)})",
-                    fg="red",
-                    bold=True,
-                )
-            else:
-                click.secho(f"\n✔ Successfully checked {t}", fg="green", bold=True)
-
-            click.secho("-" * 50, fg="yellow")  # Separator for readability
+                click.secho("-" * 50, fg="yellow")  # Separator for readability
 
     # Test metadata sources
     if metadata or not (tracker or seedbox):
