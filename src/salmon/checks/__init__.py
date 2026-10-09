@@ -116,13 +116,10 @@ def _trackers_option(_ctx, _param, value: tuple[str, ...]) -> list[str]:
     """The site codes -t names, comma-separated or repeated; each must be a tracker in the config."""
     import salmon.trackers
 
-    codes = list(dict.fromkeys(entry.strip().upper() for item in value for entry in item.split(",") if entry.strip()))
-    for code in codes:
-        if code not in salmon.trackers.tracker_list:
-            raise click.BadParameter(
-                f"{code} is not a tracker in your config ({', '.join(salmon.trackers.tracker_list) or 'none'})."
-            )
-    return codes
+    try:
+        return salmon.trackers.tracker_codes(value)
+    except salmon.trackers.UnknownTrackerError as e:
+        raise click.BadParameter(str(e)) from None
 
 
 @check.command(name="all")
