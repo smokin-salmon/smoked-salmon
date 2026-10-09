@@ -78,6 +78,11 @@ def capturing() -> Iterator[None]:
         sys.stdout, sys.stderr = real_out, real_err
 
 
+def in_job() -> bool:
+    """Whether what this context prints goes to a salmon web job's log, not to a terminal."""
+    return _sink.get() is not None
+
+
 def real_stderr() -> TextIO:
     """The server's own stderr, never a job's log: where tracebacks go."""
     stream = sys.stderr

@@ -120,6 +120,14 @@ class FakeTracker:
         if request.path == "/ajax.php" and action == "upload" and request.method == "POST":
             torrent_id, self._next_torrent_id = self._next_torrent_id, self._next_torrent_id + 1
             return _success({"torrentid": torrent_id, "groupid": GROUP_ID})
+        if request.path == "/upload.php" and request.method == "POST":
+            # The site's own form (RED takes a CD's logs there): the group page, the new torrent on it.
+            torrent_id, self._next_torrent_id = self._next_torrent_id, self._next_torrent_id + 1
+            return web.Response(
+                text=f'<html><a class="tooltip" href="torrents.php?torrentid={torrent_id}">DL</a>'
+                f'<a class="brackets" href="upload.php?groupid={GROUP_ID}">Add format</a></html>',
+                content_type="text/html",
+            )
         if request.path == "/reportsv2.php" and request.method == "POST":
             raise web.HTTPFound(f"/torrents.php?torrentid={dict(fields)['torrentid']}")
         if request.path == "/torrents.php":
@@ -292,6 +300,38 @@ def _run_up(
     The seams that need audio tools, a metadata source or a reviewer are stubbed, `fakes` replace more of them.
     `classes` gives the client class of each site code, RED and OPS by default. `yes_all=False` leaves out -yyy.
     """
+    tracker, queued, logins = fake_upload_world(
+        monkeypatch, torrents, classes=classes, multi_tracker_upload=multi_tracker_upload, **fakes
+    )
+
+    async def run():
+        async with tracker.serving():
+            return await CliRunner().invoke(
+                salmon.uploader.up,
+                [str(album), *(arg for code in trackers for arg in ("-t", code)), "-s", "WEB", "-n"]
+                + (["-yyy"] if yes_all else [])
+                + ["--skip-integrity-check", "--skip-up"]
+                + ["--source-url", SOURCE_URL, *args],
+                input=input,
+            )
+
+    return Run(anyio.run(run), tracker, queued, logins)
+
+
+def fake_upload_world(
+    monkeypatch,
+    torrents: Path,
+    *,
+    classes: dict[str, type[BaseGazelleApi]] | None = None,
+    multi_tracker_upload: bool = True,
+    tracker: "FakeTracker | None" = None,
+    **fakes: Any,
+) -> tuple[FakeTracker, list[tuple[Any, ...]], list[str | None]]:
+    """Stub what an upload needs besides the tracker, and send its tracker requests to `tracker`, else a new fake.
+
+    Returns:
+        The fake tracker (not serving yet), the seedbox tasks the run queues, and the torrent client logins.
+    """
     rls_data = {
         "format": "FLAC",
         "encoding": "Lossless",
@@ -348,22 +388,10 @@ def _run_up(
     monkeypatch.setattr(cfg, "seedbox", [Seedbox(name="box", torrent_client="qbittorrent+http://127.0.0.1:9")])
     logins: list[str | None] = []
     monkeypatch.setattr(QBittorrentClient, "login", lambda client: logins.append(client.url))
-    tracker = FakeTracker()
+    tracker = tracker or FakeTracker()
     classes = classes or {"RED": RedApi, "OPS": OpsApi}
     monkeypatch.setattr(salmon.trackers, "get_class", lambda code: lambda: _client(classes[code], tracker, torrents))
-
-    async def run():
-        async with tracker.serving():
-            return await CliRunner().invoke(
-                salmon.uploader.up,
-                [str(album), *(arg for code in trackers for arg in ("-t", code)), "-s", "WEB", "-n"]
-                + (["-yyy"] if yes_all else [])
-                + ["--skip-integrity-check", "--skip-up"]
-                + ["--source-url", SOURCE_URL, *args],
-                input=input,
-            )
-
-    return Run(anyio.run(run), tracker, queued, logins)
+    return tracker, queued, logins
 
 
 @pytest.fixture

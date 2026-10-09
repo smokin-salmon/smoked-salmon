@@ -35,6 +35,7 @@ from salmon.errors import (
     UploadError,
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
+from salmon.uploader import record
 from salmon.web import create_app_async, spectrals
 
 if TYPE_CHECKING:
@@ -859,6 +860,7 @@ async def report_lossy_master(
     try:
         await gazelle_site.report_lossy_master(torrent_id, comment, source)
     except UnknownOutcomeError as err:
+        record.note_unknown_outcome(err)
         # The upload itself went through, so the rest of the flow (seeding above all) goes on.
         click.secho(
             f"\nCould not tell whether {gazelle_site.site_string} took the lossy master report ({err}): it may "
@@ -990,6 +992,7 @@ async def post_upload_spectral_check(
         try:
             await gazelle_site.append_to_torrent_description(torrent_id, spectrals_bbcode)
         except UnknownOutcomeError as err:
+            record.note_unknown_outcome(err)
             click.secho(
                 f"\nCould not tell whether {gazelle_site.site_string} took the description edit for {permalink} "
                 f"({err}): it may not have been updated; check the description before pasting this in "
