@@ -2,10 +2,16 @@
   import { apiGet } from '../lib/api'
   import { FINISHED, jobStore } from '../lib/jobs.svelte'
 
+  interface Space {
+    free_bytes: number | null
+    total_bytes: number | null
+  }
   interface Overview {
     version: string | null
     trackers: string[]
-    roots: { path: string; name: string; library: boolean }[]
+    roots: ({ path: string; name: string; library: boolean } & Space)[]
+    tmp: ({ name: string } & Space) | null
+    tools: { required: Record<string, boolean>; optional: Record<string, boolean> }
     jobs: Record<string, number>
     max_jobs: number
   }
@@ -20,6 +26,24 @@
       .catch((e) => (error = String(e)))
   })
 
+  const missing = $derived(overview ? Object.values(overview.tools.required).filter((found) => !found).length : 0)
+
+  function usedPercent(space: Space): number | null {
+    if (space.free_bytes === null || !space.total_bytes) return null
+    return Math.round(((space.total_bytes - space.free_bytes) / space.total_bytes) * 100)
+  }
+
+  function formatBytes(bytes: number): string {
+    const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+    let value = bytes
+    let unit = 0
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024
+      unit += 1
+    }
+    return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
+  }
+
   // Live, from the job events.
   const running = $derived(jobStore.jobs.filter((j) => j.status === 'running').length)
   const waiting = $derived(jobStore.jobs.filter((j) => j.status === 'waiting').length)
@@ -27,7 +51,23 @@
   const finished = $derived(jobStore.jobs.filter((j) => FINISHED.includes(j.status)).length)
 </script>
 
-<!-- Ported from the fork's Dashboard (chodeus, 9bfdddc3), without the connection check: no tracker request on load. -->
+<!-- Ported from the fork's Dashboard (chodeus, 9bfdddc3, 0b29d2d5), without the connection check: no tracker request
+     on load. -->
+
+{#snippet usage(space: Space)}
+  {@const used = usedPercent(space)}
+  {#if used === null}
+    <span class="chip">usage unavailable</span>
+  {:else}
+    <div class="disk" title="{formatBytes(space.free_bytes ?? 0)} free of {formatBytes(space.total_bytes ?? 0)}">
+      <div class="disk-bar">
+        <div class="disk-fill {used >= 90 ? 'err' : used >= 75 ? 'warn' : ''}" style="width: {used}%"></div>
+      </div>
+      <span class="muted">{formatBytes(space.free_bytes ?? 0)} free</span>
+    </div>
+  {/if}
+{/snippet}
+
 <h1>Dashboard</h1>
 <p class="lead">What this salmon is set up with, and what it is doing.</p>
 
@@ -77,6 +117,38 @@
           <tr>
             <td>{root.library ? 'library_dirs' : 'download_directory'}</td>
             <td class="mono">{root.path}</td>
+            <td>{@render usage(root)}</td>
+          </tr>
+        {/each}
+        {#if overview.tmp}
+          <tr>
+            <td>tmp_dir</td>
+            <td class="mono">{overview.tmp.name}</td>
+            <td>{@render usage(overview.tmp)}</td>
+          </tr>
+        {/if}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Tools</h2>
+    <p class="muted small">
+      {missing ? `${missing} required tool${missing === 1 ? '' : 's'} not found on PATH.` : 'All required tools are on PATH.'}
+      The same check as <span class="mono">salmon health</span>.
+    </p>
+    <table>
+      <tbody>
+        {#each Object.entries(overview.tools.required) as [name, found] (name)}
+          <tr>
+            <td class="mono">{name}</td>
+            <td><span class="chip {found ? 'ok' : 'err'}">{found ? 'found' : 'missing'}</span></td>
+          </tr>
+        {/each}
+        {#each Object.entries(overview.tools.optional) as [name, found] (name)}
+          <tr>
+            <td class="mono">{name} <span class="muted">(optional)</span></td>
+            <td><span class="chip {found ? 'ok' : ''}">{found ? 'found' : 'missing'}</span></td>
           </tr>
         {/each}
       </tbody>
@@ -131,5 +203,28 @@
   }
   td.mono {
     overflow-wrap: anywhere;
+  }
+  .disk {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 160px;
+  }
+  .disk-bar {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .disk-fill {
+    height: 100%;
+    background: var(--accent);
+  }
+  .disk-fill.warn {
+    background: var(--warn);
+  }
+  .disk-fill.err {
+    background: var(--err);
   }
 </style>
