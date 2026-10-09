@@ -1,7 +1,9 @@
-"""The ``salmon web`` server: login, the request rules, jobs, and the committed front-end build (ADR 0004).
+"""The ``salmon web`` server: login, the request rules, jobs, the folder browser, the dashboard, and the committed
+front-end build (ADR 0004).
 
 Ported from styx-techno's first ``salmon web`` (5f1f55a6) and chodeus's token auth (995928d1, 18d685fe, ab23ae24),
-and the fork's jobs router, from FastAPI to aiohttp, which salmon already uses: no new dependency.
+and the fork's jobs, browse and system routers, from FastAPI to aiohttp, which salmon already uses: no new
+dependency.
 """
 
 import asyncio
@@ -19,12 +21,14 @@ import msgspec
 from aiohttp import WSCloseCode, web
 from aiohttp.typedefs import Handler
 
+import salmon.trackers
 from salmon import cfg
+from salmon.release_notification import get_version
 from salmon.trackers import account
-from salmon.webui import output
+from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers the job kinds)
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
 from salmon.webui.egress import Redactor, config_secrets
-from salmon.webui.jobs import Job, JobError, JobManager
+from salmon.webui.jobs import FINISHED, Job, JobError, JobManager
 from salmon.webui.security import DEV_ORIGINS, host_allowed, is_loopback, origin_allowed
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -38,6 +42,7 @@ ALLOWED_HOSTS = web.AppKey("allowed_hosts", list[str])
 DEV = web.AppKey("dev", bool)
 BUILD_FILES = web.AppKey("build_files", dict[str, Path])
 JOBS = web.AppKey("jobs", JobManager)
+REDACTOR = web.AppKey("redactor", Redactor)
 SOCKETS = web.AppKey("sockets", weakref.WeakSet[web.WebSocketResponse])
 
 
@@ -158,6 +163,41 @@ async def api_not_found(_request: web.Request) -> web.Response:
     return _error(404, "Not found.")
 
 
+def _filtered(request: web.Request, answer: Any, status: int = 200) -> web.Response:
+    """A JSON answer through the egress filter, as every job event goes: a path or a name may hold a secret too."""
+    return web.json_response(request.app[REDACTOR].value(answer), status=status)
+
+
+# --- Folders and the dashboard (GET only: they change nothing and send nothing) ----------
+
+
+async def browse(request: web.Request) -> web.Response:
+    """The roots, or the folders inside a folder of one (``?path=``), each marked when it holds audio."""
+    try:
+        # A worker thread: a folder on a slow disk must not stall the server's loop.
+        answer = await asyncio.to_thread(paths.listing, request.query.get("path"))
+    except paths.PathRefused as e:
+        return _filtered(request, {"detail": e.detail}, e.status)
+    return _filtered(request, answer)
+
+
+async def dashboard(request: web.Request) -> web.Response:
+    """The version, the trackers configured (names only), the roots and the job counts. Contacts no tracker."""
+    counts = {"running": 0, "waiting": 0, "queued": 0, "finished": 0}
+    for job in request.app[JOBS].jobs.values():
+        counts["finished" if job.status in FINISHED else job.status] += 1
+    return _filtered(
+        request,
+        {
+            "version": get_version(),
+            "trackers": list(salmon.trackers.tracker_list),
+            "roots": [root.shown() for root in paths.roots()],
+            "jobs": counts,
+            "max_jobs": request.app[JOBS].max_jobs,
+        },
+    )
+
+
 # --- Jobs ------------------------------------------------------------------------------
 
 
@@ -207,6 +247,14 @@ async def cancel_job(request: web.Request) -> web.Response:
     if not request.app[JOBS].cancel(job.id):
         return _error(409, "This job has ended already.")
     return web.json_response({"cancelled": job.id})
+
+
+async def discard_job(request: web.Request) -> web.Response:
+    """Delete a finished job's own folder, and the spectrals in it: nothing else."""
+    job = _job(request)
+    if not await request.app[JOBS].discard(job.id):
+        return _error(409, "This job has not finished: cancel it first, or wait for it to end.")
+    return web.json_response({"discarded": job.id})
 
 
 async def job_spectral(request: web.Request) -> web.StreamResponse:
@@ -300,7 +348,8 @@ def create_app(
     app[ALLOWED_HOSTS] = list(allowed_hosts)
     app[DEV] = dev
     app[BUILD_FILES] = build_files(STATIC_DIR)
-    app[JOBS] = JobManager(max_jobs or cfg.web.max_jobs, Redactor([*config_secrets(cfg), token]))
+    app[REDACTOR] = Redactor([*config_secrets(cfg), token])
+    app[JOBS] = JobManager(max_jobs or cfg.web.max_jobs, app[REDACTOR])
     app[SOCKETS] = weakref.WeakSet()
     app.cleanup_ctx.append(_jobs_running)
     app.on_shutdown.append(_close_sockets)
@@ -309,11 +358,14 @@ def create_app(
     app.router.add_post("/api/logout", logout)
     app.router.add_get("/api/auth", auth_status)
     app.router.add_get("/api/health", health)
+    app.router.add_get("/api/dashboard", dashboard)
+    app.router.add_get("/api/browse", browse)
     app.router.add_get("/api/jobs", list_jobs)
     app.router.add_post("/api/jobs", start_job)
     app.router.add_get("/api/jobs/{job_id}", get_job)
     app.router.add_post("/api/jobs/{job_id}/answer", answer_job)
     app.router.add_post("/api/jobs/{job_id}/cancel", cancel_job)
+    app.router.add_post("/api/jobs/{job_id}/discard", discard_job)
     app.router.add_get("/api/jobs/{job_id}/spectrals/{name}", job_spectral)
     app.router.add_get("/api/ws", job_events)
     app.router.add_route("*", "/api/{tail:.*}", api_not_found)

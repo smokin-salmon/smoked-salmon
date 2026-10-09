@@ -1,9 +1,13 @@
 <script lang="ts">
   import logo from './assets/salmon-logo.png'
+  import Checks from './pages/Checks.svelte'
+  import Dashboard from './pages/Dashboard.svelte'
   import Jobs from './pages/Jobs.svelte'
   import Login from './pages/Login.svelte'
+  import Spectrals from './pages/Spectrals.svelte'
   import { checkAuth, login, logout, onUnauthorized, takeTokenFromUrl } from './lib/api'
   import { FINISHED, jobStore } from './lib/jobs.svelte'
+  import { router } from './lib/router.svelte'
 
   // null while the first check runs.
   let authed = $state<boolean | null>(null)
@@ -64,7 +68,10 @@
     <div class="brand">
       <img class="logo" src={logo} alt="" width="24" height="24" /> salmon<span class="accent">web</span>
     </div>
-    <a href="#/jobs" class="active">
+    <a href="#/dashboard" class:active={router.page === 'dashboard'}>Dashboard</a>
+    <a href="#/spectrals" class:active={router.page === 'spectrals'}>Spectrals</a>
+    <a href="#/checks" class:active={router.page === 'checks'}>Checks</a>
+    <a href="#/jobs" class:active={router.page === 'jobs'}>
       Jobs
       {#if active > 0}<span class="chip {asking ? 'warn' : 'run'}">{active}</span>{/if}
     </a>
@@ -74,7 +81,15 @@
   </nav>
 
   <main>
-    <Jobs />
+    {#if router.page === 'dashboard'}
+      <Dashboard />
+    {:else if router.page === 'spectrals'}
+      <Spectrals />
+    {:else if router.page === 'checks'}
+      <Checks />
+    {:else}
+      <Jobs />
+    {/if}
   </main>
 </div>
 
