@@ -4,7 +4,7 @@ import anyio
 import asyncclick as click
 import pyperclip
 
-from salmon import cfg, dryrun
+from salmon import cfg, dryrun, interaction
 from salmon.common import AliasedCommands, commandgroup
 from salmon.config.image_hosts import cover_refusal, spectrals_refusal
 from salmon.errors import ImageUploadFailed
@@ -306,7 +306,7 @@ async def _handle_failed_spectrals(spectrals, successful, tracker: str | None = 
         # for specs_uploader.
         forbidden = {host: reason for host in HOSTS if (reason := spectrals_refusal(host, tracker)) is not None}
         allowed_hosts = [host for host in HOSTS if host not in forbidden]
-        host_input: str = await click.prompt(
+        host_input: str = await interaction.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
                 f"with? (Options: {', '.join(allowed_hosts)})",

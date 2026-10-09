@@ -3,7 +3,7 @@ import re
 import asyncclick as click
 from bs4 import BeautifulSoup
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import UploadFiles
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import (
@@ -78,7 +78,7 @@ class OpsApi(BaseGazelleApi):
             if str(importance).strip() == str(ARTIST_IMPORTANCES["main"])
         )
         if "releasetype" in data and main_artist_count >= 2 and not self._split_prompted:
-            self._use_split = click.confirm(
+            self._use_split = await interaction.confirm(
                 click.style(
                     f"\nThis release has {main_artist_count} main artists. "
                     "OPS has a 'Split' release type:\n\n"

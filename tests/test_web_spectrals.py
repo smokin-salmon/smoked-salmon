@@ -44,7 +44,6 @@ async def _drive_server(specs_path: Path, ids: dict[int, str], requests_fn) -> i
     poke at it in place of the "press enter" prompt, and return the port it used.
     """
     original_create_app_async = uploader_spectrals.create_app_async
-    original_prompt_async = uploader_spectrals.prompt_async
     original_port = web_module.web_cfg.port
     original_host = web_module.web_cfg.host
     captured: dict[str, web.AppRunner | int] = {}
@@ -54,7 +53,7 @@ async def _drive_server(specs_path: Path, ids: dict[int, str], requests_fn) -> i
         captured["runner"] = runner
         return runner
 
-    async def fake_prompt_async(*args, **kwargs) -> None:
+    async def fake_wait_for_enter(_text: str) -> None:
         runner = captured["runner"]
         assert isinstance(runner, web.AppRunner)
         port = runner.addresses[0][1]
@@ -64,12 +63,10 @@ async def _drive_server(specs_path: Path, ids: dict[int, str], requests_fn) -> i
     web_module.web_cfg.port = 0
     web_module.web_cfg.host = "127.0.0.1"
     uploader_spectrals.create_app_async = capturing_create_app_async
-    uploader_spectrals.prompt_async = fake_prompt_async
     try:
-        await uploader_spectrals._open_specs_in_web_server(str(specs_path), ids)
+        await uploader_spectrals._open_specs_in_web_server(str(specs_path), ids, fake_wait_for_enter)
     finally:
         uploader_spectrals.create_app_async = original_create_app_async
-        uploader_spectrals.prompt_async = original_prompt_async
         web_module.web_cfg.port = original_port
         web_module.web_cfg.host = original_host
         web_spectrals.set_active_spectrals({})

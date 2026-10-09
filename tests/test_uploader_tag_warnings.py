@@ -31,10 +31,10 @@ def _edit_metadata_stubs(monkeypatch, audio_info: dict) -> None:
         return value
 
     monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
-    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: None)
+    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
     monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
-    monkeypatch.setattr(uploader, "rename_folder", lambda path, *a, **k: path)
-    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: None)
+    monkeypatch.setattr(uploader, "rename_folder", lambda path, *a, **k: returns(path))
+    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
     monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
     monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
     monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: audio_info)

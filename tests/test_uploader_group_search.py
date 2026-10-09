@@ -218,7 +218,7 @@ class Flow:
             "check_hybrid": returning(False),
             "standardize_tags": returning(),
             "gather_tags": returning({}),
-            "construct_rls_data": returning(rls_data),
+            "construct_rls_data": returning_async(rls_data),
             "mqa_test": checks,
             "check_spectrals": check_spectrals,
             "get_metadata": returning_async((metadata, None)),

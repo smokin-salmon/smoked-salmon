@@ -292,7 +292,7 @@ def _one_folder_release(tmp_path, monkeypatch) -> list[str]:
         (tmp_path / f"CD{disc}" / "rip.log").write_text(f"disc {disc}")
     metadata = {"tracks": {d: {t: {"artists": [("A", "main")]} for t in ("1", "2")} for d in ("1", "2")}}
 
-    rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD")
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
     assert sorted(os.listdir(tmp_path)) == [*ONE_FOLDER_CRCS, "rip.1.log", "rip.2.log"]
     return [str(tmp_path / "rip.1.log"), str(tmp_path / "rip.2.log")]

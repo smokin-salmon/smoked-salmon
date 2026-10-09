@@ -8,7 +8,7 @@ from typing import Any
 import asyncclick as click
 import msgspec
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
@@ -26,7 +26,7 @@ class Change(msgspec.Struct, frozen=True):
     new: Any
 
 
-def tag_files(path, tags, metadata, auto_rename):
+async def tag_files(path, tags, metadata, auto_rename):
     """
     Wrapper function that calls the functions that create and print the
     proposed changes, and then prompts for confirmation to retag the file.
@@ -42,7 +42,7 @@ def tag_files(path, tags, metadata, auto_rename):
         click.secho("Skipping retagging procedure...", fg="red")
         return
     print_changes(album_changes, track_changes, next(iter(tags.values())))
-    if auto_rename or click.confirm(
+    if auto_rename or await interaction.confirm(
         click.style("\nWould you like to auto-tag the files with the updated metadata?", fg="magenta"),
         default=True,
     ):
@@ -377,7 +377,7 @@ def retag_files(path, album_changes, track_changes):
     click.secho("Retagged files.", fg="green")
 
 
-def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
+async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
     """
     Call functions that generate the proposed changes, then print and prompt
     for confirmation. Apply the changes if user agrees.
@@ -437,7 +437,7 @@ def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
             for name in clashes:
                 click.secho(f"   {name}", fg="red")
             return
-        if auto_rename or click.confirm(
+        if auto_rename or await interaction.confirm(
             click.style("\nWould you like to rename the files?", fg="magenta"),
             default=True,
         ):

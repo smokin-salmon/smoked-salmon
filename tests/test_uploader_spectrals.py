@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import anyio
 import pytest
 
+from salmon import interaction
 from salmon.errors import RequestFailedError
 from salmon.uploader import spectrals
 
@@ -110,7 +111,7 @@ def release(tmp_path, monkeypatch):
     # Compression runs only where oxipng is installed (not on Python 3.14); this checks which files it gets.
     monkeypatch.setattr(spectrals, "oxipng", object())
     monkeypatch.setattr(spectrals, "prompt_lossy_master", not_lossy)
-    monkeypatch.setattr(spectrals, "view_spectrals", no_viewer)
+    monkeypatch.setattr(interaction, "show_spectrals", no_viewer)
     monkeypatch.setattr(spectrals.cfg.upload.compression, "compress_spectrals", True)
     monkeypatch.setattr(spectrals.cfg.directory, "tmp_dir", None)
     return str(path), audio_info, compressed

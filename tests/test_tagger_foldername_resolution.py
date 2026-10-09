@@ -1,5 +1,6 @@
 """The optional {resolution} folder token: bit depth and sample rate, only when asked for."""
 
+import anyio
 import pytest
 
 from salmon import cfg
@@ -90,7 +91,7 @@ def test_the_token_lands_in_the_folder_name_when_the_template_uses_it(monkeypatc
     album = tmp_path / "old name"
     album.mkdir()
 
-    renamed = foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False)
+    renamed = anyio.run(lambda: foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False))
 
     assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB FLAC 24-96]")
     assert calls == [str(album)]
@@ -104,7 +105,7 @@ def test_a_blank_token_strips_cleanly(monkeypatch, tmp_path) -> None:
     album = tmp_path / "old name"
     album.mkdir()
 
-    renamed = foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False)
+    renamed = anyio.run(lambda: foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False))
 
     assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB FLAC]")
     assert calls == [str(album)]
@@ -117,7 +118,7 @@ def test_the_default_template_is_unchanged_and_does_not_read_files(monkeypatch, 
     album = tmp_path / "old name"
     album.mkdir()
 
-    renamed = foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False)
+    renamed = anyio.run(lambda: foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False))
 
     assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB 24bit FLAC]")
     assert calls == []
@@ -134,7 +135,7 @@ def test_a_blank_token_with_a_format_spec_does_not_raise(monkeypatch, tmp_path) 
     album = tmp_path / "old name"
     album.mkdir()
 
-    renamed = foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False)
+    renamed = anyio.run(lambda: foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False))
 
     assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB FLAC]")
     assert calls == [str(album)]
@@ -148,7 +149,7 @@ def test_an_escaped_token_does_not_read_the_files(monkeypatch, tmp_path) -> None
     album = tmp_path / "old name"
     album.mkdir()
 
-    renamed = foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False)
+    renamed = anyio.run(lambda: foldername.rename_folder(str(album), METADATA, auto_rename=True, check=False))
 
     assert renamed == str(tmp_path / "Illy - journaling [{resolution}]")
     assert calls == []

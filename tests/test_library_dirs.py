@@ -271,7 +271,7 @@ def _returning_async(result: Any = None):
     return fake
 
 
-def _retag(path: str, *_args: Any) -> None:
+async def _retag(path: str, *_args: Any) -> None:
     """Stands in for tag_files: rewrites a tag in every FLAC of the folder it is given."""
     for root, _dirs, files in os.walk(path):
         for name in files:
@@ -281,7 +281,7 @@ def _retag(path: str, *_args: Any) -> None:
                 tagged.save()
 
 
-def _rename_files(path: str, *_args: Any) -> None:
+async def _rename_files(path: str, *_args: Any) -> None:
     """Stands in for rename_files: renames the tracks of the folder it is given."""
     for name in os.listdir(path):
         if name.endswith(".flac"):
@@ -332,7 +332,7 @@ def _run_up(monkeypatch, album: Path, **fakes: Any) -> tuple[Any, list[str], lis
         "gather_audio_info": _returning({}),
         "check_hybrid": _returning(False),
         "gather_tags": _returning({}),
-        "construct_rls_data": _returning(rls_data),
+        "construct_rls_data": _returning_async(rls_data),
         "mqa_test": _returning_async(),
         "check_spectrals": _returning_async((False, None)),
         "get_metadata": _returning_async((metadata, None)),
@@ -351,7 +351,7 @@ def _run_up(monkeypatch, album: Path, **fakes: Any) -> tuple[Any, list[str], lis
     }.items():
         monkeypatch.setattr(salmon.uploader, name, fake)
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
-    # -yyy sets yes_all: patched, so it is put back after the test.
+    # A config with yes_all on would answer the questions the run is meant to ask.
     monkeypatch.setattr(cfg.upload, "yes_all", False)
     monkeypatch.setattr(cfg.upload.requests, "last_minute_dupe_check", False)
     monkeypatch.setattr(cfg.upload.requests, "check_requests", False)
@@ -485,7 +485,9 @@ def test_rename_folder_never_hardlinks_or_removes_a_library_album(monkeypatch, d
     monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
 
-    new_path = salmon.tagger.foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)
+    new_path = anyio.run(
+        lambda: salmon.tagger.foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)
+    )
 
     assert new_path == str(downloads / RENAMED)
     assert _snapshot(library) == before
@@ -505,7 +507,9 @@ def test_rename_folder_never_replaces_a_library_with_the_renamed_folder(monkeypa
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
 
     with pytest.raises(UploadError, match="library_dirs"):
-        salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
+        anyio.run(
+            lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
+        )
 
     assert _snapshot(library) == before
 
@@ -521,7 +525,7 @@ def test_tag_works_on_a_copy_renamed_into_download_directory(monkeypatch, dirs) 
     for name, fake in {
         "gather_tags": _returning({}),
         "gather_audio_info": _returning({}),
-        "construct_rls_data": _returning({}),
+        "construct_rls_data": _returning_async({}),
         "get_metadata": _returning_async((metadata, None)),
         "review_metadata_with_ai": _returning_async(metadata),
         "tag_files": _retag,
@@ -669,7 +673,9 @@ def test_rename_folder_never_follows_a_symlink_into_a_library(monkeypatch, dirs,
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning("link/Album"))
 
     with pytest.raises(UploadError, match="library_dirs"):
-        salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
+        anyio.run(
+            lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
+        )
 
     assert _snapshot(library) == before
 

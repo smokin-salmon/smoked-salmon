@@ -2,7 +2,7 @@ from typing import Any
 
 import asyncclick as click
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import UploadFiles
 from salmon.errors import UploadRefusedError
 from salmon.trackers.base import BaseGazelleApi, TagRules
@@ -114,7 +114,7 @@ class DICApi(BaseGazelleApi):
         """
         if not self._marks_prompted:
             # Prompt for mark type
-            raw_mark = await click.prompt(
+            raw_mark = await interaction.prompt(
                 click.style(
                     "\n"
                     "Do you want to mark this torrent as 'Self-purchased' or 'Self-rip'?\n"
@@ -137,7 +137,7 @@ class DICApi(BaseGazelleApi):
 
             # Prompt for exclusive mark if needed
             if mark in ("p", "r"):
-                raw_excl = await click.prompt(
+                raw_excl = await interaction.prompt(
                     click.style(
                         "\nDo you want to mark this torrent as 'Exclusive'?\n[E]xclusive, [N]one",
                         fg="magenta",

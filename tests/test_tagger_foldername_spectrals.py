@@ -4,6 +4,7 @@ import hashlib
 from pathlib import Path
 from typing import Any
 
+import anyio
 import pytest
 
 from salmon import cfg
@@ -76,7 +77,7 @@ def test_the_tmp_dir_spectrals_move_to_the_new_name(monkeypatch, dirs, tmp_path,
     album = _album(seeding / "Old Name")
     _write_spectrals(tmp_dir / "spectrals_Old Name")
 
-    new_path = foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)
+    new_path = anyio.run(lambda: foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False))
 
     assert Path(new_path).name == NEW_NAME
     assert sorted(entry.name for entry in tmp_dir.iterdir()) == [f"spectrals_{NEW_NAME}"]
@@ -94,7 +95,7 @@ def test_a_stale_tmp_dir_spectrals_folder_of_the_new_name_is_replaced(monkeypatc
     (tmp_dir / f"spectrals_{NEW_NAME}").mkdir()
     (tmp_dir / f"spectrals_{NEW_NAME}" / "stale.png").write_bytes(b"stale")
 
-    foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)
+    anyio.run(lambda: foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False))
 
     assert sorted(entry.name for entry in tmp_dir.iterdir()) == [f"spectrals_{NEW_NAME}"]
     assert _files(tmp_dir / f"spectrals_{NEW_NAME}") == SPECTRAL_FILES
@@ -109,7 +110,9 @@ def test_the_source_spectrals_move_into_the_renamed_copy(monkeypatch, dirs, hard
     before = _listing(album)
     _write_spectrals(Path(get_spectrals_path(str(album))))
 
-    new_path = Path(foldername.rename_folder(str(album), _metadata(scene), auto_rename=True, check=False))
+    new_path = Path(
+        anyio.run(lambda: foldername.rename_folder(str(album), _metadata(scene), auto_rename=True, check=False))
+    )
 
     assert new_path.parent == downloads
     assert new_path.name == ("Old Name" if scene else NEW_NAME)
@@ -129,7 +132,7 @@ def test_a_user_folder_named_spectrals_below_the_top_level_is_still_copied(monke
     before = _listing(album)
     _write_spectrals(Path(get_spectrals_path(str(album))))
 
-    new_path = Path(foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False))
+    new_path = Path(anyio.run(lambda: foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)))
 
     assert _listing(album) == before
     assert (new_path / "Extras" / "Spectrals" / "mine.png").read_bytes() == b"mine"
@@ -141,7 +144,7 @@ def test_an_album_without_spectrals_is_copied_as_before(dirs) -> None:
     album = _album(seeding / "Old Name")
     before = _listing(album)
 
-    new_path = Path(foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False))
+    new_path = Path(anyio.run(lambda: foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)))
 
     assert _listing(album) == before
     assert _listing(new_path) == before
@@ -154,7 +157,7 @@ def test_a_plain_file_named_spectrals_is_copied_like_any_other(monkeypatch, dirs
     album = _album(seeding / "Old Name")
     (album / "Spectrals").write_bytes(b"not a folder")
 
-    new_path = Path(foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False))
+    new_path = Path(anyio.run(lambda: foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)))
 
     assert (new_path / "Spectrals").read_bytes() == b"not a folder"
 
@@ -170,6 +173,6 @@ def test_the_spectrals_of_a_library_album_are_never_inside_it(monkeypatch, dirs)
 
     assert not Path(get_spectrals_path(str(album))).is_relative_to(album)
 
-    foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False)
+    anyio.run(lambda: foldername.rename_folder(str(album), _metadata(), auto_rename=True, check=False))
 
     assert _listing(library) == before

@@ -8,7 +8,7 @@ from typing import Any
 import asyncclick as click
 import msgspec
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.common.strings import artist_keys, comparable
@@ -227,7 +227,7 @@ async def _select_choice(
 
     while True:
         if choices:
-            res = await click.prompt(
+            res = await interaction.prompt(
                 click.style(
                     "\nWhich metadata results would you like to use? Other "
                     'options: paste URLs, [m]anual, [a], prefix choice or URL with "*" to indicate source (WEB)',
@@ -237,7 +237,7 @@ async def _select_choice(
                 default=default,
             )
         else:
-            res = await click.prompt(
+            res = await interaction.prompt(
                 click.style(
                     "\nNo metadata results were found. Options: paste URLs, "
                     '[m]anual, [a]bort, prefix URL with "*" to indicate source (WEB)',
@@ -248,7 +248,7 @@ async def _select_choice(
             )
 
         if res.lower().startswith("m"):
-            return _get_manual_metadata(rls_data), None
+            return await _get_manual_metadata(rls_data), None
         elif res.lower().startswith("a"):
             raise click.Abort
 
@@ -286,7 +286,7 @@ async def _select_choice(
         if not tasks:
             # Go to manual mode only if we have any URLs
             if rls_data["urls"]:
-                meta = _get_manual_metadata(rls_data)
+                meta = await _get_manual_metadata(rls_data)
                 meta["urls"] = meta.get("urls", [])
                 # If we have a source_url (from a starred URL), make sure it's included
                 if source_url and source_url not in meta["urls"]:
@@ -303,7 +303,7 @@ async def _select_choice(
         return meta, source_url
 
 
-def _get_manual_metadata(rls_data):
+async def _get_manual_metadata(rls_data):
     """
     Use the metadata built from the file tags as a base, then allow the user to edit
     that dictionary.
@@ -311,7 +311,7 @@ def _get_manual_metadata(rls_data):
     metadata = json.dumps(rls_data, indent=2, ensure_ascii=False)
     while True:
         try:
-            metadata = click.edit(metadata, extension=".json", editor=cfg.upload.default_editor) or metadata
+            metadata = await interaction.edit(metadata, extension=".json", editor=cfg.upload.default_editor) or metadata
             metadata_dict = msgspec.json.decode(metadata)
             if isinstance(metadata_dict["genres"], str):
                 metadata_dict["genres"] = [metadata_dict["genres"]]
@@ -319,7 +319,7 @@ def _get_manual_metadata(rls_data):
             metadata_dict["genres"] = standardize_genres(metadata_dict["genres"])
             return metadata_dict
         except (TypeError, msgspec.DecodeError):
-            click.confirm(
+            await interaction.confirm(
                 click.style("Metadata is not a valid JSON file, retry?", fg="magenta", bold=True),
                 default=True,
                 abort=True,

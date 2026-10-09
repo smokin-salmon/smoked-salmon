@@ -5,7 +5,7 @@ import asyncclick as click
 from mutagen import File as MutagenFile
 from mutagen import flac, mp3, mp4
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import get_audio_files
 from salmon.tagger.tagfile import TAG_FIELDS, TagFile
 
@@ -153,7 +153,7 @@ async def prompt_editor(path: str) -> bool:
     Returns:
         True if the editor was opened, False if tags were accepted.
     """
-    if not click.confirm(
+    if not await interaction.confirm(
         click.style("\nAre the above tags acceptable? ([n] to open in tag editor)", fg="magenta"),
         default=True,
     ):

@@ -92,7 +92,7 @@ def _snapshot(folder: Path) -> dict[str, tuple[bytes, int]]:
     }
 
 
-def _retag(path: str, *_args: Any) -> None:
+async def _retag(path: str, *_args: Any) -> None:
     """Stands in for tag_files: rewrites a tag in every FLAC of the folder it is given."""
     for name in os.listdir(path):
         if name.endswith(".flac"):
@@ -101,7 +101,7 @@ def _retag(path: str, *_args: Any) -> None:
             tagged.save()
 
 
-def _rename_files(path: str, *_args: Any) -> None:
+async def _rename_files(path: str, *_args: Any) -> None:
     """Stands in for rename_files: renames the tracks of the folder it is given."""
     for name in os.listdir(path):
         if name.endswith(".flac"):
@@ -173,7 +173,7 @@ def _run_up(
         "gather_audio_info": _returning({}),
         "check_hybrid": _returning(False),
         "gather_tags": _returning({}),
-        "construct_rls_data": _returning(rls_data),
+        "construct_rls_data": _returning_async(rls_data),
         "mqa_test": _returning_async(),
         "check_spectrals": _returning_async((False, None)),
         "get_metadata": _returning_async((metadata, None)),

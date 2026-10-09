@@ -259,7 +259,7 @@ def _run_up(monkeypatch, tmp_path: Path, broken, track_data, convert_folder=None
         "check_hybrid": _returning(False),
         "standardize_tags": _returning(),
         "gather_tags": _returning({}),
-        "construct_rls_data": _returning(metadata),
+        "construct_rls_data": _returning_async(metadata),
         "mqa_test": _returning_async(),
         "upload_upconvert_test": _returning_async(),
         "check_spectrals": _returning_async((False, None)),

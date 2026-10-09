@@ -125,7 +125,7 @@ async def tag(
         standardize_tags(path)
         tags = gather_tags(path)
         audio_info = gather_audio_info(path)
-        rls_data = construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
+        rls_data = await construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
 
         metadata, source_url = await get_metadata(path, tags, rls_data)
         durations = [info.get("duration") or 0 for info in audio_info.values()]
@@ -138,12 +138,12 @@ async def tag(
             skip_initial_review=skip_initial_review,
             apply_suggestions=apply_ai_suggestions,
         )
-        tag_files(path, tags, metadata, auto_rename)
+        await tag_files(path, tags, metadata, auto_rename)
 
         await download_cover_if_nonexistent(path, metadata["cover"])
         tags = await check_tags(path)
-        path = rename_folder(path, metadata, auto_rename, parent=rename_into)
-        rename_files(path, tags, metadata, auto_rename, None)
+        path = await rename_folder(path, metadata, auto_rename, parent=rename_into)
+        await rename_files(path, tags, metadata, auto_rename, None)
         await check_folder_structure(path, scene=False)
         click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
 

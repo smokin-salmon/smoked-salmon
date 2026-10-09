@@ -7,7 +7,7 @@ from string import Formatter
 
 import asyncclick as click
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common import strip_template_keys
 from salmon.constants import (
     BLACKLISTED_CHARS,
@@ -17,7 +17,7 @@ from salmon.errors import UploadError
 from salmon.tagger.audio_info import gather_audio_info
 
 
-def rename_folder(path, metadata, auto_rename, check=True, parent=None):
+async def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     """
     Create a revised folder name from the new metadata and present it to the
     user. Have them decide whether or not to accept the folder name.
@@ -44,11 +44,13 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
         click.echo(f"Old folder name        : {old_base}")
         click.echo(f"New pending folder name: {new_base}")
 
-        user_rename_choice = cfg.upload.yes_all or click.confirm(
+        user_rename_choice = await interaction.assume_defaults() or await interaction.confirm(
             click.style("\nWould you like to replace the original folder name?", fg="magenta"), default=True
         )
 
-        new_base = _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
+        new_base = (
+            await _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
+        )
 
     new_path = os.path.join(parent or cfg.directory.download_directory, new_base)
     same_location = os.path.isdir(new_path) and os.path.samefile(path, new_path)
@@ -56,7 +58,7 @@ def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     if not same_location and cfg.directory.protects(new_path):
         raise UploadError(f"Not renaming into {new_path}: it is in library_dirs, or holds one.")
     if os.path.isdir(new_path) and not same_location:
-        if not check or click.confirm(
+        if not check or await interaction.confirm(
             click.style(
                 f"A folder already exists with the new folder name '{new_path}', would you like to replace it?",
                 fg="magenta",
@@ -262,20 +264,20 @@ def _fix_format(metadata, keys):
     return sub_metadata
 
 
-def _edit_folder_interactive(foldername, auto_rename):
+async def _edit_folder_interactive(foldername, auto_rename):
     """Allow the user to edit the pending folder name in a text editor."""
     if auto_rename:
         return foldername
-    if not click.confirm(
+    if not await interaction.confirm(
         click.style("Is the new folder name acceptable? ([n] to edit)", fg="magenta"),
         default=True,
     ):
-        newname = click.edit(foldername, editor=cfg.upload.default_editor)
+        newname = await interaction.edit(foldername, editor=cfg.upload.default_editor)
         while True:
             if newname is None:
                 return foldername
             elif re.search(BLACKLISTED_CHARS, newname):
-                if not click.confirm(
+                if not await interaction.confirm(
                     click.style(
                         "Folder name contains invalid characters, retry?",
                         fg="magenta",
@@ -286,5 +288,5 @@ def _edit_folder_interactive(foldername, auto_rename):
                     sys.exit(1)
             else:
                 return newname.strip().replace("\n", "")
-            newname = click.edit(foldername, editor=cfg.upload.default_editor)
+            newname = await interaction.edit(foldername, editor=cfg.upload.default_editor)
     return foldername

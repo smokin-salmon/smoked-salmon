@@ -38,6 +38,7 @@ the test run never reads a developer's config.
 | Path | What lives there |
 |---|---|
 | `src/salmon/run.py`, `commands.py` | CLI entry point (`salmon`) and top-level commands |
+| `src/salmon/interaction.py` | Every question salmon asks the user (`prompt`, `confirm`, `edit`, `show_spectrals`) and `assume_defaults` (`-yyy`) |
 | `src/salmon/config/` | Config schema (`validations.py`, msgspec structs); validation runs in `__post_init__` |
 | `src/salmon/data/config.default.toml` | The config new users start from; keep it valid and in sync with the schema |
 | `src/salmon/data/version.toml` | Version and changelog. **See Releases below before touching it** |
@@ -85,6 +86,10 @@ the test run never reads a developer's config.
   retag, rename, sanitize or delete work on the folder `staged_source` (`uploader/staging.py`)
   returns, which is a real copy for `--skip-flac-upload` and for library albums. A new command or
   step that writes into, or removes, a folder checks `cfg.directory.protects(path)` first (#531).
+- **Ask the user only through `salmon.interaction`** (`await interaction.confirm(...)`), never asyncclick's
+  `prompt`, `confirm` or `edit` or `input()`: a web job would hang on the server's terminal. A test walks `src/salmon`
+  and fails on one. Whether a run answers with defaults (`-yyy`, or `yes_all` in the config) is
+  `await interaction.assume_defaults()`; nothing writes `cfg` at runtime.
 - Keep PRs to one logical change. Maintainers squash-merge.
 - Image hosts that only display for one tracker's members (RED's) must never be usable through a
   setting shared by all trackers. See [ADR 0002](docs/adr/0002-per-tracker-cover-host.md).

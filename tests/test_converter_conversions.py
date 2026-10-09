@@ -281,7 +281,7 @@ def test_a_renamed_folder_can_still_be_uploaded_with_its_note(tmp_path, monkeypa
         "scene": False,
     }
 
-    renamed = foldername.rename_folder(str(album), metadata, auto_rename=True, check=False)
+    renamed = anyio.run(lambda: foldername.rename_folder(str(album), metadata, auto_rename=True, check=False))
 
     assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB FLAC]")
     assert _facts(renamed) == DOWNCONVERT
