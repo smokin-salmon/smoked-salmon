@@ -174,14 +174,13 @@ def test_a_conversion_makes_the_folder_and_the_record_the_command_makes(roots: R
     _with_app(test)
     result, from_job = seen["job"]
     assert from_job == seen["command"]
-    output = next(path for path in from_job if path.endswith(".mp3" if kind == "transcode" else "01 Track 1.flac"))
-    folder = os.path.dirname(output)
+    folder = result["output"]
     assert folder != str(album)
-    assert result == {"output": folder}
+    assert os.path.dirname(folder) == str(roots.downloads)
+    assert any(path.startswith(folder + os.sep) for path in from_job)
+    sidecar = os.path.join(roots.downloads, conversions.REGISTRY_DIR, os.path.basename(folder) + ".json")
+    assert sidecar in from_job
     assert conversions.conversion_of(folder) is not None
-    assert os.path.join(os.path.dirname(folder), conversions.REGISTRY_DIR, os.path.basename(folder) + ".json") in (
-        from_job
-    )
 
 
 def test_essential_only_leaves_the_extra_files_out_as_the_command_does(roots: Roots) -> None:
