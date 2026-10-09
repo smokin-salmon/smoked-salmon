@@ -419,3 +419,7 @@ ESSENTIAL_EXTENSIONS = {
     ".pdf",
     ".png",
 }
+
+# The command line tools salmon shells out to: `salmon health` and the web dashboard both report these.
+REQUIRED_TOOLS = ["curl", "flac", "git", "lame", "mp3val", "sox"]
+OPTIONAL_TOOLS = ["puddletag", "feh", "rclone"]
