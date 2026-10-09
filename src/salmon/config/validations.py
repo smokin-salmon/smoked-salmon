@@ -418,6 +418,34 @@ class ProxyCfg(BaseStruct):
                 )
 
 
+# A web token guards uploads with the user's tracker accounts: long enough that guessing it is hopeless.
+WEB_TOKEN_MIN_LENGTH = 32
+
+
+class Web(BaseStruct):
+    """``salmon web``. The CLI's spectrals viewer keeps its own [upload.web_interface]."""
+
+    host: str = "127.0.0.1"
+    port: int = 55155
+    token: str | None = None
+    # Host header values accepted besides loopback names and the bind address (DNS rebinding).
+    allowed_hosts: list[str] = msgspec.field(default_factory=list)
+    max_jobs: int = 2
+
+    def __post_init__(self):
+        if self.port < 1 or self.port > 65535:
+            raise ValueError("web.port must be between 1 and 65535")
+        if self.token == "":
+            self.token = None
+        if self.token is not None and len(self.token) < WEB_TOKEN_MIN_LENGTH:
+            raise ValueError(
+                f"web.token must be at least {WEB_TOKEN_MIN_LENGTH} characters"
+                ' (python -c "import secrets; print(secrets.token_urlsafe(32))" makes one)'
+            )
+        if self.max_jobs < 1:
+            raise ValueError("web.max_jobs must be at least 1")
+
+
 class Cfg(BaseStruct):
     "This class defines the schema that msgspec uses to parse the config"
 
@@ -428,6 +456,7 @@ class Cfg(BaseStruct):
     seedbox: list[Seedbox] = msgspec.field(default_factory=list)
     upload: Upload = msgspec.field(default_factory=Upload)
     proxy: ProxyCfg = msgspec.field(default_factory=ProxyCfg)
+    web: Web = msgspec.field(default_factory=Web)
 
     def __post_init__(self):
         # Uploads to RED's image host authenticate with the RED API key, whichever tracker the image is for.

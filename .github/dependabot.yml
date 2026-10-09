@@ -51,3 +51,17 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  # The salmon web front end's build tools. A bump that changes the build needs the rebuilt
+  # src/salmon/webui/static/ committed on its branch before CI passes (see webui/README.md).
+  - package-ecosystem: "npm"
+    directory: "/webui"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"

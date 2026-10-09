@@ -1,0 +1,138 @@
+:root {
+  --bg: #12151a;
+  --bg-raised: #1a1e25;
+  --bg-hover: #232833;
+  --border: #2c323d;
+  --text: #e6e9ee;
+  --text-dim: #9aa3b2;
+  --accent: #fa8072;
+  --accent-dim: #b85e54;
+  --ok: #6fd08c;
+  --warn: #e8c468;
+  --err: #e87a72;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+h1, h2, h3 { font-weight: 600; margin: 0 0 0.5rem; }
+h1 { font-size: 1.3rem; }
+.lead { color: var(--text-dim); font-size: 0.9rem; margin: -0.2rem 0 1rem; max-width: 62ch; }
+h2 { font-size: 1.05rem; }
+
+code, .mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+}
+
+.card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.btn {
+  background: var(--accent);
+  color: #1a1214;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s;
+}
+.btn:hover:not(:disabled) { filter: brightness(1.1); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn.secondary {
+  background: var(--bg-hover);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn.small { padding: 0.25rem 0.6rem; font-size: 0.8rem; }
+
+input[type='text'], select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.9rem;
+  width: 100%;
+}
+input[type='text']:focus, select:focus {
+  outline: none;
+  border-color: var(--accent-dim);
+}
+input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent, #e5684a);
+  outline-offset: 2px;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg-hover);
+  color: var(--text-dim);
+}
+.chip.ok { background: #1d3527; color: var(--ok); }
+.chip.warn { background: #3a331e; color: var(--warn); }
+.chip.err { background: #3a2220; color: var(--err); }
+.chip.run { background: #22303f; color: #7ab8e8; }
+
+.progress {
+  height: 6px;
+  background: var(--bg-hover);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.progress > div {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+
+table { border-collapse: collapse; width: 100%; }
+th, td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.88rem;
+}
+th { color: var(--text-dim); font-weight: 600; }
+
+/* Anything carrying a title= is explained on hover; hint that it is there. */
+label[title] { cursor: help; }
+label.check[title] > :last-child,
+label[title] > :first-child { text-decoration: underline dotted var(--border); text-underline-offset: 3px; }
+
+.muted { color: var(--text-dim); }
+.row { display: flex; gap: 0.6rem; align-items: center; }
+.grow { flex: 1; }
+
+@media (max-width: 700px) {
+  /* Inputs under 16px make iOS Safari zoom the whole page on focus. */
+  input[type='text'], select { font-size: 16px; }
+  /* Scroll wide tables rather than squashing them; every table sits in a .card. */
+  .card table { display: block; overflow-x: auto; white-space: nowrap; }
+  .btn { padding: 0.6rem 1rem; }
+  .btn.small { padding: 0.45rem 0.8rem; }
+}

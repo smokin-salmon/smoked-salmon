@@ -1,12 +1,21 @@
 """``salmon --help`` must not import the heavy libraries that only some commands need (#367)."""
 
 import json
+import re
 import subprocess
 import sys
 
 # Each of these adds from 30 ms (av) to 300 ms (openai) to every salmon start. salmon.uploader.frequency loads
 # numpy and av.
-HEAVY_MODULES = ("openai", "numpy", "av", "aiohttp.web", "jinja2", "salmon.uploader.frequency")
+HEAVY_MODULES = (
+    "openai",
+    "numpy",
+    "av",
+    "aiohttp.web",
+    "jinja2",
+    "salmon.uploader.frequency",
+    "salmon.webui.server",
+)
 
 # Runs --help through the real command group, as salmon.run.main() does, but without main()'s
 # release notification, which would fetch version.toml from GitHub.
@@ -33,6 +42,8 @@ def test_help_does_not_import_heavy_modules() -> None:
 
     assert result.returncode == 0, result.stderr
     assert "Usage: salmon" in result.stdout
+    # salmon web is listed, so its module was imported, without its server (#629).
+    assert re.search(r"^  web\s", result.stdout, re.MULTILINE)
     loaded = json.loads(result.stdout.splitlines()[-1])
     # The command modules themselves are imported: --help lists their commands.
     assert loaded.pop("salmon.uploader") is True

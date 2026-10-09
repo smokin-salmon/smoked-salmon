@@ -3,3 +3,5 @@ Dockerfile
 config.py
 smoked.db
 __pycache__
+# The front-end source: the image carries its committed build only.
+webui

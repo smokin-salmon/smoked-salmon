@@ -47,3 +47,45 @@ jobs:
 
       - name: Run Pyright Type Check
         run: uv run --frozen basedpyright
+
+  # The front end of salmon web: type checks, then a build from the committed source and lockfile
+  # that must give the committed build, byte for byte (ADR 0004).
+  webui:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: webui
+    steps:
+      # No token left in .git/config for the npm packages the build runs.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: webui/.node-version
+          package-manager-cache: false
+
+      # No install scripts: nothing in the lockfile runs code before the build does.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: svelte-check and tsc
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      - name: Check the committed build is this build
+        run: |
+          changes=$(git status --porcelain --untracked-files=all -- ../src/salmon/webui/static)
+          if [ -n "$changes" ]; then
+            echo "::error::src/salmon/webui/static is not the build of webui/: run npm ci --ignore-scripts && npm run build in webui/ and commit the result."
+            echo "$changes"
+            git diff --stat -- ../src/salmon/webui/static
+            exit 1
+          fi

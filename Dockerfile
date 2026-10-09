@@ -102,8 +102,9 @@ RUN set -e; \
     unreadable="$(find /app \( -type f ! -perm -0004 \) -o \( -type d ! -perm -0005 \) | head -20)"; \
     if [ -n "$unreadable" ]; then echo "not world-readable:"; echo "$unreadable"; exit 1; fi
 
-# Expose port for web interface
-EXPOSE 55110
+# 55110: the spectrals viewer salmon upload opens. 55155: salmon web, run as
+# `salmon web --host 0.0.0.0` with SALMON_WEB_TOKEN set.
+EXPOSE 55110 55155
 
 # Set the entrypoint to run the 'salmon' script
 ENTRYPOINT ["salmon"]
