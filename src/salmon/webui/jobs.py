@@ -125,8 +125,8 @@ class Job:
         self.log: deque[dict[str, Any]] = deque(maxlen=MAX_LOG_LINES)
         # Lines logged so far, the dropped ones included.
         self.lines = 0
-        # The folder and names of the spectral images the browser may fetch.
-        self.spectrals: tuple[str, list[str]] | None = None
+        # The spectral images the browser may fetch: each one's name as shown, and its path.
+        self.spectrals: dict[str, str] | None = None
         # Reached from the job's thread too.
         self._lock = threading.Lock()
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -151,7 +151,7 @@ class Job:
             "error": self.error,
             "result": self.result,
             "question": self.question,
-            "spectrals": self.spectrals[1] if self.spectrals else None,
+            "spectrals": list(self.spectrals) if self.spectrals is not None else None,
         }
 
     def detail(self) -> dict[str, Any]:
@@ -447,8 +447,8 @@ class JobManager:
         self._publish({"event": "answered", "job_id": job.id, "question_id": question_id, "status": job.status})
 
     def _show_spectrals(self, job: Job, folder: str, files: list[str]) -> None:
-        job.spectrals = (folder, files)
-        self._publish({"event": "spectrals", "job_id": job.id, "files": self._redactor.value(files)})
+        job.spectrals = {self._redactor.text(name): os.path.join(folder, name) for name in files}
+        self._publish({"event": "spectrals", "job_id": job.id, "files": list(job.spectrals)})
 
     def _finish(self, job: Job, status: Status, error: str | None, result: Any) -> None:
         job.status = status

@@ -211,13 +211,10 @@ async def cancel_job(request: web.Request) -> web.Response:
 
 async def job_spectral(request: web.Request) -> web.StreamResponse:
     """One of the spectral images a job shows, from its spectrals folder only."""
-    job = _job(request)
-    name = request.match_info["name"]
-    if job.spectrals is None or name not in job.spectrals[1]:
-        return _error(404, "No such spectral image.")
-    folder = job.spectrals[0]
-    path = os.path.join(folder, name)
-    if os.path.islink(path) or not os.path.isfile(path) or os.path.dirname(os.path.realpath(path)) != folder:
+    # Looked up among the paths the job published: no path is made from what the request asks for.
+    path = (_job(request).spectrals or {}).get(request.match_info["name"])
+    # Its folder was resolved when published: a symlink put there since resolves elsewhere.
+    if path is None or os.path.realpath(path) != path or not os.path.isfile(path):
         return _error(404, "No such spectral image.")
     return web.FileResponse(path, headers={"Cache-Control": "no-store"})
 

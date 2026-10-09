@@ -541,7 +541,10 @@ def test_spectrals_are_served_from_the_jobs_folder_until_the_user_is_done(
         assert image.status == 200
         assert await image.read() == b"\x89PNG full"
         assert image.content_type == "image/png"
-        for name in ("02 Full.png", "notes.txt", "..%2Fsecret.png", "%2E%2E%2Fsecret.png"):
+        # A link put in the folder once the images are shown is not followed out of it.
+        (spectrals / "01 Zoom.png").unlink()
+        (spectrals / "01 Zoom.png").symlink_to(tmp_path / "secret.png")
+        for name in ("02 Full.png", "notes.txt", "01 Zoom.png", "..%2Fsecret.png", "%2E%2E%2Fsecret.png"):
             response = await client.get(f"/api/jobs/{job_id}/spectrals/{name}", headers=AUTH)
             assert response.status == 404, name
         await _answer(client, manager, job_id, True)
@@ -708,7 +711,7 @@ def test_no_secret_leaves_the_server_in_any_event(kind: Callable[[str, Run], Non
     async def done(_params: Params) -> dict[str, Any]:
         click.echo(f"out {text}")
         click.echo(f"err {text}", err=True)
-        print(f"https://tracker.test/torrents.php?action=download&authkey=x&torrent_pass={SECRETS['passkey']}")
+        click.echo(f"https://tracker.test/torrents.php?action=download&authkey=x&torrent_pass={SECRETS['passkey']}")
         await interaction.prompt(f"prompt {text}", default=SECRETS["api_key"], type=click.Choice([SECRETS["session"]]))
         await interaction.confirm(f"confirm {text}")
         await interaction.edit(f"edit {text}")
