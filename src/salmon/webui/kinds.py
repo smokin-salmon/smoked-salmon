@@ -14,7 +14,7 @@ tracker checks. The fork's upload called the command's steps itself; the job her
 
 import os
 from collections.abc import Callable
-from typing import Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any
 
 import anyio.to_thread
 import asyncclick as click
@@ -26,6 +26,9 @@ from salmon.constants import SOURCES, TAG_ENCODINGS
 from salmon.errors import DryRunRefused, UnknownOutcomeError
 from salmon.webui import paths
 from salmon.webui.jobs import JobError, JobKind, own_folder, register
+
+if TYPE_CHECKING:
+    from salmon.uploader import UpOptions
 
 
 class SpectralsParams(msgspec.Struct, forbid_unknown_fields=True):
@@ -178,7 +181,7 @@ async def upload(params: UploadParams) -> dict[str, Any]:
             master report, a description edit), as the command does: the job then ends as unknown_outcome.
         click.ClickException: A dry run stopped before a step that would have sent something.
     """
-    from salmon.uploader import UpOptions, run_up
+    from salmon.uploader import UpOptions
     from salmon.uploader.record import recording
 
     path = _album(params.path)
@@ -187,12 +190,28 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     options = UpOptions(**{**_up_options(params, trackers), "path": path})
     with recording() as record:
         try:
-            await run_up(options)
-        except* DryRunRefused as refused:
-            raise click.ClickException(str(refused.exceptions[0])) from None
+            await _run_up(options)
+        except BaseException as err:
+            # Also when the run stops later (an abort, a cancel): what may be on the tracker is what the job says.
+            if record.unknown_outcomes:
+                raise _unknown(record.unknown_outcomes) from err
+            raise
     if record.unknown_outcomes:
-        raise UnknownOutcomeError("; ".join(str(error) for error in record.unknown_outcomes))
+        raise _unknown(record.unknown_outcomes)
     return {"folder": os.path.basename(path), "trackers": list(trackers), "uploads": record.uploads}
+
+
+async def _run_up(options: "UpOptions") -> None:
+    from salmon.uploader import run_up
+
+    try:
+        await run_up(options)
+    except* DryRunRefused as refused:
+        raise click.ClickException(str(refused.exceptions[0])) from None
+
+
+def _unknown(errors: list[UnknownOutcomeError]) -> UnknownOutcomeError:
+    return UnknownOutcomeError("; ".join(str(error) for error in errors))
 
 
 def _title(what: str) -> Callable[[Any], str]:

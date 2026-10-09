@@ -525,6 +525,30 @@ def test_an_answer_lost_after_the_upload_ends_the_job_as_unknown_outcome(
     assert tracker.lookups[0] == tracker.lookups[1]
 
 
+def test_a_lost_answer_still_ends_the_job_as_unknown_outcome_when_the_run_is_aborted_after_it(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path], no_backoff: None
+) -> None:
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    monkeypatch.setattr(base, "_LOST_UPLOAD_FIRST_WAIT", 0)
+    monkeypatch.setattr(base, "_LOST_UPLOAD_SECOND_WAIT", 0)
+    tracker = AnsweringTracker(uploads=(lambda: web.Response(status=502, text="Bad gateway"),))
+    fake_upload_world(monkeypatch, torrents, tracker=tracker)
+    answers = iter(["", "a"])
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        # RED's upload loses its answer; the run goes on to OPS, whose group question is answered with abort.
+        job_id = await _start(client, album, params={"trackers": ["RED", "OPS"]}, assume_defaults=True)
+        job, asked = await _drive(client, manager, job_id, lambda _q: next(answers))
+        assert len(asked) == 2
+        assert job.status == "unknown_outcome", (job.error, _log(job))
+        assert job.error is not None
+        assert "check your uploads on RED before uploading it again" in job.error
+
+    _web_run(tracker, test)
+    assert len(_uploads(tracker)) == 1
+
+
 def test_a_lossy_report_with_a_lost_answer_ends_the_job_as_unknown_outcome(
     monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path], no_backoff: None
 ) -> None:
@@ -701,7 +725,8 @@ def test_a_scrape_traceback_goes_to_the_servers_stderr_not_the_jobs_log(
         raise RuntimeError("the store page changed")
 
     async def run(_params: Any) -> None:
-        assert await handle_scrape_errors(broken()) is None
+        handled = await handle_scrape_errors(broken())
+        assert handled is None
 
     _kind(monkeypatch, "scrapes", run)
 
