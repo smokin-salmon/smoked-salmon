@@ -5,7 +5,7 @@ import socket
 import ssl
 import sys
 from collections.abc import AsyncIterator, Collection, Iterator
-from contextlib import asynccontextmanager, contextmanager, suppress
+from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
 from dataclasses import dataclass
 from http import HTTPStatus
@@ -18,7 +18,6 @@ import msgspec
 from aiohttp import FormData
 from aiohttp.abc import AbstractStreamWriter
 from aiohttp.http import StreamWriter
-from aiolimiter import AsyncLimiter
 from bs4 import BeautifulSoup, Tag
 from humanfriendly import format_size
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential, wait_random
@@ -37,6 +36,7 @@ from salmon.errors import (
     TLSCertificateError,
     UnknownOutcomeError,
 )
+from salmon.trackers.account import POOL_CONNECTIONS, TrackerAccount, account_for
 
 
 @dataclass(frozen=True, slots=True)
@@ -275,8 +275,8 @@ _TRANSIENT_5XX = frozenset(
 
 # How long to wait, in seconds, before sending again a request the tracker rate limited (a 429, or
 # an error naming its rate limit): what its Retry-After asks for, rounded up to whole seconds, or
-# the default when it names no valid wait. Never less than the rate limiter's own spacing (5
-# requests per 10 s), so a Retry-After of 0 does not send the retries in a burst. The waits of one
+# the default when it names no valid wait. Never less than 2 s, the average spacing of 5 requests in
+# 10 s, so a Retry-After of 0 does not send the retries in a burst. The waits of one
 # request add up to the maximum at most, however many times it is retried: a tracker asking for
 # more is not waited for, and the request fails with RateLimitedError instead.
 _RATE_LIMIT_WAIT = 20
@@ -328,7 +328,7 @@ class _StallBoundBody(aiohttp.payload.Payload):
 
     aiohttp bounds no part of sending a body: sock_read only starts once all of it is sent. A
     tracker that stops reading would hold the request for good, and with it every later request
-    of the client that is not idempotent, as those go one at a time. A slow but moving upload
+    to the tracker that is not idempotent, as those go one at a time. A slow but moving upload
     goes through, however long it takes.
 
     The kernel is also kept from holding much of the body not sent yet (_keep_little_unsent), so
@@ -436,8 +436,9 @@ class BaseGazelleApi:
     # Uploads drop artists with these roles rather than send an unrecognised importance value.
     unsupported_artist_roles: frozenset[str] = frozenset()
 
-    # Rate limiter: 5 requests per 10 seconds (shared across all instances)
-    _rate_limiter = AsyncLimiter(5, 10)
+    # The rate limiter requests go through: None for the tracker account's, shared by every client of the
+    # tracker. Tests replace it with one that does not make them wait.
+    _rate_limiter: AbstractAsyncContextManager[Any] | None = None
 
     def __init__(self) -> None:
         """Initialize the API client. Subclasses should call this after setting cookie/base_url."""
@@ -456,9 +457,9 @@ class BaseGazelleApi:
         # The authentication in progress, shared by the requests waiting for it, and how many they are.
         self._authentication: asyncio.Task[None] | None = None
         self._authentication_waiters = 0
+        # The tracker account's pool while this client uses it, and that account.
         self._session: aiohttp.ClientSession | None = None
-        # Held while a request that is not idempotent is in flight, on its own connection.
-        self._non_idempotent_lock = asyncio.Lock()
+        self._account_used: TrackerAccount | None = None
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
@@ -473,24 +474,45 @@ class BaseGazelleApi:
             cookie_jar=aiohttp.DummyCookieJar(),
         )
 
+    def _account(self) -> TrackerAccount:
+        """This tracker's account on the running event loop: its rate limit, pool and lock."""
+        return account_for(self.site_code)
+
+    def _limiter(self) -> AbstractAsyncContextManager[Any]:
+        """The rate limiter every request and redirect hop of this client goes through."""
+        return self._rate_limiter if self._rate_limiter is not None else self._account().limiter
+
     def _http_session(self) -> aiohttp.ClientSession:
-        """Get the persistent HTTP session for this API instance."""
-        if self._session is None or self._session.closed:
+        """Get the kept-alive pool of this tracker account, shared by all its clients."""
+        account = self._account()
+        if account.pool is None or account.pool.closed:
             # A small, reused pool, so gathered calls cannot burst one TLS handshake
             # per request from one IP and read as scanner traffic to tracker edges.
             # Two connections keep short batches from queueing behind a single one;
             # long batches are paced by the rate limiter anyway.
-            # Per instance, as a ClientSession binds to the running loop.
-            self._session = self._new_session(connections=2)
+            # Per event loop, as a ClientSession binds to the running loop.
+            account.pool = self._new_session(connections=POOL_CONNECTIONS)
+        if self._account_used is not account:
+            if self._account_used is not None:
+                # Another loop's: that loop is done with it, or closes it with its own clients.
+                self._account_used.clients.discard(self)
+            self._account_used = account
+        if self not in account.clients:
+            account.clients.add(self)
             with suppress(RuntimeError):
                 click.get_current_context().call_on_close(self.close)
-        return self._session
+        self._session = account.pool
+        return account.pool
 
     async def close(self) -> None:
-        """Close the persistent HTTP session."""
-        if self._session is not None:
-            await self._session.close()
-            self._session = None
+        """Stop using the tracker account's pool, and close it unless another client still uses it."""
+        account, self._account_used, self._session = self._account_used, None, None
+        if account is None:
+            return
+        account.clients.discard(self)
+        if not account.clients and account.pool is not None:
+            pool, account.pool = account.pool, None
+            await pool.close()
 
     @asynccontextmanager
     async def _session_for(self, idempotent: bool) -> AsyncIterator[aiohttp.ClientSession]:
@@ -500,8 +522,11 @@ class BaseGazelleApi:
         on it cannot be told from one the tracker acted on. A request that is not idempotent
         goes out on a new connection instead, in a session of its own, closed once the request
         is done. Closing the shared pool for it would cut off the other requests in flight on
-        it (#472). Such requests go one at a time per client: gathered, each would open its
-        new connection at once, the burst of handshakes the pool's cap is there to prevent.
+        it (#472). Such requests go one at a time per tracker account: gathered, each would open
+        its new connection at once, the burst of handshakes the pool's cap is there to prevent.
+
+        A pooled request holds one of the pool's connections while it is sent, taken before it
+        enters the rate limiter.
 
         Args:
             idempotent: Whether the request is idempotent.
@@ -509,10 +534,12 @@ class BaseGazelleApi:
         Yields:
             The shared session, or a session of the request's own.
         """
+        account = self._account()
         if idempotent:
-            yield self._http_session()
+            async with account.pool_slots:
+                yield self._http_session()
         else:
-            async with self._non_idempotent_lock, self._new_session(connections=1) as session:
+            async with account.non_idempotent_lock, self._new_session(connections=1) as session:
                 yield session
 
     @property
@@ -731,7 +758,7 @@ class BaseGazelleApi:
                 # instead, through the limiter, and the login page is never requested.
                 for _ in range(_MAX_REDIRECTS + 1):
                     async with (
-                        self._rate_limiter,
+                        self._limiter(),
                         session.request(
                             method,
                             url,
@@ -793,6 +820,8 @@ class BaseGazelleApi:
                                     _secho(message, fg="red")
                                     raise RateLimitedError(message)
                                 rate_limit_waits.append(wait)
+                                # The tracker limits the account: every request to it waits, not only this one.
+                                self._account().limiter.pause(wait)
                                 if _held_request_messages.get() is not None:
                                     # This is only printed after the wait is over (once the held
                                     # messages are flushed), so word it in the past.
