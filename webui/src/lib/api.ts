@@ -69,5 +69,10 @@ export function takeTokenFromUrl(): string | null {
   const match = /^#token=(.+)$/.exec(location.hash)
   if (!match) return null
   history.replaceState(null, '', location.pathname + location.search)
-  return decodeURIComponent(match[1])
+  try {
+    return decodeURIComponent(match[1])
+  } catch {
+    // Malformed (#token=%): sent as it is, the login refuses it and says so.
+    return match[1]
+  }
 }
