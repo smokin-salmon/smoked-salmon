@@ -152,13 +152,13 @@ def test_a_job_of_a_registered_kind_runs_in_a_thread_of_its_own(kind: Callable[[
     _with_app(test)
 
 
-def test_no_job_kind_is_exposed_yet() -> None:
+def test_only_the_read_only_job_kinds_are_exposed() -> None:
     async def test(client: TestClient, _manager: JobManager) -> None:
         response = await client.post("/api/jobs", json={"kind": "upload"}, headers=AUTH)
         assert response.status == 400
         assert "Unknown job kind" in (await response.json())["detail"]
 
-    assert jobs.KINDS == {}
+    assert set(jobs.KINDS) == {"spectrals", "checks"}
     _with_app(test)
 
 
@@ -182,7 +182,10 @@ def test_a_job_with_parameters_its_kind_does_not_take_is_refused(kind: Callable[
         ("GET", "/api/jobs/job-1"),
         ("POST", "/api/jobs/job-1/answer"),
         ("POST", "/api/jobs/job-1/cancel"),
+        ("POST", "/api/jobs/job-1/discard"),
         ("GET", "/api/jobs/job-1/spectrals/01 Full.png"),
+        ("GET", "/api/browse"),
+        ("GET", "/api/dashboard"),
         ("GET", "/api/ws"),
     ],
 )

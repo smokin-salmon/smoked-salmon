@@ -18,11 +18,14 @@ import asyncio
 import concurrent.futures
 import itertools
 import os
+import shutil
+import tempfile
 import threading
 import traceback
 from collections import deque
 from collections.abc import Awaitable, Callable
 from contextlib import suppress
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -30,7 +33,7 @@ from typing import Any, Literal
 import asyncclick as click
 import msgspec
 
-from salmon import dryrun, interaction
+from salmon import cfg, dryrun, interaction
 from salmon.errors import UnknownOutcomeError
 from salmon.webui import output
 from salmon.webui.egress import Redactor
@@ -50,6 +53,8 @@ MAX_LOG_LINES = 5000
 # Live connections (browser tabs) at once, and events waiting for a slow one before it is cut off.
 MAX_SUBSCRIBERS = 16
 SUBSCRIBER_BACKLOG = 2000
+# How the folders of a job's own (see own_folder) are named.
+OWN_FOLDER_PREFIX = "salmon-web-"
 
 
 @dataclass(frozen=True)
@@ -62,6 +67,8 @@ class JobKind:
         run: Runs the job, in its thread; returns the result, which must be JSON.
         title: The job's title in the list.
         folder: The album folder it works on, if any: one job per folder at a time.
+        check: Checks the parameters before the job is queued and returns them as the job takes them (a folder
+            resolved, say); raises JobError to refuse the job.
     """
 
     name: str
@@ -69,6 +76,7 @@ class JobKind:
     run: Callable[[Any], Awaitable[Any]]
     title: Callable[[Any], str]
     folder: Callable[[Any], str | None] = lambda _params: None
+    check: Callable[[Any], Any] = lambda params: params
 
 
 KINDS: dict[str, JobKind] = {}
@@ -135,6 +143,8 @@ class Job:
         # The open question's id, as the job made it, and where its answer goes.
         self._question_id: str | None = None
         self._answer: concurrent.futures.Future[Any] | None = None
+        # The folders the job made with own_folder, resolved: removed with its spectrals.
+        self._own_folders: list[str] = []
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -188,6 +198,48 @@ def _no_answer() -> str:
     return f"No answer for {round(QUESTION_TIMEOUT / 60)} minutes: the job stopped."
 
 
+_running_job: ContextVar[Job | None] = ContextVar("salmon_web_job", default=None)
+
+
+def own_folder(purpose: str) -> str:
+    """A new, empty folder of the running job's own, outside every album folder: under tmp_dir when it is set,
+    else in the system's temporary folder.
+
+    It is removed when the user discards the job's spectrals, when the job leaves the history, or when salmon web
+    stops, and only then: a job's images outlive the job, so the user can look at them again.
+
+    Raises:
+        RuntimeError: Not called from a salmon web job, or the folder would be in a library (the config does
+            not let tmp_dir be).
+    """
+    job = _running_job.get()
+    if job is None:
+        raise RuntimeError("own_folder() makes a folder for a salmon web job, and no job is running here.")
+    folder = os.path.realpath(
+        tempfile.mkdtemp(prefix=f"{OWN_FOLDER_PREFIX}{job.id}-{purpose}-", dir=cfg.directory.tmp_dir or None)
+    )
+    if cfg.directory.protects(folder):
+        os.rmdir(folder)
+        raise RuntimeError("A salmon web job's folder would be in a library folder: check tmp_dir.")
+    with job._lock:
+        job._own_folders.append(folder)
+    return folder
+
+
+def _remove_own_folders(folders: list[str]) -> None:
+    """Remove folders own_folder made, each checked again first: rmtree is no call to make on a path that changed."""
+    for folder in folders:
+        # A symlink put in its place resolves elsewhere.
+        if (
+            os.path.basename(folder).startswith(OWN_FOLDER_PREFIX)
+            and os.path.realpath(folder) == folder
+            and not cfg.directory.protects(folder)
+        ):
+            shutil.rmtree(folder, ignore_errors=True)
+        else:
+            print(f"salmon web: left {folder} in place: it is no longer the job's own.", file=output.real_stderr())
+
+
 class _JobAsker:
     """A job's questions, from its thread to the browser and back."""
 
@@ -229,6 +281,8 @@ class JobManager:
         self._stopping = False
         self._idle = asyncio.Event()
         self._idle.set()
+        # Folders of jobs dropped from the history, being removed in a worker thread.
+        self._removals: set[asyncio.Future[None]] = set()
 
     def open(self) -> None:
         """Take jobs, run on the running loop."""
@@ -247,6 +301,10 @@ class JobManager:
         except TimeoutError:
             names = ", ".join(sorted(job.id for job in self._running))
             print(f"salmon web: stopped while jobs were still running: {names}", file=output.real_stderr())
+        folders = [folder for job in self.jobs.values() for folder in self._take_own_folders(job)]
+        await asyncio.to_thread(_remove_own_folders, folders)
+        if self._removals:
+            await asyncio.gather(*self._removals)
 
     # --- Starting, cancelling, answering ---------------------------------------
 
@@ -265,6 +323,10 @@ class JobManager:
             decoded = msgspec.convert(params, kind.params)
         except msgspec.ValidationError as e:
             raise JobError(400, self._redactor.text(f"Invalid parameters: {e}")) from None
+        try:
+            decoded = kind.check(decoded)
+        except JobError as e:
+            raise JobError(e.status, self._redactor.text(e.detail)) from None
         if len(self._queue) >= MAX_QUEUED_JOBS:
             raise JobError(429, f"{MAX_QUEUED_JOBS} jobs are already waiting: try again once some have run.")
         folder = kind.folder(decoded)
@@ -301,6 +363,24 @@ class JobManager:
             with suppress(RuntimeError):
                 loop.call_soon_threadsafe(task.cancel)
         return True
+
+    async def discard(self, job_id: str) -> bool:
+        """Remove a finished job's own folders, its spectrals with them. False if the job has not finished."""
+        job = self.jobs.get(job_id)
+        if job is None or job.status not in FINISHED:
+            return False
+        folders = self._take_own_folders(job)
+        if job.spectrals is not None:
+            job.spectrals = None
+            self._publish({"event": "spectrals", "job_id": job.id, "files": None})
+        await asyncio.to_thread(_remove_own_folders, folders)
+        return True
+
+    @staticmethod
+    def _take_own_folders(job: Job) -> list[str]:
+        with job._lock:
+            folders, job._own_folders = job._own_folders, []
+        return folders
 
     def answer(self, job_id: str, question_id: str, value: Any) -> bool:
         """Answer a job's open question. False if it has no question of that id open."""
@@ -377,6 +457,7 @@ class JobManager:
                 return "cancelled", None, None
             job._loop = asyncio.get_running_loop()
             job._task = asyncio.current_task()
+        _running_job.set(job)
         lines = output.Lines(lambda line, err: self._call(self._log, job, line, err))
         asker = _JobAsker(self, job, lines)
         try:
@@ -468,5 +549,11 @@ class JobManager:
 
     def _prune(self) -> None:
         finished = [job for job in self.jobs.values() if job.status in FINISHED]
+        folders: list[str] = []
         for job in finished[: max(0, len(finished) - MAX_FINISHED_JOBS)]:
             del self.jobs[job.id]
+            folders += self._take_own_folders(job)
+        if folders:
+            removal = asyncio.get_running_loop().run_in_executor(None, _remove_own_folders, folders)
+            self._removals.add(removal)
+            removal.add_done_callback(self._removals.discard)

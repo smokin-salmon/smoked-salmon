@@ -1,4 +1,5 @@
 import os
+from typing import TYPE_CHECKING
 
 import asyncclick as click
 
@@ -8,6 +9,9 @@ from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
 from salmon.common.files import process_files
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
+
+if TYPE_CHECKING:
+    from salmon.checks.album import AlbumChecks
 
 
 @commandgroup.group()
@@ -146,6 +150,15 @@ async def all_checks(path: str, trackers: list[str], report: bool) -> None:
     from salmon.checks.report import build_report
 
     checks = await check_album(path, trackers)
+    print_album_checks(checks)
+    if report:
+        click.echo(f"\n{build_report(checks)}")
+    if checks.blocking:
+        raise click.exceptions.Exit(1)
+
+
+def print_album_checks(checks: "AlbumChecks") -> None:
+    """Print check all's verdict rows and its summary line."""
     width = max(len(row.check) for row in checks.rows)
     click.secho(f"\n{checks.folder}", bold=True)
     for row in checks.rows:
@@ -162,11 +175,6 @@ async def all_checks(path: str, trackers: list[str], report: bool) -> None:
     else:
         click.secho("\nNothing blocking, no warning.", fg="green")
     click.echo("Advisory: salmon up runs its own checks.")
-
-    if report:
-        click.echo(f"\n{build_report(checks)}")
-    if checks.blocking:
-        raise click.exceptions.Exit(1)
 
 
 async def mqa_test(path: str, all_files: bool = True) -> None:
