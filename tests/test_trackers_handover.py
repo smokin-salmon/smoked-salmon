@@ -469,6 +469,28 @@ def test_cancelling_a_job_whose_post_waits_for_its_turn_sends_nothing() -> None:
     assert [method for _, _, method, _ in tracker.hits] == ["POST"]
 
 
+def test_a_cancelled_jobs_post_the_tracker_did_not_act_on_is_not_sent_again() -> None:
+    # The POST had its turn, so the cancel waits for it; the tracker answers 429, which it sends without acting.
+    # The retry would send the POST the user cancelled.
+    async def body(tracker: Tracker) -> None:
+        (api,) = _clients(await tracker.start(), "RED", unlimited=True)
+        tracker.limit_once["upload"] = "2"
+
+        async def job() -> None:
+            await _post(api)
+
+        each = Job(job)
+        each.thread.start()
+        await tracker.limited.wait()
+        each.cancel()
+        await anyio.to_thread.run_sync(each.thread.join, 30)
+        assert isinstance(each.error, asyncio.CancelledError)
+        await api.close()
+
+    tracker = _serve(body)
+    assert [(method, action) for _, _, method, action in tracker.hits] == [("POST", "upload")]
+
+
 def test_a_cancelled_job_still_gets_the_unknown_outcome_of_its_post() -> None:
     async def body(tracker: Tracker) -> None:
         (api,) = _clients(await tracker.start(), "RED", unlimited=True)

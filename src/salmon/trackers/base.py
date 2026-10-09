@@ -787,6 +787,8 @@ class BaseGazelleApi:
 
         rate_limit_waits holds the rate limit waits of the attempts before this one, and gets this one's.
         """
+        # A salmon web job cancelled since the last attempt sends nothing again.
+        accounts.stop_if_cancelled()
         if idempotent is None:
             idempotent = method != "POST"
         # Once the tracker redirects, it has acted on the request, whatever happens next.

@@ -142,6 +142,8 @@ class _HandOver:
         self.task: asyncio.Task | None = None
         # Set once the call may have reached the tracker: a cancel then waits for it to end.
         self.committed = committed
+        # Set once the caller was cancelled: the call sends nothing more, not even a retry.
+        self.cancel_requested = False
 
 
 _hand_over: ContextVar[_HandOver | None] = ContextVar("tracker_hand_over", default=None)
@@ -188,6 +190,21 @@ def commit() -> None:
         hand_over.committed = True
 
 
+def stop_if_cancelled() -> None:
+    """Stop a handed-over call whose caller was cancelled, before it sends a request again.
+
+    Called at the start of each attempt. A retry is only sent when the tracker did not act on the attempt
+    before, so the call can stop there with nothing done. Not called on a redirect hop, whose request the
+    tracker has acted on: that one runs to its end, and its outcome reaches the caller.
+
+    Raises:
+        asyncio.CancelledError: If the caller was cancelled.
+    """
+    hand_over = _hand_over.get()
+    if hand_over is not None and hand_over.cancel_requested:
+        raise asyncio.CancelledError("cancelled before sending the request again")
+
+
 def _settle(finished: asyncio.Future[asyncio.Task], task: asyncio.Task) -> None:
     if not finished.done():
         finished.set_result(task)
@@ -230,6 +247,7 @@ async def run_on_request_loop(
         hand_over.task.add_done_callback(tell_caller)
 
     def cancel_unless_committed() -> None:
+        hand_over.cancel_requested = True
         if hand_over.task is not None and not hand_over.committed:
             hand_over.task.cancel()
 
