@@ -124,18 +124,40 @@ async def descgen(urls: tuple[str, ...]) -> None:
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
 async def compress(path: str) -> None:
     """Recompress a directory of FLACs to level 8."""
-    if cfg.directory.protects(path):
-        click.secho(f"Not recompressing {path}: it is in library_dirs, or holds one.", fg="red")
+    if (refusal := compress_refusal(path)) is not None:
+        click.secho(refusal, fg="red")
         raise click.Abort
-    flac_files = [f for f in get_audio_files(path) if f.lower().endswith(".flac")]
-    if not flac_files:
-        click.secho("No flacs found to recompress. Skipping...", fg="red")
-        return
     try:
-        await recompress_path(path, files=flac_files)
+        await recompress_flacs(path)
     except UploadError as e:
         click.secho(str(e), fg="red")
         raise click.exceptions.Exit(1) from e
+
+
+def compress_refusal(path: str) -> str | None:
+    """Why ``salmon compress`` will not recompress this folder, which it does in place; None if it will."""
+    if cfg.directory.protects(path):
+        return f"Not recompressing {path}: it is in library_dirs, or holds one."
+    return None
+
+
+async def recompress_flacs(path: str) -> int:
+    """What ``salmon compress`` runs, and so does the web interface: the folder's FLACs recompressed in place.
+
+    Returns:
+        How many FLACs were recompressed (none, and a message, if the folder has none).
+
+    Raises:
+        UploadError: The folder is one ``compress_refusal`` refuses, or a file failed to recompress.
+    """
+    if (refusal := compress_refusal(path)) is not None:
+        raise UploadError(refusal)
+    flac_files = [f for f in get_audio_files(path) if f.lower().endswith(".flac")]
+    if not flac_files:
+        click.secho("No flacs found to recompress. Skipping...", fg="red")
+        return 0
+    await recompress_path(path, files=flac_files)
+    return len(flac_files)
 
 
 @commandgroup.command()

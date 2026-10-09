@@ -1,17 +1,21 @@
-"""The jobs salmon web runs on an album folder: spectrals, file checks and uploads (ADR 0004, section 5).
+"""The jobs salmon web runs on an album folder: spectrals, file checks, uploads and conversions (ADR 0004, section 5).
 
 Spectrals send nothing anywhere: no tracker request, no image host. Checks send nothing either unless trackers are
 named: then each named tracker gets what ``salmon check all -t`` sends it, salmon up's dupe search (the index call,
 then one browse per search string), through salmon web's request loop. Both read the album folder only, which may
 be in library_dirs. An upload runs what ``salmon up`` runs (``uploader.run_up``), its questions asked in the browser:
 it sends what the command sends for the same album and answers, every tracker request through salmon web's request
-loop (``trackers.account``), and works on a copy of a library album, as the command does. Each folder is checked by
-``paths.album_folder`` before the job is queued, and again when it starts, since it may have changed while the job
-waited its turn.
+loop (``trackers.account``), and works on a copy of a library album, as the command does. A conversion (transcode,
+downconvert) or a recompression (compress) runs what ``salmon transcode``, ``salmon downconv`` and ``salmon compress``
+run and sends nothing anywhere: a conversion writes where the command puts it (beside the album, or for a library
+album under download_directory), a recompression writes in place and is refused for a library album. Each folder is
+checked by ``paths.album_folder`` before the job is queued, and again when it starts, since it may have changed while
+the job waited its turn.
 
-Ported from the fork's ``routers/spectrals.py``, ``routers/checks.py`` (chodeus, d6ac6372, 9bfdddc3 and 889cc4f5) and
-``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37), without the spectrals upload. The fork's
-upload called the command's steps itself; the job here runs the command's own code.
+Ported from the fork's ``routers/spectrals.py``, ``routers/checks.py`` (chodeus, d6ac6372, 9bfdddc3 and 889cc4f5),
+``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37) and ``routers/convert.py`` (chodeus
+0b29d2d5, a70a3d75, d8c68c28 and a18e0e25), without the spectrals upload. The fork's upload and conversions called the
+commands' steps themselves; the jobs here run the commands' own code.
 """
 
 import os
@@ -25,6 +29,7 @@ import msgspec
 import salmon.trackers
 from salmon import interaction
 from salmon.constants import SOURCES, TAG_ENCODINGS
+from salmon.converter.transcoding import Bitrate
 from salmon.errors import DryRunRefused, UnknownOutcomeError
 from salmon.webui import paths
 from salmon.webui.jobs import JobError, JobKind, own_folder, register
@@ -43,6 +48,25 @@ class ChecksParams(msgspec.Struct, forbid_unknown_fields=True):
     report: bool = False
     # check all's -t: the trackers to search for a dupe, whose rules apply. None contacts no tracker.
     trackers: list[str] = []
+
+
+class TranscodeParams(msgspec.Struct, forbid_unknown_fields=True):
+    """``salmon transcode``: -b and -eo."""
+
+    path: str
+    bitrate: Bitrate
+    essential_only: bool = False
+
+
+class DownconvertParams(msgspec.Struct, forbid_unknown_fields=True):
+    """``salmon downconv``: -eo."""
+
+    path: str
+    essential_only: bool = False
+
+
+class CompressParams(msgspec.Struct, forbid_unknown_fields=True):
+    path: str
 
 
 # Track numbers count from 1: the command's -sp also takes 0 and negative numbers, which pick other tracks.
@@ -133,6 +157,27 @@ def _checked_upload(params: UploadParams, dry_run: bool) -> UploadParams:
     return checked
 
 
+def _checked_conversion(
+    params: TranscodeParams | DownconvertParams, dry_run: bool
+) -> TranscodeParams | DownconvertParams:
+    # The commands have no dry run, and a conversion's record is the one thing a dry run would leave out.
+    if dry_run:
+        raise JobError(400, "A conversion has no dry run: it writes a new folder and leaves the album as it is.")
+    return msgspec.structs.replace(params, path=paths.album_folder(params.path))
+
+
+def _checked_compress(params: CompressParams, dry_run: bool) -> CompressParams:
+    """The folder, refused where ``salmon compress`` refuses it: it recompresses in place."""
+    from salmon.commands import compress_refusal
+
+    if dry_run:
+        raise JobError(400, "Compress has no dry run: it recompresses the album in place.")
+    path = paths.album_folder(params.path)
+    if (refusal := compress_refusal(path)) is not None:
+        raise JobError(403, refusal)
+    return msgspec.structs.replace(params, path=path)
+
+
 def _album(path: str) -> str:
     """The album folder, checked again as the job starts."""
     try:
@@ -188,6 +233,33 @@ async def checks(params: ChecksParams) -> dict[str, Any]:
     }
 
 
+async def transcode(params: TranscodeParams) -> dict[str, Any]:
+    """What ``salmon transcode`` runs: the album transcoded to MP3, where the command puts it."""
+    from salmon.converter import run_transcode
+
+    path = _album(params.path)
+    return {"output": await run_transcode(path, params.bitrate, params.essential_only)}
+
+
+async def downconvert(params: DownconvertParams) -> dict[str, Any]:
+    """What ``salmon downconv`` runs: the album downconverted to 16 bit, where the command puts it."""
+    from salmon.converter import run_downconv
+
+    path = _album(params.path)
+    return {"output": await run_downconv(path, params.essential_only)}
+
+
+async def compress(params: CompressParams) -> dict[str, Any]:
+    """What ``salmon compress`` runs: the album's FLACs recompressed in place, never a library album's."""
+    from salmon.commands import compress_refusal, recompress_flacs
+
+    path = _album(params.path)
+    # Again: the config or the folder may have changed while the job waited.
+    if (refusal := compress_refusal(path)) is not None:
+        raise click.ClickException(refusal)
+    return {"folder": path, "recompressed": await recompress_flacs(path)}
+
+
 async def upload(params: UploadParams) -> dict[str, Any]:
     """What ``salmon up`` runs, its questions asked in the browser.
 
@@ -241,6 +313,10 @@ def _checks_title(params: ChecksParams) -> str:
     return f"Checks{against}: {os.path.basename(params.path)}"
 
 
+def _transcode_title(params: TranscodeParams) -> str:
+    return f"Transcode {params.bitrate}: {os.path.basename(params.path)}"
+
+
 def _upload_title(params: UploadParams) -> str:
     where = f" to {', '.join(params.trackers)}" if params.trackers else ""
     return f"Upload{where}: {os.path.basename(params.path)}"
@@ -274,5 +350,35 @@ register(
         title=_upload_title,
         folder=lambda params: params.path,
         check=_checked_upload,
+    )
+)
+register(
+    JobKind(
+        name="transcode",
+        params=TranscodeParams,
+        run=transcode,
+        title=_transcode_title,
+        folder=lambda params: params.path,
+        check=_checked_conversion,
+    )
+)
+register(
+    JobKind(
+        name="downconvert",
+        params=DownconvertParams,
+        run=downconvert,
+        title=_title("Downconvert"),
+        folder=lambda params: params.path,
+        check=_checked_conversion,
+    )
+)
+register(
+    JobKind(
+        name="compress",
+        params=CompressParams,
+        run=compress,
+        title=_title("Recompress"),
+        folder=lambda params: params.path,
+        check=_checked_compress,
     )
 )
