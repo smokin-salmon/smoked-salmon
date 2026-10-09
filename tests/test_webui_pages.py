@@ -682,3 +682,14 @@ def test_the_tmp_dir_name_holds_no_secret(roots: Roots, monkeypatch: pytest.Monk
     monkeypatch.setattr(cfg.directory, "tmp_dir", str(secret_tmp))
     monkeypatch.setattr(cfg.tracker, "red", GazelleTrackerSettings(session="planted-session-77aa", api_key=SECRET))
     assert SECRET not in _dashboard()["_text"]
+
+
+def test_a_tmp_dir_with_a_trailing_slash_shows_only_its_folder_name(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tmp = roots.outside / SECRET
+    tmp.mkdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", f"{tmp}/")
+    answer = _dashboard()
+    assert answer["tmp"]["name"] == SECRET
+    assert str(roots.outside) not in answer["_text"]

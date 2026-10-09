@@ -194,9 +194,10 @@ def _tools() -> dict[str, dict[str, bool]]:
 def _folders() -> dict[str, Any]:
     """The roots with their free space, and tmp_dir (by name only, not browsable) when it is set."""
     tmp = cfg.directory.tmp_dir
+    tmp_name = os.path.basename(os.path.normpath(tmp)) or "tmp_dir" if tmp else ""
     return {
         "roots": [{**root.shown(), **paths.free_space(root.path)} for root in paths.roots()],
-        "tmp": {"name": os.path.basename(tmp) or tmp, **paths.free_space(tmp)} if tmp else None,
+        "tmp": {"name": tmp_name, **paths.free_space(tmp)} if tmp else None,
     }
 
 
