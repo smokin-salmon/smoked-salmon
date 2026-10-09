@@ -5,6 +5,7 @@
   import Jobs from './pages/Jobs.svelte'
   import Login from './pages/Login.svelte'
   import Spectrals from './pages/Spectrals.svelte'
+  import Upload from './pages/Upload.svelte'
   import { checkAuth, login, logout, onUnauthorized, takeTokenFromUrl } from './lib/api'
   import { FINISHED, jobStore } from './lib/jobs.svelte'
   import { router } from './lib/router.svelte'
@@ -69,6 +70,7 @@
       <img class="logo" src={logo} alt="" width="24" height="24" /> salmon<span class="accent">web</span>
     </div>
     <a href="#/dashboard" class:active={router.page === 'dashboard'}>Dashboard</a>
+    <a href="#/upload" class:active={router.page === 'upload'}>Upload</a>
     <a href="#/spectrals" class:active={router.page === 'spectrals'}>Spectrals</a>
     <a href="#/checks" class:active={router.page === 'checks'}>Checks</a>
     <a href="#/jobs" class:active={router.page === 'jobs'}>
@@ -83,6 +85,8 @@
   <main>
     {#if router.page === 'dashboard'}
       <Dashboard />
+    {:else if router.page === 'upload'}
+      <Upload />
     {:else if router.page === 'spectrals'}
       <Spectrals />
     {:else if router.page === 'checks'}
