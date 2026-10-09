@@ -175,11 +175,17 @@ def _unknown_outcome(error: BaseException) -> UnknownOutcomeError | None:
     """The UnknownOutcomeError behind `error`, raised as it is, in a group or as the cause of another."""
     for leaf in _leaves(error):
         seen: BaseException | None = leaf
-        while seen is not None:
+        walked: set[int] = set()
+        while seen is not None and id(seen) not in walked:
             if isinstance(seen, UnknownOutcomeError):
                 return seen
+            walked.add(id(seen))
             seen = seen.__cause__ or seen.__context__
     return None
+
+
+def _no_answer() -> str:
+    return f"No answer for {round(QUESTION_TIMEOUT / 60)} minutes: the job stopped."
 
 
 class _JobAsker:
@@ -199,8 +205,7 @@ class _JobAsker:
         try:
             return await asyncio.wait_for(asyncio.wrap_future(answer), QUESTION_TIMEOUT)
         except TimeoutError:
-            minutes = QUESTION_TIMEOUT // 60
-            click.secho(f"No answer for {minutes} minutes: the job stopped.", fg="red")
+            click.secho(_no_answer(), fg="red")
             raise NoAnswerError() from None
         finally:
             answer.cancel()
@@ -400,7 +405,7 @@ class JobManager:
         if cancelled or all(isinstance(leaf, asyncio.CancelledError) for leaf in leaves):
             return "cancelled", None, None
         if any(isinstance(leaf, NoAnswerError) for leaf in leaves):
-            return "failed", f"No answer for {QUESTION_TIMEOUT // 60} minutes: the job stopped.", None
+            return "failed", _no_answer(), None
         if any(isinstance(leaf, click.Abort) for leaf in leaves):
             return "failed", "Aborted.", None
         if len(leaves) == 1 and isinstance(leaves[0], click.exceptions.Exit) and leaves[0].exit_code == 0:
