@@ -7,6 +7,11 @@ from types import SimpleNamespace
 
 import anyio
 import pytest
+from asyncclick.testing import CliRunner
+from test_uploader_downconversion import (  # pyright: ignore[reportMissingImports]
+    SOURCE_NAMES,
+    _write_flac,
+)
 from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     RENAMED,
     _album,
@@ -17,7 +22,7 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
 
 import salmon.uploader as uploader
 from salmon import cfg, dryrun
-from salmon.converter import conversions
+from salmon.converter import conversions, downconv
 from salmon.converter import downconverting as dc
 from salmon.converter import transcoding as tc
 from salmon.errors import UploadError
@@ -159,6 +164,63 @@ def test_nothing_converted_means_nothing_recorded(tmp_path, monkeypatch) -> None
     anyio.run(dc.convert_folder, str(src), 16, 44100)
 
     assert conversions.conversion_of(str(out)) is None
+
+
+def _downconv_source(tmp_path) -> tuple[Path, Path]:
+    """A source of two 24-bit FLACs and the folder its downconversion goes into."""
+    src = tmp_path / "Album [WEB 24bit FLAC]"
+    for name in SOURCE_NAMES:
+        _write_flac(src / name, 96000, 24)
+    return src, Path(dc._build_output_path(str(src), 16, None))
+
+
+def _snapshot(folder: Path) -> dict[str, bytes]:
+    return {str(p.relative_to(folder)): p.read_bytes() for p in sorted(folder.rglob("*")) if p.is_file()}
+
+
+def _run_downconv(src: Path):
+    async def run():
+        return await CliRunner().invoke(downconv, [str(src)])
+
+    return anyio.run(run)
+
+
+def _converted_files(out: Path, names=SOURCE_NAMES) -> None:
+    for name in names:
+        _write_flac(out / name, 48000, 16)
+
+
+@pytest.mark.parametrize("state", ["one file, no record", "all files, no record", "all files, other source"])
+def test_downconv_refuses_an_output_folder_that_is_not_a_finished_conversion(tmp_path, state: str) -> None:
+    src, out = _downconv_source(tmp_path)
+    _converted_files(out, SOURCE_NAMES[:1] if state.startswith("one") else SOURCE_NAMES)
+    if state.endswith("other source"):
+        elsewhere = tmp_path / "Elsewhere [WEB 24bit FLAC]"
+        elsewhere.mkdir()
+        conversions.record_conversion(str(out), **{**DOWNCONVERT, "source": str(elsewhere)})
+    before = _snapshot(out)
+
+    result = _run_downconv(src)
+
+    # run.main prints an UploadError as "There was an error: ..."; the command itself ends on it.
+    assert isinstance(result.exception, UploadError)
+    assert str(result.exception) == (
+        f"{out} is incomplete or not salmon's conversion of this album: remove it and run again."
+    )
+    assert _snapshot(out) == before
+
+
+def test_downconv_takes_a_finished_conversion_for_done(tmp_path) -> None:
+    src, out = _downconv_source(tmp_path)
+    _converted_files(out)
+    conversions.record_conversion(str(out), **{**DOWNCONVERT, "source": str(src)})
+    before = _snapshot(out)
+
+    result = _run_downconv(src)
+
+    assert result.exit_code == 0, result.output
+    assert f"{out} already exists." in result.output
+    assert _snapshot(out) == before
 
 
 def _stub_transcode(monkeypatch, out, items):

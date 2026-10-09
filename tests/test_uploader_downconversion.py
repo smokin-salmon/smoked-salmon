@@ -11,6 +11,7 @@ import pytest
 
 import salmon.trackers
 import salmon.uploader as uploader
+from salmon.errors import UploadError
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -126,6 +127,21 @@ def test_unreadable_converted_folder_is_skipped_and_the_next_task_runs(
     assert f"Could not read {tmp_path / 'converted 24'}" in out
     assert reason in out
     assert "not uploading it" in out
+
+
+def _refused_as_incomplete(folder: Path) -> None:
+    raise UploadError(f"{folder} is incomplete or not salmon's conversion of this album: remove it and run again.")
+
+
+def test_a_refused_downconversion_is_skipped_with_its_message_and_the_run_goes_on(
+    monkeypatch, capsys, tmp_path: Path
+) -> None:
+    uploads, manager = _run_up(monkeypatch, tmp_path, _refused_as_incomplete, _track_data())
+
+    assert uploads == [(str(tmp_path / "converted 16"), 16)]
+    assert manager.executed == ["/release", str(tmp_path / "converted 16")]
+    out = capsys.readouterr().out
+    assert f"{tmp_path / 'converted 24'} is incomplete or not salmon's conversion of this album" in out
 
 
 def _files_in(bits: int, rate: int):
