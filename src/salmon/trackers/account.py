@@ -142,7 +142,8 @@ class _HandOver:
         self.task: asyncio.Task | None = None
         # Set once the call may have reached the tracker: a cancel then waits for it to end.
         self.committed = committed
-        # Set once the caller was cancelled: the call sends nothing more, not even a retry.
+        # Set once the caller was cancelled: no new attempt goes out. A redirect hop of the attempt in flight
+        # still does, as the tracker has acted on it.
         self.cancel_requested = False
 
 
