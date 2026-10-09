@@ -1,7 +1,9 @@
 <script lang="ts">
   import logo from './assets/salmon-logo.png'
+  import Jobs from './pages/Jobs.svelte'
   import Login from './pages/Login.svelte'
   import { checkAuth, login, logout, onUnauthorized, takeTokenFromUrl } from './lib/api'
+  import { FINISHED, jobStore } from './lib/jobs.svelte'
 
   // null while the first check runs.
   let authed = $state<boolean | null>(null)
@@ -42,6 +44,14 @@
   $effect(() => {
     start()
   })
+
+  $effect(() => {
+    if (authed) jobStore.start()
+    else jobStore.stop()
+  })
+
+  const active = $derived(jobStore.jobs.filter((j) => !FINISHED.includes(j.status)).length)
+  const asking = $derived(jobStore.jobs.some((j) => j.question))
 </script>
 
 {#if authed === null}
@@ -54,12 +64,17 @@
     <div class="brand">
       <img class="logo" src={logo} alt="" width="24" height="24" /> salmon<span class="accent">web</span>
     </div>
+    <a href="#/jobs" class="active">
+      Jobs
+      {#if active > 0}<span class="chip {asking ? 'warn' : 'run'}">{active}</span>{/if}
+    </a>
     <div class="spacer"></div>
+    <span class="chip {jobStore.connected ? 'ok' : 'err'}">{jobStore.connected ? 'connected' : 'disconnected'}</span>
     <button class="btn secondary small" onclick={signOut}>Log out</button>
   </nav>
 
   <main>
-    <p class="muted">Nothing here yet.</p>
+    <Jobs />
   </main>
 </div>
 
@@ -100,6 +115,20 @@
   }
   .brand .accent {
     color: var(--accent);
+  }
+  nav a {
+    color: var(--text-dim);
+    padding: 0.45rem 0.6rem;
+    border-radius: 8px;
+    font-weight: 500;
+  }
+  nav a:hover {
+    background: var(--bg-hover);
+    text-decoration: none;
+  }
+  nav a.active {
+    background: var(--bg-hover);
+    color: var(--text);
   }
   .spacer {
     flex: 1;

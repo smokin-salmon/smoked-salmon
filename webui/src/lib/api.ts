@@ -76,3 +76,9 @@ export function takeTokenFromUrl(): string | null {
     return match[1]
   }
 }
+
+/** The job events websocket, on this page's own host: the server checks its Origin. */
+export function wsUrl(): string {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${proto}//${location.host}${BASE}/ws`
+}
