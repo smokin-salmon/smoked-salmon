@@ -1,5 +1,5 @@
 /** The pages, by the hash of the address (`#/checks`): the server serves the app at every path. */
-export const PAGES = ['dashboard', 'upload', 'spectrals', 'checks', 'jobs'] as const
+export const PAGES = ['dashboard', 'upload', 'spectrals', 'checks', 'convert', 'jobs'] as const
 export type Page = (typeof PAGES)[number]
 
 function fromHash(): Page {

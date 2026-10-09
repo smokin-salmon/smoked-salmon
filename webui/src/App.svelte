@@ -1,6 +1,7 @@
 <script lang="ts">
   import logo from './assets/salmon-logo.png'
   import Checks from './pages/Checks.svelte'
+  import Convert from './pages/Convert.svelte'
   import Dashboard from './pages/Dashboard.svelte'
   import Jobs from './pages/Jobs.svelte'
   import Login from './pages/Login.svelte'
@@ -73,6 +74,7 @@
     <a href="#/upload" class:active={router.page === 'upload'}>Upload</a>
     <a href="#/spectrals" class:active={router.page === 'spectrals'}>Spectrals</a>
     <a href="#/checks" class:active={router.page === 'checks'}>Checks</a>
+    <a href="#/convert" class:active={router.page === 'convert'}>Convert</a>
     <a href="#/jobs" class:active={router.page === 'jobs'}>
       Jobs
       {#if active > 0}<span class="chip {asking ? 'warn' : 'run'}">{active}</span>{/if}
@@ -91,6 +93,8 @@
       <Spectrals />
     {:else if router.page === 'checks'}
       <Checks />
+    {:else if router.page === 'convert'}
+      <Convert />
     {:else}
       <Jobs />
     {/if}

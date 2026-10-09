@@ -208,10 +208,11 @@ jobs in threads, every tracker request on one loop
 ### 5. Scope of v1
 
 - In v1: login, jobs (live log, questions, cancel), the folder browser, spectrals (make and view, no
-  upload), file checks without trackers, then the upload page, with dry run.
+  upload), file checks without trackers, the upload page, with dry run, then convert (transcode, downconvert
+  and compress, each the command's own code).
 - Later, each its own change: checks against trackers (the dupe check), cross-upload, store search and
-  metadata (with the fork's SSRF guard), convert, tag, the description generator, image uploads, the
-  connection check.
+  metadata (with the fork's SSRF guard), tag, the description generator, image uploads, the connection
+  check.
 - The CLI stays the authority: the web calls the same code, and offers nothing the CLI cannot do.
 
 ### 6. Tests
