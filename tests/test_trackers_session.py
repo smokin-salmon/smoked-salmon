@@ -11,12 +11,13 @@ from tenacity import wait_none
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import salmon.trackers.base as trackers_base
-from salmon.errors import UnknownOutcomeError
+from salmon.errors import RequestFailedError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi, RetryableError, hold_request_messages
 
 
 class FakeApi(BaseGazelleApi):
     site_code = "RED"
+    site_string = "RED"
     cookie = "fake-cookie"
 
     def __init__(self, base_url: str) -> None:
@@ -274,3 +275,60 @@ async def _rate_limit_message_reads_past_tense_when_held(monkeypatch: pytest.Mon
 
 def test_rate_limit_message_reads_past_tense_when_held(monkeypatch: pytest.MonkeyPatch) -> None:
     anyio.run(lambda: _rate_limit_message_reads_past_tense_when_held(monkeypatch))
+
+
+async def _rate_limited_without_an_error_key() -> tuple[str, int]:
+    hits = []
+
+    async def handle_ajax(_request: web.Request) -> web.Response:
+        hits.append(1)
+        if len(hits) == 1:
+            return web.Response(
+                status=429, text='{"status": "failure"}', content_type="application/json", headers={"Retry-After": "2"}
+            )
+        return _ok()
+
+    runner, api = await _rate_limited(handle_ajax)
+    try:
+        response = await api._request("GET", api.base_url + "/ajax.php", params={"action": "index"})
+        return response.text, len(hits)
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+def test_429_without_an_error_key_is_waited_for_and_sent_again(monkeypatch: pytest.MonkeyPatch) -> None:
+    slept = []
+
+    async def fake_sleep(seconds: float) -> None:
+        slept.append(seconds)
+
+    monkeypatch.setattr(trackers_base.asyncio, "sleep", fake_sleep)
+    monkeypatch.setattr(BaseGazelleApi._send.retry, "wait", wait_none())  # type: ignore[attr-defined]
+    text, hits = anyio.run(_rate_limited_without_an_error_key)
+    assert hits == 2
+    assert "authkey" in text
+    assert 2 in slept
+
+
+async def _failed_with(body: str, status: int) -> str:
+    async def handle_ajax(_request: web.Request) -> web.Response:
+        return web.Response(status=status, text=body, content_type="application/json")
+
+    runner, api = await _rate_limited(handle_ajax)
+    try:
+        with pytest.raises(RequestFailedError) as raised:
+            await api._request("GET", api.base_url + "/ajax.php", params={"action": "index"})
+        return str(raised.value)
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+@pytest.mark.parametrize("body", ['{"status": "failure"}', '["a", "b"]', '"nope"', "42"])
+def test_error_answer_without_an_error_key_keeps_the_body_as_message(body: str) -> None:
+    assert anyio.run(_failed_with, body, 400) == body
+
+
+def test_error_answer_with_an_error_key_gives_that_message() -> None:
+    assert anyio.run(_failed_with, '{"status": "failure", "error": "bad id"}', 400) == '"bad id"'
