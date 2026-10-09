@@ -30,7 +30,8 @@
 
   function usedPercent(space: Space): number | null {
     if (space.free_bytes === null || !space.total_bytes) return null
-    return Math.round(((space.total_bytes - space.free_bytes) / space.total_bytes) * 100)
+    const percent = Math.round(((space.total_bytes - space.free_bytes) / space.total_bytes) * 100)
+    return Math.min(100, Math.max(0, percent))
   }
 
   function formatBytes(bytes: number): string {
