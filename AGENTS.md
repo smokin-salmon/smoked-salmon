@@ -51,6 +51,7 @@ the test run never reads a developer's config.
 | `src/salmon/converter/` | Transcoding and downconversion (shells out to `flac`, `sox`, `lame`) |
 | `src/salmon/images/` | Image host uploaders; one module per host, registered in `HOSTS` |
 | `src/salmon/web/` | Small aiohttp server for viewing spectrals |
+| `src/salmon/webui/`, `webui/` | `salmon web` (ADR 0004): the aiohttp server and its jobs (`jobs.py`, each in a thread of its own), the browser's side of `salmon.interaction`, and the Svelte front end, whose build is committed in `src/salmon/webui/static/` |
 | `docs/adr/` | Decision records: read before re-proposing something they rule out |
 
 ## Tracker safety rules
@@ -59,7 +60,9 @@ the test run never reads a developer's config.
   limiter (5 requests in any 10.5 s: 10 s plus a margin for network jitter, one budget per
   tracker) and the tracker's kept-alive connection pool, both in `trackers/account.py`, and the
   retry policy (`BaseGazelleApi._send`). Do not open a new `aiohttp.ClientSession` to a tracker
-  anywhere else.
+  anywhere else. That state belongs to one event loop: while `salmon web` runs, `_request`
+  called from a job's own loop runs on the server's loop instead (`run_on_request_loop`), so
+  every job shares it. Anything new that touches a client's loop-bound state does the same.
 - **Do not add request loops without a bound.** A feature that issues one request per item (per
   torrent, per group, per page) must cap the count or make it opt-in. Issue #432 is the example of
   what goes wrong: one check sends ~99 requests per upload.

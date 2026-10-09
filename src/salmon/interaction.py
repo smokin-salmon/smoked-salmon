@@ -84,6 +84,11 @@ def assuming_defaults(on: bool = True) -> Iterator[None]:
         _assumed.reset(token)
 
 
+def run_assumes_defaults() -> bool:
+    """Whether this run answers its questions with their defaults: inside `assuming_defaults()`, or `yes_all`."""
+    return _assumed.get() or cfg.upload.yes_all
+
+
 class TerminalInteraction:
     """Ask in the terminal, through asyncclick."""
 
@@ -131,7 +136,7 @@ class TerminalInteraction:
         await view_spectrals(spectrals_path, all_spectral_ids, wait_for_enter=self._wait_for_enter)
 
     async def assume_defaults(self) -> bool:
-        return _assumed.get() or cfg.upload.yes_all
+        return run_assumes_defaults()
 
     @staticmethod
     async def _wait_for_enter(text: str) -> None:

@@ -4,10 +4,12 @@ import re
 import socket
 import ssl
 import sys
+import threading
 from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
 from dataclasses import dataclass
+from functools import partial
 from http import HTTPStatus
 from typing import Any, Literal, cast
 from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
@@ -36,6 +38,7 @@ from salmon.errors import (
     TLSCertificateError,
     UnknownOutcomeError,
 )
+from salmon.trackers import account as accounts
 from salmon.trackers.account import POOL_CONNECTIONS, TrackerAccount, account_for
 
 
@@ -108,6 +111,23 @@ def _normalize_session_cookie(cookie: str) -> str:
         The percent-encoded cookie value.
     """
     return quote(unquote(cookie.strip()), safe="")
+
+
+def session_cookie_forms(cookie: str) -> list[str]:
+    """A session cookie as configured, decoded and as sent: what a tracker's answer may repeat."""
+    cookie = cookie.strip()
+    return [cookie, unquote(cookie), _normalize_session_cookie(cookie)]
+
+
+# The authkeys and passkeys trackers have sent this process: salmon web masks them in all it sends out.
+_learned_secrets: set[str] = set()
+_learned_secrets_lock = threading.Lock()
+
+
+def learned_secrets() -> list[str]:
+    """The authkeys and passkeys of the tracker accounts this process has authenticated with."""
+    with _learned_secrets_lock:
+        return list(_learned_secrets)
 
 
 def _form_parts(files: UploadFiles, data: dict[str, Any]) -> list[tuple[str, Any, str | None]]:
@@ -482,6 +502,18 @@ class BaseGazelleApi:
         """The rate limiter every request and redirect hop of this client goes through."""
         return self._rate_limiter if self._rate_limiter is not None else self._account().limiter
 
+    @asynccontextmanager
+    async def _turn(self, idempotent: bool) -> AsyncIterator[None]:
+        """Wait for a request's turn in the rate limit; it goes out right after.
+
+        From then on a request that is not idempotent may reach the tracker, so cancelling the salmon web
+        job that sent it waits for the answer instead of stopping it.
+        """
+        async with self._limiter():
+            if not idempotent:
+                accounts.commit()
+            yield
+
     def _http_session(self) -> aiohttp.ClientSession:
         """Get the kept-alive pool of this tracker account, shared by all its clients."""
         account = self._account()
@@ -499,13 +531,19 @@ class BaseGazelleApi:
             self._account_used = account
         if self not in account.clients:
             account.clients.add(self)
-            with suppress(RuntimeError):
-                click.get_current_context().call_on_close(self.close)
+            # salmon web closes the pools of its request loop when it stops: the command running there
+            # outlives every client its jobs make.
+            if not accounts.on_request_loop():
+                with suppress(RuntimeError):
+                    click.get_current_context().call_on_close(self.close)
         self._session = account.pool
         return account.pool
 
     async def close(self) -> None:
         """Stop using the tracker account's pool, and close it unless another client still uses it."""
+        if accounts.handing_over():
+            # The pool belongs to salmon web's request loop: closed there, and never only part way.
+            return await accounts.run_on_request_loop(self.close, cancellable=False)
         account, self._account_used, self._session = self._account_used, None, None
         if account is None:
             return
@@ -553,8 +591,7 @@ class BaseGazelleApi:
         The session cookie as configured, decoded and as sent, the api key, and the authkey and
         passkey once authenticated.
         """
-        cookie = self.cookie.strip()
-        return [cookie, unquote(cookie), _normalize_session_cookie(cookie), self.api_key, self.authkey, self.passkey]
+        return [*session_cookie_forms(self.cookie), self.api_key, self.authkey, self.passkey]
 
     def _redact(self, text: str) -> str:
         """Mask this tracker's secrets in text about to be printed or raised."""
@@ -599,6 +636,8 @@ class BaseGazelleApi:
         acctinfo = await self.api_call("index")
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
+        with _learned_secrets_lock:
+            _learned_secrets.update(key for key in (self.authkey, self.passkey) if key)
         self._authenticated = True
 
     async def ensure_authenticated(self) -> None:
@@ -612,6 +651,9 @@ class BaseGazelleApi:
         """
         if self._authenticated:
             return
+        if accounts.handing_over():
+            # The attempt in progress is a task of salmon web's request loop.
+            return await accounts.run_on_request_loop(self.ensure_authenticated)
         if self._authentication is None or self._authentication.done():
             self._authentication = asyncio.create_task(self.authenticate())
         attempt = self._authentication
@@ -678,6 +720,26 @@ class BaseGazelleApi:
             DryRunRefused: If the request is not a GET and a dry run is running. Nothing is sent.
             RequestFailedError: With binary, if the answer holds more than 25 MiB. Not retried.
         """
+        if accounts.handing_over():
+            # salmon web: the request runs on its request loop, where each tracker account has its one rate
+            # limit, lock and pool (ADR 0004), with this context's variables (dry run, held messages, job output).
+            action = f"?action={params['action']}" if params and "action" in params else ""
+            return await accounts.run_on_request_loop(
+                partial(
+                    self._request,
+                    method,
+                    url,
+                    params,
+                    data,
+                    timeout_secs,
+                    prefer_api_key,
+                    idempotent,
+                    needs_authkey,
+                    expected_error_statuses,
+                    binary,
+                ),
+                what=f"{method} {urlparse(url).path}{action} to {self.site_string}",
+            )
         # A dry run only reads from the tracker. Each step that would send something skips itself; this
         # stops any that was missed, before anything goes out.
         if method != "GET" and dryrun.active():
@@ -725,6 +787,8 @@ class BaseGazelleApi:
 
         rate_limit_waits holds the rate limit waits of the attempts before this one, and gets this one's.
         """
+        # A salmon web job cancelled since the last attempt sends nothing again.
+        accounts.stop_if_cancelled()
         if idempotent is None:
             idempotent = method != "POST"
         # Once the tracker redirects, it has acted on the request, whatever happens next.
@@ -758,7 +822,7 @@ class BaseGazelleApi:
                 # instead, through the limiter, and the login page is never requested.
                 for _ in range(_MAX_REDIRECTS + 1):
                     async with (
-                        self._limiter(),
+                        self._turn(idempotent),
                         session.request(
                             method,
                             url,
