@@ -23,6 +23,7 @@ from aiohttp.typedefs import Handler
 
 import salmon.trackers
 from salmon import cfg
+from salmon.constants import SOURCES, TAG_ENCODINGS
 from salmon.release_notification import get_version
 from salmon.trackers import account
 from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers the job kinds)
@@ -198,6 +199,18 @@ async def dashboard(request: web.Request) -> web.Response:
     )
 
 
+async def upload_options(_request: web.Request) -> web.Response:
+    """What the upload form offers: the trackers configured, the sources and the lossy encodings ``salmon up``
+    takes. Contacts no tracker."""
+    return web.json_response(
+        {
+            "trackers": list(salmon.trackers.tracker_list),
+            "sources": list(SOURCES.values()),
+            "encodings": list(TAG_ENCODINGS),
+        }
+    )
+
+
 # --- Jobs ------------------------------------------------------------------------------
 
 
@@ -360,6 +373,7 @@ def create_app(
     app.router.add_get("/api/health", health)
     app.router.add_get("/api/dashboard", dashboard)
     app.router.add_get("/api/browse", browse)
+    app.router.add_get("/api/upload/options", upload_options)
     app.router.add_get("/api/jobs", list_jobs)
     app.router.add_post("/api/jobs", start_job)
     app.router.add_get("/api/jobs/{job_id}", get_job)

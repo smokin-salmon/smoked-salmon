@@ -67,8 +67,8 @@ class JobKind:
         run: Runs the job, in its thread; returns the result, which must be JSON.
         title: The job's title in the list.
         folder: The album folder it works on, if any: one job per folder at a time.
-        check: Checks the parameters before the job is queued and returns them as the job takes them (a folder
-            resolved, say); raises JobError to refuse the job.
+        check: Checks the parameters, and whether the job is a dry run, before the job is queued, and returns the
+            parameters as the job takes them (a folder resolved, say); raises JobError to refuse the job.
     """
 
     name: str
@@ -76,7 +76,7 @@ class JobKind:
     run: Callable[[Any], Awaitable[Any]]
     title: Callable[[Any], str]
     folder: Callable[[Any], str | None] = lambda _params: None
-    check: Callable[[Any], Any] = lambda params: params
+    check: Callable[[Any, bool], Any] = lambda params, _dry_run: params
 
 
 KINDS: dict[str, JobKind] = {}
@@ -324,7 +324,7 @@ class JobManager:
         except msgspec.ValidationError as e:
             raise JobError(400, self._redactor.text(f"Invalid parameters: {e}")) from None
         try:
-            decoded = kind.check(decoded)
+            decoded = kind.check(decoded, dry_run)
         except JobError as e:
             raise JobError(e.status, self._redactor.text(e.detail)) from None
         if len(self._queue) >= MAX_QUEUED_JOBS:

@@ -6,6 +6,7 @@ import subprocess
 from urllib.parse import unquote, urlparse
 
 import anyio
+import anyio.abc
 import asyncclick as click
 
 from salmon import cfg, dryrun
@@ -13,6 +14,7 @@ from salmon.common.redaction import redact_command, redact_secrets, secret_value
 from salmon.config.validations import Seedbox
 from salmon.errors import DryRunRefused
 from salmon.uploader.torrent_client import TorrentClient, TorrentClientGenerator
+from salmon.webui import output
 
 
 def _resolve_shell_path(remote_folder: str, extra_args: list[str]) -> str:
@@ -83,6 +85,9 @@ async def _run_rclone(commands: list[str], secrets: list[str]) -> int:
     (a connection string with its password) and, with -vv, its whole command line. With -P, what
     rclone logs once the copy has started goes to stdout, within the progress display, instead.
 
+    In a salmon web job there is no terminal: what rclone writes to its stdout would reach the server's,
+    not the job's log. Its stdout is then read too, and printed a line at a time, masked, as its stderr.
+
     Args:
         commands: The rclone command line.
         secrets: Values to mask in what rclone prints, from seedbox_secrets.
@@ -90,21 +95,31 @@ async def _run_rclone(commands: list[str], secrets: list[str]) -> int:
     Returns:
         rclone's exit code.
     """
-    async with await anyio.open_process(commands, stdin=None, stdout=None, stderr=subprocess.PIPE) as process:
+    in_job = output.in_job()
+    stdout = subprocess.PIPE if in_job else None
+    async with await anyio.open_process(commands, stdin=None, stdout=stdout, stderr=subprocess.PIPE) as process:
         assert process.stderr is not None
-        pending = b""
-        async for chunk in process.stderr:
-            *lines, pending = (pending + chunk).split(b"\n")
-            for line in lines:
-                _print_rclone_line(line, secrets)
-        if pending:
-            _print_rclone_line(pending, secrets)
+        async with anyio.create_task_group() as task_group:
+            if process.stdout is not None:
+                task_group.start_soon(_print_rclone_output, process.stdout, secrets, False)
+            await _print_rclone_output(process.stderr, secrets, True)
         return await process.wait()
 
 
-def _print_rclone_line(line: bytes, secrets: list[str]) -> None:
-    """Print a line rclone wrote to stderr, to salmon's stderr, with the seedbox's secrets masked."""
-    click.echo(redact_secrets(line.decode(errors="replace").rstrip("\r"), secrets), err=True)
+async def _print_rclone_output(stream: anyio.abc.ByteReceiveStream, secrets: list[str], err: bool) -> None:
+    """Print what rclone writes to `stream` a line at a time, to salmon's stderr (or stdout), masked."""
+    pending = b""
+    async for chunk in stream:
+        *lines, pending = (pending + chunk).split(b"\n")
+        for line in lines:
+            _print_rclone_line(line, secrets, err)
+    if pending:
+        _print_rclone_line(pending, secrets, err)
+
+
+def _print_rclone_line(line: bytes, secrets: list[str], err: bool = True) -> None:
+    """Print a line rclone wrote, to salmon's stderr (or stdout), with the seedbox's secrets masked."""
+    click.echo(redact_secrets(line.decode(errors="replace").rstrip("\r"), secrets), err=err)
 
 
 async def _add_to_downloader(

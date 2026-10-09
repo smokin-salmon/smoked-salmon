@@ -196,7 +196,18 @@ async def handle_scrape_errors(task: Awaitable[ReturnType], mute: bool = False) 
     except Exception as e:
         # Catch any unexpected errors too
         if not mute:
-            click.secho(f"Unexpected scrape error: {e}\n{''.join(traceback.format_exception(e))}", fg="red", bold=True)
+            # Imported here: salmon.webui imports this module.
+            from salmon.webui import output
+
+            if output.in_job():
+                # A salmon web job's log takes the message only: a chained error may repeat a request's URL.
+                click.secho(f"Unexpected scrape error: {e}", fg="red", bold=True)
+                print("salmon web: unexpected scrape error in a job:", file=output.real_stderr())
+                traceback.print_exception(e, file=output.real_stderr())
+            else:
+                click.secho(
+                    f"Unexpected scrape error: {e}\n{''.join(traceback.format_exception(e))}", fg="red", bold=True
+                )
     return None
 
 

@@ -1,10 +1,11 @@
 """A salmon web job's questions, put to the browser (ADR 0004, section 2).
 
 The job's implementation of ``salmon.interaction``: each ``prompt``, ``confirm`` and ``edit`` becomes a question the
-browser answers, while the job waits in its own thread. An answer is checked as the terminal checks it: the
-``type`` or ``value_proc`` conversion, yes or no, the default for an empty answer; a wrong one is asked again with
-the error. ``show_spectrals`` serves the job's spectral images to the browser and waits until the user is done with
-them. Ported from the fork's ``WebInteraction`` (styx-techno, chodeus), which patched asyncclick instead.
+browser answers, while the job waits in its own thread. Its text comes without the terminal's colour codes, as the
+job's log does. An answer is checked as the terminal checks it: the ``type`` or ``value_proc`` conversion, yes or no,
+the default for an empty answer; a wrong one is asked again with the error. ``show_spectrals`` serves the job's
+spectral images to the browser and waits until the user is done with them. Ported from the fork's
+``WebInteraction`` (styx-techno, chodeus), which patched asyncclick instead.
 """
 
 import inspect
@@ -68,7 +69,7 @@ class WebInteraction:
             answer = await self._asker.ask(
                 {
                     "kind": "prompt",
-                    "text": text,
+                    "text": click.unstyle(text),
                     "default": _shown_default(default) if show_default else None,
                     "choices": choices,
                     "error": error,
@@ -93,7 +94,9 @@ class WebInteraction:
     async def confirm(self, text: str, *, default: bool | None = False, abort: bool = False) -> bool:
         error: str | None = None
         while True:
-            answer = await self._asker.ask({"kind": "confirm", "text": text, "default": default, "error": error})
+            answer = await self._asker.ask(
+                {"kind": "confirm", "text": click.unstyle(text), "default": default, "error": error}
+            )
             reply = _text(answer).strip().lower()
             if answer is True or reply in ("y", "yes"):
                 value = True

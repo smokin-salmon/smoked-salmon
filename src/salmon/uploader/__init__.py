@@ -4,6 +4,7 @@ import platform
 import shutil
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 import anyio
@@ -46,6 +47,7 @@ from salmon.errors import (
     InvalidMetadataError,
     LogCheckSkipped,
     RequestError,
+    UnknownOutcomeError,
     UploadError,
 )
 from salmon.images import HOSTS, upload_cover
@@ -70,6 +72,7 @@ from salmon.tagger.review import review_metadata, suggest_release_type
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.trackers.base import TagRules
 from salmon.trackers.red import RedApi
+from salmon.uploader import record
 from salmon.uploader.dupe_checker import (
     can_check_site_log,
     check_existing_group,
@@ -252,79 +255,157 @@ async def up(
     dry_run: bool,
 ) -> None:
     """Command to upload an album folder to a Gazelle Site."""
-    if skip_flac_upload and group_id is None:
-        raise click.UsageError("--skip-flac-upload requires --group-id.")
-    if skip_flac_upload and request:
-        raise click.UsageError("--skip-flac-upload cannot be used with --request.")
-    if skip_flac_upload and spectrals_after:
-        raise click.UsageError("--skip-flac-upload cannot be used with --spectrals-after.")
-    if essential_only and scene:
-        raise click.UsageError("--essential-only and --scene cannot be used together.")
-    if skip_flac_upload and trackers[1:]:
-        raise click.UsageError("--skip-flac-upload uploads to one tracker: give -t a single tracker.")
-    if dry_run and spectrals_after:
-        raise click.UsageError(
-            "--dry-run cannot be used with --spectrals-after: that step edits the uploaded torrent, and a dry run "
-            "uploads none."
-        )
+    options = UpOptions(
+        path=path,
+        trackers=trackers,
+        source=source,
+        group_id=group_id,
+        skip_flac_upload=skip_flac_upload,
+        lossy=lossy,
+        spectrals=spectrals,
+        overwrite=overwrite,
+        encoding=encoding,
+        compress=compress,
+        request=request,
+        spectrals_after=spectrals_after,
+        auto_rename=auto_rename,
+        skip_up=skip_up,
+        scene=scene,
+        source_url=source_url,
+        skip_initial_review=skip_initial_review,
+        apply_ai_suggestions=apply_ai_suggestions,
+        skip_mqa=skip_mqa,
+        skip_log_check=skip_log_check,
+        skip_integrity_check=skip_integrity_check,
+        essential_only=essential_only,
+    )
+    if (error := options.usage_error(dry_run)) is not None:
+        raise click.UsageError(error)
     with dryrun.mode(dry_run), interaction.assuming_defaults(yyy):
-        if dry_run:
-            dryrun.say(
-                "the upload runs on a copy of the album and sends nothing. Each upload's form is printed instead."
-            )
         try:
-            gazelle_site = salmon.trackers.get_class(trackers[0])()
-            if request:
-                request = salmon.trackers.validate_request(gazelle_site, request)
-                # This is isn't handled by click because we need the tracker sorted first.
-            print_preassumptions(
-                gazelle_site,
-                path,
-                group_id,
-                source,
-                lossy,
-                spectrals,
-                encoding,
-                spectrals_after,
-            )
-            flac_group = None
-            if group_id:
-                group = await confirm_group_upload(gazelle_site, group_id, source)
-                if skip_flac_upload:
-                    flac_group = group
-            if source_url:
-                source_url = source_url.strip()
-            await upload(
-                gazelle_site,
-                path,
-                group_id,
-                source,
-                lossy,
-                spectrals,
-                encoding,
-                source_url=source_url,
-                scene=scene,
-                overwrite_meta=overwrite,
-                recompress=compress,
-                request_id=request,
-                spectrals_after=spectrals_after,
-                auto_rename=auto_rename,
-                skip_up=skip_up,
-                skip_mqa=skip_mqa,
-                skip_log_check=skip_log_check,
-                skip_integrity_check=skip_integrity_check,
-                essential_only=essential_only,
-                flac_group=flac_group,
-                skip_initial_review=skip_initial_review,
-                apply_ai_suggestions=apply_ai_suggestions,
-                trackers=list(trackers) if len(trackers) > 1 else None,
-            )
+            await run_up(options)
         except* DryRunRefused as refused:
             # except*: a refusal in a task group comes out in an exception group.
             click.secho(f"\n{refused.exceptions[0]}", fg="red", bold=True)
             raise click.exceptions.Exit(1) from refused
-        if dry_run:
-            dryrun.say(f"done. Nothing was sent, and {path} is unchanged.")
+
+
+@dataclass(frozen=True, kw_only=True)
+class UpOptions:
+    """What ``salmon up`` uploads, and how: its options once parsed, but -yyy and --dry-run, which are the run's.
+
+    salmon web's upload job builds the same from its form, and runs the same ``run_up``.
+
+    Attributes:
+        trackers: The site codes to upload to, in order, chosen and checked already (``validate_trackers``).
+        source: The media source, as ``validate_source`` gives it.
+        group_id: The group to upload into.
+        encoding: The lossy encoding, as ``validate_encoding`` gives it.
+        request: The request to fill, a URL or an ID, checked against the tracker by ``run_up``.
+    """
+
+    path: str
+    trackers: tuple[str, ...]
+    source: str | None
+    group_id: int | None = None
+    skip_flac_upload: bool = False
+    lossy: bool | None = None
+    spectrals: tuple[int, ...] = ()
+    overwrite: bool = False
+    encoding: str | None = None
+    compress: bool = False
+    request: str | None = None
+    spectrals_after: bool = False
+    auto_rename: bool = False
+    skip_up: bool = False
+    scene: bool = False
+    source_url: str | None = None
+    skip_initial_review: bool = False
+    apply_ai_suggestions: bool = False
+    skip_mqa: bool = False
+    skip_log_check: bool = False
+    skip_integrity_check: bool = False
+    essential_only: bool = False
+
+    def usage_error(self, dry_run: bool) -> str | None:
+        """Why these options cannot go together, as ``salmon up`` says it; None when they can."""
+        if self.skip_flac_upload and self.group_id is None:
+            return "--skip-flac-upload requires --group-id."
+        if self.skip_flac_upload and self.request:
+            return "--skip-flac-upload cannot be used with --request."
+        if self.skip_flac_upload and self.spectrals_after:
+            return "--skip-flac-upload cannot be used with --spectrals-after."
+        if self.essential_only and self.scene:
+            return "--essential-only and --scene cannot be used together."
+        if self.skip_flac_upload and self.trackers[1:]:
+            return "--skip-flac-upload uploads to one tracker: give -t a single tracker."
+        if dry_run and self.spectrals_after:
+            return (
+                "--dry-run cannot be used with --spectrals-after: that step edits the uploaded torrent, and a dry run "
+                "uploads none."
+            )
+        return None
+
+
+async def run_up(options: UpOptions) -> None:
+    """Upload an album folder as ``salmon up`` does, with the options checked by ``UpOptions.usage_error``.
+
+    A dry run and -yyy are the caller's, set around the call (``dryrun.mode``, ``interaction.assuming_defaults``).
+
+    Raises:
+        DryRunRefused: A step that sends something ran in a dry run, maybe in an exception group.
+    """
+    path = options.path
+    if dryrun.active():
+        dryrun.say("the upload runs on a copy of the album and sends nothing. Each upload's form is printed instead.")
+    gazelle_site = salmon.trackers.get_class(options.trackers[0])()
+    request = options.request
+    if request:
+        request = salmon.trackers.validate_request(gazelle_site, request)
+        # This is isn't handled by click because we need the tracker sorted first.
+    print_preassumptions(
+        gazelle_site,
+        path,
+        options.group_id,
+        options.source,
+        options.lossy,
+        options.spectrals,
+        options.encoding,
+        options.spectrals_after,
+    )
+    flac_group = None
+    if options.group_id:
+        group = await confirm_group_upload(gazelle_site, options.group_id, options.source)
+        if options.skip_flac_upload:
+            flac_group = group
+    source_url = options.source_url.strip() if options.source_url else options.source_url
+    await upload(
+        gazelle_site,
+        path,
+        options.group_id,
+        options.source,
+        options.lossy,
+        options.spectrals,
+        options.encoding,
+        source_url=source_url,
+        scene=options.scene,
+        overwrite_meta=options.overwrite,
+        recompress=options.compress,
+        request_id=request,
+        spectrals_after=options.spectrals_after,
+        auto_rename=options.auto_rename,
+        skip_up=options.skip_up,
+        skip_mqa=options.skip_mqa,
+        skip_log_check=options.skip_log_check,
+        skip_integrity_check=options.skip_integrity_check,
+        essential_only=options.essential_only,
+        flac_group=flac_group,
+        skip_initial_review=options.skip_initial_review,
+        apply_ai_suggestions=options.apply_ai_suggestions,
+        trackers=list(options.trackers) if len(options.trackers) > 1 else None,
+    )
+    if dryrun.active():
+        dryrun.say(f"done. Nothing was sent, and {path} is unchanged.")
 
 
 async def get_cover_url(
@@ -1143,6 +1224,8 @@ async def _upload_staged(
                             )
                 except RequestError as e:
                     click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                    if isinstance(e, UnknownOutcomeError):
+                        record.note_unknown_outcome(e)
 
                 tracker = None
                 if flac_url or not remaining_gazelle_sites or not go_on:
@@ -1802,6 +1885,7 @@ def finish_upload(
         fg="green",
         bold=True,
     )
+    record.note_upload(gazelle_site.site_code, format, url)
 
     # Copy URL to clipboard
     if cfg.upload.description.copy_uploaded_url_to_clipboard:
