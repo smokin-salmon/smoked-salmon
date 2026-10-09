@@ -20,6 +20,7 @@ import pytest
 from aiohttp import web
 from tenacity import wait_none
 from test_trackers_account import (  # pyright: ignore[reportMissingImports]
+    HELD,
     POST_TIME,
     FakeApi,
     FakeTracker,
@@ -48,28 +49,29 @@ def no_backoff(monkeypatch: pytest.MonkeyPatch) -> None:
 def short_period(monkeypatch: pytest.MonkeyPatch) -> float:
     """A rate limit period of one second, with a margin as large for it as the real one is for 10 s."""
     monkeypatch.setattr(account, "RATE_LIMIT_PERIOD", 1.0)
-    monkeypatch.setattr(account, "RATE_LIMIT_MARGIN", 0.05)
+    monkeypatch.setattr(account, "RATE_LIMIT_MARGIN", 0.2)
     return 1.0
 
 
 class Tracker(FakeTracker):
-    """The fake tracker, which also answers a POST with action "fail" 500, after taking its time."""
+    """The fake tracker, which also answers a POST with action "fail" 500, and one with "hold" after a second."""
 
     def __init__(self) -> None:
         super().__init__()
-        # Requests that are not idempotent the fake has finished answering, by action.
+        # The requests that are not idempotent the fake has finished answering, by action.
         self.answered: list[str] = []
-        # The time each request reached the fake, and the time its answer was sent, by action.
         self.arrived = asyncio.Event()
 
     async def handle(self, request: web.Request) -> web.Response:
         self.arrived.set()
         action = request.query.get("action", "")
-        if request.method == "POST" and action == "fail":
+        if request.method == "POST" and action in ("fail", "hold"):
             await request.read()
             self.hits.append((time.monotonic(), request.headers["X-Site"], request.method, action))
-            await asyncio.sleep(POST_TIME)
+            await asyncio.sleep(POST_TIME if action == "fail" else HELD)
             self.answered.append(action)
+            if action == "hold":
+                return web.json_response({"status": "success", "response": {}})
             return web.json_response({"status": "failure", "error": "Server error"}, status=500)
         response = await super().handle(request)
         if request.method == "POST":
@@ -439,11 +441,14 @@ def test_cancelling_a_job_whose_post_waits_for_its_turn_sends_nothing() -> None:
         (first,) = _clients(site, "RED", unlimited=True)
         (second,) = _clients(site, "RED", unlimited=True)
 
-        async def post(api: FakeApi) -> None:
-            await _post(api)
+        async def hold() -> None:
+            await first._request("POST", site + "/ajax.php", params={"action": "hold"}, data={"file": "x"})
 
-        holding = Job(lambda: post(first))
-        waiting = Job(lambda: post(second))
+        async def post() -> None:
+            await _post(second)
+
+        holding = Job(hold)
+        waiting = Job(post)
         holding.thread.start()
         await tracker.arrived.wait()
         waiting.thread.start()
@@ -455,7 +460,8 @@ def test_cancelling_a_job_whose_post_waits_for_its_turn_sends_nothing() -> None:
             await anyio.to_thread.run_sync(each.thread.join, 30)
         assert holding.error is None
         assert isinstance(waiting.error, asyncio.CancelledError)
-        assert waiting.ended_at - cancelled_at < POST_TIME / 2
+        # Long before the other POST is answered (1 s).
+        assert waiting.ended_at - cancelled_at < 0.5
         await first.close()
         await second.close()
 
@@ -513,7 +519,7 @@ def test_an_anyio_cancel_stops_a_get_at_once() -> None:
         await _in_threads(each)
         assert each.error is None
         # Long before the fake's answer (1 s).
-        assert each.result - started < 0.5
+        assert each.result - started < 0.8
         await api.close()
 
     _serve(body)

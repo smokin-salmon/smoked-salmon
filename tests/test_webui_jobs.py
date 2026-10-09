@@ -857,7 +857,7 @@ def test_a_connection_too_far_behind_is_cut_off(
 @pytest.fixture
 def short_period(monkeypatch: pytest.MonkeyPatch) -> float:
     monkeypatch.setattr(account, "RATE_LIMIT_PERIOD", 1.0)
-    monkeypatch.setattr(account, "RATE_LIMIT_MARGIN", 0.05)
+    monkeypatch.setattr(account, "RATE_LIMIT_MARGIN", 0.2)
     return 1.0
 
 
