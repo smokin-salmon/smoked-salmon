@@ -50,7 +50,7 @@ build-backend = "uv_build"
 dev = [
     "basedpyright>=1.40.1",
     "pytest>=9.1.1",
-    "ruff>=0.16.9",
+    "ruff>=0.16.10",
 ]
 
 [tool.ruff]
