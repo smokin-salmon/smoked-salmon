@@ -9,6 +9,7 @@ dependency.
 import asyncio
 import contextlib
 import os
+import shutil
 import signal
 import weakref
 from collections.abc import AsyncIterator
@@ -23,7 +24,7 @@ from aiohttp.typedefs import Handler
 
 import salmon.trackers
 from salmon import cfg
-from salmon.constants import SOURCES, TAG_ENCODINGS
+from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
 from salmon.release_notification import get_version
 from salmon.trackers import account
 from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers the job kinds)
@@ -182,17 +183,40 @@ async def browse(request: web.Request) -> web.Response:
     return _filtered(request, answer)
 
 
+def _tools() -> dict[str, dict[str, bool]]:
+    """Which of the tools ``salmon health`` checks are on PATH: found or not, never where."""
+    return {
+        "required": {name: shutil.which(name) is not None for name in REQUIRED_TOOLS},
+        "optional": {name: shutil.which(name) is not None for name in OPTIONAL_TOOLS},
+    }
+
+
+def _folders() -> dict[str, Any]:
+    """The roots with their free space, and tmp_dir (by name only, not browsable) when it is set."""
+    tmp = cfg.directory.tmp_dir
+    tmp_name = os.path.basename(os.path.normpath(tmp)) or "tmp_dir" if tmp else ""
+    return {
+        "roots": [{**root.shown(), **paths.free_space(root.path)} for root in paths.roots()],
+        "tmp": {"name": tmp_name, **paths.free_space(tmp)} if tmp else None,
+    }
+
+
 async def dashboard(request: web.Request) -> web.Response:
-    """The version, the trackers configured (names only), the roots and the job counts. Contacts no tracker."""
+    """The version, the trackers configured (names only), the roots with their free space, the tools found on PATH
+    and the job counts. Contacts no tracker."""
     counts = {"running": 0, "waiting": 0, "queued": 0, "finished": 0}
     for job in request.app[JOBS].jobs.values():
         counts["finished" if job.status in FINISHED else job.status] += 1
+    # A worker thread: disk_usage on a slow or hung mount must not stall the server's loop.
+    folders = await asyncio.to_thread(_folders)
     return _filtered(
         request,
         {
             "version": get_version(),
             "trackers": list(salmon.trackers.tracker_list),
-            "roots": [root.shown() for root in paths.roots()],
+            "roots": folders["roots"],
+            "tmp": folders["tmp"],
+            "tools": _tools(),
             "jobs": counts,
             "max_jobs": request.app[JOBS].max_jobs,
         },

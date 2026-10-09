@@ -7,13 +7,16 @@ built and nothing is sent anywhere: the network guard stands, and the tracker cl
 
 import asyncio
 import os
+import shutil
 import stat
 import sys
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Any
 
+import anyio
 import pytest
 from aiohttp.test_utils import TestClient
 from mutagen.flac import FLAC
@@ -580,3 +583,113 @@ def test_a_bare_page_load_sends_nothing(roots: Roots) -> None:
         await asyncio.sleep(0)
 
     _with_app(test)
+
+
+# --- The dashboard's tools and free space (#653) -----------------------------------------------
+
+
+@pytest.fixture
+def only_sox_and_flac(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A PATH holding fake sox and flac scripts and nothing else."""
+    bin_dir = tmp_path / "fakebin"
+    bin_dir.mkdir()
+    for name in ("sox", "flac"):
+        tool = bin_dir / name
+        tool.write_text("#!/bin/sh\nexit 0\n")
+        tool.chmod(tool.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.setenv("PATH", str(bin_dir))
+    return bin_dir
+
+
+def _dashboard() -> dict[str, Any]:
+    answer: dict[str, Any] = {}
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        response = await client.get("/api/dashboard", headers=AUTH)
+        assert response.status == 200
+        answer["_text"] = await response.text()
+        answer.update(await response.json())
+
+    _with_app(test)
+    return answer
+
+
+def test_the_dashboard_marks_the_tools_found_on_path(roots: Roots, only_sox_and_flac: Path) -> None:
+    answer = _dashboard()
+    assert answer["tools"]["required"] == {
+        "curl": False,
+        "flac": True,
+        "git": False,
+        "lame": False,
+        "mp3val": False,
+        "sox": True,
+    }
+    assert answer["tools"]["optional"] == {"puddletag": False, "feh": False, "rclone": False}
+    assert str(only_sox_and_flac) not in answer["_text"]
+
+
+def test_salmon_health_prints_the_tools_as_before(only_sox_and_flac: Path) -> None:
+    from asyncclick.testing import CliRunner
+
+    from salmon.commands import health
+
+    result = anyio.run(partial(CliRunner().invoke, health, []))
+    assert result.exit_code == 0, result.output
+    expected = (
+        "Required Dependencies:\ncurl ✘\nflac ✓\ngit ✘\nlame ✘\nmp3val ✘\nsox ✓\n"
+        "\nOptional Dependencies:\npuddletag ✘\nfeh ✘\nrclone ✘\n"
+    )
+    assert result.output.endswith(expected)
+
+
+def test_the_dashboard_gives_free_space_for_each_folder(roots: Roots) -> None:
+    answer = _dashboard()
+    assert [root["path"] for root in answer["roots"]] == [str(roots.downloads), str(roots.library)]
+    for folder in (*answer["roots"], answer["tmp"]):
+        assert folder["total_bytes"] > 0
+        assert 0 <= folder["free_bytes"] <= folder["total_bytes"]
+    assert answer["tmp"]["name"] == "scratch"
+    assert str(roots.scratch) not in answer["_text"]
+
+
+def test_a_removed_root_and_an_unset_tmp_dir_give_no_space(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    roots.library.rmdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    answer = _dashboard()
+    assert answer["roots"][0]["free_bytes"] is not None
+    assert answer["roots"][1]["free_bytes"] is None and answer["roots"][1]["total_bytes"] is None
+    assert answer["tmp"] is None
+
+
+def test_an_unreadable_folder_gives_no_space(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    real = shutil.disk_usage
+
+    def usage(path: str) -> Any:
+        if str(path) == str(roots.library):
+            raise PermissionError("no")
+        return real(path)
+
+    monkeypatch.setattr(shutil, "disk_usage", usage)
+    answer = _dashboard()
+    assert answer["roots"][0]["free_bytes"] is not None
+    assert answer["roots"][1]["free_bytes"] is None
+    assert answer["tmp"]["free_bytes"] is not None
+
+
+def test_the_tmp_dir_name_holds_no_secret(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    secret_tmp = roots.outside / SECRET
+    secret_tmp.mkdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", str(secret_tmp))
+    monkeypatch.setattr(cfg.tracker, "red", GazelleTrackerSettings(session="planted-session-77aa", api_key=SECRET))
+    assert SECRET not in _dashboard()["_text"]
+
+
+def test_a_tmp_dir_with_a_trailing_slash_shows_only_its_folder_name(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tmp = roots.outside / SECRET
+    tmp.mkdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", f"{tmp}/")
+    answer = _dashboard()
+    assert answer["tmp"]["name"] == SECRET
+    assert str(roots.outside) not in answer["_text"]

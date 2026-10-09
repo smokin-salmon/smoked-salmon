@@ -10,6 +10,7 @@ Ported from the fork's ``webui/validation.py`` and ``routers/browse.py``: the co
 """
 
 import os
+import shutil
 from dataclasses import dataclass
 from typing import Any
 
@@ -47,6 +48,15 @@ def roots() -> list[Root]:
     for root in found:
         unique.setdefault(root.path, root)
     return list(unique.values())
+
+
+def free_space(path: str) -> dict[str, int | None]:
+    """Free and total bytes of the disk holding a folder, or None for both when it is missing or unreadable."""
+    try:
+        usage = shutil.disk_usage(path)
+    except OSError:
+        return {"free_bytes": None, "total_bytes": None}
+    return {"free_bytes": usage.free, "total_bytes": usage.total}
 
 
 def _inside(path: str, folder: str) -> bool:

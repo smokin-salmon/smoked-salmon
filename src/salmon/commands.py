@@ -23,6 +23,7 @@ from salmon import cfg, interaction
 from salmon.common import commandgroup, get_audio_files, str_to_int_if_int
 from salmon.common.redaction import redact_secrets
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
+from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS
 from salmon.errors import TLSCertificateError, UploadError
 from salmon.sources.tidal import credentials_configured as tidal_credentials_configured
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
@@ -503,10 +504,8 @@ async def health() -> None:
 
     click.echo()
 
-    req_deps = ["curl", "flac", "git", "lame", "mp3val", "sox"]
-    opt_deps = ["puddletag", "feh", "rclone"]
     click.secho("Required Dependencies:", fg="cyan")
-    _iter_which(req_deps)
+    _iter_which(REQUIRED_TOOLS)
 
     click.secho("\nOptional Dependencies:", fg="cyan")
-    _iter_which(opt_deps)
+    _iter_which(OPTIONAL_TOOLS)
