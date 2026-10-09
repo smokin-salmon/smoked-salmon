@@ -1,21 +1,30 @@
-"""The ``salmon web`` server: login, the request rules, and the committed front-end build (ADR 0004).
+"""The ``salmon web`` server: login, the request rules, jobs, and the committed front-end build (ADR 0004).
 
 Ported from styx-techno's first ``salmon web`` (5f1f55a6) and chodeus's token auth (995928d1, 18d685fe, ab23ae24),
-from FastAPI to aiohttp, which salmon already uses: no new dependency.
+and the fork's jobs router, from FastAPI to aiohttp, which salmon already uses: no new dependency.
 """
 
+import asyncio
 import contextlib
+import os
 import signal
+import weakref
+from collections.abc import AsyncIterator
 from pathlib import Path
+from typing import Any
 
 import anyio
 import asyncclick as click
 import msgspec
-from aiohttp import web
+from aiohttp import WSCloseCode, web
 from aiohttp.typedefs import Handler
 
 from salmon import cfg
+from salmon.trackers import account
+from salmon.webui import output
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
+from salmon.webui.egress import Redactor, config_secrets
+from salmon.webui.jobs import Job, JobError, JobManager
 from salmon.webui.security import DEV_ORIGINS, host_allowed, is_loopback, origin_allowed
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -28,10 +37,25 @@ BIND_HOST = web.AppKey("bind_host", str)
 ALLOWED_HOSTS = web.AppKey("allowed_hosts", list[str])
 DEV = web.AppKey("dev", bool)
 BUILD_FILES = web.AppKey("build_files", dict[str, Path])
+JOBS = web.AppKey("jobs", JobManager)
+SOCKETS = web.AppKey("sockets", weakref.WeakSet[web.WebSocketResponse])
 
 
 class LoginRequest(msgspec.Struct):
     token: str
+
+
+class StartJobRequest(msgspec.Struct, forbid_unknown_fields=True):
+    kind: str
+    params: dict[str, Any] = msgspec.field(default_factory=dict)
+    dry_run: bool = False
+    # A job's -yyy: its questions are answered with their defaults where the CLI would.
+    assume_defaults: bool = False
+
+
+class AnswerRequest(msgspec.Struct, forbid_unknown_fields=True):
+    question_id: str
+    value: str | bool | None = None
 
 
 def _error(status: int, detail: str) -> web.Response:
@@ -134,6 +158,119 @@ async def api_not_found(_request: web.Request) -> web.Response:
     return _error(404, "Not found.")
 
 
+# --- Jobs ------------------------------------------------------------------------------
+
+
+def _job(request: web.Request) -> Job:
+    job = request.app[JOBS].jobs.get(request.match_info["job_id"])
+    if job is None:
+        raise web.HTTPNotFound(text='{"detail": "No such job."}', content_type="application/json")
+    return job
+
+
+async def list_jobs(request: web.Request) -> web.Response:
+    """Every job, the newest first, without their logs."""
+    return web.json_response({"jobs": [job.summary() for job in reversed(request.app[JOBS].jobs.values())]})
+
+
+async def start_job(request: web.Request) -> web.Response:
+    try:
+        body = msgspec.json.decode(await request.read(), type=StartJobRequest)
+    except msgspec.MsgspecError:
+        return _error(400, 'Send {"kind": "...", "params": {...}}, with "dry_run" and "assume_defaults" if wanted.')
+    try:
+        job = request.app[JOBS].start(
+            body.kind, body.params, dry_run=body.dry_run, assume_defaults=body.assume_defaults
+        )
+    except JobError as e:
+        return _error(e.status, e.detail)
+    return web.json_response(job.summary(), status=201)
+
+
+async def get_job(request: web.Request) -> web.Response:
+    return web.json_response(_job(request).detail())
+
+
+async def answer_job(request: web.Request) -> web.Response:
+    job = _job(request)
+    try:
+        body = msgspec.json.decode(await request.read(), type=AnswerRequest)
+    except msgspec.MsgspecError:
+        return _error(400, 'Send {"question_id": "...", "value": ...}.')
+    if not request.app[JOBS].answer(job.id, body.question_id, body.value):
+        return _error(409, "This job has no such question open: it was answered already, or the job has ended.")
+    return web.json_response({"answered": body.question_id})
+
+
+async def cancel_job(request: web.Request) -> web.Response:
+    job = _job(request)
+    if not request.app[JOBS].cancel(job.id):
+        return _error(409, "This job has ended already.")
+    return web.json_response({"cancelled": job.id})
+
+
+async def job_spectral(request: web.Request) -> web.StreamResponse:
+    """One of the spectral images a job shows, from its spectrals folder only."""
+    job = _job(request)
+    name = request.match_info["name"]
+    if job.spectrals is None or name not in job.spectrals[1]:
+        return _error(404, "No such spectral image.")
+    folder = job.spectrals[0]
+    path = os.path.join(folder, name)
+    if os.path.islink(path) or not os.path.isfile(path) or os.path.dirname(os.path.realpath(path)) != folder:
+        return _error(404, "No such spectral image.")
+    return web.FileResponse(path, headers={"Cache-Control": "no-store"})
+
+
+async def job_events(request: web.Request) -> web.StreamResponse:
+    """Every job event, as it happens, over a websocket. Logged in as the API is; from this site only."""
+    if not origin_allowed(request.headers.get("Origin"), request.headers.get("Host"), request.app[DEV]):
+        return _error(403, "This connection comes from another site.")
+    manager = request.app[JOBS]
+    subscriber = manager.subscribe()
+    if subscriber is None:
+        return _error(503, "Too many connections: close another salmon web tab.")
+    socket = web.WebSocketResponse(heartbeat=30)
+    try:
+        await socket.prepare(request)
+        request.app[SOCKETS].add(socket)
+
+        async def send() -> None:
+            while (event := await subscriber.events.get()) is not None:
+                await socket.send_json(event)
+            # Too far behind: the browser connects again and reloads the jobs.
+            await socket.close(code=WSCloseCode.TRY_AGAIN_LATER, message=b"Reconnect")
+
+        sending = asyncio.create_task(send())
+        try:
+            # The browser sends nothing; this ends when either side closes.
+            async for _message in socket:
+                pass
+        finally:
+            sending.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await sending
+    finally:
+        manager.unsubscribe(subscriber)
+    return socket
+
+
+async def _jobs_running(app: web.Application) -> AsyncIterator[None]:
+    """While the server runs: jobs, their output captured, and every tracker request on this loop."""
+    with output.capturing():
+        async with account.requests_on_this_loop():
+            app[JOBS].open()
+            try:
+                yield
+            finally:
+                await app[JOBS].stop()
+
+
+async def _close_sockets(app: web.Application) -> None:
+    for socket in list(app[SOCKETS]):
+        await socket.close(code=WSCloseCode.GOING_AWAY, message=b"salmon web is stopping")
+
+
 def build_files(root: Path) -> dict[str, Path]:
     """The build's files by URL path. Requests are looked up here: no path is made from what a request asks for."""
     return {path.relative_to(root).as_posix(): path for path in root.rglob("*") if path.is_file()}
@@ -157,18 +294,31 @@ async def front_end(request: web.Request) -> web.StreamResponse:
     return response
 
 
-def create_app(token: str, bind_host: str, allowed_hosts: list[str], dev: bool = False) -> web.Application:
+def create_app(
+    token: str, bind_host: str, allowed_hosts: list[str], dev: bool = False, max_jobs: int | None = None
+) -> web.Application:
     app = web.Application(middlewares=[dev_cors, request_rules] if dev else [request_rules])
     app[AUTH] = Auth(token)
     app[BIND_HOST] = bind_host
     app[ALLOWED_HOSTS] = list(allowed_hosts)
     app[DEV] = dev
     app[BUILD_FILES] = build_files(STATIC_DIR)
+    app[JOBS] = JobManager(max_jobs or cfg.web.max_jobs, Redactor([*config_secrets(cfg), token]))
+    app[SOCKETS] = weakref.WeakSet()
+    app.cleanup_ctx.append(_jobs_running)
+    app.on_shutdown.append(_close_sockets)
     app.on_response_prepare.append(security_headers)
     app.router.add_post("/api/login", login)
     app.router.add_post("/api/logout", logout)
     app.router.add_get("/api/auth", auth_status)
     app.router.add_get("/api/health", health)
+    app.router.add_get("/api/jobs", list_jobs)
+    app.router.add_post("/api/jobs", start_job)
+    app.router.add_get("/api/jobs/{job_id}", get_job)
+    app.router.add_post("/api/jobs/{job_id}/answer", answer_job)
+    app.router.add_post("/api/jobs/{job_id}/cancel", cancel_job)
+    app.router.add_get("/api/jobs/{job_id}/spectrals/{name}", job_spectral)
+    app.router.add_get("/api/ws", job_events)
     app.router.add_route("*", "/api/{tail:.*}", api_not_found)
     app.router.add_get("/{tail:.*}", front_end)
     return app

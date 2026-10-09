@@ -4,6 +4,7 @@ import re
 import socket
 import ssl
 import sys
+import threading
 from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
@@ -110,6 +111,23 @@ def _normalize_session_cookie(cookie: str) -> str:
         The percent-encoded cookie value.
     """
     return quote(unquote(cookie.strip()), safe="")
+
+
+def session_cookie_forms(cookie: str) -> list[str]:
+    """A session cookie as configured, decoded and as sent: what a tracker's answer may repeat."""
+    cookie = cookie.strip()
+    return [cookie, unquote(cookie), _normalize_session_cookie(cookie)]
+
+
+# The authkeys and passkeys trackers have sent this process: salmon web masks them in all it sends out.
+_learned_secrets: set[str] = set()
+_learned_secrets_lock = threading.Lock()
+
+
+def learned_secrets() -> list[str]:
+    """The authkeys and passkeys of the tracker accounts this process has authenticated with."""
+    with _learned_secrets_lock:
+        return list(_learned_secrets)
 
 
 def _form_parts(files: UploadFiles, data: dict[str, Any]) -> list[tuple[str, Any, str | None]]:
@@ -573,8 +591,7 @@ class BaseGazelleApi:
         The session cookie as configured, decoded and as sent, the api key, and the authkey and
         passkey once authenticated.
         """
-        cookie = self.cookie.strip()
-        return [cookie, unquote(cookie), _normalize_session_cookie(cookie), self.api_key, self.authkey, self.passkey]
+        return [*session_cookie_forms(self.cookie), self.api_key, self.authkey, self.passkey]
 
     def _redact(self, text: str) -> str:
         """Mask this tracker's secrets in text about to be printed or raised."""
@@ -619,6 +636,8 @@ class BaseGazelleApi:
         acctinfo = await self.api_call("index")
         self.authkey = acctinfo["authkey"]
         self.passkey = acctinfo["passkey"]
+        with _learned_secrets_lock:
+            _learned_secrets.update(key for key in (self.authkey, self.passkey) if key)
         self._authenticated = True
 
     async def ensure_authenticated(self) -> None:
