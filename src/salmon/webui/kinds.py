@@ -1,15 +1,17 @@
 """The jobs salmon web runs on an album folder: spectrals, file checks and uploads (ADR 0004, section 5).
 
-Spectrals and checks send nothing anywhere: no tracker request, no image host. Both read the album folder only,
-which may be in library_dirs. An upload runs what ``salmon up`` runs (``uploader.run_up``), its questions asked in
-the browser: it sends what the command sends for the same album and answers, every tracker request through salmon
-web's request loop (``trackers.account``), and works on a copy of a library album, as the command does. Each folder
-is checked by ``paths.album_folder`` before the job is queued, and again when it starts, since it may have changed
-while the job waited its turn.
+Spectrals send nothing anywhere: no tracker request, no image host. Checks send nothing either unless trackers are
+named: then each named tracker gets what ``salmon check all -t`` sends it, salmon up's dupe search (the index call,
+then one browse per search string), through salmon web's request loop. Both read the album folder only, which may
+be in library_dirs. An upload runs what ``salmon up`` runs (``uploader.run_up``), its questions asked in the browser:
+it sends what the command sends for the same album and answers, every tracker request through salmon web's request
+loop (``trackers.account``), and works on a copy of a library album, as the command does. Each folder is checked by
+``paths.album_folder`` before the job is queued, and again when it starts, since it may have changed while the job
+waited its turn.
 
-Ported from the fork's ``routers/spectrals.py``, ``routers/checks.py`` (chodeus, d6ac6372 and 9bfdddc3) and
-``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37), without the spectrals upload and the
-tracker checks. The fork's upload called the command's steps itself; the job here runs the command's own code.
+Ported from the fork's ``routers/spectrals.py``, ``routers/checks.py`` (chodeus, d6ac6372, 9bfdddc3 and 889cc4f5) and
+``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37), without the spectrals upload. The fork's
+upload called the command's steps itself; the job here runs the command's own code.
 """
 
 import os
@@ -39,6 +41,8 @@ class ChecksParams(msgspec.Struct, forbid_unknown_fields=True):
     path: str
     # Also the plain-text report check all --report prints.
     report: bool = False
+    # check all's -t: the trackers to search for a dupe, whose rules apply. None contacts no tracker.
+    trackers: list[str] = []
 
 
 # Track numbers count from 1: the command's -sp also takes 0 and negative numbers, which pick other tracks.
@@ -77,6 +81,16 @@ class UploadParams(msgspec.Struct, forbid_unknown_fields=True):
 
 def _checked(params: SpectralsParams | ChecksParams, _dry_run: bool) -> SpectralsParams | ChecksParams:
     return msgspec.structs.replace(params, path=paths.album_folder(params.path))
+
+
+def _checked_checks(params: ChecksParams, _dry_run: bool) -> ChecksParams:
+    """The folder checked, and the trackers as check all's -t takes them: a tracker not in the config is refused
+    before the job starts, as the command refuses it before it runs."""
+    try:
+        trackers = salmon.trackers.tracker_codes(params.trackers)
+    except salmon.trackers.UnknownTrackerError as e:
+        raise JobError(422, str(e)) from None
+    return msgspec.structs.replace(params, path=paths.album_folder(params.path), trackers=trackers)
 
 
 def _up_options(params: UploadParams, trackers: tuple[str, ...]) -> dict[str, Any]:
@@ -150,16 +164,20 @@ async def spectrals(params: SpectralsParams) -> dict[str, Any]:
 
 
 async def checks(params: ChecksParams) -> dict[str, Any]:
-    """``salmon check all`` without a tracker: the verdict rows, and the report if asked. Changes nothing."""
+    """``salmon check all``, with -t for each tracker named: the verdict rows, and the report if asked.
+
+    Changes nothing. Each named tracker gets the command's dupe search, through salmon web's request loop.
+    """
     from salmon.checks import print_album_checks
     from salmon.checks.album import check_album
     from salmon.checks.report import build_report
 
     path = _album(params.path)
-    found = await check_album(path, [])
+    found = await check_album(path, params.trackers)
     print_album_checks(found)
     return {
         "folder": found.folder,
+        "trackers": params.trackers,
         "rows": [
             {"verdict": row.verdict, "check": row.check, "detail": row.detail, "notes": list(row.notes)}
             for row in found.rows
@@ -218,6 +236,11 @@ def _title(what: str) -> Callable[[Any], str]:
     return lambda params: f"{what}: {os.path.basename(params.path)}"
 
 
+def _checks_title(params: ChecksParams) -> str:
+    against = f" against {', '.join(params.trackers)}" if params.trackers else ""
+    return f"Checks{against}: {os.path.basename(params.path)}"
+
+
 def _upload_title(params: UploadParams) -> str:
     where = f" to {', '.join(params.trackers)}" if params.trackers else ""
     return f"Upload{where}: {os.path.basename(params.path)}"
@@ -238,9 +261,9 @@ register(
         name="checks",
         params=ChecksParams,
         run=checks,
-        title=_title("Checks"),
+        title=_checks_title,
         folder=lambda params: params.path,
-        check=_checked,
+        check=_checked_checks,
     )
 )
 register(

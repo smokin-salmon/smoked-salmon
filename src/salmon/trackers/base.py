@@ -540,15 +540,19 @@ class BaseGazelleApi:
         return account.pool
 
     async def close(self) -> None:
-        """Stop using the tracker account's pool, and close it unless another client still uses it."""
+        """Stop using the tracker account's pool, and close it unless another client still uses it.
+
+        On salmon web's request loop the pool stays open for the next job, whichever job closes its client
+        last: the loop closes it when salmon web stops.
+        """
         if accounts.handing_over():
-            # The pool belongs to salmon web's request loop: closed there, and never only part way.
+            # The pool belongs to salmon web's request loop: left there, and never only part way.
             return await accounts.run_on_request_loop(self.close, cancellable=False)
         account, self._account_used, self._session = self._account_used, None, None
         if account is None:
             return
         account.clients.discard(self)
-        if not account.clients and account.pool is not None:
+        if not account.clients and account.pool is not None and not accounts.on_request_loop():
             pool, account.pool = account.pool, None
             await pool.close()
 

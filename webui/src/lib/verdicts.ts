@@ -10,6 +10,8 @@ export interface Row {
 
 export interface ChecksResult {
   folder: string
+  // The trackers searched for a dupe; their rows are among the others.
+  trackers: string[]
   rows: Row[]
   blocking: number
   warnings: number

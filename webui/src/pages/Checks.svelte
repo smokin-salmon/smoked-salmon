@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { apiPost } from '../lib/api'
+  import { apiGet, apiPost } from '../lib/api'
   import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
@@ -9,6 +9,9 @@
 
   let path = $state('')
   let report = $state(false)
+  // The trackers in the config, and those picked: none by default, so nothing is sent unless asked.
+  let trackers = $state<string[]>([])
+  let chosen = $state<string[]>([])
   let error = $state('')
   let starting = $state(false)
   let jobId = $state<string | null>(null)
@@ -21,11 +24,25 @@
   )
   const result = $derived(job?.status === 'done' ? (job.result as ChecksResult | null) : null)
 
+  // Read once: the dashboard's overview names the trackers and asks none of them anything.
+  $effect(() => {
+    apiGet<{ trackers: string[] }>('/dashboard')
+      .then((answer) => (trackers = answer.trackers))
+      .catch((e) => (error = `Could not load the trackers: ${e}`))
+  })
+
+  // Kept in the order the config lists them. Ported from the fork's tracker choice (chodeus, 9bfdddc3).
+  function toggleTracker(code: string) {
+    chosen = chosen.includes(code)
+      ? chosen.filter((c) => c !== code)
+      : trackers.filter((t) => t === code || chosen.includes(t))
+  }
+
   async function run() {
     error = ''
     starting = true
     try {
-      const started = await apiPost<Job>('/jobs', { kind: 'checks', params: { path, report } })
+      const started = await apiPost<Job>('/jobs', { kind: 'checks', params: { path, report, trackers: chosen } })
       jobId = started.id
       showLog = false
     } catch (e) {
@@ -52,17 +69,40 @@
   }
 </script>
 
-<!-- Ported from the fork's Checks page (chodeus, 9bfdddc3), on salmon check all's rows. -->
+<!-- Ported from the fork's Checks page (chodeus, 9bfdddc3 and 889cc4f5), on salmon check all's rows. -->
 <h1>Checks</h1>
 <p class="lead">
   Every check <span class="mono">salmon check all</span> runs on an album folder: source, integrity, MQA, upconverts,
   rip logs, tags, sample rate, path length, provenance, the frequency analysis and the Do-Not-Upload lists. No tracker
-  is contacted, and nothing in the folder is changed. Advisory only: <span class="mono">salmon up</span> runs its own
-  checks.
+  is contacted unless you pick one, and nothing in the folder is changed. Advisory only:
+  <span class="mono">salmon up</span> runs its own checks.
 </p>
 
 <div class="card">
   <FolderPicker bind:value={path} />
+  {#if trackers.length}
+    <div class="trackers">
+      <span class="label">Search for a dupe on</span>
+      <div class="row wrap">
+        {#each trackers as code (code)}
+          <button
+            class="chip toggle"
+            class:on={chosen.includes(code)}
+            aria-pressed={chosen.includes(code)}
+            onclick={() => toggleTracker(code)}>{code}</button
+          >
+        {/each}
+      </div>
+      <small class="hint">
+        {#if chosen.length}
+          Each gets what <span class="mono">salmon up</span>'s dupe search sends: its index call, then one search per
+          search string. Only {chosen.join(' and ')}'s rules apply (-t).
+        {:else}
+          None: no tracker is contacted, and RED's and OPS's rules apply.
+        {/if}
+      </small>
+    </div>
+  {/if}
   <div class="row actions">
     <label class="row option">
       <input type="checkbox" bind:checked={report} />
@@ -114,6 +154,38 @@
 <style>
   .actions {
     margin-top: 0.7rem;
+  }
+  .trackers {
+    margin-top: 0.7rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  .label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .wrap {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .toggle {
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font: inherit;
+  }
+  .toggle.on {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--bg-hover);
+  }
+  .hint {
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    max-width: 60ch;
   }
   .option {
     gap: 0.4rem;

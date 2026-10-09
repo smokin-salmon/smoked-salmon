@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from urllib import parse
 
 import asyncclick as click
@@ -19,6 +20,26 @@ if tracker_cfg.ops:
     tracker_list.append("OPS")
 if tracker_cfg.dic:
     tracker_list.append("DIC")
+
+
+class UnknownTrackerError(ValueError):
+    """A site code that is not a tracker in the config."""
+
+
+def tracker_codes(names: Iterable[str]) -> list[str]:
+    """The site codes `names` give, each a code or a comma-separated list, upper-cased, a code named twice once.
+
+    For a check that names its trackers up front (`salmon check all -t`, salmon web's checks job): unlike
+    `validate_trackers`, it never asks.
+
+    Raises:
+        UnknownTrackerError: If a code is not a tracker in the config; nothing is asked or sent.
+    """
+    codes = list(dict.fromkeys(entry.strip().upper() for item in names for entry in item.split(",") if entry.strip()))
+    for code in codes:
+        if code not in tracker_list:
+            raise UnknownTrackerError(f"{code} is not a tracker in your config ({', '.join(tracker_list) or 'none'}).")
+    return codes
 
 
 def get_class(site_code) -> type[BaseGazelleApi]:
