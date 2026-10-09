@@ -3,17 +3,32 @@
 A tracker limits the account, not a client object, and a command may hold several clients of one
 tracker (ADR 0004, amending ADR 0001). Each tracker has its own. The state is kept per event loop, as
 an asyncio lock or an aiohttp session cannot be used from another loop.
+
+salmon web runs each job on a loop of its own, so that loop's state would be the job's only. While it
+runs, every tracker request is handed over to its loop instead (`requests_on_this_loop`), so all jobs
+share one rate limit, lock and pool per account. In the CLI nothing is handed over.
 """
 
 import asyncio
+import contextvars
 import threading
 import time
 from collections import deque
-from typing import TYPE_CHECKING
+from collections.abc import AsyncIterator, Callable, Coroutine
+from contextlib import asynccontextmanager, suppress
+from contextvars import ContextVar
+from typing import TYPE_CHECKING, Any, TypeVar
 from weakref import WeakSet
+
+import anyio
+import asyncclick as click
+
+from salmon.errors import RequestFailedError, UnknownOutcomeError
 
 if TYPE_CHECKING:
     import aiohttp
+
+T = TypeVar("T")
 
 # At most this many requests enter in any window of RATE_LIMIT_PERIOD + RATE_LIMIT_MARGIN seconds.
 RATE_LIMIT_REQUESTS = 5
@@ -103,3 +118,153 @@ def account_for(site_code: str) -> TrackerAccount:
         if site_code not in accounts:
             accounts[site_code] = TrackerAccount()
         return accounts[site_code]
+
+
+async def _close_pools(loop: asyncio.AbstractEventLoop) -> None:
+    """Close the pools opened on `loop`, the running one, and forget its accounts."""
+    with _accounts_lock:
+        accounts = _accounts.pop(loop, {})
+    for account in accounts.values():
+        pool, account.pool = account.pool, None
+        if pool is not None:
+            await pool.close()
+
+
+# The loop every tracker request runs on while salmon web runs, whichever loop makes it. None in the CLI,
+# where a command has one loop and its requests run where they are made.
+_request_loop: asyncio.AbstractEventLoop | None = None
+
+
+class _HandOver:
+    """A call handed over to the request loop: its task there, and whether a cancel may still stop it."""
+
+    def __init__(self, committed: bool) -> None:
+        self.task: asyncio.Task | None = None
+        # Set once the call may have reached the tracker: a cancel then waits for it to end.
+        self.committed = committed
+
+
+_hand_over: ContextVar[_HandOver | None] = ContextVar("tracker_hand_over", default=None)
+
+
+@asynccontextmanager
+async def requests_on_this_loop() -> AsyncIterator[None]:
+    """Run every tracker request made during the block on the running loop, whichever loop makes it.
+
+    For salmon web, whose jobs each run on a loop of their own (ADR 0004). The pools opened on this loop
+    are closed when the block ends.
+    """
+    global _request_loop
+    if _request_loop is not None:
+        raise RuntimeError("tracker requests already run on another loop")
+    loop = asyncio.get_running_loop()
+    _request_loop = loop
+    try:
+        yield
+    finally:
+        _request_loop = None
+        await _close_pools(loop)
+
+
+def handing_over() -> bool:
+    """Whether a tracker request made here runs on another loop: salmon web's, from a job's own loop."""
+    loop = _request_loop
+    return loop is not None and loop is not asyncio.get_running_loop()
+
+
+def on_request_loop() -> bool:
+    """Whether the running loop is salmon web's request loop, which closes its pools when it stops."""
+    loop = _request_loop
+    return loop is not None and loop is asyncio.get_running_loop()
+
+
+def commit() -> None:
+    """Note that the call handed over may reach the tracker from now on: a cancel no longer stops it.
+
+    Called right before a request that is not idempotent goes out. Does nothing in a call not handed over.
+    """
+    hand_over = _hand_over.get()
+    if hand_over is not None:
+        hand_over.committed = True
+
+
+def _settle(finished: asyncio.Future[asyncio.Task], task: asyncio.Task) -> None:
+    if not finished.done():
+        finished.set_result(task)
+
+
+async def run_on_request_loop(
+    call: Callable[[], Coroutine[Any, Any, T]], *, cancellable: bool = True, what: str = ""
+) -> T:
+    """Run `call()` on the request loop, in a copy of this context, and return what it returns.
+
+    The copy carries the caller's context variables (a dry run, held request messages, a job's output)
+    to the request. Cancelling the caller cancels the call at once, unless it has committed (see
+    `commit`): the caller then waits for it to end, and is cancelled after. An UnknownOutcomeError it
+    raises still reaches the caller, so its outcome is never lost.
+
+    Args:
+        call: Makes the coroutine to run there.
+        cancellable: False for a call no cancel may stop part way.
+        what: What the call sends, for the message shown when a cancel came after it went out.
+
+    Raises:
+        RequestFailedError: If salmon web stopped before the call could run or end.
+    """
+    loop = _request_loop
+    if loop is None or loop is asyncio.get_running_loop():
+        return await call()
+    context = contextvars.copy_context()
+    hand_over = _HandOver(committed=not cancellable)
+    context.run(_hand_over.set, hand_over)
+    caller_loop = asyncio.get_running_loop()
+    finished: asyncio.Future[asyncio.Task] = caller_loop.create_future()
+
+    def tell_caller(task: asyncio.Task) -> None:
+        # A closed loop has no one waiting on it any more.
+        with suppress(RuntimeError):
+            caller_loop.call_soon_threadsafe(_settle, finished, task)
+
+    def start() -> None:
+        hand_over.task = loop.create_task(call(), context=context)
+        hand_over.task.add_done_callback(tell_caller)
+
+    def cancel_unless_committed() -> None:
+        if hand_over.task is not None and not hand_over.committed:
+            hand_over.task.cancel()
+
+    try:
+        loop.call_soon_threadsafe(start)
+    except RuntimeError as err:
+        raise RequestFailedError("salmon web is stopping: the request was not sent") from err
+
+    cancelled: asyncio.CancelledError | None = None
+    try:
+        await asyncio.shield(finished)
+    except asyncio.CancelledError as err:
+        # Raised again once the call has ended: anyio knows its own cancellations by this one's message.
+        cancelled = err
+        with suppress(RuntimeError):
+            loop.call_soon_threadsafe(cancel_unless_committed)
+        # Shielded from anyio too, which cancels a task again on each step until it ends.
+        with anyio.CancelScope(shield=True):
+            while not finished.done():
+                with suppress(asyncio.CancelledError):
+                    await asyncio.shield(finished)
+    task = finished.result()
+    if cancelled is None:
+        if task.cancelled():
+            # Only salmon web stopping cancels a call no one cancelled.
+            if hand_over.committed and what:
+                raise UnknownOutcomeError(f"salmon web stopped before {what} was answered")
+            if hand_over.committed:
+                raise RequestFailedError("salmon web stopped")
+            raise RequestFailedError("salmon web stopped: the request was not sent")
+        return task.result()
+    if not task.cancelled():
+        error = task.exception()
+        if isinstance(error, UnknownOutcomeError):
+            raise error
+        if hand_over.committed and what:
+            click.secho(f"Cancelled once {what} had been answered: check the site for what it did.", fg="yellow")
+    raise cancelled
