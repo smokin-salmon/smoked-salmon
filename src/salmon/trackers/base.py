@@ -863,7 +863,9 @@ class BaseGazelleApi:
 
                             error_msg = text
                             with suppress(msgspec.DecodeError, ValueError):
-                                error_msg = msgspec.json.encode(msgspec.json.decode(text)["error"]).decode()
+                                decoded = msgspec.json.decode(text)
+                                if isinstance(decoded, dict) and "error" in decoded:
+                                    error_msg = msgspec.json.encode(decoded["error"]).decode()
                             # Printed and raised: an error page carries the authkey in its links and forms.
                             error_msg = self._redact(error_msg)
 
