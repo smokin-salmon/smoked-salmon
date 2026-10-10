@@ -7,6 +7,7 @@ import aiohttp
 import msgspec
 from bs4 import BeautifulSoup
 
+from salmon import ssrf
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
 from salmon.proxy import session_kwargs
@@ -100,6 +101,8 @@ class BaseScraper:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
         except msgspec.DecodeError as e:
             raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
+        except ssrf.NonPublicAddressError as e:
+            raise ScrapeError(f"{self.__class__.__name__}: {e}") from e
         except (TimeoutError, aiohttp.ClientError) as e:
             # aiohttp repeats the request URL, query params included; name the type only.
             raise ScrapeError(f"{self.__class__.__name__}: Request failed ({type(e).__name__}).") from e

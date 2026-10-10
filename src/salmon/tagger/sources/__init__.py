@@ -25,6 +25,14 @@ METASOURCES = {
     "Bandcamp": bandcamp,  # Must be last due to the catch-all nature of its URLs.
 }
 
+# What `salmon meta` leaves out of a release's metadata: the files' properties, which no store knows.
+NOT_SHOWN = ("encoding", "media", "encoding_vbr", "source")
+
+
+def matching_source(url: str) -> str | None:
+    """The name of the metadata source whose scraper takes `url`, as run_metadata picks it; None for none."""
+    return next((name for name, source in METASOURCES.items() if source.Scraper.regex.match(url)), None)
+
 
 async def run_metadata(
     url: str,
