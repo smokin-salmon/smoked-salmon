@@ -709,6 +709,40 @@ def test_the_filter_knows_every_secret_the_config_holds(planted: None, monkeypat
     assert "" not in found
 
 
+def _template_config(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The settings as a new user leaves them: the default template's values."""
+    monkeypatch.setattr(cfg.tracker, "red", GazelleTrackerSettings(session="get-from-site-cookie"))
+    for key in ("ptscreens_key", "oeimg_key", "imgbb_key", "ra_key"):
+        monkeypatch.setattr(cfg.image, key, "api_key")
+    monkeypatch.setattr(cfg.metadata, "discogs_token", "discogs-token")
+    monkeypatch.setattr(cfg.metadata.beatport, "password", "password")
+
+
+def test_the_templates_placeholders_are_no_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
+    _template_config(monkeypatch)
+    monkeypatch.setattr(base, "_learned_secrets", set())
+    redactor = egress.Redactor(egress.config_secrets(cfg))
+    line = "Wrong password for api_key, discogs-token, get-from-site-cookie"
+    assert redactor.text(line) == line
+    assert redactor.value({"api_key": "x"}) == {"api_key": "x"}
+
+
+def test_real_values_are_still_masked_beside_the_placeholders(monkeypatch: pytest.MonkeyPatch) -> None:
+    _template_config(monkeypatch)
+    monkeypatch.setattr(cfg.image, "imgbb_key", SECRETS["image_key"])
+    monkeypatch.setattr(cfg.metadata.beatport, "password", "real-beatport-pass")
+    found = egress.config_secrets(cfg)
+    assert SECRETS["image_key"] in found
+    assert "real-beatport-pass" in found
+    assert "api_key" not in found
+
+
+def test_another_settings_placeholder_is_a_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    _template_config(monkeypatch)
+    monkeypatch.setattr(cfg.image, "imgbb_key", "password")
+    assert "password" in egress.config_secrets(cfg)
+
+
 def test_no_secret_leaves_the_server_in_any_event(kind: Callable[[str, Run], None], planted: None) -> None:
     text = _all_secrets()
 
