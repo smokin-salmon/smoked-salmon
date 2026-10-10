@@ -11,9 +11,11 @@ downconvert) or a recompression (compress) runs what ``salmon transcode``, ``sal
 run and sends nothing anywhere: a conversion writes where the command puts it (beside the album, or for a library
 album under download_directory), a recompression writes in place and is refused for a library album. A tag job runs
 what ``salmon tag`` runs (``tagger.run_tag``), its questions asked in the browser: it sends nothing to a tracker, and
-tags a library album as a copy renamed into download_directory, never in place. Each folder is
-checked by ``paths.album_folder`` before the job is queued, and again when it starts, since it may have changed while
-the job waited its turn.
+tags a library album as a copy renamed into download_directory, never in place. A cross-upload runs what ``salmon
+cross-upload`` runs (``cross_upload.run_cross_upload``): it reads SOURCE and the album folder, and sends TARGET what
+the command sends for the same releases and answers, through the same request loop; it writes where the command
+writes, never into the album. Each folder is checked by ``paths.album_folder`` before the job is queued, and again
+when it starts, since it may have changed while the job waited its turn.
 
 The connection check is ``salmon checkconf -t`` for the trackers asked for: at most two requests each (the index
 call with the session cookie, then with the API key when one is set), through salmon web's request loop, and only
@@ -21,9 +23,10 @@ when the user starts it, never on page load. Metadata sources and seedboxes stay
 
 Ported from the fork's ``routers/spectrals.py``, ``routers/checks.py`` (chodeus, d6ac6372, 9bfdddc3 and 889cc4f5),
 ``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37), ``routers/convert.py`` (chodeus
-0b29d2d5, a70a3d75, d8c68c28 and a18e0e25), without the spectrals upload, and ``checks/connection.py`` (chodeus,
-0b29d2d5, 9bfdddc3 and 75e5a3d9), without its run on load and its cache. The fork's upload and conversions called
-the commands' steps themselves; the jobs here run the commands' own code.
+0b29d2d5, a70a3d75, d8c68c28 and a18e0e25), without the spectrals upload, ``checks/connection.py`` (chodeus,
+0b29d2d5, 9bfdddc3 and 75e5a3d9), without its run on load and its cache, and the cross-upload of ``routers/tools.py``
+(chodeus 0b29d2d5, 9bfdddc3 and 3c69045a). The fork's jobs called the commands' steps, or their click callbacks,
+themselves; the jobs here run the commands' own code.
 """
 
 import os
@@ -49,10 +52,14 @@ from salmon.trackers.connection import (
     print_verdict,
 )
 from salmon.webui import paths
-from salmon.webui.jobs import JobError, JobKind, own_folder, register
+from salmon.webui.jobs import JobError, JobKind, PartialResult, claim_folder, own_folder, register
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
+    from salmon.cross_upload import CrossUploadOptions
     from salmon.uploader import UpOptions
+    from salmon.uploader.record import RunRecord
 
 
 class SpectralsParams(msgspec.Struct, forbid_unknown_fields=True):
@@ -138,6 +145,25 @@ class TagParams(msgspec.Struct, forbid_unknown_fields=True):
     auto_rename: bool = False
     skip_initial_review: bool = False
     apply_ai_suggestions: bool = False
+
+
+class CrossUploadParams(msgspec.Struct, forbid_unknown_fields=True):
+    """The arguments and options of ``salmon cross-upload`` a form gives. -yyy and --dry-run are the job's own
+    (``assume_defaults``, ``dry_run``)."""
+
+    # INPUT...: SOURCE torrent IDs or torrent URLs, kept as the IDs they name. A browser names no .torrent file.
+    inputs: list[str]
+    # SOURCE_TRACKER and TARGET_TRACKER.
+    source: str
+    target: str
+    # --path: the album folder, when it is not download_directory/<the torrent's folder>.
+    path: str | None = None
+    group_id: Annotated[int, msgspec.Meta(gt=0)] | None = None
+    # --transcode, each bitrate once.
+    transcodes: list[str] = []
+    downconvert: bool = False
+    # --all
+    all_formats: bool = False
 
 
 def _checked(params: SpectralsParams | ChecksParams, _dry_run: bool) -> SpectralsParams | ChecksParams:
@@ -240,6 +266,59 @@ def _checked_compress(params: CompressParams, dry_run: bool) -> CompressParams:
     if (refusal := compress_refusal(path)) is not None:
         raise JobError(403, refusal)
     return msgspec.structs.replace(params, path=path)
+
+
+def _cross_upload_options(params: CrossUploadParams, path: str | None) -> "CrossUploadOptions":
+    from salmon.cross_upload import CrossUploadOptions
+
+    return CrossUploadOptions(
+        inputs=tuple(params.inputs),
+        source=params.source,
+        target=params.target,
+        path=path,
+        group_id=params.group_id,
+        transcodes=tuple(params.transcodes),
+        downconvert=params.downconvert,
+        all_formats=params.all_formats,
+    )
+
+
+def _checked_cross_upload(params: CrossUploadParams, _dry_run: bool) -> CrossUploadParams:
+    """The cross-upload's arguments as the command parses them, refused where it refuses them, before any request.
+
+    Each INPUT is kept as the torrent ID it names: a URL is neither shown nor kept.
+    """
+    from salmon.cross_upload import TRANSCODES, is_torrent_reference, torrent_id_of
+
+    transcodes: list[str] = []
+    for bitrate in params.transcodes:
+        code = bitrate.strip().upper()
+        if code not in TRANSCODES:
+            raise JobError(400, f"{bitrate} is not a transcode salmon makes: {' or '.join(TRANSCODES)}.")
+        if code not in transcodes:
+            transcodes.append(code)
+    checked = msgspec.structs.replace(
+        params,
+        inputs=[value.strip() for value in params.inputs],
+        source=params.source.strip().upper(),
+        target=params.target.strip().upper(),
+        transcodes=transcodes,
+    )
+    # A tracker not in the config is refused here: no client of it is made.
+    if (error := _cross_upload_options(checked, params.path).usage_error()) is not None:
+        raise JobError(400, error)
+    source = salmon.trackers.get_class(checked.source)()
+    ids: list[str] = []
+    for value in checked.inputs:
+        # Anything else would be a .torrent file on the server: never looked for.
+        if not is_torrent_reference(value):
+            raise JobError(400, f"{value} is not a {source.site_string} torrent ID or URL.")
+        try:
+            ids.append(str(torrent_id_of(value, source)))
+        except click.UsageError as e:
+            raise JobError(400, e.format_message()) from None
+    path = paths.album_folder(params.path) if params.path is not None else None
+    return msgspec.structs.replace(checked, inputs=ids, path=path)
 
 
 def _album(path: str) -> str:
@@ -378,6 +457,59 @@ async def _run_up(options: "UpOptions") -> None:
         raise click.ClickException(str(refused.exceptions[0])) from None
 
 
+async def cross_upload(params: CrossUploadParams) -> dict[str, Any]:
+    """What ``salmon cross-upload`` runs, its questions asked in the browser.
+
+    The job works on one album folder at a time, as every job does: the path given, else each release's folder from
+    when SOURCE names it until the job ends (``claim_folder``). A release whose folder another running job works on
+    is not cross-uploaded, as one that fails a check is not; a job started on that folder later waits for this one.
+
+    Returns:
+        SOURCE, TARGET, the torrent IDs, and each torrent uploaded (none in a dry run).
+
+    Raises:
+        PartialResult: The run stopped (a refusal, a failed step, an abort, a cancel), with what it uploaded before.
+            The job ends as unknown_outcome when an upload or a lossy report may have reached TARGET, also when the
+            run went on after it, and as the command's failure otherwise.
+    """
+    from salmon.uploader.record import recording
+
+    path = _album(params.path) if params.path is not None else None
+    with recording() as record:
+        try:
+            await _run_cross_upload(_cross_upload_options(params, path))
+        except BaseException as err:
+            ended = _unknown(record.unknown_outcomes) if record.unknown_outcomes else err
+            raise PartialResult(_cross_upload_result(params, record)) from ended
+    if record.unknown_outcomes:
+        raise PartialResult(_cross_upload_result(params, record)) from _unknown(record.unknown_outcomes)
+    return _cross_upload_result(params, record)
+
+
+async def _run_cross_upload(options: "CrossUploadOptions") -> None:
+    from salmon.cross_upload import Stopped, run_cross_upload
+
+    try:
+        try:
+            await run_cross_upload(options, claim_folder=_claim_album)
+        except* DryRunRefused as refused:
+            raise click.ClickException(str(refused.exceptions[0])) from None
+    except Stopped as stopped:
+        # The log says why, as the terminal does; the job's error repeats it.
+        raise click.ClickException(stopped.reason) from stopped
+
+
+async def _claim_album(folder: "Path") -> str | None:
+    holder = await claim_folder(str(folder))
+    if holder is None:
+        return None
+    return f"another job works on {folder} ({holder}): cross-upload it once that job has ended"
+
+
+def _cross_upload_result(params: CrossUploadParams, record: "RunRecord") -> dict[str, Any]:
+    return {"source": params.source, "target": params.target, "inputs": params.inputs, "uploads": record.uploads}
+
+
 def _unknown(errors: list[UnknownOutcomeError]) -> UnknownOutcomeError:
     return UnknownOutcomeError("; ".join(str(error) for error in errors))
 
@@ -410,6 +542,10 @@ def _title(what: str) -> Callable[[Any], str]:
 def _checks_title(params: ChecksParams) -> str:
     against = f" against {', '.join(params.trackers)}" if params.trackers else ""
     return f"Checks{against}: {os.path.basename(params.path)}"
+
+
+def _cross_upload_title(params: CrossUploadParams) -> str:
+    return f"Cross-upload {params.source} to {params.target}: {', '.join(params.inputs)}"
 
 
 def _transcode_title(params: TranscodeParams) -> str:
@@ -463,6 +599,16 @@ register(
         title=_title("Tag"),
         folder=lambda params: params.path,
         check=_checked_tag,
+    )
+)
+register(
+    JobKind(
+        name="cross_upload",
+        params=CrossUploadParams,
+        run=cross_upload,
+        title=_cross_upload_title,
+        folder=lambda params: params.path,
+        check=_checked_cross_upload,
     )
 )
 register(
