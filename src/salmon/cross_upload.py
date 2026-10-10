@@ -5,6 +5,8 @@ Do-Not-Upload list, the files on disk, the log, the images), shows the plan, and
 per release, the dupe check as `up` makes it, the upload of the source format, and the conversions asked for. The
 first failure there stops the run, and says what is already up.
 
+salmon web's cross-upload job runs the same ``run_cross_upload`` as the command, with the same options.
+
 Ported from chodeus's fork (cross_upload.py), the version used on the live trackers: the form, the order of
 the steps around the upload and the description are the fork's, apart from the differences
 tests/test_cross_upload_fork_parity.py lists. DIC goes as the fork sends it, but for the same differences; what
@@ -14,6 +16,7 @@ DIC's rules and API answers are is not checked against DIC itself: where it matt
 import html
 import re
 import unicodedata
+from collections.abc import Awaitable, Callable
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -78,6 +81,8 @@ from salmon.uploader.upload import (
 # The trackers a release can go between.
 TRACKERS = ("RED", "OPS", "DIC")
 MAX_RELEASES = 5
+# The MP3 transcodes --transcode offers.
+TRANSCODES = ("320", "V0")
 # The most images one release may need fetched from SOURCE and uploaded again.
 MAX_REHOSTED_IMAGES = 10
 
@@ -141,6 +146,67 @@ class CrossUploadRefused(Exception):
     """A release that cannot be cross-uploaded; the message says why."""
 
 
+class Stopped(click.exceptions.Exit):
+    """The run stopped, having printed why: the command exits with status 1.
+
+    Raised from the error that stopped it, if any: an UnknownOutcomeError for an upload whose answer was lost.
+
+    Attributes:
+        reason: Why, as printed.
+    """
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(1)
+        self.reason = reason
+
+
+@dataclass(frozen=True, kw_only=True)
+class CrossUploadOptions:
+    """What ``salmon cross-upload`` uploads, and how: its arguments once parsed, but -yyy and --dry-run, which are
+    the run's.
+
+    salmon web's cross-upload job builds the same from its form, and runs the same ``run_cross_upload``.
+
+    Attributes:
+        inputs: The INPUTs as given: SOURCE torrent IDs or URLs, or .torrent files.
+        source: SOURCE's site code, upper-cased.
+        target: TARGET's site code, upper-cased.
+        transcodes: The MP3 bitrates of --transcode, upper-cased.
+    """
+
+    inputs: tuple[str, ...]
+    source: str
+    target: str
+    path: str | None = None
+    group_id: int | None = None
+    transcodes: tuple[str, ...] = ()
+    downconvert: bool = False
+    all_formats: bool = False
+
+    def usage_error(self) -> str | None:
+        """Why these options cannot go together, as ``salmon cross-upload`` says it; None when they can.
+
+        Checked before any tracker client is made.
+        """
+        if self.source == self.target:
+            return "SOURCE_TRACKER and TARGET_TRACKER must be different trackers."
+        missing = [code for code in (self.source, self.target) if code not in salmon.trackers.tracker_list]
+        if missing:
+            return f"Not configured: {', '.join(missing)}. Add it under [tracker] in your config."
+        if not self.inputs:
+            return "Give at least one INPUT."
+        if len(self.inputs) > MAX_RELEASES:
+            return f"At most {MAX_RELEASES} releases per run, not {len(self.inputs)}."
+        if (self.path or self.group_id) and len(self.inputs) > 1:
+            return "--path and --group-id go with a single INPUT."
+        return None
+
+
+# Called with a release's album folder once SOURCE names it, before anything reads the folder: why the release
+# cannot go now, or None. salmon web's lock of the folder.
+FolderClaim = Callable[[Path], Awaitable[str | None]]
+
+
 @dataclass
 class Release:
     """A release that passed every check before anything is sent to TARGET."""
@@ -178,7 +244,7 @@ class Release:
 @click.option(
     "--transcode",
     "transcodes",
-    type=click.Choice(("320", "V0"), case_sensitive=False),
+    type=click.Choice(TRANSCODES, case_sensitive=False),
     multiple=True,
     help="Also upload this MP3 transcode of a FLAC; may be given twice.",
 )
@@ -212,42 +278,51 @@ async def cross_upload(
       salmon cross-upload 456 RED OPS
       salmon cross-upload 456 789 OPS RED --dry-run
     """
-    source, target = source.upper(), target.upper()
-    if source == target:
-        raise click.UsageError("SOURCE_TRACKER and TARGET_TRACKER must be different trackers.")
-    missing = [code for code in (source, target) if code not in salmon.trackers.tracker_list]
-    if missing:
-        raise click.UsageError(f"Not configured: {', '.join(missing)}. Add it under [tracker] in your config.")
-    if len(inputs) > MAX_RELEASES:
-        raise click.UsageError(f"At most {MAX_RELEASES} releases per run, not {len(inputs)}.")
-    if (path or group_id) and len(inputs) > 1:
-        raise click.UsageError("--path and --group-id go with a single INPUT.")
-
-    source_site = salmon.trackers.get_class(source)()
-    target_site = salmon.trackers.get_class(target)()
-    # A cross-upload is a re-post: it is never marked as the user's own purchase or rip.
-    target_site.skip_upload_marks()
-    # The same ID or file given twice is read once.
-    items = list(dict.fromkeys(_input_item(value, source_site) for value in inputs))
+    options = CrossUploadOptions(
+        inputs=inputs,
+        source=source.upper(),
+        target=target.upper(),
+        path=path,
+        group_id=group_id,
+        transcodes=tuple(t.upper() for t in transcodes),
+        downconvert=downconvert,
+        all_formats=all_formats,
+    )
+    if (error := options.usage_error()) is not None:
+        raise click.UsageError(error)
     with dryrun.mode(dry_run), interaction.assuming_defaults(yyy):
-        if dry_run:
-            dryrun.say("reading from both trackers and sending nothing. Each upload's form is printed instead.")
         try:
-            await _run(
-                items,
-                source_site,
-                target_site,
-                path=path,
-                group_id=group_id,
-                transcodes=tuple(t.upper() for t in transcodes),
-                downconvert=downconvert,
-                all_formats=all_formats,
-            )
+            await run_cross_upload(options)
         except* DryRunRefused as refused:
             click.secho(f"\n{refused.exceptions[0]}", fg="red", bold=True)
             raise click.exceptions.Exit(1) from refused
-        if dry_run:
-            dryrun.say("done. Nothing was sent.")
+
+
+async def run_cross_upload(options: CrossUploadOptions, *, claim_folder: FolderClaim | None = None) -> None:
+    """Cross-upload as ``salmon cross-upload`` does, with options ``CrossUploadOptions.usage_error`` passed.
+
+    A dry run and -yyy are the caller's, set around the call (``dryrun.mode``, ``interaction.assuming_defaults``).
+
+    Args:
+        claim_folder: Takes each release's album folder once it is known; a release whose folder it refuses is
+            not cross-uploaded. None claims nothing, as the command, alone at its terminal, needs no lock.
+
+    Raises:
+        click.UsageError: An INPUT is none of a SOURCE torrent ID, URL or .torrent file. Nothing is sent.
+        Stopped: The run stopped, having said why.
+        DryRunRefused: A step that sends something ran in a dry run, maybe in an exception group.
+    """
+    source_site = salmon.trackers.get_class(options.source)()
+    target_site = salmon.trackers.get_class(options.target)()
+    # A cross-upload is a re-post: it is never marked as the user's own purchase or rip.
+    target_site.skip_upload_marks()
+    # The same ID or file given twice is read once.
+    items = list(dict.fromkeys(_input_item(value, source_site) for value in options.inputs))
+    if dryrun.active():
+        dryrun.say("reading from both trackers and sending nothing. Each upload's form is printed instead.")
+    await _run(items, source_site, target_site, options, claim_folder)
+    if dryrun.active():
+        dryrun.say("done. Nothing was sent.")
 
 
 def is_torrent_reference(value: str) -> bool:
@@ -264,14 +339,19 @@ def _input_item(value: str, source_site: "BaseGazelleApi") -> int | Path:
     """
     # A reference is never looked up on disk: "42" is torrent 42 even if a folder "42" exists.
     if is_torrent_reference(value):
-        return _torrent_id(value, source_site)
+        return torrent_id_of(value, source_site)
     path = Path(value).expanduser()
     if path.is_file() and path.suffix.lower() == ".torrent":
         return path
     raise click.UsageError(f"{value} is not a {source_site.site_string} torrent ID or URL, or a .torrent file.")
 
 
-def _torrent_id(value: str, source_site: "BaseGazelleApi") -> int:
+def torrent_id_of(value: str, source_site: "BaseGazelleApi") -> int:
+    """The torrent ID a reference (see is_torrent_reference) names: an ID, or a SOURCE torrent URL's torrentid.
+
+    Raises:
+        click.UsageError: If the URL is not SOURCE's, or holds no numeric torrentid.
+    """
     value = value.strip()
     if value.isdigit():
         return int(value)
@@ -288,32 +368,22 @@ async def _run(
     items: list[int | Path],
     source: "BaseGazelleApi",
     target: "BaseGazelleApi",
-    *,
-    path: str | None,
-    group_id: int | None,
-    transcodes: tuple[str, ...],
-    downconvert: bool,
-    all_formats: bool,
+    options: CrossUploadOptions,
+    claim_folder: FolderClaim | None,
 ) -> None:
-    """Check every release against SOURCE and the disk, confirm the plan, then upload each to TARGET."""
+    """Check every release against SOURCE and the disk, confirm the plan, then upload each to TARGET.
+
+    Raises:
+        Stopped: Nothing could be cross-uploaded, SOURCE could not be read, or a step on TARGET failed.
+    """
+    group_id = options.group_id
     releases: list[Release] = []
     seen: set[int] = set()
     for item in items:
         label = str(item)
         click.secho(f"\nReading {source.site_string} torrent {label}...", fg="cyan", bold=True)
         try:
-            releases.append(
-                await _prepare(
-                    item,
-                    source,
-                    target,
-                    seen,
-                    path=path,
-                    transcodes=transcodes,
-                    downconvert=downconvert,
-                    all_formats=all_formats,
-                )
-            )
+            releases.append(await _prepare(item, source, target, seen, options, claim_folder))
         except (CrossUploadRefused, RequestFailedError, click.Abort) as error:
             # Only this release: SOURCE answered, about it.
             reason = str(error) or "stopped"
@@ -321,12 +391,13 @@ async def _run(
         except RequestError as error:
             # SOURCE itself (a rate limit, an outage, the login, TLS): every later release would fail the same way,
             # after sending its own requests. Nothing has gone to TARGET yet.
-            click.secho(f"\nStopping: {source.site_string} could not be read ({error}).", fg="red", bold=True)
-            raise click.exceptions.Exit(1) from error
+            reason = f"{source.site_string} could not be read ({error})"
+            click.secho(f"\nStopping: {reason}.", fg="red", bold=True)
+            raise Stopped(reason) from error
 
     if not releases:
         click.secho("\nNothing to cross-upload.", fg="red")
-        raise click.exceptions.Exit(1)
+        raise Stopped("Nothing to cross-upload.")
     _print_plan(releases, source, target, group_id)
     if not await interaction.assume_defaults() and not await interaction.confirm(
         click.style(
@@ -345,12 +416,13 @@ async def _run(
             for release in releases:
                 await _upload(release, source, target, seedbox, uploaded, group_id=group_id)
         except (CrossUploadRefused, RequestError, UploadError, click.Abort) as error:
-            click.secho(f"\nStopping: {str(error) or 'aborted'}. Nothing more is uploaded.", fg="red", bold=True)
+            reason = str(error) or "aborted"
+            click.secho(f"\nStopping: {reason}. Nothing more is uploaded.", fg="red", bold=True)
             if uploaded and not dryrun.active():
                 click.secho("Already uploaded:", fg="red")
                 for url in uploaded:
                     click.echo(f"  {url}")
-            raise click.exceptions.Exit(1) from error
+            raise Stopped(reason) from error
         finally:
             await seedbox.execute_upload()
 
@@ -363,17 +435,15 @@ async def _prepare(
     source: "BaseGazelleApi",
     target: "BaseGazelleApi",
     seen: set[int],
-    *,
-    path: str | None,
-    transcodes: tuple[str, ...],
-    downconvert: bool,
-    all_formats: bool,
+    options: CrossUploadOptions,
+    claim_folder: FolderClaim | None,
 ) -> Release:
     """Read a release from SOURCE and check everything that needs no TARGET request.
 
     Args:
         seen: The IDs of the torrents already in the run: one given again (as an ID and as its .torrent file)
             is dropped. This one's is added.
+        claim_folder: Takes the album folder once it is known, before the checks read it.
 
     Raises:
         CrossUploadRefused: If the release cannot go, saying why.
@@ -390,7 +460,9 @@ async def _prepare(
     release.data = compile_data(response, source, target)
     if reason := do_not_upload_reason(target.site_code, Candidate.from_form(release.data)):
         raise CrossUploadRefused(reason)
-    release.path = _release_path(response, path)
+    release.path = _release_path(response, options.path)
+    if claim_folder is not None and (refusal := await claim_folder(release.path)):
+        raise CrossUploadRefused(refusal)
     _verify_release_files(response, release.path, target)
     await _check_pieces(release, given, source)
     rule = target.TAG_RULES.sixteen_bit_above_48khz
@@ -408,7 +480,7 @@ async def _prepare(
         except click.Abort:
             raise CrossUploadRefused("the log check stopped it") from None
 
-    release.tasks = _conversion_tasks(release, transcodes, downconvert, all_formats)
+    release.tasks = _conversion_tasks(release, options.transcodes, options.downconvert, options.all_formats)
     if not release.data["album_desc"]:
         release.data["album_desc"] = generate_description(_track_data(release), {"comment": None, "urls": []})
         release.notes.append(f"{source.site_string} has no album description: sending the tracklist from the tags")
