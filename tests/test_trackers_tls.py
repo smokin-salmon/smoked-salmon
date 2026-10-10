@@ -403,8 +403,6 @@ async def _checkconf(certificate: Certificate, monkeypatch: pytest.MonkeyPatch) 
 def test_checkconf_reports_a_certificate_failure_not_an_authentication_failure(
     certificates: Certificates, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], tmp_path: Path
 ) -> None:
-    # checkconf turns it on for the rest of the run: undone after the test.
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", False)
     stale_bundle = tmp_path / "old-ca-bundle.pem"
     monkeypatch.setenv("SSL_CERT_FILE", str(stale_bundle))
     monkeypatch.delenv("SSL_CERT_DIR", raising=False)
