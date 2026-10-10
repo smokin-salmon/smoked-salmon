@@ -2,6 +2,7 @@
   import logo from './assets/salmon-logo.png'
   import Checks from './pages/Checks.svelte'
   import Convert from './pages/Convert.svelte'
+  import CrossUpload from './pages/CrossUpload.svelte'
   import Dashboard from './pages/Dashboard.svelte'
   import Jobs from './pages/Jobs.svelte'
   import Login from './pages/Login.svelte'
@@ -74,6 +75,7 @@
     </div>
     <a href="#/dashboard" class:active={router.page === 'dashboard'}>Dashboard</a>
     <a href="#/upload" class:active={router.page === 'upload'}>Upload</a>
+    <a href="#/cross-upload" class:active={router.page === 'cross-upload'}>Cross-upload</a>
     <a href="#/spectrals" class:active={router.page === 'spectrals'}>Spectrals</a>
     <a href="#/checks" class:active={router.page === 'checks'}>Checks</a>
     <a href="#/tag" class:active={router.page === 'tag'}>Tag</a>
@@ -93,6 +95,8 @@
       <Dashboard />
     {:else if router.page === 'upload'}
       <Upload />
+    {:else if router.page === 'cross-upload'}
+      <CrossUpload />
     {:else if router.page === 'spectrals'}
       <Spectrals />
     {:else if router.page === 'checks'}
