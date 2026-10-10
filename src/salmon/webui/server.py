@@ -235,6 +235,16 @@ async def upload_options(_request: web.Request) -> web.Response:
     )
 
 
+async def cross_upload_options(_request: web.Request) -> web.Response:
+    """What the cross-upload form offers: the trackers configured, the transcodes and the most releases one
+    ``salmon cross-upload`` takes. Contacts no tracker."""
+    from salmon.cross_upload import MAX_RELEASES, TRANSCODES
+
+    return web.json_response(
+        {"trackers": list(salmon.trackers.tracker_list), "transcodes": list(TRANSCODES), "max_releases": MAX_RELEASES}
+    )
+
+
 # --- Jobs ------------------------------------------------------------------------------
 
 
@@ -398,6 +408,7 @@ def create_app(
     app.router.add_get("/api/dashboard", dashboard)
     app.router.add_get("/api/browse", browse)
     app.router.add_get("/api/upload/options", upload_options)
+    app.router.add_get("/api/cross-upload/options", cross_upload_options)
     app.router.add_get("/api/jobs", list_jobs)
     app.router.add_post("/api/jobs", start_job)
     app.router.add_get("/api/jobs/{job_id}", get_job)

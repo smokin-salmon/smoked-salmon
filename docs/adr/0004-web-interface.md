@@ -131,7 +131,9 @@ jobs in threads, every tracker request on one loop
   has answered that request: the hand-over does not pass that cancellation on. Any other request is
   cancelled at once.
 - At most `[web] max_jobs` jobs run at once (default 2); the others wait in order. One job per album
-  folder at a time. A question left unanswered for 30 minutes aborts its job, as in the fork.
+  folder at a time: a job that learns its folder only once it runs (a cross-upload without a path, from
+  SOURCE's answer) holds it from then on, and does not take a folder another running job holds. A question
+  left unanswered for 30 minutes aborts its job, as in the fork.
 
 ### 2. Prompts go through one interface; output is captured per job
 
@@ -209,10 +211,10 @@ jobs in threads, every tracker request on one loop
 
 - In v1: login, jobs (live log, questions, cancel), the folder browser, spectrals (make and view, no
   upload), file checks without trackers, the upload page, with dry run, then convert (transcode, downconvert
-  and compress, each the command's own code).
-- Later, each its own change: checks against trackers (the dupe check), cross-upload, store search and
-  metadata (with the fork's SSRF guard), tag, the description generator, image uploads, the connection
-  check.
+  and compress, each the command's own code), and cross-upload (the command's own code, from torrent IDs and
+  URLs: the browser names no `.torrent` file).
+- Later, each its own change: checks against trackers (the dupe check), store search and metadata (with the
+  fork's SSRF guard), tag, the description generator, image uploads, the connection check.
 - The CLI stays the authority: the web calls the same code, and offers nothing the CLI cannot do.
 
 ### 6. Tests
