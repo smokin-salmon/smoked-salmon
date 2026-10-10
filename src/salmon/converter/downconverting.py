@@ -12,7 +12,7 @@ import msgspec
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
-from salmon.converter.conversions import record_conversion
+from salmon.converter.conversions import conversion_of, record_conversion
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -255,6 +255,17 @@ async def _convert_audio_files(
 # ---------------------------------------------------------------------------
 
 
+def _is_finished_conversion(path: str, new_path: str, items: list[ConvertItem]) -> bool:
+    """Whether new_path holds every converted file and a record that it was converted from path.
+
+    The record is written after the last file, so a run that died has none.
+    """
+    if not all(os.path.isfile(item.dst) for item in items):
+        return False
+    record = conversion_of(new_path)
+    return record is not None and os.path.realpath(record["source"]) == os.path.realpath(path)
+
+
 async def convert_folder(
     path: str,
     bit_depth: BitDepth = 16,
@@ -281,11 +292,16 @@ async def convert_folder(
     if cfg.directory.protects(new_path):
         raise UploadError(f"Not converting into {new_path}: it is in library_dirs, or holds one.")
 
+    items = _collect_convert_items(path, new_path, sample_rate)
     if os.path.isdir(new_path):
+        # Never removed: unlike a transcode's, this name can belong to a folder the user made.
+        if items and not _is_finished_conversion(path, new_path, items):
+            raise UploadError(
+                f"{new_path} is incomplete or not salmon's conversion of this album: remove it and run again."
+            )
         click.secho(f"{new_path} already exists.", fg="yellow")
         return sample_rate, new_path
 
-    items = _collect_convert_items(path, new_path, sample_rate)
     convert_srcs = frozenset(item.src for item in items)
     _copy_extra_files(path, new_path, convert_srcs, essential_only=essential_only)
     await _convert_audio_files(items, bit_depth)
