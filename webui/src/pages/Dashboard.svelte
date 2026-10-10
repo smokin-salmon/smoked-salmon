@@ -66,9 +66,10 @@
   )
   const checking = $derived(checkJobs.find((j) => !FINISHED.includes(j.status)) ?? null)
   const lastRun = $derived<Job | null>(checkJobs.find((j) => FINISHED.includes(j.status)) ?? null)
-  const lastResult = $derived(checkJobs.find((j) => j.status === 'done') ?? null)
+  // The latest finished run only: a newer run that failed or was cancelled does not show an older run's rows.
   const checks = $derived<TrackerCheck[]>(
-    ((lastResult?.result as { trackers?: TrackerCheck[] } | null)?.trackers ?? []) as TrackerCheck[],
+    ((lastRun?.status === 'done' ? (lastRun.result as { trackers?: TrackerCheck[] } | null)?.trackers : null) ??
+      []) as TrackerCheck[],
   )
 
   async function checkConnections() {
@@ -203,7 +204,7 @@
           {/each}
         </tbody>
       </table>
-    {:else if !checking}
+    {:else if !checking && !lastRun}
       <p class="muted small">Not checked yet.</p>
     {/if}
   </div>
