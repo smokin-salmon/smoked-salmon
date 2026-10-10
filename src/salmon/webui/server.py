@@ -260,7 +260,8 @@ async def start_job(request: web.Request) -> web.Response:
             body.kind, body.params, dry_run=body.dry_run, assume_defaults=body.assume_defaults
         )
     except JobError as e:
-        return _error(e.status, e.detail)
+        # The job in the way, if any, so a page can show that one.
+        return web.json_response({"detail": e.detail, **({"job_id": e.job_id} if e.job_id else {})}, status=e.status)
     return web.json_response(job.summary(), status=201)
 
 

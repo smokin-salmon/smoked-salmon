@@ -69,6 +69,8 @@ class JobKind:
         folder: The album folder it works on, if any: one job per folder at a time.
         check: Checks the parameters, and whether the job is a dry run, before the job is queued, and returns the
             parameters as the job takes them (a folder resolved, say); raises JobError to refuse the job.
+        exclusive: At most one job of this kind at a time, queued or running: another start is refused (409) with
+            the id of the one that is.
     """
 
     name: str
@@ -77,6 +79,7 @@ class JobKind:
     title: Callable[[Any], str]
     folder: Callable[[Any], str | None] = lambda _params: None
     check: Callable[[Any, bool], Any] = lambda params, _dry_run: params
+    exclusive: bool = False
 
 
 KINDS: dict[str, JobKind] = {}
@@ -87,12 +90,16 @@ def register(kind: JobKind) -> None:
 
 
 class JobError(Exception):
-    """A job that cannot be started, with the HTTP status that says why."""
+    """A job that cannot be started, with the HTTP status that says why.
 
-    def __init__(self, status: int, detail: str) -> None:
+    `job_id` is the job in the way, when there is one.
+    """
+
+    def __init__(self, status: int, detail: str, job_id: str | None = None) -> None:
         super().__init__(detail)
         self.status = status
         self.detail = detail
+        self.job_id = job_id
 
 
 def _now() -> str:
@@ -312,7 +319,8 @@ class JobManager:
         """Start a job of the kind named, or queue it.
 
         Raises:
-            JobError: An unknown kind, parameters it does not take, too many jobs waiting, or the server stopping.
+            JobError: An unknown kind, parameters it does not take, a job of an exclusive kind already running, too
+                many jobs waiting, or the server stopping.
         """
         if self._stopping:
             raise JobError(503, "salmon web is stopping.")
@@ -327,6 +335,10 @@ class JobManager:
             decoded = kind.check(decoded, dry_run)
         except JobError as e:
             raise JobError(e.status, self._redactor.text(e.detail)) from None
+        if kind.exclusive:
+            for other in self.jobs.values():
+                if other.kind is kind and other.status not in FINISHED:
+                    raise JobError(409, f"A {kind.name} job is {other.status} already: {other.id}.", other.id)
         if len(self._queue) >= MAX_QUEUED_JOBS:
             raise JobError(429, f"{MAX_QUEUED_JOBS} jobs are already waiting: try again once some have run.")
         folder = kind.folder(decoded)

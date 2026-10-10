@@ -4,7 +4,9 @@ The expected output is what the command printed before its tracker part moved to
 tracker is a fake on 127.0.0.1; the network guard in conftest.py stands.
 """
 
+import asyncio
 import re
+import time
 from collections.abc import Callable
 from contextlib import asynccontextmanager
 from functools import partial
@@ -25,20 +27,43 @@ Sent = tuple[str, str]
 
 
 class FakeTracker:
-    """A local Gazelle tracker answering the index call, which records who asked: ``cookie`` or ``api key``."""
+    """A local Gazelle tracker answering the index call, which records who asked: ``cookie`` or ``api key``.
 
-    def __init__(self, *, cookie_ok: bool = True, key_ok: bool = True) -> None:
+    Attributes:
+        error: What a refused request says.
+        rate_limited: The first requests this many are answered 429, asking to wait a second.
+        hold: Requests wait for this to be set before they are answered.
+    """
+
+    def __init__(
+        self,
+        *,
+        cookie_ok: bool = True,
+        key_ok: bool = True,
+        error: str = "bad credentials",
+        rate_limited: int = 0,
+        hold: asyncio.Event | None = None,
+    ) -> None:
         self.cookie_ok = cookie_ok
         self.key_ok = key_ok
+        self.error = error
+        self.rate_limited = rate_limited
+        self.hold = hold
         self.sent: list[Sent] = []
+        self.times: list[float] = []
         self.url = ""
 
     async def _handle(self, request: web.Request) -> web.Response:
         by_key = "Authorization" in request.headers
         assert not (by_key and "Cookie" in request.headers), "a request carried both the key and the cookie"
         self.sent.append((request.query.get("action", ""), "api key" if by_key else "cookie"))
+        self.times.append(time.monotonic())
+        if self.hold is not None:
+            await self.hold.wait()
+        if len(self.sent) <= self.rate_limited:
+            return web.json_response({"status": "failure"}, status=429, headers={"Retry-After": "1"})
         if not (self.key_ok if by_key else self.cookie_ok):
-            return web.json_response({"status": "failure", "error": "bad credentials"}, status=403)
+            return web.json_response({"status": "failure", "error": self.error}, status=403)
         return web.json_response({"status": "success", "response": {"authkey": "authkey", "passkey": "passkey"}})
 
     @asynccontextmanager

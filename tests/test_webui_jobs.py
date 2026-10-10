@@ -158,7 +158,15 @@ def test_only_the_job_kinds_of_v1_are_exposed() -> None:
         assert response.status == 400
         assert "Unknown job kind" in (await response.json())["detail"]
 
-    assert set(jobs.KINDS) == {"spectrals", "checks", "upload", "transcode", "downconvert", "compress"}
+    assert set(jobs.KINDS) == {
+        "spectrals",
+        "checks",
+        "upload",
+        "transcode",
+        "downconvert",
+        "compress",
+        "connection_check",
+    }
     _with_app(test)
 
 

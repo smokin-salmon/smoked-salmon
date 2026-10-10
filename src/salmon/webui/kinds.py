@@ -1,4 +1,5 @@
-"""The jobs salmon web runs on an album folder: spectrals, file checks, uploads and conversions (ADR 0004, section 5).
+"""The jobs salmon web runs: on an album folder (spectrals, file checks, uploads, conversions) and the
+connection check (ADR 0004, section 5).
 
 Spectrals send nothing anywhere: no tracker request, no image host. Checks send nothing either unless trackers are
 named: then each named tracker gets what ``salmon check all -t`` sends it, salmon up's dupe search (the index call,
@@ -12,14 +13,20 @@ album under download_directory), a recompression writes in place and is refused 
 checked by ``paths.album_folder`` before the job is queued, and again when it starts, since it may have changed while
 the job waited its turn.
 
+The connection check is ``salmon checkconf -t`` for the trackers asked for: at most two requests each (the index
+call with the session cookie, then with the API key when one is set), through salmon web's request loop, and only
+when the user starts it, never on page load. Metadata sources and seedboxes stay with the command.
+
 Ported from the fork's ``routers/spectrals.py``, ``routers/checks.py`` (chodeus, d6ac6372, 9bfdddc3 and 889cc4f5),
-``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37) and ``routers/convert.py`` (chodeus
-0b29d2d5, a70a3d75, d8c68c28 and a18e0e25), without the spectrals upload. The fork's upload and conversions called the
-commands' steps themselves; the jobs here run the commands' own code.
+``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37), ``routers/convert.py`` (chodeus
+0b29d2d5, a70a3d75, d8c68c28 and a18e0e25), without the spectrals upload, and ``checks/connection.py`` (chodeus,
+0b29d2d5, 9bfdddc3 and 75e5a3d9), without its run on load and its cache. The fork's upload and conversions called
+the commands' steps themselves; the jobs here run the commands' own code.
 """
 
 import os
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, Any
 
 import anyio.to_thread
@@ -31,6 +38,14 @@ from salmon import interaction
 from salmon.constants import SOURCES, TAG_ENCODINGS
 from salmon.converter.transcoding import Bitrate
 from salmon.errors import DryRunRefused, UnknownOutcomeError
+from salmon.trackers.connection import (
+    check_connection,
+    print_certificate_failure,
+    print_session_cookie_header,
+    print_step,
+    print_tracker_header,
+    print_verdict,
+)
 from salmon.webui import paths
 from salmon.webui.jobs import JobError, JobKind, own_folder, register
 
@@ -67,6 +82,11 @@ class DownconvertParams(msgspec.Struct, forbid_unknown_fields=True):
 
 class CompressParams(msgspec.Struct, forbid_unknown_fields=True):
     path: str
+
+
+class ConnectionCheckParams(msgspec.Struct, forbid_unknown_fields=True):
+    # checkconf's -t: the trackers to check, in order. None: every tracker in the config.
+    trackers: list[str] = []
 
 
 # Track numbers count from 1: the command's -sp also takes 0 and negative numbers, which pick other tracks.
@@ -115,6 +135,17 @@ def _checked_checks(params: ChecksParams, _dry_run: bool) -> ChecksParams:
     except salmon.trackers.UnknownTrackerError as e:
         raise JobError(422, str(e)) from None
     return msgspec.structs.replace(params, path=paths.album_folder(params.path), trackers=trackers)
+
+
+def _checked_connection_check(params: ConnectionCheckParams, _dry_run: bool) -> ConnectionCheckParams:
+    """The trackers to check: those named, each in the config, else all of those in the config."""
+    try:
+        trackers = salmon.trackers.tracker_codes(params.trackers) or list(salmon.trackers.tracker_list)
+    except salmon.trackers.UnknownTrackerError as e:
+        raise JobError(422, str(e)) from None
+    if not trackers:
+        raise JobError(422, "No tracker is configured.")
+    return msgspec.structs.replace(params, trackers=trackers)
 
 
 def _up_options(params: UploadParams, trackers: tuple[str, ...]) -> dict[str, Any]:
@@ -304,6 +335,27 @@ def _unknown(errors: list[UnknownOutcomeError]) -> UnknownOutcomeError:
     return UnknownOutcomeError("; ".join(str(error) for error in errors))
 
 
+async def connection_check(params: ConnectionCheckParams) -> dict[str, Any]:
+    """``salmon checkconf -t`` for each tracker: what each found, and when. The request dumps are not on.
+
+    Changes nothing. Sends at most two requests to each tracker, one tracker after the other.
+    """
+    found: list[dict[str, Any]] = []
+    for code in params.trackers:
+        print_tracker_header(code)
+        api = salmon.trackers.get_class(code)()
+        try:
+            print_session_cookie_header()
+            result = await check_connection(code, api, print_step)
+        finally:
+            await api.close()
+        if result.tls_error is not None:
+            print_certificate_failure(result)
+        print_verdict(result)
+        found.append({**msgspec.to_builtins(result), "ok": result.ok, "checked_at": datetime.now(UTC).isoformat()})
+    return {"trackers": found}
+
+
 def _title(what: str) -> Callable[[Any], str]:
     return lambda params: f"{what}: {os.path.basename(params.path)}"
 
@@ -315,6 +367,10 @@ def _checks_title(params: ChecksParams) -> str:
 
 def _transcode_title(params: TranscodeParams) -> str:
     return f"Transcode {params.bitrate}: {os.path.basename(params.path)}"
+
+
+def _connection_check_title(params: ConnectionCheckParams) -> str:
+    return f"Connection check: {', '.join(params.trackers)}"
 
 
 def _upload_title(params: UploadParams) -> str:
@@ -380,5 +436,15 @@ register(
         title=_title("Recompress"),
         folder=lambda params: params.path,
         check=_checked_compress,
+    )
+)
+register(
+    JobKind(
+        name="connection_check",
+        params=ConnectionCheckParams,
+        run=connection_check,
+        title=_connection_check_title,
+        check=_checked_connection_check,
+        exclusive=True,
     )
 )

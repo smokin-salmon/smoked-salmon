@@ -26,29 +26,33 @@ class ConnectionResult(msgspec.Struct, kw_only=True):
 
     Attributes:
         tracker: The site code.
-        session_cookie: ``ok``, ``failed`` (with ``session_cookie_error``), or ``not_checked`` when the TLS certificate
+        cookie: ``ok``, ``failed`` (with ``cookie_error``), or ``not_checked`` when the TLS certificate
             failed first.
-        api_key: ``ok``, ``failed`` (with ``api_key_error``), ``not_set``, or ``not_checked`` when the TLS
+        key: ``ok``, ``failed`` (with ``key_error``), ``not_set``, or ``not_checked`` when the TLS
             certificate failed first.
         tls_error: Why the certificate of the site does not verify, if it does not.
+
+    The fields are not named after the config's (``api_key``): salmon web masks every secret the config holds in
+    what it sends, field names included, and a config copied from the default template holds ``api_key`` itself
+    as an image host's key.
     """
 
     tracker: str
-    session_cookie: Literal["ok", "failed", "not_checked"]
-    session_cookie_error: str | None = None
-    api_key: Literal["ok", "failed", "not_set", "not_checked"]
-    api_key_error: str | None = None
+    cookie: Literal["ok", "failed", "not_checked"]
+    cookie_error: str | None = None
+    key: Literal["ok", "failed", "not_set", "not_checked"]
+    key_error: str | None = None
     tls_error: str | None = None
 
     @property
     def failed_checks(self) -> list[str]:
         """What failed, in the order it was checked."""
         failed: list[str] = []
-        if self.session_cookie == "failed":
+        if self.cookie == "failed":
             failed.append(SESSION_COOKIE)
         if self.tls_error is not None:
             failed.append(TLS_CERTIFICATE)
-        if self.api_key == "failed":
+        if self.key == "failed":
             failed.append(API_KEY)
         return failed
 
@@ -72,21 +76,21 @@ async def check_connection(
             first, or no API key).
     """
     index = f"{api.base_url}/ajax.php"
-    session_cookie: Literal["ok", "failed", "not_checked"] = "ok"
-    session_cookie_error: str | None = None
+    cookie: Literal["ok", "failed", "not_checked"] = "ok"
+    cookie_error: str | None = None
     tls_error: str | None = None
     # The session cookie check is independent of API key authentication.
     try:
         await api._request("GET", index, params={"action": "index"}, prefer_api_key=False)
     except TLSCertificateError as err:
-        session_cookie, tls_error = "not_checked", str(err)
+        cookie, tls_error = "not_checked", str(err)
     except Exception as err:
-        session_cookie, session_cookie_error = "failed", str(err)
+        cookie, cookie_error = "failed", str(err)
     if tls_error is None and on_step is not None:
-        on_step(SESSION_COOKIE, session_cookie_error)
+        on_step(SESSION_COOKIE, cookie_error)
 
     api_key: Literal["ok", "failed", "not_set", "not_checked"] = "ok"
-    api_key_error: str | None = None
+    key_error: str | None = None
     if not api.api_key:
         api_key = "not_set"
     elif tls_error is not None:
@@ -96,15 +100,15 @@ async def check_connection(
         try:
             await api._request("GET", index, params={"action": "index"}, prefer_api_key=True)
         except Exception as err:
-            api_key, api_key_error = "failed", str(err)
+            api_key, key_error = "failed", str(err)
         if on_step is not None:
-            on_step(API_KEY, api_key_error)
+            on_step(API_KEY, key_error)
     return ConnectionResult(
         tracker=code,
-        session_cookie=session_cookie,
-        session_cookie_error=session_cookie_error,
-        api_key=api_key,
-        api_key_error=api_key_error,
+        cookie=cookie,
+        cookie_error=cookie_error,
+        key=api_key,
+        key_error=key_error,
         tls_error=tls_error,
     )
 
