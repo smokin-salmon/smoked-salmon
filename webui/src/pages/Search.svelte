@@ -33,7 +33,8 @@
   }
 
   let query = $state('')
-  let trackCount = $state('')
+  // A number input: empty is null.
+  let trackCount = $state<number | null>(null)
   let searching = $state(false)
   let searched = $state<{ query: string; sources: Source[] } | null>(null)
   let error = $state('')
@@ -43,36 +44,44 @@
   let found = $state<{ url: string; source: string; metadata: Metadata } | null>(null)
   let lookupError = $state('')
 
+  // Each search and lookup is numbered: only the latest one's answer is shown.
+  let searchSeq = 0
+  let lookupSeq = 0
+
   async function search() {
     if (!query.trim()) return
+    const seq = ++searchSeq
     searching = true
     error = ''
     searched = null
     const params = new URLSearchParams({ q: query.trim() })
-    if (trackCount.trim()) params.set('track_count', trackCount.trim())
+    if (trackCount) params.set('track_count', String(trackCount))
     try {
-      searched = await apiGet<{ query: string; sources: Source[] }>(`/search?${params}`)
+      const answer = await apiGet<{ query: string; sources: Source[] }>(`/search?${params}`)
+      if (seq === searchSeq) searched = answer
     } catch (e) {
-      error = String(e)
+      if (seq === searchSeq) error = String(e)
     } finally {
-      searching = false
+      if (seq === searchSeq) searching = false
     }
   }
 
   async function lookUp(url: string) {
     if (!url.trim()) return
+    const seq = ++lookupSeq
     lookupUrl = url.trim()
     looking = true
     lookupError = ''
     found = null
     try {
-      found = await apiGet<{ url: string; source: string; metadata: Metadata }>(
+      const answer = await apiGet<{ url: string; source: string; metadata: Metadata }>(
         `/metadata?${new URLSearchParams({ url: lookupUrl })}`,
       )
+      if (seq === lookupSeq) found = answer
     } catch (e) {
-      lookupError = String(e)
+      if (seq === lookupSeq) lookupError = String(e)
     } finally {
-      looking = false
+      if (seq === lookupSeq) looking = false
     }
   }
 
@@ -153,7 +162,7 @@
   <div class="card">
     <h2>{found.source}</h2>
     <p>
-      <strong>{names(metadata.artists)}</strong> – {metadata.title}
+      <strong>{names(metadata.artists)}</strong> - {metadata.title}
       <span class="muted"
         >({metadata.year ?? '?'}{metadata.label ? `, ${metadata.label}` : ''}{metadata.catno
           ? `, ${metadata.catno}`

@@ -73,7 +73,7 @@ def bandcamp_page(cover_url: str = "") -> str:
 
 
 class FakeStore:
-    """A store on 127.0.0.1: album pages at /album/<name>, a cover at /cover.png, a redirect to ?to= at /moved.
+    """A store on 127.0.0.1: album pages at /album/<name>, a cover at /cover.png, a redirect to `moved_to` at /moved.
 
     Every request it gets is kept, by path.
     """
@@ -81,6 +81,7 @@ class FakeStore:
     def __init__(self, page: str | None = None) -> None:
         self.requests: list[str] = []
         self.page = page
+        self.moved_to = ""
 
     @contextlib.asynccontextmanager
     async def serving(self) -> AsyncIterator["FakeStore"]:
@@ -102,7 +103,7 @@ class FakeStore:
     async def _answer(self, request: web.Request) -> web.StreamResponse:
         self.requests.append(request.path)
         if request.path == "/moved":
-            raise web.HTTPFound(request.query["to"])
+            raise web.HTTPFound(self.moved_to)
         if request.path == "/cover.png":
             return web.Response(body=_png(), content_type="image/png")
         return web.Response(text=self.page or bandcamp_page(), content_type="text/html")
@@ -239,9 +240,9 @@ def test_a_public_page_redirecting_inward_is_refused_at_the_second_hop(
     names = {"store.test": ["127.0.0.1"], "inner.test": ["192.168.1.1"]}
 
     async def test(store: FakeStore) -> None:
-        to = target.format(port=store.port)
+        store.moved_to = target.format(port=store.port)
         with pytest.raises(ssrf.NonPublicAddressError) as refused:
-            await _get(store.url(f"/moved?to={to}", "store.test"), names)
+            await _get(store.url("/moved", "store.test"), names)
         assert refused.value.host == refused_host
         # The first hop reached the store, the second nothing.
         assert store.requests == ["/moved"]
