@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { apiGet } from '../lib/api'
-  import { FINISHED, jobStore } from '../lib/jobs.svelte'
+  import { apiGet, apiPost } from '../lib/api'
+  import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
 
   interface Space {
     free_bytes: number | null
@@ -16,8 +16,22 @@
     max_jobs: number
   }
 
+  /** What the connection check found for one tracker (`salmon checkconf -t`). */
+  interface TrackerCheck {
+    tracker: string
+    ok: boolean
+    cookie: 'ok' | 'failed' | 'not_checked'
+    cookie_error: string | null
+    key: 'ok' | 'failed' | 'not_set' | 'not_checked'
+    key_error: string | null
+    tls_error: string | null
+    checked_at: string
+  }
+
   let overview = $state<Overview | null>(null)
   let error = $state('')
+  let starting = $state(false)
+  let checkError = $state('')
 
   // Read once: nothing here asks a tracker anything.
   $effect(() => {
@@ -43,6 +57,42 @@
       unit += 1
     }
     return `${value.toFixed(unit === 0 ? 0 : 1)} ${units[unit]}`
+  }
+
+  // The connection checks are jobs, kept by the server and followed by their events: the result stays until the
+  // next run, across reloads too. Only the button starts one.
+  const checkJobs = $derived(
+    jobStore.jobs.filter((j) => j.kind === 'connection_check').sort((a, b) => b.created_at.localeCompare(a.created_at)),
+  )
+  const checking = $derived(checkJobs.find((j) => !FINISHED.includes(j.status)) ?? null)
+  const lastRun = $derived<Job | null>(checkJobs.find((j) => FINISHED.includes(j.status)) ?? null)
+  const lastResult = $derived(checkJobs.find((j) => j.status === 'done') ?? null)
+  const checks = $derived<TrackerCheck[]>(
+    ((lastResult?.result as { trackers?: TrackerCheck[] } | null)?.trackers ?? []) as TrackerCheck[],
+  )
+
+  async function checkConnections() {
+    starting = true
+    checkError = ''
+    try {
+      await apiPost<Job>('/jobs', { kind: 'connection_check', params: {} })
+    } catch (e) {
+      checkError = String(e)
+    } finally {
+      starting = false
+    }
+  }
+
+  function when(iso: string): string {
+    return new Date(iso).toLocaleString()
+  }
+
+  function problems(check: TrackerCheck): string[] {
+    if (check.tls_error) return [check.tls_error]
+    return [
+      check.cookie_error ? `Session cookie: ${check.cookie_error}` : '',
+      check.key_error ? `API key: ${check.key_error}` : '',
+    ].filter(Boolean)
   }
 
   // Live, from the job events.
@@ -106,7 +156,56 @@
         <span class="chip err">none configured</span>
       {/each}
     </p>
-    <p class="muted small">The connections to the trackers are not checked here: run <span class="mono">salmon checkconf</span>.</p>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <h2 class="grow">Tracker connections</h2>
+      <button class="btn small" onclick={checkConnections} disabled={!overview.trackers.length || starting || !!checking}>
+        {checking ? 'Checking…' : 'Check connections'}
+      </button>
+    </div>
+    <p class="muted small">
+      Sends each tracker above the requests <span class="mono">salmon checkconf -t</span> sends: your session cookie,
+      then your API key if you set one. Only when you press the button.
+    </p>
+    {#if checkError}<p class="err-text small">{checkError}</p>{/if}
+    {#if lastRun && lastRun.status !== 'done'}
+      <p class="err-text small">
+        The last check {lastRun.status === 'cancelled' ? 'was cancelled' : `did not finish: ${lastRun.error ?? lastRun.status}`}
+      </p>
+    {/if}
+    {#if checks.length}
+      <table>
+        <tbody>
+          {#each checks as check (check.tracker)}
+            <tr>
+              <td class="mono">{check.tracker}</td>
+              <td>
+                {#if check.cookie === 'ok'}<span class="chip ok">session ok</span>
+                {:else if check.cookie === 'failed'}<span class="chip err">session failed</span>
+                {:else}<span class="chip">session not checked</span>{/if}
+              </td>
+              <td>
+                {#if check.key === 'ok'}<span class="chip ok">API key ok</span>
+                {:else if check.key === 'failed'}<span class="chip err">API key failed</span>
+                {:else if check.key === 'not_set'}<span class="chip">no API key</span>
+                {:else}<span class="chip">API key not checked</span>{/if}
+              </td>
+              <td class="muted small">
+                {#if check.tls_error}<span class="chip err">TLS certificate</span>{/if}
+                {when(check.checked_at)}
+              </td>
+            </tr>
+            {#each problems(check) as line (line)}
+              <tr><td></td><td colspan="3" class="muted small problem">{line}</td></tr>
+            {/each}
+          {/each}
+        </tbody>
+      </table>
+    {:else if !checking}
+      <p class="muted small">Not checked yet.</p>
+    {/if}
   </div>
 
   <div class="card">
@@ -202,8 +301,12 @@
   .small {
     font-size: 0.85rem;
   }
-  td.mono {
+  td.mono,
+  td.problem {
     overflow-wrap: anywhere;
+  }
+  .err-text {
+    color: var(--err);
   }
   .disk {
     display: flex;
