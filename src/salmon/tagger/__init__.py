@@ -1,4 +1,5 @@
 import functools
+from dataclasses import dataclass
 from itertools import chain
 from pprint import pprint
 
@@ -116,16 +117,59 @@ async def tag(
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
     """
+    await run_tag(
+        TagOptions(
+            path=path,
+            source=source,
+            encoding=encoding,
+            overwrite=overwrite,
+            auto_rename=auto_rename,
+            skip_initial_review=skip_initial_review,
+            apply_ai_suggestions=apply_ai_suggestions,
+        )
+    )
+
+
+@dataclass(frozen=True, kw_only=True)
+class TagOptions:
+    """What ``salmon tag`` tags, and how: its options once parsed.
+
+    salmon web's tag job builds the same from its form, and runs the same ``run_tag``.
+
+    Attributes:
+        path: The album folder.
+        source: The media source, as ``validate_source`` gives it.
+        encoding: The lossy encoding, as ``validate_encoding`` gives it.
+    """
+
+    path: str
+    source: str
+    encoding: str | None = None
+    overwrite: bool = False
+    auto_rename: bool = False
+    skip_initial_review: bool = False
+    apply_ai_suggestions: bool = False
+
+
+async def run_tag(options: TagOptions) -> str:
+    """Tag an album folder as ``salmon tag`` does.
+
+    An album in library_dirs is tagged as a copy, renamed into download_directory (``staged_source``), never in place.
+
+    Returns:
+        The folder as it ends up: the album's, or its copy's, under its new name after a rename.
+    """
     # Imported here: salmon.uploader imports this module.
     from salmon.uploader.staging import staged_source
 
-    click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
-    # An album in library_dirs is tagged as a copy, renamed into download_directory.
-    with staged_source(path, scratch=False) as (path, rename_into):
+    click.secho(f"\nProcessing {options.path}", fg="cyan", bold=True)
+    with staged_source(options.path, scratch=False) as (path, rename_into):
         standardize_tags(path)
         tags = gather_tags(path)
         audio_info = gather_audio_info(path)
-        rls_data = await construct_rls_data(tags, audio_info, source, encoding, overwrite=overwrite)
+        rls_data = await construct_rls_data(
+            tags, audio_info, options.source, options.encoding, overwrite=options.overwrite
+        )
 
         metadata, source_url = await get_metadata(path, tags, rls_data)
         durations = [info.get("duration") or 0 for info in audio_info.values()]
@@ -135,17 +179,18 @@ async def tag(
             source_url,
             metadata_validator_base,
             functools.partial(review_metadata, rls_type_hint=suggest_release_type(rls_data.get("title"), durations)),
-            skip_initial_review=skip_initial_review,
-            apply_suggestions=apply_ai_suggestions,
+            skip_initial_review=options.skip_initial_review,
+            apply_suggestions=options.apply_ai_suggestions,
         )
-        await tag_files(path, tags, metadata, auto_rename)
+        await tag_files(path, tags, metadata, options.auto_rename)
 
         await download_cover_if_nonexistent(path, metadata["cover"])
         tags = await check_tags(path)
-        path = await rename_folder(path, metadata, auto_rename, parent=rename_into)
-        await rename_files(path, tags, metadata, auto_rename, None)
+        path = await rename_folder(path, metadata, options.auto_rename, parent=rename_into)
+        await rename_files(path, tags, metadata, options.auto_rename, None)
         await check_folder_structure(path, scene=False)
         click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
+        return path
 
 
 @commandgroup.command()

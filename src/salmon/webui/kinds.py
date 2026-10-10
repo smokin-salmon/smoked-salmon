@@ -9,7 +9,9 @@ it sends what the command sends for the same album and answers, every tracker re
 loop (``trackers.account``), and works on a copy of a library album, as the command does. A conversion (transcode,
 downconvert) or a recompression (compress) runs what ``salmon transcode``, ``salmon downconv`` and ``salmon compress``
 run and sends nothing anywhere: a conversion writes where the command puts it (beside the album, or for a library
-album under download_directory), a recompression writes in place and is refused for a library album. Each folder is
+album under download_directory), a recompression writes in place and is refused for a library album. A tag job runs
+what ``salmon tag`` runs (``tagger.run_tag``), its questions asked in the browser: it sends nothing to a tracker, and
+tags a library album as a copy renamed into download_directory, never in place. Each folder is
 checked by ``paths.album_folder`` before the job is queued, and again when it starts, since it may have changed while
 the job waited its turn.
 
@@ -123,6 +125,21 @@ class UploadParams(msgspec.Struct, forbid_unknown_fields=True):
     apply_ai_suggestions: bool = False
 
 
+class TagParams(msgspec.Struct, forbid_unknown_fields=True):
+    """The options of ``salmon tag`` a form gives. -yyy is the job's own (``assume_defaults``); the command has no
+    dry run."""
+
+    path: str
+    # -s, which the command requires.
+    source: str
+    # -e, needed when the files are not lossless.
+    encoding: str | None = None
+    overwrite: bool = False
+    auto_rename: bool = False
+    skip_initial_review: bool = False
+    apply_ai_suggestions: bool = False
+
+
 def _checked(params: SpectralsParams | ChecksParams, _dry_run: bool) -> SpectralsParams | ChecksParams:
     return msgspec.structs.replace(params, path=paths.album_folder(params.path))
 
@@ -186,6 +203,22 @@ def _checked_upload(params: UploadParams, dry_run: bool) -> UploadParams:
     if (error := UpOptions(**_up_options(checked, tuple(trackers))).usage_error(dry_run)) is not None:
         raise JobError(400, error)
     return checked
+
+
+def _checked_tag(params: TagParams, dry_run: bool) -> TagParams:
+    """The tag options as the command's callbacks give them, refused where the command refuses them."""
+    # The command has none, and tagging writes the files and renames the folder: nothing a dry run could leave out.
+    if dry_run:
+        raise JobError(400, "Tag has no dry run: it retags and renames the album.")
+    source = SOURCES.get(params.source.lower())
+    if source is None:
+        sources = ", ".join(SOURCES.values())
+        raise JobError(400, f"{params.source} is not a valid source. Possible sources are: {sources}")
+    # Kept by its name, which the job shows among its parameters.
+    encoding = params.encoding.upper() if params.encoding else None
+    if encoding is not None and encoding not in TAG_ENCODINGS:
+        raise JobError(400, f"{params.encoding} is not a valid encoding.")
+    return msgspec.structs.replace(params, path=paths.album_folder(params.path), source=source, encoding=encoding)
 
 
 def _checked_conversion(
@@ -322,6 +355,20 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     return {"folder": os.path.basename(path), "trackers": list(trackers), "uploads": record.uploads}
 
 
+async def tag(params: TagParams) -> dict[str, Any]:
+    """What ``salmon tag`` runs, its questions asked in the browser.
+
+    Returns:
+        The folder as it ends up: its new name after a rename, and for a library album the copy in download_directory.
+    """
+    from salmon.tagger import TagOptions, run_tag
+
+    path = _album(params.path)
+    encoding = TAG_ENCODINGS[params.encoding] if params.encoding else None
+    options = TagOptions(**{**msgspec.structs.asdict(params), "path": path, "encoding": encoding})
+    return {"folder": await run_tag(options)}
+
+
 async def _run_up(options: "UpOptions") -> None:
     from salmon.uploader import run_up
 
@@ -406,6 +453,16 @@ register(
         title=_upload_title,
         folder=lambda params: params.path,
         check=_checked_upload,
+    )
+)
+register(
+    JobKind(
+        name="tag",
+        params=TagParams,
+        run=tag,
+        title=_title("Tag"),
+        folder=lambda params: params.path,
+        check=_checked_tag,
     )
 )
 register(
