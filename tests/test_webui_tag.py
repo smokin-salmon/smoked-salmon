@@ -269,7 +269,8 @@ def test_a_tag_job_tags_and_renames_as_salmon_tag_does(roots: Roots, tmp_path: P
         for question in asked:
             if question["kind"] == "edit":
                 continue
-            at = shown.index(click.unstyle(question["text"]).strip(), at)
+            text = click.unstyle(question["text"]).strip()
+            at = shown.index(text, at) + len(text)
         assert [question["kind"] for question in asked] == ["prompt", "prompt", "edit", "prompt", "confirm", "confirm"]
         assert not [question for question in asked if "\x1b" in question["text"]]
 
