@@ -33,7 +33,7 @@ from typing import Any, Literal
 import asyncclick as click
 import msgspec
 
-from salmon import cfg, dryrun, interaction
+from salmon import cfg, dryrun, interaction, ssrf
 from salmon.errors import UnknownOutcomeError
 from salmon.webui import output
 from salmon.webui.egress import Redactor
@@ -478,6 +478,8 @@ class JobManager:
                 interaction.using(WebInteraction(asker)),
                 interaction.assuming_defaults(job.assume_defaults),
                 dryrun.mode(job.dry_run),
+                # The URLs a job fetches come from the browser and from store pages: public addresses only.
+                ssrf.public_only(),
             ):
                 try:
                     result = await job.kind.run(job.params)

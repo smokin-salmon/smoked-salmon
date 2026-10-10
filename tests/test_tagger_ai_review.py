@@ -107,6 +107,10 @@ def make_metadata() -> dict:
     }
 
 
+async def _names_label(_url: str, _label: str) -> bool:
+    return True
+
+
 def make_review(**metadata_overrides) -> dict:
     metadata = make_metadata()
     review_metadata = {
@@ -491,7 +495,7 @@ def test_apply_ai_review_guardrails_ignores_unsupported_label_changes() -> None:
     metadata["label"] = "doin' fine"
     review = make_review(label="Crash Blossoms Money World Suicide Mob")
 
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+    sanitized_review, warnings = anyio.run(_apply_ai_review_guardrails, metadata, review, None)
 
     assert sanitized_review["metadata"]["label"] == "doin' fine"
     assert warnings == [
@@ -505,7 +509,7 @@ def test_apply_ai_review_guardrails_allows_self_released_without_opened_label_ci
     metadata["label"] = "doin' fine"
     review = make_review(label="Self-Released")
 
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+    sanitized_review, warnings = anyio.run(_apply_ai_review_guardrails, metadata, review, None)
 
     assert sanitized_review["metadata"]["label"] == "Self-Released"
     assert warnings == []
@@ -522,9 +526,9 @@ def test_apply_ai_review_guardrails_accepts_explicit_opened_label_evidence(monke
         }
     ]
     review["_opened_page_urls"] = ["https://example.com/release"]
-    monkeypatch.setattr(ai_review, "_url_explicitly_names_label", lambda _url, _label: True)
+    monkeypatch.setattr(ai_review, "_url_explicitly_names_label", _names_label)
 
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+    sanitized_review, warnings = anyio.run(_apply_ai_review_guardrails, metadata, review, None)
 
     assert sanitized_review["metadata"]["label"] == "New Label"
     assert warnings == []
@@ -541,9 +545,9 @@ def test_apply_ai_review_guardrails_accepts_annotated_label_support(monkeypatch)
         }
     ]
     review["_opened_page_urls"] = ["https://example.com/release"]
-    monkeypatch.setattr(ai_review, "_url_explicitly_names_label", lambda _url, _label: True)
+    monkeypatch.setattr(ai_review, "_url_explicitly_names_label", _names_label)
 
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+    sanitized_review, warnings = anyio.run(_apply_ai_review_guardrails, metadata, review, None)
 
     assert sanitized_review["metadata"]["label"] == "ITModels"
     assert warnings == []
@@ -586,7 +590,7 @@ def test_apply_ai_review_guardrails_preserves_existing_guest_artists() -> None:
         ]
     )
 
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+    sanitized_review, warnings = anyio.run(_apply_ai_review_guardrails, metadata, review, None)
 
     assert sanitized_review["metadata"]["artists"] == [
         {"name": "doin' fine", "role": "main"},
@@ -619,7 +623,7 @@ def test_apply_ai_review_guardrails_allows_guest_to_main_promotion() -> None:
         ]
     )
 
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+    sanitized_review, warnings = anyio.run(_apply_ai_review_guardrails, metadata, review, None)
 
     assert sanitized_review["metadata"]["artists"] == [
         {"name": "Anna Zak", "role": "main"},
@@ -639,7 +643,7 @@ def test_apply_ai_review_guardrails_drops_unopened_url_additions() -> None:
     )
     review["_opened_page_urls"] = ["https://old.example/release"]
 
-    sanitized_review, warnings = _apply_ai_review_guardrails(metadata, review, None)
+    sanitized_review, warnings = anyio.run(_apply_ai_review_guardrails, metadata, review, None)
 
     assert sanitized_review["metadata"]["urls"] == ["https://old.example/release"]
     assert warnings == [

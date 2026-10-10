@@ -85,7 +85,7 @@ class BaseImageUploader:
         The connections are reused from one upload to the next instead of opened for each image.
         """
         async with aiohttp.ClientSession(
-            connector=proxy.connector(self.proxy_service, limit=limit), timeout=UPLOAD_TIMEOUT
+            connector=proxy.connector(self.proxy_service, fixed_hosts=True, limit=limit), timeout=UPLOAD_TIMEOUT
         ) as session:
             self._session = session
             try:
@@ -100,7 +100,7 @@ class BaseImageUploader:
             yield self._session
         else:
             async with aiohttp.ClientSession(
-                timeout=UPLOAD_TIMEOUT, **proxy.session_kwargs(self.proxy_service)
+                timeout=UPLOAD_TIMEOUT, **proxy.session_kwargs(self.proxy_service, fixed_hosts=True)
             ) as session:
                 yield session
 
