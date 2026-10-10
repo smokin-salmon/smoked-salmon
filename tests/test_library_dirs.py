@@ -613,10 +613,15 @@ def test_conversions_of_library_albums_go_to_their_own_folders_in_download_direc
     ]
     output_dirs: list[str | None] = []
 
-    async def convert(_path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> None:
+    async def transcode(path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> str:
         output_dirs.append(output_dir)
+        return path
 
-    monkeypatch.setattr(salmon.converter, "transcode_folder", convert)
+    async def convert(path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> tuple[None, str]:
+        output_dirs.append(output_dir)
+        return None, path
+
+    monkeypatch.setattr(salmon.converter, "transcode_folder", transcode)
     monkeypatch.setattr(salmon.converter, "convert_folder", convert)
 
     for album in albums:
@@ -643,8 +648,9 @@ def test_conversions_outside_a_library_still_go_beside_the_source(monkeypatch, d
     album = _album(tmp_path / "seeding" / "Album")
     output_dirs: list[str | None] = []
 
-    async def convert(_path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> None:
+    async def convert(path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> tuple[None, str]:
         output_dirs.append(output_dir)
+        return None, path
 
     monkeypatch.setattr(salmon.converter, "convert_folder", convert)
 

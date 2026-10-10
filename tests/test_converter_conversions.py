@@ -301,6 +301,23 @@ def test_an_unreadable_sidecar_is_not_read_as_no_conversion(tmp_path, monkeypatc
         conversions.conversion_of(str(out))
 
 
+def test_a_dry_run_copy_takes_its_record_into_its_run_directory(tmp_path, monkeypatch) -> None:
+    from salmon.uploader.staging import staged_source
+
+    downloads = tmp_path / "downloads"
+    album = tmp_path / "seeding" / "Album [WEB FLAC]"
+    album.mkdir(parents=True)
+    (album / "01.flac").write_bytes(b"x")
+    downloads.mkdir()
+    monkeypatch.setattr(cfg.directory, "download_directory", str(downloads))
+    conversions.record_conversion(str(album), **DOWNCONVERT)
+
+    with dryrun.mode(), staged_source(str(album), scratch=True) as (staged, _rename_into):
+        carried = os.path.exists(conversions._sidecar(staged))
+
+    assert carried
+
+
 def test_staging_a_library_album_takes_its_record_along(tmp_path, monkeypatch) -> None:
     from salmon.uploader.staging import staged_source
 

@@ -33,7 +33,7 @@ async def transcode(path: str, bitrate: Bitrate, essential_only: bool) -> None:
         bitrate: Target bitrate (V0 or 320).
         essential_only: Only keep music and image files.
     """
-    await transcode_folder(path, bitrate, essential_only=essential_only, output_dir=_output_dir(path))
+    await run_transcode(path, bitrate, essential_only)
 
 
 @commandgroup.command()
@@ -51,7 +51,27 @@ async def downconv(path: str, essential_only: bool) -> None:
         path: Path to the directory containing 24bit FLAC files.
         essential_only: Only keep music and image files.
     """
-    await convert_folder(path, essential_only=essential_only, output_dir=_output_dir(path))
+    await run_downconv(path, essential_only)
+
+
+async def run_transcode(path: str, bitrate: Bitrate, essential_only: bool = False) -> str:
+    """What ``salmon transcode`` runs, and so does the web interface: the folder transcoded where the command puts it.
+
+    Returns:
+        The output folder.
+    """
+    return await transcode_folder(path, bitrate, essential_only=essential_only, output_dir=_output_dir(path))
+
+
+async def run_downconv(path: str, essential_only: bool = False) -> str:
+    """What ``salmon downconv`` runs, and so does the web interface: the folder downconverted where the command
+    puts it.
+
+    Returns:
+        The output folder.
+    """
+    _rate, output = await convert_folder(path, essential_only=essential_only, output_dir=_output_dir(path))
+    return output
 
 
 def _output_dir(path: str) -> str | None:

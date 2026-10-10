@@ -96,7 +96,8 @@ def _copy_into(path: str, into: str, scratch: bool) -> str:
     except OSError as error:
         raise UploadError(f"Could not copy {path} to {dest}: {error}") from error
     # The record lives beside the album, not in it, so the copy would otherwise leave it behind.
-    carry_conversion(path, dest)
+    with dryrun.writing_into(into):  # A dry run writes the record only into its run directory.
+        carry_conversion(path, dest)
     return dest
 
 
