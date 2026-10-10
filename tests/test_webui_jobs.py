@@ -162,6 +162,7 @@ def test_only_the_job_kinds_of_v1_are_exposed() -> None:
         "spectrals",
         "checks",
         "upload",
+        "tag",
         "transcode",
         "downconvert",
         "compress",
