@@ -266,9 +266,7 @@ def test_a_file_that_is_not_an_image_is_refused_and_the_host_receives_nothing(
     _with_app(test)
 
 
-def test_a_file_that_is_not_an_image_is_refused_even_when_it_looks_like_one_to_the_extension_check(
-    monkeypatch: pytest.MonkeyPatch, world: World
-) -> None:
+def test_an_image_with_a_non_image_name_is_uploaded(monkeypatch: pytest.MonkeyPatch, world: World) -> None:
     # A PNG called .torrent is an image, by what is in it: the name decides nothing either way.
     odd = world.downloads / "picture.torrent"
     odd.write_bytes(png())
