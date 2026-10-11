@@ -17,32 +17,47 @@ the command sends for the same releases and answers, through the same request lo
 writes, never into the album. Each folder is checked by ``paths.album_folder`` before the job is queued, and again
 when it starts, since it may have changed while the job waited its turn.
 
+The description generator is ``salmon descgen`` for at most 10 release URLs, each matched against the scrapers before
+the job is queued; it scrapes the stores behind the guard for web jobs (``salmon.ssrf``) and returns the BBCode, never
+touching the server's clipboard. An image upload is ``salmon images up``: at most 20 files, each read before the job is
+queued and again when it starts, and sent only if it is an image by its content (``paths.image_file``), the host chosen
+by the command's rules, with a host whose images only display for some trackers (RED's) refused unless a tracker it
+displays on is named. A spectrals upload is ``salmon specs``' upload of a finished spectrals job's own images, to the
+spectrals host of the tracker picked, ``spectrals_refusal`` honoured. Image hosts are public: nothing but an image
+goes there, and a job never reads a file a request names for it outside what ``image_file`` lets through.
+
 The connection check is ``salmon checkconf -t`` for the trackers asked for: at most two requests each (the index
 call with the session cookie, then with the API key when one is set), through salmon web's request loop, and only
 when the user starts it, never on page load. Metadata sources and seedboxes stay with the command.
 
 Ported from the fork's ``routers/spectrals.py``, ``routers/checks.py`` (chodeus, d6ac6372, 9bfdddc3 and 889cc4f5),
 ``routers/upload.py`` (styx-techno 637ee666, chodeus 0b29d2d5 and 6f846b37), ``routers/convert.py`` (chodeus
-0b29d2d5, a70a3d75, d8c68c28 and a18e0e25), without the spectrals upload, ``checks/connection.py`` (chodeus,
-0b29d2d5, 9bfdddc3 and 75e5a3d9), without its run on load and its cache, and the cross-upload of ``routers/tools.py``
-(chodeus 0b29d2d5, 9bfdddc3 and 3c69045a). The fork's jobs called the commands' steps, or their click callbacks,
-themselves; the jobs here run the commands' own code.
+0b29d2d5, a70a3d75, d8c68c28 and a18e0e25), ``routers/tools.py`` (chodeus 0b29d2d5, 9bfdddc3, 1f8e47d8 and 18fc08d9),
+``checks/connection.py`` (chodeus, 0b29d2d5, 9bfdddc3 and 75e5a3d9), without its run on load and its cache, and the
+cross-upload of ``routers/tools.py`` (chodeus 0b29d2d5, 9bfdddc3 and 3c69045a). The fork's jobs called the commands'
+steps, or their click callbacks, themselves; the jobs here run the commands' own code. Unlike the fork's, an image
+upload takes images only, not any regular file inside the roots.
 """
 
 import os
+import stat
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Annotated, Any
 
+import aiohttp
 import anyio.to_thread
 import asyncclick as click
 import msgspec
 
 import salmon.trackers
-from salmon import interaction
+from salmon import cfg, interaction
+from salmon.commands import descgen_refusals
+from salmon.config.image_hosts import display_refusal, spectrals_refusal
 from salmon.constants import SOURCES, TAG_ENCODINGS
 from salmon.converter.transcoding import Bitrate
-from salmon.errors import DryRunRefused, UnknownOutcomeError
+from salmon.errors import DryRunRefused, ImageUploadFailed, ScrapeError, UnknownOutcomeError
+from salmon.images.files import NotAnImage, check_image
 from salmon.trackers.connection import (
     check_connection,
     print_certificate_failure,
@@ -52,7 +67,17 @@ from salmon.trackers.connection import (
     print_verdict,
 )
 from salmon.webui import paths
-from salmon.webui.jobs import JobError, JobKind, PartialResult, claim_folder, own_folder, register
+from salmon.webui.jobs import (
+    FINISHED,
+    JobError,
+    JobKind,
+    PartialResult,
+    claim_folder,
+    find_job,
+    own_folder,
+    own_folders,
+    register,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -96,6 +121,34 @@ class CompressParams(msgspec.Struct, forbid_unknown_fields=True):
 class ConnectionCheckParams(msgspec.Struct, forbid_unknown_fields=True):
     # checkconf's -t: the trackers to check, in order. None: every tracker in the config.
     trackers: list[str] = []
+
+
+# What a descgen job and an image upload take at most: each URL is a scrape, each file an upload to a public host.
+MAX_DESCGEN_URLS = 10
+MAX_IMAGE_FILES = 20
+MAX_URL_LENGTH = 2000
+
+
+class DescgenParams(msgspec.Struct, forbid_unknown_fields=True):
+    """``salmon descgen``: the release URLs."""
+
+    urls: list[str]
+
+
+class ImageUploadParams(msgspec.Struct, forbid_unknown_fields=True):
+    """``salmon images up``: the files, -i and -t."""
+
+    paths: list[str]
+    host: str | None = None
+    tracker: str | None = None
+
+
+class SpectralsUploadParams(msgspec.Struct, forbid_unknown_fields=True):
+    """The spectrals of a finished spectrals job, for the tracker whose spectrals host they go to (None: the shared
+    [image] specs_uploader, as ``salmon specs`` uses)."""
+
+    job_id: str
+    tracker: str | None = None
 
 
 # Track numbers count from 1: the command's -sp also takes 0 and negative numbers, which pick other tracks.
@@ -321,6 +374,120 @@ def _checked_cross_upload(params: CrossUploadParams, _dry_run: bool) -> CrossUpl
     return msgspec.structs.replace(checked, inputs=ids, path=path)
 
 
+def _checked_descgen(params: DescgenParams, _dry_run: bool) -> DescgenParams:
+    """The URLs descgen takes: at most ``MAX_DESCGEN_URLS``, each one a release URL a scraper takes, or the job is
+    refused (422) before any request, naming the URL as the command does."""
+    urls = [url.strip() for url in params.urls]
+    if not urls:
+        raise JobError(422, "Give at least one release URL.")
+    if len(urls) > MAX_DESCGEN_URLS:
+        raise JobError(422, f"Give at most {MAX_DESCGEN_URLS} release URLs: {len(urls)} were given.")
+    if any(len(url) > MAX_URL_LENGTH for url in urls):
+        raise JobError(422, f"A release URL is at most {MAX_URL_LENGTH} characters.")
+    # Never whether a URL is a folder here: that would tell a browser what exists outside the folders it may see.
+    if refusals := descgen_refusals(urls, folders=False):
+        raise JobError(422, " ".join(refusals))
+    return msgspec.structs.replace(params, urls=urls)
+
+
+def _image_host(params: ImageUploadParams) -> tuple[str, str | None]:
+    """The host and the tracker an image upload goes to, by the rules of ``salmon images up``.
+
+    With a tracker, ``image_host_for_tracker`` decides: the host named (which must display there) else the tracker's
+    image_uploader. Without one, the host named else [image] image_uploader, and a host whose images only display for
+    some trackers' members (RED's) is refused: nothing says which tracker it is for (ADR 0002).
+
+    Raises:
+        JobError: An unknown host or tracker, or a host that cannot be used for the tracker.
+    """
+    from salmon import images
+
+    if params.host is not None and params.host not in images.HOSTS:
+        raise JobError(422, f"{params.host} is not a valid image host.")
+    if params.tracker:
+        code = params.tracker.strip().upper()
+        if code not in salmon.trackers.tracker_list:
+            raise JobError(422, f"{params.tracker} is not a tracker in your config.")
+        try:
+            return images.image_host_for_tracker(code, params.host), code
+        except images.ImageHostRefused as e:
+            raise JobError(422, str(e)) from None
+    host = params.host or cfg.image.image_uploader
+    if (reason := display_refusal(host)) is not None:
+        raise JobError(422, f"{host} can't be used without a tracker: {reason}. Name the tracker the images are for.")
+    return host, None
+
+
+def _image_count(params: ImageUploadParams) -> None:
+    if not params.paths:
+        raise JobError(422, "Pick at least one image.")
+    if len(params.paths) > MAX_IMAGE_FILES:
+        raise JobError(422, f"Pick at most {MAX_IMAGE_FILES} images: {len(params.paths)} were picked.")
+
+
+def _preflight_images(params: ImageUploadParams) -> None:
+    """In a worker thread: every file read to see it is an image, before the job is queued."""
+    _image_count(params)
+    for raw in params.paths:
+        paths.image_file(raw)
+
+
+def _checked_images(params: ImageUploadParams, dry_run: bool) -> ImageUploadParams:
+    """The files (each inside a root, a regular file, not a symlink, not in a folder of .torrent files or a
+    seedbox's; ``preflight`` read them), the host and the tracker, as ``salmon images up`` takes them."""
+    # Every image host's upload refuses in a dry run.
+    if dry_run:
+        raise JobError(400, "An image upload has no dry run: it sends the files to an image host.")
+    _image_count(params)
+    host, tracker = _image_host(params)
+    # Once each, in the order given.
+    resolved = list(dict.fromkeys(paths.image_file(raw, content=False) for raw in params.paths))
+    return msgspec.structs.replace(params, paths=resolved, host=host, tracker=tracker)
+
+
+def _spectrals_host(tracker: str | None) -> tuple[str, str | None]:
+    """The spectrals host of a tracker (None: the shared [image] setting) and the tracker as the config knows it.
+
+    Raises:
+        JobError: An unknown tracker, or a host the spectrals rules refuse (the config does not load with one, but
+            a request is not to rely on that).
+    """
+    code = tracker.strip().upper() if tracker else None
+    if code is not None and code not in salmon.trackers.tracker_list:
+        raise JobError(422, f"{tracker} is not a tracker in your config.")
+    host = cfg.image.host_for(code, "specs_uploader")
+    if (reason := spectrals_refusal(host, code)) is not None:
+        raise JobError(422, f"{host} can't be used for spectrals: {reason}.")
+    return host, code
+
+
+def _spectrals_source(job_id: str) -> tuple[str, dict[int, str]]:
+    """The folder and the tracks of a finished spectrals job whose images are still kept: the job's own folder,
+    which only a spectrals job makes, never a path from a request.
+
+    Raises:
+        JobError: There is no such spectrals job (404), or it has not finished, failed, or was discarded (409).
+    """
+    job = find_job(job_id)
+    if job is None or job.kind.name != "spectrals":
+        raise JobError(404, "No such spectrals job.")
+    if job.status not in FINISHED:
+        raise JobError(409, "This spectrals job has not finished: answer its question or wait for it to end.")
+    folders = own_folders(job)
+    tracks = (job.result or {}).get("tracks") if isinstance(job.result, dict) else None
+    if job.status != "done" or not tracks:
+        raise JobError(409, "This spectrals job did not make spectrals.")
+    if job.spectrals is None or len(folders) != 1:
+        raise JobError(409, "The spectrals of this job were discarded.")
+    return folders[0], {int(spectral_id): name for spectral_id, name in tracks.items()}
+
+
+def _checked_spectrals_upload(params: SpectralsUploadParams, _dry_run: bool) -> SpectralsUploadParams:
+    _spectrals_source(params.job_id)
+    _host, tracker = _spectrals_host(params.tracker)
+    return msgspec.structs.replace(params, tracker=tracker)
+
+
 def _album(path: str) -> str:
     """The album folder, checked again as the job starts."""
     try:
@@ -535,6 +702,109 @@ async def connection_check(params: ConnectionCheckParams) -> dict[str, Any]:
     return {"trackers": found}
 
 
+async def descgen(params: DescgenParams) -> dict[str, Any]:
+    """What ``salmon descgen`` makes: the BBCode description of the releases at the URLs. The clipboard is the
+    browser's to fill, never the server's.
+
+    Fetches each URL once, from the stores, behind the guard that keeps web jobs to public addresses.
+    """
+    from salmon.commands import build_description
+
+    # Again: the URLs are ones a scraper takes, whatever happened while the job waited.
+    if refusals := descgen_refusals(params.urls, folders=False):
+        raise click.ClickException(" ".join(refusals))
+    try:
+        description = await build_description(params.urls)
+    except ScrapeError as e:
+        raise click.ClickException(f"Scrape failed: {e}") from None
+    except (aiohttp.ClientError, TimeoutError) as e:
+        # aiohttp repeats the request URL: name the error only.
+        raise click.ClickException(f"Scrape failed ({type(e).__name__}).") from None
+    return {"description": description}
+
+
+def _images_refused(error: JobError) -> click.ClickException:
+    return click.ClickException(error.detail)
+
+
+async def upload_images(params: ImageUploadParams) -> dict[str, Any]:
+    """What ``salmon images up`` runs: the files uploaded to the host, over the command's connections.
+
+    Every file is read again first, since it may have changed while the job waited. Nothing else is sent, and
+    the clipboard is the browser's to fill, never the server's.
+
+    Returns:
+        The host, the tracker, and each file with its URL.
+    """
+    from salmon import images
+
+    try:
+        host, tracker = _image_host(params)
+        checked = await anyio.to_thread.run_sync(lambda: [paths.image_file(raw) for raw in params.paths])
+    except JobError as e:
+        raise _images_refused(e) from None
+    try:
+        urls = await images.upload_images(tuple(checked), images.HOSTS[host], copy_to_clipboard=False)
+    except ImageUploadFailed as e:
+        raise click.ClickException(f"{e}: {e.__cause__}" if e.__cause__ is not None else str(e)) from None
+    return {
+        "host": host,
+        "tracker": tracker,
+        "images": [{"file": os.path.basename(path), "url": url} for path, url in zip(checked, urls, strict=True)],
+    }
+
+
+def _spectral_images(folder: str, tracks: dict[int, str]) -> None:
+    """Each image of the tracks, in the job's own folder, read to see it is the image it should be.
+
+    Raises:
+        click.ClickException: A file is missing, is a symlink or is not an image.
+    """
+    for spectral_id in tracks:
+        for kind in ("Full", "Zoom"):
+            name = f"{spectral_id:02d} {kind}.png"
+            path = os.path.join(folder, name)
+            try:
+                if os.path.realpath(path) != path or not stat.S_ISREG(os.lstat(path).st_mode):
+                    raise click.ClickException(f"{name} is gone from the job's folder, or no longer a plain file.")
+                check_image(path)
+            except FileNotFoundError:
+                raise click.ClickException(f"{name} is gone from the job's folder.") from None
+            except NotAnImage as e:
+                raise click.ClickException(f"{name} is not an image any more ({e}).") from None
+
+
+async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
+    """What ``salmon specs`` uploads, from a finished spectrals job: its images to the spectrals host of the tracker,
+    from the job's own folder only. A track that fails is offered to another host, as the command does.
+
+    Returns:
+        The host and the tracker, each track's URLs, and the text ``salmon specs`` prints (plain, and as BBCode).
+    """
+    from salmon.commands import format_spectral_urls
+    from salmon.uploader.spectrals import upload_spectrals as upload_spectral_images
+
+    try:
+        folder, tracks = _spectrals_source(params.job_id)
+        host, tracker = _spectrals_host(params.tracker)
+    except JobError as e:
+        raise click.ClickException(e.detail) from None
+    await anyio.to_thread.run_sync(_spectral_images, folder, tracks)
+    uploaded = await upload_spectral_images(folder, tracks, tracker)
+    if not uploaded:
+        raise click.ClickException("No spectral was uploaded.")
+    filenames = [tracks.get(number, "") for number in range(1, max(tracks) + 1)]
+    return {
+        "host": host,
+        "tracker": tracker,
+        "tracks": [
+            {"id": spectral_id, "track": tracks[spectral_id], "urls": urls} for spectral_id, urls in uploaded.items()
+        ],
+        "text": format_spectral_urls(filenames, uploaded, False),
+        "bbcode": format_spectral_urls(filenames, uploaded, True),
+    }
+
+
 def _title(what: str) -> Callable[[Any], str]:
     return lambda params: f"{what}: {os.path.basename(params.path)}"
 
@@ -649,5 +919,35 @@ register(
         title=_connection_check_title,
         check=_checked_connection_check,
         exclusive=True,
+    )
+)
+register(
+    JobKind(
+        name="descgen",
+        params=DescgenParams,
+        run=descgen,
+        title=lambda params: f"Description from {len(params.urls)} URL(s)",
+        check=_checked_descgen,
+    )
+)
+register(
+    JobKind(
+        name="images",
+        params=ImageUploadParams,
+        run=upload_images,
+        title=lambda params: f"Upload {len(params.paths)} image(s) to {params.host or 'the image host'}",
+        check=_checked_images,
+        preflight=_preflight_images,
+    )
+)
+register(
+    JobKind(
+        name="spectrals_upload",
+        params=SpectralsUploadParams,
+        run=upload_spectrals,
+        title=lambda params: (
+            f"Upload spectrals of {params.job_id}" + (f" for {params.tracker}" if params.tracker else "")
+        ),
+        check=_checked_spectrals_upload,
     )
 )

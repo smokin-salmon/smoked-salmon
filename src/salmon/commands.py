@@ -4,6 +4,7 @@ import os
 import shutil
 import ssl
 import sys
+from collections.abc import Sequence
 from typing import Any
 from urllib import parse
 
@@ -51,6 +52,23 @@ from salmon.uploader.torrent_client import TorrentClientGenerator
 from salmon.uploader.upload import generate_source_links
 
 
+def format_spectral_urls(filenames: list[str], spectral_urls: dict[int, list[str]], bbcode: bool) -> str:
+    """What ``salmon specs`` prints for uploaded spectrals, and so does the web interface: a line per track.
+
+    Args:
+        filenames: The album's audio files, in track order; a spectral ID counts from 1 into them.
+        spectral_urls: Each spectral ID's image URLs.
+        bbcode: Whether to give each track as a hidden BBCode block (``specs -f``) instead of ``name: urls``.
+    """
+    lines: list[str] = []
+    for spec_id, urls in spectral_urls.items():
+        if bbcode:
+            lines.append(f"[hide={filenames[spec_id - 1]}][img={'][img='.join(urls)}][/hide]")
+        else:
+            lines.append(f"{filenames[spec_id - 1]}: {' '.join(urls)}")
+    return "\n".join(lines)
+
+
 @commandgroup.command()
 @click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1)
 @click.option("--no-delete-specs", "-nd", is_flag=True)
@@ -62,15 +80,8 @@ async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
     spath = get_spectrals_path(path)
     spectral_urls = await handle_spectrals_upload_and_deletion(spath, sids, delete_spectrals=not no_delete_specs)
 
-    filenames = list(audio_info.keys())
     if spectral_urls:
-        output_lines: list[str] = []
-        for spec_id, urls in spectral_urls.items():
-            if format_output:
-                output_lines.append(f"[hide={filenames[spec_id - 1]}][img={'][img='.join(urls)}][/hide]")
-            else:
-                output_lines.append(f"{filenames[spec_id - 1]}: {' '.join(urls)}")
-        output = "\n".join(output_lines)
+        output = format_spectral_urls(list(audio_info.keys()), spectral_urls, format_output)
         click.secho(output)
         if cfg.upload.description.copy_uploaded_url_to_clipboard:
             pyperclip.copy(output)
@@ -79,29 +90,27 @@ async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
         click.secho(f"Spectrals saved to {spath}", fg="green")
 
 
-@commandgroup.command()
-@click.argument("urls", type=click.STRING, nargs=-1)
-async def descgen(urls: tuple[str, ...]) -> None:
-    """Generate a description from metadata sources."""
-    if not urls:
-        click.secho("You must specify at least one URL", fg="red")
-        return
+def descgen_refusals(urls: Sequence[str], folders: bool = True) -> list[str]:
+    """Why ``salmon descgen`` will not take these arguments: one message per URL that no source's scraper takes.
 
-    # Checked before any scrape starts, so a bad argument sends no request and ends without a traceback.
+    Args:
+        urls: The arguments.
+        folders: Whether to tell an argument that is a folder on this machine from one that is not. The web
+            interface does not: it would say what exists outside the folders it may show.
+    """
     unsupported = [url for url in urls if not any(source.Scraper.regex.match(url) for source in METASOURCES.values())]
-    if unsupported:
-        sources = ", ".join(METASOURCES)
-        for url in unsupported:
-            if os.path.isdir(url):
-                click.secho(
-                    f"{url} is a folder; descgen takes store URLs ({sources}), `salmon up` writes the description "
-                    "itself.",
-                    fg="red",
-                )
-            else:
-                click.secho(f"{url} is not a release URL descgen supports. It takes URLs from {sources}.", fg="red")
-        raise click.exceptions.Exit(1)
+    sources = ", ".join(METASOURCES)
+    return [
+        f"{url} is a folder; descgen takes store URLs ({sources}), `salmon up` writes the description itself."
+        if folders and os.path.isdir(url)
+        else f"{url} is not a release URL descgen supports. It takes URLs from {sources}."
+        for url in unsupported
+    ]
 
+
+async def build_description(urls: Sequence[str]) -> str:
+    """What ``salmon descgen`` makes, and so does the web interface: the BBCode description of the releases at these
+    URLs, their metadata combined. Fetches each URL once; the URLs are ones ``descgen_refusals`` accepts."""
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
     metadatas = await asyncio.gather(*tasks)
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
@@ -123,6 +132,24 @@ async def descgen(urls: tuple[str, ...]) -> None:
         description += f"\n{metadata['comment']}\n"
     if metadata["urls"]:
         description += "\n[b]More info:[/b] " + generate_source_links(metadata["urls"])
+    return description
+
+
+@commandgroup.command()
+@click.argument("urls", type=click.STRING, nargs=-1)
+async def descgen(urls: tuple[str, ...]) -> None:
+    """Generate a description from metadata sources."""
+    if not urls:
+        click.secho("You must specify at least one URL", fg="red")
+        return
+
+    # Checked before any scrape starts, so a bad argument sends no request and ends without a traceback.
+    if refusals := descgen_refusals(urls):
+        for refusal in refusals:
+            click.secho(refusal, fg="red")
+        raise click.exceptions.Exit(1)
+
+    description = await build_description(urls)
     click.secho("\nDescription:\n", fg="yellow", bold=True)
     click.echo(description)
     if cfg.upload.description.copy_uploaded_url_to_clipboard:

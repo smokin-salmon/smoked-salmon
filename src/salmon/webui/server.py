@@ -29,12 +29,13 @@ import salmon.trackers
 from salmon import cfg, ssrf
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
 from salmon.errors import ScrapeError
+from salmon.images.files import MAX_IMAGE_BYTES
 from salmon.release_notification import get_version
 from salmon.trackers import account
 from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers the job kinds)
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
 from salmon.webui.egress import Redactor, config_secrets
-from salmon.webui.jobs import FINISHED, Job, JobError, JobManager
+from salmon.webui.jobs import FINISHED, KINDS, Job, JobError, JobManager
 from salmon.webui.security import DEV_ORIGINS, host_allowed, is_loopback, origin_allowed
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -183,10 +184,11 @@ def _filtered(request: web.Request, answer: Any, status: int = 200) -> web.Respo
 
 
 async def browse(request: web.Request) -> web.Response:
-    """The roots, or the folders inside a folder of one (``?path=``), each marked when it holds audio."""
+    """The roots, or the folders inside a folder of one (``?path=``), each marked when it holds audio; with
+    ``?images=1``, the folder's image files too."""
     try:
         # A worker thread: a folder on a slow disk must not stall the server's loop.
-        answer = await asyncio.to_thread(paths.listing, request.query.get("path"))
+        answer = await asyncio.to_thread(paths.listing, request.query.get("path"), request.query.get("images") == "1")
     except paths.PathRefused as e:
         return _filtered(request, {"detail": e.detail}, e.status)
     return _filtered(request, answer)
@@ -251,6 +253,37 @@ async def cross_upload_options(_request: web.Request) -> web.Response:
 
     return web.json_response(
         {"trackers": list(salmon.trackers.tracker_list), "transcodes": list(TRANSCODES), "max_releases": MAX_RELEASES}
+    )
+
+
+async def tools_options(_request: web.Request) -> web.Response:
+    """What the Tools page and the spectrals upload offer: the image hosts (with the trackers a host's images
+    display for, when it is only some), the trackers configured with the image host each one's images and spectrals
+    go to, the host without a tracker, and the limits. Contacts nothing."""
+    from salmon import images
+    from salmon.config.image_hosts import tracker_only_hosts
+
+    only = tracker_only_hosts()
+    trackers = list(salmon.trackers.tracker_list)
+    return web.json_response(
+        {
+            "image_hosts": [
+                {"name": name, "only_for": [code.upper() for code in only.get(name, ())]} for name in images.HOSTS
+            ],
+            "trackers": [
+                {
+                    "code": code,
+                    "image_host": cfg.image.host_for(code, "image_uploader"),
+                    "spectrals_host": cfg.image.host_for(code, "specs_uploader"),
+                }
+                for code in trackers
+            ],
+            "image_host": cfg.image.image_uploader,
+            "spectrals_host": cfg.image.specs_uploader,
+            "max_images": kinds.MAX_IMAGE_FILES,
+            "max_descgen_urls": kinds.MAX_DESCGEN_URLS,
+            "max_image_bytes": MAX_IMAGE_BYTES,
+        }
     )
 
 
@@ -353,12 +386,32 @@ async def list_jobs(request: web.Request) -> web.Response:
     return web.json_response({"jobs": [job.summary() for job in reversed(request.app[JOBS].jobs.values())]})
 
 
+async def _preflight(body: StartJobRequest, redactor: Redactor) -> None:
+    """The kind's checks that read files, in a worker thread: a decode must not stall the server's loop.
+
+    Raises:
+        JobError: The kind refuses the job. Parameters that do not decode are left for ``start`` to refuse.
+    """
+    kind = KINDS.get(body.kind)
+    if kind is None or kind.preflight is None:
+        return
+    try:
+        params = msgspec.convert(body.params, kind.params)
+    except msgspec.ValidationError:
+        return
+    try:
+        await asyncio.to_thread(kind.preflight, params)
+    except JobError as e:
+        raise JobError(e.status, redactor.text(e.detail)) from None
+
+
 async def start_job(request: web.Request) -> web.Response:
     try:
         body = msgspec.json.decode(await request.read(), type=StartJobRequest)
     except msgspec.MsgspecError:
         return _error(400, 'Send {"kind": "...", "params": {...}}, with "dry_run" and "assume_defaults" if wanted.')
     try:
+        await _preflight(body, request.app[REDACTOR])
         job = request.app[JOBS].start(
             body.kind, body.params, dry_run=body.dry_run, assume_defaults=body.assume_defaults
         )
@@ -504,6 +557,7 @@ def create_app(
     app.router.add_get("/api/browse", browse)
     app.router.add_get("/api/upload/options", upload_options)
     app.router.add_get("/api/cross-upload/options", cross_upload_options)
+    app.router.add_get("/api/tools/options", tools_options)
     app.router.add_get("/api/search", search)
     app.router.add_get("/api/metadata", metadata)
     app.router.add_get("/api/jobs", list_jobs)

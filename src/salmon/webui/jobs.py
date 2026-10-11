@@ -72,6 +72,9 @@ class JobKind:
             parameters as the job takes them (a folder resolved, say); raises JobError to refuse the job.
         exclusive: At most one job of this kind at a time, queued or running: another start is refused (409) with
             the id of the one that is.
+        preflight: Checks that block too long for the server's loop (reading files to see what they are). The
+            server runs it in a worker thread on the decoded parameters before it asks ``check``, which stays quick;
+            it raises JobError to refuse the job.
     """
 
     name: str
@@ -81,6 +84,7 @@ class JobKind:
     folder: Callable[[Any], str | None] = lambda _params: None
     check: Callable[[Any, bool], Any] = lambda params, _dry_run: params
     exclusive: bool = False
+    preflight: Callable[[Any], None] | None = None
 
 
 KINDS: dict[str, JobKind] = {}
@@ -152,6 +156,8 @@ class Job:
         self.lines = 0
         # The spectral images the browser may fetch: each one's name as shown, and its path.
         self.spectrals: dict[str, str] | None = None
+        # The manager the job belongs to, set when it is started.
+        self.manager: JobManager | None = None
         # Reached from the job's thread too.
         self._lock = threading.Lock()
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -223,6 +229,23 @@ def _no_answer() -> str:
 
 _running_job: ContextVar[Job | None] = ContextVar("salmon_web_job", default=None)
 _running_manager: ContextVar["JobManager | None"] = ContextVar("salmon_web_jobs", default=None)
+# The manager that is checking the parameters of a job it is asked to start.
+_starting: ContextVar["JobManager | None"] = ContextVar("salmon_web_starting", default=None)
+
+
+def find_job(job_id: str) -> Job | None:
+    """A job of the server's history, for a job kind that works on another job's output: from its ``check``, while
+    its job is being started, and from its ``run``. None if there is no such job (or called from anywhere else)."""
+    manager = _starting.get()
+    if manager is None and (running := _running_job.get()) is not None:
+        manager = running.manager
+    return manager.jobs.get(job_id) if manager is not None else None
+
+
+def own_folders(job: Job) -> list[str]:
+    """The folders ``own_folder`` made for a job, resolved, as of now."""
+    with job._lock:
+        return list(job._own_folders)
 
 
 def own_folder(purpose: str) -> str:
@@ -366,10 +389,13 @@ class JobManager:
             decoded = msgspec.convert(params, kind.params)
         except msgspec.ValidationError as e:
             raise JobError(400, self._redactor.text(f"Invalid parameters: {e}")) from None
+        token = _starting.set(self)
         try:
             decoded = kind.check(decoded, dry_run)
         except JobError as e:
             raise JobError(e.status, self._redactor.text(e.detail)) from None
+        finally:
+            _starting.reset(token)
         if kind.exclusive:
             for other in self.jobs.values():
                 if other.kind is kind and other.status not in FINISHED:
@@ -386,6 +412,7 @@ class JobManager:
             dry_run,
             assume_defaults,
         )
+        job.manager = self
         self.jobs[job.id] = job
         self._queue.append(job)
         self._publish({"event": "created", "job": job.summary()})
