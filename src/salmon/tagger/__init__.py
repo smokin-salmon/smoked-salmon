@@ -21,7 +21,7 @@ from salmon.tagger.metadata import get_metadata
 from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import rename_files, tag_files
 from salmon.tagger.review import review_metadata, suggest_release_type
-from salmon.tagger.sources import run_metadata
+from salmon.tagger.sources import NOT_SHOWN, run_metadata
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 
 
@@ -158,7 +158,7 @@ async def meta(url: str) -> None:
     """
     try:
         metadata = await run_metadata(url)
-        for key in ["encoding", "media", "encoding_vbr", "source"]:
+        for key in NOT_SHOWN:
             if key in metadata and isinstance(metadata, dict):
                 del metadata[key]
         click.echo()

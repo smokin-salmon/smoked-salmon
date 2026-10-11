@@ -1,9 +1,9 @@
-"""The ``salmon web`` server: login, the request rules, jobs, the folder browser, the dashboard, and the committed
-front-end build (ADR 0004).
+"""The ``salmon web`` server: login, the request rules, jobs, the folder browser, the dashboard, store search and
+metadata, and the committed front-end build (ADR 0004).
 
 Ported from styx-techno's first ``salmon web`` (5f1f55a6) and chodeus's token auth (995928d1, 18d685fe, ab23ae24),
-and the fork's jobs, browse and system routers, from FastAPI to aiohttp, which salmon already uses: no new
-dependency.
+and the fork's jobs, browse, system and search routers (5f1f55a6 styx-techno, 0b29d2d5 and 9f576258 chodeus), from
+FastAPI to aiohttp, which salmon already uses: no new dependency.
 """
 
 import asyncio
@@ -14,17 +14,21 @@ import signal
 import weakref
 from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
+import aiohttp
 import anyio
 import asyncclick as click
 import msgspec
 from aiohttp import WSCloseCode, web
 from aiohttp.typedefs import Handler
 
+import salmon.search
+import salmon.tagger.sources
 import salmon.trackers
-from salmon import cfg
+from salmon import cfg, ssrf
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
+from salmon.errors import ScrapeError
 from salmon.release_notification import get_version
 from salmon.trackers import account
 from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers the job kinds)
@@ -46,6 +50,11 @@ BUILD_FILES = web.AppKey("build_files", dict[str, Path])
 JOBS = web.AppKey("jobs", JobManager)
 REDACTOR = web.AppKey("redactor", Redactor)
 SOCKETS = web.AppKey("sockets", weakref.WeakSet[web.WebSocketResponse])
+STORE_LOCK = web.AppKey("store_lock", asyncio.Lock)
+
+# The longest search query and metadata URL taken.
+MAX_QUERY_LENGTH = 200
+MAX_URL_LENGTH = 2000
 
 
 class LoginRequest(msgspec.Struct):
@@ -235,6 +244,90 @@ async def upload_options(_request: web.Request) -> web.Response:
     )
 
 
+# --- Store search and metadata (GET only: they read from the stores, never from a tracker) -------------
+
+
+def _track_count(value: str | None) -> int | None:
+    """``?track_count=``: a whole number of tracks, or none.
+
+    Raises:
+        ValueError: Not a number from 1 to 999.
+    """
+    if not value:
+        return None
+    count = int(value)
+    if not 1 <= count <= 999:
+        raise ValueError(value)
+    return count
+
+
+def _search_answer(results: dict[str, Any]) -> list[dict[str, Any]]:
+    """Each source's releases, in the order ``salmon metas`` prints them, with the URL it prints."""
+    sources = []
+    for name, module in salmon.search.SEARCHSOURCES.items():
+        if name not in results:
+            sources.append({"name": name, "status": "failed", "releases": []})
+            continue
+        found = results[name]
+        if found is None:
+            sources.append({"name": name, "status": "inactive", "releases": []})
+            continue
+        releases = [
+            {
+                "artist": ident.artist,
+                "album": ident.album,
+                "year": ident.year,
+                "track_count": ident.track_count,
+                "summary": click.unstyle(shown),
+                "url": module.Searcher.format_url(rls_id, ident.album),
+            }
+            for rls_id, (ident, shown) in found.items()
+        ]
+        sources.append({"name": name, "status": "found" if releases else "none", "releases": releases})
+    return sources
+
+
+async def search(request: web.Request) -> web.Response:
+    """What ``salmon metas`` runs: every store searched for ``?q=``, with ``?track_count=`` if given, at the
+    configured limit. One search or lookup at a time; the guard keeps it to public addresses (salmon.ssrf)."""
+    query = request.query.get("q", "").strip()
+    if not query or len(query) > MAX_QUERY_LENGTH:
+        return _error(422, f"Send ?q= with a search of at most {MAX_QUERY_LENGTH} characters.")
+    try:
+        track_count = _track_count(request.query.get("track_count"))
+    except ValueError:
+        return _error(422, "?track_count= must be a number of tracks, from 1 to 999.")
+    async with request.app[STORE_LOCK]:
+        with ssrf.public_only():
+            results = await salmon.search.run_metasearch(
+                [query], limit=cfg.upload.search.limit, track_count=track_count
+            )
+    return _filtered(request, {"query": query, "sources": _search_answer(results)})
+
+
+async def metadata(request: web.Request) -> web.Response:
+    """What ``salmon meta`` runs: the release metadata of ``?url=``, from the source whose scraper takes it. A URL
+    no scraper takes is refused before any request. One search or lookup at a time, public addresses only."""
+    url = request.query.get("url", "").strip()
+    if not url or len(url) > MAX_URL_LENGTH:
+        return _error(422, f"Send ?url= with a release URL of at most {MAX_URL_LENGTH} characters.")
+    source = salmon.tagger.sources.matching_source(url)
+    if source is None:
+        return _error(422, "No metadata source takes this URL.")
+    try:
+        async with request.app[STORE_LOCK]:
+            with ssrf.public_only():
+                found = await salmon.tagger.sources.run_metadata(url)
+    except ScrapeError as e:
+        return _filtered(request, {"detail": f"Scrape failed: {e}"}, 502)
+    except (aiohttp.ClientError, TimeoutError) as e:
+        # aiohttp repeats the request URL: name the error only.
+        return _filtered(request, {"detail": f"Scrape failed ({type(e).__name__})."}, 502)
+    found = cast("dict[str, Any]", found)
+    shown = {key: value for key, value in found.items() if key not in salmon.tagger.sources.NOT_SHOWN}
+    return _filtered(request, {"url": url, "source": source, "metadata": msgspec.to_builtins(shown)})
+
+
 # --- Jobs ------------------------------------------------------------------------------
 
 
@@ -389,6 +482,7 @@ def create_app(
     app[REDACTOR] = Redactor([*config_secrets(cfg), token])
     app[JOBS] = JobManager(max_jobs or cfg.web.max_jobs, app[REDACTOR])
     app[SOCKETS] = weakref.WeakSet()
+    app[STORE_LOCK] = asyncio.Lock()
     app.cleanup_ctx.append(_jobs_running)
     app.on_shutdown.append(_close_sockets)
     app.on_response_prepare.append(security_headers)
@@ -399,6 +493,8 @@ def create_app(
     app.router.add_get("/api/dashboard", dashboard)
     app.router.add_get("/api/browse", browse)
     app.router.add_get("/api/upload/options", upload_options)
+    app.router.add_get("/api/search", search)
+    app.router.add_get("/api/metadata", metadata)
     app.router.add_get("/api/jobs", list_jobs)
     app.router.add_post("/api/jobs", start_job)
     app.router.add_get("/api/jobs/{job_id}", get_job)

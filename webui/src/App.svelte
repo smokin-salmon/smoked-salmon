@@ -5,6 +5,7 @@
   import Dashboard from './pages/Dashboard.svelte'
   import Jobs from './pages/Jobs.svelte'
   import Login from './pages/Login.svelte'
+  import Search from './pages/Search.svelte'
   import Spectrals from './pages/Spectrals.svelte'
   import Upload from './pages/Upload.svelte'
   import { checkAuth, login, logout, onUnauthorized, takeTokenFromUrl } from './lib/api'
@@ -75,6 +76,7 @@
     <a href="#/spectrals" class:active={router.page === 'spectrals'}>Spectrals</a>
     <a href="#/checks" class:active={router.page === 'checks'}>Checks</a>
     <a href="#/convert" class:active={router.page === 'convert'}>Convert</a>
+    <a href="#/search" class:active={router.page === 'search'}>Search</a>
     <a href="#/jobs" class:active={router.page === 'jobs'}>
       Jobs
       {#if active > 0}<span class="chip {asking ? 'warn' : 'run'}">{active}</span>{/if}
@@ -95,6 +97,8 @@
       <Checks />
     {:else if router.page === 'convert'}
       <Convert />
+    {:else if router.page === 'search'}
+      <Search />
     {:else}
       <Jobs />
     {/if}

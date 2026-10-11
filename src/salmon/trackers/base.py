@@ -510,7 +510,7 @@ class BaseGazelleApi:
         # DummyCookieJar keeps nothing between requests, so an api-key request
         # still goes out without a session cookie.
         return aiohttp.ClientSession(
-            connector=proxy.connector(self.site_code.lower(), limit=connections),
+            connector=proxy.connector(self.site_code.lower(), fixed_hosts=True, limit=connections),
             cookie_jar=aiohttp.DummyCookieJar(),
         )
 

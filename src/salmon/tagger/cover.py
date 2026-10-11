@@ -15,6 +15,7 @@ from PIL import Image
 
 from salmon import cfg
 from salmon.common import get_audio_files
+from salmon.proxy import session_kwargs
 
 # RED allows at most 1 MiB of embedded pictures plus padding per file.
 MAX_PICTURES_AND_PADDING = humanfriendly.parse_size("1MiB")
@@ -122,7 +123,8 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
     timeout = aiohttp.ClientTimeout(total=30)
     try:
         async with (
-            aiohttp.ClientSession(timeout=timeout) as session,
+            # No proxy service, but salmon web's guard (salmon.ssrf): the URL comes from a store's page.
+            aiohttp.ClientSession(timeout=timeout, **session_kwargs(None)) as session,
             session.get(cover_url, headers=headers) as response,
         ):
             if response.status >= 400:
