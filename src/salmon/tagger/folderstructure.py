@@ -118,7 +118,7 @@ async def _check_invisible_characters(path: str, scene: bool) -> None:
 
     Raises:
         NoncompliantFolderStructure: If a scene release has such names, the user declines the
-            rename, or a rename would replace a path that exists.
+            rename, a rename would replace a path that exists, or nothing would be left of a name.
         click.Abort: If the release folder's own name holds such a character.
     """
     folder_name = os.path.basename(os.path.normpath(path))

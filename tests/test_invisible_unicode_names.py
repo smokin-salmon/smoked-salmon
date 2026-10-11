@@ -221,6 +221,19 @@ def test_check_refuses_two_names_that_clean_to_the_same_name(tmp_path, monkeypat
     assert len(_names(root)) == 2
 
 
+def test_check_refuses_a_name_with_nothing_left_after_cleaning(tmp_path, monkeypatch) -> None:
+    root = tmp_path / "Release"
+    root.mkdir()
+    (root / f"{ZWSP}{NBSP}").write_bytes(b"1")
+    asked = _answer(monkeypatch, True)
+
+    with pytest.raises(NoncompliantFolderStructure):
+        anyio.run(lambda: _check_invisible_characters(str(root), False))
+
+    assert len(_names(root)) == 1
+    assert asked == []
+
+
 def test_check_aborts_on_a_release_folder_name_it_cannot_rename(tmp_path, monkeypatch) -> None:
     root = tmp_path / f"Artist{NBSP}- Album"
     root.mkdir()
