@@ -8,6 +8,7 @@ export const PAGES = [
   'tag',
   'convert',
   'search',
+  'tools',
   'jobs',
 ] as const
 export type Page = (typeof PAGES)[number]

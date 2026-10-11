@@ -9,6 +9,7 @@
   import Search from './pages/Search.svelte'
   import Spectrals from './pages/Spectrals.svelte'
   import Tag from './pages/Tag.svelte'
+  import Tools from './pages/Tools.svelte'
   import Upload from './pages/Upload.svelte'
   import { checkAuth, login, logout, onUnauthorized, takeTokenFromUrl } from './lib/api'
   import { FINISHED, jobStore } from './lib/jobs.svelte'
@@ -81,6 +82,7 @@
     <a href="#/tag" class:active={router.page === 'tag'}>Tag</a>
     <a href="#/convert" class:active={router.page === 'convert'}>Convert</a>
     <a href="#/search" class:active={router.page === 'search'}>Search</a>
+    <a href="#/tools" class:active={router.page === 'tools'}>Tools</a>
     <a href="#/jobs" class:active={router.page === 'jobs'}>
       Jobs
       {#if active > 0}<span class="chip {asking ? 'warn' : 'run'}">{active}</span>{/if}
@@ -105,6 +107,8 @@
       <Tag />
     {:else if router.page === 'convert'}
       <Convert />
+    {:else if router.page === 'tools'}
+      <Tools />
     {:else if router.page === 'search'}
       <Search />
     {:else}
