@@ -284,7 +284,7 @@ smoked-salmon uses distinct terminal colors for different types of messages:
 * Magenta – User prompts
 
 ### 🔧 CLI Mode
-smoked-salmon runs in CLI mode, except for spectral visualization, which launches a web server. Quick start usage instructions can be found on the [Wiki Usage page](https://github.com/smokin-salmon/smoked-salmon/wiki#usage).
+smoked-salmon runs in CLI mode, or in your browser with `salmon web` (see below). The spectral review in `up` also launches a small web server. Quick start usage instructions can be found on the [Wiki Usage page](https://github.com/smokin-salmon/smoked-salmon/wiki#usage).
 
 The examples below show how to run smoked-salmon directly. If you're using Docker, you'll need to adjust them accordingly, but the underlying principles remain the same.
 
@@ -365,8 +365,86 @@ into a tracker help thread; it names the album folder and no other path. It is a
 
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
-### 🌐 Spectral Web Interface
-When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. There is no separate `web` command since 0.11.0. If salmon runs on another machine or in Docker, set `display_host` under `[upload.web_interface]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead.
+### 🌐 Spectral Viewer for `up`
+When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. If salmon runs on another machine or in Docker, set `display_host` under `[upload.web_interface]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead. This viewer is separate from `salmon web` below.
+
+### 🖥️ salmon web
+`salmon web` is salmon in your browser. Each page starts the same code as the matching CLI command, so it does the
+same checks, asks the same questions (as questions in the page) and sends the same requests. It offers nothing the
+CLI cannot do.
+
+The pages:
+* **Dashboard** – the salmon version, which command line tools (`flac`, `sox`, `lame`, ...) are installed, free space
+  in your folders, and a button for the tracker connection check. The check runs only when you press it.
+* **Folder browser** – pick an album folder inside `download_directory` or `library_dirs`.
+* **Upload** – `salmon up`, with its options and dry run.
+* **Spectrals** – make and view an album's spectrals, and upload them to the spectrals host.
+* **Checks** – `salmon check all`. Pick trackers to add the dupe search.
+* **Convert** – transcode, downconvert and compress.
+* **Tag** – `salmon tag`.
+* **Search** – look up an album in the stores and read its metadata.
+* **Tools** – the description generator (`salmon descgen`) and image uploads (`salmon images up`).
+* **Cross-upload** – `salmon cross-upload`, from torrent IDs or URLs.
+* **Jobs** – every job with its live log, the questions it waits on, and a cancel button.
+
+Start it with:
+```bash
+salmon web
+```
+It listens on `127.0.0.1:55155`. Use `--host` and `--port` to change that, or set `host` and `port` under `[web]`.
+
+**Login.** A token is always required. On `127.0.0.1`, if you set none, salmon makes a new one at each start and
+prints a login link; open it and you are in. On any other address salmon refuses to start without a token. Set it in
+the environment (`SALMON_WEB_TOKEN`, which wins) or as `token` under `[web]`. It must have at least 32 characters.
+To make one:
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Also under `[web]`:
+* `allowed_hosts` – the names or addresses your browser uses to reach salmon web, besides `localhost` and the bind
+  address. A request with any other `Host` is refused. Example: `allowed_hosts = ["seedbox.lan", "192.168.1.20"]`.
+* `max_jobs` – how many jobs run at once (default 2). The others wait in line. Only one job at a time works on a
+  given album folder.
+
+**Safety.**
+* salmon web speaks plain HTTP. On any address but `127.0.0.1`, your token and login cookie cross the network in
+  clear. Reach it through a reverse proxy that does TLS and passes the `Host` header on, through an SSH tunnel, or
+  over a VPN, unless you trust the whole network. Do not put it on the open internet.
+* The browser can list, and start jobs on, folders inside `download_directory` and `library_dirs` only.
+* A library album is never changed in place. Jobs that retag, rename or delete work on a copy in `download_directory`.
+* The web sends the same tracker requests as the CLI, under the same per-account rate limit, shared by all running
+  jobs. The web adds no retries of its own.
+* When a request that changes something may have reached the tracker but salmon did not get the answer, the job ends
+  as "unknown outcome". Check the site before you try again.
+* Jobs fetch public addresses only (release URLs you paste, covers). If you use a `[proxy]`, a name that the proxy
+  resolves to a different address than this machine does is not covered by that check.
+* Image uploads take image files only.
+* Secrets from your config are hidden in the logs, questions and results the browser gets.
+* Jobs and their history live in memory. A restart loses them.
+
+**Docker.** The image already exposes port 55155. Add a service to your compose file next to the CLI one:
+
+```yaml
+services:
+  salmon-web:
+    image: ghcr.io/smokin-salmon/smoked-salmon:latest
+    command: web --host 0.0.0.0
+    ports:
+      - "55155:55155"
+    environment:
+      - SALMON_WEB_TOKEN=${SALMON_WEB_TOKEN:?set SALMON_WEB_TOKEN}
+    volumes:
+      - /path/to/your/music:/app/.music
+      - /path/to/your/config:/config
+      - /path/to/your/generated/dottorrents:/app/.torrents
+```
+
+Put the token in an environment variable or an `.env` file next to the compose file, not in the compose file itself.
+Add the name or address you type in the browser to `allowed_hosts` in `config.toml`, for example
+`allowed_hosts = ["192.168.1.20"]`, or the page answers "This host name is not allowed". With `network_mode: host`
+instead of `ports`, leave `--host` at its default: salmon then listens on the host's `127.0.0.1` only, so use an SSH
+tunnel or a reverse proxy on that machine. Keep the service on a trusted network or behind a TLS proxy, as above.
 
 ## 🔄 Updating
 

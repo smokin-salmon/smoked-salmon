@@ -209,12 +209,16 @@ jobs in threads, every tracker request on one loop
 
 ### 5. Scope of v1
 
+Amended 2026-10-11: the 0.16.0 milestone took every page of the fork's interface; see #625. The list below
+is what v1 was decided to hold, then what was left for later, and both are now shipped.
+
 - In v1: login, jobs (live log, questions, cancel), the folder browser, spectrals (make and view, no
   upload), file checks without trackers, the upload page, with dry run, then convert (transcode, downconvert
   and compress, each the command's own code), then tag, then cross-upload (the command's own code, from torrent
   IDs and URLs: the browser names no `.torrent` file).
-- Later, each its own change: checks against trackers (the dupe check), store search and metadata (with the
-  fork's SSRF guard), the description generator, image uploads, the connection check.
+- Later, each its own change, shipped in 0.16.0: checks against trackers (the dupe check), store search and
+  metadata (with the fork's SSRF guard), the description generator, image uploads, the spectrals upload, the
+  connection check.
 - The CLI stays the authority: the web calls the same code, and offers nothing the CLI cannot do.
 
 ### 6. Tests
