@@ -12,6 +12,47 @@ def comparable(text: object) -> str:
     return "".join(char for char in plain if char.isalnum())
 
 
+_REPLACED_CATEGORIES = frozenset({"Zs", "Zl", "Zp"})
+_REMOVED_CATEGORIES = frozenset({"Cf", "Cc"})
+
+
+def invisible_chars(name: str) -> list[str]:
+    """The characters of a name that clean_name changes, each once, as "U+00A0 NO-BREAK SPACE".
+
+    These are the Unicode spaces other than U+0020, the line and paragraph separators, and the format and
+    control characters. A name holding none of them is left alone.
+    """
+    found: dict[str, str] = {}
+    for char in name:
+        category = unicodedata.category(char)
+        if char != " " and (category in _REPLACED_CATEGORIES or category in _REMOVED_CATEGORIES):
+            found.setdefault(char, f"U+{ord(char):04X} {unicodedata.name(char, 'CONTROL CHARACTER')}")
+    return list(found.values())
+
+
+def show_invisible(name: str) -> str:
+    """A name with each character clean_name changes spelled out as <U+00A0>, so it can be seen."""
+    return "".join(f"<U+{ord(c):04X}>" if invisible_chars(c) else c for c in name)
+
+
+def clean_name(name: str) -> str:
+    """A file or folder name (one path component) without invisible or odd Unicode characters.
+
+    Unicode spaces other than U+0020 and the line and paragraph separators become a plain space; format and
+    control characters (zero-width characters, the soft hyphen, byte order mark, direction marks, tab, newline)
+    are removed. Runs of spaces collapse to one and the ends are stripped. A name that would end up empty is
+    returned as it was.
+    """
+    chars = []
+    for char in name:
+        category = unicodedata.category(char)
+        if category in _REMOVED_CATEGORIES:
+            continue
+        chars.append(" " if category in _REPLACED_CATEGORIES else char)
+    cleaned = re.sub(r" {2,}", " ", "".join(chars)).strip(" ")
+    return cleaned or name
+
+
 def artist_keys(artists) -> set[str]:
     """comparable() forms a listing may name a release's artists by: each main artist, and all of them together.
 
