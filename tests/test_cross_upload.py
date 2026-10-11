@@ -152,6 +152,8 @@ class Sent:
     cookie: bool
     authorization: bool
     fields: dict[str, Any] = field(default_factory=dict)
+    # The content of each file part, by field name.
+    files: dict[str, list[bytes]] = field(default_factory=dict)
 
     @property
     def step(self) -> str:
@@ -179,7 +181,9 @@ class FakeTracker:
         self.group_page = (FIXTURES / "ops-group-torrent-table.html").read_text(encoding="utf-8")
         self.results: list[dict[str, Any]] = []  # TARGET search results
         self.groups: dict[int, dict[str, Any]] = {}  # TARGET torrentgroup answers
-        self.uploads: list[str] = []  # How each upload POST is answered: "ok", "drop" or an error message
+        # How each upload POST is answered: "ok", "drop", "429" or an error message.
+        self.uploads: list[str] = []
+        self.report_answers: list[str] = []  # How each report POST is answered: "ok" or "drop"
         self.images: dict[str, bytes] = {}  # Images on the tracker's own host, by path
         self.group_pages: dict[str, str] = {}  # The page each upload through upload.php redirects to, by torrent id
         self.next_torrent_id = 700001
@@ -190,9 +194,14 @@ class FakeTracker:
 
     async def _handle(self, request: web.Request) -> web.StreamResponse:
         fields: dict[str, Any] = {}
+        files: dict[str, list[bytes]] = {}
         if request.method == "POST":
             for name, value in (await request.post()).items():
-                fields.setdefault(name, []).append(value.filename if isinstance(value, web.FileField) else value)
+                if isinstance(value, web.FileField):
+                    fields.setdefault(name, []).append(value.filename)
+                    files.setdefault(name, []).append(value.file.read())
+                else:
+                    fields.setdefault(name, []).append(value)
         self.sent.append(
             Sent(
                 request.method,
@@ -201,6 +210,7 @@ class FakeTracker:
                 "session" in request.cookies,
                 "Authorization" in request.headers,
                 fields,
+                files,
             )
         )
         if self.sent[-1].step in self.answers:
@@ -227,6 +237,8 @@ class FakeTracker:
         if request.path == "/torrents.php" and request.query.get("torrentid") in self.group_pages:
             return web.Response(text=self.group_pages[request.query["torrentid"]], content_type="text/html")
         if request.path == "/reportsv2.php" and request.method == "POST":
+            if (self.report_answers.pop(0) if self.report_answers else "ok") == "drop":
+                return self._drop(request)
             raise web.HTTPFound(f"/torrents.php?torrentid={fields['torrentid'][0]}")
         if request.path == "/torrents.php" and "id" in request.query:
             return web.Response(text=self.group_page, content_type="text/html")
@@ -253,12 +265,19 @@ class FakeTracker:
             return web.Response(status=404, text="<html>Torrent not found</html>", content_type="text/html")
         return web.Response(body=content, content_type="application/x-bittorrent")
 
+    @staticmethod
+    def _drop(request: web.Request) -> web.StreamResponse:
+        """Close the connection without an answer, once the request has arrived."""
+        assert request.transport is not None
+        request.transport.close()
+        return web.Response()
+
     def _upload(self, request: web.Request, fields: dict[str, Any]) -> web.StreamResponse:
         outcome = self.uploads.pop(0) if self.uploads else "ok"
         if outcome == "drop":
-            assert request.transport is not None
-            request.transport.close()
-            return web.Response()
+            return self._drop(request)
+        if outcome == "429":
+            return web.json_response({"status": "failure"}, status=429, headers={"Retry-After": "1"})
         if outcome != "ok":
             return _failure(outcome)
         torrent_id, self.next_torrent_id = self.next_torrent_id, self.next_torrent_id + 1
@@ -269,9 +288,7 @@ class FakeTracker:
         """upload.php, as Gazelle's site answers it: a redirect to the new torrent on its group page."""
         outcome = self.uploads.pop(0) if self.uploads else "ok"
         if outcome == "drop":
-            assert request.transport is not None
-            request.transport.close()
-            return web.Response()
+            return self._drop(request)
         if outcome != "ok":
             # The upload form again, with the error.
             return web.Response(text=f"<html><p>{outcome}</p></html>", content_type="text/html")
@@ -306,14 +323,16 @@ class FakeTracker:
         return [sent for sent in self.posts() if sent.path == "/reportsv2.php"]
 
 
-def _client(code: str, tracker: FakeTracker, torrents: Path) -> BaseGazelleApi:
+def _client(code: str, tracker: FakeTracker, torrents: Path, *, unlimited: bool = True) -> BaseGazelleApi:
+    """A real client of the tracker, sending to the fake. `unlimited=False` keeps the account's own rate limit."""
     site = {"RED": RedApi, "OPS": OpsApi, "DIC": DICApi}[code]()
     site.base_url = tracker.url
     # RED with its API key only, OPS with both, DIC with its session cookie only (it has no API key).
     site.api_key = API_KEYS.get(code, "")
     site.cookie = SESSIONS[code] if code != "RED" else ""
     site.dot_torrents_dir = str(torrents)
-    site._rate_limiter = AsyncLimiter(1000, 1)
+    if unlimited:
+        site._rate_limiter = AsyncLimiter(1000, 1)
     return site
 
 
@@ -365,18 +384,36 @@ async def _no_log_check(_path: str) -> None:
     return None
 
 
-def _cross_upload(
+@dataclass
+class World:
+    """Two fake trackers (not serving yet), and what the fake image hosts and seedbox got."""
+
+    trackers: dict[str, FakeTracker]
+    images: list[tuple[str, str]]
+    seeded: list[tuple[str, str]]
+    copied: list[str]
+
+    @asynccontextmanager
+    async def serving(self) -> AsyncIterator[None]:
+        async with AsyncExitStack() as stack:
+            for tracker in self.trackers.values():
+                await stack.enter_async_context(tracker.serving())
+            yield
+
+
+def cross_upload_world(
     monkeypatch,
     dirs: SimpleNamespace,
-    args: list[str],
     *,
-    input: str = "",
     source: str = "OPS",
     target: str = "RED",
-    prepare=None,
     transcode=None,
-) -> Run:
-    """Run `salmon cross-upload ARGS SOURCE TARGET` against two fake trackers, a fake image host and seedbox."""
+    unlimited: bool = True,
+) -> World:
+    """Send every tracker client to a fake tracker of its own, and every image and seedbox step to fakes.
+
+    `unlimited=False` keeps each tracker account's own rate limit.
+    """
     trackers = {source: FakeTracker(source), target: FakeTracker(target)}
     images: list[tuple[str, str]] = []
     seeded: list[tuple[str, str]] = []
@@ -428,27 +465,36 @@ def _cross_upload(
         monkeypatch.setattr(salmon.uploader, "transcode_folder", transcode)
     monkeypatch.setattr(salmon.uploader, "check_folder_structure", _no_folder_check)
 
-    clients: dict[str, BaseGazelleApi] = {}
-
     def get_class(code: str):
-        def make() -> BaseGazelleApi:
-            clients[code] = _client(code, trackers[code], dirs.torrents)
-            return clients[code]
-
-        return make
+        return lambda: _client(code, trackers[code], dirs.torrents, unlimited=unlimited)
 
     monkeypatch.setattr(salmon.trackers, "get_class", get_class)
+    return World(trackers, images, seeded, copied)
+
+
+def _cross_upload(
+    monkeypatch,
+    dirs: SimpleNamespace,
+    args: list[str],
+    *,
+    input: str = "",
+    source: str = "OPS",
+    target: str = "RED",
+    prepare=None,
+    transcode=None,
+) -> Run:
+    """Run `salmon cross-upload ARGS SOURCE TARGET` against two fake trackers, a fake image host and seedbox."""
+    world = cross_upload_world(monkeypatch, dirs, source=source, target=target, transcode=transcode)
+    trackers = world.trackers
 
     async def run():
-        async with AsyncExitStack() as stack:
-            for tracker in trackers.values():
-                await stack.enter_async_context(tracker.serving())
+        async with world.serving():
             if prepare is not None:
                 prepare(trackers[source], trackers[target])
             return await CliRunner().invoke(cross_upload_module.cross_upload, [*args, source, target], input=input)
 
     result = anyio.run(run)
-    return Run(result, trackers[source], trackers[target], images, seeded, copied)
+    return Run(result, trackers[source], trackers[target], world.images, world.seeded, world.copied)
 
 
 async def _no_folder_check(*_args: Any, **_kwargs: Any) -> None:

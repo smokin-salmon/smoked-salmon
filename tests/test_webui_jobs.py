@@ -154,7 +154,7 @@ def test_a_job_of_a_registered_kind_runs_in_a_thread_of_its_own(kind: Callable[[
 
 def test_only_the_job_kinds_of_v1_are_exposed() -> None:
     async def test(client: TestClient, _manager: JobManager) -> None:
-        response = await client.post("/api/jobs", json={"kind": "cross-upload"}, headers=AUTH)
+        response = await client.post("/api/jobs", json={"kind": "description"}, headers=AUTH)
         assert response.status == 400
         assert "Unknown job kind" in (await response.json())["detail"]
 
@@ -162,6 +162,7 @@ def test_only_the_job_kinds_of_v1_are_exposed() -> None:
         "spectrals",
         "checks",
         "upload",
+        "cross_upload",
         "tag",
         "transcode",
         "downconvert",
