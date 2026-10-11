@@ -1,4 +1,69 @@
-current = "0.15.0"
+current = "0.16.0"
+
+[[changelog]]
+version = "0.16.0"
+date = "2026-10-11"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- **Tracker requests are spaced out per tracker account.** Each tracker (RED, OPS, DIC) now has its own budget: at most 5 requests in any 10.5 seconds, counted over a sliding window, so salmon no longer sends short bursts at the edge of a period. One upload to one tracker can take a few seconds longer. An upload to several trackers no longer waits for the first tracker's budget before starting on the next, since each tracker has its own. When a tracker answers "too many requests", every request to that tracker now waits, not only the one that got the answer. There is no setting for this. Thanks @chodeus
+- **Folder and file names lose invisible and unusual Unicode characters.** A no-break space or another Unicode space in a store's title becomes a plain space, and zero-width characters, the byte order mark, the soft hyphen and direction marks are removed, in the names salmon proposes. A tracker refused such names after the upload request. The folder check before an upload now lists any file or sub-folder name that still holds one, naming the character, and offers to rename them. A scene release is only reported, never renamed. If the album folder's own name holds one (you kept the old name), the upload stops and asks you to accept the proposed name. Tags are not changed. Thanks @ThoughtzThruKeyz
+- **A release whose files have different sample rates gets no lossless downconversion**: salmon says so once, and MP3 transcodes are still offered. Before, every track was converted to the first track's rate, so some were upsampled. `salmon cross-upload --downconvert` refuses such a release before contacting the target. `salmon downconv` is unchanged. Thanks @0rkag
+
+## ✨ New Features & Improvements
+
+- **`salmon web`: salmon in your browser.** Run `salmon web` and open the login link it prints (`http://127.0.0.1:55155` by default). Each page runs the same code as the matching command, with the same checks, the same questions (asked in the page) and the same tracker requests; it offers nothing the CLI cannot do. The pages:
+  - Dashboard: the version, which tools (`flac`, `sox`, `lame`, ...) are installed, free space in your folders, and a tracker connection check that runs only when you press the button.
+  - Upload (`salmon up`, with its options and dry run), Spectrals (make, view and upload them), Checks (`salmon check all`, with trackers for the dupe search), Convert (transcode, downconvert, compress), Tag (`salmon tag`), Search (stores and metadata), Tools (description generator and image uploads), Cross-upload (from torrent IDs or URLs), and Jobs (every job with its live log, its questions and a cancel button).
+  - A folder browser to pick albums inside `download_directory` and `library_dirs`, and nothing outside them.
+
+  A login token is always required: on `127.0.0.1` salmon makes one at each start, and on any other address you must set one (`SALMON_WEB_TOKEN`, or `token` under the new `[web]` section, at least 32 characters). Settings under `[web]`: `host`, `port`, `token`, `allowed_hosts` (the names your browser uses to reach it) and `max_jobs` (2 by default). The Docker image exposes port 55155; the README has a compose example and the safety notes (plain HTTP: use a TLS proxy, an SSH tunnel or a VPN off your own machine). Ported from chodeus's fork. Thanks @chodeus and @styx-techno
+- **When spectrals fail to upload, you can go on without them**: answer `skip` to the retry question. The upload continues with the spectrals that did upload, and salmon names the tracks left out. Pressing Enter still retries on your spectrals host. Thanks @ThoughtzThruKeyz
+
+## 🐛 Bug Fixes
+
+- A downconversion folder left half-written by an interrupted run is no longer taken for a finished one and uploaded. salmon names the folder and asks you to remove it; in `salmon up` that conversion is skipped and the others go on.
+- A tracker error answer in an unexpected format no longer ends in a traceback: it is reported like any other error, and a "too many requests" answer in that format is waited for and sent again.
+
+## 🔒 Tracker & Security Improvements
+
+- **salmon web** sends the same tracker requests as the CLI, under the same per-account limit shared by all running jobs, and adds no retries of its own. When a request that changes something may have reached the tracker but no answer came back, the job ends as "unknown outcome" and nothing is sent again: check the site before retrying.
+- salmon web jobs only fetch public addresses (release URLs you paste, covers), so a pasted link cannot make salmon reach your local network. Secrets from your config are masked in everything the browser receives. A library album is never changed in place. Image uploads take image files only, checked by their content, and never from your torrent or seedbox folders.
+
+## What's Changed
+* Offer no downconversion for a release with mixed sample rates by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/626
+* ADR 0004: web interface by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/627
+* One interface for every prompt by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/634
+* salmon web: server, login and packaging by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/635
+* One rate limit, lock and connection pool per tracker account by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/641
+* Bump astral-sh/uv from 0.12.22 to 0.12.24 in the minor-and-patch group across 1 directory by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/640
+* Update uv-build requirement from <0.13.0,>=0.12.19 to >=0.12.22,<0.13.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/639
+* Update msgspec[toml] requirement from >=0.21.1 to >=0.22.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/638
+* Bump the minor-and-patch group across 1 directory with 3 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/646
+* Bump multidict from 6.7.1 to 6.9.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/645
+* Web interface: jobs, browser questions and the tracker hand-over by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/647
+* Web interface: folder browser, spectrals and file checks by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/649
+* Handle a tracker error answer in JSON without an error key by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/648
+* Web interface: upload page by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/650
+* Web interface: checks against trackers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/661
+* Web interface: dashboard tools and free space by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/660
+* Web interface: convert page by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/662
+* Do not take a half-written downconversion for a finished one by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/664
+* Web interface: connection check button by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/665
+* Web interface: store search and metadata lookup, and an SSRF guard for web jobs by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/668
+* Do not mask the config template's placeholders in salmon web by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/667
+* Web interface: tag page by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/670
+* Web interface: cross-upload page by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/669
+* Web interface: description generator, image uploads and the spectrals upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/675
+* Document salmon web by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/676
+* Let an upload continue without the spectrals that failed to upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/677
+* Clean invisible Unicode characters from folder and file names by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/678
+
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.15.0...0.16.0
+
+"""
 
 [[changelog]]
 version = "0.15.0"
