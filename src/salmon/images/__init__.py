@@ -27,6 +27,10 @@ HOSTS = {
 UPLOAD_CONNECTIONS = 8
 
 
+# The answer to the retry question that goes on without the spectrals that failed.
+SKIP = "skip"
+
+
 class ImageHostRefused(ValueError):
     """An image host may not be used for a tracker's images; the message says why."""
 
@@ -300,7 +304,7 @@ async def _handle_failed_spectrals(spectrals, successful, tracker: str | None = 
         tracker: The site code of the tracker the spectrals are for, or None if they are not for one.
 
     Returns:
-        Dictionary of uploaded URLs.
+        Dictionary of the URLs of the spectrals uploaded from here on: none on "skip".
     """
     while True:
         # Recomputed every iteration (not cached at import time) so it always reflects the
@@ -311,13 +315,17 @@ async def _handle_failed_spectrals(spectrals, successful, tracker: str | None = 
         host_input: str = await interaction.prompt(
             click.style(
                 "Some spectrals failed to upload. Which image host would you like to retry "
-                f"with? (Options: {', '.join(allowed_hosts)})",
+                f"with, or {SKIP} to go on without them? (Options: {', '.join(allowed_hosts)}, {SKIP})",
                 fg="magenta",
                 bold=True,
             ),
             default=cfg.image.host_for(tracker, "specs_uploader"),
         )
         host = host_input.lower()
+        if host == SKIP:
+            left_out = [filename for sid, filename, _ in spectrals if sid not in successful]
+            click.secho(f"Going on without the spectrals of: {', '.join(left_out)}.", fg="yellow")
+            return {}
         if host in forbidden:
             click.secho(f"{host} can't be used for spectrals: {forbidden[host]}.", fg="red")
         elif host not in HOSTS:
