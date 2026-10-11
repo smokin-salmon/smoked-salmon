@@ -11,13 +11,17 @@ Ported from the fork's ``webui/validation.py`` and ``routers/browse.py``: the co
 
 import os
 import shutil
+import stat
 from dataclasses import dataclass
 from typing import Any
 
 from salmon import cfg
+from salmon.images.files import NotAnImage, check_image
 from salmon.webui.jobs import JobError
 
 AUDIO_EXTENSIONS = frozenset({".flac", ".mp3", ".m4a"})
+# The files the picker offers as images; what a file really is, the upload checks (``image_file``).
+IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".gif", ".webp"})
 # Entries of one folder looked at, and folders listed, at most: a listing past them says it was cut.
 MAX_SCANNED = 5000
 MAX_LISTED = 500
@@ -135,6 +139,76 @@ def album_folder(raw: str) -> str:
     return path
 
 
+def withheld_folders() -> list[str]:
+    """The folders no file may be sent from: where .torrent files are kept (they carry the passkey) and the
+    folders of the local seedboxes, resolved. A seedbox folder that is a root or holds one (the default is
+    download_directory) is the music itself and is left out of the list: the content check stands there."""
+    folders = [cfg.directory.dottorrents_dir]
+    folders += [
+        tracker.dottorrents_dir
+        for tracker in (cfg.tracker.red, cfg.tracker.ops, cfg.tracker.dic)
+        if tracker is not None and tracker.dottorrents_dir
+    ]
+    found = roots()
+    for seedbox in cfg.seedbox:
+        if seedbox.type != "local" or not seedbox.directory:
+            continue
+        folder = os.path.realpath(seedbox.directory)
+        if not any(_inside(root.path, folder) for root in found):
+            folders.append(folder)
+    return [os.path.realpath(folder) for folder in folders if folder]
+
+
+def _is_withheld(path: str) -> bool:
+    return any(_inside(path, folder) for folder in withheld_folders())
+
+
+def image_file(raw: str, *, content: bool = True) -> str:
+    """The image file a job may send to an image host: `raw` resolved, the rule the image upload applies.
+
+    The file must resolve inside a root, must not be a symlink or in a folder of .torrent files or a seedbox's, must
+    be a regular file, and (with `content`) must be an image by what is in it: Pillow reads it as a whole JPEG, PNG,
+    GIF or WebP, whatever its name says. An image host is public: nothing that is not an image goes there.
+
+    Args:
+        raw: The path as given.
+        content: Whether to read the file to check it. That decodes the whole image: a caller on the server's loop
+            leaves it to a worker thread.
+
+    Raises:
+        PathRefused: The file is refused, with a status and a reason that names it.
+    """
+    # The name as given: the only thing an error may say before the path is known to be inside a root.
+    name = os.path.basename(raw.rstrip("/\\")) or raw
+    path = _resolve(raw)
+    found = roots()
+    # Confined before anything probes the path.
+    if not _within(path, found):
+        raise PathRefused(403, f"Refusing {name}: it is outside download_directory and library_dirs.")
+    given = os.path.abspath(raw)
+    if os.path.join(os.path.realpath(os.path.dirname(given)), os.path.basename(given)) != path:
+        raise PathRefused(403, f"Refusing {name}: it is a symlink. Pick the file it leads to.")
+    if _is_withheld(path):
+        raise PathRefused(403, f"Refusing {name}: it is in a folder of .torrent files or a seedbox's.")
+    try:
+        mode = os.lstat(path).st_mode
+    except FileNotFoundError:
+        raise PathRefused(404, f"No such file: {name}.") from None
+    except OSError:
+        raise PathRefused(403, f"salmon may not read {name}.") from None
+    # Before opening it: opening a named pipe waits for a writer.
+    if not stat.S_ISREG(mode):
+        raise PathRefused(422, f"Refusing {name}: it is not a regular file.")
+    if content:
+        try:
+            check_image(path)
+        except NotAnImage as e:
+            raise PathRefused(422, f"Refusing {name}: it is not an image salmon will send ({e}).") from None
+        except OSError:
+            raise PathRefused(403, f"salmon may not read {name}.") from None
+    return path
+
+
 def _marked_audio(path: str) -> bool:
     """Whether the folder holds audio files, or its disc folders do: the folders the picker offers as albums."""
     try:
@@ -162,12 +236,16 @@ def _marked_audio(path: str) -> bool:
     return False
 
 
-def listing(raw: str | None) -> dict[str, Any]:
+def listing(raw: str | None, images: bool = False) -> dict[str, Any]:
     """What the folder browser shows: the roots, or the folders inside one folder of a root. Changes nothing.
 
     Folders whose name starts with a dot and symlinks are left out. Each folder listed says whether it holds
     audio files (or its disc folders do). At most ``MAX_LISTED`` folders are listed, out of the first
     ``MAX_SCANNED`` entries; ``truncated`` says when the folder holds more.
+
+    With `images`, the folder's image files are listed too (``images``, at most ``MAX_LISTED``, with their sizes):
+    the regular files, not symlinks, whose name says JPEG, PNG, GIF or WebP, in no folder of .torrent files or a
+    seedbox's. What a file is, the upload checks again.
 
     Raises:
         PathRefused: A path outside the roots, or not a folder.
@@ -183,6 +261,7 @@ def listing(raw: str | None) -> dict[str, Any]:
             "folders": [{**root.shown(), "audio": _marked_audio(root.path)} for root in found],
             "truncated": False,
             "roots": shown_roots,
+            **({"images": []} if images else {}),
         }
     path = _resolve(raw)
     if not _within(path, found):
@@ -190,8 +269,11 @@ def listing(raw: str | None) -> dict[str, Any]:
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
     names: list[tuple[str, str]] = []
+    pictures: list[tuple[str, str, int]] = []
     truncated = False
     audio = False
+    # An image in a folder of .torrent files is never offered.
+    offered = images and not _is_withheld(path)
     try:
         with os.scandir(path) as entries:
             for seen, entry in enumerate(entries):
@@ -202,16 +284,21 @@ def listing(raw: str | None) -> dict[str, Any]:
                     continue
                 if entry.is_dir(follow_symlinks=False):
                     names.append((entry.name, entry.path))
-                elif not audio and entry.is_file(follow_symlinks=False) and _is_audio(entry.name):
-                    audio = True
+                elif entry.is_file(follow_symlinks=False):
+                    if not audio and _is_audio(entry.name):
+                        audio = True
+                    elif offered and os.path.splitext(entry.name.lower())[1] in IMAGE_EXTENSIONS:
+                        pictures.append((entry.name, entry.path, entry.stat(follow_symlinks=False).st_size))
     except PermissionError:
         raise PathRefused(403, "salmon may not read this folder.") from None
     names.sort(key=lambda item: item[0].lower())
-    if len(names) > MAX_LISTED:
+    pictures.sort(key=lambda item: item[0].lower())
+    if len(names) > MAX_LISTED or len(pictures) > MAX_LISTED:
         truncated = True
         names = names[:MAX_LISTED]
+        pictures = pictures[:MAX_LISTED]
     parent = os.path.dirname(path)
-    return {
+    answer: dict[str, Any] = {
         "path": path,
         "parent": parent if _within(parent, found) and parent != path else None,
         "library": cfg.directory.is_library_path(path),
@@ -220,3 +307,6 @@ def listing(raw: str | None) -> dict[str, Any]:
         "truncated": truncated,
         "roots": shown_roots,
     }
+    if images:
+        answer["images"] = [{"name": name, "path": full, "size": size} for name, full, size in pictures]
+    return answer

@@ -125,12 +125,14 @@ async def up(filepaths: tuple[str, ...], image_host: str | None, tracker: str | 
     await upload_images(filepaths, HOSTS[image_host or cfg.image.image_uploader])
 
 
-async def upload_images(filepaths: tuple, image_host) -> list[str]:
+async def upload_images(filepaths: tuple, image_host, copy_to_clipboard: bool = True) -> list[str]:
     """Upload images to the specified host, over at most UPLOAD_CONNECTIONS connections.
 
     Args:
         filepaths: Tuple of file paths to upload.
         image_host: The image host module.
+        copy_to_clipboard: Whether to copy the URLs to the clipboard, if the config asks for it. The web interface
+            runs on a server, whose clipboard is nobody's: it passes False.
 
     Returns:
         List of uploaded URLs.
@@ -152,7 +154,7 @@ async def upload_images(filepaths: tuple, image_host) -> list[str]:
     urls = [group[0] for group in results if group is not None]
     for url in urls:
         click.secho(url)
-    if cfg.upload.description.copy_uploaded_url_to_clipboard:
+    if copy_to_clipboard and cfg.upload.description.copy_uploaded_url_to_clipboard:
         pyperclip.copy("\n".join(urls))
     return urls
 

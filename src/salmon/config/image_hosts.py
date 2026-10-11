@@ -59,6 +59,12 @@ def spectrals_refusal(host: str, tracker: str | None = None) -> str | None:
     return ", and ".join(reasons) or None
 
 
+def display_refusal(host: str, tracker: str | None = None) -> str | None:
+    """Why `host`'s images may not be shown for `tracker`'s pages, or for every tracker's if None; None if allowed."""
+    rules = HOST_RULES.get(host)
+    return None if rules is None else _display_refusal(rules, tracker)
+
+
 def cover_refusal(host: str, tracker: str) -> str | None:
     """Why `host` may not be used as a cover host for `tracker` (a site code, e.g. "RED"), or None if allowed."""
     rules = HOST_RULES.get(host)

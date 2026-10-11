@@ -168,6 +168,9 @@ def test_only_the_job_kinds_of_v1_are_exposed() -> None:
         "downconvert",
         "compress",
         "connection_check",
+        "descgen",
+        "images",
+        "spectrals_upload",
     }
     _with_app(test)
 
