@@ -46,6 +46,7 @@ import salmon.images
 import salmon.trackers
 from salmon import cfg, interaction, ssrf
 from salmon.config.validations import GazelleTrackerSettings, ImageUploader, Seedbox
+from salmon.errors import ImageUploadFailed
 from salmon.tagger.sources import METASOURCES
 from salmon.trackers import base
 from salmon.webui import jobs, paths
@@ -1085,5 +1086,36 @@ def test_the_tools_options_say_which_host_each_tracker_uses(
         ]
         assert (answer["image_host"], answer["spectrals_host"]) == ("catbox", "catbox")
         assert (answer["max_images"], answer["max_descgen_urls"]) == (20, 10)
+
+    _with_app(test)
+
+
+def test_a_spectral_that_fails_to_upload_can_be_skipped(
+    monkeypatch: pytest.MonkeyPatch, spectrals_job: None, hosts: list[tuple[str, str]]
+) -> None:
+    _config(monkeypatch, specs_uploader="catbox")
+
+    class Failing(_Recorder):
+        async def upload_file(self, filename: str) -> tuple[str, None]:
+            if os.path.basename(filename).startswith("02"):
+                raise ImageUploadFailed("rate limited")
+            return await super().upload_file(filename)
+
+    monkeypatch.setitem(salmon.images.HOSTS, "catbox", SimpleNamespace(ImageUploader=lambda: Failing("catbox", hosts)))
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        response = await _post(client, "spectrals_upload", {"job_id": source.id})
+        assert response.status == 201, await response.text()
+        job_id = (await response.json())["id"]
+        question = await _answer(client, manager, job_id, "skip")
+        assert question["kind"] == "prompt"
+        assert "skip" in question["text"]
+        job = await _finished(manager, job_id)
+        assert job.status == "done", job.error
+        # Only the track that uploaded, in the result and in what salmon specs prints.
+        assert [track["id"] for track in job.result["tracks"]] == [1]
+        assert job.result["text"] == f"{TRACKS['01']}: {' '.join(_urls('catbox', 1))}"
+        assert TRACKS["02"] not in job.result["bbcode"]
 
     _with_app(test)
