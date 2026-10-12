@@ -1,4 +1,54 @@
-current = "0.16.0"
+current = "0.17.0"
+
+[[changelog]]
+version = "0.17.0"
+date = "2026-10-12"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- **FLAC tag names are written in uppercase.** When salmon writes or renames a Vorbis comment, it now writes `ARTIST`, `DATE`, `TRACKTOTAL` and so on, as most taggers do, instead of `artist`, `date`, `tracktotal`. Tag names are not case-sensitive, so players read them as before, and no tag is duplicated: salmon replaces a tag whatever the case of its name. There is no setting for this. Thanks @SomeCrab163
+- **With `strip_useless_versions = false`, Beatport titles keep `(Original Mix)`.** The Beatport source dropped it whatever the setting said, while the other stores followed it. With the default (`true`) nothing changes. Thanks @techk1ng
+
+## ✨ New Features & Improvements
+
+- **Choose which conversions `salmon up` makes after a FLAC.** The new setting `conversions` under `[upload]` lists the ones selected by default, and made with `-yyy`: `"24bit"`, `"16bit"`, `"320"`, `"V0"` (all four by default, as before; `[]` makes none). `salmon up --conversions 16bit` (or `none`, or `all`) overrides it for one run. Every possible conversion is still listed at the prompt and can be picked by number. Thanks @vladciobancai
+- **salmon warns about config keys it does not know.** A misspelled key, a key in the wrong section, or one left over from an old config is now named at startup with the file it is in, for example `Unknown config key tracker.dic.remove_source_dir in /path/config.toml: ignored. Did you mean upload.formatting.remove_source_dir (under [upload.formatting])?`. This catches a common mistake: uncommenting a setting from the template without its section header puts it under the section above. The config still loads. `salmon checkconf` now starts by printing which config file it uses.
+- **salmon says what happens to the source folder.** With `remove_source_dir = true`, salmon now prints when it removes the source folder, and when it keeps it, why: the album is in `library_dirs`, or the run worked on a copy (`--skip-flac-upload`, `--dry-run`).
+- **The README shows salmon web**, with screenshots of its pages.
+
+## 🐛 Bug Fixes
+
+- **Discogs tagging** reads artists correctly: Discogs's numbers that tell artists of the same name apart, such as `(27)`, are dropped from the names in your tags too, a `feat.` credit no longer loses its closing bracket, artists after a `Feat.` on Discogs are guests, and `X-Men` and `X.Men` are one artist. A name that is only the start of another (`Rae` next to `Raekwon`) is no longer dropped as a duplicate. Thanks @djkingraja
+- **`Could not contact DNS servers` on Linux** where name lookups only work through systemd-resolved (or a VPN's DNS, or DNS over TLS): salmon now looks names up through the system like every other program, on every platform.
+- A FLAC tag repeated with the same value (`TRACKNUMBER=1` twice) is read once, so the retag no longer proposes changing `1; 1` to `1`. Thanks @techk1ng
+- `no_genres_from_qobuz` in the config template was written `False`, which is not valid TOML once uncommented; it is now `false`.
+
+## 🔒 Tracker & Security Improvements
+
+- **Cross-upload from RED to DIC works with RED-hosted images.** RED's image host needs cookies that RED only sets for a request made with the session cookie, so the fetch always got a 403. salmon now gets them with one request just before fetching a release's images (counted in the plan's request line), and sends them only to RED's image host. This needs `session` under `[tracker.red]`: without it, the release is refused before anything is sent.
+- **Cross-upload stops before the upload when a source file or folder name holds an invisible Unicode character** (a no-break space, a zero-width character), listing the names. The target tracker would refuse it after the request. Nothing is renamed, as those are the files your client seeds: fix the torrent on the source tracker first.
+
+## What's Changed
+* Refuse a cross-upload whose source names hold invisible Unicode characters by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/683
+* Resolve names through the OS on every platform (drop aiohttp speedups) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/684
+* Discogs tagging: read feat. joins, drop (N) suffixes from tags, no duplicate artists by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/685
+* Say when remove_source_dir removes the source folder, or why it keeps it by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/686
+* Warn about unknown config keys and show the config file in checkconf by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/687
+* Read a FLAC tag repeated with the same value once by @techk1ng in https://github.com/smokin-salmon/smoked-salmon/pull/688
+* Keep Beatport's Original Mix when strip_useless_versions is off by @techk1ng in https://github.com/smokin-salmon/smoked-salmon/pull/689
+* Choose which conversions salmon up makes by default (upload.conversions, --conversions) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/691
+* Capitalize Vorbis comments by @SomeCrab163 in https://github.com/smokin-salmon/smoked-salmon/pull/673
+* Show salmon web in the README by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/694
+* Fetch RED-hosted images with RED's image cookies when cross-uploading to DIC by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/696
+
+## New Contributors
+* @techk1ng made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/688
+* @SomeCrab163 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/673
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.16.0...0.17.0
+
+"""
 
 [[changelog]]
 version = "0.16.0"
