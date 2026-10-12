@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 
+from salmon import cfg
 from salmon.errors import ScrapeError
 from salmon.sources import BeatportBase
 from salmon.tagger.sources.base import MetadataMixin
@@ -98,10 +99,12 @@ class Scraper(BeatportBase, MetadataMixin):
                 for remixer in track["remixers"]:
                     artists.append((remixer["name"], "remixer"))
 
-                # Get title with mix name if not Original Mix
-                title = track["name"]
-                if track["mix_name"] and track["mix_name"] != "Original Mix":
-                    title += f" ({track['mix_name']})"
+                # Get title with mix name. "Original Mix" is a useless version: kept only when the config keeps those.
+                # Beatport sometimes pads the name with a space, which would double up before the mix name.
+                title = track["name"].strip()
+                mix_name = track["mix_name"]
+                if mix_name and (mix_name != "Original Mix" or not cfg.upload.formatting.strip_useless_versions):
+                    title += f" ({mix_name})"
 
                 tracks[str(cur_disc)][track_num] = self.generate_track(
                     trackno=track_num,
