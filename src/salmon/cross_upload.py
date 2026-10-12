@@ -16,7 +16,7 @@ DIC's rules and API answers are is not checked against DIC itself: where it matt
 import html
 import re
 import unicodedata
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -34,7 +34,7 @@ import salmon.trackers
 from salmon import cfg, dryrun, interaction
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
-from salmon.common import commandgroup
+from salmon.common import commandgroup, invisible_chars, show_invisible
 from salmon.config.image_hosts import HOST_RULES
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
 from salmon.errors import (
@@ -464,6 +464,7 @@ async def _prepare(
     if claim_folder is not None and (refusal := await claim_folder(release.path)):
         raise CrossUploadRefused(refusal)
     _verify_release_files(response, release.path, target)
+    _check_invisible_names(release.path, _file_list(response["torrent"]), source)
     await _check_pieces(release, given, source)
     rule = target.TAG_RULES.sixteen_bit_above_48khz
     # Only a 16bit FLAC can break the rule, and no tracker's torrent says its sample rate: the files do.
@@ -754,7 +755,7 @@ def _file_list(torrent: dict[str, Any]) -> dict[str, int]:
     """The torrent's files from its fileList, by path in the torrent's folder (NFC), with their size."""
     files: dict[str, int] = {}
     for entry in (torrent.get("fileList") or "").split("|||"):
-        match = _FILE_ENTRY.match(entry.strip())
+        match = _FILE_ENTRY.match(entry)
         if match:
             files[unicodedata.normalize("NFC", html.unescape(match[1]))] = int(match[2])
     return files
@@ -792,6 +793,43 @@ def _verify_release_files(response: dict[str, Any], folder: Path, target: "BaseG
     too_long = [name for name in expected if len(f"{folder.name}/{name}") > limit]
     if too_long:
         raise CrossUploadRefused(f"{len(too_long)} path(s) are longer than {target.site_string}'s {limit} characters")
+
+
+def _check_invisible_names(folder: Path, files: Iterable[str], source: "BaseGazelleApi") -> None:
+    """Refuse a release whose folder, sub-folder or file names hold a character `clean_name` would change.
+
+    The files are the ones the client seeds, so nothing is renamed: the torrent has to be fixed on SOURCE.
+
+    Args:
+        folder: The album folder, named as the torrent's folder.
+        files: The torrent's file paths, relative to the album folder.
+
+    Raises:
+        CrossUploadRefused: Listing the names and their characters first.
+    """
+    offending: list[tuple[str, list[str]]] = []
+    if chars := invisible_chars(folder.name):
+        offending.append((folder.name, chars))
+    seen: set[str] = set()
+    for file in files:
+        parts = file.split("/")
+        for depth in range(1, len(parts) + 1):
+            relative = "/".join(parts[:depth])
+            if relative in seen:
+                continue
+            seen.add(relative)
+            if chars := invisible_chars(parts[depth - 1]):
+                offending.append((f"{folder.name}/{relative}", chars))
+    if not offending:
+        return
+    click.secho("These names hold invisible or unusual Unicode characters:", fg="red", bold=True)
+    for name, chars in offending:
+        click.echo(f" >> {show_invisible(name)}")
+        for char in chars:
+            click.echo(f"      {char}")
+    raise CrossUploadRefused(
+        f"{len(offending)} name(s) hold invisible Unicode characters: fix the torrent on {source.site_string} first"
+    )
 
 
 async def _check_pieces(release: Release, given: Torrent | None, source: "BaseGazelleApi") -> None:
