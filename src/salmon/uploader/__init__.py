@@ -771,6 +771,7 @@ async def upload(
             apply_ai_suggestions=apply_ai_suggestions,
             rename_into=rename_into,
             library_album=path if cfg.directory.is_library_path(path) else None,
+            original=path if staged != path else None,
             conversion=conversion,
             trackers=trackers,
         )
@@ -850,6 +851,7 @@ async def _upload_staged(
     apply_ai_suggestions: bool,
     rename_into: str | None,
     library_album: str | None,
+    original: str | None = None,
     conversion: dict[str, Any] | None = None,
     trackers: list[str] | None = None,
 ) -> None:
@@ -859,6 +861,7 @@ async def _upload_staged(
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
         rename_into: The directory the renamed folder goes into, instead of download_directory.
         library_album: The folder path is a copy of, when that folder must be kept: "delete" deletes only the copy.
+        original: The folder the user gave, when path is a copy of it: the folder rename says why it is kept.
     """
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
@@ -968,6 +971,7 @@ async def _upload_staged(
                 skip_initial_review,
                 apply_ai_suggestions,
                 rename_into=rename_into,
+                original=original,
                 max_path_length=_max_path_length_for_run(gazelle_site, trackers),
                 rls_type_hint=suggest_release_type(
                     rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
@@ -1260,6 +1264,7 @@ async def edit_metadata(
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
     rename_into: str | None = None,
+    original: str | None = None,
     max_path_length: int = 180,
     rls_type_hint: str | None = None,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
@@ -1282,6 +1287,7 @@ async def edit_metadata(
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
         rename_into: The directory the renamed folder goes into, instead of download_directory.
+        original: The folder the user gave, when path is a copy of it, for the folder rename's remove_source_dir note.
         max_path_length: The longest in-torrent path the folder structure check allows.
         rls_type_hint: The release type prompt's default, when the release type has to be asked.
 
@@ -1320,7 +1326,10 @@ async def edit_metadata(
                 await recompress_path(path)
             except UploadError as e:
                 raise UploadError(f"{e} Rerun without -c.") from e
-        path = await rename_folder(path, metadata, auto_rename, parent=rename_into)
+        renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original)
+        if renamed != path:
+            original = None  # A re-run renames the renamed folder, which is no longer the copy of the original.
+        path = renamed
         if not metadata["scene"]:
             await rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
         await check_folder_structure(

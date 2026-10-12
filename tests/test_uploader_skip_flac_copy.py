@@ -231,6 +231,16 @@ def test_the_source_folder_is_left_byte_identical(
     assert site.torrentgroup_calls == 1
 
 
+def test_the_run_says_it_keeps_the_source_folder_and_why(monkeypatch, tmp_path, downloads) -> None:
+    release = _release(tmp_path / "seeding" / "Album")
+
+    result, _site, _transcodes = _run_up(monkeypatch, release, remove_source_dir=True)
+
+    assert result.exit_code == 0, result.output
+    assert f"remove_source_dir is on, but {release} is kept: --skip-flac-upload works on a copy." in result.output
+    assert "Removed the source folder" not in result.output
+
+
 def test_an_aborted_run_leaves_the_source_and_removes_the_copy(monkeypatch, tmp_path, downloads) -> None:
     release = _release(tmp_path / "seeding" / "Album")
     before = _snapshot(release)

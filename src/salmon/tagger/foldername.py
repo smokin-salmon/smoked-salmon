@@ -7,7 +7,7 @@ from string import Formatter
 
 import asyncclick as click
 
-from salmon import cfg, interaction
+from salmon import cfg, dryrun, interaction
 from salmon.common import clean_name, strip_template_keys
 from salmon.constants import (
     BLACKLISTED_CHARS,
@@ -17,7 +17,7 @@ from salmon.errors import UploadError
 from salmon.tagger.audio_info import gather_audio_info
 
 
-async def rename_folder(path, metadata, auto_rename, check=True, parent=None):
+async def rename_folder(path, metadata, auto_rename, check=True, parent=None, original=None):
     """
     Create a revised folder name from the new metadata and present it to the
     user. Have them decide whether or not to accept the folder name.
@@ -26,6 +26,8 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None):
     For scene releases, the name of the original folder is kept untouched, and
     the folder is copied to the download folder.
     `parent` replaces the download folder as the directory the renamed folder goes into.
+    `original` is the folder the user gave, passed only when `path` is a copy of it: with remove_source_dir on,
+    the copy is left for its run directory to remove, and the output says why `original` is kept.
     """
     # Imported here: the uploader package imports this module.
     from salmon.uploader.spectrals import get_spectrals_path
@@ -106,10 +108,13 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None):
             # Moved, not copied: the source must not keep a Spectrals folder the upload never deletes.
             _move_folder(specs_path, get_spectrals_path(new_path))
 
-        if cfg.upload.formatting.remove_source_dir and in_library:
+        if cfg.upload.formatting.remove_source_dir and original is not None:
+            click.secho(f"remove_source_dir is on, but {original} is kept: {_kept_reason(original)}.", fg="yellow")
+        elif cfg.upload.formatting.remove_source_dir and in_library:
             click.secho(f"Not removing {path}: it is in library_dirs, or holds one.", fg="yellow")
         elif cfg.upload.formatting.remove_source_dir:
             shutil.rmtree(path)
+            click.secho(f"Removed the source folder {path} (remove_source_dir).", fg="yellow")
     # Local: the converter package imports this module.
     from salmon.converter.conversions import carry_conversion
 
@@ -189,6 +194,15 @@ def drop_resolution_token(foldername, token):
     foldername = re.sub(r"\s*" + re.escape(token) + r"\b", "", foldername)
     foldername = re.sub(r"[\[{(]\s*[\]})]", "", foldername)
     return re.sub(r"\s+", " ", foldername).strip()
+
+
+def _kept_reason(original: str) -> str:
+    """Why a run that worked on a copy of `original` leaves it where it is."""
+    if cfg.directory.is_library_path(original):
+        return "it is in library_dirs, and salmon never removes a library album"
+    if dryrun.active():
+        return "a dry run works on a copy and changes nothing"
+    return "--skip-flac-upload works on a copy"
 
 
 def generate_folder_name(metadata):

@@ -186,7 +186,13 @@ async def run_tag(options: TagOptions) -> str:
 
         await download_cover_if_nonexistent(path, metadata["cover"])
         tags = await check_tags(path)
-        path = await rename_folder(path, metadata, options.auto_rename, parent=rename_into)
+        path = await rename_folder(
+            path,
+            metadata,
+            options.auto_rename,
+            parent=rename_into,
+            original=options.path if path != options.path else None,
+        )
         await rename_files(path, tags, metadata, options.auto_rename, None)
         await check_folder_structure(path, scene=False)
         click.secho(f"\nProcessed {path}", fg="cyan", bold=True)

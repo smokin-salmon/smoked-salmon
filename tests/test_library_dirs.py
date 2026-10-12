@@ -547,6 +547,7 @@ def test_tag_works_on_a_copy_renamed_into_download_directory(monkeypatch, dirs) 
     assert result.exit_code == 0, result.output
     assert _snapshot(library) == before
     assert set(os.listdir(downloads)) == {staging.STAGING_DIR, RENAMED}
+    assert f"remove_source_dir is on, but {album} is kept: it is in library_dirs" in result.output
     one = FLAC(downloads / RENAMED / "01. one.flac")
     assert (one["album"], one["date"]) == (["Album"], ["2020"])
 
