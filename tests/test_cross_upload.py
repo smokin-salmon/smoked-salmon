@@ -64,6 +64,8 @@ AUTHKEY = "authkey-0123456789"
 PASSKEY = "passkey-9876543210"
 API_KEYS = {"RED": "red-api-key-0001", "OPS": "ops-api-key-0001"}
 SESSIONS = {"RED": "red-session-cookie", "OPS": "ops-session-cookie", "DIC": "dic-session-cookie"}
+# The cookies RED's image host checks, as RED's ajax.php sets them on an answer to a request with the session cookie.
+IMAGE_COOKIES = {"imgauth_u": "4242424", "imgauth_h": "c2lnbmF0dXJl/b2Y+aW1hZ2U=", "imgauth_e": "1791234567"}
 # Torrent 600012 has a row on the fixture group page with no lossy label; 600011's says lossy master approved.
 TORRENT_ID = 600012
 GROUP_ID = 500002
@@ -154,12 +156,20 @@ class Sent:
     fields: dict[str, Any] = field(default_factory=dict)
     # The content of each file part, by field name.
     files: dict[str, list[bytes]] = field(default_factory=dict)
+    # Every cookie the request carried, by name, each value as sent (quotes and all), as nginx reads it.
+    cookies: dict[str, str] = field(default_factory=dict)
 
     @property
     def step(self) -> str:
         """The request as the budget names it, e.g. "GET ajax.php?action=browse"."""
         action = self.query.get("action")
         return f"{self.method} {self.path.lstrip('/')}{f'?action={action}' if action else ''}"
+
+
+def _raw_cookies(header: str) -> dict[str, str]:
+    """A Cookie header's cookies, by name, each value as sent: not unquoted, as aiohttp's request.cookies would."""
+    pairs = (pair.strip().partition("=") for pair in header.split(";") if pair.strip())
+    return {name: value for name, _, value in pairs}
 
 
 def _success(response: Any) -> web.Response:
@@ -191,6 +201,10 @@ class FakeTracker:
         self.answers: dict[str, Callable[[], web.Response]] = {}
         # Each torrent's .torrent, by torrent id: an answer's "dot_torrent" unless set here.
         self.dot_torrents: dict[int, bytes] = {}
+        # The cookies its image host (/i/) answers only with, which the index call sets when sent with the session
+        # cookie: RED's.
+        self.image_cookies = dict(IMAGE_COOKIES) if code == "RED" else {}
+        self.sets_image_cookies = True
 
     async def _handle(self, request: web.Request) -> web.StreamResponse:
         fields: dict[str, Any] = {}
@@ -211,6 +225,7 @@ class FakeTracker:
                 "Authorization" in request.headers,
                 fields,
                 files,
+                _raw_cookies(request.headers.get("Cookie", "")),
             )
         )
         if self.sent[-1].step in self.answers:
@@ -218,7 +233,13 @@ class FakeTracker:
         action = request.query.get("action")
         if request.path == "/ajax.php":
             if action == "index":
-                return _success({"authkey": AUTHKEY, "passkey": PASSKEY})
+                answer = _success({"authkey": AUTHKEY, "passkey": PASSKEY})
+                sent = self.sent[-1]
+                if self.sets_image_cookies and sent.cookie and not sent.authorization:
+                    for name, value in self.image_cookies.items():
+                        # Raw: aiohttp's set_cookie would quote the signature, which holds / + =.
+                        answer.headers.add("Set-Cookie", f"{name}={value}; path=/i/; HttpOnly")
+                return answer
             if action == "torrent":
                 return self._torrent(request.query)
             if action == "browse":
@@ -246,6 +267,10 @@ class FakeTracker:
             return web.Response(text="<html></html>", content_type="text/html")
         if request.path == "/log.php":
             return web.Response(text="<html><body></body></html>", content_type="text/html")
+        if self.image_cookies and request.path.startswith("/i/"):
+            cookies = self.sent[-1].cookies
+            if "session" not in cookies or any(cookies.get(name) != self.image_cookies[name] for name in IMAGE_COOKIES):
+                return web.Response(status=403, text="<html>403 Forbidden</html>", content_type="text/html")
         if request.path in self.images:
             return web.Response(body=self.images[request.path], content_type="image/png")
         return web.Response(status=404)
@@ -323,13 +348,16 @@ class FakeTracker:
         return [sent for sent in self.posts() if sent.path == "/reportsv2.php"]
 
 
-def _client(code: str, tracker: FakeTracker, torrents: Path, *, unlimited: bool = True) -> BaseGazelleApi:
+def _client(
+    code: str, tracker: FakeTracker, torrents: Path, *, unlimited: bool = True, red_session: bool = False
+) -> BaseGazelleApi:
     """A real client of the tracker, sending to the fake. `unlimited=False` keeps the account's own rate limit."""
     site = {"RED": RedApi, "OPS": OpsApi, "DIC": DICApi}[code]()
     site.base_url = tracker.url
-    # RED with its API key only, OPS with both, DIC with its session cookie only (it has no API key).
+    # RED with its API key only (and its session cookie with red_session), OPS with both, DIC with its session cookie
+    # only (it has no API key).
     site.api_key = API_KEYS.get(code, "")
-    site.cookie = SESSIONS[code] if code != "RED" else ""
+    site.cookie = SESSIONS[code] if code != "RED" or red_session else ""
     site.dot_torrents_dir = str(torrents)
     if unlimited:
         site._rate_limiter = AsyncLimiter(1000, 1)
@@ -409,10 +437,12 @@ def cross_upload_world(
     target: str = "RED",
     transcode=None,
     unlimited: bool = True,
+    red_session: bool = False,
 ) -> World:
     """Send every tracker client to a fake tracker of its own, and every image and seedbox step to fakes.
 
-    `unlimited=False` keeps each tracker account's own rate limit.
+    `unlimited=False` keeps each tracker account's own rate limit. `red_session` gives RED's client its session
+    cookie as well as its API key.
     """
     trackers = {source: FakeTracker(source), target: FakeTracker(target)}
     images: list[tuple[str, str]] = []
@@ -466,7 +496,7 @@ def cross_upload_world(
     monkeypatch.setattr(salmon.uploader, "check_folder_structure", _no_folder_check)
 
     def get_class(code: str):
-        return lambda: _client(code, trackers[code], dirs.torrents, unlimited=unlimited)
+        return lambda: _client(code, trackers[code], dirs.torrents, unlimited=unlimited, red_session=red_session)
 
     monkeypatch.setattr(salmon.trackers, "get_class", get_class)
     return World(trackers, images, seeded, copied)
@@ -482,9 +512,12 @@ def _cross_upload(
     target: str = "RED",
     prepare=None,
     transcode=None,
+    red_session: bool = False,
 ) -> Run:
     """Run `salmon cross-upload ARGS SOURCE TARGET` against two fake trackers, a fake image host and seedbox."""
-    world = cross_upload_world(monkeypatch, dirs, source=source, target=target, transcode=transcode)
+    world = cross_upload_world(
+        monkeypatch, dirs, source=source, target=target, transcode=transcode, red_session=red_session
+    )
     trackers = world.trackers
 
     async def run():
@@ -1014,13 +1047,13 @@ def test_a_failed_second_format_stops_the_run_and_says_what_is_up(monkeypatch, d
 
 
 def _red_answer(red_url: str):
-    """A RED torrent answer for the album: the OPS fixture with RED-hosted, per-viewer signed images."""
+    """A RED torrent answer for the album: the OPS fixture with images on RED's own host, as RED's API gives them."""
 
     def answer(folder: Path, torrent_id: int) -> dict[str, Any]:
         response = _ops_answer(folder, torrent_id)
         group = response["group"]
-        group["wikiImage"] = f"{red_url}/i/cover.jpg?h=signature&e=1700000000&u=12345"
-        group["bbBody"] = f"Notes [img]{red_url}/i/inline.png?h=other&e=1700000000&u=12345[/img]"
+        group["wikiImage"] = f"{red_url}/i/cover.jpg"
+        group["bbBody"] = f"Notes [img]{red_url}/i/inline.png[/img]"
         response["torrent"].update(lossyMasterApproved=False, lossyWebApproved=False, remastered=True)
         return response
 
@@ -1035,17 +1068,24 @@ def test_a_red_image_goes_to_ops_as_its_bare_url_and_is_never_fetched(monkeypatc
         _source_has(album, answer=_red_answer(source.url))(source, target)
 
     run = _cross_upload(
-        monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", source="RED", target="OPS", prepare=prepare
+        monkeypatch,
+        dirs,
+        [str(TORRENT_ID), "-yyy"],
+        input="\n",
+        source="RED",
+        target="OPS",
+        prepare=prepare,
+        red_session=True,
     )
 
     assert run.result.exit_code == 0, run.output
+    # Neither fetched nor its image cookies asked for: RED's only index call is the API key's, to authenticate.
     assert not any(sent.path.startswith("/i/") for sent in run.source.sent)
+    assert [sent.authorization for sent in run.source.sent if sent.step == "GET ajax.php?action=index"] == [True]
     assert run.images == []
     (post,) = run.target.posts()
     assert post.fields["image"] == [f"{run.source.url}/i/cover.jpg"]
     assert post.fields["album_desc"] == [f"Notes [img]{run.source.url}/i/inline.png[/img]"]
-    # RED signs the URLs it hands out per viewer, with their user id: none of that reaches OPS.
-    assert "u=12345" not in json.dumps(post.fields)
 
 
 def _ops_hosted_images(ops_url: str):
@@ -2051,7 +2091,7 @@ def test_an_upload_to_dic_goes_through_its_upload_page_with_its_session_and_no_m
         # RED's own images do not show on DIC: they are fetched from RED and rehosted.
         source_tracker.images = {"/i/cover.jpg": JPEG, "/i/inline.png": PNG}
 
-    run = _to_dic(monkeypatch, dirs, source, input="\n", prepare=prepare)
+    run = _to_dic(monkeypatch, dirs, source, input="\n", prepare=prepare, red_session=source == "RED")
 
     assert run.result.exit_code == 0, run.output
     # Measured: the upload and the group page it redirects to. DIC has a session cookie: its site log is read
@@ -2079,6 +2119,133 @@ def test_an_upload_to_dic_goes_through_its_upload_page_with_its_session_and_no_m
     torrent = Torrent.read(dirs.torrents / f"{FOLDER} - DICMusic.torrent")
     assert (torrent.source, torrent.trackers) == ("DICMusic", [[f"https://tracker.52dic.vip/{PASSKEY}/announce"]])
     assert torrent.comment == f"{run.target.url}/torrents.php?torrentid=700001"
+
+
+# RED's own images to DIC: RED's image host takes the imgauth_* cookies its ajax.php sets on an answer to a request
+# made with the session cookie (#695), never the API key nor the session cookie alone.
+
+
+def _auth(sent: Sent) -> str:
+    return {(True, False): "cookie", (False, True): "api key", (True, True): "both", (False, False): "none"}[
+        (sent.cookie, sent.authorization)
+    ]
+
+
+def _red_images(source: FakeTracker, _target: FakeTracker) -> None:
+    source.images = {"/i/cover.jpg": JPEG, "/i/inline.png": PNG}
+
+
+def _cookie_index_calls(run: Run) -> list[Sent]:
+    return [sent for sent in run.source.sent if sent.step == "GET ajax.php?action=index" and sent.cookie]
+
+
+def test_red_images_go_to_dic_fetched_with_the_cookies_of_one_index_call_sent_with_the_session(
+    monkeypatch, dirs
+) -> None:
+    run = _to_dic(monkeypatch, dirs, "RED", input="\n", prepare=_red_images, red_session=True)
+
+    assert run.result.exit_code == 0, run.output
+    # Measured: RED's reads as before, then one index call with the session cookie alone, then each image once.
+    assert [(sent.step, _auth(sent)) for sent in run.source.sent] == [
+        ("GET ajax.php?action=index", "api key"),
+        ("GET ajax.php?action=torrent", "api key"),
+        ("GET ajax.php?action=download", "api key"),
+        ("GET ajax.php?action=index", "cookie"),
+        ("GET i/cover.jpg", "cookie"),
+        ("GET i/inline.png", "cookie"),
+    ]
+    for sent in run.source.sent:
+        if sent.path.startswith("/i/"):
+            assert {name: sent.cookies.get(name) for name in IMAGE_COOKIES} == IMAGE_COOKIES
+        else:
+            assert not set(IMAGE_COOKIES) & set(sent.cookies)
+    assert run.images == [("dichost", "image.jpg"), ("dichost", "image.png")]
+    (post,) = _site_uploads(run)
+    assert post.fields["image"] == ["https://dichost.images.test/1.png"]
+    assert post.fields["album_desc"] == ["Notes [img]https://dichost.images.test/2.png[/img]"]
+    # The plan counts the index call with the images.
+    assert ", 2 image GET and 1 index GET to RED" in run.output
+
+
+def test_each_release_rehosting_red_images_makes_its_own_index_call_and_one_without_makes_none(
+    monkeypatch, dirs
+) -> None:
+    albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(3)]
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _red_images(source, target)
+        _source_has(*albums, answer=_red_answer(source.url))(source, target)
+        # The third release's images are on another host: nothing to fetch from RED.
+        source.torrents[TORRENT_ID + 2]["group"].update(wikiImage="https://ptpimg.me/x00012.jpg", bbBody="Notes")
+
+    ids = [str(TORRENT_ID + number) for number in range(3)]
+    run = _cross_upload(
+        monkeypatch, dirs, [*ids, "-yyy"], input="\n" * 3, source="RED", target="DIC", prepare=prepare, red_session=True
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert len(_site_uploads(run)) == 3
+    assert len(_cookie_index_calls(run)) == 2
+    assert run.source.steps()["GET i/cover.jpg"] == 2
+    # Each release's index call comes right before its own images.
+    steps = [sent.step for sent in run.source.sent if sent.cookie]
+    assert steps == ["GET ajax.php?action=index", "GET i/cover.jpg", "GET i/inline.png"] * 2
+
+
+def test_red_images_to_dic_without_reds_session_cookie_stop_the_release_before_any_request_for_them(
+    monkeypatch, dirs
+) -> None:
+    run = _to_dic(monkeypatch, dirs, "RED", input="\n", prepare=_red_images)
+
+    assert run.result.exit_code == 1
+    assert f"Not cross-uploading {TORRENT_ID}:" in run.output
+    assert "tracker.red.session" in run.output
+    assert "salmon up" in run.output
+    assert run.target.sent == []
+    assert not any(sent.path.startswith("/i/") for sent in run.source.sent)
+    assert _cookie_index_calls(run) == []
+
+
+def test_an_index_answer_setting_no_image_cookies_stops_it_before_any_image_is_fetched(monkeypatch, dirs) -> None:
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _red_images(source, target)
+        source.sets_image_cookies = False
+
+    run = _to_dic(monkeypatch, dirs, "RED", input="\n", prepare=prepare, red_session=True)
+
+    assert run.result.exit_code == 1
+    assert "set none of the cookies its image host takes" in run.output
+    assert len(_cookie_index_calls(run)) == 1
+    assert not any(sent.path.startswith("/i/") for sent in run.source.sent)
+    assert _site_uploads(run) == []
+
+
+def test_a_403_on_a_red_image_still_stops_it(monkeypatch, dirs) -> None:
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _red_images(source, target)
+        source.answers["GET i/cover.jpg"] = lambda: web.Response(status=403, text="Forbidden")
+
+    run = _to_dic(monkeypatch, dirs, "RED", input="\n", prepare=prepare, red_session=True)
+
+    assert run.result.exit_code == 1
+    assert f"could not fetch {run.source.url}/i/cover.jpg (RequestFailedError)" in run.output
+    assert run.source.steps()["GET i/cover.jpg"] == 1
+    assert _site_uploads(run) == []
+
+
+def test_reds_image_cookies_are_never_printed(monkeypatch, dirs) -> None:
+    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
+
+    run = _to_dic(monkeypatch, dirs, "RED", input="\n", prepare=_red_images, red_session=True)
+
+    assert run.result.exit_code == 0, run.output
+    # The dumps show RED's answer setting them.
+    assert "imgauth_h=[REDACTED]" in run.output
+    for value in IMAGE_COOKIES.values():
+        assert value not in run.output
+    # salmon web masks the signature in all it sends out; the user id and expiry are numbers, never printed.
+    assert IMAGE_COOKIES["imgauth_h"] in base.learned_secrets()
+    assert not {IMAGE_COOKIES["imgauth_u"], IMAGE_COOKIES["imgauth_e"]} & set(base.learned_secrets())
 
 
 async def _converted(path: str, *, bit_depth: int, sample_rate: int, output_dir: str | None = None, **_kw: Any):

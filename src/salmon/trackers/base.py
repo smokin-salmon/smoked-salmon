@@ -139,13 +139,14 @@ def session_cookie_forms(cookie: str) -> list[str]:
     return [cookie, unquote(cookie), _normalize_session_cookie(cookie)]
 
 
-# The authkeys and passkeys trackers have sent this process: salmon web masks them in all it sends out.
+# The authkeys, passkeys and image cookie signatures trackers have sent this process: salmon web masks them in all
+# it sends out.
 _learned_secrets: set[str] = set()
 _learned_secrets_lock = threading.Lock()
 
 
 def learned_secrets() -> list[str]:
-    """The authkeys and passkeys of the tracker accounts this process has authenticated with."""
+    """The authkeys, passkeys and image cookie signatures of the tracker accounts this process has used."""
     with _learned_secrets_lock:
         return list(_learned_secrets)
 
@@ -457,6 +458,9 @@ class HttpResponse(msgspec.Struct, frozen=True):
     status: int
     # The body as bytes, for a request made with binary=True (its text is then empty).
     content: bytes = b""
+    # The cookies the answer sets (Set-Cookie), by name, each value as set. No later request sends them unless given
+    # them.
+    cookies: dict[str, str] = msgspec.field(default_factory=dict)
 
 
 class BaseGazelleApi:
@@ -480,6 +484,10 @@ class BaseGazelleApi:
     # tracker. Tests replace it with one that does not make them wait.
     _rate_limiter: AbstractAsyncContextManager[Any] | None = None
 
+    # The cookies this tracker's own image host checks besides the session cookie, which its ajax.php sets on an
+    # answer to a request made with the session cookie. Empty when its images need no more than its pages.
+    IMAGE_COOKIES: tuple[str, ...] = ()
+
     def __init__(self) -> None:
         """Initialize the API client. Subclasses should call this after setting cookie/base_url."""
         self.headers = {
@@ -500,6 +508,8 @@ class BaseGazelleApi:
         # The tracker account's pool while this client uses it, and that account.
         self._session: aiohttp.ClientSession | None = None
         self._account_used: TrackerAccount | None = None
+        # The signatures of the image cookies image_cookies() got, masked as the session cookie is.
+        self._image_cookie_secrets: list[str] = []
 
     def _get_cookies(self) -> dict[str, str]:
         """Get cookies dict for requests."""
@@ -612,10 +622,16 @@ class BaseGazelleApi:
     def _secrets(self) -> list[str | None]:
         """This tracker's secrets, as what it sends back may repeat them.
 
-        The session cookie as configured, decoded and as sent, the api key, and the authkey and
-        passkey once authenticated.
+        The session cookie as configured, decoded and as sent, the api key, the authkey and
+        passkey once authenticated, and the image cookies' signatures once got.
         """
-        return [*session_cookie_forms(self.cookie), self.api_key, self.authkey, self.passkey]
+        return [
+            *session_cookie_forms(self.cookie),
+            self.api_key,
+            self.authkey,
+            self.passkey,
+            *self._image_cookie_secrets,
+        ]
 
     def _redact(self, text: str) -> str:
         """Mask this tracker's secrets in text about to be printed or raised."""
@@ -664,6 +680,41 @@ class BaseGazelleApi:
             _learned_secrets.update(key for key in (self.authkey, self.passkey) if key)
         self._authenticated = True
 
+    async def image_cookies(self) -> dict[str, str]:
+        """The cookies of IMAGE_COOKIES, to fetch images from this tracker's own image host with.
+
+        One index call, sent with the session cookie and never the API key, as the tracker sets them
+        only then; not sent again but as _send retries a GET. No request when IMAGE_COOKIES is empty.
+
+        Returns:
+            Each cookie's value, by name: {} when the image host needs none.
+
+        Raises:
+            RequestError: If the index call fails, or its answer does not set them all.
+        """
+        if not self.IMAGE_COOKIES:
+            return {}
+        if not self.has_session_cookie:
+            raise RequestFailedError(
+                f"{self.site_string}'s image host needs tracker.{self.site_code.lower()}.session, not the API key"
+            )
+        answer = await self._request(
+            "GET", f"{self.base_url}/ajax.php", params={"action": "index"}, timeout_secs=5, needs_authkey=False
+        )
+        cookies = {name: answer.cookies[name] for name in self.IMAGE_COOKIES if answer.cookies.get(name)}
+        if len(cookies) < len(self.IMAGE_COOKIES):
+            raise RequestFailedError(
+                f"{self.site_string} set none of the cookies its image host takes, or not all: it may have changed "
+                f"how it serves its images, or the session cookie is logged out"
+            )
+        # The signature is the credential, masked wherever salmon prints. A user id and an expiry are numbers,
+        # which masking would cut out of every other number: they are never printed either.
+        signatures = [value for value in cookies.values() if not value.isdigit()]
+        self._image_cookie_secrets = signatures
+        with _learned_secrets_lock:
+            _learned_secrets.update(signatures)
+        return cookies
+
     async def ensure_authenticated(self) -> None:
         """Ensure we are authenticated before making requests.
 
@@ -703,6 +754,7 @@ class BaseGazelleApi:
         needs_authkey: bool = True,
         expected_error_statuses: Collection[int] = (),
         binary: bool = False,
+        cookies: dict[str, str] | None = None,
     ) -> HttpResponse:
         """Authenticated HTTP request, returns response data.
 
@@ -727,6 +779,8 @@ class BaseGazelleApi:
             binary: Read a successful answer as bytes, into the response's content, streamed and
                 stopped once it holds more than 25 MiB. Its text is then empty. Error and redirect
                 answers are read as text, as without it.
+            cookies: Cookies sent with the session cookie, on every hop. Only for a request that
+                authenticates with the session cookie: one that would use the API key is refused.
 
         Redirects within the site are followed, up to three hops, each one through the
         rate limiter. A redirect to the login page raises LoginError without requesting it.
@@ -743,7 +797,11 @@ class BaseGazelleApi:
             TLSCertificateError: If the TLS certificate of the host does not verify. Not retried.
             DryRunRefused: If the request is not a GET and a dry run is running. Nothing is sent.
             RequestFailedError: With binary, if the answer holds more than 25 MiB. Not retried.
+            ValueError: If cookies are given for a request that would use the API key. Nothing is sent.
         """
+        if cookies and prefer_api_key and self.api_key:
+            # A request authenticates with the session cookie or the API key, never both.
+            raise ValueError("cookies are only sent with the session cookie, not with the API key")
         if accounts.handing_over():
             # salmon web: the request runs on its request loop, where each tracker account has its one rate
             # limit, lock and pool (ADR 0004), with this context's variables (dry run, held messages, job output).
@@ -761,6 +819,7 @@ class BaseGazelleApi:
                     needs_authkey,
                     expected_error_statuses,
                     binary,
+                    cookies,
                 ),
                 what=f"{method} {urlparse(url).path}{action} to {self.site_string}",
             )
@@ -774,7 +833,17 @@ class BaseGazelleApi:
             await self.ensure_authenticated()
         # One list for every attempt, so the rate limit waits add up across the retries.
         return await self._send(
-            method, url, params, data, timeout_secs, prefer_api_key, idempotent, expected_error_statuses, [], binary
+            method,
+            url,
+            params,
+            data,
+            timeout_secs,
+            prefer_api_key,
+            idempotent,
+            expected_error_statuses,
+            [],
+            binary,
+            cookies,
         )
 
     # The retry policy. A failed request is sent again only when that cannot do more on the
@@ -806,6 +875,7 @@ class BaseGazelleApi:
         expected_error_statuses: Collection[int],
         rate_limit_waits: list[int],
         binary: bool = False,
+        extra_cookies: dict[str, str] | None = None,
     ) -> HttpResponse:
         """Send a request with the retry policy. _request authenticates first; see it for the arguments.
 
@@ -830,6 +900,11 @@ class BaseGazelleApi:
         use_api_key = prefer_api_key and bool(self.api_key)
         headers = {**self.headers, **({"Authorization": self.api_key} if use_api_key else {})}
         cookies = {} if use_api_key else self._get_cookies()
+        if extra_cookies and not use_api_key:
+            # Sent as the tracker set them, as browsers do: aiohttp would quote a value holding / or =, and an
+            # image host compares the value as it is.
+            headers["Cookie"] = "; ".join(f"{name}={value}" for name, value in {**cookies, **extra_cookies}.items())
+            cookies = {}
 
         if _dumping():
             _secho(f"[DEBUG] {method} {self._redact(url)}", fg="cyan")
@@ -951,6 +1026,7 @@ class BaseGazelleApi:
                                 url=str(resp.url),
                                 status=resp.status,
                                 content=content,
+                                cookies={name: morsel.coded_value for name, morsel in resp.cookies.items()},
                             )
 
                         current = urlparse(str(resp.url))
