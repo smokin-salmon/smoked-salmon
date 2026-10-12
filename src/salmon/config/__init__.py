@@ -2,10 +2,11 @@ import os
 import shutil
 import sys
 from pathlib import Path
-from typing import get_args
+from typing import Any, get_args
 
 import asyncclick as click
 import msgspec
+import msgspec.inspect as mi
 import requests
 from platformdirs import user_config_dir
 
@@ -20,6 +21,9 @@ CONFIG_DIR_ENV = "SALMON_CONFIG_DIR"
 _PKG_DIR = Path(__file__).parent.parent
 
 _warned_legacy_config_fallback = False
+
+# (config file, key path) pairs already warned about, so a key is reported once per process.
+_warned_unknown_keys: set[tuple[str, str]] = set()
 
 
 def _platform_cfg_path() -> Path:
@@ -82,9 +86,111 @@ def get_default_config_path() -> Path:
     return default_config_path
 
 
-def _parse_config(config_path: Path) -> Cfg:
+def _unwrap(tp: mi.Type) -> mi.Type:
+    while isinstance(tp, mi.Metadata):
+        tp = tp.type
+    return tp
+
+
+def _table_members(tp: mi.Type) -> list[mi.StructType]:
+    """The Struct types a value of type ``tp`` can be when it is a TOML table."""
+    tp = _unwrap(tp)
+    if isinstance(tp, mi.StructType):
+        return [tp]
+    if isinstance(tp, mi.UnionType):
+        return [m for member in tp.types if isinstance(m := _unwrap(member), mi.StructType)]
+    return []
+
+
+def _list_item_structs(tp: mi.Type) -> list[mi.StructType]:
+    """The Struct types a value of type ``tp`` holds when it is an array of tables."""
+    tp = _unwrap(tp)
+    if isinstance(tp, mi.ListType):
+        return _table_members(tp.item_type)
+    if isinstance(tp, mi.UnionType):
+        return [s for member in tp.types for s in _list_item_structs(member)]
+    return []
+
+
+def _walk_unknown(value: object, structs: list[mi.StructType], path: str, found: list[str]) -> None:
+    """Append the path of every key under ``value`` that none of ``structs`` declares."""
+    if not isinstance(value, dict) or not structs:
+        return
+    # Union members are alternatives; a key is known when the first Struct declares it.
+    fields = {f.encode_name: f for f in structs[0].fields}
+    for key, sub in value.items():
+        sub_path = f"{path}.{key}" if path else str(key)
+        field = fields.get(key)
+        if field is None:
+            found.append(sub_path)
+            continue
+        _walk_unknown(sub, _table_members(field.type), sub_path, found)
+        if isinstance(sub, list):
+            items = _list_item_structs(field.type)
+            for i, item in enumerate(sub):
+                _walk_unknown(item, items, f"{sub_path}[{i}]", found)
+
+
+def unknown_keys(raw: dict[str, Any], struct_type: type[msgspec.Struct] = Cfg) -> list[str]:
+    """Full dotted paths of the keys in a decoded TOML table that the schema does not declare.
+
+    Only nested tables, optional tables and arrays of tables are descended into (``seedbox[0].name``);
+    anything else, such as a table-valued setting of another shape, is left alone.
+    """
+    found: list[str] = []
+    _walk_unknown(raw, _table_members(mi.type_info(struct_type)), "", found)
+    return found
+
+
+def _schema_keys(structs: list[mi.StructType], path: str, header: str, out: list[tuple[str, str]]) -> None:
+    for field in structs[0].fields if structs else []:
+        field_path = f"{path}.{field.encode_name}" if path else field.encode_name
+        tables = _table_members(field.type)
+        items = _list_item_structs(field.type)
+        if tables:
+            _schema_keys(tables, field_path, f"[{field_path}]", out)
+        elif items:
+            _schema_keys(items, field_path, f"[[{field_path}]]", out)
+        else:
+            out.append((field_path, header))
+
+
+def _suggestions(key_path: str) -> list[str]:
+    """Known keys with the same last component as ``key_path`` (case-insensitive), each with its header."""
+    last = key_path.rsplit(".", 1)[-1].lower()
+    known: list[tuple[str, str]] = []
+    _schema_keys(_table_members(mi.type_info(Cfg)), "", "", known)
+    out = []
+    for path, header in known:
+        if path.rsplit(".", 1)[-1].lower() != last:
+            continue
+        out.append(f"{path} (under {header})" if header else f"{path} (at the top of the file, before any [section])")
+    return out
+
+
+def _warn_unknown_keys(data: bytes, config_path: Path) -> None:
+    """Warn about each key in the config that the schema does not know. The config still loads."""
     try:
-        return msgspec.toml.decode(config_path.read_bytes(), type=Cfg)
+        raw = msgspec.toml.decode(data)
+    except msgspec.DecodeError:
+        return  # the typed decode raises the TOML error
+    if not isinstance(raw, dict):
+        return
+    for key_path in unknown_keys(raw):
+        if (str(config_path), key_path) in _warned_unknown_keys:
+            continue
+        _warned_unknown_keys.add((str(config_path), key_path))
+        message = f"Unknown config key {key_path} in {config_path}: ignored."
+        if suggestions := _suggestions(key_path):
+            message += f" Did you mean {', '.join(suggestions)}?"
+        click.secho(message, fg="yellow", err=True)
+
+
+def _parse_config(config_path: Path) -> Cfg:
+    data = config_path.read_bytes()
+    _warn_unknown_keys(data, config_path)
+    try:
+        return msgspec.toml.decode(data, type=Cfg)
     except msgspec.ValidationError as e:
         raise _ptpimg_removed_error(e) from e
 

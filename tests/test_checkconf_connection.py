@@ -117,7 +117,8 @@ def red(monkeypatch: pytest.MonkeyPatch) -> Callable[[str | None], None]:
 
 
 def shown(output: str, fake: FakeTracker) -> str:
-    """The output, with what changes from run to run fixed: the fake's port and the response headers."""
+    """The output, with what changes from run to run fixed: the config file line, the fake's port, the headers."""
+    output = re.sub(r"\AConfig file: .*\n", "", output)
     output = output.replace(fake.url, "http://127.0.0.1:PORT")
     return re.sub(r"(\[DEBUG\] response headers: ).*", r"\1HEADERS", output)
 
