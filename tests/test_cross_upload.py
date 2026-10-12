@@ -879,6 +879,7 @@ def test_a_dirty_release_does_not_stop_the_clean_one_in_the_same_run(monkeypatch
     assert run.result.exit_code == 0, run.output
     assert f"Not cross-uploading {TORRENT_ID}: 1 name(s) hold invisible Unicode characters" in run.output
     assert run.target.steps()["POST ajax.php?action=upload"] == 1
+    assert [name for _, name in run.seeded] == [clean.name]
 
 
 def test_a_library_album_is_read_where_it_is_and_never_written(monkeypatch, dirs) -> None:
