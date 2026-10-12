@@ -306,6 +306,8 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
     Use the -m flag to test metadata sources connections.
     Use the -s flag to test seedbox connections.
     """
+    click.echo(f"Config file: {find_config_path()}")
+
     if reset:
         click.secho("Resetting new config.toml file", fg="cyan", bold=True)
 
