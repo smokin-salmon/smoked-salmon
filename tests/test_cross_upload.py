@@ -825,6 +825,59 @@ def test_a_path_longer_than_the_targets_limit_stops_the_release(monkeypatch, dir
     assert len(run.target.posts()) == (0 if refused else 1)
 
 
+@pytest.mark.parametrize(
+    ("dirty", "shown", "listed"),
+    [
+        ("file", f"{FOLDER}/notes<U+00A0>.txt", "U+00A0 NO-BREAK SPACE"),
+        ("subfolder", f"{FOLDER}/Art<U+200B>work", "U+200B ZERO WIDTH SPACE"),
+        ("folder", f"{FOLDER}<U+200B>", "U+200B ZERO WIDTH SPACE"),
+    ],
+)
+def test_a_name_with_an_invisible_character_stops_the_release_before_any_target_request(
+    monkeypatch, dirs, dirty: str, shown: str, listed: str
+) -> None:
+    folder = dirs.downloads / (f"{FOLDER}​" if dirty == "folder" else FOLDER)
+    album = _album(folder)
+    if dirty == "file":
+        (album / "notes .txt").write_text("notes")
+    if dirty == "subfolder":
+        (album / "Art​work").mkdir()
+        (album / "Art​work" / "back.jpg").write_bytes(JPEG)
+        (album / "Art​work" / "front.jpg").write_bytes(JPEG)
+    before = _snapshot(album)
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], prepare=_source_has(album))
+
+    assert run.result.exit_code == 1
+    assert "These names hold invisible or unusual Unicode characters:" in run.output
+    assert f" >> {shown}\n      {listed}\n" in run.output
+    assert f"Not cross-uploading {TORRENT_ID}: 1 name(s) hold invisible Unicode characters" in run.output
+    assert "fix the torrent on OPS first" in run.output
+    # A sub-folder is listed once, not once per file in it.
+    assert run.output.count(" >> ") == 1
+    assert run.target.sent == []
+    assert run.target.posts() == []
+    assert _snapshot(album) == before
+
+
+def test_a_dirty_release_does_not_stop_the_clean_one_in_the_same_run(monkeypatch, dirs) -> None:
+    dirty = _album(dirs.downloads / f"{FOLDER} 0")
+    (dirty / "notes .txt").write_text("notes")
+    clean = _album(dirs.downloads / f"{FOLDER} 1")
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(dirty, clean)(source, target)
+        source.group_page = "".join(
+            source.group_page.replace(str(TORRENT_ID), str(TORRENT_ID + number)) for number in range(2)
+        )
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), str(TORRENT_ID + 1), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert f"Not cross-uploading {TORRENT_ID}: 1 name(s) hold invisible Unicode characters" in run.output
+    assert run.target.steps()["POST ajax.php?action=upload"] == 1
+
+
 def test_a_library_album_is_read_where_it_is_and_never_written(monkeypatch, dirs) -> None:
     album = _album(dirs.library / "sample3000" / FOLDER)
     before = _snapshot(album)
