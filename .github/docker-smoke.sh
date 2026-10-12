@@ -64,6 +64,14 @@ for png in "$full_png" "$zoom_png"; do
     fi
 done
 
+echo "== aiohttp resolves names through the OS, without aiodns (#682) =="
+python3 -c "
+import importlib.util
+import aiohttp.resolver
+assert aiohttp.resolver.DefaultResolver is aiohttp.resolver.ThreadedResolver, aiohttp.resolver.DefaultResolver
+assert importlib.util.find_spec('aiodns') is None, 'aiodns is installed'
+"
+
 echo "== salmon web --help runs, with the front-end build and without Node =="
 # salmon reads its config at import: a copy of the default one, whose .music and .torrents are
 # relative to the working directory, /app, with the release check (a request to GitHub) off.
