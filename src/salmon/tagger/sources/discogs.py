@@ -151,8 +151,9 @@ def parse_artists(artist_soup, track):
         for art in track["extraartists"]:
             for role in art["role"].split(","):
                 role = role.strip()
-                if role in ROLES:
-                    artists.append((sanitize_artist_name(art["name"]), ROLES[role]))
+                credit = (sanitize_artist_name(art["name"]), ROLES.get(role))
+                if role in ROLES and credit not in artists:
+                    artists.append(credit)
         for name, role in artists:
             if role != "main" and (name, "main") in artists:
                 artists.remove((name, "main"))
@@ -175,7 +176,7 @@ def sanitize_artist_name(name):
     Remove parenthentical number disambiguation bullshit from artist names,
     as well as the asterisk stuff.
     """
-    return re.sub(r"\*+$", "", strip_numbered_suffix(name))
+    return strip_numbered_suffix(re.sub(r"\*+$", "", name))
 
 
 def parse_source(formats):

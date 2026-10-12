@@ -272,10 +272,22 @@ def combine_tracks(base, meta, update_track_numbers):
 
 def check_for_artist_fragments(artists):
     """Check for artists that may be a fragment of another artist in the release."""
-    artist_set = {comparable(a) for a, _ in artists}
+    names = [_comparable_words(a) for a, _ in artists]
     for a, i in artists.copy():
-        key = comparable(a)
-        for artist in artist_set:
-            if key != artist and key in artist and len(key) > 1 and (a, i) in artists:
+        words = _comparable_words(a)
+        if len("".join(words)) <= 1:
+            continue
+        for other in names:
+            if words != other and _is_word_run(words, other) and (a, i) in artists:
                 artists.remove((a, i))
     return artists
+
+
+def _comparable_words(name):
+    """The words of a name with case, accents and punctuation dropped (`X-Men` is `xmen`)."""
+    return [word for word in (comparable(w) for w in name.split()) if word]
+
+
+def _is_word_run(words, other):
+    """True when `words` is a contiguous run of whole words inside `other`."""
+    return any(other[i : i + len(words)] == words for i in range(len(other) - len(words) + 1))

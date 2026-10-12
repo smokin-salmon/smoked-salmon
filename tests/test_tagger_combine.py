@@ -4,7 +4,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from salmon.tagger.combine import _extract_remixers_from_title, combine_metadatas, combine_tracks
+from salmon.tagger.combine import (
+    _extract_remixers_from_title,
+    check_for_artist_fragments,
+    combine_metadatas,
+    combine_tracks,
+)
 from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.sources.discogs import parse_artists as discogs_parse_artists
 
@@ -175,6 +180,31 @@ def test_combine_tracks_issue_tag_with_vs_credit_gives_no_duplicate_or_suffix():
         ("DJ Face", "remixer"),
         ('Matt "Jam" Lamont', "remixer"),
     ]
+
+
+def test_fragment_check_keeps_names_that_only_share_letters():
+    for artists in (["Eve", "Steve Aoki"], ["Ann", "Joanna"], ["Mos", "Kosmos"], ["Rae", "Raekwon"], ["A B", "ABBA"]):
+        pairs = [(name, "main") for name in artists]
+
+        assert check_for_artist_fragments(list(pairs)) == pairs, artists
+
+
+def test_fragment_check_drops_a_name_that_is_whole_words_of_another():
+    artists = [("Ultra", "main"), ("Ultra Nate", "main"), ("Nate", "guest")]
+
+    assert check_for_artist_fragments(artists) == [("Ultra Nate", "main")]
+
+
+def test_fragment_check_matches_words_ignoring_case_and_punctuation():
+    artists = [("X.Men", "main"), ("Selena vs. X-Men", "main"), ("selena", "main")]
+
+    assert check_for_artist_fragments(artists) == [("Selena vs. X-Men", "main")]
+
+
+def test_fragment_check_keeps_single_letter_names():
+    artists = [("A", "main"), ("A Tribe Called Quest", "main")]
+
+    assert check_for_artist_fragments(artists) == artists
 
 
 def test_combine_tracks_still_requires_the_same_role_to_match():

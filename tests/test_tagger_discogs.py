@@ -160,6 +160,33 @@ def test_discogs_feat_join_is_not_matched_inside_a_longer_word() -> None:
     assert parse_artists([], track) == [("One", "main"), ("Two", "main")]
 
 
+def test_discogs_guest_after_feat_join_is_not_added_again_from_extraartists() -> None:
+    track = {
+        "artists": [artist("Lead", "Feat."), artist("Guest")],
+        "extraartists": [
+            {"name": "Guest", "role": "Featuring"},
+            {"name": "Guest", "role": "Vocals, Featuring"},
+        ],
+    }
+
+    assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest")]
+
+
+def test_discogs_extraartist_with_another_role_is_kept_for_the_same_name() -> None:
+    track = {
+        "artists": [artist("Lead", "Feat."), artist("Guest")],
+        "extraartists": [{"name": "Guest", "role": "Producer"}],
+    }
+
+    assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest"), ("Guest", "producer")]
+
+
+def test_discogs_asterisk_is_stripped_before_the_numbered_suffix() -> None:
+    track = {"artists": [artist("Lead", "Feat."), artist("Guest (27)*")]}
+
+    assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest")]
+
+
 def test_discogs_vs_join_keeps_both_artists_main_and_adds_remixers() -> None:
     # Discogs release 2520452, track 1-16
     track = {
