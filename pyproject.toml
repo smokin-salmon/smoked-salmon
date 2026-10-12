@@ -6,15 +6,16 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "aiohttp>=3.8.5 ; sys_platform == 'win32'",
+    "aiohttp>=3.14.3",
     "aiohttp-jinja2>=1.5.1",
-    "aiohttp[speedups]>=3.14.3 ; sys_platform != 'win32'",
     "aiohttp-socks>=0.12.0",
     "aiolimiter>=1.3.0",
     "anyio>=4.12.1",
     "asyncclick>=8.4.2.1",
     "av>=18.1.0",
+    "backports-zstd>=1.3.0 ; python_full_version < '3.14' and platform_python_implementation == 'CPython'",
     "beautifulsoup4[lxml]>=4.15.0",
+    "brotli>=1.2.0 ; platform_python_implementation == 'CPython'",
     "deluge-client>=1.10.2",
     "humanfriendly>=10.0",
     "jinja2>=3.1.2",
