@@ -182,8 +182,9 @@ def standardize_tags(path: str) -> None:
         for tag, aliases in STANDARDIZED_TAGS.items():
             for alias in aliases:
                 if alias in tags:
-                    # Mutagen tags support dynamic key access for Vorbis comments
-                    tags[tag] = tags[alias]
+                    # Vorbis comment names are case-insensitive; the spec recommends uppercase.
+                    # Mutagen keeps the case it is given, so a lowercase map name would replace YEAR with date.
+                    tags[tag.upper()] = tags[alias]
                     del tags[alias]
                     found_aliased.add(alias)
         if found_aliased:

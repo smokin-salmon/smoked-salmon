@@ -1,12 +1,14 @@
+import struct
 from types import SimpleNamespace
 
 import anyio
 import msgspec
 import pytest
+from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg
 from salmon.errors import AmbiguousTrackOrderError
-from salmon.tagger.retagger import Change, _get_tag_number, create_track_changes, rename_files, tag_files
+from salmon.tagger.retagger import Change, _get_tag_number, create_track_changes, rename_files, retag_files, tag_files
 
 
 def _trackmeta(title, track_no, disc_no):
@@ -700,3 +702,55 @@ def test_rename_files_never_replaces_a_file_when_two_folders_go_to_one_disc_fold
     assert _contents(tmp_path) == before
     assert ("CD01/cover.jpg", "Disc 1/cover.jpg") in tree
     assert ("Disc 1 bonus/cover.jpg", "Disc 1 bonus/cover.jpg") in tree
+
+
+def _write_flac(path, **tags: str) -> None:
+    """A FLAC with no audio: a STREAMINFO block and the given Vorbis comments, key case preserved."""
+    streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
+    streaminfo += ((44100 << 44) | (1 << 41) | (15 << 36)).to_bytes(8, "big") + bytes(16)
+    path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
+    audio = FLAC(path)
+    for key, value in tags.items():
+        audio[key] = value
+    audio.save()
+
+
+def test_retag_files_writes_uppercase_vorbis_comment_keys(tmp_path):
+    """Retagging replaces a comment, and mutagen keeps the case of the name it is given.
+
+    The field map is lowercase, so a file tagged ARTIST came back as artist. Vorbis comment names are
+    case-insensitive, but the spec recommends uppercase.
+    """
+    _write_flac(
+        tmp_path / "01.flac",
+        ARTIST="Old Artist",
+        title="Old Title",
+        ALBUM="Old Album",
+        CATALOGNUMBER="OLD",
+        ENCODER="reference",
+    )
+
+    retag_files(
+        str(tmp_path),
+        {"album": "New Album", "albumartist": "Album Artist", "catno": "CAT-1"},
+        {"01.flac": [Change("title", "Old Title", "New Title"), Change("artist", "Old Artist", "New Artist")]},
+    )
+
+    audio = FLAC(tmp_path / "01.flac")
+    comments = audio.tags
+    assert isinstance(comments, VCFLACDict)
+    # Iterate the comment, not .keys(): that normalizes every name to lowercase.
+    assert {key for key, _value in comments} == {
+        "TITLE",
+        "ARTIST",
+        "ALBUM",
+        "ALBUMARTIST",
+        "CATALOGNUMBER",
+        "ENCODER",
+    }
+    assert audio["title"] == ["New Title"]
+    assert audio["artist"] == ["New Artist"]
+    assert audio["album"] == ["New Album"]
+    assert audio["albumartist"] == ["Album Artist"]
+    assert audio["catalognumber"] == ["CAT-1"]
+    assert audio["encoder"] == ["reference"]
