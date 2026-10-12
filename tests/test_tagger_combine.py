@@ -186,25 +186,33 @@ def test_fragment_check_keeps_names_that_only_share_letters():
     for artists in (["Eve", "Steve Aoki"], ["Ann", "Joanna"], ["Mos", "Kosmos"], ["Rae", "Raekwon"], ["A B", "ABBA"]):
         pairs = [(name, "main") for name in artists]
 
-        assert check_for_artist_fragments(list(pairs)) == pairs, artists
+        kept = check_for_artist_fragments(list(pairs))
+
+        assert kept == pairs, artists
 
 
 def test_fragment_check_drops_a_name_that_is_whole_words_of_another():
     artists = [("Ultra", "main"), ("Ultra Nate", "main"), ("Nate", "guest")]
 
-    assert check_for_artist_fragments(artists) == [("Ultra Nate", "main")]
+    kept = check_for_artist_fragments(artists)
+
+    assert kept == [("Ultra Nate", "main")]
 
 
 def test_fragment_check_matches_words_ignoring_case_and_punctuation():
     artists = [("X.Men", "main"), ("Selena vs. X-Men", "main"), ("selena", "main")]
 
-    assert check_for_artist_fragments(artists) == [("Selena vs. X-Men", "main")]
+    kept = check_for_artist_fragments(artists)
+
+    assert kept == [("Selena vs. X-Men", "main")]
 
 
 def test_fragment_check_keeps_single_letter_names():
     artists = [("A", "main"), ("A Tribe Called Quest", "main")]
 
-    assert check_for_artist_fragments(artists) == artists
+    kept = check_for_artist_fragments(list(artists))
+
+    assert kept == artists
 
 
 def test_combine_tracks_still_requires_the_same_role_to_match():
