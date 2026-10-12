@@ -387,6 +387,62 @@ The pages:
 * **Cross-upload** – `salmon cross-upload`, from torrent IDs or URLs.
 * **Jobs** – every job with its live log, the questions it waits on, and a cancel button.
 
+<p align="center">
+  <img src="docs/images/web/02-upload-question.webp" alt="The Upload page during a dry run: the job waits on the metadata review question, the same one salmon up asks in the terminal, with the job's log below it" width="100%">
+  <br>
+  <em>An upload dry run waiting on the metadata review, with its log below the question.</em>
+</p>
+
+<details>
+<summary>More screenshots</summary>
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/web/01-dashboard.webp" alt="The Dashboard: the salmon version, the tracker connection check with both trackers passing, free space in the configured folders and the command line tools found" width="100%">
+      <br><em>Dashboard</em>
+    </td>
+    <td width="50%">
+      <img src="docs/images/web/03-search.webp" alt="The Search page: results from several metadata sources for one album, and the metadata of one release opened above them" width="100%">
+      <br><em>Search</em>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/web/04-spectrals.webp" alt="The Spectrals page: the full, spectrum and zoom images of the first track, made by sox, with the job asking you to look at them" width="100%">
+      <br><em>Spectrals</em>
+    </td>
+    <td width="50%">
+      <img src="docs/images/web/05-convert.webp" alt="The Convert page: a finished downconversion to 16-bit with its log open" width="100%">
+      <br><em>Convert</em>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/web/06-checks.webp" alt="The Checks page: the verdict of each check on an album folder, including the dupe search on one tracker" width="100%">
+      <br><em>Checks</em>
+    </td>
+    <td width="50%">
+      <img src="docs/images/web/07-tools.webp" alt="The Tools page: the description generator's BBCode for an album's tracklist" width="100%">
+      <br><em>Tools</em>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <img src="docs/images/web/08-cross-upload.webp" alt="The Cross-upload page: the plan for one torrent from one tracker to another, waiting for the go-ahead" width="100%">
+      <br><em>Cross-upload</em>
+    </td>
+    <td width="50%">
+      <img src="docs/images/web/09-jobs.webp" alt="The Jobs page: finished jobs, a running job with its live log open and a job waiting on a question" width="100%">
+      <br><em>Jobs</em>
+    </td>
+  </tr>
+</table>
+
+All screenshots show made-up data: a synthetic album, and local fake trackers and stores.
+
+</details>
+
 Start it with:
 ```bash
 salmon web
