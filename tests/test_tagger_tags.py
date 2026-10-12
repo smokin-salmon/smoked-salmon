@@ -4,28 +4,33 @@ from unittest.mock import MagicMock
 import anyio
 import asyncclick as click
 from mutagen import mp4
-from mutagen.flac import FLAC
+from mutagen.flac import FLAC, VCFLACDict
 from mutagen.id3 import TIT2, TPE1
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4Tags
 
 from salmon import cfg
 from salmon.tagger.tagfile import TagFile
-from salmon.tagger.tags import check_tags, print_a_tag
+from salmon.tagger.tags import check_tags, print_a_tag, standardize_tags
 
 
-def _write_flac(path, *, title=None, artist=None) -> None:
-    """Write a FLAC file with no audio: just a STREAMINFO block, optionally tagged."""
+def _write_flac(path, *, title=None, artist=None, **tags: str) -> None:
+    """Write a FLAC file with no audio: just a STREAMINFO block, optionally tagged.
+
+    Extra tags keep the case of the keyword: mutagen stores the comment name it is given.
+    """
     streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
     streaminfo += ((44100 << 44) | (1 << 41) | (15 << 36)).to_bytes(8, "big") + bytes(16)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
-    if title is not None or artist is not None:
+    if title is not None or artist is not None or tags:
         tagged = FLAC(path)
         if title is not None:
             tagged["title"] = title
         if artist is not None:
             tagged["artist"] = artist
+        for key, value in tags.items():
+            tagged[key] = value
         tagged.save()
 
 
@@ -116,3 +121,40 @@ def test_print_a_tag_no_tags_prints_nothing(tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert out == ""
+
+
+def test_standardize_tags_writes_uppercase_vorbis_comment_keys(tmp_path):
+    """Renaming an alias writes the canonical comment, and mutagen keeps the case it is given.
+
+    The alias map is lowercase, so a file tagged YEAR came back as date. Vorbis comment names are
+    case-insensitive, but the spec recommends uppercase.
+    """
+    _write_flac(
+        tmp_path / "01.flac",
+        YEAR="1999",
+        TOTALTRACKS="12",
+        ARTIST="Artist",
+        ENCODER="reference",
+    )
+    _write_flac(tmp_path / "02.flac", year="2001", TITLE="Song")
+
+    standardize_tags(str(tmp_path))
+
+    first = FLAC(tmp_path / "01.flac")
+    comments = first.tags
+    assert isinstance(comments, VCFLACDict)
+    # Iterate the comment, not .keys(): that normalizes every name to lowercase.
+    assert {key for key, _value in comments} == {"DATE", "TRACKTOTAL", "ARTIST", "ENCODER"}
+    assert first["date"] == ["1999"]
+    assert first["tracktotal"] == ["12"]
+    assert first["artist"] == ["Artist"]
+    assert "year" not in comments
+    assert "totaltracks" not in comments
+
+    second = FLAC(tmp_path / "02.flac")
+    second_comments = second.tags
+    assert isinstance(second_comments, VCFLACDict)
+    assert {key for key, _value in second_comments} == {"DATE", "TITLE"}
+    assert second["date"] == ["2001"]
+    assert second["title"] == ["Song"]
+    assert "year" not in second_comments
