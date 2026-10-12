@@ -117,3 +117,89 @@ def test_discogs_vinyl_style_positions_keep_their_side_prefixed_keys() -> None:
     assert tracks["1"]["A1"]["disc#"] == "1"
     assert tracks["1"]["B1"]["title"] == "Side B Track One"
     assert tracks["1"]["B1"]["disc#"] == "1"
+
+
+def artist(name: str, join: str = "") -> dict:
+    return {"name": name, "join": join}
+
+
+def test_discogs_feat_join_makes_following_artists_guests() -> None:
+    # Discogs release 2520452, track 4-11
+    track = {"artists": [artist("Shawfire", "Feat."), artist("Ultra (27)", "&"), artist("Tullisa")]}
+
+    assert parse_artists([{"name": "Various"}], track) == [
+        ("Shawfire", "main"),
+        ("Ultra", "guest"),
+        ("Tullisa", "guest"),
+    ]
+
+
+def test_discogs_feat_join_spellings() -> None:
+    for join in ("Featuring", "featuring", "Ft", "ft.", "FEAT", "Feat."):
+        track = {"artists": [artist("Lead", join), artist("Guest")]}
+
+        assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest")], join
+
+
+def test_discogs_feat_join_applies_to_release_artists_without_track_artists() -> None:
+    release_artists = [artist("Lead", "Feat."), artist("Guest")]
+
+    assert parse_artists(release_artists, {}) == [("Lead", "main"), ("Guest", "guest")]
+
+
+def test_discogs_other_joins_keep_artists_main() -> None:
+    for join in ("&", ",", "Vs.", "And", "With", ""):
+        track = {"artists": [artist("One", join), artist("Two")]}
+
+        assert parse_artists([], track) == [("One", "main"), ("Two", "main")], join
+
+
+def test_discogs_feat_join_is_not_matched_inside_a_longer_word() -> None:
+    track = {"artists": [artist("One", "Featured"), artist("Two")]}
+
+    assert parse_artists([], track) == [("One", "main"), ("Two", "main")]
+
+
+def test_discogs_guest_after_feat_join_is_not_added_again_from_extraartists() -> None:
+    track = {
+        "artists": [artist("Lead", "Feat."), artist("Guest")],
+        "extraartists": [
+            {"name": "Guest", "role": "Featuring"},
+            {"name": "Guest", "role": "Vocals, Featuring"},
+        ],
+    }
+
+    assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest")]
+
+
+def test_discogs_extraartist_with_another_role_is_kept_for_the_same_name() -> None:
+    track = {
+        "artists": [artist("Lead", "Feat."), artist("Guest")],
+        "extraartists": [{"name": "Guest", "role": "Producer"}],
+    }
+
+    assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest"), ("Guest", "producer")]
+
+
+def test_discogs_asterisk_is_stripped_before_the_numbered_suffix() -> None:
+    track = {"artists": [artist("Lead", "Feat."), artist("Guest (27)*")]}
+
+    assert parse_artists([], track) == [("Lead", "main"), ("Guest", "guest")]
+
+
+def test_discogs_vs_join_keeps_both_artists_main_and_adds_remixers() -> None:
+    # Discogs release 2520452, track 1-16
+    track = {
+        "artists": [artist("Selena (5)", "Vs."), {"name": "X.Men", "anv": "X-Men", "join": ""}],
+        "extraartists": [
+            {"name": "DJ Face", "anv": "Face", "join": "", "role": "Remix"},
+            {"name": 'Matt "Jam" Lamont', "anv": "Jamm", "join": "", "role": "Remix"},
+        ],
+    }
+
+    assert parse_artists([{"name": 'Matt "Jam" Lamont'}], track) == [
+        ("Selena", "main"),
+        ("X.Men", "main"),
+        ("DJ Face", "remixer"),
+        ('Matt "Jam" Lamont', "remixer"),
+    ]

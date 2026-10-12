@@ -7,9 +7,12 @@ from copy import deepcopy
 import asyncclick as click
 
 from salmon import cfg, interaction
-from salmon.common import RE_FEAT, re_split, split_genre
+from salmon.common import re_split, split_genre
 from salmon.common.files import _tracknumber_sort_key
+from salmon.common.strings import strip_numbered_suffixes
 from salmon.constants import FORMATS, TAG_ENCODINGS
+
+_RE_FEAT_START = re.compile(r" [\(\[\{]?(?:f(?:ea)?t(?:uring)?\.?|with\.) ", flags=re.IGNORECASE)
 
 EMPTY_METADATA = {
     "artists": [],
@@ -187,19 +190,37 @@ def parse_artists(artist_list):
     if isinstance(artist_list, str):
         artist_list = [artist_list]
     for artist in artist_list:
-        feat = RE_FEAT.search(artist)
-        if feat:
-            for a in re_split(feat[1]):
-                artists.append((a, "guest"))
-            artist = artist.replace(feat[0], "")
+        guests, artist = _extract_feat(artist)
+        for a in re_split(guests):
+            artists.append((strip_numbered_suffixes(a), "guest"))
         remix = re.search(r" \(?remix(?:\.|ed|ed by)? ([^\)]+)\)?", artist)
         if remix:
             for a in re_split(remix[1]):
-                artists.append((a, "remixer"))
+                artists.append((strip_numbered_suffixes(a), "remixer"))
             artist = artist.replace(remix[0], "")
         for a in re_split(artist):
-            artists.append((a, "main"))
+            artists.append((strip_numbered_suffixes(a), "main"))
     return artists
+
+
+def _extract_feat(artist):
+    """Split a `feat.` credit off an artist string, returning (guests, rest).
+
+    The guests run to the closing bracket that matches the one opening the credit, or to the end of
+    the string for a bare `feat.`. Brackets inside the guests, such as a Discogs `(27)`, stay balanced.
+    """
+    feat = _RE_FEAT_START.search(artist)
+    if not feat:
+        return "", artist
+    depth = 0
+    for i in range(feat.end(), len(artist)):
+        if artist[i] in "([{":
+            depth += 1
+        elif artist[i] in ")]}":
+            if depth == 0:
+                return artist[feat.end() : i], artist[: feat.start()] + artist[i + 1 :]
+            depth -= 1
+    return artist[feat.end() :], artist[: feat.start()]
 
 
 def construct_track_artists(track):
