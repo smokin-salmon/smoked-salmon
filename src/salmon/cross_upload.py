@@ -755,7 +755,7 @@ def _file_list(torrent: dict[str, Any]) -> dict[str, int]:
     """The torrent's files from its fileList, by path in the torrent's folder (NFC), with their size."""
     files: dict[str, int] = {}
     for entry in (torrent.get("fileList") or "").split("|||"):
-        match = _FILE_ENTRY.match(entry.strip())
+        match = _FILE_ENTRY.match(entry)
         if match:
             files[unicodedata.normalize("NFC", html.unescape(match[1]))] = int(match[2])
     return files

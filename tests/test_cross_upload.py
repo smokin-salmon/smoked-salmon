@@ -829,6 +829,7 @@ def test_a_path_longer_than_the_targets_limit_stops_the_release(monkeypatch, dir
     ("dirty", "shown", "listed"),
     [
         ("file", f"{FOLDER}/notes<U+00A0>.txt", "U+00A0 NO-BREAK SPACE"),
+        ("leading", f"{FOLDER}/<U+00A0>notes.txt", "U+00A0 NO-BREAK SPACE"),
         ("subfolder", f"{FOLDER}/Art<U+200B>work", "U+200B ZERO WIDTH SPACE"),
         ("folder", f"{FOLDER}<U+200B>", "U+200B ZERO WIDTH SPACE"),
     ],
@@ -836,14 +837,16 @@ def test_a_path_longer_than_the_targets_limit_stops_the_release(monkeypatch, dir
 def test_a_name_with_an_invisible_character_stops_the_release_before_any_target_request(
     monkeypatch, dirs, dirty: str, shown: str, listed: str
 ) -> None:
-    folder = dirs.downloads / (f"{FOLDER}​" if dirty == "folder" else FOLDER)
+    folder = dirs.downloads / (f"{FOLDER}\u200b" if dirty == "folder" else FOLDER)
     album = _album(folder)
     if dirty == "file":
-        (album / "notes .txt").write_text("notes")
+        (album / "notes\u00a0.txt").write_text("notes")
+    if dirty == "leading":
+        (album / "\u00a0notes.txt").write_text("notes")
     if dirty == "subfolder":
-        (album / "Art​work").mkdir()
-        (album / "Art​work" / "back.jpg").write_bytes(JPEG)
-        (album / "Art​work" / "front.jpg").write_bytes(JPEG)
+        (album / "Art\u200bwork").mkdir()
+        (album / "Art\u200bwork" / "back.jpg").write_bytes(JPEG)
+        (album / "Art\u200bwork" / "front.jpg").write_bytes(JPEG)
     before = _snapshot(album)
 
     run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], prepare=_source_has(album))
@@ -862,7 +865,7 @@ def test_a_name_with_an_invisible_character_stops_the_release_before_any_target_
 
 def test_a_dirty_release_does_not_stop_the_clean_one_in_the_same_run(monkeypatch, dirs) -> None:
     dirty = _album(dirs.downloads / f"{FOLDER} 0")
-    (dirty / "notes .txt").write_text("notes")
+    (dirty / "notes\u00a0.txt").write_text("notes")
     clean = _album(dirs.downloads / f"{FOLDER} 1")
 
     def prepare(source: FakeTracker, target: FakeTracker) -> None:
