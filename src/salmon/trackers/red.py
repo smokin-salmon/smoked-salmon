@@ -112,6 +112,9 @@ def _parse_upload_form(data: dict, soup: BeautifulSoup) -> None:
 
 class RedApi(BaseGazelleApi):
     TAG_RULES = TagRules(max_path_length=180, sixteen_bit_above_48khz="trumpable")
+    # RED's image host (/i/) answers only a request with these signed cookies (user id, signature, expiry) and the
+    # session cookie. Neither the API key nor the session cookie alone gets an image (#695).
+    IMAGE_COOKIES = ("imgauth_u", "imgauth_h", "imgauth_e")
 
     def __init__(self):
         self.site_code = "RED"

@@ -217,6 +217,42 @@ def test_api_key_requests_stay_cookie_free() -> None:
     anyio.run(_api_key_requests_stay_cookie_free)
 
 
+async def _cookies_given_go_with_the_session_cookie_and_set_cookies_are_returned() -> None:
+    sent = []
+
+    async def handle_ajax(request: web.Request) -> web.Response:
+        sent.append((request.headers.get("Cookie"), request.headers.get("Authorization")))
+        response = _ok()
+        # Raw: aiohttp's set_cookie would quote a value holding / + =.
+        response.headers.add("Set-Cookie", "imgauth_h=set/by+the=server; path=/i/; HttpOnly")
+        return response
+
+    runner = await _serve(handle_ajax)
+    api = FakeApi(_url(runner, "localhost"))
+    api.api_key = "an-api-key"
+    try:
+        url = api.base_url + "/ajax.php"
+        answer = await api._request("GET", url)
+        assert answer.cookies == {"imgauth_h": "set/by+the=server"}
+        await api._request("GET", url, cookies=answer.cookies)
+        await api._request("GET", url)
+        # Sent back as set, unquoted, with the session cookie and no Authorization.
+        assert sent[1] == ("session=fake-cookie; imgauth_h=set/by+the=server", None)
+        # Kept by no jar: the requests not given it carry only the session cookie.
+        assert sent[0] == sent[2] == ("session=fake-cookie", None)
+        # Never with the API key: refused before anything is sent.
+        with pytest.raises(ValueError, match="not with the API key"):
+            await api._request("GET", url, prefer_api_key=True, cookies=answer.cookies)
+        assert len(sent) == 3
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+def test_cookies_given_go_with_the_session_cookie_and_set_cookies_are_returned() -> None:
+    anyio.run(_cookies_given_go_with_the_session_cookie_and_set_cookies_are_returned)
+
+
 async def _rate_limited(handler) -> tuple[web.AppRunner, FakeApi]:
     runner = await _serve(handler)
     api = FakeApi(_url(runner))
