@@ -1,0 +1,400 @@
+"""Which conversions salmon up selects by default after a FLAC: upload.conversions and --conversions (#690).
+
+The setting changes only the default answer: every possible conversion is still listed and can be picked by number.
+The end-to-end runs go against the local fake tracker of test_uploader_dry_run, never a real one.
+"""
+
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+
+import anyio
+import asyncclick as click
+import msgspec
+import pytest
+from asyncclick.testing import CliRunner
+from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+    _album,
+    _returning,
+    _returning_async,
+    _run_up,
+    _write_flac,
+    image_uploads,  # noqa: F401 (a fixture)
+)
+
+import salmon.trackers
+import salmon.uploader as uploader
+from salmon import cfg, interaction
+from salmon.config.validations import CONVERSION_KINDS, Upload
+
+TRACKS_24BIT_48K = {"01.flac": {"sample rate": 48000}}
+RELEASE_24BIT = {"format": "FLAC", "encoding": "24bit Lossless"}
+
+
+# The cover goes to the fake image host.
+pytestmark = pytest.mark.usefixtures("image_uploads")
+
+
+@pytest.fixture
+def torrents(monkeypatch, tmp_path) -> Path:
+    """A download_directory and a dot_torrents_dir, configured. Gives the dot_torrents_dir."""
+    downloads, torrents = tmp_path / "downloads", tmp_path / "torrents"
+    downloads.mkdir()
+    torrents.mkdir()
+    monkeypatch.setattr(cfg.directory, "download_directory", str(downloads))
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [])
+    return torrents
+
+
+@pytest.fixture(autouse=True)
+def _interactive(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "yes_all", False)
+    monkeypatch.setattr(cfg.upload, "conversions", list(CONVERSION_KINDS))
+
+
+# What names a conversion
+
+
+def test_a_task_is_named_by_its_kind_whatever_the_rates() -> None:
+    tracks = {"01.flac": {"sample rate": 192000}}
+    options = uploader.get_downconversion_options(RELEASE_24BIT, tracks)
+
+    assert [option["name"] for option in options] == ["24bit 96.0 kHz", "16bit 48.0 kHz", "MP3 320", "MP3 V0"]
+    assert [uploader.conversion_kind(option) for option in options] == ["24bit", "16bit", "320", "V0"]
+
+
+# The default answer
+
+
+def _offered() -> list[dict[str, Any]]:
+    return uploader.get_downconversion_options(RELEASE_24BIT, TRACKS_24BIT_48K, quiet=True)
+
+
+def _prompt_yyy(held: frozenset[str] = frozenset(), conversions: tuple[str, ...] | None = None) -> list[str]:
+    async def run() -> list[str]:
+        with interaction.assuming_defaults():
+            tasks = await uploader.prompt_downconversion_choice(RELEASE_24BIT, TRACKS_24BIT_48K, held, conversions)
+        return [task["name"] for task in tasks]
+
+    return anyio.run(run)
+
+
+def test_the_offer_for_a_24bit_48khz_release(monkeypatch) -> None:
+    assert [option["name"] for option in _offered()] == ["16bit 48.0 kHz", "MP3 320", "MP3 V0"]
+
+
+def test_yyy_makes_every_conversion_by_default() -> None:
+    assert _prompt_yyy() == ["16bit 48.0 kHz", "MP3 320", "MP3 V0"]
+
+
+def test_yyy_makes_only_the_conversions_the_config_names(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "conversions", ["16bit"])
+
+    assert _prompt_yyy() == ["16bit 48.0 kHz"]
+
+
+def test_yyy_makes_none_when_the_config_is_empty(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cfg.upload, "conversions", [])
+
+    assert _prompt_yyy() == []
+    assert "Selected formats" not in capsys.readouterr().out
+
+
+def test_the_option_overrides_the_config(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "conversions", ["16bit"])
+
+    assert _prompt_yyy(conversions=("V0",)) == ["MP3 V0"]
+    assert _prompt_yyy(conversions=()) == []
+    assert _prompt_yyy(conversions=CONVERSION_KINDS) == ["16bit 48.0 kHz", "MP3 320", "MP3 V0"]
+
+
+def test_a_held_format_is_left_out_of_the_conversions_the_config_names(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "conversions", ["16bit", "V0"])
+
+    assert _prompt_yyy(held=frozenset({"16bit 48.0 kHz"})) == ["MP3 V0"]
+
+
+def _interactive_choice(monkeypatch, answer: str | None = None, **kwargs: Any) -> tuple[list[str], dict[str, Any]]:
+    """Run the prompt interactively. Returns the names selected, and the default offered with the question."""
+    asked: dict[str, Any] = {}
+
+    async def fake_prompt(text: str, *_args, default: str = "", **_kwargs) -> str:
+        asked["default"] = default
+        return default if answer is None else answer
+
+    async def run() -> list[str]:
+        tasks = await uploader.prompt_downconversion_choice(RELEASE_24BIT, TRACKS_24BIT_48K, **kwargs)
+        return [task["name"] for task in tasks]
+
+    monkeypatch.setattr(click, "prompt", fake_prompt)
+    monkeypatch.setattr(click, "confirm", _returning(True))
+    return anyio.run(run), asked
+
+
+@pytest.mark.parametrize(
+    ("conversions", "default", "names"),
+    [
+        (("24bit", "16bit", "320", "V0"), "*", ["16bit 48.0 kHz", "MP3 320", "MP3 V0"]),
+        (("16bit",), "1", ["16bit 48.0 kHz"]),
+        (("24bit", "320"), "2", ["MP3 320"]),
+        (("16bit", "V0"), "1 3", ["16bit 48.0 kHz", "MP3 V0"]),
+        ((), "0", []),
+    ],
+)
+def test_the_default_answer_is_the_conversions_wanted(
+    monkeypatch, conversions: tuple[str, ...], default: str, names: list[str]
+) -> None:
+    selected, asked = _interactive_choice(monkeypatch, conversions=conversions)
+
+    assert asked["default"] == default
+    assert selected == names
+
+
+def test_the_default_answer_follows_the_config(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "conversions", ["16bit"])
+
+    selected, asked = _interactive_choice(monkeypatch)
+
+    assert asked["default"] == "1"
+    assert selected == ["16bit 48.0 kHz"]
+
+
+def test_a_held_format_leaves_the_default_even_when_the_config_names_it(monkeypatch) -> None:
+    selected, asked = _interactive_choice(monkeypatch, held=frozenset({"MP3 320"}))
+
+    assert asked["default"] == "1 3"
+    assert selected == ["16bit 48.0 kHz", "MP3 V0"]
+
+
+def test_every_option_is_listed_and_the_excluded_are_named(monkeypatch, capsys) -> None:
+    _selected, _asked = _interactive_choice(monkeypatch, conversions=("16bit",))
+
+    out = capsys.readouterr().out
+    assert "Not selected by default (upload.conversions / --conversions): MP3 320, MP3 V0" in out
+    assert out.index("Not selected by default") < out.index("1. 16bit 48.0 kHz")
+    assert "2. MP3 320" in out
+    assert "3. MP3 V0" in out
+
+
+def test_nothing_is_said_when_nothing_listed_is_excluded(monkeypatch, capsys) -> None:
+    # 24bit is not offered for this release: naming only the kinds that are offered excludes nothing.
+    _interactive_choice(monkeypatch, conversions=("16bit", "320", "V0"))
+
+    assert "Not selected by default" not in capsys.readouterr().out
+
+
+def test_an_excluded_format_can_still_be_picked_by_number(monkeypatch) -> None:
+    selected, asked = _interactive_choice(monkeypatch, answer="2", conversions=("16bit",))
+
+    assert asked["default"] == "1"
+    assert selected == ["MP3 320"]
+
+
+# The question before the prompt
+
+
+@pytest.mark.parametrize(("conversions", "expected"), [((), False), (("V0",), True), (CONVERSION_KINDS, True)])
+def test_the_question_is_not_the_default_when_no_conversion_is_wanted(
+    monkeypatch, torrents: Path, conversions: tuple[str, ...], expected: bool
+) -> None:
+    asked: list[bool | None] = []
+
+    def confirm(text: str, default: bool | None = False, **_kwargs: Any) -> bool:
+        if "check downconversion options" in text:
+            asked.append(default)
+            return False
+        return True if default is None else default
+
+    async def prompt(text: str, default: Any = None, **_kwargs: Any) -> Any:
+        return default
+
+    run = _run_conversion_up(
+        monkeypatch,
+        torrents,
+        ("--conversions", ",".join(conversions) or "none"),
+        yes_all=False,
+        confirm=confirm,
+        prompt=prompt,
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert asked == [expected]
+
+
+# The command
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        (None, None),
+        ("16bit,v0", ("16bit", "V0")),
+        (" 24BIT , 320 ", ("24bit", "320")),
+        ("V0", ("V0",)),
+        ("none", ()),
+        ("None", ()),
+        ("all", CONVERSION_KINDS),
+        ("ALL", CONVERSION_KINDS),
+    ],
+)
+def test_the_option_is_parsed(value: str | None, expected: tuple[str, ...] | None) -> None:
+    assert uploader.validate_conversions(None, None, value) == expected
+
+
+@pytest.mark.parametrize("value", ["mp3", "16bit,mp3", "16bit,16bit", "16bit,", ""])
+def test_the_option_refuses_what_is_not_a_conversion(value: str) -> None:
+    with pytest.raises(click.UsageError):
+        uploader.validate_conversions(None, None, value)
+
+
+async def _invoke(monkeypatch, tmp_path: Path, *args: str):
+    seen: list[Any] = []
+
+    async def fake_run_up(options) -> None:
+        seen.append(options)
+
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED"])
+    monkeypatch.setattr(uploader, "run_up", fake_run_up)
+    result = await CliRunner().invoke(uploader.up, [str(tmp_path), "-t", "RED", "-s", "WEB", *args])
+    return result, seen
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ([], None),
+        (["--conversions", "16bit,v0"], ("16bit", "V0")),
+        (["--conversions", "none"], ()),
+        (["--conversions", "all"], CONVERSION_KINDS),
+    ],
+)
+def test_the_option_reaches_the_upload(monkeypatch, tmp_path, args: list[str], expected) -> None:
+    result, seen = anyio.run(lambda: _invoke(monkeypatch, tmp_path, *args))
+
+    assert result.exit_code == 0, result.output
+    assert [options.conversions for options in seen] == [expected]
+
+
+def test_the_option_refuses_an_unknown_conversion_naming_the_choices(monkeypatch, tmp_path) -> None:
+    result, seen = anyio.run(lambda: _invoke(monkeypatch, tmp_path, "--conversions", "mp3"))
+
+    assert result.exit_code == 2
+    assert '"24bit", "16bit", "320", "V0"' in result.output
+    assert seen == []
+
+
+# The config
+
+
+def test_the_default_is_every_conversion() -> None:
+    assert Upload().conversions == ["24bit", "16bit", "320", "V0"]
+
+
+def test_the_config_takes_any_case_and_keeps_the_canonical_one() -> None:
+    assert Upload(conversions=["v0", "16BIT"]).conversions == ["V0", "16bit"]
+    assert msgspec.convert({"conversions": ["24Bit"]}, Upload).conversions == ["24bit"]
+
+
+def test_the_config_takes_an_empty_list() -> None:
+    assert Upload(conversions=[]).conversions == []
+
+
+def test_the_config_refuses_an_unknown_conversion_naming_the_choices() -> None:
+    with pytest.raises(ValueError, match=r"upload\.conversions: 'mp3' is not a conversion.*\"24bit\", \"16bit\""):
+        Upload(conversions=["16bit", "mp3"])
+
+
+def test_the_config_refuses_a_conversion_named_twice() -> None:
+    with pytest.raises(ValueError, match=r"upload\.conversions: '16bit' is named twice"):
+        Upload(conversions=["16bit", "16BIT"])
+
+
+# End to end, against the fake tracker
+
+
+def _run_conversion_up(monkeypatch, torrents: Path, args: tuple[str, ...], *, confirm=None, prompt=None, **kwargs: Any):
+    """Run `salmon up -yyy` on a 24-bit 48 kHz FLAC against the fake tracker; its conversions are made-up files."""
+    album = _album(torrents.parent / "seeding" / "Album")
+    names = ["01. one.flac", "02. two.flac"]
+
+    def track(number: int, precision: int, rate: int) -> dict[str, Any]:
+        tags = SimpleNamespace(tracknumber=str(number), discnumber=None, artist=["Artist"], title=str(number))
+        return {"sample rate": rate, "precision": precision, "duration": 60, "bit rate": 1_000_000, "t": tags}
+
+    rls_data = {**RELEASE_24BIT, "artists": [("Artist", "main")], "title": "Album", "catno": "CAT1"}
+    source_tracks = {name: track(i, 24, 48000) for i, name in enumerate(names, 1)}
+
+    async def convert_folder(path, bit_depth, sample_rate, output_dir):
+        folder = Path(output_dir) / f"converted {bit_depth}"
+        folder.mkdir(parents=True, exist_ok=True)
+        for name in names:
+            _write_flac(folder / name)
+        return sample_rate, str(folder)
+
+    def gather_audio_info(path, *_args, **_kwargs):
+        if Path(path).name.startswith("converted"):
+            bits = int(Path(path).name.split()[-1])
+            return {name: track(i, bits, 48000) for i, name in enumerate(names, 1)}
+        return {}
+
+    if confirm is not None:
+        monkeypatch.setattr(click, "confirm", confirm)
+    if prompt is not None:
+        monkeypatch.setattr(click, "prompt", prompt)
+    return _run_up(
+        monkeypatch,
+        album,
+        torrents,
+        args,
+        multi_tracker_upload=False,
+        construct_rls_data=_returning_async(rls_data),
+        concat_track_data=_returning(source_tracks),
+        check_spectrals=_returning_async((False, None)),
+        convert_folder=convert_folder,
+        gather_audio_info=gather_audio_info,
+        **kwargs,
+    )
+
+
+def _upload_posts(run) -> list[Any]:
+    return [sent for sent in run.tracker.sent if sent.method == "POST" and sent.query.get("action") == "upload"]
+
+
+def _formats(run) -> list[str]:
+    """The format and encoding of each torrent the run uploaded, in order."""
+    return [f"{dict(post.fields)['format']} {dict(post.fields)['bitrate']}" for post in _upload_posts(run)]
+
+
+def test_yyy_with_one_conversion_sends_the_flac_and_that_conversion(monkeypatch, torrents: Path) -> None:
+    run = _run_conversion_up(monkeypatch, torrents, ("--conversions", "16bit"))
+
+    assert run.result.exit_code == 0, run.result.output
+    # The FLAC, then its 16-bit downconversion (the made-up 24-bit FLAC reads as Lossless in the stubbed metadata).
+    assert len(_upload_posts(run)) == 2
+    assert "Processing: 16bit 48.0 kHz" in run.result.output
+    assert "Processing: MP3" not in run.result.output
+
+
+def test_yyy_with_the_default_sends_the_flac_and_every_conversion(monkeypatch, torrents: Path) -> None:
+    run = _run_conversion_up(monkeypatch, torrents, ())
+
+    assert run.result.exit_code == 0, run.result.output
+    assert len(_upload_posts(run)) == 4
+    assert _formats(run)[2:] == ["MP3 320", "MP3 V0 (VBR)"]
+
+
+def test_yyy_with_a_lossy_conversion_only_converts_no_flac(monkeypatch, torrents: Path) -> None:
+    run = _run_conversion_up(monkeypatch, torrents, ("--conversions", "v0"))
+
+    assert run.result.exit_code == 0, run.result.output
+    assert _formats(run)[1:] == ["MP3 V0 (VBR)"]
+    assert "Processing: 16bit" not in run.result.output
+
+
+def test_yyy_with_none_sends_only_the_flac(monkeypatch, torrents: Path) -> None:
+    run = _run_conversion_up(monkeypatch, torrents, ("--conversions", "none"))
+
+    assert run.result.exit_code == 0, run.result.output
+    assert len(_upload_posts(run)) == 1
+    assert "Processing:" not in run.result.output

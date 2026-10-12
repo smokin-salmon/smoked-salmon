@@ -207,6 +207,10 @@ session = 'get-from-site-cookie'
 # # still asked when the frequency analysis finds a lossy encoder's marks.
 # yes_all = false
 
+# # Conversions salmon up selects by default after a FLAC (and makes under -yyy): "24bit", "16bit", "320", "V0".
+# # [] makes none. Every possible one is still offered at the prompt. salmon up --conversions overrides it.
+# conversions = ["24bit", "16bit", "320", "V0"]
+
 # # Check every FLAC file for an MQA marker before uploading (reads the first second of each).
 # # false checks only the first file: faster, but MQA on a track other than the first is not caught.
 # mqa_check_all_tracks = true

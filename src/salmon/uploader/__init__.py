@@ -25,6 +25,7 @@ from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup, tagify
 from salmon.config.image_hosts import cover_refusal
+from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
 from salmon.converter.conversions import conversion_of
 from salmon.converter.downconverting import (
@@ -105,6 +106,25 @@ from salmon.uploader.upload import (
 if TYPE_CHECKING:
     from salmon.tagger.tagfile import TagFile
     from salmon.trackers.base import BaseGazelleApi
+
+
+def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | None:
+    """Parse --conversions: comma-separated kinds in any case, or none, or all. None when not given.
+
+    Raises:
+        click.BadParameter: A value is not a conversion kind; the message lists the choices.
+    """
+    if value is None:
+        return None
+    text = value.strip().lower()
+    if text == "all":
+        return CONVERSION_KINDS
+    if text == "none":
+        return ()
+    try:
+        return canonical_conversions(entry.strip() for entry in value.split(","))
+    except ValueError as e:
+        raise click.BadParameter(f"{e}, or use none or all.") from None
 
 
 @commandgroup.command()
@@ -222,6 +242,13 @@ if TYPE_CHECKING:
     help="Only keep essential files; strip nfo, sfv, md5, txt, and other extras.",
 )
 @click.option(
+    "--conversions",
+    callback=validate_conversions,
+    help="The conversions to select by default after a FLAC, and to make with -yyy: a comma-separated list of "
+    f"{', '.join(CONVERSION_KINDS)}, or none, or all. Overrides upload.conversions for this run. "
+    "Every possible conversion is still offered at the prompt.",
+)
+@click.option(
     "--dry-run",
     is_flag=True,
     help="Go through the whole upload on a copy of the album and send nothing: print what each upload would "
@@ -252,6 +279,7 @@ async def up(
     skip_log_check: bool,
     skip_integrity_check: bool,
     essential_only: bool,
+    conversions: tuple[str, ...] | None,
     dry_run: bool,
 ) -> None:
     """Command to upload an album folder to a Gazelle Site."""
@@ -278,6 +306,7 @@ async def up(
         skip_log_check=skip_log_check,
         skip_integrity_check=skip_integrity_check,
         essential_only=essential_only,
+        conversions=conversions,
     )
     if (error := options.usage_error(dry_run)) is not None:
         raise click.UsageError(error)
@@ -302,6 +331,8 @@ class UpOptions:
         group_id: The group to upload into.
         encoding: The lossy encoding, as ``validate_encoding`` gives it.
         request: The request to fill, a URL or an ID, checked against the tracker by ``run_up``.
+        conversions: The conversion kinds to select by default after a FLAC (``--conversions``); None follows
+            upload.conversions.
     """
 
     path: str
@@ -326,6 +357,7 @@ class UpOptions:
     skip_log_check: bool = False
     skip_integrity_check: bool = False
     essential_only: bool = False
+    conversions: tuple[str, ...] | None = None
 
     def usage_error(self, dry_run: bool) -> str | None:
         """Why these options cannot go together, as ``salmon up`` says it; None when they can."""
@@ -403,6 +435,7 @@ async def run_up(options: UpOptions) -> None:
         skip_initial_review=options.skip_initial_review,
         apply_ai_suggestions=options.apply_ai_suggestions,
         trackers=list(options.trackers) if len(options.trackers) > 1 else None,
+        conversions=options.conversions,
     )
     if dryrun.active():
         dryrun.say(f"done. Nothing was sent, and {path} is unchanged.")
@@ -699,6 +732,7 @@ async def upload(
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
     trackers: list[str] | None = None,
+    conversions: tuple[str, ...] | None = None,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
@@ -732,6 +766,8 @@ async def upload(
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
         trackers: The site codes to upload to, in order, gazelle_site's first: the run uploads to each and
             asks about no other. None asks after each upload, as configured.
+        conversions: The conversion kinds selected by default after a FLAC (see ``conversion_kind``). None follows
+            upload.conversions.
     """
     path = os.path.abspath(path)
     # Read before staging and renaming: the record knows the folder by the name the converter gave it.
@@ -774,6 +810,7 @@ async def upload(
             original=path if staged != path else None,
             conversion=conversion,
             trackers=trackers,
+            conversions=conversions,
         )
 
 
@@ -854,6 +891,7 @@ async def _upload_staged(
     original: str | None = None,
     conversion: dict[str, Any] | None = None,
     trackers: list[str] | None = None,
+    conversions: tuple[str, ...] | None = None,
 ) -> None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
@@ -1188,15 +1226,16 @@ async def _upload_staged(
                             )
 
                     # Nothing to convert (an MP3 upload) asks nothing.
-                    if get_downconversion_options(rls_data, track_data, quiet=True) and (
+                    conversion_options = get_downconversion_options(rls_data, track_data, quiet=True)
+                    if conversion_options and (
                         flac_url
                         or await interaction.assume_defaults()
                         or await interaction.confirm(
                             click.style("\nWould you like to check downconversion options?", fg="magenta"),
-                            default=True,
+                            default=bool(wanted_conversions(conversion_options, held, conversions)),
                         )
                     ):
-                        selected_tasks = await prompt_downconversion_choice(rls_data, track_data, held)
+                        selected_tasks = await prompt_downconversion_choice(rls_data, track_data, held, conversions)
                         if selected_tasks:
                             display_names = [task["name"] for task in selected_tasks]
                             click.secho(
@@ -1495,12 +1534,36 @@ def downconversion_format(task: dict[str, Any]) -> tuple[str, str]:
     return "FLAC", "Lossless" if task["target_bitdepth"] == 16 else "24bit Lossless"
 
 
-async def prompt_downconversion_choice(rls_data, track_data, held: set[str] | frozenset[str] = frozenset()):
+def conversion_kind(task: dict[str, Any]) -> str:
+    """Name a downconversion task by its kind, whatever the release's rates: 24bit, 16bit, 320 or V0."""
+    if task["action"] == "transcode":
+        return task["encoding"]
+    return f"{task['target_bitdepth']}bit"
+
+
+def wanted_conversions(
+    options: list[dict[str, Any]],
+    held: set[str] | frozenset[str] = frozenset(),
+    conversions: tuple[str, ...] | None = None,
+) -> list[dict[str, Any]]:
+    """The options selected by default: those of a kind in `conversions` (None: upload.conversions) not in `held`."""
+    kinds = cfg.upload.conversions if conversions is None else conversions
+    return [option for option in options if conversion_kind(option) in kinds and option["name"] not in held]
+
+
+async def prompt_downconversion_choice(
+    rls_data,
+    track_data,
+    held: set[str] | frozenset[str] = frozenset(),
+    conversions: tuple[str, ...] | None = None,
+):
     """
     Prompt user to select downconversion formats.
     Returns a list of selected task dictionaries.
     Options named in `held` are already in the edition: they are flagged as a dupe risk and left out
     of the default choice and of --yes-all, but can still be picked by number.
+    `conversions` (None: upload.conversions) names the kinds selected by default and made with --yes-all:
+    every option is still listed, and any can be picked by number.
     """
     options = get_downconversion_options(rls_data, track_data)
 
@@ -1511,9 +1574,9 @@ async def prompt_downconversion_choice(rls_data, track_data, held: set[str] | fr
         click.secho(
             f"\nDUPE RISK: this edition already has {name}; the site removes exact duplicates.", fg="red", bold=True
         )
-    unheld = [option for option in options if option["name"] not in held]
+    wanted = wanted_conversions(options, held, conversions)
     if await interaction.assume_defaults():
-        return unheld
+        return wanted
 
     click.secho("\nDownconversion Options", fg="cyan", bold=True)
 
@@ -1528,6 +1591,9 @@ async def prompt_downconversion_choice(rls_data, track_data, held: set[str] | fr
         current_format = encoding
 
     click.secho(f"Current format: {current_format}", fg="yellow")
+    kinds = cfg.upload.conversions if conversions is None else conversions
+    if left_out := [option["name"] for option in options if conversion_kind(option) not in kinds]:
+        click.secho(f"Not selected by default (upload.conversions / --conversions): {', '.join(left_out)}", fg="yellow")
     click.secho("Available downconversion formats:", fg="green")
 
     for i, option in enumerate(options, 1):
@@ -1535,10 +1601,10 @@ async def prompt_downconversion_choice(rls_data, track_data, held: set[str] | fr
 
     click.secho("  0. Skip downconversion", fg="white")
     click.secho("  *. All formats", fg="white")
-    if len(unheld) == len(options):
+    if len(wanted) == len(options):
         default = "*"
     else:
-        default = " ".join(str(i) for i, option in enumerate(options, 1) if option in unheld) or "0"
+        default = " ".join(str(i) for i, option in enumerate(options, 1) if option in wanted) or "0"
 
     selected_tasks = []
 
