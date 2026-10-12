@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 
+from salmon.common.strings import strip_numbered_suffix
 from salmon.sources import DiscogsBase
 from salmon.tagger.sources.base import MetadataMixin
 
@@ -31,6 +32,8 @@ ROLES = {
     "Remix": "remixer",
     "Arranged By": "arranger",
 }
+
+RE_FEAT_JOIN = re.compile(r"(?:feat|featuring|ft)\.?", flags=re.IGNORECASE)
 
 RELEASE_TYPES = {
     "Album": "Album",
@@ -141,9 +144,9 @@ def parse_artists(artist_soup, track):
     each track.
     """
     if "artists" in track:
-        artists = [*((sanitize_artist_name(art["name"]), "main") for art in track["artists"])]
+        artists = _credited_artists(track["artists"])
     else:
-        artists = [*((sanitize_artist_name(art["name"]), "main") for art in artist_soup if art["name"] != "Various")]
+        artists = _credited_artists([art for art in artist_soup if art["name"] != "Various"])
     if "extraartists" in track:
         for art in track["extraartists"]:
             for role in art["role"].split(","):
@@ -156,13 +159,23 @@ def parse_artists(artist_soup, track):
     return artists
 
 
+def _credited_artists(credits):
+    """Name the artists of a credit list, making those after a feat. join guests."""
+    artists = []
+    role = "main"
+    for art in credits:
+        artists.append((sanitize_artist_name(art["name"]), role))
+        if RE_FEAT_JOIN.fullmatch((art.get("join") or "").strip()):
+            role = "guest"
+    return artists
+
+
 def sanitize_artist_name(name):
     """
     Remove parenthentical number disambiguation bullshit from artist names,
     as well as the asterisk stuff.
     """
-    name = re.sub(r" \(\d+\)$", "", name)
-    return re.sub(r"\*+$", "", name)
+    return re.sub(r"\*+$", "", strip_numbered_suffix(name))
 
 
 def parse_source(formats):

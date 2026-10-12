@@ -5,6 +5,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from salmon.tagger.combine import _extract_remixers_from_title, combine_metadatas, combine_tracks
+from salmon.tagger.pre_data import parse_artists
+from salmon.tagger.sources.discogs import parse_artists as discogs_parse_artists
 
 
 def make_metadata(title: str) -> dict:
@@ -113,6 +115,75 @@ def test_combine_tracks_sorts_multi_disc_provider_tracks_and_discs():
     assert combined["2"]["1"]["isrc"] == "ISRC 2-1"
     assert combined["2"]["2"]["isrc"] == "ISRC 2-2"
     assert combined["2"]["10"]["isrc"] == "ISRC 2-10"
+
+
+def one_track(artists: list[tuple[str, str]], title: str) -> dict:
+    track = make_tracks({"1": ["1"]}, isrc_prefix=None)["1"]["1"]
+    return {"1": {"1": {**track, "artists": artists, "title": title}}}
+
+
+def test_combine_tracks_feat_credit_from_tag_and_discogs_gives_one_guest_list():
+    # Discogs release 2520452, track 4-11, tag "Shawfire feat. Ultra (27) & Tullisa"
+    base = one_track(parse_artists("Shawfire feat. Ultra (27) & Tullisa"), "Work It Out")
+    discogs_track = {
+        "artists": [
+            {"name": "Shawfire", "join": "Feat."},
+            {"name": "Ultra (27)", "join": "&"},
+            {"name": "Tullisa", "join": ""},
+        ]
+    }
+    meta = one_track(discogs_parse_artists([], discogs_track), "Work It Out")
+
+    combined = combine_tracks(deepcopy(base), deepcopy(meta), True)
+
+    assert sorted(combined["1"]["1"]["artists"]) == [("Shawfire", "main"), ("Tullisa", "guest"), ("Ultra", "guest")]
+
+
+DISCOGS_1_16 = {
+    "artists": [{"name": "Selena (5)", "join": "Vs."}, {"name": "X.Men", "anv": "X-Men", "join": ""}],
+    "extraartists": [
+        {"name": "DJ Face", "role": "Remix"},
+        {"name": 'Matt "Jam" Lamont', "role": "Remix"},
+    ],
+}
+
+
+def test_combine_tracks_does_not_duplicate_artists_spelled_with_different_punctuation():
+    # Discogs release 2520452, track 1-16: Discogs names it "X.Men" (anv "X-Men")
+    base = one_track([("Selena", "main"), ("X-Men", "main")], "Give It Up (Jamm & Face Remix)")
+    meta = one_track(discogs_parse_artists([], DISCOGS_1_16), "Give It Up (Jamm & Face Remix)")
+
+    combined = combine_tracks(deepcopy(base), deepcopy(meta), True)
+
+    assert combined["1"]["1"]["artists"] == [
+        ("Selena", "main"),
+        ("X-Men", "main"),
+        ("DJ Face", "remixer"),
+        ('Matt "Jam" Lamont', "remixer"),
+    ]
+
+
+def test_combine_tracks_issue_tag_with_vs_credit_gives_no_duplicate_or_suffix():
+    # The tag of track 1-16 is one string, "Selena (5) vs. X-Men", so it is one name to salmon
+    base = one_track(parse_artists("Selena (5) vs. X-Men"), "Give It Up (Jamm & Face Remix)")
+    meta = one_track(discogs_parse_artists([], DISCOGS_1_16), "Give It Up (Jamm & Face Remix)")
+
+    combined = combine_tracks(deepcopy(base), deepcopy(meta), True)
+
+    assert combined["1"]["1"]["artists"] == [
+        ("Selena vs. X-Men", "main"),
+        ("DJ Face", "remixer"),
+        ('Matt "Jam" Lamont', "remixer"),
+    ]
+
+
+def test_combine_tracks_still_requires_the_same_role_to_match():
+    base = one_track([("X-Men", "main")], "Song")
+    meta = one_track([("X.Men", "guest")], "Song")
+
+    combined = combine_tracks(deepcopy(base), deepcopy(meta), True)
+
+    assert combined["1"]["1"]["artists"] == [("X-Men", "main"), ("X.Men", "guest")]
 
 
 def test_extract_remixers_does_not_span_an_earlier_paren_group():
