@@ -475,3 +475,68 @@ async def _confirm_group_id(gazelle_site: "BaseGazelleApi", group_id: int, resul
             return True
         elif resp == "n":
             return False
+
+
+def _edition_matches(torrent: dict, edition: dict | None) -> bool:
+    """Check whether a torrent matches our release edition.
+
+    Args:
+        torrent: Torrent dict from the group response.
+        edition: Our edition with keys year, edition_title, label, catno.
+
+    Returns:
+        True when every field with values on both sides matches, else False.
+    """
+    if not edition:
+        return True
+    mapping = (
+        ("year", "remasterYear"),
+        ("edition_title", "remasterTitle"),
+        ("label", "remasterRecordLabel"),
+        ("catno", "remasterCatalogueNumber"),
+    )
+    for edition_key, torrent_key in mapping:
+        ours = str(edition.get(edition_key) or "").strip().lower()
+        theirs = str(torrent.get(torrent_key) or "").strip().lower()
+        if ours and theirs and ours != theirs:
+            return False
+    return True
+
+
+async def group_has_torrent(
+    api: "BaseGazelleApi",
+    group_id: int | None,
+    media: str,
+    format_: str,
+    encoding_: str,
+    edition: dict | None = None,
+) -> dict | None:
+    """Check whether a group already has a torrent matching media, format, encoding and edition.
+
+    Args:
+        api: The tracker API instance.
+        group_id: The group ID to check.
+        media: Media source to match.
+        format_: Format to match.
+        encoding_: Encoding to match.
+        edition: Optional edition with keys year, edition_title, label, catno.
+
+    Returns:
+        The matching torrent dict, or None when there is no match.
+    """
+    if not group_id:
+        return None
+    try:
+        resp = await api.torrentgroup(group_id)
+    except Exception as e:
+        click.secho(f"  Existence check failed ({e}), uploading anyway", fg="yellow")
+        return None
+    for t in resp.get("torrents", []) or []:
+        if (
+            str(t.get("media") or "").strip() == str(media or "").strip()
+            and str(t.get("format") or "").strip() == str(format_ or "").strip()
+            and str(t.get("encoding") or "").strip() == str(encoding_ or "").strip()
+            and _edition_matches(t, edition)
+        ):
+            return t
+    return None

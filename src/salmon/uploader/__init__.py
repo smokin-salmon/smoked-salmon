@@ -54,6 +54,7 @@ from salmon.uploader.dupe_checker import (
     check_existing_group,
     dupe_check_recent_torrents,
     generate_dupe_check_searchstrs,
+    group_has_torrent,
     print_recent_upload_results,
     print_torrents,
 )
@@ -184,6 +185,12 @@ if TYPE_CHECKING:
     is_flag=True,
     help="Only keep essential files; strip nfo, sfv, md5, txt, and other extras.",
 )
+@click.option(
+    "--only-16bit",
+    is_flag=True,
+    help="Skip the 24-bit original and upload only the 16-bit downconvert "
+    "when the same edition's 24-bit is already on the tracker",
+)
 async def up(
     path: str,
     group_id: int | None,
@@ -207,6 +214,7 @@ async def up(
     skip_log_check: bool,
     skip_integrity_check: bool,
     essential_only: bool,
+    only_16bit: bool,
 ) -> None:
     """Command to upload an album folder to a Gazelle Site."""
     if essential_only and scene:
@@ -253,6 +261,72 @@ async def up(
         essential_only=essential_only,
         skip_initial_review=skip_initial_review,
         apply_ai_suggestions=apply_ai_suggestions,
+        only_16bit=only_16bit,
+    )
+
+
+async def _should_upload_16bit_only(
+    gazelle_site: "BaseGazelleApi",
+    group_id: int | None,
+    source: str | None,
+    metadata: dict[str, Any],
+    rls_data: dict[str, Any],
+    only_16bit_flag: bool,
+) -> bool:
+    """Check whether to skip the 24-bit original and upload the 16-bit downconvert only.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        group_id: The group ID being uploaded to.
+        source: Media source (CD, WEB, etc).
+        metadata: Release metadata dictionary.
+        rls_data: Release data dictionary.
+        only_16bit_flag: Whether --only-16bit was passed.
+
+    Returns:
+        True when the same edition's 24-bit is already on the tracker and no
+        16-bit exists yet, otherwise False.
+    """
+    if not group_id:
+        return False
+    if rls_data.get("encoding") != "24bit Lossless":
+        return False
+    if metadata.get("format") != "FLAC":
+        return False
+    edition = {
+        "year": metadata.get("year"),
+        "edition_title": metadata.get("edition_title"),
+        "label": metadata.get("label"),
+        "catno": metadata.get("catno"),
+    }
+    t24 = await group_has_torrent(gazelle_site, group_id, source, "FLAC", "24bit Lossless", edition)
+    if not t24:
+        return False
+    t16 = await group_has_torrent(gazelle_site, group_id, source, "FLAC", "Lossless", edition)
+    if t16:
+        return False
+    edition_str = " / ".join(
+        str(v)
+        for v in [
+            t24.get("remasterYear") or metadata.get("year"),
+            t24.get("remasterRecordLabel") or metadata.get("label"),
+            t24.get("remasterCatalogueNumber") or metadata.get("catno"),
+        ]
+        if v
+    )
+    if only_16bit_flag or cfg.upload.yes_all:
+        click.secho(
+            f"\n24-bit already on {gazelle_site.site_string} in edition {edition_str}, uploading 16-bit only.",
+            fg="yellow",
+        )
+        return True
+    return click.confirm(
+        click.style(
+            f"\n24-bit already on {gazelle_site.site_string} in edition {edition_str}. "
+            "Transcode and upload 16-bit FLAC only to this tracker?",
+            fg="magenta",
+        ),
+        default=True,
     )
 
 
@@ -279,6 +353,7 @@ async def upload(
     essential_only: bool = False,
     skip_initial_review: bool = False,
     apply_ai_suggestions: bool = False,
+    only_16bit: bool = False,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
@@ -307,6 +382,8 @@ async def upload(
         essential_only: If True, only essential extensions are allowed.
         skip_initial_review: Skip the first manual metadata review before AI review.
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
+        only_16bit: If True, skip the 24-bit original when the same edition's 24-bit is already
+            on the tracker and upload the 16-bit downconvert only.
     """
     path = os.path.abspath(path)
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
@@ -453,6 +530,7 @@ async def upload(
     try:
         while True:
             # Loop until we don't want to upload to any more sites.
+            only_16bit_this_tracker = False
             if not tracker:
                 if spectrals_after and torrent_id:
                     # Here we are checking the spectrals after uploading to the first site
@@ -497,34 +575,46 @@ async def upload(
             if not request_id and cfg.upload.requests.check_requests:
                 request_id = await check_requests(gazelle_site, searchstrs)
 
-            try:
-                torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
-                    gazelle_site,
-                    path,
-                    group_id,
-                    metadata,
-                    cover_url,
-                    track_data,
-                    hybrid,
-                    lossy_master,
-                    spectral_urls,
-                    spectral_ids,
-                    lossy_comment,
-                    request_id,
-                    source_url,
-                    seedbox_uploader,
-                    source=source,
+            if group_id and not spectrals_after:
+                only_16bit_this_tracker = await _should_upload_16bit_only(
+                    gazelle_site, group_id, source, metadata, rls_data, only_16bit
                 )
 
-                request_id = None
+            try:
+                if only_16bit_this_tracker:
+                    torrent_id = None
+                    url = f"{gazelle_site.base_url}/torrents.php?id={group_id}"
+                    click.secho(f"\nSkipping 24-bit original, uploading 16-bit only: {url}", fg="yellow")
+                else:
+                    torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
+                        gazelle_site,
+                        path,
+                        group_id,
+                        metadata,
+                        cover_url,
+                        track_data,
+                        hybrid,
+                        lossy_master,
+                        spectral_urls,
+                        spectral_ids,
+                        lossy_comment,
+                        request_id,
+                        source_url,
+                        seedbox_uploader,
+                        source=source,
+                    )
+
+                    request_id = None
 
                 await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
-                if cfg.upload.yes_all or click.confirm(
+                if only_16bit_this_tracker or cfg.upload.yes_all or click.confirm(
                     click.style("\nWould you like to check downconversion options?", fg="magenta"),
                     default=True,
                 ):
-                    selected_tasks = await prompt_downconversion_choice(rls_data, track_data)
+                    selected_tasks = await prompt_downconversion_choice(
+                        rls_data, track_data, only_16bit=only_16bit_this_tracker
+                    )
                     if selected_tasks:
                         display_names = [task["name"] for task in selected_tasks]
                         click.secho(
@@ -786,12 +876,14 @@ def get_downconversion_options(rls_data, track_data):
     return options
 
 
-async def prompt_downconversion_choice(rls_data, track_data):
+async def prompt_downconversion_choice(rls_data, track_data, only_16bit: bool = False):
     """
     Prompt user to select downconversion formats.
     Returns a list of selected task dictionaries.
     """
     options = get_downconversion_options(rls_data, track_data)
+    if only_16bit:
+        options = [t for t in options if t.get("target_bitdepth") == 16]
 
     if not options:
         return []
