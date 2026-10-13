@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 import sys
+import time
 from pathlib import Path
 
 import anyio
@@ -217,40 +218,79 @@ def test_api_key_requests_stay_cookie_free() -> None:
     anyio.run(_api_key_requests_stay_cookie_free)
 
 
-async def _cookies_given_go_with_the_session_cookie_and_set_cookies_are_returned() -> None:
+class SignedImagesApi(FakeApi):
+    SIGNED_IMAGES = True
+
+
+def _imgauth(expiry: int) -> web.Response:
+    return web.json_response({"status": "success", "response": {"h": "k3yF0rTh3Ima9eHost", "e": expiry, "u": 4242}})
+
+
+async def _image_auth_is_one_imgauth_call_kept_until_it_expires() -> None:
     sent = []
+    expiries = [4102444800]
 
     async def handle_ajax(request: web.Request) -> web.Response:
-        sent.append((request.headers.get("Cookie"), request.headers.get("Authorization")))
-        response = _ok()
-        # Raw: aiohttp's set_cookie would quote a value holding / + =.
-        response.headers.add("Set-Cookie", "imgauth_h=set/by+the=server; path=/i/; HttpOnly")
-        return response
+        sent.append((request.query.get("action"), request.headers.get("Cookie"), request.headers.get("Authorization")))
+        return _imgauth(expiries[0])
 
     runner = await _serve(handle_ajax)
-    api = FakeApi(_url(runner, "localhost"))
+    api = SignedImagesApi(_url(runner))
     api.api_key = "an-api-key"
     try:
-        url = api.base_url + "/ajax.php"
-        answer = await api._request("GET", url)
-        assert answer.cookies == {"imgauth_h": "set/by+the=server"}
-        await api._request("GET", url, cookies=answer.cookies)
-        await api._request("GET", url)
-        # Sent back as set, unquoted, with the session cookie and no Authorization.
-        assert sent[1] == ("session=fake-cookie; imgauth_h=set/by+the=server", None)
-        # Kept by no jar: the requests not given it carry only the session cookie.
-        assert sent[0] == sent[2] == ("session=fake-cookie", None)
-        # Never with the API key: refused before anything is sent.
-        with pytest.raises(ValueError, match="not with the API key"):
-            await api._request("GET", url, prefer_api_key=True, cookies=answer.cookies)
+        auth = {"h": "k3yF0rTh3Ima9eHost", "e": "4102444800", "u": "4242"}
+        assert await api.image_auth() == auth
+        assert await api.image_auth() == auth
+        # One call, with the API key and no session cookie, kept for the next.
+        assert sent == [("imgauth", None, "an-api-key")]
+        assert "k3yF0rTh3Ima9eHost" in api._secrets()
+        assert "k3yF0rTh3Ima9eHost" in trackers_base.learned_secrets()
+        # Within a minute of expiring: got again.
+        api._image_auth["e"] = str(int(time.time()) + 30)
+        expiries[0] = 4102444801
+        assert (await api.image_auth())["e"] == "4102444801"
+        assert len(sent) == 2
+        # Without an API key, the session cookie authenticates it.
+        cookie_only = SignedImagesApi(api.base_url)
+        await cookie_only.image_auth()
+        assert sent[2] == ("imgauth", "session=fake-cookie", None)
+        # A tracker that does not sign its images is not asked.
+        assert await FakeApi(api.base_url).image_auth() == {}
         assert len(sent) == 3
     finally:
         await api.close()
         await runner.cleanup()
 
 
-def test_cookies_given_go_with_the_session_cookie_and_set_cookies_are_returned() -> None:
-    anyio.run(_cookies_given_go_with_the_session_cookie_and_set_cookies_are_returned)
+def test_image_auth_is_one_imgauth_call_kept_until_it_expires() -> None:
+    anyio.run(_image_auth_is_one_imgauth_call_kept_until_it_expires)
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        {"status": "failure", "error": "bad action"},
+        {"status": "success", "response": {"h": "k3y", "e": 4102444800}},
+        {"status": "success", "response": {"h": "", "e": 4102444800, "u": 4242}},
+        {"status": "success", "response": []},
+    ],
+)
+def test_an_imgauth_answer_without_all_three_is_refused(answer: dict) -> None:
+    async def run() -> None:
+        async def handle_ajax(_request: web.Request) -> web.Response:
+            return web.json_response(answer)
+
+        runner = await _serve(handle_ajax)
+        api = SignedImagesApi(_url(runner))
+        try:
+            with pytest.raises(RequestFailedError, match="RED"):
+                await api.image_auth()
+            assert api._image_auth == {}
+        finally:
+            await api.close()
+            await runner.cleanup()
+
+    anyio.run(run)
 
 
 async def _rate_limited(handler) -> tuple[web.AppRunner, FakeApi]:

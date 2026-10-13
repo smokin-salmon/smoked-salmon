@@ -486,13 +486,6 @@ async def _prepare(
         release.data["album_desc"] = generate_description(_track_data(release), {"comment": None, "urls": []})
         release.notes.append(f"{source.site_string} has no album description: sending the tracklist from the tags")
     release.rehost = _images_to_rehost(release.data, source, target)
-    if release.rehost and source.IMAGE_COOKIES and not source.has_session_cookie:
-        code = source.site_code.lower()
-        raise CrossUploadRefused(
-            f"its images on {source.site_string} need fetching for {target.site_string}, and {source.site_string}'s "
-            f"image host takes the session cookie, not the API key: set tracker.{code}.session in your config, or "
-            f"upload it to {target.site_string} with salmon up meanwhile"
-        )
     await _check_lossy_approval(release, source, target)
     return release
 
@@ -988,7 +981,7 @@ def _shows_on(tracker: str, target: str) -> bool:
 
 
 def _bare(url: str) -> str:
-    """The URL without its query, fragment or user info. RED signs its images in cookies (IMAGE_COOKIES), not URLs."""
+    """The URL without its query, fragment or user info: a URL RED signs carries the viewer's key and user id."""
     parsed = urlparse(url)
     netloc = parsed.hostname or ""
     if parsed.port:
@@ -1144,8 +1137,8 @@ def most_requests(
 ) -> tuple[int, int, int]:
     """The most requests uploading one release can send, retries aside: GETs and POSTs to TARGET, GETs to SOURCE.
 
-    TARGET's index call, once per run, is not counted. SOURCE's GETs are its images to fetch, and the index call for
-    its image host's cookies when it needs some.
+    TARGET's index call, once per run, is not counted. SOURCE's GETs are its images to fetch, and the call for its
+    image host's credentials when it signs its images, sent at most once per run.
     """
     data = release.data
     uploads = 1 + len(release.tasks)
@@ -1169,8 +1162,8 @@ def most_requests(
         posts += uploads  # The lossy report of each upload, never sent again
         gets += 2 * uploads  # The pages each redirects to
     source_gets = len({url for _, url in release.rehost})
-    if source_gets and source.IMAGE_COOKIES:
-        source_gets += 1  # The index call for the image host's cookies
+    if source_gets and source.SIGNED_IMAGES:
+        source_gets += 1  # The call for the image host's credentials
     return gets, posts, source_gets
 
 
@@ -1206,12 +1199,12 @@ def _print_plan(
             click.echo(f"   images to rehost: {images}, each fetched once from {source.site_string}")
         for note in release.notes:
             click.echo(f"   {note}")
-        # The reads of SOURCE done so far are not counted: only the images still to fetch, and the index call
-        # for its image host's cookies, are.
+        # The reads of SOURCE done so far are not counted: only the images still to fetch, and the call for its
+        # image host's credentials, are.
         if not source_gets:
             source_line = f"no more GET to {source.site_string}"
         elif source_gets > images:
-            source_line = f"{images} image GET and {source_gets - images} index GET to {source.site_string}"
+            source_line = f"{images} image GET and {source_gets - images} imgauth GET to {source.site_string}"
         else:
             source_line = f"{images} image GET to {source.site_string}"
         click.echo(f"   at most {gets} GET and {posts} POST to {target.site_string}, {source_line}")
@@ -1311,7 +1304,7 @@ async def _rehost_images(
     """Fetch each SOURCE image TARGET cannot show through SOURCE's client, upload it to TARGET's host, swap the URL.
 
     Each URL is fetched once, even when it is both the cover and a description image going to two hosts. A SOURCE
-    whose image host takes cookies of its own (RED's) gets one index call for them first, right before the images.
+    whose image host signs its images (RED's) is asked for its credentials first, once per run.
 
     Raises:
         CrossUploadRefused: If a fetch or an upload fails, or a host gives no usable URL.
@@ -1319,7 +1312,7 @@ async def _rehost_images(
     images: dict[str, tuple[bytes, str]] = {}
     new_urls: dict[tuple[str, str], str] = {}
     # Every image to rehost is on SOURCE's own site (_images_to_rehost).
-    cookies = await _source_image_cookies(source) if rehost else {}
+    signature = await _source_image_auth(source) if rehost else {}
     for field_name, url in rehost:
         host = (
             cfg.image.host_for(target.site_code, "cover_uploader")
@@ -1327,32 +1320,33 @@ async def _rehost_images(
             else image_host_for_tracker(target.site_code)
         )
         if url not in images:
-            images[url] = await _fetch_source_image(url, source, cookies)
+            images[url] = await _fetch_source_image(url, source, signature)
         key = (host, url)
         if key not in new_urls:
             new_urls[key] = await _upload_image(*images[url], _bare(url), target, host)
         data[field_name] = data[field_name].replace(url, new_urls[key])
 
 
-async def _source_image_cookies(source: "BaseGazelleApi") -> dict[str, str]:
-    """The cookies SOURCE's image host takes besides the session cookie: {} with no request for one that takes none.
+async def _source_image_auth(source: "BaseGazelleApi") -> dict[str, str]:
+    """The credentials SOURCE's image host takes, as query parameters: {} with no request for one that takes none.
 
     Raises:
         CrossUploadRefused: If SOURCE does not give them.
     """
     try:
-        return await source.image_cookies()
+        return await source.image_auth()
     except RequestError as error:
         raise CrossUploadRefused(
             f"could not fetch its images from {source.site_string}: {str(error) or type(error).__name__}"
         ) from None
 
 
-async def _fetch_source_image(url: str, source: "BaseGazelleApi", cookies: dict[str, str]) -> tuple[bytes, str]:
+async def _fetch_source_image(url: str, source: "BaseGazelleApi", signature: dict[str, str]) -> tuple[bytes, str]:
     """Fetch an image from SOURCE's own site through SOURCE's client: its content and its file suffix.
 
     Args:
-        cookies: The cookies SOURCE's image host takes besides the session cookie, from _source_image_cookies.
+        signature: The credentials SOURCE's image host takes, from _source_image_auth: added to the URL, in place
+            of any query it has.
 
     Raises:
         CrossUploadRefused: If it is not on SOURCE's site, cannot be fetched, or is not an image.
@@ -1363,15 +1357,15 @@ async def _fetch_source_image(url: str, source: "BaseGazelleApi", cookies: dict[
     click.secho(f"Fetching {shown} from {source.site_string}...", fg="yellow")
     try:
         # Through SOURCE's client: its rate limit, retries and redirect rules, and its credentials only ever
-        # go to its own site. Image cookies go with the session cookie, never the API key.
+        # go to its own site. A signed URL needs no session cookie: it goes with the API key when there is one.
         response = await source._request(
             "GET",
-            url,
+            urlparse(url)._replace(query="").geturl() if signature else url,
+            params=signature or None,
             timeout_secs=30,
-            prefer_api_key=not cookies and not source.has_session_cookie,
+            prefer_api_key=bool(signature) or not source.has_session_cookie,
             needs_authkey=False,
             binary=True,
-            cookies=cookies,
         )
     except RequestError as error:
         raise CrossUploadRefused(f"could not fetch {shown} ({type(error).__name__})") from None
