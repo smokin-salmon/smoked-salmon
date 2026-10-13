@@ -1,6 +1,7 @@
 import asyncio
+import json
 
-from salmon.tagger.sources.discogs import Scraper, parse_artists
+from salmon.tagger.sources.discogs import Scraper, parse_artists, parse_credits
 
 
 def make_soup(tracklist: list[dict]) -> dict:
@@ -203,3 +204,53 @@ def test_discogs_vs_join_keeps_both_artists_main_and_adds_remixers() -> None:
         ("DJ Face", "remixer"),
         ('Matt "Jam" Lamont', "remixer"),
     ]
+
+
+def test_discogs_reads_the_anv_of_track_artists_and_extraartists() -> None:
+    # Discogs release 2520452, track 4-6 (the Remix credit has no ANV there; "Trouble Men" is given one here)
+    track = {
+        "artists": [
+            {"name": "Gomi", "anv": "DJ Gomi", "join": "Feat."},
+            {"name": 'Louie "Balo" Guzman', "anv": "Loui Balo", "join": "&"},
+            {"name": "Yasmeen", "anv": "", "join": ""},
+        ],
+        "extraartists": [{"name": "Trouble Men", "anv": "The Trouble Men", "join": "", "role": "Remix"}],
+    }
+
+    artists, variations = parse_credits([], track)
+
+    assert artists == [
+        ("Gomi", "main"),
+        ('Louie "Balo" Guzman', "guest"),
+        ("Yasmeen", "guest"),
+        ("Trouble Men", "remixer"),
+    ]
+    assert variations == [
+        {"name": "Gomi", "role": "main", "anv": "DJ Gomi"},
+        {"name": 'Louie "Balo" Guzman', "role": "guest", "anv": "Loui Balo"},
+        {"name": "Trouble Men", "role": "remixer", "anv": "The Trouble Men"},
+    ]
+
+
+def test_discogs_anv_equal_to_the_name_or_empty_is_not_a_variation() -> None:
+    track = {"artists": [{"name": "Ultra (27)", "anv": "Ultra"}, {"name": "Tullisa", "anv": ""}, {"name": "Lead"}]}
+
+    assert parse_credits([], track)[1] == []
+
+
+def test_discogs_scraper_carries_the_anv_beside_the_track_artists() -> None:
+    tracklist = [
+        {
+            "type_": "track",
+            "position": "3-3",
+            "title": "Tell Me It's Real",
+            "artists": [{"name": "K-Ci & JoJo", "anv": "K-Ci And JoJo", "join": ""}],
+        }
+    ]
+
+    tracks = asyncio.run(Scraper().parse_tracks(make_soup(tracklist)))
+
+    assert tracks["3"]["3"]["artists"] == [("K-Ci & JoJo", "main")]
+    assert tracks["3"]["3"]["artist_variations"] == [{"name": "K-Ci & JoJo", "role": "main", "anv": "K-Ci And JoJo"}]
+    # Plain data: a scrape that is shown as JSON must not hold tuple keys.
+    json.dumps(tracks)
