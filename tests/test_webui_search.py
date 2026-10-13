@@ -15,6 +15,11 @@ import asyncclick as click
 import pytest
 from aiohttp.test_utils import TestClient
 from test_ssrf import LOOPBACK, FakeStore, bandcamp_page  # pyright: ignore[reportMissingImports]
+from test_tagger_run_metadata import (  # pyright: ignore[reportMissingImports]
+    RELEASE_URL,
+    FakeDiscogs,
+    pointed_at,
+)
 from test_uploader_dry_run import (  # noqa: F401  # pyright: ignore[reportMissingImports]
     _album,
     fake_upload_world,
@@ -243,6 +248,23 @@ def test_a_lookup_gives_what_salmon_meta_prints(monkeypatch: pytest.MonkeyPatch)
         assert store.requests == ["/album/x"]
 
     _lookup_run(test)
+
+
+def test_a_discogs_lookup_with_a_credited_name_answers_without_artist_variations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = FakeDiscogs()
+
+    async def test(client: TestClient, store: FakeStore) -> None:
+        pointed_at(monkeypatch, store)
+        response = await client.get("/api/metadata", params={"url": RELEASE_URL}, headers=AUTH)
+        assert response.status == 200, await response.text()
+        track = (await response.json())["metadata"]["tracks"]["3"]["3"]
+        assert track["artists"] == [["K-Ci & JoJo", "main"], ["Club Asylum", "remixer"]]
+        assert "artist_variations" not in track
+        assert store.requests == ["/releases/2520452"]
+
+    _lookup_run(test, store)
 
 
 @pytest.mark.parametrize("path", ["/nothing", "/release/x", ""])

@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 from salmon.tagger.sources.discogs import Scraper, parse_artists, parse_credits
 
@@ -224,17 +225,17 @@ def test_discogs_reads_the_anv_of_track_artists_and_extraartists() -> None:
         ("Yasmeen", "guest"),
         ("Trouble Men", "remixer"),
     ]
-    assert variations == {
-        ("Gomi", "main"): "DJ Gomi",
-        ('Louie "Balo" Guzman', "guest"): "Loui Balo",
-        ("Trouble Men", "remixer"): "The Trouble Men",
-    }
+    assert variations == [
+        {"name": "Gomi", "role": "main", "anv": "DJ Gomi"},
+        {"name": 'Louie "Balo" Guzman', "role": "guest", "anv": "Loui Balo"},
+        {"name": "Trouble Men", "role": "remixer", "anv": "The Trouble Men"},
+    ]
 
 
 def test_discogs_anv_equal_to_the_name_or_empty_is_not_a_variation() -> None:
     track = {"artists": [{"name": "Ultra (27)", "anv": "Ultra"}, {"name": "Tullisa", "anv": ""}, {"name": "Lead"}]}
 
-    assert parse_credits([], track)[1] == {}
+    assert parse_credits([], track)[1] == []
 
 
 def test_discogs_scraper_carries_the_anv_beside_the_track_artists() -> None:
@@ -250,4 +251,6 @@ def test_discogs_scraper_carries_the_anv_beside_the_track_artists() -> None:
     tracks = asyncio.run(Scraper().parse_tracks(make_soup(tracklist)))
 
     assert tracks["3"]["3"]["artists"] == [("K-Ci & JoJo", "main")]
-    assert tracks["3"]["3"]["artist_variations"] == {("K-Ci & JoJo", "main"): "K-Ci And JoJo"}
+    assert tracks["3"]["3"]["artist_variations"] == [{"name": "K-Ci & JoJo", "role": "main", "anv": "K-Ci And JoJo"}]
+    # Plain data: a scrape that is shown as JSON must not hold tuple keys.
+    json.dumps(tracks)

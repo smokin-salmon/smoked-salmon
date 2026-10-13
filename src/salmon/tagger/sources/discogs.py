@@ -153,7 +153,7 @@ def parse_credits(artist_soup, track):
     """
     Generate the artists list of a track and, beside it, the name each artist is
     credited under on this release when that differs from the main Discogs name
-    (the ANV, `{(name, role): anv}`).
+    (the ANV): `[{"name": ..., "role": ..., "anv": ...}]`, plain data that survives JSON.
     """
     credits = track["artists"] if "artists" in track else [art for art in artist_soup if art["name"] != "Various"]
     artists, variations = _credited_artists(credits)
@@ -174,7 +174,7 @@ def parse_credits(artist_soup, track):
 def _credited_artists(credits):
     """Name the artists of a credit list, making those after a feat. join guests."""
     artists = []
-    variations = {}
+    variations = []
     role = "main"
     for art in credits:
         credit = (sanitize_artist_name(art["name"]), role)
@@ -186,10 +186,10 @@ def _credited_artists(credits):
 
 
 def _note_variation(variations, credit, art):
-    """Record the name `art` is credited under on the release when it is not the main name."""
+    """Add the name `art` is credited under on the release to `variations` when it is not the main name."""
     anv = sanitize_artist_name((art.get("anv") or "").strip())
     if anv and anv != credit[0]:
-        variations[credit] = anv
+        variations.append({"name": credit[0], "role": credit[1], "anv": anv})
 
 
 def sanitize_artist_name(name):

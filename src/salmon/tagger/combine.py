@@ -240,7 +240,7 @@ def combine_tracks(base, meta, update_track_numbers):
 
             base_artists = {(comparable(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
-            variations = track.get("artist_variations", {})
+            variations = {(v["name"], v["role"]): v["anv"] for v in track.get("artist_variations", [])}
             for a in track["artists"]:
                 if (comparable(a[0]), a[1]) in base_artists:
                     continue
