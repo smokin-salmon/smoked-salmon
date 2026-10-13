@@ -22,6 +22,7 @@ TAG_FIELDS = {
         "tracktotal": "tracktotal",
         "disctotal": "disctotal",
         "artist": "artist",
+        "artists": "artists",
         "title": "title",
         "replay_gain": "replaygain_track_gain",
         "peak": "replaygain_track_peak",
@@ -41,6 +42,7 @@ TAG_FIELDS = {
         "discnumber": ["TPOS"],
         "disctotal": ["TPOS"],
         "artist": ["TPE1"],
+        "artists": ["TXXX:ARTISTS"],
         "title": ["TIT2"],
         "isrc": ["TSRC"],
         "comment": ["COMM"],
@@ -75,7 +77,7 @@ class TagFile:
             return None
         try:
             if isinstance(mut, flac.FLAC):
-                if attr in {"artist", "genre"}:
+                if attr in {"artist", "artists", "genre"}:
                     return list(mut[TAG_FIELDS["FLAC"][attr]]) or []
                 # A Vorbis comment can repeat a field with the same value (TRACKNUMBER=1 twice); read it once.
                 return "; ".join(dict.fromkeys(mut[TAG_FIELDS["FLAC"][attr]])) or None
@@ -126,7 +128,7 @@ class TagFile:
                         number, total = tag_val[0]
                         return (number if "number" in attr else total) or None
                 try:
-                    if attr in {"artist", "genre"}:
+                    if attr in {"artist", "artists", "genre"}:
                         try:
                             # MP3: ID3 frames have .text attribute
                             frame = tags[field]
@@ -203,7 +205,11 @@ class TagFile:
         else:
             try:
                 tag_key, desc = TAG_FIELDS["MP3"][key][0].split(":")
-                frame = getattr(id3, tag_key)(desc=desc, text=value)
+                # A TXXX description is case-sensitive in the frame's key, so a stale "artists" frame would
+                # sit next to the new "ARTISTS" one.
+                for stale in [f for f in tags.getall(tag_key) if f.desc.lower() == desc.lower()]:
+                    tags.delall(stale.HashKey)
+                frame = getattr(id3, tag_key)(encoding=3, desc=desc, text=value)
                 tags.add(frame)
             except ValueError:
                 tag_key = TAG_FIELDS["MP3"][key][0]
