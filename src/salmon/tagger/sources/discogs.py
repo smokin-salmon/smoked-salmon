@@ -129,12 +129,15 @@ class Scraper(DiscogsBase, MetadataMixin):
                 disc_str, track_num = _clean_discogs_position(raw_pos, cur_disc)
                 disc_num = int(disc_str)
 
+                artists, variations = parse_credits(soup["artists"], track)
                 tracks[disc_str][track_num] = self.generate_track(
                     trackno=track_num,
                     discno=disc_num,
-                    artists=parse_artists(soup["artists"], track),
+                    artists=artists,
                     title=track["title"],
                 )
+                # Only the merge reads this, to match tag artists spelled the way the release credits them.
+                tracks[disc_str][track_num]["artist_variations"] = variations
         return dict(tracks)
 
 
@@ -143,10 +146,17 @@ def parse_artists(artist_soup, track):
     Generate the artists list from the artist dictionary provided with
     each track.
     """
-    if "artists" in track:
-        artists = _credited_artists(track["artists"])
-    else:
-        artists = _credited_artists([art for art in artist_soup if art["name"] != "Various"])
+    return parse_credits(artist_soup, track)[0]
+
+
+def parse_credits(artist_soup, track):
+    """
+    Generate the artists list of a track and, beside it, the name each artist is
+    credited under on this release when that differs from the main Discogs name
+    (the ANV, `{(name, role): anv}`).
+    """
+    credits = track["artists"] if "artists" in track else [art for art in artist_soup if art["name"] != "Various"]
+    artists, variations = _credited_artists(credits)
     if "extraartists" in track:
         for art in track["extraartists"]:
             for role in art["role"].split(","):
@@ -154,21 +164,32 @@ def parse_artists(artist_soup, track):
                 credit = (sanitize_artist_name(art["name"]), ROLES.get(role))
                 if role in ROLES and credit not in artists:
                     artists.append(credit)
+                    _note_variation(variations, credit, art)
         for name, role in artists:
             if role != "main" and (name, "main") in artists:
                 artists.remove((name, "main"))
-    return artists
+    return artists, variations
 
 
 def _credited_artists(credits):
     """Name the artists of a credit list, making those after a feat. join guests."""
     artists = []
+    variations = {}
     role = "main"
     for art in credits:
-        artists.append((sanitize_artist_name(art["name"]), role))
+        credit = (sanitize_artist_name(art["name"]), role)
+        artists.append(credit)
+        _note_variation(variations, credit, art)
         if RE_FEAT_JOIN.fullmatch((art.get("join") or "").strip()):
             role = "guest"
-    return artists
+    return artists, variations
+
+
+def _note_variation(variations, credit, art):
+    """Record the name `art` is credited under on the release when it is not the main name."""
+    anv = sanitize_artist_name((art.get("anv") or "").strip())
+    if anv and anv != credit[0]:
+        variations[credit] = anv
 
 
 def sanitize_artist_name(name):

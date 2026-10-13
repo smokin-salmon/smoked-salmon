@@ -138,6 +138,10 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
     if "url" in base:
         del base["url"]
 
+    for disc in base["tracks"].values():
+        for track in disc.values():
+            track.pop("artist_variations", None)
+
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
     base["genres"] = standardize_genres(base["genres"])
     base["label"] = determine_label_type(base["label"], base["artists"])
@@ -236,9 +240,15 @@ def combine_tracks(base, meta, update_track_numbers):
 
             base_artists = {(comparable(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
+            variations = track.get("artist_variations", {})
             for a in track["artists"]:
-                if (comparable(a[0]), a[1]) not in base_artists:
-                    btrack["artists"].append(a)
+                if (comparable(a[0]), a[1]) in base_artists:
+                    continue
+                # The tags may spell the artist the way the release credits them (Discogs ANV)
+                anv = variations.get(a)
+                if anv and (comparable(anv), a[1]) in base_artists:
+                    continue
+                btrack["artists"].append(a)
 
             # Skip title-based remixer inference if remixers are already credited
             # (e.g. from Discogs), to avoid adding spurious artists from mix names
