@@ -7,6 +7,7 @@ from typing import Any
 
 import asyncclick as click
 import msgspec
+from mutagen import mp4
 
 from salmon import cfg, interaction
 from salmon.common import clean_name
@@ -74,7 +75,7 @@ def collect_album_data(metadata):
         k: v
         for k, v in {
             "album": title,
-            "genre": "; ".join(sorted(metadata["genres"])),
+            "genre": sorted(metadata["genres"]),
             "date": metadata["group_year"],
             "label": metadata["label"],
             "catno": metadata["catno"],
@@ -147,6 +148,12 @@ def create_track_changes(tags, metadata):
         new_artist_str = create_artist_str(trackmeta["artists"])
         if old_artist_str != new_artist_str:
             changes[filename].append(Change("artist", old_artist_str, new_artist_str))
+
+        if not _is_aac(tagset):
+            old_artists = list(getattr(tagset, "artists", None) or [])
+            new_artists = create_artists_list(trackmeta["artists"])
+            if new_artists and old_artists != new_artists:
+                changes[filename].append(Change("artists", old_artists or None, new_artists))
 
         old_composer = getattr(tagset, "composer", None) or "None"
         new_composer = create_composer_str(trackmeta["artists"])
@@ -324,6 +331,20 @@ def create_artist_str(artists):
     return artist_str
 
 
+def create_artists_list(artists):
+    """The track's artists by name, one per value of the ARTISTS tag: its main artists, then its guests.
+
+    Unlike ``create_artist_str`` this never swaps guests for the various artists word or leaves them to the
+    title, and has no conductors, composers or remixers: those are not the track's credited artists.
+    """
+    return _ordered_unique([*(a for a, i in artists if i == "main"), *(a for a, i in artists if i == "guest")])
+
+
+def _is_aac(tagset) -> bool:
+    """Whether the tags are an M4A's, which has no ARTISTS tag and takes a genre as one string."""
+    return isinstance(getattr(tagset, "mut", None), mp4.MP4)
+
+
 def create_composer_str(artists):
     """Create the composer string from the metadata."""
     composers = _ordered_unique(a for a, i in artists if i == "composer")
@@ -349,14 +370,20 @@ def print_changes(album_changes, track_changes, a_track):
         if changes:
             click.secho(f"> {filename}", fg="yellow")
             for change in changes:
-                click.echo(f"  {change.tag.ljust(20)} ••• {change.old} {ARROWS} {change.new}")
+                old, new = _shown(change.old, change.new)
+                click.echo(f"  {change.tag.ljust(20)} ••• {old} {ARROWS} {new}")
 
     click.secho("\nAlbum tags (applied to all):", fg="yellow", bold=True)
     for field, value in album_changes.items():
-        previous = getattr(a_track, field, "None")
-        if isinstance(previous, list):
-            previous = "; ".join(previous)
-        is_different = str(previous) != str(value)
+        previous = getattr(a_track, field, None)
+        if isinstance(value, list):
+            # What the file would hold, so the values are compared as the file keeps them, not as text
+            value = _written(a_track, value)
+            previous = _values(previous) if previous is not None else None
+            is_different = (previous or []) != _values(value)
+        else:
+            is_different = _joined(previous) != str(value)
+        previous, value = _shown(previous, value)
         if not is_different:
             click.secho(f"> {field.ljust(13)} ••• {previous}")
         else:
@@ -366,14 +393,47 @@ def print_changes(album_changes, track_changes, a_track):
             )
 
 
+def _values(value):
+    """The values a tag holds, as a list of strings."""
+    return [str(v) for v in value] if isinstance(value, list) else [str(value)]
+
+
+def _shown(old, new):
+    """The two sides of a change as text.
+
+    The values of a list are joined with a semicolon. When two different lists would read the same that
+    way (one value ``Hip Hop; Rap`` and the two values ``Hip Hop`` and ``Rap``), each value is quoted instead.
+    """
+    if isinstance(old, list) and isinstance(new, list) and old != new and _joined(old) == _joined(new):
+        return _quoted(old), _quoted(new)
+    return _joined(old), _joined(new)
+
+
+def _joined(value):
+    return "; ".join(map(str, value)) if isinstance(value, list) else str(value)
+
+
+def _quoted(values):
+    return ", ".join(f'"{v}"' for v in values)
+
+
+def _written(mut, value):
+    """What a file takes for a tag value: FLAC and MP3 hold one value per list item, M4A one string."""
+    if isinstance(value, list):
+        return "; ".join(map(str, value)) if _is_aac(mut) else [str(v) for v in value]
+    return str(value)
+
+
 def retag_files(path, album_changes, track_changes):
     """Apply the proposed metadata changes to the files."""
     for filename, changes in track_changes.items():
         mut = TagFile(os.path.join(path, filename))
         for change in changes:
-            setattr(mut, change.tag, str(change.new))
+            if change.tag == "artists" and _is_aac(mut):
+                continue
+            setattr(mut, change.tag, _written(mut, change.new))
         for tag, value in album_changes.items():
-            setattr(mut, tag, str(value))
+            setattr(mut, tag, _written(mut, value))
         mut.save()
     click.secho("Retagged files.", fg="green")
 

@@ -12,6 +12,7 @@ from salmon.tagger.tagfile import TAG_FIELDS, TagFile
 TAG_PRINT_ORDER = [
     "title",
     "artist",
+    "artists",
     "album",
     "albumartist",
     "date",

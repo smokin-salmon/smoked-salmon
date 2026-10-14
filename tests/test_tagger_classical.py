@@ -62,7 +62,13 @@ def test_create_track_changes_adds_composer_change_for_classical_track() -> None
 
     changes = create_track_changes(tags, metadata)
 
-    assert [change.tag for change in changes["01. Example.flac"]] == ["artist", "composer", "conductor", "title"]
+    assert [change.tag for change in changes["01. Example.flac"]] == [
+        "artist",
+        "artists",
+        "composer",
+        "conductor",
+        "title",
+    ]
 
 
 def test_construct_track_artists_recovers_conductor_and_composer_roles_from_tags() -> None:

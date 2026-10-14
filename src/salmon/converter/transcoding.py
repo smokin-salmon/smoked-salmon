@@ -146,6 +146,9 @@ def _get_id3_frame(tag_name: str, tag_value: list[str]) -> TXXX:
         frame_name = VORBIS_TO_ID3_MAP[tag_name]
         frame_type = Frames[frame_name]
         return frame_type(encoding=3, text=tag_value)
+    if tag_name == "artists":
+        # The name Picard writes; the FLAC's field names come lowercase, and every other one stays so.
+        return TXXX(encoding=3, desc="ARTISTS", text=tag_value)
     return TXXX(encoding=3, desc=tag_name, text=tag_value)
 
 
