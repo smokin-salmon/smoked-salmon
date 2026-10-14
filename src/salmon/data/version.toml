@@ -1,4 +1,30 @@
-current = "0.17.0"
+current = "0.18.0"
+
+[[changelog]]
+version = "0.18.0"
+date = "2026-10-14"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- **FLAC and MP3 tags hold one value per genre, and a new `ARTISTS` tag lists the track's artists.** When salmon retags a FLAC or an MP3 (including the MP3s it transcodes from a FLAC), it now writes one `GENRE` value per genre instead of `Hip Hop; Rap` in a single one, as MusicBrainz Picard does. `ARTIST` is unchanged: the credit as it reads, such as `Dree Low (feat. Owen)`. The new `ARTISTS` tag holds each main artist and guest of the track by name (`Dree Low`, `Owen`), so library software such as Navidrome can list the track under each of them. Remixers, composers and conductors are not in it. The first time you retag an album that an older salmon tagged, the genre shows as a change (`"Hip Hop; Rap" >>> "Hip Hop", "Rap"`). M4A files are tagged as before. There is no setting for this. Thanks @SomeCrab163
+
+## 🐛 Bug Fixes
+
+- **Discogs tagging no longer adds an artist twice when the release credits them under another name.** Discogs gives some artists a different name on a given release (`K-Ci And JoJo` for `K-Ci & JoJo`). When your tags already held that name, salmon added the main Discogs name next to it (`K-Ci and JoJo & K-Ci & JoJo`). It now recognises either name and keeps the spelling in your tags. Thanks @djkingraja
+
+## 🔒 Tracker & Security Improvements
+
+- **Cross-upload from RED to DIC with RED-hosted images no longer needs RED's session cookie.** 0.17.0 needed `session` under `[tracker.red]` to fetch RED-hosted images. salmon now gets access to them with your RED API key, through RED's API, once per run, and sends nothing extra when the release has no RED-hosted image. A RED session cookie is no longer needed for this, which is safer on a seedbox: an API key can be scoped and revoked, a session cookie is a full login. Thanks @Nirzak
+
+## What's Changed
+* Discogs tagging: match tag artists on the name the release credits them under by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/700
+* Fetch RED-hosted images on URLs signed by ajax.php?action=imgauth by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/701
+* Write one value per genre and per artist in FLAC and MP3 tags (GENRE, ARTISTS) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/702
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.17.0...0.18.0
+
+"""
 
 [[changelog]]
 version = "0.17.0"
