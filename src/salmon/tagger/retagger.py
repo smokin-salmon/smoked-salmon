@@ -7,7 +7,7 @@ from typing import Any
 
 import asyncclick as click
 import msgspec
-from mutagen import flac, mp3, mp4
+from mutagen import mp4
 
 from salmon import cfg, interaction
 from salmon.common import clean_name
@@ -370,13 +370,20 @@ def print_changes(album_changes, track_changes, a_track):
         if changes:
             click.secho(f"> {filename}", fg="yellow")
             for change in changes:
-                click.echo(f"  {change.tag.ljust(20)} ••• {_shown(change.old)} {ARROWS} {_shown(change.new)}")
+                old, new = _shown(change.old, change.new)
+                click.echo(f"  {change.tag.ljust(20)} ••• {old} {ARROWS} {new}")
 
     click.secho("\nAlbum tags (applied to all):", fg="yellow", bold=True)
     for field, value in album_changes.items():
-        previous = _shown(getattr(a_track, field, "None"))
-        value = _shown(value)
-        is_different = str(previous) != str(value)
+        previous = getattr(a_track, field, None)
+        if isinstance(value, list):
+            # What the file would hold, so the values are compared as the file keeps them, not as text
+            value = _written(a_track, value)
+            previous = _values(previous) if previous is not None else None
+            is_different = (previous or []) != _values(value)
+        else:
+            is_different = _joined(previous) != str(value)
+        previous, value = _shown(previous, value)
         if not is_different:
             click.secho(f"> {field.ljust(13)} ••• {previous}")
         else:
@@ -386,15 +393,34 @@ def print_changes(album_changes, track_changes, a_track):
             )
 
 
-def _shown(value):
-    """A tag value as the proposed changes show it: the values of a list joined with a semicolon."""
-    return "; ".join(value) if isinstance(value, list) else value
+def _values(value):
+    """The values a tag holds, as a list of strings."""
+    return [str(v) for v in value] if isinstance(value, list) else [str(value)]
+
+
+def _shown(old, new):
+    """The two sides of a change as text.
+
+    The values of a list are joined with a semicolon. When two different lists would read the same that
+    way (one value ``Hip Hop; Rap`` and the two values ``Hip Hop`` and ``Rap``), each value is quoted instead.
+    """
+    if isinstance(old, list) and isinstance(new, list) and old != new and _joined(old) == _joined(new):
+        return _quoted(old), _quoted(new)
+    return _joined(old), _joined(new)
+
+
+def _joined(value):
+    return "; ".join(map(str, value)) if isinstance(value, list) else str(value)
+
+
+def _quoted(values):
+    return ", ".join(f'"{v}"' for v in values)
 
 
 def _written(mut, value):
     """What a file takes for a tag value: FLAC and MP3 hold one value per list item, M4A one string."""
     if isinstance(value, list):
-        return [str(v) for v in value] if isinstance(mut.mut, (flac.FLAC, mp3.MP3)) else "; ".join(map(str, value))
+        return "; ".join(map(str, value)) if _is_aac(mut) else [str(v) for v in value]
     return str(value)
 
 

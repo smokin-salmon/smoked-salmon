@@ -352,3 +352,48 @@ def test_an_m4a_gets_the_genre_string_and_no_artists(tmp_path):
     assert audio.tags["\xa9gen"] == ["Hip Hop; Rap"]
     assert audio.tags["\xa9ART"] == ["Dree Low (feat. Owen)"]
     assert not [key for key in audio.tags if "artists" in str(key).lower()]
+
+
+def _preview(tmp_path, metadata, name):
+    tags = _gather(tmp_path)
+    changes = create_track_changes(tags, metadata)
+    print_changes(collect_album_data(metadata), changes, tags[name])
+    return changes
+
+
+def _preview_line(out, start):
+    """What follows the bullets on the first line of the output that starts with ``start``."""
+    return next(line for line in out.splitlines() if line.lstrip().startswith(start)).split("•••")[1].strip()
+
+
+def test_preview_marks_genre_changed_when_the_file_holds_it_as_one_joined_value(tmp_path, capsys):
+    _flac_album(tmp_path, GENRE="Hip Hop; Rap")
+
+    _preview(tmp_path, _metadata(_trackmeta(CREDIT)), "01.flac")
+
+    assert _preview_line(capsys.readouterr().out, "> genre") == '"Hip Hop; Rap" >>> "Hip Hop", "Rap"'
+
+
+def test_preview_marks_artists_changed_when_the_file_holds_them_as_one_joined_value(tmp_path, capsys):
+    _flac_album(tmp_path, ARTIST="Dree Low (feat. Owen)", ARTISTS="Dree Low; Owen")
+
+    changes = _preview(tmp_path, _metadata(_trackmeta(CREDIT)), "01.flac")
+
+    assert [c.tag for c in changes["01.flac"]] == ["artists"]
+    assert _preview_line(capsys.readouterr().out, "artists") == '"Dree Low; Owen" >>> "Dree Low", "Owen"'
+
+
+def test_preview_does_not_quote_values_when_the_sides_already_read_differently(tmp_path, capsys):
+    _flac_album(tmp_path, GENRE="Jazz")
+
+    _preview(tmp_path, _metadata(_trackmeta(CREDIT)), "01.flac")
+
+    assert _preview_line(capsys.readouterr().out, "> genre") == "Jazz >>> Hip Hop; Rap"
+
+
+def test_preview_leaves_an_m4a_genre_string_unchanged(tmp_path, capsys):
+    _write_m4a(tmp_path / "01.m4a", trkn=[(1, 0)], **{"\xa9gen": ["Hip Hop; Rap"]})
+
+    _preview(tmp_path, _metadata(_trackmeta(CREDIT)), "01.m4a")
+
+    assert ">>>" not in _preview_line(capsys.readouterr().out, "> genre")
