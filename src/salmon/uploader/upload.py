@@ -10,9 +10,11 @@ from torf import Torrent
 from salmon import cfg, dryrun
 from salmon.common import UploadFiles, str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
+from salmon.errors import UploadRefusedError
 from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
+from salmon.uploader.seedbox import warn_unmatched_normalization
 from salmon.uploader.spectrals import (
     make_spectral_bbcode,
 )
@@ -361,19 +363,28 @@ def _normalize_torrent_names(t: Torrent, form: Literal["NFC", "NFD"]) -> None:
     """Normalize the Unicode form of every file path component in a torrent's info dict.
 
     Only the names change: piece hashes cover file contents, so they stay valid. The caller
-    is responsible for writing the torrent with validate=False and reloading it from disk
-    afterwards, since the normalized names no longer match the on-disk file names that
-    Torrent.validate() checks against.
+    reloads the torrent from its own bytes with validate=False, since the normalized names no
+    longer match the on-disk file names that Torrent.validate() checks against.
 
     Args:
         t: The generated torrent, still pointing at the source folder on disk.
         form: "NFC" or "NFD".
+
+    Raises:
+        UploadRefusedError: If two files end up with the same path once normalized.
     """
     info = t.metainfo["info"]
     info["name"] = unicodedata.normalize(form, info["name"])
-    if "files" in info:
-        for fileinfo in info["files"]:
-            fileinfo["path"] = [unicodedata.normalize(form, part) for part in fileinfo["path"]]
+    seen: set[tuple[str, ...]] = set()
+    for fileinfo in info.get("files", []):
+        fileinfo["path"] = [unicodedata.normalize(form, part) for part in fileinfo["path"]]
+        path = tuple(fileinfo["path"])
+        if path in seen:
+            raise UploadRefusedError(
+                f"Two files are both {'/'.join(path)} once {form}-normalized: rename one, "
+                'or set torrent_name_normalization to "none".'
+            )
+        seen.add(path)
 
 
 def generate_torrent(gazelle_site: "BaseGazelleApi", path: str, normalize: bool = True) -> tuple[str, Torrent]:
@@ -402,16 +413,13 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str, normalize: bool 
     )
 
     normalization = cfg.upload.torrent_name_normalization if normalize else ""
-    if normalization in ("", "none"):
-        t.write(tpath, overwrite=True)
-    else:
+    if normalization not in ("", "none"):
         form: Literal["NFC", "NFD"] = "NFC" if normalization == "NFC" else "NFD"
         _normalize_torrent_names(t, form)
-        # The normalized names no longer match the file names on disk, so validation
-        # against the source folder would fail; skip it, then reload from the written
-        # file so later use (dump, write, infohash) does not re-validate against disk.
-        t.write(tpath, overwrite=True, validate=False)
-        t = Torrent.read(tpath)
+        warn_unmatched_normalization(form, gazelle_site.site_code)
+        # Reloaded in memory, so dumps no longer validate against disk; never from tpath, a watch folder may take it.
+        t = Torrent.read_stream(t.dump(validate=False))
+    t.write(tpath, overwrite=True)
 
     click.secho(" done!", fg="yellow")
     return tpath, t

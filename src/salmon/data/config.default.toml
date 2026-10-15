@@ -218,8 +218,8 @@ session = 'get-from-site-cookie'
 # # enable seedbox uploading
 # upload_to_seedbox = true
 
-# # Normalize file names in generated .torrent files to "NFC" or "NFD".
-# # Use this if you tag on macOS (NFD file names) and seed from Linux (NFC), or the reverse.
+# # "NFC" / "NFD" (""/"none": as on disk): the form of the file names your client seeds; rclone keeps names
+# # as they are unless extra_args has --local-unicode-normalization, so this must match the copied files.
 # torrent_name_normalization = ""
 
 # [upload.search]
