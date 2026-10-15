@@ -745,13 +745,15 @@ def test_a_url_no_scraper_takes_is_refused_before_any_request(monkeypatch: pytes
     async def test(client: TestClient, manager: JobManager, store: FakeStore) -> None:
         bad = "https://shop.example.com/releases/123"
         detail = await _refused(client, "descgen", {"urls": [store.url("/album/x"), bad]})
-        # The command's own message, naming the URL and the sources.
-        assert f"{bad} is not a release URL descgen supports. It takes URLs from " in detail
+        # The command's own message, naming the argument's host (never the URL) and the sources.
+        assert "Argument 2 (shop.example.com) is not a release URL descgen supports. It takes URLs from " in detail
+        assert bad not in detail
         assert all(name in detail for name in METASOURCES)
         # A folder is no URL, and nothing here says whether it exists: that is the command's, on its own machine.
         folder = str(world.downloads)
         detail = await _refused(client, "descgen", {"urls": [folder]})
-        assert f"{folder} is not a release URL descgen supports" in detail
+        assert "Argument 1 (not a URL) is not a release URL descgen supports" in detail
+        assert folder not in detail
         assert "is a folder" not in detail
         assert "at least one" in await _refused(client, "descgen", {"urls": []})
         await _nothing_queued(client, manager)

@@ -694,14 +694,17 @@ def _sixteen_bit_refusal(tracker: str, audio_info: dict[str, Any]) -> bool:
     return False
 
 
-def _warn_about_provenance(path: str) -> None:
+def _warn_about_provenance(provenance: dict[str, Any]) -> None:
     """Print each ripper or store marker in the tags that the audio contradicts.
 
-    Read before the files are retagged, which can blank or replace their comments. Only warns: it never
-    stops the upload or changes an answer, and prints nothing when no marker contradicts the audio.
+    `provenance` is `gather_provenance` of the files as they were given: read before they are retagged, which can
+    blank or replace their comments. Only warns: it never stops the upload or changes an answer, and prints
+    nothing when no marker contradicts the audio.
     """
-    contradictions = gather_provenance(path)["contradictions"]
-    if contradictions:
+    if not provenance["files"]:
+        click.secho("\nTag markers not checked: the tags could not be read.", fg="yellow")
+        return
+    if contradictions := provenance["contradictions"]:
         click.secho("\nTag markers the audio contradicts:", fg="yellow", bold=True)
         for note in contradictions:
             click.secho(f"  - {note}", fg="yellow")
@@ -906,6 +909,9 @@ async def _upload_staged(
         source = await _prompt_source(detect_source(path))
     audio_info = gather_audio_info(path)
     hybrid = check_hybrid(audio_info)
+    # Before any tag is rewritten: standardize_tags saves a file whose tags use an alias. Printed further down.
+    # A salmon conversion carries its source's tags, which describe the source's audio, not its own: no news.
+    provenance = gather_provenance(path) if conversion is None else None
     if not scene:
         standardize_tags(path)
     tags = gather_tags(path)
@@ -966,7 +972,8 @@ async def _upload_staged(
             if source == "CD" and not skip_log_check:
                 await _check_logs(path)
 
-            _warn_about_provenance(path)
+            if provenance is not None:
+                _warn_about_provenance(provenance)
 
             if group_fetch is not None:
                 results, recent_uploads = await group_fetch.result()

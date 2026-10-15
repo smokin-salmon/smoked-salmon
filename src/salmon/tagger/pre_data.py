@@ -7,7 +7,7 @@ from copy import deepcopy
 import asyncclick as click
 
 from salmon import cfg, interaction
-from salmon.common import re_split, split_genre
+from salmon.common import RE_USELESS_VERSION, re_split, split_genre
 from salmon.common.files import _tracknumber_sort_key
 from salmon.common.strings import strip_numbered_suffixes
 from salmon.constants import FORMATS, TAG_ENCODINGS
@@ -85,19 +85,9 @@ def parse_title(title):
     base = title.strip()
 
     if cfg.upload.formatting.strip_useless_versions:
-        # Define patterns to strip and capture
-        junk_pattern = re.compile(
-            r"\s*\(*\b("
-            r"Original( Mix)?|Remastered|Clean|"
-            r"(Expanded|Deluxe|Anniversary|Limited|Collector'?s|Ultimate|Reissue|Bonus|Special)\s+Edition|"
-            r"Album.+(edition|mix)|feat[^\)]+"
-            r")\b\)*\s*$",
-            flags=re.IGNORECASE,
-        )
-
-        match = junk_pattern.search(base)
+        match = RE_USELESS_VERSION.search(base)
         if match:
-            edition = match.group(1).strip()
+            edition = match.group("version").strip()
             base = base[: match.start()].strip()
 
     return base, edition

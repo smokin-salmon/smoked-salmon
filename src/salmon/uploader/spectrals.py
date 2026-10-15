@@ -435,6 +435,11 @@ async def _generate_spectrals(
     return sorted_spectrals
 
 
+def _spectral_images(spectrals_path: str) -> list[str]:
+    """The folder's PNGs by name, without hidden files such as a compression's leftover copy."""
+    return sorted(f for f in os.listdir(spectrals_path) if f.lower().endswith(".png") and not f.startswith("."))
+
+
 _not_compressed_notice_shown = False
 
 
@@ -460,7 +465,7 @@ async def _compress_with_oxipng_program(program: str, filepath: str) -> bool:
 
     Returns False, after printing one line, when the file was left as it was.
     """
-    tmp_path = f"{filepath}.tmp.png"
+    tmp_path = os.path.join(os.path.dirname(filepath), f".{os.path.basename(filepath)}.tmp.png")
     try:
         shutil.copyfile(filepath, tmp_path)
         with anyio.fail_after(OXIPNG_PROGRAM_TIMEOUT):
@@ -512,7 +517,7 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
             if os.path.isfile(os.path.join(spectrals_path, fname))
         ]
     else:
-        files = [f for f in os.listdir(spectrals_path) if f.endswith(".png")]
+        files = _spectral_images(spectrals_path)
     if not files:
         return
     program = None
@@ -596,10 +601,10 @@ async def _open_specs_in_preview(spectrals_path: str) -> None:
     Args:
         spectrals_path: Path to the spectrals directory.
     """
-    files = sorted(Path(spectrals_path).glob("*"))
+    files = _spectral_images(spectrals_path)
     if not files:
         return
-    args = ["qlmanage", "-p", *(str(f) for f in files)]
+    args = ["qlmanage", "-p", *(os.path.join(spectrals_path, f) for f in files)]
     await anyio.run_process(args, check=False)
 
 
@@ -626,12 +631,11 @@ async def _open_specs_in_feh(spectrals_path: str) -> None:
 
 
 def _open_specs_in_windows(spectrals_path):
-    png_files = [os.path.join(spectrals_path, f) for f in os.listdir(spectrals_path) if f.lower().endswith(".png")]
+    png_files = [os.path.join(spectrals_path, f) for f in _spectral_images(spectrals_path)]
 
     if not png_files:
         click.secho("No PNG files found to display.", fg="yellow")
         return
-    png_files.sort()
     os.startfile(png_files[0])
 
 

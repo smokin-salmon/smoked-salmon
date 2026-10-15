@@ -122,11 +122,16 @@ def load_list(tracker: str) -> list[Entry]:
     """The entries of a tracker's list; none for a tracker without one.
 
     Raises:
-        OSError, UnicodeDecodeError, msgspec.MsgspecError: If the file cannot be read, or an entry is not valid.
+        OSError, UnicodeDecodeError, msgspec.MsgspecError: If the file cannot be read, has no entry, or an entry is
+            not valid.
     """
     if tracker not in LISTS:
         return []
-    return msgspec.toml.decode((LISTS_DIR / LISTS[tracker]).read_bytes(), type=_List).entry
+    entries = msgspec.toml.decode((LISTS_DIR / LISTS[tracker]).read_bytes(), type=_List).entry
+    if not entries:
+        # An emptied or truncated file must not read as a list that forbids nothing.
+        raise msgspec.ValidationError(f"{LISTS[tracker]} has no entries")
+    return entries
 
 
 def do_not_upload_reason(tracker: str, release: Candidate) -> str | None:

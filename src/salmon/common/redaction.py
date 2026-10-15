@@ -133,8 +133,11 @@ def redact_command(args: list[str], known: Iterable[str | None] = ()) -> str:
 # What a Gazelle tracker sends back carries its own secrets: the authkey (auth, authkey), the passkey
 # (passkey, torrent_pass), the session cookie and an api key.
 _TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|api_?key|authorization)"
-# "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script.
-_TRACKER_ASSIGNMENT = re.compile(rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2).)*\2""", re.IGNORECASE)
+# "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script. A backslash escapes the
+# next character, so an escaped quote does not end the value.
+_TRACKER_ASSIGNMENT = re.compile(
+    rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\\\n]|\\.)*\2""", re.IGNORECASE
+)
 # ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page.
 _TRACKER_QUERY = re.compile(rf"""([?&;]{_TRACKER_KEYS}=)[^&#\s"'<>]*""", re.IGNORECASE)
 # The passkey in an announce URL: https://tracker/<passkey>/announce.

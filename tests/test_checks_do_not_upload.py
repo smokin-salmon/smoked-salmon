@@ -12,11 +12,15 @@ def _release(*artists: str, title: str = "Album", edition_title: str = "", label
     return Candidate(artists=artists, title=title, edition_title=edition_title, labels=tuple(labels), media=media)
 
 
+# A list that reads, for a tracker a test gives no list: an empty one forbids everything.
+UNMATCHED = "[[entry]]\nartist = 'test-artist-unmatched'\nnote = 'Matches no test release.'\n"
+
+
 def write_lists(monkeypatch, folder: Path, **lists: str) -> None:
-    """Make salmon read its lists from folder: the TOML text given for each tracker, and empty lists otherwise."""
+    """Make salmon read its lists from folder: the TOML text given for each tracker, and UNMATCHED otherwise."""
     folder.mkdir(exist_ok=True)
     for tracker, name in LISTS.items():
-        (folder / name).write_text(lists.get(tracker, ""), encoding="utf-8")
+        (folder / name).write_text(lists.get(tracker, UNMATCHED), encoding="utf-8")
     monkeypatch.setattr(do_not_upload, "LISTS_DIR", folder)
 
 
@@ -150,6 +154,7 @@ def test_an_upload_form_is_matched_on_its_main_artists_title_edition_and_labels(
     ("text", "said"),
     [
         ("[[entry]\nartist = 'x'", "Expected"),
+        ("", "red.toml has no entries"),
         ("[[entry]]\nartist = 'Someone'\n", "Object missing required field `note`"),
         ("[[entry]]\nartits = 'Someone'\nnote = 'x'\n", "unknown field `artits`"),
         ("[[entry]]\nnote = 'x'\n", "an entry needs an artist, an album or a label"),
@@ -158,7 +163,7 @@ def test_an_upload_form_is_matched_on_its_main_artists_title_edition_and_labels(
         ("[[entry]]\nlabel = 'Label'\nartist = 'Someone'\nnote = 'x'\n", "a label entry names no artist or album"),
         ("[[entry]]\nartist = 'Someone'\nmedia = 'Web'\nnote = 'x'\n", "the media 'Web' is none of"),
     ],
-    ids=["toml", "no note", "typo", "nothing named", "no word", "blank note", "label and artist", "media"],
+    ids=["toml", "no entry", "no note", "typo", "nothing named", "no word", "blank note", "label and artist", "media"],
 )
 def test_a_list_that_cannot_be_read_forbids_every_upload_to_its_tracker(monkeypatch, tmp_path, text, said) -> None:
     write_lists(monkeypatch, tmp_path, RED=text)

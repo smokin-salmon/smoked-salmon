@@ -107,6 +107,22 @@ def test_recompress_path_reports_a_single_failure_and_still_processes_the_rest(m
     assert sorted(processed) == sorted(str(tmp_path / name) for name in filenames)
 
 
+def test_recompress_path_skips_a_folder_holding_an_mp3_named_like_a_flac(monkeypatch, tmp_path) -> None:
+    _write_flac(tmp_path / "01.flac")
+    (tmp_path / "02.flac.mp3").write_bytes(b"ID3")
+    processed: list[str] = []
+
+    async def fake_compress(filepath: str) -> CompressResult:
+        processed.append(filepath)
+        return CompressResult(filepath, True)
+
+    monkeypatch.setattr(audio_info, "compress", fake_compress)
+
+    anyio.run(audio_info.recompress_path, str(tmp_path))
+
+    assert processed == []
+
+
 def test_recompress_path_reports_missing_flac_binary(monkeypatch, tmp_path) -> None:
     _write_flac(tmp_path / "01.flac")
 

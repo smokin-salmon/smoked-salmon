@@ -17,6 +17,7 @@ from aiolimiter import AsyncLimiter
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon import cfg
 from salmon.common import UploadFiles
+from salmon.common.redaction import redact_tracker_text
 from salmon.errors import RequestError
 from salmon.trackers.base import BaseGazelleApi
 
@@ -215,3 +216,17 @@ def test_a_failed_upload_shows_the_page_without_its_secrets(monkeypatch, capsys,
 
     assert "Group page for Artist - Album" in output
     _assert_no_secret(output)
+
+
+@pytest.mark.parametrize(
+    ("text", "masked"),
+    [
+        ('{"torrent_pass":"tp-01\\"tp-02","artist":"A"}', '{"torrent_pass":"[REDACTED]","artist":"A"}'),
+        ('{"torrent_pass":"tp-01\\\\","artist":"A"}', '{"torrent_pass":"[REDACTED]","artist":"A"}'),
+        ("{'authkey': 'ak-01\\'ak-02', 'x': 1}", "{'authkey': '[REDACTED]', 'x': 1}"),
+        ('authkey = "ak-01\\"ak-02";', 'authkey = "[REDACTED]";'),
+    ],
+    ids=["escaped-quote", "escaped-backslash", "single-quoted", "script-assignment"],
+)
+def test_a_secret_holding_an_escape_is_masked_whole(text: str, masked: str) -> None:
+    assert redact_tracker_text(text) == masked

@@ -90,6 +90,14 @@ async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
         click.secho(f"Spectrals saved to {spath}", fg="green")
 
 
+def _url_host(url: str) -> str:
+    """Only the host of an argument: an unsupported URL may hold a passkey or an authkey."""
+    try:
+        return parse.urlsplit(url).hostname or "not a URL"
+    except ValueError:
+        return "not a URL"
+
+
 def descgen_refusals(urls: Sequence[str], folders: bool = True) -> list[str]:
     """Why ``salmon descgen`` will not take these arguments: one message per URL that no source's scraper takes.
 
@@ -98,13 +106,19 @@ def descgen_refusals(urls: Sequence[str], folders: bool = True) -> list[str]:
         folders: Whether to tell an argument that is a folder on this machine from one that is not. The web
             interface does not: it would say what exists outside the folders it may show.
     """
-    unsupported = [url for url in urls if not any(source.Scraper.regex.match(url) for source in METASOURCES.values())]
+    unsupported = [
+        (position, url)
+        for position, url in enumerate(urls, 1)
+        if not any(source.Scraper.regex.match(url) for source in METASOURCES.values())
+    ]
     sources = ", ".join(METASOURCES)
+    # An unsupported URL is never echoed: a tracker link holds a passkey in its path or an authkey in its query.
     return [
-        f"{url} is a folder; descgen takes store URLs ({sources}), `salmon up` writes the description itself."
+        f"{url} is a folder; descgen takes release URLs from {sources}. `salmon up` writes the description itself."
         if folders and os.path.isdir(url)
-        else f"{url} is not a release URL descgen supports. It takes URLs from {sources}."
-        for url in unsupported
+        else f"Argument {position} ({_url_host(url)}) is not a release URL descgen supports. "
+        f"It takes URLs from {sources}."
+        for position, url in unsupported
     ]
 
 

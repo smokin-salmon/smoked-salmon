@@ -24,6 +24,7 @@ from asyncclick.testing import CliRunner
 from mutagen.flac import FLAC
 from tenacity import wait_none
 from test_checks_all_command import _snapshot, fake_flac  # noqa: F401  # pyright: ignore[reportMissingImports]
+from test_checks_do_not_upload import UNMATCHED  # pyright: ignore[reportMissingImports]
 from test_checks_mqa import _write_flac  # pyright: ignore[reportMissingImports]
 from test_trackers_account import _most_within  # pyright: ignore[reportMissingImports]
 from test_webui_jobs import AUTH, _finished, _log, _with_app  # pyright: ignore[reportMissingImports]
@@ -134,8 +135,8 @@ def configured(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
     lists = tmp_path / "lists"
     lists.mkdir()
-    (lists / "red.toml").write_text("")
-    (lists / "ops.toml").write_text("")
+    (lists / "red.toml").write_text(UNMATCHED)
+    (lists / "ops.toml").write_text(UNMATCHED)
     monkeypatch.setattr(do_not_upload, "LISTS_DIR", lists)
 
 

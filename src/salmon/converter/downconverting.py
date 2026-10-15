@@ -16,7 +16,12 @@ from salmon.converter.conversions import conversion_of, record_conversion
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
-from salmon.tagger.foldername import drop_resolution_token, resolution_token
+from salmon.tagger.foldername import (
+    drop_resolution_token,
+    holds_resolution_token,
+    resolution_token,
+    swap_resolution_token,
+)
 
 BitDepth = Literal[16, 24]
 
@@ -78,7 +83,7 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
     # inside is not the same thing as one whose name says so.
     audio_info = gather_audio_info(path)
     current_token = resolution_token(audio_info)
-    has_token = bool(current_token) and re.search(r"\b" + re.escape(current_token) + r"\b", foldername)
+    has_token = holds_resolution_token(foldername, current_token)
     # A {resolution}-only name (the recommended template does not pair it with {format}) has no
     # "24bit"/"16bit FLAC" wording to rewrite: swap its token for the conversion's own one in
     # place instead of running it through the FLAC/bit-depth rewriting below.
@@ -91,7 +96,7 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
             target_rate = _resolve_sample_rate(source_rate)
         new_token = resolution_token({"_": {"precision": bit_depth, "sample rate": target_rate}})
         if new_token:
-            foldername = foldername.replace(current_token, new_token)
+            foldername = swap_resolution_token(foldername, current_token, new_token)
         else:
             foldername = drop_resolution_token(foldername, current_token)
         return os.path.join(output_dir or os.path.dirname(path), foldername)
@@ -255,15 +260,25 @@ async def _convert_audio_files(
 # ---------------------------------------------------------------------------
 
 
-def _is_finished_conversion(path: str, new_path: str, items: list[ConvertItem]) -> bool:
-    """Whether new_path holds every converted file and a record that it was converted from path.
+def _recorded_rate(items: list[ConvertItem]) -> int | list[int]:
+    """The target sample rate as a conversion record holds it: the one rate, or each rate in order."""
+    rates = sorted({item.target_rate for item in items})
+    return rates[0] if len(rates) == 1 else rates
+
+
+def _is_finished_conversion(path: str, new_path: str, items: list[ConvertItem], bit_depth: BitDepth) -> bool:
+    """Whether new_path holds every converted file and a record that it is this conversion of path.
 
     The record is written after the last file, so a run that died has none.
     """
     if not all(os.path.isfile(item.dst) for item in items):
         return False
     record = conversion_of(new_path)
-    return record is not None and os.path.realpath(record["source"]) == os.path.realpath(path)
+    if record is None or os.path.realpath(record["source"]) != os.path.realpath(path):
+        return False
+    # The name alone can match: a 16-bit conversion at 44.1 kHz and at 48 kHz can share one.
+    wanted = {"kind": "downconvert", "bit_depth": bit_depth, "sample_rate": _recorded_rate(items)}
+    return all(record.get(key) == value for key, value in wanted.items())
 
 
 async def convert_folder(
@@ -295,9 +310,10 @@ async def convert_folder(
     items = _collect_convert_items(path, new_path, sample_rate)
     if os.path.isdir(new_path):
         # Never removed: unlike a transcode's, this name can belong to a folder the user made.
-        if items and not _is_finished_conversion(path, new_path, items):
+        if items and not _is_finished_conversion(path, new_path, items, bit_depth):
             raise UploadError(
-                f"{new_path} is incomplete or not salmon's conversion of this album: remove it and run again."
+                f"{new_path} is incomplete or not salmon's conversion of this album at these settings: "
+                "remove it and run again."
             )
         click.secho(f"{new_path} already exists.", fg="yellow")
         return sample_rate, new_path
@@ -307,14 +323,9 @@ async def convert_folder(
     await _convert_audio_files(items, bit_depth)
 
     final_rate = items[-1].target_rate if items else None
-    target_rates = sorted({item.target_rate for item in items})
     if items:
         record_conversion(
-            new_path,
-            source=path,
-            kind="downconvert",
-            bit_depth=bit_depth,
-            sample_rate=target_rates[0] if len(target_rates) == 1 else target_rates,
+            new_path, source=path, kind="downconvert", bit_depth=bit_depth, sample_rate=_recorded_rate(items)
         )
     return final_rate or sample_rate, new_path
 

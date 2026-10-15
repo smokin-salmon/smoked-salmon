@@ -130,7 +130,7 @@ def test_unreadable_converted_folder_is_skipped_and_the_next_task_runs(
 
 
 def _refused_as_incomplete(folder: Path) -> None:
-    raise UploadError(f"{folder} is incomplete or not salmon's conversion of this album: remove it and run again.")
+    raise UploadError(f"{folder} is incomplete or not salmon's conversion of this album at these settings.")
 
 
 def test_a_refused_downconversion_is_skipped_with_its_message_and_the_run_goes_on(
@@ -141,7 +141,9 @@ def test_a_refused_downconversion_is_skipped_with_its_message_and_the_run_goes_o
     assert uploads == [(str(tmp_path / "converted 16"), 16)]
     assert manager.executed == ["/release", str(tmp_path / "converted 16")]
     out = capsys.readouterr().out
-    assert f"{tmp_path / 'converted 24'} is incomplete or not salmon's conversion of this album" in out
+    assert (
+        f"{tmp_path / 'converted 24'} is incomplete or not salmon's conversion of this album at these settings" in out
+    )
 
 
 def _files_in(bits: int, rate: int):

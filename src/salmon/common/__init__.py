@@ -11,7 +11,7 @@ import asyncclick as click
 import msgspec
 
 from salmon.common.aliases import AliasedCommands
-from salmon.common.constants import RE_FEAT
+from salmon.common.constants import RE_FEAT, RE_USELESS_VERSION
 from salmon.common.files import (
     compress,
     create_relative_path,
@@ -41,6 +41,7 @@ from salmon.errors import ScrapeError
 __all__ = [
     "AliasedCommands",
     "RE_FEAT",
+    "RE_USELESS_VERSION",
     "UploadFiles",
     "compress",
     "create_relative_path",
