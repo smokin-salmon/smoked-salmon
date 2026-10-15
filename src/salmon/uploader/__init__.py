@@ -3,14 +3,14 @@ import os
 import platform
 import shutil
 from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack, asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
 import anyio
 import asyncclick as click
-import pyperclip
 from mutagen import MutagenError
+from torf import TorfError
 
 import salmon.trackers
 from salmon import cfg, dryrun, interaction
@@ -23,7 +23,7 @@ from salmon.checks.provenance import gather_provenance
 from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
-from salmon.common import commandgroup, tagify
+from salmon.common import clipboard_copy, commandgroup, tagify
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
@@ -104,6 +104,8 @@ from salmon.uploader.upload import (
 )
 
 if TYPE_CHECKING:
+    from torf import Torrent
+
     from salmon.tagger.tagfile import TagFile
     from salmon.trackers.base import BaseGazelleApi
 
@@ -1213,7 +1215,12 @@ async def _upload_staged(
                         request_id = None
                         uploaded.append(url)
 
-                        if not dryrun.active():
+                        if not group_id:
+                            # Conversions sent with no group id would each start a new group beside this one.
+                            click.secho(
+                                f"\nNo group id came back for {url}: no conversions are offered for it.", fg="yellow"
+                            )
+                        elif not dryrun.active():
                             await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
 
                         if spectrals_after:
@@ -1232,8 +1239,10 @@ async def _upload_staged(
                                 uploads=spectral_uploads,
                             )
 
-                    # Nothing to convert (an MP3 upload) asks nothing.
-                    conversion_options = get_downconversion_options(rls_data, track_data, quiet=True)
+                    # Nothing to convert (an MP3 upload) asks nothing, nor does an upload whose group is not known.
+                    conversion_options = (
+                        get_downconversion_options(rls_data, track_data, quiet=True) if group_id else []
+                    )
                     if conversion_options and (
                         flac_url
                         or await interaction.assume_defaults()
@@ -1941,6 +1950,9 @@ def finish_upload(
 ) -> str:
     """Write the uploaded torrent with its URL, and queue it for the seedboxes.
 
+    The tracker has the torrent by now: a step here that fails says so and lets the rest go on, so the torrent is
+    still reported and seeded.
+
     Args:
         gazelle_site: The tracker it was uploaded to.
         path: The folder the torrent was made from.
@@ -1963,7 +1975,7 @@ def finish_upload(
         return url
 
     torrent_content.comment = url
-    torrent_content.write(torrent_path, overwrite=True)
+    _rewrite_torrent(torrent_content, torrent_path)
 
     # Display success message
     click.secho(
@@ -1975,7 +1987,7 @@ def finish_upload(
 
     # Copy URL to clipboard
     if cfg.upload.description.copy_uploaded_url_to_clipboard:
-        pyperclip.copy(url)
+        clipboard_copy(url)
 
     # Add to seedbox upload queue
     if cfg.upload.upload_to_seedbox:
@@ -1989,6 +2001,22 @@ def finish_upload(
         )
 
     return url
+
+
+def _rewrite_torrent(torrent_content: "Torrent", torrent_path: str) -> None:
+    """Write the torrent over its .torrent file whole, or not at all.
+
+    Written to a file beside it first, then moved over it: a write that fails part way (a full disk) leaves the
+    .torrent the upload was made from, without the URL, which seeds just as well.
+    """
+    part = f"{torrent_path}.part"
+    try:
+        torrent_content.write(part, overwrite=True)
+        os.replace(part, torrent_path)
+    except (OSError, TorfError) as err:
+        with suppress(OSError):
+            os.remove(part)
+        click.secho(f"Could not add the URL to {torrent_path} ({err}): it seeds without it.", fg="yellow")
 
 
 def convert_genres(genres):

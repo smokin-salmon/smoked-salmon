@@ -4,20 +4,26 @@ it, however many trackers follow (#567), and nothing offers to delete the folder
 The runs here go against the local fake tracker of test_uploader_dry_run and a fake image host, never a real one.
 """
 
+import errno
+import os
 import re
 from pathlib import Path
 from typing import Any
 
+import pyperclip
 import pytest
+from aiohttp import web
 from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     API_KEYS,
     FIRST_TORRENT_ID,
     RENAMED,
+    FakeTracker,
     _album,
     _lossy_with_spectrals,
     _run_up,
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
+from torf import Torrent, WriteError
 
 import salmon.trackers
 import salmon.uploader
@@ -346,3 +352,115 @@ def test_the_check_after_the_upload_leaves_the_albums_own_spectrals_folder(monke
     assert (downloads / RENAMED / "Spectrals" / "notes.txt").read_bytes() == b"mine"
     assert _left_behind(downloads) == []
     assert list(downloads.glob("spectrals_*")) == []
+
+
+# Once the tracker has the torrent: what fails after it does not report it failed, and it is seeded
+
+
+class NoGroupIdTracker(FakeTracker):
+    """Answers an upload with group 0, as an API answer may."""
+
+    async def _handle(self, request: web.Request) -> web.StreamResponse:
+        response = await super()._handle(request)
+        if request.path == "/ajax.php" and request.query.get("action") == "upload":
+            # The torrent id the fake tracker just gave it.
+            torrent_id = self._next_torrent_id - 1
+            return web.json_response({"status": "success", "response": {"torrentid": torrent_id, "groupid": 0}})
+        return response
+
+
+def test_an_upload_whose_group_id_does_not_come_back_offers_no_conversions(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED")
+    seedbox_runs = _seedbox_runs(monkeypatch)
+    offered: list[bool] = []
+    choose = salmon.uploader.prompt_downconversion_choice
+
+    async def recording(*args: Any, **kwargs: Any) -> Any:
+        offered.append(True)
+        return await choose(*args, **kwargs)
+
+    # A new group on RED.
+    run = _run_up(
+        monkeypatch,
+        _album(tmp_path / "Album"),
+        torrents,
+        input="\n\n",
+        tracker=NoGroupIdTracker(),
+        prompt_downconversion_choice=recording,
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    url = f"{run.tracker.url}/torrents.php?torrentid={FIRST_TORRENT_ID}"
+    assert f"No group id came back for {url}: no conversions are offered for it." in run.result.output
+    # Each conversion would have started a group of its own: none is offered, nor sent.
+    assert offered == []
+    assert len(_uploads(run)) == 1
+    # Nor is group 0's page asked for.
+    assert not [sent for sent in run.tracker.sent if sent.query.get("action") == "torrentgroup"]
+    assert seedbox_runs == [True]
+    assert len(run.queued) == 2
+
+
+def test_a_machine_with_no_clipboard_still_reports_and_seeds_each_upload(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED")
+    seedbox_runs = _seedbox_runs(monkeypatch)
+    monkeypatch.setattr(cfg.upload.description, "copy_uploaded_url_to_clipboard", True)
+
+    def no_clipboard(_text: str) -> None:
+        raise pyperclip.PyperclipException("Pyperclip could not find a copy/paste mechanism for your system.")
+
+    monkeypatch.setattr(pyperclip, "copy", no_clipboard)
+
+    # A new group on RED.
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, input="\n\n")
+
+    assert run.result.exit_code == 0, run.result.output
+    output = run.result.output
+    # The FLAC and its two transcodes, each reported and queued for the seedbox.
+    assert len(_uploads(run)) == 3
+    assert output.count("Successfully uploaded") == 3
+    assert output.count("Could not copy to the clipboard: Pyperclip could not find") == 3
+    assert seedbox_runs == [True]
+    assert len(run.queued) == 6
+
+
+def test_a_torrent_the_disk_cannot_take_the_url_into_still_seeds_as_uploaded(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED")
+    seedbox_runs = _seedbox_runs(monkeypatch)
+    write = Torrent.write
+    failed: list[str] = []
+
+    def full_disk(self: Torrent, filepath: str, validate: bool = True, overwrite: bool = False) -> None:
+        if not self.comment:
+            # The .torrent the upload is made from.
+            return write(self, filepath, validate=validate, overwrite=overwrite)
+        # With its URL, once uploaded: part of it, then the disk is full.
+        failed.append(os.path.basename(filepath))
+        Path(filepath).write_bytes(self.dump()[:100])
+        raise WriteError(errno.ENOSPC, filepath)
+
+    monkeypatch.setattr(Torrent, "write", full_disk)
+
+    # A new group on RED.
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, input="\n\n")
+
+    assert run.result.exit_code == 0, run.result.output
+    output = run.result.output
+    assert len(failed) == 3
+    assert len(_uploads(run)) == 3
+    assert output.count("Successfully uploaded") == 3
+    assert output.count("it seeds without it.") == 3
+    # Each .torrent is the one uploaded, whole, with nothing left beside it.
+    dot_torrents = sorted(torrents.iterdir())
+    assert [path.suffix for path in dot_torrents] == [".torrent"] * 3
+    sent = sorted(Torrent.read_stream(dict(upload)["file_input"][1]).infohash for upload in _sent_files(run))
+    assert sorted(Torrent.read(path).infohash for path in dot_torrents) == sent
+    assert seedbox_runs == [True]
+    assert len(run.queued) == 6
+
+
+def _sent_files(run) -> list[list[tuple[str, Any]]]:
+    return [sent.fields for sent in run.tracker.sent if sent.query.get("action") == "upload"]

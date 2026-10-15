@@ -9,6 +9,7 @@ from typing import TypeVar
 import aiohttp
 import asyncclick as click
 import msgspec
+import pyperclip
 
 from salmon.common.aliases import AliasedCommands
 from salmon.common.constants import RE_FEAT, RE_USELESS_VERSION
@@ -64,6 +65,7 @@ __all__ = [
     "ScrapeError",
     "commandgroup",
     "prompt_async",
+    "clipboard_copy",
     "flush_stdin",
     "str_to_int_if_int",
     "handle_scrape_errors",
@@ -142,6 +144,18 @@ class Prompt:
 
 
 prompt_async = Prompt()
+
+
+def clipboard_copy(text: str) -> None:
+    """Copy text to the clipboard, or say why it could not.
+
+    A machine with no clipboard (a server, the Docker image) makes pyperclip raise: nothing may fail over that,
+    least of all after an upload.
+    """
+    try:
+        pyperclip.copy(text)
+    except Exception as err:
+        click.secho(f"Could not copy to the clipboard: {err}", fg="yellow")
 
 
 def flush_stdin():

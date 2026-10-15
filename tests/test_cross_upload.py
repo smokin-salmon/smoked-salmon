@@ -1031,6 +1031,26 @@ def test_a_failed_second_format_stops_the_run_and_says_what_is_up(monkeypatch, d
     assert run.seeded == [("/seed", FOLDER)]
 
 
+def test_an_upload_whose_group_id_does_not_come_back_gets_no_conversions(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.answers["POST ajax.php?action=upload"] = lambda: _success({"torrentid": 700001, "groupid": 0})
+
+    # A new group: no group id to fall back on.
+    run = _cross_upload(
+        monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "--all"], input="\n", prepare=prepare, transcode=_transcode
+    )
+
+    assert run.result.exit_code == 0, run.output
+    url = f"{run.target.url}/torrents.php?torrentid=700001"
+    assert f"No group id came back for {url}: its conversions are not uploaded." in run.output
+    # The FLAC only: each conversion would have started a group of its own.
+    assert len(run.target.posts()) == 1
+    assert run.seeded == [("/seed", FOLDER)]
+
+
 # Images
 
 

@@ -22,6 +22,7 @@ from tenacity import wait_none
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon.errors import RateLimitedError, RequestError, RequestFailedError, UnknownOutcomeError
+from salmon.trackers.account import SlidingWindowLimiter
 from salmon.trackers.base import BaseGazelleApi, RetryableError
 
 
@@ -228,6 +229,37 @@ def test_upload_answered_another_status_naming_the_rate_limit_is_an_unknown_outc
     assert waits == []
     assert hits == ["POST"]
     assert isinstance(err, UnknownOutcomeError)
+
+
+@pytest.mark.parametrize(
+    ("retry_after", "paused"),
+    [
+        pytest.param(lambda: None, 20, id="none"),
+        pytest.param(lambda: "30", 30, id="30"),
+        pytest.param(lambda: "3600", 60, id="past-the-most-one-request-waits"),
+    ],
+)
+def test_upload_answered_another_status_naming_the_rate_limit_pauses_the_account(
+    monkeypatch: pytest.MonkeyPatch,
+    waits: list[float],
+    capsys: pytest.CaptureFixture[str],
+    retry_after: Callable[[], str | None],
+    paused: int,
+) -> None:
+    pauses: list[float] = []
+    monkeypatch.setattr(SlidingWindowLimiter, "pause", lambda _self, seconds: pauses.append(seconds))
+
+    hits, err = anyio.run(_rate_limited, retry_after, "POST", 503)
+
+    assert hits == ["POST"]
+    assert isinstance(err, UnknownOutcomeError)
+    # The upload is not sent again, so it does not wait: what is sent next (the lookup of the upload) does, in the
+    # account's rate limit, for no longer than salmon waits for one request.
+    assert waits == []
+    assert pauses == [paused]
+    assert f"RED answered 503 naming its rate limit: the next request to it waits {paused} seconds." in (
+        capsys.readouterr().out
+    )
 
 
 def test_get_answered_another_status_naming_the_rate_limit_is_waited_for(waits: list[float]) -> None:

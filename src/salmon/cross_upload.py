@@ -1270,8 +1270,13 @@ async def _upload(
             fg="yellow",
         )
 
-    if release.tasks:
-        await _upload_conversions(release, target, group_id, torrent_id, url, existing_group, seedbox, uploaded)
+    if not release.tasks:
+        return
+    if not group_id:
+        # Conversions sent with no group id would each start a new group beside this one, as in up.
+        click.secho(f"\nNo group id came back for {url}: its conversions are not uploaded.", fg="yellow")
+        return
+    await _upload_conversions(release, target, group_id, torrent_id, url, existing_group, seedbox, uploaded)
 
 
 def _edition(release: Release) -> dict[str, Any]:
