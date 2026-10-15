@@ -132,3 +132,32 @@ def test_numbers_in_the_title_stay_when_the_token_is_swapped(monkeypatch) -> Non
     new_path = downconverting._build_output_path(source, 16, 48000)
 
     assert new_path == "/downloads/Artist - Recordings 1924-48 (2021) [WEB FLAC 16-48]"
+
+
+def _template(monkeypatch, template: str) -> None:
+    monkeypatch.setattr(downconverting.cfg.upload.formatting, "folder_template", template)
+
+
+def test_a_title_reading_like_the_token_is_kept_when_the_template_has_no_resolution(monkeypatch) -> None:
+    _stub_24_96(monkeypatch)
+    _template(monkeypatch, "{artists} - {title} ({year}) [{source} {format}]")
+    source = "/downloads/Artist - 24-96 (2024) [WEB FLAC]"
+
+    assert downconverting._build_output_path(source, 16, 48000) == "/downloads/Artist - 24-96 (2024) [WEB 16bit FLAC]"
+
+
+def test_only_the_bracketed_token_changes_beside_a_title_that_reads_like_it(monkeypatch) -> None:
+    _stub_24_96(monkeypatch)
+    _template(monkeypatch, "[{source} FLAC {resolution}]")
+    source = "/downloads/Artist - 24-96 (2024) [WEB FLAC 24-96]"
+
+    assert downconverting._build_output_path(source, 16, 48000) == "/downloads/Artist - 24-96 (2024) [WEB FLAC 16-48]"
+
+
+def test_an_unbracketed_token_is_handled_when_the_template_places_resolution(monkeypatch) -> None:
+    _stub_24_96(monkeypatch)
+    _template(monkeypatch, "{artists} - {title} {resolution}")
+
+    assert downconverting._build_output_path("/downloads/Artist - Title 24-96", 16, 48000) == (
+        "/downloads/Artist - Title 16-48"
+    )
