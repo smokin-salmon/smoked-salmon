@@ -355,3 +355,37 @@ def test_a_renamed_album_leaves_no_spectrals_in_the_source_or_tmp_dir(
     assert _entries(album) == before
     if with_tmp_dir:
         assert list(tmp_dir.iterdir()) == []
+
+
+@pytest.mark.parametrize("specs_hosts", [{}, {"red": "imgbox"}], ids=["one host", "a host per tracker"])
+def test_an_albums_own_spectrals_folder_survives_the_upload_and_goes_into_the_renamed_copy(
+    monkeypatch, tmp_path, dirs, hosts, scratch, specs_hosts: dict[str, str]
+) -> None:
+    # Without tmp_dir, salmon made its spectrals in <album>/Spectrals: a folder the album had there was emptied first,
+    # left out of the renamed copy, then deleted after the upload.
+    _library, downloads, torrents = dirs
+    _image_settings(monkeypatch, **specs_hosts)
+    album = _album(tmp_path / "seeding" / "Album")
+    (album / "Spectrals").mkdir()
+    (album / "Spectrals" / "notes.txt").write_bytes(b"mine")
+    before = _entries(album)
+    images_at_upload: list[list[Path]] = []
+    upload_and_report = salmon.uploader.upload_and_report
+
+    async def recording(gazelle_site, path, *args, **kwargs) -> Any:
+        images_at_upload.append(list(Path(path).rglob("*.png")))
+        return await upload_and_report(gazelle_site, path, *args, **kwargs)
+
+    monkeypatch.setattr(salmon.uploader, "upload_and_report", recording)
+
+    run = _run_up(monkeypatch, album, torrents)
+
+    assert run.result.exit_code == 0, run.result.output
+    assert {host for host, _name in _spectral_uploads(hosts)} == {"catbox", *specs_hosts.values()}
+    assert (album / "Spectrals" / "notes.txt").read_bytes() == b"mine"
+    assert _entries(album) == before
+    assert (downloads / RENAMED / "Spectrals" / "notes.txt").read_bytes() == b"mine"
+    # No torrent took salmon's spectrals, and none are left.
+    assert len(images_at_upload) == 6 and not any(images_at_upload)
+    assert _left_behind(downloads, scratch) == []
+    assert list(downloads.glob("spectrals_*")) == []

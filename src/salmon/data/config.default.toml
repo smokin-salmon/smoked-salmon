@@ -22,8 +22,8 @@ download_directory = '.music'
 # You still need to have it set even if using direct torrent injection with qbittorrent
 dottorrents_dir = '.torrents'
 
-# Set the TMP dir where spectrals will be generated. If unset, the spectrals will be generated in the albums folders
-# and be cleaned up up before upload. Useful if you want to generate the spectral on a fast disk for instance.
+# Set the TMP dir where spectrals are made, e.g. on a fast disk. Unset, they go in the album's Spectrals folder, or in
+# download_directory for a library album or an album that has a Spectrals folder of its own.
 # tmp_dir = 'path to tmp dir'
 
 # If True, clean the temporary directory at startup to prevent leftover files from accumulating

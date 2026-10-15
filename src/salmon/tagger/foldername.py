@@ -30,7 +30,7 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
     the copy is left for its run directory to remove, and the output says why `original` is kept.
     """
     # Imported here: the uploader package imports this module.
-    from salmon.uploader.spectrals import get_spectrals_path
+    from salmon.uploader.spectrals import get_spectrals_path, made_by_salmon
 
     old_base = os.path.basename(path)
     template_fields = {fn for _, fn, _, _ in Formatter().parse(cfg.upload.formatting.folder_template) if fn}
@@ -84,13 +84,16 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
     in_library = cfg.directory.protects(path)
     use_hardlinks = same_volume and cfg.directory.hardlinks and not in_library
 
-    # The spectrals are salmon's own scratch files, made before this rename and looked up by the new name
-    # afterwards. They move with the album (or stay out of the copy) whatever remove_source_dir says.
+    # The spectrals salmon made before this rename are looked up by the new name afterwards: they move with the album,
+    # wherever they are and whatever remove_source_dir says. A Spectrals folder salmon did not make is the album's own,
+    # copied like any other folder (get_spectrals_path never names it).
     specs_path = get_spectrals_path(path)
-    specs_in_source = not in_library and _is_direct_child(specs_path, path) and os.path.isdir(specs_path)
-    ignore = _ignoring_top_level(path, os.path.basename(specs_path)) if specs_in_source else None
+    carry_specs = made_by_salmon(specs_path)
+    in_source = carry_specs and _is_direct_child(specs_path, path)
+    ignore = _ignoring_top_level(path, os.path.basename(specs_path)) if in_source else None
 
-    if os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path):
+    same_folder = os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path)
+    if same_folder:
         click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
     else:
         if use_hardlinks:
@@ -107,10 +110,12 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
             shutil.copytree(path, new_path, dirs_exist_ok=True, ignore=ignore)
             click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
 
-        if specs_in_source:
-            # Moved, not copied: the source must not keep a Spectrals folder the upload never deletes.
-            _move_folder(specs_path, get_spectrals_path(new_path))
+    if carry_specs:
+        # Moved, not copied: the source must not keep a spectrals folder the upload never deletes. Also into the same
+        # folder: a case-only rename still renames salmon's folder outside it.
+        _move_specs_folder(specs_path, get_spectrals_path(new_path))
 
+    if not same_folder:
         if cfg.upload.formatting.remove_source_dir and original is not None:
             click.secho(f"remove_source_dir is on, but {original} is kept: {_kept_reason(original)}.", fg="yellow")
         elif cfg.upload.formatting.remove_source_dir and in_library:
@@ -122,20 +127,6 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
     from salmon.converter.conversions import carry_conversion
 
     carry_conversion(path, new_path)
-
-    # Also rename spectrals folder in TMP_DIR if it exists
-    if cfg.directory.tmp_dir and os.path.exists(cfg.directory.tmp_dir):
-        tmp_old_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{old_base}")
-        tmp_new_specs_path = os.path.join(cfg.directory.tmp_dir, f"spectrals_{new_base}")
-
-        if not os.path.exists(tmp_old_specs_path):
-            pass  # No spectrals folder exists, nothing to rename
-        elif os.path.exists(tmp_new_specs_path) and os.path.samefile(tmp_old_specs_path, tmp_new_specs_path):
-            click.secho(f"Skipping move, same location already for '{tmp_new_specs_path}'", fg="yellow")
-        else:
-            _move_folder(tmp_old_specs_path, tmp_new_specs_path)
-            click.secho(f"Moved temporary spectrals folder to '{tmp_new_specs_path}'.", fg="yellow")
-
     return new_path
 
 
@@ -154,11 +145,21 @@ def _ignoring_top_level(top, name):
     return ignore
 
 
-def _move_folder(src, dst):
-    """Move a folder to `dst`, replacing a stale one there. Works across volumes."""
-    if os.path.isdir(dst):
-        shutil.rmtree(dst)
+def _move_specs_folder(src, dst):
+    """Move salmon's spectrals folder to `dst`, replacing salmon's own stale one there. Works across volumes.
+
+    Raises:
+        UploadError: Something salmon did not make is at `dst`.
+    """
+    # Imported here: the uploader package imports this module.
+    from salmon.uploader.spectrals import carry_specs_claim, make_way_for_spectrals
+
+    if os.path.exists(dst) and os.path.samefile(src, dst):
+        return  # The album was renamed into itself, and its spectrals folder keeps its name.
+    old_real = os.path.realpath(src)
+    make_way_for_spectrals(dst)
     shutil.move(src, dst)
+    carry_specs_claim(old_real, dst)
 
 
 def _resolution(path):

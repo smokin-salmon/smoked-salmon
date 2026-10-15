@@ -39,7 +39,7 @@ from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
 from salmon.uploader import staging
 from salmon.uploader.seedbox import UploadManager
-from salmon.uploader.spectrals import get_spectrals_path
+from salmon.uploader.spectrals import create_specs_folder
 from salmon.uploader.torrent_client import QBittorrentClient
 
 RENAMED = "Artist - Album (2020) [WEB FLAC]"
@@ -253,8 +253,7 @@ async def _rename_files(path: str, *_args: Any) -> None:
 
 async def _lossy_with_spectrals(path: str, *_args: Any, **_kwargs: Any) -> tuple[bool, dict[int, str]]:
     """Stands in for check_spectrals: the release is a lossy master, and track 1's spectrals go in."""
-    spectrals = Path(get_spectrals_path(path))
-    spectrals.mkdir()
+    spectrals = Path(create_specs_folder(path))
     for name in ("01 Full.png", "01 Zoom.png"):
         (spectrals / name).write_bytes(b"png")
     return True, {1: "01. one.flac"}
@@ -464,10 +463,20 @@ def _torrent_lines(torrent_data: bytes) -> list[str]:
 
 
 @pytest.mark.parametrize("where", ["elsewhere", "in library_dirs"])
-def test_a_dry_run_sends_nothing_and_leaves_nothing_behind(monkeypatch, dirs, image_uploads, where: str) -> None:
+@pytest.mark.parametrize("with_tmp_dir", [False, True], ids=["no tmp_dir", "tmp_dir"])
+def test_a_dry_run_sends_nothing_and_leaves_nothing_behind(
+    monkeypatch, tmp_path, dirs, image_uploads, where: str, with_tmp_dir: bool
+) -> None:
     library, downloads, torrents = dirs
     album = _album((library / "Artist" if where == "in library_dirs" else downloads.parent / "seeding") / "Album")
     before = _snapshot(album)
+    tmp_dir = tmp_path / "tmp"
+    if with_tmp_dir:
+        # Another album's spectrals, by the name a real run of this one used to replace.
+        (tmp_dir / "spectrals_Album").mkdir(parents=True)
+        (tmp_dir / "spectrals_Album" / "01 Full.png").write_bytes(b"png")
+        monkeypatch.setattr(cfg.directory, "tmp_dir", str(tmp_dir))
+    tmp_before = _snapshot(tmp_dir) if with_tmp_dir else None
 
     run = _run_up(monkeypatch, album, torrents, args=("--dry-run",))
 
@@ -504,6 +513,8 @@ def test_a_dry_run_sends_nothing_and_leaves_nothing_behind(monkeypatch, dirs, im
     assert "Dry run: not uploading the cover cover.jpg to testhost." in run.result.output
     assert "Dry run: not uploading the spectrals of 1 track(s) to testhost." in run.result.output
     assert f"Dry run: done. Nothing was sent, and {album} is unchanged." in run.result.output
+    if with_tmp_dir:
+        assert _snapshot(tmp_dir) == tmp_before
 
 
 def test_a_dry_run_prints_the_forms_the_real_run_sends(monkeypatch, tmp_path, dirs, image_uploads) -> None:

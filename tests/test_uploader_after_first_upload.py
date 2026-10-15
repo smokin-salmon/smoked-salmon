@@ -326,3 +326,23 @@ def test_the_check_after_the_upload_does_not_offer_to_delete_the_folder_and_abor
     assert len(run.queued) == 2
     assert (downloads / RENAMED).is_dir()
     assert _left_behind(downloads) == []
+
+
+def test_the_check_after_the_upload_leaves_the_albums_own_spectrals_folder(monkeypatch, tmp_path, dirs) -> None:
+    # The torrent seeds from the renamed copy: the check used to empty its Spectrals folder, then delete it.
+    downloads, torrents = dirs
+    _trackers(monkeypatch, "RED")
+    checks, edits = _checks(monkeypatch), _description_edits(monkeypatch)
+    album = _album(tmp_path / "Album")
+    (album / "Spectrals").mkdir()
+    (album / "Spectrals" / "notes.txt").write_bytes(b"mine")
+
+    run = _run_up(monkeypatch, album, torrents, args=("-a",), input="\n\n")
+
+    assert run.result.exit_code == 0, run.result.output
+    assert checks == [("RED", FIRST_TORRENT_ID)]
+    assert len(edits) == 1
+    assert (album / "Spectrals" / "notes.txt").read_bytes() == b"mine"
+    assert (downloads / RENAMED / "Spectrals" / "notes.txt").read_bytes() == b"mine"
+    assert _left_behind(downloads) == []
+    assert list(downloads.glob("spectrals_*")) == []
