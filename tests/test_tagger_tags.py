@@ -111,6 +111,21 @@ def test_flac_tag_repeated_with_the_same_value_reads_once(tmp_path):
     assert tag_file.isrc == "GBABC2600001"
 
 
+def test_flac_artists_and_genres_repeated_with_the_same_value_read_once(tmp_path):
+    _write_flac(tmp_path / "01.flac")
+    tagged = FLAC(tmp_path / "01.flac")
+    tagged["artist"] = ["Artist", "Guest", "Artist"]
+    tagged["artists"] = ["Artist", "Artist"]
+    tagged["genre"] = ["Rock", "Rock"]
+    tagged.save()
+
+    tag_file = TagFile(str(tmp_path / "01.flac"))
+
+    assert tag_file.artist == ["Artist", "Guest"]
+    assert tag_file.artists == ["Artist"]
+    assert tag_file.genre == ["Rock"]
+
+
 def test_flac_tag_with_repeated_and_different_values_keeps_each_once_in_order(tmp_path):
     _write_flac(tmp_path / "01.flac")
     tagged = FLAC(tmp_path / "01.flac")

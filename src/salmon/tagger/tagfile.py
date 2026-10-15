@@ -77,10 +77,11 @@ class TagFile:
             return None
         try:
             if isinstance(mut, flac.FLAC):
-                if attr in {"artist", "artists", "genre"}:
-                    return list(mut[TAG_FIELDS["FLAC"][attr]]) or []
                 # A Vorbis comment can repeat a field with the same value (TRACKNUMBER=1 twice); read it once.
-                return "; ".join(dict.fromkeys(mut[TAG_FIELDS["FLAC"][attr]])) or None
+                values = list(dict.fromkeys(mut[TAG_FIELDS["FLAC"][attr]]))
+                if attr in {"artist", "artists", "genre"}:
+                    return values
+                return "; ".join(values) or None
             elif isinstance(mut, mp3.MP3):
                 return self.parse_tag(attr, "MP3")
             elif isinstance(mut, mp4.MP4):
