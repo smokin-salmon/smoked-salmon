@@ -7,7 +7,7 @@ from itertools import chain
 from typing import Any
 
 from salmon import cfg
-from salmon.common import fetch_genre, less_uppers, normalize_accents, split_genre
+from salmon.common import RE_USELESS_VERSION, fetch_genre, less_uppers, normalize_accents, split_genre
 from salmon.errors import GenreNotInWhitelist
 
 
@@ -248,13 +248,7 @@ class MetadataMixin(ABC):
         parsed with the artists.
         """
         if cfg.upload.formatting.strip_useless_versions:
-            base = re.sub(
-                r" \(*(Original( Mix)?|Remastered|Clean|"
-                r"Album.+edition|Album.+mix|feat[^\)]+)\)*$",
-                "",
-                title,
-                flags=re.IGNORECASE,
-            ).strip()
+            base = RE_USELESS_VERSION.sub("", title).strip()
             strip_set = {
                 "original mix",
                 "original",
