@@ -385,7 +385,7 @@ class Upload(BaseStruct):
     upload_to_seedbox: bool = True
 
     # Normalize file names in generated .torrent files to a fixed Unicode form.
-    # "" (default): leave names as they are on disk. "NFC" or "NFD": normalize to that form.
+    # "" or "none" (default) keeps names as on disk; "NFC" / "NFD" must be the form of the files the client seeds.
     torrent_name_normalization: str = ""
 
     # TODO: take these out of the upload struct!

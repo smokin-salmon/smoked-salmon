@@ -3,6 +3,8 @@ import collections
 import os
 import posixpath
 import subprocess
+import sys
+import unicodedata
 from urllib.parse import unquote, urlparse
 
 import anyio
@@ -62,7 +64,11 @@ async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str)
     Returns:
         True if rclone exited successfully, False otherwise.
     """
-    remote_path = posixpath.join(remote_folder, os.path.basename(path))
+    folder_name = os.path.basename(path)
+    if _normalizes_to_nfc(seedbox):
+        # rclone makes every name it copies NFC with the flag, but not this explicit destination name.
+        folder_name = unicodedata.normalize("NFC", folder_name)
+    remote_path = posixpath.join(remote_folder, folder_name)
     commands = ["rclone", "copy", path, f"{seedbox.url}:{remote_path}", *seedbox.extra_args]
     secrets = seedbox_secrets(seedbox)
     click.secho(redact_secrets(f"Starting Rclone upload to {seedbox.url}:{remote_folder}", secrets), fg="cyan")
@@ -169,6 +175,48 @@ def _seedbox_display_name(seedbox: Seedbox, secrets: list[str]) -> str:
 def _enabled_seedboxes() -> list[Seedbox]:
     """Return the configured seedboxes that are not disabled with `enabled = false`."""
     return [seedbox for seedbox in cfg.seedbox if seedbox.enabled]
+
+
+_UNICODE_FLAG = "--local-unicode-normalization"
+# Seedboxes already warned about in this process: once is enough for a config problem.
+_warned_normalization: set[int] = set()
+
+
+def _normalizes_to_nfc(seedbox: Seedbox) -> bool:
+    """Whether rclone is told to make the names it copies NFC."""
+    return any(arg in (_UNICODE_FLAG, f"{_UNICODE_FLAG}=true") for arg in seedbox.extra_args)
+
+
+def _unmatched_normalization(seedbox: Seedbox, form: str) -> str | None:
+    """Why a seedbox's client may not find files a torrent names in this Unicode form; None if it will."""
+    if seedbox.type == "rclone":
+        if form == "NFD":
+            return "rclone cannot copy names as NFD"
+        if not _normalizes_to_nfc(seedbox):
+            return f"rclone copies names as they are, without {_UNICODE_FLAG} in its extra_args"
+        return None
+    # macOS finds a file whatever the form of its name; Linux compares the bytes.
+    if sys.platform.startswith("linux"):
+        return "its client seeds the files where they are, and Linux keeps their names as they are"
+    return None
+
+
+def warn_unmatched_normalization(form: str, site_code: str) -> None:
+    """Warn once per seedbox when the client behind it may not find the files a form-normalized torrent names."""
+    if not cfg.upload.upload_to_seedbox:
+        return
+    for seedbox in _enabled_seedboxes():
+        if seedbox.trackers and site_code.upper() not in seedbox.trackers:
+            continue
+        if id(seedbox) in _warned_normalization or not (reason := _unmatched_normalization(seedbox, form)):
+            continue
+        _warned_normalization.add(id(seedbox))
+        click.secho(
+            f"\nWarning: torrent_name_normalization is {form}, but on "
+            f"{_seedbox_display_name(seedbox, seedbox_secrets(seedbox))} {reason}. Its client cannot seed a file "
+            f'whose name is not {form} already: set torrent_name_normalization to "none" unless they all are.',
+            fg="yellow",
+        )
 
 
 class UploadManager:

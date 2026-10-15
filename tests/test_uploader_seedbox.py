@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import unicodedata
 
 import anyio
 import msgspec
@@ -846,3 +847,26 @@ def test_seedbox_trackers_are_uppercased() -> None:
 def test_seedbox_rejects_unknown_tracker() -> None:
     with pytest.raises(ValueError, match="Unknown tracker"):
         Seedbox(name="typo-box", trackers=["REDD"])
+
+
+@needs_posix
+@pytest.mark.parametrize("flag", ["--local-unicode-normalization", "--local-unicode-normalization=true"])
+def test_rclone_destination_folder_is_nfc_with_the_unicode_flag(monkeypatch, tmp_path, capfd, flag: str) -> None:
+    _fake_rclone(monkeypatch, tmp_path, code="print(sys.argv[1:])")
+    nfd = unicodedata.normalize("NFD", "Café")
+
+    anyio.run(seedbox._rclone_upload_folder, Seedbox(url="box", extra_args=[flag]), "/music", f"/tmp/{nfd}")
+
+    out = capfd.readouterr().out
+    assert f"box:/music/{unicodedata.normalize('NFC', 'Café')}'" in out
+    assert f"box:/music/{nfd}'" not in out
+
+
+@needs_posix
+def test_rclone_destination_folder_keeps_its_name_without_the_unicode_flag(monkeypatch, tmp_path, capfd) -> None:
+    _fake_rclone(monkeypatch, tmp_path, code="print(sys.argv[1:])")
+    nfd = unicodedata.normalize("NFD", "Café")
+
+    anyio.run(seedbox._rclone_upload_folder, Seedbox(url="box", extra_args=["--checksum"]), "/music", f"/tmp/{nfd}")
+
+    assert f"box:/music/{nfd}'" in capfd.readouterr().out
