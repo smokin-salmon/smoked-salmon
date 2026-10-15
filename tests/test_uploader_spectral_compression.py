@@ -172,3 +172,53 @@ def test_with_pyoxipng_the_program_is_never_looked_up(monkeypatch, tmp_path) -> 
     anyio.run(partial(spectrals._compress_spectrals, str(path)))
 
     assert looked_up == []
+
+
+def test_a_hidden_leftover_is_neither_compressed_nor_shown(monkeypatch, tmp_path) -> None:
+    compressed: list[str] = []
+
+    class FakeOxipng:
+        class StripChunks:
+            @staticmethod
+            def all() -> str:
+                return "all"
+
+        @staticmethod
+        def optimize(path, **kwargs) -> None:
+            compressed.append(Path(path).name)
+
+    monkeypatch.setattr(spectrals, "oxipng", FakeOxipng)
+    path = _spectrals_dir(tmp_path)
+    (path / ".01 Full.png.tmp.png").write_bytes(b"leftover")
+
+    anyio.run(partial(spectrals._compress_spectrals, str(path)))
+
+    assert sorted(compressed) == ["01 Full.png", "01 Zoom.png", "02 Full.png", "02 Zoom.png"]
+    assert spectrals._spectral_images(str(path)) == ["01 Full.png", "01 Zoom.png", "02 Full.png", "02 Zoom.png"]
+
+
+def test_the_windows_viewer_skips_a_hidden_leftover(monkeypatch, tmp_path) -> None:
+    opened: list[str] = []
+    monkeypatch.setattr(spectrals.os, "startfile", opened.append, raising=False)
+    path = _spectrals_dir(tmp_path)
+    (path / ".00 Full.png.tmp.png").write_bytes(b"leftover")
+
+    spectrals._open_specs_in_windows(str(path))
+
+    assert opened == [str(path / "01 Full.png")]
+
+
+def test_the_quick_look_viewer_is_given_the_pngs_only(monkeypatch, tmp_path) -> None:
+    run: list[list[str]] = []
+
+    async def fake_run_process(args, **kwargs) -> None:
+        run.append(args)
+
+    monkeypatch.setattr(spectrals.anyio, "run_process", fake_run_process)
+    path = _spectrals_dir(tmp_path)
+    (path / ".00 Full.png.tmp.png").write_bytes(b"leftover")
+    (path / "notes.txt").write_bytes(b"not an image")
+
+    anyio.run(spectrals._open_specs_in_preview, str(path))
+
+    assert [Path(arg).name for arg in run[0][2:]] == ["01 Full.png", "01 Zoom.png", "02 Full.png", "02 Zoom.png"]

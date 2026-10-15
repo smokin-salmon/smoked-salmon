@@ -3,6 +3,7 @@
 import re
 
 import anyio
+import pytest
 from asyncclick.testing import CliRunner
 
 import salmon.commands
@@ -51,7 +52,7 @@ def _run_descgen(monkeypatch, *args: str):
     return anyio.run(run)
 
 
-def test_descgen_given_a_folder_says_it_takes_store_urls(monkeypatch, tmp_path) -> None:
+def test_descgen_given_a_folder_says_it_takes_release_urls(monkeypatch, tmp_path) -> None:
     album = tmp_path / "Artist - Album (2024) [FLAC]"
     album.mkdir()
 
@@ -62,7 +63,7 @@ def test_descgen_given_a_folder_says_it_takes_store_urls(monkeypatch, tmp_path) 
     assert "Traceback" not in result.output
     lines = result.output.strip().splitlines()
     assert len(lines) == 1
-    assert f"{album} is a folder; descgen takes store URLs" in lines[0]
+    assert f"{album} is a folder; descgen takes release URLs from " in lines[0]
     assert "`salmon up` writes the description itself" in lines[0]
     assert all(name in lines[0] for name in METASOURCES)
 
@@ -77,5 +78,23 @@ def test_descgen_given_an_unsupported_url_lists_the_sources(monkeypatch) -> None
     assert "Traceback" not in result.output
     lines = result.output.strip().splitlines()
     assert len(lines) == 1
-    assert f"{url} is not a release URL descgen supports" in lines[0]
+    assert "Argument 1 (shop.example.com) is not a release URL descgen supports" in lines[0]
     assert all(name in lines[0] for name in METASOURCES)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://tracker.example/12345678901234567890abcdef/announce",
+        "https://tracker.example/torrents.php?action=download&id=1&authkey=SECRETKEY&torrent_pass=SECRETPASS",
+        "not a url, but SECRETKEY",
+    ],
+)
+def test_descgen_never_echoes_a_refused_url(monkeypatch, url: str) -> None:
+    result = _run_descgen(monkeypatch, "https://www.qobuz.com/us-en/album/x/abc123", url)
+
+    assert result.exit_code == 1
+    assert "Argument 2 (" in result.output
+    assert "SECRET" not in result.output
+    assert "announce" not in result.output
+    assert "12345678901234567890abcdef" not in result.output
