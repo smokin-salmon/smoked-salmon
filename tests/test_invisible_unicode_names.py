@@ -12,8 +12,8 @@ import pytest
 
 from salmon import cfg, interaction
 from salmon.common import clean_name, invisible_chars
-from salmon.errors import NoncompliantFolderStructure
-from salmon.tagger.foldername import generate_folder_name
+from salmon.errors import NoncompliantFolderStructure, UploadError
+from salmon.tagger.foldername import _edit_folder_interactive, generate_folder_name, rename_folder
 from salmon.tagger.folderstructure import _check_invisible_characters, check_folder_structure
 from salmon.tagger.retagger import generate_file_name
 
@@ -270,3 +270,171 @@ def test_path_length_check_counts_the_cleaned_name(tmp_path, monkeypatch) -> Non
     anyio.run(lambda: check_folder_structure(str(root), False, max_path_length=180))
 
     assert _names(root) == [f"{'x' * 150}.flac"]
+
+
+# rename_folder and generate_file_name refuse a name that shows nothing or escapes its directory
+
+FOLDER_METADATA = {
+    "scene": False,
+    "title": "Album",
+    "artists": [("Artist", "main")],
+    "year": 2020,
+    "source": "WEB",
+    "format": "FLAC",
+    "encoding": "Lossless",
+}
+
+
+def _download_dir(tmp_path, monkeypatch):
+    """A download directory with a file in it, below a parent holding a sibling file."""
+    parent = tmp_path / "parent"
+    downloads = parent / "downloads"
+    downloads.mkdir(parents=True)
+    (parent / "sibling.txt").write_text("keep")
+    (downloads / "other.txt").write_text("keep")
+    album = downloads / "Album"
+    album.mkdir()
+    (album / "01.flac").write_bytes(b"fLaC")
+    monkeypatch.setattr(cfg.directory, "download_directory", str(downloads))
+    return parent, downloads, album
+
+
+def _assert_untouched(parent, downloads, album) -> None:
+    assert (parent / "sibling.txt").read_text() == "keep"
+    assert (downloads / "other.txt").read_text() == "keep"
+    assert (album / "01.flac").read_bytes() == b"fLaC"
+
+
+def _default_answers(monkeypatch) -> list[str]:
+    """Every question answered with its default, as -yyy does."""
+    asked: list[str] = []
+
+    async def confirm(text, default=False, **_kwargs):
+        asked.append(text)
+        return default
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+    return asked
+
+
+@pytest.mark.parametrize("name", ["", ".", ".."])
+def test_rename_folder_refuses_a_name_that_is_not_a_folder_name(tmp_path, monkeypatch, name) -> None:
+    parent, downloads, album = _download_dir(tmp_path, monkeypatch)
+    monkeypatch.setattr("salmon.tagger.foldername.generate_folder_name", lambda _metadata: name)
+    _default_answers(monkeypatch)
+
+    # The default answer to "replace the existing folder?" is yes, and that used to rmtree the directory.
+    with pytest.raises(UploadError, match="Invalid folder name"):
+        anyio.run(lambda: rename_folder(str(album), FOLDER_METADATA, auto_rename=True))
+
+    _assert_untouched(parent, downloads, album)
+
+
+@pytest.mark.parametrize("name", ["", ".", ".."])
+def test_rename_folder_without_check_refuses_a_name_that_is_not_a_folder_name(tmp_path, monkeypatch, name) -> None:
+    parent, downloads, album = _download_dir(tmp_path, monkeypatch)
+    monkeypatch.setattr("salmon.tagger.foldername.generate_folder_name", lambda _metadata: name)
+    _default_answers(monkeypatch)
+
+    with pytest.raises(UploadError, match="Invalid folder name"):
+        anyio.run(lambda: rename_folder(str(album), FOLDER_METADATA, auto_rename=True, check=False))
+
+    _assert_untouched(parent, downloads, album)
+
+
+@pytest.mark.parametrize("name", ["", ".", ".."])
+def test_rename_folder_refuses_an_edited_name_that_is_not_a_folder_name(tmp_path, monkeypatch, name) -> None:
+    parent, downloads, album = _download_dir(tmp_path, monkeypatch)
+    asked: list[str] = []
+
+    async def confirm(text, default=False, **_kwargs):
+        asked.append(text)
+        # The new name is not acceptable (so it is edited), the retry is declined, the rest take the default.
+        return default and "acceptable" not in text and "retry" not in text
+
+    async def edit(*_args, **_kwargs):
+        return name
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+    monkeypatch.setattr(interaction, "edit", edit)
+
+    with pytest.raises(SystemExit):
+        anyio.run(lambda: rename_folder(str(album), FOLDER_METADATA, auto_rename=False))
+
+    assert any("retry" in text for text in asked)
+    _assert_untouched(parent, downloads, album)
+
+
+def test_rename_folder_refuses_a_template_that_renders_empty(tmp_path, monkeypatch) -> None:
+    parent, downloads, album = _download_dir(tmp_path, monkeypatch)
+    monkeypatch.setattr(cfg.upload.formatting, "folder_template", "{description}")
+    _default_answers(monkeypatch)
+
+    with pytest.raises(UploadError, match="Invalid folder name"):
+        anyio.run(
+            lambda: rename_folder(str(album), {**FOLDER_METADATA, "description": ""}, auto_rename=True, check=False)
+        )
+
+    _assert_untouched(parent, downloads, album)
+
+
+@pytest.mark.parametrize("title", [ZWSP, f"{NBSP}{BOM}"])
+def test_rename_folder_refuses_a_name_with_nothing_visible(tmp_path, monkeypatch, title) -> None:
+    parent, downloads, album = _download_dir(tmp_path, monkeypatch)
+    monkeypatch.setattr(cfg.upload.formatting, "folder_template", "{title}")
+    _default_answers(monkeypatch)
+
+    with pytest.raises(UploadError, match="Invalid folder name"):
+        anyio.run(lambda: rename_folder(str(album), {**FOLDER_METADATA, "title": title}, auto_rename=True, check=False))
+
+    _assert_untouched(parent, downloads, album)
+
+
+@pytest.mark.parametrize("name", ["..", ZWSP, ""])
+def test_edit_folder_offers_a_retry_for_a_name_that_would_be_refused(monkeypatch, name) -> None:
+    names = iter([name, "Fixed Name"])
+
+    async def edit(*_args, **_kwargs):
+        return next(names)
+
+    async def confirm(text, default=False, **_kwargs):
+        return "acceptable" not in text
+
+    monkeypatch.setattr(interaction, "edit", edit)
+    monkeypatch.setattr(interaction, "confirm", confirm)
+
+    assert anyio.run(lambda: _edit_folder_interactive("Old", auto_rename=False)) == "Fixed Name"
+
+
+def test_rename_folder_still_renames_a_normal_name(tmp_path, monkeypatch) -> None:
+    parent, downloads, album = _download_dir(tmp_path, monkeypatch)
+    _default_answers(monkeypatch)
+
+    new_path = anyio.run(lambda: rename_folder(str(album), FOLDER_METADATA, auto_rename=True, check=False))
+
+    assert new_path.startswith(str(downloads))
+    assert new_path != str(album)
+    assert (downloads / "other.txt").read_text() == "keep"
+
+
+@pytest.mark.parametrize("title", [ZWSP, f"{NBSP}{BOM}", ""])
+def test_generate_file_name_refuses_a_name_with_nothing_visible(monkeypatch, title) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "file_template", "{title}")
+    tags = _tags()
+    tags.title = title
+
+    with pytest.raises(UploadError, match="nothing visible in file_template"):
+        generate_file_name(tags, ".flac", multiple_artists=False)
+
+
+@pytest.mark.parametrize("name", ["a/b", "../escape", "/abs"])
+def test_rename_folder_refuses_a_name_with_a_path_separator(tmp_path, monkeypatch, name) -> None:
+    parent, downloads, album = _download_dir(tmp_path, monkeypatch)
+    monkeypatch.setattr("salmon.tagger.foldername.generate_folder_name", lambda _metadata: name)
+    _default_answers(monkeypatch)
+
+    with pytest.raises(UploadError, match="Invalid folder name"):
+        anyio.run(lambda: rename_folder(str(album), FOLDER_METADATA, auto_rename=True, check=False))
+
+    _assert_untouched(parent, downloads, album)
+    assert not (parent / "escape").exists()

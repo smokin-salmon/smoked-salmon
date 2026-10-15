@@ -25,6 +25,7 @@ from salmon.common.regexes import (
 from salmon.common.strings import (
     clean_name,
     fetch_genre,
+    has_visible_chars,
     invisible_chars,
     less_uppers,
     make_searchstrs,
@@ -48,6 +49,7 @@ __all__ = [
     "re_split",
     "re_strip",
     "clean_name",
+    "has_visible_chars",
     "fetch_genre",
     "invisible_chars",
     "less_uppers",

@@ -8,7 +8,7 @@ from string import Formatter
 import asyncclick as click
 
 from salmon import cfg, dryrun, interaction
-from salmon.common import clean_name, strip_template_keys
+from salmon.common import clean_name, has_visible_chars, strip_template_keys
 from salmon.constants import (
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
@@ -53,6 +53,9 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
         new_base = (
             await _edit_folder_interactive(new_base, auto_rename) if auto_rename or user_rename_choice else old_base
         )
+
+    if not _is_folder_name(new_base):
+        raise UploadError(f"Invalid folder name: {new_base!r}")
 
     new_path = os.path.join(parent or cfg.directory.download_directory, new_base)
     same_location = os.path.isdir(new_path) and os.path.samefile(path, new_path)
@@ -278,6 +281,13 @@ def _fix_format(metadata, keys):
     return sub_metadata
 
 
+def _is_folder_name(name: str) -> bool:
+    """Whether a name is one folder name: not empty, not . or .., no path separator, something visible in it."""
+    if name in {"", ".", ".."} or os.sep in name or (os.altsep and os.altsep in name):
+        return False
+    return has_visible_chars(name)
+
+
 async def _edit_folder_interactive(foldername, auto_rename):
     """Allow the user to edit the pending folder name in a text editor."""
     if auto_rename:
@@ -290,10 +300,10 @@ async def _edit_folder_interactive(foldername, auto_rename):
         while True:
             if newname is None:
                 return foldername
-            elif re.search(BLACKLISTED_CHARS, newname):
+            elif re.search(BLACKLISTED_CHARS, newname) or not _is_folder_name(clean_name(newname.replace("\n", ""))):
                 if not await interaction.confirm(
                     click.style(
-                        "Folder name contains invalid characters, retry?",
+                        "Folder name is empty or contains invalid characters, retry?",
                         fg="magenta",
                         bold=True,
                     ),
