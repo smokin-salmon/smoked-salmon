@@ -99,3 +99,15 @@ def test_up_says_when_the_markers_could_not_be_read_and_uploads(monkeypatch, tmp
     assert NOT_CHECKED in run.result.output
     assert HEADING not in run.result.output
     assert "Successfully uploaded" in run.result.output
+
+
+def test_up_weighs_no_markers_on_a_salmon_conversion(monkeypatch, tmp_path, torrents) -> None:
+    album = _album(tmp_path / "Album", comment="24bit")
+    monkeypatch.setattr(salmon.uploader, "conversion_of", lambda _path: {"source": "Album [24-96]"})
+    monkeypatch.setattr(salmon.uploader, "converted_from_note", lambda *_args: None)
+
+    run = _run_up(monkeypatch, album, torrents, input=ANSWERS, yes_all=False)
+
+    assert run.result.exit_code == 0, run.result.output
+    assert HEADING not in run.result.output
+    assert NOT_CHECKED not in run.result.output

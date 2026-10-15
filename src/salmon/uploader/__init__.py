@@ -910,7 +910,8 @@ async def _upload_staged(
     audio_info = gather_audio_info(path)
     hybrid = check_hybrid(audio_info)
     # Before any tag is rewritten: standardize_tags saves a file whose tags use an alias. Printed further down.
-    provenance = gather_provenance(path)
+    # A salmon conversion carries its source's tags, which describe the source's audio, not its own: no news.
+    provenance = gather_provenance(path) if conversion is None else None
     if not scene:
         standardize_tags(path)
     tags = gather_tags(path)
@@ -971,7 +972,8 @@ async def _upload_staged(
             if source == "CD" and not skip_log_check:
                 await _check_logs(path)
 
-            _warn_about_provenance(provenance)
+            if provenance is not None:
+                _warn_about_provenance(provenance)
 
             if group_fetch is not None:
                 results, recent_uploads = await group_fetch.result()
