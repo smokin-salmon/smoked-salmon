@@ -190,14 +190,19 @@ def _converted_files(out: Path, names=SOURCE_NAMES) -> None:
         _write_flac(out / name, 48000, 16)
 
 
-@pytest.mark.parametrize("state", ["one file, no record", "all files, no record", "all files, other source"])
+@pytest.mark.parametrize(
+    "state", ["one file, no record", "all files, no record", "all files, other source", "all files, other settings"]
+)
 def test_downconv_refuses_an_output_folder_that_is_not_a_finished_conversion(tmp_path, state: str) -> None:
     src, out = _downconv_source(tmp_path)
     _converted_files(out, SOURCE_NAMES[:1] if state.startswith("one") else SOURCE_NAMES)
     if state.endswith("other source"):
         elsewhere = tmp_path / "Elsewhere [WEB 24bit FLAC]"
         elsewhere.mkdir()
-        conversions.record_conversion(str(out), **{**DOWNCONVERT, "source": str(elsewhere)})
+        conversions.record_conversion(str(out), **{**DOWNCONVERT, "source": str(elsewhere), "sample_rate": 48000})
+    if state.endswith("other settings"):
+        # 96 kHz goes to 48 kHz by default: a 44.1 kHz conversion has the same folder name.
+        conversions.record_conversion(str(out), **{**DOWNCONVERT, "source": str(src), "sample_rate": 44100})
     before = _snapshot(out)
 
     result = _run_downconv(src)
@@ -205,7 +210,7 @@ def test_downconv_refuses_an_output_folder_that_is_not_a_finished_conversion(tmp
     # run.main prints an UploadError as "There was an error: ..."; the command itself ends on it.
     assert isinstance(result.exception, UploadError)
     assert str(result.exception) == (
-        f"{out} is incomplete or not salmon's conversion of this album: remove it and run again."
+        f"{out} is incomplete or not salmon's conversion of this album at these settings: remove it and run again."
     )
     assert _snapshot(out) == before
 
@@ -213,7 +218,7 @@ def test_downconv_refuses_an_output_folder_that_is_not_a_finished_conversion(tmp
 def test_downconv_takes_a_finished_conversion_for_done(tmp_path) -> None:
     src, out = _downconv_source(tmp_path)
     _converted_files(out)
-    conversions.record_conversion(str(out), **{**DOWNCONVERT, "source": str(src)})
+    conversions.record_conversion(str(out), **{**DOWNCONVERT, "source": str(src), "sample_rate": 48000})
     before = _snapshot(out)
 
     result = _run_downconv(src)
