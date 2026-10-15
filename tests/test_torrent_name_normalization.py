@@ -135,6 +135,14 @@ def test_two_files_that_normalize_to_one_path_are_refused() -> None:
         _normalize_torrent_names(cast("Torrent", cast("object", t)), "NFC")
 
 
+def test_a_file_and_a_folder_that_normalize_to_one_path_are_refused() -> None:
+    files = [{"length": 1, "path": [COMPOSED_NAME]}, {"length": 1, "path": [DECOMPOSED_NAME, "track.flac"]}]
+    t = SimpleNamespace(metainfo={"info": {"name": "Album", "files": files}})
+
+    with pytest.raises(UploadRefusedError, match="folder are both Café.flac once NFC-normalized"):
+        _normalize_torrent_names(cast("Torrent", cast("object", t)), "NFC")
+
+
 def test_colliding_names_are_refused_before_the_torrent_is_written(tmp_path: Path, monkeypatch) -> None:
     album = tmp_path / "Album"
     album.mkdir()
@@ -222,34 +230,39 @@ def test_a_seedbox_that_cannot_match_the_form_is_warned_about(seedboxes, capsys,
 def test_a_seedbox_that_matches_nfc_or_gets_no_torrent_is_not_warned_about(seedboxes, capsys, box) -> None:
     seedboxes(box)
     warn_unmatched_normalization("NFC", "RED")
-    assert "torrent_name_normalization" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "torrent_name_normalization" not in out
 
 
 def test_a_local_seedbox_on_macos_finds_any_form(seedboxes, capsys, monkeypatch) -> None:
     seedboxes(_box(type="local"))
     monkeypatch.setattr(seedbox_module.sys, "platform", "darwin")
     warn_unmatched_normalization("NFD", "RED")
-    assert "torrent_name_normalization" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "torrent_name_normalization" not in out
 
 
 def test_no_warning_without_seedbox_uploads(seedboxes, capsys, monkeypatch) -> None:
     seedboxes(_box())
     monkeypatch.setattr(cfg.upload, "upload_to_seedbox", False)
     warn_unmatched_normalization("NFC", "RED")
-    assert "torrent_name_normalization" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "torrent_name_normalization" not in out
 
 
 def test_a_seedbox_is_warned_about_once(seedboxes, capsys) -> None:
     seedboxes(_box())
     warn_unmatched_normalization("NFC", "RED")
     warn_unmatched_normalization("NFC", "OPS")
-    assert capsys.readouterr().out.count("torrent_name_normalization is NFC") == 1
+    out = capsys.readouterr().out
+    assert out.count("torrent_name_normalization is NFC") == 1
 
 
 def test_the_warning_masks_the_seedbox_url(seedboxes, capsys) -> None:
     seedboxes(_box(name="", url="sftp://user:hunter2@host"))
     warn_unmatched_normalization("NFC", "RED")
-    assert "hunter2" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "hunter2" not in out
 
 
 @pytest.mark.parametrize(
@@ -265,4 +278,5 @@ def test_only_a_normalized_torrent_warns(
     album = _make_album(tmp_path)
     gazelle_site = FakeGazelleApi(str(tmp_path))
     generate_torrent(cast("BaseGazelleApi", cast("object", gazelle_site)), str(album), normalize=normalize)
-    assert ("torrent_name_normalization is NFC" in capsys.readouterr().out) is warned
+    out = capsys.readouterr().out
+    assert ("torrent_name_normalization is NFC" in out) is warned
