@@ -10,7 +10,7 @@ from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.tagger.sources.base import MetadataMixin
+from salmon.tagger.sources.base import MetadataMixin, strip_ep_suffix
 
 # ------------------------------------------------------------------------------
 # Constants and Regular Expressions
@@ -461,8 +461,7 @@ class Scraper(QobuzBase, MetadataMixin):
         # Check the title for explicit indicators
         title = soup.get("title", "")
         if RE_EP.search(title):
-            # Remove the suffix from the title
-            soup["title"] = RE_EP.sub("", title)
+            soup["title"] = strip_ep_suffix(title)
             return "EP"
         elif RE_SINGLE.search(title):
             # Remove the suffix from the title

@@ -261,6 +261,7 @@ class UploadFormatting(BaseStruct):
     guests_in_track_title: bool = False
     various_artist_word: str = "Various"
     strip_useless_versions: bool = True
+    strip_ep_from_title: bool = True
     add_edition_title_to_album_tag: bool = True
 
 

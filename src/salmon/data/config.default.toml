@@ -254,6 +254,10 @@ session = 'get-from-site-cookie'
 # guests_in_track_title = false
 # various_artist_word = "Various"
 # strip_useless_versions = true
+# # true drops an "EP" that ends a release title ("Space EP" -> "Space"); false keeps it, as it is often part of
+# # the release's name. A store's own marker ("Space - EP", "Space (EP)") is dropped either way, and an "EP"
+# # inside a title ("The EP Sessions") is kept either way.
+# strip_ep_from_title = true
 # add_edition_title_to_album_tag = true
 
 # # torrent description settings
