@@ -22,6 +22,7 @@ from aiohttp import web
 from aiolimiter import AsyncLimiter
 from asyncclick.testing import CliRunner
 from mutagen.flac import FLAC
+from test_checks_do_not_upload import UNMATCHED  # pyright: ignore[reportMissingImports]
 from test_checks_logs import (  # pyright: ignore[reportMissingImports]
     FakeCambiaOutput,
     FakeChecksum,
@@ -278,7 +279,7 @@ def _run_with_trackers(
     lists = tmp_path / "lists"
     lists.mkdir()
     (lists / "red.toml").write_text(red_list)
-    (lists / "ops.toml").write_text("")
+    (lists / "ops.toml").write_text(UNMATCHED)
     monkeypatch.setattr(do_not_upload, "LISTS_DIR", lists)
 
     def client(code: str) -> BaseGazelleApi:
@@ -329,7 +330,7 @@ def test_named_trackers_get_ups_dupe_search_and_their_do_not_upload_list(album, 
 )
 def test_a_malformed_search_answer_is_a_warning_and_the_other_checks_go_on(album, monkeypatch, tmp_path, browse):
     trackers = {"RED": FakeTracker([]), "OPS": FakeTracker([], browse=browse)}
-    result = _run_with_trackers(monkeypatch, tmp_path, album, trackers, "")
+    result = _run_with_trackers(monkeypatch, tmp_path, album, trackers, UNMATCHED)
     assert result.exit_code == 0, result.output
     rows = _rows(result.output)
     assert (rows["Dupe (RED)"], rows["Dupe (OPS)"]) == ("OK", "WARN")
