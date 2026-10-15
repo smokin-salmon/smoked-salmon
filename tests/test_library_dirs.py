@@ -672,16 +672,19 @@ def test_spectrals_of_a_library_album_are_made_outside_it(dirs, tmp_path) -> Non
 
 
 def test_rename_folder_never_follows_a_symlink_into_a_library(monkeypatch, dirs, tmp_path) -> None:
-    # A folder template like "link/{title}" through a symlink in download_directory leads into the library.
+    # A parent folder that is a symlink in download_directory leads into the library. (A name holding a path
+    # separator, like a folder template "link/{title}", is refused before that: see test_invisible_unicode_names.)
     library, downloads = dirs
     (downloads / "link").symlink_to(library, target_is_directory=True)
     before = _snapshot(library)
     source = _album(tmp_path / "seeding" / "Album")
-    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning("link/Album"))
+    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning("Album"))
 
     with pytest.raises(UploadError, match="library_dirs"):
         anyio.run(
-            lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
+            lambda: salmon.tagger.foldername.rename_folder(
+                str(source), _metadata(), auto_rename=True, check=False, parent=str(downloads / "link")
+            )
         )
 
     assert _snapshot(library) == before

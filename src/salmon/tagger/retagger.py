@@ -10,13 +10,13 @@ import msgspec
 from mutagen import mp4
 
 from salmon import cfg, interaction
-from salmon.common import clean_name
+from salmon.common import clean_name, has_visible_chars
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
-from salmon.errors import AmbiguousTrackOrderError
+from salmon.errors import AmbiguousTrackOrderError, UploadError
 from salmon.tagger.tagfile import TagFile
 
 
@@ -582,7 +582,10 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
             new_base = new_base.replace(char, sub)
     new_base = re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, new_base)
     # Cleaned before the extension is added, so a space left at the end of the name does not sit before the dot
-    return clean_name(new_base) + ext
+    new_base = clean_name(new_base)
+    if not has_visible_chars(new_base):
+        raise UploadError(f"Not naming a file {new_base!r}{ext}: its tags leave nothing visible in file_template.")
+    return new_base + ext
 
 
 def _parse_integer(value):

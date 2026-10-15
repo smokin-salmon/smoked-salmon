@@ -48,6 +48,14 @@ def show_invisible(name: str) -> str:
     return "".join(f"<U+{ord(c):04X}>" if invisible_chars(c) else c for c in name)
 
 
+def has_visible_chars(name: str) -> bool:
+    """Whether a name keeps a character once the spaces, format and control characters clean_name handles are gone."""
+    return any(
+        unicodedata.category(char) not in _REPLACED_CATEGORIES and unicodedata.category(char) not in _REMOVED_CATEGORIES
+        for char in name
+    )
+
+
 def clean_name(name: str) -> str:
     """A file or folder name (one path component) without invisible or odd Unicode characters.
 
