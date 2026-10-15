@@ -184,16 +184,37 @@ def resolution_token(audio_info):
     return f"{bit_depth}-{sample_rate / 1000:g}"
 
 
+def _token_span(foldername, token):
+    """Where the name's last standalone token is, or None: "1924-48" in a title holds "24-48" but not as a token."""
+    matches = list(re.finditer(r"(?<![\w.-])" + re.escape(token) + r"(?![\w.-])", foldername)) if token else []
+    return matches[-1].span() if matches else None
+
+
+def holds_resolution_token(foldername, token) -> bool:
+    """Whether the folder name carries token as its own word."""
+    return _token_span(foldername, token) is not None
+
+
+def swap_resolution_token(foldername, token, new):
+    """Replace the name's standalone resolution token with new; a name without one is left as it is."""
+    span = _token_span(foldername, token)
+    return foldername if span is None else foldername[: span[0]] + new + foldername[span[1] :]
+
+
 def drop_resolution_token(foldername, token):
-    """
-    Remove a resolution token, e.g. "24-96", from an already-formatted folder name. Only a
-    bracket group left holding nothing else comes with it; a group that still has other text
-    (like "[WEB FLAC]") stays untouched. The converters use this once a token is gone for good,
-    e.g. a 16/44.1 downconversion or an MP3 transcode that must not claim a resolution at all.
-    """
-    foldername = re.sub(r"\s*" + re.escape(token) + r"\b", "", foldername)
-    foldername = re.sub(r"[\[{(]\s*[\]})]", "", foldername)
-    return re.sub(r"\s+", " ", foldername).strip()
+    """Remove the name's standalone resolution token, one space beside it, and a bracket pair it leaves empty."""
+    span = _token_span(foldername, token)
+    if span is None:
+        return foldername
+    start, end = span
+    if start > 0 and foldername[start - 1] == " ":
+        start -= 1
+    elif end < len(foldername) and foldername[end] == " ":
+        end += 1
+    name = foldername[:start] + foldername[end:]
+    if 0 < start < len(name) and name[start - 1] in "[({" and name[start] in "])}":
+        name = name[: start - 1].rstrip(" ") + name[start + 1 :]
+    return name.strip()
 
 
 def _kept_reason(original: str) -> str:

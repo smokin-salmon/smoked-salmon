@@ -121,3 +121,14 @@ def test_only_the_measured_token_is_removed_not_a_look_alike_in_the_title(monkey
     source = "/downloads/Artist - 24-96 (2024) [WEB FLAC]"
 
     assert downconverting._build_output_path(source, 16, None) == "/downloads/Artist - 24-96 (2024) [WEB 16bit FLAC]"
+
+
+def test_numbers_in_the_title_stay_when_the_token_is_swapped(monkeypatch) -> None:
+    monkeypatch.setattr(
+        downconverting, "gather_audio_info", lambda path: {"01.flac": {"precision": 24, "sample rate": 48000}}
+    )
+    source = "/downloads/Artist - Recordings 1924-48 (2021) [WEB FLAC 24-48]"
+
+    new_path = downconverting._build_output_path(source, 16, 48000)
+
+    assert new_path == "/downloads/Artist - Recordings 1924-48 (2021) [WEB FLAC 16-48]"

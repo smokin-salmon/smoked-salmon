@@ -77,3 +77,22 @@ def test_only_the_measured_token_is_removed_not_a_look_alike_in_the_title(monkey
     source = "/downloads/Artist - 24-96 (2024) [WEB FLAC]"
 
     assert transcoding._build_output_path(source, "V0") == "/downloads/Artist - 24-96 (2024) [WEB MP3 V0]"
+
+
+def test_numbers_in_the_title_are_not_taken_for_the_token(monkeypatch) -> None:
+    monkeypatch.setattr(
+        transcoding, "gather_audio_info", lambda path: {"01.flac": {"precision": 24, "sample rate": 48000}}
+    )
+    source = "/downloads/Artist - Complete Recordings 1924-48 (2021) [WEB 24bit FLAC]"
+
+    new_path = transcoding._build_output_path(source, "320")
+
+    assert new_path == "/downloads/Artist - Complete Recordings 1924-48 (2021) [WEB MP3 320]"
+
+
+def test_a_token_first_in_its_brackets_leaves_no_stray_space(monkeypatch) -> None:
+    _stub_24_96(monkeypatch)
+
+    new_path = transcoding._build_output_path("/downloads/Artist - Title (2024) [24-96 WEB FLAC]", "V0")
+
+    assert new_path == "/downloads/Artist - Title (2024) [WEB MP3 V0]"

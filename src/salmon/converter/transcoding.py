@@ -93,9 +93,7 @@ def _build_output_path(path: str, bitrate: Bitrate, output_dir: str | None = Non
     # Drop a stale resolution token before deriving the new name: an MP3 transcode must not keep
     # claiming a FLAC resolution such as "24-96". The token is computed from the source's actual
     # files, not guessed at with a pattern, so it cannot also eat unrelated digits from the title.
-    current_token = resolution_token(gather_audio_info(path))
-    if current_token:
-        foldername = drop_resolution_token(foldername, current_token)
+    foldername = drop_resolution_token(foldername, resolution_token(gather_audio_info(path)))
 
     if FLAC_FOLDER_RE.search(foldername):
         if LOSSLESS_FOLDER_RE.search(foldername):

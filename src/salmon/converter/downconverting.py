@@ -16,7 +16,12 @@ from salmon.converter.conversions import conversion_of, record_conversion
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
-from salmon.tagger.foldername import drop_resolution_token, resolution_token
+from salmon.tagger.foldername import (
+    drop_resolution_token,
+    holds_resolution_token,
+    resolution_token,
+    swap_resolution_token,
+)
 
 BitDepth = Literal[16, 24]
 
@@ -78,7 +83,7 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
     # inside is not the same thing as one whose name says so.
     audio_info = gather_audio_info(path)
     current_token = resolution_token(audio_info)
-    has_token = bool(current_token) and re.search(r"\b" + re.escape(current_token) + r"\b", foldername)
+    has_token = holds_resolution_token(foldername, current_token)
     # A {resolution}-only name (the recommended template does not pair it with {format}) has no
     # "24bit"/"16bit FLAC" wording to rewrite: swap its token for the conversion's own one in
     # place instead of running it through the FLAC/bit-depth rewriting below.
@@ -91,7 +96,7 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
             target_rate = _resolve_sample_rate(source_rate)
         new_token = resolution_token({"_": {"precision": bit_depth, "sample rate": target_rate}})
         if new_token:
-            foldername = foldername.replace(current_token, new_token)
+            foldername = swap_resolution_token(foldername, current_token, new_token)
         else:
             foldername = drop_resolution_token(foldername, current_token)
         return os.path.join(output_dir or os.path.dirname(path), foldername)
