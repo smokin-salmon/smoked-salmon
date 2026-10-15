@@ -54,3 +54,36 @@ def test_qobuz_title_without_a_release_type_follows_the_setting(monkeypatch, str
 
     assert [QobuzScraper().parse_release_type(soup) for soup in soups] == ["EP", "EP"]
     assert [soup["title"] for soup in soups] == ["Space" if strip else "Space EP", "Space"]
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Space – EP", "Space"),
+        ("Space — EP", "Space"),
+        ("MAX-EP", "MAX-EP"),
+        ("Super-EP", "Super-EP"),
+    ],
+)
+def test_a_store_marker_takes_any_dash_after_a_space(title: str, expected: str) -> None:
+    assert title_and_type(title)[0] == expected
+
+
+@pytest.mark.parametrize("title", ["Deep", "Sweep", "Steep - Remixes"])
+def test_qobuz_title_ending_in_ep_letters_is_no_ep(title: str) -> None:
+    soup = {"release_type": "", "title": title}
+
+    rls_type = QobuzScraper().parse_release_type(soup)
+
+    assert rls_type != "EP"
+    assert soup["title"] == title
+
+
+@pytest.mark.parametrize(
+    ("strip", "title", "expected"),
+    [(True, "Space EP", "Space"), (False, "Space EP", "Space EP"), (False, "Space - EP", "Space")],
+)
+def test_qobuz_explicit_ep_title_follows_the_setting(monkeypatch, strip: bool, title: str, expected: str) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "strip_ep_from_title", strip)
+
+    assert QobuzScraper().determine_rls_type({"title": title, "rls_type": "EP"}) == (expected, "EP")

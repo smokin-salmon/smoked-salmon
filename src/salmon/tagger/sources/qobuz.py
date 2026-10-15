@@ -10,7 +10,7 @@ from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
 from salmon.sources import QobuzBase
-from salmon.tagger.sources.base import MetadataMixin, strip_ep_suffix
+from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, strip_ep_suffix
 
 # ------------------------------------------------------------------------------
 # Constants and Regular Expressions
@@ -19,7 +19,6 @@ from salmon.tagger.sources.base import MetadataMixin, strip_ep_suffix
 # Pre-compiled regular expressions for better performance
 RE_YEAR = re.compile(r"(\d{4})")
 RE_EDITION = re.compile(r"\((.*?)\)(?:\s*-\s*(?:Single|EP))?$")
-RE_EP = re.compile(r" ?-? *E\.?P\.?$", re.IGNORECASE)
 RE_SINGLE = re.compile(r"-? *Single$", re.IGNORECASE)
 RE_SOUNDTRACK = re.compile(r"original.*soundtrack", re.IGNORECASE)
 
@@ -460,7 +459,7 @@ class Scraper(QobuzBase, MetadataMixin):
 
         # Check the title for explicit indicators
         title = soup.get("title", "")
-        if RE_EP.search(title):
+        if ends_with_ep(title):
             soup["title"] = strip_ep_suffix(title)
             return "EP"
         elif RE_SINGLE.search(title):
@@ -504,7 +503,10 @@ class Scraper(QobuzBase, MetadataMixin):
         """
         # If Qobuz provided an explicit release type, respect it and keep it
         # Might have to check which other rls_types from Qobuz are trustworthy
-        if data["rls_type"] in ["EP", "Single", "Soundtrack"]:
+        if data["rls_type"] == "EP":
+            # The title may still carry the marker, as with any other store: the same rule drops it.
+            return strip_ep_suffix(data["title"]), "EP"
+        if data["rls_type"] in ["Single", "Soundtrack"]:
             return data["title"], data["rls_type"]
 
         # Otherwise, fall back to the base class's heuristics

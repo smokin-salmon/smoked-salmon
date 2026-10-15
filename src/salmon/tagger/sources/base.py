@@ -275,10 +275,18 @@ class MetadataMixin(ABC):
         return base
 
 
-# What a store appends to a title to say the release is an EP: "Title - EP", "Title (EP)", "Title [EP]".
-RE_EP_STORE_SUFFIX = re.compile(r"\s*(?:-\s*E\.?P\.?|\(\s*E\.?P\.?\s*\)|\[\s*E\.?P\.?\s*\])\s*$", re.IGNORECASE)
+# What a store appends to a title to say the release is an EP: "Title - EP" (any dash, with a space before it, so
+# "MAX-EP" stays a name), "Title (EP)", "Title [EP]".
+RE_EP_STORE_SUFFIX = re.compile(
+    r"(?:\s+[-‐-―]\s*E\.?P\.?|\s*\(\s*E\.?P\.?\s*\)|\s*\[\s*E\.?P\.?\s*\])\s*$", re.IGNORECASE
+)
 # "EP" ending the title itself: "Title EP".
 RE_EP_TITLE_SUFFIX = re.compile(r"\s+E\.?P\.?\s*$", re.IGNORECASE)
+
+
+def ends_with_ep(title):
+    """Whether an EP marker ends the title, a store's or a bare "EP", whatever strip_ep_from_title says."""
+    return bool(RE_EP_STORE_SUFFIX.search(title) or RE_EP_TITLE_SUFFIX.search(title))
 
 
 def strip_ep_suffix(title):
