@@ -59,18 +59,26 @@
     }
   })
 
-  /** The roots (no path), or the folders in one; the server refuses anything outside the roots. */
+  let latest = 0
+
+  /**
+   * The roots (no path), or the folders in one; the server refuses anything outside the roots. Only the latest
+   * request applies its answer, so a slower, older one (another folder, the other sort) cannot overwrite it.
+   */
   async function browse(path?: string | null) {
+    const mine = ++latest
     loading = true
     error = ''
     try {
       const query = path ? `path=${encodeURIComponent(path)}&sort=${sort}` : `sort=${sort}`
-      listing = await apiGet<Listing>(`/browse?${query}`)
+      const found = await apiGet<Listing>(`/browse?${query}`)
+      if (mine !== latest) return
+      listing = found
       open = true
     } catch (e) {
-      error = String(e)
+      if (mine === latest) error = String(e)
     } finally {
-      loading = false
+      if (mine === latest) loading = false
     }
   }
 
