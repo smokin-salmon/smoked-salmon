@@ -185,10 +185,15 @@ def _filtered(request: web.Request, answer: Any, status: int = 200) -> web.Respo
 
 async def browse(request: web.Request) -> web.Response:
     """The roots, or the folders inside a folder of one (``?path=``), each marked when it holds audio; with
-    ``?images=1``, the folder's image files too."""
+    ``?images=1``, the folder's image files too. ``?sort=`` is ``newest`` (the default) or ``name``."""
     try:
         # A worker thread: a folder on a slow disk must not stall the server's loop.
-        answer = await asyncio.to_thread(paths.listing, request.query.get("path"), request.query.get("images") == "1")
+        answer = await asyncio.to_thread(
+            paths.listing,
+            request.query.get("path"),
+            request.query.get("images") == "1",
+            request.query.get("sort", "newest"),
+        )
     except paths.PathRefused as e:
         return _filtered(request, {"detail": e.detail}, e.status)
     return _filtered(request, answer)

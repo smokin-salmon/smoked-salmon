@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { apiGet } from './api'
 
-  let { value = $bindable('') }: { value: string } = $props()
+  /** `prefill`: start an empty box with download_directory and a separator, for a page that needs an album folder. */
+  let { value = $bindable(''), prefill = true }: { value: string; prefill?: boolean } = $props()
 
   interface Folder {
     name: string
@@ -17,26 +19,78 @@
     audio: boolean
     folders: Folder[]
     truncated: boolean
+    sort: Sort
     roots: { path: string; name: string; library: boolean }[]
+  }
+
+  type Sort = 'newest' | 'name'
+  const SORT_KEY = 'salmon.folderSort'
+
+  /** The viewer's last choice; blocked or cleared storage (a private window) falls back to newest first. */
+  function remembered(): Sort {
+    try {
+      return localStorage.getItem(SORT_KEY) === 'name' ? 'name' : 'newest'
+    } catch {
+      return 'newest'
+    }
   }
 
   let open = $state(false)
   let listing = $state<Listing | null>(null)
   let error = $state('')
   let loading = $state(false)
+  let sort = $state<Sort>(remembered())
 
-  /** The roots (no path), or the folders in one; the server refuses anything outside the roots. */
+  /**
+   * An empty box starts as download_directory and a separator, so a folder name pasted after it is an absolute path
+   * and Browse opens inside download_directory. The first root is always download_directory. A failure leaves the
+   * box empty, and a value set meanwhile (the page's, or typed) is never overwritten.
+   */
+  onMount(async () => {
+    if (!prefill || value) return
+    try {
+      const answer = await apiGet<Listing>('/browse')
+      const root = answer.roots[0]
+      if (value || !root || root.library) return
+      const separator = root.path.includes('\\') ? '\\' : '/'
+      value = /[\\/]$/.test(root.path) ? root.path : root.path + separator
+    } catch {
+      // Not prefilled: the box stays empty.
+    }
+  })
+
+  let latest = 0
+
+  /**
+   * The roots (no path), or the folders in one; the server refuses anything outside the roots. Only the latest
+   * request applies its answer, so a slower, older one (another folder, the other sort) cannot overwrite it.
+   */
   async function browse(path?: string | null) {
+    const mine = ++latest
     loading = true
     error = ''
     try {
-      listing = await apiGet<Listing>(path ? `/browse?path=${encodeURIComponent(path)}` : '/browse')
+      const query = path ? `path=${encodeURIComponent(path)}&sort=${sort}` : `sort=${sort}`
+      const found = await apiGet<Listing>(`/browse?${query}`)
+      if (mine !== latest) return
+      listing = found
       open = true
     } catch (e) {
-      error = String(e)
+      if (mine === latest) error = String(e)
     } finally {
-      loading = false
+      if (mine === latest) loading = false
     }
+  }
+
+  function sortBy(next: Sort) {
+    if (next === sort) return
+    sort = next
+    try {
+      localStorage.setItem(SORT_KEY, next)
+    } catch {
+      // Not remembered: the choice still holds until the page is closed.
+    }
+    if (listing) void browse(listing.path)
   }
 
   function select(path: string) {
@@ -76,6 +130,21 @@
         <span class="mono grow">{listing.path ?? 'Your folders'}</span>
         {#if listing.path && listing.audio}
           <button class="btn small" onclick={() => select(listing!.path!)}>Select this folder</button>
+        {/if}
+        {#if listing.path}
+          <span
+            class="sorts"
+            role="group"
+            aria-label="Sort folders"
+            title="Newest is by when the folder was last changed or copied in"
+          >
+            <button class="sort" class:current={sort === 'newest'} aria-pressed={sort === 'newest'} onclick={() => sortBy('newest')}
+              >Newest</button
+            >
+            <button class="sort" class:current={sort === 'name'} aria-pressed={sort === 'name'} onclick={() => sortBy('name')}
+              >Name</button
+            >
+          </span>
         {/if}
         <button class="btn small secondary" onclick={() => (open = false)}>Close</button>
       </div>
@@ -133,6 +202,23 @@
     cursor: pointer;
   }
   .root.current {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .sorts {
+    display: inline-flex;
+    gap: 0.25rem;
+  }
+  .sort {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+  .sort.current {
     border-color: var(--accent);
     color: var(--text);
   }

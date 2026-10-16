@@ -14,6 +14,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import anyio
@@ -128,8 +129,9 @@ async def _start(client: TestClient, kind: str, path: str, **body: Any) -> str:
     return (await response.json())["id"]
 
 
-async def _browse(client: TestClient, path: str | None = None) -> Any:
-    return await client.get("/api/browse", params={"path": path} if path is not None else {}, headers=AUTH)
+async def _browse(client: TestClient, path: str | None = None, **extra: str) -> Any:
+    params = {"path": path, **extra} if path is not None else dict(extra)
+    return await client.get("/api/browse", params=params, headers=AUTH)
 
 
 # --- The album folder rule ------------------------------------------------------------------
@@ -245,8 +247,9 @@ def test_the_browser_lists_folders_and_marks_those_holding_audio(roots: Roots) -
     before = _snapshot(roots.downloads)
 
     async def test(client: TestClient, _manager: JobManager) -> None:
-        answer = await (await _browse(client, str(roots.downloads))).json()
+        answer = await (await _browse(client, str(roots.downloads), sort="name")).json()
         assert answer["path"] == str(roots.downloads)
+        assert answer["sort"] == "name"
         assert answer["parent"] is None
         assert answer["audio"] is True
         assert answer["truncated"] is False
@@ -269,9 +272,112 @@ def test_a_long_listing_is_cut_and_says_so(roots: Roots, monkeypatch: pytest.Mon
     monkeypatch.setattr(paths, "MAX_LISTED", 3)
 
     async def test(client: TestClient, _manager: JobManager) -> None:
-        answer = await (await _browse(client, str(roots.downloads))).json()
+        answer = await (await _browse(client, str(roots.downloads), sort="name")).json()
         assert [f["name"] for f in answer["folders"]] == ["folder 0", "folder 1", "folder 2"]
         assert answer["truncated"] is True
+
+    _with_app(test)
+
+
+def _times(monkeypatch: pytest.MonkeyPatch, times: dict[str, tuple[float, float]]) -> None:
+    """Give each named folder this (mtime, ctime) as the listing's stat sees them; any other entry is stat-ed for real.
+
+    A real ``os.utime`` cannot do it: it sets the ctime to now. A negative mtime makes the stat fail.
+    """
+    real = paths._changed
+
+    class Stamped:
+        def __init__(self, entry: os.DirEntry[str]) -> None:
+            self.entry = entry
+
+        def stat(self, follow_symlinks: bool = True) -> Any:
+            if self.entry.name not in times:
+                return self.entry.stat(follow_symlinks=follow_symlinks)
+            mtime, ctime = times[self.entry.name]
+            if mtime < 0:
+                raise FileNotFoundError(self.entry.path)
+            return SimpleNamespace(st_mtime=mtime, st_ctime=ctime)
+
+    monkeypatch.setattr(paths, "_changed", lambda entry: real(Stamped(entry)))  # pyright: ignore[reportArgumentType]
+
+
+def _make(roots: Roots, *names: str) -> None:
+    for name in names:
+        (roots.downloads / name).mkdir()
+
+
+def test_the_browser_lists_the_newest_folders_first_unless_asked_for_names(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Names and ages disagree, so neither order is the other's by chance; the last two share a time: ties by name.
+    _make(roots, "b middle", "a oldest", "c newest", "e tie", "d tie")
+    _times(
+        monkeypatch,
+        {
+            "b middle": (500, 500),
+            "a oldest": (100, 100),
+            "c newest": (900, 900),
+            "e tie": (300, 300),
+            "d tie": (300, 300),
+        },
+    )
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        newest = await (await _browse(client, str(roots.downloads))).json()
+        assert newest["sort"] == "newest"
+        assert [f["name"] for f in newest["folders"]] == ["c newest", "b middle", "d tie", "e tie", "a oldest"]
+        named = await (await _browse(client, str(roots.downloads), sort="name")).json()
+        assert named["sort"] == "name"
+        assert [f["name"] for f in named["folders"]] == ["a oldest", "b middle", "c newest", "d tie", "e tie"]
+
+    _with_app(test)
+
+
+def test_the_newest_folder_is_listed_in_a_folder_longer_than_the_cut(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(paths, "MAX_LISTED", 3)
+    names = [f"folder {number}" for number in range(5)]
+    # The last one alphabetically is the newest: by name, the cut would drop it.
+    _make(roots, *names, "zz newest")
+    stamps = {name: (100.0 + number, 100.0 + number) for number, name in enumerate(names)}
+    _times(monkeypatch, stamps | {"zz newest": (999.0, 999.0)})
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _browse(client, str(roots.downloads))).json()
+        assert answer["truncated"] is True
+        assert [f["name"] for f in answer["folders"]] == ["zz newest", "folder 4", "folder 3"]
+        named = await (await _browse(client, str(roots.downloads), sort="name")).json()
+        assert "zz newest" not in [f["name"] for f in named["folders"]]
+
+    _with_app(test)
+
+
+def test_a_folder_copied_in_with_an_old_mtime_counts_as_new(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    # cp -a and rsync -a keep the source's mtime; the ctime is the copy's.
+    _make(roots, "a copied in", "b made earlier")
+    _times(monkeypatch, {"a copied in": (10, 800), "b made earlier": (500, 500)})
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _browse(client, str(roots.downloads))).json()
+        assert [f["name"] for f in answer["folders"]] == ["a copied in", "b made earlier"]
+
+    _with_app(test)
+
+
+def test_a_folder_that_vanishes_mid_listing_sorts_last(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    _make(roots, "a gone", "b kept")
+    _times(monkeypatch, {"a gone": (-1, -1), "b kept": (5, 5)})
+    answer = paths.listing(str(roots.downloads))
+    assert [f["name"] for f in answer["folders"]] == ["b kept", "a gone"]
+
+
+def test_the_browser_refuses_a_sort_it_does_not_know(roots: Roots) -> None:
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        for path in (str(roots.downloads), None):
+            for sort in ("bogus", ""):
+                response = await _browse(client, path, sort=sort)
+                assert response.status == 400, (path, sort)
 
     _with_app(test)
 
