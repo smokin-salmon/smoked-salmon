@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { apiGet } from './api'
 
-  let { value = $bindable('') }: { value: string } = $props()
+  /** `prefill`: start an empty box with download_directory and a separator, for a page that needs an album folder. */
+  let { value = $bindable(''), prefill = true }: { value: string; prefill?: boolean } = $props()
 
   interface Folder {
     name: string
@@ -38,6 +40,24 @@
   let error = $state('')
   let loading = $state(false)
   let sort = $state<Sort>(remembered())
+
+  /**
+   * An empty box starts as download_directory and a separator, so a folder name pasted after it is an absolute path
+   * and Browse opens inside download_directory. The first root is always download_directory. A failure leaves the
+   * box empty, and a value set meanwhile (the page's, or typed) is never overwritten.
+   */
+  onMount(async () => {
+    if (!prefill || value) return
+    try {
+      const answer = await apiGet<Listing>('/browse')
+      const root = answer.roots[0]
+      if (value || !root || root.library) return
+      const separator = root.path.includes('\\') ? '\\' : '/'
+      value = /[\\/]$/.test(root.path) ? root.path : root.path + separator
+    } catch {
+      // Not prefilled: the box stays empty.
+    }
+  })
 
   /** The roots (no path), or the folders in one; the server refuses anything outside the roots. */
   async function browse(path?: string | null) {

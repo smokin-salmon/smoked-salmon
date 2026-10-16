@@ -181,7 +181,7 @@
 
     <div class="field folder">
       <span class="label">Album folder (optional)</span>
-      <FolderPicker bind:value={path} />
+      <FolderPicker bind:value={path} prefill={false} />
       {#if showHelp}
         <small class="hint">
           Only when the files are not in download_directory under the torrent's folder name (--path). One torrent
