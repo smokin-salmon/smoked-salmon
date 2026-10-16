@@ -289,7 +289,8 @@ def _run_up(monkeypatch, tmp_path: Path, broken, track_data, convert_folder=None
         "UploadManager": lambda: manager,
         "check_requests": _returning_async(None),
         "upload_and_report": main_upload_then_conversions,
-        "print_torrents": _returning_async(),
+        "print_torrents": _returning_async({}),
+        "recheck_edition": _same_group,
     }.items():
         monkeypatch.setattr(uploader, name, fake)
     monkeypatch.setattr(uploader.cfg.upload, "yes_all", False)
@@ -325,3 +326,8 @@ def test_a_release_at_one_sample_rate_still_gets_its_downconversions(capsys, rat
     assert [o["name"] for o in options if o["action"] == "downconvert"] == names
     assert [o["name"] for o in options if o["action"] == "transcode"] == ["MP3 320", "MP3 V0"]
     assert "different sample rates" not in capsys.readouterr().out
+
+
+async def _same_group(_site, group_id, *_args):
+    """Stands in for recheck_edition: the group picked or given is kept."""
+    return group_id

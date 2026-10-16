@@ -108,7 +108,8 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         "edit_metadata": _returning_async((path, metadata, {}, {})),
         "concat_track_data": _returning({}),
         "resolve_cover_url": _returning_async((True, None)),
-        "print_torrents": _returning_async(None),
+        "print_torrents": _returning_async({}),
+        "recheck_edition": _same_group,
         "UploadManager": FakeUploadManager,
         "upload_and_report": fake_upload_and_report,
         "fetch_existing_group_candidates_in_background": fake_group_candidates_in_background,
@@ -212,3 +213,8 @@ def test_a_caller_supplied_group_id_still_reaches_the_post_review_checks(monkeyp
     _, searchstrs, our_title = recorder.last_min_dupe_check_calls[0]
     assert searchstrs == new_searchstrs
     assert our_title == "New Title"
+
+
+async def _same_group(_site, group_id, *_args):
+    """Stands in for recheck_edition: the group picked or given is kept."""
+    return group_id
