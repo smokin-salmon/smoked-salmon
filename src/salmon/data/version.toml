@@ -1,4 +1,70 @@
-current = "0.18.0"
+current = "0.19.0"
+
+[[changelog]]
+version = "0.19.0"
+date = "2026-10-16"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- **Albums that share files with another folder are no longer changed in place.** This covers albums with files hardlinked from another folder, such as a torrent client's seeding folder hardlinked into your music folder, and albums that hold a symlink. `salmon up` and `salmon tag` now work on a real copy, which takes the album's size in disk space. `salmon compress` and the integrity check's sanitize refuse them. Retagging in place changed the seeded files too, so that torrent failed its recheck. This applies whether `library_dirs` is set or not. `library_dirs` now also matches a folder given in another case on a case-insensitive volume, or reached through a second mount. Running `salmon up` again on a folder salmon renamed with hardlinks on (the default) now stops at the rename instead of replacing it. To upload that album to another tracker, use `salmon cross-upload`. Thanks @chodeus
+- **The `salmon web` folder browser lists the newest folders first.** The order goes by when a folder was last changed or copied in, so an album you just copied in is at the top. Before, a folder holding more than 500 folders could leave it out of the list altogether. A Newest / Name toggle next to the listing switches back to name order, and your choice is remembered in the browser.
+- **Qobuz EP titles ending in "EP" now lose it, as on the other stores.** Set `strip_ep_from_title = false` under `[upload.formatting]` to keep a bare "EP" that ends a title (see below).
+- **A `folder_template` containing `/` is refused.** Subfolders in the folder name were never documented, and a name holding a path separator could point outside the download folder.
+
+## ✨ New Features & Improvements
+
+- **`strip_ep_from_title`** (`[upload.formatting]`, default `true`): whether a bare "EP" ending a release title is removed. `Space EP` becomes `Space` with the default and stays `Space EP` with `false`. A store's own marker (`Space - EP`, `Space (EP)`) always goes, and an "EP" inside the title (`The EP Sessions Vol. 2`, `EP 1`) is never touched. Before, every "EP" word was removed wherever it stood, leaving titles such as `Space -` or `Space ()`. Thanks @techk1ng
+- **The `salmon web` upload page remembers its options between uploads.** These are Auto-rename, Spectrals after upload, Recompress FLACs, Essential files only, Scene release, -yyy and the trackers you picked. They are saved in the browser when you press Start, and "Reset to defaults" forgets them. Options that skip a check or change tags, and everything about one album, are never remembered.
+- **The `salmon web` path box starts with your `download_directory`**, so pasting an album folder's name after it is enough.
+
+## 🐛 Bug Fixes
+
+- **salmon no longer replaces or deletes a `Spectrals` folder it did not make.** An album shipping its own `Spectrals` folder lost it on a plain `salmon up`, `salmon specs` or `salmon checkspecs`, and the rename moved it out of the album. Two albums with the same folder name (two `CD1`s) shared one spectrals folder, so making one's spectrals wiped the other's, even across two `salmon web` jobs running at once. A dry run with `tmp_dir` set no longer replaces a real run's spectrals. Thanks @chodeus
+- **An empty or invisible folder name can no longer delete your download folder.** A name left empty, `.`, `..`, or made only of invisible characters in the folder editor or the template pointed at the download folder or its parent, and the "replace it?" prompt (default yes) then deleted it. Such a name is now refused, and the editor lets you try again. A file name with nothing visible left is refused too. Thanks @chodeus
+- **A title that already names its version no longer gets a remix credit appended.** `Nobody Else (London Connection Edit)` became `Nobody Else (London Connection Edit) (London Connection Remix)`. The remixer is still credited as an artist. Thanks @djkingraja
+- **The `salmon web` folder picker no longer offers `download_directory` or a `library_dirs` folder itself as an album.** Picking one failed later with "Refusing a root folder".
+- Smaller fixes, thanks @chodeus:
+  - Removing a useless version from a title no longer cuts real title words. `Title - Remastered` is kept whole instead of becoming `Title -`.
+  - The bit depth or sample rate token in a conversion's folder name no longer eats numbers in the title.
+  - A downconversion folder made at other settings is no longer reused.
+  - Repeated `ARTIST`, `ARTISTS` or `GENRE` values in a file are read once.
+  - An emptied Do-Not-Upload list no longer allows everything: it is refused as unreadable.
+  - A file is taken for FLAC only when its name ends in `.flac`.
+  - The provenance markers are read before the tags are rewritten, and are not printed for salmon's own conversions.
+  - The spectral image viewers skip hidden files.
+
+## 🔒 Tracker & Security Improvements
+
+- **An upload the tracker took is kept when a later step fails.** The tracker stores the torrent before it answers. When salmon could not use that answer, it reported the upload as failed, the torrent went unseeded, and uploading it again made a dupe. This happened with a request fill the tracker refused, a warnings page, an API answer that was not JSON, or a lookup of the new group that failed. salmon now finds the torrent it uploaded, says what to do by hand (such as filling the request), and goes on seeding it. When the group is still unknown, conversions are no longer sent as new groups. A `.torrent` file that cannot be rewritten with its URL (a full disk) is no longer left truncated. A machine with no clipboard (Docker, a server) no longer stops the run after the upload. When a tracker answers that you are rate limited, salmon now waits before looking the upload up. Thanks @chodeus
+- **Conversions the edition already holds are no longer made by default after a FLAC upload.** Uploading a 24-bit FLAC into a group whose edition already has the 16-bit FLAC, a 320 or a V0 offered those conversions again, selected by default and made under `-yyy`, and the site removed them as dupes. They are now flagged `DUPE RISK` and left out of the default and of `-yyy`; you can still pick them by number. A group picked before the metadata review, or given with `-g`, is now checked again against the edition the review settled on. This costs one request on the first tracker. Thanks @chodeus
+- **Torrent name normalization** (only with `torrent_name_normalization` set to `NFC` or `NFD`): the torrent is no longer written to `dottorrents_dir` and read back, which failed when that folder is a torrent client's watch folder. Two file names that become the same once normalized are refused before the upload. salmon now warns when a seedbox cannot match the normalized names. The setting's comment in the default config now says the form must match the names the client seeds. Thanks @chodeus
+- **Secrets and URLs in output:** a secret in JSON holding an escaped quote is now masked whole. `salmon descgen` and the web interface no longer print a refused URL back, only its position and host. Thanks @chodeus
+
+## What's Changed
+* Refuse a folder or file name that escapes its folder or shows nothing by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/705
+* Normalize torrent names in memory, refuse colliding names, and warn when the seedbox cannot match them by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/704
+* Strip only the EP marker that ends a release title (strip_ep_from_title) by @techk1ng in https://github.com/smokin-salmon/smoked-salmon/pull/703
+* Small fixes from chodeus's fork: titles, conversion names, lists and output by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/706
+* Never replace or delete a spectrals folder salmon did not make by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/708
+* Keep an upload the tracker took when a later step fails by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/707
+* Leave out conversions the edition already holds after a FLAC upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/721
+* Work on a copy of an album that shares files through a link by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/718
+* Leave a title that already names its version without a remix credit by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/720
+* salmon web: list the newest folders first in the folder browser by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/722
+* Bump the minor-and-patch group with 2 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/710
+* Bump astral-sh/uv from 0.12.24 to 0.13.1 in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/711
+* Bump @types/node from 24.19.1 to 25.9.9 in /webui by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/713
+* Update uv-build requirement from <0.13.0,>=0.12.22 to >=0.12.24,<0.13.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/715
+* Bump basedpyright from 1.40.1 to 1.40.2 in the dev-tools group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/709
+* Bump the minor-and-patch group with 5 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/714
+* Bump the minor-and-patch group across 1 directory with 2 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/712
+* salmon web: never offer a root folder as an album by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/725
+* salmon web: remember the upload page's options between uploads by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/727
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.18.0...0.19.0
+
+"""
 
 [[changelog]]
 version = "0.18.0"
