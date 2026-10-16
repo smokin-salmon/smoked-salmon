@@ -1,4 +1,5 @@
 import errno
+import hashlib
 import os
 import platform
 import random
@@ -192,13 +193,22 @@ async def handle_spectrals_upload_and_deletion(
 
 
 async def _delete_spectrals(spectrals_path: str) -> None:
-    """Delete a spectrals folder, trying twice: on Windows, a viewer may still hold its files."""
+    """Delete salmon's spectrals folder, trying twice: on Windows, a viewer may still hold its files.
+
+    A folder salmon did not make (see made_by_salmon), such as one the user put a file in, is left where it is.
+    """
+    if not os.path.lexists(spectrals_path):
+        drop_specs_claim(spectrals_path)
+        return
+    if not made_by_salmon(spectrals_path):
+        click.secho(f"Not deleting {spectrals_path}: it is not a spectrals folder salmon made.", fg="yellow")
+        return
+    shutil.rmtree(spectrals_path, ignore_errors=True)
+    await anyio.sleep(0.5)
     if os.path.isdir(spectrals_path):
-        shutil.rmtree(spectrals_path, ignore_errors=True)
+        shutil.rmtree(spectrals_path)
         await anyio.sleep(0.5)
-        if os.path.isdir(spectrals_path):
-            shutil.rmtree(spectrals_path)
-            await anyio.sleep(0.5)
+    drop_specs_claim(spectrals_path)
 
 
 def specs_hosts_text(trackers: Sequence[str]) -> str:
@@ -264,7 +274,9 @@ class SpectralUploads:
         if not Path(self._path).resolve().is_relative_to(Path(self._album_path).resolve()):
             return
         self._scratch = tempfile.mkdtemp(prefix="salmon-spectrals-")
+        old_real = os.path.realpath(self._path)
         self._path = shutil.move(self._path, os.path.join(self._scratch, "Spectrals"))
+        carry_specs_claim(old_real, self._path)
 
     async def close(self) -> None:
         """Delete the spectral files, if they are still there."""
@@ -541,24 +553,100 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
         click.secho("Finished compressing spectrals.", fg="green")
 
 
-def get_spectrals_path(path):
-    """Get the path to the spectrals folder for an album."""
+def get_spectrals_path(path: str) -> str:
+    """The folder salmon makes an album's spectrals in: never one salmon did not make, which it would replace.
+
+    That is the album's Spectrals folder, unless tmp_dir is set, the album is in library_dirs, or the album has a
+    Spectrals of its own (one salmon did not make). Then it is a folder outside the album: in tmp_dir, else in
+    download_directory, and in a dry run in its run directory. Its name holds a digest of the album's real path, so
+    albums of the same folder name (two CD1s) never share one.
+    """
+    in_album = os.path.join(path, "Spectrals")
+    tmp_dir = cfg.directory.tmp_dir if cfg.directory.tmp_dir and os.path.isdir(cfg.directory.tmp_dir) else None
+    albums_own = os.path.lexists(in_album) and not made_by_salmon(in_album)
+    if tmp_dir is None and not albums_own and not cfg.directory.protects(path):
+        return in_album
+    # A dry run leaves nothing outside its run directory, and never replaces a real run's spectrals.
+    outside = dryrun.scratch_dir() if dryrun.active() else (tmp_dir or cfg.directory.download_directory)
     base_name = os.path.basename(path.rstrip("/"))
-    if cfg.directory.tmp_dir and os.path.isdir(cfg.directory.tmp_dir):
-        # Create a unique subfolder for this album
-        return os.path.join(cfg.directory.tmp_dir, f"spectrals_{base_name}")
-    if cfg.directory.protects(path):
-        # Never inside a library album: the folder is replaced, then deleted.
-        return os.path.join(cfg.directory.download_directory, f"spectrals_{base_name}")
-    return os.path.join(path, "Spectrals")
+    digest = hashlib.sha1(os.path.realpath(path).encode(), usedforsecurity=False).hexdigest()[:8]
+    return os.path.join(outside, f"spectrals_{base_name} {digest}")
 
 
-def create_specs_folder(path):
-    """Create the spectrals folder."""
+# The spectrals folders this process made, by real path: an empty folder is salmon's only if it is one of these.
+_made_specs_folders: set[str] = set()
+# What salmon writes into a spectrals folder: the spectrals, the averaged spectra (spectrum_plot_name), and the copy
+# that oxipng compresses, which a killed run leaves behind.
+_SALMON_SPECTRAL = re.compile(r"\d{2,} (?:Full|Zoom|Spectrum)\.png(?:\.tmp\.png)?")
+# What a file browser leaves beside them, besides hidden files.
+_BROWSER_LITTER = frozenset({"Thumbs.db", "desktop.ini"})
+
+
+def made_by_salmon(spectrals_path: str) -> bool:
+    """Whether a spectrals folder is salmon's: a folder, not a symlink, that holds salmon's spectral images and no other
+    file or folder (hidden files and a file browser's litter aside), or an empty one this process made.
+
+    By its files, spectrals an earlier run left (salmon specs -nd, an interrupted check) are still salmon's.
+    """
+    if os.path.islink(spectrals_path):
+        return False
+    try:
+        with os.scandir(spectrals_path) as entries:
+            is_file = {entry.name: entry.is_file(follow_symlinks=False) for entry in entries}
+    except OSError:  # Not a folder, or gone.
+        return False
+    if not all(is_file.values()):
+        return False
+    images = [name for name in is_file if not name.startswith(".") and name not in _BROWSER_LITTER]
+    if not all(_SALMON_SPECTRAL.fullmatch(name) for name in images):
+        return False
+    return bool(images) or os.path.realpath(spectrals_path) in _made_specs_folders
+
+
+def carry_specs_claim(old_real: str, new_path: str) -> None:
+    """After salmon moved its spectrals folder from old_real (a real path) to new_path, make the folder there salmon's.
+
+    Folder renames move it, so that a second rename moves it again, and a folder made later at the old path is not
+    taken for salmon's.
+    """
+    if old_real in _made_specs_folders:
+        _made_specs_folders.discard(old_real)
+        _made_specs_folders.add(os.path.realpath(new_path))
+
+
+def drop_specs_claim(spectrals_path: str) -> None:
+    """Forget a spectrals folder salmon removed, so that a folder made there later is the user's."""
+    _made_specs_folders.discard(os.path.realpath(spectrals_path))
+
+
+def make_way_for_spectrals(spectrals_path: str) -> None:
+    """Clear spectrals_path for salmon's spectrals folder: remove salmon's own, or an empty folder.
+
+    Raises:
+        UploadError: Something salmon did not make is there.
+    """
+    if not os.path.lexists(spectrals_path):
+        return
+    try:
+        empty = not os.path.islink(spectrals_path) and os.path.isdir(spectrals_path) and not os.listdir(spectrals_path)
+    except OSError:
+        empty = False
+    if not (empty or made_by_salmon(spectrals_path)):
+        raise UploadError(f"Not replacing {spectrals_path} with spectrals: salmon did not make it. Move it away.")
+    shutil.rmtree(spectrals_path)
+    drop_specs_claim(spectrals_path)
+
+
+def create_specs_folder(path: str) -> str:
+    """Create the spectrals folder of an album (see get_spectrals_path), replacing salmon's own from an earlier run.
+
+    Raises:
+        UploadError: Something salmon did not make is where the folder goes.
+    """
     spectrals_path = get_spectrals_path(path)
-    if os.path.isdir(spectrals_path):
-        shutil.rmtree(spectrals_path)
+    make_way_for_spectrals(spectrals_path)
     os.mkdir(spectrals_path)
+    _made_specs_folders.add(os.path.realpath(spectrals_path))
     return spectrals_path
 
 

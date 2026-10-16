@@ -26,7 +26,7 @@ from salmon.config.validations import Directory
 from salmon.errors import AbortAndDeleteFolder, UploadError
 from salmon.trackers.base import TagRules
 from salmon.uploader import staging
-from salmon.uploader.spectrals import get_spectrals_path
+from salmon.uploader.spectrals import create_specs_folder, get_spectrals_path
 
 RENAMED = "Artist - Album (2020) [WEB FLAC]"
 
@@ -667,8 +667,26 @@ def test_conversions_outside_a_library_still_go_beside_the_source(monkeypatch, d
 def test_spectrals_of_a_library_album_are_made_outside_it(dirs, tmp_path) -> None:
     library, downloads = dirs
 
-    assert get_spectrals_path(str(library / "Album")) == str(downloads / "spectrals_Album")
+    assert os.path.dirname(get_spectrals_path(str(library / "Album"))) == str(downloads)
+    assert os.path.basename(get_spectrals_path(str(library / "Album"))).startswith("spectrals_Album ")
     assert get_spectrals_path(str(tmp_path / "seeding" / "Album")) == str(tmp_path / "seeding" / "Album" / "Spectrals")
+
+
+def test_same_named_library_albums_keep_their_spectrals_apart(dirs) -> None:
+    # Two discs, each a CD1 of its own release: making the second's spectrals must not wipe the first's.
+    library, downloads = dirs
+    first, second = library / "One" / "CD1", library / "Two" / "CD1"
+    first.mkdir(parents=True)
+    second.mkdir(parents=True)
+    first_specs = create_specs_folder(str(first))
+    with open(os.path.join(first_specs, "01 Full.png"), "wb") as image:
+        image.write(b"first")
+
+    second_specs = create_specs_folder(str(second))
+
+    assert second_specs != first_specs
+    assert os.path.dirname(first_specs) == os.path.dirname(second_specs) == str(downloads)
+    assert os.listdir(first_specs) == ["01 Full.png"]
 
 
 def test_rename_folder_never_follows_a_symlink_into_a_library(monkeypatch, dirs, tmp_path) -> None:
