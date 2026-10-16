@@ -2,6 +2,8 @@ import sys
 from copy import deepcopy
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from salmon.tagger.combine import (
@@ -12,6 +14,7 @@ from salmon.tagger.combine import (
 )
 from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.retagger import create_artist_str
+from salmon.tagger.sources.base import append_remixers_to_track_titles
 from salmon.tagger.sources.discogs import parse_artists as discogs_parse_artists
 from salmon.tagger.sources.discogs import parse_credits
 
@@ -369,3 +372,47 @@ def test_combine_metadatas_from_discogs_alone_leaves_the_anv_out_too():
     combined = combine_metadatas(("Discogs", discogs))
 
     assert "artist_variations" not in combined["tracks"]["1"]["1"]
+
+
+def remix_title(title: str, remixers: tuple[str, ...] = ("X",)) -> str:
+    data = {"1": {"1": {"title": title, "artists": [("Lead", "main"), *((r, "remixer") for r in remixers)]}}}
+
+    return append_remixers_to_track_titles(data)["1"]["1"]["title"]
+
+
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Nobody Else (London Connection Edit)",
+        "Walking Zero (Tuff & Jam Unda-Vybe Vocal)",
+        "Too Close (London Connection 2 Step Dub)",
+        "R U Sleeping (Blunt Edit)",
+        "What Would We Do? (Clay and Deller's Industry Standard Edit)",
+        "Song [Club Dub]",
+        "Song (Feather Edit)",
+        "Song (Edit) ",
+    ],
+)
+def test_remixer_is_not_appended_to_a_title_that_ends_in_a_version(title):
+    assert remix_title(title) == title
+
+
+def test_remixed_is_not_appended_to_a_title_that_ends_in_a_version():
+    assert remix_title("Song (Dub)", ("A", "B", "C", "D")) == "Song (Dub)"
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Song", "Song (X Remix)"),
+        ("Song (feat. Y)", "Song (feat. Y) (X Remix)"),
+        ("Song [Feat Y]", "Song [Feat Y] (X Remix)"),
+        ("Song (ft. Y)", "Song (ft. Y) (X Remix)"),
+        ("Song (Featuring Y)", "Song (Featuring Y) (X Remix)"),
+        ("Song (Edit) Part 2", "Song (Edit) Part 2 (X Remix)"),
+        ("Song (X Remix)", "Song (X Remix)"),
+        ("Song (X Mix)", "Song (X Mix)"),
+    ],
+)
+def test_remixer_is_still_appended_unless_the_title_names_its_version(title, expected):
+    assert remix_title(title) == expected

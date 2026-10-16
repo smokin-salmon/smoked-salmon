@@ -440,11 +440,22 @@ def fix_artists_list(original_artists, to_replace):
     return original_artists
 
 
+# A whole (...) or [...] ending the title, and the credit a featuring group starts with ("feat" is not "Feather").
+_RE_TRAILING_GROUP = re.compile(r"[(\[](?P<group>[^()\[\]]*)[)\]]\s*$")
+_RE_FEATURING_GROUP = re.compile(r"\s*(?:featuring|feat|ft)(?:\.|\s|$)", flags=re.IGNORECASE)
+
+
+def _ends_in_a_version(title):
+    """Whether the title ends in a bracketed version of its own, as "(Blunt Edit)" or "[Club Dub]"."""
+    match = _RE_TRAILING_GROUP.search(title)
+    return bool(match) and not _RE_FEATURING_GROUP.match(match["group"])
+
+
 def append_remixers_to_track_titles(data):
     for dnum, disc in data.items():
         for tnum, track in disc.items():
             remix_artists = [a for a, i in track["artists"] if i == "remixer"]
-            if not any(x in track["title"] for x in ("Remix", "Mix")):
+            if not any(x in track["title"] for x in ("Remix", "Mix")) and not _ends_in_a_version(track["title"]):
                 if len(remix_artists) >= cfg.upload.formatting.various_artist_threshold:
                     data[dnum][tnum]["title"] += " (Remixed)"
                 elif remix_artists:
