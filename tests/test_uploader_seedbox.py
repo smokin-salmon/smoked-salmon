@@ -116,6 +116,7 @@ def test_the_rclone_command_salmon_prints_hides_the_seedbox_home_folder(extra_ar
         (["-P", "--sftp-path-override"], None),
         (["--sftp-path-override", "@/a", "--sftp-path-override"], None),
         (["-P"], None),
+        (["--sftp-path-override", "--sftp-path-override=/target"], "--sftp-path-override=/target"),
     ],
 )
 def test_path_override_is_the_last_one_in_either_form(extra_args, expected) -> None:

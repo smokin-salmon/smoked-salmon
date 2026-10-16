@@ -24,10 +24,17 @@ _MIN_MASKED_PATH = 4
 def _path_override(extra_args: list[str]) -> str | None:
     """The last --sftp-path-override value in extra_args, as rclone reads it; None without one."""
     override = None
-    for arg, following in zip(extra_args, [*extra_args[1:], None], strict=False):
-        name, equals, value = arg.partition("=")
+    i = 0
+    while i < len(extra_args):
+        name, equals, value = extra_args[i].partition("=")
+        i += 1
         if name == "--sftp-path-override":
-            override = value if equals else following
+            if equals:
+                override = value
+            else:
+                # The next argument is this flag's value, whatever it looks like.
+                override = extra_args[i] if i < len(extra_args) else None
+                i += 1
     return override
 
 
