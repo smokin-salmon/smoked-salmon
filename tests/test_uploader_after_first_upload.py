@@ -464,3 +464,61 @@ def test_a_torrent_the_disk_cannot_take_the_url_into_still_seeds_as_uploaded(mon
 
 def _sent_files(run) -> list[list[tuple[str, Any]]]:
     return [sent.fields for sent in run.tracker.sent if sent.query.get("action") == "upload"]
+
+
+def _uploaded_torrent(tmp_path: Path) -> tuple[Torrent, Path]:
+    """A .torrent as generate_torrent leaves it, and its torrent with the URL added, ready to rewrite."""
+    folder = tmp_path / "Album"
+    folder.mkdir()
+    (folder / "01.flac").write_bytes(b"fLaC" + bytes(40000))
+    torrent = Torrent(path=folder, trackers=["https://tracker.invalid/announce"], private=True)
+    torrent.generate()
+    torrent_path = tmp_path / "torrents" / "Album.torrent"
+    torrent_path.parent.mkdir()
+    torrent.write(torrent_path)
+    torrent.comment = "https://tracker.invalid/torrents.php?torrentid=1"
+    return torrent, torrent_path
+
+
+@pytest.mark.parametrize("fails", [False, True], ids=["written", "disk full"])
+@pytest.mark.parametrize("kind", ["file", "symlink"])
+def test_the_torrent_rewrite_touches_no_file_but_its_own(monkeypatch, tmp_path, kind, fails) -> None:
+    torrent, torrent_path = _uploaded_torrent(tmp_path)
+    original = torrent_path.read_bytes()
+    # Someone else's file at the name a fixed temporary file would have, or a link from there to one.
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.write_bytes(b"not salmon's")
+    beside = Path(f"{torrent_path}.part")
+    if kind == "file":
+        beside.write_bytes(b"not salmon's")
+    else:
+        beside.symlink_to(elsewhere)
+    if fails:
+
+        def full_disk(self: Torrent, filepath: str, validate: bool = True, overwrite: bool = False) -> None:
+            Path(filepath).write_bytes(self.dump()[:100])
+            raise WriteError(errno.ENOSPC, filepath)
+
+        monkeypatch.setattr(Torrent, "write", full_disk)
+
+    salmon.uploader._rewrite_torrent(torrent, str(torrent_path))
+
+    assert beside.read_bytes() == b"not salmon's"
+    assert beside.is_symlink() == (kind == "symlink")
+    assert elsewhere.read_bytes() == b"not salmon's"
+    assert sorted(path.name for path in torrent_path.parent.iterdir()) == ["Album.torrent", "Album.torrent.part"]
+    if fails:
+        assert torrent_path.read_bytes() == original
+    else:
+        assert Torrent.read(torrent_path).comment == torrent.comment
+
+
+def test_the_rewritten_torrent_keeps_the_mode_of_the_one_it_replaces(tmp_path) -> None:
+    torrent, torrent_path = _uploaded_torrent(tmp_path)
+    # Readable by a torrent client running as another user of the same group.
+    torrent_path.chmod(0o640)
+
+    salmon.uploader._rewrite_torrent(torrent, str(torrent_path))
+
+    assert Torrent.read(torrent_path).comment == torrent.comment
+    assert torrent_path.stat().st_mode & 0o777 == 0o640

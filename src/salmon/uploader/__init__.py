@@ -2,6 +2,7 @@ import functools
 import os
 import platform
 import shutil
+import tempfile
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
 from dataclasses import dataclass
@@ -1950,8 +1951,8 @@ def finish_upload(
 ) -> str:
     """Write the uploaded torrent with its URL, and queue it for the seedboxes.
 
-    The tracker has the torrent by now: a step here that fails says so and lets the rest go on, so the torrent is
-    still reported and seeded.
+    The tracker has the torrent by now: the .torrent rewrite or the clipboard failing says so and does not stop the
+    rest, so the torrent is still reported and its seedbox tasks still queued.
 
     Args:
         gazelle_site: The tracker it was uploaded to.
@@ -2006,16 +2007,25 @@ def finish_upload(
 def _rewrite_torrent(torrent_content: "Torrent", torrent_path: str) -> None:
     """Write the torrent over its .torrent file whole, or not at all.
 
-    Written to a file beside it first, then moved over it: a write that fails part way (a full disk) leaves the
-    .torrent the upload was made from, without the URL, which seeds just as well.
+    Written to a new file of its own beside it first, then moved over it: a write that fails part way (a full disk)
+    leaves the .torrent the upload was made from, without the URL, which seeds just as well. No other file is written
+    or removed, whatever its name.
     """
-    part = f"{torrent_path}.part"
+    folder, name = os.path.split(torrent_path)
+    temp = None
     try:
-        torrent_content.write(part, overwrite=True)
-        os.replace(part, torrent_path)
+        handle, temp = tempfile.mkstemp(dir=folder or ".", prefix=f"{name}.", suffix=".part")
+        os.close(handle)
+        # mkstemp's file is readable by its owner only: give it the mode of the .torrent it replaces, which a
+        # torrent client running as another user may read.
+        with suppress(FileNotFoundError):
+            shutil.copymode(torrent_path, temp)
+        torrent_content.write(temp, overwrite=True)
+        os.replace(temp, torrent_path)
     except (OSError, TorfError) as err:
-        with suppress(OSError):
-            os.remove(part)
+        if temp is not None:
+            with suppress(OSError):
+                os.remove(temp)
         click.secho(f"Could not add the URL to {torrent_path} ({err}): it seeds without it.", fg="yellow")
 
 
