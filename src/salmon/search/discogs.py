@@ -32,7 +32,7 @@ class Searcher(DiscogsBase, SearchMixin):
                 edition = self.edition(year, source, "Not On Label")
 
             # Check if the release is in the user's discogs collection and add a hint if so
-            release_in_user_collection = rls["user_data"]["in_collection"]
+            release_in_user_collection = (rls.get("user_data") or {}).get("in_collection")
             collection_text = click.style("IN COLLECTION", bg="red", bold=True) if release_in_user_collection else None
 
             releases[rls["id"]] = (

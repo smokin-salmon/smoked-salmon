@@ -140,3 +140,15 @@ def test_beatport_scraped_result_without_a_label_is_listed(monkeypatch) -> None:
     line = _shown(anyio.run(beatport.Searcher().search_releases_scraping, "test album", 5))
 
     assert line == "Test Artist - Test Album"
+
+
+@pytest.mark.parametrize("user_data", [..., None, {}], ids=["no user_data", "null user_data", "empty user_data"])
+def test_discogs_result_without_user_data_is_listed(monkeypatch, user_data) -> None:
+    rls: dict[str, Any] = {"id": 1, "title": "Test Artist - Test Album", "year": "2020", "format": ["CD"]}
+    if user_data is not ...:
+        rls["user_data"] = user_data
+    monkeypatch.setattr(discogs.Searcher, "get_json", _answer({"results": [rls]}))
+
+    shown = _shown(anyio.run(discogs.Searcher().search_releases, "test album", 5))
+
+    assert shown == "Test Artist - Test Album {CD} 2020 CD Not On Label"
