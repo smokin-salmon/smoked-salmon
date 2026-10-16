@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+from salmon.tagger.sources.base import append_remixers_to_track_titles, generate_artists
 from salmon.tagger.sources.discogs import Scraper, parse_artists, parse_credits
 
 
@@ -254,3 +255,23 @@ def test_discogs_scraper_carries_the_anv_beside_the_track_artists() -> None:
     assert tracks["3"]["3"]["artist_variations"] == [{"name": "K-Ci & JoJo", "role": "main", "anv": "K-Ci And JoJo"}]
     # Plain data: a scrape that is shown as JSON must not hold tuple keys.
     json.dumps(tracks)
+
+
+def test_discogs_remix_credit_does_not_add_a_second_version_to_the_title() -> None:
+    # Discogs release 1217780: the title already names its version, the remixer is only credited
+    tracklist = [
+        {
+            "type_": "track",
+            "position": "1",
+            "title": "Nobody Else (London Connection Edit)",
+            "artists": [{"name": "Lead", "anv": "", "join": ""}],
+            "extraartists": [{"name": "London Connection", "anv": "", "join": "", "role": "Remix"}],
+        }
+    ]
+
+    tracks = asyncio.run(Scraper().parse_tracks(make_soup(tracklist)))
+    _, tracks = generate_artists(tracks)
+    tracks = append_remixers_to_track_titles(tracks)
+
+    assert tracks["1"]["1"]["title"] == "Nobody Else (London Connection Edit)"
+    assert ("London Connection", "remixer") in tracks["1"]["1"]["artists"]
