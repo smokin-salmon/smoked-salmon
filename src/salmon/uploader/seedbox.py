@@ -67,7 +67,9 @@ def seedbox_secrets(seedbox: Seedbox) -> list[str]:
             secrets.append(override)
         else:
             # Masking "/" or a few characters would wreck every path in the output.
-            secrets = [secret for secret in secrets if secret not in (raw, override)]
+            # Only the occurrence the override added: another secret may have the same value.
+            if raw in secrets:
+                secrets.remove(raw)
     return secrets
 
 

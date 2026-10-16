@@ -99,7 +99,8 @@ def test_rclone_writes_its_progress_straight_to_salmons_stdout(monkeypatch, tmp_
     [["--sftp-path-override", "@/home/UNIQUEBOXUSER"], ["--sftp-path-override=@/home/UNIQUEBOXUSER"]],
 )
 def test_the_rclone_command_salmon_prints_hides_the_seedbox_home_folder(extra_args) -> None:
-    shown = redact_command(["rclone", "copy", "a", "sbox:b", *extra_args])
+    secrets = seedbox.seedbox_secrets(Seedbox(url="sbox", extra_args=extra_args))
+    shown = redact_command(["rclone", "copy", "a", "sbox:b", *extra_args], secrets)
 
     assert "UNIQUEBOXUSER" not in shown
     assert "--sftp-path-override" in shown
@@ -150,6 +151,12 @@ def test_a_root_or_tiny_path_override_is_not_masked(override) -> None:
 
     assert seedbox.seedbox_secrets(box) == []
     assert redact_secrets("copied /music/Album to /", seedbox.seedbox_secrets(box)) == "copied /music/Album to /"
+
+
+def test_a_tiny_path_override_does_not_unmask_a_password_with_the_same_value() -> None:
+    box = Seedbox(url="sbox", extra_args=["--sftp-pass", "/ab", "--sftp-path-override", "/ab"])
+
+    assert "/ab" in seedbox.seedbox_secrets(box)
 
 
 @needs_posix
