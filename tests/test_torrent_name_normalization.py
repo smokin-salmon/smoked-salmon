@@ -234,6 +234,46 @@ def test_a_seedbox_that_matches_nfc_or_gets_no_torrent_is_not_warned_about(seedb
     assert "torrent_name_normalization" not in out
 
 
+@pytest.fixture(autouse=True)
+def _no_rclone_normalization_variable(monkeypatch) -> None:
+    monkeypatch.delenv("RCLONE_LOCAL_UNICODE_NORMALIZATION", raising=False)
+
+
+FLAG = "--local-unicode-normalization"
+
+
+@pytest.mark.parametrize(
+    ("extra_args", "env", "expected"),
+    [
+        ([], None, False),
+        ([FLAG], None, True),
+        ([f"{FLAG}=true"], None, True),
+        ([f"{FLAG}=1"], None, True),
+        ([f"{FLAG}=T"], None, True),
+        ([f"{FLAG}=false"], None, False),
+        ([f"{FLAG}=0"], None, False),
+        ([f"{FLAG}=maybe"], None, False),
+        ([FLAG, f"{FLAG}=false"], None, False),
+        ([f"{FLAG}=false", FLAG], None, True),
+        ([], "true", True),
+        ([], "1", True),
+        ([], "false", False),
+        ([], "yes", False),
+        ([], "", False),
+        ([f"{FLAG}=false"], "true", False),
+        ([FLAG], "false", True),
+        ([f"{FLAG}=maybe"], "true", False),
+    ],
+)
+def test_rclone_normalization_is_the_last_flag_else_its_environment_variable(
+    monkeypatch, extra_args, env, expected
+) -> None:
+    if env is not None:
+        monkeypatch.setenv("RCLONE_LOCAL_UNICODE_NORMALIZATION", env)
+
+    assert seedbox_module._normalizes_to_nfc(_box(extra_args=extra_args)) is expected
+
+
 def test_a_local_seedbox_on_macos_finds_any_form(seedboxes, capsys, monkeypatch) -> None:
     seedboxes(_box(type="local"))
     monkeypatch.setattr(seedbox_module.sys, "platform", "darwin")

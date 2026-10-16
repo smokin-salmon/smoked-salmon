@@ -221,7 +221,8 @@ session = 'get-from-site-cookie'
 # upload_to_seedbox = true
 
 # # "NFC" / "NFD" (""/"none": as on disk): the form of the file names your client seeds; rclone keeps names
-# # as they are unless extra_args has --local-unicode-normalization, so this must match the copied files.
+# # as they are unless extra_args has --local-unicode-normalization (or RCLONE_LOCAL_UNICODE_NORMALIZATION is
+# # set), so this must match the copied files.
 # torrent_name_normalization = ""
 
 # [upload.search]
