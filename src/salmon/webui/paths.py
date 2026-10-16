@@ -256,7 +256,9 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
     """What the folder browser shows: the roots, or the folders inside one folder of a root. Changes nothing.
 
     Folders whose name starts with a dot and symlinks are left out. Each folder listed says whether it holds
-    audio files (or its disc folders do). At most ``MAX_LISTED`` folders are listed, out of the first
+    audio files (or its disc folders do), that is, whether the picker may offer it as an album. A root never is
+    (``album_folder`` refuses it), so a root says ``audio`` false, in the roots view and when listed itself.
+    At most ``MAX_LISTED`` folders are listed, out of the first
     ``MAX_SCANNED`` entries (in the order the disk gives them: a folder of more entries is not read past them);
     ``truncated`` says when the folder holds more. The folders are sorted before that cut: ``sort`` is
     ``"newest"`` (the default: the most recently changed or copied in first, ties by name) or ``"name"``, and
@@ -279,7 +281,7 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
             "parent": None,
             "library": False,
             "audio": False,
-            "folders": [{**root.shown(), "audio": _marked_audio(root.path)} for root in found],
+            "folders": [{**root.shown(), "audio": False} for root in found],
             "truncated": False,
             "sort": sort,
             "roots": shown_roots,
@@ -325,7 +327,7 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
         "path": path,
         "parent": parent if _within(parent, found) and parent != path else None,
         "library": cfg.directory.is_library_path(path),
-        "audio": audio or _marked_audio(path),
+        "audio": not any(path == root.path for root in found) and (audio or _marked_audio(path)),
         "folders": [{"name": name, "path": full, "audio": _marked_audio(full)} for name, full, _ in names],
         "truncated": truncated,
         "sort": sort,

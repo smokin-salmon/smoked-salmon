@@ -251,7 +251,7 @@ def test_the_browser_lists_folders_and_marks_those_holding_audio(roots: Roots) -
         assert answer["path"] == str(roots.downloads)
         assert answer["sort"] == "name"
         assert answer["parent"] is None
-        assert answer["audio"] is True
+        assert answer["audio"] is False  # A root is never an album.
         assert answer["truncated"] is False
         assert [(f["name"], f["audio"]) for f in answer["folders"]] == [
             ("A Box", True),
@@ -264,6 +264,37 @@ def test_the_browser_lists_folders_and_marks_those_holding_audio(roots: Roots) -
 
     _with_app(test)
     assert _snapshot(roots.downloads) == before
+
+
+def test_the_roots_view_offers_no_root_as_an_album(roots: Roots) -> None:
+    _album(roots.downloads / "Album")
+    _album(roots.library / "Kept")
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _browse(client)).json()
+        assert [(f["path"], f["audio"]) for f in answer["folders"]] == [
+            (str(roots.downloads), False),
+            (str(roots.library), False),
+        ]
+
+    _with_app(test)
+
+
+@pytest.mark.parametrize("root", ["downloads", "library"])
+def test_a_listed_root_is_no_album_but_the_folders_in_it_are(roots: Roots, root: str) -> None:
+    base = getattr(roots, root)
+    _album(base / "Album")
+    _album(base / "Box" / "CD1", tracks=1)
+    _album(base / "Box" / "CD2", tracks=1)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _browse(client, str(base), sort="name")).json()
+        assert answer["audio"] is False
+        assert [(f["name"], f["audio"]) for f in answer["folders"]] == [("Album", True), ("Box", True)]
+        inside = await (await _browse(client, str(base / "Box"))).json()
+        assert inside["audio"] is True
+
+    _with_app(test)
 
 
 def test_a_long_listing_is_cut_and_says_so(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
