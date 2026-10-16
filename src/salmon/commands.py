@@ -21,6 +21,7 @@ import salmon.trackers
 import salmon.uploader
 from salmon import cfg, interaction
 from salmon.common import clipboard_copy, commandgroup, get_audio_files, str_to_int_if_int
+from salmon.common.files import AlbumPath, rewrite_refusal
 from salmon.common.redaction import redact_secrets
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS
@@ -170,7 +171,7 @@ async def descgen(urls: tuple[str, ...]) -> None:
 
 
 @commandgroup.command()
-@click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument("path", type=AlbumPath(exists=True, file_okay=False))
 async def compress(path: str) -> None:
     """Recompress a directory of FLACs to level 8."""
     if (refusal := compress_refusal(path)) is not None:
@@ -185,8 +186,8 @@ async def compress(path: str) -> None:
 
 def compress_refusal(path: str) -> str | None:
     """Why ``salmon compress`` will not recompress this folder, which it does in place; None if it will."""
-    if cfg.directory.protects(path):
-        return f"Not recompressing {path}: it is in library_dirs, or holds one."
+    if (refusal := rewrite_refusal(path)) is not None:
+        return f"Not recompressing {path}: {refusal}."
     return None
 
 

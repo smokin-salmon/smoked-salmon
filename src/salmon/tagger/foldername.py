@@ -9,6 +9,7 @@ import asyncclick as click
 
 from salmon import cfg, dryrun, interaction
 from salmon.common import clean_name, has_visible_chars, strip_template_keys
+from salmon.common.files import shares_files
 from salmon.constants import (
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
@@ -63,6 +64,13 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
     if not same_location and cfg.directory.protects(new_path):
         raise UploadError(f"Not renaming into {new_path}: it is in library_dirs, or holds one.")
     if os.path.isdir(new_path) and not same_location:
+        # The album this run's copy was made from, already under the new name: replacing it would delete it.
+        if original is not None and os.path.samefile(new_path, original):
+            raise UploadError(
+                f"Not replacing {new_path}: it is the album this run works on a copy of. "
+                "Rename it, or give this album another name. "
+                "If it is already uploaded, salmon cross-upload sends it to another tracker."
+            )
         if not check or await interaction.confirm(
             click.style(
                 f"A folder already exists with the new folder name '{new_path}', would you like to replace it?",
@@ -250,6 +258,8 @@ def _kept_reason(original: str) -> str:
     """Why a run that worked on a copy of `original` leaves it where it is."""
     if cfg.directory.is_library_path(original):
         return "it is in library_dirs, and salmon never removes a library album"
+    if shares_files(original):
+        return "it shares files with another folder through a hardlink or symlink, so salmon worked on a copy"
     if dryrun.active():
         return "a dry run works on a copy and changes nothing"
     return "--skip-flac-upload works on a copy"

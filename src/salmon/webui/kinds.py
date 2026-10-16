@@ -9,9 +9,10 @@ it sends what the command sends for the same album and answers, every tracker re
 loop (``trackers.account``), and works on a copy of a library album, as the command does. A conversion (transcode,
 downconvert) or a recompression (compress) runs what ``salmon transcode``, ``salmon downconv`` and ``salmon compress``
 run and sends nothing anywhere: a conversion writes where the command puts it (beside the album, or for a library
-album under download_directory), a recompression writes in place and is refused for a library album. A tag job runs
-what ``salmon tag`` runs (``tagger.run_tag``), its questions asked in the browser: it sends nothing to a tracker, and
-tags a library album as a copy renamed into download_directory, never in place. A cross-upload runs what ``salmon
+album under download_directory), a recompression writes in place and is refused for a library album or an album
+sharing files through a link (``rewrite_refusal``). A tag job runs what ``salmon tag`` runs (``tagger.run_tag``), its
+questions asked in the browser: it sends nothing to a tracker, and tags such an album as a copy renamed into
+download_directory, never in place. A cross-upload runs what ``salmon
 cross-upload`` runs (``cross_upload.run_cross_upload``): it reads SOURCE and the album folder, and sends TARGET what
 the command sends for the same releases and answers, through the same request loop; it writes where the command
 writes, never into the album. Each folder is checked by ``paths.album_folder`` before the job is queued, and again
@@ -560,7 +561,7 @@ async def downconvert(params: DownconvertParams) -> dict[str, Any]:
 
 
 async def compress(params: CompressParams) -> dict[str, Any]:
-    """What ``salmon compress`` runs: the album's FLACs recompressed in place, never a library album's."""
+    """What ``salmon compress`` runs: the album's FLACs recompressed in place, unless ``compress_refusal`` says no."""
     from salmon.commands import compress_refusal, recompress_flacs
 
     path = _album(params.path)

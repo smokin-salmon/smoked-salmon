@@ -25,6 +25,7 @@ from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import clipboard_copy, commandgroup, tagify
+from salmon.common.files import AlbumPath
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
@@ -132,7 +133,7 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
 
 
 @commandgroup.command()
-@click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument("path", type=AlbumPath(exists=True, file_okay=False))
 @click.option("--group-id", "-g", default=None, help="Group ID to upload torrent to")
 @click.option(
     "--skip-flac-upload",
@@ -813,7 +814,6 @@ async def upload(
             skip_initial_review=skip_initial_review,
             apply_ai_suggestions=apply_ai_suggestions,
             rename_into=rename_into,
-            library_album=path if cfg.directory.is_library_path(path) else None,
             original=path if staged != path else None,
             conversion=conversion,
             trackers=trackers,
@@ -894,7 +894,6 @@ async def _upload_staged(
     skip_initial_review: bool,
     apply_ai_suggestions: bool,
     rename_into: str | None,
-    library_album: str | None,
     original: str | None = None,
     conversion: dict[str, Any] | None = None,
     trackers: list[str] | None = None,
@@ -905,8 +904,8 @@ async def _upload_staged(
     Args:
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
         rename_into: The directory the renamed folder goes into, instead of download_directory.
-        library_album: The folder path is a copy of, when that folder must be kept: "delete" deletes only the copy.
-        original: The folder the user gave, when path is a copy of it: the folder rename says why it is kept.
+        original: The folder the user gave, when path is a copy of it: the folder rename says why it is kept, and
+            "delete" deletes only the copy.
     """
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
     if not source:
@@ -1071,9 +1070,9 @@ async def _upload_staged(
         if cfg.directory.protects(path):
             click.secho(f"\nNot deleting {path}: it is in library_dirs, or holds one.", fg="yellow", bold=True)
             return click.secho("\nAborting upload...", fg="red")
-        if library_album is not None:
+        if original is not None:
             click.secho(
-                f"\nDeleting the copy the upload worked on. The library album {library_album} is kept.",
+                f"\nDeleting the copy the upload worked on. {original} is kept.",
                 fg="yellow",
                 bold=True,
             )

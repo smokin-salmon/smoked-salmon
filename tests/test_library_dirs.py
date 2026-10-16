@@ -424,7 +424,7 @@ def test_abort_and_delete_keeps_the_library_album_and_deletes_the_copy(monkeypat
     assert result.exit_code == 0, result.output
     assert uploads == []
     assert _snapshot(library) == before
-    assert f"The library album {album} is kept" in result.output
+    assert f"Deleting the copy the upload worked on. {album} is kept." in result.output
     assert "Deleted folder" in result.output
     # What was deleted is the copy: nothing of this run is left in download_directory.
     assert deleted == ([] if when == "before the rename" else [str(downloads / RENAMED)])
@@ -518,10 +518,8 @@ def test_rename_folder_never_replaces_a_library_with_the_renamed_folder(monkeypa
 # Other commands that change a folder
 
 
-def test_tag_works_on_a_copy_renamed_into_download_directory(monkeypatch, dirs) -> None:
-    library, downloads = dirs
-    album = _album(library / "Album")
-    before = _snapshot(library)
+def _run_tag(monkeypatch, album: Path) -> Any:
+    """Run `salmon tag ALBUM` with the real staging, tag standardizing and folder rename, remove_source_dir on."""
     metadata = {**_metadata(), "cover": None}
     for name, fake in {
         "gather_tags": _returning({}),
@@ -543,7 +541,15 @@ def test_tag_works_on_a_copy_renamed_into_download_directory(monkeypatch, dirs) 
     async def run():
         return await CliRunner().invoke(salmon.tagger.tag, [str(album), "-s", "WEB", "-n"])
 
-    result = anyio.run(run)
+    return anyio.run(run)
+
+
+def test_tag_works_on_a_copy_renamed_into_download_directory(monkeypatch, dirs) -> None:
+    library, downloads = dirs
+    album = _album(library / "Album")
+    before = _snapshot(library)
+
+    result = _run_tag(monkeypatch, album)
 
     assert result.exit_code == 0, result.output
     assert _snapshot(library) == before

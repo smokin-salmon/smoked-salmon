@@ -18,15 +18,36 @@ def _real(path: str) -> str:
 
 
 def _holds(folder: str, path: str) -> bool:
-    """Whether the resolved path is the resolved folder or inside it.
+    """Whether the resolved path is the resolved folder or inside it, by its text or by device and inode.
 
     commonpath, not a string prefix: /music-old is not inside /music, and / holds everything.
     """
     folder, path = _real(folder), _real(path)
     try:
-        return os.path.commonpath([folder, path]) == folder
+        if os.path.commonpath([folder, path]) == folder:
+            return True
     except ValueError:  # Different drives on Windows.
+        pass
+    # The text misses /music/Library for /Music/Library on a case-insensitive volume, and a second bind mount.
+    return _same_dir_above(folder, path)
+
+
+def _same_dir_above(folder: str, path: str) -> bool:
+    """Whether path or a folder above it is the directory folder: the same device and inode."""
+    try:
+        target = os.stat(folder)
+    except OSError:
         return False
+    while True:
+        try:
+            if os.path.samestat(os.stat(path), target):
+                return True
+        except OSError:  # Not there (yet): a folder above it may still be.
+            pass
+        parent = os.path.dirname(path)
+        if parent == path:
+            return False
+        path = parent
 
 
 class Directory(BaseStruct):
@@ -62,11 +83,11 @@ class Directory(BaseStruct):
                     raise ValueError(f"library_dirs entry {entry} must not be inside {name} ({folder})")
 
     def library_of(self, path: str) -> str | None:
-        """The library_dirs entry path is or is inside, compared on resolved paths, or None."""
+        """The library_dirs entry path is or is inside, compared on resolved paths (see _holds), or None."""
         return next((entry for entry in self.library_dirs if _holds(entry, path)), None)
 
     def is_library_path(self, path: str) -> bool:
-        """Whether path is a library_dirs entry or inside one, compared on resolved paths."""
+        """Whether path is a library_dirs entry or inside one, compared on resolved paths (see _holds)."""
         return self.library_of(path) is not None
 
     def library_inside(self, path: str) -> str | None:

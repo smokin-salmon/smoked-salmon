@@ -9,6 +9,7 @@ from contextlib import contextmanager
 import asyncclick as click
 
 from salmon import cfg, dryrun
+from salmon.common.files import rewrite_refusal
 from salmon.converter.conversions import carry_conversion
 from salmon.errors import UploadError
 
@@ -20,8 +21,9 @@ STAGING_DIR = ".salmon-staging"
 def staged_source(path: str, scratch: bool) -> Iterator[tuple[str, str | None]]:
     """Give the folder an upload works on, and the directory its folder rename stays in.
 
-    An album inside a library_dirs entry is always worked on as a copy in a run directory of its own, like a
-    scratch copy, but its rename goes into download_directory, where the renamed copy stays to be seeded.
+    An album salmon must not rewrite in place (rewrite_refusal: inside a library_dirs entry, or sharing files with
+    another folder through a hardlink or symlink) is always worked on as a copy in a run directory of its own, like
+    a scratch copy, but its rename goes into download_directory, where the renamed copy stays to be seeded.
 
     Args:
         path: The album folder the upload starts from.
@@ -32,18 +34,18 @@ def staged_source(path: str, scratch: bool) -> Iterator[tuple[str, str | None]]:
         The folder to work on, and the directory its rename stays in (None for download_directory).
 
     Raises:
-        UploadError: If path holds a library_dirs entry, or the copy does not fit on the disk or fails.
+        UploadError: If path is or holds a library_dirs entry, or the copy does not fit on the disk or fails.
     """
-    in_library = cfg.directory.is_library_path(path)
-    if not in_library and (library := cfg.directory.library_inside(path)) is not None:
+    if (library := cfg.directory.library_inside(path)) is not None:
         raise UploadError(f"{path} holds the library folder {library}: run salmon on one album folder of it.")
-    if not scratch and not in_library:
+    refusal = rewrite_refusal(path)
+    if not scratch and refusal is None:
         yield path, None
         return
     scratch_dir = _new_scratch_dir()
     try:
         # A scratch copy (--skip-flac-upload, --dry-run) and every folder made from it go when the run ends.
-        yield _copy_into(path, scratch_dir, scratch), (scratch_dir if scratch else None)
+        yield _copy_into(path, scratch_dir, scratch, refusal), (scratch_dir if scratch else None)
     finally:
         _remove_scratch_dir(scratch_dir, path)
 
@@ -72,11 +74,11 @@ def _new_scratch_dir() -> str:
     return tempfile.mkdtemp(dir=root, prefix="run-")
 
 
-def _copy_into(path: str, into: str, scratch: bool) -> str:
-    """Copy the album folder into `into` and return the copy's path."""
+def _copy_into(path: str, into: str, scratch: bool, refusal: str | None) -> str:
+    """Copy the album folder into `into` and return the copy's path; `refusal` is why it must not be rewritten."""
     dest = os.path.join(into, os.path.basename(path.rstrip(os.sep)))
-    if not scratch:
-        why = "It is in library_dirs, so salmon works on a copy and never modifies the library album."
+    if not scratch and refusal is not None:
+        why = f"{refusal[0].upper()}{refusal[1:]}, so salmon works on a copy and never modifies the album."
     elif dryrun.active():
         why = "A dry run works on a copy, so the source is never modified."
     else:
@@ -91,7 +93,8 @@ def _copy_into(path: str, into: str, scratch: bool) -> str:
     if not scratch:
         click.secho(f"The renamed copy goes into {cfg.directory.download_directory} and stays there.", fg="cyan")
     try:
-        # A real copy: a hardlink shares the inode, so a later tag write would reach the source.
+        # A real copy: a hardlink shares the inode, so a later tag write would reach the source. Symlinks are
+        # followed (symlinks=False), so the copy holds the files they lead to, never a link to them.
         shutil.copytree(path, dest)
     except OSError as error:
         raise UploadError(f"Could not copy {path} to {dest}: {error}") from error

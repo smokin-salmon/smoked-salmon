@@ -1,15 +1,73 @@
 import os
 import re
+import stat
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import TypeVar, cast
+from typing import Any, TypeVar, cast
 
 import anyio
+import asyncclick as click
 from tqdm import tqdm
 
 from salmon import cfg
 
 T = TypeVar("T")
+
+
+class AlbumPath(click.Path):
+    """A click.Path resolved as resolve_path=True does, except a symlink as its last part, which is kept.
+
+    So an album folder or file that is a symlink reaches the command as one, and rewrite_refusal sees it, instead of
+    as the folder it leads to, which salmon would then rewrite in place.
+    """
+
+    def convert(self, value: Any, param: click.Parameter | None, ctx: click.Context | None) -> Any:
+        path = os.fsdecode(super().convert(value, param, ctx))
+        head, tail = os.path.split(path.rstrip(os.sep) or path)
+        if tail in ("", os.curdir, os.pardir):
+            return os.path.realpath(path)
+        # realpath, not abspath, on the rest: the filesystem takes "link/.." from where the link leads.
+        return os.path.join(os.path.realpath(head or os.curdir), tail)
+
+
+def shares_files(path: str) -> bool:
+    """Whether path is a symlink, or holds a symlink or a file with another hardlink.
+
+    A tag write goes into the shared inode, or through the symlink, so rewriting such a folder in place changes the
+    files of another folder too (often a torrent client's, which then fails its recheck). An entry that cannot be read
+    counts as sharing: it could hide a link.
+    """
+    if os.path.islink(path):
+        return True
+    if not os.path.isdir(path):
+        try:
+            return os.path.isfile(path) and os.stat(path).st_nlink > 1
+        except OSError:  # Gone between the two calls.
+            return True
+    errors: list[OSError] = []
+    for root, folders, files in os.walk(path, onerror=errors.append):
+        for name in (*folders, *files):
+            try:
+                entry = os.lstat(os.path.join(root, name))
+            except OSError:  # Gone or unreadable mid-walk.
+                return True
+            if stat.S_ISLNK(entry.st_mode) or (stat.S_ISREG(entry.st_mode) and entry.st_nlink > 1):
+                return True
+    return bool(errors)
+
+
+def rewrite_refusal(path: str) -> str | None:
+    """Why salmon must not rewrite or delete the files of path in place, or None if it may.
+
+    Commands that would (compress, sanitize) refuse with this reason; salmon up and salmon tag work on a copy.
+    """
+    if cfg.directory.is_library_path(path):
+        return "it is in library_dirs"
+    if (library := cfg.directory.library_inside(path)) is not None:
+        return f"it holds the library folder {library}"
+    if shares_files(path):
+        return "it shares files with another folder through a hardlink or symlink"
+    return None
 
 
 def get_audio_files(path, sort_by_tracknumber=False):
