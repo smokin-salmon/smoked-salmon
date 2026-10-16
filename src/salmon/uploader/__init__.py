@@ -85,6 +85,7 @@ from salmon.uploader.dupe_checker import (
     held_formats,
     print_recent_upload_results,
     print_torrents,
+    recheck_edition,
     resolve_existing_group,
 )
 from salmon.uploader.preassumptions import confirm_group_upload, print_preassumptions, validate_skip_flac_source
@@ -932,6 +933,8 @@ async def _upload_staged(
     if flac_group is not None and (refusal := validate_skip_flac_source(path, rls_data)):
         return click.secho(f"\n{refusal}", fg="red", bold=True)
     source_flac = None
+    # The release the first tracker's group was picked for, as it was then: None for a group given with -g.
+    weighed_against: dict[str, Any] | None = None
 
     dupe_searchstrs: list[str] = []
     # A release the first tracker's list forbids gets no group search there, so no prompt to pick a group. The
@@ -983,6 +986,8 @@ async def _upload_staged(
                 group_id = await resolve_existing_group(
                     gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
                 )
+                # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
+                weighed_against = dict(rls_data)
 
             spectral_ids = None
             lossy_master: bool = False
@@ -1033,6 +1038,10 @@ async def _upload_staged(
             if not group_id and not first_listed:
                 group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)
                 click.echo()
+            elif group_id and flac_group is None and not first_listed:
+                # The review may have moved the release into an edition the group holds. With
+                # --skip-flac-upload, choose_source_flac below weighs the reviewed edition instead.
+                group_id = await recheck_edition(gazelle_site, group_id, metadata, weighed_against)
             # From here on, the review may have changed the artists, title or catno, so search strings and
             # our title come from the reviewed metadata, not the pre-review rls_data.
             searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
@@ -1187,11 +1196,7 @@ async def _upload_staged(
                     if flac_url and source_flac is not None:
                         click.secho(f"\nNot uploading the FLAC: transcoding from {flac_url}", fg="yellow")
                         url = flac_url
-                        formats = {
-                            option["name"]: downconversion_format(option)
-                            for option in get_downconversion_options(rls_data, track_data, quiet=True)
-                        }
-                        held = held_formats(flac_group or {}, metadata, source_flac, formats)
+                        held = _held_conversions(flac_group or {}, metadata, source_flac, rls_data, track_data)
                     else:
                         group_link = f"{gazelle_site.base_url}/torrents.php?id={group_id}" if group_id else source_url
                         torrent_id, group_id, torrent_path, torrent_content, url = await upload_and_report(
@@ -1222,7 +1227,9 @@ async def _upload_staged(
                                 f"\nNo group id came back for {url}: no conversions are offered for it.", fg="yellow"
                             )
                         elif not dryrun.active():
-                            await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+                            group = await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
+                            # Read from the group just printed: no request of its own.
+                            held = _held_conversions(group, metadata, {"id": torrent_id}, rls_data, track_data)
 
                         if spectrals_after:
                             # Once, on the first torrent up, whether or not the run goes on to another tracker.
@@ -1549,6 +1556,30 @@ def downconversion_format(task: dict[str, Any]) -> tuple[str, str]:
     if task["action"] == "transcode":
         return "MP3", {"320": "320", "V0": "V0 (VBR)"}[task["encoding"]]
     return "FLAC", "Lossless" if task["target_bitdepth"] == 16 else "24bit Lossless"
+
+
+def _held_conversions(
+    group: dict[str, Any],
+    release: dict[str, Any],
+    source_flac: dict[str, Any],
+    rls_data: dict[str, Any],
+    track_data: dict[str, Any],
+) -> set[str]:
+    """The names of the conversions offered for this release that its edition in the group already holds.
+
+    Args:
+        group: The group, as the tracker's torrentgroup API returns it.
+        release: The reviewed release metadata.
+        source_flac: The FLAC the conversions are made from (the torrent just uploaded, or the one
+            --skip-flac-upload transcodes), which never counts as held.
+        rls_data: The release data the conversions are offered for.
+        track_data: The tracks' audio info.
+    """
+    formats = {
+        option["name"]: downconversion_format(option)
+        for option in get_downconversion_options(rls_data, track_data, quiet=True)
+    }
+    return held_formats(group, release, source_flac, formats)
 
 
 def conversion_kind(task: dict[str, Any]) -> str:

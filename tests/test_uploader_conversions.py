@@ -14,6 +14,7 @@ import msgspec
 import pytest
 from asyncclick.testing import CliRunner
 from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+    FakeTracker,
     _album,
     _returning,
     _returning_async,
@@ -313,8 +314,20 @@ def test_the_config_refuses_a_conversion_named_twice() -> None:
 # End to end, against the fake tracker
 
 
-def _run_conversion_up(monkeypatch, torrents: Path, args: tuple[str, ...], *, confirm=None, prompt=None, **kwargs: Any):
-    """Run `salmon up -yyy` on a 24-bit 48 kHz FLAC against the fake tracker; its conversions are made-up files."""
+def _run_conversion_up(
+    monkeypatch,
+    torrents: Path,
+    args: tuple[str, ...],
+    *,
+    confirm=None,
+    prompt=None,
+    group_torrents: tuple[dict[str, Any], ...] = (),
+    **kwargs: Any,
+):
+    """Run `salmon up -yyy` on a 24-bit 48 kHz FLAC against the fake tracker; its conversions are made-up files.
+
+    The group the FLAC goes into holds `group_torrents`: none by default, so no conversion is held back.
+    """
     album = _album(torrents.parent / "seeding" / "Album")
     names = ["01. one.flac", "02. two.flac"]
 
@@ -348,6 +361,7 @@ def _run_conversion_up(monkeypatch, torrents: Path, args: tuple[str, ...], *, co
         torrents,
         args,
         multi_tracker_upload=False,
+        tracker=FakeTracker(group_torrents=list(group_torrents)),
         construct_rls_data=_returning_async(rls_data),
         concat_track_data=_returning(source_tracks),
         check_spectrals=_returning_async((False, None)),
@@ -398,3 +412,61 @@ def test_yyy_with_none_sends_only_the_flac(monkeypatch, torrents: Path) -> None:
     assert run.result.exit_code == 0, run.result.output
     assert len(_upload_posts(run)) == 1
     assert "Processing:" not in run.result.output
+
+
+# The group the FLAC went into already holds the edition's 16-bit FLAC (#717)
+
+# The stubbed review's edition: WEB, 2020, Label.
+EDITION_16BIT_FLAC = {
+    "id": 11,
+    "media": "WEB",
+    "format": "FLAC",
+    "encoding": "Lossless",
+    "remastered": True,
+    "remasterYear": 2020,
+    "remasterTitle": "",
+    "remasterRecordLabel": "Label",
+    "remasterCatalogueNumber": "CAT1",
+}
+HELD_16BIT = "DUPE RISK: this edition already has 16bit 48.0 kHz; the site removes exact duplicates."
+
+
+def test_yyy_leaves_out_the_16bit_flac_the_edition_holds(monkeypatch, torrents: Path) -> None:
+    run = _run_conversion_up(monkeypatch, torrents, (), group_torrents=(EDITION_16BIT_FLAC,))
+
+    assert run.result.exit_code == 0, run.result.output
+    assert HELD_16BIT in run.result.output
+    assert "Processing: 16bit" not in run.result.output
+    # The 24-bit FLAC, then the MP3s.
+    assert len(_upload_posts(run)) == 3
+    assert _formats(run)[1:] == ["MP3 320", "MP3 V0 (VBR)"]
+
+
+def test_the_prompt_leaves_out_the_16bit_flac_the_edition_holds(monkeypatch, torrents: Path) -> None:
+    asked: list[Any] = []
+
+    def confirm(text: str, default: bool | None = False, **_kwargs: Any) -> bool:
+        if "check downconversion options" in text:
+            asked.append(default)
+        return True if default is None else default
+
+    async def prompt(text: str, default: Any = None, **_kwargs: Any) -> Any:
+        if "Select formats to convert" in text:
+            asked.append(default)
+        return default
+
+    run = _run_conversion_up(
+        monkeypatch,
+        torrents,
+        (),
+        yes_all=False,
+        confirm=confirm,
+        prompt=prompt,
+        group_torrents=(EDITION_16BIT_FLAC,),
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    # Asked to check, then 1. 16bit 48.0 kHz, 2. MP3 320, 3. MP3 V0: the MP3s are selected.
+    assert asked == [True, "2 3"]
+    assert HELD_16BIT in run.result.output
+    assert _formats(run)[1:] == ["MP3 320", "MP3 V0 (VBR)"]

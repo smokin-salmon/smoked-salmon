@@ -642,6 +642,54 @@ async def _prompt_for_group_id(
             return None
 
 
+def _group_as_result(group: dict) -> dict:
+    """A group as the torrentgroup API returns it, with the fields of a search result that print_torrents reads."""
+    info = group["group"]
+    artist = "".join(a["name"] + " " for a in info["musicInfo"]["artists"])
+    return {**group, "groupName": info["name"], "artist": artist, "groupId": info["id"], "groupYear": info["year"]}
+
+
+async def recheck_edition(
+    gazelle_site: "BaseGazelleApi", group_id: int, release: dict[str, Any], weighed_against: dict[str, Any] | None
+) -> int | None:
+    """Weigh a group picked or given before the review against the reviewed edition.
+
+    The group is fetched once. Only a torrent of the reviewed edition that the pick did not already name for
+    weighed_against asks again, with abort as the default, as the first check does.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        group_id: The group picked before the review, or given with --group-id.
+        release: The reviewed release.
+        weighed_against: The release the group was picked for, as it was then; None for a group given with
+            --group-id, which nothing weighed.
+
+    Returns:
+        The group to upload to, or None for a new group.
+
+    Raises:
+        click.Abort: If the user aborts.
+        AbortAndDeleteFolder: If the user chooses to delete the music folder.
+    """
+    try:
+        group = _group_as_result(await gazelle_site.torrentgroup(group_id))
+    except RequestError as err:
+        click.secho(
+            f"\nCould not re-check group {group_id} on {gazelle_site.site_string} against the reviewed edition "
+            f"({err}): check it holds no torrent like this one.",
+            fg="red",
+            bold=True,
+        )
+        return group_id
+    named = {torrent.get("id") for torrent in held_in_group(group, weighed_against)}
+    if all(torrent.get("id") in named for torrent in held_in_group(group, release)):
+        return group_id
+    click.secho(f"\nThe reviewed edition is already in group {group_id}:", fg="red", bold=True)
+    # The fetched group's own id: one given with --group-id is text, which would not find it and fetch it again.
+    confirmed = await _confirm_group_id(gazelle_site, group["groupId"], [group], release=release)
+    return group_id if confirmed else None
+
+
 async def print_torrents(
     gazelle_site: "BaseGazelleApi",
     group_id: int,
@@ -662,15 +710,7 @@ async def print_torrents(
     # If rset is not provided, fetch it from the API
     if rset is None:
         try:
-            fetched_rset = await gazelle_site.torrentgroup(group_id)
-            # account for differences between search result and group result json
-            fetched_rset["groupName"] = fetched_rset["group"]["name"]
-            fetched_rset["artist"] = ""
-            for a in fetched_rset["group"]["musicInfo"]["artists"]:
-                fetched_rset["artist"] += a["name"] + " "
-            fetched_rset["groupId"] = fetched_rset["group"]["id"]
-            fetched_rset["groupYear"] = fetched_rset["group"]["year"]
-            rset = fetched_rset
+            rset = _group_as_result(await gazelle_site.torrentgroup(group_id))
         except RequestFailedError as err:
             click.secho(f"{group_id} does not exist on {gazelle_site.site_string} ({err}).", fg="red")
             raise click.Abort from None

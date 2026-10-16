@@ -286,12 +286,16 @@ def test_a_web_upload_into_a_group_sends_what_salmon_up_sends(
         args=("-g", str(GROUP_ID), "--request", "41"),
         input="\n" * 30,
         multi_tracker_upload=False,
+        # A group without the edition's WEB FLAC: one holding it would ask again, with abort the default.
+        tracker=FakeTracker(group_torrents=[]),
     )
     assert cli.result.exit_code == 0, cli.result.output
     image_uploads.clear()
     monkeypatch.setattr(cfg.directory, "download_directory", str(downloads))
     album = _album(downloads / "Album")
-    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents, multi_tracker_upload=False)
+    tracker, _queued, _logins = fake_upload_world(
+        monkeypatch, torrents, multi_tracker_upload=False, tracker=FakeTracker(group_torrents=[])
+    )
     params = {"trackers": ["RED"], "group_id": GROUP_ID, "request": "41"}
 
     async def test(client: TestClient, manager: JobManager) -> None:

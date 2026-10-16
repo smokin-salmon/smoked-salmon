@@ -343,7 +343,8 @@ def _run_up(monkeypatch, album: Path, **fakes: Any) -> tuple[Any, list[str], lis
         "check_folder_structure": _returning_async(),
         "concat_track_data": _returning({"01. one.flac": {"sample rate": 44100}}),
         "resolve_cover_url": _returning_async((True, None)),
-        "print_torrents": _returning_async(),
+        "print_torrents": _returning_async({}),
+        "recheck_edition": _same_group,
         "UploadManager": FakeUploadManager,
         "transcode_folder": transcode,
         "upload_and_report": upload_and_report,
@@ -769,3 +770,8 @@ def test_conversions_from_two_windows_shares_go_to_different_folders(monkeypatch
 
     assert first == os.path.join(str(tmp_path), "UNC", "server", "music-1", "A")
     assert second == os.path.join(str(tmp_path), "UNC", "server", "music1", "A")
+
+
+async def _same_group(_site, group_id, *_args):
+    """Stands in for recheck_edition: the group picked or given is kept."""
+    return group_id

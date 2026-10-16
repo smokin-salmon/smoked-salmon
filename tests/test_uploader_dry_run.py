@@ -98,10 +98,12 @@ def _group() -> dict[str, Any]:
 class FakeTracker:
     """A local Gazelle tracker that answers what an upload asks for, and records every request it gets."""
 
-    def __init__(self) -> None:
+    def __init__(self, group_torrents: list[dict[str, Any]] | None = None) -> None:
+        """`group_torrents` replaces the torrents of the group torrentgroup answers (_group's WEB FLAC)."""
         self.sent: list[Sent] = []
         self.url = ""
         self._next_torrent_id = FIRST_TORRENT_ID
+        self._group_torrents = group_torrents
 
     async def _handle(self, request: web.Request) -> web.StreamResponse:
         fields: list[tuple[str, Any]] = []
@@ -116,7 +118,10 @@ class FakeTracker:
         if request.path == "/ajax.php" and action in ("browse", "requests"):
             return _success({"results": []})
         if request.path == "/ajax.php" and action == "torrentgroup":
-            return _success(_group())
+            group = _group()
+            if self._group_torrents is not None:
+                group["torrents"] = self._group_torrents
+            return _success(group)
         if request.path == "/ajax.php" and action == "upload" and request.method == "POST":
             torrent_id, self._next_torrent_id = self._next_torrent_id, self._next_torrent_id + 1
             return _success({"torrentid": torrent_id, "groupid": GROUP_ID})
