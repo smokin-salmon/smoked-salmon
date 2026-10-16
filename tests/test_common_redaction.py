@@ -53,10 +53,12 @@ def test_redact_command_shows_only_allowlisted_flag_values() -> None:
     assert "Authorization" not in shown
 
 
-def test_redact_command_keeps_the_default_config_extra_args() -> None:
-    # The extra_args example in config.default.toml has nothing to hide.
+def test_redact_command_masks_the_path_override_but_keeps_the_rest_of_the_default_config_extra_args() -> None:
+    # The path override is often a home folder naming the seedbox account.
     args = ["rclone", "copy", "a", "b:c", "--checksum", "-P", "--sftp-path-override", "@/volume3"]
-    assert redact_command(args, secret_values(args)) == "rclone copy a b:c --checksum -P --sftp-path-override @/volume3"
+    assert (
+        redact_command(args, secret_values(args)) == "rclone copy a b:c --checksum -P --sftp-path-override '[REDACTED]'"
+    )
 
 
 def test_a_url_password_in_an_argument_is_masked() -> None:

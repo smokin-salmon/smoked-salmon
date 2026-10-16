@@ -21,7 +21,6 @@ _SHOWN_FLAGS = frozenset(
         "--checkers",
         "--bwlimit",
         "--config",
-        "--sftp-path-override",
         "--timeout",
         "--contimeout",
         "--retries",
