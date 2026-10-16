@@ -10,7 +10,6 @@ from urllib import parse
 
 import anyio
 import asyncclick as click
-import pyperclip
 
 import salmon.checks
 import salmon.converter
@@ -21,7 +20,7 @@ import salmon.tagger
 import salmon.trackers
 import salmon.uploader
 from salmon import cfg, interaction
-from salmon.common import commandgroup, get_audio_files, str_to_int_if_int
+from salmon.common import clipboard_copy, commandgroup, get_audio_files, str_to_int_if_int
 from salmon.common.redaction import redact_secrets
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS
@@ -84,7 +83,7 @@ async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
         output = format_spectral_urls(list(audio_info.keys()), spectral_urls, format_output)
         click.secho(output)
         if cfg.upload.description.copy_uploaded_url_to_clipboard:
-            pyperclip.copy(output)
+            clipboard_copy(output)
 
     if no_delete_specs:
         click.secho(f"Spectrals saved to {spath}", fg="green")
@@ -167,7 +166,7 @@ async def descgen(urls: tuple[str, ...]) -> None:
     click.secho("\nDescription:\n", fg="yellow", bold=True)
     click.echo(description)
     if cfg.upload.description.copy_uploaded_url_to_clipboard:
-        pyperclip.copy(description)
+        clipboard_copy(description)
 
 
 @commandgroup.command()

@@ -2,10 +2,9 @@ from collections.abc import Callable, Sequence
 
 import anyio
 import asyncclick as click
-import pyperclip
 
 from salmon import cfg, dryrun, interaction
-from salmon.common import AliasedCommands, commandgroup
+from salmon.common import AliasedCommands, clipboard_copy, commandgroup
 from salmon.config.image_hosts import cover_refusal, spectrals_refusal
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, imgbb, imgbox, oeimg, ptscreens, ra, red
@@ -159,7 +158,7 @@ async def upload_images(filepaths: tuple, image_host, copy_to_clipboard: bool = 
     for url in urls:
         click.secho(url)
     if copy_to_clipboard and cfg.upload.description.copy_uploaded_url_to_clipboard:
-        pyperclip.copy("\n".join(urls))
+        clipboard_copy("\n".join(urls))
     return urls
 
 

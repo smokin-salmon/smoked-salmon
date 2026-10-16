@@ -22,6 +22,7 @@ from typing import Any
 from urllib.parse import unquote
 
 import msgspec
+import pyperclip
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
@@ -483,7 +484,7 @@ def test_the_same_file_picked_twice_is_uploaded_once(monkeypatch: pytest.MonkeyP
 def test_an_upload_never_fills_the_servers_clipboard(monkeypatch: pytest.MonkeyPatch, world: World) -> None:
     monkeypatch.setattr(cfg.upload.description, "copy_uploaded_url_to_clipboard", True)
     copied: list[str] = []
-    monkeypatch.setattr(salmon.images.pyperclip, "copy", copied.append)
+    monkeypatch.setattr(pyperclip, "copy", copied.append)
     picture = world.downloads / "front.png"
     picture.write_bytes(png())
     host = FakeHost()
@@ -714,7 +715,7 @@ def _store_run(
 def test_the_description_is_the_one_the_command_makes_for_the_same_pages(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ssrf, "ALLOWED", LOOPBACK)
     copied: list[str] = []
-    monkeypatch.setattr(salmon.commands.pyperclip, "copy", copied.append)
+    monkeypatch.setattr(pyperclip, "copy", copied.append)
     monkeypatch.setattr(cfg.upload.description, "copy_uploaded_url_to_clipboard", True)
 
     async def test(client: TestClient, manager: JobManager, store: FakeStore) -> None:
