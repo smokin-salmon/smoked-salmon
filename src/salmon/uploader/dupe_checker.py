@@ -839,7 +839,7 @@ def _catno_note(torrent: dict, group: dict, release: dict) -> str:
 async def choose_source_flac(group: dict, release: dict) -> dict | None:
     """Choose the FLAC in the release's edition of an existing group that the transcodes are made from.
 
-    With several matching FLACs the user picks one; --yes-all stops instead of guessing.
+    With several matching FLACs the user picks one; -yyy stops instead of guessing.
 
     Args:
         group: The group, as the tracker's torrentgroup API returns it.
@@ -867,7 +867,7 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
         click.echo(f"{i:02d} >> {describe_torrent(t, group_info)}")
     if await interaction.assume_defaults():
         click.secho(
-            "Not picking the FLAC the transcodes are made from with --yes-all. Run without it to choose.",
+            "Not picking the FLAC the transcodes are made from with -yyy (upload.yes_all). Run without it to choose.",
             fg="red",
             bold=True,
         )

@@ -45,13 +45,18 @@ def _resolve(group_id: int | None = None) -> tuple[bool, str | None]:
     return anyio.run(salmon.uploader.resolve_cover_url, RedApi(), group_id, {}, "/release", None, False)
 
 
-def test_yes_all_does_not_upload_a_new_group_without_a_cover(monkeypatch) -> None:
+def test_yes_all_does_not_upload_a_new_group_without_a_cover(monkeypatch, capsys) -> None:
     monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", True)
     _covers(monkeypatch, None)
     asked = _answers(monkeypatch)
 
-    assert _resolve() == (False, None)
+    resolved = _resolve()
+
+    out = capsys.readouterr().out
+    assert resolved == (False, None)
     assert asked == []
+    assert "Not uploading a new group without a cover image with -yyy (upload.yes_all)." in out
+    assert "--yes-all" not in out
 
 
 @pytest.mark.parametrize("answer", ["n", "", "no", "x"])

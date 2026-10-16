@@ -11,7 +11,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 - **Upconvert Detection** – Checks 24-bit flac files for potential upconverts.
 - **MQA Detection** – Checks files for common MQA markers.
 - **Duplicate Upload Detection** – Prevents redundant uploads.  
-- **Do-Not-Upload Lists** – salmon ships a copy of RED's and OPS's Do-Not-Upload lists (fakes, unreleased albums, bootlegs, some whole discographies and labels; some entries only for one media, such as WEB), and never uploads a listed release to that tracker, with or without `--yes-all`: it says which entry matched and why, and the run goes on to the other trackers. A legitimate copy needs that tracker's staff approval first. The maintainers update the lists with salmon's releases; `cross-upload` checks the target's list too.  
+- **Do-Not-Upload Lists** – salmon ships a copy of RED's and OPS's Do-Not-Upload lists (fakes, unreleased albums, bootlegs, some whole discographies and labels; some entries only for one media, such as WEB), and never uploads a listed release to that tracker, with or without `-yyy`: it says which entry matched and why, and the run goes on to the other trackers. A legitimate copy needs that tracker's staff approval first. The maintainers update the lists with salmon's releases; `cross-upload` checks the target's list too.  
 - **Spectral Analysis** – Generates, compresses, and verifies spectrals, shown on a web page during upload.  
 - **Frequency Analysis** – Before the lossy-master question, measures the two marks a lossy encoder leaves in each track: a brick-wall lowpass where MP3 and AAC encoders cut, and highs that flip between content and digital silence. It prints what it measured, shows an averaged-spectrum plot next to each track's spectrals (kept local, never uploaded), and makes "yes" the question's default when a track carries the marks. It is a measurement, not a verdict: high-bitrate AAC can leave neither mark.  
 - **Spectral Upload** – Can generate spectrals for an existing upload (based on local files), and update the release description.  
@@ -320,7 +320,7 @@ and removes the copy when the run ends. The transcodes land in `download_directo
 
 The transcode descriptions link to the group's FLAC in this release's edition (same media, encoding,
 year and edition title, as reviewed; the catalogue number is not compared, since sites and uploaders
-write it in different conventions); if there are several, salmon asks which one (with `--yes-all` it
+write it in different conventions); if there are several, salmon asks which one (with `-yyy` it
 stops). Formats the edition already has are flagged as a dupe risk and left out unless you pick them
 by number.
 
@@ -353,7 +353,7 @@ with `--path`). salmon first reads each torrent and checks its files, its log an
 plan. The files are checked against the source torrent's pieces, so an album still downloading (its files
 already at full size) is not uploaded: for an ID or URL, salmon downloads the source `.torrent` once (through
 the tracker's API with its API key, otherwise with its session cookie; never with a freeleech token). When pieces differ, salmon says how many and asks whether to go on (default no;
-`--yes-all` stops). From DIC, only a `.torrent` file INPUT gets this check; by ID or URL its files are checked
+`-yyy` stops). From DIC, only a `.torrent` file INPUT gets this check; by ID or URL its files are checked
 by size only, and the plan says so. Then, for each release, it checks the target for duplicates as `up` does and uploads it with the
 source's group and torrent data. The album folder is never changed: the new torrent seeds from the same files,
 and a seedbox only gets the new torrent, not another copy. `--dry-run` reads from both trackers and sends

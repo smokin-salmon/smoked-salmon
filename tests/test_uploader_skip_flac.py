@@ -196,12 +196,15 @@ def test_several_matching_flacs_can_abort(monkeypatch) -> None:
     assert _choose(_group(_torrent(11), _torrent(12))) is None
 
 
-def test_several_matching_flacs_stop_with_yes_all(monkeypatch) -> None:
+def test_several_matching_flacs_stop_with_yes_all(monkeypatch, capsys) -> None:
     monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", True)
     asked = _answers(monkeypatch)
 
     assert _choose(_group(_torrent(11), _torrent(12))) is None
     assert asked == []
+    out = capsys.readouterr().out
+    assert "Not picking the FLAC the transcodes are made from with -yyy (upload.yes_all). Run without it" in out
+    assert "--yes-all" not in out
 
 
 def _stub(monkeypatch, fakes: dict[str, Any]) -> None:
