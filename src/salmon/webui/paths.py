@@ -25,6 +25,8 @@ IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".gif", ".webp"})
 # Entries of one folder looked at, and folders listed, at most: a listing past them says it was cut.
 MAX_SCANNED = 5000
 MAX_LISTED = 500
+# The orders the folder browser lists folders in: the most recently changed or copied in first, or by name.
+SORTS = ("newest", "name")
 # Entries looked at to mark a listed folder as holding audio (it or its disc folders).
 MAX_MARK_SCAN = 200
 # Folders walked to find an audio file in an album folder: past them, it is not an album.
@@ -236,20 +238,39 @@ def _marked_audio(path: str) -> bool:
     return False
 
 
-def listing(raw: str | None, images: bool = False) -> dict[str, Any]:
+def _changed(entry: os.DirEntry[str]) -> float:
+    """When the folder entry last changed or was copied in: the later of its mtime and ctime, not following a link.
+
+    A folder copied with ``cp -a`` or ``rsync -a`` keeps its source's mtime, but its ctime (its creation time on
+    Windows) is the copy's. ``DirEntry`` caches the stat, so this costs one syscall per folder. An entry that
+    vanished mid listing counts as the oldest.
+    """
+    try:
+        found = entry.stat(follow_symlinks=False)
+    except OSError:
+        return float("-inf")
+    return max(found.st_mtime, found.st_ctime)
+
+
+def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict[str, Any]:
     """What the folder browser shows: the roots, or the folders inside one folder of a root. Changes nothing.
 
     Folders whose name starts with a dot and symlinks are left out. Each folder listed says whether it holds
     audio files (or its disc folders do). At most ``MAX_LISTED`` folders are listed, out of the first
-    ``MAX_SCANNED`` entries; ``truncated`` says when the folder holds more.
+    ``MAX_SCANNED`` entries (in the order the disk gives them: a folder of more entries is not read past them);
+    ``truncated`` says when the folder holds more. The folders are sorted before that cut: ``sort`` is
+    ``"newest"`` (the default: the most recently changed or copied in first, ties by name) or ``"name"``, and
+    the answer says which. The roots keep the order they are configured in, and the image files go by name.
 
     With `images`, the folder's image files are listed too (``images``, at most ``MAX_LISTED``, with their sizes):
     the regular files, not symlinks, whose name says JPEG, PNG, GIF or WebP, in no folder of .torrent files or a
     seedbox's. What a file is, the upload checks again.
 
     Raises:
-        PathRefused: A path outside the roots, or not a folder.
+        PathRefused: A path outside the roots, or not a folder, or a sort that is not one of ``SORTS``.
     """
+    if sort not in SORTS:
+        raise PathRefused(400, f"Unknown sort: use one of {', '.join(SORTS)}.")
     found = roots()
     shown_roots = [root.shown() for root in found]
     if not raw:
@@ -260,6 +281,7 @@ def listing(raw: str | None, images: bool = False) -> dict[str, Any]:
             "audio": False,
             "folders": [{**root.shown(), "audio": _marked_audio(root.path)} for root in found],
             "truncated": False,
+            "sort": sort,
             "roots": shown_roots,
             **({"images": []} if images else {}),
         }
@@ -268,7 +290,7 @@ def listing(raw: str | None, images: bool = False) -> dict[str, Any]:
         raise PathRefused(403, "Refusing to list a folder outside download_directory and library_dirs.")
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
-    names: list[tuple[str, str]] = []
+    names: list[tuple[str, str, float]] = []
     pictures: list[tuple[str, str, int]] = []
     truncated = False
     audio = False
@@ -283,7 +305,7 @@ def listing(raw: str | None, images: bool = False) -> dict[str, Any]:
                 if entry.name.startswith("."):
                     continue
                 if entry.is_dir(follow_symlinks=False):
-                    names.append((entry.name, entry.path))
+                    names.append((entry.name, entry.path, _changed(entry) if sort == "newest" else 0.0))
                 elif entry.is_file(follow_symlinks=False):
                     if not audio and _is_audio(entry.name):
                         audio = True
@@ -291,7 +313,8 @@ def listing(raw: str | None, images: bool = False) -> dict[str, Any]:
                         pictures.append((entry.name, entry.path, entry.stat(follow_symlinks=False).st_size))
     except PermissionError:
         raise PathRefused(403, "salmon may not read this folder.") from None
-    names.sort(key=lambda item: item[0].lower())
+    # Sorted before the cut, so the newest folders are always inside it.
+    names.sort(key=lambda item: (-item[2], item[0].lower()) if sort == "newest" else item[0].lower())
     pictures.sort(key=lambda item: item[0].lower())
     if len(names) > MAX_LISTED or len(pictures) > MAX_LISTED:
         truncated = True
@@ -303,8 +326,9 @@ def listing(raw: str | None, images: bool = False) -> dict[str, Any]:
         "parent": parent if _within(parent, found) and parent != path else None,
         "library": cfg.directory.is_library_path(path),
         "audio": audio or _marked_audio(path),
-        "folders": [{"name": name, "path": full, "audio": _marked_audio(full)} for name, full in names],
+        "folders": [{"name": name, "path": full, "audio": _marked_audio(full)} for name, full, _ in names],
         "truncated": truncated,
+        "sort": sort,
         "roots": shown_roots,
     }
     if images:

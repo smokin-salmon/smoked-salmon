@@ -17,26 +17,52 @@
     audio: boolean
     folders: Folder[]
     truncated: boolean
+    sort: Sort
     roots: { path: string; name: string; library: boolean }[]
+  }
+
+  type Sort = 'newest' | 'name'
+  const SORT_KEY = 'salmon.folderSort'
+
+  /** The viewer's last choice; blocked or cleared storage (a private window) falls back to newest first. */
+  function remembered(): Sort {
+    try {
+      return localStorage.getItem(SORT_KEY) === 'name' ? 'name' : 'newest'
+    } catch {
+      return 'newest'
+    }
   }
 
   let open = $state(false)
   let listing = $state<Listing | null>(null)
   let error = $state('')
   let loading = $state(false)
+  let sort = $state<Sort>(remembered())
 
   /** The roots (no path), or the folders in one; the server refuses anything outside the roots. */
   async function browse(path?: string | null) {
     loading = true
     error = ''
     try {
-      listing = await apiGet<Listing>(path ? `/browse?path=${encodeURIComponent(path)}` : '/browse')
+      const query = path ? `path=${encodeURIComponent(path)}&sort=${sort}` : `sort=${sort}`
+      listing = await apiGet<Listing>(`/browse?${query}`)
       open = true
     } catch (e) {
       error = String(e)
     } finally {
       loading = false
     }
+  }
+
+  function sortBy(next: Sort) {
+    if (next === sort) return
+    sort = next
+    try {
+      localStorage.setItem(SORT_KEY, next)
+    } catch {
+      // Not remembered: the choice still holds until the page is closed.
+    }
+    if (listing) void browse(listing.path)
   }
 
   function select(path: string) {
@@ -76,6 +102,21 @@
         <span class="mono grow">{listing.path ?? 'Your folders'}</span>
         {#if listing.path && listing.audio}
           <button class="btn small" onclick={() => select(listing!.path!)}>Select this folder</button>
+        {/if}
+        {#if listing.path}
+          <span
+            class="sorts"
+            role="group"
+            aria-label="Sort folders"
+            title="Newest is by when the folder was last changed or copied in"
+          >
+            <button class="sort" class:current={sort === 'newest'} aria-pressed={sort === 'newest'} onclick={() => sortBy('newest')}
+              >Newest</button
+            >
+            <button class="sort" class:current={sort === 'name'} aria-pressed={sort === 'name'} onclick={() => sortBy('name')}
+              >Name</button
+            >
+          </span>
         {/if}
         <button class="btn small secondary" onclick={() => (open = false)}>Close</button>
       </div>
@@ -133,6 +174,23 @@
     cursor: pointer;
   }
   .root.current {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+  .sorts {
+    display: inline-flex;
+    gap: 0.25rem;
+  }
+  .sort {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg-raised);
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+  .sort.current {
     border-color: var(--accent);
     color: var(--text);
   }
