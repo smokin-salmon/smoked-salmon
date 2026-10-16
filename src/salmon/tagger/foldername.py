@@ -68,7 +68,8 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
         if original is not None and os.path.samefile(new_path, original):
             raise UploadError(
                 f"Not replacing {new_path}: it is the album this run works on a copy of. "
-                "Rename it, or give this album another name."
+                "Rename it, or give this album another name. "
+                "If it is already uploaded, salmon cross-upload sends it to another tracker."
             )
         if not check or await interaction.confirm(
             click.style(

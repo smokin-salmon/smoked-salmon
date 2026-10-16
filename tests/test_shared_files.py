@@ -292,7 +292,11 @@ def test_up_never_replaces_an_album_sharing_files_that_already_has_the_new_name(
 
     assert (_snapshot(seeding), _snapshot(album), _inodes(album)) == before
     assert uploads == []
-    assert f"Not replacing {album}: it is the album this run works on a copy of" in str(result.exception)
+    assert str(result.exception) == (
+        f"Not replacing {album}: it is the album this run works on a copy of. "
+        "Rename it, or give this album another name. "
+        "If it is already uploaded, salmon cross-upload sends it to another tracker."
+    )
     assert os.listdir(downloads / staging.STAGING_DIR) == []
 
 
