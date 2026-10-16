@@ -408,7 +408,6 @@ def _upload_until_the_source_is_settled(monkeypatch, source: str | None) -> tupl
                 skip_initial_review=False,
                 apply_ai_suggestions=False,
                 rename_into=None,
-                library_album=None,
             )
         )
     return detected_paths, prompted_with

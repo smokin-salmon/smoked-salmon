@@ -6,7 +6,7 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg, interaction
-from salmon.common.files import process_files
+from salmon.common.files import process_files, rewrite_refusal
 
 FLAC_IMPORTANT_REGEXES = [
     # A warning, then flac's "ok" for the decode.
@@ -162,7 +162,7 @@ async def handle_integrity_check(path: str) -> None:
         click.Abort: If the path is neither a file nor a directory.
     """
     # Sanitizing rewrites the files in place.
-    in_library = cfg.directory.protects(path)
+    refusal = rewrite_refusal(path)
     if os.path.isfile(path):
         if not any(path.lower().endswith(ext) for ext in [".flac", ".mp3"]):
             click.secho(f"File '{path}' is not a FLAC or MP3 file.", fg="red", bold=True)
@@ -171,8 +171,8 @@ async def handle_integrity_check(path: str) -> None:
         result = await check_integrity(path)
         click.echo(format_integrity(result))
 
-        if not result.passed and in_library:
-            _no_sanitize_in_library(path)
+        if not result.passed and refusal is not None:
+            _no_sanitize(path, refusal)
         elif (
             not result.passed
             and path.lower().endswith(".flac")
@@ -183,18 +183,17 @@ async def handle_integrity_check(path: str) -> None:
         result = await check_integrity(path)
         click.echo(format_integrity(result))
 
-        if not result.passed and in_library:
-            _no_sanitize_in_library(path)
+        if not result.passed and refusal is not None:
+            _no_sanitize(path, refusal)
         elif not result.passed and await interaction.confirm(click.style(f"\n{sanitize_prompt(result)}", fg="magenta")):
             await sanitize_and_verify(path)
     else:
         raise click.Abort
 
 
-def _no_sanitize_in_library(path: str) -> None:
+def _no_sanitize(path: str, refusal: str) -> None:
     click.secho(
-        f"\nNot offering to sanitize {path}: it is in library_dirs, or holds one, and sanitizing rewrites files. "
-        "salmon up sanitizes a copy.",
+        f"\nNot offering to sanitize {path}: {refusal}, and sanitizing rewrites files. salmon up sanitizes a copy.",
         fg="yellow",
     )
 

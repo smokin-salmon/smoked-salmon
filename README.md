@@ -228,6 +228,7 @@ salmon up "/app/.music/path/to/album" -s WEB
 
 - **Hardlinks**  
   With `hardlinks = true` (the default), salmon hardlinks the release into `download_directory` instead of copying it. A hardlink cannot cross mounts, even two bind mounts of the same disk, so point `download_directory` at a folder inside the music mount (e.g. `/app/.music/seeding`). Otherwise salmon falls back to a full copy.
+  An album whose files already have another hardlink, or that is or holds a symlink (for example a folder your torrent client seeds, hardlinked into your music folder), is never retagged in place: `salmon up` and `salmon tag` work on a real copy, which takes the album's size in disk space, and `salmon compress` and the integrity check's sanitize refuse it.
 
 - **.torrent Directory Mapping**  
   Depending on how you've set `dottorrents_dir` in your `config.toml`, you may need to map an additional directory for `.torrent` file output. Add:
@@ -477,7 +478,8 @@ Also under `[web]`:
   clear. Reach it through a reverse proxy that does TLS and passes the `Host` header on, through an SSH tunnel, or
   over a VPN, unless you trust the whole network. Do not put it on the open internet.
 * The browser can list, and start jobs on, folders inside `download_directory` and `library_dirs` only.
-* A library album is never changed in place. Jobs that retag, rename or delete work on a copy in `download_directory`.
+* A library album is never changed in place, nor is an album that shares files with another folder through a hardlink
+  or symlink. Jobs that retag, rename or delete work on a copy in `download_directory`.
 * The web sends the same tracker requests as the CLI, under the same per-account rate limit, shared by all running
   jobs. The web adds no retries of its own.
 * When a request that changes something may have reached the tracker but salmon did not get the answer, the job ends

@@ -6,6 +6,7 @@ from pprint import pprint
 import asyncclick as click
 
 from salmon.common import commandgroup
+from salmon.common.files import AlbumPath
 from salmon.constants import (
     ARTIST_IMPORTANCES,
     RELEASE_TYPES,
@@ -60,7 +61,7 @@ def validate_encoding(ctx, param, value):
 
 
 @commandgroup.command()
-@click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True))
+@click.argument("path", type=AlbumPath(exists=True, file_okay=False))
 @click.option(
     "--source",
     "-s",
@@ -154,7 +155,8 @@ class TagOptions:
 async def run_tag(options: TagOptions) -> str:
     """Tag an album folder as ``salmon tag`` does.
 
-    An album in library_dirs is tagged as a copy, renamed into download_directory (``staged_source``), never in place.
+    An album in library_dirs, or one sharing files through a hardlink or symlink, is tagged as a copy, renamed into
+    download_directory (``staged_source``), never in place.
 
     Returns:
         The folder as it ends up: the album's, or its copy's, under its new name after a rename.

@@ -14,6 +14,8 @@ download_directory = '.music'
 
 # Curated music folders salmon must never change or delete (e.g. your library). An album inside one is copied
 # (a real copy, never a hardlink) into download_directory before anything touches it, and the upload uses the copy.
+# Set or not, an album that shares files with another folder (a file with a second hardlink, or a symlink, as when
+# a torrent client's folder is hardlinked elsewhere) is copied the same way, and compress and sanitize refuse it.
 # Each entry must exist, must not contain download_directory, dottorrents_dir or tmp_dir, and must not be inside
 # download_directory or tmp_dir (salmon replaces and deletes folders there).
 # library_dirs = ['/data/media/music']

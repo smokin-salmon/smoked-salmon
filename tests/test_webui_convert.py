@@ -303,7 +303,7 @@ def test_compress_refuses_a_library_album_and_a_folder_holding_one(
     async def test(client: TestClient, manager: JobManager) -> None:
         response = await _post(client, "compress", album)
         assert response.status == 403
-        assert (await response.json())["detail"] == f"Not recompressing {album}: it is in library_dirs, or holds one."
+        assert (await response.json())["detail"] == f"Not recompressing {album}: it is in library_dirs."
         # A folder holding a library is refused before, by the album folder rule.
         monkeypatch.setattr(cfg.directory, "library_dirs", [str(roots.library), str(album)])
         for each in (holder, roots.library / "Artist"):
@@ -314,6 +314,30 @@ def test_compress_refuses_a_library_album_and_a_folder_holding_one(
     _with_app(test)
     assert recompressed == []
     assert _tree(roots.library) == before
+
+
+def test_compress_refuses_an_album_sharing_a_file_through_a_hardlink(
+    roots: Roots, recompressed: list[tuple[str, list[str] | None]]
+) -> None:
+    album = _album(roots.downloads / "Album")
+    seeded = roots.outside / "Album"
+    seeded.mkdir()
+    try:
+        os.link(album / "01 Track 1.flac", seeded / "01 Track 1.flac")
+    except OSError as error:
+        pytest.skip(f"this filesystem refuses hardlinks: {error}")
+    before = _tree(roots.downloads, roots.outside)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        response = await _post(client, "compress", album)
+        assert response.status == 403
+        reason = "it shares files with another folder through a hardlink or symlink"
+        assert (await response.json())["detail"] == f"Not recompressing {album}: {reason}."
+        assert manager.jobs == {}
+
+    _with_app(test)
+    assert recompressed == []
+    assert _tree(roots.downloads, roots.outside) == before
 
 
 def test_compress_checks_the_folder_again_when_the_job_starts(
@@ -331,7 +355,7 @@ def test_compress_checks_the_folder_again_when_the_job_starts(
         manager._schedule()
         job = await _finished(manager, job_id)
         assert job.status == "failed"
-        assert job.error == f"Not recompressing {album}: it is in library_dirs, or holds one."
+        assert job.error == f"Not recompressing {album}: it is in library_dirs."
 
     _with_app(test)
     assert recompressed == []
@@ -346,7 +370,7 @@ def test_the_command_refuses_a_library_album_with_the_same_message(
     result = anyio.run(CliRunner().invoke, salmon.commands.compress, [str(album)])
 
     assert result.exit_code != 0
-    assert f"Not recompressing {album}: it is in library_dirs, or holds one." in result.output
+    assert f"Not recompressing {album}: it is in library_dirs." in result.output
     assert recompressed == []
 
 
