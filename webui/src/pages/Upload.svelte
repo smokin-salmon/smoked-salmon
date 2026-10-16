@@ -24,6 +24,64 @@
     uploads: Uploaded[]
   }
 
+  const OPTIONS_KEY = 'salmon.upload.options'
+
+  // The only flags remembered between uploads: choices that do not depend on the album. Every other flag either
+  // belongs to one album or skips a check or changes tags, and carried over silently it could send the next album
+  // up unchecked. A flag added to FLAGS later is therefore not remembered unless it is added here.
+  const REMEMBERED_FLAGS = ['auto_rename', 'spectrals_after', 'compress', 'essential_only', 'scene']
+
+  interface Stored {
+    flags: Record<string, boolean>
+    assumeDefaults: boolean
+    trackers: string[] | null
+  }
+
+  /** What was kept at the last Start. Anything unreadable falls back to the command's default, piece by piece. */
+  function storedOptions(): Stored {
+    const found: Stored = { flags: {}, assumeDefaults: false, trackers: null }
+    try {
+      const data: unknown = JSON.parse(localStorage.getItem(OPTIONS_KEY) ?? 'null')
+      if (typeof data !== 'object' || data === null || Array.isArray(data)) return found
+      const { flags: kept, assume_defaults: yyy, trackers: picked } = data as Record<string, unknown>
+      if (typeof kept === 'object' && kept !== null && !Array.isArray(kept)) {
+        for (const key of REMEMBERED_FLAGS) {
+          const value = (kept as Record<string, unknown>)[key]
+          if (value === true) found.flags[key] = true
+        }
+      }
+      if (yyy === true) found.assumeDefaults = true
+      if (Array.isArray(picked) && picked.every((each) => typeof each === 'string')) found.trackers = picked
+    } catch {
+      // Unreadable or blocked storage: the defaults.
+    }
+    return found
+  }
+
+  function saveOptions() {
+    try {
+      const kept: Record<string, boolean> = {}
+      for (const key of REMEMBERED_FLAGS) kept[key] = !!flags[key]
+      localStorage.setItem(
+        OPTIONS_KEY,
+        JSON.stringify({ flags: kept, assume_defaults: assumeDefaults, trackers: chosen }),
+      )
+    } catch {
+      // Not remembered: the page works as before.
+    }
+  }
+
+  function resetOptions() {
+    try {
+      localStorage.removeItem(OPTIONS_KEY)
+    } catch {
+      // Nothing was kept, or it cannot be reached.
+    }
+    for (const key of REMEMBERED_FLAGS) flags[key] = false
+    assumeDefaults = false
+    chosen = options.trackers.length ? [options.trackers[0]] : []
+  }
+
   let options = $state<Options>({ trackers: [], sources: [], encodings: [] })
 
   let path = $state('')
@@ -35,9 +93,9 @@
   let sourceUrl = $state('')
   let encoding = $state('')
   let spectrals = $state('')
-  let flags = $state<Record<string, boolean>>({})
+  let flags = $state<Record<string, boolean>>(storedOptions().flags)
   let dryRun = $state(false)
-  let assumeDefaults = $state(false)
+  let assumeDefaults = $state(storedOptions().assumeDefaults)
   let showHelp = $state(false)
 
   let error = $state('')
@@ -110,7 +168,11 @@
     apiGet<Options>('/upload/options')
       .then((answer) => {
         options = answer
-        if (!chosen.length && answer.trackers.length) chosen = [answer.trackers[0]]
+        if (chosen.length || !answer.trackers.length) return
+        const kept = storedOptions().trackers
+        const still = kept ? answer.trackers.filter((t) => kept.includes(t)) : []
+        // A stored empty list stays empty; nothing stored, or all gone from the config: the first tracker.
+        chosen = kept && (kept.length === 0 || still.length) ? still : [answer.trackers[0]]
       })
       .catch((e) => {
         error = `Could not load the trackers: ${e}`
@@ -145,6 +207,7 @@
       error = 'Spectral track numbers are whole numbers from 1.'
       return
     }
+    saveOptions()
     starting = true
     try {
       const started = await apiPost<Job>('/jobs', {
@@ -288,6 +351,7 @@
       >
         -yyy
       </button>
+      <button class="link" onclick={resetOptions}>Reset to defaults</button>
       <label class="check help">
         <input type="checkbox" bind:checked={showHelp} /> Explain the options
       </label>
@@ -404,6 +468,16 @@
     border-color: var(--accent);
     color: var(--text);
     background: var(--bg-hover);
+  }
+  .link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text-dim);
+    font: inherit;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
   }
   .help {
     margin-left: auto;
