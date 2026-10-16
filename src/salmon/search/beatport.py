@@ -32,10 +32,9 @@ class Searcher(BeatportBase, SearchMixin):
                 track_count = release["track_count"]
                 explicit = release["is_explicit"]
 
-                label = edition = (release.get("label") or {}).get("name") or ""
+                label = (release.get("label") or {}).get("name") or ""
                 catno = release.get("catalog_number")
-                if catno and catno != release.get("upc"):
-                    edition = f"{edition} {catno}".strip()
+                edition = self.edition(label, catno if catno != release.get("upc") else None)
 
                 if label.lower() not in cfg.upload.search.excluded_labels:
                     releases[rls_id] = (

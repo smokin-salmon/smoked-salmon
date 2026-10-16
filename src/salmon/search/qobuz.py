@@ -34,9 +34,7 @@ class Searcher(QobuzBase, SearchMixin):
                     year = self._parse_year(rls.get("release_date_original"))
                     track_count = rls["tracks_count"]
 
-                    edition = f"{year}"
-                    if rls.get("label", {}).get("name"):
-                        edition += f" {rls['label']['name']}"
+                    edition = self.edition(year, (rls.get("label") or {}).get("name"))
 
                     format_details = []
                     if rls.get("hires"):
