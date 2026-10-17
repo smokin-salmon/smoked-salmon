@@ -20,7 +20,14 @@ from salmon.tagger.sources.base import generate_artists, standardize_genres
 from salmon.tagger.tag_urls import tag_urls
 
 
-async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
+async def get_metadata(
+    path: str,
+    tags: dict[str, Any],
+    rls_data: dict[str, Any],
+    *,
+    skip_search_url: str | None = None,
+    skip_search: bool = False,
+) -> tuple[dict[str, Any], str | None]:
     """Get metadata pertaining to a release from various metadata sources.
 
     Have the user decide which sources to use, and then combine their information.
@@ -29,6 +36,8 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
         path: Path to the album folder.
         tags: Tag data from audio files.
         rls_data: Release data dictionary.
+        skip_search_url: The --source-url the user gave.
+        skip_search: --skip-search: take the metadata from skip_search_url without searching the stores.
 
     Returns:
         Tuple of (metadata dict, source URL or None).
@@ -36,6 +45,11 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
     click.secho("\nChecking metadata...", fg="cyan", bold=True)
     if not rls_data:
         raise ValueError("rls_data cannot be None")
+    if skip_search:
+        scraped = await _metadata_from_source_url(skip_search_url, rls_data)
+        if scraped is not None:
+            metadata, source_url = scraped
+            return await _finish_metadata(metadata, path), source_url
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
     click.secho(f"Searching for '{searchstrs}' releases...")
     artists_list = [a for a, _ in rls_data["artists"]]
@@ -46,11 +60,54 @@ async def get_metadata(path: str, tags: dict[str, Any], rls_data: dict[str, Any]
     choices = _print_search_results(search_results, rls_data)
     default = suggest_choice(choices, search_results, rls_data, len(tags), files_store_url(path))
     metadata, source_url = await _select_choice(choices, rls_data, default=default)
+    return await _finish_metadata(metadata, path), source_url
+
+
+async def _finish_metadata(metadata: dict[str, Any], path: str) -> dict[str, Any]:
     await fill_upc_from_deezer(metadata, path)
     _dedupe_catno_against_upc(metadata)
     remove_various_artists(metadata["tracks"])
-    metadata = fix_hardcore_genre(metadata)
-    return metadata, source_url
+    return fix_hardcore_genre(metadata)
+
+
+async def _metadata_from_source_url(url: str | None, rls_data: dict[str, Any]) -> tuple[dict[str, Any], str] | None:
+    """--skip-search: the metadata of the --source-url, scraped as a URL pasted at the prompt is; None to search.
+
+    Says why in yellow when the search runs anyway because there is no URL a metadata source scrapes, and in red
+    when the scrape fails.
+    """
+    url = (url or "").strip()
+    if not url:
+        click.secho("--skip-search needs --source-url: searching the stores anyway.", fg="yellow")
+        return None
+    name = _metasource_of(url)
+    if name is None:
+        click.secho(f"--skip-search: no metadata source scrapes {url}: searching the stores anyway.", fg="yellow")
+        return None
+    click.secho(f"Skipping the search: taking the metadata from {url}", fg="cyan")
+    rls_data.setdefault("urls", [])
+    added = url not in rls_data["urls"]
+    if added:
+        rls_data["urls"].append(url)
+    scraped = await handle_scrape_errors(METASOURCES[name].Scraper().scrape_release(url))
+    if not scraped:
+        if added:
+            rls_data["urls"].remove(url)
+        click.secho("Could not take the metadata from that URL: searching the stores instead.", fg="yellow")
+        return None
+    return _combine_scraped([name], [scraped], rls_data, url), url
+
+
+def _combine_scraped(
+    sources: list[str], metadatas: list[Any], rls_data: dict[str, Any], source_url: str | None
+) -> dict[str, Any]:
+    """The scraped metadatas, combined over the tags' own and cleaned."""
+    meta = combine_metadatas(
+        *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data, source_url=source_url
+    )
+    meta = clean_metadata(meta)
+    meta["artists"], meta["tracks"] = generate_artists(meta["tracks"])
+    return meta
 
 
 def _first_deezer_album_url(urls: list[str]) -> str | None:
@@ -295,12 +352,7 @@ async def _select_choice(
             continue
 
         metadatas = await asyncio.gather(*tasks)
-        meta = combine_metadatas(
-            *((s, m) for s, m in zip(sources, metadatas, strict=False) if m), base=rls_data, source_url=source_url
-        )
-        meta = clean_metadata(meta)
-        meta["artists"], meta["tracks"] = generate_artists(meta["tracks"])
-        return meta, source_url
+        return _combine_scraped(sources, list(metadatas), rls_data, source_url), source_url
 
 
 async def _get_manual_metadata(rls_data):

@@ -215,6 +215,12 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
     help="For WEB uploads provide the source of the album to be added in release description",
 )
 @click.option(
+    "--skip-search",
+    is_flag=True,
+    help="With --source-url naming a store salmon scrapes, take the metadata from that URL without searching "
+    "the stores.",
+)
+@click.option(
     "--skip-initial-review",
     is_flag=True,
     help="Skip the initial manual metadata review before AI review.",
@@ -277,6 +283,7 @@ async def up(
     skip_up: bool,
     scene: bool,
     source_url: str | None,
+    skip_search: bool,
     skip_initial_review: bool,
     apply_ai_suggestions: bool,
     yyy: bool,
@@ -305,6 +312,7 @@ async def up(
         skip_up=skip_up,
         scene=scene,
         source_url=source_url,
+        skip_search=skip_search,
         skip_initial_review=skip_initial_review,
         apply_ai_suggestions=apply_ai_suggestions,
         skip_mqa=skip_mqa,
@@ -356,6 +364,7 @@ class UpOptions:
     skip_up: bool = False
     scene: bool = False
     source_url: str | None = None
+    skip_search: bool = False
     skip_initial_review: bool = False
     apply_ai_suggestions: bool = False
     skip_mqa: bool = False
@@ -438,6 +447,7 @@ async def run_up(options: UpOptions) -> None:
         essential_only=options.essential_only,
         flac_group=flac_group,
         skip_initial_review=options.skip_initial_review,
+        skip_search=options.skip_search,
         apply_ai_suggestions=options.apply_ai_suggestions,
         trackers=list(options.trackers) if len(options.trackers) > 1 else None,
         conversions=options.conversions,
@@ -743,6 +753,7 @@ async def upload(
     apply_ai_suggestions: bool = False,
     trackers: list[str] | None = None,
     conversions: tuple[str, ...] | None = None,
+    skip_search: bool = False,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
@@ -778,6 +789,8 @@ async def upload(
             asks about no other. None asks after each upload, as configured.
         conversions: The conversion kinds selected by default after a FLAC (see ``conversion_kind``). None follows
             upload.conversions.
+        skip_search: Take the metadata from source_url without searching the stores, when a metadata source
+            scrapes it.
     """
     path = os.path.abspath(path)
     # Read before staging and renaming: the record knows the folder by the name the converter gave it.
@@ -820,6 +833,7 @@ async def upload(
             conversion=conversion,
             trackers=trackers,
             conversions=conversions,
+            skip_search=skip_search,
         )
 
 
@@ -898,6 +912,7 @@ async def _upload_staged(
     rename_into: str | None,
     original: str | None = None,
     conversion: dict[str, Any] | None = None,
+    skip_search: bool = False,
     trackers: list[str] | None = None,
     conversions: tuple[str, ...] | None = None,
 ) -> None:
@@ -1006,7 +1021,9 @@ async def _upload_staged(
                 )
                 lossy_master = lossy_result if lossy_result is not None else False
 
-            metadata, new_source_url = await get_metadata(path, tags, rls_data)
+            metadata, new_source_url = await get_metadata(
+                path, tags, rls_data, skip_search=skip_search, skip_search_url=source_url
+            )
             if new_source_url is not None:
                 source_url = new_source_url
                 click.secho(f"New Source URL: {source_url}", fg="yellow")

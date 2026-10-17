@@ -187,7 +187,7 @@ def test_a_review_moving_the_release_into_an_edition_the_group_holds_asks_again(
     tags_release = _tags_release(2019)
     if in_place:
         # As combine_metadatas does with its base: the chosen scrape lands in the tags' release itself.
-        async def get_metadata(_path, _tags, rls_data):
+        async def get_metadata(_path, _tags, rls_data, **_kwargs):
             rls_data["year"] = 2020
             return {**rls_data, "source": "WEB", "label": "Label", "cover": None}, None
 
