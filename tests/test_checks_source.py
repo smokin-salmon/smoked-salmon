@@ -4,6 +4,7 @@ import os
 import struct
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 
 import anyio
 import pytest
@@ -296,6 +297,28 @@ def test_a_rip_log_beside_hi_res_files_conflicts(tmp_path) -> None:
     (album / "EAC.log").write_bytes(EAC_LOG.encode("utf-16"))
 
     assert detect_source(str(album)) is None
+
+
+def test_a_48khz_mp3_beside_a_rip_log_does_not_contradict_it(tmp_path) -> None:
+    """A lossy encode's rate says nothing about the master it was made from."""
+    # MPEG-1 Layer III, 128 kbit/s, 48 kHz: 384-byte frames.
+    (tmp_path / "01.mp3").write_bytes((bytes([0xFF, 0xFB, 0x94, 0x00]) + bytes(380)) * 3)
+    assert vars(MP3(tmp_path / "01.mp3").info)["sample_rate"] == 48000
+    (tmp_path / "EAC.log").write_bytes(EAC_LOG.encode("utf-16"))
+
+    assert detect_source(str(tmp_path)) == DetectedSource("CD", "rip log found (EAC.log)")
+
+
+@pytest.mark.parametrize(("codec", "expected"), [("mp4a.40.2", "CD"), ("alac", None)], ids=["aac", "alac"])
+def test_only_lossless_m4a_above_cd_contradicts_a_rip_log(tmp_path, monkeypatch, codec, expected) -> None:
+    (tmp_path / "EAC.log").write_bytes(EAC_LOG.encode("utf-16"))
+    (tmp_path / "01.m4a").write_bytes(b"")
+    m4a = SimpleNamespace(tags={}, info=SimpleNamespace(bits_per_sample=16, sample_rate=48000, codec=codec))
+    monkeypatch.setattr(source_mod, "MutagenFile", lambda _path: m4a)
+
+    detected = detect_source(str(tmp_path))
+
+    assert (detected.source if detected else None) == expected
 
 
 def test_a_rip_log_beside_vinyl_sides_conflicts(tmp_path) -> None:

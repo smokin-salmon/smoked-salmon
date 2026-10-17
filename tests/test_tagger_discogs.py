@@ -33,6 +33,15 @@ def test_discogs_arranged_by_maps_to_arranger() -> None:
     assert ("Some Arranger", "arranger") in artists
 
 
+def test_discogs_artist_who_arranged_their_own_track_stays_its_main_artist() -> None:
+    track = {
+        "artists": [{"name": "Main Artist"}],
+        "extraartists": [{"name": "Main Artist", "role": "Arranged By"}],
+    }
+
+    assert parse_artists([], track) == [("Main Artist", "main"), ("Main Artist", "arranger")]
+
+
 def test_discogs_multi_disc_positions_without_headings_split_by_disc() -> None:
     scraper = Scraper()
     soup = make_soup(

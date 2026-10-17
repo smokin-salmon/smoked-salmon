@@ -166,7 +166,8 @@ def parse_credits(artist_soup, track):
                     artists.append(credit)
                     _note_variation(variations, credit, art)
         for name, role in artists:
-            if role != "main" and (name, "main") in artists:
+            # An artist who also arranged the track stays its main artist.
+            if role != "main" and (name, "main") in artists and (name, "arranger") not in artists:
                 artists.remove((name, "main"))
     return artists, variations
 

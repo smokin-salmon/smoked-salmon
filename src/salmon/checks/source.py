@@ -126,9 +126,11 @@ def _gather(path: str) -> _Evidence:
             continue
         evidence.proofs.update(_tag_proofs(mut))
         evidence.tracknumbers.extend(_tracknumbers(mut))
-        bits = getattr(mut.info, "bits_per_sample", None) or 0
-        rate = getattr(mut.info, "sample_rate", None) or 0
-        evidence.above_cd_quality |= bits > 16 or rate > 44100
+        # Only lossless audio says anything about the master: a 48 kHz MP3 or AAC does not.
+        if filename.lower().endswith(".flac") or getattr(mut.info, "codec", None) == "alac":
+            bits = getattr(mut.info, "bits_per_sample", None) or 0
+            rate = getattr(mut.info, "sample_rate", None) or 0
+            evidence.above_cd_quality |= bits > 16 or rate > 44100
     return evidence
 
 

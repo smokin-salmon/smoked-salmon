@@ -40,6 +40,7 @@ pytestmark = pytest.mark.usefixtures("image_uploads")
 
 QOBUZ_URL = "https://www.qobuz.com/gb-en/album/album-artist/abc123xyz"
 DEEZER_URL = "https://www.deezer.com/album/322064097"
+APPLE_URL = "https://music.apple.com/us/album/the-album/1440857781"
 ANOTHER_TRACKER = "Would you like to upload to another tracker?"
 DOWNCONVERSION = "Would you like to check downconversion options?"
 
@@ -67,6 +68,29 @@ def _tagged_album(folder: Path, *tags: dict[str, str]) -> Path:
     for number, file_tags in enumerate(tags, 1):
         _write_flac(folder / f"0{number}.flac", title=f"Track {number}", **file_tags)
     return folder
+
+
+@pytest.mark.parametrize(
+    ("url", "other_form"),
+    [
+        (DEEZER_URL, "https://www.deezer.com/en/album/322064097"),
+        (DEEZER_URL, "https://deezer.com/album/322064097/"),
+        (QOBUZ_URL, "https://www.qobuz.com/us-en/album/album-artist/abc123xyz"),
+        (QOBUZ_URL, "https://open.qobuz.com/album/abc123xyz"),
+        (APPLE_URL, APPLE_URL + "/"),
+    ],
+    ids=["deezer-locale", "deezer-host-and-slash", "qobuz-locale", "qobuz-player", "apple-slash"],
+)
+def test_two_forms_of_one_album_url_are_one_store_album(tmp_path, url: str, other_form: str) -> None:
+    album = _tagged_album(tmp_path / "a", {"SOURCE": url, "COMMENT": other_form})
+
+    assert metadata_mod.files_store_url(str(album)) == url
+
+
+def test_two_albums_of_one_store_give_no_store_url(tmp_path) -> None:
+    album = _tagged_album(tmp_path / "a", {"SOURCE": DEEZER_URL, "COMMENT": "https://www.deezer.com/en/album/111"})
+
+    assert metadata_mod.files_store_url(str(album)) is None
 
 
 def test_the_store_url_under_a_source_key_is_the_files_store_url(tmp_path) -> None:
