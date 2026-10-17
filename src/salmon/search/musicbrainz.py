@@ -45,11 +45,7 @@ class Searcher(MusicBrainzBase, SearchMixin):
                 except KeyError:
                     source = None
 
-                edition = ""
-                if label:
-                    edition += label
-                if catno:
-                    edition += " " + catno
+                edition = self.edition(label, catno)
 
                 if label.lower() not in cfg.upload.search.excluded_labels:
                     releases[rls["id"]] = (

@@ -7,6 +7,7 @@ import anyio
 import msgspec
 import pytest
 
+from salmon.common.redaction import redact_command, redact_secrets
 from salmon.config.validations import Seedbox
 from salmon.uploader import seedbox
 from salmon.uploader.torrent_client import DelugeClient, QBittorrentClient, TransmissionClient
@@ -74,7 +75,7 @@ def test_the_rclone_command_salmon_prints_keeps_harmless_values(monkeypatch, tmp
 
     assert (
         "Executing: rclone copy '/tmp/Artist - Album' 'sbox:/music/Artist - Album' "
-        "--checksum -P --sftp-path-override @/volume3 --transfers 4 --bwlimit=8M"
+        "--checksum -P --sftp-path-override '[REDACTED]' --transfers 4 --bwlimit=8M"
     ) in capfd.readouterr().out
 
 
@@ -91,6 +92,72 @@ def test_rclone_writes_its_progress_straight_to_salmons_stdout(monkeypatch, tmp_
     assert f"{['copy', '/tmp/Artist - Album', 'seedbox:/music/Artist - Album', '--checksum', '-P']} " in out
     assert salmons_stdout in out
     assert "Rclone upload successful" in out
+
+
+@pytest.mark.parametrize(
+    "extra_args",
+    [["--sftp-path-override", "@/home/UNIQUEBOXUSER"], ["--sftp-path-override=@/home/UNIQUEBOXUSER"]],
+)
+def test_the_rclone_command_salmon_prints_hides_the_seedbox_home_folder(extra_args) -> None:
+    secrets = seedbox.seedbox_secrets(Seedbox(url="sbox", extra_args=extra_args))
+    shown = redact_command(["rclone", "copy", "a", "sbox:b", *extra_args], secrets)
+
+    assert "UNIQUEBOXUSER" not in shown
+    assert "--sftp-path-override" in shown
+
+
+@pytest.mark.parametrize(
+    ("extra_args", "expected"),
+    [
+        (["--sftp-path-override", "@/a"], "@/a"),
+        (["--sftp-path-override=@/a"], "@/a"),
+        (["--sftp-path-override", "@/a", "--sftp-path-override=/b"], "/b"),
+        (["--sftp-path-override=/b", "--sftp-path-override", "@/a"], "@/a"),
+        (["-P", "--sftp-path-override"], None),
+        (["--sftp-path-override", "@/a", "--sftp-path-override"], None),
+        (["-P"], None),
+        (["--sftp-path-override", "--sftp-path-override=/target"], "--sftp-path-override=/target"),
+    ],
+)
+def test_path_override_is_the_last_one_in_either_form(extra_args, expected) -> None:
+    assert seedbox._path_override(extra_args) == expected
+
+
+def test_a_path_override_with_no_value_is_no_override() -> None:
+    extra_args = ["-P", "--sftp-path-override"]
+
+    assert seedbox._resolve_shell_path("/music", extra_args) == "/music"
+    assert seedbox.seedbox_secrets(Seedbox(url="sbox", extra_args=extra_args)) == []
+
+
+def test_the_last_path_override_decides_the_seed_path() -> None:
+    extra_args = ["--sftp-path-override", "/first", "--sftp-path-override=@/home/last"]
+
+    assert seedbox._resolve_shell_path("/music", extra_args) == "/home/last/music"
+
+
+@pytest.mark.parametrize("override", ["@/home/UNIQUEBOXUSER", "/home/UNIQUEBOXUSER/music"])
+def test_an_error_repeating_the_seed_path_hides_the_seedbox_home_folder(override) -> None:
+    box = Seedbox(url="sbox", extra_args=["--sftp-path-override", override])
+    shell_path = seedbox._resolve_shell_path("/music", box.extra_args)
+
+    shown = redact_secrets(f"cannot create {shell_path}/Album", seedbox.seedbox_secrets(box))
+
+    assert "UNIQUEBOXUSER" not in shown
+
+
+@pytest.mark.parametrize("override", ["/", "@/", "@", "/ab", "@/ab"])
+def test_a_root_or_tiny_path_override_is_not_masked(override) -> None:
+    box = Seedbox(url="sbox", extra_args=["--sftp-path-override", override])
+
+    assert seedbox.seedbox_secrets(box) == []
+    assert redact_secrets("copied /music/Album to /", seedbox.seedbox_secrets(box)) == "copied /music/Album to /"
+
+
+def test_a_tiny_path_override_does_not_unmask_a_password_with_the_same_value() -> None:
+    box = Seedbox(url="sbox", extra_args=["--sftp-pass", "/ab", "--sftp-path-override", "/ab"])
+
+    assert "/ab" in seedbox.seedbox_secrets(box)
 
 
 @needs_posix

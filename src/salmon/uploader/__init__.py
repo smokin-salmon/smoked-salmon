@@ -560,7 +560,7 @@ async def resolve_cover_url(
     """Get the cover URL to upload to a tracker with, asking before a new group goes up without one.
 
     An existing group already has its cover, so it needs none. For a new group with no cover,
-    --yes-all stops the upload; otherwise the user can go on without one, retry, or stop. A retry
+    -yyy stops the upload; otherwise the user can go on without one, retry, or stop. A retry
     after a failed upload (a cover file was found) asks which host to retry with; a retry with no
     cover found just looks at the folder again.
 
@@ -600,7 +600,9 @@ async def resolve_cover_url(
                 bold=True,
             )
             if await interaction.assume_defaults():
-                click.secho("Not uploading a new group without a cover image with --yes-all.", fg="red", bold=True)
+                click.secho(
+                    "Not uploading a new group without a cover image with -yyy (upload.yes_all).", fg="red", bold=True
+                )
                 return False, None
 
             choice = await interaction.prompt(
@@ -1608,8 +1610,8 @@ async def prompt_downconversion_choice(
     Prompt user to select downconversion formats.
     Returns a list of selected task dictionaries.
     Options named in `held` are already in the edition: they are flagged as a dupe risk and left out
-    of the default choice and of --yes-all, but can still be picked by number.
-    `conversions` (None: upload.conversions) names the kinds selected by default and made with --yes-all:
+    of the default choice and of -yyy, but can still be picked by number.
+    `conversions` (None: upload.conversions) names the kinds selected by default and made with -yyy:
     every option is still listed, and any can be picked by number.
     """
     options = get_downconversion_options(rls_data, track_data)

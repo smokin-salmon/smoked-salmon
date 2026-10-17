@@ -46,6 +46,11 @@ class SearchMixin(ABC):
         pass
 
     @staticmethod
+    def edition(*parts) -> str:
+        """The parts that are present, joined with spaces, so a missing year or label shows nothing, not "None"."""
+        return " ".join(str(part) for part in parts if part)
+
+    @staticmethod
     def format_result(
         artists,
         title,

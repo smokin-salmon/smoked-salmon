@@ -45,7 +45,7 @@ class Searcher(BandcampBase, SearchMixin):
 
                     releases[(rls_url, release_type, rls_id)] = (
                         IdentData(artists, title, year, track_count, "WEB"),
-                        self.format_result(artists, title, f"{year} {releaser}", track_count=track_count),
+                        self.format_result(artists, title, self.edition(year, releaser), track_count=track_count),
                     )
 
                     if len(releases) == limit:

@@ -915,10 +915,10 @@ def test_review_metadata_with_ai_yes_all_auto_applies(monkeypatch) -> None:
         return review, "response-1"
 
     async def fail_prompt(*_args, **_kwargs):
-        raise AssertionError("click.prompt should not run when yes-all auto-applies AI suggestions")
+        raise AssertionError("click.prompt should not run when -yyy auto-applies AI suggestions")
 
     def fail_confirm(*_args, **_kwargs):
-        raise AssertionError("click.confirm should not run when yes-all is enabled")
+        raise AssertionError("click.confirm should not run when -yyy is enabled")
 
     try:
         cfg.upload.ai_review.enabled = True

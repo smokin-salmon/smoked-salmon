@@ -745,7 +745,7 @@ def test_the_downconversion_question_stays_when_there_is_something_to_convert(mo
     assert DOWNCONVERSION in run.result.output
 
 
-# --yes-all
+# -yyy
 
 
 def test_yes_all_still_asks_the_prompts_with_a_pre_filled_default(monkeypatch) -> None:

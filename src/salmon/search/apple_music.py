@@ -48,7 +48,7 @@ class Searcher(AppleMusicBase, SearchMixin):
                         rls["collectionId"],
                         (
                             IdentData(artists, title, year, track_count, "WEB"),
-                            (explicit, clean, f"{year or ''} {copyright_str or ''}".strip()),
+                            (explicit, clean, self.edition(year, copyright_str)),
                         ),
                     )
                 )

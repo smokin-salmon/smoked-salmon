@@ -1,4 +1,3 @@
-import argparse
 import collections
 import os
 import posixpath
@@ -18,6 +17,26 @@ from salmon.errors import DryRunRefused
 from salmon.uploader.torrent_client import TorrentClient, TorrentClientGenerator
 from salmon.webui import output
 
+# A path override shorter than this is not masked: it would match inside every path in the output.
+_MIN_MASKED_PATH = 4
+
+
+def _path_override(extra_args: list[str]) -> str | None:
+    """The last --sftp-path-override value in extra_args, as rclone reads it; None without one."""
+    override = None
+    i = 0
+    while i < len(extra_args):
+        name, equals, value = extra_args[i].partition("=")
+        i += 1
+        if name == "--sftp-path-override":
+            if equals:
+                override = value
+            else:
+                # The next argument is this flag's value, whatever it looks like.
+                override = extra_args[i] if i < len(extra_args) else None
+                i += 1
+    return override
+
 
 def _resolve_shell_path(remote_folder: str, extra_args: list[str]) -> str:
     """Resolve the effective download path, respecting --sftp-path-override.
@@ -29,10 +48,7 @@ def _resolve_shell_path(remote_folder: str, extra_args: list[str]) -> str:
     Returns:
         Effective shell path for the torrent client.
     """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--sftp-path-override", type=str, default=None)
-    known_args, _ = parser.parse_known_args(extra_args)
-    override = known_args.sftp_path_override
+    override = _path_override(extra_args)
     if not override:
         return remote_folder
     if override.startswith("@"):
@@ -50,6 +66,17 @@ def seedbox_secrets(seedbox: Seedbox) -> list[str]:
     if password:
         # Written percent-encoded in the URL, and decoded by the time a client error repeats it.
         secrets += [password, unquote(password)]
+    raw = _path_override(seedbox.extra_args)
+    if raw:
+        override = raw.removeprefix("@")
+        if len(override) >= _MIN_MASKED_PATH and override != "/":
+            # A home folder names the account; the client gets the path without its "@", and an error can repeat it.
+            secrets.append(override)
+        else:
+            # Masking "/" or a few characters would wreck every path in the output.
+            # Only the occurrence the override added: another secret may have the same value.
+            if raw in secrets:
+                secrets.remove(raw)
     return secrets
 
 
@@ -178,13 +205,22 @@ def _enabled_seedboxes() -> list[Seedbox]:
 
 
 _UNICODE_FLAG = "--local-unicode-normalization"
+# rclone reads every flag from its RCLONE_* variable too; a flag on the command line wins over it.
+_UNICODE_ENV = "RCLONE_LOCAL_UNICODE_NORMALIZATION"
+# The true spellings of Go's strconv.ParseBool, which rclone reads both with.
+_GO_TRUE = {"1", "t", "T", "true", "TRUE", "True"}
 # Seedboxes already warned about in this process: once is enough for a config problem.
 _warned_normalization: set[int] = set()
 
 
 def _normalizes_to_nfc(seedbox: Seedbox) -> bool:
-    """Whether rclone is told to make the names it copies NFC."""
-    return any(arg in (_UNICODE_FLAG, f"{_UNICODE_FLAG}=true") for arg in seedbox.extra_args)
+    """Whether rclone makes the names it copies NFC: the last such flag in extra_args, else its variable."""
+    flags = [arg.partition("=") for arg in seedbox.extra_args if arg.partition("=")[0] == _UNICODE_FLAG]
+    if not flags:
+        # salmon starts rclone with its own environment.
+        return os.environ.get(_UNICODE_ENV, "") in _GO_TRUE
+    _, has_value, value = flags[-1]
+    return not has_value or value in _GO_TRUE
 
 
 def _unmatched_normalization(seedbox: Seedbox, form: str) -> str | None:
@@ -193,7 +229,7 @@ def _unmatched_normalization(seedbox: Seedbox, form: str) -> str | None:
         if form == "NFD":
             return "rclone cannot copy names as NFD"
         if not _normalizes_to_nfc(seedbox):
-            return f"rclone copies names as they are, without {_UNICODE_FLAG} in its extra_args"
+            return f"rclone copies names as they are, without {_UNICODE_FLAG} in its extra_args or {_UNICODE_ENV} set"
         return None
     # macOS finds a file whatever the form of its name; Linux compares the bytes.
     if sys.platform.startswith("linux"):

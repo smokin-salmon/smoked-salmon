@@ -25,14 +25,14 @@ class Searcher(DiscogsBase, SearchMixin):
             source = parse_source(rls["format"])
             ed_title = ", ".join(set(rls["format"]))
 
-            edition = f"{year} {source}"
-            if rls["label"] and rls["label"][0] != "Not On Label":
-                edition += f" {rls['label'][0]} {rls['catno']}"
+            labels = rls.get("label")
+            if labels and labels[0] != "Not On Label":
+                edition = self.edition(year, source, labels[0], rls.get("catno"))
             else:
-                edition += " Not On Label"
+                edition = self.edition(year, source, "Not On Label")
 
             # Check if the release is in the user's discogs collection and add a hint if so
-            release_in_user_collection = rls["user_data"]["in_collection"]
+            release_in_user_collection = (rls.get("user_data") or {}).get("in_collection")
             collection_text = click.style("IN COLLECTION", bg="red", bold=True) if release_in_user_collection else None
 
             releases[rls["id"]] = (
