@@ -6,7 +6,7 @@ import anyio
 import pytest
 
 from salmon import interaction
-from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError
+from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, TrackCombineError
 from salmon.tagger import retagger
 from salmon.tagger.combine import combine_tracks
 from salmon.tagger.pairing import pair_by_content
@@ -171,6 +171,36 @@ def test_a_title_that_only_fits_does_not_move_a_numbered_file():
     assert _proposed(changes, "title") == {"01.flac": "Work (Original Mix)", "02.flac": "Django (Original Mix)"}
 
 
+def test_a_numbered_file_moved_by_its_isrc_shifts_no_other_file():
+    # File 3 is track 1. File 2 keeps its place; only file 1, which it displaced, takes the track left over.
+    locals_ = [{"title": "A"}, {"title": "B"}, {"title": "C", "isrc": "GBAAA2600001"}]
+    metas = [{"title": "One", "isrc": "GBAAA2600001"}, {"title": "Two"}, {"title": "Three"}]
+
+    assert pair_by_content(locals_, metas, numbered=True) == ([2, 1, 0], ["isrc", "position", "position"])
+
+
+def test_the_moves_name_each_files_own_track_number():
+    # Numbers with a gap: 05.flac is the third file, but it is numbered 5, and the question says so.
+    tags = {
+        "01.flac": _tagset(None, tracknumber="1"),
+        "02.flac": _tagset(None, tracknumber="2"),
+        "05.flac": _tagset(None, tracknumber="5", isrc="GBAAA2600001"),
+    }
+    metadata = _one_disc(
+        _trackmeta("One", "1", isrc="GBAAA2600001"),
+        _trackmeta("Two", "2"),
+        _trackmeta("Three", "3"),
+    )
+
+    with pytest.raises(NumberedTrackMoveError) as refused:
+        create_track_changes(tags, metadata)
+
+    assert [(filename, own["track#"], after["track#"]) for filename, own, after, _ in refused.value.moves] == [
+        ("01.flac", "1", "3"),
+        ("05.flac", "5", "1"),
+    ]
+
+
 def test_a_duration_alone_pairs_nothing():
     locals_ = [{"title": "Foo", "duration": 250}, {"title": "Bar", "duration": 200}]
     metas = [{"title": "One", "duration": 200}, {"title": "Two", "duration": 250}]
@@ -309,6 +339,26 @@ def test_combine_tracks_keeps_numbered_local_tracks_when_only_durations_disagree
     assert {num: track["peak"] for num, track in combined["1"].items()} == {"1": "0.5", "2": "0.6", "3": "0.7"}
 
 
+def test_combine_tracks_refuses_to_renumber_a_track_onto_one_the_source_has_no_track_for():
+    # Local track 4 is the source's track 3 (same ISRC); local track 3 has no source track, and would be lost.
+    base = {
+        "1": {num: _track(f"Local {num}", num, isrc=f"GBAAA260000{num}", numbered=True) for num in ("1", "2", "3", "4")}
+    }
+    meta = {
+        "1": {
+            "1": _track("One", "1", isrc="GBAAA2600001"),
+            "2": _track("Two", "2", isrc="GBAAA2600002"),
+            "3": _track("Three", "3", isrc="GBAAA2600004"),
+        }
+    }
+    untouched = deepcopy(base)
+
+    with pytest.raises(TrackCombineError):
+        combine_tracks(base, deepcopy(meta), True)
+
+    assert base == untouched
+
+
 def test_combine_tracks_merges_each_scraped_track_onto_its_own_local_track():
     # Unnumbered local tracks, numbered in file-name order; the source lists them in release order.
     base = {
@@ -391,6 +441,27 @@ def test_a_local_track_without_a_track_number_is_not_numbered():
             artist=["Some Artist"],
             title="Work",
             tracknumber=None,
+            discnumber=None,
+            tracktotal=None,
+            disctotal=None,
+            replay_gain=None,
+            peak=None,
+            isrc=None,
+        )
+    }
+
+    tracks = create_track_list(tags, False)
+
+    assert tracks["1"]["1"]["numbered"] is False
+
+
+def test_a_track_number_int_cannot_read_is_not_numbered():
+    # "²" passes str.isdigit() but int() rejects it.
+    tags = {
+        "Work.flac": SimpleNamespace(
+            artist=["Some Artist"],
+            title="Work",
+            tracknumber="²",
             discnumber=None,
             tracktotal=None,
             disctotal=None,

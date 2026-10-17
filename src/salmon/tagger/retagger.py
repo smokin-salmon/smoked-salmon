@@ -73,6 +73,12 @@ async def _confirm_moves(moves):
     return await interaction.confirm(click.style("Retag them as those tracks?", fg="magenta"), default=False)
 
 
+def _own_number(tagset):
+    """The file's own DISCNUMBER and TRACKNUMBER, shaped like a track for ``_track_label``."""
+    disc = _parse_tag_number(tagset, "discnumber")
+    return {"disc#": None if disc is None else str(disc), "track#": str(_parse_tag_number(tagset, "tracknumber"))}
+
+
 def _track_label(track):
     disc = track.get("disc#")
     return f"{disc}-{track['track#']}" if disc and str(disc) != "1" else str(track["track#"])
@@ -181,11 +187,11 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
     if ambiguous is not None and not all(reason in BY_ISRC_OR_TITLE for reason in file_reasons):
         raise ambiguous
     moves = [
-        (filename, numbered_as, pairs_with, reason)
-        for (filename, _), numbered_as, pairs_with, reason in zip(
+        (filename, _own_number(tagset), pairs_with, reason)
+        for (filename, tagset), in_order, pairs_with, reason in zip(
             ordered_tags, by_order, tracks, file_reasons, strict=False
         )
-        if pairs_with is not numbered_as
+        if pairs_with is not in_order
     ]
     if numbered and moves and not move_numbered:
         raise NumberedTrackMoveError(moves)

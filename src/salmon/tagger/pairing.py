@@ -120,6 +120,12 @@ def pair_by_content(locals_, metas, *, numbered=False):
             duration_breaks_ties=True,
         )
 
+    if numbered:
+        # A numbered file nothing claimed keeps its own place, so one file moved by its ISRC or title doesn't
+        # shift every file after it: only the files it displaced take the tracks left over.
+        for mi in pending():
+            if mi in unclaimed:
+                claim(mi, mi, "position")
     for mi in pending():
         if not unclaimed:
             break

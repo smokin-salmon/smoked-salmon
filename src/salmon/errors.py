@@ -157,7 +157,7 @@ class AmbiguousTrackOrderError(Exception):
 class NumberedTrackMoveError(Exception):
     """Raised when retagging would give files that carry their own track numbers other tracks' tags.
 
-    ``moves`` holds ``(filename, track it is numbered as, track it would get, how that track was paired)``.
+    ``moves`` holds ``(filename, its own "disc#" and "track#", track it would get, how that track was paired)``.
     """
 
     def __init__(self, moves):
