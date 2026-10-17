@@ -13,6 +13,7 @@ from mutagen.mp3 import MP3
 
 from salmon.checks import tag_rules
 from salmon.checks.tag_rules import (
+    find_tag_issues,
     has_blank_id3v2_alongside_id3v1,
     has_id3_tag,
     in_torrent_path,
@@ -180,20 +181,30 @@ def test_a_v1_track_number_alone_is_not_text(tmp_path, comment_end, flagged) -> 
     assert has_blank_id3v2_alongside_id3v1(str(path)) is flagged
 
 
-def test_a_tag_mutagen_cannot_parse_is_not_flagged_and_does_not_crash(tmp_path, monkeypatch) -> None:
-    """A warning check must never raise: a malformed ID3v2 tag mutagen refuses to parse (not just a
-    missing one) must be treated as not the flagged case, not propagated to abort the upload."""
+@pytest.mark.parametrize(
+    "check",
+    [
+        pytest.param(lambda path: process_tag_issues(path, {}, scene=False, recompress=False), id="upload"),
+        pytest.param(lambda path: find_tag_issues(path, {}), id="check-all"),
+    ],
+)
+def test_a_tag_mutagen_cannot_read_is_noted_and_does_not_crash(tmp_path, monkeypatch, check) -> None:
+    """mutagen raises one error for a malformed tag and a failed read, so either gets a note, never a pass."""
     path = tmp_path / "a.mp3"
     path.write_bytes(b"ID3\x02\x00\x00\x00\x00\x00\x00" + b"\x00" * 300 + _id3v1_tag())
     parsed = []
 
-    def raise_unsupported(filepath, *, load_v1):
+    def raise_unsupported(filepath, load_v1=True):
         parsed.append(filepath)
         raise ID3UnsupportedVersionError("mutagen cannot parse this ID3v2 version")
 
     monkeypatch.setattr(tag_rules, "ID3", raise_unsupported)
 
-    assert has_blank_id3v2_alongside_id3v1(str(path)) is False
+    messages = check(str(tmp_path))
+
+    assert messages == [
+        "a.mp3: could not read its ID3v2 tag (mutagen cannot parse this ID3v2 version); check it by hand."
+    ]
     assert parsed == [str(path)]
 
 

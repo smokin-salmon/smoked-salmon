@@ -63,14 +63,15 @@ def has_blank_id3v2_alongside_id3v1(filepath: str) -> bool:
     an ID3v2 tag with real content sitting next to an ID3v1 tag. When both a v1 tag and a v2
     header exist, mutagen reads the v2 tag: it is the blank one that matters here, not the
     presence of v1 by itself, so both a v1 block and a v2 header must be found on disk first.
+
+    Raises:
+        MutagenError, OSError: If the ID3v2 tag cannot be read: mutagen raises the same error for a
+            malformed tag and a failed read, so neither is taken for a clean file.
     """
     if not (_id3v1_holds_text(filepath) and _has_id3v2_header(filepath)):
         return False
-    try:
-        # load_v1=False: mutagen otherwise reads the v1 fields into the v2 tag, and a blank v2 looks filled.
-        tags = ID3(filepath, load_v1=False)
-    except (MutagenError, OSError):
-        return False
+    # load_v1=False: mutagen otherwise reads the v1 fields into the v2 tag, and a blank v2 looks filled.
+    tags = ID3(filepath, load_v1=False)
     return not any(tags.getall(key) for key in tags)
 
 
@@ -108,8 +109,15 @@ def _uncompressed(filename: str) -> str:
     return f"{filename}: FLAC file looks uncompressed (RED and OPS can trump it); recompress it with salmon up -c."
 
 
-def _dual_id3(filename: str) -> str:
-    return f"{filename}: MP3 file has a filled-in ID3v1 tag and a blank ID3v2 tag (RED and OPS can trump it)."
+def _dual_id3(filename: str, filepath: str) -> str | None:
+    """The line for an MP3 with a dual ID3 tag set, or for one whose ID3v2 tag cannot be read; None if neither."""
+    try:
+        dual = has_blank_id3v2_alongside_id3v1(filepath)
+    except (MutagenError, OSError) as e:
+        return f"{filename}: could not read its ID3v2 tag ({e}); check it by hand."
+    if dual:
+        return f"{filename}: MP3 file has a filled-in ID3v1 tag and a blank ID3v2 tag (RED and OPS can trump it)."
+    return None
 
 
 def find_tag_issues(path: str, audio_info: dict) -> list[str]:
@@ -132,8 +140,8 @@ def find_tag_issues(path: str, audio_info: dict) -> list[str]:
             track = audio_info.get(filename)
             if track and is_uncompressed(track):
                 messages.append(_uncompressed(filename))
-        elif lower.endswith(".mp3") and has_blank_id3v2_alongside_id3v1(filepath):
-            messages.append(_dual_id3(filename))
+        elif lower.endswith(".mp3") and (message := _dual_id3(filename, filepath)):
+            messages.append(message)
     return messages
 
 
@@ -179,6 +187,6 @@ def process_tag_issues(path: str, audio_info: dict, *, scene: bool, recompress: 
                 track = audio_info.get(filename)
                 if track and is_uncompressed(track):
                     messages.append(_uncompressed(filename))
-        elif lower.endswith(".mp3") and has_blank_id3v2_alongside_id3v1(filepath):
-            messages.append(_dual_id3(filename))
+        elif lower.endswith(".mp3") and (message := _dual_id3(filename, filepath)):
+            messages.append(message)
     return messages
