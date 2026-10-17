@@ -76,6 +76,7 @@ def test_construct_track_artists_recovers_conductor_and_composer_roles_from_tags
         artist=["Ensemble Carminé, Claire Chevalier"],
         conductor="Claire Chevalier",
         composer="Alfonso X el Sabio",
+        genre="Classical",
     )
 
     assert construct_track_artists(track) == [
@@ -91,11 +92,13 @@ def test_construct_artists_li_preserves_first_seen_role_order() -> None:
             artist=["Ensemble Carminé, Claire Chevalier"],
             conductor="Claire Chevalier",
             composer="Alfonso X el Sabio",
+            genre=["Classical"],
         ),
         "02. Example.flac": SimpleNamespace(
             artist=["Ensemble Carminé, Claire Chevalier"],
             conductor="Claire Chevalier",
             composer="Guillaume de Machaut",
+            genre=["Classical"],
         ),
     }
 
@@ -107,6 +110,45 @@ def test_construct_artists_li_preserves_first_seen_role_order() -> None:
         ("Alfonso X el Sabio", "composer"),
         ("Guillaume de Machaut", "composer"),
     ]
+
+
+def test_construct_track_artists_ignores_composer_outside_classical() -> None:
+    track = SimpleNamespace(artist="Adele", composer=["Adele", "Paul Epworth"], genre=["Pop"])
+
+    assert construct_track_artists(track) == [("Adele", "main")]
+
+
+def test_construct_track_artists_ignores_conductor_outside_classical() -> None:
+    track = SimpleNamespace(artist="Some Band", conductor="Some Band", composer=None, genre="Rock")
+
+    assert construct_track_artists(track) == [("Some Band", "main")]
+
+
+def test_construct_track_artists_without_genre_is_not_classical() -> None:
+    track = SimpleNamespace(artist="Some Band", conductor="Maestro", composer="Writer")
+
+    assert construct_track_artists(track) == [("Some Band", "main")]
+
+
+def test_construct_track_artists_classical_list_genre_keeps_roles() -> None:
+    track = SimpleNamespace(artist="Orchestra", conductor="Maestro", composer="Writer", genre=["Classical", "Baroque"])
+
+    assert construct_track_artists(track) == [
+        ("Orchestra", "main"),
+        ("Maestro", "conductor"),
+        ("Writer", "composer"),
+    ]
+
+
+def test_construct_artists_li_keeps_main_artist_named_in_composer_on_pop_album() -> None:
+    from salmon.tagger.pre_data import construct_artists_li
+
+    tags = {
+        "01.flac": SimpleNamespace(artist="Adele", composer=["Adele", "Paul Epworth"], genre=["Pop"]),
+        "02.flac": SimpleNamespace(artist="Adele", composer="Adele", genre=["Pop"]),
+    }
+
+    assert construct_artists_li(tags) == [("Adele", "main")]
 
 
 def test_check_required_tags_flags_missing_composer_for_classical_release(capsys) -> None:
