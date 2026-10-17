@@ -17,6 +17,7 @@ from salmon.constants import (
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import AmbiguousTrackOrderError, UploadError
+from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
 from salmon.tagger.tagfile import TagFile
 
 
@@ -493,10 +494,13 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
 
     if to_rename:
         print_filenames(to_rename)
-        if single_folder and (clashes := _rename_clashes(path, to_rename)):
+        renames, clashes = plan_renames(
+            [(os.path.join(path, filename), os.path.join(path, new_name)) for filename, new_name in to_rename]
+        )
+        if clashes:
             click.secho("\nNot renaming: these files would overwrite another file.", fg="red")
             for name in clashes:
-                click.secho(f"   {name}", fg="red")
+                click.secho(f"   {os.path.relpath(name, path)}", fg="red")
             return
         if auto_rename or await interaction.confirm(
             click.style("\nWould you like to rename the files?", fg="magenta"),
@@ -512,17 +516,17 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
 
                 if old_dir != path:
                     directory_move_pairs.add((os.path.splitext(filename)[1], old_dir, new_dir))
-                new_path, new_path_ext = os.path.splitext(os.path.join(path, new_name))
-                # new_path = new_path[: 200 - len(new_path_ext) + len(os.path.dirname(path))] + new_path_ext
-                new_path = new_path + new_path_ext
-                os.rename(os.path.join(path, filename), new_path)
+            try:
+                rename_all(renames)
+            except RenameStopped as e:
+                raise UploadError(f"{e.report(path)}\nThe album's files are only partly renamed.") from e
 
-                # Update spectral_ids with new filenames, if spectrals were generated
-                if spectral_ids:
-                    for old_name, new_name in to_rename:
-                        for key, value in spectral_ids.items():
-                            if value == old_name:
-                                spectral_ids[key] = new_name
+            # Update spectral_ids with new filenames, if spectrals were generated
+            if spectral_ids:
+                new_names = dict(to_rename)
+                for key, value in spectral_ids.items():
+                    if value in new_names:
+                        spectral_ids[key] = new_names[value]
 
             # A folder holding one disc's tracks has its other files named for that disc (log.2.log)
             disc_of_folder = {folder: discs.pop() for folder, discs in folder_discs.items() if len(discs) == 1}
@@ -622,21 +626,6 @@ def _has_tag(tracktags, field):
     """Whether a tag object or dict carries a (possibly malformed) value for ``field``."""
     value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
     return value is not None
-
-
-def _rename_clashes(path, to_rename):
-    """Return the new names that more than one file would get, or that another file already has."""
-    counts = {}
-    for _, new_name in to_rename:
-        counts[new_name] = counts.get(new_name, 0) + 1
-    clashes = []
-    for filename, new_name in to_rename:
-        old_path, new_path = os.path.join(path, filename), os.path.join(path, new_name)
-        # On a case-insensitive filesystem the new name can be the file itself
-        taken = os.path.lexists(new_path) and not (os.path.exists(new_path) and os.path.samefile(old_path, new_path))
-        if (counts[new_name] > 1 or taken) and new_name not in clashes:
-            clashes.append(new_name)
-    return clashes
 
 
 def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
