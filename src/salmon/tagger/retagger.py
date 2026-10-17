@@ -17,6 +17,7 @@ from salmon.constants import (
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import AmbiguousTrackOrderError, UploadError
+from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_recorded
 from salmon.tagger.tagfile import TagFile
 
@@ -103,6 +104,7 @@ def create_track_changes(tags, metadata):
     """
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
+    ambiguous = None
 
     def disc_track_key(tagset):
         return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
@@ -136,8 +138,17 @@ def create_track_changes(tags, metadata):
         # onto the wrong track.
         ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
     else:
-        ordered_tags = _order_by_disc_folders(tags, metadata["tracks"])
+        try:
+            ordered_tags = _order_by_disc_folders(tags, metadata["tracks"])
+        except AmbiguousTrackOrderError as e:
+            ordered_tags, ambiguous = list(tags.items()), e
 
+    # Pair each file with its own track by title/ISRC/duration rather than by position, so
+    # unnumbered promo folders tag correctly. The order above is only the fallback for files the
+    # content can't place, and when there is no trustworthy order, every file must be placed by content.
+    tracks, by_content = order_tracks_for_files(ordered_tags, tracks)
+    if ambiguous is not None and not by_content:
+        raise ambiguous
     for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False):
         changes[filename] = []
 
@@ -289,6 +300,70 @@ def _disc_track_sort_key(value):
     """Sort key that treats a numeric string as a number, so disc "10" sorts after "2"."""
     s = str(value)
     return (0, int(s)) if s.isdecimal() else (1, s.lower())
+
+
+def _tagset_identity(tagset):
+    """The signals used to recognise which scraped track a file is."""
+
+    def tag(field):
+        value = tagset.get(field) if isinstance(tagset, dict) else getattr(tagset, field, None)
+        return value[0] if isinstance(value, list) and value else value or None
+
+    mut = getattr(tagset, "mut", None)
+    info = getattr(mut, "info", None)
+    return {
+        "title": tag("title"),
+        "isrc": tag("isrc"),
+        "duration": int(info.length) if info and getattr(info, "length", None) else None,
+    }
+
+
+def order_tracks_for_files(items, tracks):
+    """Reorder ``tracks`` so that entry N belongs to the Nth file in ``items``.
+
+    ``items`` is the ``(filename, tagset)`` pairs in the order they would otherwise be
+    zipped with ``tracks``. ``combine_tracks`` already paired the tracks by content, but it
+    works on track dicts that carry no filename, so the association is lost by the time tags
+    are written. Redo the match here against the files themselves.
+
+    Each track's ``duration`` is the duration of the local file it was built from
+    (``create_track_list``), which ``combine_tracks`` keeps, so this second match agrees with
+    the first. A track without one falls back to ISRC and title, then to its position in
+    ``items``.
+
+    Returns the reordered tracks, and whether every file was placed by content rather than
+    by position. On a count mismatch or an incomplete pairing ``tracks`` comes back as is.
+    """
+    if len(items) != len(tracks):
+        return tracks, False  # Counts disagree: keep the order as it is, and the caller reports the mismatch.
+    locals_ = [_tagset_identity(tagset) for _, tagset in items]
+    pairing, reasons = pair_by_content(locals_, tracks)
+
+    slots: list[dict | None] = [None] * len(items)
+    for mi, li in enumerate(pairing):
+        if li is not None:
+            slots[li] = tracks[mi]
+    ordered = [t for t in slots if t is not None]
+    if len(ordered) != len(slots):
+        return tracks, False  # Incomplete pairing; don't risk a partial reorder.
+
+    file_reasons = _reasons_by_file(pairing, reasons)
+    if ordered != tracks:
+        click.secho("\nMatched files to the metadata tracklist by content:", fg="yellow", bold=True)
+        for (filename, _), track, reason in zip(items, ordered, file_reasons, strict=True):
+            click.secho(
+                f"  {filename}\n      -> {track['track#']}. {track['title']} (matched on {reason})", fg="yellow"
+            )
+    return ordered, "position" not in file_reasons
+
+
+def _reasons_by_file(pairing, reasons):
+    """Re-key the per-scraped-track reasons onto the local file order."""
+    by_file = [None] * len(pairing)
+    for mi, li in enumerate(pairing):
+        if li is not None:
+            by_file[li] = reasons[mi]
+    return by_file
 
 
 def _compare_tag(tagfield, metafield, tagset, trackmeta):
