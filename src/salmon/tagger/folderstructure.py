@@ -234,13 +234,15 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
         # Shorten the name so the in-torrent path lands exactly on max_path_length, the ".."
         # marker included.
         excess = relative_len - max_path_length + 2
-        new_name = name[: max(len(name) - excess, 0)] + ".."
+        kept = len(name) - excess
+        new_name = name[: max(kept, 0)] + ".."
         newpath = os.path.join(directory, new_name + ext)
         new_relative_len = len(in_torrent_path(folder_name, os.path.relpath(newpath, path)))
-        if new_relative_len > max_path_length:
+        # At least one character of the name stays: "...flac" alone has no extension, and the track is lost.
+        if kept < 1 or new_relative_len > max_path_length:
             click.secho(
                 f"{filepath} cannot be shortened to {max_path_length} characters: its "
-                "folder path alone is already too long.",
+                "folder path leaves no room for its name.",
                 fg="red",
                 bold=True,
             )

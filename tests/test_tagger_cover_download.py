@@ -1,10 +1,13 @@
 """download_cover_if_nonexistent falls back to an embedded FLAC front cover when the folder has none."""
 
+import asyncio
 import io
 import struct
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 import anyio
+from aiohttp import web
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
 from PIL import Image
@@ -140,3 +143,79 @@ def test_embedded_cover_is_removed_after_upload_through_resolve_cover_url(tmp_pa
 
     assert result == (True, "https://catbox/uploaded.jpg")
     assert not (tmp_path / "cover.jpg").exists()
+
+
+# --- Downloads, from a local fake store ------------------------------------------------------------
+
+
+def _download(tmp_path: Path, handler: Callable[[web.Request], Awaitable[web.StreamResponse]]) -> str | None:
+    """Run _download_cover against a local server whose /cover.jpg answers with `handler`."""
+
+    async def main() -> str | None:
+        app = web.Application()
+        app.router.add_get("/cover.jpg", handler)
+        runner = web.AppRunner(app, access_log=None)
+        await runner.setup()
+        await web.TCPSite(runner, "127.0.0.1", 0).start()
+        try:
+            return await cover._download_cover(str(tmp_path), f"http://127.0.0.1:{runner.addresses[0][1]}/cover.jpg")
+        finally:
+            await runner.cleanup()
+
+    return anyio.run(main)
+
+
+def test_a_cover_download_cut_off_partway_leaves_no_file(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cover.cfg.upload.formatting, "lowercase_cover", False)
+
+    async def cut_off(request: web.Request) -> web.StreamResponse:
+        response = web.StreamResponse(headers={"Content-Length": str(len(FRONT) * 10), "Content-Type": "image/jpeg"})
+        await response.prepare(request)
+        await response.write(FRONT[:40])
+        assert request.transport is not None
+        request.transport.close()
+        return response
+
+    result = _download(tmp_path, cut_off)
+
+    assert result is None
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_a_downloaded_cover_is_written_whole(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cover.cfg.upload.formatting, "lowercase_cover", False)
+
+    async def whole(_request: web.Request) -> web.Response:
+        return web.Response(body=FRONT, content_type="image/jpeg")
+
+    result = _download(tmp_path, whole)
+
+    assert result == str(tmp_path / "Cover.jpg")
+    assert [entry.name for entry in tmp_path.iterdir()] == ["Cover.jpg"]
+    assert (tmp_path / "Cover.jpg").read_bytes() == FRONT
+
+
+def test_a_cover_download_that_times_out_is_reported_not_raised(tmp_path, monkeypatch) -> None:
+    real_timeout = cover.aiohttp.ClientTimeout
+    monkeypatch.setattr(cover.aiohttp, "ClientTimeout", lambda **_kwargs: real_timeout(total=0.2))
+
+    async def stalled(_request: web.Request) -> web.Response:
+        await asyncio.sleep(2)
+        return web.Response(body=FRONT, content_type="image/jpeg")
+
+    result = _download(tmp_path, stalled)
+
+    assert result is None
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_a_cover_bigger_than_an_image_may_be_is_not_kept(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cover, "MAX_IMAGE_BYTES", len(FRONT) - 1)
+
+    async def whole(_request: web.Request) -> web.Response:
+        return web.Response(body=FRONT, content_type="image/jpeg")
+
+    result = _download(tmp_path, whole)
+
+    assert result is None
+    assert list(tmp_path.iterdir()) == []

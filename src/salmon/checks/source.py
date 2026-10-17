@@ -31,6 +31,8 @@ _STORE_URL = re.compile(
     r"\.com(?:[/:?#]|$)",
     re.IGNORECASE,
 )
+# A release or track page: an artist's or label's store page also links a CD rip's artist.
+_STORE_RELEASE_PAGE = re.compile(r"/(?:album|release|track)(?:[/?#]|$)", re.IGNORECASE)
 _STORE_NAMES = {
     "qobuz": "Qobuz",
     "deezer": "Deezer",
@@ -159,7 +161,7 @@ def _tag_proofs(mut) -> dict[str, str]:
             elif field == "comment" and _BANDCAMP_COMMENT.match(lowered):
                 proofs["Bandcamp comment in the tags"] = "WEB"
     for _field, url in tag_url_fields(mut):
-        if match := _STORE_URL.match(url):
+        if (match := _STORE_URL.match(url)) and _STORE_RELEASE_PAGE.search(url[match.end() - 1 :]):
             store = (match.group(1) or match.group(2)).lower()
             proofs[f"{_STORE_NAMES[store]} URL in the tags"] = "WEB"
     return proofs

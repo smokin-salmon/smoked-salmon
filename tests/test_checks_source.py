@@ -218,6 +218,9 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         {"COMMENT": "Bought on Qobuz, tagged by hand"},
         {"COMMENT": "bought on bandcamp.com"},
         {"WEBSITE": "https://www.apple.com/logic-pro/"},
+        {"WWWARTIST": "https://artist.bandcamp.com"},
+        {"URL": "https://www.qobuz.com/au-en/interpreter/artist/123"},
+        {"WEBSITE": "https://www.qobuz.com/au-en/label/a-label/albums"},
     ],
     ids=[
         "picard-asin",
@@ -227,6 +230,9 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         "hand-written-comment",
         "hand-written-bandcamp-comment",
         "apple-but-not-its-store",
+        "bandcamp-artist-page",
+        "store-artist-page",
+        "store-label-listing",
     ],
 )
 def test_tags_a_user_or_a_tagger_writes_do_not_prove_web(tmp_path, tags) -> None:
