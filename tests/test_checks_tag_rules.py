@@ -171,6 +171,15 @@ def test_a_blank_v1_next_to_a_blank_v2_is_not_flagged(tmp_path) -> None:
     assert has_blank_id3v2_alongside_id3v1(str(path)) is False
 
 
+@pytest.mark.parametrize(("comment_end", "flagged"), [(b"\0\x05", False), (b"ok", True)], ids=["v1.1-track", "v1.0"])
+def test_a_v1_track_number_alone_is_not_text(tmp_path, comment_end, flagged) -> None:
+    """Bytes 125-126 hold a v1.1 track number when byte 125 is zero, else the end of a v1.0 comment."""
+    path = tmp_path / "a.mp3"
+    _write_mp3_v1_and_blank_v2(path, b"TAG" + bytes(122) + comment_end + b"\xff")
+
+    assert has_blank_id3v2_alongside_id3v1(str(path)) is flagged
+
+
 def test_a_tag_mutagen_cannot_parse_is_not_flagged_and_does_not_crash(tmp_path, monkeypatch) -> None:
     """A warning check must never raise: a malformed ID3v2 tag mutagen refuses to parse (not just a
     missing one) must be treated as not the flagged case, not propagated to abort the upload."""

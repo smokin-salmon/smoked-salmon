@@ -36,7 +36,9 @@ def _id3v1_holds_text(filepath: str) -> bool:
             return False
         handle.seek(-128, os.SEEK_END)
         block = handle.read(128)
-    return block[:3] == b"TAG" and bool(block[3:127].strip(b"\0 "))
+    # Byte 126 is the ID3v1.1 track number when byte 125 is zero, else the comment's end.
+    text = block[3:125] if block[125] == 0 else block[3:127]
+    return block[:3] == b"TAG" and bool(text.strip(b"\0 "))
 
 
 def _has_id3v2_header(filepath: str) -> bool:
