@@ -204,8 +204,13 @@ def _pair_base_tracks(btracks, mtracks):
     track belonging to ``mtracks[i]``, or ``None`` if no local track is left for
     it (the caller raises TrackCombineError for those), and how each was paired.
     Local tracks beyond the scraped tracklist are left unclaimed and untouched.
+
+    Tracks numbered by their files' own TRACKNUMBER tags keep their numbers unless
+    an ISRC or an exact title says otherwise. A track dict without the "numbered"
+    key (another source's) counts as numbered.
     """
-    pairing, reasons = pair_by_content(btracks, mtracks)
+    numbered = all(track.get("numbered", True) for track in btracks)
+    pairing, reasons = pair_by_content(btracks, mtracks, numbered=numbered)
     return [None if bi is None else btracks[bi] for bi in pairing], reasons
 
 
@@ -234,8 +239,8 @@ def combine_tracks(base, meta, update_track_numbers):
     ]
     btracks_flat = list(chain.from_iterable(btracks_sorted))
 
-    # Pair on content instead of on sorted rank, so the local files don't have to
-    # already be numbered in the source's real tracklist order.
+    # Pair on content instead of on sorted rank, so unnumbered local files don't
+    # have to already be in the source's real tracklist order.
     mtracks_flat = [
         track for _, tracks in _sorted_naturally(meta.items()) for _, track in _sorted_naturally(tracks.items())
     ]

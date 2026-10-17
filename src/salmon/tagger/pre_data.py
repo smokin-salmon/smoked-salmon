@@ -143,15 +143,12 @@ def create_track_list(tags, overwrite, audio_info=None):
     tracks = defaultdict(dict)
     for trackindex, (filename, track) in enumerate(sorted(tags.items(), key=lambda k: _tracknumber_sort_key(k[0])), 1):
         discnumber = track.discnumber or "1"
-        tracknumber = (
-            str(track.tracknumber).split("/")[0]
-            if (
-                track.tracknumber
-                and str(track.tracknumber).split("/")[0].isdigit()
-                and int(str(track.tracknumber).split("/")[0]) > 0
-            )
-            else str(trackindex)
+        numbered = bool(
+            track.tracknumber
+            and str(track.tracknumber).split("/")[0].isdigit()
+            and int(str(track.tracknumber).split("/")[0]) > 0
         )
+        tracknumber = str(track.tracknumber).split("/")[0] if numbered else str(trackindex)
         tracks[discnumber][tracknumber] = {
             "track#": tracknumber,
             "disc#": discnumber,
@@ -165,8 +162,10 @@ def create_track_list(tags, overwrite, audio_info=None):
             "explicit": None,
             "format": None,
             "streamable": None,
-            # Used to match files against a metadata source's tracklist.
+            # Used to match files against a metadata source's tracklist: a track numbered by its own TRACKNUMBER
+            # tag keeps that number unless its ISRC or exact title says otherwise (tagger.pairing).
             "duration": audio_info.get(filename, {}).get("duration"),
+            "numbered": numbered,
         }
         if overwrite:
             tracks[discnumber][tracknumber]["artists"] = []
