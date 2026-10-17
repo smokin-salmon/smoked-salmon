@@ -17,6 +17,7 @@ from salmon import cfg
 from salmon.common import get_audio_files
 from salmon.images.files import MAX_IMAGE_BYTES
 from salmon.proxy import session_kwargs
+from salmon.ssrf import NonPublicAddressError
 
 # RED allows at most 1 MiB of embedded pictures plus padding per file.
 MAX_PICTURES_AND_PADDING = humanfriendly.parse_size("1MiB")
@@ -99,7 +100,10 @@ def _is_valid_cover(cover_path: str | IO[bytes]) -> bool:
         True if the file is a valid JPEG or PNG image.
     """
     try:
-        mime = Image.open(cover_path).get_format_mimetype()
+        with Image.open(cover_path) as image:
+            mime = image.get_format_mimetype()
+            # Every pixel: a download cut off with no Content-Length still has a valid header.
+            image.load()
     except Exception:
         return False
     return mime in ("image/jpeg", "image/png")
@@ -140,7 +144,10 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
                     click.secho(f"\nFailed to download cover image (ERROR over {limit} MiB)", fg="red")
                     return None
     except (aiohttp.ClientError, TimeoutError) as e:
-        click.secho(f"\nFailed to download cover image (ERROR {str(e) or type(e).__name__})", fg="red")
+        # By type: an aiohttp error can repeat the URL, and a cover URL can be signed. salmon web's own refusal
+        # names only the host.
+        reason = str(e) if isinstance(e, NonPublicAddressError) else type(e).__name__
+        click.secho(f"\nFailed to download cover image (ERROR {reason})", fg="red")
         return None
 
     if not _is_valid_cover(io.BytesIO(data)):

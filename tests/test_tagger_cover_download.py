@@ -220,3 +220,39 @@ def test_a_cover_bigger_than_an_image_may_be_is_not_kept(tmp_path, monkeypatch) 
 
     assert result is None
     assert list(tmp_path.iterdir()) == []
+
+
+def _noisy_jpeg() -> bytes:
+    """A JPEG big enough that a cut-off copy still has a whole header."""
+    buffer = io.BytesIO()
+    Image.frombytes("RGB", (64, 64), bytes(range(256)) * 48).save(buffer, "jpeg", quality=95)
+    return buffer.getvalue()
+
+
+def test_a_cover_cut_off_with_no_content_length_is_not_kept(tmp_path, monkeypatch) -> None:
+    body = _noisy_jpeg()
+
+    async def ends_early(request: web.Request) -> web.StreamResponse:
+        response = web.StreamResponse(headers={"Content-Type": "image/jpeg"})
+        response.enable_chunked_encoding()
+        await response.prepare(request)
+        await response.write(body[: len(body) // 2])
+        await response.write_eof()
+        return response
+
+    result = _download(tmp_path, ends_early)
+
+    assert result is None
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_a_failed_cover_download_never_prints_its_url(tmp_path, capsys) -> None:
+    async def loops(request: web.Request) -> web.Response:
+        raise web.HTTPFound("/cover.jpg?sig=test-sig-0001")
+
+    result = _download(tmp_path, loops)
+
+    assert result is None
+    out = capsys.readouterr().out
+    assert "test-sig-0001" not in out
+    assert "Failed to download cover image (ERROR TooManyRedirects)" in out

@@ -117,8 +117,16 @@ def test_a_verification_log_proves_nothing(tmp_path) -> None:
         ({"MY OWN KEY": "https://artist.bandcamp.com/album/y"}, "Bandcamp URL in the tags"),
         ({"SOURCE": "https://itunes.apple.com/us/album/y/123"}, "Apple URL in the tags"),
         ({"URL": "https://music.apple.com/us/song/y/456"}, "Apple URL in the tags"),
+        ({"URL": "https://www.hdtracks.com/?ref=x#/album/123"}, "HDtracks URL in the tags"),
     ],
-    ids=["qobuz-custom-key", "tidal-comment", "bandcamp-custom-key", "itunes-store", "apple-song-page"],
+    ids=[
+        "qobuz-custom-key",
+        "tidal-comment",
+        "bandcamp-custom-key",
+        "itunes-store",
+        "apple-song-page",
+        "hdtracks-query",
+    ],
 )
 def test_a_store_url_proves_web_whatever_tag_holds_it(tmp_path, tags, reason) -> None:
     album = _album(tmp_path, tags)

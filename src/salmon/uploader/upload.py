@@ -550,7 +550,7 @@ def generate_t_description(
         for filename, track in track_data.items():
             mins, secs = track["duration"] // 60, track["duration"] % 60
             bitrate = f" [{track['bit rate'] / 1000:.01f}kbps]" if cfg.upload.description.bitrates_in_t_desc else ""
-            bits = f"{track['precision']} bit / " if track["precision"] else ""
+            bits = f"{track['precision']} bit / " if track["precision"] is not None else ""
             hybrid_info = f" [{bits}{track['sample rate'] / 1000} kHz]" if hybrid else ""
             tracklist += f"{os.path.splitext(filename)[0]} [i]({mins}:{secs:02d})[/i]{bitrate}{hybrid_info}\n"
         tracklist += "\n"

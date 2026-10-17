@@ -240,6 +240,12 @@ def _hybrid_tracklist(precision: int | None) -> str:
     )
 
 
+def test_a_hybrid_tracklist_keeps_a_zero_bit_depth(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.description, "bitrates_in_t_desc", False)
+
+    assert "01. Intro [i](3:05)[/i] [0 bit / 44.1 kHz]\n" in _hybrid_tracklist(0)
+
+
 def test_a_lossy_hybrid_tracklist_names_no_bit_depth(monkeypatch) -> None:
     monkeypatch.setattr(cfg.upload.description, "bitrates_in_t_desc", False)
 

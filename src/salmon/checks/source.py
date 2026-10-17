@@ -10,6 +10,7 @@ Reads the files already in the folder and nothing else.
 import os
 import re
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 from mutagen import File as MutagenFile
 
@@ -162,7 +163,8 @@ def _tag_proofs(mut) -> dict[str, str]:
                 proofs["Bandcamp comment in the tags"] = "WEB"
     for _field, url in tag_url_fields(mut):
         # The path and fragment only (HDtracks pages are #/album/...): a query can quote any path.
-        if (match := _STORE_URL.match(url)) and _STORE_RELEASE_PAGE.search(url[match.end() - 1 :].split("?", 1)[0]):
+        page = urlsplit(url)
+        if (match := _STORE_URL.match(url)) and _STORE_RELEASE_PAGE.search(f"{page.path}#{page.fragment}"):
             store = (match.group(1) or match.group(2)).lower()
             proofs[f"{_STORE_NAMES[store]} URL in the tags"] = "WEB"
     return proofs
