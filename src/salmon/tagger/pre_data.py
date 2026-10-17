@@ -63,7 +63,7 @@ async def construct_rls_data(
         metadata["label"] = tag_track.label
         metadata["catno"] = tag_track.catno
         metadata["genres"] = split_genres(tag_track.genre)
-    metadata["tracks"] = create_track_list(tags, overwrite)
+    metadata["tracks"] = create_track_list(tags, overwrite, audio_info)
 
     metadata["source"] = source
     metadata["scene"] = scene
@@ -136,10 +136,11 @@ async def parse_encoding(format_, audio_info, supplied_encoding, prompt_encoding
     raise click.Abort
 
 
-def create_track_list(tags, overwrite):
+def create_track_list(tags, overwrite, audio_info=None):
     """Generate the track data from each track tag."""
+    audio_info = audio_info or {}
     tracks = defaultdict(dict)
-    for trackindex, (_, track) in enumerate(sorted(tags.items(), key=lambda k: _tracknumber_sort_key(k[0])), 1):
+    for trackindex, (filename, track) in enumerate(sorted(tags.items(), key=lambda k: _tracknumber_sort_key(k[0])), 1):
         discnumber = track.discnumber or "1"
         tracknumber = (
             str(track.tracknumber).split("/")[0]
@@ -163,6 +164,8 @@ def create_track_list(tags, overwrite):
             "explicit": None,
             "format": None,
             "streamable": None,
+            # Used to match files against a metadata source's tracklist.
+            "duration": audio_info.get(filename, {}).get("duration"),
         }
         if overwrite:
             tracks[discnumber][tracknumber]["artists"] = []
