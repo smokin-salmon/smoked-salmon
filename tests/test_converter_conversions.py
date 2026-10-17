@@ -115,6 +115,14 @@ def test_a_record_naming_another_folder_is_ignored_with_one_line(tmp_path, capsy
     assert capsys.readouterr().out.count("Ignoring") == 1
 
 
+def test_a_record_found_under_another_case_is_the_same_folders(tmp_path) -> None:
+    """A case-insensitive volume opens the record of "Album [WEB FLAC]" for "album [web flac]"."""
+    out = tmp_path / "album [web flac]"
+    _write_record(out, {**DOWNCONVERT, "output": "Album [WEB FLAC]"})
+
+    assert _facts(str(out)) == DOWNCONVERT
+
+
 def test_a_missing_record_reads_as_no_conversion_quietly(tmp_path, capsys) -> None:
     assert conversions.conversion_of(str(tmp_path / "Album [WEB FLAC]")) is None
     assert capsys.readouterr().out == ""

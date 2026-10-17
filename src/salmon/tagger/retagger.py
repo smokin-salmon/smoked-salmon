@@ -649,13 +649,17 @@ def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
     disc number of each folder that held one disc: its files are named for that disc (``rip.log`` from disc 2
     becomes ``rip.2.log``, ``Scans`` becomes ``Scans.2``), so several discs' files can sit side by side.
     """
+    track_dirs = [os.path.normpath(old_dir) for _ext, old_dir, _new_dir in directory_move_pairs]
     for ext, old_dir, new_dir in sorted(directory_move_pairs):
-        if old_dir == new_dir:
+        if old_dir == new_dir or not os.path.isdir(old_dir):
             continue
         disc_number = (disc_of_folder or {}).get(old_dir)
         for file in sorted(os.listdir(old_dir)):
             old_path = os.path.join(old_dir, file)
             if file.endswith(ext) and not os.path.isdir(old_path):
+                continue
+            # A folder that held tracks too (Disc 1/Bonus) has its files moved on its own pass.
+            if os.path.isdir(old_path) and _holds_any(old_path, track_dirs):
                 continue
             new_file = file
             if disc_number is not None:
@@ -666,6 +670,11 @@ def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
                 click.secho(f"Left {old_path} where it is: {new_path} already exists.", fg="yellow")
                 continue
             shutil.move(old_path, new_path)
+
+
+def _holds_any(folder: str, paths: list[str]) -> bool:
+    folder = os.path.normpath(folder)
+    return any(path == folder or path.startswith(folder + os.sep) for path in paths)
 
 
 def delete_empty_folders(path):

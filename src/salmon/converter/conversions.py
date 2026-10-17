@@ -92,7 +92,11 @@ def _usable(data: Any, name: str) -> bool:
     from salmon.converter.downconverting import SOX_DEPTH_ARGS  # local: both converters import this module
     from salmon.converter.transcoding import LAME_COMMAND_MAP
 
-    if not isinstance(data, dict) or not isinstance(data.get("source"), str) or data.get("output") != name:
+    if not isinstance(data, dict) or not isinstance(data.get("source"), str):
+        return False
+    # A case-insensitive volume opens the record of "Album" for "album", and that is the same folder.
+    output = data.get("output")
+    if not isinstance(output, str) or output.casefold() != name.casefold():
         return False
     # Hashable before any membership test: a list or object from a hand-edited file must read as unusable.
     kind, bitrate, bit_depth = data.get("kind"), data.get("bitrate"), data.get("bit_depth")

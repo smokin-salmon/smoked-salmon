@@ -209,7 +209,8 @@ def _disc_number(path: str) -> int | None:
     except Exception:
         return None
     number = str(value).split("/")[0].strip() if value is not None else ""
-    return int(number) if number.isdigit() else None
+    # isdecimal(), as the retagger reads it: isdigit() also takes a superscript "2", which int() refuses.
+    return int(number) if number.isdecimal() else None
 
 
 def _audio_files_of_disc(audio_files: list[str], logpath: str) -> list[str]:
