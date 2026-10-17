@@ -116,8 +116,9 @@ def test_a_verification_log_proves_nothing(tmp_path) -> None:
         ({"COMMENT": "https://listen.tidal.com/album/2468665"}, "Tidal URL in the tags"),
         ({"MY OWN KEY": "https://artist.bandcamp.com/album/y"}, "Bandcamp URL in the tags"),
         ({"SOURCE": "https://itunes.apple.com/us/album/y/123"}, "Apple URL in the tags"),
+        ({"URL": "https://music.apple.com/us/song/y/456"}, "Apple URL in the tags"),
     ],
-    ids=["qobuz-custom-key", "tidal-comment", "bandcamp-custom-key", "itunes-store"],
+    ids=["qobuz-custom-key", "tidal-comment", "bandcamp-custom-key", "itunes-store", "apple-song-page"],
 )
 def test_a_store_url_proves_web_whatever_tag_holds_it(tmp_path, tags, reason) -> None:
     album = _album(tmp_path, tags)
@@ -221,6 +222,7 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         {"WWWARTIST": "https://artist.bandcamp.com"},
         {"URL": "https://www.qobuz.com/au-en/interpreter/artist/123"},
         {"WEBSITE": "https://www.qobuz.com/au-en/label/a-label/albums"},
+        {"WWWARTIST": "https://artist.bandcamp.com/?from=/album/y"},
     ],
     ids=[
         "picard-asin",
@@ -233,6 +235,7 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         "bandcamp-artist-page",
         "store-artist-page",
         "store-label-listing",
+        "album-path-only-in-the-query",
     ],
 )
 def test_tags_a_user_or_a_tagger_writes_do_not_prove_web(tmp_path, tags) -> None:

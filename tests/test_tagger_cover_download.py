@@ -195,7 +195,7 @@ def test_a_downloaded_cover_is_written_whole(tmp_path, monkeypatch) -> None:
     assert (tmp_path / "Cover.jpg").read_bytes() == FRONT
 
 
-def test_a_cover_download_that_times_out_is_reported_not_raised(tmp_path, monkeypatch) -> None:
+def test_a_cover_download_that_times_out_is_reported_not_raised(tmp_path, monkeypatch, capsys) -> None:
     real_timeout = cover.aiohttp.ClientTimeout
     monkeypatch.setattr(cover.aiohttp, "ClientTimeout", lambda **_kwargs: real_timeout(total=0.2))
 
@@ -207,6 +207,7 @@ def test_a_cover_download_that_times_out_is_reported_not_raised(tmp_path, monkey
 
     assert result is None
     assert list(tmp_path.iterdir()) == []
+    assert "Failed to download cover image (ERROR TimeoutError)" in capsys.readouterr().out
 
 
 def test_a_cover_bigger_than_an_image_may_be_is_not_kept(tmp_path, monkeypatch) -> None:
