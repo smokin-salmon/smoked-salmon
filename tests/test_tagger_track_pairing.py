@@ -359,6 +359,25 @@ def test_combine_tracks_refuses_to_renumber_a_track_onto_one_the_source_has_no_t
     assert base == untouched
 
 
+def test_combine_tracks_refuses_to_renumber_two_tracks_into_one_slot():
+    # The source has local disc 1 track 2 (Gamma) as its disc 2 track 1. Renumbered on its own disc, Gamma would
+    # take disc 1 track 1, which Alpha keeps.
+    base = {
+        "1": {"1": _track("Alpha", "1", numbered=True), "2": _track("Gamma", "2", numbered=True)},
+        "2": {"1": {**_track("Beta", "1", numbered=True), "disc#": "2"}},
+    }
+    meta = {
+        "1": {"1": _track("Alpha", "1"), "2": _track("Beta", "2")},
+        "2": {"1": {**_track("Gamma", "1"), "disc#": "2"}},
+    }
+    untouched = deepcopy(base)
+
+    with pytest.raises(TrackCombineError):
+        combine_tracks(base, deepcopy(meta), True)
+
+    assert base == untouched
+
+
 def test_combine_tracks_merges_each_scraped_track_onto_its_own_local_track():
     # Unnumbered local tracks, numbered in file-name order; the source lists them in release order.
     base = {

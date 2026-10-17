@@ -214,20 +214,21 @@ def _pair_base_tracks(btracks, mtracks):
     return [None if bi is None else btracks[bi] for bi in pairing], reasons
 
 
-def _refuse_renumbering_onto_unpaired(btracks, mtracks, ordered, update_track_numbers):
-    """Raise TrackCombineError, before anything is merged, if a paired local track would take the number of a
-    local track the source has no track for: that track would be overwritten and lost. Pairing by content can
-    leave an unpaired track anywhere in the folder, not only after the paired ones."""
+def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, update_track_numbers):
+    """Raise TrackCombineError, before anything is merged, if two local tracks would end up in one slot, so one
+    would be overwritten and lost: a paired track taking the number of a track the source has no track for, or
+    two paired tracks taking the same number on one disc (a track keeps its own disc when it is renumbered).
+    Pairing by content can pair a local track anywhere in the folder, not only at its own rank."""
     paired = {id(btrack) for btrack in ordered if btrack is not None}
-    unpaired_slots = {(btrack["disc#"], btrack["track#"]) for btrack in btracks if id(btrack) not in paired}
+    taken = {(btrack["disc#"], btrack["track#"]) for btrack in btracks if id(btrack) not in paired}
     for mtrack, btrack in zip(mtracks, ordered, strict=True):
         if btrack is None:
             continue  # The merge raises for a scraped track without a local one.
         new_num = mtrack["track#"] if (update_track_numbers and mtrack["track#"]) else btrack["track#"]
-        if (btrack["disc#"], new_num) in unpaired_slots:
-            raise TrackCombineError(
-                f"Disc {btrack['disc#']} track {new_num} would replace a local track the source has no track for."
-            )
+        slot = (btrack["disc#"], new_num)
+        if slot in taken:
+            raise TrackCombineError(f"Disc {slot[0]} track {slot[1]} would hold two local tracks, losing one.")
+        taken.add(slot)
 
 
 def _print_pairing(mtracks, ordered, reasons):
@@ -261,7 +262,7 @@ def combine_tracks(base, meta, update_track_numbers):
         track for _, tracks in _sorted_naturally(meta.items()) for _, track in _sorted_naturally(tracks.items())
     ]
     ordered_btracks, pair_reasons = _pair_base_tracks(btracks_flat, mtracks_flat)
-    _refuse_renumbering_onto_unpaired(btracks_flat, mtracks_flat, ordered_btracks, update_track_numbers)
+    _refuse_renumbering_that_loses_a_track(btracks_flat, mtracks_flat, ordered_btracks, update_track_numbers)
     _print_pairing(mtracks_flat, ordered_btracks, pair_reasons)
 
     # If the source already provides remixer credits, skip title-based inference
