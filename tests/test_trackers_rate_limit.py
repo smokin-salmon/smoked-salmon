@@ -21,6 +21,7 @@ from aiolimiter import AsyncLimiter
 from tenacity import wait_none
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from salmon.common import urls
 from salmon.errors import RateLimitedError, RequestError, RequestFailedError, UnknownOutcomeError
 from salmon.trackers.account import SlidingWindowLimiter
 from salmon.trackers.base import BaseGazelleApi, RetryableError
@@ -78,9 +79,23 @@ def far_from_utc() -> Iterator[None]:
     time.tzset()
 
 
-def _in(seconds: float, *, usegmt: bool = True) -> str:
-    """An HTTP-date `seconds` from now; with usegmt=False, the "-0000" form that parses without a zone."""
-    return formatdate(time.time() + seconds, usegmt=usegmt)
+FIXED_NOW = 1_800_000_000.0
+
+
+@pytest.fixture
+def fixed_clock(monkeypatch: pytest.MonkeyPatch) -> float:
+    """Freeze the clock `parse_retry_after` reads at a whole second.
+
+    An HTTP-date has no fraction of a second, so against the real clock the wait it gives is 30 minus the fraction
+    already elapsed minus the time the request took: 29 when that crosses a second boundary.
+    """
+    monkeypatch.setattr(urls, "time", lambda: FIXED_NOW)
+    return FIXED_NOW
+
+
+def _in(seconds: float, *, usegmt: bool = True, now: float | None = None) -> str:
+    """An HTTP-date `seconds` from `now` (real time by default); usegmt=False gives the zone-less "-0000" form."""
+    return formatdate((time.time() if now is None else now) + seconds, usegmt=usegmt)
 
 
 async def _rate_limited(
@@ -197,8 +212,8 @@ def test_waits_of_one_request_add_up_to_60_seconds_at_most(
 
 @pytest.mark.parametrize("usegmt", [True, False], ids=["gmt", "naive"])
 @pytest.mark.usefixtures("far_from_utc")
-def test_retry_after_as_a_date_is_waited_for(waits: list[float], usegmt: bool) -> None:
-    hits, err = anyio.run(_rate_limited, lambda: _in(30, usegmt=usegmt))
+def test_retry_after_as_a_date_is_waited_for(waits: list[float], fixed_clock: float, usegmt: bool) -> None:
+    hits, err = anyio.run(_rate_limited, lambda: _in(30, usegmt=usegmt, now=fixed_clock))
     # Whole seconds, rounded up: the date has no fraction of a second.
     assert waits == [30, 30]
     assert len(hits) == 3
