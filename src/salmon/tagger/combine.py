@@ -3,11 +3,13 @@ import re
 from collections import defaultdict
 from itertools import chain
 
+import asyncclick as click
 from unidecode import unidecode
 
 from salmon.common import re_strip
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
+from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import determine_label_type, generate_artists, standardize_genres
 
@@ -195,13 +197,50 @@ def _sorted_naturally(items):
     return sorted(items, key=lambda item: _natural_track_key(item[0]))
 
 
+def _pair_base_tracks(btracks, mtracks):
+    """Order the local track dicts to line up with the scraped tracklist.
+
+    Returns a list of length ``len(mtracks)`` where entry ``i`` is the local
+    track belonging to ``mtracks[i]``, or ``None`` if no local track is left for
+    it (the caller raises TrackCombineError for those), and how each was paired.
+    Local tracks beyond the scraped tracklist are left unclaimed and untouched.
+    """
+    pairing, reasons = pair_by_content(btracks, mtracks)
+    return [None if bi is None else btracks[bi] for bi in pairing], reasons
+
+
+def _print_pairing(mtracks, ordered, reasons):
+    """Show how local files were matched, so a bad pairing is visible before tagging."""
+    if not any(r and r != "position" for r in reasons):
+        return  # Paired by position only, as before: nothing worth reporting.
+    click.secho("\nMatched local tracks to the metadata source:", fg="yellow", bold=True)
+    for mtrack, btrack, why in zip(mtracks, ordered, reasons, strict=False):
+        if btrack is None:
+            click.secho(f"  {mtrack['track#']:>3}. {mtrack['title']} -> (no local track)", fg="red")
+            continue
+        moved = str(btrack["track#"]) != str(mtrack["track#"])
+        click.secho(
+            f"  {mtrack['track#']:>3}. {mtrack['title']} <- {btrack['title']} "
+            f"(was track {btrack['track#']}, matched on {why})",
+            fg="red" if why == "position" else ("yellow" if moved else "green"),
+        )
+
+
 def combine_tracks(base, meta, update_track_numbers):
     """Combine the metadata for the tracks of two different sources."""
     # Track dictionaries reflect discovery order, so sort discs and tracks naturally before pairing.
     btracks_sorted = [
         [track for _, track in _sorted_naturally(disc.items())] for _, disc in _sorted_naturally(base.items())
     ]
-    btracks = iter(chain.from_iterable(btracks_sorted))
+    btracks_flat = list(chain.from_iterable(btracks_sorted))
+
+    # Pair on content instead of on sorted rank, so the local files don't have to
+    # already be numbered in the source's real tracklist order.
+    mtracks_flat = [
+        track for _, tracks in _sorted_naturally(meta.items()) for _, track in _sorted_naturally(tracks.items())
+    ]
+    ordered_btracks, pair_reasons = _pair_base_tracks(btracks_flat, mtracks_flat)
+    _print_pairing(mtracks_flat, ordered_btracks, pair_reasons)
 
     # If the source already provides remixer credits, skip title-based inference
     # to avoid adding spurious artists from mix names like "Attitude Dub Mix".
@@ -209,12 +248,17 @@ def combine_tracks(base, meta, update_track_numbers):
         role == "remixer" for tracks in meta.values() for track in tracks.values() for _, role in track["artists"]
     )
 
+    # Track numbers are applied after the merge loop; renumbering in place can
+    # overwrite a base track that hasn't been visited yet once pairing reorders.
+    renumbered = []
+
+    # One entry per scraped track, in the order this loop visits them.
+    paired_btracks = iter(ordered_btracks)
     for disc, tracks in _sorted_naturally(meta.items()):
         for num, track in _sorted_naturally(tracks.items()):
-            try:
-                btrack = next(btracks)
-            except StopIteration:
-                raise TrackCombineError(f"Disc {disc} track {num} does not exist.") from None
+            btrack = next(paired_btracks)
+            if btrack is None:
+                raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
 
             if (
                 # Use unidecode comparison when there are accents in the title
@@ -273,10 +317,16 @@ def combine_tracks(base, meta, update_track_numbers):
                 btrack["tracktotal"] = track["tracktotal"]
             if not btrack["disctotal"]:
                 btrack["disctotal"] = track["disctotal"]
-            if update_track_numbers and track["track#"]:
-                del base[btrack["disc#"]][btrack["track#"]]
-                btrack["track#"] = track["track#"]
-            base[btrack["disc#"]][btrack["track#"]] = btrack
+            new_num = track["track#"] if (update_track_numbers and track["track#"]) else btrack["track#"]
+            renumbered.append((btrack, btrack["disc#"], btrack["track#"], new_num))
+
+    # Clear every old slot before filling the new ones, so two tracks swapping
+    # positions doesn't leave one of them deleted.
+    for _, disc_no, old_num, _ in renumbered:
+        base[disc_no].pop(old_num, None)
+    for btrack, disc_no, _, new_num in renumbered:
+        btrack["track#"] = new_num
+        base[disc_no][new_num] = btrack
     return base
 
 
