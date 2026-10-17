@@ -162,9 +162,15 @@ def _tag_proofs(mut) -> dict[str, str]:
             elif field == "comment" and _BANDCAMP_COMMENT.match(lowered):
                 proofs["Bandcamp comment in the tags"] = "WEB"
     for _field, url in tag_url_fields(mut):
+        if not (match := _STORE_URL.match(url)):
+            continue
+        try:
+            page = urlsplit(url)
+        except ValueError:
+            # Only URL-shaped ("https://[broken"): a tag is whatever its writer put there.
+            continue
         # The path and fragment only (HDtracks pages are #/album/...): a query can quote any path.
-        page = urlsplit(url)
-        if (match := _STORE_URL.match(url)) and _STORE_RELEASE_PAGE.search(f"{page.path}#{page.fragment}"):
+        if _STORE_RELEASE_PAGE.search(f"{page.path}#{page.fragment}"):
             store = (match.group(1) or match.group(2)).lower()
             proofs[f"{_STORE_NAMES[store]} URL in the tags"] = "WEB"
     return proofs

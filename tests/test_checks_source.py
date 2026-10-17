@@ -442,3 +442,12 @@ def test_a_known_source_skips_the_detection_and_the_prompt(monkeypatch) -> None:
 
     assert detected_paths == []
     assert prompted_with == []
+
+
+@pytest.mark.parametrize("url", ["https://[broken", "https://www.qobuz.com:[broken/album/x"], ids=["any", "store"])
+def test_a_tag_url_python_cannot_parse_is_skipped(tmp_path, url: str) -> None:
+    album = _album(tmp_path, {"URL": url})
+
+    found = detect_source(str(album))
+
+    assert found is None

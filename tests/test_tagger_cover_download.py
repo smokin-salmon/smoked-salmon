@@ -13,6 +13,7 @@ from mutagen.id3 import PictureType
 from PIL import Image
 
 import salmon.uploader
+from salmon import interaction
 from salmon.tagger import cover
 from salmon.trackers.red import RedApi
 
@@ -256,3 +257,29 @@ def test_a_failed_cover_download_never_prints_its_url(tmp_path, capsys) -> None:
     out = capsys.readouterr().out
     assert "test-sig-0001" not in out
     assert "Failed to download cover image (ERROR TooManyRedirects)" in out
+
+
+def test_a_cover_whose_size_would_take_gigabytes_to_load_is_refused() -> None:
+    """A small file can claim a huge image: 9000x9000 is under Pillow's own limit, far over any cover."""
+    huge = io.BytesIO()
+    Image.new("1", (9000, 9000)).save(huge, "png")
+
+    assert len(huge.getvalue()) < 1_000_000
+    assert cover._is_valid_cover(io.BytesIO(huge.getvalue())) is False
+    assert cover._is_valid_cover(io.BytesIO(FRONT)) is True
+
+
+def test_the_no_cover_message_for_a_new_group_names_a_failed_download(tmp_path, monkeypatch, capsys) -> None:
+    async def no_cover(*_args, **_kwargs) -> tuple[None, bool]:
+        return None, False
+
+    monkeypatch.setattr(salmon.uploader, "get_cover_url", no_cover)
+
+    with interaction.assuming_defaults():
+        result = anyio.run(
+            salmon.uploader.resolve_cover_url, RedApi(), None, {}, str(tmp_path), "https://store/cover.jpg", True
+        )
+
+    assert result == (False, None)
+    out = capsys.readouterr().out
+    assert "No cover image for this new group on RED: none was found, its download failed, or the upload to" in out

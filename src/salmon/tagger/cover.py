@@ -15,7 +15,7 @@ from PIL import Image
 
 from salmon import cfg
 from salmon.common import get_audio_files
-from salmon.images.files import MAX_IMAGE_BYTES
+from salmon.images.files import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
 from salmon.proxy import session_kwargs
 from salmon.ssrf import NonPublicAddressError
 
@@ -102,6 +102,9 @@ def _is_valid_cover(cover_path: str | IO[bytes]) -> bool:
     try:
         with Image.open(cover_path) as image:
             mime = image.get_format_mimetype()
+            # Read from the header: a small file can claim pixels that would take gigabytes to load.
+            if image.width * image.height > MAX_IMAGE_PIXELS:
+                return False
             # Every pixel: a download cut off with no Content-Length still has a valid header.
             image.load()
     except Exception:
