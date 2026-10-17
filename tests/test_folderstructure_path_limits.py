@@ -111,3 +111,74 @@ def test_truncation_never_cuts_a_file_name_down_to_its_extension(tmp_path) -> No
     with pytest.raises(NoncompliantFolderStructure):
         _check_path_lengths(str(folder), scene=False, max_path_length=9)
     assert os.listdir(folder) == ["xxxxx.flac"]
+
+
+# Two movements share this prefix, longer than what a 40-character limit leaves of a name in "F/"
+SYMPHONY = "Symphony No. 5 in C minor, Op. 67"
+
+
+def _movements(tmp_path, *names):
+    """A release folder "F" holding a file per name, each holding its own name."""
+    folder = tmp_path / "F"
+    folder.mkdir()
+    for name in names:
+        (folder / name).write_text(name)
+    return folder
+
+
+def _files(folder):
+    return sorted((path.name, path.read_text()) for path in folder.iterdir())
+
+
+def test_truncation_gives_two_names_cut_to_one_prefix_a_name_each(tmp_path) -> None:
+    first, second = f"{SYMPHONY}: I. Allegro con brio.flac", f"{SYMPHONY}: II. Andante con moto.flac"
+    folder = _movements(tmp_path, first, second)
+
+    _check_path_lengths(str(folder), scene=False, max_path_length=40)
+
+    assert _files(folder) == [
+        ("Symphony No. 5 in C minor, Op. ...flac", first),
+        ("Symphony No. 5 in C minor, Op~2...flac", second),
+    ]
+    assert all(len(f"F/{name}") <= 40 for name, _ in _files(folder))
+
+
+def test_truncation_never_takes_the_name_of_a_file_already_there(tmp_path) -> None:
+    long_name = f"{SYMPHONY}: I. Allegro con brio.flac"
+    folder = _movements(tmp_path, long_name, "Symphony No. 5 in C minor, Op. ...flac")
+
+    _check_path_lengths(str(folder), scene=False, max_path_length=40)
+
+    assert _files(folder) == [
+        ("Symphony No. 5 in C minor, Op. ...flac", "Symphony No. 5 in C minor, Op. ...flac"),
+        ("Symphony No. 5 in C minor, Op~2...flac", long_name),
+    ]
+
+
+def test_truncation_renames_nothing_when_a_unique_name_cannot_fit(tmp_path) -> None:
+    # A 10-character limit leaves "a" of each name: there is no room for a counter.
+    folder = _movements(tmp_path, "aXXXXX.flac", "aYYYYY.flac")
+    before = _files(folder)
+
+    with pytest.raises(NoncompliantFolderStructure):
+        _check_path_lengths(str(folder), scene=False, max_path_length=10)
+
+    assert _files(folder) == before
+
+
+def test_truncation_stops_at_the_first_failed_rename_and_names_the_files_left(tmp_path, monkeypatch, capsys) -> None:
+    first, second = f"{SYMPHONY}: I. Allegro con brio.flac", f"{SYMPHONY}: II. Andante con moto.flac"
+    folder = _movements(tmp_path, first, second)
+
+    def failing_rename(src, dst):
+        raise PermissionError(13, "Permission denied", src)
+
+    monkeypatch.setattr(os, "rename", failing_rename)
+
+    with pytest.raises(NoncompliantFolderStructure):
+        _check_path_lengths(str(folder), scene=False, max_path_length=40)
+
+    out = capsys.readouterr().out
+    assert "Permission denied" in out
+    assert "Not renamed" in out
+    assert second in out

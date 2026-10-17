@@ -4,6 +4,7 @@ Generated folder and file names are cleaned, and check_folder_structure renames 
 release, reports) the names that still hold one.
 """
 
+import os
 from types import SimpleNamespace
 
 import anyio
@@ -438,3 +439,37 @@ def test_rename_folder_refuses_a_name_with_a_path_separator(tmp_path, monkeypatc
 
     _assert_untouched(parent, downloads, album)
     assert not (parent / "escape").exists()
+
+
+def test_check_stops_when_a_new_name_is_taken_after_the_check(tmp_path, monkeypatch) -> None:
+    root = _release(tmp_path)
+
+    async def confirm(*_args, **_kwargs):
+        (root / "01. Some Title.flac").write_bytes(b"other")
+        return True
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+
+    with pytest.raises(NoncompliantFolderStructure):
+        anyio.run(lambda: _check_invisible_characters(str(root), False))
+
+    assert (root / "01. Some Title.flac").read_bytes() == b"other"
+    assert (root / f"01. Some{NBSP}Title.flac").read_bytes() == b"fLaC"
+
+
+def test_check_stops_at_the_first_failed_rename_and_names_the_names_left(tmp_path, monkeypatch, capsys) -> None:
+    root = _release(tmp_path)
+    _answer(monkeypatch, True)
+
+    def failing_rename(src, dst):
+        raise PermissionError(13, "Permission denied", src)
+
+    monkeypatch.setattr(os, "rename", failing_rename)
+
+    with pytest.raises(NoncompliantFolderStructure):
+        anyio.run(lambda: _check_invisible_characters(str(root), False))
+
+    out = capsys.readouterr().out
+    assert "Permission denied" in out
+    assert "Not renamed" in out
+    assert f"Disc{WORD_JOINER} 1" in out

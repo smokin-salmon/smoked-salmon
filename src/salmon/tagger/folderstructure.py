@@ -9,6 +9,7 @@ from salmon.checks.tag_rules import in_torrent_path
 from salmon.common import clean_name, invisible_chars, show_invisible
 from salmon.constants import ALLOWED_EXTENSIONS, ESSENTIAL_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
+from salmon.tagger.renames import RenameStopped, name_key, rename_all
 
 # Used when no tracker is known yet (e.g. `salmon tag`), and as the fallback for trackers whose
 # own limit has not been set.
@@ -166,9 +167,7 @@ async def _check_invisible_characters(path: str, scene: bool) -> None:
         click.style("Rename them to the names without those characters?", fg="magenta"), default=True
     ):
         raise NoncompliantFolderStructure
-    for old, new in renames:
-        os.rename(old, new)
-        click.echo(f" >> {new}")
+    _rename_or_stop(path, renames)
 
 
 def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
@@ -227,6 +226,9 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
         return click.secho(f"No paths exceed {max_path_length} characters in length.", fg="green")
 
     click.secho(f"The following exceed {max_path_length} characters in length, truncating...", fg="red")
+    renames = []
+    key = name_key(offending_files)
+    planned = set()
     for filepath in sorted(offending_files):
         directory, base = os.path.split(filepath)
         name, ext = os.path.splitext(base)
@@ -235,8 +237,20 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
         # marker included.
         excess = relative_len - max_path_length + 2
         kept = len(name) - excess
-        new_name = name[: max(kept, 0)] + ".."
-        newpath = os.path.join(directory, new_name + ext)
+        newpath = os.path.join(directory, name[: max(kept, 0)] + ".." + ext)
+        # Two names cut to the same start, or a file already there with it: the second becomes "Name~2.."
+        counter = 1
+        while os.path.lexists(newpath) or key(newpath) in planned:
+            counter += 1
+            mark = f"~{counter}"
+            if kept - len(mark) < 1:
+                click.secho(
+                    f"{filepath} cannot be shortened to {max_path_length} characters under a name no other file has.",
+                    fg="red",
+                    bold=True,
+                )
+                raise NoncompliantFolderStructure
+            newpath = os.path.join(directory, name[: kept - len(mark)] + mark + ".." + ext)
         new_relative_len = len(in_torrent_path(folder_name, os.path.relpath(newpath, path)))
         # At least one character of the name stays: "...flac" alone has no extension, and the track is lost.
         if kept < 1 or new_relative_len > max_path_length:
@@ -247,8 +261,24 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
                 bold=True,
             )
             raise NoncompliantFolderStructure
-        os.rename(filepath, newpath)
-        click.echo(f" >> {newpath}")
+        planned.add(key(newpath))
+        renames.append((filepath, newpath))
+    _rename_or_stop(path, renames)
+
+
+def _rename_or_stop(path: str, renames: list[tuple[str, str]]) -> None:
+    """Make the renames the checks planned, stopping at the first that fails with what was renamed and what was not.
+
+    Raises:
+        NoncompliantFolderStructure: A rename failed, or its new name was taken since the check.
+    """
+    try:
+        rename_all(renames)
+    except RenameStopped as e:
+        click.secho(e.report(path), fg="red", bold=True)
+        raise NoncompliantFolderStructure from e
+    for _, new in renames:
+        click.echo(f" >> {new}")
 
 
 def _check_zero_len_folder(path: str) -> None:
