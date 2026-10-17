@@ -94,7 +94,7 @@ def check_required_tags(tags):
         for t in ["title", "artist", "album", "tracknumber"]:
             if not getattr(tag_item, t, False):
                 missing.append(t)
-        if _requires_classical_composer(tag_item) and not getattr(tag_item, "composer", False):
+        if is_classical(tag_item) and not getattr(tag_item, "composer", False):
             missing.append("composer")
         if missing:
             offending_files.append(f"{fln} ({', '.join(missing)})")
@@ -108,7 +108,8 @@ def check_required_tags(tags):
         click.secho("Verified that all files contain the required tags.", fg="green")
 
 
-def _requires_classical_composer(tag_item) -> bool:
+def is_classical(tag_item) -> bool:
+    """Whether the track's genre tag names a classical genre (no genre tag counts as not classical)."""
     genres = getattr(tag_item, "genre", None)
     if not genres:
         return False
