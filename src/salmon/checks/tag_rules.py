@@ -28,6 +28,17 @@ def _has_id3v1_block(filepath: str) -> bool:
         return handle.read(3) == b"TAG"
 
 
+def _id3v1_holds_text(filepath: str) -> bool:
+    """Whether the file ends in an ID3v1 block with anything in its text fields."""
+    with open(filepath, "rb") as handle:
+        handle.seek(0, os.SEEK_END)
+        if handle.tell() < 128:
+            return False
+        handle.seek(-128, os.SEEK_END)
+        block = handle.read(128)
+    return block[:3] == b"TAG" and bool(block[3:127].strip(b"\0 "))
+
+
 def _has_id3v2_header(filepath: str) -> bool:
     with open(filepath, "rb") as handle:
         return handle.read(3) == b"ID3"
@@ -51,10 +62,11 @@ def has_blank_id3v2_alongside_id3v1(filepath: str) -> bool:
     header exist, mutagen reads the v2 tag: it is the blank one that matters here, not the
     presence of v1 by itself, so both a v1 block and a v2 header must be found on disk first.
     """
-    if not (_has_id3v1_block(filepath) and _has_id3v2_header(filepath)):
+    if not (_id3v1_holds_text(filepath) and _has_id3v2_header(filepath)):
         return False
     try:
-        tags = ID3(filepath)
+        # load_v1=False: mutagen otherwise reads the v1 fields into the v2 tag, and a blank v2 looks filled.
+        tags = ID3(filepath, load_v1=False)
     except (MutagenError, OSError):
         return False
     return not any(tags.getall(key) for key in tags)
@@ -151,7 +163,10 @@ def process_tag_issues(path: str, audio_info: dict, *, scene: bool, recompress: 
                     messages.append(_id3_in_flac(filename))
                 else:
                     try:
-                        FLAC(filepath).save(deleteid3=True)
+                        flac = FLAC(filepath)
+                        padding = sum(block.length for block in flac.metadata_blocks if block.code == 1)
+                        # The padding the file had: the bytes the ID3 tag took go, rather than becoming padding.
+                        flac.save(deleteid3=True, padding=lambda _info, keep=padding: keep)
                     except (MutagenError, OSError) as e:
                         messages.append(f"{filename}: could not remove its ID3 tag ({e}); remove it by hand.")
                     else:
