@@ -910,6 +910,8 @@ async def _upload_staged(
             "delete" deletes only the copy.
     """
     remove_downloaded_cover_image = scene or cfg.image.remove_auto_downloaded_cover_image
+    # The album folder and every conversion the run makes, on any tracker's turn, are checked against it.
+    max_path_length = _max_path_length_for_run(gazelle_site, trackers)
     if not source:
         source = await _prompt_source(detect_source(path))
     audio_info = gather_audio_info(path)
@@ -1026,7 +1028,7 @@ async def _upload_staged(
                 apply_ai_suggestions,
                 rename_into=rename_into,
                 original=original,
-                max_path_length=_max_path_length_for_run(gazelle_site, trackers),
+                max_path_length=max_path_length,
                 rls_type_hint=suggest_release_type(
                     rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
                 ),
@@ -1289,6 +1291,7 @@ async def _upload_staged(
                                 source,
                                 url,
                                 uploaded=uploaded,
+                                max_path_length=max_path_length,
                             )
                 except RequestError as e:
                     click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
@@ -1723,6 +1726,7 @@ async def execute_downconversion_tasks(
     base_url: str,
     *,
     uploaded: list[str] | None = None,
+    max_path_length: int | None = None,
 ) -> None:
     """Execute the selected downconversion tasks.
 
@@ -1745,9 +1749,13 @@ async def execute_downconversion_tasks(
         source: Media source.
         base_url: Base URL for the original upload.
         uploaded: Where to add the URL of each torrent uploaded.
+        max_path_length: The longest in-torrent path each conversion may have: the run's limit, the one its album
+            folder was checked against. None: gazelle_site's run limit, without the trackers named with -t.
     """
     if uploaded is None:
         uploaded = []
+    if max_path_length is None:
+        max_path_length = _max_path_length_for_run(gazelle_site)
 
     base_path = path
     # A dry run's go into its scratch directory, removed with it.
@@ -1811,9 +1819,7 @@ async def execute_downconversion_tasks(
             # Generate description for conversion
             description = generate_conversion_description(base_url, sample_rate, task["target_bitdepth"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(
-                new_path, conversion_metadata["scene"], max_path_length=_max_path_length_for_run(gazelle_site)
-            )
+            await check_folder_structure(new_path, conversion_metadata["scene"], max_path_length=max_path_length)
 
             # Upload the converted version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
@@ -1855,9 +1861,7 @@ async def execute_downconversion_tasks(
             # Generate description for transcode
             description = generate_transcode_description(base_url, task["encoding"])
             click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(
-                transcoded_path, transcode_metadata["scene"], max_path_length=_max_path_length_for_run(gazelle_site)
-            )
+            await check_folder_structure(transcoded_path, transcode_metadata["scene"], max_path_length=max_path_length)
 
             # Upload the transcoded version
             torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
