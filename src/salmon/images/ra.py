@@ -46,8 +46,8 @@ class ImageUploader(BaseImageUploader):
             ):
                 body = await resp.text()
                 if resp.status >= 400:
-                    # Masked: a server that echoes the request would repeat the key (too short a key would mask words).
-                    shown = body.replace(key, "[REDACTED]") if len(key) >= 8 else body
+                    # Masked whatever its length: a server that echoes the request would repeat the key.
+                    shown = body.replace(key, "[REDACTED]")
                     raise ImageUploadFailed(f"Ra returned {resp.status}: {shown[:200]}")
                 resp_data = msgspec.json.decode(body)
                 return resp_data["links"][0], None

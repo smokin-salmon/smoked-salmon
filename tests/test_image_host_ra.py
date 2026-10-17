@@ -96,7 +96,7 @@ def test_ra_without_a_key_says_so(tmp_path, monkeypatch) -> None:
         anyio.run(_run_upload, tmp_path)
 
 
-@pytest.mark.parametrize("key", ["ra-secret-0123456789"], ids=["long-key"])
+@pytest.mark.parametrize("key", ["ra-secret-0123456789", "k3y"], ids=["long-key", "short-key"])
 def test_ra_error_echoing_the_key_is_masked(tmp_path, monkeypatch, key) -> None:
     async def handle_upload(request: web.Request) -> web.Response:
         data = await request.post()
