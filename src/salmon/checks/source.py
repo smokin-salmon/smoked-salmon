@@ -169,8 +169,9 @@ def _tag_proofs(mut) -> dict[str, str]:
         except ValueError:
             # Only URL-shaped ("https://[broken"): a tag is whatever its writer put there.
             continue
-        # The path and fragment only (HDtracks pages are #/album/...): a query can quote any path.
-        if _STORE_RELEASE_PAGE.search(f"{page.path}#{page.fragment}"):
+        # The path and the fragment's own path only (HDtracks pages are #/album/...): a query can quote any path,
+        # in the fragment too.
+        if _STORE_RELEASE_PAGE.search(f"{page.path}#{page.fragment.split('?', 1)[0]}"):
             store = (match.group(1) or match.group(2)).lower()
             proofs[f"{_STORE_NAMES[store]} URL in the tags"] = "WEB"
     return proofs

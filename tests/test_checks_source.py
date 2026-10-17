@@ -118,6 +118,7 @@ def test_a_verification_log_proves_nothing(tmp_path) -> None:
         ({"SOURCE": "https://itunes.apple.com/us/album/y/123"}, "Apple URL in the tags"),
         ({"URL": "https://music.apple.com/us/song/y/456"}, "Apple URL in the tags"),
         ({"URL": "https://www.hdtracks.com/?ref=x#/album/123"}, "HDtracks URL in the tags"),
+        ({"URL": "https://www.hdtracks.com/#/album/123"}, "HDtracks URL in the tags"),
     ],
     ids=[
         "qobuz-custom-key",
@@ -126,6 +127,7 @@ def test_a_verification_log_proves_nothing(tmp_path) -> None:
         "itunes-store",
         "apple-song-page",
         "hdtracks-query",
+        "hdtracks-fragment",
     ],
 )
 def test_a_store_url_proves_web_whatever_tag_holds_it(tmp_path, tags, reason) -> None:
@@ -231,6 +233,7 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         {"URL": "https://www.qobuz.com/au-en/interpreter/artist/123"},
         {"WEBSITE": "https://www.qobuz.com/au-en/label/a-label/albums"},
         {"WWWARTIST": "https://artist.bandcamp.com/?from=/album/y"},
+        {"URL": "https://www.hdtracks.com/#/artist/a?ref=/album/y"},
     ],
     ids=[
         "picard-asin",
@@ -244,6 +247,7 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         "store-artist-page",
         "store-label-listing",
         "album-path-only-in-the-query",
+        "album-path-only-in-the-fragments-query",
     ],
 )
 def test_tags_a_user_or_a_tagger_writes_do_not_prove_web(tmp_path, tags) -> None:
