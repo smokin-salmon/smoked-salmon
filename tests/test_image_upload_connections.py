@@ -10,7 +10,7 @@ import gc
 from collections import Counter
 from collections.abc import Awaitable, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from urllib.parse import unquote
 
 import aiohttp
@@ -283,3 +283,20 @@ def test_images_up_still_fails_when_an_upload_fails(monkeypatch: pytest.MonkeyPa
             await images.upload_images((str(path),), images.HOSTS["catbox"])
 
     _run(monkeypatch, body)
+
+
+def test_two_uploads_failing_at_once_raise_one_plain_error(tmp_path: Path) -> None:
+    class Refusing:
+        host = "test"
+
+        @contextlib.asynccontextmanager
+        async def connections(self, _limit):
+            yield
+
+        async def upload_file(self, filename):
+            raise ValueError(f"{filename} is not an image")
+
+    paths = [str(tmp_path / "a.txt"), str(tmp_path / "b.txt")]
+
+    with pytest.raises(ValueError, match="is not an image"):
+        anyio.run(images._upload_groups, cast("Any", Refusing()), [paths])

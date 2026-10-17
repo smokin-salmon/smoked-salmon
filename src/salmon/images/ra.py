@@ -29,11 +29,14 @@ class ImageUploader(BaseImageUploader):
         Raises:
             ImageUploadFailed: If upload fails.
         """
+        key = cfg.image.ra_key
+        if not key:
+            raise ImageUploadFailed("Ra needs an API key: set ra_key under [image].")
         async with await anyio.open_file(filename, "rb") as f:
             file_data = await f.read()
 
         data = aiohttp.FormData()
-        data.add_field("api_key", cfg.image.ra_key)
+        data.add_field("api_key", key)
         data.add_field("image", file_data, filename=Path(filename).name)
 
         try:
@@ -43,7 +46,9 @@ class ImageUploader(BaseImageUploader):
             ):
                 body = await resp.text()
                 if resp.status >= 400:
-                    raise ImageUploadFailed(f"Ra returned {resp.status}: {body[:200]}")
+                    # Masked: a server that echoes the request would repeat the key (too short a key would mask words).
+                    shown = body.replace(key, "[REDACTED]") if len(key) >= 8 else body
+                    raise ImageUploadFailed(f"Ra returned {resp.status}: {shown[:200]}")
                 resp_data = msgspec.json.decode(body)
                 return resp_data["links"][0], None
         except (msgspec.DecodeError, KeyError, IndexError, TypeError) as e:
