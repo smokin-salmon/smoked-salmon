@@ -1,0 +1,197 @@
+"""clean_tmp_dir leaves alone what a running salmon has in tmp_dir.
+
+Every salmon holds a shared flock on tmp_dir/.salmon.lock for its whole life; the one that cleans needs the
+exclusive lock first. flock locks taken through two separate open() calls conflict even within one process, so
+a second open file holding a shared lock stands for another salmon here.
+"""
+
+import os
+import time
+from collections.abc import Iterator
+from pathlib import Path
+
+import pytest
+
+import salmon.run
+from salmon import cfg
+from salmon.common import tmp_lock
+
+fcntl = pytest.importorskip("fcntl")
+
+DAY = 24 * 60 * 60
+
+
+@pytest.fixture
+def tmp_dir(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Iterator[Path]:
+    folder = tmp_path / "tmp"
+    folder.mkdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", str(folder))
+    monkeypatch.setattr(cfg.directory, "clean_tmp_dir", True)
+    yield folder
+    tmp_lock.release()
+
+
+def _entries(folder: Path) -> list[str]:
+    return sorted(os.listdir(folder))
+
+
+def _fill(folder: Path) -> None:
+    (folder / "Album-spectrals").mkdir()
+    (folder / "Album-spectrals" / "01 Zoom.png").write_bytes(b"png")
+    (folder / "salmon-web-1-specs-abc").mkdir()
+    (folder / "leftover.txt").write_text("x")
+
+
+def _blocked(path: Path, operation: int) -> bool:
+    """Whether a new open file of path cannot take this lock now."""
+    with open(path) as probe:
+        try:
+            fcntl.flock(probe, operation | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return True
+        return False
+
+
+def test_cleanup_leaves_a_running_salmons_files(tmp_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    _fill(tmp_dir)
+    with open(tmp_dir / ".salmon.lock", "a") as other:
+        fcntl.flock(other, fcntl.LOCK_SH)
+
+        salmon.run.cleanup_tmp_dir()
+
+    assert _entries(tmp_dir) == [".salmon.lock", "Album-spectrals", "leftover.txt", "salmon-web-1-specs-abc"]
+    out = capsys.readouterr().out
+    assert "Another salmon is running: not cleaning tmp_dir." in out
+    assert "Cleaned temporary directory" not in out
+
+
+def test_cleanup_alone_cleans_everything_but_the_lock_then_holds_it_shared(
+    tmp_dir: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fill(tmp_dir)
+    (tmp_dir / "link").symlink_to(tmp_dir / "leftover.txt")
+
+    salmon.run.cleanup_tmp_dir()
+
+    assert _entries(tmp_dir) == [".salmon.lock"]
+    assert "Cleaned temporary directory" in capsys.readouterr().out
+    # This salmon now holds a shared lock: another may share it, but cannot clean.
+    assert _blocked(tmp_dir / ".salmon.lock", fcntl.LOCK_EX)
+    assert not _blocked(tmp_dir / ".salmon.lock", fcntl.LOCK_SH)
+
+
+def test_a_second_salmon_started_later_does_not_clean_the_first_ones_files(tmp_dir: Path) -> None:
+    salmon.run.cleanup_tmp_dir()
+    _fill(tmp_dir)
+    first = tmp_lock.detach()
+
+    try:
+        salmon.run.cleanup_tmp_dir()
+    finally:
+        if first is not None:
+            first.close()
+
+    assert _entries(tmp_dir) == [".salmon.lock", "Album-spectrals", "leftover.txt", "salmon-web-1-specs-abc"]
+
+
+def test_no_clean_tmp_dir_deletes_nothing_but_still_takes_the_shared_lock(
+    tmp_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(cfg.directory, "clean_tmp_dir", False)
+    _fill(tmp_dir)
+
+    salmon.run.cleanup_tmp_dir()
+
+    assert _entries(tmp_dir) == [".salmon.lock", "Album-spectrals", "leftover.txt", "salmon-web-1-specs-abc"]
+    assert capsys.readouterr().out == ""
+    assert _blocked(tmp_dir / ".salmon.lock", fcntl.LOCK_EX)
+
+
+def test_no_tmp_dir_takes_no_lock(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    monkeypatch.setattr(cfg.directory, "clean_tmp_dir", True)
+
+    salmon.run.cleanup_tmp_dir()
+
+    assert tmp_lock.detach() is None
+
+
+def _age(path: Path, seconds: float) -> None:
+    then = time.time() - seconds
+    os.utime(path, (then, then), follow_symlinks=False)
+
+
+def _old_and_new(folder: Path) -> None:
+    (folder / "old.txt").write_text("x")
+    _age(folder / "old.txt", DAY + 60)
+    (folder / "new.txt").write_text("x")
+    # A folder that looks old but holds a file changed just now: a running salmon's.
+    (folder / "busy").mkdir()
+    (folder / "busy" / "fresh.png").write_bytes(b"png")
+    _age(folder / "busy", 2 * DAY)
+    # A folder whose every entry is old.
+    (folder / "stale").mkdir()
+    (folder / "stale" / "inner").mkdir()
+    (folder / "stale" / "inner" / "old.png").write_bytes(b"png")
+    for path in (folder / "stale" / "inner" / "old.png", folder / "stale" / "inner", folder / "stale"):
+        _age(path, 2 * DAY)
+
+
+def test_without_fcntl_only_entries_unchanged_for_a_day_go(
+    tmp_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(tmp_lock, "fcntl", None)
+    _old_and_new(tmp_dir)
+
+    salmon.run.cleanup_tmp_dir()
+
+    assert _entries(tmp_dir) == ["busy", "new.txt"]
+    out = capsys.readouterr().out
+    assert out.count("24 hours") == 1
+    assert "Cleaned temporary directory" in out
+
+
+def test_a_lock_file_that_cannot_be_locked_falls_back_to_the_age_rule(
+    tmp_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def no_locks(_file: object, _operation: int) -> None:
+        raise OSError(37, "No locks available")
+
+    monkeypatch.setattr(fcntl, "flock", no_locks)
+    _old_and_new(tmp_dir)
+    (tmp_dir / ".salmon.lock").write_text("")
+    _age(tmp_dir / ".salmon.lock", 2 * DAY)
+
+    salmon.run.cleanup_tmp_dir()
+
+    assert _entries(tmp_dir) == [".salmon.lock", "busy", "new.txt"]
+    assert capsys.readouterr().out.count("24 hours") == 1
+
+
+def test_a_lock_file_that_cannot_be_created_falls_back_to_the_age_rule(
+    tmp_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_dir / ".salmon.lock").mkdir()
+    _old_and_new(tmp_dir)
+
+    salmon.run.cleanup_tmp_dir()
+
+    assert _entries(tmp_dir) == [".salmon.lock", "busy", "new.txt"]
+    assert capsys.readouterr().out.count("24 hours") == 1
+
+
+def test_a_salmon_cleaning_for_too_long_is_waited_for_a_bounded_time(
+    tmp_dir: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(tmp_lock, "WAIT_SECONDS", 0.3)
+    _old_and_new(tmp_dir)
+    with open(tmp_dir / ".salmon.lock", "a") as other:
+        fcntl.flock(other, fcntl.LOCK_EX)
+        started = time.monotonic()
+
+        salmon.run.cleanup_tmp_dir()
+
+        assert time.monotonic() - started < 5
+
+    assert _entries(tmp_dir) == [".salmon.lock", "busy", "new.txt"]
+    assert capsys.readouterr().out.count("24 hours") == 1
