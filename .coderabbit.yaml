@@ -48,7 +48,7 @@ reviews:
     - path: "src/salmon/uploader/**/*.py"
       instructions: |-
         Upload flow. The tracker POST is the point of no return.
-        - Nothing may reach a tracker upload or report without the user's explicit go (or --yes-all).
+        - Nothing may reach a tracker upload or report without the user's explicit go (or -yyy).
         - Never modify or delete a folder the user did not ask salmon to change (a seeding folder, a
           library); deletion on abort only targets what salmon created.
         - A failure partway (seedbox copy, image upload, description edit) must not be reported as success,
