@@ -86,3 +86,33 @@ def test_recent_upload_match_requires_shared_title_word_when_titles_given() -> N
     )
     # Without title words, the shared artist alone is still enough (the pre-existing behaviour).
     assert _recent_upload_matches(searchstrs, comparisons, tolerance=0.5) is True
+
+
+def test_an_html_escaped_edition_is_the_same_edition() -> None:
+    """RED sends HTML-escaped text: "Collector&#39;s Edition" is the edition "Collector's Edition"."""
+    torrent = {
+        "media": "WEB",
+        "format": "FLAC",
+        "encoding": "Lossless",
+        "remastered": True,
+        "remasterYear": 2024,
+        "remasterTitle": "Collector&#39;s Edition",
+        "remasterCatalogueNumber": "R&amp;B-01",
+    }
+    group = {"group": {"year": 2020, "catalogueNumber": ""}, "torrents": [torrent]}
+    release = {
+        "source": "WEB",
+        "format": "FLAC",
+        "encoding": "Lossless",
+        "year": "2024",
+        "edition_title": "Collector's Edition",
+        "catno": "R&B-01",
+    }
+
+    assert dupe_checker.matching_torrents(group, release) == [torrent]
+    assert dupe_checker._catno_note(torrent, group, release) == ""
+
+
+@pytest.mark.parametrize(("ours", "logged"), [("Rock 'n' Roll", "Rock'n'Roll"), ("Lovin’", "Lovin'")])
+def test_title_words_ignore_punctuation(ours: str, logged: str) -> None:
+    assert _title_words(ours) == _title_words(logged)
