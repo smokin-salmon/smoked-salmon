@@ -556,7 +556,8 @@ def test_a_skipped_seed_names_its_seedbox(monkeypatch, tmp_path, capsys) -> None
 
     anyio.run(_queue_one_release(tmp_path).execute_upload)
 
-    assert "Skipping seed on My Box: the Rclone upload of" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Skipping seed on My Box: the Rclone upload of" in out
 
 
 def test_a_percent_encoded_client_password_is_masked_decoded_too() -> None:
