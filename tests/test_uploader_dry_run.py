@@ -750,6 +750,16 @@ def test_the_guard_refuses_to_log_into_a_torrent_client(monkeypatch) -> None:
     assert logins == []
 
 
+def test_the_refusal_to_log_into_a_torrent_client_hides_a_proxy_key(monkeypatch) -> None:
+    monkeypatch.setattr(QBittorrentClient, "login", lambda client: None)
+
+    with dryrun.mode(), pytest.raises(DryRunRefused) as refused:
+        QBittorrentClient(url="http://proxy.local:7476/proxy/PROXYKEY0123UNIQUE")
+
+    assert "proxy.local:7476" in str(refused.value)
+    assert "PROXYKEY0123UNIQUE" not in str(refused.value)
+
+
 def test_the_dry_run_flag_is_seen_by_the_tasks_it_starts_and_ends_with_its_block() -> None:
     seen: list[bool] = []
 

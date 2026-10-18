@@ -10,7 +10,7 @@ import transmission_rpc
 from deluge_client import DelugeRPCClient
 
 from salmon import dryrun
-from salmon.common.redaction import redact_secrets
+from salmon.common.redaction import redact_client_url, redact_secrets, url_secrets
 
 
 class TorrentClient:
@@ -32,13 +32,13 @@ class TorrentClient:
 
         # Logging in reaches the client: a dry run neither logs in nor adds anything.
         if dryrun.active():
-            dryrun.refuse(f"log into the torrent client at {redact_secrets(url or host or '', known=[password])}")
+            dryrun.refuse(f"log into the torrent client at {redact_client_url(url) if url else host or ''}")
         click.secho(f"Initializing {self.__class__.__name__} client...", fg="cyan")
         self.client = self.login()
 
     def _redact(self, text: str) -> str:
-        """Mask this client's password wherever an error repeats it, then the usual patterns."""
-        return redact_secrets(text, known=[self.password])
+        """Mask this client's password and its URL's path wherever an error repeats them, then the usual patterns."""
+        return redact_secrets(text, known=[self.password, *url_secrets(self.url or "")])
 
     def login(self):
         raise NotImplementedError
@@ -280,16 +280,12 @@ class TorrentClientGenerator:
         Returns:
             An instance of the appropriate TorrentClient subclass.
         """
-        # Sanitize URL for logging to avoid leaking credentials
-        parsed = urlparse(url)
-        if parsed.username or parsed.password:
-            safe_netloc = f"****:****@{parsed.hostname}"
-            if parsed.port:
-                safe_netloc += f":{parsed.port}"
-            safe_url = f"{parsed.scheme}://{safe_netloc}{parsed.path}"
-        else:
-            safe_url = url
-        click.secho(f"\nParsing torrent client URL: {safe_url}", fg="cyan")
+        click.secho(f"\nParsing torrent client URL: {redact_client_url(url)}", fg="cyan")
+        try:
+            parsed = urlparse(url)
+        except ValueError:
+            # urlparse's own message quotes the URL's user:password.
+            raise ValueError("The torrent client URL does not parse: check torrent_client in the config.") from None
 
         username: str | None = None
         password: str | None = None
