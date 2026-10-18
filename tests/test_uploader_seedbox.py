@@ -532,6 +532,40 @@ def test_rclone_not_installed_skips_seeding(monkeypatch, tmp_path) -> None:
     assert client.torrents == []
 
 
+def test_a_seed_task_without_its_folder_is_refused(monkeypatch) -> None:
+    # Without its folder, a seed task could not be skipped when the copy of that folder failed.
+    manager = _manager_with_boxes(monkeypatch, [Seedbox(type="rclone", url="box", torrent_client="x")])
+
+    with pytest.raises(ValueError, match="folder"):
+        manager.add_upload_task("/torrents/Album.torrent", task_type="seed", is_flac=True)
+
+    assert not manager.tasks
+
+
+def test_a_skipped_seed_names_its_seedbox(monkeypatch, tmp_path, capsys) -> None:
+    async def fail(commands: list[str], secrets: list[str]) -> int:
+        return 1
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", name="My Box", url="box", torrent_client="qbittorrent+http://box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+    monkeypatch.setattr(seedbox, "_run_rclone", fail)
+
+    anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    out = capsys.readouterr().out
+    assert "Skipping seed on My Box: the Rclone upload of" in out
+
+
+def test_a_percent_encoded_client_password_is_masked_decoded_too() -> None:
+    box = Seedbox(type="local", torrent_client="qbittorrent+http://dean:pa%40ss-UNIQUE@box:8080")
+
+    assert {"pa%40ss-UNIQUE", "pa@ss-UNIQUE"} <= set(seedbox.seedbox_secrets(box))
+
+
 def _queue_one_release(tmp_path) -> "seedbox.UploadManager":
     release = tmp_path / "Artist - Album (2020) [WEB FLAC]"
     release.mkdir()
@@ -672,8 +706,8 @@ def test_qbittorrent_ok_response_is_reported_as_added(monkeypatch, capsys) -> No
     assert "Torrent added successfully" in capsys.readouterr().out
 
 
-def test_qbittorrent_5_1_metadata_success_is_reported_as_added(monkeypatch, capsys) -> None:
-    # Web API v2.14.0+ (qBittorrent 5.1+) answers with a JSON object instead of "Ok."/"Fails.".
+def test_qbittorrent_api_2_14_metadata_success_is_reported_as_added(monkeypatch, capsys) -> None:
+    # Web API v2.14.0+ (qBittorrent 5.2+) answers with a JSON object instead of "Ok."/"Fails.".
     class FakeApi:
         def torrents_add(self, **kwargs):
             return {"success_count": 1, "failure_count": 0, "pending_count": 0, "added_torrent_ids": ["abc"]}
@@ -686,7 +720,7 @@ def test_qbittorrent_5_1_metadata_success_is_reported_as_added(monkeypatch, caps
     assert "Torrent added successfully" in capsys.readouterr().out
 
 
-def test_qbittorrent_5_1_metadata_failure_is_reported_as_not_added(monkeypatch, capsys) -> None:
+def test_qbittorrent_api_2_14_metadata_failure_is_reported_as_not_added(monkeypatch, capsys) -> None:
     class FakeApi:
         def torrents_add(self, **kwargs):
             return {"success_count": 0, "failure_count": 1, "pending_count": 0, "added_torrent_ids": []}
@@ -724,6 +758,33 @@ def test_deluge_torrent_id_is_reported_as_added(monkeypatch, capsys) -> None:
 
     assert added is True
     assert "Torrent added successfully" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("set_error", "expected"),
+    [
+        ("Unknown Label: salmon, UNIQUESECRET", "Failed to create/set label"),
+        ("access denied for UNIQUESECRET", "Failed to set label"),
+    ],
+    ids=["label could not be created", "label could not be set"],
+)
+def test_a_deluge_label_error_never_prints_its_password(monkeypatch, capsys, set_error, expected) -> None:
+    class FakeApi:
+        def call(self, method, *args):
+            if method == "core.add_torrent_file":
+                return "abc123"
+            if method == "label.add":
+                raise RuntimeError("label.add refused for UNIQUESECRET")
+            raise RuntimeError(set_error)
+
+    client = _connected_client(monkeypatch, DelugeClient, FakeApi())
+
+    added = client.add_to_downloader("/music", b"torrent", is_paused=False, label="salmon")
+
+    out = capsys.readouterr().out
+    assert added is True
+    assert expected in out
+    assert "UNIQUESECRET" not in out
 
 
 def test_transmission_torrent_result_is_reported_as_added(monkeypatch, capsys) -> None:

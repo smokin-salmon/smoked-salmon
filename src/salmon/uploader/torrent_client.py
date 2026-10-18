@@ -50,8 +50,8 @@ class TorrentClient:
 def _qbittorrent_add_succeeded(result: object) -> bool:
     """Whether qBittorrent's torrents_add answer means the torrent was added.
 
-    Web API v2.14.0+ (qBittorrent 5.1+) answers with a JSON object carrying success_count,
-    failure_count, pending_count and added_torrent_ids; a pre-5.1 server still answers the plain
+    Web API v2.14.0+ (qBittorrent 5.2+) answers with a JSON object carrying success_count,
+    failure_count, pending_count and added_torrent_ids; an older server still answers the plain
     string "Ok." (success) or "Fails." (failure), which qbittorrent-api falls back to whenever the
     body is not JSON.
     """
@@ -202,9 +202,9 @@ class DelugeClient(TorrentClient):
                             self.client.call("label.set_torrent", result, label)
                             click.secho(f"Label '{label}' set successfully", fg="green")
                         except Exception as add_label_error:
-                            click.secho(f"Failed to create/set label: {add_label_error}", fg="red")
+                            click.secho(f"Failed to create/set label: {self._redact(str(add_label_error))}", fg="red")
                     else:
-                        click.secho(f"Failed to set label: {label_error}", fg="red")
+                        click.secho(f"Failed to set label: {self._redact(str(label_error))}", fg="red")
                 else:
                     click.secho(f"Label '{label}' set successfully", fg="green")
 
