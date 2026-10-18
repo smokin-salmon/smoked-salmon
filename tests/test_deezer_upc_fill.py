@@ -237,3 +237,40 @@ def test_an_error_answered_with_http_200_leaves_the_barcode_blank_and_says_so(mo
 
     assert upc is None
     assert said == ["Could not read the barcode from Deezer (Quota limit exceeded); leaving it blank."]
+
+
+def test_two_different_deezer_albums_fill_no_upc_and_make_no_request(tmp_path, monkeypatch) -> None:
+    """A compilation or a mistagged track must not take whichever album comes first for the release's barcode."""
+    (tmp_path / "01.flac").write_bytes(b"")
+    _tagged(monkeypatch, {"source": [DEEZER_URL, "https://www.deezer.com/en/album/999"]})
+    asked = _deezer_answers(monkeypatch, {"upc": "should not be read"})
+
+    metadata = {"upc": None}
+    anyio.run(metadata_mod.fill_upc_from_deezer, metadata, str(tmp_path))
+
+    assert metadata["upc"] is None
+    assert asked == []
+
+
+def test_two_different_deezer_albums_across_source_and_other_tags_fill_no_upc(tmp_path, monkeypatch) -> None:
+    (tmp_path / "01.flac").write_bytes(b"")
+    _tagged(monkeypatch, {"source": [DEEZER_URL], "comment": ["https://www.deezer.com/album/999"]})
+    asked = _deezer_answers(monkeypatch, {"upc": "should not be read"})
+
+    metadata = {"upc": None}
+    anyio.run(metadata_mod.fill_upc_from_deezer, metadata, str(tmp_path))
+
+    assert metadata["upc"] is None
+    assert asked == []
+
+
+def test_one_deezer_album_in_two_url_forms_is_filled_with_one_request(tmp_path, monkeypatch) -> None:
+    (tmp_path / "01.flac").write_bytes(b"")
+    _tagged(monkeypatch, {"source": [DEEZER_URL, "http://deezer.com/album/322064097/"]})
+    asked = _deezer_answers(monkeypatch, {"upc": "0656465465801"})
+
+    metadata = {"upc": None}
+    anyio.run(metadata_mod.fill_upc_from_deezer, metadata, str(tmp_path))
+
+    assert metadata["upc"] == "0656465465801"
+    assert asked == ["/album/322064097"]
