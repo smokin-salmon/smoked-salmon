@@ -1,3 +1,4 @@
+import ipaddress
 import re
 import shlex
 import string
@@ -112,6 +113,71 @@ def secret_values(args: Iterable[str], connection: str = "") -> list[str]:
     return found
 
 
+_ID = re.compile(r"\d{1,19}")
+_WORD = re.compile(r"[A-Za-z_]{1,32}")
+# A query value shows only under these names, and only in the shape each takes; every other value is masked.
+_SHOWN_QUERY = {"id": _ID, "torrentid": _ID, "groupid": _ID, "page": _ID, "action": _WORD}
+# A query name shows only as a plain short name with no digit: one holding "=", a digit or a token is masked.
+_SHOWN_NAME = re.compile(r"[A-Za-z_][A-Za-z_.\[\]-]{0,31}")
+# A run this long could be a passkey or a token, wherever it sits in a URL and however it is encoded.
+_TOKEN_RUN = re.compile(r"[A-Za-z0-9_]{20,}")
+
+
+# A path segment shows only as a plain one once decoded: digits alone (an id) or no digit at all (a word or slug).
+# One mixing letters and digits, as every random passkey and token does, is masked whatever its length.
+_PLAIN_SEGMENT = re.compile(r"\d{1,19}|\D{0,64}")
+
+
+def _ip_literal(host: str) -> str:
+    """An IPv6 host: shown when it is an address, masked when it holds a zone (fe80::1%eth0) or is none."""
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return "[REDACTED]"
+    return host if not getattr(address, "scope_id", None) else "[REDACTED]"
+
+
+def _segment(text: str) -> str:
+    """A host label or path segment to show: masked unless, decoded, it is a plain id or word."""
+    decoded = unquote(text)
+    return text if _PLAIN_SEGMENT.fullmatch(decoded) and not _TOKEN_RUN.search(decoded) else "[REDACTED]"
+
+
+def _query_name(name: str) -> str:
+    return name if _SHOWN_NAME.fullmatch(name) and not _TOKEN_RUN.search(name) else "[REDACTED]"
+
+
+def redact_url(url: str) -> str:
+    """An http(s) URL to show: no userinfo, and its fragment and any token-like host, path or query part masked."""
+    try:
+        parts = urlsplit(url)
+        host, port = parts.hostname or "", parts.port
+    except ValueError:
+        return "[REDACTED]"
+    shown_host = _ip_literal(host) if ":" in host else ".".join(_segment(label) for label in host.split("."))
+    netloc = (f"[{shown_host}]" if ":" in shown_host else shown_host) + (f":{port}" if port else "")
+    segments = parts.path.split("/")
+    # An announce URL's passkey sits next to "announce" (/<passkey>/announce), however short it is.
+    beside_announce = {
+        index + step
+        for index, segment in enumerate(segments)
+        if unquote(segment).lower().startswith("announce")
+        for step in (-1, 1)
+    }
+    path = "/".join(
+        "[REDACTED]" if index in beside_announce and segment else _segment(segment)
+        for index, segment in enumerate(segments)
+    )
+    query = "&".join(
+        f"{_query_name(name)}="
+        + (value if (shape := _SHOWN_QUERY.get(name.lower())) and shape.fullmatch(value) else "[REDACTED]")
+        for name, value in parse_qsl(parts.query, keep_blank_values=True)
+    )
+    return (
+        f"{parts.scheme}://{netloc}{path}" + (f"?{query}" if query else "") + ("#[REDACTED]" if parts.fragment else "")
+    )
+
+
 _ESCAPE = re.compile(r"%[0-9a-fA-F]{2}")
 _UNRESERVED = frozenset(string.ascii_letters + string.digits + "-._~")
 # What requests leaves unescaped when it re-quotes a URL before sending it; with a bad escape anywhere in the
@@ -197,15 +263,15 @@ def redact_command(args: list[str], known: Iterable[str | None] = ()) -> str:
 # What a Gazelle tracker sends back carries its own secrets: the authkey (auth, authkey), the passkey
 # (passkey, torrent_pass), the session cookie and an api key.
 _TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|api_?key|authorization)"
-# "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script. A backslash escapes the
-# next character, so an escaped quote does not end the value.
+# "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script. A value ends at its closing
+# quote, or at its line's end when an excerpt cut it off; a backslash escapes the next character.
 _TRACKER_ASSIGNMENT = re.compile(
-    rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\\\n]|\\.)*\2""", re.IGNORECASE
+    rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\\\n]|\\.)*(\2?)""", re.IGNORECASE
 )
 # ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page.
 _TRACKER_QUERY = re.compile(rf"""([?&;]{_TRACKER_KEYS}=)[^&#\s"'<>]*""", re.IGNORECASE)
-# The passkey in an announce URL: https://tracker/<passkey>/announce.
-_ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]{16,}(?=/announce)")
+# The passkey in an announce URL, however short: https://tracker/<passkey>/announce, as in redact_url.
+_ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]+(?=/announce)")
 # A form field carrying one, <input name="auth" value="...">, its attributes in any order.
 _INPUT_TAG = re.compile(r"<input\b[^>]*>", re.IGNORECASE)
 _SECRET_FIELD_NAME = re.compile(rf"""\bname\s*=\s*(["']?){_TRACKER_KEYS}\1(?=[\s/>])""", re.IGNORECASE)
@@ -226,10 +292,11 @@ def redact_tracker_text(text: str, known: Iterable[str | None] = ()) -> str:
     """Mask a tracker's secrets in a page, an API answer or a URL before it reaches the terminal."""
     text = _mask_known(text, known)
     text = _INPUT_TAG.sub(_mask_secret_field, text)
-    text = _TRACKER_ASSIGNMENT.sub(lambda m: f"{m[1]}{m[2]}[REDACTED]{m[2]}", text)
     text = _TRACKER_QUERY.sub(r"\1[REDACTED]", text)
     text = _ANNOUNCE_PASSKEY.sub("/[REDACTED]", text)
-    return _URL_USERINFO.sub(r"\1[REDACTED]@", text)
+    text = _URL_USERINFO.sub(r"\1[REDACTED]@", text)
+    # Last: a value with no closing quote runs to its line's end, past text another pattern would have masked.
+    return _TRACKER_ASSIGNMENT.sub(lambda m: f"{m[1]}{m[2]}[REDACTED]{m[3]}", text)
 
 
 def redact_tracker_headers(headers: Iterable[tuple[str, str]], known: Iterable[str | None] = ()) -> dict[str, str]:

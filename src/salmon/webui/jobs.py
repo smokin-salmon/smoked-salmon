@@ -35,6 +35,7 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg, dryrun, interaction, ssrf
+from salmon.common.redaction import redact_url
 from salmon.errors import UnknownOutcomeError
 from salmon.webui import output
 from salmon.webui.egress import Redactor
@@ -88,6 +89,18 @@ class JobKind:
 
 
 KINDS: dict[str, JobKind] = {}
+
+
+def shown_urls(value: Any) -> Any:
+    """`value` as the API shows it: each http(s) URL in it masked by allowlist (redact_url), the rest as it is."""
+    if isinstance(value, str):
+        # By its scheme, not a parse: a URL too malformed to parse is masked whole, never shown.
+        return redact_url(value) if value.strip().lower().startswith(("http://", "https://")) else value
+    if isinstance(value, dict):
+        return {key: shown_urls(item) for key, item in value.items()}
+    if isinstance(value, list | tuple):
+        return [shown_urls(item) for item in value]
+    return value
 
 
 def register(kind: JobKind) -> None:
@@ -406,7 +419,7 @@ class JobManager:
         job = Job(
             kind,
             decoded,
-            self._redactor.value(msgspec.to_builtins(decoded)),
+            shown_urls(self._redactor.value(msgspec.to_builtins(decoded))),
             self._redactor.text(kind.title(decoded)),
             os.path.realpath(folder) if folder else None,
             dry_run,

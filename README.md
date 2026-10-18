@@ -494,7 +494,7 @@ Also under `[web]`:
 * Jobs fetch public addresses only (release URLs you paste, covers). If you use a `[proxy]`, a name that the proxy
   resolves to a different address than this machine does is not covered by that check.
 * Image uploads take image files only.
-* Secrets from your config are hidden in the logs, questions and results the browser gets.
+* Secrets from your config, and the authkeys, passkeys and image host keys your trackers send, are hidden in the logs, questions and results the browser gets. A job's parameters show a URL without its userinfo, fragment or any token-like part.
 * Jobs and their history live in memory. A restart loses them.
 
 **Docker.** The image already exposes port 55155. Add a service to your compose file next to the CLI one:

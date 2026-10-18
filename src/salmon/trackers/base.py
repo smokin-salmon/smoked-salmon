@@ -734,8 +734,9 @@ class BaseGazelleApi:
                 f"{self.site_string} gave no usable credentials for its image host: it may have changed how it "
                 "serves its images"
             ) from error
-        if not auth["h"]:
-            raise RequestFailedError(f"{self.site_string} gave an empty key for its image host")
+        if len(auth["h"]) < 8:
+            # Masked by value wherever salmon prints: a shorter one would cut itself out of ordinary text.
+            raise RequestFailedError(f"{self.site_string} gave no usable key for its image host")
         # The key is the credential, masked wherever salmon prints. A user id and an expiry are numbers, which
         # masking would cut out of every other number: they are never printed either.
         self._image_auth = auth

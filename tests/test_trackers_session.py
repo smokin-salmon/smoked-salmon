@@ -271,6 +271,7 @@ def test_image_auth_is_one_imgauth_call_kept_until_it_expires() -> None:
     [
         {"status": "failure", "error": "bad action"},
         {"status": "success", "response": {"h": "k3y", "e": 4102444800}},
+        {"status": "success", "response": {"h": "k3y4567", "e": 4102444800, "u": 4242}},
         {"status": "success", "response": {"h": "", "e": 4102444800, "u": 4242}},
         {"status": "success", "response": []},
     ],
