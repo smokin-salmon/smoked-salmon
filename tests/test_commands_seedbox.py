@@ -216,5 +216,6 @@ def test_the_qobuz_connection_test_skips_the_shipped_placeholders(monkeypatch, c
 
     anyio.run(commands_module._test_metadata_sources)
 
+    out = capsys.readouterr().out
     assert asked == []
-    assert "Qobuz: Missing required configuration" in capsys.readouterr().out
+    assert "Qobuz: Missing required configuration" in out
