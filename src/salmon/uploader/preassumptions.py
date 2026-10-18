@@ -6,6 +6,7 @@ import asyncclick as click
 from salmon import cfg, interaction
 from salmon.common import get_audio_files
 from salmon.errors import RequestError, UploadError
+from salmon.uploader.dupe_checker import describe_torrent
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -134,20 +135,5 @@ async def print_group_info(gazelle_site: "BaseGazelleApi", group_id: int, source
 
     for t in group["torrents"]:
         if t["media"] == source:
-            if t["remastered"]:
-                click.echo(
-                    unescape(
-                        f"> {t['remasterYear']} / {t['remasterRecordLabel']} / "
-                        f"{t['remasterCatalogueNumber']} / {t['format']} / "
-                        f"{t['encoding']}"
-                    )
-                )
-            if not t["remastered"]:
-                click.echo(
-                    unescape(
-                        f"> OR / {group['group']['recordLabel']} / "
-                        f"{group['group']['catalogueNumber']} / {t['format']} / "
-                        f"{t['encoding']}"
-                    )
-                )
+            click.echo(unescape(f"> {describe_torrent(t, group['group'])}"))
     return group
