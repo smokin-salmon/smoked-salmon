@@ -37,6 +37,7 @@ def test_plan_compares_names_without_case_on_a_volume_that_ignores_it(tmp_path, 
     a, b = _files(tmp_path, "a", "b")
     upper, lower = str(tmp_path / "X"), str(tmp_path / "x")
 
+    monkeypatch.setattr(renames, "_folds_case", lambda _path: False)
     assert plan_renames([(a, upper), (b, lower)])[1] == []
     monkeypatch.setattr(renames, "_folds_case", lambda _path: True)
     assert plan_renames([(a, upper), (b, lower)])[1] == [upper, lower]

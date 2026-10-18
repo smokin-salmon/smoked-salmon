@@ -1,4 +1,4 @@
-"""Renaming a batch of files without ever replacing one: os.rename replaces an existing file silently on POSIX.
+"""Renaming a batch of files without replacing one that exists: os.rename replaces an existing file silently on POSIX.
 
 A batch is planned before its first rename (``plan_renames``), then renamed one file at a time, each checked
 right before it is renamed (``rename_all``). A rename that fails stops the batch; nothing is undone.
@@ -92,7 +92,10 @@ def plan_renames(renames: Sequence[Rename]) -> tuple[list[Rename], list[str]]:
 
 
 def rename_all(renames: Sequence[Rename]) -> None:
-    """Rename each pair in turn, never onto a path in use (other than by the file itself, under another case).
+    """Rename each pair in turn, its new path checked just before, so a path that already exists is never replaced.
+
+    The file itself under another case is not in the way. A file created between the check and the rename would
+    still be replaced; nothing else writes into the folder.
 
     Raises:
         RenameStopped: A rename failed, or its new path was in use; the renames after it were not made.
