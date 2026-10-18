@@ -667,6 +667,15 @@ def _holds_any(folder: str, paths: list[str]) -> bool:
 
 
 def delete_empty_folders(path):
-    for root, dirs, files in os.walk(path):
-        if not dirs and not files:
-            os.rmdir(root)
+    """Remove every folder under path left empty, deepest first so a parent its children emptied goes too.
+
+    path itself is kept, and symlinks are neither followed nor removed.
+    """
+    for root, _dirs, _files in os.walk(path, topdown=False):
+        if os.path.samefile(root, path) or os.path.islink(root):
+            continue
+        try:
+            if not os.listdir(root):
+                os.rmdir(root)
+        except OSError:
+            continue

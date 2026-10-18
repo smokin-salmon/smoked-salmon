@@ -9,7 +9,15 @@ from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg, interaction
 from salmon.errors import AmbiguousTrackOrderError, UploadError
-from salmon.tagger.retagger import Change, _get_tag_number, create_track_changes, rename_files, retag_files, tag_files
+from salmon.tagger.retagger import (
+    Change,
+    _get_tag_number,
+    create_track_changes,
+    delete_empty_folders,
+    rename_files,
+    retag_files,
+    tag_files,
+)
 
 
 def _trackmeta(title, track_no, disc_no):
@@ -665,6 +673,50 @@ def test_rename_files_single_folder_moves_a_folder_of_tracks_inside_another_on_i
         ("rip.1.log", "Disc 1/rip.log"),
         ("rip.2.log", "Disc 2/rip.log"),
     ]
+    assert not [d for d in tmp_path.rglob("*") if d.is_dir() and not any(d.iterdir())]
+    assert not (tmp_path / "Disc 1").exists()
+
+
+def test_delete_empty_folders_removes_an_emptied_chain_and_keeps_the_rest(tmp_path) -> None:
+    (tmp_path / "a" / "b" / "c").mkdir(parents=True)
+    (tmp_path / "d").mkdir()
+    (tmp_path / "d" / "keep.txt").write_text("x")
+
+    delete_empty_folders(str(tmp_path))
+
+    assert not (tmp_path / "a").exists()
+    assert (tmp_path / "d" / "keep.txt").exists()
+    assert tmp_path.exists()
+
+
+def test_delete_empty_folders_keeps_an_album_folder_left_with_nothing(tmp_path) -> None:
+    (tmp_path / "a").mkdir()
+    delete_empty_folders(str(tmp_path))
+
+    assert not (tmp_path / "a").exists()
+    assert tmp_path.is_dir()
+
+
+def test_delete_empty_folders_keeps_an_album_folder_with_nothing_in_it(tmp_path) -> None:
+    delete_empty_folders(str(tmp_path))
+
+    assert tmp_path.is_dir()
+
+
+def test_delete_empty_folders_does_not_follow_or_remove_a_symlink(tmp_path) -> None:
+    album = tmp_path / "album"
+    outside = tmp_path / "outside"
+    album.mkdir()
+    (outside / "inner").mkdir(parents=True)
+    try:
+        (album / "link").symlink_to(outside, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks need privileges here")
+
+    delete_empty_folders(str(album))
+
+    assert (album / "link").is_symlink()
+    assert (outside / "inner").is_dir()
 
 
 @pytest.mark.parametrize(
