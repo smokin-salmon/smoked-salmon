@@ -102,7 +102,8 @@ def _title_words(title: str | None) -> set[str]:
     album = re.sub(r"\(?[Ff]eat(\.|uring)? [^\)]+\)?", "", album)
     normalized = re_strip(album, filter_nonscrape=False)
     accented = normalize_accents(normalized)
-    return set(accented.split()) if isinstance(accented, str) else set()
+    # Split on punctuation too: "Rock'n'Roll" and "Rock 'n' Roll", "Lovin'" and "Lovin’" share their words.
+    return {comparable(word) for word in re.split(r"\W+", accented)} - {""} if isinstance(accented, str) else set()
 
 
 def _recent_upload_matches(

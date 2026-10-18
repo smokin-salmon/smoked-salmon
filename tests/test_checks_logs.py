@@ -364,6 +364,7 @@ def test_a_range_rip_log_named_for_its_disc_rebuilds_only_that_disc(tmp_path, mo
         pytest.param("rip.1.log", ["1", "1", "2", None], id="a-track-without-disc-number"),
         pytest.param("rip.1.log", ["1", "1", "1", "1"], id="all-one-disc"),
         pytest.param("rip.3.log", ["1", "1", "2", "2"], id="no-track-of-that-disc"),
+        pytest.param("rip.1.log", ["1", "1", "2", "\u00b2"], id="a-disc-tag-int-cannot-read"),
     ],
 )
 def test_a_log_is_checked_against_every_track_when_its_disc_is_unclear(tmp_path, monkeypatch, log_name, discs) -> None:

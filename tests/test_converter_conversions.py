@@ -115,6 +115,42 @@ def test_a_record_naming_another_folder_is_ignored_with_one_line(tmp_path, capsy
     assert capsys.readouterr().out.count("Ignoring") == 1
 
 
+def test_a_record_found_under_another_case_is_the_same_folders(tmp_path) -> None:
+    """A case-insensitive volume opens the record of "Album [WEB FLAC]" for "album [web flac]"."""
+    out = tmp_path / "album [web flac]"
+    out.mkdir()
+    # The other case leads to the same folder, as it does on a case-insensitive volume.
+    (tmp_path / "Album [WEB FLAC]").symlink_to(out, target_is_directory=True)
+    _write_record(out, {**DOWNCONVERT, "output": "Album [WEB FLAC]"})
+
+    assert _facts(str(out)) == DOWNCONVERT
+
+
+def test_a_record_found_under_another_case_on_a_case_insensitive_volume(tmp_path) -> None:
+    out = tmp_path / "Album [WEB FLAC]"
+    out.mkdir()
+    conversions.record_conversion(str(out), **DOWNCONVERT)
+    other_case = tmp_path / "album [web flac]"
+    if not other_case.is_dir():
+        pytest.skip("this filesystem is case-sensitive")
+
+    assert _facts(str(other_case)) == DOWNCONVERT
+
+
+def test_the_record_of_a_folder_named_in_another_case_is_refused(tmp_path) -> None:
+    """On a case-sensitive volume "Album" and "album" are two folders: one's record is not the other's."""
+    first, second = tmp_path / "Album", tmp_path / "album"
+    first.mkdir()
+    if second.is_dir():
+        pytest.skip("this filesystem is case-insensitive")
+    second.mkdir()
+    conversions.record_conversion(str(first), **DOWNCONVERT)
+    sidecar = Path(conversions._sidecar(str(second)))
+    sidecar.write_bytes(Path(conversions._sidecar(str(first))).read_bytes())
+
+    assert conversions.conversion_of(str(second)) is None
+
+
 def test_a_missing_record_reads_as_no_conversion_quietly(tmp_path, capsys) -> None:
     assert conversions.conversion_of(str(tmp_path / "Album [WEB FLAC]")) is None
     assert capsys.readouterr().out == ""

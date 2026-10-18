@@ -1069,7 +1069,7 @@ async def _upload_staged(
             our_title = metadata["title"]
             track_data = concat_track_data(tags, audio_info)
             if flac_group is not None:
-                # Matched on the reviewed metadata, so an edited catalogue number or edition title moves the pick.
+                # Matched on the reviewed metadata, so an edited year or edition title moves the pick.
                 source_flac = await choose_source_flac(flac_group, metadata)
                 if source_flac is None:
                     raise click.Abort

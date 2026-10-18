@@ -13,6 +13,7 @@ from mutagen.mp3 import MP3
 
 from salmon.checks import tag_rules
 from salmon.checks.tag_rules import (
+    find_tag_issues,
     has_blank_id3v2_alongside_id3v1,
     has_id3_tag,
     in_torrent_path,
@@ -73,11 +74,13 @@ def _write_mp3_v2_only(path) -> None:
     mut.save(v1=0)
 
 
-def _write_mp3_v1_and_blank_v2(path) -> None:
+def _write_mp3_v1_and_blank_v2(path, v1_block: bytes | None = None) -> None:
+    """A frameless ID3v2 tag, and an ID3v1 block written by hand: mutagen would fill it from the v2 tag."""
     _write_mp3_frames(path)
     mut = MP3(str(path))
     mut.add_tags()
-    mut.save(v1=2)
+    mut.save(v1=0)
+    path.write_bytes(path.read_bytes() + (_id3v1_tag() if v1_block is None else v1_block))
 
 
 def _write_mp3_v1_and_good_v2(path) -> None:
@@ -161,18 +164,48 @@ def test_dual_id3_is_flagged_only_for_a_filled_v1_next_to_a_blank_v2(tmp_path) -
     assert has_blank_id3v2_alongside_id3v1(str(v1_and_good_v2)) is False
 
 
-def test_a_tag_mutagen_cannot_parse_is_not_flagged_and_does_not_crash(tmp_path, monkeypatch) -> None:
-    """A warning check must never raise: a malformed ID3v2 tag mutagen refuses to parse (not just a
-    missing one) must be treated as not the flagged case, not propagated to abort the upload."""
+def test_a_blank_v1_next_to_a_blank_v2_is_not_flagged(tmp_path) -> None:
     path = tmp_path / "a.mp3"
-    path.write_bytes(b"ID3\x02\x00\x00\x00\x00\x00\x00" + b"\x00" * 300 + b"TAG" + b"\x00" * 125)
+    # No text and no genre (255), as mutagen writes the ID3v1 block of a blank tag.
+    _write_mp3_v1_and_blank_v2(path, b"TAG" + bytes(124) + b"\xff")
 
-    def raise_unsupported(_filepath):
+    assert has_blank_id3v2_alongside_id3v1(str(path)) is False
+
+
+@pytest.mark.parametrize(("comment_end", "flagged"), [(b"\0\x05", False), (b"ok", True)], ids=["v1.1-track", "v1.0"])
+def test_a_v1_track_number_alone_is_not_text(tmp_path, comment_end, flagged) -> None:
+    """Bytes 125-126 hold a v1.1 track number when byte 125 is zero, else the end of a v1.0 comment."""
+    path = tmp_path / "a.mp3"
+    _write_mp3_v1_and_blank_v2(path, b"TAG" + bytes(122) + comment_end + b"\xff")
+
+    assert has_blank_id3v2_alongside_id3v1(str(path)) is flagged
+
+
+@pytest.mark.parametrize(
+    "check",
+    [
+        pytest.param(lambda path: process_tag_issues(path, {}, scene=False, recompress=False), id="upload"),
+        pytest.param(lambda path: find_tag_issues(path, {}), id="check-all"),
+    ],
+)
+def test_a_tag_mutagen_cannot_read_is_noted_and_does_not_crash(tmp_path, monkeypatch, check) -> None:
+    """mutagen raises one error for a malformed tag and a failed read, so either gets a note, never a pass."""
+    path = tmp_path / "a.mp3"
+    path.write_bytes(b"ID3\x02\x00\x00\x00\x00\x00\x00" + b"\x00" * 300 + _id3v1_tag())
+    parsed = []
+
+    def raise_unsupported(filepath, load_v1=True):
+        parsed.append(filepath)
         raise ID3UnsupportedVersionError("mutagen cannot parse this ID3v2 version")
 
     monkeypatch.setattr(tag_rules, "ID3", raise_unsupported)
 
-    assert has_blank_id3v2_alongside_id3v1(str(path)) is False
+    messages = check(str(tmp_path))
+
+    assert messages == [
+        "a.mp3: could not read its ID3v2 tag (mutagen cannot parse this ID3v2 version); check it by hand."
+    ]
+    assert parsed == [str(path)]
 
 
 def test_stripping_removes_a_leading_id3v2_header_but_keeps_the_stream_and_tags(tmp_path) -> None:
@@ -187,6 +220,21 @@ def test_stripping_removes_a_leading_id3v2_header_but_keeps_the_stream_and_tags(
     assert FLAC(str(path))["title"] == ["Hello"]
     assert FLAC(str(path)).info.sample_rate == 44100
     assert messages == ["Removed an ID3 tag from 01.flac (RED and OPS do not allow ID3 tags in FLAC files)."]
+
+
+def test_stripping_keeps_the_padding_the_file_had(tmp_path) -> None:
+    """The bytes the ID3 tag took go, rather than staying in the FLAC as padding."""
+    path = tmp_path / "01.flac"
+    _write_flac(path, title="Hello")
+    padding = [block.length for block in FLAC(str(path)).metadata_blocks if block.code == 1]
+    size = 5000
+    syncsafe = bytes([(size >> 21) & 0x7F, (size >> 14) & 0x7F, (size >> 7) & 0x7F, size & 0x7F])
+    path.write_bytes(b"ID3" + bytes([3, 0, 0]) + syncsafe + bytes(size) + path.read_bytes())
+
+    process_tag_issues(str(tmp_path), {}, scene=False, recompress=False)
+
+    assert has_id3_tag(str(path)) is False
+    assert [block.length for block in FLAC(str(path)).metadata_blocks if block.code == 1] == padding
 
 
 def test_stripping_removes_a_trailing_id3v1_block_but_keeps_the_stream_and_tags(tmp_path) -> None:
@@ -210,10 +258,12 @@ def test_a_failed_strip_is_warned_about_and_does_not_crash(tmp_path, monkeypatch
     _prepend_id3v2_header(path)
 
     class _RaisingFlac:
+        metadata_blocks = []
+
         def __init__(self, _filepath) -> None:
             pass
 
-        def save(self, deleteid3: bool = False) -> None:
+        def save(self, deleteid3: bool = False, padding=None) -> None:
             raise MutagenError("cannot re-save this file")
 
     monkeypatch.setattr(tag_rules, "FLAC", _RaisingFlac)

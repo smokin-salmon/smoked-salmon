@@ -645,6 +645,28 @@ def test_rename_files_single_folder_keeps_the_names_from_a_folder_of_several_dis
     assert ("Audio/cover.jpg", "Audio/cover.jpg") in tree
 
 
+def test_rename_files_single_folder_moves_a_folder_of_tracks_inside_another_on_its_own_pass(
+    tmp_path, monkeypatch
+) -> None:
+    # Disc 1/Bonus holds tracks too: Disc 1's pass used to move it whole, and its own pass then found it gone.
+    _single_folder(monkeypatch)
+    tracks = {"Disc 1/a.flac": (1, 1), "Disc 1/Bonus/b.flac": (1, 2), "Disc 2/c.flac": (2, 1)}
+    tags, metadata = _release(tmp_path, tracks, ["Disc 1/rip.log", "Disc 1/Bonus/notes.txt", "Disc 2/rip.log"])
+    before = _contents(tmp_path)
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _contents(tmp_path) == before
+    assert [(name, origin) for name, origin in _tree(tmp_path) if origin is not None] == [
+        ("1.01. Title 1-1.flac", "Disc 1/a.flac"),
+        ("1.02. Title 1-2.flac", "Disc 1/Bonus/b.flac"),
+        ("2.01. Title 2-1.flac", "Disc 2/c.flac"),
+        ("notes.1.txt", "Disc 1/Bonus/notes.txt"),
+        ("rip.1.log", "Disc 1/rip.log"),
+        ("rip.2.log", "Disc 2/rip.log"),
+    ]
+
+
 @pytest.mark.parametrize(
     ("tracks", "template"),
     [
