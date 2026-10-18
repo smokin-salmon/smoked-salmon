@@ -198,8 +198,9 @@ def test_a_shortened_transcode_is_reused(made, tmp_path, capsys) -> None:
     _shorten(out)
     before, made_before = _snapshot(out), list(made)
 
-    assert _transcode(album, tmp_path) == out
+    again = _transcode(album, tmp_path)
 
+    assert again == out
     assert made == made_before
     assert _snapshot(out) == before
     assert f"{out} already exists." in capsys.readouterr().out
@@ -228,8 +229,9 @@ def test_a_transcode_without_a_record_missing_a_file_is_made_again(made, tmp_pat
     (out / "02. two.mp3").unlink()
     made.clear()
 
-    assert _transcode(album, tmp_path) == out
+    again = _transcode(album, tmp_path)
 
+    assert again == out
     assert sorted(made) == ["01. " + LONG + ".mp3", "02. two.mp3"]
     assert (out / "02. two.mp3").is_file()
     assert "exists but appears incomplete, re-transcoding" in capsys.readouterr().out
@@ -241,8 +243,9 @@ def test_an_old_record_is_reused_by_its_names(made, tmp_path, capsys) -> None:
     _without_files(out)
     before, made_before = _snapshot(out), list(made)
 
-    assert _transcode(album, tmp_path) == out
+    again = _transcode(album, tmp_path)
 
+    assert again == out
     assert made == made_before
     assert _snapshot(out) == before
     assert f"{out} already exists." in capsys.readouterr().out
@@ -264,17 +267,32 @@ def test_an_old_record_whose_names_differ_is_refused_not_removed(made, tmp_path)
     assert _snapshot(out) == before
 
 
-def test_another_albums_transcode_under_the_name_is_refused_not_removed(made, tmp_path) -> None:
+@pytest.mark.parametrize(
+    ("change", "holds"),
+    [
+        ({"source": "other"}, "a conversion of another album ({other})"),
+        ({"bitrate": "320"}, "a transcode of this album at 320"),
+        ({"kind": "downconvert", "bit_depth": 16, "sample_rate": 44100}, "a downconversion of this album"),
+    ],
+    ids=["another source", "another bitrate", "another kind"],
+)
+def test_another_conversions_record_is_refused_whatever_names_it_holds(made, tmp_path, change, holds) -> None:
     album = _album(tmp_path)
     out = _transcode(album, tmp_path)
-    record = json.loads(Path(conversions._sidecar(str(out))).read_text())
-    Path(conversions._sidecar(str(out))).write_text(json.dumps({**record, "source": str(tmp_path / "other")}))
-    os.rename(out / "02. two.mp3", out / "02. tw..mp3")
+    other = str(tmp_path / "other")
+    sidecar = Path(conversions._sidecar(str(out)))
+    record = json.loads(sidecar.read_text())
+    change = {key: other if value == "other" else value for key, value in change.items()}
+    sidecar.write_text(json.dumps({**record, **change}))
+    # Every name is the one this transcode writes: only the record says it is another conversion.
     before = _snapshot(out)
 
-    with pytest.raises(UploadError):
+    with pytest.raises(UploadError) as refused:
         _transcode(album, tmp_path)
 
+    assert str(refused.value) == (
+        f"{out} holds {holds.format(other=other)}, not this transcode: remove it and run again."
+    )
     assert _snapshot(out) == before
 
 
@@ -287,8 +305,9 @@ def test_a_shortened_downconversion_is_reused(made, tmp_path, capsys) -> None:
     _shorten(out)
     before, made_before = _snapshot(out), list(made)
 
-    assert _downconvert(album, tmp_path) == out
+    again = _downconvert(album, tmp_path)
 
+    assert again == out
     assert made == made_before
     assert _snapshot(out) == before
     assert f"{out} already exists." in capsys.readouterr().out

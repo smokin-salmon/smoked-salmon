@@ -3,7 +3,7 @@ import os
 import re
 import shutil
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import asyncclick as click
 import msgspec
@@ -450,27 +450,25 @@ def _is_finished_transcode(path: str, new_path: str, bitrate: Bitrate) -> bool:
 
     salmon's record of the transcode lists the files it wrote, under the names the folder check may have shortened
     since. Only a folder with no record, a transcode that stopped before its last file, is ever made again: one with a
-    record may be what a torrent seeds from.
+    record may be what a torrent seeds from. A record of another conversion (another kind, bitrate or source) is
+    refused whatever names the folder holds.
 
     Raises:
         UploadError: new_path has a record and is not this transcode, complete.
     """
     record = conversion_of(new_path)
-    same = (
-        record is not None
-        and record["kind"] == "transcode"
-        and record["bitrate"] == bitrate
-        and os.path.realpath(record["source"]) == os.path.realpath(path)
-    )
-    missing = missing_files(new_path, record) if same and record is not None else None
-    if missing:
-        raise UploadError(
-            f"{new_path} is salmon's transcode of this album at {bitrate}, but {', '.join(missing)} "
-            f"{'is' if len(missing) == 1 else 'are'} missing: remove it and run again."
-        )
-    if missing is not None:
-        return True
-    # A record from before salmon listed the files it wrote, or none: the paths this transcode would give them.
+    if record is not None:
+        if differs := _how_record_differs(record, path, bitrate):
+            raise UploadError(f"{new_path} holds {differs}, not this transcode: remove it and run again.")
+        missing = missing_files(new_path, record)
+        if missing:
+            raise UploadError(
+                f"{new_path} is salmon's transcode of this album at {bitrate}, but {', '.join(missing)} "
+                f"{'is' if len(missing) == 1 else 'are'} missing: remove it and run again."
+            )
+        if missing is not None:
+            return True
+    # No record, or this transcode's from before salmon listed the files it wrote: the paths it would give them.
     expected_mp3s = {Path(item.dst).relative_to(new_path) for item in _collect_transcode_items(path, new_path)}
     existing_files = {p.relative_to(new_path) for p in Path(new_path).rglob("*") if p.suffix.lower() == ".mp3"}
     if expected_mp3s and expected_mp3s <= existing_files:
@@ -480,6 +478,17 @@ def _is_finished_transcode(path: str, new_path: str, bitrate: Bitrate) -> bool:
             f"{new_path} is incomplete or not salmon's transcode of this album at {bitrate}: remove it and run again."
         )
     return False
+
+
+def _how_record_differs(record: dict[str, Any], path: str, bitrate: Bitrate) -> str | None:
+    """What a conversion record is of, when it is not this transcode of path at bitrate; None when it is."""
+    if os.path.realpath(record["source"]) != os.path.realpath(path):
+        return f"a conversion of another album ({record['source']})"
+    if record["kind"] != "transcode":
+        return "a downconversion of this album"
+    if record["bitrate"] != bitrate:
+        return f"a transcode of this album at {record['bitrate']}"
+    return None
 
 
 def transcode_note(url: str, bitrate: Bitrate) -> str:
