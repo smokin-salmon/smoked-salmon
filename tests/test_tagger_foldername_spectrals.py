@@ -328,6 +328,80 @@ def test_deleting_spectrals_leaves_a_folder_holding_files_salmon_did_not_make(mo
 # Moving salmon's spectrals with a rename
 
 
+def test_an_album_reached_through_a_link_of_another_name_has_one_tmp_dir_spectrals_folder(
+    monkeypatch, dirs, tmp_path
+) -> None:
+    downloads, seeding = dirs
+    _tmp_dir(monkeypatch, tmp_path)
+    album = _album(downloads / "Album")
+    (seeding / "Linked").symlink_to(album)
+
+    assert get_spectrals_path(str(seeding / "Linked")) == get_spectrals_path(str(album))
+
+
+def test_a_folder_given_another_file_before_the_second_try_is_not_deleted(monkeypatch, tmp_path, capsys) -> None:
+    import shutil
+
+    specs = tmp_path / "Album" / "Spectrals"
+    specs.parent.mkdir()
+    _write_spectrals(specs)
+    rmtree = shutil.rmtree
+    tries: list[str] = []
+    slept: list[float] = []
+
+    def held_on_the_first_try(path: str, ignore_errors: bool = False) -> None:
+        # As on Windows, where a viewer holding a file stops the first try.
+        tries.append(path)
+        if len(tries) > 1:
+            rmtree(path, ignore_errors=ignore_errors)
+
+    async def a_file_arrives(seconds: float) -> None:
+        if not slept:
+            (specs / "notes.txt").write_bytes(b"theirs")
+        slept.append(seconds)
+
+    _no_upload(monkeypatch)
+    monkeypatch.setattr(spectrals.shutil, "rmtree", held_on_the_first_try)
+    monkeypatch.setattr(spectrals.anyio, "sleep", a_file_arrives)
+    anyio.run(spectrals.handle_spectrals_upload_and_deletion, str(specs), None)
+
+    assert (specs / "notes.txt").read_bytes() == b"theirs"
+    assert len(tries) == 1
+    assert "Not deleting" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("put_there", ["a folder", "a link to another of salmon's"])
+def test_what_takes_the_place_of_salmons_folder_during_the_delete_is_not_salmons(
+    monkeypatch, tmp_path, put_there: str
+) -> None:
+    specs = tmp_path / "Album" / "Spectrals"
+    specs.parent.mkdir()
+    _write_spectrals(specs)
+    other = Path(create_specs_folder(str(_album(tmp_path / "Other"))))
+    slept: list[float] = []
+
+    async def put_in_its_place(seconds: float) -> None:
+        if not slept:
+            if put_there == "a folder":
+                specs.mkdir()
+                (specs / ".theirs").write_bytes(b"theirs")
+                (specs / "notes.txt").write_bytes(b"theirs")
+            else:
+                specs.symlink_to(other)
+        slept.append(seconds)
+
+    _no_upload(monkeypatch)
+    monkeypatch.setattr(spectrals.anyio, "sleep", put_in_its_place)
+    anyio.run(spectrals.handle_spectrals_upload_and_deletion, str(specs), None)
+
+    if put_there == "a folder":
+        # Left with only a hidden file of the user's, it must not pass for salmon's empty folder.
+        (specs / "notes.txt").unlink()
+        assert not made_by_salmon(str(specs))
+    else:
+        assert made_by_salmon(str(other))
+
+
 def test_a_library_albums_spectrals_follow_it_to_the_renamed_copy(monkeypatch, dirs) -> None:
     downloads, _seeding = dirs
     library = downloads.parent / "library"
