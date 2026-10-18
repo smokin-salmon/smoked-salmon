@@ -226,3 +226,14 @@ def test_dedupe_catno_against_upc_tolerates_missing_keys(metadata: dict) -> None
     metadata_mod._dedupe_catno_against_upc(metadata)
 
     assert metadata.get("catno") != metadata.get("upc") or not metadata.get("catno")
+
+
+def test_an_error_answered_with_http_200_leaves_the_barcode_blank_and_says_so(monkeypatch) -> None:
+    _deezer_answers(monkeypatch, {"error": {"type": "Exception", "message": "Quota limit exceeded", "code": 4}})
+    said: list[str] = []
+    monkeypatch.setattr(deezer.click, "secho", lambda message, **_kwargs: said.append(message))
+
+    upc = anyio.run(deezer.album_upc, DEEZER_URL)
+
+    assert upc is None
+    assert said == ["Could not read the barcode from Deezer (Quota limit exceeded); leaving it blank."]

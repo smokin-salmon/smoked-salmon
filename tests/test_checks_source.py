@@ -116,8 +116,19 @@ def test_a_verification_log_proves_nothing(tmp_path) -> None:
         ({"COMMENT": "https://listen.tidal.com/album/2468665"}, "Tidal URL in the tags"),
         ({"MY OWN KEY": "https://artist.bandcamp.com/album/y"}, "Bandcamp URL in the tags"),
         ({"SOURCE": "https://itunes.apple.com/us/album/y/123"}, "Apple URL in the tags"),
+        ({"URL": "https://music.apple.com/us/song/y/456"}, "Apple URL in the tags"),
+        ({"URL": "https://www.hdtracks.com/?ref=x#/album/123"}, "HDtracks URL in the tags"),
+        ({"URL": "https://www.hdtracks.com/#/album/123"}, "HDtracks URL in the tags"),
     ],
-    ids=["qobuz-custom-key", "tidal-comment", "bandcamp-custom-key", "itunes-store"],
+    ids=[
+        "qobuz-custom-key",
+        "tidal-comment",
+        "bandcamp-custom-key",
+        "itunes-store",
+        "apple-song-page",
+        "hdtracks-query",
+        "hdtracks-fragment",
+    ],
 )
 def test_a_store_url_proves_web_whatever_tag_holds_it(tmp_path, tags, reason) -> None:
     album = _album(tmp_path, tags)
@@ -218,6 +229,11 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         {"COMMENT": "Bought on Qobuz, tagged by hand"},
         {"COMMENT": "bought on bandcamp.com"},
         {"WEBSITE": "https://www.apple.com/logic-pro/"},
+        {"WWWARTIST": "https://artist.bandcamp.com"},
+        {"URL": "https://www.qobuz.com/au-en/interpreter/artist/123"},
+        {"WEBSITE": "https://www.qobuz.com/au-en/label/a-label/albums"},
+        {"WWWARTIST": "https://artist.bandcamp.com/?from=/album/y"},
+        {"URL": "https://www.hdtracks.com/#/artist/a?ref=/album/y"},
     ],
     ids=[
         "picard-asin",
@@ -227,6 +243,11 @@ def test_plain_cd_quality_with_no_log_is_undecidable(tmp_path) -> None:
         "hand-written-comment",
         "hand-written-bandcamp-comment",
         "apple-but-not-its-store",
+        "bandcamp-artist-page",
+        "store-artist-page",
+        "store-label-listing",
+        "album-path-only-in-the-query",
+        "album-path-only-in-the-fragments-query",
     ],
 )
 def test_tags_a_user_or_a_tagger_writes_do_not_prove_web(tmp_path, tags) -> None:
@@ -425,3 +446,12 @@ def test_a_known_source_skips_the_detection_and_the_prompt(monkeypatch) -> None:
 
     assert detected_paths == []
     assert prompted_with == []
+
+
+@pytest.mark.parametrize("url", ["https://[broken", "https://www.qobuz.com:[broken/album/x"], ids=["any", "store"])
+def test_a_tag_url_python_cannot_parse_is_skipped(tmp_path, url: str) -> None:
+    album = _album(tmp_path, {"URL": url})
+
+    found = detect_source(str(album))
+
+    assert found is None

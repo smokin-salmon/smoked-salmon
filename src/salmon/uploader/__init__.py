@@ -595,7 +595,8 @@ async def resolve_cover_url(
                 return True, cover_url
 
             click.secho(
-                f"\nNo cover image for this new group on {tracker}: none was found, or the upload to {host} failed.",
+                f"\nNo cover image for this new group on {tracker}: none was found, its download failed, or the upload "
+                f"to {host} failed.",
                 fg="yellow",
                 bold=True,
             )

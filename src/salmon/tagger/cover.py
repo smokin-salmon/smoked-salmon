@@ -3,9 +3,9 @@ import io
 import os
 import re
 import uuid
+from typing import IO
 
 import aiohttp
-import anyio
 import asyncclick as click
 import humanfriendly
 from mutagen import PaddingInfo
@@ -15,7 +15,9 @@ from PIL import Image
 
 from salmon import cfg
 from salmon.common import get_audio_files
+from salmon.images.files import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
 from salmon.proxy import session_kwargs
+from salmon.ssrf import NonPublicAddressError
 
 # RED allows at most 1 MiB of embedded pictures plus padding per file.
 MAX_PICTURES_AND_PADDING = humanfriendly.parse_size("1MiB")
@@ -88,17 +90,23 @@ def _find_embedded_front_cover(path: str) -> tuple[str, bytes] | None:
     return None
 
 
-def _is_valid_cover(cover_path: str) -> bool:
+def _is_valid_cover(cover_path: str | IO[bytes]) -> bool:
     """Check if the file at cover_path is a valid JPEG or PNG image.
 
     Args:
-        cover_path: Path to the image file.
+        cover_path: Path to the image file, or the image file itself.
 
     Returns:
         True if the file is a valid JPEG or PNG image.
     """
     try:
-        mime = Image.open(cover_path).get_format_mimetype()
+        with Image.open(cover_path) as image:
+            mime = image.get_format_mimetype()
+            # Read from the header: a small file can claim pixels that would take gigabytes to load.
+            if image.width * image.height > MAX_IMAGE_PIXELS:
+                return False
+            # Every pixel: a download cut off with no Content-Length still has a valid header.
+            image.load()
     except Exception:
         return False
     return mime in ("image/jpeg", "image/png")
@@ -121,6 +129,7 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
     cover_path = os.path.join(path, cover_image_filename)
 
     timeout = aiohttp.ClientTimeout(total=30)
+    data = bytearray()
     try:
         async with (
             # No proxy service, but salmon web's guard (salmon.ssrf): the URL comes from a store's page.
@@ -131,17 +140,24 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
                 click.secho(f"\nFailed to download cover image (ERROR {response.status})", fg="red")
                 return None
 
-            async with await anyio.open_file(cover_path, "wb") as f:
-                async for chunk in response.content.iter_chunked(5096):
-                    await f.write(chunk)
-    except aiohttp.ClientError as e:
-        click.secho(f"\nFailed to download cover image (ERROR {e})", fg="red")
+            async for chunk in response.content.iter_chunked(64 * 1024):
+                data += chunk
+                if len(data) > MAX_IMAGE_BYTES:
+                    limit = MAX_IMAGE_BYTES // 1024 // 1024
+                    click.secho(f"\nFailed to download cover image (ERROR over {limit} MiB)", fg="red")
+                    return None
+    except (aiohttp.ClientError, TimeoutError) as e:
+        # By type: an aiohttp error can repeat the URL, and a cover URL can be signed. salmon web's own refusal
+        # names only the host.
+        reason = str(e) if isinstance(e, NonPublicAddressError) else type(e).__name__
+        click.secho(f"\nFailed to download cover image (ERROR {reason})", fg="red")
         return None
 
-    if not _is_valid_cover(cover_path):
-        os.remove(cover_path)
+    if not _is_valid_cover(io.BytesIO(data)):
         click.secho("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])", fg="red")
         return None
+    # Written whole: a download cut off partway would pass for the folder's cover on the next run.
+    _write_whole_file(cover_path, bytes(data))
 
     click.secho(f"Cover image downloaded: {cover_image_filename} ", fg="yellow")
     return cover_path

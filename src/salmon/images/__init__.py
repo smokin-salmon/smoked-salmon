@@ -217,9 +217,7 @@ async def _upload_groups(
             for _ in range(UPLOAD_CONNECTIONS):
                 tg.start_soon(worker)
     except BaseExceptionGroup as group:
-        # Raise what an upload raised as it is, as a plain gather would, not wrapped in a group.
-        if len(group.exceptions) != 1:
-            raise
+        # The first error as it is, as a plain gather would: two workers can fail in the same step.
         raised = group.exceptions[0]
     if raised is not None:
         raise raised

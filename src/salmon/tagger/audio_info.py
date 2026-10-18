@@ -2,6 +2,7 @@ import os
 
 import asyncclick as click
 from mutagen import File as MutagenFile
+from mutagen.mp4 import MP4Info
 
 from salmon.common import get_audio_files
 from salmon.common.files import CompressResult, compress, process_files
@@ -27,11 +28,15 @@ def gather_audio_info(path, sort_by_tracknumber=False):
 
 
 def _parse_audio_info(streaminfo):
+    precision = getattr(streaminfo, "bits_per_sample", None)
+    if isinstance(streaminfo, MP4Info) and streaminfo.codec != "alac":
+        # mutagen gives AAC the sample entry's 16 bits: a lossy file has no bit depth.
+        precision = None
     return {
         "channels": streaminfo.channels,
         "sample rate": streaminfo.sample_rate,
         "bit rate": streaminfo.bitrate,
-        "precision": getattr(streaminfo, "bits_per_sample", None),
+        "precision": precision,
         "duration": int(streaminfo.length),
     }
 

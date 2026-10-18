@@ -224,3 +224,29 @@ def test_generate_t_description_omits_empty_more_info_after_source_filter() -> N
 
     assert "[b]Source:[/b] [url=https://gammenterprises.bandcamp.com/album/cry-fi-dem]Bandcamp[/url]" in description
     assert "[b]More info:[/b]" not in description
+
+
+def _hybrid_tracklist(precision: int | None) -> str:
+    """The torrent description of a hybrid release whose one track has this bit depth."""
+    return generate_t_description(
+        metadata={"date": None},
+        track_data={"01. Intro.flac": {"duration": 185, "bit rate": 0, "precision": precision, "sample rate": 44100}},
+        hybrid=True,
+        metadata_urls=[],
+        spectral_urls=None,
+        spectral_ids=None,
+        lossy_comment=None,
+        source_url=None,
+    )
+
+
+def test_a_hybrid_tracklist_keeps_a_zero_bit_depth(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.description, "bitrates_in_t_desc", False)
+
+    assert "01. Intro [i](3:05)[/i] [0 bit / 44.1 kHz]\n" in _hybrid_tracklist(0)
+
+
+def test_a_lossy_hybrid_tracklist_names_no_bit_depth(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.description, "bitrates_in_t_desc", False)
+
+    assert "01. Intro [i](3:05)[/i] [44.1 kHz]\n" in _hybrid_tracklist(None)

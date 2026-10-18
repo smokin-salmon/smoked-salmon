@@ -6,6 +6,8 @@ _max_path_length_for_run picks the value a whole run is checked against: the tra
 the strictest among every tracker configured, when the run might go on to another of them.
 """
 
+import os
+
 import pytest
 
 import salmon.trackers
@@ -98,3 +100,14 @@ def test_truncation_that_cannot_fit_raises_instead_of_leaving_the_path_too_long(
 
     with pytest.raises(NoncompliantFolderStructure):
         _check_path_lengths(str(folder), scene=False, max_path_length=max_path_length)
+
+
+def test_truncation_never_cuts_a_file_name_down_to_its_extension(tmp_path) -> None:
+    """With none of the name left, "...flac" has no extension, so the track would drop out of the upload."""
+    folder = tmp_path / "F"
+    folder.mkdir()
+    (folder / "xxxxx.flac").write_bytes(b"fLaC")  # "F/xxxxx.flac" is 12 characters: 3 over a limit of 9.
+
+    with pytest.raises(NoncompliantFolderStructure):
+        _check_path_lengths(str(folder), scene=False, max_path_length=9)
+    assert os.listdir(folder) == ["xxxxx.flac"]

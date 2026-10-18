@@ -87,3 +87,33 @@ def test_ra_success_without_links_raises(tmp_path, monkeypatch) -> None:
             await runner.cleanup()
 
     anyio.run(run)
+
+
+def test_ra_without_a_key_says_so(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(ra.cfg.image, "ra_key", None)
+
+    with pytest.raises(ImageUploadFailed, match="ra_key"):
+        anyio.run(_run_upload, tmp_path)
+
+
+@pytest.mark.parametrize("key", ["ra-secret-0123456789", "k3y"], ids=["long-key", "short-key"])
+def test_ra_error_echoing_the_key_is_masked(tmp_path, monkeypatch, key) -> None:
+    async def handle_upload(request: web.Request) -> web.Response:
+        data = await request.post()
+        return web.Response(text=f"bad request: api_key={data.get('api_key')}", status=400)
+
+    async def run() -> str:
+        runner = await _serve(handle_upload)
+        monkeypatch.setattr(ra, "UPLOAD_URL", _local_url(runner))
+        monkeypatch.setattr(ra.cfg.image, "ra_key", key)
+        try:
+            with pytest.raises(ImageUploadFailed) as error:
+                await _run_upload(tmp_path)
+            return str(error.value)
+        finally:
+            await runner.cleanup()
+
+    message = anyio.run(run)
+
+    assert key not in message
+    assert "[REDACTED]" in message

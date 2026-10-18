@@ -33,6 +33,11 @@ async def album_upc(url: str) -> str | None:
         # so: otherwise a blank catalogue number looks like "this release has no barcode".
         click.secho(f"Could not read the barcode from Deezer ({type(error).__name__}); leaving it blank.", fg="yellow")
         return None
+    if isinstance(data, dict) and isinstance(error := data.get("error"), dict):
+        # Deezer answers a quota or a lookup it refuses with HTTP 200 and this, not with an error status.
+        reason = str(error.get("message") or error.get("type") or "an error")[:100]
+        click.secho(f"Could not read the barcode from Deezer ({reason}); leaving it blank.", fg="yellow")
+        return None
     upc = data.get("upc") if isinstance(data, dict) else None
     return str(upc) if upc else None
 
