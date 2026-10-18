@@ -101,6 +101,14 @@ def test_a_bandcamp_album_under_a_differently_cased_host_counts_once(tmp_path) -
     assert metadata_mod.files_store_url(str(album)) == url
 
 
+def test_a_bandcamp_album_whose_slug_differs_only_by_case_counts_once(tmp_path) -> None:
+    """Bandcamp writes its slugs in lowercase: a slug in another case is the same album."""
+    url = "https://artist.bandcamp.com/album/the-album"
+    album = _tagged_album(tmp_path / "a", {"SOURCE": url, "COMMENT": "https://artist.bandcamp.com/album/The-Album"})
+
+    assert metadata_mod.files_store_url(str(album)) == url
+
+
 def test_two_albums_of_one_store_give_no_store_url(tmp_path) -> None:
     album = _tagged_album(tmp_path / "a", {"SOURCE": DEEZER_URL, "COMMENT": "https://www.deezer.com/en/album/111"})
 

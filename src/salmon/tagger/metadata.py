@@ -143,15 +143,18 @@ def files_store_url(path: str) -> str | None:
 
 
 def _album_identity(url: str) -> tuple[str, ...] | None:
-    """(source, release id) of a store album URL, so its other forms (locale, host, slash) count once."""
+    """(source, release id) of a store album URL, or (source, host, slug) for Bandcamp, so its other forms
+    (locale, host, slash) count once."""
     source = _metasource_of(url)
     match = METASOURCES[source].Scraper.regex.search(url) if source else None
     if source is None or match is None:
         return None
     groups = [group.rstrip("/") for group in match.groups() if group]
-    # The release id is the last group, kept as written; a Bandcamp slug is unique only on its own host, the
-    # first group, whose case does not matter.
-    return (source, groups[0].lower(), groups[-1]) if source == "Bandcamp" else (source, groups[-1])
+    # The release id is the last group, kept as written. A Bandcamp slug is unique only on its own host, the
+    # first group; Bandcamp writes both in lowercase, so their case does not matter.
+    if source == "Bandcamp":
+        return (source, groups[0].lower(), groups[-1].lower())
+    return (source, groups[-1])
 
 
 def _comparable_title(title: object) -> str:
