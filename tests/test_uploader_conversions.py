@@ -14,6 +14,7 @@ import msgspec
 import pytest
 from asyncclick.testing import CliRunner
 from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+    FIRST_TORRENT_ID,
     FakeTracker,
     _album,
     _returning,
@@ -439,6 +440,29 @@ def test_yyy_leaves_out_the_16bit_flac_the_edition_holds(monkeypatch, torrents: 
     assert "Processing: 16bit" not in run.result.output
     # The 24-bit FLAC, then the MP3s.
     assert len(_upload_posts(run)) == 3
+    assert _formats(run)[1:] == ["MP3 320", "MP3 V0 (VBR)"]
+
+
+def test_yyy_converts_a_16bit_flac_held_only_under_another_catalogue_number(monkeypatch, torrents: Path) -> None:
+    # The site files the uploaded FLAC (the fake's first torrent id) under the form's edition, CAT1; the held
+    # 16-bit FLAC sits in CAT2, another pressing of the same year.
+    uploaded = {**EDITION_16BIT_FLAC, "id": FIRST_TORRENT_ID, "encoding": "24bit Lossless"}
+    other = {**EDITION_16BIT_FLAC, "remasterCatalogueNumber": "CAT2"}
+    run = _run_conversion_up(monkeypatch, torrents, (), group_torrents=(uploaded, other))
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "DUPE RISK" not in run.result.output
+    assert "Processing: 16bit" in run.result.output
+    assert _formats(run)[1:] == ["FLAC Lossless", "MP3 320", "MP3 V0 (VBR)"]
+
+
+def test_yyy_leaves_out_a_16bit_flac_held_in_the_edition_the_flac_was_filed_under(monkeypatch, torrents: Path) -> None:
+    uploaded = {**EDITION_16BIT_FLAC, "id": FIRST_TORRENT_ID, "encoding": "24bit Lossless"}
+    same = {**EDITION_16BIT_FLAC, "remasterCatalogueNumber": "CAT-1"}
+    run = _run_conversion_up(monkeypatch, torrents, (), group_torrents=(uploaded, same))
+
+    assert run.result.exit_code == 0, run.result.output
+    assert HELD_16BIT in run.result.output
     assert _formats(run)[1:] == ["MP3 320", "MP3 V0 (VBR)"]
 
 

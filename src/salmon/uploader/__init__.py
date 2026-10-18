@@ -1250,7 +1250,9 @@ async def _upload_staged(
                         elif not dryrun.active():
                             group = await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
                             # Read from the group just printed: no request of its own.
-                            held = _held_conversions(group, metadata, {"id": torrent_id}, rls_data, track_data)
+                            held = _held_conversions(
+                                group, metadata, {"id": torrent_id}, rls_data, track_data, uploaded=True
+                            )
 
                         if spectrals_after:
                             # Once, on the first torrent up, whether or not the run goes on to another tracker.
@@ -1586,6 +1588,8 @@ def _held_conversions(
     source_flac: dict[str, Any],
     rls_data: dict[str, Any],
     track_data: dict[str, Any],
+    *,
+    uploaded: bool = False,
 ) -> set[str]:
     """The names of the conversions offered for this release that its edition in the group already holds.
 
@@ -1596,12 +1600,13 @@ def _held_conversions(
             --skip-flac-upload transcodes), which never counts as held.
         rls_data: The release data the conversions are offered for.
         track_data: The tracks' audio info.
+        uploaded: Whether this run sent the source FLAC (see held_formats).
     """
     formats = {
         option["name"]: downconversion_format(option)
         for option in get_downconversion_options(rls_data, track_data, quiet=True)
     }
-    return held_formats(group, release, source_flac, formats)
+    return held_formats(group, release, source_flac, formats, uploaded=uploaded)
 
 
 def conversion_kind(task: dict[str, Any]) -> str:
