@@ -431,7 +431,7 @@ async def _test_metadata_sources() -> None:
         "Qobuz": {
             "class": salmon.sources.QobuzBase,
             "test_url": "https://www.qobuz.com/album/-/0886446576442",
-            "config_check": lambda: bool(cfg.metadata.qobuz.app_id and cfg.metadata.qobuz.user_auth_token),
+            "config_check": salmon.sources.QobuzBase.configured,
         },
     }
 

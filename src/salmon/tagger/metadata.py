@@ -110,26 +110,29 @@ def _combine_scraped(
     return meta
 
 
-def _first_deezer_album_url(urls: list[str]) -> str | None:
+def _deezer_album_ids(urls: list[str]) -> set[str]:
+    """The distinct Deezer album IDs among `urls`; one album in several URL forms is one ID."""
+    ids = set()
     for url in urls:
         match = DeezerBase.regex.search(url)
         if match and match[1] == "album":
-            return url
-    return None
+            ids.add(match[2])
+    return ids
 
 
 async def fill_upc_from_deezer(metadata: dict[str, Any], path: str) -> None:
     """Take a missing UPC from the files' own Deezer album; another store's release may carry a different barcode.
 
-    Makes one request, and only when the UPC is still empty and the files carry a Deezer album URL.
+    Makes one request at most, and only when the UPC is still empty and the files' tags name exactly one
+    Deezer album: with two different albums (a compilation, a mistagged track) any pick could be the wrong barcode.
     """
     if metadata.get("upc"):
         return
     sourced, other = tag_urls(path)
-    url = _first_deezer_album_url(sourced) or _first_deezer_album_url(other)
-    if not url:
+    ids = _deezer_album_ids([*sourced, *other])
+    if len(ids) != 1:
         return
-    metadata["upc"] = await album_upc(url)
+    metadata["upc"] = await album_upc(f"https://www.deezer.com/album/{ids.pop()}")
 
 
 def _print_search_results(results, rls_data=None):
