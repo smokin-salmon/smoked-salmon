@@ -807,3 +807,30 @@ def test_yes_all_still_asks_the_prompts_with_a_pre_filled_default(monkeypatch) -
     anyio.run(review._check_for_empty_release_type, metadata, "Single")
     assert group_id == 200
     assert defaults == ["1", "Y", "Single"]
+
+
+def test_the_pretyped_metadata_answer_is_explained(capsys) -> None:
+    metadata_mod._explain_default(f"*{QOBUZ_URL} 7", {7: ("Deezer", "1013507111")})
+
+    out = capsys.readouterr().out
+    assert f"Pre-typed *{QOBUZ_URL}: the store page in the files' tags" in out
+    assert "Pre-typed 7: the Deezer result matching the files' artist, title and track count." in out
+
+
+def test_the_metadata_prompt_says_how_several_answers_combine(monkeypatch) -> None:
+    messages: list[str] = []
+
+    async def fake_prompt(message, **_kwargs):
+        messages.append(str(message))
+        return "m"
+
+    async def manual(_rls_data):
+        return {"tracks": {}}
+
+    monkeypatch.setattr(click, "prompt", fake_prompt)
+    monkeypatch.setattr(metadata_mod, "_get_manual_metadata", manual)
+
+    anyio.run(metadata_mod._select_choice, {1: ("Deezer", "1")}, {"urls": []}, None)
+
+    assert "separated by spaces" in messages[0]
+    assert "[a]bort" in messages[0]
