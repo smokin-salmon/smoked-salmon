@@ -71,7 +71,7 @@ def conversion_of(folder: str) -> dict[str, Any] | None:
     except (json.JSONDecodeError, UnicodeDecodeError):
         click.secho(f"Ignoring an unreadable conversion record for {os.path.basename(folder)}.", fg="yellow")
         return None
-    if not _usable(data, os.path.basename(os.path.abspath(folder))):
+    if not _usable(data, folder):
         click.secho(f"Ignoring a conversion record that does not fit {os.path.basename(folder)}.", fg="yellow")
         return None
     return data
@@ -88,15 +88,14 @@ def carry_conversion(old: str, new: str) -> None:
             os.remove(_sidecar(old))
 
 
-def _usable(data: Any, name: str) -> bool:
+def _usable(data: Any, folder: str) -> bool:
     from salmon.converter.downconverting import SOX_DEPTH_ARGS  # local: both converters import this module
     from salmon.converter.transcoding import LAME_COMMAND_MAP
 
     if not isinstance(data, dict) or not isinstance(data.get("source"), str):
         return False
-    # A case-insensitive volume opens the record of "Album" for "album", and that is the same folder.
     output = data.get("output")
-    if not isinstance(output, str) or output.casefold() != name.casefold():
+    if not isinstance(output, str) or not _names_folder(output, folder):
         return False
     # Hashable before any membership test: a list or object from a hand-edited file must read as unusable.
     kind, bitrate, bit_depth = data.get("kind"), data.get("bitrate"), data.get("bit_depth")
@@ -105,6 +104,24 @@ def _usable(data: Any, name: str) -> bool:
     if kind == "transcode":
         return isinstance(bitrate, str) and bitrate in LAME_COMMAND_MAP
     return _positive_int(bit_depth) and bit_depth in SOX_DEPTH_ARGS and _usable_rates(data.get("sample_rate"))
+
+
+def _names_folder(output: str, folder: str) -> bool:
+    """Whether a record's output name is the folder's: its own name, or another case of it leading to the same folder.
+
+    A case-insensitive volume opens the record of "Album" for "album", and that is the same folder; on a
+    case-sensitive one they are two folders, and one's record is not the other's.
+    """
+    folder = os.path.abspath(folder)
+    name = os.path.basename(folder)
+    if output == name:
+        return True
+    if output.casefold() != name.casefold():
+        return False
+    try:
+        return os.path.samefile(os.path.join(os.path.dirname(folder), output), folder)
+    except OSError:
+        return False
 
 
 def _usable_rates(rates: Any) -> bool:

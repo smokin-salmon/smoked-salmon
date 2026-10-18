@@ -87,6 +87,20 @@ def test_two_forms_of_one_album_url_are_one_store_album(tmp_path, url: str, othe
     assert metadata_mod.files_store_url(str(album)) == url
 
 
+def test_two_qobuz_ids_differing_only_by_case_give_no_store_url(tmp_path) -> None:
+    other = QOBUZ_URL.replace("abc123xyz", "ABC123xyz")
+    album = _tagged_album(tmp_path / "a", {"SOURCE": QOBUZ_URL, "COMMENT": other})
+
+    assert metadata_mod.files_store_url(str(album)) is None
+
+
+def test_a_bandcamp_album_under_a_differently_cased_host_counts_once(tmp_path) -> None:
+    url = "https://artist.bandcamp.com/album/the-album"
+    album = _tagged_album(tmp_path / "a", {"SOURCE": url, "COMMENT": "https://Artist.Bandcamp.com/album/the-album"})
+
+    assert metadata_mod.files_store_url(str(album)) == url
+
+
 def test_two_albums_of_one_store_give_no_store_url(tmp_path) -> None:
     album = _tagged_album(tmp_path / "a", {"SOURCE": DEEZER_URL, "COMMENT": "https://www.deezer.com/en/album/111"})
 

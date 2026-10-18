@@ -148,9 +148,10 @@ def _album_identity(url: str) -> tuple[str, ...] | None:
     match = METASOURCES[source].Scraper.regex.search(url) if source else None
     if source is None or match is None:
         return None
-    groups = [group.lower().rstrip("/") for group in match.groups() if group]
-    # The release id is the last group; a Bandcamp slug is unique only on its own host, the first group.
-    return (source, groups[0], groups[-1]) if source == "Bandcamp" else (source, groups[-1])
+    groups = [group.rstrip("/") for group in match.groups() if group]
+    # The release id is the last group, kept as written; a Bandcamp slug is unique only on its own host, the
+    # first group, whose case does not matter.
+    return (source, groups[0].lower(), groups[-1]) if source == "Bandcamp" else (source, groups[-1])
 
 
 def _comparable_title(title: object) -> str:
