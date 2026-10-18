@@ -314,7 +314,7 @@ def test_a_pasted_url_to_an_internal_address_is_refused_in_an_upload_job(
     store = FakeStore()
 
     def answer(question: dict[str, Any]) -> str:
-        if "paste URLs" in question["text"]:
+        if "Paste URLs" in question["text"]:
             return store.url(f"/album/x?token={PLANTED['qobuz']}")
         return ""
 
@@ -323,7 +323,7 @@ def test_a_pasted_url_to_an_internal_address_is_refused_in_an_upload_job(
             job, asked = await _drive(
                 client, manager, await _start(client, album, params={"trackers": ["RED"]}), answer
             )
-        assert any("paste URLs" in question["text"] for question in asked)
+        assert any("Paste URLs" in question["text"] for question in asked)
         # As any failed scrape of a pasted URL ends the run.
         assert job.status == "failed"
         assert "Refused to connect to 127.0.0.1" in str(job.error)
