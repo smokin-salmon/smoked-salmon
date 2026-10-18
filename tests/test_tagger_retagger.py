@@ -1,3 +1,4 @@
+import os
 import struct
 from types import SimpleNamespace
 
@@ -6,8 +7,8 @@ import msgspec
 import pytest
 from mutagen.flac import FLAC, VCFLACDict
 
-from salmon import cfg
-from salmon.errors import AmbiguousTrackOrderError
+from salmon import cfg, interaction
+from salmon.errors import AmbiguousTrackOrderError, UploadError
 from salmon.tagger.retagger import Change, _get_tag_number, create_track_changes, rename_files, retag_files, tag_files
 
 
@@ -702,6 +703,98 @@ def test_rename_files_never_replaces_a_file_when_two_folders_go_to_one_disc_fold
     assert _contents(tmp_path) == before
     assert ("CD01/cover.jpg", "Disc 1/cover.jpg") in tree
     assert ("Disc 1 bonus/cover.jpg", "Disc 1 bonus/cover.jpg") in tree
+
+
+def test_rename_files_renames_nothing_when_tracks_from_two_folders_get_one_name(tmp_path, monkeypatch) -> None:
+    # A single-disc release whose tracks sit in two folders: both are moved into the release folder, and
+    # the second one given the same name used to replace the first.
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"CD1/01.flac": (None, 1), "CD2/01.flac": (None, 1)})
+    for tagset in tags.values():
+        tagset.title = "Intro"
+    before = _tree(tmp_path)
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == before
+
+
+def test_rename_files_renames_nothing_over_a_track_already_in_a_disc_folder(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tracks = {"CD01/01. Title 1-1.flac": (1, 1), "Disc 1/dup.flac": (1, 1), "Disc 2/b.flac": (2, 1)}
+    tags, metadata = _release(tmp_path, tracks)
+    before = _tree(tmp_path)
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == before
+
+
+def test_rename_files_moves_a_file_away_before_another_takes_its_name(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting(one_album_artist_file_template="{tracknumber}"))
+    tags, metadata = _release(tmp_path, {"01.flac": (1, 2), "02.flac": (1, 3)})
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [("02.flac", "01.flac"), ("03.flac", "02.flac")]
+
+
+def test_rename_files_renames_nothing_when_two_files_swap_names(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting(one_album_artist_file_template="{tracknumber}"))
+    tags, metadata = _release(tmp_path, {"01.flac": (1, 2), "02.flac": (1, 1)})
+    before = _tree(tmp_path)
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == before
+
+
+def test_rename_files_stops_when_a_new_name_is_taken_after_the_check(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2)})
+
+    async def confirm(*_args, **_kwargs):
+        (tmp_path / "02. Title 1-2.flac").write_text("someone else's")
+        return True
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+
+    with pytest.raises(UploadError) as raised:
+        anyio.run(
+            lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=False, spectral_ids=None, source="CD")
+        )
+
+    assert _tree(tmp_path) == [
+        ("01. Title 1-1.flac", "a.flac"),
+        ("02. Title 1-2.flac", "someone else's"),
+        ("b.flac", "b.flac"),
+    ]
+    assert "b.flac" in str(raised.value)
+
+
+def test_rename_files_stops_at_the_first_failed_rename_and_names_the_files_left(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2), "c.flac": (1, 3)})
+    rename = os.rename
+    calls = []
+
+    def failing_rename(src, dst):
+        calls.append(src)
+        if len(calls) == 2:
+            raise PermissionError(13, "Permission denied", src)
+        rename(src, dst)
+
+    monkeypatch.setattr(os, "rename", failing_rename)
+
+    with pytest.raises(UploadError) as raised:
+        anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert len(calls) == 2
+    assert [name for name, _ in _tree(tmp_path)] == ["01. Title 1-1.flac", "b.flac", "c.flac"]
+    message = str(raised.value)
+    assert "a.flac" in message
+    assert "b.flac" in message
+    assert "c.flac" in message
 
 
 def _write_flac(path, **tags: str) -> None:
