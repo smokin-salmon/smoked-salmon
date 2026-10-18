@@ -1,12 +1,15 @@
 """Remember what each converted folder was made from, so a later upload can describe the conversion.
 
-The record is only a hint for the description: it never changes the format, bitrate or media of an upload.
+The record is only a hint for the description: it never changes the format, bitrate or media of an upload. It also
+lists the audio files the converter wrote, kept in step with the renames salmon makes in the folder afterwards, so a
+converter finding its own output again knows it for complete whatever the folder check made of its names.
 """
 
 import contextlib
 import json
 import os
 import tempfile
+from collections.abc import Sequence
 from typing import Any
 
 import asyncclick as click
@@ -33,7 +36,7 @@ def _inside_scratch(path: str) -> bool:
 
 
 def record_conversion(output: str, **facts: Any) -> None:
-    """Note how `output` was produced: its source folder plus the converter's settings.
+    """Note how `output` was produced: its source folder plus the converter's settings, and the files it wrote.
 
     Nothing is written into a library_dirs entry, nor, in a dry run, outside the run's scratch directory.
     """
@@ -61,6 +64,10 @@ def record_conversion(output: str, **facts: Any) -> None:
 
 def conversion_of(folder: str) -> dict[str, Any] | None:
     """The recorded facts for a folder a converter produced; None when there are none or they are unusable."""
+    return _read(folder, quiet=False)
+
+
+def _read(folder: str, *, quiet: bool) -> dict[str, Any] | None:
     try:
         with open(_sidecar(folder), encoding="utf-8") as fh:
             data = json.load(fh)
@@ -69,12 +76,67 @@ def conversion_of(folder: str) -> dict[str, Any] | None:
     except FileNotFoundError:
         return None
     except (json.JSONDecodeError, UnicodeDecodeError):
-        click.secho(f"Ignoring an unreadable conversion record for {os.path.basename(folder)}.", fg="yellow")
+        if not quiet:
+            click.secho(f"Ignoring an unreadable conversion record for {os.path.basename(folder)}.", fg="yellow")
         return None
     if not _usable(data, folder):
-        click.secho(f"Ignoring a conversion record that does not fit {os.path.basename(folder)}.", fg="yellow")
+        if not quiet:
+            click.secho(f"Ignoring a conversion record that does not fit {os.path.basename(folder)}.", fg="yellow")
         return None
     return data
+
+
+def recorded_files(record: dict[str, Any]) -> dict[str, str] | None:
+    """The audio files a conversion wrote, as recorded: each one's path in the folder, by its source file's path.
+
+    Both paths are relative to their folders. None for a record from before salmon kept them, or one whose entries
+    are not relative paths.
+    """
+    files = record.get("files")
+    if not isinstance(files, dict) or not all(_relative(path) for item in files.items() for path in item):
+        return None
+    return files
+
+
+def missing_files(folder: str, record: dict[str, Any]) -> list[str] | None:
+    """The recorded audio files that are not in folder, in order; None when the record does not list them."""
+    files = recorded_files(record)
+    if files is None:
+        return None
+    return sorted(path for path in set(files.values()) if not os.path.isfile(os.path.join(folder, path)))
+
+
+def note_renamed(folder: str, renames: Sequence[tuple[str, str]]) -> None:
+    """Keep the record of a converted folder in step with renames salmon made inside it, in the order made.
+
+    Each rename is the path of a file or sub-folder of folder before and after it. Nothing happens to a folder
+    without a record, or with one that does not list its files.
+    """
+    record = _read(folder, quiet=True) if renames else None
+    files = None if record is None else recorded_files(record)
+    if record is None or files is None:
+        return
+    renamed = dict(files)
+    for old, new in renames:
+        old_rel, new_rel = os.path.relpath(old, folder), os.path.relpath(new, folder)
+        for source, path in renamed.items():
+            if path == old_rel:
+                renamed[source] = new_rel
+            elif path.startswith(old_rel + os.sep):
+                renamed[source] = new_rel + path[len(old_rel) :]
+    if renamed != files:
+        record_conversion(folder, **{**_without_output(record), "files": renamed})
+
+
+def _without_output(record: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in record.items() if key != "output"}
+
+
+def _relative(path: Any) -> bool:
+    """Whether path names something inside a folder: a relative path that never goes up a level."""
+    if not isinstance(path, str) or not path or os.path.isabs(path):
+        return False
+    return os.pardir not in path.replace("\\", "/").split("/")
 
 
 def carry_conversion(old: str, new: str) -> None:
@@ -82,7 +144,7 @@ def carry_conversion(old: str, new: str) -> None:
     facts = conversion_of(old)
     if facts is None or os.path.abspath(old) == os.path.abspath(new):
         return
-    record_conversion(new, **{key: value for key, value in facts.items() if key != "output"})
+    record_conversion(new, **_without_output(facts))
     if not os.path.isdir(old):
         with contextlib.suppress(OSError):
             os.remove(_sidecar(old))

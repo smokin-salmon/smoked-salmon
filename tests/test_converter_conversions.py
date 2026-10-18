@@ -156,7 +156,19 @@ def test_a_missing_record_reads_as_no_conversion_quietly(tmp_path, capsys) -> No
     assert capsys.readouterr().out == ""
 
 
+def _with_dst(out, items, ext: str = ".flac"):
+    """The items, each given the path in out it would be written to, when it has none."""
+    return [
+        SimpleNamespace(dst=str(Path(out, Path(item.src).name).with_suffix(ext)), **vars(item))
+        if "dst" not in vars(item)
+        else item
+        for item in items
+    ]
+
+
 def _stub_convert(monkeypatch, out, items):
+    items = _with_dst(out, items)
+
     async def no_conversion(_items, _bit_depth):
         return None
 
@@ -171,24 +183,28 @@ def test_convert_folder_records_its_output(tmp_path, monkeypatch) -> None:
     src = tmp_path / "Album [WEB 24bit FLAC]"
     src.mkdir()
     out = tmp_path / "Album [WEB FLAC]"
-    _stub_convert(monkeypatch, out, [SimpleNamespace(src="01.flac", target_rate=44100)])
+    _stub_convert(monkeypatch, out, [SimpleNamespace(src="01.flac", dst=str(out / "01.flac"), target_rate=44100)])
 
     rate, path = anyio.run(dc.convert_folder, str(src), 16, 44100)
 
     assert (rate, path) == (44100, str(out))
-    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src)}
+    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src), "files": {"01.flac": "01.flac"}}
 
 
 def test_a_mixed_family_folder_records_every_target_rate(tmp_path, monkeypatch) -> None:
     src = tmp_path / "Album [WEB 24bit FLAC]"
     src.mkdir()
     out = tmp_path / "Album [WEB FLAC]"
-    items = [SimpleNamespace(src="01.flac", target_rate=48000), SimpleNamespace(src="02.flac", target_rate=44100)]
+    items = [
+        SimpleNamespace(src="01.flac", dst=str(out / "01.flac"), target_rate=48000),
+        SimpleNamespace(src="02.flac", dst=str(out / "02.flac"), target_rate=44100),
+    ]
     _stub_convert(monkeypatch, out, items)
 
     anyio.run(dc.convert_folder, str(src), 16, None)
 
-    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src), "sample_rate": [44100, 48000]}
+    files = {"01.flac": "01.flac", "02.flac": "02.flac"}
+    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src), "sample_rate": [44100, 48000], "files": files}
 
 
 def test_nothing_converted_means_nothing_recorded(tmp_path, monkeypatch) -> None:
@@ -265,6 +281,8 @@ def test_downconv_takes_a_finished_conversion_for_done(tmp_path) -> None:
 
 
 def _stub_transcode(monkeypatch, out, items):
+    items = _with_dst(out, items, ".mp3")
+
     async def no_transcode(_items, _bitrate):
         return None
 
@@ -279,12 +297,17 @@ def test_transcode_folder_records_its_output(tmp_path, monkeypatch) -> None:
     src = tmp_path / "Album [WEB FLAC]"
     src.mkdir()
     out = tmp_path / "Album [WEB MP3 V0]"
-    _stub_transcode(monkeypatch, out, [SimpleNamespace(src="01.flac")])
+    _stub_transcode(monkeypatch, out, [SimpleNamespace(src=str(src / "01.flac"), dst=str(out / "01.mp3"))])
 
     result = anyio.run(tc.transcode_folder, str(src), "V0")
 
     assert result == str(out)
-    assert _facts(str(out)) == {"source": str(src), "kind": "transcode", "bitrate": "V0"}
+    assert _facts(str(out)) == {
+        "source": str(src),
+        "kind": "transcode",
+        "bitrate": "V0",
+        "files": {"01.flac": "01.mp3"},
+    }
 
 
 def test_transcode_of_nothing_records_nothing(tmp_path, monkeypatch) -> None:
@@ -531,7 +554,9 @@ def test_parallel_conversions_keep_each_others_records(tmp_path, monkeypatch) ->
 
     monkeypatch.setattr(tc, "_validate_lossless", lambda _path: None)
     monkeypatch.setattr(tc, "_build_output_path", lambda path, bitrate, *_a: f"{path} [{bitrate}]")
-    monkeypatch.setattr(tc, "_collect_transcode_items", lambda *_a: [SimpleNamespace(src="01.flac")])
+    monkeypatch.setattr(
+        tc, "_collect_transcode_items", lambda path, new: [SimpleNamespace(src=f"{path}/01.flac", dst=f"{new}/01.mp3")]
+    )
     monkeypatch.setattr(tc, "_copy_extra_files", lambda *_a, **_k: None)
     monkeypatch.setattr(tc, "_transcode_audio_files", no_transcode)
 

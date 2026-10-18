@@ -9,7 +9,7 @@ from salmon.checks.tag_rules import in_torrent_path
 from salmon.common import clean_name, invisible_chars, show_invisible
 from salmon.constants import ALLOWED_EXTENSIONS, ESSENTIAL_EXTENSIONS
 from salmon.errors import NoncompliantFolderStructure
-from salmon.tagger.renames import RenameStopped, name_key, rename_all
+from salmon.tagger.renames import RenameStopped, name_key, rename_recorded
 
 # Used when no tracker is known yet (e.g. `salmon tag`), and as the fallback for trackers whose
 # own limit has not been set.
@@ -273,7 +273,7 @@ def _rename_or_stop(path: str, renames: list[tuple[str, str]]) -> None:
         NoncompliantFolderStructure: A rename failed, or its new name was taken since the check.
     """
     try:
-        rename_all(renames)
+        rename_recorded(path, renames)
     except RenameStopped as e:
         click.secho(e.report(path), fg="red", bold=True)
         raise NoncompliantFolderStructure from e

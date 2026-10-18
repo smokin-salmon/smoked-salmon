@@ -29,7 +29,7 @@ from salmon.common.files import AlbumPath
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
-from salmon.converter.conversions import conversion_of
+from salmon.converter.conversions import conversion_of, recorded_files
 from salmon.converter.downconverting import (
     BitDepth,
     conversion_note,
@@ -1724,6 +1724,19 @@ async def prompt_downconversion_choice(
     return selected_tasks
 
 
+def _by_source_name(folder: str, audio_info: dict[str, Any]) -> dict[str, Any]:
+    """A converted folder's audio info, by the names its files had in the source, as salmon recorded them.
+
+    The folder check may have shortened them since, on an earlier tracker's turn. Without a record listing exactly
+    these files, the info stays by the names they have.
+    """
+    record = conversion_of(folder)
+    files = None if record is None else recorded_files(record)
+    if files is None or set(files.values()) != audio_info.keys() or len(set(files.values())) != len(files):
+        return audio_info
+    return {source: audio_info[path] for source, path in files.items()}
+
+
 async def execute_downconversion_tasks(
     selected_tasks: list[dict[str, Any]],
     path: str,
@@ -1805,7 +1818,7 @@ async def execute_downconversion_tasks(
             # The upload describes the converted files (their sample rate, for one), not the source's.
             # A folder that was already there may hold other files: then it is not this conversion.
             try:
-                converted_info = gather_audio_info(new_path)
+                converted_info = _by_source_name(new_path, gather_audio_info(new_path))
             except (UploadError, MutagenError) as e:
                 click.secho(f"  Could not read {new_path} ({e}): not uploading it.", fg="red", bold=True)
                 continue
@@ -1868,7 +1881,11 @@ async def execute_downconversion_tasks(
             click.secho(f"  Target encoding: {task['encoding']}", fg="white")
 
             # Execute transcoding
-            transcoded_path = await transcode_folder(base_path, task["encoding"], output_dir=output_dir)
+            try:
+                transcoded_path = await transcode_folder(base_path, task["encoding"], output_dir=output_dir)
+            except UploadError as e:
+                click.secho(f"  {e}", fg="red", bold=True)
+                continue
             await anyio.sleep(0.1)
 
             # Update metadata for this transcode
