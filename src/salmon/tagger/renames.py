@@ -107,3 +107,22 @@ def rename_all(renames: Sequence[Rename]) -> None:
             os.rename(old, new)
         except OSError as e:
             raise RenameStopped(e, renames[:done], (old, new), renames[done + 1 :]) from e
+
+
+def rename_recorded(folder: str, renames: Sequence[Rename]) -> None:
+    """``rename_all`` inside folder, keeping the record of the files salmon converted into it in step.
+
+    On a stop, the record follows the renames that were made, so it never names a file that was renamed away.
+
+    Raises:
+        RenameStopped: As ``rename_all``.
+    """
+    # Local: the converter package imports the tagger.
+    from salmon.converter.conversions import note_renamed
+
+    try:
+        rename_all(renames)
+    except RenameStopped as e:
+        note_renamed(folder, e.done)
+        raise
+    note_renamed(folder, renames)

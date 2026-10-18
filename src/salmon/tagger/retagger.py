@@ -17,7 +17,7 @@ from salmon.constants import (
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import AmbiguousTrackOrderError, UploadError
-from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
+from salmon.tagger.renames import RenameStopped, plan_renames, rename_recorded
 from salmon.tagger.tagfile import TagFile
 
 
@@ -517,7 +517,7 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
                 if old_dir != path:
                     directory_move_pairs.add((os.path.splitext(filename)[1], old_dir, new_dir))
             try:
-                rename_all(renames)
+                rename_recorded(path, renames)
             except RenameStopped as e:
                 raise UploadError(f"{e.report(path)}\nThe album's files are only partly renamed.") from e
 
