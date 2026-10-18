@@ -150,3 +150,29 @@ def test_a_client_url_shows_only_its_scheme_host_and_port(url, shown) -> None:
 def test_url_secrets_take_no_root_path() -> None:
     # "/" would mask every slash an error holds.
     assert url_secrets("qbittorrent+http://127.0.0.1:8080/") == []
+
+
+@pytest.mark.parametrize(
+    "url", ["qbittorrent+http://box.example:8080/torrent/", "transmission+http://b:9091/web/1/transmission/rpc"]
+)
+def test_a_short_path_segment_is_not_a_secret_on_its_own(url) -> None:
+    secrets = url_secrets(url)
+
+    assert {"torrent", "web", "1"}.isdisjoint(secrets)
+
+
+def test_a_short_path_does_not_mask_ordinary_output() -> None:
+    from salmon.config.validations import Seedbox
+    from salmon.uploader.seedbox import seedbox_secrets
+    from salmon.webui.egress import Redactor
+
+    box = Seedbox(type="local", torrent_client="qbittorrent+http://box.example:8080/torrent/")
+
+    assert Redactor(seedbox_secrets(box)).text("Uploading torrent 1 of 2") == "Uploading torrent 1 of 2"
+
+
+def test_a_long_query_value_is_a_secret_on_its_own_and_a_short_one_is_not() -> None:
+    secrets = url_secrets("qbittorrent+http://proxy.local:7476/proxy?key=PROXYKEY0123UNIQUE&user=bob")
+
+    assert "PROXYKEY0123UNIQUE" in secrets
+    assert "bob" not in secrets

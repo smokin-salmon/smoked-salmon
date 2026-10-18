@@ -2,7 +2,7 @@ import re
 import shlex
 import string
 from collections.abc import Iterable
-from urllib.parse import quote, unquote, urlsplit
+from urllib.parse import parse_qsl, quote, unquote, urlsplit
 
 _URL_USERINFO = re.compile(r"(://)[^/\s@]+@")
 _USERINFO_PASSWORD = re.compile(r"://[^/\s@:]*:([^/\s@']+)@")
@@ -122,6 +122,9 @@ _URI_SAFE_NO_PERCENT = _URI_SAFE.replace("%", "")
 _CLIENT_PATH_WORDS = frozenset(
     {"api", "v2", "json", "proxy", "plugins", "rpc", "rpc.php", "rpc2", "httprpc", "action.php", "rutorrent"}
 ) | {"deluge", "transmission", "qbittorrent"}
+# A proxy's random key is longer; a shorter segment or value is a word, an id or an account name, and masking it
+# alone would mask that word everywhere salmon web prints.
+_MIN_LONE_SECRET = 12
 
 
 def _requoted(text: str) -> str:
@@ -156,14 +159,19 @@ def redact_client_url(url: str) -> str:
 
 
 def url_secrets(url: str) -> list[str]:
-    """A URL's password, path, path segments but endpoint words, query and fragment, in the forms an error repeats."""
+    """A URL's password, path, query and fragment, and a long path segment or query value alone, as errors echo them."""
     try:
         parts = urlsplit(url)
     except ValueError:
         return [url]
     path = parts.path.rstrip("/")
-    keys = (segment for segment in path.split("/") if unquote(segment).casefold() not in _CLIENT_PATH_WORDS)
-    found = [parts.password or "", path, *keys, parts.query, parts.fragment]
+    keys = (
+        segment
+        for segment in path.split("/")
+        if unquote(segment).casefold() not in _CLIENT_PATH_WORDS and len(unquote(segment)) >= _MIN_LONE_SECRET
+    )
+    values = (value for _, value in parse_qsl(parts.query, keep_blank_values=True) if len(value) >= _MIN_LONE_SECRET)
+    found = [parts.password or "", path, *keys, parts.query, *values, parts.fragment]
     return list(dict.fromkeys(form for secret in found if secret for form in _echoed_forms(secret)))
 
 
