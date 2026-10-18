@@ -124,6 +124,7 @@ class ImageUploader(BaseStruct):
     specs_uploader: ImgUploaderLiteral = "catbox"
     ptscreens_key: str | None = None
     oeimg_key: str | None = None
+    catbox_userhash: str | None = None
     imgbb_key: str | None = None
     ra_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False

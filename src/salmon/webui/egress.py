@@ -64,7 +64,10 @@ def config_secrets(config: Cfg) -> list[str]:
                 found += session_cookie_forms(tracker.session)
             found.append(_own(tracker.api_key, "tracker", name, "api_key"))
     image = config.image
-    found += [_own(getattr(image, key), "image", key) for key in ("ptscreens_key", "oeimg_key", "imgbb_key", "ra_key")]
+    found += [
+        _own(getattr(image, key), "image", key)
+        for key in ("ptscreens_key", "oeimg_key", "catbox_userhash", "imgbb_key", "ra_key")
+    ]
     for seedbox in config.seedbox:
         found += seedbox_secrets(seedbox)
     metadata = config.metadata
