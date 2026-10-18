@@ -1462,4 +1462,6 @@ async def _upload_conversions(
         source=release.torrent["media"],
         base_url=url,
         uploaded=uploaded,
+        # The limit the album folder was held to: a cross-upload goes to TARGET alone.
+        max_path_length=target.TAG_RULES.max_path_length,
     )

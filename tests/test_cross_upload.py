@@ -846,6 +846,44 @@ def test_a_path_longer_than_the_targets_limit_stops_the_release(monkeypatch, dir
     assert len(run.target.posts()) == (0 if refused else 1)
 
 
+@pytest.mark.parametrize(("source", "target", "limit"), [("RED", "OPS", 255), ("OPS", "RED", 180)])
+@pytest.mark.parametrize("multi_tracker_upload", [True, False])
+def test_transcodes_are_checked_against_the_targets_limit_as_the_album_is(
+    monkeypatch, dirs, source: str, target: str, limit: int, multi_tracker_upload: bool
+) -> None:
+    # RED, OPS and DIC are configured: with multi_tracker_upload, `up` would hold a run to the strictest, 180.
+    monkeypatch.setattr(cfg.upload, "multi_tracker_upload", multi_tracker_upload)
+    album = _album(dirs.downloads / FOLDER)
+    limits: list[int] = []
+
+    async def check(_path: str, _scene: bool, **kwargs: Any) -> None:
+        limits.append(kwargs["max_path_length"])
+
+    def prepare(source_tracker: FakeTracker, target_tracker: FakeTracker) -> None:
+        answer = _red_answer(source_tracker.url) if source == "RED" else _ops_answer
+        _source_has(album, answer=answer)(source_tracker, target_tracker)
+        # After cross_upload_world, which stubs the check.
+        monkeypatch.setattr(salmon.uploader, "check_folder_structure", check)
+
+    run = _cross_upload(
+        monkeypatch,
+        dirs,
+        [str(TORRENT_ID), "-yyy", "--transcode", "320"],
+        input="\n",
+        source=source,
+        target=target,
+        prepare=prepare,
+        transcode=_transcode,
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert limits == [limit]
+    assert [post.fields["format"][0] for post in run.target.posts() if post.step == "POST ajax.php?action=upload"] == [
+        "FLAC",
+        "MP3",
+    ]
+
+
 @pytest.mark.parametrize(
     ("dirty", "shown", "listed"),
     [
