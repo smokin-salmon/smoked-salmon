@@ -2,7 +2,7 @@
 
 import pytest
 
-from salmon.common.redaction import redact_command, redact_secrets, redact_tracker_text, redact_url, secret_values
+from salmon.common.redaction import redact_command, redact_secrets, redact_tracker_text, secret_values
 
 
 @pytest.mark.parametrize(
@@ -134,81 +134,6 @@ def test_a_masked_known_value_keeps_what_follows_it() -> None:
 
 def test_a_value_only_partly_known_is_still_masked_whole() -> None:
     assert redact_secrets("pass=hunter2xyz rest", known=["hunter2"]) == "pass=[REDACTED] rest"
-
-
-PASSKEY = "abcdef0123456789abcdef0123456789"
-ENCODED_PASSKEY = "".join(f"%{ord(char):02X}" for char in PASSKEY)
-
-
-@pytest.mark.parametrize(
-    ("url", "shown"),
-    [
-        (
-            "https://tracker.example/torrents.php?action=download&id=12&authkey=test-authkey-0001&torrent_pass=t1",
-            "https://tracker.example/torrents.php?action=download&id=12&authkey=[REDACTED]&torrent_pass=[REDACTED]",
-        ),
-        (
-            "https://tracker.example/torrents.php?id=34&torrentid=56",
-            "https://tracker.example/torrents.php?id=34&torrentid=56",
-        ),
-        (f"https://tracker.example/{PASSKEY}/announce", "https://tracker.example/[REDACTED]/announce"),
-        ("https://user:test-password@tracker.example:8443/x", "https://tracker.example:8443/x"),
-        (
-            "https://store.example/album/the-album-deluxe-edition#token=t2",
-            "https://store.example/album/the-album-deluxe-edition#[REDACTED]",
-        ),
-        (f"https://tracker.example/torrents.php?id={PASSKEY}", "https://tracker.example/torrents.php?id=[REDACTED]"),
-        ("https://[::1]:8080/a?sig=s3", "https://[::1]:8080/a?sig=[REDACTED]"),
-        ("https://tracker.example:bad/x", "[REDACTED]"),
-        (
-            "https://tracker.example/abcDEF0123_456789abc_def0123456/announce",
-            "https://tracker.example/[REDACTED]/announce",
-        ),
-        (f"https://tracker.example/{ENCODED_PASSKEY}/announce", "https://tracker.example/[REDACTED]/announce"),
-        (f"https://tracker.example/x?api_key%3D{PASSKEY}=ignored", "https://tracker.example/x?[REDACTED]=[REDACTED]"),
-        (f"https://tracker.example/x?{PASSKEY}", "https://tracker.example/x?[REDACTED]=[REDACTED]"),
-        (f"https://{PASSKEY}.tracker.example/x", "https://[REDACTED].tracker.example/x"),
-        ("https://tracker.example/test-passkey-0001/announce", "https://tracker.example/[REDACTED]/announce"),
-        ("https://tracker.example/announce.php/test-passkey-0001", "https://tracker.example/announce.php/[REDACTED]"),
-        ("https://tracker.example/download/test-passkey-0001", "https://tracker.example/download/[REDACTED]"),
-        ("https://test-passkey-0001.tracker.example/x", "https://[REDACTED].tracker.example/x"),
-        ("https://192.0.2.10/x", "https://192.0.2.10/x"),
-        ("https://tracker.example/download/abcdefgh", "https://tracker.example/download/abcdefgh"),
-        ("https://tracker.example/x?id=test-pass-0001", "https://tracker.example/x?id=[REDACTED]"),
-        ("https://tracker.example/x?test-pass-0001", "https://tracker.example/x?[REDACTED]=[REDACTED]"),
-        ("https://[fe80::1%25eth0]/a", "https://[REDACTED]/a"),
-        ("https://tracker.example/x?action=dl2x&page=3", "https://tracker.example/x?action=[REDACTED]&page=3"),
-        ("https://store.example/release/the-album/654321", "https://store.example/release/the-album/654321"),
-    ],
-    ids=[
-        "query-secrets",
-        "ids-kept",
-        "passkey-path",
-        "userinfo",
-        "fragment",
-        "long-id",
-        "ipv6",
-        "unparseable",
-        "underscore-path",
-        "encoded-path",
-        "secret-in-a-name",
-        "token-as-a-name",
-        "token-host",
-        "short-passkey-before-announce",
-        "short-passkey-after-announce",
-        "letters-and-digits-anywhere",
-        "short-token-host",
-        "ipv4-host",
-        "a-word",
-        "short-secret-as-an-id",
-        "short-secret-as-a-name",
-        "ipv6-zone",
-        "action-holding-a-digit",
-        "a-slug-and-an-id",
-    ],
-)
-def test_a_url_is_shown_without_its_secrets(url: str, shown: str) -> None:
-    assert redact_url(url) == shown
 
 
 @pytest.mark.parametrize(

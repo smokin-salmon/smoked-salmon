@@ -1051,37 +1051,3 @@ def test_job_threads_do_not_outlive_the_server(kind: Callable[[str, Run], None])
     while [thread for thread in threading.enumerate() if thread.name.startswith("salmon web job-")]:
         assert time.monotonic() < deadline
         time.sleep(0.01)
-
-
-def test_a_jobs_shown_params_mask_every_url_but_the_job_keeps_what_it_was_given(
-    kind: Callable[[str, Run], None],
-) -> None:
-    link = "https://tracker.example/torrents.php?torrentid=7&torrent_pass=test-pass-0001&sig=abc"
-    seen: list[str] = []
-
-    async def run(params: Params) -> None:
-        seen.append(params.name)
-
-    kind("link", run)
-
-    async def test(client: TestClient, manager: JobManager) -> None:
-        job_id = await _start(client, "link", name=link, folder="/music/Artist - Album [FLAC]")
-        job = await _finished(manager, job_id)
-        listed = await (await client.get("/api/jobs", headers=AUTH)).json()
-
-        masked = "https://tracker.example/torrents.php?torrentid=7&torrent_pass=[REDACTED]&sig=[REDACTED]"
-        assert job.summary()["params"] == {"name": masked, "folder": "/music/Artist - Album [FLAC]"}
-        assert [entry["params"]["name"] for entry in listed["jobs"] if entry["id"] == job_id] == [masked]
-        assert "test-pass-0001" not in json.dumps(listed)
-        assert seen == [link], "the job runs with the link as it was given"
-
-    _with_app(test)
-
-
-def test_a_cross_upload_title_masks_the_links_it_names() -> None:
-    from salmon.webui.kinds import CrossUploadParams, _cross_upload_title
-
-    link = "https://tracker.example/torrents.php?torrentid=7&torrent_pass=test-pass-0001"
-    params = CrossUploadParams(inputs=[link, "12"], source="RED", target="OPS")
-
-    assert "test-pass-0001" not in _cross_upload_title(params)

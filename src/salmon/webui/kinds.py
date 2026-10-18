@@ -78,7 +78,6 @@ from salmon.webui.jobs import (
     own_folder,
     own_folders,
     register,
-    shown_urls,
 )
 
 if TYPE_CHECKING:
@@ -817,7 +816,7 @@ def _checks_title(params: ChecksParams) -> str:
 
 
 def _cross_upload_title(params: CrossUploadParams) -> str:
-    return f"Cross-upload {params.source} to {params.target}: {', '.join(shown_urls(params.inputs))}"
+    return f"Cross-upload {params.source} to {params.target}: {', '.join(params.inputs)}"
 
 
 def _transcode_title(params: TranscodeParams) -> str:
