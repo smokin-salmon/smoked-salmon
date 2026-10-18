@@ -31,6 +31,9 @@ dottorrents_dir = '.torrents'
 # If True, clean the temporary directory at startup to prevent leftover files from accumulating
 # Only files inside the TMP_DIR (and subdirectories) will be cleaned, preserving the TMP_DIR itself
 # WARNING: use this feature with caution, as it will delete all files in the TMP_DIR
+# A running salmon's files are left alone: nothing is cleaned while another salmon (salmon web, a CLI run) runs
+# Where salmon cannot lock tmp_dir (Windows, a filesystem without flock), it cleans only what has not changed in
+# 24 hours instead, so a salmon idle for that long can lose its files
 # clean_tmp_dir = true
 
 # ===============================
