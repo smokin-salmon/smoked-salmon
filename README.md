@@ -309,6 +309,13 @@ To start an upload (with the WEB source):
 salmon up /data/path/to/album -s WEB
 ```
 
+If you know the store page of the release, give it with `--source-url` and add `--skip-search` to take the
+metadata from that page without searching the stores (the review that follows is unchanged). If the page is
+not one salmon scrapes, or the scrape fails, salmon searches as usual:
+```bash
+salmon up /data/path/to/album -s WEB --source-url https://www.qobuz.com/us-en/album/... --skip-search
+```
+
 If the FLAC torrent is already in an existing group, skip re-uploading it and
 select the lower formats to transcode and upload:
 ```bash

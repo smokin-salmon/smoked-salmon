@@ -295,7 +295,9 @@ def test_a_lookup_of_an_internal_address_is_refused_at_the_connection(host: str)
 # --- The metadata question and the cover of an upload job ---------------------------------------------
 
 
-async def _asks_for_urls(_path: str, _tags: Any, rls_data: dict[str, Any]) -> tuple[dict[str, Any], str | None]:
+async def _asks_for_urls(
+    _path: str, _tags: Any, rls_data: dict[str, Any], **_kwargs: Any
+) -> tuple[dict[str, Any], str | None]:
     """The metadata question, as get_metadata asks it when no store finds the release."""
     return await salmon.tagger.metadata._select_choice({}, dict(rls_data))
 
