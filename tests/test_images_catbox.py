@@ -2,9 +2,11 @@
 
 from contextlib import asynccontextmanager
 
+import aiohttp
 import anyio
 import pytest
 
+from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox
 
@@ -29,15 +31,19 @@ class _Response:
 class _Session:
     def __init__(self, body: str):
         self._body = body
+        self.form: aiohttp.FormData | None = None
 
-    def post(self, *_args, **_kwargs):
+    def post(self, *_args, data: aiohttp.FormData | None = None, **_kwargs):
+        self.form = data
         return _Response(self._body)
 
 
-def _upload(monkeypatch, tmp_path, body: str):
+def _upload(monkeypatch, tmp_path, body: str, session: _Session | None = None):
+    session = session or _Session(body)
+
     @asynccontextmanager
     async def fake_http_session(_self):
-        yield _Session(body)
+        yield session
 
     monkeypatch.setattr(catbox.ImageUploader, "_http_session", fake_http_session)
     image = tmp_path / "cover.jpg"
@@ -67,3 +73,13 @@ def test_a_url_with_surrounding_whitespace_is_stripped(monkeypatch, tmp_path) ->
 def test_a_response_without_a_url_raises_instead_of_reporting_success(monkeypatch, tmp_path, body) -> None:
     with pytest.raises(ImageUploadFailed):
         _upload(monkeypatch, tmp_path, body)
+
+
+@pytest.mark.parametrize(("userhash", "sent"), [(None, ""), ("abc123", "abc123")])
+def test_the_configured_userhash_is_sent(monkeypatch, tmp_path, userhash, sent) -> None:
+    monkeypatch.setattr(cfg.image, "catbox_userhash", userhash)
+    session = _Session("https://files.catbox.moe/abc123.jpg")
+    _upload(monkeypatch, tmp_path, "", session)
+    assert session.form is not None
+    fields = {f[0]["name"]: f[2] for f in session.form._fields}
+    assert fields["userhash"] == sent

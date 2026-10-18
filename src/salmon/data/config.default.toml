@@ -49,7 +49,8 @@ specs_uploader = "catbox"
 # (IDs a release does not have are left out). Leave unset to use context-based default.
 # default_spectral_ids = "3"
 
-# catbox needs no API key.
+# catbox works without a key. Set your userhash (catbox.moe, My Account) to upload to your account.
+# catbox_userhash = 'userhash'
 # ptscreens API key (log into ptscreens, settings, API)
 ptscreens_key = 'api_key'
 # oeimg API key (log into imgoe, settings, API)
