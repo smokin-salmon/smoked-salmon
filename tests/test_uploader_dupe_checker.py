@@ -116,3 +116,70 @@ def test_an_html_escaped_edition_is_the_same_edition() -> None:
 @pytest.mark.parametrize(("ours", "logged"), [("Rock 'n' Roll", "Rock'n'Roll"), ("Lovin’", "Lovin'")])
 def test_title_words_ignore_punctuation(ours: str, logged: str) -> None:
     assert _title_words(ours) == _title_words(logged)
+
+
+_HELD_RELEASE = {"source": "WEB", "format": "FLAC", "encoding": "24bit Lossless", "year": "2024"}
+_HELD_FLAC = {
+    "id": 1,
+    "media": "WEB",
+    "format": "FLAC",
+    "encoding": "24bit Lossless",
+    "remasterYear": 2024,
+    "remasterRecordLabel": "Label",
+    "remasterCatalogueNumber": "0000000000017",
+}
+
+
+def test_held_formats_count_only_the_edition_the_site_filed_the_flac_under() -> None:
+    flac = _HELD_FLAC
+    other = {
+        **flac,
+        "id": 2,
+        "encoding": "Lossless",
+        "remasterTitle": "Extended Mix",
+        "remasterCatalogueNumber": "CAT-2",
+    }
+    same = {**flac, "id": 3, "format": "MP3", "encoding": "320"}
+    titled = {**flac, "id": 4, "format": "MP3", "encoding": "V0 (VBR)", "remasterTitle": "Extended Mix"}
+    group = {"group": {"year": 2024}, "torrents": [flac, other, same, titled]}
+    formats = {"16bit": ("FLAC", "Lossless"), "MP3 320": ("MP3", "320"), "MP3 V0": ("MP3", "V0 (VBR)")}
+
+    filed = dupe_checker.held_formats(group, _HELD_RELEASE, flac, formats, uploaded=True)
+    # Not in the group, or not sent by this run: the transcodes' edition is unknown, so every match counts.
+    unfiled = dupe_checker.held_formats(group, _HELD_RELEASE, {"id": 99}, formats, uploaded=True)
+    existing = dupe_checker.held_formats(group, _HELD_RELEASE, flac, formats)
+
+    assert filed == {"MP3 320"}
+    assert unfiled == existing == {"16bit", "MP3 320", "MP3 V0"}
+
+
+@pytest.mark.parametrize(
+    ("flac_fields", "mp3_fields", "held"),
+    [
+        # One catalogue number, typed two ways: the same release.
+        ({}, {"remasterCatalogueNumber": "CAT2"}, {"MP3 320"}),
+        ({}, {"remasterCatalogueNumber": "cat-2"}, {"MP3 320"}),
+        ({}, {"remasterCatalogueNumber": "CAT3"}, set()),
+        # An id sent as text is the same torrent.
+        ({"id": "1"}, {"remasterCatalogueNumber": "CAT3"}, set()),
+        # An original release has the group's edition: the same year, label and catalogue number as the FLAC's.
+        (
+            {},
+            {"remastered": False, "remasterYear": 0, "remasterRecordLabel": "", "remasterCatalogueNumber": ""},
+            {"MP3 320"},
+        ),
+        (
+            {"remasterCatalogueNumber": "CAT3"},
+            {"remastered": False, "remasterYear": 0, "remasterRecordLabel": "", "remasterCatalogueNumber": ""},
+            set(),
+        ),
+    ],
+)
+def test_held_formats_tell_editions_apart_by_their_fields(flac_fields, mp3_fields, held) -> None:
+    flac = {**_HELD_FLAC, "remasterCatalogueNumber": "CAT-2", **flac_fields}
+    mp3 = {**flac, "id": 2, "format": "MP3", "encoding": "320", **mp3_fields}
+    group = {"group": {"year": 2024, "recordLabel": "Label", "catalogueNumber": "CAT-2"}, "torrents": [flac, mp3]}
+
+    found = dupe_checker.held_formats(group, _HELD_RELEASE, {"id": 1}, {"MP3 320": ("MP3", "320")}, uploaded=True)
+
+    assert found == held

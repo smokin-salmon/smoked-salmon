@@ -653,6 +653,64 @@ def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> 
     assert run.target.posts()[1].fields["release_desc"][0].startswith(f"[b]Source:[/b] {flac_url}\n")
 
 
+def _filed_group(*others: dict[str, Any]) -> dict[str, Any]:
+    """TARGET's group once the FLAC is up: the FLAC (700001) filed under CAT-1 in 2023, beside `others`."""
+    flac = {
+        "id": 700001,
+        "media": "WEB",
+        "format": "FLAC",
+        "encoding": "Lossless",
+        "remastered": True,
+        "remasterYear": 2023,
+        "remasterTitle": "",
+        "remasterRecordLabel": "Label",
+        "remasterCatalogueNumber": "CAT-1",
+    }
+    return {"group": {"id": TARGET_GROUP_ID, "year": 2018}, "torrents": [flac, *(({**flac, **o}) for o in others)]}
+
+
+def _transcode_into_filed_group(monkeypatch, dirs, group: dict[str, Any]) -> Run:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.results = [_result([])]
+        target.groups[TARGET_GROUP_ID] = group
+
+    return _cross_upload(
+        monkeypatch,
+        dirs,
+        [str(TORRENT_ID), "-yyy", "--transcode", "V0"],
+        input="1\n\n",
+        prepare=prepare,
+        transcode=_transcode,
+    )
+
+
+def test_a_transcode_held_only_under_another_catalogue_number_is_uploaded(monkeypatch, dirs) -> None:
+    # The V0 sits in a 2023 edition of the group, but under CAT-2: another pressing than the FLAC's CAT-1.
+    other = {"id": 700002, "format": "MP3", "encoding": "V0 (VBR)", "remasterCatalogueNumber": "CAT-2"}
+    run = _transcode_into_filed_group(monkeypatch, dirs, _filed_group(other))
+
+    assert run.result.exit_code == 0, run.output
+    assert "Not uploading MP3 V0" not in run.output
+    formats = [(post.fields["format"][0], post.fields["bitrate"][0]) for post in run.target.posts()]
+    assert formats == [("FLAC", "Lossless"), ("MP3", "V0 (VBR)")]
+    # The group was read once, as before: no request of its own.
+    assert run.target.steps()["GET ajax.php?action=torrentgroup"] == 1
+
+
+def test_a_transcode_held_in_the_edition_the_flac_was_filed_under_is_left_out(monkeypatch, dirs) -> None:
+    # CAT1 and CAT-1 name one release.
+    held = {"id": 700002, "format": "MP3", "encoding": "V0 (VBR)", "remasterCatalogueNumber": "CAT1"}
+    run = _transcode_into_filed_group(monkeypatch, dirs, _filed_group(held))
+
+    assert run.result.exit_code == 0, run.output
+    assert "Not uploading MP3 V0: the group already has it in this edition." in run.output
+    assert [post.fields["format"][0] for post in run.target.posts()] == ["FLAC"]
+    assert run.target.steps()["GET ajax.php?action=torrentgroup"] == 1
+
+
 def test_a_new_group_with_transcodes_needs_no_group_fetch(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
     run = _cross_upload(

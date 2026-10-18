@@ -793,6 +793,26 @@ def _edition_catno(torrent: dict, group: dict) -> str:
     return ((group.get("group") or {}).get("catalogueNumber") or "").strip()
 
 
+def _site_edition(torrent: dict, group: dict) -> tuple[str, str, str, str]:
+    """A torrent's edition as the site files it: year, title, label and catalogue number, each comparable().
+
+    An original release has no edition fields of its own and takes the group's year, label and catalogue number.
+    """
+    if _is_remaster(torrent):
+        fields = (
+            torrent.get("remasterYear"),
+            torrent.get("remasterTitle"),
+            torrent.get("remasterRecordLabel"),
+            torrent.get("remasterCatalogueNumber"),
+        )
+    else:
+        info = group.get("group") or {}
+        fields = (info.get("year"), "", info.get("recordLabel"), info.get("catalogueNumber"))
+    # comparable(): "CAT-2" and "CAT2" name one release, however each was typed.
+    year, title, label, catno = (comparable(str(field or "")) for field in fields)
+    return year, title, label, catno
+
+
 def matching_torrents(group: dict, release: dict) -> list[dict]:
     """Find the group's torrents in the release's edition with its media, format and encoding.
 
@@ -886,7 +906,14 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
         click.secho(f"Enter a number from 1 to {len(flacs)}, or a to abort.", fg="red")
 
 
-def held_formats(group: dict, release: dict, source_flac: dict, formats: dict[str, tuple[str, str]]) -> set[str]:
+def held_formats(
+    group: dict,
+    release: dict,
+    source_flac: dict,
+    formats: dict[str, tuple[str, str]],
+    *,
+    uploaded: bool = False,
+) -> set[str]:
     """Find the formats that the release's edition in the group already holds, the source FLAC aside.
 
     Args:
@@ -894,14 +921,27 @@ def held_formats(group: dict, release: dict, source_flac: dict, formats: dict[st
         release: The reviewed release metadata.
         source_flac: The FLAC the transcodes are made from, which never counts as held.
         formats: The format and encoding of each candidate, by name.
+        uploaded: Whether this run sent the source FLAC, with the form the transcodes use. The site has then
+            filed it under their edition, catalogue number included, so a format is held only by a torrent in
+            that edition. The group must be fetched after the upload. False (a FLAC already on the site, which
+            may be filed under another edition), or a source FLAC missing from the group, keeps to the year
+            and edition title.
 
     Returns:
         The names of the candidates the edition already has.
     """
+    source_id = str(source_flac.get("id"))
+    placed = None
+    if uploaded:
+        placed = next((t for t in group.get("torrents") or [] if str(t.get("id")) == source_id), None)
+    filed_under = _site_edition(placed, group) if placed is not None else None
     held = set()
     for name, (fmt, encoding) in formats.items():
         in_edition = matching_torrents(group, {**release, "format": fmt, "encoding": encoding})
-        if any(t.get("id") != source_flac.get("id") for t in in_edition):
+        if any(
+            str(t.get("id")) != source_id and (filed_under is None or _site_edition(t, group) == filed_under)
+            for t in in_edition
+        ):
             held.add(name)
     return held
 
