@@ -197,17 +197,19 @@ async def _delete_spectrals(spectrals_path: str) -> None:
 
     A folder salmon did not make (see made_by_salmon), such as one the user put a file in, is left where it is.
     """
-    for last in (False, True):
-        # Checked before each try: in the half second between, the folder may be replaced or given another file.
-        if not os.path.lexists(spectrals_path):
-            break
-        if not made_by_salmon(spectrals_path):
-            click.secho(f"Not deleting {spectrals_path}: it is not a spectrals folder salmon made.", fg="yellow")
-            break
-        shutil.rmtree(spectrals_path, ignore_errors=not last)
-        await anyio.sleep(0.5)
-    drop_specs_claim(spectrals_path)
-    drop_specs_claim(spectrals_path)
+    try:
+        for last in (False, True):
+            # Checked before each try: in the half second between, the folder may be replaced or given another file.
+            if not os.path.lexists(spectrals_path):
+                break
+            if not made_by_salmon(spectrals_path):
+                click.secho(f"Not deleting {spectrals_path}: it is not a spectrals folder salmon made.", fg="yellow")
+                break
+            shutil.rmtree(spectrals_path, ignore_errors=not last)
+            await anyio.sleep(0.5)
+    finally:
+        # Also when the last try raises: what is made there later is the user's.
+        drop_specs_claim(spectrals_path)
 
 
 def specs_hosts_text(trackers: Sequence[str]) -> str:
