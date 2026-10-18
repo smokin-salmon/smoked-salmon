@@ -21,14 +21,17 @@ from salmon.release_notification import show_release_notification
 STALE_SECONDS = 24 * 60 * 60
 
 
-def _remove(item_path: str) -> None:
+def _remove(item_path: str) -> bool:
+    """Remove a file, link or folder; False, said, when it fails."""
     try:
         if os.path.isfile(item_path) or os.path.islink(item_path):
             os.unlink(item_path)
         elif os.path.isdir(item_path):
             shutil.rmtree(item_path)
+        return True
     except Exception as e:
         click.secho(f"Failed to remove {item_path}: {e}", fg="yellow")
+        return False
 
 
 def cleanup_tmp_dir():
@@ -50,6 +53,7 @@ def cleanup_tmp_dir():
             fg="yellow",
         )
     cutoff = time.time() - STALE_SECONDS
+    failed = 0
     try:
         for item in os.listdir(tmp_dir):
             if item == tmp_lock.LOCK_NAME:
@@ -61,9 +65,15 @@ def cleanup_tmp_dir():
                         continue
                 except OSError as e:
                     click.secho(f"Failed to remove {item_path}: {e}", fg="yellow")
+                    failed += 1
                     continue
-            _remove(item_path)
-        click.secho(f"Cleaned temporary directory: {tmp_dir}", fg="green")
+            if not _remove(item_path):
+                failed += 1
+        if failed:
+            entries = "entry" if failed == 1 else "entries"
+            click.secho(f"Cleaned temporary directory partly: {failed} {entries} left in {tmp_dir}", fg="yellow")
+        else:
+            click.secho(f"Cleaned temporary directory: {tmp_dir}", fg="green")
     except Exception as e:
         click.secho(f"Failed to clean temporary directory: {e}", fg="yellow")
     finally:

@@ -11,6 +11,7 @@ apart, so cleaning keeps whatever changed in the last 24 hours.
 
 import enum
 import os
+import stat
 import time
 from typing import IO
 
@@ -58,9 +59,19 @@ def claim(tmp_dir: str, exclusive: bool) -> Claim:
     if fcntl is None:
         return Claim.UNLOCKED
     try:
-        # Kept open for the process's life: closing it drops the lock.
-        file = open(os.path.join(tmp_dir, LOCK_NAME), "a", encoding="utf-8")  # noqa: SIM115
+        # Non-blocking, so a FIFO planted at the lock's name cannot hang startup (no reader: ENXIO).
+        flags = os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NONBLOCK | os.O_CLOEXEC
+        fd = os.open(os.path.join(tmp_dir, LOCK_NAME), flags, 0o644)
     except OSError:
+        return Claim.UNLOCKED
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            os.close(fd)
+            return Claim.UNLOCKED
+        # Kept open for the process's life: closing it drops the lock.
+        file = os.fdopen(fd, "a", encoding="utf-8")
+    except OSError:
+        os.close(fd)
         return Claim.UNLOCKED
     try:
         if exclusive:
@@ -111,14 +122,18 @@ def detach() -> IO[str] | None:
     return file
 
 
+def _raise(error: OSError) -> None:
+    raise error
+
+
 def newest_change(path: str) -> float:
-    """The latest mtime of path and, for a folder, of everything in it (symlinks not followed)."""
+    """The latest mtime of path and, for a folder, of everything in it (symlinks not followed).
+
+    Raises OSError when part of it cannot be read: its age is then unknown.
+    """
     newest = os.lstat(path).st_mtime
     if os.path.isdir(path) and not os.path.islink(path):
-        for root, dirs, files in os.walk(path):
+        for root, dirs, files in os.walk(path, onerror=_raise):
             for name in dirs + files:
-                try:
-                    newest = max(newest, os.lstat(os.path.join(root, name)).st_mtime)
-                except OSError:
-                    continue
+                newest = max(newest, os.lstat(os.path.join(root, name)).st_mtime)
     return newest
