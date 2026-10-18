@@ -199,3 +199,22 @@ def test_a_failed_probe_never_repeats_a_configured_secret(monkeypatch, capsys) -
     out = capsys.readouterr().out
     assert "rclone refused" in out
     assert "hunter2" not in out
+
+
+def test_the_qobuz_connection_test_skips_the_shipped_placeholders(monkeypatch, capsys) -> None:
+    """config.default.toml's placeholder Qobuz values are truthy; they must read as unset, with no request."""
+    monkeypatch.setattr(cfg.metadata.qobuz, "app_id", "app-id")
+    monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", "user_auth_token")
+    asked: list[str] = []
+
+    async def fake_fetch_data(_self, url, *_args, **_kwargs):
+        asked.append(url)
+
+    monkeypatch.setattr(commands_module.salmon.sources.QobuzBase, "fetch_data", fake_fetch_data)
+    for other in (commands_module.salmon.sources.DiscogsBase, commands_module.salmon.sources.TidalBase):
+        monkeypatch.setattr(other, "fetch_data", lambda *_a, **_k: anyio.sleep(0))
+
+    anyio.run(commands_module._test_metadata_sources)
+
+    assert asked == []
+    assert "Qobuz: Missing required configuration" in capsys.readouterr().out
