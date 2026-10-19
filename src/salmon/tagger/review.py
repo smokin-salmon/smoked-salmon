@@ -57,8 +57,8 @@ async def review_metadata(metadata, validator, enforce_required_fields: bool = T
         r = await interaction.prompt(
             click.style(
                 "\nAre there any metadata fields you would like to edit? [a]rtists, "
-                "artist a[l]iases, [t]itle, [g]enres, [r]elease type, [y]ears, "
-                "[e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing",
+                "artist a[L]iases (rename or split an artist on every track), [t]itle, [g]enres, "
+                "[r]elease type, [y]ears, [e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing",
                 fg="magenta",
             )
         )
@@ -69,7 +69,8 @@ async def review_metadata(metadata, validator, enforce_required_fields: bool = T
             if r_let == "n":
                 break_ = True
             else:
-                click.secho(f"{r_let} is not a valid editing option.", fg="red")
+                hint = " The artist aliases key is the letter L." if r_let == "1" else ""
+                click.secho(f"{r_let} is not a valid editing option.{hint}", fg="red")
                 continue
         try:
             validator(metadata)
@@ -169,6 +170,11 @@ For full rules, see the tracker's Classical Tagging Guide.""",
 
 
 async def _edit_artists(metadata):
+    click.secho(
+        "One artist per line as: Name (role). This changes the release's artists and the roles on tracks; "
+        "to rename or split an artist on every track, use artist a[L]iases instead.",
+        fg="cyan",
+    )
     artist_text = "\n".join(f"{a} ({i})" for a, i in metadata["artists"])
     while True:
         artist_text = await interaction.edit(artist_text, editor=cfg.upload.default_editor)
@@ -210,18 +216,21 @@ async def _edit_artists(metadata):
 
 async def _alias_artists(metadata):
     existing_artists = {a for a, _ in metadata["artists"]}
+    marker = "Enter aliases below this line:"
     while True:
         artist_aliases = defaultdict(list)
         artists_to_delete = []
         artist_list_str = (
             "\n".join({a for a, _ in metadata["artists"]})
-            + "\n\nEnter the artist alias list below. Refer to README for syntax.\n\n"
+            + "\n\nOne alias per line as: existing name --> new name. Two lines with the same existing name split it"
+            + " into two artists; nothing after --> removes the artist.\n"
+            + f"{marker}\n\n"
         )
         artist_list = await interaction.edit(artist_list_str, editor=cfg.upload.default_editor)
         try:
             if artist_list is None:
                 return
-            artist_text = artist_list.split("Refer to README for syntax.")[1].strip()
+            artist_text = artist_list.split(marker)[1].strip()
             for line in artist_text.split("\n"):
                 if line:
                     existing, new = [a.strip() for a in line.split("-->", 1)]

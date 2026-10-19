@@ -1,6 +1,7 @@
 import math
 import os
 import re
+from functools import partial
 
 import anyio
 import asyncclick as click
@@ -40,7 +41,7 @@ async def upload_upconvert_test(path: str) -> None:
             default=True,
         ):
             raise click.Abort
-    else:
+    elif any_upconverts is False:
         click.secho(
             click.style(
                 "No upconverts detected (This is not a 100 percent accurate process).",
@@ -58,9 +59,11 @@ async def test_upconverted(path: str) -> bool | None:
     Returns:
         True if any upconverts detected, False if none, None if not applicable.
     """
+    skipped: list[str] = []
     if os.path.isfile(path):
-        result = await _upconvert_check_handler(path)
+        result = await _upconvert_check_handler(path, skipped=skipped)
         if result is None:
+            _say_if_all_skipped(skipped, 1)
             return None
         _display_results([result])
         return result.is_upconverted
@@ -70,29 +73,46 @@ async def test_upconverted(path: str) -> bool | None:
             for f in files:
                 if f.lower().endswith(".flac"):
                     flac_files.append(os.path.join(root, f))
+        if not flac_files:
+            click.secho("No FLAC files found to check.", fg="yellow")
         results = await process_files(
             flac_files,
-            _upconvert_check_handler,
+            partial(_upconvert_check_handler, skipped=skipped),
             "Checking FLAC files for upconverts",
         )
         valid_results = [r for r in results if r is not None]
+        _say_if_all_skipped(skipped, len(flac_files))
         _display_results(valid_results)
         return any(r.is_upconverted for r in valid_results) if valid_results else None
     return None
 
 
-async def _upconvert_check_handler(filepath: str, _: int | None = None) -> UpconvertCheckResult | None:
+def _say_if_all_skipped(skipped: list[str], total: int) -> None:
+    """One line, not one per file, when every file was 16bit and so left out of the check."""
+    if skipped and len(skipped) == total:
+        click.secho("Nothing to check: the upconvert check skips 16bit FLAC files, and these all are.", fg="yellow")
+
+
+async def _upconvert_check_handler(
+    filepath: str, _: int | None = None, skipped: list[str] | None = None
+) -> UpconvertCheckResult | None:
     """Handle upconvert check for a single file, logging errors.
 
     Args:
         filepath: Path to the FLAC file to check.
         _: Unused index parameter for process_files compatibility.
+        skipped: Collects the files left out because they are 16bit.
 
     Returns:
-        UpconvertCheckResult on success, None if the file cannot be analyzed.
+        UpconvertCheckResult on success, None if the file is out of scope or cannot be analyzed.
     """
     try:
         return await check_upconvert(filepath)
+    except UpconvertCheckNotApplicable:
+        # 16bit is out of scope, so it is not worth a line of warning per track.
+        if skipped is not None:
+            skipped.append(filepath)
+        return None
     except UpconvertCheckError as e:
         click.secho(f"{os.path.basename(filepath)}: {e}", fg="yellow")
         return None
