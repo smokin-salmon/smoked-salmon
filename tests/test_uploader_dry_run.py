@@ -385,7 +385,7 @@ def fake_upload_world(
     monkeypatch.setattr(cfg.upload, "upload_to_seedbox", True)
     monkeypatch.setattr(cfg.upload.requests, "check_requests", True)
     monkeypatch.setattr(cfg.upload.requests, "last_minute_dupe_check", False)
-    monkeypatch.setattr(cfg.image, "auto_compress_cover", False)
+    monkeypatch.setattr(cfg.image, "embed_missing_cover", False)
     queued: list[tuple[Any, ...]] = []
     monkeypatch.setattr(UploadManager, "add_upload_task", lambda _self, *task, **_kw: queued.append(task))
     # A seedbox whose torrent client is logged into when the upload manager is set up.

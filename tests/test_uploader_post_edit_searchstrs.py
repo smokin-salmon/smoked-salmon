@@ -125,7 +125,7 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "last_minute_dupe_check", True)
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "check_requests", True)
     monkeypatch.setattr(salmon.uploader.cfg.upload, "multi_tracker_upload", True)
-    monkeypatch.setattr(salmon.uploader.cfg.image, "auto_compress_cover", False)
+    monkeypatch.setattr(salmon.uploader.cfg.image, "embed_missing_cover", False)
 
     sites = {"FAKE1": FakeSite("FAKE1"), "FAKE2": FakeSite("FAKE2")}
     monkeypatch.setattr(salmon.trackers, "tracker_list", list(sites))

@@ -199,7 +199,7 @@ def test_checkconf_prints_what_it_printed_before(
     red(key)
     point_at(monkeypatch, {"RED": fake})
     # checkconf prints the request dumps whatever the config says.
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", False)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", False)
 
     result = run_checkconf(fake, "-t", "RED")
 
@@ -215,9 +215,9 @@ def test_checkconf_leaves_the_debug_setting_as_the_config_has_it(
     red("an-api-key")
     fake = FakeTracker()
     point_at(monkeypatch, {"RED": fake})
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", configured)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", configured)
 
     result = run_checkconf(fake, "-t", "RED")
 
     assert "[DEBUG] GET" in result.output
-    assert cfg.upload.debug_tracker_connection is configured
+    assert cfg.tracker.debug_connection is configured

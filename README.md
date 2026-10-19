@@ -383,7 +383,7 @@ into a tracker help thread; it names the album folder and no other path. It is a
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
 ### 🌐 Spectral Viewer for `up`
-When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. If salmon runs on another machine or in Docker, set `display_host` under `[upload.web_interface]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead. This viewer is separate from `salmon web` below.
+When `up` reaches spectral review, it starts a small web server and prints the link to the spectrals page (by default `http://localhost:55110/spectrals`); the server stops when you continue. If salmon runs on another machine or in Docker, set `display_host` under `[upload.spectrals_viewer]` to that machine's address so the printed link works. Set `native_spectrals_viewer = true` to open the images locally instead. This viewer is separate from `salmon web` below.
 
 ### 🖥️ salmon web
 `salmon web` is salmon in your browser. Each page starts the same code as the matching CLI command, so it does the

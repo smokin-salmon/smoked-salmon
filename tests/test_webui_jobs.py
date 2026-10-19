@@ -723,19 +723,21 @@ def test_the_filter_knows_every_secret_the_config_holds(planted: None, monkeypat
 
 
 def _template_config(monkeypatch: pytest.MonkeyPatch) -> None:
-    """The settings as a new user leaves them: the default template's values."""
+    """The settings as the old template left them. Qobuz's placeholder is one the template only shows commented out:
+    compat's list of old placeholders knows it, not the template."""
     monkeypatch.setattr(cfg.tracker, "red", GazelleTrackerSettings(session="get-from-site-cookie"))
     for key in ("ptscreens_key", "oeimg_key", "imgbb_key", "ra_key"):
         monkeypatch.setattr(cfg.image, key, "api_key")
     monkeypatch.setattr(cfg.metadata, "discogs_token", "discogs-token")
     monkeypatch.setattr(cfg.metadata.beatport, "password", "password")
+    monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", "user_auth_token")
 
 
 def test_the_templates_placeholders_are_no_secrets(monkeypatch: pytest.MonkeyPatch) -> None:
     _template_config(monkeypatch)
     monkeypatch.setattr(base, "_learned_secrets", set())
     redactor = egress.Redactor(egress.config_secrets(cfg))
-    line = "Wrong password for api_key, discogs-token, get-from-site-cookie"
+    line = "Wrong password for api_key, discogs-token, get-from-site-cookie, user_auth_token"
     assert redactor.text(line) == line
     assert redactor.value({"api_key": "x"}) == {"api_key": "x"}
 
@@ -1015,7 +1017,7 @@ def test_jobs_requests_carry_their_output_to_their_own_log(
     kind: Callable[[str, Run], None], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # The debug lines of each request are printed on the request loop, into the log of the job that sent it.
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", True)
     tracker = FakeTracker()
     site: list[str] = []
 

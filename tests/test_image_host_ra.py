@@ -8,8 +8,16 @@ import anyio
 import pytest
 from aiohttp import web
 
+from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images import ra
+
+
+@pytest.fixture(autouse=True)
+def _host_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A key for each host: the template's 'api_key' placeholders now load as unset (salmon.config.compat)."""
+    for key in ("ptscreens_key", "oeimg_key", "imgbb_key", "ra_key"):
+        monkeypatch.setattr(cfg.image, key, f"test-{key}")
 
 
 async def _serve(handler) -> web.AppRunner:

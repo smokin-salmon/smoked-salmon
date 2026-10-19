@@ -18,8 +18,17 @@ from aiohttp import web
 
 import salmon.images as images
 import salmon.images.base as images_base
+from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, imgbb, oeimg, ptscreens, ra
+
+
+@pytest.fixture(autouse=True)
+def _host_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A key for each host: the template's 'api_key' placeholders now load as unset (salmon.config.compat)."""
+    for key in ("ptscreens_key", "oeimg_key", "imgbb_key", "ra_key"):
+        monkeypatch.setattr(cfg.image, key, f"test-{key}")
+
 
 REAL_HOSTS = ("https://catbox.moe", "https://ptscreens.com")
 

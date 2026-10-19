@@ -357,7 +357,7 @@ def _run_up(monkeypatch, album: Path, **fakes: Any) -> tuple[Any, list[str], lis
     monkeypatch.setattr(cfg.upload.requests, "last_minute_dupe_check", False)
     monkeypatch.setattr(cfg.upload.requests, "check_requests", False)
     monkeypatch.setattr(cfg.upload, "multi_tracker_upload", False)
-    monkeypatch.setattr(cfg.image, "auto_compress_cover", False)
+    monkeypatch.setattr(cfg.image, "embed_missing_cover", False)
     monkeypatch.setattr(salmon.trackers, "get_class", lambda _tracker: FakeSite)
 
     async def run():

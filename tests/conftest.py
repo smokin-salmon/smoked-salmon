@@ -21,8 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-
-_DEFAULT_CONFIG = Path(__file__).parent.parent / "src" / "salmon" / "data" / "config.default.toml"
+from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 _root = Path(tempfile.mkdtemp(prefix="salmon-tests-"))
 _music = _root / "music"
@@ -30,13 +29,7 @@ _torrents = _root / "torrents"
 _music.mkdir()
 _torrents.mkdir()
 
-_config = _DEFAULT_CONFIG.read_text(encoding="utf-8")
-for _old, _new in (
-    ("download_directory = '.music'", f"download_directory = '{_music.as_posix()}'"),
-    ("dottorrents_dir = '.torrents'", f"dottorrents_dir = '{_torrents.as_posix()}'"),
-):
-    assert _old in _config, f"default config no longer contains {_old!r}; update tests/conftest.py"
-    _config = _config.replace(_old, _new)
+_config = shipped_config(_music, _torrents)
 
 _config_dir = _root / "config" / "smoked-salmon"
 _config_dir.mkdir(parents=True)

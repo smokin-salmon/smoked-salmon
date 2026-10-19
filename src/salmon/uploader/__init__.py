@@ -1206,7 +1206,7 @@ async def _upload_staged(
                     # Uploaded to this tracker's specs host, unless a tracker using the same host already did.
                     spectral_urls = await spectral_uploads.urls_for(gazelle_site.site_code, spectral_ids)
 
-                if not scene and cfg.image.auto_compress_cover:
+                if not scene and cfg.image.embed_missing_cover:
                     compress_pictures(path)
 
                 if not flac_url and not request_id and cfg.upload.requests.check_requests:

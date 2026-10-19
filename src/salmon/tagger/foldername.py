@@ -308,7 +308,7 @@ def _compile_artist_str(artist_data):
 
 
 def _sub_illegal_characters(stri):
-    if cfg.upload.description.fullwidth_replacements:
+    if cfg.upload.formatting.fullwidth_replacements:
         for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
             stri = str(stri).replace(char, sub)
     return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, str(stri))

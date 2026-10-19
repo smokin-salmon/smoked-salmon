@@ -295,7 +295,7 @@ def _run_up(monkeypatch, tmp_path: Path, broken, track_data, convert_folder=None
         monkeypatch.setattr(uploader, name, fake)
     monkeypatch.setattr(uploader.cfg.upload, "yes_all", False)
     monkeypatch.setattr(uploader.cfg.upload.requests, "last_minute_dupe_check", False)
-    monkeypatch.setattr(uploader.cfg.image, "auto_compress_cover", False)
+    monkeypatch.setattr(uploader.cfg.image, "embed_missing_cover", False)
     monkeypatch.setattr(uploader.click, "confirm", _returning(True))
     monkeypatch.setattr(uploader.click, "prompt", _returning_async(choice))
     monkeypatch.setattr(salmon.trackers, "choose_tracker", _returning_async(None))

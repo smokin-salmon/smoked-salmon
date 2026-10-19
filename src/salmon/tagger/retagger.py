@@ -115,7 +115,7 @@ def collect_album_data(metadata):
             "catno": metadata["catno"],
             "albumartist": _generate_album_artist(metadata["artists"]),
             "upc": metadata["upc"],
-            "comment": metadata["comment"] if cfg.upload.description.review_as_comment_tag else None,
+            "comment": metadata["comment"] if cfg.upload.formatting.review_as_comment_tag else None,
         }.items()
         if v
     }
@@ -217,7 +217,7 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
         if cfg.upload.formatting.guests_in_track_title:
             trackmeta["title"] = append_guests_to_track_titles(trackmeta)
 
-        if cfg.upload.description.empty_track_comment_tag and getattr(tagset, "comment", False):
+        if cfg.upload.formatting.empty_track_comment_tag and getattr(tagset, "comment", False):
             changes[filename].append(Change("comment", tagset.comment, ""))
 
         for tagfield, metafield in [
@@ -737,7 +737,7 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
     if "tracknumber" in keys and trackno_or is not None:
         template_keys["tracknumber"] = trackno_or
     new_base = template.format(**template_keys)
-    if cfg.upload.description.fullwidth_replacements:
+    if cfg.upload.formatting.fullwidth_replacements:
         for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
             new_base = new_base.replace(char, sub)
     new_base = re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, new_base)

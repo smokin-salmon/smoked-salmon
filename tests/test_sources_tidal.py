@@ -392,20 +392,10 @@ def test_search_uses_the_search_results_collection(tidal: FakeTidal, monkeypatch
     assert (ident.artist, ident.album, ident.year, ident.track_count) == ("Kordz", "Accept & Connect", 2018, 3)
 
 
-@pytest.mark.parametrize(
-    ("token", "notified"),
-    [("a-token-from-the-web-player", True), ("your-token", False), (None, False)],
-)
-def test_retired_token_alone_leaves_tidal_off_with_one_notice(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], token: str | None, notified: bool
+@pytest.mark.parametrize(("client_id", "client_secret"), [("an-id", None), (None, "a-secret"), (None, None)])
+def test_tidal_is_off_without_both_client_credentials(
+    monkeypatch: pytest.MonkeyPatch, client_id: str | None, client_secret: str | None
 ) -> None:
-    monkeypatch.setattr(cfg.metadata.tidal, "client_id", None)
-    monkeypatch.setattr(cfg.metadata.tidal, "client_secret", None)
-    monkeypatch.setattr(cfg.metadata.tidal, "token", token)
-    tidal_source._notify_retired_token.cache_clear()
-
+    monkeypatch.setattr(cfg.metadata.tidal, "client_id", client_id)
+    monkeypatch.setattr(cfg.metadata.tidal, "client_secret", client_secret)
     assert credentials_configured() is False
-    assert credentials_configured() is False
-
-    out = capsys.readouterr().out
-    assert out.count("developer.tidal.com") == (1 if notified else 0)

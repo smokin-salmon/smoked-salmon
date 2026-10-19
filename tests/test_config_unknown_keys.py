@@ -12,12 +12,12 @@ import anyio
 import msgspec
 import pytest
 from asyncclick.testing import CliRunner
+from shipped_config import DEFAULT_CONFIG as _DEFAULT_CONFIG  # pyright: ignore[reportMissingImports]
+from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 import salmon.commands
 from salmon.commands import checkconf
 from salmon.config import Cfg, _parse_config, unknown_keys
-
-_DEFAULT_CONFIG = Path(__file__).parent.parent / "src" / "salmon" / "data" / "config.default.toml"
 
 _SECTION_COMMENT = re.compile(r"^# (\[\[?[\w.]+\]\]?)\s*$")
 _KEY_COMMENT = re.compile(r"^# ([A-Za-z_]\w* = .*)$")
@@ -32,9 +32,7 @@ def _template(tmp_path: Path) -> str:
     torrents = tmp_path / "torrents"
     music.mkdir(exist_ok=True)
     torrents.mkdir(exist_ok=True)
-    text = _DEFAULT_CONFIG.read_text(encoding="utf-8")
-    text = text.replace("download_directory = '.music'", f"download_directory = '{music.as_posix()}'")
-    return text.replace("dottorrents_dir = '.torrents'", f"dottorrents_dir = '{torrents.as_posix()}'")
+    return shipped_config(music, torrents)
 
 
 def _write(tmp_path: Path, text: str) -> Path:
@@ -44,11 +42,14 @@ def _write(tmp_path: Path, text: str) -> Path:
 
 
 def _load(tmp_path: Path, text: str, capsys: pytest.CaptureFixture[str]) -> tuple[Cfg, list[str]]:
-    """Load a config from ``text``; return it and the warning lines printed on stderr."""
+    """Load a config from ``text``; return it and the unknown-key warning lines printed on stderr.
+
+    The template's old placeholders get warnings of their own (tests/test_config_compat.py), left out here.
+    """
     path = _write(tmp_path, text)
     capsys.readouterr()
     cfg = _parse_config(path)
-    warnings = [line for line in capsys.readouterr().err.splitlines() if line.strip()]
+    warnings = [line for line in capsys.readouterr().err.splitlines() if line.startswith("Unknown config key")]
     return cfg, warnings
 
 

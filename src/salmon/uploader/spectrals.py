@@ -746,7 +746,7 @@ async def _open_specs_in_web_server(
         try:
             runner = await create_app_async(specs_path)
         except OSError as e:
-            port = cfg.upload.web_interface.port
+            port = cfg.upload.spectrals_viewer.port
             if e.errno == errno.EADDRINUSE:
                 click.secho(
                     f"\nFailed to start web server: port {port} is already in use ({e}). "
@@ -768,7 +768,7 @@ async def _open_specs_in_web_server(
                     bold=True,
                 )
             return
-        url = f"http://{cfg.upload.web_interface.effective_host}:{cfg.upload.web_interface.port}/spectrals"
+        url = f"http://{cfg.upload.spectrals_viewer.effective_host}:{cfg.upload.spectrals_viewer.port}/spectrals"
         await wait_for_enter(
             click.style(
                 f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"

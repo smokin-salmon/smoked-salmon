@@ -2320,7 +2320,7 @@ def test_a_403_on_a_red_image_still_stops_it(monkeypatch, dirs) -> None:
 
 
 def test_reds_image_credentials_are_never_printed(monkeypatch, dirs) -> None:
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", True)
 
     run = _to_dic(monkeypatch, dirs, "RED", input="\n", prepare=_red_images)
 
@@ -2691,7 +2691,7 @@ def test_with_a_session_cookie_only_the_torrent_is_downloaded_through_the_site_l
     monkeypatch.setitem(API_KEYS, "OPS", "")
     album = _album(dirs.downloads / FOLDER)
     # Every request is printed, secrets masked.
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", True)
     run = _cross_upload(
         monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "--dry-run"], input="\n", prepare=_source_has(album)
     )

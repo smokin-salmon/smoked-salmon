@@ -1,11 +1,9 @@
 import re
-from functools import cache
 from time import monotonic
 from typing import Any, ClassVar
 
 import aiohttp
 import anyio
-import asyncclick as click
 import msgspec
 
 from salmon import cfg
@@ -29,9 +27,6 @@ MAX_PAGES = 50
 RATE_LIMIT_RETRIES = 2
 MAX_RETRY_WAIT = 30.0
 
-# The value the old config.default.toml shipped for the retired token.
-_TOKEN_PLACEHOLDER = "your-token"
-
 
 def parse_quality(media_tags: list[str]) -> str | None:
     """Map Tidal V2 mediaTags to the best audio quality they list."""
@@ -42,26 +37,9 @@ def parse_quality(media_tags: list[str]) -> str | None:
 
 
 def credentials_configured() -> bool:
-    """Check whether Tidal client credentials are set.
-
-    A config written for Tidal's retired API only has a ``token``, which no longer works;
-    the user is told once how to switch to client credentials.
-    """
+    """Check whether Tidal client credentials are set."""
     tidal = cfg.metadata.tidal
-    if tidal.client_id and tidal.client_secret:
-        return True
-    if tidal.token and tidal.token != _TOKEN_PLACEHOLDER:
-        _notify_retired_token()
-    return False
-
-
-@cache
-def _notify_retired_token() -> None:
-    click.secho(
-        "Tidal: [metadata.tidal] token only worked with Tidal's retired API, so Tidal is skipped. "
-        "Register a client at https://developer.tidal.com and set client_id and client_secret instead.",
-        fg="yellow",
-    )
+    return bool(tidal.client_id and tidal.client_secret)
 
 
 class _RateLimitedError(ScrapeError):
