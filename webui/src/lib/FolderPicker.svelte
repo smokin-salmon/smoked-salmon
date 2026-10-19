@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onMount, tick } from 'svelte'
   import { apiGet } from './api'
 
   /** `prefill`: start an empty box with download_directory and a separator, for a page that needs an album folder. */
@@ -40,6 +40,19 @@
   let error = $state('')
   let loading = $state(false)
   let sort = $state<Sort>(remembered())
+  let filter = $state('')
+  let filterInput = $state<HTMLInputElement | null>(null)
+
+  /** Case- and accent-insensitive, so `cafe` finds `Café`. */
+  function fold(s: string): string {
+    return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+  }
+
+  const words = $derived(fold(filter).split(/\s+/).filter(Boolean))
+  const filtering = $derived(words.length > 0)
+  const shown = $derived(
+    listing ? listing.folders.filter((f) => words.every((w) => fold(f.name).includes(w))) : [],
+  )
 
   /**
    * An empty box starts as download_directory and a separator, so a folder name pasted after it is an absolute path
@@ -65,7 +78,7 @@
    * The roots (no path), or the folders in one; the server refuses anything outside the roots. Only the latest
    * request applies its answer, so a slower, older one (another folder, the other sort) cannot overwrite it.
    */
-  async function browse(path?: string | null) {
+  async function browse(path?: string | null, focus = false) {
     const mine = ++latest
     loading = true
     error = ''
@@ -73,8 +86,13 @@
       const query = path ? `path=${encodeURIComponent(path)}&sort=${sort}` : `sort=${sort}`
       const found = await apiGet<Listing>(`/browse?${query}`)
       if (mine !== latest) return
+      if ((found.path ?? null) !== (listing?.path ?? null)) filter = ''
       listing = found
       open = true
+      if (focus && window.matchMedia('(pointer: fine)').matches) {
+        await tick()
+        if (mine === latest) filterInput?.focus()
+      }
     } catch (e) {
       if (mine === latest) error = String(e)
     } finally {
@@ -93,6 +111,21 @@
     if (listing) void browse(listing.path)
   }
 
+  function closeListing() {
+    open = false
+    filter = ''
+  }
+
+  function filterKey(event: KeyboardEvent) {
+    if (event.key === 'Escape' && filter) {
+      event.preventDefault()
+      filter = ''
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      if (shown.length === 1) void browse(shown[0].path)
+    }
+  }
+
   function select(path: string) {
     value = path
     open = false
@@ -108,7 +141,7 @@
 <div class="picker">
   <div class="row">
     <input type="text" class="mono grow" bind:value placeholder="/path/to/album" />
-    <button class="btn secondary" disabled={loading} onclick={() => browse(value || null)}>Browse</button>
+    <button class="btn secondary" disabled={loading} onclick={() => browse(value || null, true)}>Browse</button>
   </div>
 
   {#if open && listing}
@@ -146,15 +179,29 @@
             >
           </span>
         {/if}
-        <button class="btn small secondary" onclick={() => (open = false)}>Close</button>
+        <button class="btn small secondary" onclick={closeListing}>Close</button>
       </div>
+      {#if listing.folders.length > 0}
+        <input
+          type="text"
+          class="filter"
+          bind:this={filterInput}
+          bind:value={filter}
+          onkeydown={filterKey}
+          placeholder="Filter these folders"
+          aria-label="Filter folders"
+        />
+        {#if filtering}
+          <p class="muted small count">{shown.length} of {listing.folders.length} folders</p>
+        {/if}
+      {/if}
       <ul>
         {#if listing.parent}
           <li><button class="nav" onclick={() => browse(listing!.parent)}>..</button></li>
         {:else if listing.path}
           <li><button class="nav" onclick={() => browse(null)}>..</button></li>
         {/if}
-        {#each listing.folders as folder (folder.path)}
+        {#each shown as folder (folder.path)}
           <li>
             <button class="nav" onclick={() => browse(folder.path)}>
               {folder.name}/{#if folder.library}<span class="muted"> (library)</span>{/if}
@@ -165,11 +212,16 @@
             {/if}
           </li>
         {:else}
-          <li class="muted">No folders here.</li>
+          <li class="muted">
+            {#if filtering}No folder here matches "{filter}".{:else}No folders here.{/if}
+          </li>
         {/each}
       </ul>
       {#if listing.truncated}
-        <p class="muted small">Only the first {listing.folders.length} folders are listed: type the path to reach another.</p>
+        <p class="muted small">
+          {#if filtering}The filter only covers the first {listing.folders.length} folders listed here{:else}Only the first {listing.folders.length}
+            folders are listed{/if}: type the path to reach another.
+        </p>
       {/if}
     </div>
   {/if}
@@ -228,6 +280,14 @@
   }
   .here .mono {
     overflow-wrap: anywhere;
+  }
+  .filter {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 0.3rem;
+  }
+  .count {
+    margin: 0 0 0.3rem;
   }
   ul {
     list-style: none;
