@@ -373,8 +373,12 @@ def compress_pictures(path):
                 click.secho("No cover file found!", fg="red")
                 continue
 
-            with open(cover_file, "rb") as c:
-                data = c.read()
+            try:
+                with open(cover_file, "rb") as c:
+                    data = c.read()
+            except OSError as e:
+                click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
+                continue
 
             max_picture_block_size = MAX_PICTURES_AND_PADDING - humanfriendly.parse_size("8KiB")
 
