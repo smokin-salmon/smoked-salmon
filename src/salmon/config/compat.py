@@ -187,21 +187,34 @@ def _drop_removed(raw: dict[str, Any], entry: Removed, value: Any, config_path: 
 
 
 def _drop_placeholder_trackers(raw: dict[str, Any], config_path: Path) -> None:
-    """Leave out each tracker whose session is the old template's placeholder, and a default naming one."""
+    """Leave out each tracker whose session is the old template's placeholder, and a default naming one.
+
+    RED and OPS take an API key on its own, so one that has a key stays, with no cookie. DIC takes none.
+    """
     tracker = raw.get("tracker")
     if not isinstance(tracker, dict):
         return
     dropped: list[str] = []
     for code in _TRACKER_CODES:
         table = tracker.get(code)
-        if isinstance(table, dict) and table.get("session") == _SESSION_PLACEHOLDER:
-            del tracker[code]
-            dropped.append(code)
+        if not isinstance(table, dict) or table.get("session") != _SESSION_PLACEHOLDER:
+            continue
+        api_key = table.get("api_key")
+        if code != "dic" and isinstance(api_key, str) and api_key.strip():
+            table["session"] = ""
             warn(
                 config_path,
-                f"tracker.{code}.session is still the old template's placeholder '{_SESSION_PLACEHOLDER}'. "
-                f"{code.upper()} is left out: set its cookie or remove [tracker.{code}].",
+                f"tracker.{code}.session is still the old template's placeholder '{_SESSION_PLACEHOLDER}': "
+                f"salmon treats it as unset, so {code.upper()} uses only its API key.",
             )
+            continue
+        del tracker[code]
+        dropped.append(code)
+        warn(
+            config_path,
+            f"tracker.{code}.session is still the old template's placeholder '{_SESSION_PLACEHOLDER}'. "
+            f"{code.upper()} is left out: set its cookie or remove [tracker.{code}].",
+        )
     default = tracker.get("default_tracker")
     if isinstance(default, str) and default.lower() in dropped:
         del tracker["default_tracker"]

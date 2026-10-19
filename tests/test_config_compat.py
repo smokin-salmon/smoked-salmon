@@ -10,12 +10,19 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import anyio
 import msgspec
 import pytest
+from aiohttp import web
+from aiolimiter import AsyncLimiter
 
 import salmon.release_notification
+import salmon.trackers.ops
+import salmon.trackers.red
 from salmon.config import _parse_config, compat
 from salmon.config.validations import Cfg
+from salmon.trackers.base import BaseGazelleApi
+from salmon.uploader import dupe_checker
 
 UPGRADE_PAGE = "https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21"
 
@@ -174,6 +181,88 @@ def test_a_placeholder_session_leaves_that_tracker_out(tmp_path: Path, capsys) -
     assert cfg.tracker.red is not None and cfg.tracker.red.session == "a-real-cookie"
     assert len(warnings) == 1
     assert "DIC is left out: set its cookie or remove [tracker.dic]" in warnings[0]
+
+
+@pytest.mark.parametrize("code", ["red", "ops"])
+def test_a_placeholder_session_with_an_api_key_keeps_that_tracker_without_a_cookie(
+    tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch, code: str
+) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"][code] = {"session": "get-from-site-cookie", "api_key": "a-real-key"}
+    cfg, warnings = _load(tmp_path, raw, capsys)
+    kept = getattr(cfg.tracker, code)
+    assert kept is not None and (kept.session, kept.api_key) == ("", "a-real-key")
+    assert warnings == [
+        f"tracker.{code}.session is still the old template's placeholder 'get-from-site-cookie': "
+        f"salmon treats it as unset, so {code.upper()} uses only its API key."
+    ]
+    monkeypatch.setattr(salmon.trackers.red, "cfg", cfg)
+    monkeypatch.setattr(salmon.trackers.ops, "cfg", cfg)
+    api = salmon.trackers.red.RedApi() if code == "red" else salmon.trackers.ops.OpsApi()
+    assert api.api_key == "a-real-key"
+    assert api.has_session_cookie is False
+
+
+@pytest.mark.parametrize("api_key", [None, "", "  "], ids=["no key", "empty key", "blank key"])
+def test_a_placeholder_session_without_an_api_key_still_leaves_that_tracker_out(
+    tmp_path: Path, capsys, api_key: str | None
+) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"]["ops"] = {"session": "get-from-site-cookie", **({} if api_key is None else {"api_key": api_key})}
+    cfg, warnings = _load(tmp_path, raw, capsys)
+    assert cfg.tracker.ops is None
+    assert "OPS is left out" in warnings[0]
+
+
+class _LogTracker:
+    """A local tracker: the API answers, and log.php (a site page, which needs a cookie) bounces to login.php."""
+
+    def __init__(self) -> None:
+        self.hits: list[str] = []
+
+    async def start(self) -> str:
+        app = web.Application()
+        app.router.add_get("/ajax.php", self.answer)
+        app.router.add_get("/log.php", self.answer)
+        app.router.add_get("/login.php", self.answer)
+        self.runner = web.AppRunner(app)
+        await self.runner.setup()
+        await web.TCPSite(self.runner, "127.0.0.1", 0).start()
+        return f"http://127.0.0.1:{self.runner.addresses[0][1]}"
+
+    async def answer(self, request: web.Request) -> web.Response:
+        self.hits.append(request.path)
+        return web.json_response({"status": "success", "response": {"results": []}})
+
+
+async def _a_kept_tracker_without_a_cookie_sends_no_cookie_only_request(api: BaseGazelleApi) -> None:
+    tracker = _LogTracker()
+    api.base_url = await tracker.start()
+    api._rate_limiter = AsyncLimiter(100, 1)
+    api._authenticated = True
+    try:
+        assert dupe_checker.can_check_site_log(api) is False
+        await dupe_checker.check_existing_group(api, ["artist title"])
+        assert tracker.hits == ["/ajax.php"]
+    finally:
+        await api.close()
+        await tracker.runner.cleanup()
+
+
+def test_a_kept_tracker_without_a_cookie_skips_cookie_only_requests(
+    tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"]["red"] = {"session": "get-from-site-cookie", "api_key": "a-real-key"}
+    cfg, _ = _load(tmp_path, raw, capsys)
+    monkeypatch.setattr(salmon.trackers.red, "cfg", cfg)
+
+    async def new_group(*args, **kwargs) -> str:
+        return "n"
+
+    monkeypatch.setattr(dupe_checker.click, "prompt", new_group)
+    anyio.run(_a_kept_tracker_without_a_cookie_sends_no_cookie_only_request, salmon.trackers.red.RedApi())
+    assert "needs a session cookie" in capsys.readouterr().out
 
 
 def test_a_placeholder_tracker_is_not_offered(tmp_path: Path) -> None:
