@@ -29,14 +29,16 @@ class Moved:
 
 @dataclass(frozen=True)
 class Removed:
-    """A key salmon no longer reads. Warned about when ignoring it changes nothing, refused otherwise."""
+    """A key salmon no longer reads. Warned about when ignoring it changes nothing, refused otherwise.
+
+    It has no ``refused_from``: the warning lasts as long as the entry stays in the table.
+    """
 
     old: str
     reason: str
     default: Any = None
     # It never did anything, so ignoring it changes nothing whatever its value.
     did_nothing: bool = False
-    refused_from: str = REFUSED_FROM
 
 
 OLD_KEYS: tuple[Moved | Removed, ...] = (
@@ -51,9 +53,8 @@ OLD_KEYS: tuple[Moved | Removed, ...] = (
     Moved("image.auto_compress_cover", "image.embed_missing_cover"),
     Removed(
         "upload.web_interface.static_root_url",
-        "the spectrals viewer always serves its files under /static",
+        "the spectrals viewer now always serves its files at /static",
         default="/static",
-        did_nothing=True,
     ),
     Removed(
         "metadata.tidal.token",
@@ -177,14 +178,12 @@ def _move(raw: dict[str, Any], entry: Moved, value: Any, version: Version | None
         warn(config_path, message)
 
 
-def _drop_removed(raw: dict[str, Any], entry: Removed, value: Any, version: Version | None, config_path: Path) -> None:
+def _drop_removed(raw: dict[str, Any], entry: Removed, value: Any, config_path: Path) -> None:
     if not entry.did_nothing and value != entry.default:
+        # Ignoring it would change what salmon does: refused now, not after a release of warnings.
         raise ValueError(f"{entry.old} is no longer used: {entry.reason}. Remove it. See {UPGRADE_PAGE}")
-    message = f"{entry.old} is no longer used, remove it: {entry.reason}. See {UPGRADE_PAGE}"
-    if _refused(entry.refused_from, version):
-        raise ValueError(message)
     _remove(raw, entry.old)
-    warn(config_path, message)
+    warn(config_path, f"{entry.old} is no longer used, remove it: {entry.reason}. See {UPGRADE_PAGE}")
 
 
 def _drop_placeholder_trackers(raw: dict[str, Any], config_path: Path) -> None:
@@ -231,8 +230,8 @@ def apply(raw: dict[str, Any], config_path: Path) -> None:
     """Rewrite the decoded config in place: old keys under their new names, old placeholders unset.
 
     Raises:
-        ValueError: An old key is set with its new name, or this salmon no longer honours it, or a removed key
-            holds a value that ignoring would change.
+        ValueError: A moved key is set with its new name, or this salmon no longer honours its old name, or a
+            removed key holds a value that ignoring would change.
     """
     version = _salmon_version()
     for entry in OLD_KEYS:
@@ -242,5 +241,5 @@ def apply(raw: dict[str, Any], config_path: Path) -> None:
         if isinstance(entry, Moved):
             _move(raw, entry, value, version, config_path)
         else:
-            _drop_removed(raw, entry, value, version, config_path)
+            _drop_removed(raw, entry, value, config_path)
     _drop_placeholders(raw, config_path)

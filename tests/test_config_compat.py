@@ -131,16 +131,34 @@ def test_an_old_table_emptied_by_its_moves_is_no_unknown_key(tmp_path: Path, cap
     assert not [line for line in warnings if line.startswith("Unknown config key")]
 
 
-@pytest.mark.parametrize("value", ["/static", "/elsewhere"])
-def test_static_root_url_is_warned_about_whatever_its_value(tmp_path: Path, capsys, value: str) -> None:
-    cfg, warnings = _load(tmp_path, _put(_base(tmp_path), "upload.web_interface.static_root_url", value), capsys)
+@pytest.mark.parametrize("version", ["0.20.0", "0.22.0", "1.0.0"])
+def test_static_root_url_at_its_old_default_is_warned_about_whatever_the_version(
+    tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch, version: str
+) -> None:
+    _version(monkeypatch, version)
+    raw = _put(_base(tmp_path), "upload.web_interface.static_root_url", "/static")
+    cfg, warnings = _load(tmp_path, raw, capsys)
     assert cfg.upload.spectrals_viewer.port == 55110
-    assert len(warnings) == 1
-    assert warnings[0].startswith("upload.web_interface.static_root_url is no longer used, remove it")
+    assert warnings == [
+        "upload.web_interface.static_root_url is no longer used, remove it: the spectrals viewer now always serves "
+        f"its files at /static. See {UPGRADE_PAGE}"
+    ]
 
 
+def test_static_root_url_set_to_anything_else_is_refused(tmp_path: Path, capsys) -> None:
+    raw = _put(_base(tmp_path), "upload.web_interface.static_root_url", "/salmon/static")
+    with pytest.raises(
+        ValueError, match=r"static_root_url is no longer used: .* always serves its files at /static\. Remove it"
+    ):
+        _load(tmp_path, raw, capsys)
+
+
+@pytest.mark.parametrize("version", ["0.20.0", "0.22.0", "1.0.0"])
 @pytest.mark.parametrize("value", ["your-token", "a-token-from-the-web-player"])
-def test_tidal_token_is_warned_about_whatever_its_value(tmp_path: Path, capsys, value: str) -> None:
+def test_tidal_token_is_warned_about_whatever_its_value_and_version(
+    tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch, value: str, version: str
+) -> None:
+    _version(monkeypatch, version)
     cfg, warnings = _load(tmp_path, _put(_base(tmp_path), "metadata.tidal.token", value), capsys)
     assert not hasattr(cfg.metadata.tidal, "token")
     assert len(warnings) == 1
