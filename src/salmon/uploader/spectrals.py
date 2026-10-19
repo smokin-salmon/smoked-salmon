@@ -197,18 +197,19 @@ async def _delete_spectrals(spectrals_path: str) -> None:
 
     A folder salmon did not make (see made_by_salmon), such as one the user put a file in, is left where it is.
     """
-    if not os.path.lexists(spectrals_path):
+    try:
+        for last in (False, True):
+            # Checked before each try: in the half second between, the folder may be replaced or given another file.
+            if not os.path.lexists(spectrals_path):
+                break
+            if not made_by_salmon(spectrals_path):
+                click.secho(f"Not deleting {spectrals_path}: it is not a spectrals folder salmon made.", fg="yellow")
+                break
+            shutil.rmtree(spectrals_path, ignore_errors=not last)
+            await anyio.sleep(0.5)
+    finally:
+        # Also when the last try raises: what is made there later is the user's.
         drop_specs_claim(spectrals_path)
-        return
-    if not made_by_salmon(spectrals_path):
-        click.secho(f"Not deleting {spectrals_path}: it is not a spectrals folder salmon made.", fg="yellow")
-        return
-    shutil.rmtree(spectrals_path, ignore_errors=True)
-    await anyio.sleep(0.5)
-    if os.path.isdir(spectrals_path):
-        shutil.rmtree(spectrals_path)
-        await anyio.sleep(0.5)
-    drop_specs_claim(spectrals_path)
 
 
 def specs_hosts_text(trackers: Sequence[str]) -> str:
@@ -568,9 +569,10 @@ def get_spectrals_path(path: str) -> str:
         return in_album
     # A dry run leaves nothing outside its run directory, and never replaces a real run's spectrals.
     outside = dryrun.scratch_dir() if dryrun.active() else (tmp_dir or cfg.directory.download_directory)
-    base_name = os.path.basename(path.rstrip("/"))
-    digest = hashlib.sha1(os.path.realpath(path).encode(), usedforsecurity=False).hexdigest()[:8]
-    return os.path.join(outside, f"spectrals_{base_name} {digest}")
+    # Both from the real path, so the album and a link to it, whatever its name, find one folder.
+    real = os.path.realpath(path)
+    digest = hashlib.sha1(real.encode(), usedforsecurity=False).hexdigest()[:8]
+    return os.path.join(outside, f"spectrals_{os.path.basename(real)} {digest}")
 
 
 # The spectrals folders this process made, by real path: an empty folder is salmon's only if it is one of these.
@@ -615,8 +617,10 @@ def carry_specs_claim(old_real: str, new_path: str) -> None:
 
 
 def drop_specs_claim(spectrals_path: str) -> None:
-    """Forget a spectrals folder salmon removed, so that a folder made there later is the user's."""
-    _made_specs_folders.discard(os.path.realpath(spectrals_path))
+    """Forget a spectrals folder gone or no longer salmon's: a folder made there later is the user's."""
+    # The last part unresolved: a link put in place of salmon's folder must not clear the claim of the one it names.
+    parent, name = os.path.split(os.path.abspath(spectrals_path))
+    _made_specs_folders.discard(os.path.join(os.path.realpath(parent), name))
 
 
 def make_way_for_spectrals(spectrals_path: str) -> None:
