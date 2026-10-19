@@ -17,6 +17,7 @@ than a good PR description.
 | [0003](0003-per-tracker-spectrals-host.md) | Spectrals and description image hosts are chosen per tracker too; spectrals are uploaded once per host | Accepted |
 | [0004](0004-web-interface.md) | The web interface runs jobs in threads, sends every tracker request from one loop with one budget, lock and pool per account, asks through one interface, and always needs a token | Accepted |
 | [0005](0005-config-compatibility.md) | Config keys change with one release of warnings, never silently; a changed default is a listed breaking change; salmon never rewrites the config | Accepted |
+| [0006](0006-typed-questions.md) | Typed questions: the call site keeps its text and parser, the web draws a description of the options and sends back the line the CLI would read | Accepted |
 
 ## Template
 
