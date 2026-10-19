@@ -53,7 +53,8 @@ def test_a_corrupt_folder_does_not_claim_the_files_are_16bit(monkeypatch, tmp_pa
 
     anyio.run(uc.test_upconverted, str(tmp_path))
 
-    assert "skips 16bit" not in capsys.readouterr().out
+    output = capsys.readouterr().out
+    assert "skips 16bit" not in output
 
 
 def test_a_single_16bit_file_gets_the_line_too(monkeypatch, tmp_path, capsys):
@@ -64,4 +65,5 @@ def test_a_single_16bit_file_gets_the_line_too(monkeypatch, tmp_path, capsys):
     )
 
     assert anyio.run(uc.test_upconverted, str(path)) is None
-    assert capsys.readouterr().out.count("skips 16bit") == 1
+    output = capsys.readouterr().out
+    assert output.count("skips 16bit") == 1
