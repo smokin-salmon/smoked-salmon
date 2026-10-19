@@ -117,7 +117,10 @@
       </div>
     {:else if q.kind === 'spectrals'}
       <div class="row views">
-        <button class="btn small secondary" onclick={() => setView(view === 'single' ? 'grid' : 'single')}>
+        <button class="btn small secondary" onclick={() => {
+            if (view === 'single') setView('grid')
+            else openSingle(index)
+          }}>
           {view === 'single' ? 'Grid' : 'One at a time'}
         </button>
       </div>
