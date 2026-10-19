@@ -243,8 +243,8 @@
     bind:this={lightboxDialog}
     onclose={closed}
     onmousedown={(e) => (pressedOnBackdrop = e.target === e.currentTarget)}
-    onclick={(e) => {
-      // A drag that starts on the image and ends on the backdrop is not a click on the backdrop.
+    onmouseup={(e) => {
+      // Close only when the press and the release are both on the backdrop.
       if (pressedOnBackdrop && e.target === e.currentTarget) closeLightbox()
       pressedOnBackdrop = false
     }}
