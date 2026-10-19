@@ -2,7 +2,7 @@
 
 import pytest
 
-from salmon.common.redaction import redact_command, redact_secrets, secret_values
+from salmon.common.redaction import redact_command, redact_secrets, redact_tracker_text, secret_values
 
 
 @pytest.mark.parametrize(
@@ -134,3 +134,23 @@ def test_a_masked_known_value_keeps_what_follows_it() -> None:
 
 def test_a_value_only_partly_known_is_still_masked_whole() -> None:
     assert redact_secrets("pass=hunter2xyz rest", known=["hunter2"]) == "pass=[REDACTED] rest"
+
+
+@pytest.mark.parametrize(
+    ("text", "shown"),
+    [
+        ("{'authkey': 'FAKEKEYSIX", "{'authkey': '[REDACTED]"),
+        ('{"authkey": "FAKEKEY\nnext line', '{"authkey": "[REDACTED]\nnext line'),
+        ("session: 'open\nthe next line's words stay", "session: '[REDACTED]\nthe next line's words stay"),
+        ("https://tracker.example/FAKE01/announce", "https://tracker.example/[REDACTED]/announce"),
+        ("https://tracker.example/FAKEPASSKEY0123456789/announce", "https://tracker.example/[REDACTED]/announce"),
+    ],
+)
+def test_redact_tracker_text_masks_a_cut_off_value_and_an_announce_passkey_of_any_length(text, shown) -> None:
+    assert redact_tracker_text(text) == shown
+
+
+def test_redact_tracker_text_masks_an_input_a_cut_off_value_runs_into() -> None:
+    shown = redact_tracker_text("{'authkey': 'FAKEKEYEIGHT <input value='FAKEKEYNINE' name='auth'>")
+
+    assert "FAKEKEY" not in shown

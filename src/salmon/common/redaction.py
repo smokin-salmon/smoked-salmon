@@ -197,15 +197,15 @@ def redact_command(args: list[str], known: Iterable[str | None] = ()) -> str:
 # What a Gazelle tracker sends back carries its own secrets: the authkey (auth, authkey), the passkey
 # (passkey, torrent_pass), the session cookie and an api key.
 _TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|api_?key|authorization)"
-# "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script. A backslash escapes the
-# next character, so an escaped quote does not end the value.
+# "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script. A value ends at its closing
+# quote, or at its line's end when an excerpt cut it off; a backslash escapes the next character.
 _TRACKER_ASSIGNMENT = re.compile(
-    rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\\\n]|\\.)*\2""", re.IGNORECASE
+    rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\\\n]|\\.)*(\2?)""", re.IGNORECASE
 )
 # ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page.
 _TRACKER_QUERY = re.compile(rf"""([?&;]{_TRACKER_KEYS}=)[^&#\s"'<>]*""", re.IGNORECASE)
-# The passkey in an announce URL: https://tracker/<passkey>/announce.
-_ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]{16,}(?=/announce)")
+# The passkey in an announce URL, whatever its length: https://tracker/<passkey>/announce.
+_ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]+(?=/announce)")
 # A form field carrying one, <input name="auth" value="...">, its attributes in any order.
 _INPUT_TAG = re.compile(r"<input\b[^>]*>", re.IGNORECASE)
 _SECRET_FIELD_NAME = re.compile(rf"""\bname\s*=\s*(["']?){_TRACKER_KEYS}\1(?=[\s/>])""", re.IGNORECASE)
@@ -226,10 +226,11 @@ def redact_tracker_text(text: str, known: Iterable[str | None] = ()) -> str:
     """Mask a tracker's secrets in a page, an API answer or a URL before it reaches the terminal."""
     text = _mask_known(text, known)
     text = _INPUT_TAG.sub(_mask_secret_field, text)
-    text = _TRACKER_ASSIGNMENT.sub(lambda m: f"{m[1]}{m[2]}[REDACTED]{m[2]}", text)
     text = _TRACKER_QUERY.sub(r"\1[REDACTED]", text)
     text = _ANNOUNCE_PASSKEY.sub("/[REDACTED]", text)
-    return _URL_USERINFO.sub(r"\1[REDACTED]@", text)
+    text = _URL_USERINFO.sub(r"\1[REDACTED]@", text)
+    # Last: a value with no closing quote runs to its line's end, past text another pattern would have masked.
+    return _TRACKER_ASSIGNMENT.sub(lambda m: f"{m[1]}{m[2]}[REDACTED]{m[3]}", text)
 
 
 def redact_tracker_headers(headers: Iterable[tuple[str, str]], known: Iterable[str | None] = ()) -> dict[str, str]:
