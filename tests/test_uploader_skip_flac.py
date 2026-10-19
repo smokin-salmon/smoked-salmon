@@ -427,7 +427,7 @@ def _flow(
     )
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "check_requests", True)
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "last_minute_dupe_check", False)
-    monkeypatch.setattr(salmon.uploader.cfg.image, "auto_compress_cover", False)
+    monkeypatch.setattr(salmon.uploader.cfg.image, "embed_missing_cover", False)
     monkeypatch.setattr(salmon.uploader.click, "confirm", _returning(True, calls, "confirm"))
     monkeypatch.setattr(salmon.trackers, "choose_tracker", _returning_async(None, calls, "choose_tracker"))
     # Another tracker is configured, so going on to it would be possible.

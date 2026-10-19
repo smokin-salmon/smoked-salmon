@@ -324,7 +324,7 @@ def test_a_post_the_proxy_passed_on_is_not_sent_again_when_its_answer_is_lost(
 def test_the_proxy_password_is_never_shown(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], failure: str
 ) -> None:
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", True)
     proxy = FakeProxy("http", auth=("salmon", "the-right-one" if failure == "wrong password" else PASSWORD))
     shown: list[str] = []
 

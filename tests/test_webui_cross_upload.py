@@ -797,7 +797,7 @@ def test_no_planted_secret_leaves_in_any_event_of_a_cross_upload_job(
     dirs: SimpleNamespace,  # noqa: F811
     dry_run: bool,
 ) -> None:
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", True)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", True)
     for code in ("red", "ops"):
         planted = GazelleTrackerSettings(session=PLANTED[f"{code}_session"], api_key=PLANTED[f"{code}_api_key"])
         monkeypatch.setattr(cfg.tracker, code, planted)

@@ -802,7 +802,6 @@ def test_a_failing_store_ends_the_job_with_the_reason(monkeypatch: pytest.Monkey
 
 PLANTED_STORE = {
     "qobuz": "planted-qobuz-user-token-5b1e",
-    "tidal": "planted-tidal-token-8e42",
     "discogs": "planted-discogs-token-a9d0",
 }
 
@@ -816,7 +815,6 @@ async def _everything(client: TestClient, events: list[str], job: jobs.Job) -> s
 def test_no_store_secret_leaves_in_a_description(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(ssrf, "ALLOWED", LOOPBACK)
     monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", PLANTED_STORE["qobuz"])
-    monkeypatch.setattr(cfg.metadata.tidal, "token", PLANTED_STORE["tidal"])
     monkeypatch.setattr(cfg.metadata, "discogs_token", PLANTED_STORE["discogs"])
     secrets = " ".join(PLANTED_STORE.values())
     store = FakeStore(bandcamp_page().replace("The Album", secrets))

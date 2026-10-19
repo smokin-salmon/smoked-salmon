@@ -45,7 +45,6 @@ pytestmark = pytest.mark.usefixtures("image_uploads")
 PLANTED = {
     "qobuz": "planted-qobuz-user-token-5b1e",
     "tidal_secret": "planted-tidal-client-secret-c07a",
-    "tidal_token": "planted-tidal-token-8e42",
     "discogs": "planted-discogs-token-a9d0",
     "beatport": "planted-beatport-password-36f1",
 }
@@ -379,7 +378,6 @@ def test_a_cover_url_to_an_internal_address_is_refused_in_an_upload_job(
 def _plant(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cfg.metadata.qobuz, "user_auth_token", PLANTED["qobuz"])
     monkeypatch.setattr(cfg.metadata.tidal, "client_secret", PLANTED["tidal_secret"])
-    monkeypatch.setattr(cfg.metadata.tidal, "token", PLANTED["tidal_token"])
     monkeypatch.setattr(cfg.metadata, "discogs_token", PLANTED["discogs"])
     monkeypatch.setattr(cfg.metadata.beatport, "password", PLANTED["beatport"])
 
@@ -409,7 +407,7 @@ def test_no_store_secret_leaves_in_a_search_or_a_lookup(monkeypatch: pytest.Monk
         sent.append(await response.text())
         # A refused lookup's error too.
         refused = await client.get(
-            "/api/metadata", params={"url": f"http://10.0.0.1/album/{PLANTED['tidal_token']}"}, headers=AUTH
+            "/api/metadata", params={"url": f"http://10.0.0.1/album/{PLANTED['tidal_secret']}"}, headers=AUTH
         )
         assert refused.status == 502
         sent.append(await refused.text())

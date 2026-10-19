@@ -70,7 +70,7 @@ def _run(
     Args:
         known: Whether the client already has its authkey and passkey, as it does once authenticated.
     """
-    monkeypatch.setattr(cfg.upload, "debug_tracker_connection", debug)
+    monkeypatch.setattr(cfg.tracker, "debug_connection", debug)
     raised: list[str] = []
 
     async def main() -> None:

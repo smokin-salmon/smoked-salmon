@@ -6,14 +6,12 @@ salmon knows them. What a tracker sends back may repeat them (an upload page's d
 and so may an error that quotes it. The idea is chodeus's (ad4f8034), applied here once for everything that leaves.
 """
 
-import tomllib
 from collections.abc import Iterable
-from functools import cache
-from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlparse
 
 from salmon.common.redaction import redact_tracker_text
+from salmon.config.compat import placeholder
 from salmon.config.validations import Cfg
 from salmon.trackers.base import learned_secrets, session_cookie_forms
 from salmon.uploader.seedbox import seedbox_secrets
@@ -29,32 +27,15 @@ def _url_password(url: str | None) -> list[str]:
     return [password, unquote(password)] if password else []
 
 
-@cache
-def _template() -> dict[str, Any]:
-    """The default config template, parsed once: the placeholders a new user starts with."""
-    path = Path(__file__).resolve().parent.parent / "data" / "config.default.toml"
-    return tomllib.loads(path.read_text(encoding="utf-8"))
-
-
-def _placeholder(*path: str) -> str | None:
-    """What the template sets the setting at `path` to, if it sets it."""
-    node: Any = _template()
-    for key in path:
-        if not isinstance(node, dict) or key not in node:
-            return None
-        node = node[key]
-    return node if isinstance(node, str) else None
-
-
 def _own(value: str | None, *path: str) -> str | None:
-    """`value`, unless it is the template's placeholder for this same setting: that is no secret, and masking it
+    """`value`, unless it is the old template's placeholder for this same setting: that is no secret, and masking it
     would hide the word wherever it appears (`api_key`, `password`). Another setting's placeholder stays one."""
-    return None if value is not None and value == _placeholder(*path) else value
+    return None if value is not None and value == placeholder(".".join(path)) else value
 
 
 def config_secrets(config: Cfg) -> list[str]:
     """Every secret the config holds: tracker sessions and API keys, image host keys, seedbox and torrent client
-    passwords, metadata source credentials, proxy passwords and the web token. The template's placeholders for a
+    passwords, metadata source credentials, proxy passwords and the web token. The old template's placeholders for a
     setting are left out."""
     found: list[str | None] = []
     trackers = {"red": config.tracker.red, "ops": config.tracker.ops, "dic": config.tracker.dic}
@@ -75,7 +56,6 @@ def config_secrets(config: Cfg) -> list[str]:
         _own(metadata.discogs_token, "metadata", "discogs_token"),
         _own(metadata.qobuz.user_auth_token, "metadata", "qobuz", "user_auth_token"),
         _own(metadata.tidal.client_secret, "metadata", "tidal", "client_secret"),
-        _own(metadata.tidal.token, "metadata", "tidal", "token"),
         _own(metadata.beatport.password, "metadata", "beatport", "password"),
         _own(config.upload.ai_review.api_key, "upload", "ai_review", "api_key"),
         _own(config.web.token, "web", "token"),

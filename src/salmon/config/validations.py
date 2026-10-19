@@ -128,7 +128,8 @@ class ImageUploader(BaseStruct):
     imgbb_key: str | None = None
     ra_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
-    auto_compress_cover: bool = False
+    # Embed the folder cover, shrunk to fit, in every FLAC with no picture; the cover file is never changed.
+    embed_missing_cover: bool = False
     strip_oversized_pictures: bool = True
     default_spectral_ids: SpectralSelection | None = None
     red: TrackerImageSettings | None = None
@@ -184,8 +185,6 @@ class ImageUploader(BaseStruct):
 class TidalSettings(BaseStruct):
     client_id: str | None = None
     client_secret: str | None = None
-    # Only Tidal's retired API used this; kept to tell users to switch to client credentials.
-    token: str | None = None
     regions: list[str] = msgspec.field(default_factory=lambda: ["de", "nz", "us", "gb"])
 
 
@@ -225,6 +224,8 @@ class Tracker(BaseStruct):
     ops: GazelleTrackerSettings | None = None
     dic: GazelleTrackerSettings | None = None
     default_tracker: Literal["RED", "OPS", "DIC"] | None = None
+    # Print every tracker request and response, secrets masked.
+    debug_connection: bool = False
 
     def __post_init__(self):
         if (self.red is None) and (self.ops is None) and (self.dic is None):
@@ -285,27 +286,26 @@ class UploadFormatting(BaseStruct):
     strip_useless_versions: bool = True
     strip_ep_from_title: bool = True
     add_edition_title_to_album_tag: bool = True
+    review_as_comment_tag: bool = True
+    fullwidth_replacements: bool = False
+    empty_track_comment_tag: bool = True
 
 
 class UploadDescription(BaseStruct):
     bitrates_in_t_desc: bool = False
     include_tracklist_in_t_desc: bool = False
     copy_uploaded_url_to_clipboard: bool = False
-    # TODO: should this be in description?
-    review_as_comment_tag: bool = True
     icons_in_descriptions: bool = True
-    # TODO: should this be in description?
-    fullwidth_replacements: bool = False
-    # TODO: should this be in description?
-    empty_track_comment_tag: bool = True
     artist_tags_in_tracklist: bool = False
+    lma_comment_in_t_desc: bool = False
 
 
-class UploadWebInterface(BaseStruct):
+class UploadSpectralsViewer(BaseStruct):
+    """The spectrals viewer salmon upload opens in the browser, not ``salmon web`` ([web])."""
+
     host: str = "0.0.0.0"
     port: int = 55110
     display_host: str = "localhost"
-    static_root_url: str = "/static"
 
     def __post_init__(self):
         if self.port < 1 or self.port > 65535:
@@ -330,8 +330,6 @@ class UploadRequests(BaseStruct):
 class UploadCompression(BaseStruct):
     flac_compression_level: Annotated[int, msgspec.Meta(ge=0, le=8)] = 8
     compress_spectrals: bool = True
-    # TODO: this probably should be in description
-    lma_comment_in_t_desc: bool = False
     use_upc_as_catno: bool = True
 
 
@@ -389,8 +387,6 @@ class Upload(BaseStruct):
     windows_use_recycle_bin: bool = True
 
     multi_tracker_upload: bool = True
-    # TODO: should this be in tracker?
-    debug_tracker_connection: bool = False
 
     update_notification: bool = True
     update_notification_verbose: bool = True
@@ -415,7 +411,7 @@ class Upload(BaseStruct):
     search: UploadSearch = msgspec.field(default_factory=UploadSearch)
     formatting: UploadFormatting = msgspec.field(default_factory=UploadFormatting)
     description: UploadDescription = msgspec.field(default_factory=UploadDescription)
-    web_interface: UploadWebInterface = msgspec.field(default_factory=UploadWebInterface)
+    spectrals_viewer: UploadSpectralsViewer = msgspec.field(default_factory=UploadSpectralsViewer)
     requests: UploadRequests = msgspec.field(default_factory=UploadRequests)
     compression: UploadCompression = msgspec.field(default_factory=UploadCompression)
     ai_review: UploadAiReview = msgspec.field(default_factory=UploadAiReview)
@@ -478,7 +474,7 @@ WEB_TOKEN_MIN_LENGTH = 32
 
 
 class Web(BaseStruct):
-    """``salmon web``. The CLI's spectrals viewer keeps its own [upload.web_interface]."""
+    """``salmon web``. The CLI's spectrals viewer keeps its own [upload.spectrals_viewer]."""
 
     host: str = "127.0.0.1"
     port: int = 55155

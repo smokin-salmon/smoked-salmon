@@ -193,7 +193,7 @@ def _run_up(
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
     monkeypatch.setattr(salmon.uploader.cfg.upload.formatting, "remove_source_dir", remove_source_dir)
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "last_minute_dupe_check", False)
-    monkeypatch.setattr(salmon.uploader.cfg.image, "auto_compress_cover", False)
+    monkeypatch.setattr(salmon.uploader.cfg.image, "embed_missing_cover", False)
     monkeypatch.setattr(salmon.trackers, "get_class", lambda _tracker: lambda: site)
 
     async def run():

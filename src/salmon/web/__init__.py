@@ -9,7 +9,7 @@ from salmon.web import spectrals
 if TYPE_CHECKING:
     from aiohttp import web
 
-web_cfg = cfg.upload.web_interface
+web_cfg = cfg.upload.spectrals_viewer
 
 
 async def create_app_async(specs_path: str | None = None) -> "web.AppRunner":
@@ -53,7 +53,7 @@ def add_routes(app: "web.Application", specs_path: str | None = None) -> None:
     app.router.add_static("/static", join(dirname(__file__), "static"))
     app.router.add_route("GET", "/", handle_index)
     app.router.add_route("GET", "/spectrals", spectrals.handle_spectrals)
-    app["static_root_url"] = web_cfg.static_root_url
+    app["static_root_url"] = "/static"
 
 
 async def handle_index(request: "web.Request") -> "web.Response":

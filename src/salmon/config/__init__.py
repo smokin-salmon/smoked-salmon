@@ -10,6 +10,7 @@ import msgspec.inspect as mi
 import requests
 from platformdirs import user_config_dir
 
+from . import compat
 from .validations import Cfg, ImgUploaderLiteral
 
 APPNAME = "smoked-salmon"
@@ -21,9 +22,6 @@ CONFIG_DIR_ENV = "SALMON_CONFIG_DIR"
 _PKG_DIR = Path(__file__).parent.parent
 
 _warned_legacy_config_fallback = False
-
-# (config file, key path) pairs already warned about, so a key is reported once per process.
-_warned_unknown_keys: set[tuple[str, str]] = set()
 
 
 def _platform_cfg_path() -> Path:
@@ -168,29 +166,22 @@ def _suggestions(key_path: str) -> list[str]:
     return out
 
 
-def _warn_unknown_keys(data: bytes, config_path: Path) -> None:
+def _warn_unknown_keys(raw: dict[str, Any], config_path: Path) -> None:
     """Warn about each key in the config that the schema does not know. The config still loads."""
-    try:
-        raw = msgspec.toml.decode(data)
-    except msgspec.DecodeError:
-        return  # the typed decode raises the TOML error
-    if not isinstance(raw, dict):
-        return
     for key_path in unknown_keys(raw):
-        if (str(config_path), key_path) in _warned_unknown_keys:
-            continue
-        _warned_unknown_keys.add((str(config_path), key_path))
         message = f"Unknown config key {key_path} in {config_path}: ignored."
         if suggestions := _suggestions(key_path):
             message += f" Did you mean {', '.join(suggestions)}?"
-        click.secho(message, fg="yellow", err=True)
+        compat.warn(config_path, message)
 
 
 def _parse_config(config_path: Path) -> Cfg:
-    data = config_path.read_bytes()
-    _warn_unknown_keys(data, config_path)
+    raw = msgspec.toml.decode(config_path.read_bytes())
+    # Old keys first: an old name is read under its new one, never reported as unknown.
+    compat.apply(raw, config_path)
+    _warn_unknown_keys(raw, config_path)
     try:
-        return msgspec.toml.decode(data, type=Cfg)
+        return msgspec.convert(raw, type=Cfg)
     except msgspec.ValidationError as e:
         raise _ptpimg_removed_error(e) from e
 

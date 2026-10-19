@@ -66,8 +66,9 @@ ra_key = 'api_key'
 # Set to true to remove downloaded cover images that are created in source folder, when one does not exist
 # remove_auto_downloaded_cover_image = false
 
-# Set to true to automatically process cover image sizes, including embedded covers in audio files
-# auto_compress_cover = false
+# Set to true to embed the folder's cover, shrunk to fit under 1 MiB, in every FLAC that has no picture (or only
+# pictures over that limit, which are removed first). The folder's cover file is never changed.
+# embed_missing_cover = false
 
 # Before an upload, salmon removes the embedded pictures and padding from FLACs where they exceed RED's
 # 1 MiB limit, keeping the front cover as a file. Scene releases are never changed.
@@ -130,6 +131,8 @@ password = 'password'
 # ===============================
 [tracker]
 default_tracker = 'RED'       # If not set, you'll be prompted to choose when using multiple trackers
+# Print every tracker request and response, with secrets masked
+# debug_connection = false
 
 # Authentication (Replace with valid session keys or API keys)
 [tracker.red]
@@ -202,9 +205,6 @@ session = 'get-from-site-cookie'
 # # uploaded to, in that order and without asking, whatever this says.
 # multi_tracker_upload = true
 
-# # debugging & logging
-# debug_tracker_connection = false
-
 # # update notifications
 # update_notification = true
 # update_notification_verbose = true
@@ -266,30 +266,29 @@ session = 'get-from-site-cookie'
 # # inside a title ("The EP Sessions") is kept either way.
 # strip_ep_from_title = true
 # add_edition_title_to_album_tag = true
+# review_as_comment_tag = true
+# fullwidth_replacements = false
+# empty_track_comment_tag = true
 
 # # torrent description settings
 # [upload.description]
 # bitrates_in_t_desc = false
 # include_tracklist_in_t_desc = false
 # copy_uploaded_url_to_clipboard = false
-# review_as_comment_tag = true
 # icons_in_descriptions = true
-# fullwidth_replacements = false
-# empty_track_comment_tag = true
+# lma_comment_in_t_desc = false
 
 # Wrap artist names in [artist][/artist] BBCode in the group description's tracklist.
 # artist_tags_in_tracklist = false
 
-# [upload.web_interface]
-# # web interface settings
+# [upload.spectrals_viewer]
+# # the spectrals viewer salmon upload opens in the browser
 # host = "0.0.0.0"
 # port = 55110
 
 # Host used in generated URLs (e.g. spectral viewer links).
 # Set to "" to use the value of "host".
 # display_host = "localhost"
-
-# static_root_url = "/static"
 
 # [upload.requests]
 # # request handling
@@ -302,7 +301,6 @@ session = 'get-from-site-cookie'
 # # compression settings
 # flac_compression_level = 8
 # compress_spectrals = true
-# lma_comment_in_t_desc = false
 # use_upc_as_catno = true
 
 # [upload.ai_review]
@@ -378,7 +376,7 @@ session = 'get-from-site-cookie'
 # # [::1] and the bind address, e.g. the seedbox's name or LAN address. This stops DNS rebinding.
 # # Bound to 0.0.0.0, every name but the loopback ones must be listed here.
 # #
-# # The [upload.web_interface] section above is the spectrals viewer that salmon upload opens, not
+# # The [upload.spectrals_viewer] section above is the spectrals viewer that salmon upload opens, not
 # # this.
 
 # [web]

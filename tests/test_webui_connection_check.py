@@ -351,7 +351,7 @@ def test_a_job_shows_no_request_dumps_beside_a_run_that_asks_for_them(
     point_at(monkeypatch, {"RED": by_cli})
     # The command prints the dumps: it used to leave them on for the rest of the process.
     assert "[DEBUG] GET" in run_checkconf(by_cli, "-t", "RED").output
-    assert cfg.upload.debug_tracker_connection is False
+    assert cfg.tracker.debug_connection is False
 
     by_web = FakeTracker()
     point_at(monkeypatch, {"RED": by_web})
@@ -362,7 +362,7 @@ def test_a_job_shows_no_request_dumps_beside_a_run_that_asks_for_them(
             job = await _check(client, manager, "RED")
         assert not [line for line in _log(job) if line.startswith("[DEBUG]")]
         assert len(_log(job)) == 8
-        assert cfg.upload.debug_tracker_connection is False
+        assert cfg.tracker.debug_connection is False
 
     _web({"RED": by_web}, test)
     assert by_web.sent == REQUESTS_WITH_KEY

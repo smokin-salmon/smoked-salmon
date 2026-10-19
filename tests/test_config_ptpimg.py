@@ -8,10 +8,9 @@ same path an end user's config goes through, without ever contacting a real host
 from pathlib import Path
 
 import pytest
+from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 from salmon.config import _parse_config
-
-_DEFAULT_CONFIG = Path(__file__).parent.parent / "src" / "salmon" / "data" / "config.default.toml"
 
 
 def _write_config(tmp_path: Path, text: str) -> Path:
@@ -25,10 +24,7 @@ def _base_config(tmp_path: Path) -> str:
     torrents = tmp_path / "torrents"
     music.mkdir()
     torrents.mkdir()
-    text = _DEFAULT_CONFIG.read_text(encoding="utf-8")
-    text = text.replace("download_directory = '.music'", f"download_directory = '{music.as_posix()}'")
-    text = text.replace("dottorrents_dir = '.torrents'", f"dottorrents_dir = '{torrents.as_posix()}'")
-    return text
+    return shipped_config(music, torrents)
 
 
 def test_shipped_config_validates_with_no_image_host_key_and_defaults_to_catbox(tmp_path: Path) -> None:

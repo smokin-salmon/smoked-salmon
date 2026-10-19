@@ -557,7 +557,7 @@ def generate_t_description(
 
     lossy_notes = (
         f"[u]Lossy Notes:[/u]\n{lossy_comment}\n\n"
-        if lossy_comment and cfg.upload.compression.lma_comment_in_t_desc
+        if lossy_comment and cfg.upload.description.lma_comment_in_t_desc
         else ""
     )
 

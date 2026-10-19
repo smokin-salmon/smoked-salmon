@@ -70,7 +70,7 @@ _held_request_messages: ContextVar[list[tuple[str, dict[str, Any]]] | None] = Co
 )
 
 
-# Whether requests sent from this context print their dumps, as `debug_tracker_connection` makes every request do.
+# Whether requests sent from this context print their dumps, as `tracker.debug_connection` makes every request do.
 # A run's own setting, so that one run (salmon checkconf) can show them without changing the config, which a
 # server would share with every job.
 _request_dumps: ContextVar[bool] = ContextVar("request_dumps", default=False)
@@ -87,7 +87,7 @@ def request_dumps() -> Iterator[None]:
 
 
 def _dumping() -> bool:
-    return cfg.upload.debug_tracker_connection or _request_dumps.get()
+    return cfg.tracker.debug_connection or _request_dumps.get()
 
 
 def _secho(message: str, **styles: Any) -> None:

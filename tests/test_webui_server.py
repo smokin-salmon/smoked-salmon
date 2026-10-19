@@ -18,6 +18,8 @@ import msgspec
 import pytest
 from aiohttp import ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
+from shipped_config import DEFAULT_CONFIG as _DEFAULT_CONFIG  # pyright: ignore[reportMissingImports]
+from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 from salmon import cfg
 from salmon.config import _parse_config
@@ -27,7 +29,6 @@ from salmon.webui.security import host_allowed, origin_allowed, split_host
 
 TOKEN = "correct-horse-battery-staple-0123456789"
 JSON = {"Content-Type": "application/json"}
-_DEFAULT_CONFIG = Path(__file__).parent.parent / "src" / "salmon" / "data" / "config.default.toml"
 
 
 def _with_client(
@@ -564,8 +565,11 @@ def test_ctrl_c_and_sigterm_stop_the_server_cleanly(signum: int) -> None:
     try:
         stdout = proc.stdout
         assert stdout is not None
-        first = stdout.readline()
-        assert "log in at" in first, first + proc.communicate(timeout=10)[0]
+        # Config warnings may come first: the template's old placeholders are each warned about.
+        printed = ""
+        while (line := stdout.readline()) and "log in at" not in line:
+            printed += line
+        assert "log in at" in line, printed + proc.communicate(timeout=10)[0]
         proc.send_signal(signum)
         rest, _ = proc.communicate(timeout=10)
     finally:
@@ -582,9 +586,7 @@ def _parse(tmp_path: Path, section: str):
     music, torrents = tmp_path / "music", tmp_path / "torrents"
     music.mkdir()
     torrents.mkdir()
-    text = _DEFAULT_CONFIG.read_text(encoding="utf-8")
-    text = text.replace("download_directory = '.music'", f"download_directory = '{music.as_posix()}'")
-    text = text.replace("dottorrents_dir = '.torrents'", f"dottorrents_dir = '{torrents.as_posix()}'")
+    text = shipped_config(music, torrents)
     path = tmp_path / "config.toml"
     path.write_text(text + "\n" + section, encoding="utf-8")
     return _parse_config(path).web
@@ -600,7 +602,7 @@ def test_a_config_without_web_gets_the_defaults(tmp_path: Path) -> None:
         2,
     )
     # The spectrals viewer keeps its own section.
-    assert cfg.upload.web_interface.port == 55110
+    assert cfg.upload.spectrals_viewer.port == 55110
 
 
 def test_the_documented_web_section_is_valid(tmp_path: Path) -> None:

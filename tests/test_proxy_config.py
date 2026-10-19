@@ -13,12 +13,12 @@ import anyio
 import msgspec
 import pytest
 from aiohttp_socks import ProxyConnector
+from shipped_config import DEFAULT_CONFIG as _DEFAULT_CONFIG  # pyright: ignore[reportMissingImports]
+from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 from salmon import cfg, proxy
 from salmon.config import _parse_config
 from salmon.config.validations import ProxyCfg, ProxyServicesCfg
-
-_DEFAULT_CONFIG = Path(__file__).parent.parent / "src" / "salmon" / "data" / "config.default.toml"
 
 SERVICES = ProxyServicesCfg.__struct_fields__
 
@@ -28,9 +28,7 @@ def _parse(tmp_path: Path, section: str) -> ProxyCfg:
     music, torrents = tmp_path / "music", tmp_path / "torrents"
     music.mkdir()
     torrents.mkdir()
-    text = _DEFAULT_CONFIG.read_text(encoding="utf-8")
-    text = text.replace("download_directory = '.music'", f"download_directory = '{music.as_posix()}'")
-    text = text.replace("dottorrents_dir = '.torrents'", f"dottorrents_dir = '{torrents.as_posix()}'")
+    text = shipped_config(music, torrents)
     path = tmp_path / "config.toml"
     path.write_text(text + "\n" + section, encoding="utf-8")
     return _parse_config(path).proxy
