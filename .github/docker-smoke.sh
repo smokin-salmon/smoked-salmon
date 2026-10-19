@@ -77,8 +77,10 @@ echo "== salmon web --help runs, with the front-end build and without Node =="
 # relative to the working directory, /app, with the release check (a request to GitHub) off.
 package=$(python3 -c "import importlib.util; print(importlib.util.find_spec('salmon').submodule_search_locations[0])")
 mkdir "$workdir/config"
-cp "$package/data/config.default.toml" "$workdir/config/config.toml"
-printf '\n[upload]\nupdate_notification = false\n' >> "$workdir/config/config.toml"
+# The template has no tracker, and salmon refuses a config without one; its [upload] table is empty.
+sed 's/^\[upload\]$/[upload]\nupdate_notification = false/' "$package/data/config.default.toml" > "$workdir/config/config.toml"
+grep -q '^update_notification = false$' "$workdir/config/config.toml"
+printf '\n[tracker.red]\nsession = "smoke"\n' >> "$workdir/config/config.toml"
 SALMON_CONFIG_DIR="$workdir/config" salmon web --help | grep -q 'Start the web interface'
 if [ ! -s "$package/webui/static/index.html" ]; then
     echo "the front-end build is missing: $package/webui/static/index.html" >&2

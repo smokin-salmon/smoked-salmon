@@ -44,8 +44,8 @@ def test_shipped_config_validates_with_no_image_host_key_and_defaults_to_catbox(
     ],
 )
 def test_top_level_ptpimg_uploader_fails_with_a_clear_message(tmp_path: Path, replacement: str) -> None:
-    field = replacement.split(" =")[0]
-    text = _base_config(tmp_path).replace(f'{field} = "catbox"', replacement)
+    text = _base_config(tmp_path).replace("\n[image]\n", f"\n[image]\n{replacement}\n")
+    assert text.count(replacement) == 1
     path = _write_config(tmp_path, text)
     with pytest.raises(ValueError, match="ptpimg has shut down"):
         _parse_config(path)
@@ -53,10 +53,7 @@ def test_top_level_ptpimg_uploader_fails_with_a_clear_message(tmp_path: Path, re
 
 @pytest.mark.parametrize("field", ["cover_uploader", "specs_uploader", "image_uploader"])
 def test_per_tracker_ptpimg_uploader_fails_with_a_clear_message(tmp_path: Path, field: str) -> None:
-    text = _base_config(tmp_path).replace(
-        '# [image.red]\n# cover_uploader = "red"',
-        f'[image.red]\n{field} = "ptpimg"',
-    )
+    text = _base_config(tmp_path) + f'\n[image.red]\n{field} = "ptpimg"\n'
     path = _write_config(tmp_path, text)
     with pytest.raises(ValueError, match="ptpimg has shut down"):
         _parse_config(path)

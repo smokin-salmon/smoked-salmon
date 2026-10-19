@@ -18,7 +18,7 @@ import msgspec
 import pytest
 from aiohttp import ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
-from shipped_config import DEFAULT_CONFIG as _DEFAULT_CONFIG  # pyright: ignore[reportMissingImports]
+from shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG  # pyright: ignore[reportMissingImports]
 from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 from salmon import cfg
@@ -606,9 +606,11 @@ def test_a_config_without_web_gets_the_defaults(tmp_path: Path) -> None:
 
 
 def test_the_documented_web_section_is_valid(tmp_path: Path) -> None:
-    text = _DEFAULT_CONFIG.read_text(encoding="utf-8")
-    section = text[text.index("# [web]") :]
-    uncommented = "\n".join(line.removeprefix("# ") for line in section.splitlines() if not line.startswith("# #"))
+    text = _REFERENCE_CONFIG.read_text(encoding="utf-8")
+    section = text[text.index("\n[web]\n") :]
+    uncommented = "\n".join(
+        line.removeprefix("# ") for line in section.splitlines() if re.match(r"(# \w+ = |\[web\])", line)
+    )
     web_cfg = _parse(tmp_path, uncommented)
     assert web_cfg.port == 55155
     assert web_cfg.allowed_hosts == ["seedbox.lan", "192.168.1.20"]
