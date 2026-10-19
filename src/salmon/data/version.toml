@@ -1,4 +1,101 @@
-current = "0.19.0"
+current = "0.20.0"
+
+[[changelog]]
+version = "0.20.0"
+date = "2026-10-19"
+notes = """
+
+## ⚠️ Behaviour changes
+
+- **Retagging pairs files with the source's tracklist by content, and asks before moving a numbered file.** Files are matched to tracks by ISRC, then by title, and only then by position (see New Features). When a folder's files all carry their own track numbers, salmon keeps them unless an ISRC or an exact title says a file is another track. In that case it lists the moves and asks, defaulting to no. Declining, or running with `-yyy`, skips the retag instead of moving files. Thanks @techk1ng
+- **Some folders salmon used to retag in a guessed order are now refused.** File names count as a track order only when they start with a number. `Apple.flac` and `Zebra.flac` with the same or no track tags are no longer tagged alphabetically. Two files with the same title, no track tags and unnumbered names are no longer told apart by their durations alone. In both cases salmon asks you to fix the DISCNUMBER and TRACKNUMBER tags, or number the files, before retagging. Thanks @chodeus
+- **`clean_tmp_dir` no longer cleans while another salmon runs.** Before, every salmon start emptied `tmp_dir`, deleting the files of a `salmon web` job or a CLI run still going. On Windows, where salmon cannot lock the folder, it now removes only what has not changed for 24 hours. Thanks @chodeus
+- **salmon never deletes a conversion folder it made.** A transcode or downconversion folder missing a file, or holding another conversion, is refused with a message saying what is wrong: remove it and run again. Before, a transcode folder could be deleted and made again, from under a torrent already seeding it. When a transcode is refused or fails during `salmon up`, that format is skipped and the run goes on, where before the run ended.
+- **A tag linking a store's artist or label page no longer suggests WEB as the source.** Only a release or track page does (an Apple Music `/song/` page counts too). For other folders salmon asks, as with any folder whose source is unclear. Thanks @chodeus
+
+## ✨ New Features & Improvements
+
+- **Retagging matches files by content.** Promo folders, which usually come without track numbers, no longer get each file tagged with another track's title, number, artists and ISRC. salmon pairs files and tracks by ISRC, then by exact title, then by the file's title as whole words of the track's ("Django" fits "Django (Original Mix)"). When two tracks fit one title, such as an Original Mix and an Extended Mix, the files' durations decide. Whatever is left is paired by position, as before. salmon prints the pairing when it moved anything, and refuses rather than overwrite a track when two would end up in one slot. Track durations come from Beatport, Discogs and the files themselves. Thanks @techk1ng
+- **`salmon up --skip-search`**: with `--source-url` naming a page one of the metadata sources reads, salmon takes the metadata from that page without searching the stores. Without a usable URL, or when reading the page fails, it says why and searches as usual. Thanks @asuna42 for the idea
+- **`catbox_userhash`** (`[image]`): set your catbox.moe userhash to upload spectrals and covers to your own catbox account. Without it, uploads stay anonymous, as before. Thanks @dewey
+- **Clearer prompts.** The metadata prompt explains how to answer: result numbers and URLs are combined, and `*` marks the store the files came from. A pre-typed answer says where it came from. The edit menu names the artist aliases key (`L`), and the artist and alias editors explain their syntax. Thanks @chodeus
+- **`salmon check upconv` on 16-bit files** prints one line saying there is nothing to check, instead of a warning per file. During an upload, a folder where no file could be checked no longer reports "No upconverts detected". Thanks @chodeus
+
+## 🐛 Bug Fixes
+
+- **OPS uploads with `-g` no longer crash** with `KeyError: 'remastered'` when listing the group's torrents. Thanks @dewey
+- **Multi-tracker uploads no longer delete or skip conversions whose file names were shortened.** When the path check shortened a transcode's file names to fit the path limit, the next tracker's turn deleted the folder, from under the torrent already seeding it, and transcoded again. A shortened downconversion was refused, so the next tracker got none. Both are now reused. With several trackers named with `-t`, conversions are also checked against the strictest of their path limits, as the album folder already was. Thanks @chodeus
+- **Renaming tracks never replaces another file.** Names that two tracks would get, that another file already has, or that two tracks would swap now stop the rename before anything is renamed, on every folder layout. Two long names shortened to the same name no longer lose a file: the second gets `~2`. A rename that fails part way stops and says which files were renamed and which were not. An emptied parent folder (such as `Disc 1`) is no longer left behind after nested folders are renamed. Thanks @chodeus
+- **Track order from tags is trusted when the files line up with the metadata.** A single folder whose files are tagged disc 1 and disc 2, against a tracklist with one disc, no longer gets titles from the wrong tracks. A disc whose tracks are numbered straight through now fills a two-disc tracklist instead of being refused. Thanks @chodeus
+- **COMPOSER and CONDUCTOR tags no longer become artist credits outside classical genres.** A pop release from store files lost its main artist and gained its songwriters as composers. Thanks @chodeus
+- **An unreadable cover file no longer stops an upload.** The cover is left out of that file with a message, and the upload goes on.
+- **salmon no longer deletes a file put in a spectrals folder while it is being removed**, and an album reached through a link of another name shares one spectrals folder with it. Thanks @chodeus
+- Covers and images, thanks @chodeus:
+  - A cover download that is cut off, too big (over 20 MiB) or claims too many pixels leaves no cover file behind. A timeout is reported instead of stopping the run, and the error never prints the cover URL.
+  - Two image uploads failing at once give one plain error instead of a long traceback.
+  - Ra: a missing `ra_key` is named.
+  - The no-cover question for a new group also says when the download failed.
+- Checks, thanks @chodeus:
+  - The source check no longer confirms WEB when a log or folder in the album cannot be read, and a 48 kHz MP3 or AAC beside a rip log no longer cancels the CD proof.
+  - The dual-ID3 check flags a filled-in ID3v1 tag beside a blank ID3v2 tag (and no longer a blank pair), and notes an MP3 whose ID3v2 tag cannot be read.
+  - Removing an ID3 tag from a FLAC no longer adds its size to the file's padding.
+  - The log check no longer crashes on a disc number tag it cannot read.
+- Metadata and search, thanks @chodeus:
+  - Two forms of one store album's URL in the tags (another locale or host) now count as one album.
+  - The UPC is filled from the files' Deezer album only when the tags name a single album, and salmon says why when Deezer refuses the lookup.
+  - A Discogs artist who arranged their own track stays its main artist.
+  - Beatport and Discogs search no longer drop some results, and search results show nothing instead of "None" for a missing year, source or label.
+  - The dupe check matches HTML-escaped edition titles ("Collector's Edition"), and title words split on punctuation.
+  - The connection test no longer contacts Qobuz when only the placeholder credentials are set.
+- Smaller fixes, thanks @chodeus:
+  - Keeping a multi-disc release in one folder no longer crashes when a disc folder holds another folder of tracks (`Disc 1/Bonus`).
+  - An AAC (M4A) folder no longer gets a 16-bit depth, and a hybrid release with lossy tracks no longer reads "None bit".
+  - Shortening a path that is too long never cuts a file name down to `...flac`.
+  - A bare `--sftp-path-override` in a seedbox's `extra_args` no longer exits salmon, and the last one given wins.
+  - rclone's `--local-unicode-normalization`: the last flag wins, `=false` is understood, and `RCLONE_LOCAL_UNICODE_NORMALIZATION` is read when there is no flag.
+  - When a failed copy skips a seed, the line names the seedbox by its `name`.
+
+## 🔒 Tracker & Security Improvements
+
+- **Conversions are flagged `DUPE RISK` only when the edition your FLAC was filed under holds them.** After a FLAC upload, salmon now finds where the site filed it and compares year, title, label and catalogue number. Before, a V0 in another pressing of the same year (another catalogue number) left your V0 out of the defaults and of `-yyy`, though it was a valid upload. With `--skip-flac-upload`, the old rule applies. No request is added. Thanks @chodeus
+- **Secrets in output**, thanks @chodeus:
+  - The torrent client URL shows only its scheme, host and port: its path, query and fragment, which can hold a proxy's key, are hidden, also in errors that repeat the URL.
+  - A tracker key cut off before its closing quote is masked to the end of its line, and an announce URL's passkey is masked whatever its length.
+  - Deluge: an error setting a torrent's label no longer prints the client's password.
+  - The path of `--sftp-path-override` and the Ra key are masked in salmon's output.
+  - An image host key from the tracker shorter than 8 characters is refused rather than used.
+
+## What's Changed
+* Small fixes from chodeus's fork: search results, seedbox override, -yyy wording by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/728
+* Credit composers and conductors only on classical tracks by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/731
+* Say -yyy in the CodeRabbit config, and fix a flaky Retry-After date test by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/732
+* Covers, image hosts and source detection: follow-ups from chodeus's fork by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/736
+* Seedbox follow-ups from chodeus's fork: refuse a seed without its folder, mask Deluge label errors by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/733
+* Add salmon up --skip-search by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/738
+* Leave a running salmon's files alone when cleaning tmp_dir by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/737
+* Check conversions against the run's path limit by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/734
+* Support user hash parameter by @dewey in https://github.com/smokin-salmon/smoked-salmon/pull/741
+* Fix crash on OPS uploads by @dewey in https://github.com/smokin-salmon/smoked-salmon/pull/742
+* Never let a rename replace another file by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/739
+* Fixes from chodeus's fork: source, log and dual-ID3 checks, nested disc folders, escaped editions by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/735
+* Fill the UPC only from a single Deezer album, and skip an unconfigured Qobuz in the connection test by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/743
+* Remove a parent folder the rename emptied, not only the deepest by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/744
+* Reuse a conversion whose names the path check shortened, never delete a recorded one by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/740
+* Count a format as held only in the edition the site filed this run's FLAC under by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/746
+* Hide the torrent client URL's path, query and fragment from salmon's output by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/745
+* Mask a cut-off quoted value and an announce passkey of any length, and refuse a too-short image host key by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/749
+* Check a spectrals folder is still salmon's before each delete try, and drop its claim on refusal by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/747
+* Pair local files with the tracklist by ISRC, title and duration, not by position by @techk1ng in https://github.com/smokin-salmon/smoked-salmon/pull/730
+* Explain the metadata answer and the alias syntax at the prompts, skip 16bit files quietly in check upconv by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/748
+* Trust tag order when files line up with the metadata, and refuse unnumbered names as an order by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/750
+* Skip a cover file compress_pictures cannot open instead of crashing the upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/751
+
+## New Contributors
+* @dewey made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/741
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.19.0...0.20.0
+
+"""
 
 [[changelog]]
 version = "0.19.0"
