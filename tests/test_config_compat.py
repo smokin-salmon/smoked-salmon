@@ -223,8 +223,8 @@ class _LogTracker:
     async def start(self) -> str:
         app = web.Application()
         app.router.add_get("/ajax.php", self.answer)
-        app.router.add_get("/log.php", self.answer)
-        app.router.add_get("/login.php", self.answer)
+        app.router.add_get("/log.php", self.bounce)
+        app.router.add_get("/login.php", self.bounce)
         self.runner = web.AppRunner(app)
         await self.runner.setup()
         await web.TCPSite(self.runner, "127.0.0.1", 0).start()
@@ -233,6 +233,10 @@ class _LogTracker:
     async def answer(self, request: web.Request) -> web.Response:
         self.hits.append(request.path)
         return web.json_response({"status": "success", "response": {"results": []}})
+
+    async def bounce(self, request: web.Request) -> web.Response:
+        self.hits.append(request.path)
+        raise web.HTTPFound("/login.php" if request.path == "/log.php" else "/log.php")
 
 
 async def _a_kept_tracker_without_a_cookie_sends_no_cookie_only_request(api: BaseGazelleApi) -> None:
