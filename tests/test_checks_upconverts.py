@@ -33,7 +33,7 @@ def test_a_real_failure_still_names_the_file_and_the_reason(monkeypatch, capsys)
     assert "bad frame" in printed
 
 
-def test_a_folder_of_16bit_files_gets_one_line_saying_the_check_is_for_24bit(monkeypatch, tmp_path, capsys):
+def test_a_folder_of_16bit_files_gets_one_line_saying_the_check_skips_16bit(monkeypatch, tmp_path, capsys):
     for number in range(1, 4):
         (tmp_path / f"0{number}.flac").write_bytes(b"")
     monkeypatch.setattr(
@@ -42,7 +42,7 @@ def test_a_folder_of_16bit_files_gets_one_line_saying_the_check_is_for_24bit(mon
 
     assert anyio.run(uc.test_upconverted, str(tmp_path)) is None
 
-    lines = [line for line in capsys.readouterr().out.splitlines() if "24bit" in line]
+    lines = [line for line in capsys.readouterr().out.splitlines() if "skips 16bit" in line]
     assert len(lines) == 1
     assert ".flac" not in lines[0]
 
@@ -53,7 +53,7 @@ def test_a_corrupt_folder_does_not_claim_the_files_are_16bit(monkeypatch, tmp_pa
 
     anyio.run(uc.test_upconverted, str(tmp_path))
 
-    assert "24bit" not in capsys.readouterr().out
+    assert "skips 16bit" not in capsys.readouterr().out
 
 
 def test_a_single_16bit_file_gets_the_line_too(monkeypatch, tmp_path, capsys):
@@ -64,4 +64,4 @@ def test_a_single_16bit_file_gets_the_line_too(monkeypatch, tmp_path, capsys):
     )
 
     assert anyio.run(uc.test_upconverted, str(path)) is None
-    assert capsys.readouterr().out.count("24bit") == 1
+    assert capsys.readouterr().out.count("skips 16bit") == 1

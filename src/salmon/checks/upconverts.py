@@ -88,7 +88,7 @@ async def test_upconverted(path: str) -> bool | None:
 def _say_if_all_skipped(skipped: list[str], total: int) -> None:
     """One line, not one per file, when every file was 16bit and so left out of the check."""
     if skipped and len(skipped) == total:
-        click.secho("Nothing to check: the upconvert check is for 24bit FLAC files, and these are 16bit.", fg="yellow")
+        click.secho("Nothing to check: the upconvert check skips 16bit FLAC files, and these all are.", fg="yellow")
 
 
 async def _upconvert_check_handler(
