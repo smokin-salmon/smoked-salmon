@@ -147,7 +147,8 @@ def parse_duration(duration):
     if not duration:
         return None
     parts = duration.strip().split(":")
-    if not all(p.isdigit() for p in parts) or not 2 <= len(parts) <= 3:
+    # isdecimal(), not isdigit(): isdigit() accepts some Unicode digits (superscript "2") that int() rejects.
+    if not all(p.isdecimal() for p in parts) or not 2 <= len(parts) <= 3:
         return None
     seconds = 0
     for part in parts:

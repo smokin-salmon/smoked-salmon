@@ -456,7 +456,16 @@ def test_combine_tracks_merges_each_scraped_track_onto_its_own_local_track():
 
 @pytest.mark.parametrize(
     ("duration", "seconds"),
-    [("4:05", 245), ("12:00", 720), ("1:02:03", 3723), (" 4:05 ", 245), ("", None), (None, None), ("4:0x", None)],
+    [
+        ("4:05", 245),
+        ("12:00", 720),
+        ("1:02:03", 3723),
+        (" 4:05 ", 245),
+        ("", None),
+        (None, None),
+        ("4:0x", None),
+        ("²:05", None),
+    ],
 )
 def test_discogs_track_durations_are_read_in_seconds(duration, seconds):
     assert parse_duration(duration) == seconds
