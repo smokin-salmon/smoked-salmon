@@ -17,6 +17,7 @@
   let lightboxViewer = $state<HTMLElement>()
   let lightboxDialog = $state<HTMLDialogElement>()
   let opener: HTMLElement | null = null
+  let pressedOnBackdrop = false
   let discarding = $state<string[]>([])
 
   // The upload of a job's spectrals: the tracker picked for each job, and the upload job started for it.
@@ -241,8 +242,11 @@
     use:modal
     bind:this={lightboxDialog}
     onclose={closed}
+    onmousedown={(e) => (pressedOnBackdrop = e.target === e.currentTarget)}
     onclick={(e) => {
-      if (e.target === e.currentTarget) closeLightbox()
+      // A drag that starts on the image and ends on the backdrop is not a click on the backdrop.
+      if (pressedOnBackdrop && e.target === e.currentTarget) closeLightbox()
+      pressedOnBackdrop = false
     }}
   >
     <SpectralViewer images={lightboxImages} bind:index={lightbox.index} bind:root={lightboxViewer} />
