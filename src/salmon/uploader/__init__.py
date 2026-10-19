@@ -255,9 +255,8 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
 @click.option(
     "--conversions",
     callback=validate_conversions,
-    help="The conversions to select by default after a FLAC, and to make with -yyy: a comma-separated list of "
-    f"{', '.join(CONVERSION_KINDS)}, or none, or all. Overrides upload.conversions for this run. "
-    "Every possible conversion is still offered at the prompt.",
+    help="Makes these conversions after the FLAC, without asking: a comma-separated list of "
+    f"{', '.join(CONVERSION_KINDS)}, or none, or all. Overrides upload.conversions for this run.",
 )
 @click.option(
     "--dry-run",
@@ -344,8 +343,8 @@ class UpOptions:
         group_id: The group to upload into.
         encoding: The lossy encoding, as ``validate_encoding`` gives it.
         request: The request to fill, a URL or an ID, checked against the tracker by ``run_up``.
-        conversions: The conversion kinds to select by default after a FLAC (``--conversions``); None follows
-            upload.conversions.
+        conversions: The conversion kinds to make after a FLAC, without asking (``--conversions``); None follows
+            upload.conversions, which is asked about.
     """
 
     path: str
@@ -788,8 +787,8 @@ async def upload(
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
         trackers: The site codes to upload to, in order, gazelle_site's first: the run uploads to each and
             asks about no other. None asks after each upload, as configured.
-        conversions: The conversion kinds selected by default after a FLAC (see ``conversion_kind``). None follows
-            upload.conversions.
+        conversions: The conversion kinds to make after a FLAC, without asking (see ``conversion_kind``). None
+            follows upload.conversions, which is asked about.
         skip_search: Take the metadata from source_url without searching the stores, when a metadata source
             scrapes it.
     """
@@ -1274,15 +1273,10 @@ async def _upload_staged(
                     conversion_options = (
                         get_downconversion_options(rls_data, track_data, quiet=True) if group_id else []
                     )
-                    if conversion_options and (
-                        flac_url
-                        or await interaction.assume_defaults()
-                        or await interaction.confirm(
-                            click.style("\nWould you like to check downconversion options?", fg="magenta"),
-                            default=bool(wanted_conversions(conversion_options, held, conversions)),
+                    if conversion_options:
+                        selected_tasks = await choose_conversions(
+                            rls_data, track_data, conversion_options, held, conversions, ask_first=not flac_url
                         )
-                    ):
-                        selected_tasks = await prompt_downconversion_choice(rls_data, track_data, held, conversions)
                         if selected_tasks:
                             display_names = [task["name"] for task in selected_tasks]
                             click.secho(
@@ -1626,6 +1620,62 @@ def wanted_conversions(
     return [option for option in options if conversion_kind(option) in kinds and option["name"] not in held]
 
 
+def _applicable_conversions(options: list[dict[str, Any]], conversions: tuple[str, ...] | None) -> bool:
+    """Whether any offered option is of a kind in `conversions` (None: upload.conversions), held or not."""
+    kinds = cfg.upload.conversions if conversions is None else conversions
+    return any(conversion_kind(option) in kinds for option in options)
+
+
+def _warn_held_conversions(held: set[str] | frozenset[str]) -> None:
+    for name in sorted(held):
+        click.secho(
+            f"\nDUPE RISK: this edition already has {name}; the site removes exact duplicates.", fg="red", bold=True
+        )
+
+
+async def choose_conversions(
+    rls_data,
+    track_data,
+    options: list[dict[str, Any]],
+    held: set[str] | frozenset[str] = frozenset(),
+    conversions: tuple[str, ...] | None = None,
+    *,
+    ask_first: bool = True,
+) -> list[dict[str, Any]]:
+    """Choose the conversions to make after an upload to one tracker, asking only what the run leaves open.
+
+    A selection for the run (`conversions`, from --conversions) is final: what it names, minus `held`, is made
+    without a question. A selection that names nothing offered (an empty one, or kinds this release cannot give,
+    or the same from upload.conversions) makes none, also without a question. Only a run that relies on an
+    upload.conversions that names something offered is asked: whether to check the options (unless `ask_first`
+    is false: transcodes only), then which. -yyy takes the default choice.
+
+    Args:
+        rls_data: The release data the conversions are offered for.
+        track_data: The tracks' audio info.
+        options: The conversions offered for this upload.
+        held: The names of the conversions the edition already holds.
+        conversions: The kinds selected for this run (--conversions), or None to follow upload.conversions.
+        ask_first: Whether to ask "check downconversion options?" before the choice.
+    """
+    if not _applicable_conversions(options, conversions):
+        click.secho("\nNo conversions selected for this upload.", fg="yellow")
+        return []
+    if conversions is not None:
+        _warn_held_conversions(held)
+        return wanted_conversions(options, held, conversions)
+    if (
+        ask_first
+        and not await interaction.assume_defaults()
+        and not await interaction.confirm(
+            click.style("\nWould you like to check downconversion options?", fg="magenta"),
+            default=bool(wanted_conversions(options, held, conversions)),
+        )
+    ):
+        return []
+    return await prompt_downconversion_choice(rls_data, track_data, held, conversions)
+
+
 async def prompt_downconversion_choice(
     rls_data,
     track_data,
@@ -1645,10 +1695,7 @@ async def prompt_downconversion_choice(
     if not options:
         return []
 
-    for name in sorted(held):
-        click.secho(
-            f"\nDUPE RISK: this edition already has {name}; the site removes exact duplicates.", fg="red", bold=True
-        )
+    _warn_held_conversions(held)
     wanted = wanted_conversions(options, held, conversions)
     if await interaction.assume_defaults():
         return wanted

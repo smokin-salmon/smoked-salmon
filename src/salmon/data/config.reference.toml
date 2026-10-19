@@ -224,7 +224,7 @@
 # yes_all = false
 
 # Conversions salmon up selects by default after a FLAC (and makes under -yyy): "24bit", "16bit", "320", "V0".
-# [] makes none. Every possible one is still offered at the prompt. salmon up --conversions overrides it.
+# [] makes none and asks nothing. salmon up --conversions overrides it, and makes its conversions without asking.
 # conversions = ["24bit", "16bit", "320", "V0"]
 
 # Check every FLAC file for an MQA marker before uploading (reads the first second of each).

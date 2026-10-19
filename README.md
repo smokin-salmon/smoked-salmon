@@ -333,12 +333,13 @@ by number.
 
 After a FLAC upload, salmon offers its conversions: a 24-bit or 16-bit downconversion, MP3 320 and MP3 V0. To
 choose which are selected by default, and made with `-yyy`, name them in the config (`conversions` under
-`[upload]`) or for one run:
+`[upload]`; `[]` makes none and asks nothing). To make some for one run, without being asked:
 ```bash
-salmon up /data/path/to/album -s WEB -yyy --conversions 16bit
+salmon up /data/path/to/album -s WEB --conversions 16bit
 ```
-Give `24bit`, `16bit`, `320` or `V0`, comma-separated, or `none` or `all`. Every conversion that is possible is
-still listed and can be picked by number; the setting only changes the default answer.
+Give `24bit`, `16bit`, `320` or `V0`, comma-separated, or `none` or `all`. Formats the edition already has are
+left out. Without `--conversions`, every conversion that is possible is still listed and can be picked by number;
+the config only changes the default answer.
 
 To see what an upload would send, without sending anything, add `--dry-run`:
 ```bash

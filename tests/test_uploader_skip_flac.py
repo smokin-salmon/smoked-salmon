@@ -95,6 +95,15 @@ def _answers(monkeypatch, *answers: str) -> list[str]:
     return asked
 
 
+def _no_prompt(monkeypatch) -> None:
+    """Fail the test on any prompt (an AssertionError, which the conversion prompt's retry loop does not catch)."""
+
+    async def fake_prompt(text: str, *_args, **_kwargs) -> str:
+        raise AssertionError(f"asked: {text}")
+
+    monkeypatch.setattr(salmon.uploader.click, "prompt", fake_prompt)
+
+
 def _choose(group: dict[str, Any], **release: Any) -> int | None:
     chosen = anyio.run(dupe_checker.choose_source_flac, group, _release(**release))
     return chosen["id"] if chosen else None
@@ -381,11 +390,16 @@ def test_group_upload_without_the_flag_uploads_the_flac(monkeypatch, tmp_path) -
 
 
 def _flow(
-    monkeypatch, group: dict[str, Any], source: str = "WEB", reviewed: dict[str, Any] | None = None, **fakes: Any
+    monkeypatch,
+    group: dict[str, Any],
+    source: str = "WEB",
+    reviewed: dict[str, Any] | None = None,
+    conversions: tuple[str, ...] | None = None,
+    **fakes: Any,
 ) -> tuple[list[str], list[tuple]]:
     """Run upload() with --skip-flac-upload over stubbed seams. Returns the calls and the transcode runs.
 
-    `reviewed` overrides fields of the metadata as the review leaves it.
+    `reviewed` overrides fields of the metadata as the review leaves it, `conversions` is --conversions.
     """
     calls: list[str] = []
     transcoded: list[tuple] = []
@@ -445,6 +459,7 @@ def _flow(
             (),
             None,
             flac_group=group,
+            conversions=conversions,
         )
     )
     assert site.torrentgroup_calls == 0
@@ -460,6 +475,57 @@ def test_transcodes_are_uploaded_as_transcodes_of_the_chosen_flac(monkeypatch) -
     # No FLAC upload, no request search, no downconversion confirm, no other tracker.
     assert transcoded == [(["MP3 320", "MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
     assert calls == ["mqa_test", "check_spectrals"]
+
+
+def test_transcodes_without_a_run_selection_ask_which_but_not_whether(monkeypatch) -> None:
+    asked = _answers(monkeypatch, "*")
+    group = _group(_torrent(11))
+
+    calls, transcoded = _flow(monkeypatch, group)
+
+    assert len(asked) == 1
+    assert "confirm" not in calls
+    assert transcoded == [(["MP3 320", "MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
+
+
+def test_a_run_selection_makes_the_transcodes_without_asking(monkeypatch) -> None:
+    _no_prompt(monkeypatch)
+    group = _group(_torrent(11))
+
+    calls, transcoded = _flow(monkeypatch, group, conversions=("V0",))
+
+    assert "confirm" not in calls
+    assert transcoded == [(["MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
+
+
+@pytest.mark.parametrize("conversions", [(), ("16bit",)])
+def test_a_run_selection_naming_no_transcode_makes_none_without_asking(monkeypatch, capsys, conversions) -> None:
+    _no_prompt(monkeypatch)
+
+    _calls, transcoded = _flow(monkeypatch, _group(_torrent(11)), conversions=conversions)
+
+    assert transcoded == []
+    assert "No conversions selected for this upload." in capsys.readouterr().out
+
+
+def test_a_config_naming_no_transcode_asks_nothing(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(salmon.uploader.cfg.upload, "conversions", [])
+    _no_prompt(monkeypatch)
+
+    _calls, transcoded = _flow(monkeypatch, _group(_torrent(11)))
+
+    assert transcoded == []
+    assert "No conversions selected for this upload." in capsys.readouterr().out
+
+
+def test_a_held_transcode_a_run_selection_names_is_left_out_with_its_dupe_risk(monkeypatch, capsys) -> None:
+    _no_prompt(monkeypatch)
+    group = _group(_torrent(11), _torrent(12, format_="MP3", encoding="320"))
+
+    _calls, transcoded = _flow(monkeypatch, group, conversions=("320", "V0"))
+
+    assert transcoded == [(["MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
+    assert "DUPE RISK: this edition already has MP3 320" in capsys.readouterr().out
 
 
 def test_the_source_flac_is_picked_on_the_reviewed_metadata(monkeypatch) -> None:
