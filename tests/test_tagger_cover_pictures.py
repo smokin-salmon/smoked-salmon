@@ -403,7 +403,8 @@ def test_a_cover_pil_refuses_as_a_decompression_bomb_is_skipped(tmp_path, monkey
 
 
 def test_a_cover_file_that_cannot_be_opened_is_skipped(tmp_path, capsys) -> None:
-    # A directory named cover.jpg stands in for any cover file that cannot be read: opening and reading it raises an OSError.
+    # A directory named cover.jpg stands in for any cover file that cannot be read: opening or reading it
+    # raises an OSError.
     (tmp_path / "cover.jpg").mkdir()
     _write_flac(tmp_path / "01.flac")
 
