@@ -135,10 +135,25 @@ class Scraper(DiscogsBase, MetadataMixin):
                     discno=disc_num,
                     artists=artists,
                     title=track["title"],
+                    duration=parse_duration(track.get("duration")),
                 )
                 # Only the merge reads this, to match tag artists spelled the way the release credits them.
                 tracks[disc_str][track_num]["artist_variations"] = variations
         return dict(tracks)
+
+
+def parse_duration(duration):
+    """Convert Discogs' "m:ss" / "h:mm:ss" track duration to seconds."""
+    if not duration:
+        return None
+    parts = duration.strip().split(":")
+    # isdecimal(), not isdigit(): isdigit() accepts some Unicode digits (superscript "2") that int() rejects.
+    if not all(p.isdecimal() for p in parts) or not 2 <= len(parts) <= 3:
+        return None
+    seconds = 0
+    for part in parts:
+        seconds = seconds * 60 + int(part)
+    return seconds
 
 
 def parse_artists(artist_soup, track):

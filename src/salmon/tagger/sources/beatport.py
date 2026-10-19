@@ -113,6 +113,7 @@ class Scraper(BeatportBase, MetadataMixin):
                     title=title,
                     streamable=track["is_available_for_streaming"],
                     isrc=track["isrc"],
+                    duration=(track["length_ms"] // 1000 if track.get("length_ms") else None),
                 )
             return dict(tracks)
         except (KeyError, IndexError) as e:

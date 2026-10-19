@@ -16,7 +16,8 @@ from salmon.constants import (
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
-from salmon.errors import AmbiguousTrackOrderError, UploadError
+from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
+from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_recorded
 from salmon.tagger.tagfile import TagFile
 
@@ -44,12 +45,43 @@ async def tag_files(path, tags, metadata, auto_rename):
         click.secho(str(e), fg="red")
         click.secho("Skipping retagging procedure...", fg="red")
         return
+    except NumberedTrackMoveError as e:
+        if not await _confirm_moves(e.moves):
+            click.secho("Skipping retagging procedure...", fg="red")
+            return
+        track_changes = create_track_changes(tags, metadata, move_numbered=True)
     print_changes(album_changes, track_changes, next(iter(tags.values())))
     if auto_rename or await interaction.confirm(
         click.style("\nWould you like to auto-tag the files with the updated metadata?", fg="magenta"),
         default=True,
     ):
         retag_files(path, album_changes, track_changes)
+
+
+async def _confirm_moves(moves):
+    """Ask before giving numbered files other tracks' tags. A run that answers with defaults (-yyy) doesn't."""
+    click.secho("\nThese files carry their own track numbers, but the metadata pairs them with other tracks:", fg="red")
+    for filename, numbered_as, pairs_with, reason in moves:
+        click.secho(
+            f"  {filename}: numbered {_track_label(numbered_as)}, "
+            f"would be {_track_label(pairs_with)}. {pairs_with['title']} (matched on {reason})",
+            fg="red",
+        )
+    if await interaction.assume_defaults():
+        click.secho("Not retagging numbered files as other tracks without asking.", fg="red")
+        return False
+    return await interaction.confirm(click.style("Retag them as those tracks?", fg="magenta"), default=False)
+
+
+def _own_number(tagset):
+    """The file's own DISCNUMBER and TRACKNUMBER, shaped like a track for ``_track_label``."""
+    disc = _parse_tag_number(tagset, "discnumber")
+    return {"disc#": None if disc is None else str(disc), "track#": str(_parse_tag_number(tagset, "tracknumber"))}
+
+
+def _track_label(track):
+    disc = track.get("disc#")
+    return f"{disc}-{track['track#']}" if disc and str(disc) != "1" else str(track["track#"])
 
 
 def check_whether_to_tag(tags, metadata):
@@ -96,13 +128,17 @@ def _generate_album_artist(artists):
     return c.join(sorted(main_artists))
 
 
-def create_track_changes(tags, metadata):
+def create_track_changes(tags, metadata, *, move_numbered=False):
     """
     Compare the track data in the metadata to the track data in the tags
     and record all differences.
+
+    Raises NumberedTrackMoveError when files that carry their own track numbers would
+    get other tracks' tags (their ISRC or title says so), unless `move_numbered`.
     """
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
+    ambiguous = None
 
     def disc_track_key(tagset):
         return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
@@ -136,8 +172,32 @@ def create_track_changes(tags, metadata):
         # onto the wrong track.
         ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
     else:
-        ordered_tags = _order_by_disc_folders(tags, metadata["tracks"])
+        try:
+            ordered_tags = _order_by_disc_folders(tags, metadata["tracks"])
+        except AmbiguousTrackOrderError as e:
+            ordered_tags, ambiguous = list(tags.items()), e
 
+    # Pair each file with its own track by ISRC and title rather than by position, so unnumbered
+    # promo folders tag correctly. The order above is the fallback for files the content can't place.
+    # Files that all carry their own numbers keep them unless an ISRC or exact title says otherwise,
+    # and then only when asked. With no trustworthy order, every file must be placed by ISRC or title,
+    # and a numbered file is asked about when it would get a disc and track other than its own tags'.
+    numbered = _numbered_by_tags(tags)
+    by_order = tracks
+    tracks, file_reasons = order_tracks_for_files(
+        ordered_tags, tracks, numbered=numbered and ambiguous is None, show=not numbered
+    )
+    if ambiguous is not None and not all(reason in BY_ISRC_OR_TITLE for reason in file_reasons):
+        raise ambiguous
+    moves = [
+        (filename, _own_number(tagset), pairs_with, reason)
+        for (filename, tagset), in_order, pairs_with, reason in zip(
+            ordered_tags, by_order, tracks, file_reasons, strict=False
+        )
+        if (pairs_with is not in_order if ambiguous is None else disc_track_key(tagset) != _track_key(pairs_with))
+    ]
+    if numbered and moves and not move_numbered:
+        raise NumberedTrackMoveError(moves)
     for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False):
         changes[filename] = []
 
@@ -212,6 +272,11 @@ def metadata_to_track_list(metadata):
 def _metadata_track_keys(discs):
     """The metadata's real (disc, track) pairs, numbers read the same way a tag's are."""
     return {(_to_number(disc), _to_number(track)) for disc, disc_tracks in discs.items() for track in disc_tracks}
+
+
+def _track_key(track):
+    """A track's (disc, track) pair, read the way a file's own tags are (no disc is disc 1)."""
+    return (_to_number(track.get("disc#") or 1), _to_number(track["track#"]))
 
 
 def _to_number(value):
@@ -289,6 +354,85 @@ def _disc_track_sort_key(value):
     """Sort key that treats a numeric string as a number, so disc "10" sorts after "2"."""
     s = str(value)
     return (0, int(s)) if s.isdecimal() else (1, s.lower())
+
+
+def _tagset_identity(tagset):
+    """The signals used to recognise which scraped track a file is."""
+
+    def tag(field):
+        value = tagset.get(field) if isinstance(tagset, dict) else getattr(tagset, field, None)
+        return value[0] if isinstance(value, list) and value else value or None
+
+    mut = getattr(tagset, "mut", None)
+    info = getattr(mut, "info", None)
+    return {
+        "title": tag("title"),
+        "isrc": tag("isrc"),
+        "duration": int(info.length) if info and getattr(info, "length", None) else None,
+    }
+
+
+def order_tracks_for_files(items, tracks, *, numbered=False, show=True):
+    """Reorder ``tracks`` so that entry N belongs to the Nth file in ``items``.
+
+    ``items`` is the ``(filename, tagset)`` pairs in the order they would otherwise be
+    zipped with ``tracks``. ``combine_tracks`` already paired the tracks by content, but it
+    works on track dicts that carry no filename, so the association is lost by the time tags
+    are written. Redo the match here against the files themselves: a track that
+    ``combine_tracks`` paired by ISRC or title now carries that ISRC or the scraped title, and
+    the duration of the local file it was built from (``create_track_list``), which breaks
+    ties between titles that fit two tracks the same way the first match did.
+
+    With ``numbered``, the files are in the order of their own track numbers, and only an ISRC
+    or an exact title moves one (see ``pair_by_content``). With ``show``, the matches are printed
+    when content reordered anything; the caller shows, and asks about, a numbered file's move instead.
+
+    Returns the reordered tracks and how each file was paired. On a count mismatch or an
+    incomplete pairing ``tracks`` comes back as is, every file paired by position.
+    """
+    by_position = (tracks, ["position"] * len(items))
+    if len(items) != len(tracks):
+        return by_position  # Counts disagree: keep the order as it is, and the caller reports the mismatch.
+    locals_ = [_tagset_identity(tagset) for _, tagset in items]
+    pairing, reasons = pair_by_content(locals_, tracks, numbered=numbered)
+
+    slots: list[dict | None] = [None] * len(items)
+    for mi, li in enumerate(pairing):
+        if li is not None:
+            slots[li] = tracks[mi]
+    ordered = [t for t in slots if t is not None]
+    if len(ordered) != len(slots):
+        return by_position  # Incomplete pairing; don't risk a partial reorder.
+
+    file_reasons = _reasons_by_file(pairing, reasons)
+    if ordered != tracks and show:
+        click.secho("\nMatched files to the metadata tracklist by content:", fg="yellow", bold=True)
+        for (filename, _), track, reason in zip(items, ordered, file_reasons, strict=True):
+            click.secho(
+                f"  {filename}\n      -> {track['track#']}. {track['title']} (matched on {reason})", fg="yellow"
+            )
+    return ordered, file_reasons
+
+
+def _numbered_by_tags(tags):
+    """Whether every file carries its own track number: one above zero, which no other file of its folder and
+    disc shares (a promo folder whose files are all TRACKNUMBER 1 is not numbered)."""
+    numbers = {}
+    for filename, tagset in tags.items():
+        number = _parse_tag_number(tagset, "tracknumber")
+        if number is None or number < 1:
+            return False
+        numbers.setdefault((os.path.dirname(filename), _parse_tag_number(tagset, "discnumber")), []).append(number)
+    return all(len(set(group)) == len(group) for group in numbers.values())
+
+
+def _reasons_by_file(pairing, reasons):
+    """Re-key the per-scraped-track reasons onto the local file order."""
+    by_file = [None] * len(pairing)
+    for mi, li in enumerate(pairing):
+        if li is not None:
+            by_file[li] = reasons[mi]
+    return by_file
 
 
 def _compare_tag(tagfield, metafield, tagset, trackmeta):

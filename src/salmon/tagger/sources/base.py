@@ -93,6 +93,7 @@ class MetadataMixin(ABC):
         media_version: str | None = None,
         lossless: bool | None = None,
         mp3_320: bool | None = None,
+        duration: int | None = None,
     ) -> dict[str, Any]:
         """Return a generated track dictionary containing the required values.
 
@@ -112,6 +113,8 @@ class MetadataMixin(ABC):
             media_version: Media version (Deezer).
             lossless: Whether lossless is available (Deezer).
             mp3_320: Whether MP3 320 is available (Deezer).
+            duration: Track length in seconds, used to match local files to this
+                tracklist when titles are ambiguous.
 
         Returns:
             A dictionary containing track metadata.
@@ -134,6 +137,7 @@ class MetadataMixin(ABC):
             "media_version": media_version,
             "lossless": lossless,
             "mp3_320": mp3_320,
+            "duration": duration,
         }
 
     def determine_rls_type(self, data):
