@@ -16,7 +16,7 @@ from salmon.tagger.sources.beatport import Scraper as BeatportScraper
 from salmon.tagger.sources.discogs import parse_duration
 
 
-def _tagset(title, *, tracknumber=None, isrc=None, length=None):
+def _tagset(title, *, tracknumber=None, discnumber=None, isrc=None, length=None):
     return SimpleNamespace(
         artist=["Some Artist"],
         title=title,
@@ -25,20 +25,20 @@ def _tagset(title, *, tracknumber=None, isrc=None, length=None):
         comment=None,
         isrc=isrc,
         tracknumber=tracknumber,
-        discnumber=None,
+        discnumber=discnumber,
         tracktotal=None,
         disctotal=None,
         mut=SimpleNamespace(info=SimpleNamespace(length=length)),
     )
 
 
-def _trackmeta(title, track_no, *, isrc=None, duration=None):
+def _trackmeta(title, track_no, *, isrc=None, duration=None, disc="1"):
     return {
         "title": title,
         "isrc": isrc,
         "duration": duration,
         "track#": track_no,
-        "disc#": "1",
+        "disc#": disc,
         "tracktotal": None,
         "disctotal": None,
         "artists": [("Some Artist", "main")],
@@ -94,6 +94,18 @@ def _numbered_for_another_edition():
     return tags, metadata
 
 
+def _numbered_in_folders_that_are_not_the_discs():
+    # Two folders, each numbered from 1, against a one-disc tracklist: the folders can't be its discs, so no order
+    # can be trusted, and the titles place every file. a/02.flac is the source's track 3, and b/01.flac its track 2.
+    tags = {
+        "a/01.flac": _tagset("Work", tracknumber="1"),
+        "a/02.flac": _tagset("Django", tracknumber="2"),
+        "b/01.flac": _tagset("I Walk", tracknumber="1"),
+    }
+    metadata = _one_disc(_trackmeta("Work", "1"), _trackmeta("I Walk", "2"), _trackmeta("Django", "3"))
+    return tags, metadata
+
+
 def test_numbered_files_the_isrc_moves_are_not_retagged_as_other_tracks_without_asking():
     tags, metadata = _numbered_for_another_edition()
 
@@ -106,6 +118,41 @@ def test_numbered_files_the_isrc_moves_are_not_retagged_as_other_tracks_without_
     ]
     changes = create_track_changes(tags, metadata, move_numbered=True)
     assert _proposed(changes, "title") == {"01.flac": "Second", "02.flac": "First"}
+
+
+def test_numbered_files_whose_order_is_ambiguous_are_not_retagged_as_other_tracks_without_asking():
+    tags, metadata = _numbered_in_folders_that_are_not_the_discs()
+
+    with pytest.raises(NumberedTrackMoveError) as refused:
+        create_track_changes(tags, metadata)
+
+    assert [(filename, own["track#"], after["track#"]) for filename, own, after, _ in refused.value.moves] == [
+        ("a/02.flac", "2", "3"),
+        ("b/01.flac", "1", "2"),
+    ]
+    changes = create_track_changes(tags, metadata, move_numbered=True)
+    assert _proposed(changes, "tracknumber") == {"a/01.flac": None, "a/02.flac": "3", "b/01.flac": "2"}
+
+
+def test_numbered_files_whose_order_is_ambiguous_keep_their_own_disc_and_track_without_asking():
+    # One folder for two discs, and only the second disc's file has a DISCNUMBER, so the folder can't be ordered as
+    # the discs. Each file's title gives it the disc and track its tags already say, a missing DISCNUMBER being 1.
+    tags = {
+        "01.flac": _tagset("Work", tracknumber="1"),
+        "02.flac": _tagset("Django", tracknumber="2"),
+        "03.flac": _tagset("I Walk", tracknumber="1", discnumber="2"),
+    }
+    metadata = {
+        "tracks": {
+            "1": {"1": _trackmeta("Work", "1"), "2": _trackmeta("Django", "2")},
+            "2": {"1": _trackmeta("I Walk", "1", disc="2")},
+        }
+    }
+
+    changes = create_track_changes(tags, metadata)
+
+    assert _proposed(changes, "tracknumber") == {"01.flac": None, "02.flac": None, "03.flac": None}
+    assert _proposed(changes, "discnumber") == {"01.flac": "1", "02.flac": "1", "03.flac": None}
 
 
 def _run_tag_files(monkeypatch, tags, metadata, *, answer):
@@ -132,9 +179,12 @@ def test_tag_files_retags_numbered_files_as_other_tracks_when_told_to(monkeypatc
     assert _proposed(written[0], "title") == {"01.flac": "Second", "02.flac": "First"}
 
 
+@pytest.mark.parametrize(
+    "layout", [_numbered_for_another_edition, _numbered_in_folders_that_are_not_the_discs], ids=["isrc", "ambiguous"]
+)
 @pytest.mark.parametrize("assume_defaults", [False, True], ids=["declined", "-yyy"])
-def test_tag_files_skips_retagging_numbered_files_it_may_not_move(monkeypatch, capsys, assume_defaults):
-    tags, metadata = _numbered_for_another_edition()
+def test_tag_files_skips_retagging_numbered_files_it_may_not_move(monkeypatch, capsys, assume_defaults, layout):
+    tags, metadata = layout()
 
     with interaction.assuming_defaults(assume_defaults):
         asked, written = _run_tag_files(monkeypatch, tags, metadata, answer=False)

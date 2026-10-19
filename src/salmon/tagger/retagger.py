@@ -134,7 +134,7 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
     and record all differences.
 
     Raises NumberedTrackMoveError when files that carry their own track numbers would
-    get other tracks' tags (their ISRC or exact title says so), unless `move_numbered`.
+    get other tracks' tags (their ISRC or title says so), unless `move_numbered`.
     """
     changes = {}
     tracks = metadata_to_track_list(metadata["tracks"])
@@ -180,10 +180,13 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
     # Pair each file with its own track by ISRC and title rather than by position, so unnumbered
     # promo folders tag correctly. The order above is the fallback for files the content can't place.
     # Files that all carry their own numbers keep them unless an ISRC or exact title says otherwise,
-    # and then only when asked; with no trustworthy order, every file must be placed by ISRC or title.
-    numbered = ambiguous is None and _numbered_by_tags(tags)
+    # and then only when asked. With no trustworthy order, every file must be placed by ISRC or title,
+    # and a numbered file is asked about when it would get a disc and track other than its own tags'.
+    numbered = _numbered_by_tags(tags)
     by_order = tracks
-    tracks, file_reasons = order_tracks_for_files(ordered_tags, tracks, numbered=numbered)
+    tracks, file_reasons = order_tracks_for_files(
+        ordered_tags, tracks, numbered=numbered and ambiguous is None, show=not numbered
+    )
     if ambiguous is not None and not all(reason in BY_ISRC_OR_TITLE for reason in file_reasons):
         raise ambiguous
     moves = [
@@ -191,7 +194,7 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
         for (filename, tagset), in_order, pairs_with, reason in zip(
             ordered_tags, by_order, tracks, file_reasons, strict=False
         )
-        if pairs_with is not in_order
+        if (pairs_with is not in_order if ambiguous is None else disc_track_key(tagset) != _track_key(pairs_with))
     ]
     if numbered and moves and not move_numbered:
         raise NumberedTrackMoveError(moves)
@@ -269,6 +272,11 @@ def metadata_to_track_list(metadata):
 def _metadata_track_keys(discs):
     """The metadata's real (disc, track) pairs, numbers read the same way a tag's are."""
     return {(_to_number(disc), _to_number(track)) for disc, disc_tracks in discs.items() for track in disc_tracks}
+
+
+def _track_key(track):
+    """A track's (disc, track) pair, read the way a file's own tags are (no disc is disc 1)."""
+    return (_to_number(track.get("disc#") or 1), _to_number(track["track#"]))
 
 
 def _to_number(value):
@@ -364,7 +372,7 @@ def _tagset_identity(tagset):
     }
 
 
-def order_tracks_for_files(items, tracks, *, numbered=False):
+def order_tracks_for_files(items, tracks, *, numbered=False, show=True):
     """Reorder ``tracks`` so that entry N belongs to the Nth file in ``items``.
 
     ``items`` is the ``(filename, tagset)`` pairs in the order they would otherwise be
@@ -376,7 +384,8 @@ def order_tracks_for_files(items, tracks, *, numbered=False):
     ties between titles that fit two tracks the same way the first match did.
 
     With ``numbered``, the files are in the order of their own track numbers, and only an ISRC
-    or an exact title moves one (see ``pair_by_content``).
+    or an exact title moves one (see ``pair_by_content``). With ``show``, the matches are printed
+    when content reordered anything; the caller shows, and asks about, a numbered file's move instead.
 
     Returns the reordered tracks and how each file was paired. On a count mismatch or an
     incomplete pairing ``tracks`` comes back as is, every file paired by position.
@@ -396,8 +405,7 @@ def order_tracks_for_files(items, tracks, *, numbered=False):
         return by_position  # Incomplete pairing; don't risk a partial reorder.
 
     file_reasons = _reasons_by_file(pairing, reasons)
-    # A numbered file that moves is shown, and asked about, by the caller.
-    if ordered != tracks and not numbered:
+    if ordered != tracks and show:
         click.secho("\nMatched files to the metadata tracklist by content:", fg="yellow", bold=True)
         for (filename, _), track, reason in zip(items, ordered, file_reasons, strict=True):
             click.secho(
