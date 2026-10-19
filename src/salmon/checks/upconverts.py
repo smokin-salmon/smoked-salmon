@@ -41,7 +41,7 @@ async def upload_upconvert_test(path: str) -> None:
             default=True,
         ):
             raise click.Abort
-    else:
+    elif any_upconverts is False:
         click.secho(
             click.style(
                 "No upconverts detected (This is not a 100 percent accurate process).",
@@ -73,6 +73,8 @@ async def test_upconverted(path: str) -> bool | None:
             for f in files:
                 if f.lower().endswith(".flac"):
                     flac_files.append(os.path.join(root, f))
+        if not flac_files:
+            click.secho("No FLAC files found to check.", fg="yellow")
         results = await process_files(
             flac_files,
             partial(_upconvert_check_handler, skipped=skipped),
