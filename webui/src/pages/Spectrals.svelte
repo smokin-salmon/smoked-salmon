@@ -1,17 +1,21 @@
 <script lang="ts">
+  import { tick } from 'svelte'
   import { apiPost } from '../lib/api'
   import { copyText } from '../lib/clipboard'
   import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
   import QuestionPanel from '../lib/QuestionPanel.svelte'
+  import SpectralViewer from '../lib/SpectralViewer.svelte'
   import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
   import { loadToolsOptions, type SpectralsUploadResult, type ToolsOptions } from '../lib/tools'
 
   let path = $state('')
   let error = $state('')
   let starting = $state(false)
-  let lightbox = $state<string | null>(null)
+  let lightbox = $state<{ job: Job; index: number } | null>(null)
+  let lightboxViewer = $state<HTMLElement>()
+  let opener: HTMLElement | null = null
   let discarding = $state<string[]>([])
 
   // The upload of a job's spectrals: the tracker picked for each job, and the upload job started for it.
@@ -101,6 +105,34 @@
     return `/api/jobs/${encodeURIComponent(job.id)}/spectrals/${encodeURIComponent(file)}`
   }
 
+  function openLightbox(job: Job, at: number, from: HTMLElement) {
+    opener = from
+    lightbox = { job, index: at }
+    void tick().then(() => lightboxViewer?.focus())
+  }
+
+  function closeLightbox() {
+    lightbox = null
+    opener?.focus()
+    opener = null
+  }
+
+  const lightboxImages = $derived(
+    lightbox
+      ? (lightbox.job.spectrals ?? []).map((file) => {
+          const name = track(lightbox!.job, file)
+          return { url: imageUrl(lightbox!.job, file), label: name ? `${file}: ${name}` : file }
+        })
+      : [],
+  )
+
+  function lightboxKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      closeLightbox()
+      event.preventDefault()
+    }
+  }
+
   function track(job: Job, file: string): string {
     const tracks = (job.result as { tracks?: Record<string, string> } | null)?.tracks
     return tracks?.[file.slice(0, 2)] ?? ''
@@ -140,9 +172,9 @@
 
     {#if FINISHED.includes(job.status) && job.spectrals?.length}
       <div class="gallery">
-        {#each job.spectrals as file (file)}
+        {#each job.spectrals as file, i (file)}
           <figure>
-            <button onclick={() => (lightbox = imageUrl(job, file))}>
+            <button onclick={(e) => openLightbox(job, i, e.currentTarget)}>
               <img src={imageUrl(job, file)} alt={file} loading="lazy" />
             </button>
             <figcaption class="muted mono">{file}{#if track(job, file)}: {track(job, file)}{/if}</figcaption>
@@ -200,9 +232,21 @@
 {/each}
 
 {#if lightbox}
-  <button class="lightbox" onclick={() => (lightbox = null)}>
-    <img src={lightbox} alt="Spectral" />
-  </button>
+  <!-- svelte-ignore a11y_click_events_have_key_events -->
+  <div
+    class="lightbox"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Spectral"
+    tabindex="-1"
+    onkeydown={lightboxKeydown}
+    onclick={(e) => {
+      if (e.target === e.currentTarget) closeLightbox()
+    }}
+  >
+    <SpectralViewer images={lightboxImages} bind:index={lightbox.index} bind:root={lightboxViewer} />
+    <button class="btn small secondary close" onclick={closeLightbox}>Close</button>
+  </div>
 {/if}
 
 <style>
@@ -279,16 +323,17 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.85);
-    border: none;
-    cursor: zoom-out;
     z-index: 50;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.8rem;
     padding: 2rem;
   }
-  .lightbox img {
-    max-width: 100%;
-    max-height: 100%;
+  .close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
   }
 </style>

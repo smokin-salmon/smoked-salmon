@@ -1,6 +1,8 @@
 <script lang="ts">
+  import { tick } from 'svelte'
   import { apiPost } from './api'
   import type { Job } from './jobs.svelte'
+  import SpectralViewer from './SpectralViewer.svelte'
 
   let { job }: { job: Job } = $props()
 
@@ -10,10 +12,64 @@
   let sending = $state(false)
   let lastQuestionId = ''
 
+  const VIEW_KEY = 'salmon.spectralsView'
+  type View = 'single' | 'grid'
+
+  /** The viewer's last choice; blocked or cleared storage (a private window) falls back to one at a time. */
+  function rememberedView(): View {
+    try {
+      return localStorage.getItem(VIEW_KEY) === 'grid' ? 'grid' : 'single'
+    } catch {
+      return 'single'
+    }
+  }
+
+  let view = $state<View>(rememberedView())
+  let index = $state(0)
+  let viewer = $state<HTMLElement>()
+
+  function setView(next: View) {
+    if (next === view) return
+    view = next
+    try {
+      localStorage.setItem(VIEW_KEY, next)
+    } catch {
+      // Not remembered: the choice still holds until the page is closed.
+    }
+  }
+
+  function openSingle(at: number) {
+    index = at
+    setView('single')
+    void tick().then(() => viewer?.focus())
+  }
+
+  const spectrals = $derived(
+    job.question?.kind === 'spectrals'
+      ? (job.question.files ?? []).map((file) => {
+          const name = job.question?.tracks?.[file.slice(0, 2)]
+          return { url: spectralUrl(file), label: name ? `${file}: ${name}` : file }
+        })
+      : [],
+  )
+
+  // Stay in range if the files change.
+  $effect(() => {
+    if (index > 0 && index >= spectrals.length) index = Math.max(0, spectrals.length - 1)
+  })
+
   $effect(() => {
     const q = job.question
     if (q && q.id !== lastQuestionId) {
       lastQuestionId = q.id
+      index = 0
+      if (q.kind === 'spectrals') {
+        // Keys work without a click, unless something else has the focus.
+        void tick().then(() => {
+          const active = document.activeElement
+          if (viewer && (active === null || active === document.body)) viewer.focus()
+        })
+      }
       text = typeof q.default === 'string' ? q.default : ''
       editText = q.initial ?? ''
       sendError = ''
@@ -60,17 +116,31 @@
         <button class="btn secondary" disabled={sending} onclick={() => send(null)}>Leave unchanged</button>
       </div>
     {:else if q.kind === 'spectrals'}
-      <div class="gallery">
-        {#each q.files ?? [] as file (file)}
-          <a href={spectralUrl(file)} target="_blank" rel="noreferrer">
-            <img src={spectralUrl(file)} alt={file} loading="lazy" />
-            <span class="muted mono">
-              {file}{#if q.tracks?.[file.slice(0, 2)]}: {q.tracks[file.slice(0, 2)]}{/if}
-            </span>
-          </a>
-        {/each}
+      <div class="row views">
+        <button class="btn small secondary" onclick={() => setView(view === 'single' ? 'grid' : 'single')}>
+          {view === 'single' ? 'Grid' : 'One at a time'}
+        </button>
       </div>
-      <div class="row actions">
+      {#if view === 'single'}
+        <SpectralViewer images={spectrals} bind:index bind:root={viewer} onenter={() => send(true)} />
+        <p class="muted hint centered">← → to step, Enter for Done</p>
+      {:else}
+        <div class="gallery">
+          {#each spectrals as image, i (image.url)}
+            <a
+              href={image.url}
+              onclick={(e) => {
+                e.preventDefault()
+                openSingle(i)
+              }}
+            >
+              <img src={image.url} alt={image.label} loading="lazy" />
+              <span class="muted mono">{image.label}</span>
+            </a>
+          {/each}
+        </div>
+      {/if}
+      <div class="row actions done">
         <button class="btn" disabled={sending} onclick={() => send(true)}>Done</button>
       </div>
     {:else}
@@ -119,6 +189,19 @@
   }
   .actions {
     margin-top: 0.5rem;
+  }
+  .done {
+    position: sticky;
+    bottom: 0;
+    background: #221a1c;
+    padding: 0.5rem 0;
+    z-index: 1;
+  }
+  .views {
+    margin-bottom: 0.6rem;
+  }
+  .centered {
+    text-align: center;
   }
   .hint {
     font-size: 0.8rem;
