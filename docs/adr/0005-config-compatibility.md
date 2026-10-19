@@ -38,6 +38,8 @@ Options considered:
    `refused_from`, the next minor version. salmon compares `refused_from` with its own version, so the
    switch from warning to refusal happens by itself at that release. An entry stays in the table for at
    least one release after `refused_from`, so a user who skips releases gets the message, not a silent drop.
+   *Amended 2026-10-20 (#767): only renamed and moved keys have a `refused_from`. A removed key has none:
+   its warning, or its refusal (point 3), lasts for as long as its entry stays in the table.*
 2. **A renamed or moved key** is read under its old name, with a warning naming the new key and its
    section, until `refused_from`; from then on salmon refuses to start, with the same message. A config
    that sets both the old and the new name is refused: salmon does not guess which one is meant.
@@ -62,6 +64,7 @@ Options considered:
 
 - An upgrade never changes behaviour silently: a key that stops working says so for one release, then
   stops salmon with the same message.
+  *Amended 2026-10-20 (#767): a removed key that only warns keeps warning; it is never refused by version.*
 - A changed default reaches every user who never set the key, and only the release notes tell them. That
   is the price of not carrying old defaults forever, so each one needs its release-notes line.
 - The rule that a new setting must not change behaviour for existing configs still holds for new
