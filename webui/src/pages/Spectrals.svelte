@@ -15,6 +15,7 @@
   let starting = $state(false)
   let lightbox = $state<{ job: Job; index: number } | null>(null)
   let lightboxViewer = $state<HTMLElement>()
+  let lightboxDialog = $state<HTMLDialogElement>()
   let opener: HTMLElement | null = null
   let discarding = $state<string[]>([])
 
@@ -111,7 +112,16 @@
     void tick().then(() => lightboxViewer?.focus())
   }
 
+  /** A native modal dialog: focus stays inside it, the page behind is inert, and Escape fires `close` too. */
+  function modal(node: HTMLDialogElement) {
+    node.showModal()
+  }
+
   function closeLightbox() {
+    lightboxDialog?.close()
+  }
+
+  function closed() {
     lightbox = null
     opener?.focus()
     opener = null
@@ -125,13 +135,6 @@
         })
       : [],
   )
-
-  function lightboxKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-      closeLightbox()
-      event.preventDefault()
-    }
-  }
 
   function track(job: Job, file: string): string {
     const tracks = (job.result as { tracks?: Record<string, string> } | null)?.tracks
@@ -232,21 +235,19 @@
 {/each}
 
 {#if lightbox}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <div
+  <dialog
     class="lightbox"
-    role="dialog"
-    aria-modal="true"
     aria-label="Spectral"
-    tabindex="-1"
-    onkeydown={lightboxKeydown}
+    use:modal
+    bind:this={lightboxDialog}
+    onclose={closed}
     onclick={(e) => {
       if (e.target === e.currentTarget) closeLightbox()
     }}
   >
     <SpectralViewer images={lightboxImages} bind:index={lightbox.index} bind:root={lightboxViewer} />
     <button class="btn small secondary close" onclick={closeLightbox}>Close</button>
-  </div>
+  </dialog>
 {/if}
 
 <style>
@@ -320,16 +321,25 @@
     overflow-wrap: anywhere;
   }
   .lightbox {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    z-index: 50;
-    display: flex;
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 0.8rem;
     padding: 2rem;
+  }
+  .lightbox[open] {
+    display: flex;
+  }
+  .lightbox::backdrop {
+    background: rgba(0, 0, 0, 0.85);
   }
   .close {
     position: absolute;
