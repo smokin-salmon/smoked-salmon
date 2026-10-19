@@ -117,6 +117,7 @@
   }
 
   function filterKey(event: KeyboardEvent) {
+    if (event.isComposing || event.keyCode === 229) return
     if (event.key === 'Escape' && filter) {
       event.preventDefault()
       filter = ''
@@ -128,7 +129,7 @@
 
   function select(path: string) {
     value = path
-    open = false
+    closeListing()
   }
 
   function within(root: string, path: string): boolean {
