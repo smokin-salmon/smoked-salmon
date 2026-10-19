@@ -340,84 +340,70 @@ def check_embedded_pictures(path: str) -> None:
     click.secho(f"Stripped {stripped} file(s) to no embedded pictures and 8 KiB of padding.", fg="green")
 
 
-def compress_pictures(path):
+def embed_missing_cover(path: str) -> None:
+    """Embed the folder's cover in every FLAC that has no picture, shrunk to fit under RED's 1 MiB limit.
+
+    A FLAC that has a picture is left as it is, whatever its size (that is `check_embedded_pictures`'s job).
+    The cover file is never written. With no cover file, or one that cannot be read or shrunk enough, the FLAC
+    is left as it is and a line says so.
+
+    Args:
+        path: The release folder, which must be safe to change.
+    """
+    cover_file = None
+    looked = False
     for filename in get_audio_files(path):
         if not filename.lower().endswith(".flac"):
             continue
-        click.secho(f"Processing file: {filename}", fg="blue")
         audio = FLAC(os.path.join(path, filename))
+        if audio.pictures:
+            continue
+        if not looked:
+            cover_file = get_cover_from_path(path)
+            looked = True
+        if not cover_file:
+            click.secho(f"No cover file found to embed in {filename}.", fg="red")
+            continue
 
-        padding_size = sum(block.length for block in audio.metadata_blocks if block.code == 1)
+        try:
+            with open(cover_file, "rb") as c:
+                data = c.read()
+        except OSError as e:
+            click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
+            continue
 
-        cover_sizes = sum(len(picture.write()) for picture in audio.pictures)
-        click.secho(
-            (
-                f"Padding size: {humanfriendly.format_size(padding_size, binary=True)}, "
-                f"Cover size: {humanfriendly.format_size(cover_sizes, binary=True)}"
-            ),
-            fg="cyan",
-        )
+        max_picture_block_size = MAX_PICTURES_AND_PADDING - humanfriendly.parse_size("8KiB")
 
-        cover_file = get_cover_from_path(path)
+        # The PICTURE block's own fields (MIME type, dimensions, lengths) count against the limit too, so
+        # the image gets what is left once they are written with no data.
+        picture = Picture()
+        try:
+            with Image.open(cover_file) as opened:
+                picture.mime = opened.get_format_mimetype()
+        except (OSError, Image.DecompressionBombError) as e:
+            click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
+            continue
 
-        if padding_size + cover_sizes > MAX_PICTURES_AND_PADDING:
+        if len(data) > max_picture_block_size - len(picture.write()):
             click.secho(
-                f"Total size ({humanfriendly.format_size(padding_size + cover_sizes, binary=True)}) exceeds 1MiB!",
+                f"Resizing oversized cover ({humanfriendly.format_size(len(data), binary=True)})...",
                 fg="yellow",
             )
-            cover_file = _strip_pictures(path, audio, cover_file)
-
-        if audio.pictures == []:
-            click.secho("Attempting to add external cover...", fg="magenta")
-            if not cover_file:
-                click.secho("No cover file found!", fg="red")
-                continue
-
+            picture.mime = "image/jpeg"
             try:
-                with open(cover_file, "rb") as c:
-                    data = c.read()
-            except OSError as e:
-                click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
-                continue
-
-            max_picture_block_size = MAX_PICTURES_AND_PADDING - humanfriendly.parse_size("8KiB")
-
-            # The PICTURE block's own fields (MIME type, dimensions, lengths) count against the limit too, so
-            # the image gets what is left once they are written with no data.
-            picture = Picture()
-            try:
-                picture.mime = Image.open(cover_file).get_format_mimetype()
-            except (OSError, Image.DecompressionBombError) as e:
-                click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
-                continue
-
-            if len(data) <= max_picture_block_size - len(picture.write()):
-                click.secho(
-                    f"Cover size ({humanfriendly.format_size(len(data), binary=True)}) within limit",
-                    fg="bright_green",
-                )
-            else:
-                click.secho(
-                    f"Resizing oversized cover ({humanfriendly.format_size(len(data), binary=True)})...",
-                    fg="yellow",
-                )
-                picture.mime = "image/jpeg"
-                try:
-                    image = Image.open(cover_file)
+                with Image.open(cover_file) as image:
                     image.thumbnail((1000, 1000))
                     image = _flatten_to_rgb(image)
                     data = compress_to_target_size(image, max_picture_block_size - len(picture.write()))
-                except (OSError, ValueError, Image.DecompressionBombError) as e:
-                    click.secho(f"Could not convert cover file {cover_file} to a JPEG ({e}); leaving it out.", fg="red")
-                    continue
-                if data is None:
-                    click.secho(f"Could not shrink {cover_file} enough to embed it; leaving it out.", fg="red")
-                    continue
+            except (OSError, ValueError, Image.DecompressionBombError) as e:
+                click.secho(f"Could not convert cover file {cover_file} to a JPEG ({e}); leaving it out.", fg="red")
+                continue
+            if data is None:
+                click.secho(f"Could not shrink {cover_file} enough to embed it; leaving it out.", fg="red")
+                continue
 
-            picture.data = data
-            picture.type = PictureType.COVER_FRONT
-            audio.add_picture(picture)
-            audio.save(padding=get_8kib_padding)
-            click.secho(f"Saved {filename} with optimized cover", fg="bright_green")
-        else:
-            click.secho("Existing covers meet size requirements", fg="bright_white")
+        picture.data = data
+        picture.type = PictureType.COVER_FRONT
+        audio.add_picture(picture)
+        audio.save(padding=get_8kib_padding)
+        click.secho(f"Embedded the cover in {filename}", fg="bright_green")

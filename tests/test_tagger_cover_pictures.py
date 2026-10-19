@@ -124,18 +124,6 @@ def test_the_picture_block_counts_not_only_the_image(tmp_path) -> None:
     assert cover.find_oversized_pictures(str(tmp_path)) == {"01.flac": MIB - 1 + BLOCK_FIELDS}
 
 
-def test_auto_compress_cover_strips_when_the_picture_block_is_over(tmp_path) -> None:
-    folder_cover = io.BytesIO()
-    Image.new("RGB", (10, 10), "blue").save(folder_cover, "jpeg")
-    (tmp_path / "cover.jpg").write_bytes(folder_cover.getvalue())
-    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"x" * (MIB - 8 * KIB - 1)),))
-
-    cover.compress_pictures(str(tmp_path))
-
-    # Stripped, then the folder's cover embedded in place of the oversized one.
-    assert [picture.data for picture in FLAC(tmp_path / "01.flac").pictures] == [folder_cover.getvalue()]
-
-
 def test_strips_by_default(album, capsys) -> None:
     before = _snapshot(album)
     assert cfg.image.strip_oversized_pictures is True
@@ -257,12 +245,12 @@ def test_the_cover_write_never_touches_an_existing_file(tmp_path, monkeypatch) -
     assert (taken / f".{'0' * 32}.part").read_bytes() == b"someone else's"
 
 
-def test_auto_compress_cover_embeds_within_the_limit_counting_the_picture_block(tmp_path) -> None:
+def test_embed_missing_cover_embeds_within_the_limit_counting_the_picture_block(tmp_path) -> None:
     # The image alone fits beside 8 KiB of padding; with the PICTURE block's own fields it would not.
     (tmp_path / "cover.jpg").write_bytes(_image("jpeg", MIB - 8 * KIB - 1))
     _write_flac(tmp_path / "01.flac")
 
-    cover.compress_pictures(str(tmp_path))
+    cover.embed_missing_cover(str(tmp_path))
 
     audio = FLAC(tmp_path / "01.flac")
     assert len(audio.pictures) == 1
@@ -307,7 +295,7 @@ def test_a_cover_that_cannot_be_shrunk_is_not_embedded(tmp_path, monkeypatch, ca
     _write_flac(tmp_path / "01.flac")
     monkeypatch.setattr(cover, "compress_to_target_size", lambda _image, _target: None)
 
-    cover.compress_pictures(str(tmp_path))
+    cover.embed_missing_cover(str(tmp_path))
 
     assert FLAC(tmp_path / "01.flac").pictures == []
     assert "Could not shrink" in capsys.readouterr().out
@@ -323,21 +311,6 @@ def test_nothing_is_said_or_changed_within_the_limit(tmp_path, capsys) -> None:
     assert _snapshot(tmp_path) == before
 
 
-def test_auto_compress_cover_still_strips_and_embeds_the_cover(tmp_path) -> None:
-    # compress_pictures shares the strip with check_embedded_pictures; its own behaviour is unchanged.
-    front = io.BytesIO()
-    Image.new("RGB", (10, 10), "red").save(front, "jpeg")
-    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, front.getvalue()),), padding=2 * MIB)
-
-    cover.compress_pictures(str(tmp_path))
-
-    audio = FLAC(tmp_path / "01.flac")
-    assert (tmp_path / "cover.jpg").read_bytes() == front.getvalue()
-    assert [picture.data for picture in audio.pictures] == [front.getvalue()]
-    assert cover.pictures_and_padding_size(audio) == len(front.getvalue()) + BLOCK_FIELDS + 8 * KIB
-    assert (tmp_path / "01.flac").read_bytes().endswith(AUDIO)
-
-
 @pytest.mark.parametrize(
     ("mode", "size", "seed"),
     [
@@ -347,7 +320,7 @@ def test_auto_compress_cover_still_strips_and_embeds_the_cover(tmp_path) -> None
         ("I;16", (1000, 1000), 4),
     ],
 )
-def test_auto_compress_cover_converts_unusual_modes_before_saving_as_jpeg(tmp_path, mode, size, seed) -> None:
+def test_embed_missing_cover_converts_unusual_modes_before_saving_as_jpeg(tmp_path, mode, size, seed) -> None:
     # RGBA gets a fully transparent 32x32 block; I;16 gets a mid-grey (32768) 32x32 block, both top left.
     known_block = (0, 0, 32, 32) if mode in ("RGBA", "I;16") else None
     cover_bytes = _png_bytes(mode, size, seed, known_block=known_block)
@@ -355,7 +328,7 @@ def test_auto_compress_cover_converts_unusual_modes_before_saving_as_jpeg(tmp_pa
     assert len(cover_bytes) > MIB
     _write_flac(tmp_path / "01.flac")
 
-    cover.compress_pictures(str(tmp_path))
+    cover.embed_missing_cover(str(tmp_path))
 
     audio = FLAC(tmp_path / "01.flac")
     assert len(audio.pictures) == 1
@@ -380,7 +353,7 @@ def test_a_cover_that_is_not_a_readable_image_is_skipped(tmp_path, capsys) -> No
     (tmp_path / "cover.png").write_bytes(b"not a real image, just garbage bytes" * 100)
     _write_flac(tmp_path / "01.flac")
 
-    cover.compress_pictures(str(tmp_path))
+    cover.embed_missing_cover(str(tmp_path))
 
     audio = FLAC(tmp_path / "01.flac")
     assert audio.pictures == []
@@ -394,7 +367,7 @@ def test_a_cover_pil_refuses_as_a_decompression_bomb_is_skipped(tmp_path, monkey
     (tmp_path / "cover.png").write_bytes(_image("png"))
     _write_flac(tmp_path / "01.flac")
 
-    cover.compress_pictures(str(tmp_path))
+    cover.embed_missing_cover(str(tmp_path))
 
     audio = FLAC(tmp_path / "01.flac")
     assert audio.pictures == []
@@ -408,9 +381,42 @@ def test_a_cover_file_that_cannot_be_opened_is_skipped(tmp_path, capsys) -> None
     (tmp_path / "cover.jpg").mkdir()
     _write_flac(tmp_path / "01.flac")
 
-    cover.compress_pictures(str(tmp_path))
+    cover.embed_missing_cover(str(tmp_path))
 
     audio = FLAC(tmp_path / "01.flac")
     assert audio.pictures == []
     output = capsys.readouterr().out
     assert "Could not read cover file" in output
+
+
+def test_embed_missing_cover_leaves_a_flac_that_has_a_picture_alone(tmp_path) -> None:
+    (tmp_path / "cover.jpg").write_bytes(_image("jpeg"))
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"x" * (MIB - 8 * KIB - 1)),))
+    _write_flac(tmp_path / "02.flac", pictures=((PictureType.COVER_BACK, _image("png")),))
+    before = _snapshot(tmp_path)
+
+    cover.embed_missing_cover(str(tmp_path))
+
+    # Even the one over the limit: stripping is check_embedded_pictures's job.
+    assert _snapshot(tmp_path) == before
+
+
+def test_embed_missing_cover_says_so_when_there_is_no_cover_file(tmp_path, capsys) -> None:
+    _write_flac(tmp_path / "01.flac")
+    before = _snapshot(tmp_path)
+
+    cover.embed_missing_cover(str(tmp_path))
+
+    assert _snapshot(tmp_path) == before
+    assert "No cover file found" in capsys.readouterr().out
+
+
+def test_embed_missing_cover_never_changes_the_cover_file(tmp_path) -> None:
+    cover_bytes = _image("jpeg", 2 * MIB)
+    (tmp_path / "cover.jpg").write_bytes(cover_bytes)
+    _write_flac(tmp_path / "01.flac")
+
+    cover.embed_missing_cover(str(tmp_path))
+
+    assert (tmp_path / "cover.jpg").read_bytes() == cover_bytes
+    assert cover.pictures_and_padding_size(FLAC(tmp_path / "01.flac")) <= MIB

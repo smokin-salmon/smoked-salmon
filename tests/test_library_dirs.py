@@ -1,6 +1,7 @@
 """library_dirs: an album inside one comes out of any salmon run byte-identical, and is never deleted."""
 
 import hashlib
+import io
 import os
 import struct
 import sys
@@ -13,6 +14,7 @@ import pytest
 from asyncclick.testing import CliRunner
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
+from PIL import Image
 
 import salmon.checks
 import salmon.commands
@@ -288,7 +290,9 @@ async def _rename_files(path: str, *_args: Any) -> None:
             os.rename(os.path.join(path, name), os.path.join(path, name.replace(" - ", ". ")))
 
 
-def _run_up(monkeypatch, album: Path, **fakes: Any) -> tuple[Any, list[str], list[tuple[str, str]]]:
+def _run_up(
+    monkeypatch, album: Path, *, embed: bool = False, scene: bool = False, **fakes: Any
+) -> tuple[Any, list[str], list[tuple[str, str]]]:
     """Run `salmon up ALBUM -g 5` with the real staging, tag standardizing, picture strip and folder rename.
 
     The seams that need audio tools, a network or a reviewer are stubbed, `fakes` replace more of them.
@@ -357,13 +361,26 @@ def _run_up(monkeypatch, album: Path, **fakes: Any) -> tuple[Any, list[str], lis
     monkeypatch.setattr(cfg.upload.requests, "last_minute_dupe_check", False)
     monkeypatch.setattr(cfg.upload.requests, "check_requests", False)
     monkeypatch.setattr(cfg.upload, "multi_tracker_upload", False)
-    monkeypatch.setattr(cfg.image, "embed_missing_cover", False)
+    monkeypatch.setattr(cfg.image, "embed_missing_cover", embed)
     monkeypatch.setattr(salmon.trackers, "get_class", lambda _tracker: FakeSite)
 
     async def run():
         return await CliRunner().invoke(
             salmon.uploader.up,
-            [str(album), "-t", "RED", "-g", "5", "-s", "WEB", "-n", "-yyy", "--skip-integrity-check", "--skip-up"],
+            [
+                str(album),
+                "-t",
+                "RED",
+                "-g",
+                "5",
+                "-s",
+                "WEB",
+                "-n",
+                "-yyy",
+                "--skip-integrity-check",
+                "--skip-up",
+                *(["--scene"] if scene else []),
+            ],
             input="y\n",
         )
 
@@ -400,6 +417,84 @@ def test_up_leaves_a_library_album_byte_identical_and_uploads_a_copy(
     assert all(os.stat(file).st_nlink == 1 for file in library.rglob("*") if file.is_file())
 
 
+def _bare_album(folder: Path) -> tuple[Path, bytes]:
+    """A release whose FLACs have no picture, with a real cover.jpg. Returns the folder and the cover's bytes."""
+    folder.mkdir(parents=True)
+    _write_flac(folder / "01 - one.flac", title="One", artist="Artist")
+    _write_flac(folder / "02 - two.flac", title="Two", artist="Artist")
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), "green").save(buffer, "jpeg")
+    (folder / "cover.jpg").write_bytes(buffer.getvalue())
+    return folder, buffer.getvalue()
+
+
+def _pictures_at_upload(seen: list[list[int]]):
+    """An upload_and_report that records how many pictures each FLAC has when the torrent is made."""
+
+    async def upload_and_report(_site: Any, path: str, *_args: Any, **_kwargs: Any) -> tuple:
+        seen.append(sorted(len(FLAC(file).pictures) for file in Path(path).rglob("*.flac")))
+        return 21, 5, "/t.torrent", b"", "https://tracker.test/t"
+
+    return upload_and_report
+
+
+def test_up_embeds_the_folder_cover_in_a_flac_with_no_picture_before_the_first_torrent(monkeypatch, dirs) -> None:
+    _library, downloads = dirs
+    album, cover_bytes = _bare_album(downloads / "Album")
+    seen: list[list[int]] = []
+
+    result, _uploads, _transcodes = _run_up(monkeypatch, album, embed=True, upload_and_report=_pictures_at_upload(seen))
+
+    assert result.exit_code == 0, result.output
+    assert seen[0] == [1, 1]
+    copy = downloads / RENAMED
+    for file in copy.glob("*.flac"):
+        (picture,) = FLAC(file).pictures
+        assert picture.type == PictureType.COVER_FRONT
+        assert picture.data == cover_bytes
+    assert (copy / "cover.jpg").read_bytes() == cover_bytes
+
+
+def test_up_leaves_the_files_alone_with_embed_missing_cover_off(monkeypatch, dirs) -> None:
+    _library, downloads = dirs
+    album, _cover = _bare_album(downloads / "Album")
+    seen: list[list[int]] = []
+
+    result, _uploads, _transcodes = _run_up(
+        monkeypatch, album, embed=False, upload_and_report=_pictures_at_upload(seen)
+    )
+
+    assert result.exit_code == 0, result.output
+    assert seen[0] == [0, 0]
+
+
+def test_up_leaves_a_scene_release_alone(monkeypatch, dirs) -> None:
+    _library, downloads = dirs
+    album, _cover = _bare_album(downloads / "Album")
+    seen: list[list[int]] = []
+
+    result, _uploads, _transcodes = _run_up(
+        monkeypatch, album, embed=True, scene=True, upload_and_report=_pictures_at_upload(seen)
+    )
+
+    assert result.exit_code == 0, result.output
+    assert seen[0] == [0, 0]
+
+
+def test_up_embeds_the_cover_in_the_copy_of_a_library_album_only(monkeypatch, dirs) -> None:
+    library, downloads = dirs
+    album, cover_bytes = _bare_album(library / "Album")
+    before = _snapshot(library)
+    seen: list[list[int]] = []
+
+    result, _uploads, _transcodes = _run_up(monkeypatch, album, embed=True, upload_and_report=_pictures_at_upload(seen))
+
+    assert result.exit_code == 0, result.output
+    assert seen[0] == [1, 1]
+    assert _snapshot(library) == before
+    assert all(len(FLAC(file).pictures) == 1 for file in (downloads / RENAMED).glob("*.flac"))
+
+
 @pytest.mark.parametrize("when", ["before the rename", "after the rename"])
 def test_abort_and_delete_keeps_the_library_album_and_deletes_the_copy(monkeypatch, dirs, when: str) -> None:
     library, downloads = dirs
@@ -414,7 +509,7 @@ def test_abort_and_delete_keeps_the_library_album_and_deletes_the_copy(monkeypat
         deleted.append(path)
         raise AbortAndDeleteFolder
 
-    fakes = (
+    fakes: dict[str, Any] = (
         {"check_spectrals": delete_before} if when == "before the rename" else {"check_embedded_pictures": delete_after}
     )
     monkeypatch.setattr(cfg.upload, "windows_use_recycle_bin", False)
