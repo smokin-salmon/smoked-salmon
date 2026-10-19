@@ -259,7 +259,8 @@ def test_a_duration_alone_pairs_nothing():
 
 
 def test_duration_tells_apart_two_files_with_the_same_title():
-    tags = {"a.flac": _tagset("Django", length=420.4), "b.flac": _tagset("Django", length=300.2)}
+    # The names order the files, and the durations overrule that order: 01 is the Extended Mix, track 2.
+    tags = {"01.flac": _tagset("Django", length=420.4), "02.flac": _tagset("Django", length=300.2)}
     metadata = _one_disc(
         _trackmeta("Django (Original Mix)", "1", duration=300),
         _trackmeta("Django (Extended Mix)", "2", duration=420),
@@ -267,7 +268,24 @@ def test_duration_tells_apart_two_files_with_the_same_title():
 
     changes = create_track_changes(tags, metadata)
 
-    assert _proposed(changes, "title") == {"a.flac": "Django (Extended Mix)", "b.flac": "Django (Original Mix)"}
+    assert _proposed(changes, "title") == {"01.flac": "Django (Extended Mix)", "02.flac": "Django (Original Mix)"}
+
+
+def test_tag_files_skips_unnumbered_files_with_one_title_that_only_durations_tell_apart(monkeypatch, capsys):
+    # No track tags and names with no number give no order, and a duration alone never places a file.
+    tags = {"a.flac": _tagset("Django", length=300.2), "b.flac": _tagset("Django", length=420.4)}
+    metadata = _one_disc(
+        _trackmeta("Django (Original Mix)", "1", duration=300),
+        _trackmeta("Django (Extended Mix)", "2", duration=420),
+    )
+
+    with pytest.raises(AmbiguousTrackOrderError):
+        create_track_changes(tags, metadata)
+    asked, written = _run_tag_files(monkeypatch, tags, metadata, answer=True)
+
+    assert asked == []
+    assert written == []
+    assert "Skipping retagging procedure" in capsys.readouterr().out
 
 
 def test_files_whose_order_is_ambiguous_are_tagged_when_their_titles_place_every_one():

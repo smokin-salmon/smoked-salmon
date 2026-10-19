@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from collections import Counter
 from itertools import chain
 from string import Formatter
 from typing import Any
@@ -151,25 +152,12 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
     keys_unique = len(set(disc_track_keys)) == len(disc_track_keys)
     discnumber_tags = [_has_tag(tagset, "discnumber") for tagset in tags.values()]
 
-    if tracknumber_readable and keys_unique and not any(discnumber_tags):
-        # No file carries a DISCNUMBER tag, so every key defaults to (1, track) and uniqueness
-        # among them is really uniqueness of the track numbers alone (a flat single-disc folder,
-        # or one whose TRACKNUMBER counts straight through every disc instead of restarting at
-        # each one). Nothing here vouches for *which* disc a file belongs to, but the positional
-        # zip below only needs the track order right, which this does give us.
-        ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
-    elif (
-        tracknumber_readable
-        and keys_unique
-        and all(discnumber_tags)
-        and all(_parse_tag_number(tagset, "discnumber") is not None for tagset in tags.values())
-        and set(disc_track_keys) == _metadata_track_keys(metadata["tracks"])
-    ):
-        # DISCNUMBER is present and parseable on every file, and the resulting pairs are not just
-        # unique among themselves but are exactly the metadata's real disc/track pairs: a pair
-        # that happens to be unique but that the metadata doesn't have (an extra track number a
-        # disc's real tracklist doesn't include, say) would otherwise still get trusted and zipped
-        # onto the wrong track.
+    # DISCNUMBER on no file keys every file (1, track), which proves the track order: all the zip below needs.
+    # On every file, it must parse; on only some, a file without it would sort as disc 1 among real disc 1s.
+    disc_tags_usable = not any(discnumber_tags) or (
+        all(discnumber_tags) and all(_parse_tag_number(tagset, "discnumber") is not None for tagset in tags.values())
+    )
+    if tracknumber_readable and keys_unique and disc_tags_usable and _zips_onto(disc_track_keys, metadata["tracks"]):
         ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
     else:
         try:
@@ -269,11 +257,6 @@ def metadata_to_track_list(metadata):
     return list(chain.from_iterable(metadata[disc].values() for disc in sorted(metadata, key=_disc_track_sort_key)))
 
 
-def _metadata_track_keys(discs):
-    """The metadata's real (disc, track) pairs, numbers read the same way a tag's are."""
-    return {(_to_number(disc), _to_number(track)) for disc, disc_tracks in discs.items() for track in disc_tracks}
-
-
 def _track_key(track):
     """A track's (disc, track) pair, read the way a file's own tags are (no disc is disc 1)."""
     return (_to_number(track.get("disc#") or 1), _to_number(track["track#"]))
@@ -287,6 +270,20 @@ def _to_number(value):
     """
     s = str(value)
     return int(s) if s.isdecimal() else s
+
+
+def _zips_onto(keys, discs) -> bool:
+    """Whether files sorted by their (disc, track) keys line up with the metadata's discs in order.
+
+    They do when either side has one disc (a flat tracklist, or one tagged disc numbered straight through),
+    or when each tagged disc holds as many files as the metadata's disc in the same place has tracks.
+    """
+    file_discs = Counter(disc for disc, _track in keys)
+    if len(file_discs) == 1 or len(discs) == 1:
+        return True
+    return [file_discs[disc] for disc in sorted(file_discs)] == [
+        len(discs[disc]) for disc in sorted(discs, key=_disc_track_sort_key)
+    ]
 
 
 def _order_by_disc_folders(tags, discs):
@@ -315,14 +312,29 @@ def _order_within_disc(group):
 
     This is also the path a single-disc, single-folder release takes, so a folder full of duplicate or
     missing TRACKNUMBER tags (exactly why someone would retag) still resolves by file name instead of being
-    refused. Only raise when neither the tags nor the file names can tell the files apart.
+    refused. Names are an order only when every one starts with a number, or when unique track tags pin
+    all files but one and the name order keeps each pinned file at its tag's place: "Apple" before "Zebra"
+    says nothing about which is track 1. Raise otherwise.
     """
     numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in group]
     if None not in numbers and len(set(numbers)) == len(numbers):
         return sorted(group, key=lambda item: _get_tag_number(item[1], "tracknumber"))
-    if _names_distinct(filename for filename, _ in group):
-        return sorted(group, key=lambda item: _natural_key(item[0]))
+    names = [filename for filename, _ in group]
+    if not _names_distinct(names):
+        raise _ambiguous_tracks()
+    by_name = sorted(group, key=lambda item: _natural_key(item[0]))
+    if all(re.match(r"\d", os.path.basename(name)) for name in names):
+        return by_name
+    pinned = sum(1 for n in numbers if n is not None and numbers.count(n) == 1)
+    if pinned >= len(group) - 1 and not _names_move_a_pinned_file(by_name):
+        return by_name
     raise _ambiguous_tracks()
+
+
+def _names_move_a_pinned_file(by_name) -> bool:
+    """Whether name order puts a file away from the place its track tag gives, when no other file has that tag."""
+    numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in by_name]
+    return any(n is not None and numbers.count(n) == 1 and n != place for place, n in enumerate(numbers, 1))
 
 
 def _names_distinct(names) -> bool:

@@ -409,6 +409,80 @@ def test_create_track_changes_handles_the_one_folder_disc_dot_track_layout():
     assert Change("title", "Old Third", "New Third") in changes["2.01 Third.flac"]
 
 
+def _two_discs_of_two():
+    return {
+        "tracks": {
+            str(disc): {str(track): _trackmeta(f"New {disc}-{track}", str(track), str(disc)) for track in (1, 2)}
+            for disc in (1, 2)
+        }
+    }
+
+
+def test_disc_tags_order_a_flat_folder_when_the_metadata_has_one_disc():
+    # A flat folder tagged as two discs of two, against metadata that lists the four tracks as one disc.
+    # The titles do not match (another language or edition), so only the tags can order the files: by
+    # file name, "02 Beta" (disc 1 track 2) would sort after "01 Gamma" (disc 2 track 1) and swap titles.
+    files = {
+        "01 Alpha.flac": ("1", "1"),
+        "02 Beta.flac": ("1", "2"),
+        "01 Gamma.flac": ("2", "1"),
+        "02 Delta.flac": ("2", "2"),
+    }
+    tags = {name: _tagset(f"Old {name}", tracknumber=track, discnumber=disc) for name, (disc, track) in files.items()}
+    metadata = {"tracks": {"1": {str(n): _trackmeta(f"New {n}", str(n), "1") for n in range(1, 5)}}}
+
+    changes = create_track_changes(tags, metadata)
+
+    for n, name in enumerate(files, 1):
+        assert Change("title", f"Old {name}", f"New {n}") in changes[name]
+
+
+def test_tracks_numbered_through_one_tagged_disc_fill_the_metadata_discs():
+    # Four files tagged disc 1, tracks 1 to 4, against two discs of two: the files line up with the
+    # tracklist in order, so they tag rather than refuse.
+    tags = {f"0{n}.flac": _tagset(f"Old {n}", tracknumber=str(n), discnumber="1") for n in range(1, 5)}
+
+    changes = create_track_changes(tags, _two_discs_of_two())
+
+    assert Change("title", "Old 3", "New 2-1") in changes["03.flac"]
+    assert Change("title", "Old 4", "New 2-2") in changes["04.flac"]
+
+
+def test_names_without_a_number_are_not_an_order():
+    # Two files share TRACKNUMBER 1 and their names carry no number: alphabetical order says nothing
+    # about which is track 1, so this must refuse rather than tag "Apple" as track 1.
+    tags = {name: _tagset(f"Old {name}", tracknumber="1", discnumber=None) for name in ("Zebra.flac", "Apple.flac")}
+    metadata = {"tracks": {"1": {"1": _trackmeta("New 1", "1", "1"), "2": _trackmeta("New 2", "2", "1")}}}
+
+    with pytest.raises(AmbiguousTrackOrderError, match="DISCNUMBER and TRACKNUMBER"):
+        create_track_changes(tags, metadata)
+
+
+def test_a_track_tag_that_pins_a_file_orders_unnumbered_names_that_agree_with_it():
+    tags = {
+        "Zebra.flac": _tagset("Old Zebra", tracknumber=None, discnumber=None),
+        "Apple.flac": _tagset("Old Apple", tracknumber="1", discnumber=None),
+    }
+    metadata = {"tracks": {"1": {"1": _trackmeta("New 1", "1", "1"), "2": _trackmeta("New 2", "2", "1")}}}
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old Apple", "New 1") in changes["Apple.flac"]
+    assert Change("title", "Old Zebra", "New 2") in changes["Zebra.flac"]
+
+
+def test_unnumbered_names_that_put_a_pinned_file_elsewhere_are_not_an_order():
+    # Zebra's tag says track 1, but by name it sorts second: the names would tag Apple as track 1.
+    tags = {
+        "Zebra.flac": _tagset("Old Zebra", tracknumber="1", discnumber=None),
+        "Apple.flac": _tagset("Old Apple", tracknumber=None, discnumber=None),
+    }
+    metadata = {"tracks": {"1": {"1": _trackmeta("New 1", "1", "1"), "2": _trackmeta("New 2", "2", "1")}}}
+
+    with pytest.raises(AmbiguousTrackOrderError, match="DISCNUMBER and TRACKNUMBER"):
+        create_track_changes(tags, metadata)
+
+
 def test_get_tag_number_reads_the_number_part_of_a_slash_pair():
     assert _get_tag_number(SimpleNamespace(discnumber="3/12"), "discnumber") == 3
 
