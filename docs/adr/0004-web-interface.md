@@ -154,8 +154,8 @@ jobs in threads, every tracker request on one loop
   secho, `err=True`, print) to that job's log, found through a contextvar, and anything else to the real
   streams. Nothing in asyncclick is patched.
 - *Amended by [0006](0006-typed-questions.md): `prompt` takes a description of the options and `confirm`
-  the words of its buttons; the terminal ignores them, and the web draws them and sends the call site the
-  line a terminal user would have typed.*
+  the words of its buttons. The terminal ignores both. The web draws them; `prompt` then returns the line a
+  terminal user would have typed, and `confirm` still returns True or False.*
 
 ### 3. Security
 
