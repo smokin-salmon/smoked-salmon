@@ -86,6 +86,9 @@ the test run never reads a developer's config.
 - Config: add new settings to the msgspec schema with a default, validate them in
   `__post_init__`, and document them (commented out if optional) in `config.default.toml`. New
   settings must not change behaviour for existing configs unless that is the point of the change.
+  Changes to existing keys follow [ADR 0005](docs/adr/0005-config-compatibility.md): renaming,
+  moving or removing a key needs an entry in its old-key table, never a silent change; a changed
+  default is a breaking change, with a release-notes line that keeps the old behaviour.
 - Every bug fix comes with a test that fails without the fix.
 - **Never change or delete a user's album in place when it may be in `library_dirs`.** Steps that
   retag, rename, sanitize or delete work on the folder `staged_source` (`uploader/staging.py`)
