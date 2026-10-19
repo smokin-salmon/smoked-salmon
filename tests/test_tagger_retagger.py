@@ -458,6 +458,31 @@ def test_names_without_a_number_are_not_an_order():
         create_track_changes(tags, metadata)
 
 
+def test_a_track_tag_that_pins_a_file_orders_unnumbered_names_that_agree_with_it():
+    tags = {
+        "Zebra.flac": _tagset("Old Zebra", tracknumber=None, discnumber=None),
+        "Apple.flac": _tagset("Old Apple", tracknumber="1", discnumber=None),
+    }
+    metadata = {"tracks": {"1": {"1": _trackmeta("New 1", "1", "1"), "2": _trackmeta("New 2", "2", "1")}}}
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old Apple", "New 1") in changes["Apple.flac"]
+    assert Change("title", "Old Zebra", "New 2") in changes["Zebra.flac"]
+
+
+def test_unnumbered_names_that_put_a_pinned_file_elsewhere_are_not_an_order():
+    # Zebra's tag says track 1, but by name it sorts second: the names would tag Apple as track 1.
+    tags = {
+        "Zebra.flac": _tagset("Old Zebra", tracknumber="1", discnumber=None),
+        "Apple.flac": _tagset("Old Apple", tracknumber=None, discnumber=None),
+    }
+    metadata = {"tracks": {"1": {"1": _trackmeta("New 1", "1", "1"), "2": _trackmeta("New 2", "2", "1")}}}
+
+    with pytest.raises(AmbiguousTrackOrderError, match="DISCNUMBER and TRACKNUMBER"):
+        create_track_changes(tags, metadata)
+
+
 def test_get_tag_number_reads_the_number_part_of_a_slash_pair():
     assert _get_tag_number(SimpleNamespace(discnumber="3/12"), "discnumber") == 3
 

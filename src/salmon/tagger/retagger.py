@@ -313,17 +313,28 @@ def _order_within_disc(group):
     This is also the path a single-disc, single-folder release takes, so a folder full of duplicate or
     missing TRACKNUMBER tags (exactly why someone would retag) still resolves by file name instead of being
     refused. Names are an order only when every one starts with a number, or when unique track tags pin
-    all files but one: "Apple" before "Zebra" says nothing about which is track 1. Raise otherwise.
+    all files but one and the name order keeps each pinned file at its tag's place: "Apple" before "Zebra"
+    says nothing about which is track 1. Raise otherwise.
     """
     numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in group]
     if None not in numbers and len(set(numbers)) == len(numbers):
         return sorted(group, key=lambda item: _get_tag_number(item[1], "tracknumber"))
     names = [filename for filename, _ in group]
-    numbered = all(re.match(r"\d", os.path.basename(name)) for name in names)
+    if not _names_distinct(names):
+        raise _ambiguous_tracks()
+    by_name = sorted(group, key=lambda item: _natural_key(item[0]))
+    if all(re.match(r"\d", os.path.basename(name)) for name in names):
+        return by_name
     pinned = sum(1 for n in numbers if n is not None and numbers.count(n) == 1)
-    if (numbered or pinned >= len(group) - 1) and _names_distinct(names):
-        return sorted(group, key=lambda item: _natural_key(item[0]))
+    if pinned >= len(group) - 1 and not _names_move_a_pinned_file(by_name):
+        return by_name
     raise _ambiguous_tracks()
+
+
+def _names_move_a_pinned_file(by_name) -> bool:
+    """Whether name order puts a file away from the place its track tag gives, when no other file has that tag."""
+    numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in by_name]
+    return any(n is not None and numbers.count(n) == 1 and n != place for place, n in enumerate(numbers, 1))
 
 
 def _names_distinct(names) -> bool:
