@@ -153,6 +153,9 @@ jobs in threads, every tracker request on one loop
 - `salmon web` replaces `sys.stdout` and `sys.stderr` with wrappers that send what a job writes (echo,
   secho, `err=True`, print) to that job's log, found through a contextvar, and anything else to the real
   streams. Nothing in asyncclick is patched.
+- *Amended by [0006](0006-typed-questions.md): `prompt` takes a description of the options and `confirm`
+  the words of its buttons; the terminal ignores them, and the web draws them and sends the call site the
+  line a terminal user would have typed.*
 
 ### 3. Security
 
