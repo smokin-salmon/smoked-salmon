@@ -522,7 +522,8 @@ def _downloading(cover_bytes: bytes, calls: list[str]):
 
     async def download(path: str, url: str | None) -> tuple[str, bool]:
         calls.append(str(url))
-        target = Path(path, "cover.jpg")
+        # A query string in the name, as a URL like .../c.jpg?size=big gives.
+        target = Path(path, "cover.jpg?size=big")
         target.write_bytes(cover_bytes)
         return str(target), True
 
@@ -552,7 +553,7 @@ def test_up_downloads_a_missing_cover_and_embeds_it_before_the_first_torrent(mon
     assert calls == ["https://store.test/c.jpg"]
     assert seen[0] == [1, 1]
     # With removal on, the downloaded file is gone before the torrent is made, so it is not in it.
-    assert ("cover.jpg" in files[0]) is not remove
+    assert ("cover.jpg?size=big" in files[0]) is not remove
     assert all(FLAC(file).pictures[0].data == cover_bytes for file in (downloads / RENAMED).glob("*.flac"))
 
 

@@ -421,3 +421,43 @@ def test_embed_missing_cover_never_changes_the_cover_file(tmp_path) -> None:
 
     assert (tmp_path / "cover.jpg").read_bytes() == cover_bytes
     assert cover.pictures_and_padding_size(FLAC(tmp_path / "01.flac")) <= MIB
+
+
+def test_embed_missing_cover_shrinks_the_cover_once_for_the_whole_folder(tmp_path, monkeypatch) -> None:
+    (tmp_path / "cover.jpg").write_bytes(_image("jpeg", 2 * MIB))
+    for name in ("01.flac", "02.flac", "03.flac"):
+        _write_flac(tmp_path / name)
+    shrinks = []
+    real = cover.compress_to_target_size
+
+    def counting(image, target):
+        shrinks.append(target)
+        return real(image, target)
+
+    monkeypatch.setattr(cover, "compress_to_target_size", counting)
+
+    cover.embed_missing_cover(str(tmp_path))
+
+    assert len(shrinks) == 1
+    assert [len(FLAC(tmp_path / name).pictures) for name in ("01.flac", "02.flac", "03.flac")] == [1, 1, 1]
+
+
+def test_embed_missing_cover_says_once_that_a_bad_cover_is_left_out(tmp_path, capsys) -> None:
+    (tmp_path / "cover.png").write_bytes(b"not a real image" * 100)
+    _write_flac(tmp_path / "01.flac")
+    _write_flac(tmp_path / "02.flac")
+
+    cover.embed_missing_cover(str(tmp_path))
+
+    assert capsys.readouterr().out.count("Could not read cover file") == 1
+
+
+def test_embed_missing_cover_embeds_the_cover_file_it_is_given(tmp_path) -> None:
+    # A downloaded cover can have a query string in its name, which get_cover_from_path does not match.
+    odd = tmp_path / "cover.jpg?size=big"
+    odd.write_bytes(_image("jpeg"))
+    _write_flac(tmp_path / "01.flac")
+
+    cover.embed_missing_cover(str(tmp_path), str(odd))
+
+    assert [picture.data for picture in FLAC(tmp_path / "01.flac").pictures] == [odd.read_bytes()]
