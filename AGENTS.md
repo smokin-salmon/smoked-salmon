@@ -24,7 +24,8 @@ pass.
 
 The `salmon` package loads and validates its config at import time and exits if there is none.
 `tests/conftest.py` handles this for the test run by pointing `XDG_CONFIG_HOME` at a temporary
-copy of `src/salmon/data/config.default.toml`. If you import `salmon` outside pytest, you need a
+config built from the short `src/salmon/data/config.default.toml`, with fake tracker tables added
+(`tests/shipped_config.py`). If you import `salmon` outside pytest, you need a
 config at `~/.config/smoked-salmon/config.toml` (Linux) or a `config.toml` at the repo root, and
 every directory it names must exist.
 
@@ -40,7 +41,8 @@ the test run never reads a developer's config.
 | `src/salmon/run.py`, `commands.py` | CLI entry point (`salmon`) and top-level commands |
 | `src/salmon/interaction.py` | Every question salmon asks the user (`prompt`, `confirm`, `edit`, `show_spectrals`) and `assume_defaults` (`-yyy`) |
 | `src/salmon/config/` | Config schema (`validations.py`, msgspec structs); validation runs in `__post_init__` |
-| `src/salmon/data/config.default.toml` | The config new users start from; keep it valid and in sync with the schema |
+| `src/salmon/data/config.default.toml` | The short config new users start from. It has no tracker, so it loads only once one is filled in |
+| `src/salmon/data/config.reference.toml` | Documents every key, commented out with its default; a test keeps it in sync with the schema |
 | `src/salmon/data/version.toml` | Version and changelog. **See Releases below before touching it** |
 | `src/salmon/trackers/` | Tracker API clients. `base.py` (`BaseGazelleApi`) does all tracker HTTP |
 | `src/salmon/uploader/` | The upload flow (`__init__.py`), dupe/request checks, spectrals, seedbox, torrent clients |
@@ -84,7 +86,8 @@ the test run never reads a developer's config.
 
 - Python 3.11+, ruff line length 120, async throughout (`anyio`, `aiohttp`, `asyncclick`).
 - Config: add new settings to the msgspec schema with a default, validate them in
-  `__post_init__`, and document them (commented out if optional) in `config.default.toml`. New
+  `__post_init__`, and document them, commented out with their default, in `config.reference.toml` (add a key to
+  `config.default.toml` only if a new user is likely to change it). New
   settings must not change behaviour for existing configs unless that is the point of the change.
   Changes to existing keys follow [ADR 0005](docs/adr/0005-config-compatibility.md): renaming,
   moving or removing a key needs an entry in its old-key table, never a silent change; a changed

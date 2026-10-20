@@ -13,7 +13,7 @@ import anyio
 import msgspec
 import pytest
 from aiohttp_socks import ProxyConnector
-from shipped_config import DEFAULT_CONFIG as _DEFAULT_CONFIG  # pyright: ignore[reportMissingImports]
+from shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG  # pyright: ignore[reportMissingImports]
 from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 from salmon import cfg, proxy
@@ -58,13 +58,14 @@ def test_without_a_proxy_every_service_connects_as_before(
     anyio.run(main)
 
 
-_SHIPPED_PROXY_SECTION = _DEFAULT_CONFIG.read_text(encoding="utf-8").split("# PROXY SETTINGS", 1)[1]
+_SHIPPED_PROXY_SECTION = _REFERENCE_CONFIG.read_text(encoding="utf-8").split("# PROXY SETTINGS", 1)[1]
 
 
 def _uncommented_proxy_section() -> str:
     """What a user uncomments: the tables and settings, not the comments explaining them."""
-    lines = _SHIPPED_PROXY_SECTION.splitlines()
-    return "\n".join(line[2:] for line in lines if re.match(r"# (\[|\w+ = )", line))
+    # The [proxy] table; one setting per service is in [proxy.services], and would override its url.
+    lines = _SHIPPED_PROXY_SECTION.split("\n[proxy.services]", 1)[0].splitlines()
+    return "\n".join(line.removeprefix("# ") for line in lines if re.match(r"(# \w+ = |\[)", line))
 
 
 def test_the_shipped_proxy_section_uncommented_with_a_url_proxies_every_service(
@@ -88,7 +89,7 @@ def test_the_shipped_proxy_section_uncommented_as_is_is_refused(tmp_path: Path) 
 
 
 def test_the_shipped_proxy_section_names_every_service() -> None:
-    services = _SHIPPED_PROXY_SECTION.split("# [proxy.services]", 1)[1]
+    services = _SHIPPED_PROXY_SECTION.split("\n[proxy.services]\n", 1)[1]
     assert [service for service in SERVICES if not re.search(rf"\b{service}\b", services)] == []
 
 

@@ -12,7 +12,7 @@ import anyio
 import msgspec
 import pytest
 from asyncclick.testing import CliRunner
-from shipped_config import DEFAULT_CONFIG as _DEFAULT_CONFIG  # pyright: ignore[reportMissingImports]
+from shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG  # pyright: ignore[reportMissingImports]
 from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
 
 import salmon.commands
@@ -21,9 +21,7 @@ from salmon.config import Cfg, _parse_config, unknown_keys
 
 _SECTION_COMMENT = re.compile(r"^# (\[\[?[\w.]+\]\]?)\s*$")
 _KEY_COMMENT = re.compile(r"^# ([A-Za-z_]\w* = .*)$")
-_ACTIVE_HEADER = re.compile(r"^\[\[?([\w.]+)\]\]?\s*$")
 
-_REMOVE_SOURCE_DIR_LINE = "# remove_source_dir = false"
 _SUGGESTION = "upload.formatting.remove_source_dir (under [upload.formatting])"
 
 
@@ -33,6 +31,13 @@ def _template(tmp_path: Path) -> str:
     music.mkdir(exist_ok=True)
     torrents.mkdir(exist_ok=True)
     return shipped_config(music, torrents)
+
+
+def _in_upload(tmp_path: Path, line: str) -> str:
+    """The template with one line in its (empty) [upload] table."""
+    text = _template(tmp_path)
+    assert text.count("\n[upload]\n") == 1
+    return text.replace("\n[upload]\n", f"\n[upload]\n{line}\n")
 
 
 def _write(tmp_path: Path, text: str) -> Path:
@@ -53,25 +58,8 @@ def _load(tmp_path: Path, text: str, capsys: pytest.CaptureFixture[str]) -> tupl
     return cfg, warnings
 
 
-def _uncomment_remove_source_dir(text: str) -> str:
-    assert text.count(_REMOVE_SOURCE_DIR_LINE) == 1
-    return text.replace(_REMOVE_SOURCE_DIR_LINE, "remove_source_dir = true")
-
-
-def _table_above(text: str, needle: str) -> str:
-    """The last active ``[...]`` or ``[[...]]`` header above ``needle``: where a user's uncommented line lands."""
-    table = None
-    for line in text.splitlines():
-        if line.startswith(needle):
-            assert table is not None
-            return table
-        if m := _ACTIVE_HEADER.match(line):
-            table = m.group(1)
-    raise AssertionError(f"{needle!r} not in the template")
-
-
 def test_misplaced_key_in_a_table_is_warned_and_ignored(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    text = _template(tmp_path) + "\n[upload]\nremove_source_dir = true\n"
+    text = _in_upload(tmp_path, "remove_source_dir = true")
     cfg, warnings = _load(tmp_path, text, capsys)
     assert len(warnings) == 1
     assert "Unknown config key upload.remove_source_dir" in warnings[0]
@@ -95,7 +83,7 @@ def test_top_level_key_from_the_old_config_py_matches_case_insensitively(
 def test_suggestion_for_a_known_top_level_key_names_the_top_of_the_file(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    text = _template(tmp_path) + "\n[upload]\ndefault_tracker = 'RED'\n"
+    text = _in_upload(tmp_path, "default_tracker = 'RED'")
     _, warnings = _load(tmp_path, text, capsys)
     assert len(warnings) == 1
     assert "tracker.default_tracker (under [tracker])" in warnings[0]
@@ -148,7 +136,7 @@ def test_unknown_keys_does_not_descend_into_other_shapes() -> None:
 
 
 def test_misspelled_key_without_a_match_gets_no_suggestion(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    text = _template(tmp_path) + "\n[upload]\nqwertyuiop = true\n"
+    text = _in_upload(tmp_path, "qwertyuiop = true")
     _, warnings = _load(tmp_path, text, capsys)
     assert len(warnings) == 1
     assert "Unknown config key upload.qwertyuiop in" in warnings[0]
@@ -156,7 +144,7 @@ def test_misspelled_key_without_a_match_gets_no_suggestion(tmp_path: Path, capsy
 
 
 def test_a_key_is_warned_about_once_per_process(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    text = _template(tmp_path) + "\n[upload]\nqwertyuiop = true\n"
+    text = _in_upload(tmp_path, "qwertyuiop = true")
     path = _write(tmp_path, text)
     capsys.readouterr()
     _parse_config(path)
@@ -181,26 +169,23 @@ def _uncomment_template(text: str) -> str:
 
 def test_every_commented_template_setting_is_in_the_schema() -> None:
     """A setting the template offers (commented out) must be one the schema reads: the template cannot drift."""
-    text = _uncomment_template(_DEFAULT_CONFIG.read_text(encoding="utf-8"))
+    text = _uncomment_template(_REFERENCE_CONFIG.read_text(encoding="utf-8"))
     raw = msgspec.toml.decode(text.encode())
     assert unknown_keys(raw) == []
 
 
 def test_support_case_uncommenting_only_remove_source_dir(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    """Every [upload.*] header is commented out in the template: the line lands under the last active table."""
-    template = _template(tmp_path)
-    table = _table_above(template, _REMOVE_SOURCE_DIR_LINE)
-    cfg, warnings = _load(tmp_path, _uncomment_remove_source_dir(template), capsys)
+    """A key uncommented without its (commented) header lands under the last table of the file."""
+    text = _template(tmp_path) + "\nremove_source_dir = true\n"
+    cfg, warnings = _load(tmp_path, text, capsys)
     assert len(warnings) == 1
-    assert f"Unknown config key {table}.remove_source_dir in {tmp_path / 'config.toml'}" in warnings[0]
+    assert f"Unknown config key tracker.dic.remove_source_dir in {tmp_path / 'config.toml'}" in warnings[0]
     assert f"Did you mean {_SUGGESTION}?" in warnings[0]
     assert cfg.upload.formatting.remove_source_dir is False
 
 
 def test_support_case_with_a_seedbox_enabled(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    template = _template(tmp_path)
-    assert template.count("# [[seedbox]]") == 1
-    text = _uncomment_remove_source_dir(template.replace("# [[seedbox]]", "[[seedbox]]\nname = 'box'"))
+    text = _template(tmp_path) + "\n[[seedbox]]\nname = 'box'\nremove_source_dir = true\n"
     cfg, warnings = _load(tmp_path, text, capsys)
     assert len(warnings) == 1
     assert "Unknown config key seedbox[0].remove_source_dir in" in warnings[0]
