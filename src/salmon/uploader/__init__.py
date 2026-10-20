@@ -65,7 +65,13 @@ from salmon.tagger.audio_info import (
     gather_audio_info,
     recompress_path,
 )
-from salmon.tagger.cover import check_embedded_pictures, compress_pictures, download_cover_if_nonexistent
+from salmon.tagger.cover import (
+    check_embedded_pictures,
+    download_cover_if_nonexistent,
+    embed_missing_cover,
+    get_cover_from_path,
+    has_flac_without_picture,
+)
 from salmon.tagger.foldername import rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
@@ -1075,6 +1081,15 @@ async def _upload_staged(
             if not scene:
                 # Before any torrent or transcode is made from the folder, so they all get the same files.
                 check_embedded_pictures(path)
+                if cfg.image.embed_missing_cover:
+                    # A missing cover is downloaded from the metadata first, as the per-tracker step used to.
+                    cover_path, downloaded = None, False
+                    if metadata["cover"] and has_flac_without_picture(path) and not get_cover_from_path(path):
+                        cover_path, downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
+                    embed_missing_cover(path, cover_path)
+                    if downloaded and remove_downloaded_cover_image and cover_path:
+                        # Not in the torrents; the cover upload downloads it again.
+                        os.remove(cover_path)
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
@@ -1204,9 +1219,6 @@ async def _upload_staged(
                 if not spectrals_after:
                     # Uploaded to this tracker's specs host, unless a tracker using the same host already did.
                     spectral_urls = await spectral_uploads.urls_for(gazelle_site.site_code, spectral_ids)
-
-                if not scene and cfg.image.embed_missing_cover:
-                    compress_pictures(path)
 
                 if not flac_url and not request_id and cfg.upload.requests.check_requests:
                     request_id = await check_requests(gazelle_site, searchstrs)

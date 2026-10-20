@@ -69,9 +69,11 @@
 # Set to true to remove downloaded cover images that are created in source folder, when one does not exist
 # remove_auto_downloaded_cover_image = false
 
-# Set to true to embed the folder's cover, shrunk to fit under 1 MiB, in every FLAC that has no picture (or only
-# pictures over that limit, which are removed first). The folder's cover file is never changed.
-# embed_missing_cover = false
+# Embeds the folder's cover, shrunk to fit under 1 MiB, in every FLAC that has no picture, before the torrents
+# are made. A missing cover is downloaded from the metadata first, as before. The cover file is
+# never changed. Scene releases are never changed.
+# Set to false to keep the files as they are.
+# embed_missing_cover = true
 
 # Before an upload, salmon removes the embedded pictures and padding from FLACs where they exceed RED's
 # 1 MiB limit, keeping the front cover as a file. Scene releases are never changed.

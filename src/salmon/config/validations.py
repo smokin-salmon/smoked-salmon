@@ -129,7 +129,7 @@ class ImageUploader(BaseStruct):
     ra_key: str | None = None
     remove_auto_downloaded_cover_image: bool = False
     # Embed the folder cover, shrunk to fit, in every FLAC with no picture; the cover file is never changed.
-    embed_missing_cover: bool = False
+    embed_missing_cover: bool = True
     strip_oversized_pictures: bool = True
     default_spectral_ids: SpectralSelection | None = None
     red: TrackerImageSettings | None = None
