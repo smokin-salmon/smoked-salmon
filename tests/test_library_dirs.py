@@ -291,7 +291,13 @@ async def _rename_files(path: str, *_args: Any) -> None:
 
 
 def _run_up(
-    monkeypatch, album: Path, *, embed: bool = False, scene: bool = False, **fakes: Any
+    monkeypatch,
+    album: Path,
+    *,
+    embed: bool | None = False,
+    scene: bool = False,
+    cover_url: str | None = None,
+    **fakes: Any,
 ) -> tuple[Any, list[str], list[tuple[str, str]]]:
     """Run `salmon up ALBUM -g 5` with the real staging, tag standardizing, picture strip and folder rename.
 
@@ -328,7 +334,7 @@ def _run_up(
         "year": 2020,
         "edition_title": None,
         "scene": False,
-        "cover": None,
+        "cover": cover_url,
         "genres": [],
     }
     for name, fake in {
@@ -361,7 +367,8 @@ def _run_up(
     monkeypatch.setattr(cfg.upload.requests, "last_minute_dupe_check", False)
     monkeypatch.setattr(cfg.upload.requests, "check_requests", False)
     monkeypatch.setattr(cfg.upload, "multi_tracker_upload", False)
-    monkeypatch.setattr(cfg.image, "embed_missing_cover", embed)
+    if embed is not None:
+        monkeypatch.setattr(cfg.image, "embed_missing_cover", embed)
     monkeypatch.setattr(salmon.trackers, "get_class", lambda _tracker: FakeSite)
 
     async def run():
@@ -428,10 +435,12 @@ def _bare_album(folder: Path) -> tuple[Path, bytes]:
     return folder, buffer.getvalue()
 
 
-def _pictures_at_upload(seen: list[list[int]]):
-    """An upload_and_report that records how many pictures each FLAC has when the torrent is made."""
+def _pictures_at_upload(seen: list[list[int]], files: list[list[str]] | None = None):
+    """An upload_and_report that records how many pictures each FLAC has, and the files, when the torrent is made."""
 
     async def upload_and_report(_site: Any, path: str, *_args: Any, **_kwargs: Any) -> tuple:
+        if files is not None:
+            files.append(sorted(str(file.relative_to(path)) for file in Path(path).rglob("*") if file.is_file()))
         seen.append(sorted(len(FLAC(file).pictures) for file in Path(path).rglob("*.flac")))
         return 21, 5, "/t.torrent", b"", "https://tracker.test/t"
 
@@ -493,6 +502,71 @@ def test_up_embeds_the_cover_in_the_copy_of_a_library_album_only(monkeypatch, di
     assert seen[0] == [1, 1]
     assert _snapshot(library) == before
     assert all(len(FLAC(file).pictures) == 1 for file in (downloads / RENAMED).glob("*.flac"))
+
+
+def test_up_embeds_the_cover_by_default(monkeypatch, dirs) -> None:
+    # No embed_missing_cover set: the default config does it.
+    _library, downloads = dirs
+    album, cover_bytes = _bare_album(downloads / "Album")
+    seen: list[list[int]] = []
+
+    result, _uploads, _transcodes = _run_up(monkeypatch, album, embed=None, upload_and_report=_pictures_at_upload(seen))
+
+    assert result.exit_code == 0, result.output
+    assert seen[0] == [1, 1]
+    assert (downloads / RENAMED / "cover.jpg").read_bytes() == cover_bytes
+
+
+def _downloading(cover_bytes: bytes, calls: list[str]):
+    """A download_cover_if_nonexistent that writes the cover into the folder, as the real one would."""
+
+    async def download(path: str, url: str | None) -> tuple[str, bool]:
+        calls.append(str(url))
+        target = Path(path, "cover.jpg")
+        target.write_bytes(cover_bytes)
+        return str(target), True
+
+    return download
+
+
+@pytest.mark.parametrize("remove", [False, True])
+def test_up_downloads_a_missing_cover_and_embeds_it_before_the_first_torrent(monkeypatch, dirs, remove: bool) -> None:
+    _library, downloads = dirs
+    album, cover_bytes = _bare_album(downloads / "Album")
+    (album / "cover.jpg").unlink()
+    monkeypatch.setattr(cfg.image, "remove_auto_downloaded_cover_image", remove)
+    seen: list[list[int]] = []
+    files: list[list[str]] = []
+    calls: list[str] = []
+
+    result, _uploads, _transcodes = _run_up(
+        monkeypatch,
+        album,
+        embed=None,
+        cover_url="https://store.test/c.jpg",
+        upload_and_report=_pictures_at_upload(seen, files),
+        download_cover_if_nonexistent=_downloading(cover_bytes, calls),
+    )
+
+    assert result.exit_code == 0, result.output
+    assert calls == ["https://store.test/c.jpg"]
+    assert seen[0] == [1, 1]
+    # With removal on, the downloaded file is gone before the torrent is made, so it is not in it.
+    assert ("cover.jpg" in files[0]) is not remove
+    assert all(FLAC(file).pictures[0].data == cover_bytes for file in (downloads / RENAMED).glob("*.flac"))
+
+
+def test_up_says_once_that_there_is_no_cover_to_embed(monkeypatch, dirs) -> None:
+    _library, downloads = dirs
+    album, _cover = _bare_album(downloads / "Album")
+    (album / "cover.jpg").unlink()
+    seen: list[list[int]] = []
+
+    result, _uploads, _transcodes = _run_up(monkeypatch, album, embed=None, upload_and_report=_pictures_at_upload(seen))
+
+    assert result.exit_code == 0, result.output
+    assert seen[0] == [0, 0]
+    assert result.output.count("No cover file to embed") == 1
 
 
 @pytest.mark.parametrize("when", ["before the rename", "after the rename"])

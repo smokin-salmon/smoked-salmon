@@ -340,6 +340,15 @@ def check_embedded_pictures(path: str) -> None:
     click.secho(f"Stripped {stripped} file(s) to no embedded pictures and 8 KiB of padding.", fg="green")
 
 
+def has_flac_without_picture(path: str) -> bool:
+    """Whether any FLAC in the folder has no embedded picture."""
+    return any(
+        not FLAC(os.path.join(path, filename)).pictures
+        for filename in get_audio_files(path)
+        if filename.lower().endswith(".flac")
+    )
+
+
 def embed_missing_cover(path: str) -> None:
     """Embed the folder's cover in every FLAC that has no picture, shrunk to fit under RED's 1 MiB limit.
 
@@ -352,6 +361,7 @@ def embed_missing_cover(path: str) -> None:
     """
     cover_file = None
     looked = False
+    said = False
     for filename in get_audio_files(path):
         if not filename.lower().endswith(".flac"):
             continue
@@ -362,7 +372,9 @@ def embed_missing_cover(path: str) -> None:
             cover_file = get_cover_from_path(path)
             looked = True
         if not cover_file:
-            click.secho(f"No cover file found to embed in {filename}.", fg="red")
+            if not said:
+                click.secho("No cover file to embed: FLACs with no picture are left as they are.", fg="yellow")
+                said = True
             continue
 
         try:

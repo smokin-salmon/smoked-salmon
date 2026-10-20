@@ -401,14 +401,15 @@ def test_embed_missing_cover_leaves_a_flac_that_has_a_picture_alone(tmp_path) ->
     assert _snapshot(tmp_path) == before
 
 
-def test_embed_missing_cover_says_so_when_there_is_no_cover_file(tmp_path, capsys) -> None:
+def test_embed_missing_cover_says_so_once_when_there_is_no_cover_file(tmp_path, capsys) -> None:
     _write_flac(tmp_path / "01.flac")
+    _write_flac(tmp_path / "02.flac")
     before = _snapshot(tmp_path)
 
     cover.embed_missing_cover(str(tmp_path))
 
     assert _snapshot(tmp_path) == before
-    assert "No cover file found" in capsys.readouterr().out
+    assert capsys.readouterr().out.count("No cover file to embed") == 1
 
 
 def test_embed_missing_cover_never_changes_the_cover_file(tmp_path) -> None:
