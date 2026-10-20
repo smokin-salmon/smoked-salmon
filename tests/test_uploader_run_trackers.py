@@ -115,8 +115,8 @@ def test_with_skip_flac_upload_the_path_limit_is_the_first_trackers_alone(monkey
     async def recording(_path: str, _scene: bool, *, max_path_length: int, **_kwargs: Any) -> None:
         limits.append(max_path_length)
 
-    # OPS (255) is the default tracker and RED (180) is offered after it, but the run stops after OPS, which takes
-    # the transcodes into its group.
+    # OPS (255) is the default tracker; RED (180) is configured and would be offered after it with
+    # multi_tracker_upload, but --skip-flac-upload stops the run after OPS, which takes the transcodes into its group.
     run = _run_up(
         monkeypatch,
         _album(downloads.parent / "seeding" / "Album"),
