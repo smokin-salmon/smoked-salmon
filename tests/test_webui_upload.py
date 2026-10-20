@@ -449,6 +449,29 @@ def test_a_job_with_no_tracker_ticked_takes_the_default_trackers(
     assert len(_uploads(tracker)) == 6
 
 
+def test_a_job_with_one_tracker_ticked_uploads_there_only(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path]
+) -> None:
+    """Only OPS ticked, with RED, OPS and DIC configured and multi_tracker_upload on: OPS, and no tracker question."""
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents, multi_tracker_upload=True)
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS", "DIC"])
+
+    async def tracker_question(*_args: Any, **_kwargs: Any) -> None:
+        raise AssertionError("a tracker question was asked")
+
+    monkeypatch.setattr(salmon.trackers, "choose_tracker", tracker_question)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job, asked = await _drive(client, manager, await _start(client, album, params={"trackers": ["OPS"]}))
+        assert job.status == "done", (job.error, _log(job))
+        assert not [question for question in asked if "tracker" in question["text"].lower()]
+        assert {each["tracker"] for each in job.result["uploads"]} == {"OPS"}
+
+    _web_run(tracker, test)
+
+
 # --- Tracker answers: a 429, a lost answer -------------------------------------------------------
 
 

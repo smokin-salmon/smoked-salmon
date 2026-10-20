@@ -250,7 +250,7 @@ def _up_options(params: UploadParams, trackers: tuple[str, ...]) -> dict[str, An
     return {
         **msgspec.structs.asdict(params),
         "trackers": trackers,
-        "trackers_from_config": isinstance(trackers, salmon.trackers.DefaultTrackers),
+        "trackers_named": not isinstance(trackers, salmon.trackers.UnnamedTrackers),
         "spectrals": tuple(params.spectrals),
         "encoding": TAG_ENCODINGS[params.encoding] if params.encoding else None,
     }

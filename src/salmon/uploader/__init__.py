@@ -192,8 +192,8 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
     "trackers",
     multiple=True,
     callback=salmon.trackers.validate_trackers,
-    help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)}). Name several, comma-separated or "
-    "with -t repeated, to upload to each in that order without being asked for another tracker. Without -t, "
+    help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)}). Name one, or several comma-separated or "
+    "with -t repeated, to upload to exactly those, in that order, without being asked for another tracker. Without -t, "
     "salmon uses tracker.default_trackers in order, then offers the other trackers only if "
     "upload.multi_tracker_upload is on; with no list, it asks which tracker.",
 )
@@ -305,7 +305,7 @@ async def up(
     options = UpOptions(
         path=path,
         trackers=trackers,
-        trackers_from_config=isinstance(trackers, salmon.trackers.DefaultTrackers),
+        trackers_named=not isinstance(trackers, salmon.trackers.UnnamedTrackers),
         source=source,
         group_id=group_id,
         skip_flac_upload=skip_flac_upload,
@@ -348,8 +348,9 @@ class UpOptions:
 
     Attributes:
         trackers: The site codes to upload to, in order, chosen and checked already (``validate_trackers``).
-        trackers_from_config: Whether the trackers are the config's default_trackers rather than named with -t: the
-            run then offers the other configured trackers after them, and --skip-flac-upload takes the first.
+        trackers_named: Whether -t named the trackers: the run uploads to exactly those. False for the config's
+            default_trackers or the tracker asked for (``UnnamedTrackers``): the run then offers the other configured
+            trackers after them, and --skip-flac-upload takes the first.
         source: The media source, as ``validate_source`` gives it.
         group_id: The group to upload into.
         encoding: The lossy encoding, as ``validate_encoding`` gives it.
@@ -361,7 +362,7 @@ class UpOptions:
     path: str
     trackers: tuple[str, ...]
     source: str | None
-    trackers_from_config: bool = False
+    trackers_named: bool = True
     group_id: int | None = None
     skip_flac_upload: bool = False
     lossy: bool | None = None
@@ -394,7 +395,7 @@ class UpOptions:
             return "--skip-flac-upload cannot be used with --spectrals-after."
         if self.essential_only and self.scene:
             return "--essential-only and --scene cannot be used together."
-        if self.skip_flac_upload and self.trackers[1:] and not self.trackers_from_config:
+        if self.skip_flac_upload and self.trackers[1:] and self.trackers_named:
             return "--skip-flac-upload uploads to one tracker: give -t a single tracker."
         if dry_run and self.spectrals_after:
             return (
@@ -462,8 +463,8 @@ async def run_up(options: UpOptions) -> None:
         skip_initial_review=options.skip_initial_review,
         skip_search=options.skip_search,
         apply_ai_suggestions=options.apply_ai_suggestions,
-        trackers=list(trackers) if len(trackers) > 1 else None,
-        offer_others=options.trackers_from_config,
+        trackers=list(trackers),
+        offer_others=not options.trackers_named,
         conversions=options.conversions,
     )
     if dryrun.active():
@@ -804,8 +805,8 @@ async def upload(
         apply_ai_suggestions: Automatically apply AI review suggestions when present.
         trackers: The site codes to upload to, in order, gazelle_site's first: the run uploads to each and
             asks about no other. None asks after each upload, as configured.
-        offer_others: With `trackers`, the config's default_trackers: after them, offer the other configured
-            trackers, as configured.
+        offer_others: `trackers` were not named with -t (the config's default_trackers, or the tracker asked for):
+            after them, offer the other configured trackers, as configured.
         conversions: The conversion kinds to make after a FLAC, without asking (see ``conversion_kind``). None
             follows upload.conversions, which is asked about.
         skip_search: Take the metadata from source_url without searching the stores, when a metadata source
@@ -887,8 +888,8 @@ def _trackers_for_run(
 def _reachable_trackers(trackers: list[str] | None, offer_others: bool) -> list[str] | None:
     """Every tracker a run given these trackers may upload to, in order; None when it is only known as it goes.
 
-    The config's default_trackers (`offer_others`) are followed by the other configured trackers the run offers,
-    with multi_tracker_upload.
+    Trackers not named with -t (`offer_others`: the config's default_trackers, or the one asked for) are followed by
+    the other configured trackers the run offers, with multi_tracker_upload.
     """
     if not trackers or not offer_others or not cfg.upload.multi_tracker_upload:
         return trackers
