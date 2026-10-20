@@ -139,8 +139,9 @@
 # TRACKER SETTINGS
 # ===============================
 [tracker]
+# Without -t, salmon up uploads to these in order, then offers your other trackers if multi_tracker_upload is on.
 # If not set, you'll be prompted to choose when using multiple trackers
-# default_tracker = 'RED'
+# default_trackers = ["RED", "OPS"]
 # Print every tracker request and response, with secrets masked
 # debug_connection = false
 

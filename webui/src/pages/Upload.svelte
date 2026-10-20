@@ -8,6 +8,7 @@
 
   interface Options {
     trackers: string[]
+    default_trackers: string[]
     sources: string[]
     encodings: string[]
   }
@@ -79,10 +80,17 @@
     }
     for (const key of REMEMBERED_FLAGS) flags[key] = false
     assumeDefaults = false
-    chosen = options.trackers.length ? [options.trackers[0]] : []
+    chosen = firstVisitTrackers(options)
   }
 
-  let options = $state<Options>({ trackers: [], sources: [], encodings: [] })
+  /** The trackers ticked when nothing is remembered: the config's default_trackers, else the first configured. */
+  function firstVisitTrackers(answer: Options): string[] {
+    const defaults = (answer.default_trackers ?? []).filter((t) => answer.trackers.includes(t))
+    if (defaults.length) return defaults
+    return answer.trackers.length ? [answer.trackers[0]] : []
+  }
+
+  let options = $state<Options>({ trackers: [], default_trackers: [], sources: [], encodings: [] })
 
   let path = $state('')
   let chosen = $state<string[]>([])
@@ -171,8 +179,8 @@
         if (chosen.length || !answer.trackers.length) return
         const kept = storedOptions().trackers
         const still = kept ? answer.trackers.filter((t) => kept.includes(t)) : []
-        // A stored empty list stays empty; nothing stored, or all gone from the config: the first tracker.
-        chosen = kept && (kept.length === 0 || still.length) ? still : [answer.trackers[0]]
+        // A stored empty list stays empty; nothing stored, or all gone from the config: the first-visit preset.
+        chosen = kept && (kept.length === 0 || still.length) ? still : firstVisitTrackers(answer)
       })
       .catch((e) => {
         error = `Could not load the trackers: ${e}`
@@ -275,7 +283,11 @@
           {/each}
         </div>
         {#if !chosen.length}
-          <small class="hint">None: the job asks, as salmon up does without -t.</small>
+          <small class="hint">
+            None: as salmon up without -t, {options.default_trackers?.length
+              ? `${options.default_trackers.join(', ')} from your config`
+              : 'the job asks which'}.
+          </small>
         {:else if showHelp}
           <small class="hint">Uploads to each in turn, and asks about no other tracker (-t).</small>
         {/if}

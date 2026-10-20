@@ -310,6 +310,7 @@ def test_a_web_upload_into_a_group_sends_what_salmon_up_sends(
 
 def test_the_form_offers_the_trackers_sources_and_encodings_up_takes(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
+    monkeypatch.setattr(cfg.tracker, "default_trackers", ["OPS", "RED"])
     tracker = FakeTracker()
 
     async def test(client: TestClient, _manager: JobManager) -> None:
@@ -317,6 +318,7 @@ def test_the_form_offers_the_trackers_sources_and_encodings_up_takes(monkeypatch
         assert response.status == 200
         assert await response.json() == {
             "trackers": ["RED", "OPS"],
+            "default_trackers": ["OPS", "RED"],
             "sources": ["WEB", "CD", "DVD", "Vinyl", "Soundboard", "SACD", "DAT", "Cassette"],
             "encodings": ["V0", "V1", "V2", "320", "256", "192", "320V", "256V", "192V"],
         }
@@ -424,6 +426,27 @@ def test_a_two_tracker_job_uploads_to_each_in_order(
     assert len(_uploads(tracker)) == 6
     # Each upload's folder and torrent queued for the seedbox.
     assert len(queued) == 12
+
+
+def test_a_job_with_no_tracker_ticked_takes_the_default_trackers(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path]
+) -> None:
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
+    monkeypatch.setattr(cfg.tracker, "default_trackers", ["RED", "OPS"])
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job, asked = await _drive(client, manager, await _start(client, album, params={}, assume_defaults=True))
+        assert job.status == "done", (job.error, _log(job))
+        # Two group prompts: no question about which tracker, and none left to offer.
+        assert len(asked) == 2
+        assert job.result["trackers"] == ["RED", "OPS"]
+        assert [each["tracker"] for each in job.result["uploads"]] == ["RED"] * 3 + ["OPS"] * 3
+
+    _web_run(tracker, test)
+    assert len(_uploads(tracker)) == 6
 
 
 # --- Tracker answers: a 429, a lost answer -------------------------------------------------------

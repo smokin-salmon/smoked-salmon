@@ -240,11 +240,12 @@ async def dashboard(request: web.Request) -> web.Response:
 
 
 async def upload_options(_request: web.Request) -> web.Response:
-    """What the upload form offers: the trackers configured, the sources and the lossy encodings ``salmon up``
-    takes. Contacts no tracker."""
+    """What the upload form offers: the trackers configured, the config's default_trackers, the sources and the
+    lossy encodings ``salmon up`` takes. Contacts no tracker."""
     return web.json_response(
         {
             "trackers": list(salmon.trackers.tracker_list),
+            "default_trackers": list(cfg.tracker.default_trackers),
             "sources": list(SOURCES.values()),
             "encodings": list(TAG_ENCODINGS),
         }
