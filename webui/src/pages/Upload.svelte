@@ -137,7 +137,7 @@
     {
       key: 'skip_flac_upload',
       label: 'Transcodes only',
-      help: 'The FLAC is already in the Group ID group: upload only transcodes of it, into that group (--skip-flac-upload). Needs a group ID and one tracker; not with a request or spectrals after upload.',
+      help: 'The FLAC is already in the Group ID group: upload only transcodes of it, into that group (--skip-flac-upload). Needs a group ID and one tracker (your default_trackers ticked as they are: the first); not with a request or spectrals after upload.',
     },
     {
       key: 'overwrite',
@@ -178,7 +178,8 @@
         options = answer
         if (chosen.length || !answer.trackers.length) return
         const kept = storedOptions().trackers
-        const still = kept ? answer.trackers.filter((t) => kept.includes(t)) : []
+        // In the order kept: the job uploads in it, and the config's default_trackers order is how they are told apart.
+        const still = kept ? kept.filter((t) => answer.trackers.includes(t)) : []
         // A stored empty list stays empty; nothing stored, or all gone from the config: the first-visit preset.
         chosen = kept && (kept.length === 0 || still.length) ? still : firstVisitTrackers(answer)
       })
