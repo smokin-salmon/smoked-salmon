@@ -774,8 +774,8 @@ async def upload(
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
-    Offer the choice to upload to another tracker after completion, unless `trackers` names them and not
-    `offer_others`.
+    With multi_tracker_upload, offer the choice to upload to another tracker after completion, unless `trackers`
+    names them and not `offer_others`.
 
     Args:
         gazelle_site: The tracker API instance.

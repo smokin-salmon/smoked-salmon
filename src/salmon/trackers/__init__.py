@@ -73,7 +73,8 @@ class UnnamedTrackers(tuple[str, ...]):
     """The trackers ``validate_trackers`` gives when no -t names one: the config's default_trackers, else the one
     asked for.
 
-    Trackers named with -t are the run's, one or several. After these, the run offers the other configured trackers.
+    After these, the run offers the other configured trackers (with multi_tracker_upload). Trackers named with -t, one
+    or several, are a plain tuple: the run uploads to exactly those and offers no other.
     """
 
 
