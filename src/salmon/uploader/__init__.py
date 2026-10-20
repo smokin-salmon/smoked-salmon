@@ -193,9 +193,9 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
     multiple=True,
     callback=salmon.trackers.validate_trackers,
     help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)}). Name several, comma-separated or "
-    "with -t repeated, to upload to each in that order without being asked for another tracker. Without -t: "
-    "tracker.default_trackers in order, then the other trackers are offered (with multi_tracker_upload); "
-    "with no default_trackers, salmon asks which.",
+    "with -t repeated, to upload to each in that order without being asked for another tracker. Without -t, "
+    "salmon uses tracker.default_trackers in order, then offers the other trackers only if "
+    "upload.multi_tracker_upload is on; with no list, it asks which tracker.",
 )
 @click.option("--request", "-r", default=None, help="Pass a request URL or ID")
 @click.option(

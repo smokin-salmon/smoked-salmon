@@ -137,7 +137,7 @@
     {
       key: 'skip_flac_upload',
       label: 'Transcodes only',
-      help: 'The FLAC is already in the Group ID group: upload only transcodes of it, into that group (--skip-flac-upload). Needs a group ID and one tracker (your default_trackers ticked as they are: the first); not with a request or spectrals after upload.',
+      help: 'The FLAC is already in the Group ID group: upload only transcodes of it, into that group (--skip-flac-upload). Needs a group ID and one tracker; not with a request or spectrals after upload.',
     },
     {
       key: 'overwrite',
@@ -178,7 +178,7 @@
         options = answer
         if (chosen.length || !answer.trackers.length) return
         const kept = storedOptions().trackers
-        // In the order kept: the job uploads in it, and the config's default_trackers order is how they are told apart.
+        // In the order kept, which is the order the job uploads in.
         const still = kept ? kept.filter((t) => answer.trackers.includes(t)) : []
         // A stored empty list stays empty; nothing stored, or all gone from the config: the first-visit preset.
         chosen = kept && (kept.length === 0 || still.length) ? still : firstVisitTrackers(answer)
@@ -194,14 +194,6 @@
       ? chosen.filter((c) => c !== code)
       : options.trackers.filter((t) => t === code || chosen.includes(t))
   }
-
-  // Exactly the config's default_trackers, in its order: sent as none, so the job runs as salmon up without -t
-  // (the other trackers offered after them, Transcodes only on the first) rather than as -t.
-  const asDefaults = $derived(
-    options.default_trackers.length > 0 &&
-      chosen.length === options.default_trackers.length &&
-      chosen.every((code, i) => code === options.default_trackers[i]),
-  )
 
   /** A group ID, or the ID in a torrents.php?id= link; null for none, undefined when it is neither. */
   function parseGroupId(value: string): number | null | undefined {
@@ -232,7 +224,7 @@
         params: {
           path,
           source,
-          trackers: asDefaults ? [] : chosen,
+          trackers: chosen,
           group_id: group,
           request: request.trim() || null,
           source_url: sourceUrl.trim() || null,
@@ -296,11 +288,6 @@
             None: as salmon up without -t, {options.default_trackers?.length
               ? `${options.default_trackers.join(', ')} from your config`
               : 'the job asks which'}.
-          </small>
-        {:else if showHelp && asDefaults}
-          <small class="hint">
-            Your config's default_trackers: uploads to each in turn, then offers the others (multi_tracker_upload),
-            as salmon up without -t.
           </small>
         {:else if showHelp}
           <small class="hint">Uploads to each in turn, and asks about no other tracker (-t).</small>
