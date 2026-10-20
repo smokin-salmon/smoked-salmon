@@ -1,7 +1,8 @@
 # Smoked Salmon Configuration File
-# Every setting is listed, with its default and an explanation, in config.reference.toml, next to this
-# file in the installed package (`salmon checkconf` prints where). Wiki:
-# https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration
+# Every setting is listed, with its default and an explanation, in config.reference.toml: installed next to
+# this file (`salmon checkconf --reset` prints where), and at
+# https://github.com/smokin-salmon/smoked-salmon/blob/master/src/salmon/data/config.reference.toml
+# Wiki: https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration
 
 [directory]
 download_directory = '.music'
