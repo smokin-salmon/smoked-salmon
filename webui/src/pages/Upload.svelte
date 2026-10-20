@@ -194,6 +194,14 @@
       : options.trackers.filter((t) => t === code || chosen.includes(t))
   }
 
+  // Exactly the config's default_trackers, in its order: sent as none, so the job runs as salmon up without -t
+  // (the other trackers offered after them, Transcodes only on the first) rather than as -t.
+  const asDefaults = $derived(
+    options.default_trackers.length > 0 &&
+      chosen.length === options.default_trackers.length &&
+      chosen.every((code, i) => code === options.default_trackers[i]),
+  )
+
   /** A group ID, or the ID in a torrents.php?id= link; null for none, undefined when it is neither. */
   function parseGroupId(value: string): number | null | undefined {
     const trimmed = value.trim()
@@ -223,7 +231,7 @@
         params: {
           path,
           source,
-          trackers: chosen,
+          trackers: asDefaults ? [] : chosen,
           group_id: group,
           request: request.trim() || null,
           source_url: sourceUrl.trim() || null,
@@ -287,6 +295,11 @@
             None: as salmon up without -t, {options.default_trackers?.length
               ? `${options.default_trackers.join(', ')} from your config`
               : 'the job asks which'}.
+          </small>
+        {:else if showHelp && asDefaults}
+          <small class="hint">
+            Your config's default_trackers: uploads to each in turn, then offers the others (multi_tracker_upload),
+            as salmon up without -t.
           </small>
         {:else if showHelp}
           <small class="hint">Uploads to each in turn, and asks about no other tracker (-t).</small>
