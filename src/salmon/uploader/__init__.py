@@ -961,7 +961,9 @@ async def _upload_staged(
     # Every tracker the run may reach, in order: those uploaded to without asking, then those it may offer.
     reachable = _reachable_trackers(trackers, offer_others)
     # The album folder and every conversion the run makes, on any tracker's turn, are checked against it.
-    max_path_length = _max_path_length_for_run(gazelle_site, reachable)
+    max_path_length = _max_path_length_for_run(
+        gazelle_site, _trackers_for_run(gazelle_site.site_code, flac_group, reachable)
+    )
     if not source:
         source = await _prompt_source(detect_source(path))
     audio_info = gather_audio_info(path)
@@ -1175,6 +1177,7 @@ async def _upload_staged(
         # Whether the run goes on after a tracker: always for named ones, until none is left.
         go_on = bool(reachable) or cfg.upload.multi_tracker_upload
         tracker = gazelle_site.site_code
+        requested = request_id  # What --request gave, if anything: check_requests only looks when it gave none
         if first_listed:
             remaining_gazelle_sites.remove(tracker)
             if request_id is not None:
@@ -1206,6 +1209,13 @@ async def _upload_staged(
                     if not tracker:
                         click.secho("\nDone with this release.", fg="green")
                         break
+                    # A request is of the tracker it was given or found for, whatever became of that tracker's turn.
+                    if request_id is not None:
+                        if request_id == requested:
+                            click.secho(
+                                f"\nNot filling request {request_id}: it is {gazelle_site.site_code}'s.", fg="yellow"
+                            )
+                        request_id = None
                     gazelle_site = salmon.trackers.get_class(tracker)()
                     # Before its dupe check, which may ask which group to upload into.
                     if _do_not_upload_refusal(tracker, metadata) is not None or (
