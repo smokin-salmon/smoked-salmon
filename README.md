@@ -338,8 +338,8 @@ choose which are selected by default, and made with `-yyy`, name them in the con
 salmon up /data/path/to/album -s WEB --conversions 16bit
 ```
 Give `24bit`, `16bit`, `320` or `V0`, comma-separated, or `none` or `all`. Formats the edition already has are
-left out. Without `--conversions`, when the config names at least one conversion that is possible, every possible
-conversion is listed and can be picked by number; the config only changes the default answer.
+left out. Without `--conversions`, the picker lists every offered conversion, to be picked by number, only when
+`upload.conversions` names one on offer; the config only changes the default answer.
 
 To see what an upload would send, without sending anything, add `--dry-run`:
 ```bash
