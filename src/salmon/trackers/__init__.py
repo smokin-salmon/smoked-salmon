@@ -69,16 +69,25 @@ async def choose_tracker(choices):
             return None
 
 
+class UnnamedTrackers(tuple[str, ...]):
+    """The trackers ``validate_trackers`` gives when no -t names one: the config's default_trackers, else the one
+    asked for.
+
+    After these, the run offers the other configured trackers (with multi_tracker_upload). Trackers named with -t, one
+    or several, are a plain tuple: the run uploads to exactly those and offers no other.
+    """
+
+
 async def choose_tracker_first_time(question="Which tracker would you like to upload to?"):
     """Specific logic for the first time a tracker choice is offered.
-    Uses default if there is one and uses the only tracker if there is only one."""
+    Uses the first default tracker if there is one and the only tracker if there is only one."""
     choices = tracker_list
     if len(choices) == 1:
         click.secho(f"Using tracker: {choices[0]}")
         return choices[0]
-    if tracker_cfg.default_tracker:
-        click.secho(f"Using tracker: {tracker_cfg.default_tracker}", fg="green")
-        return tracker_cfg.default_tracker
+    if tracker_cfg.default_trackers:
+        click.secho(f"Using tracker: {tracker_cfg.default_trackers[0]}", fg="green")
+        return tracker_cfg.default_trackers[0]
     click.secho(question, fg="magenta")
     tracker = await choose_tracker(choices)
     return tracker
@@ -104,12 +113,16 @@ async def validate_tracker(ctx, param, value):
 
 
 async def validate_trackers(ctx, param, value):
-    """Validate every tracker given with -t, in the order given; none given runs the first-time choice.
+    """Validate every tracker given with -t, in the order given.
 
     Each -t takes one tracker or a comma-separated list, and may be repeated: `-t RED,OPS` and
-    `-t RED -t OPS` both give ("RED", "OPS"). A tracker named twice counts once.
+    `-t RED -t OPS` both give ("RED", "OPS"). A tracker named twice counts once. None given: ``UnnamedTrackers``,
+    the config's default_trackers when it names several, else the first-time choice.
     """
     entries = [entry.strip() for item in value or () for entry in item.split(",") if entry.strip()]
+    if not entries and len(tracker_cfg.default_trackers) > 1:
+        click.secho(f"Using trackers: {', '.join(tracker_cfg.default_trackers)}", fg="green")
+        return UnnamedTrackers(tracker_cfg.default_trackers)
     if not entries:
         codes = [await choose_tracker_first_time()]
     else:
@@ -118,7 +131,7 @@ async def validate_trackers(ctx, param, value):
     if not chosen:
         click.secho("No tracker selected.", fg="red")
         raise click.Abort
-    return chosen
+    return chosen if entries else UnnamedTrackers(chosen)
 
 
 def validate_request(gazelle_site, request):

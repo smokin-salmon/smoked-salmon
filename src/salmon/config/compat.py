@@ -41,7 +41,13 @@ class Removed:
     did_nothing: bool = False
 
 
+def _one_tracker_to_list(value: Any) -> Any:
+    """``default_tracker = "RED"`` as ``default_trackers = ["RED"]``; anything else is left for the decode to refuse."""
+    return [value] if isinstance(value, str) else value
+
+
 OLD_KEYS: tuple[Moved | Removed, ...] = (
+    Moved("tracker.default_tracker", "tracker.default_trackers", convert=_one_tracker_to_list),
     Moved("upload.web_interface.host", "upload.spectrals_viewer.host"),
     Moved("upload.web_interface.port", "upload.spectrals_viewer.port"),
     Moved("upload.web_interface.display_host", "upload.spectrals_viewer.display_host"),
@@ -187,7 +193,7 @@ def _drop_removed(raw: dict[str, Any], entry: Removed, value: Any, config_path: 
 
 
 def _drop_placeholder_trackers(raw: dict[str, Any], config_path: Path) -> None:
-    """Leave out each tracker whose session is the old template's placeholder, and a default naming one.
+    """Leave out each tracker whose session is the old template's placeholder, and each default naming one.
 
     RED and OPS take an API key on its own, so one that has a key stays, with no cookie. DIC takes none.
     """
@@ -215,14 +221,16 @@ def _drop_placeholder_trackers(raw: dict[str, Any], config_path: Path) -> None:
             f"tracker.{code}.session is still the old template's placeholder '{_SESSION_PLACEHOLDER}'. "
             f"{code.upper()} is left out: set its cookie or remove [tracker.{code}].",
         )
-    default = tracker.get("default_tracker")
-    if isinstance(default, str) and default.lower() in dropped:
-        del tracker["default_tracker"]
-        warn(
-            config_path,
-            f"tracker.default_tracker = '{default}' is ignored: {default.upper()} is left out, "
-            "so salmon asks which tracker to upload to.",
-        )
+    defaults = tracker.get("default_trackers")
+    if not isinstance(defaults, list):
+        return
+    left_out = [code for code in defaults if isinstance(code, str) and code.strip().lower() in dropped]
+    if not left_out:
+        return
+    tracker["default_trackers"] = kept = [code for code in defaults if code not in left_out]
+    then = "the run uploads to the others it names" if kept else "salmon asks which tracker to upload to"
+    for code in dict.fromkeys(code.strip().upper() for code in left_out):
+        warn(config_path, f"tracker.default_trackers names {code}, which is left out: it is ignored, so {then}.")
 
 
 def _drop_placeholders(raw: dict[str, Any], config_path: Path) -> None:

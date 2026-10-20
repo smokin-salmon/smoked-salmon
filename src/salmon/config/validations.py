@@ -223,7 +223,8 @@ class Tracker(BaseStruct):
     red: GazelleTrackerSettings | None = None
     ops: GazelleTrackerSettings | None = None
     dic: GazelleTrackerSettings | None = None
-    default_tracker: Literal["RED", "OPS", "DIC"] | None = None
+    # Without -t, a run uploads to these in order, then offers the other trackers. Empty: asks which.
+    default_trackers: list[str] = msgspec.field(default_factory=list)
     # Print every tracker request and response, secrets masked.
     debug_connection: bool = False
 
@@ -231,12 +232,16 @@ class Tracker(BaseStruct):
         if (self.red is None) and (self.ops is None) and (self.dic is None):
             raise ValueError("You need a tracker session cookie in your config!")
 
-        if self.ops is None and self.default_tracker == "OPS":
-            raise ValueError("Default tracker is invalid!")
-        if self.red is None and self.default_tracker == "RED":
-            raise ValueError("Default tracker is invalid!")
-        if self.dic is None and self.default_tracker == "DIC":
-            raise ValueError("Default tracker is invalid!")
+        self.default_trackers = list(
+            dict.fromkeys(code.strip().upper() for code in self.default_trackers if code.strip())
+        )
+        for code in self.default_trackers:
+            if code not in ("RED", "OPS", "DIC"):
+                raise ValueError(f"tracker.default_trackers names {code}, which is not RED, OPS or DIC.")
+            if getattr(self, code.lower()) is None:
+                raise ValueError(
+                    f"tracker.default_trackers names {code}, which has no [tracker.{code.lower()}] in your config."
+                )
 
 
 class Seedbox(BaseStruct):

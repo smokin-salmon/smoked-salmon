@@ -291,13 +291,54 @@ def test_every_tracker_a_placeholder_is_no_tracker(tmp_path: Path, capsys) -> No
         _load(tmp_path, raw, capsys)
 
 
-def test_a_default_tracker_left_out_is_dropped_with_a_warning(tmp_path: Path, capsys) -> None:
+def test_the_old_default_tracker_is_a_list_of_one_with_a_warning(tmp_path: Path, capsys) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"]["default_tracker"] = "RED"
+    cfg, warnings = _load(tmp_path, raw, capsys)
+    assert cfg.tracker.default_trackers == ["RED"]
+    assert warnings == [
+        "tracker.default_tracker is now tracker.default_trackers (under [tracker]): it still works in 0.21, and "
+        f"stops salmon from 0.22.0. See {UPGRADE_PAGE}"
+    ]
+
+
+def test_the_old_and_the_new_default_trackers_together_are_refused(tmp_path: Path, capsys) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"].update(default_tracker="RED", default_trackers=["RED"])
+    with pytest.raises(ValueError, match="tracker.default_tracker and tracker.default_trackers are both set"):
+        _load(tmp_path, raw, capsys)
+
+
+def test_the_old_default_tracker_is_refused_from_0_22_0(tmp_path: Path, capsys, monkeypatch) -> None:
+    _version(monkeypatch, "0.22.0")
+    raw = _base(tmp_path)
+    raw["tracker"]["default_tracker"] = "RED"
+    with pytest.raises(ValueError, match="tracker.default_tracker is now tracker.default_trackers"):
+        _load(tmp_path, raw, capsys)
+
+
+def test_an_old_default_tracker_left_out_is_dropped_with_a_warning(tmp_path: Path, capsys) -> None:
     raw = _base(tmp_path)
     raw["tracker"]["ops"] = {"session": "get-from-site-cookie"}
     raw["tracker"]["default_tracker"] = "OPS"
     cfg, warnings = _load(tmp_path, raw, capsys)
-    assert cfg.tracker.default_tracker is None
-    assert any("tracker.default_tracker = 'OPS' is ignored" in line for line in warnings)
+    assert cfg.tracker.default_trackers == []
+    assert (
+        "tracker.default_trackers names OPS, which is left out: it is ignored, so salmon asks which tracker to "
+        "upload to." in warnings
+    )
+
+
+def test_a_default_tracker_left_out_leaves_the_others(tmp_path: Path, capsys) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"]["ops"] = {"session": "get-from-site-cookie"}
+    raw["tracker"]["default_trackers"] = ["OPS", "RED"]
+    cfg, warnings = _load(tmp_path, raw, capsys)
+    assert cfg.tracker.default_trackers == ["RED"]
+    assert (
+        "tracker.default_trackers names OPS, which is left out: it is ignored, so the run uploads to the others it "
+        "names." in warnings
+    )
 
 
 def test_a_default_tracker_kept_stays(tmp_path: Path, capsys) -> None:
@@ -305,7 +346,33 @@ def test_a_default_tracker_kept_stays(tmp_path: Path, capsys) -> None:
     raw["tracker"]["ops"] = {"session": "get-from-site-cookie"}
     raw["tracker"]["default_tracker"] = "RED"
     cfg, _ = _load(tmp_path, raw, capsys)
-    assert cfg.tracker.default_tracker == "RED"
+    assert cfg.tracker.default_trackers == ["RED"]
+
+
+def test_default_trackers_are_upper_cased_each_once_in_order(tmp_path: Path, capsys) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"]["ops"] = {"session": "another-real-cookie"}
+    raw["tracker"]["default_trackers"] = ["ops", "RED", "Ops"]
+    cfg, warnings = _load(tmp_path, raw, capsys)
+    assert cfg.tracker.default_trackers == ["OPS", "RED"]
+    assert warnings == []
+
+
+@pytest.mark.parametrize(
+    ("codes", "message"),
+    [
+        (["RED", "OPS"], "tracker.default_trackers names OPS, which has no \\[tracker.ops\\] in your config"),
+        (["XYZ"], "tracker.default_trackers names XYZ, which is not RED, OPS or DIC"),
+    ],
+    ids=["not configured", "not a tracker"],
+)
+def test_a_default_tracker_salmon_cannot_upload_to_is_refused(
+    tmp_path: Path, capsys, codes: list[str], message: str
+) -> None:
+    raw = _base(tmp_path)
+    raw["tracker"]["default_trackers"] = codes
+    with pytest.raises(msgspec.ValidationError, match=message):
+        _load(tmp_path, raw, capsys)
 
 
 def test_a_chosen_image_host_with_the_placeholder_key_is_refused(tmp_path: Path, capsys) -> None:

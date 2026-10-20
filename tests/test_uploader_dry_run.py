@@ -296,17 +296,22 @@ def _run_up(
     classes: dict[str, type[BaseGazelleApi]] | None = None,
     multi_tracker_upload: bool = True,
     yes_all: bool = True,
-    trackers: tuple[str, ...] = ("RED",),
+    trackers: tuple[str, ...] | None = None,
     **fakes: Any,
 ) -> Run:
-    """Run `salmon up ALBUM -t RED` (or the `trackers`) against the fake tracker: real staging, torrents and forms.
+    """Run `salmon up ALBUM` against the fake tracker: real staging, torrents and forms.
 
+    Without `trackers`, no -t and tracker.default_trackers = ["RED"]: RED, then the other trackers are offered.
+    `trackers` are named with -t, each; `()` names none and leaves default_trackers as the test set it.
     The seams that need audio tools, a metadata source or a reviewer are stubbed, `fakes` replace more of them.
     `classes` gives the client class of each site code, RED and OPS by default. `yes_all=False` leaves out -yyy.
     """
     tracker, queued, logins = fake_upload_world(
         monkeypatch, torrents, classes=classes, multi_tracker_upload=multi_tracker_upload, **fakes
     )
+    if trackers is None:
+        monkeypatch.setattr(cfg.tracker, "default_trackers", ["RED"])
+        trackers = ()
 
     async def run():
         async with tracker.serving():

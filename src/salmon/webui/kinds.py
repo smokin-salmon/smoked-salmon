@@ -250,6 +250,7 @@ def _up_options(params: UploadParams, trackers: tuple[str, ...]) -> dict[str, An
     return {
         **msgspec.structs.asdict(params),
         "trackers": trackers,
+        "trackers_named": not isinstance(trackers, salmon.trackers.UnnamedTrackers),
         "spectrals": tuple(params.spectrals),
         "encoding": TAG_ENCODINGS[params.encoding] if params.encoding else None,
     }
@@ -586,7 +587,7 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     from salmon.uploader.record import recording
 
     path = _album(params.path)
-    # The command's -t: none given asks which tracker.
+    # The command's -t: none given takes the config's default_trackers, else asks which tracker.
     trackers = await salmon.trackers.validate_trackers(None, None, tuple(params.trackers))
     options = UpOptions(**{**_up_options(params, trackers), "path": path})
     with recording() as record:

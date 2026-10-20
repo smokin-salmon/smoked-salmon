@@ -83,10 +83,10 @@ def test_top_level_key_from_the_old_config_py_matches_case_insensitively(
 def test_suggestion_for_a_known_top_level_key_names_the_top_of_the_file(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    text = _in_upload(tmp_path, "default_tracker = 'RED'")
+    text = _in_upload(tmp_path, "default_trackers = ['RED']")
     _, warnings = _load(tmp_path, text, capsys)
     assert len(warnings) == 1
-    assert "tracker.default_tracker (under [tracker])" in warnings[0]
+    assert "tracker.default_trackers (under [tracker])" in warnings[0]
 
 
 def test_several_matches_are_each_named_with_their_header(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

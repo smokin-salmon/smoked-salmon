@@ -78,7 +78,7 @@ def test_a_release_on_opss_list_goes_to_red_only(monkeypatch, tmp_path, dirs) ->
     write_lists(monkeypatch, tmp_path / "lists", OPS=ARTIST)
 
     # OPS named after RED: it is not asked for.
-    run = _run_up(monkeypatch, _album(downloads.parent / "seeding" / "Album"), torrents, args=("-t", "OPS"))
+    run = _run_up(monkeypatch, _album(downloads.parent / "seeding" / "Album"), torrents, trackers=("RED", "OPS"))
 
     assert run.result.exit_code == 0, run.result.output
     assert "Next tracker: OPS\n\nNot uploading to OPS: Artist (the whole discography) is on OPS's" in run.result.output

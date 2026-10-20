@@ -161,7 +161,7 @@ def test_a_conversion_the_edition_holds_is_not_selected_in_the_prompt(monkeypatc
 
 def test_each_trackers_upload_leaves_out_what_its_edition_holds(monkeypatch, tmp_path) -> None:
     # RED, then OPS (named with -t: no question between them); a new group on each.
-    run = _up(monkeypatch, tmp_path, GroupTracker([WEB_FLAC, WEB_320]), ("-t", "OPS"), input="\n\n")
+    run = _up(monkeypatch, tmp_path, GroupTracker([WEB_FLAC, WEB_320]), trackers=("RED", "OPS"), input="\n\n")
 
     assert run.result.exit_code == 0, run.result.output
     assert _uploads(run) == ["FLAC Lossless", "MP3 V0 (VBR)"] * 2
