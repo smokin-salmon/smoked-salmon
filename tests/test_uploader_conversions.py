@@ -193,37 +193,6 @@ def test_an_excluded_format_can_still_be_picked_by_number(monkeypatch) -> None:
     assert selected == ["MP3 320"]
 
 
-# The question before the prompt
-
-
-@pytest.mark.parametrize(("conversions", "expected"), [((), False), (("V0",), True), (CONVERSION_KINDS, True)])
-def test_the_question_is_not_the_default_when_no_conversion_is_wanted(
-    monkeypatch, torrents: Path, conversions: tuple[str, ...], expected: bool
-) -> None:
-    asked: list[bool | None] = []
-
-    def confirm(text: str, default: bool | None = False, **_kwargs: Any) -> bool:
-        if "check downconversion options" in text:
-            asked.append(default)
-            return False
-        return True if default is None else default
-
-    async def prompt(text: str, default: Any = None, **_kwargs: Any) -> Any:
-        return default
-
-    run = _run_conversion_up(
-        monkeypatch,
-        torrents,
-        ("--conversions", ",".join(conversions) or "none"),
-        yes_all=False,
-        confirm=confirm,
-        prompt=prompt,
-    )
-
-    assert run.result.exit_code == 0, run.result.output
-    assert asked == [expected]
-
-
 # The command
 
 
@@ -361,14 +330,13 @@ def _run_conversion_up(
         album,
         torrents,
         args,
-        multi_tracker_upload=False,
         tracker=FakeTracker(group_torrents=list(group_torrents)),
         construct_rls_data=_returning_async(rls_data),
         concat_track_data=_returning(source_tracks),
         check_spectrals=_returning_async((False, None)),
         convert_folder=convert_folder,
         gather_audio_info=gather_audio_info,
-        **kwargs,
+        **{"multi_tracker_upload": False, **kwargs},
     )
 
 
@@ -494,3 +462,126 @@ def test_the_prompt_leaves_out_the_16bit_flac_the_edition_holds(monkeypatch, tor
     assert asked == [True, "2 3"]
     assert HELD_16BIT in run.result.output
     assert _formats(run)[1:] == ["MP3 320", "MP3 V0 (VBR)"]
+
+
+# The questions: a selection made for the run is final, so it is not asked about (#753)
+
+NO_CONVERSIONS = "No conversions selected for this upload."
+
+
+def _questions(monkeypatch, torrents: Path, *args: str, config: list[str] | None = None, **kwargs: Any):
+    """Run the upload without -yyy, answering each question with its default. Gives the run and the questions asked.
+
+    The questions are the default of "check downconversion options?", then of "Select formats to convert".
+    """
+    asked: list[Any] = []
+    if config is not None:
+        monkeypatch.setattr(cfg.upload, "conversions", config)
+
+    def confirm(text: str, default: bool | None = False, **_kwargs: Any) -> bool:
+        if "check downconversion options" in text:
+            asked.append(default)
+        return True if default is None else default
+
+    async def prompt(text: str, default: Any = None, **_kwargs: Any) -> Any:
+        if "Select formats to convert" in text:
+            asked.append(default)
+        return default
+
+    kwargs.setdefault("yes_all", False)
+    run = _run_conversion_up(monkeypatch, torrents, args, confirm=confirm, prompt=prompt, **kwargs)
+    assert run.result.exit_code == 0, run.result.output
+    return run, asked
+
+
+@pytest.mark.parametrize("config", [[], ["24bit"]])
+def test_a_config_naming_nothing_offered_asks_nothing_and_makes_nothing(
+    monkeypatch, torrents: Path, config: list[str]
+) -> None:
+    run, asked = _questions(monkeypatch, torrents, config=config)
+
+    assert asked == []
+    assert len(_upload_posts(run)) == 1
+    assert NO_CONVERSIONS in run.result.output
+
+
+def test_a_run_selection_makes_those_conversions_without_asking(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, "--conversions", "320,V0")
+
+    assert asked == []
+    assert _formats(run)[1:] == ["MP3 320", "MP3 V0 (VBR)"]
+    assert NO_CONVERSIONS not in run.result.output
+
+
+def test_a_run_selection_of_none_asks_nothing_and_makes_nothing(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, "--conversions", "none")
+
+    assert asked == []
+    assert len(_upload_posts(run)) == 1
+    assert NO_CONVERSIONS in run.result.output
+
+
+def test_a_run_selection_of_kinds_the_release_cannot_give_makes_nothing(monkeypatch, torrents: Path) -> None:
+    # A 24-bit 48 kHz release is offered no 24-bit downconversion.
+    run, asked = _questions(monkeypatch, torrents, "--conversions", "24bit")
+
+    assert asked == []
+    assert len(_upload_posts(run)) == 1
+    assert NO_CONVERSIONS in run.result.output
+
+
+def test_a_run_selection_beats_a_config_that_would_ask(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, "--conversions", "16bit", config=list(CONVERSION_KINDS))
+
+    assert asked == []
+    assert len(_upload_posts(run)) == 2
+    assert "Processing: 16bit 48.0 kHz" in run.result.output
+
+
+def test_a_config_only_run_asks_both_questions(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, config=["V0"])
+
+    # Asked to check (V0 is wanted), then 1. 16bit 48.0 kHz, 2. MP3 320, 3. MP3 V0.
+    assert asked == [True, "3"]
+    assert _formats(run)[1:] == ["MP3 V0 (VBR)"]
+
+
+def test_yyy_asks_nothing_and_makes_what_the_config_names(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, config=["320"], yes_all=True)
+
+    assert asked == []
+    assert _formats(run)[1:] == ["MP3 320"]
+
+
+def test_yyy_with_a_config_naming_nothing_offered_makes_nothing(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, config=[], yes_all=True)
+
+    assert asked == []
+    assert len(_upload_posts(run)) == 1
+    assert NO_CONVERSIONS in run.result.output
+
+
+def test_a_held_format_a_run_selection_names_is_left_out_with_its_dupe_risk(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, "--conversions", "16bit,V0", group_torrents=(EDITION_16BIT_FLAC,))
+
+    assert asked == []
+    assert HELD_16BIT in run.result.output
+    assert "Processing: 16bit" not in run.result.output
+    assert _formats(run)[1:] == ["MP3 V0 (VBR)"]
+
+
+def test_a_run_selection_naming_only_held_formats_makes_nothing_and_says_why(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, "--conversions", "16bit", group_torrents=(EDITION_16BIT_FLAC,))
+
+    assert asked == []
+    assert HELD_16BIT in run.result.output
+    assert len(_upload_posts(run)) == 1
+    assert NO_CONVERSIONS not in run.result.output
+
+
+def test_a_run_selection_asks_no_tracker_of_the_run(monkeypatch, torrents: Path) -> None:
+    run, asked = _questions(monkeypatch, torrents, "--conversions", "320,V0", trackers=("RED", "OPS"))
+
+    assert asked == []
+    # Each tracker gets the FLAC and the two MP3s.
+    assert _formats(run) == ["FLAC Lossless", "MP3 320", "MP3 V0 (VBR)"] * 2
