@@ -89,7 +89,7 @@ def test_the_shipped_proxy_section_uncommented_as_is_is_refused(tmp_path: Path) 
 
 
 def test_the_shipped_proxy_section_names_every_service() -> None:
-    services = _SHIPPED_PROXY_SECTION.split("[proxy.services]", 1)[1]
+    services = _SHIPPED_PROXY_SECTION.split("\n[proxy.services]\n", 1)[1]
     assert [service for service in SERVICES if not re.search(rf"\b{service}\b", services)] == []
 
 
