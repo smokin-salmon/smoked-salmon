@@ -21,7 +21,7 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
 )
 
 import salmon.uploader as uploader
-from salmon import cfg, dryrun
+from salmon import cfg, dryrun, interaction
 from salmon.converter import conversions, downconv
 from salmon.converter import downconverting as dc
 from salmon.converter import transcoding as tc
@@ -411,7 +411,15 @@ def test_a_renamed_folder_can_still_be_uploaded_with_its_note(tmp_path, monkeypa
 
     assert renamed == str(tmp_path / "Illy - journaling (2022) [WEB FLAC]")
     assert _facts(renamed) == DOWNCONVERT
+    # The source is kept until the run ends, record and all: an abort leaves both for the retry.
+    assert _facts(str(album)) == DOWNCONVERT
+
+    with interaction.assuming_defaults():
+        anyio.run(lambda: foldername.remove_source_folder(str(album), renamed))
+
+    assert not album.exists()
     assert conversions.conversion_of(str(album)) is None
+    assert _facts(renamed) == DOWNCONVERT
 
 
 def test_an_unreadable_sidecar_is_not_read_as_no_conversion(tmp_path, monkeypatch) -> None:

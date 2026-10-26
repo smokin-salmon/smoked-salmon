@@ -72,7 +72,7 @@ from salmon.tagger.cover import (
     get_cover_from_path,
     has_flac_without_picture,
 )
-from salmon.tagger.foldername import rename_folder
+from salmon.tagger.foldername import remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
 from salmon.tagger.pre_data import construct_rls_data
@@ -824,7 +824,8 @@ async def upload(
         # A scratch copy's run directory, removed when the run ends: where a dry run writes.
         dryrun.writing_into(rename_into),
     ):
-        await _upload_staged(
+        original = path if staged != path else None
+        result = await _upload_staged(
             gazelle_site,
             staged,
             group_id,
@@ -849,13 +850,16 @@ async def upload(
             skip_initial_review=skip_initial_review,
             apply_ai_suggestions=apply_ai_suggestions,
             rename_into=rename_into,
-            original=path if staged != path else None,
+            original=original,
             conversion=conversion,
             trackers=trackers,
             conversions=conversions,
             skip_search=skip_search,
             offer_others=offer_others,
         )
+        # Once the run is done: an abort after the folder rename keeps the source folder, so a re-run can use it.
+        final, uploaded = result or (None, [])
+        await remove_source_folder(path, final, original, uploaded=bool(uploaded))
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -948,8 +952,11 @@ async def _upload_staged(
     trackers: list[str] | None = None,
     conversions: tuple[str, ...] | None = None,
     offer_others: bool = False,
-) -> None:
+) -> tuple[str, list[str]] | None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
+
+    Returns:
+        The folder the run ended with, and the URL of each torrent it uploaded; None when it stopped early.
 
     Args:
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
@@ -1398,6 +1405,7 @@ async def _upload_staged(
                 seedbox_uploader.remove_local_copies()
     finally:
         await spectral_uploads.close()
+    return path, uploaded
 
 
 async def edit_metadata(
@@ -1448,6 +1456,7 @@ async def edit_metadata(
     Raises:
         click.Abort: If a scene release fails the integrity check, or a file does not decode.
     """
+    given = path
     while True:
         metadata = await review_metadata_with_ai(
             metadata,
@@ -1480,6 +1489,14 @@ async def edit_metadata(
         renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original)
         if renamed != path:
             original = None  # A re-run renames the renamed folder, which is no longer the copy of the original.
+            if (
+                path != given
+                and cfg.upload.formatting.remove_source_dir
+                and os.path.isdir(path)
+                and not os.path.samefile(path, renamed)
+            ):
+                # Made by an earlier pass of this loop, not the user's: the source itself is removed when the run ends.
+                shutil.rmtree(path)
         path = renamed
         if not metadata["scene"]:
             await rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
