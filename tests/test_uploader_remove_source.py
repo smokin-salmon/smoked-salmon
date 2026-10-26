@@ -43,14 +43,14 @@ def album(monkeypatch, tmp_path) -> Path:
     return folder
 
 
-def _staged_run(monkeypatch, *, abort: bool = False, finished: bool = True) -> None:
-    """Stand in for the run: rename the folder as the metadata step does, then abort or say whether it finished."""
+def _staged_run(monkeypatch, *, abort: bool = False, uploaded: bool = True) -> None:
+    """Stand in for the run: rename the folder as the metadata step does, then abort or say what it uploaded."""
 
     async def run(_site, path, *_args, **_kwargs):
         renamed = await foldername.rename_folder(path, METADATA, auto_rename=True, check=False)
         if abort:
             raise click.Abort
-        return renamed, finished
+        return renamed, uploaded, False
 
     monkeypatch.setattr(uploader, "_upload_staged", run)
 
@@ -79,12 +79,12 @@ def test_a_run_that_uploaded_removes_the_source_folder(monkeypatch, album) -> No
 
 
 def test_a_run_that_uploaded_nothing_keeps_the_source_folder(monkeypatch, album, capsys) -> None:
-    _staged_run(monkeypatch, finished=False)
+    _staged_run(monkeypatch, uploaded=False)
 
     _up(album)
 
     assert album.exists()
-    assert "the run did not finish" in capsys.readouterr().out
+    assert "nothing was uploaded" in capsys.readouterr().out
 
 
 def test_a_metadata_rerun_removes_only_salmons_own_folder(monkeypatch, album) -> None:

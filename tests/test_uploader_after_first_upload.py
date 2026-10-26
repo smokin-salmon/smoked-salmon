@@ -287,8 +287,8 @@ def test_aborting_at_the_next_trackers_group_prompt_ends_the_run_and_still_seeds
     assert len(run.queued) == 6
 
 
-def test_aborting_after_an_upload_keeps_the_source_folder(monkeypatch, tmp_path, dirs) -> None:
-    # remove_source_dir waits for the run to finish: an abort at the next tracker is not one, even with uploads.
+def test_aborting_after_an_upload_with_yyy_keeps_the_source_folder(monkeypatch, tmp_path, dirs) -> None:
+    # An abort at the next tracker, after an upload, is not a finished run: -yyy does not remove the source for it.
     _downloads, torrents = dirs
     _trackers(monkeypatch, "RED", "OPS")
     _seedbox_runs(monkeypatch)
@@ -299,7 +299,7 @@ def test_aborting_after_an_upload_keeps_the_source_folder(monkeypatch, tmp_path,
 
     assert run.result.exit_code == 0, run.result.output
     assert "Aborting: nothing more is uploaded. Already uploaded:" in run.result.output
-    assert f"remove_source_dir is on, but {album} is kept: the run did not finish." in run.result.output
+    assert f"remove_source_dir is on, but {album} is kept: the run was aborted." in run.result.output
     assert album.is_dir()
 
 

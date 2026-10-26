@@ -247,20 +247,21 @@ def drop_resolution_token(foldername, token):
 
 
 async def remove_source_folder(
-    source: str, final: str | None, original: str | None = None, finished: bool = True
+    source: str, final: str | None, original: str | None = None, uploaded: bool = True, aborted: bool = False
 ) -> None:
     """With remove_source_dir on, remove the folder the run started from, once the run is done with it.
 
     Called when a run ends, never at the folder rename: a run stopped after the rename (an abort at a later
     question, a failed upload) leaves the source folder where it was, and running salmon on it again works.
-    The user is asked first, defaulting to yes; a run that assumes defaults removes it without asking.
+    The user is asked first, defaulting to yes; a run that assumes defaults removes it without asking. After an
+    abort that followed an upload the question defaults to no, and a run that assumes defaults keeps the folder.
 
     Args:
         source: The folder the run started from.
         final: The folder the run ended with, under its new name. None when the run stopped before the rename.
         original: The folder the user gave, when `source` is a copy of it: it is kept, and the output says why.
-        finished: Whether the run finished its work: for an upload, something was uploaded and the run was not
-            aborted. A run that did not finish keeps the source folder.
+        uploaded: Whether the run uploaded anything. A run that uploaded nothing keeps the source folder.
+        aborted: Whether the run was aborted after an upload, at a later tracker's questions.
     """
     if not cfg.upload.formatting.remove_source_dir:
         return
@@ -272,12 +273,18 @@ async def remove_source_folder(
     if cfg.directory.protects(source):
         click.secho(f"Not removing {source}: it is in library_dirs, or holds one.", fg="yellow")
         return
-    if not finished:
-        click.secho(f"remove_source_dir is on, but {source} is kept: the run did not finish.", fg="yellow")
+    if not uploaded:
+        click.secho(f"remove_source_dir is on, but {source} is kept: nothing was uploaded.", fg="yellow")
         return
-    if not await interaction.assume_defaults() and not await interaction.confirm(
-        click.style(f"\nRemove the source folder {source}? The release is now in {final}.", fg="magenta"),
-        default=True,
+    assume_defaults = await interaction.assume_defaults()
+    if aborted and assume_defaults:
+        click.secho(f"remove_source_dir is on, but {source} is kept: the run was aborted.", fg="yellow")
+        return
+    question = f"Remove the source folder {source}? The release is now in {final}."
+    if aborted:
+        question = f"The run was aborted after an upload. {question}"
+    if not assume_defaults and not await interaction.confirm(
+        click.style(f"\n{question}", fg="magenta"), default=not aborted
     ):
         click.secho(f"Kept the source folder {source}.", fg="yellow")
         return

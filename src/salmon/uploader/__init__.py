@@ -858,8 +858,8 @@ async def upload(
             offer_others=offer_others,
         )
         # Once the run is done: an abort after the folder rename keeps the source folder, so a re-run can use it.
-        final, finished = result or (None, False)
-        await remove_source_folder(path, final, original, finished=finished)
+        final, uploaded, aborted = result or (None, False, False)
+        await remove_source_folder(path, final, original, uploaded=uploaded, aborted=aborted)
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -952,12 +952,12 @@ async def _upload_staged(
     trackers: list[str] | None = None,
     conversions: tuple[str, ...] | None = None,
     offer_others: bool = False,
-) -> tuple[str, bool] | None:
+) -> tuple[str, bool, bool] | None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
     Returns:
-        The folder the run ended with, and whether the run finished with something uploaded (not after an abort);
-        None when it stopped early.
+        The folder the run ended with, whether anything was uploaded, and whether the run was aborted after an
+        upload; None when it stopped early.
 
     Args:
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
@@ -1408,7 +1408,7 @@ async def _upload_staged(
                 seedbox_uploader.remove_local_copies()
     finally:
         await spectral_uploads.close()
-    return path, bool(uploaded) and not aborted
+    return path, bool(uploaded), aborted
 
 
 async def edit_metadata(

@@ -51,10 +51,12 @@ def _rename(path: Path, original: Path | None = None) -> str:
     )
 
 
-def _remove(source: Path, final: str | None, original: Path | None = None, finished: bool = True) -> None:
+def _remove(
+    source: Path, final: str | None, original: Path | None = None, uploaded: bool = True, aborted: bool = False
+) -> None:
     anyio.run(
         lambda: foldername.remove_source_folder(
-            str(source), final, str(original) if original else None, finished=finished
+            str(source), final, str(original) if original else None, uploaded=uploaded, aborted=aborted
         )
     )
 
@@ -62,8 +64,8 @@ def _remove(source: Path, final: str | None, original: Path | None = None, finis
 def _answering(monkeypatch, answer: bool) -> list[str]:
     asked: list[str] = []
 
-    async def confirm(text: str, **_kwargs: Any) -> bool:
-        asked.append(text)
+    async def confirm(text: str, *, default: bool | None = False, **_kwargs: Any) -> bool:
+        asked.append(f"{text} [default {default}]")
         return answer
 
     monkeypatch.setattr(interaction, "confirm", confirm)
@@ -121,17 +123,43 @@ def test_a_run_assuming_defaults_removes_it_without_asking(monkeypatch, dirs) ->
     assert asked == []
 
 
-def test_a_run_that_did_not_finish_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
+def test_a_run_that_uploaded_nothing_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
     _downloads, seeding = dirs
     album = _album(seeding / "Album")
     new_path = _rename(album)
     asked = _answering(monkeypatch, True)
 
-    _remove(album, new_path, finished=False)
+    _remove(album, new_path, uploaded=False)
 
     assert album.exists()
     assert asked == []
-    assert f"remove_source_dir is on, but {album} is kept: the run did not finish." in capsys.readouterr().out
+    assert f"remove_source_dir is on, but {album} is kept: nothing was uploaded." in capsys.readouterr().out
+
+
+def test_an_abort_after_an_upload_asks_with_no_as_the_default(monkeypatch, dirs) -> None:
+    _downloads, seeding = dirs
+    album = _album(seeding / "Album")
+    new_path = _rename(album)
+    asked = _answering(monkeypatch, True)
+
+    _remove(album, new_path, aborted=True)
+
+    assert not album.exists()
+    assert len(asked) == 1 and "aborted after an upload" in asked[0] and asked[0].endswith("[default False]")
+
+
+def test_an_abort_after_an_upload_assuming_defaults_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
+    _downloads, seeding = dirs
+    album = _album(seeding / "Album")
+    new_path = _rename(album)
+    asked = _answering(monkeypatch, True)
+
+    with interaction.assuming_defaults():
+        _remove(album, new_path, aborted=True)
+
+    assert album.exists()
+    assert asked == []
+    assert f"remove_source_dir is on, but {album} is kept: the run was aborted." in capsys.readouterr().out
 
 
 def test_a_run_stopped_before_the_rename_says_nothing(monkeypatch, dirs, capsys) -> None:
