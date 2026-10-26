@@ -263,8 +263,9 @@
 # than {format}, which already spells out "24bit FLAC" and would repeat the bit depth (e.g.
 # "24bit FLAC 24-96")
 # file_template = "{tracknumber}. {artist} - {title}"
-# true removes the source folder once the run has uploaded it from its new name in download_directory: when the
-# run ends, after asking (yes by default; -yyy does not ask). An aborted run, or one that uploaded nothing, keeps it.
+# true removes the source folder when the run ends, after asking (yes by default; -yyy does not ask): salmon up once
+# it has uploaded the release from its new name in download_directory, salmon tag once it has renamed it. An aborted
+# upload, or one that uploaded nothing, keeps it.
 # It never applies to an album in library_dirs, or to a run that works on a copy (--skip-flac-upload,
 # --dry-run), and salmon says so when it keeps the folder.
 # remove_source_dir = false

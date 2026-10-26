@@ -29,7 +29,7 @@ from salmon.common.files import AlbumPath
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
-from salmon.converter.conversions import conversion_of, recorded_files
+from salmon.converter.conversions import carry_conversion, conversion_of, recorded_files
 from salmon.converter.downconverting import (
     BitDepth,
     conversion_note,
@@ -858,8 +858,8 @@ async def upload(
             offer_others=offer_others,
         )
         # Once the run is done: an abort after the folder rename keeps the source folder, so a re-run can use it.
-        final, uploaded = result or (None, [])
-        await remove_source_folder(path, final, original, uploaded=bool(uploaded))
+        final, finished = result or (None, False)
+        await remove_source_folder(path, final, original, finished=finished)
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -952,11 +952,12 @@ async def _upload_staged(
     trackers: list[str] | None = None,
     conversions: tuple[str, ...] | None = None,
     offer_others: bool = False,
-) -> tuple[str, list[str]] | None:
+) -> tuple[str, bool] | None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
     Returns:
-        The folder the run ended with, and the URL of each torrent it uploaded; None when it stopped early.
+        The folder the run ended with, and whether the run finished with something uploaded (not after an abort);
+        None when it stopped early.
 
     Args:
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
@@ -1202,6 +1203,7 @@ async def _upload_staged(
         # before the loop is one of them.
         failed_trackers: list[str] = [gazelle_site.site_string] if first_listed else []
         finished = False  # The loop ended by itself: no abort, no exception
+        aborted = False
         flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={source_flac['id']}" if source_flac else None
 
         try:
@@ -1388,6 +1390,7 @@ async def _upload_staged(
             if not uploaded or dryrun.active():
                 raise
             # What is up stays up and is seeded below: the run only stops offering more.
+            aborted = True
             click.secho("\nAborting: nothing more is uploaded. Already uploaded:", fg="red")
             for line in uploaded:
                 click.echo(f"  {line}")
@@ -1405,7 +1408,7 @@ async def _upload_staged(
                 seedbox_uploader.remove_local_copies()
     finally:
         await spectral_uploads.close()
-    return path, uploaded
+    return path, bool(uploaded) and not aborted
 
 
 async def edit_metadata(
@@ -1497,6 +1500,7 @@ async def edit_metadata(
             ):
                 # Made by an earlier pass of this loop, not the user's: the source itself is removed when the run ends.
                 shutil.rmtree(path)
+                carry_conversion(path, renamed)
         path = renamed
         if not metadata["scene"]:
             await rename_files(path, tags, metadata, auto_rename, spectral_ids, source)

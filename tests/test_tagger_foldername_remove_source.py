@@ -51,10 +51,10 @@ def _rename(path: Path, original: Path | None = None) -> str:
     )
 
 
-def _remove(source: Path, final: str | None, original: Path | None = None, uploaded: bool = True) -> None:
+def _remove(source: Path, final: str | None, original: Path | None = None, finished: bool = True) -> None:
     anyio.run(
         lambda: foldername.remove_source_folder(
-            str(source), final, str(original) if original else None, uploaded=uploaded
+            str(source), final, str(original) if original else None, finished=finished
         )
     )
 
@@ -121,17 +121,17 @@ def test_a_run_assuming_defaults_removes_it_without_asking(monkeypatch, dirs) ->
     assert asked == []
 
 
-def test_a_run_that_uploaded_nothing_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
+def test_a_run_that_did_not_finish_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
     _downloads, seeding = dirs
     album = _album(seeding / "Album")
     new_path = _rename(album)
     asked = _answering(monkeypatch, True)
 
-    _remove(album, new_path, uploaded=False)
+    _remove(album, new_path, finished=False)
 
     assert album.exists()
     assert asked == []
-    assert f"remove_source_dir is on, but {album} is kept: nothing was uploaded." in capsys.readouterr().out
+    assert f"remove_source_dir is on, but {album} is kept: the run did not finish." in capsys.readouterr().out
 
 
 def test_a_run_stopped_before_the_rename_says_nothing(monkeypatch, dirs, capsys) -> None:

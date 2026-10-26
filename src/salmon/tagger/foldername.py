@@ -247,7 +247,7 @@ def drop_resolution_token(foldername, token):
 
 
 async def remove_source_folder(
-    source: str, final: str | None, original: str | None = None, uploaded: bool = True
+    source: str, final: str | None, original: str | None = None, finished: bool = True
 ) -> None:
     """With remove_source_dir on, remove the folder the run started from, once the run is done with it.
 
@@ -259,7 +259,8 @@ async def remove_source_folder(
         source: The folder the run started from.
         final: The folder the run ended with, under its new name. None when the run stopped before the rename.
         original: The folder the user gave, when `source` is a copy of it: it is kept, and the output says why.
-        uploaded: Whether the run uploaded anything. A run that uploaded nothing keeps the source folder.
+        finished: Whether the run finished its work: for an upload, something was uploaded and the run was not
+            aborted. A run that did not finish keeps the source folder.
     """
     if not cfg.upload.formatting.remove_source_dir:
         return
@@ -271,8 +272,8 @@ async def remove_source_folder(
     if cfg.directory.protects(source):
         click.secho(f"Not removing {source}: it is in library_dirs, or holds one.", fg="yellow")
         return
-    if not uploaded:
-        click.secho(f"remove_source_dir is on, but {source} is kept: nothing was uploaded.", fg="yellow")
+    if not finished:
+        click.secho(f"remove_source_dir is on, but {source} is kept: the run did not finish.", fg="yellow")
         return
     if not await interaction.assume_defaults() and not await interaction.confirm(
         click.style(f"\nRemove the source folder {source}? The release is now in {final}.", fg="magenta"),

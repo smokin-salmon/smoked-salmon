@@ -9,6 +9,7 @@ import pytest
 
 import salmon.uploader as uploader
 from salmon import cfg, interaction
+from salmon.converter import conversions
 from salmon.tagger import foldername
 
 if TYPE_CHECKING:
@@ -42,14 +43,14 @@ def album(monkeypatch, tmp_path) -> Path:
     return folder
 
 
-def _staged_run(monkeypatch, *, abort: bool = False, uploaded: tuple[str, ...] = ("https://t/1",)) -> None:
-    """Stand in for the run: rename the folder as the metadata step does, then abort or report the uploads."""
+def _staged_run(monkeypatch, *, abort: bool = False, finished: bool = True) -> None:
+    """Stand in for the run: rename the folder as the metadata step does, then abort or say whether it finished."""
 
     async def run(_site, path, *_args, **_kwargs):
         renamed = await foldername.rename_folder(path, METADATA, auto_rename=True, check=False)
         if abort:
             raise click.Abort
-        return renamed, list(uploaded)
+        return renamed, finished
 
     monkeypatch.setattr(uploader, "_upload_staged", run)
 
@@ -78,12 +79,12 @@ def test_a_run_that_uploaded_removes_the_source_folder(monkeypatch, album) -> No
 
 
 def test_a_run_that_uploaded_nothing_keeps_the_source_folder(monkeypatch, album, capsys) -> None:
-    _staged_run(monkeypatch, uploaded=())
+    _staged_run(monkeypatch, finished=False)
 
     _up(album)
 
     assert album.exists()
-    assert "nothing was uploaded" in capsys.readouterr().out
+    assert "the run did not finish" in capsys.readouterr().out
 
 
 def test_a_metadata_rerun_removes_only_salmons_own_folder(monkeypatch, album) -> None:
@@ -98,6 +99,8 @@ def test_a_metadata_rerun_removes_only_salmons_own_folder(monkeypatch, album) ->
     async def rename_folder(path, *_args, **_kwargs):
         new = downloads / next(names)
         new.mkdir()
+        # As the real rename does: the record is copied, and the old one stays while its folder does.
+        conversions.record_conversion(str(new), source="/x/src", kind="downconvert", bit_depth=16, sample_rate=44100)
         return str(new)
 
     async def rename_files(*args, **_kwargs):
@@ -123,5 +126,7 @@ def test_a_metadata_rerun_removes_only_salmons_own_folder(monkeypatch, album) ->
 
     assert path == str(downloads / "Artist - Album (2021) [CD FLAC]")
     assert not (downloads / "Artist - Album (2020) [CD FLAC]").exists()
+    assert conversions.conversion_of(str(downloads / "Artist - Album (2020) [CD FLAC]")) is None
+    assert conversions.conversion_of(path) is not None
     assert album.exists()
     assert sources == ["CD", "CD"]
