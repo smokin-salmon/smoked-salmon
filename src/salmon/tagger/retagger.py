@@ -122,7 +122,8 @@ def collect_album_data(metadata):
 
 
 def _generate_album_artist(artists):
-    # In the order given, like the track ARTIST (create_artist_str): sorting put "B & A" for "A & B".
+    # In the order given, like the track ARTIST (create_artist_str): sorting changed
+    # "Zed Leader & Alpha Band" to "Alpha Band & Zed Leader".
     main_artists = _ordered_unique(a for a, i in artists if i == "main")
     if len(main_artists) >= cfg.upload.formatting.various_artist_threshold:
         return cfg.upload.formatting.various_artist_word

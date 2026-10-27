@@ -19,7 +19,7 @@ def test_compile_artist_str_excludes_arranger() -> None:
 def test_compile_artist_str_keeps_the_order_given() -> None:
     # The folder used to sort the main artists, so "Zed Leader & Alpha Band" became "Alpha Band & Zed Leader".
     artist_str = foldername._compile_artist_str(
-        [("Zed Leader", "main"), ("Alpha Band", "main"), ("Some Guest", "guest")]
+        [("Zed Leader", "main"), ("Alpha Band", "main"), ("Zed Leader", "main"), ("Some Guest", "guest")]
     )
 
     assert artist_str == "Zed Leader & Alpha Band"
