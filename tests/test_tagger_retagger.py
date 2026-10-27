@@ -11,6 +11,7 @@ from salmon import cfg, interaction
 from salmon.errors import AmbiguousTrackOrderError, UploadError
 from salmon.tagger.retagger import (
     Change,
+    _generate_album_artist,
     _get_tag_number,
     create_track_changes,
     delete_empty_folders,
@@ -30,6 +31,13 @@ def _trackmeta(title, track_no, disc_no):
         "disctotal": None,
         "artists": [("Some Artist", "main")],
     }
+
+
+def test_album_artist_keeps_the_order_given() -> None:
+    # ALBUMARTIST used to sort the main artists while the track ARTIST kept their order.
+    artists = [("Zed Leader", "main"), ("Alpha Band", "main"), ("Some Guest", "guest")]
+
+    assert _generate_album_artist(artists) == "Zed Leader & Alpha Band"
 
 
 def _tagset(title, tracknumber, discnumber):

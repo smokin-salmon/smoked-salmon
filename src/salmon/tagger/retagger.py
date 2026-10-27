@@ -122,11 +122,12 @@ def collect_album_data(metadata):
 
 
 def _generate_album_artist(artists):
-    main_artists = [a for a, i in artists if i == "main"]
+    # In the order given, like the track ARTIST (create_artist_str): sorting put "B & A" for "A & B".
+    main_artists = _ordered_unique(a for a, i in artists if i == "main")
     if len(main_artists) >= cfg.upload.formatting.various_artist_threshold:
         return cfg.upload.formatting.various_artist_word
     c = ", " if len(main_artists) > 2 or "&" in "".join(main_artists) else " & "
-    return c.join(sorted(main_artists))
+    return c.join(main_artists)
 
 
 def create_track_changes(tags, metadata, *, move_numbered=False):
