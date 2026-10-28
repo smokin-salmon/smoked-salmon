@@ -27,6 +27,7 @@ import salmon.search
 import salmon.tagger.sources
 import salmon.trackers
 from salmon import cfg, ssrf
+from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
 from salmon.errors import ScrapeError
 from salmon.images.files import MAX_IMAGE_BYTES
@@ -241,13 +242,16 @@ async def dashboard(request: web.Request) -> web.Response:
 
 async def upload_options(_request: web.Request) -> web.Response:
     """What the upload form offers: the trackers configured, the config's default_trackers, the sources and the
-    lossy encodings ``salmon up`` takes. Contacts no tracker."""
+    lossy encodings ``salmon up`` takes, and the config's upload.conversions with the kinds there are. Contacts no
+    tracker."""
     return web.json_response(
         {
             "trackers": list(salmon.trackers.tracker_list),
             "default_trackers": list(cfg.tracker.default_trackers),
             "sources": list(SOURCES.values()),
             "encodings": list(TAG_ENCODINGS),
+            "conversions": list(cfg.upload.conversions),
+            "conversion_kinds": list(CONVERSION_KINDS),
         }
     )
 

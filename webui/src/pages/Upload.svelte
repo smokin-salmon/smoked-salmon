@@ -11,6 +11,8 @@
     default_trackers: string[]
     sources: string[]
     encodings: string[]
+    conversions: string[]
+    conversion_kinds: string[]
   }
 
   interface Uploaded {
@@ -90,7 +92,7 @@
     return answer.trackers.length ? [answer.trackers[0]] : []
   }
 
-  let options = $state<Options>({ trackers: [], default_trackers: [], sources: [], encodings: [] })
+  let options = $state<Options>({ trackers: [], default_trackers: [], sources: [], encodings: [], conversions: [], conversion_kinds: [] })
 
   let path = $state('')
   let chosen = $state<string[]>([])
@@ -101,6 +103,8 @@
   let sourceUrl = $state('')
   let encoding = $state('')
   let spectrals = $state('')
+  // This upload only: preset from upload.conversions at every visit, never remembered.
+  let conversions = $state<string[]>([])
   let flags = $state<Record<string, boolean>>(storedOptions().flags)
   let dryRun = $state(false)
   let assumeDefaults = $state(storedOptions().assumeDefaults)
@@ -176,6 +180,7 @@
     apiGet<Options>('/upload/options')
       .then((answer) => {
         options = answer
+        conversions = (answer.conversions ?? []).filter((k) => (answer.conversion_kinds ?? []).includes(k))
         if (chosen.length || !answer.trackers.length) return
         const kept = storedOptions().trackers
         // In the order kept, which is the order the job uploads in.
@@ -193,6 +198,11 @@
     chosen = chosen.includes(code)
       ? chosen.filter((c) => c !== code)
       : options.trackers.filter((t) => t === code || chosen.includes(t))
+  }
+
+  // Kept in the canonical order, which is the order the job makes them in.
+  function toggleConversion(kind: string) {
+    conversions = options.conversion_kinds.filter((k) => (k === kind) !== conversions.includes(k))
   }
 
   /** A group ID, or the ID in a torrents.php?id= link; null for none, undefined when it is neither. */
@@ -231,6 +241,7 @@
           encoding: encoding || null,
           lossy: lossy === 'ask' ? null : lossy === 'yes',
           spectrals: tracks,
+          conversions,
           ...flags,
         },
         dry_run: dryRun,
@@ -301,6 +312,21 @@
         </select>
         {#if showHelp}<small class="hint">The media the files came from (-s).</small>{/if}
       </label>
+      <div class="field">
+        <span class="label">Conversions</span>
+        <div class="row wrap">
+          {#each options.conversion_kinds as kind (kind)}
+            <label class="check">
+              <input type="checkbox" checked={conversions.includes(kind)} onchange={() => toggleConversion(kind)} />
+              {kind}
+            </label>
+          {/each}
+        </div>
+        <small class="hint">
+          This upload only. The default is upload.conversions in your config.{#if showHelp}
+            Made after the FLAC without asking, also with Transcodes only (--conversions).{/if}
+        </small>
+      </div>
       <label>
         Lossy master
         <select bind:value={lossy}>

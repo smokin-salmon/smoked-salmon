@@ -311,6 +311,7 @@ def test_a_web_upload_into_a_group_sends_what_salmon_up_sends(
 def test_the_form_offers_the_trackers_sources_and_encodings_up_takes(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
     monkeypatch.setattr(cfg.tracker, "default_trackers", ["OPS", "RED"])
+    monkeypatch.setattr(cfg.upload, "conversions", ["24bit", "320"])
     tracker = FakeTracker()
 
     async def test(client: TestClient, _manager: JobManager) -> None:
@@ -321,10 +322,59 @@ def test_the_form_offers_the_trackers_sources_and_encodings_up_takes(monkeypatch
             "default_trackers": ["OPS", "RED"],
             "sources": ["WEB", "CD", "DVD", "Vinyl", "Soundboard", "SACD", "DAT", "Cassette"],
             "encodings": ["V0", "V1", "V2", "320", "256", "192", "320V", "256V", "192V"],
+            "conversions": ["24bit", "320"],
+            "conversion_kinds": ["24bit", "16bit", "320", "V0"],
         }
 
     _web_run(tracker, test)
     assert tracker.sent == []
+
+
+@pytest.mark.parametrize(
+    ("sent", "expected"),
+    [(["320", "V0"], ("320", "V0")), ([], ()), (None, None), (["v0", "24BIT"], ("V0", "24bit"))],
+)
+def test_the_conversions_reach_the_run_as_conversions_gives_them(
+    monkeypatch: pytest.MonkeyPatch,
+    roots: tuple[Path, Path, Path],
+    sent: list[str] | None,
+    expected: tuple[str, ...] | None,
+) -> None:
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
+    seen: list[Any] = []
+
+    async def run_up(options: Any) -> None:
+        seen.append(options.conversions)
+
+    monkeypatch.setattr("salmon.webui.kinds._run_up", run_up)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        params = {} if sent is None else {"conversions": sent}
+        job, _asked = await _drive(client, manager, await _start(client, album, params=params))
+        assert job.status == "done", (job.error, _log(job))
+
+    _web_run(tracker, test)
+    assert seen == [expected]
+
+
+@pytest.mark.parametrize("conversions", [["mp3"], ["320", "320"]])
+def test_a_conversion_that_is_not_one_is_refused(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path], conversions: list[str]
+) -> None:
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        response = await _post_upload(client, album, params={"conversions": conversions})
+        assert response.status == 400
+        detail = (await response.json())["detail"]
+        assert "is not a conversion; the choices are" in detail or "is named twice" in detail
+        assert manager.jobs == {}
+
+    _web_run(tracker, test)
 
 
 # --- Dry run, -yyy, several trackers --------------------------------------------------------------
