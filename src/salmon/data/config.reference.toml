@@ -308,6 +308,11 @@
 # always_ask_for_request_fill = false
 # check_recent_uploads = true
 # check_requests = true
+
+# Ask "upload to an existing group?" even when the group search and the recent-uploads check
+# both ran and found nothing. With false, salmon prints "No group found on RED: new group"
+# and goes on; the question is still asked when either check found something or could not run.
+# confirm_new_group = false
 # last_minute_dupe_check = false
 
 [upload.compression]

@@ -335,6 +335,10 @@ async def resolve_existing_group(
         Group ID or None for new group.
     """
     if not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
+        if recent_uploads == [] and not cfg.upload.requests.confirm_new_group:
+            # The search ran and found nothing, and so did the log (None would be a log not read).
+            click.echo(f"No group found on {gazelle_site.site_code}: new group")
+            return None
         group_id = await _prompt_for_recent_upload_results(
             gazelle_site, recent_uploads or [], " / ".join(searchstrs), offer_deletion
         )
