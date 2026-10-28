@@ -242,8 +242,8 @@ async def dashboard(request: web.Request) -> web.Response:
 
 async def upload_options(_request: web.Request) -> web.Response:
     """What the upload form offers: the trackers configured, the config's default_trackers, the sources and the
-    lossy encodings ``salmon up`` takes, and the config's upload.conversions with the kinds there are. Contacts no
-    tracker."""
+    lossy encodings ``salmon up`` takes, the config's upload.conversions with the kinds there are, and whether
+    upload.ai_review is on. Contacts no tracker."""
     return web.json_response(
         {
             "trackers": list(salmon.trackers.tracker_list),
@@ -252,6 +252,7 @@ async def upload_options(_request: web.Request) -> web.Response:
             "encodings": list(TAG_ENCODINGS),
             "conversions": list(cfg.upload.conversions),
             "conversion_kinds": list(CONVERSION_KINDS),
+            "ai_review": cfg.upload.ai_review.enabled,
         }
     )
 
