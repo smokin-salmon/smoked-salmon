@@ -1,3 +1,4 @@
+import asyncio
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -8,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from salmon.tagger.combine import (
     _extract_remixers_from_title,
+    _refuse_renumbering_that_loses_a_track,
     check_for_artist_fragments,
     combine_metadatas,
     combine_tracks,
@@ -15,8 +17,8 @@ from salmon.tagger.combine import (
 from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources.base import append_remixers_to_track_titles
+from salmon.tagger.sources.discogs import Scraper, parse_credits
 from salmon.tagger.sources.discogs import parse_artists as discogs_parse_artists
-from salmon.tagger.sources.discogs import parse_credits
 
 
 def make_metadata(title: str) -> dict:
@@ -442,3 +444,93 @@ def test_dated_source_can_still_supply_release_year():
     assert combined["year"] == "2021"
     assert combined["group_year"] == "2019"
     assert combined["date"] == "2021-02-03"
+
+
+def local_files(*nums: str, numbered: bool = True, disc: str = "1") -> dict:
+    """Local tracks as `create_track_list` gives them, without totals."""
+    tracks = {}
+    for n in nums:
+        local = one_track([("A", "main")], f"Local {n}")["1"]["1"]
+        tracks[n] = local | {"track#": n, "disc#": disc, "tracktotal": None, "disctotal": None, "numbered": numbered}
+    return {disc: tracks}
+
+
+def source_track(num: str, disc: str, tracktotal: int, disctotal: int) -> dict:
+    track = one_track([("A", "main")], f"Source {num}")["1"]["1"]
+    return track | {"track#": num, "disc#": disc, "tracktotal": str(tracktotal), "disctotal": str(disctotal)}
+
+
+def test_discogs_vinyl_sides_keep_the_files_numbers_and_give_no_totals():
+    # Discogs release 74364 (#765): heading, S, heading, 5 parse as disc 1 track S and disc 2 track 5.
+    soup = {
+        "artists": [{"name": "Adam F"}],
+        "tracklist": [
+            {"type_": "heading", "position": "", "title": "Other Side"},
+            {"type_": "track", "position": "S", "title": "Burning Deep"},
+            {"type_": "heading", "position": "", "title": "This Side"},
+            {"type_": "track", "position": "5", "title": "Lighter Style"},
+        ],
+    }
+    meta = asyncio.run(Scraper().parse_tracks(soup))
+    assert set(meta) == {"1", "2"}
+
+    combined = combine_tracks(local_files("01", "02"), meta, True)
+
+    assert [t["track#"] for t in combined["1"].values()] == ["01", "02"]
+    assert all(t["tracktotal"] is None and t["disctotal"] is None for t in combined["1"].values())
+
+
+def test_single_disc_source_numbered_1_5_keeps_the_files_numbers():
+    meta = {"1": {"1": source_track("1", "1", 2, 1), "5": source_track("5", "1", 2, 1)}}
+
+    combined = combine_tracks(local_files("1", "2"), meta, True)
+
+    assert sorted(combined["1"]) == ["1", "2"]
+    assert all(t["tracktotal"] is None for t in combined["1"].values())
+
+
+def test_one_bad_disc_makes_the_whole_source_unusable():
+    base = {**local_files("1", "2", disc="1"), **local_files("3", "4", disc="2")}
+    meta = {
+        "1": {"1": source_track("1", "1", 2, 2), "2": source_track("2", "1", 2, 2)},
+        "2": {"1": source_track("1", "2", 2, 2), "3": source_track("3", "2", 2, 2)},
+    }
+
+    combined = combine_tracks(base, meta, True)
+
+    assert sorted(combined["1"]) == ["1", "2"]
+    assert sorted(combined["2"]) == ["3", "4"]
+    assert all(t["tracktotal"] is None for disc in combined.values() for t in disc.values())
+
+
+def test_a_source_numbered_1_to_n_is_taken_as_before():
+    # Regression guard: passes on master too, the usable path is unchanged.
+    meta = {"1": {"1": source_track("1", "1", 2, 1), "2": source_track("2", "1", 2, 1)}}
+
+    combined = combine_tracks(local_files("2", "3"), meta, True)
+
+    assert sorted(combined["1"]) == ["1", "2"]
+    assert all(t["tracktotal"] == "2" and t["disctotal"] == "1" for t in combined["1"].values())
+
+
+def test_unnumbered_files_get_1_to_n_in_the_sources_order_when_the_source_is_unusable():
+    meta = {
+        "1": {
+            "A1": source_track("A1", "1", 3, 1),
+            "A2": source_track("A2", "1", 3, 1),
+            "B1": source_track("B1", "1", 3, 1),
+        }
+    }
+
+    combined = combine_tracks(local_files("7", "8", "9", numbered=False), meta, True)
+
+    assert list(combined["1"]) == ["1", "2", "3"]
+    assert all(t["tracktotal"] is None for t in combined["1"].values())
+
+
+def test_refusing_a_lost_track_accepts_the_unusable_reported_shape():
+    base = local_files("01", "02")
+    ordered = list(base["1"].values())
+    mtracks = [source_track("S", "1", 1, 2), source_track("5", "2", 1, 2)]
+
+    _refuse_renumbering_that_loses_a_track(ordered, mtracks, ordered, False, True)  # raises nothing

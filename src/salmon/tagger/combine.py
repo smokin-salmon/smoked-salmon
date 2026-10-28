@@ -219,17 +219,57 @@ def _pair_base_tracks(btracks, mtracks):
     return [None if bi is None else btracks[bi] for bi in pairing], reasons
 
 
-def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, update_track_numbers):
+def _numbers_usable(meta):
+    """True when, on every disc of the source, the track numbers are exactly 1..n (n = the disc's track count),
+    read as decimal integers. One disc that is not makes the whole source unusable for numbers (vinyl sides on
+    Discogs come as `A1`, `S` or `5`)."""
+    for disc in meta.values():
+        nums = []
+        for num in disc:
+            text = str(num).strip()
+            if not (text.isascii() and text.isdecimal()):
+                return False
+            nums.append(int(text))
+        if sorted(nums) != list(range(1, len(nums) + 1)):
+            return False
+    return True
+
+
+def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
+    """The new track number of each paired local track (None where there is no local track), in the order of
+    `mtracks`. Used by both the merge and the check that it loses no track, so the two never disagree.
+
+    A usable source: its number when `update_track_numbers`, else the file's own. An unusable source: a file
+    numbered by its own TRACKNUMBER tag keeps it, and any other file gets its place (1..n) among the paired
+    tracks of its disc, in the source's order."""
+    seen: dict[str, int] = {}
+    result = []
+    for mtrack, btrack in zip(mtracks, ordered, strict=True):
+        if btrack is None:
+            result.append(None)
+            continue
+        seen[btrack["disc#"]] = place = seen.get(btrack["disc#"], 0) + 1
+        if usable:
+            new_num = mtrack["track#"] if (update_track_numbers and mtrack["track#"]) else btrack["track#"]
+        elif btrack.get("numbered", True):
+            new_num = btrack["track#"]
+        else:
+            new_num = str(place)
+        result.append(new_num)
+    return result
+
+
+def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, usable, update_track_numbers):
     """Raise TrackCombineError, before anything is merged, if two local tracks would end up in one slot, so one
     would be overwritten and lost: a paired track taking the number of a track the source has no track for, or
     two paired tracks taking the same number on one disc (a track keeps its own disc when it is renumbered).
     Pairing by content can pair a local track anywhere in the folder, not only at its own rank."""
+    new_numbers = _new_track_numbers(mtracks, ordered, usable, update_track_numbers)
     paired = {id(btrack) for btrack in ordered if btrack is not None}
     taken = {(btrack["disc#"], btrack["track#"]) for btrack in btracks if id(btrack) not in paired}
-    for mtrack, btrack in zip(mtracks, ordered, strict=True):
+    for btrack, new_num in zip(ordered, new_numbers, strict=True):
         if btrack is None:
             continue  # The merge raises for a scraped track without a local one.
-        new_num = mtrack["track#"] if (update_track_numbers and mtrack["track#"]) else btrack["track#"]
         slot = (btrack["disc#"], new_num)
         if slot in taken:
             raise TrackCombineError(f"Disc {slot[0]} track {slot[1]} would hold two local tracks, losing one.")
@@ -267,7 +307,9 @@ def combine_tracks(base, meta, update_track_numbers):
         track for _, tracks in _sorted_naturally(meta.items()) for _, track in _sorted_naturally(tracks.items())
     ]
     ordered_btracks, pair_reasons = _pair_base_tracks(btracks_flat, mtracks_flat)
-    _refuse_renumbering_that_loses_a_track(btracks_flat, mtracks_flat, ordered_btracks, update_track_numbers)
+    usable = _numbers_usable(meta)
+    new_numbers = iter(_new_track_numbers(mtracks_flat, ordered_btracks, usable, update_track_numbers))
+    _refuse_renumbering_that_loses_a_track(btracks_flat, mtracks_flat, ordered_btracks, usable, update_track_numbers)
     _print_pairing(mtracks_flat, ordered_btracks, pair_reasons)
 
     # If the source already provides remixer credits, skip title-based inference
@@ -341,11 +383,12 @@ def combine_tracks(base, meta, update_track_numbers):
             if not btrack["replay_gain"]:
                 btrack["replay_gain"] = track["replay_gain"]
                 btrack["title"] = track["title"]
-            if not btrack["tracktotal"]:
+            # A source whose numbering is not 1..n on each disc has no totals to give either.
+            if usable and not btrack["tracktotal"]:
                 btrack["tracktotal"] = track["tracktotal"]
-            if not btrack["disctotal"]:
+            if usable and not btrack["disctotal"]:
                 btrack["disctotal"] = track["disctotal"]
-            new_num = track["track#"] if (update_track_numbers and track["track#"]) else btrack["track#"]
+            new_num = next(new_numbers)
             renumbered.append((btrack, btrack["disc#"], btrack["track#"], new_num))
 
     # Clear every old slot before filling the new ones, so two tracks swapping
