@@ -278,8 +278,8 @@
 # no_artist_in_filename_if_only_one_album_artist = true
 # one_album_artist_file_template = "{tracknumber}. {title}"
 # lowercase_cover = true
-# This many artists or more become various_artist_word in ALBUMARTIST, the folder name and "(feat. ...)", and
-# "(Remixed)" for remixers. The track ARTIST always names its main artists.
+# This many artists or more become various_artist_word in ALBUMARTIST, the folder and file names and "(feat. ...)",
+# and "(Remixed)" for remixers. The track ARTIST always names its main artists.
 # various_artist_threshold = 4
 # blacklisted_substitution = "_"
 # guests_in_track_title = false

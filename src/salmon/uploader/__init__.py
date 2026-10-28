@@ -1478,8 +1478,9 @@ async def edit_metadata(
             skip_initial_review=skip_initial_review,
             apply_suggestions=apply_ai_suggestions,
         )
+        tracks_by_file = None
         if not metadata["scene"]:
-            await tag_files(path, tags, metadata, auto_rename)
+            tracks_by_file = await tag_files(path, tags, metadata, auto_rename)
 
         tags = await check_tags(path)
         tag_messages = process_tag_issues(
@@ -1512,7 +1513,7 @@ async def edit_metadata(
                 carry_conversion(path, renamed)
         path = renamed
         if not metadata["scene"]:
-            await rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
+            await rename_files(path, tags, metadata, auto_rename, spectral_ids, source, tracks_by_file=tracks_by_file)
         await check_folder_structure(
             path, metadata["scene"], essential_only=essential_only, max_path_length=max_path_length
         )

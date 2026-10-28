@@ -101,7 +101,7 @@ async def _retag(path: str, *_args: Any) -> None:
             tagged.save()
 
 
-async def _rename_files(path: str, *_args: Any) -> None:
+async def _rename_files(path: str, *_args: Any, **_kwargs: Any) -> None:
     """Stands in for rename_files: renames the tracks of the folder it is given."""
     for name in os.listdir(path):
         if name.endswith(".flac"):

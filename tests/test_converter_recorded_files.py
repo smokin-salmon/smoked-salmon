@@ -168,7 +168,7 @@ def test_renaming_the_tracks_of_a_converted_folder_renames_them_in_the_record(ma
         "02. two.mp3": {"tracknumber": "2", "title": "Two"},
     }
     monkeypatch.setattr(
-        "salmon.tagger.retagger.generate_file_name", lambda tags, ext, _multi: f"0{tags['tracknumber']}{ext}"
+        "salmon.tagger.retagger.generate_file_name", lambda tags, ext, _multi, **_: f"0{tags['tracknumber']}{ext}"
     )
     metadata = {"tracks": {"1": {"1": {"artists": [("A", "main")]}, "2": {"artists": [("A", "main")]}}}}
 
