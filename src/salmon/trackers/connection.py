@@ -7,14 +7,18 @@ request. The command and the job print from the same functions here; the command
 The shape of the check is from the fork's ``checks/connection.py`` (chodeus, 0b29d2d5, 9bfdddc3 and 75e5a3d9).
 """
 
-from collections.abc import Callable
+import os
+import ssl
+import sys
+from collections.abc import Callable, Sequence
 from typing import Literal
 
 import asyncclick as click
 import msgspec
 
+import salmon.trackers
 from salmon.errors import TLSCertificateError
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import BaseGazelleApi, request_dumps
 
 SESSION_COOKIE = "session cookie"
 API_KEY = "API key"
@@ -150,3 +154,57 @@ def print_verdict(result: ConnectionResult) -> None:
         click.secho(f"\n✖ Error testing {result.tracker} ({', '.join(failed)})", fg="red", bold=True)
     else:
         click.secho(f"\n✔ Successfully checked {result.tracker}", fg="green", bold=True)
+
+
+def print_ca_certificates_hint() -> None:
+    """Print where Python gets the CA certificates it verifies certificates with, and to check the clock.
+
+    Nothing else from the environment: only SSL_CERT_FILE and SSL_CERT_DIR, and what
+    ssl.get_default_verify_paths() makes of them.
+    """
+    paths = ssl.get_default_verify_paths()
+    click.secho(
+        "\n  Where Python gets its CA certificates (browsers ignore SSL_CERT_FILE and SSL_CERT_DIR):", fg="yellow"
+    )
+    for env in (paths.openssl_cafile_env, paths.openssl_capath_env):
+        value = os.environ.get(env)
+        click.secho(f"    {env}: {'not set' if value is None else value or 'set, but empty'}", fg="yellow")
+    # Either one is None when what OpenSSL would load is missing: the variable's path, else the default.
+    for label, found, env, default in (
+        ("CA file", paths.cafile, paths.openssl_cafile_env, paths.openssl_cafile),
+        ("CA directory", paths.capath, paths.openssl_capath_env, paths.openssl_capath),
+    ):
+        looked_at = os.environ.get(env, default) or "an empty path"
+        click.secho(f"    {label}: {found or f'none, nothing at {looked_at}'}", fg="yellow")
+    if sys.platform == "win32":
+        click.secho("    and the Windows certificate store", fg="yellow")
+    click.secho(
+        "  Check the system clock and time zone too: a clock that is off makes a valid certificate look expired or"
+        " not yet valid. It happens in Docker, WSL, on a NAS or a seedbox.",
+        fg="yellow",
+    )
+
+
+async def check_trackers(codes: Sequence[str]) -> list[ConnectionResult]:
+    """``salmon checkconf -t`` for each tracker, one after the other, with what it prints and the request dumps.
+
+    At most two requests per tracker (see ``check_connection``). The dumps are this run's own: the config is not
+    changed (a server shares it with its jobs).
+    """
+    results: list[ConnectionResult] = []
+    with request_dumps():
+        for code in codes:
+            print_tracker_header(code)
+            api = salmon.trackers.get_class(code)()
+            try:
+                print_session_cookie_header()
+                found = await check_connection(code, api, print_step)
+            finally:
+                await api.close()
+            if found.tls_error is not None:
+                print_certificate_failure(found)
+                print_ca_certificates_hint()
+            print_verdict(found)
+            click.secho("-" * 50, fg="yellow")  # Separator for readability
+            results.append(found)
+    return results

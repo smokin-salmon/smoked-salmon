@@ -111,16 +111,22 @@ Run these commands in **PowerShell** (Start menu, "Windows PowerShell"), not in 
 ### 🔹  Initial Setup
 smoked-salmon is a command-line program: run every `salmon` command in a terminal (PowerShell on Windows).
 
-1. Run salmon for the first time. It offers to create a default configuration file and prints where it is:
+1. Run salmon for the first time. With no config, it asks for the two folders it needs (offering to create them),
+   the trackers you use and each one's session cookie and API key, writes the config file, prints where it is, and
+   offers to check the connection to those trackers:
 	```
 	salmon-user@salmon:~$ salmon
-	Could not find configuration path at /home/salmon-user/.config/smoked-salmon/config.toml.
-	Do you want smoked-salmon to create a default config file at /home/salmon-user/.config/smoked-salmon/config.toml? [y/N]:
+	No config found at /home/salmon-user/.config/smoked-salmon/config.toml.
+	No config yet: a few questions to write one. Ctrl-C stops without writing anything.
+	Folder salmon copies albums into, usually your torrent client's download folder (download_directory) [/home/salmon-user/.music]:
 	```
+	Without a terminal (a script, or Docker without `-it`), it copies the default config to that path instead and
+	exits: fill it in, then run salmon again.
 
-2. Edit the `config.toml` file with your preferred text editor to add your API keys, session cookies and update your preferences (see the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
+2. Edit the `config.toml` file with your preferred text editor to change other settings (every one is documented
+   in `config.reference.toml`, next to the default config, and in the [Configuration Wiki](https://github.com/smokin-salmon/smoked-salmon/wiki/Configuration)).
 
-3. Use the `checkconf` command to verify that the connection to the trackers is working:
+3. Use the `checkconf` command to verify the connection to the trackers again at any time:
 
 	```
 	salmon checkconf

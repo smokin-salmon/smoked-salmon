@@ -2,8 +2,6 @@ import asyncio
 import html
 import os
 import shutil
-import ssl
-import sys
 from collections.abc import Sequence
 from typing import Any
 from urllib import parse
@@ -32,15 +30,7 @@ from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
 from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources import METASOURCES, run_metadata
-from salmon.trackers.base import request_dumps
-from salmon.trackers.connection import (
-    check_connection,
-    print_certificate_failure,
-    print_session_cookie_header,
-    print_step,
-    print_tracker_header,
-    print_verdict,
-)
+from salmon.trackers.connection import check_trackers
 from salmon.uploader.seedbox import seedbox_secrets
 from salmon.uploader.spectrals import (
     check_spectrals,
@@ -347,22 +337,7 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
 
     # Test trackers if no specific test type is requested or if tracker is specified
     if not (metadata or seedbox) or tracker:
-        trackers = [tracker] if tracker else salmon.trackers.tracker_list
-
-        # The request dumps are this run's own: the config is not changed (a server shares it with its jobs).
-        with request_dumps():
-            for t in trackers:
-                print_tracker_header(t)
-                tracker_instance = salmon.trackers.get_class(t)()
-                print_session_cookie_header()
-                found = await check_connection(t, tracker_instance, print_step)
-
-                if found.tls_error is not None:
-                    print_certificate_failure(found)
-                    _print_ca_certificates_hint()
-                print_verdict(found)
-
-                click.secho("-" * 50, fg="yellow")  # Separator for readability
+        await check_trackers([tracker] if tracker else salmon.trackers.tracker_list)
 
     # Test metadata sources
     if metadata or not (tracker or seedbox):
@@ -371,35 +346,6 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
     # Test seedbox connections
     if seedbox or not (tracker or metadata):
         await _test_seedbox_connections()
-
-
-def _print_ca_certificates_hint() -> None:
-    """Print where Python gets the CA certificates it verifies certificates with, and to check the clock.
-
-    Nothing else from the environment: only SSL_CERT_FILE and SSL_CERT_DIR, and what
-    ssl.get_default_verify_paths() makes of them.
-    """
-    paths = ssl.get_default_verify_paths()
-    click.secho(
-        "\n  Where Python gets its CA certificates (browsers ignore SSL_CERT_FILE and SSL_CERT_DIR):", fg="yellow"
-    )
-    for env in (paths.openssl_cafile_env, paths.openssl_capath_env):
-        value = os.environ.get(env)
-        click.secho(f"    {env}: {'not set' if value is None else value or 'set, but empty'}", fg="yellow")
-    # Either one is None when what OpenSSL would load is missing: the variable's path, else the default.
-    for label, found, env, default in (
-        ("CA file", paths.cafile, paths.openssl_cafile_env, paths.openssl_cafile),
-        ("CA directory", paths.capath, paths.openssl_capath_env, paths.openssl_capath),
-    ):
-        looked_at = os.environ.get(env, default) or "an empty path"
-        click.secho(f"    {label}: {found or f'none, nothing at {looked_at}'}", fg="yellow")
-    if sys.platform == "win32":
-        click.secho("    and the Windows certificate store", fg="yellow")
-    click.secho(
-        "  Check the system clock and time zone too: a clock that is off makes a valid certificate look expired or"
-        " not yet valid. It happens in Docker, WSL, on a NAS or a seedbox.",
-        fg="yellow",
-    )
 
 
 def _iter_which(deps: list[str]) -> None:
