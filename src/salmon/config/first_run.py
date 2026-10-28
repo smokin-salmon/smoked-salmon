@@ -50,9 +50,14 @@ def is_terminal() -> bool:
 
 
 def write_new(dest: Path, text: str) -> None:
-    """Write a file that must not exist yet (FileExistsError if it does), creating its folder."""
+    """Write a file that must not exist yet (FileExistsError if it does), creating its folder.
+
+    Readable by its owner only: it holds, or is about to hold, tracker cookies and API keys (Windows ignores the
+    mode).
+    """
     dest.parent.mkdir(parents=True, exist_ok=True)
-    with dest.open("x", encoding="utf-8", newline="\n") as f:
+    fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
         f.write(text)
 
 

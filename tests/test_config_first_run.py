@@ -4,6 +4,7 @@ The questions are answered by a scripted interaction, never the terminal. The co
 fake tracker of test_checkconf_connection; the network guard in conftest.py stands.
 """
 
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -194,6 +195,19 @@ def test_an_existing_file_is_never_overwritten(tmp_path: Path, folders: tuple[Pa
     with pytest.raises(FileExistsError):
         first_run.copy_and_explain(TEMPLATE, dest)
     assert dest.read_text(encoding="utf-8") == "mine"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows ignores the mode")
+def test_the_config_is_readable_by_its_owner_only(tmp_path: Path, folders: tuple[Path, Path]) -> None:
+    """It holds the tracker cookies: on a shared seedbox, another user must not read them."""
+    music, torrents = folders
+    written, copied = tmp_path / "written.toml", tmp_path / "copied.toml"
+
+    assert run_flow(Scripted([str(music), str(torrents), "red", "cookie", "", False]), written) == 0
+    first_run.copy_and_explain(TEMPLATE, copied)
+
+    assert stat.S_IMODE(written.stat().st_mode) == 0o600
+    assert stat.S_IMODE(copied.stat().st_mode) == 0o600
 
 
 # Through setup_config, as salmon starts
