@@ -25,6 +25,15 @@ def test_compile_artist_str_keeps_the_order_given() -> None:
     assert artist_str == "Zed Leader & Alpha Band"
 
 
+def test_compile_artist_str_is_various_at_the_threshold(monkeypatch) -> None:
+    # The folder needed one artist more than ALBUMARTIST, so four main artists were "Various" there and named here.
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 4)
+
+    artist_str = foldername._compile_artist_str([(name, "main") for name in "ABCD"])
+
+    assert artist_str == cfg.upload.formatting.various_artist_word
+
+
 def test_hardlink_fallback_survives_a_partial_tree(tmp_path, monkeypatch) -> None:
     # Regression for #356: when os.link fails partway through copytree, the plain-copy
     # fallback used to hit SameFileError on the files that were already hardlinked.

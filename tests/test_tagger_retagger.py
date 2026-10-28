@@ -13,6 +13,8 @@ from salmon.tagger.retagger import (
     Change,
     _generate_album_artist,
     _get_tag_number,
+    append_guests_to_track_titles,
+    create_artist_str,
     create_track_changes,
     delete_empty_folders,
     rename_files,
@@ -38,6 +40,27 @@ def test_album_artist_keeps_the_order_given() -> None:
     artists = [("Zed Leader", "main"), ("Alpha Band", "main"), ("Zed Leader", "main"), ("Some Guest", "guest")]
 
     assert _generate_album_artist(artists) == "Zed Leader & Alpha Band"
+
+
+def test_artist_separates_with_commas_when_a_name_has_an_ampersand(monkeypatch) -> None:
+    # ARTIST used " & " whenever a name had "&" in it, so "Simon & Garfunkel & Paul Desmond"; ALBUMARTIST used ", ".
+    monkeypatch.setattr(cfg.upload.formatting, "guests_in_track_title", False)
+    artists = [("Simon & Garfunkel", "main"), ("Paul Desmond", "main"), ("Earth, Wind & Fire", "guest"), ("X", "guest")]
+
+    assert create_artist_str(artists) == "Simon & Garfunkel, Paul Desmond (feat. Earth, Wind & Fire, X)"
+
+
+@pytest.mark.parametrize(
+    ("guests", "feat"),
+    [(["Zed", "Alpha"], "Zed & Alpha"), (["A", "B", "C", "D"], None), (["A", "B", "C", "D", "E"], None)],
+    ids=["order given", "at the threshold", "above it"],
+)
+def test_guests_in_the_title_keep_their_order_and_become_various_at_the_threshold(monkeypatch, guests, feat) -> None:
+    # The title sorted its guests, listed four of them and dropped five or more, which ARTIST then left out too.
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 4)
+    track = {"title": "Song", "artists": [("Lead", "main"), *((g, "guest") for g in guests)]}
+
+    assert append_guests_to_track_titles(track) == f"Song (feat. {feat or cfg.upload.formatting.various_artist_word})"
 
 
 def _tagset(title, tracknumber, discnumber):

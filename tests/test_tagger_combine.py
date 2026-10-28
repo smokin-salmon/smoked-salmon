@@ -397,6 +397,11 @@ def test_remixer_is_not_appended_to_a_title_that_ends_in_a_version(title):
     assert remix_title(title) == title
 
 
+def test_remixers_are_separated_as_the_artists_are():
+    # Remixers were always joined with " & ", so "Song (A & B & C Remix)".
+    assert remix_title("Song", ("A", "B", "C")) == "Song (A, B, C Remix)"
+
+
 def test_remixed_is_not_appended_to_a_title_that_ends_in_a_version():
     assert remix_title("Song (Dub)", ("A", "B", "C", "D")) == "Song (Dub)"
 

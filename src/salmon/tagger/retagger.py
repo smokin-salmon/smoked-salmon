@@ -12,6 +12,7 @@ from mutagen import mp4
 
 from salmon import cfg, interaction
 from salmon.common import clean_name, has_visible_chars
+from salmon.common.strings import artists_or_various, join_artists
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
@@ -122,13 +123,7 @@ def collect_album_data(metadata):
 
 
 def _generate_album_artist(artists):
-    # In the order given, like the track ARTIST (create_artist_str): sorting changed
-    # "Zed Leader & Alpha Band" to "Alpha Band & Zed Leader".
-    main_artists = _ordered_unique(a for a, i in artists if i == "main")
-    if len(main_artists) >= cfg.upload.formatting.various_artist_threshold:
-        return cfg.upload.formatting.various_artist_word
-    c = ", " if len(main_artists) > 2 or "&" in "".join(main_artists) else " & "
-    return c.join(main_artists)
+    return artists_or_various(a for a, i in artists if i == "main")
 
 
 def create_track_changes(tags, metadata, *, move_numbered=False):
@@ -238,17 +233,14 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
 
 def append_guests_to_track_titles(track):
     guest_artists = [a for a, i in track["artists"] if i == "guest"]
-    if (
-        "feat" not in track["title"]
-        and guest_artists
-        and len(guest_artists) <= cfg.upload.formatting.various_artist_threshold
-    ):
-        c = ", " if len(guest_artists) > 2 or "&" in "".join(guest_artists) else " & "
+    if "feat" not in track["title"] and guest_artists:
         # If we find a remix parenthetical, remove it and re-add it after the guest artists.
         remix = re.search(r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE)
         if remix:
             track["title"] = track["title"].replace(remix[1], "")
-        track["title"] += f" (feat. {c.join(sorted(guest_artists))})"
+        # More than various_artist_threshold guests used to be left out here, and so from ARTIST, which leaves guests
+        # to the title
+        track["title"] += f" (feat. {artists_or_various(guest_artists)})"
         if remix:
             track["title"] += remix[1]
     return track["title"]
@@ -473,19 +465,14 @@ def create_artist_str(artists):
     conductors = _ordered_unique(a for a, i in artists if i == "conductor")
     lead_artists = _ordered_unique([*main_artists, *conductors])
 
-    if conductors:
-        artist_str = ", ".join(lead_artists)
-    else:
-        c = ", " if len(lead_artists) > 2 and "&" not in "".join(lead_artists) else " & "
-        artist_str = c.join(lead_artists)
+    # ALBUMARTIST's separator rule. This used " & " whenever a name contained "&", so "Simon & Garfunkel" and
+    # "Paul Desmond" became "Simon & Garfunkel & Paul Desmond"
+    artist_str = ", ".join(lead_artists) if conductors else join_artists(lead_artists)
 
     if not cfg.upload.formatting.guests_in_track_title:
-        guest_artists = _ordered_unique(a for a, i in artists if i == "guest")
-        if len(guest_artists) >= cfg.upload.formatting.various_artist_threshold:
-            artist_str += f" (feat. {cfg.upload.formatting.various_artist_word})"
-        elif guest_artists:
-            c = ", " if len(guest_artists) > 2 and "&" not in "".join(guest_artists) else " & "
-            artist_str += f" (feat. {c.join(guest_artists)})"
+        guest_artists = [a for a, i in artists if i == "guest"]
+        if guest_artists:
+            artist_str += f" (feat. {artists_or_various(guest_artists)})"
 
     return artist_str
 

@@ -3,8 +3,9 @@ from typing import TYPE_CHECKING, Any
 
 import asyncclick as click
 
-from salmon import cfg, interaction
+from salmon import interaction
 from salmon.common import get_audio_files
+from salmon.common.strings import artists_or_various
 from salmon.errors import RequestError, UploadError
 from salmon.uploader.dupe_checker import describe_torrent
 
@@ -126,7 +127,7 @@ async def print_group_info(gazelle_site: "BaseGazelleApi", group_id: int, source
         raise UploadError("Could not get information about torrent group from RED.") from err
 
     artists = [a["name"] for a in group["group"]["musicInfo"]["artists"]]
-    artists = ", ".join(artists) if len(artists) < 4 else cfg.upload.formatting.various_artist_word
+    artists = artists_or_various(artists)
     click.secho(
         f"\nTorrents matching source {source} in (Group {group_id}) {artists} - {group['group']['name']}:",
         fg="yellow",
