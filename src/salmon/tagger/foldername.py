@@ -300,11 +300,12 @@ def _strip_blank_resolution(template):
 
 def _compile_artist_str(artist_data):
     """Create a string to represent the main artists of the release."""
-    artists = [a[0] for a in artist_data if a[1] == "main"]
+    # In the order given, as the album artist tag (retagger._generate_album_artist) has it.
+    artists = list(dict.fromkeys(a[0] for a in artist_data if a[1] == "main"))
     if len(artists) > cfg.upload.formatting.various_artist_threshold:
         return cfg.upload.formatting.various_artist_word
     c = ", " if len(artists) > 2 or "&" in "".join(artists) else " & "
-    return c.join(sorted(artists))
+    return c.join(artists)
 
 
 def _sub_illegal_characters(stri):

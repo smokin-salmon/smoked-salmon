@@ -16,6 +16,15 @@ def test_compile_artist_str_excludes_arranger() -> None:
     assert artist_str == "Main Artist"
 
 
+def test_compile_artist_str_keeps_the_order_given() -> None:
+    # The folder used to sort the main artists, so "Zed Leader & Alpha Band" became "Alpha Band & Zed Leader".
+    artist_str = foldername._compile_artist_str(
+        [("Zed Leader", "main"), ("Alpha Band", "main"), ("Zed Leader", "main"), ("Some Guest", "guest")]
+    )
+
+    assert artist_str == "Zed Leader & Alpha Band"
+
+
 def test_hardlink_fallback_survives_a_partial_tree(tmp_path, monkeypatch) -> None:
     # Regression for #356: when os.link fails partway through copytree, the plain-copy
     # fallback used to hit SameFileError on the files that were already hardlinked.
