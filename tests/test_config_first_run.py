@@ -4,6 +4,7 @@ The questions are answered by a scripted interaction, never the terminal. The co
 fake tracker of test_checkconf_connection; the network guard in conftest.py stands.
 """
 
+import os
 import stat
 import subprocess
 import sys
@@ -89,7 +90,8 @@ def test_the_answers_make_a_config_that_loads(tmp_path: Path, folders: tuple[Pat
     dest = tmp_path / "config" / "config.toml"
     scripted = Scripted([str(music), str(torrents), "ops, red", NASTY_COOKIE, "", "red-cookie", "red\\key", False])
 
-    assert run_flow(scripted, dest) == 0
+    exit_code = run_flow(scripted, dest)
+    assert exit_code == 0
 
     assert scripted.answers == []
     assert [text for _, text in scripted.asked] == [
@@ -118,7 +120,8 @@ def test_dic_is_asked_no_api_key_and_every_tracker_block_fills_in(tmp_path: Path
     dest = tmp_path / "config.toml"
     scripted = Scripted([str(music), str(torrents), "DIC RED OPS", "dic", "red", "", "ops", "ops-key", False])
 
-    assert run_flow(scripted, dest) == 0
+    exit_code = run_flow(scripted, dest)
+    assert exit_code == 0
 
     assert "DIC API key (Enter to skip)" not in [text for _, text in scripted.asked]
     loaded = _parse_config(dest)
@@ -133,7 +136,8 @@ def test_an_unknown_or_empty_tracker_answer_is_asked_again(tmp_path: Path, folde
     dest = tmp_path / "config.toml"
     scripted = Scripted([str(music), str(torrents), "PTP", " , ", "red", "cookie", "", False])
 
-    assert run_flow(scripted, dest) == 0
+    exit_code = run_flow(scripted, dest)
+    assert exit_code == 0
 
     assert [text for _, text in scripted.asked].count(
         "Trackers you upload to (RED, OPS, DIC; separate with commas)"
@@ -147,7 +151,8 @@ def test_a_missing_folder_is_created_only_when_the_user_agrees(tmp_path: Path, f
     dest = tmp_path / "config.toml"
     scripted = Scripted([str(declined), False, str(music), str(created), True, "red", "cookie", "", False])
 
-    assert run_flow(scripted, dest) == 0
+    exit_code = run_flow(scripted, dest)
+    assert exit_code == 0
 
     assert not declined.exists()
     assert created.is_dir()
@@ -167,7 +172,8 @@ def test_the_folder_defaults_are_the_short_files_made_absolute(tmp_path: Path, m
             return await super().prompt(text, **kwargs)
 
     scripted = Defaults(["", True, "", True, click.Abort()])
-    assert run_flow(scripted, tmp_path / "config.toml") == 1
+    exit_code = run_flow(scripted, tmp_path / "config.toml")
+    assert exit_code == 1
 
     assert defaults[:2] == [str(tmp_path / ".music"), str(tmp_path / ".torrents")]
     assert (tmp_path / ".music").is_dir() and (tmp_path / ".torrents").is_dir()
@@ -178,7 +184,8 @@ def test_stopping_part_way_writes_nothing(tmp_path: Path, folders: tuple[Path, P
     dest = tmp_path / "config.toml"
     scripted = Scripted([str(music), str(tmp_path / "missing"), False, click.Abort()])
 
-    assert run_flow(scripted, dest) == 1
+    exit_code = run_flow(scripted, dest)
+    assert exit_code == 1
 
     assert not dest.exists()
     assert not (tmp_path / "missing").exists()
@@ -189,7 +196,8 @@ def test_an_existing_file_is_never_overwritten(tmp_path: Path, folders: tuple[Pa
     dest = tmp_path / "config.toml"
     dest.write_text("mine", encoding="utf-8")
 
-    assert run_flow(Scripted([str(music), str(torrents), "red", "cookie", ""]), dest) == 1
+    exit_code = run_flow(Scripted([str(music), str(torrents), "red", "cookie", ""]), dest)
+    assert exit_code == 1
     assert dest.read_text(encoding="utf-8") == "mine"
 
     with pytest.raises(FileExistsError):
@@ -203,8 +211,15 @@ def test_the_config_is_readable_by_its_owner_only(tmp_path: Path, folders: tuple
     music, torrents = folders
     written, copied = tmp_path / "written.toml", tmp_path / "copied.toml"
 
-    assert run_flow(Scripted([str(music), str(torrents), "red", "cookie", "", False]), written) == 0
-    first_run.copy_and_explain(TEMPLATE, copied)
+    # A usual umask: a stricter one (0o077) would make any new file 0600, with or without the fix.
+    umask = os.umask(0o022)
+    try:
+        exit_code = run_flow(Scripted([str(music), str(torrents), "red", "cookie", "", False]), written)
+        first_run.copy_and_explain(TEMPLATE, copied)
+    finally:
+        os.umask(umask)
+
+    assert exit_code == 0
 
     assert stat.S_IMODE(written.stat().st_mode) == 0o600
     assert stat.S_IMODE(copied.stat().st_mode) == 0o600
@@ -282,7 +297,8 @@ def check_through_flow(
     async def run() -> None:
         async with fake.serving():
             with interaction.using(scripted):
-                assert await first_run.run(TEMPLATE, dest) == 0
+                exit_code = await first_run.run(TEMPLATE, dest)
+                assert exit_code == 0
 
     anyio.run(run)
     return fake, [text for _, text in scripted.asked]
