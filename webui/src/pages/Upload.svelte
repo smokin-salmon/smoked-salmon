@@ -195,7 +195,7 @@
   const canStart = $derived(
     !!path &&
       !!source &&
-      chosen.length > 0 &&
+      (transcodes ? chosen.length === 1 : chosen.length > 0) &&
       !starting &&
       (!transcodes || (parseGroupId(groupId) != null && conversions.length > 0)),
   )
@@ -392,7 +392,7 @@
       </div>
       {#if transcodes}
         <small class="hint">
-          The FLAC is already in that group: only its transcodes are uploaded, to one tracker, not with a request or
+          The FLAC is already in that group: only its transcodes are uploaded, to exactly one ticked tracker, not with a request or
           spectrals after upload (--skip-flac-upload). Tick at least one conversion.
         </small>
       {/if}
