@@ -112,10 +112,12 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
                 str(metadata["group_year"]).isdigit() and int(metadata["group_year"]) < int(base["group_year"])
             ):
                 base["group_year"] = metadata["group_year"]
-            if not base["date"]:
+            if not base["date"] and metadata["date"]:
                 base["date"] = metadata["date"]
-                base["year"] = metadata["year"]
-                base["group_year"] = metadata["group_year"]
+                if metadata["year"]:
+                    base["year"] = metadata["year"]
+                if metadata["group_year"]:
+                    base["group_year"] = metadata["group_year"]
             if not base["rls_type"] or base["rls_type"] == "Album":
                 base["rls_type"] = metadata["rls_type"]
             if not base["upc"]:
@@ -136,6 +138,9 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
         raise ValueError("No metadata provided to combine")
 
     assert base is not None  # Type narrowing for pyright
+
+    if not base["group_year"]:
+        base["group_year"] = base["year"]
 
     if "url" in base:
         del base["url"]
