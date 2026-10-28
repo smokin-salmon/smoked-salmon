@@ -5,7 +5,7 @@ FROM ghcr.io/astral-sh/uv:0.13.1@sha256:4a1f3666816dafadd20ceb71eac9a7d56d7ef302
 # ===========================================
 # Stage 1: Builder - Install dependencies and build the project
 # ===========================================
-FROM python:3.13-slim-trixie@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b AS builder
+FROM python:3.13-slim-trixie@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb AS builder
 COPY --from=uv /uv /uvx /bin/
 
 # Set working directory
@@ -40,7 +40,7 @@ RUN --mount=type=cache,target=/opt/uv-cache \
 # ===========================================
 # Stage 2: Runtime - Minimal Python slim image
 # ===========================================
-FROM python:3.13-slim-trixie@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+FROM python:3.13-slim-trixie@sha256:2d44738ebf4ce5f63b9d9ea871e9c7cfdc0426f7b0c97cac915fd88ded1d86bb
 
 # Set working directory
 WORKDIR /app
