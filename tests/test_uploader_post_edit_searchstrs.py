@@ -92,7 +92,7 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         async def execute_upload(self) -> None:
             pass
 
-        def remove_local_copies(self) -> None:
+        def remove_local_copies(self, keep_because: str | None = None) -> None:
             pass
 
     def fake_confirm(text: str, *_args, **_kwargs) -> bool:

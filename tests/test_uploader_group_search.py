@@ -210,7 +210,7 @@ class Flow:
             async def execute_upload(self) -> None:
                 pass
 
-            def remove_local_copies(self) -> None:
+            def remove_local_copies(self, keep_because: str | None = None) -> None:
                 pass
 
         rls_data = {"format": "FLAC", "encoding": "Lossless", "artists": [("Artist", "main")], "title": "Hits Vol. 2"}

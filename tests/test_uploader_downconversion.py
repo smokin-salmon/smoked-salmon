@@ -103,7 +103,7 @@ class FakeUploadManager:
     async def execute_upload(self) -> None:
         self.executed = list(self.queued)
 
-    def remove_local_copies(self) -> None:
+    def remove_local_copies(self, keep_because: str | None = None) -> None:
         pass
 
 

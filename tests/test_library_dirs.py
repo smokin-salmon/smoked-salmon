@@ -321,7 +321,7 @@ def _run_up(
         async def execute_upload(self) -> None:
             pass
 
-        def remove_local_copies(self) -> None:
+        def remove_local_copies(self, keep_because: str | None = None) -> None:
             pass
 
     rls_data = {

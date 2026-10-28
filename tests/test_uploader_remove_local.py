@@ -292,3 +292,13 @@ def test_a_local_seedbox_with_the_key_is_refused() -> None:
 def test_the_key_is_off_by_default() -> None:
     assert Seedbox(type="rclone").remove_local_after_copy is False
     assert Seedbox(type="local").remove_local_after_copy is False
+
+
+def test_a_run_that_did_not_end_well_keeps_every_folder_and_says_why(monkeypatch, tmp_path) -> None:
+    run = _Run(monkeypatch, tmp_path, [_rclone("nas")])
+    folder = run.release()
+    run.queue(folder)
+    anyio.run(run.manager.execute_upload)
+    run.manager.remove_local_copies("the upload to OPS failed")
+    assert folder.is_dir()
+    assert f"remove_local_after_copy is on, but {folder} is kept: the upload to OPS failed." in "\n".join(run.lines)

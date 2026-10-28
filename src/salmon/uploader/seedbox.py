@@ -489,8 +489,11 @@ class UploadManager:
                 return f"{_seedbox_display_name(seedbox, seedbox_secrets(seedbox))} was not configured"
         return None
 
-    def remove_local_copies(self) -> None:
+    def remove_local_copies(self, keep_because: str | None = None) -> None:
         """Remove each folder from download_directory that remove_local_after_copy allows, and report each one.
+
+        With keep_because, the run did not end well (a failed upload, an abort, an error): nothing is removed,
+        and each folder is reported kept for that reason.
 
         Called by `salmon up` after execute_upload, never by cross-upload. A folder goes only when every task for
         it on every seedbox worked and nothing seeds it from the local copy (see _kept_reason); a dry run queues
@@ -501,7 +504,7 @@ class UploadManager:
         ):
             return
         for folder in self._folder_torrents:
-            reason = self._kept_reason(folder)
+            reason = keep_because or self._kept_reason(folder)
             if reason:
                 click.secho(f"remove_local_after_copy is on, but {folder} is kept: {reason}.", fg="yellow")
                 continue

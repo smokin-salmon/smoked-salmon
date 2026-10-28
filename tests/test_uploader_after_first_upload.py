@@ -28,7 +28,7 @@ from torf import Torrent, WriteError
 import salmon.trackers
 import salmon.uploader
 from salmon import cfg, interaction
-from salmon.errors import RequestError
+from salmon.errors import RequestError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
@@ -522,3 +522,77 @@ def test_the_rewritten_torrent_keeps_the_mode_of_the_one_it_replaces(tmp_path) -
 
     assert Torrent.read(torrent_path).comment == torrent.comment
     assert torrent_path.stat().st_mode & 0o777 == 0o640
+
+
+# remove_local_after_copy runs only after a run that ended by itself with every upload done (#754)
+
+
+def _removals(monkeypatch) -> list[str | None]:
+    """Record each call of remove_local_copies with its keep_because, instead of removing anything."""
+    calls: list[str | None] = []
+    monkeypatch.setattr(
+        UploadManager, "remove_local_copies", lambda _self, keep_because=None: calls.append(keep_because)
+    )
+    return calls
+
+
+def test_a_clean_run_asks_for_the_local_copies_to_be_removed(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED")
+    removals = _removals(monkeypatch)
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, input="\n\n")
+    assert run.result.exit_code == 0, run.result.output
+    assert removals == [None]
+
+
+@pytest.mark.parametrize("error", [RequestError("RED is down"), UnknownOutcomeError("RED hung up")])
+def test_a_failed_tracker_upload_keeps_the_local_copies(monkeypatch, tmp_path, dirs, error) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    removals = _removals(monkeypatch)
+    _checks(monkeypatch)
+    _description_edits(monkeypatch)
+    upload_and_report = salmon.uploader.upload_and_report
+
+    async def ops_fails(gazelle_site, *args, **kwargs) -> Any:
+        if gazelle_site.site_code == "OPS":
+            raise error
+        return await upload_and_report(gazelle_site, *args, **kwargs)
+
+    run = _run_up(
+        monkeypatch,
+        _album(tmp_path / "Album"),
+        torrents,
+        args=("-a",),
+        input="\nOPS\n\n\n",
+        upload_and_report=ops_fails,
+    )
+    assert run.result.exit_code == 0, run.result.output
+    assert removals == ["the upload to OPS failed"]
+
+
+def test_an_abort_after_an_upload_keeps_the_local_copies_and_still_seeds(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    removals = _removals(monkeypatch)
+    seedbox_runs = _seedbox_runs(monkeypatch)
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, input="\nOPS\na\n")
+    assert run.result.exit_code == 0, run.result.output
+    assert "Aborting: nothing more is uploaded." in run.result.output
+    assert seedbox_runs == [True]
+    assert removals == ["the run stopped before it finished"]
+
+
+def test_an_unexpected_error_keeps_the_local_copies_and_propagates(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED")
+    removals = _removals(monkeypatch)
+    seedbox_runs = _seedbox_runs(monkeypatch)
+
+    async def breaks(gazelle_site, *args, **kwargs) -> Any:
+        raise RuntimeError("disk on fire")
+
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, input="\n\n", upload_and_report=breaks)
+    assert isinstance(run.result.exception, RuntimeError)
+    assert seedbox_runs == [True]
+    assert removals == ["the run stopped before it finished"]
