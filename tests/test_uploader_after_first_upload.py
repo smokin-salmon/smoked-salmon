@@ -568,7 +568,7 @@ def test_a_failed_tracker_upload_keeps_the_local_copies(monkeypatch, tmp_path, d
         upload_and_report=ops_fails,
     )
     assert run.result.exit_code == 0, run.result.output
-    assert removals == ["the upload to OPS failed"]
+    assert removals == ["the upload to OPS failed or was skipped"]
 
 
 def test_an_abort_after_an_upload_keeps_the_local_copies_and_still_seeds(monkeypatch, tmp_path, dirs) -> None:
@@ -596,3 +596,40 @@ def test_an_unexpected_error_keeps_the_local_copies_and_propagates(monkeypatch, 
     assert isinstance(run.result.exception, RuntimeError)
     assert seedbox_runs == [True]
     assert removals == ["the run stopped before it finished"]
+
+
+def test_a_skipped_tracker_keeps_the_local_copies(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    removals = _removals(monkeypatch)
+    _checks(monkeypatch)
+    _description_edits(monkeypatch)
+    resolve_cover_url = salmon.uploader.resolve_cover_url
+
+    async def ops_has_no_cover(gazelle_site, *args, **kwargs) -> Any:
+        if gazelle_site.site_code == "OPS":
+            return False, None
+        return await resolve_cover_url(gazelle_site, *args, **kwargs)
+
+    monkeypatch.setattr(salmon.uploader, "resolve_cover_url", ops_has_no_cover)
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, args=("-a",), input="\nOPS\n\n\n")
+    assert run.result.exit_code == 0, run.result.output
+    assert "Skipping upload to OPS." in run.result.output
+    assert removals == ["the upload to OPS failed or was skipped"]
+
+
+def test_a_tracker_refused_before_its_upload_keeps_the_local_copies(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    removals = _removals(monkeypatch)
+    _checks(monkeypatch)
+    _description_edits(monkeypatch)
+    refusal = salmon.uploader._do_not_upload_refusal
+
+    def ops_refused(tracker: str, release: dict[str, Any], said: str | None = None) -> str | None:
+        return "refused" if tracker == "OPS" else refusal(tracker, release, said)
+
+    monkeypatch.setattr(salmon.uploader, "_do_not_upload_refusal", ops_refused)
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, args=("-a",), input="\nOPS\n\n\n")
+    assert run.result.exit_code == 0, run.result.output
+    assert removals == ["the upload to OPS failed or was skipped"]

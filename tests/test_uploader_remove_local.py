@@ -299,6 +299,24 @@ def test_a_run_that_did_not_end_well_keeps_every_folder_and_says_why(monkeypatch
     folder = run.release()
     run.queue(folder)
     anyio.run(run.manager.execute_upload)
-    run.manager.remove_local_copies("the upload to OPS failed")
+    run.manager.remove_local_copies("the upload to OPS failed or was skipped")
     assert folder.is_dir()
-    assert f"remove_local_after_copy is on, but {folder} is kept: the upload to OPS failed." in "\n".join(run.lines)
+    assert (
+        f"remove_local_after_copy is on, but {folder} is kept: the upload to OPS failed or was skipped."
+        in "\n".join(run.lines)
+    )
+
+
+def test_a_removal_that_fails_part_way_does_not_say_the_folder_is_kept(monkeypatch, tmp_path) -> None:
+    run = _Run(monkeypatch, tmp_path, [_rclone("nas")])
+    folder = run.release()
+    run.queue(folder)
+
+    def half_removed(path: str) -> None:
+        (Path(path) / "01. Track.flac").unlink()
+        raise PermissionError("busy")
+
+    monkeypatch.setattr(sb.shutil, "rmtree", half_removed)
+    report = run.finish()
+    assert f"{folder} could not be fully removed and may be incomplete: busy." in report
+    assert "is kept" not in report

@@ -518,7 +518,14 @@ class UploadManager:
             try:
                 shutil.rmtree(folder)
             except OSError as e:
-                click.secho(f"remove_local_after_copy is on, but {folder} is kept: {e}.", fg="yellow")
+                if os.path.exists(folder):
+                    click.secho(
+                        f"remove_local_after_copy is on, but {folder} could not be fully removed and may be "
+                        f"incomplete: {e}.",
+                        fg="red",
+                    )
+                else:
+                    click.secho(f"remove_local_after_copy: {folder} is gone, but removing it raised: {e}.", fg="red")
                 continue
             click.secho(
                 f"Removed {folder} from download_directory: copied to and seeding on {', '.join(names)} "
