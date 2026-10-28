@@ -193,7 +193,11 @@
   const summary = $derived(overridden.length ? `Overrides (${overridden.length} set: ${overridden.join(', ')})` : 'Overrides')
   const transcodes = $derived(mode === 'transcodes')
   const canStart = $derived(
-    !!path && !!source && chosen.length > 0 && !starting && (!transcodes || parseGroupId(groupId) != null),
+    !!path &&
+      !!source &&
+      chosen.length > 0 &&
+      !starting &&
+      (!transcodes || (parseGroupId(groupId) != null && conversions.length > 0)),
   )
 
   // The job started here, else the newest upload: back on the page, the running upload is shown again.
@@ -389,7 +393,7 @@
       {#if transcodes}
         <small class="hint">
           The FLAC is already in that group: only its transcodes are uploaded, to one tracker, not with a request or
-          spectrals after upload (--skip-flac-upload).
+          spectrals after upload (--skip-flac-upload). Tick at least one conversion.
         </small>
       {/if}
     </div>
