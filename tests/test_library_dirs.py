@@ -321,6 +321,9 @@ def _run_up(
         async def execute_upload(self) -> None:
             pass
 
+        def remove_local_copies(self) -> None:
+            pass
+
     rls_data = {
         "format": "FLAC",
         "encoding": "Lossless",

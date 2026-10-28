@@ -103,6 +103,9 @@ class FakeUploadManager:
     async def execute_upload(self) -> None:
         self.executed = list(self.queued)
 
+    def remove_local_copies(self) -> None:
+        pass
+
 
 def _downconversion_tasks() -> list[dict[str, Any]]:
     return [

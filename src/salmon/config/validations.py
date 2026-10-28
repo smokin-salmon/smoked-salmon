@@ -257,10 +257,14 @@ class Seedbox(BaseStruct):
     torrent_client: str = ""
     label: str = ""  # Label to apply to torrents in download client
     add_paused: bool = False  # If true, add torrents to client in paused state
+    # rclone only: salmon up removes the folder from download_directory once every seedbox has it and seeds it.
+    remove_local_after_copy: bool = False
 
     def __post_init__(self):
         if self.type not in ("local", "rclone"):
             raise ValueError("Invalid seedbox type specified")
+        if self.remove_local_after_copy and self.type != "rclone":
+            raise ValueError(f"seedbox '{self.name}': remove_local_after_copy only applies to rclone seedboxes")
         self.trackers = [t.upper() for t in self.trackers]
         unknown = sorted(set(self.trackers) - {"RED", "OPS", "DIC"})
         if unknown:

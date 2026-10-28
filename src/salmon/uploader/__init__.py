@@ -1377,6 +1377,7 @@ async def _upload_staged(
                 click.echo(f"  {line}")
         finally:
             await seedbox_uploader.execute_upload()
+            seedbox_uploader.remove_local_copies()
     finally:
         await spectral_uploads.close()
 

@@ -411,6 +411,9 @@ def _flow(
         async def execute_upload(self) -> None:
             pass
 
+        def remove_local_copies(self) -> None:
+            pass
+
     rls_data = _release(source=source)
     metadata = {**_release(source=source), "cover": None, **(reviewed or {})}
     track_data = {"01.flac": {"sample rate": 44100}}

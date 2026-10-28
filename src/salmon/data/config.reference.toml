@@ -191,6 +191,12 @@
 # directory = ""
 # label = "smoked-salmon" # Label to apply to torrents in download client
 # add_paused = false # If true, add torrents to client in paused state
+# "rclone" only. After salmon up, remove the release folder from download_directory once this seedbox has copied
+# it and added its torrents, and every other seedbox that took it did too. It is kept when a "local" seedbox seeds
+# it, a seedbox failed or was skipped, or a torrent seeds nowhere. Leave this off if a torrent client watches
+# dottorrents_dir or otherwise seeds from download_directory, or if you cross-upload later: salmon cross-upload
+# reads the files from download_directory.
+# remove_local_after_copy = false
 
 
 # ===============================
