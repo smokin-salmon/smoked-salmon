@@ -1,6 +1,6 @@
 # Every image this file pulls is pinned by tag and digest (the multi-arch index digest), so a build
 # is reproducible and each update arrives as a Dependabot PR (docker ecosystem) instead of silently.
-FROM ghcr.io/astral-sh/uv:0.13.1@sha256:4a1f3666816dafadd20ceb71eac9a7d56d7ef30279f7d64048519ab901ada336 AS uv
+FROM ghcr.io/astral-sh/uv:0.13.6@sha256:af22a52f5eafef3d78e551599d405c02df61919d18028f0cea8eda93bc9986d0 AS uv
 
 # ===========================================
 # Stage 1: Builder - Install dependencies and build the project
