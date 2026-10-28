@@ -205,6 +205,43 @@ def test_an_existing_file_is_never_overwritten(tmp_path: Path, folders: tuple[Pa
     assert dest.read_text(encoding="utf-8") == "mine"
 
 
+REAL_FDOPEN = os.fdopen
+
+
+class FullDisk:
+    """The file os.fdopen gives, on a disk with no space left: every write fails."""
+
+    def __init__(self, fd: int, *args: Any, **kwargs: Any) -> None:
+        self.file = REAL_FDOPEN(fd, *args, **kwargs)
+
+    def __enter__(self) -> "FullDisk":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.file.close()
+
+    def write(self, text: str) -> int:
+        raise OSError(28, "No space left on device")
+
+
+def test_a_failed_write_leaves_no_file(
+    tmp_path: Path, folders: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A partial config would load and fail at the next start, instead of the questions being asked again."""
+    music, torrents = folders
+    written, copied = tmp_path / "written.toml", tmp_path / "copied.toml"
+    monkeypatch.setattr(first_run.os, "fdopen", FullDisk)
+
+    exit_code = run_flow(Scripted([str(music), str(torrents), "red", "cookie", ""]), written)
+    with pytest.raises(OSError, match="No space left"):
+        first_run.copy_and_explain(TEMPLATE, copied)
+
+    assert exit_code == 1
+    assert f"Could not write {written}" in capsys.readouterr().out
+    assert not written.exists()
+    assert not copied.exists()
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="Windows ignores the mode")
 def test_the_config_is_readable_by_its_owner_only(tmp_path: Path, folders: tuple[Path, Path]) -> None:
     """It holds the tracker cookies: on a shared seedbox, another user must not read them."""
