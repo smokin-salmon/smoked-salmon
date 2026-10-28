@@ -61,7 +61,8 @@ def write_new(dest: Path, text: str) -> None:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
             f.write(text)
     except BaseException:
-        # O_EXCL made the file ours: nobody else's file is removed.
+        # O_EXCL made the file ours when it was created. Something that replaced it since, before the write failed,
+        # would be removed too: a first run racing another writer of the same new config, on a failing disk.
         dest.unlink(missing_ok=True)
         raise
 
