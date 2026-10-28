@@ -83,6 +83,12 @@
     for (const key of REMEMBERED_FLAGS) flags[key] = false
     assumeDefaults = false
     chosen = firstVisitTrackers(options)
+    conversions = presetConversions(options)
+  }
+
+  /** The conversions ticked at a visit: the config's upload.conversions, those that are kinds. */
+  function presetConversions(answer: Options): string[] {
+    return (answer.conversions ?? []).filter((k) => (answer.conversion_kinds ?? []).includes(k))
   }
 
   /** The trackers ticked when nothing is remembered: the config's default_trackers, else the first configured. */
@@ -180,7 +186,7 @@
     apiGet<Options>('/upload/options')
       .then((answer) => {
         options = answer
-        conversions = (answer.conversions ?? []).filter((k) => (answer.conversion_kinds ?? []).includes(k))
+        conversions = presetConversions(answer)
         if (chosen.length || !answer.trackers.length) return
         const kept = storedOptions().trackers
         // In the order kept, which is the order the job uploads in.
