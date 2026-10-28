@@ -633,3 +633,21 @@ def test_a_tracker_refused_before_its_upload_keeps_the_local_copies(monkeypatch,
     run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, args=("-a",), input="\nOPS\n\n\n")
     assert run.result.exit_code == 0, run.result.output
     assert removals == ["the upload to OPS failed or was skipped"]
+
+
+def test_a_first_tracker_refused_before_the_loop_keeps_the_local_copies(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    removals = _removals(monkeypatch)
+    _checks(monkeypatch)
+    _description_edits(monkeypatch)
+    refusal = salmon.uploader._do_not_upload_refusal
+
+    def red_refused(tracker: str, release: dict[str, Any], said: str | None = None) -> str | None:
+        return "refused" if tracker == "RED" else refusal(tracker, release, said)
+
+    monkeypatch.setattr(salmon.uploader, "_do_not_upload_refusal", red_refused)
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, args=("-a",), input="OPS\n\n\n")
+    assert run.result.exit_code == 0, run.result.output
+    assert len(_uploads(run)) > 0, run.result.output
+    assert removals == ["the upload to RED failed or was skipped"]

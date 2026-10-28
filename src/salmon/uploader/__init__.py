@@ -1191,9 +1191,9 @@ async def _upload_staged(
 
         seedbox_uploader = UploadManager()
         uploaded: list[str] = []  # The URL of each torrent uploaded, for an abort to list
-        failed_trackers: list[
-            str
-        ] = []  # Trackers whose upload failed or was skipped: the folder is needed to retry them
+        # Trackers whose upload failed or was skipped: the folder is needed to retry them. A first tracker refused
+        # before the loop is one of them.
+        failed_trackers: list[str] = [gazelle_site.site_string] if first_listed else []
         finished = False  # The loop ended by itself: no abort, no exception
         flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={source_flac['id']}" if source_flac else None
 
