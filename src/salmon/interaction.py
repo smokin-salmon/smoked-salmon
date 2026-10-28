@@ -9,7 +9,10 @@ own. The default is the terminal one, which calls asyncclick as the code did bef
 and nothing writes the config at runtime.
 
 A test (tests/test_interaction_calls.py) fails on any direct call to asyncclick's `prompt`, `confirm` or `edit`,
-or to `input()`, outside the terminal implementation below and `setup_config`.
+or to `input()`, outside the terminal implementation below.
+
+The guided first run (config/first_run.py) asks through this module before a config exists, while `salmon` is
+still importing: nothing here reads `salmon.cfg` or imports a module that does until a question needs it.
 """
 
 from collections.abc import Callable, Iterator
@@ -19,8 +22,7 @@ from typing import Any, Protocol
 
 import asyncclick as click
 
-from salmon import cfg
-from salmon.common import prompt_async
+import salmon
 
 
 class Interaction(Protocol):
@@ -86,7 +88,7 @@ def assuming_defaults(on: bool = True) -> Iterator[None]:
 
 def run_assumes_defaults() -> bool:
     """Whether this run answers its questions with their defaults: inside `assuming_defaults()`, or `yes_all`."""
-    return _assumed.get() or cfg.upload.yes_all
+    return _assumed.get() or salmon.cfg.upload.yes_all
 
 
 class TerminalInteraction:
@@ -140,6 +142,9 @@ class TerminalInteraction:
 
     @staticmethod
     async def _wait_for_enter(text: str) -> None:
+        # Imported here: salmon.common reads the config when it is imported.
+        from salmon.common import prompt_async
+
         await prompt_async(text, end=" ", flush=True)
 
 
