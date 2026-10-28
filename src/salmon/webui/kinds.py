@@ -55,6 +55,7 @@ import salmon.trackers
 from salmon import cfg, interaction
 from salmon.commands import descgen_refusals
 from salmon.config.image_hosts import display_refusal, spectrals_refusal
+from salmon.config.validations import canonical_conversions
 from salmon.constants import SOURCES, TAG_ENCODINGS
 from salmon.converter.transcoding import Bitrate
 from salmon.errors import DryRunRefused, ImageUploadFailed, ScrapeError, UnknownOutcomeError
@@ -184,6 +185,8 @@ class UploadParams(msgspec.Struct, forbid_unknown_fields=True):
     skip_integrity_check: bool = False
     skip_initial_review: bool = False
     apply_ai_suggestions: bool = False
+    # --conversions: the kinds made after the FLAC, without asking. None follows upload.conversions; [] makes none.
+    conversions: list[str] | None = None
 
 
 class TagParams(msgspec.Struct, forbid_unknown_fields=True):
@@ -253,6 +256,7 @@ def _up_options(params: UploadParams, trackers: tuple[str, ...]) -> dict[str, An
         "trackers_named": not isinstance(trackers, salmon.trackers.UnnamedTrackers),
         "spectrals": tuple(params.spectrals),
         "encoding": TAG_ENCODINGS[params.encoding] if params.encoding else None,
+        "conversions": None if params.conversions is None else tuple(params.conversions),
     }
 
 
@@ -278,8 +282,19 @@ def _checked_upload(params: UploadParams, dry_run: bool) -> UploadParams:
             raise JobError(400, f"{name} is not a tracker in your config.")
         if code not in trackers:
             trackers.append(code)
+    conversions: list[str] | None = None
+    if params.conversions is not None:
+        try:
+            conversions = list(canonical_conversions(params.conversions))
+        except ValueError as e:
+            raise JobError(400, str(e)) from None
     checked = msgspec.structs.replace(
-        params, path=paths.album_folder(params.path), source=source, encoding=encoding, trackers=trackers
+        params,
+        path=paths.album_folder(params.path),
+        source=source,
+        encoding=encoding,
+        trackers=trackers,
+        conversions=conversions,
     )
     if (error := UpOptions(**_up_options(checked, tuple(trackers))).usage_error(dry_run)) is not None:
         raise JobError(400, error)
