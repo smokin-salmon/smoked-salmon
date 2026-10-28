@@ -174,15 +174,20 @@
     },
   ]
 
+  const transcodes = $derived(mode === 'transcodes')
+  // The command refuses these with --skip-flac-upload: hidden and not sent in that mode, their values kept.
+  const NOT_WITH_TRANSCODES = ['spectrals_after']
   const AI_FLAGS = ['skip_initial_review', 'apply_ai_suggestions']
   /** The flags the form shows: the AI ones only with upload.ai_review on. */
-  const shownFlags = $derived(FLAGS.filter((f) => options.ai_review || !AI_FLAGS.includes(f.key)))
+  const shownFlags = $derived(FLAGS.filter(
+      (f) => (options.ai_review || !AI_FLAGS.includes(f.key)) && !(transcodes && NOT_WITH_TRANSCODES.includes(f.key)),
+    ))
 
   /** The overrides that differ from their default, by their label: what the Overrides summary names. */
   const overridden = $derived.by(() => {
     const set: string[] = []
     if (mode === 'flac' && groupId.trim()) set.push('group ID')
-    if (request.trim()) set.push('request')
+    if (!transcodes && request.trim()) set.push('request')
     if (lossy !== 'ask') set.push('lossy master')
     if (encoding) set.push('encoding')
     if (spectrals.trim()) set.push('spectral tracks')
@@ -191,7 +196,6 @@
     return set
   })
   const summary = $derived(overridden.length ? `Overrides (${overridden.length} set: ${overridden.join(', ')})` : 'Overrides')
-  const transcodes = $derived(mode === 'transcodes')
   const canStart = $derived(
     !!path &&
       !!source &&
@@ -249,7 +253,10 @@
   /** The flags as sent: the AI ones false when upload.ai_review is off, whatever was ticked before. */
   function sentFlags(): Record<string, boolean> {
     const sent: Record<string, boolean> = {}
-    for (const flag of FLAGS) sent[flag.key] = !!flags[flag.key] && (options.ai_review || !AI_FLAGS.includes(flag.key))
+    for (const flag of FLAGS) {
+      const hidden = (!options.ai_review && AI_FLAGS.includes(flag.key)) || (transcodes && NOT_WITH_TRANSCODES.includes(flag.key))
+      sent[flag.key] = !!flags[flag.key] && !hidden
+    }
     return sent
   }
 
@@ -277,7 +284,7 @@
           source,
           trackers: chosen,
           group_id: group,
-          request: request.trim() || null,
+          request: transcodes ? null : request.trim() || null,
           source_url: sourceUrl.trim() || null,
           // A store link is taken as it is (-su -ss), unless the stores are to be searched too.
           skip_search: !!sourceUrl.trim() && !searchAnyway,
@@ -408,11 +415,13 @@
             {#if showHelp}<small class="hint">Upload into this group: an ID or a torrents.php?id= link (-g).</small>{/if}
           </label>
         {/if}
-        <label>
-          Request
-          <input type="text" bind:value={request} placeholder="none" />
-          {#if showHelp}<small class="hint">The request to fill: a link or an ID (-r).</small>{/if}
-        </label>
+        {#if !transcodes}
+          <label>
+            Request
+            <input type="text" bind:value={request} placeholder="none" />
+            {#if showHelp}<small class="hint">The request to fill: a link or an ID (-r).</small>{/if}
+          </label>
+        {/if}
         <label>
           Lossy master
           <select bind:value={lossy}>
