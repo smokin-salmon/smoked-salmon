@@ -841,6 +841,8 @@ def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool
     configured = cfg.image.default_spectral_ids
     if configured is None:
         return context_default
+    if configured == "0" and lossy_master:
+        return "*"  # a lossy master needs at least one spectral
     if configured in ("*", "+", "0"):
         return configured
     track_ids = [i for i in configured.split() if int(i) in spectral_ids]
