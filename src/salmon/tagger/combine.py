@@ -259,6 +259,12 @@ def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
     return result
 
 
+def _slot(disc, num):
+    """A disc and track number as a slot: "01" and "1" are one track, so compare decimal numbers by value."""
+    text = str(num)
+    return (disc, int(text) if text.isascii() and text.isdecimal() else text)
+
+
 def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, usable, update_track_numbers):
     """Raise TrackCombineError, before anything is merged, if two local tracks would end up in one slot, so one
     would be overwritten and lost: a paired track taking the number of a track the source has no track for, or
@@ -266,11 +272,11 @@ def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, usable, up
     Pairing by content can pair a local track anywhere in the folder, not only at its own rank."""
     new_numbers = _new_track_numbers(mtracks, ordered, usable, update_track_numbers)
     paired = {id(btrack) for btrack in ordered if btrack is not None}
-    taken = {(btrack["disc#"], btrack["track#"]) for btrack in btracks if id(btrack) not in paired}
+    taken = {_slot(btrack["disc#"], btrack["track#"]) for btrack in btracks if id(btrack) not in paired}
     for btrack, new_num in zip(ordered, new_numbers, strict=True):
         if btrack is None:
             continue  # The merge raises for a scraped track without a local one.
-        slot = (btrack["disc#"], new_num)
+        slot = _slot(btrack["disc#"], new_num)
         if slot in taken:
             raise TrackCombineError(f"Disc {slot[0]} track {slot[1]} would hold two local tracks, losing one.")
         taken.add(slot)

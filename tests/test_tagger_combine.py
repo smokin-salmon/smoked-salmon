@@ -7,6 +7,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from salmon.errors import TrackCombineError
 from salmon.tagger.combine import (
     _extract_remixers_from_title,
     _refuse_renumbering_that_loses_a_track,
@@ -535,3 +536,13 @@ def test_refusing_a_lost_track_accepts_the_unusable_reported_shape():
     mtracks = [source_track("S", "1", 1, 2), source_track("5", "1", 1, 2)]
 
     _refuse_renumbering_that_loses_a_track(list(base["1"].values()), mtracks, ordered, False, True)  # raises nothing
+
+
+def test_refusing_a_lost_track_treats_01_and_1_as_one_slot():
+    # An unpaired file tagged "01" and an unnumbered file renumbered to 1 on the same disc would both be track 1.
+    kept = local_files("01")["1"]["01"]
+    moved = local_files("7", numbered=False)["1"]["7"]
+    mtracks = [source_track("S", "1", 1, 1)]
+
+    with pytest.raises(TrackCombineError, match="would hold two local tracks"):
+        _refuse_renumbering_that_loses_a_track([kept, moved], mtracks, [moved], False, True)

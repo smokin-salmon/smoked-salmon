@@ -238,3 +238,24 @@ def test_edit_tracks_refuses_extra_text_on_the_disc_track_line_and_changes_nothi
 
     assert len(confirms) == 1 and f'line 1: "{ident}" is not a "Disc X Track Y" line' in confirms[0]
     assert metadata["tracks"]["1"]["1"]["title"] == "One"
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "line"),
+    [
+        ("Title: One", "x Title: One", 2),
+        ("> A (main)", "x > A (main)", 4),
+        ("> A (main)", "> A (main) extra", 4),
+    ],
+)
+def test_edit_tracks_refuses_extra_text_on_title_and_artist_lines(monkeypatch, old, new, line) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace(old, new, 1).replace("Title: Two", "Title: Deux")
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and f"line {line}: " in confirms[0] and new in confirms[0]
+    assert metadata["tracks"]["1"]["2"]["title"] == "Two"
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("A", "main")]

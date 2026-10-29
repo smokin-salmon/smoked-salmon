@@ -494,7 +494,7 @@ def _parse_edited_tracks(text, tracks):
         if (discnum, tracknum) in seen:
             raise ValueError(f'line {id_no}: "Disc {discnum} Track {tracknum}" is named twice')
         seen.add((discnum, tracknum))
-        title_match = re.search(r"Title *: *(.+)", title)
+        title_match = re.fullmatch(r"Title *: *(.+)", title)
         if not title_match:
             raise ValueError(f'line {title_no}: "{title}" is not a "Title: ..." line')
         if not re.fullmatch(r"Artists *:", artists_header):
@@ -502,8 +502,8 @@ def _parse_edited_tracks(text, tracks):
         artists = []
         for artist_no, artist_line in block[3:]:
             name_part, _, role_part = artist_line.rpartition(" ")
-            role_match = re.search(r"\((.+)\)", role_part)
-            name_match = re.search(r"> *(.+)", name_part)
+            role_match = re.fullmatch(r"\((.+)\)", role_part)
+            name_match = re.fullmatch(r"> *(.+)", name_part)
             if not role_match or not name_match:
                 raise ValueError(f'line {artist_no}: "{artist_line}" is not an artist line like "> Name (role)"')
             artists.append((name_match[1], role_match[1].lower()))
