@@ -529,7 +529,7 @@ def test_unnumbered_files_get_1_to_n_in_the_sources_order_when_the_source_is_unu
 
 
 def test_refusing_a_lost_track_accepts_the_unusable_reported_shape():
-    # An unpaired local track numbered 5 must not collide with the source's own "5" (disc 2, never used).
+    # An unpaired local track numbered 5 must not collide with the source's own "5" (disc 1).
     base = local_files("01", "02", "5")
     ordered = [base["1"]["01"], base["1"]["02"]]
     mtracks = [source_track("S", "1", 1, 2), source_track("5", "1", 1, 2)]
