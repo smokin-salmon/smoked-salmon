@@ -10,6 +10,7 @@ Reads the files already in the folder, and the folder's name, and nothing else.
 
 import os
 import re
+import stat
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -167,7 +168,11 @@ def _rip_log(path: str) -> str | None:
             if not name.lower().endswith(".log"):
                 continue
             # A FIFO or a device named *.log would block the read: only a regular file (or a link to one).
-            if not os.path.isfile(os.path.join(root, name)):
+            # Other stat errors propagate: a log salmon cannot check could hide a rip log.
+            try:
+                if not stat.S_ISREG(os.stat(os.path.join(root, name)).st_mode):
+                    continue
+            except FileNotFoundError:
                 continue
             try:
                 with open(os.path.join(root, name), "rb") as fh:

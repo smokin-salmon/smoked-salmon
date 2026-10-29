@@ -1,5 +1,6 @@
 """Detecting the media source from the album's own files (#537)."""
 
+import contextlib
 import os
 import struct
 import threading
@@ -586,7 +587,9 @@ def test_a_fifo_named_like_a_log_is_not_read(tmp_path) -> None:
     hung = worker.is_alive()
     if hung:
         # Let the blocked open() return, so the thread does not outlive the test.
-        os.close(os.open(fifo, os.O_WRONLY))
+        # Nonblocking: with no reader yet (ENXIO) there is nothing to release.
+        with contextlib.suppress(OSError):
+            os.close(os.open(fifo, os.O_WRONLY | os.O_NONBLOCK))
         worker.join(timeout=5)
 
     assert not hung
