@@ -2,19 +2,22 @@
 
 Ported from chodeus's fork (`checks/source.py`). A source is reported only when the files prove it
 and nothing in them disagrees: a plain 16/44.1 rip with no log could be a CD or a WEB release, so it
-stays a question. The result is only ever offered as the source prompt's default.
+stays a question. When the files prove nothing at all, a `[WEB FLAC]`-style bracket in the folder's name is the
+fallback. The result is only ever offered as the source prompt's default.
 
-Reads the files already in the folder and nothing else.
+Reads the files already in the folder, and the folder's name, and nothing else.
 """
 
 import os
 import re
+import stat
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 from mutagen import File as MutagenFile
 
 from salmon.common.files import get_audio_files
+from salmon.constants import SOURCES
 from salmon.tagger.tag_urls import field_name, tag_pairs, tag_texts, tag_url_fields
 
 # Enough of a log to hold the ripper's banner.
@@ -62,6 +65,8 @@ _MEDIA_VALUES = {
     "sacd": "SACD",
     "dvd": "DVD",
 }
+_BRACKETED = re.compile(r"\[([^\]]*)\]|\(([^)]*)\)")
+_WORD = re.compile(r"[a-z0-9]+")
 _VINYL_SIDE = re.compile(r"[A-H][0-9]{1,2}", re.IGNORECASE)
 # What narrowing evidence leaves possible. Side numbering is also kept by the WEB release of a vinyl
 # album, and a cassette has sides too.
@@ -96,21 +101,43 @@ def detect_source(path: str) -> DetectedSource | None:
     source. Vinyl side numbering and a rate above CD's 16/44.1 only rule sources out: alone they
     prove nothing, but they make a proof they contradict unknown. So does a second proof that
     names another source.
+
+    When the files hold no proof at all, the one source named in a bracket of the folder's name
+    (`[WEB FLAC]`, `(CD)`) is the answer, under the same rule-outs. Conflicting proofs still give None.
     """
     try:
         evidence = _gather(path)
     except OSError:
         # A log or folder salmon cannot read could hide a rip log, so nothing is proven.
         return None
-    sources = set(evidence.proofs.values())
-    if len(sources) != 1:
+    if not evidence.proofs:
+        # The files prove nothing: the name is the fallback, under the same rule-outs.
+        source = _name_source(path)
+        reason = f"folder name says {source}"
+    else:
+        sources = set(evidence.proofs.values())
+        if len(sources) != 1:
+            return None
+        source = sources.pop()
+        reason = "; ".join(evidence.proofs)
+    if source is None:
         return None
-    source = sources.pop()
     if evidence.above_cd_quality and source == "CD":
         return None
     if _vinyl_sides(evidence.tracknumbers) and source not in _VINYL_SIDE_SOURCES:
         return None
-    return DetectedSource(source, "; ".join(evidence.proofs))
+    return DetectedSource(source, reason)
+
+
+def _name_source(path: str) -> str | None:
+    """The one source named in the bracketed groups ([...] and (...)) of the folder's name, else None."""
+    name = os.path.basename(os.path.normpath(path))
+    found = set()
+    for match in _BRACKETED.finditer(name):
+        for word in _WORD.findall((match.group(1) or match.group(2) or "").lower()):
+            if word in SOURCES:
+                found.add(SOURCES[word])
+    return found.pop() if len(found) == 1 else None
 
 
 def _gather(path: str) -> _Evidence:
@@ -139,6 +166,13 @@ def _rip_log(path: str) -> str | None:
     for root, _dirs, files in sorted(os.walk(path, onerror=_raise_unless_gone)):
         for name in sorted(files):
             if not name.lower().endswith(".log"):
+                continue
+            # A FIFO or a device named *.log would block the read: only a regular file (or a link to one).
+            # Other stat errors propagate: a log salmon cannot check could hide a rip log.
+            try:
+                if not stat.S_ISREG(os.stat(os.path.join(root, name)).st_mode):
+                    continue
+            except FileNotFoundError:
                 continue
             try:
                 with open(os.path.join(root, name), "rb") as fh:

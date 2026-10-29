@@ -252,6 +252,20 @@ def _changed(entry: os.DirEntry[str]) -> float:
     return max(found.st_mtime, found.st_ctime)
 
 
+def browsable_folder(raw: str) -> str:
+    """`raw` resolved, confined and checked as the folder browser does (same errors); a folder to read, not to work on.
+
+    Raises:
+        PathRefused: A relative path (400), one outside the roots (403), or not a folder (404).
+    """
+    path = _resolve(raw)
+    if not _within(path, roots()):
+        raise PathRefused(403, "Refusing to list a folder outside download_directory and library_dirs.")
+    if not os.path.isdir(path):
+        raise PathRefused(404, "No such folder.")
+    return path
+
+
 def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict[str, Any]:
     """What the folder browser shows: the roots, or the folders inside one folder of a root. Changes nothing.
 

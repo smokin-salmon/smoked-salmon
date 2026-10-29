@@ -830,3 +830,40 @@ def test_a_tmp_dir_with_a_trailing_slash_shows_only_its_folder_name(
     answer = _dashboard()
     assert answer["tmp"]["name"] == SECRET
     assert str(roots.outside) not in answer["_text"]
+
+
+# --- The source preset ----------------------------------------------------------------------
+
+
+def test_the_source_endpoint_gives_the_source_the_folder_name_says(roots: Roots) -> None:
+    album = _album(roots.downloads / "Artist - Title (2020) [WEB FLAC]")
+    plain = _album(roots.downloads / "Artist - Other")
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        found = await client.get("/api/source", params={"path": str(album)}, headers=AUTH)
+        assert await found.json() == {"source": "WEB", "reason": "folder name says WEB"}
+        none = await client.get("/api/source", params={"path": str(plain)}, headers=AUTH)
+        assert await none.json() == {"source": None, "reason": None}
+        root = await client.get("/api/source", params={"path": str(roots.downloads)}, headers=AUTH)
+        assert await root.json() == {"source": None, "reason": None}
+
+    _with_app(test)
+
+
+def test_the_source_endpoint_refuses_what_browse_refuses(roots: Roots) -> None:
+    (roots.outside / "Album [WEB]").mkdir()
+    cases = {
+        str(roots.outside / "Album [WEB]"): 403,
+        f"{roots.downloads}/../outside/Album [WEB]": 403,
+        str(roots.downloads / "missing"): 404,
+        "relative/path": 400,
+    }
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        for path, status in cases.items():
+            response = await client.get("/api/source", params={"path": path}, headers=AUTH)
+            browse = await _browse(client, path)
+            assert response.status == status == browse.status, path
+            assert "WEB" not in await response.text()
+
+    _with_app(test)

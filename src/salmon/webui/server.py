@@ -27,6 +27,7 @@ import salmon.search
 import salmon.tagger.sources
 import salmon.trackers
 from salmon import cfg, ssrf
+from salmon.checks.source import detect_source
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
 from salmon.errors import ScrapeError
@@ -195,6 +196,24 @@ async def browse(request: web.Request) -> web.Response:
             request.query.get("images") == "1",
             request.query.get("sort", "newest"),
         )
+    except paths.PathRefused as e:
+        return _filtered(request, {"detail": e.detail}, e.status)
+    return _filtered(request, answer)
+
+
+def _source_of(raw: str) -> dict[str, str | None]:
+    """What ``/api/source`` answers for a path; blocking, so it runs in a worker thread."""
+    path = paths.browsable_folder(raw)
+    # A root holds no one album: never scanned.
+    detected = None if any(path == root.path for root in paths.roots()) else detect_source(path)
+    return {"source": detected.source, "reason": detected.reason} if detected else {"source": None, "reason": None}
+
+
+async def source_preset(request: web.Request) -> web.Response:
+    """The source the folder ``?path=`` proves, else its name's bracket says, with why: ``{"source", "reason"}``,
+    both null when neither does. Reads local files only; confined as ``browse`` is."""
+    try:
+        answer = await asyncio.to_thread(_source_of, request.query.get("path", ""))
     except paths.PathRefused as e:
         return _filtered(request, {"detail": e.detail}, e.status)
     return _filtered(request, answer)
@@ -566,6 +585,7 @@ def create_app(
     app.router.add_get("/api/health", health)
     app.router.add_get("/api/dashboard", dashboard)
     app.router.add_get("/api/browse", browse)
+    app.router.add_get("/api/source", source_preset)
     app.router.add_get("/api/upload/options", upload_options)
     app.router.add_get("/api/cross-upload/options", cross_upload_options)
     app.router.add_get("/api/tools/options", tools_options)

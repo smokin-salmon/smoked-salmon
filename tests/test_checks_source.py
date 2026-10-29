@@ -1,7 +1,9 @@
 """Detecting the media source from the album's own files (#537)."""
 
+import contextlib
 import os
 import struct
+import threading
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
@@ -514,3 +516,81 @@ def test_a_tag_url_python_cannot_parse_is_skipped(tmp_path, url: str) -> None:
     found = detect_source(str(album))
 
     assert found is None
+
+
+# --- The folder name, when the files prove nothing ----------------------------------------
+
+
+def _named(tmp_path: Path, name: str, tags: dict[str, str] | None = None, **audio) -> str:
+    return str(_album(tmp_path / name, tags, **audio))
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("Artist - Title (2020) [WEB FLAC]", "WEB"),
+        ("Artist - Title (2020) (CD)", "CD"),
+        ("Artist - Title [vinyl] [FLAC]", "Vinyl"),
+        ("Artist - Title [WEB] (WEB FLAC)", "WEB"),
+    ],
+)
+def test_the_folder_name_is_the_fallback(tmp_path, name, expected) -> None:
+    album = _named(tmp_path, name)
+
+    assert detect_source(album) == DetectedSource(expected, f"folder name says {expected}")
+
+
+@pytest.mark.parametrize("name", ["Artist - Title (2020)", "Artist - Title [WEB] [CD]", "WEB - Artist - Title [FLAC]"])
+def test_a_name_without_exactly_one_source_gives_none(tmp_path, name) -> None:
+    album = _named(tmp_path, name)
+
+    assert detect_source(album) is None
+
+
+def test_above_cd_quality_rules_out_a_cd_name(tmp_path) -> None:
+    album = _named(tmp_path, "Artist - Title [CD FLAC]", bits=24, rate=96000)
+
+    assert detect_source(album) is None
+
+
+def test_vinyl_sides_rule_out_what_the_name_says(tmp_path) -> None:
+    album = tmp_path / "Artist - Title [CD]"
+    for number, side in enumerate(["A1", "A2", "B1", "B2"], start=1):
+        _write_flac(album / f"{number:02d}.flac", {"TRACKNUMBER": side})
+
+    assert detect_source(str(album)) is None
+
+
+def test_a_proof_in_the_files_beats_the_name(tmp_path) -> None:
+    album = Path(_named(tmp_path, "Artist - Title [WEB FLAC]"))
+    (album / "EAC.log").write_bytes(EAC_LOG.encode("utf-16"))
+
+    assert detect_source(str(album)) == DetectedSource("CD", "rip log found (EAC.log)")
+
+
+def test_conflicting_proofs_in_the_files_give_none_whatever_the_name_says(tmp_path) -> None:
+    album = Path(_named(tmp_path, "Artist - Title [WEB]", {"URL": QOBUZ_URL}))
+    (album / "EAC.log").write_bytes(EAC_LOG.encode("utf-16"))
+
+    assert detect_source(str(album)) is None
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="no named pipes here")
+def test_a_fifo_named_like_a_log_is_not_read(tmp_path) -> None:
+    album = _album(tmp_path)
+    fifo = album / "rip.log"
+    os.mkfifo(fifo)
+    result: list[object] = []
+    worker = threading.Thread(target=lambda: result.append(detect_source(str(album))), daemon=True)
+    worker.start()
+    worker.join(timeout=5)
+    hung = worker.is_alive()
+    if hung:
+        # Let the blocked open() return, so the thread does not outlive the test.
+        # Nonblocking: with no reader yet (ENXIO) there is nothing to release.
+        with contextlib.suppress(OSError):
+            os.close(os.open(fifo, os.O_WRONLY | os.O_NONBLOCK))
+        worker.join(timeout=5)
+
+    assert not hung
+    assert result == [None]

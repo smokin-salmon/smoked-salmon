@@ -1,5 +1,6 @@
 <script lang="ts">
   import { apiGet, apiPost } from '../lib/api'
+  import { sourcePreset } from '../lib/sourcePreset.svelte'
   import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
@@ -9,16 +10,21 @@
   interface Options {
     sources: string[]
     encodings: string[]
+    ai_review: boolean
   }
 
   interface TagResult {
     folder: string
   }
 
-  let options = $state<Options>({ sources: [], encodings: [] })
+  let options = $state<Options>({ sources: [], encodings: [], ai_review: false })
 
   let path = $state('')
   let source = $state('')
+  const preset = sourcePreset(
+    () => path,
+    (found) => (source = found),
+  )
   let encoding = $state('')
   let overwrite = $state(false)
   let autoRename = $state(false)
@@ -58,8 +64,8 @@
           encoding: encoding || null,
           overwrite,
           auto_rename: autoRename,
-          skip_initial_review: skipInitialReview,
-          apply_ai_suggestions: applyAiSuggestions,
+          skip_initial_review: options.ai_review && skipInitialReview,
+          apply_ai_suggestions: options.ai_review && applyAiSuggestions,
         },
         assume_defaults: assumeDefaults,
       })
@@ -103,10 +109,11 @@
     <div class="grid">
       <label>
         Source
-        <select bind:value={source}>
+        <select bind:value={source} onchange={() => preset.picked()}>
           <option value="" disabled>Pick one</option>
           {#each options.sources as each (each)}<option value={each}>{each}</option>{/each}
         </select>
+        {#if preset.reason}<small class="hint muted">{preset.reason}</small>{/if}
         <small class="hint">The media the files came from (<span class="mono">-s</span>).</small>
       </label>
       <label>
@@ -129,6 +136,7 @@
       >
         <input type="checkbox" bind:checked={overwrite} /> Overwrite metadata
       </label>
+      {#if options.ai_review}
       <label
         class="check"
         title="Skip the manual metadata review before the AI review (--skip-initial-review). Only with upload.ai_review on."
@@ -141,6 +149,7 @@
       >
         <input type="checkbox" bind:checked={applyAiSuggestions} /> Apply AI suggestions
       </label>
+      {/if}
       <button
         class="chip toggle"
         class:on={assumeDefaults}
