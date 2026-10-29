@@ -146,8 +146,13 @@ def carry_conversion(old: str, new: str) -> None:
         return
     record_conversion(new, **_without_output(facts))
     if not os.path.isdir(old):
-        with contextlib.suppress(OSError):
-            os.remove(_sidecar(old))
+        forget_conversion(old)
+
+
+def forget_conversion(folder: str) -> None:
+    """Remove the record of a folder that is gone."""
+    with contextlib.suppress(OSError):
+        os.remove(_sidecar(folder))
 
 
 def _usable(data: Any, folder: str) -> bool:

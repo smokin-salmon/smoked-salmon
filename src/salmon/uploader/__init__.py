@@ -50,6 +50,7 @@ from salmon.errors import (
     InvalidMetadataError,
     LogCheckSkipped,
     RequestError,
+    SkipTracker,
     UnknownOutcomeError,
     UploadError,
 )
@@ -1248,15 +1249,24 @@ async def _upload_staged(
                         continue
 
                     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
-                    # A torrent already seeds from the folder: never offer to delete it.
+                    # A torrent already seeds from the folder: never offer to delete it. Once one is up, a tracker
+                    # can be skipped (one that already has the release, say) and the run still finishes.
                     # Matched on the reviewed metadata: the review may have changed the artists, title or year.
                     try:
                         group_id = await check_existing_group(
-                            gazelle_site, searchstrs, offer_deletion=False, our_title=our_title, release=metadata
+                            gazelle_site,
+                            searchstrs,
+                            offer_deletion=False,
+                            our_title=our_title,
+                            release=metadata,
+                            offer_skip=bool(uploaded),
                         )
-                    except RequestError as e:
+                    except (RequestError, SkipTracker) as e:
                         # Like a failed upload: skip this tracker, and offer the next one.
-                        click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                        if isinstance(e, SkipTracker):
+                            click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="yellow", bold=True)
+                        else:
+                            click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
                         failed_trackers.append(gazelle_site.site_string)
                         remaining_gazelle_sites.remove(tracker)
                         tracker = None

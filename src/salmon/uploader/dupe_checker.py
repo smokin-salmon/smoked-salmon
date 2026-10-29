@@ -13,7 +13,7 @@ import asyncclick as click
 from salmon import cfg, interaction
 from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
 from salmon.common.strings import artist_keys, comparable
-from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError
+from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError, SkipTracker
 from salmon.trackers.base import hold_request_messages
 from salmon.uploader.upload import generate_catno
 
@@ -190,6 +190,7 @@ async def _prompt_for_recent_upload_results(
     recent_uploads: list[tuple],
     searchstr: str,
     offer_deletion: bool,
+    offer_skip: bool = False,
 ) -> int | None:
     """Print recent uploads and prompt user to choose a group ID.
 
@@ -198,6 +199,7 @@ async def _prompt_for_recent_upload_results(
         recent_uploads: List of recent upload tuples.
         searchstr: Search string used.
         offer_deletion: Whether to offer folder deletion option.
+        offer_skip: Whether to offer skipping this tracker, which raises SkipTracker.
 
     Returns:
         Group ID or None for new group.
@@ -225,7 +227,8 @@ async def _prompt_for_recent_upload_results(
         )
         prompt_text = (
             prompt_header + f"{'Pick from recent uploads found, p' if recent_uploads else 'P'}aste a URL"
-            f" or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}"
+            f" or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
+            f"{'/ [d]elete music folder ' if offer_deletion else ''}"
         )
 
         group_id = await interaction.prompt(
@@ -278,6 +281,8 @@ async def _prompt_for_recent_upload_results(
         # Handle action commands
         elif group_id.lower().startswith("a"):
             raise click.Abort
+        elif group_id.lower().startswith("s") and offer_skip:
+            raise SkipTracker
         elif group_id.lower().startswith("d") and offer_deletion:
             raise AbortAndDeleteFolder
         elif group_id.lower().startswith("n") or not group_id.strip():
@@ -319,6 +324,7 @@ async def resolve_existing_group(
     recent_uploads: list[tuple] | None,
     offer_deletion: bool = True,
     release: dict[str, Any] | None = None,
+    offer_skip: bool = False,
 ) -> int | None:
     """Show the candidates fetch_existing_group_candidates found, and prompt the user for a group.
 
@@ -330,6 +336,8 @@ async def resolve_existing_group(
         offer_deletion: Whether to offer folder deletion option.
         release: Our release (artists, title, year, source, format, encoding, edition), for the answers
             the prompts offer: the one result it matches, and abort when the group already holds it.
+        offer_skip: Whether the prompts offer skipping this tracker, which raises SkipTracker: once a torrent
+            is up, so that a tracker which already has the release can be passed over without aborting the run.
 
     Returns:
         Group ID or None for new group.
@@ -340,15 +348,15 @@ async def resolve_existing_group(
             click.echo(f"No group found on {gazelle_site.site_code}: new group")
             return None
         group_id = await _prompt_for_recent_upload_results(
-            gazelle_site, recent_uploads or [], " / ".join(searchstrs), offer_deletion
+            gazelle_site, recent_uploads or [], " / ".join(searchstrs), offer_deletion, offer_skip
         )
     else:
         print_search_results(gazelle_site, results, " / ".join(searchstrs))
         group_id = await _prompt_for_group_id(
-            gazelle_site, results, offer_deletion, default=suggest_group(results, release)
+            gazelle_site, results, offer_deletion, default=suggest_group(results, release), offer_skip=offer_skip
         )
     if group_id:
-        confirmation = await _confirm_group_id(gazelle_site, group_id, results, offer_deletion, release)
+        confirmation = await _confirm_group_id(gazelle_site, group_id, results, offer_deletion, release, offer_skip)
         if confirmation is True:
             return group_id
         return None
@@ -361,6 +369,7 @@ async def check_existing_group(
     offer_deletion: bool = True,
     our_title: str | None = None,
     release: dict[str, Any] | None = None,
+    offer_skip: bool = False,
 ) -> int | None:
     """Check for existing group and prompt user for selection.
 
@@ -372,12 +381,15 @@ async def check_existing_group(
         offer_deletion: Whether to offer folder deletion option.
         our_title: Our release's title, passed through to fetch_existing_group_candidates.
         release: Our release, passed through to resolve_existing_group.
+        offer_skip: Whether to offer skipping this tracker, passed through to resolve_existing_group.
 
     Returns:
         Group ID or None for new group.
     """
     results, recent_uploads = await fetch_existing_group_candidates(gazelle_site, searchstrs, our_title)
-    return await resolve_existing_group(gazelle_site, searchstrs, results, recent_uploads, offer_deletion, release)
+    return await resolve_existing_group(
+        gazelle_site, searchstrs, results, recent_uploads, offer_deletion, release, offer_skip
+    )
 
 
 class GroupCandidatesFetch:
@@ -594,6 +606,7 @@ async def _prompt_for_group_id(
     results: list[dict],
     offer_deletion: bool,
     default: str = "",
+    offer_skip: bool = False,
 ) -> int | None:
     """Prompt user to choose a group ID.
 
@@ -602,6 +615,7 @@ async def _prompt_for_group_id(
         results: Search results to choose from.
         offer_deletion: Whether to offer folder deletion option.
         default: The answer an empty reply gives: a result's number, or "" for a new group.
+        offer_skip: Whether to offer skipping this tracker, which raises SkipTracker.
 
     Returns:
         Group ID or None for new group.
@@ -611,7 +625,8 @@ async def _prompt_for_group_id(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
                 f"Paste a URL{', pick from groups found ' if results is not None else ''}"
-                f"or [N]ew group / [a]bort {'/ [d]elete music folder ' if offer_deletion else ''}",
+                f"or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
+                f"{'/ [d]elete music folder ' if offer_deletion else ''}",
                 fg="magenta",
             ),
             default=default,
@@ -640,6 +655,8 @@ async def _prompt_for_group_id(
                 continue
         elif group_id.lower().startswith("a"):
             raise click.Abort
+        elif group_id.lower().startswith("s") and offer_skip:
+            raise SkipTracker
         elif group_id.lower().startswith("d") and offer_deletion:
             raise AbortAndDeleteFolder
         elif group_id.lower().startswith("n") or not group_id.strip():
@@ -967,6 +984,7 @@ async def _confirm_group_id(
     results: list[dict],
     offer_deletion: bool = True,
     release: dict[str, Any] | None = None,
+    offer_skip: bool = False,
 ) -> bool:
     """Confirm upload to a torrent group.
 
@@ -979,6 +997,7 @@ async def _confirm_group_id(
         results: Search results.
         offer_deletion: Whether to offer folder deletion option.
         release: Our release, with its source, format, encoding and edition.
+        offer_skip: Whether to offer skipping this tracker, which raises SkipTracker.
 
     Returns:
         True if confirmed, False otherwise.
@@ -1005,7 +1024,8 @@ async def _confirm_group_id(
             await interaction.prompt(
                 click.style(
                     "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
-                    f"[n]ew group, [a]bort{', [d]elete music folder' if offer_deletion else ''}",
+                    f"[n]ew group, {'[s]kip this tracker, ' if offer_skip else ''}[a]bort"
+                    f"{', [d]elete music folder' if offer_deletion else ''}",
                     fg="magenta",
                 ),
                 default="a" if held else "Y",
@@ -1013,6 +1033,8 @@ async def _confirm_group_id(
         )[0].lower()
         if resp == "a":
             raise click.Abort
+        elif resp == "s" and offer_skip:
+            raise SkipTracker
         elif resp == "d" and offer_deletion:
             raise AbortAndDeleteFolder
         elif resp == "y":
