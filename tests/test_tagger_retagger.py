@@ -77,6 +77,16 @@ def test_guests_are_not_credited_twice_when_the_title_has_a_feature_credit(monke
     assert new_title == title
 
 
+@pytest.mark.parametrize("title", ["Defeat", "Feather"])
+def test_guests_are_credited_when_a_title_word_only_contains_feat(title) -> None:
+    # "feat" inside "Defeat" counted as a feature credit, so its guests were left out
+    track = {"title": title, "artists": [("Lead", "main"), ("Guest A", "guest"), ("Guest B", "guest")]}
+
+    new_title = append_guests_to_track_titles(track)
+
+    assert new_title == f"{title} (feat. Guest A & Guest B)"
+
+
 def _tagset(title, tracknumber, discnumber):
     return SimpleNamespace(
         artist=["Some Artist"],
