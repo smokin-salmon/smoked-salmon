@@ -18,7 +18,7 @@ from salmon.errors import UploadError
 from salmon.tagger.audio_info import gather_audio_info
 
 
-async def rename_folder(path, metadata, auto_rename, check=True, parent=None, original=None):
+async def rename_folder(path, metadata, auto_rename, check=True, parent=None, original=None, source=None):
     """
     Create a revised folder name from the new metadata and present it to the
     user. Have them decide whether or not to accept the folder name.
@@ -29,6 +29,8 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
     `parent` replaces the download folder as the directory the renamed folder goes into.
     `original` is the folder the user gave, passed only when `path` is a copy of it: the copy is left for its run
     directory to remove. The source folder is never removed here: see remove_source_folder.
+    `source` is the folder the run started from: once an earlier rename has left it, a name that leads back to it is
+    refused, since replacing it would delete the user's album.
     """
     # Imported here: the uploader package imports this module.
     from salmon.uploader.spectrals import get_spectrals_path, made_by_salmon
@@ -70,6 +72,11 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
                 f"Not replacing {new_path}: it is the album this run works on a copy of. "
                 "Rename it, or give this album another name. "
                 "If it is already uploaded, salmon cross-upload sends it to another tracker."
+            )
+        # A metadata re-run can pick the name the source folder already has, when it sits in the same directory.
+        if source is not None and os.path.isdir(source) and os.path.samefile(new_path, source):
+            raise UploadError(
+                f"Not replacing {new_path}: it is the folder this run started from. Give this album another name."
             )
         if not check or await interaction.confirm(
             click.style(
@@ -253,8 +260,8 @@ async def remove_source_folder(
 
     Called when a run ends, never at the folder rename: a run stopped after the rename (an abort at a later
     question, a failed upload) leaves the source folder where it was, and running salmon on it again works.
-    The user is asked first, defaulting to yes; a run that assumes defaults removes it without asking. After an
-    abort that followed an upload the question defaults to no, and a run that assumes defaults keeps the folder.
+    Turning remove_source_dir on is the user's yes, so nothing is asked. A run that uploaded nothing, or was
+    aborted after an upload, keeps the folder and says so.
 
     Args:
         source: The folder the run started from.
@@ -276,17 +283,8 @@ async def remove_source_folder(
     if not uploaded:
         click.secho(f"remove_source_dir is on, but {source} is kept: nothing was uploaded.", fg="yellow")
         return
-    assume_defaults = await interaction.assume_defaults()
-    if aborted and assume_defaults:
-        click.secho(f"remove_source_dir is on, but {source} is kept: the run was aborted.", fg="yellow")
-        return
-    question = f"Remove the source folder {source}? The release is now in {final}."
     if aborted:
-        question = f"The run was aborted after an upload. {question}"
-    if not assume_defaults and not await interaction.confirm(
-        click.style(f"\n{question}", fg="magenta"), default=not aborted
-    ):
-        click.secho(f"Kept the source folder {source}.", fg="yellow")
+        click.secho(f"remove_source_dir is on, but {source} is kept: the run was aborted.", fg="yellow")
         return
     shutil.rmtree(source)
     click.secho(f"Removed the source folder {source} (remove_source_dir).", fg="yellow")

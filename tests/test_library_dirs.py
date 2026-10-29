@@ -622,6 +622,27 @@ def test_abort_and_delete_never_deletes_a_folder_in_a_library(monkeypatch, dirs)
     assert _snapshot(library) == before
 
 
+def test_abort_and_delete_after_the_rename_says_the_source_is_kept(monkeypatch, dirs) -> None:
+    # The answer deletes the renamed folder; with the source no longer removed at the rename, it stayed without a word
+    _library, downloads = dirs
+    album = _album(downloads.parent / "inbox" / "Album")
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+    monkeypatch.setattr(cfg.upload, "windows_use_recycle_bin", False)
+
+    def delete_after(_path: str) -> None:
+        raise AbortAndDeleteFolder
+
+    result, uploads, _transcodes = _run_up(monkeypatch, album, check_embedded_pictures=delete_after)
+
+    assert result.exit_code == 0, result.output
+    assert uploads == []
+    assert (album / "01 - one.flac").exists()
+    assert not (downloads / RENAMED).exists()
+    assert (
+        f"remove_source_dir is on, but {album} is kept: remove it yourself if you meant the album too." in result.output
+    )
+
+
 class _not_staged:
     """A staged_source that hands the upload the folder itself."""
 

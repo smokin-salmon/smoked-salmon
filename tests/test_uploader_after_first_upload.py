@@ -287,8 +287,8 @@ def test_aborting_at_the_next_trackers_group_prompt_ends_the_run_and_still_seeds
     assert len(run.queued) == 6
 
 
-def test_aborting_after_an_upload_with_yyy_keeps_the_source_folder(monkeypatch, tmp_path, dirs) -> None:
-    # An abort at the next tracker, after an upload, is not a finished run: -yyy does not remove the source for it.
+def test_aborting_after_an_upload_keeps_the_source_folder(monkeypatch, tmp_path, dirs) -> None:
+    # An abort at the next tracker, after an upload, is not a finished run, so the source is kept.
     _downloads, torrents = dirs
     _trackers(monkeypatch, "RED", "OPS")
     _seedbox_runs(monkeypatch)

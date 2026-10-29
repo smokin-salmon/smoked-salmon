@@ -84,43 +84,19 @@ def test_the_rename_keeps_the_source_folder(dirs, capsys) -> None:
     assert "Removed the source folder" not in capsys.readouterr().out
 
 
-def test_the_source_folder_is_removed_at_the_end_when_the_user_says_yes(monkeypatch, dirs, capsys) -> None:
-    _downloads, seeding = dirs
-    album = _album(seeding / "Album")
-    new_path = _rename(album)
-    asked = _answering(monkeypatch, True)
-
-    _remove(album, new_path)
-
-    assert not album.exists()
-    assert (Path(new_path) / "01 - one.flac").read_bytes() == b"one"
-    assert len(asked) == 1 and str(album) in asked[0] and new_path in asked[0]
-    assert f"Removed the source folder {album} (remove_source_dir)." in capsys.readouterr().out
-
-
-def test_no_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
-    _downloads, seeding = dirs
-    album = _album(seeding / "Album")
-    new_path = _rename(album)
-    _answering(monkeypatch, False)
-
-    _remove(album, new_path)
-
-    assert album.exists()
-    assert f"Kept the source folder {album}." in capsys.readouterr().out
-
-
-def test_a_run_assuming_defaults_removes_it_without_asking(monkeypatch, dirs) -> None:
+def test_the_source_folder_is_removed_at_the_end_without_asking(monkeypatch, dirs, capsys) -> None:
+    # remove_source_dir is opt-in: turning it on is the yes, so the end of the run does not ask again
     _downloads, seeding = dirs
     album = _album(seeding / "Album")
     new_path = _rename(album)
     asked = _answering(monkeypatch, False)
 
-    with interaction.assuming_defaults():
-        _remove(album, new_path)
+    _remove(album, new_path)
 
     assert not album.exists()
+    assert (Path(new_path) / "01 - one.flac").read_bytes() == b"one"
     assert asked == []
+    assert f"Removed the source folder {album} (remove_source_dir)." in capsys.readouterr().out
 
 
 def test_a_run_that_uploaded_nothing_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
@@ -136,25 +112,17 @@ def test_a_run_that_uploaded_nothing_keeps_the_source_folder(monkeypatch, dirs, 
     assert f"remove_source_dir is on, but {album} is kept: nothing was uploaded." in capsys.readouterr().out
 
 
-def test_an_abort_after_an_upload_asks_with_no_as_the_default(monkeypatch, dirs) -> None:
+@pytest.mark.parametrize("assume_defaults", [False, True], ids=["asking", "-yyy"])
+def test_an_abort_after_an_upload_keeps_the_source_folder(monkeypatch, dirs, capsys, assume_defaults) -> None:
     _downloads, seeding = dirs
     album = _album(seeding / "Album")
     new_path = _rename(album)
     asked = _answering(monkeypatch, True)
 
-    _remove(album, new_path, aborted=True)
-
-    assert not album.exists()
-    assert len(asked) == 1 and "aborted after an upload" in asked[0] and asked[0].endswith("[default False]")
-
-
-def test_an_abort_after_an_upload_assuming_defaults_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
-    _downloads, seeding = dirs
-    album = _album(seeding / "Album")
-    new_path = _rename(album)
-    asked = _answering(monkeypatch, True)
-
-    with interaction.assuming_defaults():
+    if assume_defaults:
+        with interaction.assuming_defaults():
+            _remove(album, new_path, aborted=True)
+    else:
         _remove(album, new_path, aborted=True)
 
     assert album.exists()

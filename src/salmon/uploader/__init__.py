@@ -1013,6 +1013,7 @@ async def _upload_staged(
             else generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
         )
 
+    source_folder = path  # The folder the run started from: the metadata step renames path into a new folder
     try:
         # The search for an existing group only reads from the tracker, so it runs in the background during
         # the MQA, upconvert and log checks below, and what it found is shown once they are done.
@@ -1150,6 +1151,13 @@ async def _upload_staged(
                 f"\nDeleting the copy the upload worked on. {original} is kept.",
                 fg="yellow",
                 bold=True,
+            )
+        elif cfg.upload.formatting.remove_source_dir and path != source_folder and os.path.isdir(source_folder):
+            # The answer deletes the renamed folder only: the source is removed when a run ends, and this one aborts
+            click.secho(
+                f"\nremove_source_dir is on, but {source_folder} is kept: "
+                "remove it yourself if you meant the album too.",
+                fg="yellow",
             )
         if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
             try:
@@ -1489,7 +1497,7 @@ async def edit_metadata(
                 await recompress_path(path)
             except UploadError as e:
                 raise UploadError(f"{e} Rerun without -c.") from e
-        renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original)
+        renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original, source=given)
         if renamed != path:
             original = None  # A re-run renames the renamed folder, which is no longer the copy of the original.
             if (
@@ -1497,6 +1505,7 @@ async def edit_metadata(
                 and cfg.upload.formatting.remove_source_dir
                 and os.path.isdir(path)
                 and not os.path.samefile(path, renamed)
+                and not cfg.directory.protects(path)
             ):
                 # Made by an earlier pass of this loop, not the user's: the source itself is removed when the run ends.
                 shutil.rmtree(path)

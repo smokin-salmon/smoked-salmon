@@ -10,6 +10,7 @@ import pytest
 import salmon.uploader as uploader
 from salmon import cfg, interaction
 from salmon.converter import conversions
+from salmon.errors import UploadError
 from salmon.tagger import foldername
 
 if TYPE_CHECKING:
@@ -130,3 +131,78 @@ def test_a_metadata_rerun_removes_only_salmons_own_folder(monkeypatch, album) ->
     assert conversions.conversion_of(path) is not None
     assert album.exists()
     assert sources == ["CD", "CD"]
+
+
+def test_a_metadata_rerun_never_replaces_the_source_folder(monkeypatch, tmp_path) -> None:
+    # The source stays until the run ends, so a re-run that picks the source's own name was asked "replace it?",
+    # yes by default, about the user's album
+    downloads = tmp_path / "downloads"
+    source = downloads / "Album"  # Directly in download_directory, so the re-run's name can lead back to it
+    source.mkdir(parents=True)
+    (source / "01 - one.flac").write_bytes(b"one")
+    monkeypatch.setattr(cfg.directory, "download_directory", str(downloads))
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [])
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+    names = iter([NEW_NAME, "Album"])
+    monkeypatch.setattr(foldername, "generate_folder_name", lambda _metadata: next(names))
+    upload_answers = iter([False, True])  # No to "upload the torrent?" re-runs the metadata step once.
+
+    async def returns(value=None):
+        return value
+
+    async def confirm(text, *_args, **_kwargs):
+        return next(upload_answers) if "upload the torrent" in str(text) else True
+
+    monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
+    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
+    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: {})
+    monkeypatch.setattr(interaction, "confirm", confirm)
+    metadata = {"scene": False, "genres": []}
+
+    with pytest.raises(UploadError, match="it is the folder this run started from"):
+        anyio.run(lambda: uploader.edit_metadata(str(source), {}, metadata, None, "CD", {}, False, False, None, True))
+
+    assert (source / "01 - one.flac").read_bytes() == b"one"
+
+
+def test_a_metadata_rerun_never_removes_a_folder_in_a_library(monkeypatch, album) -> None:
+    # Every step that removes a folder checks the library first (#531), even where the rename rules keep it out today
+    downloads = Path(cfg.directory.download_directory)
+    first = downloads / "Artist - Album (2020) [CD FLAC]"
+    names = iter([first.name, "Artist - Album (2021) [CD FLAC]"])
+    monkeypatch.setattr(cfg.directory, "library_dirs", [str(first)])
+    answers = iter([False, True])  # No to "upload the torrent?" re-runs the metadata step once.
+
+    async def returns(value=None):
+        return value
+
+    async def rename_folder(*_args, **_kwargs):
+        new = downloads / next(names)
+        new.mkdir()
+        return str(new)
+
+    async def confirm(*_args, **_kwargs):
+        return next(answers)
+
+    monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
+    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(uploader, "rename_folder", rename_folder)
+    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
+    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: {})
+    monkeypatch.setattr(interaction, "confirm", confirm)
+
+    anyio.run(
+        lambda: uploader.edit_metadata(
+            str(album), {}, {"scene": False, "genres": []}, None, "CD", {}, False, False, None, True
+        )
+    )
+
+    assert first.is_dir()
