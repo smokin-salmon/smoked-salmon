@@ -29,7 +29,7 @@ from salmon.common.files import AlbumPath
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
-from salmon.converter.conversions import conversion_of, recorded_files
+from salmon.converter.conversions import carry_conversion, conversion_of, recorded_files
 from salmon.converter.downconverting import (
     BitDepth,
     conversion_note,
@@ -72,7 +72,7 @@ from salmon.tagger.cover import (
     get_cover_from_path,
     has_flac_without_picture,
 )
-from salmon.tagger.foldername import rename_folder
+from salmon.tagger.foldername import remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
 from salmon.tagger.pre_data import construct_rls_data
@@ -824,7 +824,8 @@ async def upload(
         # A scratch copy's run directory, removed when the run ends: where a dry run writes.
         dryrun.writing_into(rename_into),
     ):
-        await _upload_staged(
+        original = path if staged != path else None
+        result = await _upload_staged(
             gazelle_site,
             staged,
             group_id,
@@ -849,13 +850,16 @@ async def upload(
             skip_initial_review=skip_initial_review,
             apply_ai_suggestions=apply_ai_suggestions,
             rename_into=rename_into,
-            original=path if staged != path else None,
+            original=original,
             conversion=conversion,
             trackers=trackers,
             conversions=conversions,
             skip_search=skip_search,
             offer_others=offer_others,
         )
+        # Once the run is done: an abort after the folder rename keeps the source folder, so a re-run can use it.
+        final, uploaded, aborted = result or (None, False, False)
+        await remove_source_folder(path, final, original, uploaded=uploaded, aborted=aborted)
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -948,8 +952,12 @@ async def _upload_staged(
     trackers: list[str] | None = None,
     conversions: tuple[str, ...] | None = None,
     offer_others: bool = False,
-) -> None:
+) -> tuple[str, bool, bool] | None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
+
+    Returns:
+        The folder the run ended with, whether anything was uploaded, and whether the run was aborted after an
+        upload; None when it stopped early.
 
     Args:
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
@@ -1005,6 +1013,7 @@ async def _upload_staged(
             else generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
         )
 
+    source_folder = path  # The folder the run started from: the metadata step renames path into a new folder
     try:
         # The search for an existing group only reads from the tracker, so it runs in the background during
         # the MQA, upconvert and log checks below, and what it found is shown once they are done.
@@ -1143,6 +1152,13 @@ async def _upload_staged(
                 fg="yellow",
                 bold=True,
             )
+        elif cfg.upload.formatting.remove_source_dir and path != source_folder and os.path.isdir(source_folder):
+            # The answer deletes the renamed folder only: the source is removed when a run ends, and this one aborts
+            click.secho(
+                f"\nremove_source_dir is on, but {source_folder} is kept: "
+                "remove it yourself if you meant the album too.",
+                fg="yellow",
+            )
         if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
             try:
                 import send2trash
@@ -1195,6 +1211,7 @@ async def _upload_staged(
         # before the loop is one of them.
         failed_trackers: list[str] = [gazelle_site.site_string] if first_listed else []
         finished = False  # The loop ended by itself: no abort, no exception
+        aborted = False
         flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={source_flac['id']}" if source_flac else None
 
         try:
@@ -1381,6 +1398,7 @@ async def _upload_staged(
             if not uploaded or dryrun.active():
                 raise
             # What is up stays up and is seeded below: the run only stops offering more.
+            aborted = True
             click.secho("\nAborting: nothing more is uploaded. Already uploaded:", fg="red")
             for line in uploaded:
                 click.echo(f"  {line}")
@@ -1398,6 +1416,7 @@ async def _upload_staged(
                 seedbox_uploader.remove_local_copies()
     finally:
         await spectral_uploads.close()
+    return path, bool(uploaded), aborted
 
 
 async def edit_metadata(
@@ -1448,6 +1467,7 @@ async def edit_metadata(
     Raises:
         click.Abort: If a scene release fails the integrity check, or a file does not decode.
     """
+    given = path
     while True:
         metadata = await review_metadata_with_ai(
             metadata,
@@ -1477,9 +1497,19 @@ async def edit_metadata(
                 await recompress_path(path)
             except UploadError as e:
                 raise UploadError(f"{e} Rerun without -c.") from e
-        renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original)
+        renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original, source=given)
         if renamed != path:
             original = None  # A re-run renames the renamed folder, which is no longer the copy of the original.
+            if (
+                path != given
+                and cfg.upload.formatting.remove_source_dir
+                and os.path.isdir(path)
+                and not os.path.samefile(path, renamed)
+                and not cfg.directory.protects(path)
+            ):
+                # Made by an earlier pass of this loop, not the user's: the source itself is removed when the run ends.
+                shutil.rmtree(path)
+                carry_conversion(path, renamed)
         path = renamed
         if not metadata["scene"]:
             await rename_files(path, tags, metadata, auto_rename, spectral_ids, source)

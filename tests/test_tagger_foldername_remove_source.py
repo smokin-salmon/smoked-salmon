@@ -1,4 +1,6 @@
-"""remove_source_dir says what became of the source folder: removed, or kept and why (#680)."""
+"""remove_source_dir removes the source folder when the run ends, never at the rename, and says what became of it.
+
+Why it is kept is said as in #680."""
 
 from pathlib import Path
 from typing import Any
@@ -6,7 +8,7 @@ from typing import Any
 import anyio
 import pytest
 
-from salmon import cfg, dryrun
+from salmon import cfg, dryrun, interaction
 from salmon.tagger import foldername
 
 NEW_NAME = "Artist - Album (2020) [WEB FLAC]"
@@ -49,15 +51,106 @@ def _rename(path: Path, original: Path | None = None) -> str:
     )
 
 
-def test_a_removed_source_folder_is_said(dirs, capsys) -> None:
+def _remove(
+    source: Path, final: str | None, original: Path | None = None, uploaded: bool = True, aborted: bool = False
+) -> None:
+    anyio.run(
+        lambda: foldername.remove_source_folder(
+            str(source), final, str(original) if original else None, uploaded=uploaded, aborted=aborted
+        )
+    )
+
+
+def _answering(monkeypatch, answer: bool) -> list[str]:
+    asked: list[str] = []
+
+    async def confirm(text: str, *, default: bool | None = False, **_kwargs: Any) -> bool:
+        asked.append(f"{text} [default {default}]")
+        return answer
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+    return asked
+
+
+def test_the_rename_keeps_the_source_folder(dirs, capsys) -> None:
+    # A run aborted after the rename must leave the album where the user can run salmon on it again.
     _downloads, seeding = dirs
     album = _album(seeding / "Album")
 
     new_path = _rename(album)
 
+    assert (album / "01 - one.flac").read_bytes() == b"one"
+    assert (Path(new_path) / "01 - one.flac").read_bytes() == b"one"
+    assert "Removed the source folder" not in capsys.readouterr().out
+
+
+def test_the_source_folder_is_removed_at_the_end_without_asking(monkeypatch, dirs, capsys) -> None:
+    # remove_source_dir is opt-in: turning it on is the yes, so the end of the run does not ask again
+    _downloads, seeding = dirs
+    album = _album(seeding / "Album")
+    new_path = _rename(album)
+    asked = _answering(monkeypatch, False)
+
+    _remove(album, new_path)
+
     assert not album.exists()
     assert (Path(new_path) / "01 - one.flac").read_bytes() == b"one"
+    assert asked == []
     assert f"Removed the source folder {album} (remove_source_dir)." in capsys.readouterr().out
+
+
+def test_a_run_that_uploaded_nothing_keeps_the_source_folder(monkeypatch, dirs, capsys) -> None:
+    _downloads, seeding = dirs
+    album = _album(seeding / "Album")
+    new_path = _rename(album)
+    asked = _answering(monkeypatch, True)
+
+    _remove(album, new_path, uploaded=False)
+
+    assert album.exists()
+    assert asked == []
+    assert f"remove_source_dir is on, but {album} is kept: nothing was uploaded." in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("assume_defaults", [False, True], ids=["asking", "-yyy"])
+def test_an_abort_after_an_upload_keeps_the_source_folder(monkeypatch, dirs, capsys, assume_defaults) -> None:
+    _downloads, seeding = dirs
+    album = _album(seeding / "Album")
+    new_path = _rename(album)
+    asked = _answering(monkeypatch, True)
+
+    if assume_defaults:
+        with interaction.assuming_defaults():
+            _remove(album, new_path, aborted=True)
+    else:
+        _remove(album, new_path, aborted=True)
+
+    assert album.exists()
+    assert asked == []
+    assert f"remove_source_dir is on, but {album} is kept: the run was aborted." in capsys.readouterr().out
+
+
+def test_a_run_stopped_before_the_rename_says_nothing(monkeypatch, dirs, capsys) -> None:
+    _downloads, seeding = dirs
+    album = _album(seeding / "Album")
+    asked = _answering(monkeypatch, True)
+
+    _remove(album, None)
+
+    assert album.exists()
+    assert asked == []
+    assert "remove_source_dir" not in capsys.readouterr().out
+
+
+def test_the_same_folder_is_never_removed(monkeypatch, dirs) -> None:
+    downloads, _seeding = dirs
+    album = _album(downloads / NEW_NAME)
+    asked = _answering(monkeypatch, True)
+
+    _remove(album, str(album))
+
+    assert album.exists()
+    assert asked == []
 
 
 def test_a_library_album_kept_is_said(monkeypatch, dirs, tmp_path, capsys) -> None:
@@ -65,8 +158,9 @@ def test_a_library_album_kept_is_said(monkeypatch, dirs, tmp_path, capsys) -> No
     original = _album(library / "Album")
     monkeypatch.setattr(cfg.directory, "library_dirs", [str(library)])
     staged = _album(tmp_path / "staged-copy")
-
     new_path = _rename(staged, original)
+
+    _remove(staged, new_path, original)
 
     out = capsys.readouterr().out
     assert f"remove_source_dir is on, but {original} is kept:" in out
@@ -82,7 +176,8 @@ def test_a_dry_run_copy_keeps_its_source_and_says_why(dirs, capsys) -> None:
     staged = _album(seeding / "staged-copy")
 
     with dryrun.mode():
-        _rename(staged, original)
+        new_path = _rename(staged, original)
+        _remove(staged, new_path, original)
 
     out = capsys.readouterr().out
     assert f"remove_source_dir is on, but {original} is kept: a dry run works on a copy and changes nothing." in out
@@ -93,8 +188,9 @@ def test_a_skip_flac_copy_keeps_its_source_and_says_why(dirs, capsys) -> None:
     _downloads, seeding = dirs
     original = _album(seeding / "Album")
     staged = _album(seeding / "staged-copy")
+    new_path = _rename(staged, original)
 
-    _rename(staged, original)
+    _remove(staged, new_path, original)
 
     out = capsys.readouterr().out
     assert f"remove_source_dir is on, but {original} is kept: --skip-flac-upload works on a copy." in out
@@ -104,13 +200,14 @@ def test_a_skip_flac_copy_keeps_its_source_and_says_why(dirs, capsys) -> None:
 def test_the_setting_off_says_nothing_new(monkeypatch, dirs, capsys) -> None:
     _downloads, seeding = dirs
     monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", False)
-    original = _album(seeding / "Album")
-    staged = _album(seeding / "staged-copy")
+    album = _album(seeding / "Album")
+    new_path = _rename(album)
+    asked = _answering(monkeypatch, True)
 
-    _rename(staged, original)
+    _remove(album, new_path)
 
     out = capsys.readouterr().out
     assert "remove_source_dir" not in out
     assert "Removed the source folder" not in out
-    assert staged.exists()
-    assert original.exists()
+    assert album.exists()
+    assert asked == []

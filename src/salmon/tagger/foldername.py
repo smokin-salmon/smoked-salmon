@@ -18,7 +18,7 @@ from salmon.errors import UploadError
 from salmon.tagger.audio_info import gather_audio_info
 
 
-async def rename_folder(path, metadata, auto_rename, check=True, parent=None, original=None):
+async def rename_folder(path, metadata, auto_rename, check=True, parent=None, original=None, source=None):
     """
     Create a revised folder name from the new metadata and present it to the
     user. Have them decide whether or not to accept the folder name.
@@ -27,8 +27,10 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
     For scene releases, the name of the original folder is kept untouched, and
     the folder is copied to the download folder.
     `parent` replaces the download folder as the directory the renamed folder goes into.
-    `original` is the folder the user gave, passed only when `path` is a copy of it: with remove_source_dir on,
-    the copy is left for its run directory to remove, and the output says why `original` is kept.
+    `original` is the folder the user gave, passed only when `path` is a copy of it: the copy is left for its run
+    directory to remove. The source folder is never removed here: see remove_source_folder.
+    `source` is the folder the run started from: once an earlier rename has left it, a name that leads back to it is
+    refused, since replacing it would delete the user's album.
     """
     # Imported here: the uploader package imports this module.
     from salmon.uploader.spectrals import get_spectrals_path, made_by_salmon
@@ -70,6 +72,11 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
                 f"Not replacing {new_path}: it is the album this run works on a copy of. "
                 "Rename it, or give this album another name. "
                 "If it is already uploaded, salmon cross-upload sends it to another tracker."
+            )
+        # A metadata re-run can pick the name the source folder already has, when it sits in the same directory.
+        if source is not None and os.path.isdir(source) and os.path.samefile(new_path, source):
+            raise UploadError(
+                f"Not replacing {new_path}: it is the folder this run started from. Give this album another name."
             )
         if not check or await interaction.confirm(
             click.style(
@@ -123,14 +130,6 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
         # folder: a case-only rename still renames salmon's folder outside it.
         _move_specs_folder(specs_path, get_spectrals_path(new_path))
 
-    if not same_folder:
-        if cfg.upload.formatting.remove_source_dir and original is not None:
-            click.secho(f"remove_source_dir is on, but {original} is kept: {_kept_reason(original)}.", fg="yellow")
-        elif cfg.upload.formatting.remove_source_dir and in_library:
-            click.secho(f"Not removing {path}: it is in library_dirs, or holds one.", fg="yellow")
-        elif cfg.upload.formatting.remove_source_dir:
-            shutil.rmtree(path)
-            click.secho(f"Removed the source folder {path} (remove_source_dir).", fg="yellow")
     # Local: the converter package imports this module.
     from salmon.converter.conversions import carry_conversion
 
@@ -252,6 +251,47 @@ def drop_resolution_token(foldername, token):
     if 0 < start < len(name) and name[start - 1] in "[({" and name[start] in "])}":
         name = name[: start - 1].rstrip(" ") + name[start + 1 :]
     return name.strip()
+
+
+async def remove_source_folder(
+    source: str, final: str | None, original: str | None = None, uploaded: bool = True, aborted: bool = False
+) -> None:
+    """With remove_source_dir on, remove the folder the run started from, once the run is done with it.
+
+    Called when a run ends, never at the folder rename: a run stopped after the rename (an abort at a later
+    question, a failed upload) leaves the source folder where it was, and running salmon on it again works.
+    Turning remove_source_dir on is the user's yes, so nothing is asked. A run that uploaded nothing, or was
+    aborted after an upload, keeps the folder and says so.
+
+    Args:
+        source: The folder the run started from.
+        final: The folder the run ended with, under its new name. None when the run stopped before the rename.
+        original: The folder the user gave, when `source` is a copy of it: it is kept, and the output says why.
+        uploaded: Whether the run uploaded anything. A run that uploaded nothing keeps the source folder.
+        aborted: Whether the run was aborted after an upload, at a later tracker's questions.
+    """
+    if not cfg.upload.formatting.remove_source_dir:
+        return
+    if original is not None:
+        click.secho(f"remove_source_dir is on, but {original} is kept: {_kept_reason(original)}.", fg="yellow")
+        return
+    if final is None or not os.path.isdir(source) or (os.path.isdir(final) and os.path.samefile(source, final)):
+        return
+    if cfg.directory.protects(source):
+        click.secho(f"Not removing {source}: it is in library_dirs, or holds one.", fg="yellow")
+        return
+    if not uploaded:
+        click.secho(f"remove_source_dir is on, but {source} is kept: nothing was uploaded.", fg="yellow")
+        return
+    if aborted:
+        click.secho(f"remove_source_dir is on, but {source} is kept: the run was aborted.", fg="yellow")
+        return
+    shutil.rmtree(source)
+    click.secho(f"Removed the source folder {source} (remove_source_dir).", fg="yellow")
+    # Local: the converter package imports this module. With the folder gone, its conversion record goes too.
+    from salmon.converter.conversions import carry_conversion
+
+    carry_conversion(source, final)
 
 
 def _kept_reason(original: str) -> str:

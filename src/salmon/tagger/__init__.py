@@ -17,7 +17,7 @@ from salmon.errors import InvalidMetadataError, ScrapeError
 from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.cover import download_cover_if_nonexistent
-from salmon.tagger.foldername import rename_folder
+from salmon.tagger.foldername import remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import get_metadata
 from salmon.tagger.pre_data import construct_rls_data
@@ -166,6 +166,8 @@ async def run_tag(options: TagOptions) -> str:
 
     click.secho(f"\nProcessing {options.path}", fg="cyan", bold=True)
     with staged_source(options.path, scratch=False) as (path, rename_into):
+        staged = path
+        original = options.path if staged != options.path else None
         standardize_tags(path)
         tags = gather_tags(path)
         audio_info = gather_audio_info(path)
@@ -193,10 +195,11 @@ async def run_tag(options: TagOptions) -> str:
             metadata,
             options.auto_rename,
             parent=rename_into,
-            original=options.path if path != options.path else None,
+            original=original,
         )
         await rename_files(path, tags, metadata, options.auto_rename, None)
         await check_folder_structure(path, scene=False)
+        await remove_source_folder(staged, path, original)
         click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
         return path
 

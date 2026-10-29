@@ -287,6 +287,22 @@ def test_aborting_at_the_next_trackers_group_prompt_ends_the_run_and_still_seeds
     assert len(run.queued) == 6
 
 
+def test_aborting_after_an_upload_keeps_the_source_folder(monkeypatch, tmp_path, dirs) -> None:
+    # An abort at the next tracker, after an upload, is not a finished run, so the source is kept.
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    _seedbox_runs(monkeypatch)
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+    album = _album(tmp_path / "Album")
+
+    run = _run_up(monkeypatch, album, torrents, input="\nOPS\na\n")
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Aborting: nothing more is uploaded. Already uploaded:" in run.result.output
+    assert f"remove_source_dir is on, but {album} is kept: the run was aborted." in run.result.output
+    assert album.is_dir()
+
+
 def test_the_check_after_the_upload_does_not_offer_to_delete_the_folder_and_abort_ends_the_run(
     monkeypatch, tmp_path, dirs
 ) -> None:
