@@ -241,10 +241,23 @@ def _recheck(tracker: FakeTracker) -> tuple[int | None, list[str]]:
     return anyio.run(run)
 
 
-def test_the_recheck_after_a_review_skips_the_question_when_nothing_is_found(asked: Asked, capsys) -> None:
+def test_the_recheck_after_a_review_skips_the_question_when_nothing_is_found(
+    asked: Asked, capsys, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    log_checks: list[tuple[list[str], str | None]] = []
+    real = dupe_checker.dupe_check_recent_torrents
+
+    async def spy(gazelle_site: BaseGazelleApi, searchstrs: list[str], our_title: str | None = None) -> list[tuple]:
+        log_checks.append((list(searchstrs), our_title))
+        return await real(gazelle_site, searchstrs, our_title)
+
+    monkeypatch.setattr(dupe_checker, "dupe_check_recent_torrents", spy)
+
     group_id, hits = _recheck(FakeTracker())
 
     out = capsys.readouterr().out
+    reviewed = dupe_checker.generate_dupe_check_searchstrs([["Artist", "main"]], "Reviewed Title")
+    assert log_checks == [(reviewed, "Reviewed Title")]
     assert group_id is None
     assert asked.count == 0
     assert "No group found on RED: new group" in out
