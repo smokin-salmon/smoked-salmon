@@ -198,3 +198,29 @@ def test_edit_tracks_applies_nothing_when_a_later_line_is_broken(monkeypatch) ->
 
     assert metadata["tracks"]["1"]["1"]["title"] == "One"
     assert metadata["tracks"]["1"]["2"]["title"] == "Two"
+
+
+def test_edit_tracks_refuses_a_deleted_artists_line_and_changes_nothing(monkeypatch) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace("Title: One", "Title: Uno").replace("Artists:\n> A (main)", "> A (main)", 1)
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and 'is not the "Artists:" line' in confirms[0]
+    assert metadata["tracks"]["1"]["1"]["title"] == "One"
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("A", "main")]
+
+
+def test_edit_tracks_refuses_a_track_named_twice_and_changes_nothing(monkeypatch) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace("Disc 1 Track 1", "Disc 1 Track 2").replace("Title: One", "Title: Uno")
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and '"Disc 1 Track 2" is named twice' in confirms[0]
+    assert metadata["tracks"]["1"]["1"]["title"] == "One"
+    assert metadata["tracks"]["1"]["2"]["title"] == "Two"

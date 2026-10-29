@@ -477,10 +477,11 @@ def _parse_edited_tracks(text, tracks):
             blocks[-1].append((number, line.strip()))
 
     edits = []
+    seen: set[tuple[str, str]] = set()
     for block in filter(None, blocks):
         if len(block) < 3:
             raise ValueError(f"line {block[0][0]}: a track needs a Disc/Track line, a Title line and an Artists line")
-        (id_no, ident), (title_no, title), _ = block[:3]
+        (id_no, ident), (title_no, title), (artists_no, artists_header) = block[:3]
         r_ident = re.search(r"Disc ([^ ]+) Track ([^ ]+)", ident)
         if not r_ident:
             raise ValueError(f'line {id_no}: "{ident}" is not a "Disc X Track Y" line')
@@ -490,9 +491,14 @@ def _parse_edited_tracks(text, tracks):
                 f'line {id_no}: "Disc {discnum} Track {tracknum}" is not a track of this release: the Disc/Track '
                 "lines can't be changed, only the titles and artists under them."
             )
+        if (discnum, tracknum) in seen:
+            raise ValueError(f'line {id_no}: "Disc {discnum} Track {tracknum}" is named twice')
+        seen.add((discnum, tracknum))
         title_match = re.search(r"Title *: *(.+)", title)
         if not title_match:
             raise ValueError(f'line {title_no}: "{title}" is not a "Title: ..." line')
+        if not re.fullmatch(r"Artists *:", artists_header):
+            raise ValueError(f'line {artists_no}: "{artists_header}" is not the "Artists:" line')
         artists = []
         for artist_no, artist_line in block[3:]:
             name_part, _, role_part = artist_line.rpartition(" ")
