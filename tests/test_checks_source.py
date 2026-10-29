@@ -533,16 +533,22 @@ def _named(tmp_path: Path, name: str, tags: dict[str, str] | None = None, **audi
     ],
 )
 def test_the_folder_name_is_the_fallback(tmp_path, name, expected) -> None:
-    assert detect_source(_named(tmp_path, name)) == DetectedSource(expected, f"folder name says {expected}")
+    album = _named(tmp_path, name)
+
+    assert detect_source(album) == DetectedSource(expected, f"folder name says {expected}")
 
 
 @pytest.mark.parametrize("name", ["Artist - Title (2020)", "Artist - Title [WEB] [CD]", "WEB - Artist - Title [FLAC]"])
 def test_a_name_without_exactly_one_source_gives_none(tmp_path, name) -> None:
-    assert detect_source(_named(tmp_path, name)) is None
+    album = _named(tmp_path, name)
+
+    assert detect_source(album) is None
 
 
 def test_above_cd_quality_rules_out_a_cd_name(tmp_path) -> None:
-    assert detect_source(_named(tmp_path, "Artist - Title [CD FLAC]", bits=24, rate=96000)) is None
+    album = _named(tmp_path, "Artist - Title [CD FLAC]", bits=24, rate=96000)
+
+    assert detect_source(album) is None
 
 
 def test_vinyl_sides_rule_out_what_the_name_says(tmp_path) -> None:

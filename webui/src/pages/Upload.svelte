@@ -111,7 +111,6 @@
   let sourceUrl = $state('')
   const preset = sourcePreset(
     () => path,
-    () => source,
     (found) => (source = found),
   )
   // Only with a store link: search the stores anyway, as -su without -ss does. This upload only.

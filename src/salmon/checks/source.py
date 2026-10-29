@@ -100,6 +100,9 @@ def detect_source(path: str) -> DetectedSource | None:
     source. Vinyl side numbering and a rate above CD's 16/44.1 only rule sources out: alone they
     prove nothing, but they make a proof they contradict unknown. So does a second proof that
     names another source.
+
+    When the files hold no proof at all, the one source named in a bracket of the folder's name
+    (`[WEB FLAC]`, `(CD)`) is the answer, under the same rule-outs. Conflicting proofs still give None.
     """
     try:
         evidence = _gather(path)

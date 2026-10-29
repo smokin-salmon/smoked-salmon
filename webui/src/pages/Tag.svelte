@@ -23,7 +23,6 @@
   let source = $state('')
   const preset = sourcePreset(
     () => path,
-    () => source,
     (found) => (source = found),
   )
   let encoding = $state('')

@@ -201,19 +201,22 @@ async def browse(request: web.Request) -> web.Response:
     return _filtered(request, answer)
 
 
+def _source_of(raw: str) -> dict[str, str | None]:
+    """What ``/api/source`` answers for a path; blocking, so it runs in a worker thread."""
+    path = paths.browsable_folder(raw)
+    # A root holds no one album: never scanned.
+    detected = None if any(path == root.path for root in paths.roots()) else detect_source(path)
+    return {"source": detected.source, "reason": detected.reason} if detected else {"source": None, "reason": None}
+
+
 async def source_preset(request: web.Request) -> web.Response:
     """The source the folder ``?path=`` proves, else its name's bracket says, with why: ``{"source", "reason"}``,
     both null when neither does. Reads local files only; confined as ``browse`` is."""
-    none = {"source": None, "reason": None}
     try:
-        path = await asyncio.to_thread(paths.browsable_folder, request.query.get("path", ""))
+        answer = await asyncio.to_thread(_source_of, request.query.get("path", ""))
     except paths.PathRefused as e:
         return _filtered(request, {"detail": e.detail}, e.status)
-    # A root holds no one album: never scanned.
-    if any(path == root.path for root in paths.roots()):
-        return _filtered(request, none)
-    detected = await asyncio.to_thread(detect_source, path)
-    return _filtered(request, {"source": detected.source, "reason": detected.reason} if detected else none)
+    return _filtered(request, answer)
 
 
 def _tools() -> dict[str, dict[str, bool]]:
