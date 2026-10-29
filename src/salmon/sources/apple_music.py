@@ -2,10 +2,7 @@ import re
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-import aiohttp
-
 from salmon.errors import ScrapeError
-from salmon.proxy import session_kwargs
 
 from .base import BaseScraper
 
@@ -53,36 +50,32 @@ class AppleMusicBase(BaseScraper):
         if cls._token:
             return cls._token
 
-        timeout = aiohttp.ClientTimeout(total=15)
-        try:
-            async with aiohttp.ClientSession(timeout=timeout, **session_kwargs(cls.proxy_service)) as session:
-                async with session.get(APPLE_MUSIC_URL, allow_redirects=True) as resp:
-                    if resp.status != 200:
-                        raise ScrapeError("Failed to load Apple Music homepage")
-                    html = await resp.text()
+        # The homepage and its JS bundle may take 15 s each
+        async with cls._session(timeout=15) as session:
+            async with session.get(APPLE_MUSIC_URL, allow_redirects=True) as resp:
+                if resp.status != 200:
+                    raise ScrapeError("Failed to load Apple Music homepage")
+                html = await resp.text()
 
-                matches = re.findall(r"/assets/index~[^/\"]+\.js", html)
-                if not matches:
-                    raise ScrapeError("Could not find index JS bundle URL on Apple Music homepage")
-                js_uri = matches[0]
+            matches = re.findall(r"/assets/index~[^/\"]+\.js", html)
+            if not matches:
+                raise ScrapeError("Could not find index JS bundle URL on Apple Music homepage")
+            js_uri = matches[0]
 
-                async with session.get(APPLE_MUSIC_URL + js_uri) as js_resp:
-                    if js_resp.status != 200:
-                        raise ScrapeError("Failed to load Apple Music JS bundle")
-                    js_text = await js_resp.text()
+            async with session.get(APPLE_MUSIC_URL + js_uri) as js_resp:
+                if js_resp.status != 200:
+                    raise ScrapeError("Failed to load Apple Music JS bundle")
+                js_text = await js_resp.text()
 
-                # Apple does not guarantee the order of fields in the JWT
-                # header.  Tokens have used both ``eyJh`` (``{"alg": ...}``)
-                # and ``eyJ0`` (``{"typ": "JWT", ...}``) prefixes.
-                token_match = re.search(r"(eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)", js_text)
-                if not token_match:
-                    raise ScrapeError("Could not extract Bearer token from Apple Music JS bundle")
+        # Apple does not guarantee the order of fields in the JWT
+        # header.  Tokens have used both ``eyJh`` (``{"alg": ...}``)
+        # and ``eyJ0`` (``{"typ": "JWT", ...}``) prefixes.
+        token_match = re.search(r"(eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)", js_text)
+        if not token_match:
+            raise ScrapeError("Could not extract Bearer token from Apple Music JS bundle")
 
-                cls._token = token_match.group(0)
-                return cls._token
-
-        except aiohttp.ClientError as e:
-            raise ScrapeError("Network error while fetching Apple Music token") from e
+        cls._token = token_match.group(0)
+        return cls._token
 
     async def fetch_data(
         self,

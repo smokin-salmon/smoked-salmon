@@ -2,9 +2,12 @@ import sys
 from pathlib import Path
 
 import anyio
+import pytest
 from aiohttp import web
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from salmon.errors import ScrapeError
+from salmon.sources import base
 from salmon.sources.apple_music import AppleMusicBase
 
 HOMEPAGE_HTML = '<script src="/assets/index~abc123.js"></script>'
@@ -74,3 +77,25 @@ def test_get_token_finds_typ_first_header() -> None:
 
 def test_get_token_finds_alg_first_header() -> None:
     anyio.run(_get_token_finds_alg_first_header)
+
+
+class _TimingOutSession:
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_args):
+        return None
+
+    def get(self, *_args, **_kwargs):
+        raise TimeoutError
+
+
+def test_a_token_timeout_is_a_scrape_error(monkeypatch) -> None:
+    # Only aiohttp.ClientError was caught, so a TimeoutError escaped, and `salmon meta` printed a traceback
+    monkeypatch.setattr(AppleMusicBase, "_token", None)
+    monkeypatch.setattr(base.aiohttp, "ClientSession", lambda *_args, **_kwargs: _TimingOutSession())
+
+    with pytest.raises(ScrapeError) as excinfo:
+        anyio.run(AppleMusicBase._get_token)
+
+    assert str(excinfo.value) == "AppleMusicBase: Request failed (TimeoutError)."

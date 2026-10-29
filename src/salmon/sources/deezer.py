@@ -8,7 +8,6 @@ import msgspec
 
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
-from salmon.proxy import session_kwargs
 from salmon.sources.base import BaseScraper
 
 HEADERS = {
@@ -57,35 +56,6 @@ class DeezerBase(BaseScraper):
         """Initialize Deezer scraper."""
         self.country_code = None
         super().__init__()
-        self._csrf_token: str | None = None
-        self._login_csrf_token: str | None = None
-
-    async def _ensure_api_token(self) -> str | None:
-        """Fetch API token from Deezer if not cached.
-
-        Returns:
-            The CSRF token or None if failed.
-        """
-        if self._csrf_token:
-            return self._csrf_token
-
-        params = {"api_version": "1.0", "api_token": "null", "input": "3", "method": "deezer.getUserData"}
-        timeout = aiohttp.ClientTimeout(total=10)
-        try:
-            async with (
-                aiohttp.ClientSession(timeout=timeout, **session_kwargs(self.proxy_service)) as session,
-                session.get(
-                    "https://www.deezer.com/ajax/gw-light.php",
-                    params=params,
-                    headers=HEADERS,
-                ) as response,
-            ):
-                check_data = await response.json(loads=msgspec.json.decode)
-                self._csrf_token = check_data["results"]["checkForm"]
-                self._login_csrf_token = check_data["results"]["checkFormLogin"]
-        except (msgspec.DecodeError, KeyError, aiohttp.ClientError):
-            pass
-        return self._csrf_token
 
     @classmethod
     def parse_release_id(cls, url: str) -> str:
@@ -154,19 +124,13 @@ class DeezerBase(BaseScraper):
         Raises:
             ScrapeError: If scraping fails.
         """
-        timeout = aiohttp.ClientTimeout(total=10)
-        try:
-            async with (
-                aiohttp.ClientSession(timeout=timeout, **session_kwargs(self.proxy_service)) as session,
-                session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
-            ):
-                if response.status != 200:
-                    raise ScrapeError(
-                        f"Deezer internal API returned status {response.status} for {self.site_url + url}"
-                    )
-                text = await response.text()
-        except (TimeoutError, aiohttp.ClientError) as e:
-            raise ScrapeError(f"Failed to fetch Deezer internal data: {e}") from e
+        async with (
+            self._session() as session,
+            session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
+        ):
+            if response.status != 200:
+                raise ScrapeError(f"Deezer internal API returned status {response.status}.")
+            text = await response.text()
 
         r = re.search(
             r"window.__DZR_APP_STATE__ = ({.*?}})</script>",
