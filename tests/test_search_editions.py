@@ -122,11 +122,24 @@ def test_beatport_result_missing_a_label_or_catalogue_number_is_listed(monkeypat
     assert line == shown
 
 
-def test_beatport_scraped_result_without_a_label_is_listed(monkeypatch) -> None:
+def test_beatport_result_uses_the_various_artist_threshold(monkeypatch) -> None:
+    # The artists became "Various" at a hard-coded four, whatever various_artist_threshold said.
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 3)
+    release = {**BEATPORT_RELEASE, "artists": [{"name": name} for name in "ABC"]}
+    monkeypatch.setattr(beatport.Searcher, "get_json", _answer({"releases": [release]}))
+    token = cast("Any", SimpleNamespace(get_auth_header=lambda: {}))
+
+    line = _shown(anyio.run(beatport.Searcher().search_releases_api, token, "test album", 5))
+
+    assert line.startswith(f"{cfg.upload.formatting.various_artist_word} - Test Album")
+
+
+def _beatport_scraped(monkeypatch, artists=("Test Artist",)) -> str:
+    """The line shown for one scraped Beatport release by these artists."""
     found = [
         {
             "release_id": 1,
-            "artists": [{"artist_name": "Test Artist", "artist_type_name": "Artist"}],
+            "artists": [{"artist_name": name, "artist_type_name": "Artist"} for name in artists],
             "release_name": "Test Album",
         }
     ]
@@ -137,9 +150,21 @@ def test_beatport_scraped_result_without_a_label_is_listed(monkeypatch) -> None:
 
     monkeypatch.setattr(beatport.Searcher, "fetch_page", fetch_page)
 
-    line = _shown(anyio.run(beatport.Searcher().search_releases_scraping, "test album", 5))
+    return _shown(anyio.run(beatport.Searcher().search_releases_scraping, "test album", 5))
+
+
+def test_beatport_scraped_result_without_a_label_is_listed(monkeypatch) -> None:
+    line = _beatport_scraped(monkeypatch)
 
     assert line == "Test Artist - Test Album"
+
+
+def test_beatport_scraped_result_uses_the_various_artist_threshold(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 3)
+
+    line = _beatport_scraped(monkeypatch, ("A", "B", "C"))
+
+    assert line == f"{cfg.upload.formatting.various_artist_word} - Test Album"
 
 
 @pytest.mark.parametrize("user_data", [..., None, {}], ids=["no user_data", "null user_data", "empty user_data"])

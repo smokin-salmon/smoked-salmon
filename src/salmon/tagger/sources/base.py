@@ -8,6 +8,7 @@ from typing import Any
 
 from salmon import cfg
 from salmon.common import RE_USELESS_VERSION, fetch_genre, less_uppers, normalize_accents, split_genre
+from salmon.common.strings import join_artists, reaches_various_threshold
 from salmon.errors import GenreNotInWhitelist
 
 
@@ -460,10 +461,10 @@ def append_remixers_to_track_titles(data):
         for tnum, track in disc.items():
             remix_artists = [a for a, i in track["artists"] if i == "remixer"]
             if not any(x in track["title"] for x in ("Remix", "Mix")) and not _ends_in_a_version(track["title"]):
-                if len(remix_artists) >= cfg.upload.formatting.various_artist_threshold:
+                if reaches_various_threshold(remix_artists):
                     data[dnum][tnum]["title"] += " (Remixed)"
                 elif remix_artists:
-                    data[dnum][tnum]["title"] += f" ({' & '.join(remix_artists)} Remix)"
+                    data[dnum][tnum]["title"] += f" ({join_artists(remix_artists)} Remix)"
 
     return data
 

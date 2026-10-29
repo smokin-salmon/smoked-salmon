@@ -10,6 +10,7 @@ import asyncclick as click
 from salmon import cfg, dryrun, interaction
 from salmon.common import clean_name, has_visible_chars, strip_template_keys
 from salmon.common.files import shares_files
+from salmon.common.strings import artists_or_various
 from salmon.constants import (
     BLACKLISTED_CHARS,
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
@@ -339,13 +340,9 @@ def _strip_blank_resolution(template):
 
 
 def _compile_artist_str(artist_data):
-    """Create a string to represent the main artists of the release."""
-    # In the order given, as the album artist tag (retagger._generate_album_artist) has it.
-    artists = list(dict.fromkeys(a[0] for a in artist_data if a[1] == "main"))
-    if len(artists) > cfg.upload.formatting.various_artist_threshold:
-        return cfg.upload.formatting.various_artist_word
-    c = ", " if len(artists) > 2 or "&" in "".join(artists) else " & "
-    return c.join(artists)
+    """Create a string to represent the main artists of the release, as the album artist tag has it."""
+    # This needed more than various_artist_threshold main artists, one more than ALBUMARTIST
+    return artists_or_various(a[0] for a in artist_data if a[1] == "main")
 
 
 def _sub_illegal_characters(stri):

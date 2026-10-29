@@ -6,6 +6,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.common import handle_scrape_errors
+from salmon.common.strings import artists_or_various
 from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BeatportBase
@@ -23,9 +24,7 @@ class Searcher(BeatportBase, SearchMixin):
                 rls_id = release["id"]
 
                 main_artists = [a["name"] for a in release["artists"]]
-                artists = (
-                    ", ".join(main_artists) if len(main_artists) < 4 else cfg.upload.formatting.various_artist_word
-                )
+                artists = artists_or_various(main_artists)
 
                 title = release["name"]
                 year = time.strptime(release["publish_date"], "%Y-%m-%d").tm_year
@@ -70,9 +69,7 @@ class Searcher(BeatportBase, SearchMixin):
                     main_artists = [a["artist_name"] for a in result["artists"] if a["artist_type_name"] == "Artist"]
 
                     title = result["release_name"]
-                    artists = (
-                        ", ".join(main_artists) if len(main_artists) < 4 else cfg.upload.formatting.various_artist_word
-                    )
+                    artists = artists_or_various(main_artists)
                     label = (result.get("label") or {}).get("label_name") or ""
 
                     if label.lower() not in cfg.upload.search.excluded_labels:

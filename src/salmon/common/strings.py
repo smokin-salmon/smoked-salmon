@@ -2,6 +2,7 @@ import html
 import re
 import unicodedata
 
+from salmon import cfg
 from salmon.common.regexes import re_strip
 from salmon.constants import GENRE_LIST
 from salmon.errors import GenreNotInWhitelist
@@ -85,6 +86,28 @@ def artist_keys(artists) -> set[str]:
     pairs = list(artists or [])
     names = [name for name, importance in pairs if importance == "main"] or [name for name, _ in pairs]
     return ({comparable(name) for name in names} | {comparable("".join(names))}) - {""}
+
+
+def join_artists(names) -> str:
+    """The names as one credit, in the order given and without duplicates.
+
+    ", " between them when there are more than two or any of them contains "&" ("Simon & Garfunkel, Paul Desmond"),
+    otherwise " & ".
+    """
+    names = list(dict.fromkeys(names))
+    sep = ", " if len(names) > 2 or any("&" in name for name in names) else " & "
+    return sep.join(names)
+
+
+def reaches_various_threshold(names) -> bool:
+    """Whether there are ``various_artist_threshold`` or more names, not counting duplicates."""
+    return len(set(names)) >= cfg.upload.formatting.various_artist_threshold
+
+
+def artists_or_various(names) -> str:
+    """``various_artist_word`` for ``various_artist_threshold`` or more names, otherwise ``join_artists(names)``."""
+    names = list(names)
+    return cfg.upload.formatting.various_artist_word if reaches_various_threshold(names) else join_artists(names)
 
 
 def make_searchstrs(artists, album, normalize=False) -> list[str]:

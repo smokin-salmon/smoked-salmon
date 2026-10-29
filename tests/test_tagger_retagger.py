@@ -13,6 +13,8 @@ from salmon.tagger.retagger import (
     Change,
     _generate_album_artist,
     _get_tag_number,
+    append_guests_to_track_titles,
+    create_artist_str,
     create_track_changes,
     delete_empty_folders,
     rename_files,
@@ -38,6 +40,51 @@ def test_album_artist_keeps_the_order_given() -> None:
     artists = [("Zed Leader", "main"), ("Alpha Band", "main"), ("Zed Leader", "main"), ("Some Guest", "guest")]
 
     assert _generate_album_artist(artists) == "Zed Leader & Alpha Band"
+
+
+def test_artist_separates_with_commas_when_a_name_has_an_ampersand(monkeypatch) -> None:
+    # ARTIST used " & " whenever a name had "&" in it, so "Simon & Garfunkel & Paul Desmond"; ALBUMARTIST used ", ".
+    monkeypatch.setattr(cfg.upload.formatting, "guests_in_track_title", False)
+    artists = [("Simon & Garfunkel", "main"), ("Paul Desmond", "main"), ("Earth, Wind & Fire", "guest"), ("X", "guest")]
+
+    assert create_artist_str(artists) == "Simon & Garfunkel, Paul Desmond (feat. Earth, Wind & Fire, X)"
+
+
+@pytest.mark.parametrize(
+    ("guests", "feat"),
+    [(["Zed", "Alpha"], "Zed & Alpha"), (["A", "B", "C", "D"], None), (["A", "B", "C", "D", "E"], None)],
+    ids=["order given", "at the threshold", "above it"],
+)
+def test_guests_in_the_title_keep_their_order_and_become_various_at_the_threshold(monkeypatch, guests, feat) -> None:
+    # The title sorted its guests, listed four of them and dropped five or more, which ARTIST then left out too.
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 4)
+    track = {"title": "Song", "artists": [("Lead", "main"), *((g, "guest") for g in guests)]}
+
+    title = append_guests_to_track_titles(track)
+
+    assert title == f"Song (feat. {feat or cfg.upload.formatting.various_artist_word})"
+
+
+@pytest.mark.parametrize("title", ["Song (Feat. Alice)", "Song (ft. Alice)"])
+@pytest.mark.parametrize("guests", [2, 5])
+def test_guests_are_not_credited_twice_when_the_title_has_a_feature_credit(monkeypatch, title, guests) -> None:
+    # Only a lowercase "feat" counted, so "Song (Feat. Alice)" gained "(feat. ...)" after it
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 4)
+    track = {"title": title, "artists": [("Lead", "main"), *((f"Guest {i}", "guest") for i in range(guests))]}
+
+    new_title = append_guests_to_track_titles(track)
+
+    assert new_title == title
+
+
+@pytest.mark.parametrize("title", ["Defeat", "Feather"])
+def test_guests_are_credited_when_a_title_word_only_contains_feat(title) -> None:
+    # "feat" inside "Defeat" counted as a feature credit, so its guests were left out
+    track = {"title": title, "artists": [("Lead", "main"), ("Guest A", "guest"), ("Guest B", "guest")]}
+
+    new_title = append_guests_to_track_titles(track)
+
+    assert new_title == f"{title} (feat. Guest A & Guest B)"
 
 
 def _tagset(title, tracknumber, discnumber):
