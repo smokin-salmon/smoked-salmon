@@ -2,6 +2,7 @@
 
 import os
 import struct
+import threading
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
@@ -571,3 +572,22 @@ def test_conflicting_proofs_in_the_files_give_none_whatever_the_name_says(tmp_pa
     (album / "EAC.log").write_bytes(EAC_LOG.encode("utf-16"))
 
     assert detect_source(str(album)) is None
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="no named pipes here")
+def test_a_fifo_named_like_a_log_is_not_read(tmp_path) -> None:
+    album = _album(tmp_path)
+    fifo = album / "rip.log"
+    os.mkfifo(fifo)
+    result: list[object] = []
+    worker = threading.Thread(target=lambda: result.append(detect_source(str(album))), daemon=True)
+    worker.start()
+    worker.join(timeout=5)
+    hung = worker.is_alive()
+    if hung:
+        # Let the blocked open() return, so the thread does not outlive the test.
+        os.close(os.open(fifo, os.O_WRONLY))
+        worker.join(timeout=5)
+
+    assert not hung
+    assert result == [None]

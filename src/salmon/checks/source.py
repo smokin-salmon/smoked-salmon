@@ -166,6 +166,9 @@ def _rip_log(path: str) -> str | None:
         for name in sorted(files):
             if not name.lower().endswith(".log"):
                 continue
+            # A FIFO or a device named *.log would block the read: only a regular file (or a link to one).
+            if not os.path.isfile(os.path.join(root, name)):
+                continue
             try:
                 with open(os.path.join(root, name), "rb") as fh:
                     head = fh.read(_LOG_HEAD_BYTES)

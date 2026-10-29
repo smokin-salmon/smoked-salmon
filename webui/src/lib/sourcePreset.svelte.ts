@@ -15,6 +15,8 @@ export function sourcePreset(path: () => string, set: (source: string) => void) 
   let reason = $state('')
   // The folder the select's current source belongs to (preset for it, or picked by the user while it was open).
   let owner: string | null = null
+  // A source picked while no folder was entered, not yet claimed by a folder.
+  let early = false
 
   $effect(() => {
     const folder = path().trim()
@@ -30,6 +32,13 @@ export function sourcePreset(path: () => string, set: (source: string) => void) 
       apiGet<Found>(`/source?path=${encodeURIComponent(folder)}`)
         .then((found) => {
           if (stale) return
+          if (early && owner === null) {
+            // The user chose a source before any folder: it stays, and no preset replaces it.
+            owner = folder
+            early = false
+            reason = ''
+            return
+          }
           if (found.source) {
             if (owner !== folder) {
               owner = folder
@@ -59,6 +68,8 @@ export function sourcePreset(path: () => string, set: (source: string) => void) 
     /** The user chose a source: this folder's preset no longer applies. */
     picked() {
       owner = path().trim() || null
+      // Picked before any folder: it is the pick for the first folder that is looked up.
+      early = owner === null
       reason = ''
     },
   }
