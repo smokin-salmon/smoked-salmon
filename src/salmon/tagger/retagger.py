@@ -52,9 +52,13 @@ async def tag_files(path, tags, metadata, auto_rename):
             return
         track_changes = create_track_changes(tags, metadata, move_numbered=True)
     print_changes(album_changes, track_changes, next(iter(tags.values())))
-    if auto_rename or await interaction.confirm(
-        click.style("\nWould you like to auto-tag the files with the updated metadata?", fg="magenta"),
-        default=True,
+    if (
+        auto_rename
+        or await interaction.assume_defaults()
+        or await interaction.confirm(
+            click.style("\nWould you like to auto-tag the files with the updated metadata?", fg="magenta"),
+            default=True,
+        )
     ):
         retag_files(path, album_changes, track_changes)
 
@@ -660,9 +664,13 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
             for name in clashes:
                 click.secho(f"   {os.path.relpath(name, path)}", fg="red")
             return
-        if auto_rename or await interaction.confirm(
-            click.style("\nWould you like to rename the files?", fg="magenta"),
-            default=True,
+        if (
+            auto_rename
+            or await interaction.assume_defaults()
+            or await interaction.confirm(
+                click.style("\nWould you like to rename the files?", fg="magenta"),
+                default=True,
+            )
         ):
             for folder in folders_to_create:
                 if not os.path.isdir(folder):

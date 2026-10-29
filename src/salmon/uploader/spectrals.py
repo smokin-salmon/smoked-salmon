@@ -852,7 +852,7 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
     hosts = hosts or cfg.image.specs_uploader
     while True:
         ids = (
-            "*"
+            _default_spectral_selection(spectral_ids, lossy_master)
             if await interaction.assume_defaults() and not force_prompt_lossy_master
             else await interaction.prompt(
                 click.style(

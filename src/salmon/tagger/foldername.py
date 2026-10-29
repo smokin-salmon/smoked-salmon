@@ -348,7 +348,7 @@ def _is_folder_name(name: str) -> bool:
 
 async def _edit_folder_interactive(foldername, auto_rename):
     """Allow the user to edit the pending folder name in a text editor."""
-    if auto_rename:
+    if auto_rename or await interaction.assume_defaults():
         return foldername
     if not await interaction.confirm(
         click.style("Is the new folder name acceptable? ([n] to edit)", fg="magenta"),

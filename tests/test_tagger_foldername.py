@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import anyio
+import pytest
 
 from salmon import cfg
 from salmon.tagger import foldername
@@ -68,3 +69,20 @@ def test_hardlink_fallback_survives_a_partial_tree(tmp_path, monkeypatch) -> Non
     assert new_path == str(download_dir / source.name)
     for i, name in enumerate(file_names):
         assert (Path(new_path) / name).read_bytes() == f"content-{i}".encode()
+
+
+@pytest.mark.parametrize("assume", [False, True], ids=["asked", "-yyy"])
+def test_the_new_folder_name_is_accepted_without_asking_under_yyy(monkeypatch, assume) -> None:
+    asked: list[str] = []
+
+    async def confirm(text, **_kwargs):
+        asked.append(text)
+        return True
+
+    monkeypatch.setattr(foldername.interaction, "confirm", confirm)
+
+    with foldername.interaction.assuming_defaults(assume):
+        result = anyio.run(lambda: foldername._edit_folder_interactive("New name", False))
+
+    assert result == "New name"
+    assert len(asked) == (0 if assume else 1)
