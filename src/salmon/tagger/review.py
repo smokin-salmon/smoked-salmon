@@ -482,7 +482,7 @@ def _parse_edited_tracks(text, tracks):
         if len(block) < 3:
             raise ValueError(f"line {block[0][0]}: a track needs a Disc/Track line, a Title line and an Artists line")
         (id_no, ident), (title_no, title), (artists_no, artists_header) = block[:3]
-        r_ident = re.search(r"Disc ([^ ]+) Track ([^ ]+)", ident)
+        r_ident = re.fullmatch(r"Disc ([^ ]+) Track ([^ ]+)", ident)
         if not r_ident:
             raise ValueError(f'line {id_no}: "{ident}" is not a "Disc X Track Y" line')
         discnum, tracknum = r_ident[1], r_ident[2]

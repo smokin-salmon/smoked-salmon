@@ -1,4 +1,5 @@
 import anyio
+import pytest
 
 import salmon.tagger.review as review_module
 from salmon.errors import InvalidMetadataError
@@ -224,3 +225,16 @@ def test_edit_tracks_refuses_a_track_named_twice_and_changes_nothing(monkeypatch
     assert len(confirms) == 1 and '"Disc 1 Track 2" is named twice' in confirms[0]
     assert metadata["tracks"]["1"]["1"]["title"] == "One"
     assert metadata["tracks"]["1"]["2"]["title"] == "Two"
+
+
+@pytest.mark.parametrize("ident", ["Disc 1 Track 1 changed", "x Disc 1 Track 1"])
+def test_edit_tracks_refuses_extra_text_on_the_disc_track_line_and_changes_nothing(monkeypatch, ident) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace("Disc 1 Track 1", ident).replace("Title: One", "Title: Uno")
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and f'line 1: "{ident}" is not a "Disc X Track Y" line' in confirms[0]
+    assert metadata["tracks"]["1"]["1"]["title"] == "One"
