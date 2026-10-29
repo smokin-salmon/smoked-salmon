@@ -275,3 +275,46 @@ def test_spectrals_checked_after_upload_are_deleted_when_none_is_picked(monkeypa
     assert anyio.run(check_after_upload) == (False, None, None, None)
     # Not left in the folder, where the torrent of the next tracker would take them.
     assert not os.path.exists(spectrals.get_spectrals_path(path))
+
+
+@pytest.mark.parametrize(
+    ("configured", "lossy_master", "expected"),
+    [
+        ("3", False, {3}),
+        ("0", False, None),
+        ("0", True, {1, 2, 3, 4}),
+        ("*", False, {1, 2, 3, 4}),
+        (None, True, {1, 2, 3, 4}),
+    ],
+)
+def test_yyy_answers_the_spectral_ids_with_the_default(monkeypatch, configured, lossy_master, expected) -> None:
+    monkeypatch.setattr(spectrals.cfg.image, "default_spectral_ids", configured)
+
+    async def prompt(*_args, **_kwargs):
+        raise AssertionError("asked")
+
+    monkeypatch.setattr(spectrals.interaction, "prompt", prompt)
+
+    with interaction.assuming_defaults():
+        result = anyio.run(spectrals.prompt_spectrals, FOUR_TRACKS, lossy_master, True)
+
+    assert (None if result is None else set(result)) == expected
+
+
+def test_yyy_answers_a_random_third_when_nothing_is_configured(monkeypatch) -> None:
+    monkeypatch.setattr(spectrals.cfg.image, "default_spectral_ids", None)
+
+    with interaction.assuming_defaults():
+        result = anyio.run(spectrals.prompt_spectrals, FOUR_TRACKS, False, True)
+
+    assert result is not None and len(result) == 1
+
+
+@pytest.mark.parametrize(("lossy_master", "offered"), [(False, "0"), (True, "*")])
+def test_none_configured_is_not_offered_for_a_lossy_master(monkeypatch, lossy_master: bool, offered: str) -> None:
+    monkeypatch.setattr(spectrals.cfg.image, "default_spectral_ids", "0")
+    offers = _accept_default(monkeypatch)
+
+    anyio.run(spectrals.prompt_spectrals, FOUR_TRACKS, lossy_master, True)
+
+    assert offers == [offered]

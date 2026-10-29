@@ -496,7 +496,11 @@
     {#if showHelp}
       <p class="hint">
         A dry run changes nothing and sends nothing: each upload's form is printed instead. -yyy answers the yes or no
-        questions with their defaults, as in the terminal; the questions with no default are still asked.
+        questions with their defaults, as in the terminal, and takes the default spectral IDs. It never answers which
+        existing group to upload into (when the group search or the recent-uploads check found something), which
+        metadata result to use, which fields to edit, the source and the encoding when they are not given, and the
+        questions that come up only when something is wrong. With Spectrals after upload on, the lossy master, spectral
+        IDs and lossy approval questions after the upload are still asked.
       </p>
     {/if}
 

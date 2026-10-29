@@ -1050,3 +1050,58 @@ def test_retag_files_writes_uppercase_vorbis_comment_keys(tmp_path):
     assert audio["albumartist"] == ["Album Artist"]
     assert audio["catalognumber"] == ["CAT-1"]
     assert audio["encoder"] == ["reference"]
+
+
+def _refuse_confirm(monkeypatch, asked: list[str]) -> None:
+    async def confirm(text, **_kwargs):
+        asked.append(text)
+        return False
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+
+
+def test_rename_files_with_defaults_renames_without_asking(tmp_path, monkeypatch) -> None:
+    tracks, others, source, expected = DEFAULT_LAYOUT_CASES["single-disc"]
+    tags, metadata = _release(tmp_path, tracks, others)
+    asked: list[str] = []
+    _refuse_confirm(monkeypatch, asked)
+
+    with interaction.assuming_defaults():
+        anyio.run(
+            lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=False, spectral_ids=None, source=source)
+        )
+
+    assert asked == []
+    assert [name for name, _ in _tree(tmp_path)] == expected
+
+
+def test_rename_files_asks_without_defaults(tmp_path, monkeypatch) -> None:
+    tracks, others, source, _expected = DEFAULT_LAYOUT_CASES["single-disc"]
+    tags, metadata = _release(tmp_path, tracks, others)
+    asked: list[str] = []
+    _refuse_confirm(monkeypatch, asked)
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=False, spectral_ids=None, source=source))
+
+    assert len(asked) == 1
+    assert "rename the files" in asked[0]
+
+
+@pytest.mark.parametrize("assume", [False, True], ids=["asked", "-yyy"])
+def test_tag_files_auto_tag_question(monkeypatch, assume) -> None:
+    from salmon.tagger import retagger
+
+    asked: list[str] = []
+    written: list[object] = []
+    _refuse_confirm(monkeypatch, asked)
+    monkeypatch.setattr(retagger, "check_whether_to_tag", lambda tags, metadata: True)
+    monkeypatch.setattr(retagger, "collect_album_data", lambda metadata: {})
+    monkeypatch.setattr(retagger, "create_track_changes", lambda tags, metadata, **kw: {"x": 1})
+    monkeypatch.setattr(retagger, "print_changes", lambda *args: None)
+    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks: written.append(tracks))
+
+    with interaction.assuming_defaults(assume):
+        anyio.run(lambda: tag_files("/unused", {"a.flac": object()}, {}, auto_rename=False))
+
+    assert len(asked) == (0 if assume else 1)
+    assert bool(written) is assume
