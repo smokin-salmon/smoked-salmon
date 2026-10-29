@@ -1,6 +1,8 @@
 import collections
+import dataclasses
 import os
 import posixpath
+import shutil
 import subprocess
 import sys
 import unicodedata
@@ -247,6 +249,17 @@ def warn_unmatched_normalization(form: str, site_code: str) -> None:
         )
 
 
+@dataclasses.dataclass
+class _Outcome:
+    """One queued task and whether it succeeded: False until it has run and worked."""
+
+    seedbox: Seedbox
+    local_path: str
+    task_type: str
+    folder: str
+    ok: bool = False
+
+
 class UploadManager:
     """Collects upload and seed tasks during a session and executes them all at once.
 
@@ -262,6 +275,10 @@ class UploadManager:
         # every seed queued for that seedbox (a folder task's copy failing must not stop the seed
         # of a different release, or a different format of the same release, on the same seedbox).
         self.tasks: collections.deque[tuple[Seedbox, str, str, str]] = collections.deque()
+        # What remove_local_after_copy decides from: every task's outcome (keyed by seedbox identity, path, type
+        # and folder), and every .torrent built from each folder, whether or not a seedbox took it.
+        self._outcomes: dict[tuple[int, str, str, str], _Outcome] = {}
+        self._folder_torrents: dict[str, list[str]] = {}
         if dryrun.active():
             # Setting up a torrent client logs into it. A dry run queues nothing, so it needs none.
             if _enabled_seedboxes():
@@ -326,6 +343,9 @@ class UploadManager:
             raise ValueError("A seed task needs the folder its torrent was built from.")
         click.secho(f"Preparing upload tasks for: {directory}", fg="cyan")
         task_folder = folder if task_type == "seed" and folder else directory
+        torrents = self._folder_torrents.setdefault(task_folder, [])
+        if task_type == "seed" and directory not in torrents:
+            torrents.append(directory)
         for seedbox in _enabled_seedboxes():
             if seedbox.torrent_client not in self._client_cache:
                 continue
@@ -336,6 +356,9 @@ class UploadManager:
             task = (seedbox, directory, task_type, task_folder)
             if task in self.tasks:
                 continue
+            self._outcomes[(id(seedbox), directory, task_type, task_folder)] = _Outcome(
+                seedbox, directory, task_type, task_folder
+            )
             if task_type == "seed":
                 self.tasks.append(task)
                 click.secho("Added seed task", fg="magenta")
@@ -362,12 +385,18 @@ class UploadManager:
             )
             secrets = seedbox_secrets(seedbox)
             try:
+                outcome = self._outcomes.get((id(seedbox), local_path, task_type, folder))
                 if task_type == "folder":
                     if seedbox.type == "rclone":
                         succeeded = await _rclone_upload_folder(seedbox, seedbox.directory, local_path)
                         if not succeeded:
                             failed_folders.add((id(seedbox), folder))
                             failed_copies += 1
+                        elif outcome:
+                            outcome.ok = True
+                    elif outcome:
+                        # A local seedbox copies nothing.
+                        outcome.ok = True
                 elif task_type == "seed":
                     if (id(seedbox), folder) in failed_folders:
                         click.secho(
@@ -398,6 +427,8 @@ class UploadManager:
                     )
                     if not added:
                         failed_seeds += 1
+                    elif outcome:
+                        outcome.ok = True
             except Exception as e:
                 click.secho(f"Critical error during task: {redact_secrets(str(e), secrets)}", fg="red")
                 if task_type == "folder":
@@ -419,3 +450,85 @@ class UploadManager:
         else:
             click.secho("\nAll upload tasks processed", fg="green")
         self.tasks.clear()
+
+    def _kept_reason(self, folder: str) -> str | None:
+        """Why the local copy of a folder must stay, or None when every seedbox has it and seeds it."""
+        download_directory = os.path.realpath(cfg.directory.download_directory)
+        real = os.path.realpath(folder)
+        try:
+            inside = real != download_directory and os.path.commonpath([download_directory, real]) == download_directory
+        except ValueError:  # Different drives on Windows.
+            inside = False
+        if not inside or not os.path.isdir(real) or os.path.islink(folder):
+            return "it is not a folder inside download_directory"
+        if cfg.directory.protects(folder):
+            return "it is a protected folder"
+
+        outcomes = [o for o in self._outcomes.values() if o.folder == folder]
+        # "Took it": queued a copy of it. Whether the copy worked is checked below, so a failure names itself.
+        if not any(
+            o.seedbox.remove_local_after_copy and o.seedbox.type == "rclone" and o.task_type == "folder"
+            for o in outcomes
+        ):
+            return "no seedbox set to remove the local copy took it"
+        for outcome in outcomes:
+            name = _seedbox_display_name(outcome.seedbox, seedbox_secrets(outcome.seedbox))
+            if not outcome.ok and outcome.task_type == "folder":
+                return f"the copy to {name} failed"
+            if not outcome.ok:
+                return f"{name} could not add {os.path.basename(outcome.local_path)}"
+        for outcome in outcomes:
+            if outcome.seedbox.type == "local" and outcome.task_type == "seed":
+                name = _seedbox_display_name(outcome.seedbox, seedbox_secrets(outcome.seedbox))
+                return f"{name} seeds it from download_directory"
+        for torrent in self._folder_torrents.get(folder, []):
+            if not any(o.ok and o.task_type == "seed" and o.local_path == torrent for o in outcomes):
+                return f"{os.path.basename(torrent)} seeds on no seedbox"
+        for seedbox in _enabled_seedboxes():
+            if seedbox.torrent_client not in self._client_cache:
+                return f"{_seedbox_display_name(seedbox, seedbox_secrets(seedbox))} was not configured"
+        return None
+
+    def remove_local_copies(self, keep_because: str | None = None) -> None:
+        """Remove each folder from download_directory that remove_local_after_copy allows, and report each one.
+
+        With keep_because, the run did not end well (a failed upload, an abort, an error): nothing is removed,
+        and each folder is reported kept for that reason.
+
+        Called by `salmon up` after execute_upload, never by cross-upload. A folder goes only when every task for
+        it on every seedbox worked and nothing seeds it from the local copy (see _kept_reason); a dry run queues
+        nothing, so it removes nothing.
+        """
+        if dryrun.active() or not any(
+            seedbox.remove_local_after_copy and seedbox.type == "rclone" for seedbox in _enabled_seedboxes()
+        ):
+            return
+        for folder in self._folder_torrents:
+            reason = keep_because or self._kept_reason(folder)
+            if reason:
+                click.secho(f"remove_local_after_copy is on, but {folder} is kept: {reason}.", fg="yellow")
+                continue
+            names = sorted(
+                {
+                    _seedbox_display_name(o.seedbox, seedbox_secrets(o.seedbox))
+                    for o in self._outcomes.values()
+                    if o.folder == folder and o.task_type == "folder" and o.seedbox.type == "rclone"
+                }
+            )
+            try:
+                shutil.rmtree(folder)
+            except OSError as e:
+                if os.path.exists(folder):
+                    click.secho(
+                        f"remove_local_after_copy is on, but {folder} could not be fully removed and may be "
+                        f"incomplete: {e}.",
+                        fg="red",
+                    )
+                else:
+                    click.secho(f"remove_local_after_copy: {folder} is gone, but removing it raised: {e}.", fg="red")
+                continue
+            click.secho(
+                f"Removed {folder} from download_directory: copied to and seeding on {', '.join(names)} "
+                "(remove_local_after_copy).",
+                fg="yellow",
+            )
