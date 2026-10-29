@@ -333,6 +333,7 @@ class UploadRequests(BaseStruct):
     always_ask_for_request_fill: bool = False
     check_recent_uploads: bool = True
     check_requests: bool = True
+    confirm_new_group: bool = False
     last_minute_dupe_check: bool = False
 
 

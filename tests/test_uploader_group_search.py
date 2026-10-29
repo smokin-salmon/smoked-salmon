@@ -283,12 +283,27 @@ def test_the_search_runs_during_the_checks_and_sends_what_master_sends(monkeypat
 def test_the_site_log_is_read_as_before_when_the_search_finds_nothing(monkeypatch, capsys) -> None:
     tracker = FakeTracker(browse_results=[])
     flow = Flow(monkeypatch, tracker)
+    monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "confirm_new_group", True)
 
     anyio.run(flow.run)
 
     assert Counter(tracker.hits) == Counter(REQUESTS_WHEN_A_GROUP_IS_FOUND + LOG_PAGES)
     assert flow.events == ["checks start", "checks end", "group prompt", "spectral step", "upload"]
     assert _during_the_checks(capsys.readouterr().out) == ""
+
+
+def test_nothing_found_by_the_search_and_the_log_skips_the_question_with_the_same_requests(monkeypatch, capsys) -> None:
+    tracker = FakeTracker(browse_results=[])
+    flow = Flow(monkeypatch, tracker)
+    monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "confirm_new_group", False)
+
+    anyio.run(flow.run)
+
+    assert Counter(tracker.hits) == Counter(REQUESTS_WHEN_A_GROUP_IS_FOUND + LOG_PAGES)
+    assert flow.events == ["checks start", "checks end", "spectral step", "upload"]
+    out = capsys.readouterr().out
+    assert _during_the_checks(out) == ""
+    assert "No group found on RED: new group" in _before_the_spectral_step(out)
 
 
 def test_the_skipped_site_log_is_reported_before_the_spectral_step(monkeypatch, capsys) -> None:
