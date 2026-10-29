@@ -1,5 +1,6 @@
 <script lang="ts">
   import { apiGet, apiPost } from '../lib/api'
+  import { sourcePreset } from '../lib/sourcePreset.svelte'
   import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
@@ -108,6 +109,11 @@
   let groupId = $state('')
   let request = $state('')
   let sourceUrl = $state('')
+  const preset = sourcePreset(
+    () => path,
+    () => source,
+    (found) => (source = found),
+  )
   // Only with a store link: search the stores anyway, as -su without -ss does. This upload only.
   let searchAnyway = $state(false)
   // Transcodes only is --skip-flac-upload, whose group is the one the FLAC is already in.
@@ -351,10 +357,11 @@
       </div>
       <label>
         Source
-        <select bind:value={source}>
+        <select bind:value={source} onchange={() => preset.picked()}>
           <option value="" disabled>Pick one</option>
           {#each options.sources as each (each)}<option value={each}>{each}</option>{/each}
         </select>
+        {#if preset.reason}<small class="hint muted">{preset.reason}</small>{/if}
         {#if showHelp}<small class="hint">The media the files came from (-s).</small>{/if}
       </label>
       <label>

@@ -198,6 +198,7 @@ def test_a_job_with_parameters_its_kind_does_not_take_is_refused(kind: Callable[
         ("POST", "/api/jobs/job-1/discard"),
         ("GET", "/api/jobs/job-1/spectrals/01 Full.png"),
         ("GET", "/api/browse"),
+        ("GET", "/api/source"),
         ("GET", "/api/dashboard"),
         ("GET", "/api/upload/options"),
         ("GET", "/api/ws"),
