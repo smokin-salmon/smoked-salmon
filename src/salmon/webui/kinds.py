@@ -164,12 +164,14 @@ class UploadParams(msgspec.Struct, forbid_unknown_fields=True):
     path: str
     # -s, which the command requires.
     source: str
-    # -t, in order. None: the job asks which tracker, as the command does.
+    # -t, in order, at least one: a web upload never asks which tracker, and offers no other.
     trackers: list[str] = []
     group_id: Annotated[int, msgspec.Meta(gt=0)] | None = None
     skip_flac_upload: bool = False
     request: str | None = None
     source_url: str | None = None
+    # --skip-search: take the metadata from source_url without searching the stores.
+    skip_search: bool = False
     encoding: str | None = None
     lossy: bool | None = None
     spectrals: list[TrackNumber] = []
@@ -263,7 +265,8 @@ def _up_options(params: UploadParams, trackers: tuple[str, ...]) -> dict[str, An
 def _checked_upload(params: UploadParams, dry_run: bool) -> UploadParams:
     """The upload's options as the command's callbacks give them, refused where the command refuses them.
 
-    A tracker the config does not have is refused here, where the command would ask for another in the run.
+    A tracker the config does not have is refused here, where the command would ask for another in the run, and so
+    is an upload with no tracker: the ticked trackers are final, so the run never asks which tracker.
     """
     from salmon.uploader import UpOptions
 
@@ -282,6 +285,8 @@ def _checked_upload(params: UploadParams, dry_run: bool) -> UploadParams:
             raise JobError(400, f"{name} is not a tracker in your config.")
         if code not in trackers:
             trackers.append(code)
+    if not trackers:
+        raise JobError(400, "Pick at least one tracker.")
     conversions: list[str] | None = None
     if params.conversions is not None:
         try:

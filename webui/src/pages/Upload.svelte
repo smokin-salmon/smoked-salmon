@@ -13,6 +13,7 @@
     encodings: string[]
     conversions: string[]
     conversion_kinds: string[]
+    ai_review: boolean
   }
 
   interface Uploaded {
@@ -98,7 +99,7 @@
     return answer.trackers.length ? [answer.trackers[0]] : []
   }
 
-  let options = $state<Options>({ trackers: [], default_trackers: [], sources: [], encodings: [], conversions: [], conversion_kinds: [] })
+  let options = $state<Options>({ trackers: [], default_trackers: [], sources: [], encodings: [], conversions: [], conversion_kinds: [], ai_review: false })
 
   let path = $state('')
   let chosen = $state<string[]>([])
@@ -107,6 +108,10 @@
   let groupId = $state('')
   let request = $state('')
   let sourceUrl = $state('')
+  // Only with a store link: search the stores anyway, as -su without -ss does. This upload only.
+  let searchAnyway = $state(false)
+  // Transcodes only is --skip-flac-upload, whose group is the one the FLAC is already in.
+  let mode = $state<'flac' | 'transcodes'>('flac')
   let encoding = $state('')
   let spectrals = $state('')
   // This upload only: preset from upload.conversions at every visit, never remembered.
@@ -145,11 +150,6 @@
       help: 'Upload audio, logs, cues and artwork only; leave out nfo, sfv, md5, txt and other extras (-eo).',
     },
     {
-      key: 'skip_flac_upload',
-      label: 'Transcodes only',
-      help: 'The FLAC is already in the Group ID group: upload only transcodes of it, into that group (--skip-flac-upload). Needs a group ID and one tracker; not with a request or spectrals after upload.',
-    },
-    {
       key: 'overwrite',
       label: 'Overwrite metadata',
       help: "Take artists, year, label, catalogue number and genres from the scraped sources, not the file tags (-ow).",
@@ -165,14 +165,44 @@
     {
       key: 'skip_initial_review',
       label: 'Skip initial review',
-      help: 'Skip the manual metadata review before the AI review (--skip-initial-review). Only with upload.ai_review on.',
+      help: 'Skip the manual metadata review before the AI review (--skip-initial-review).',
     },
     {
       key: 'apply_ai_suggestions',
       label: 'Apply AI suggestions',
-      help: "Apply the AI review's edits without asking (--apply-ai-suggestions). Only with upload.ai_review on.",
+      help: "Apply the AI review's edits without asking (--apply-ai-suggestions).",
     },
   ]
+
+  const transcodes = $derived(mode === 'transcodes')
+  // The command refuses these with --skip-flac-upload: hidden and not sent in that mode, their values kept.
+  const NOT_WITH_TRANSCODES = ['spectrals_after']
+  const AI_FLAGS = ['skip_initial_review', 'apply_ai_suggestions']
+  /** The flags the form shows: the AI ones only with upload.ai_review on. */
+  const shownFlags = $derived(FLAGS.filter(
+      (f) => (options.ai_review || !AI_FLAGS.includes(f.key)) && !(transcodes && NOT_WITH_TRANSCODES.includes(f.key)),
+    ))
+
+  /** The overrides that differ from their default, by their label: what the Overrides summary names. */
+  const overridden = $derived.by(() => {
+    const set: string[] = []
+    if (mode === 'flac' && groupId.trim()) set.push('group ID')
+    if (!transcodes && request.trim()) set.push('request')
+    if (lossy !== 'ask') set.push('lossy master')
+    if (encoding) set.push('encoding')
+    if (spectrals.trim()) set.push('spectral tracks')
+    if (sourceUrl.trim() && searchAnyway) set.push('search the stores anyway')
+    for (const flag of shownFlags) if (flags[flag.key]) set.push(flag.label.toLowerCase())
+    return set
+  })
+  const summary = $derived(overridden.length ? `Overrides (${overridden.length} set: ${overridden.join(', ')})` : 'Overrides')
+  const canStart = $derived(
+    !!path &&
+      !!source &&
+      (transcodes ? chosen.length === 1 : chosen.length > 0) &&
+      !starting &&
+      (!transcodes || (parseGroupId(groupId) != null && conversions.length > 0)),
+  )
 
   // The job started here, else the newest upload: back on the page, the running upload is shown again.
   // Ported from the fork's Upload page (chodeus, 889cc4f5).
@@ -220,11 +250,23 @@
     return /^\d+$/.test(digits) && Number(digits) > 0 ? Number(digits) : undefined
   }
 
+  /** The flags as sent: the AI ones false when upload.ai_review is off, whatever was ticked before. */
+  function sentFlags(): Record<string, boolean> {
+    const sent: Record<string, boolean> = {}
+    for (const flag of FLAGS) {
+      const hidden = (!options.ai_review && AI_FLAGS.includes(flag.key)) || (transcodes && NOT_WITH_TRANSCODES.includes(flag.key))
+      sent[flag.key] = !!flags[flag.key] && !hidden
+    }
+    return sent
+  }
+
   async function start() {
     error = ''
     const group = parseGroupId(groupId)
-    if (group === undefined) {
-      error = 'The group ID must be a number or a torrents.php?id= link.'
+    if (group === undefined || (transcodes && group === null)) {
+      error = transcodes
+        ? 'Transcodes only needs the group the FLAC is in: a number or a torrents.php?id= link.'
+        : 'The group ID must be a number or a torrents.php?id= link.'
       return
     }
     const tracks = spectrals.split(/[,\s]+/).filter(Boolean).map(Number)
@@ -242,13 +284,16 @@
           source,
           trackers: chosen,
           group_id: group,
-          request: request.trim() || null,
+          request: transcodes ? null : request.trim() || null,
           source_url: sourceUrl.trim() || null,
+          // A store link is taken as it is (-su -ss), unless the stores are to be searched too.
+          skip_search: !!sourceUrl.trim() && !searchAnyway,
+          skip_flac_upload: transcodes,
           encoding: encoding || null,
           lossy: lossy === 'ask' ? null : lossy === 'yes',
           spectrals: tracks,
           conversions,
-          ...flags,
+          ...sentFlags(),
         },
         dry_run: dryRun,
         assume_defaults: assumeDefaults,
@@ -300,15 +345,9 @@
             </label>
           {/each}
         </div>
-        {#if !chosen.length}
-          <small class="hint">
-            None: as salmon up without -t, {options.default_trackers?.length
-              ? `${options.default_trackers.join(', ')} from your config`
-              : 'the job asks which'}.
-          </small>
-        {:else if showHelp}
-          <small class="hint">Uploads to each in turn, and asks about no other tracker (-t).</small>
-        {/if}
+        <small class="hint">
+          Pick at least one. The upload goes to exactly the ticked trackers, in order, and asks about no other (-t).
+        </small>
       </div>
       <label>
         Source
@@ -317,6 +356,14 @@
           {#each options.sources as each (each)}<option value={each}>{each}</option>{/each}
         </select>
         {#if showHelp}<small class="hint">The media the files came from (-s).</small>{/if}
+      </label>
+      <label>
+        Store link
+        <input type="text" bind:value={sourceUrl} placeholder="https://" />
+        <small class="hint">
+          salmon takes the metadata from this link, and searches the stores only if it cannot read it.{#if showHelp}
+            (-su -ss){/if}
+        </small>
       </label>
       <div class="field">
         <span class="label">Conversions</span>
@@ -333,56 +380,95 @@
             Made after the FLAC without asking, also with Transcodes only (--conversions).{/if}
         </small>
       </div>
-      <label>
-        Lossy master
-        <select bind:value={lossy}>
-          <option value="ask">check, and ask</option>
-          <option value="yes">yes</option>
-          <option value="no">no</option>
-        </select>
-        {#if showHelp}<small class="hint">Whether the master is lossy (-l / -L).</small>{/if}
-      </label>
-      <label>
-        Group ID
-        <input type="text" bind:value={groupId} placeholder="a new group" />
-        {#if showHelp}<small class="hint">Upload into this group: an ID or a torrents.php?id= link (-g).</small>{/if}
-      </label>
-      <label>
-        Request
-        <input type="text" bind:value={request} placeholder="none" />
-        {#if showHelp}<small class="hint">The request to fill: a link or an ID (-r).</small>{/if}
-      </label>
-      <label>
-        Source URL
-        <input type="text" bind:value={sourceUrl} placeholder="https://" />
-        {#if showHelp}<small class="hint">Where a WEB release came from, for its description (-su).</small>{/if}
-      </label>
-      <label>
-        Encoding
-        <select bind:value={encoding}>
-          <option value="">lossless, or ask</option>
-          {#each options.encodings as each (each)}<option value={each}>{each}</option>{/each}
-        </select>
-        {#if showHelp}<small class="hint">For lossy files only (-e).</small>{/if}
-      </label>
-      <label>
-        Spectral tracks
-        <input type="text" bind:value={spectrals} placeholder="ask" />
-        {#if showHelp}<small class="hint">The track numbers whose spectrals go in the description, e.g. 1 4 7 (-sp).</small>{/if}
-      </label>
     </div>
 
-    <div class="opts" class:helped={showHelp}>
-      {#each FLAGS as flag (flag.key)}
-        <div class="opt">
-          <label class="check" title={flag.help}>
-            <input type="checkbox" bind:checked={flags[flag.key]} />
-            {flag.label}
-          </label>
-          {#if showHelp}<small class="hint">{flag.help}</small>{/if}
-        </div>
-      {/each}
+    <div class="field mode">
+      <span class="label">Mode</span>
+      <label class="check">
+        <input type="radio" name="mode" value="flac" bind:group={mode} />
+        Upload the FLAC
+      </label>
+      <div class="row wrap">
+        <label class="check">
+          <input type="radio" name="mode" value="transcodes" bind:group={mode} />
+          Transcodes only, into group
+        </label>
+        {#if transcodes}
+          <input type="text" class="inline" bind:value={groupId} placeholder="ID or URL" aria-label="Group ID" />
+        {/if}
+      </div>
+      {#if transcodes}
+        <small class="hint">
+          The FLAC is already in that group: only its transcodes are uploaded, to exactly one ticked tracker, not with a request or
+          spectrals after upload (--skip-flac-upload). Tick at least one conversion.
+        </small>
+      {/if}
     </div>
+
+    <details class="overrides">
+      <summary>{summary}</summary>
+      <div class="grid">
+        {#if !transcodes}
+          <label>
+            Group ID
+            <input type="text" bind:value={groupId} placeholder="a new group" />
+            {#if showHelp}<small class="hint">Upload into this group: an ID or a torrents.php?id= link (-g).</small>{/if}
+          </label>
+        {/if}
+        {#if !transcodes}
+          <label>
+            Request
+            <input type="text" bind:value={request} placeholder="none" />
+            {#if showHelp}<small class="hint">The request to fill: a link or an ID (-r).</small>{/if}
+          </label>
+        {/if}
+        <label>
+          Lossy master
+          <select bind:value={lossy}>
+            <option value="ask">check, and ask</option>
+            <option value="yes">yes</option>
+            <option value="no">no</option>
+          </select>
+          {#if showHelp}<small class="hint">Whether the master is lossy (-l / -L).</small>{/if}
+        </label>
+        <label>
+          Encoding
+          <select bind:value={encoding}>
+            <option value="">lossless, or ask</option>
+            {#each options.encodings as each (each)}<option value={each}>{each}</option>{/each}
+          </select>
+          {#if showHelp}<small class="hint">For lossy files only (-e).</small>{/if}
+        </label>
+        <label>
+          Spectral tracks
+          <input type="text" bind:value={spectrals} placeholder="ask" />
+          {#if showHelp}<small class="hint">The track numbers whose spectrals go in the description, e.g. 1 4 7 (-sp).</small>{/if}
+        </label>
+      </div>
+
+      <div class="opts" class:helped={showHelp}>
+        {#if sourceUrl.trim()}
+          <div class="opt">
+            <label class="check">
+              <input type="checkbox" bind:checked={searchAnyway} />
+              Search the stores anyway
+            </label>
+            {#if showHelp}
+              <small class="hint">The store link then only goes into the description, as -su alone does.</small>
+            {/if}
+          </div>
+        {/if}
+        {#each shownFlags as flag (flag.key)}
+          <div class="opt">
+            <label class="check" title={flag.help}>
+              <input type="checkbox" bind:checked={flags[flag.key]} />
+              {flag.label}
+            </label>
+            {#if showHelp}<small class="hint">{flag.help}</small>{/if}
+          </div>
+        {/each}
+      </div>
+    </details>
 
     <div class="row wrap chips">
       <button class="chip toggle" class:on={dryRun} aria-pressed={dryRun} onclick={() => (dryRun = !dryRun)}>
@@ -409,7 +495,7 @@
     {/if}
 
     <div class="row actions">
-      <button class="btn" onclick={start} disabled={!path || !source || starting}>
+      <button class="btn" onclick={start} disabled={!canStart}>
         {dryRun ? 'Start the dry run' : 'Start the upload'}
       </button>
     </div>
@@ -497,6 +583,20 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
     gap: 0.6rem 1.2rem;
+  }
+  .mode {
+    margin-top: 0.9rem;
+  }
+  .inline {
+    width: 14rem;
+  }
+  .overrides {
+    margin-top: 0.9rem;
+  }
+  .overrides summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-dim);
   }
   .chips {
     margin-top: 0.9rem;

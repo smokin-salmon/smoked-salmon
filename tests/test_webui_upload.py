@@ -55,9 +55,11 @@ from salmon.webui.jobs import FINISHED, Job, JobKind, JobManager
 
 pytestmark = pytest.mark.usefixtures("image_uploads")
 
-# What _run_up gives salmon up besides the album and -t: -s WEB -n --skip-integrity-check --skip-up --source-url.
+# What _run_up gives salmon up besides the album: -t RED (unless a test names its own), -s WEB -n -su
+# --skip-integrity-check --skip-up.
 PARAMS = {
     "source": "WEB",
+    "trackers": ["RED"],
     "auto_rename": True,
     "skip_integrity_check": True,
     "skip_up": True,
@@ -308,7 +310,11 @@ def test_a_web_upload_into_a_group_sends_what_salmon_up_sends(
     assert (first["groupid"], first["requestid"]) == (str(GROUP_ID), "41")
 
 
-def test_the_form_offers_the_trackers_sources_and_encodings_up_takes(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("ai_review", [False, True])
+def test_the_form_offers_the_trackers_sources_and_encodings_up_takes(
+    monkeypatch: pytest.MonkeyPatch, ai_review: bool
+) -> None:
+    monkeypatch.setattr(cfg.upload.ai_review, "enabled", ai_review)
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
     monkeypatch.setattr(cfg.tracker, "default_trackers", ["OPS", "RED"])
     monkeypatch.setattr(cfg.upload, "conversions", ["24bit", "320"])
@@ -324,6 +330,7 @@ def test_the_form_offers_the_trackers_sources_and_encodings_up_takes(monkeypatch
             "encodings": ["V0", "V1", "V2", "320", "256", "192", "320V", "256V", "192V"],
             "conversions": ["24bit", "320"],
             "conversion_kinds": ["24bit", "16bit", "320", "V0"],
+            "ai_review": ai_review,
         }
 
     _web_run(tracker, test)
@@ -478,9 +485,10 @@ def test_a_two_tracker_job_uploads_to_each_in_order(
     assert len(queued) == 12
 
 
-def test_a_job_with_no_tracker_ticked_takes_the_default_trackers(
+def test_a_job_with_no_tracker_ticked_is_refused_before_it_starts(
     monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path]
 ) -> None:
+    """The ticked trackers are final: with none, the default_trackers are not taken and no tracker is asked for."""
     downloads, _library, torrents = roots
     album = _album(downloads / "Album")
     tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
@@ -488,15 +496,36 @@ def test_a_job_with_no_tracker_ticked_takes_the_default_trackers(
     monkeypatch.setattr(cfg.tracker, "default_trackers", ["RED", "OPS"])
 
     async def test(client: TestClient, manager: JobManager) -> None:
-        job, asked = await _drive(client, manager, await _start(client, album, params={}, assume_defaults=True))
-        assert job.status == "done", (job.error, _log(job))
-        # Two group prompts: no question about which tracker, and none left to offer.
-        assert len(asked) == 2
-        assert job.result["trackers"] == ["RED", "OPS"]
-        assert [each["tracker"] for each in job.result["uploads"]] == ["RED"] * 3 + ["OPS"] * 3
+        response = await _post_upload(client, album, params={"trackers": []})
+        assert response.status == 400
+        assert (await response.json())["detail"] == "Pick at least one tracker."
+        assert manager.jobs == {}
 
     _web_run(tracker, test)
-    assert len(_uploads(tracker)) == 6
+    assert tracker.sent == []
+
+
+@pytest.mark.parametrize("skip_search", [True, False])
+def test_skip_search_reaches_the_run(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path], skip_search: bool
+) -> None:
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
+    seen: list[Any] = []
+
+    async def run_up(options: Any) -> None:
+        seen.append(options.skip_search)
+
+    monkeypatch.setattr("salmon.webui.kinds._run_up", run_up)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        params = {"skip_search": True} if skip_search else {}
+        job, _asked = await _drive(client, manager, await _start(client, album, params=params))
+        assert job.status == "done", (job.error, _log(job))
+
+    _web_run(tracker, test)
+    assert seen == [skip_search]
 
 
 def test_a_job_with_one_tracker_ticked_uploads_there_only(
