@@ -154,7 +154,9 @@ def _beatport_scraped(monkeypatch, artists=("Test Artist",)) -> str:
 
 
 def test_beatport_scraped_result_without_a_label_is_listed(monkeypatch) -> None:
-    assert _beatport_scraped(monkeypatch) == "Test Artist - Test Album"
+    line = _beatport_scraped(monkeypatch)
+
+    assert line == "Test Artist - Test Album"
 
 
 def test_beatport_scraped_result_uses_the_various_artist_threshold(monkeypatch) -> None:

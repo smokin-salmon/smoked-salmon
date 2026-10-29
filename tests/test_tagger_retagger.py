@@ -60,7 +60,21 @@ def test_guests_in_the_title_keep_their_order_and_become_various_at_the_threshol
     monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 4)
     track = {"title": "Song", "artists": [("Lead", "main"), *((g, "guest") for g in guests)]}
 
-    assert append_guests_to_track_titles(track) == f"Song (feat. {feat or cfg.upload.formatting.various_artist_word})"
+    title = append_guests_to_track_titles(track)
+
+    assert title == f"Song (feat. {feat or cfg.upload.formatting.various_artist_word})"
+
+
+@pytest.mark.parametrize("title", ["Song (Feat. Alice)", "Song (ft. Alice)"])
+@pytest.mark.parametrize("guests", [2, 5])
+def test_guests_are_not_credited_twice_when_the_title_has_a_feature_credit(monkeypatch, title, guests) -> None:
+    # Only a lowercase "feat" counted, so "Song (Feat. Alice)" gained "(feat. ...)" after it
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 4)
+    track = {"title": title, "artists": [("Lead", "main"), *((f"Guest {i}", "guest") for i in range(guests))]}
+
+    new_title = append_guests_to_track_titles(track)
+
+    assert new_title == title
 
 
 def _tagset(title, tracknumber, discnumber):

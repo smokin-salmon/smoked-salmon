@@ -39,5 +39,6 @@ def test_print_group_info_uses_the_various_artist_threshold(monkeypatch, capsys)
     monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", 3)
 
     anyio.run(print_group_info, cast("Any", FakeSite(("A", "B", "C"))), 1, "CD")
+    out = capsys.readouterr().out
 
-    assert f"(Group 1) {cfg.upload.formatting.various_artist_word} - Hold Fast" in capsys.readouterr().out
+    assert f"(Group 1) {cfg.upload.formatting.various_artist_word} - Hold Fast" in out

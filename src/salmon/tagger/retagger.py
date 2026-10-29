@@ -231,9 +231,14 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
     return changes
 
 
+# A feature credit already in a title, in any case: "feat", "Feat." or "ft."
+_FEATURE_CREDIT = re.compile(r"feat|\bft\.", flags=re.IGNORECASE)
+
+
 def append_guests_to_track_titles(track):
     guest_artists = [a for a, i in track["artists"] if i == "guest"]
-    if "feat" not in track["title"] and guest_artists:
+    # This looked for "feat" alone, so "Song (Feat. Alice)" gained a second credit
+    if not _FEATURE_CREDIT.search(track["title"]) and guest_artists:
         # If we find a remix parenthetical, remove it and re-add it after the guest artists.
         remix = re.search(r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE)
         if remix:
