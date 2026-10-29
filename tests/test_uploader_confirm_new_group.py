@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon import cfg
 from salmon.errors import LoginError, RequestFailedError
 from salmon.trackers.base import BaseGazelleApi
-from salmon.uploader import dupe_checker
+from salmon.uploader import dupe_checker, recheck_dupe
 
 SEARCHSTRS = dupe_checker.generate_dupe_check_searchstrs([["Artist", "main"]], "Title")
 
@@ -131,7 +131,8 @@ def test_nothing_found_by_either_check_goes_to_a_new_group_without_asking(asked:
 
     assert group_id is None
     assert asked.count == 0
-    assert "No group found on RED: new group" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "No group found on RED: new group" in out
 
 
 def test_the_tracker_gets_the_same_requests_with_the_key_on_and_off(
@@ -205,7 +206,8 @@ def test_a_failing_search_is_not_a_new_group(asked: Asked, capsys) -> None:
     _raises(lambda: _check(FakeTracker(search_fails=True)), RequestFailedError)
 
     assert asked.count == 0
-    assert "No group found" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "No group found" not in out
 
 
 def test_the_resolve_step_asks_when_the_log_was_not_read(asked: Asked) -> None:
@@ -214,10 +216,47 @@ def test_the_resolve_step_asks_when_the_log_was_not_read(asked: Asked) -> None:
     async def run() -> None:
         api = FakeApi("http://127.0.0.1:1", cookie="good")
         try:
-            assert await dupe_checker.resolve_existing_group(api, SEARCHSTRS, [], None) is None
+            group_id = await dupe_checker.resolve_existing_group(api, SEARCHSTRS, [], None)
+            assert group_id is None
         finally:
             await api.close()
 
     anyio.run(run)
 
     assert asked.count == 1
+
+
+def _recheck(tracker: FakeTracker) -> tuple[int | None, list[str]]:
+    """recheck_dupe after a review that changed the title: the search strings it was given no longer fit."""
+
+    async def run() -> tuple[int | None, list[str]]:
+        api = FakeApi(await tracker.start(), cookie="good")
+        metadata = {"artists": [["Artist", "main"]], "title": "Reviewed Title", "catno": None}
+        try:
+            return await recheck_dupe(api, SEARCHSTRS, metadata), tracker.hits
+        finally:
+            await api.close()
+            await tracker.runner.cleanup()
+
+    return anyio.run(run)
+
+
+def test_the_recheck_after_a_review_skips_the_question_when_nothing_is_found(asked: Asked, capsys) -> None:
+    group_id, hits = _recheck(FakeTracker())
+
+    out = capsys.readouterr().out
+    assert group_id is None
+    assert asked.count == 0
+    assert "No group found on RED: new group" in out
+    assert any("reviewed" in hit.lower() for hit in hits)
+    assert any(hit.startswith("/log.php") for hit in hits)
+
+
+def test_the_recheck_after_a_review_asks_with_the_key_on(asked: Asked, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cfg.upload.requests, "confirm_new_group", True)
+
+    group_id, hits = _recheck(FakeTracker())
+
+    assert group_id is None
+    assert asked.count == 1
+    assert any(hit.startswith("/log.php") for hit in hits)
