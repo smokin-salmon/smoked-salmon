@@ -546,3 +546,12 @@ def test_refusing_a_lost_track_treats_01_and_1_as_one_slot():
 
     with pytest.raises(TrackCombineError, match="would hold two local tracks"):
         _refuse_renumbering_that_loses_a_track([kept, moved], mtracks, [moved], False, True)
+
+
+def test_refusing_a_lost_track_treats_disc_01_and_1_as_one_disc():
+    kept = local_files("1", disc="01")["01"]["1"]
+    moved = local_files("7", numbered=False, disc="1")["1"]["7"]
+    mtracks = [source_track("S", "1", 1, 1)]
+
+    with pytest.raises(TrackCombineError, match="would hold two local tracks"):
+        _refuse_renumbering_that_loses_a_track([kept, moved], mtracks, [moved], False, True)

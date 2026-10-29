@@ -242,13 +242,14 @@ def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
     A usable source: its number when `update_track_numbers`, else the file's own. An unusable source: a file
     numbered by its own TRACKNUMBER tag keeps it, and any other file gets its place (1..n) among the paired
     tracks of its disc, in the source's order."""
-    seen: dict[str, int] = {}
+    seen: dict[int | str, int] = {}
     result = []
     for mtrack, btrack in zip(mtracks, ordered, strict=True):
         if btrack is None:
             result.append(None)
             continue
-        seen[btrack["disc#"]] = place = seen.get(btrack["disc#"], 0) + 1
+        disc = _norm(btrack["disc#"])
+        seen[disc] = place = seen.get(disc, 0) + 1
         if usable:
             new_num = mtrack["track#"] if (update_track_numbers and mtrack["track#"]) else btrack["track#"]
         elif btrack.get("numbered", True):
@@ -259,10 +260,14 @@ def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
     return result
 
 
+def _norm(value):
+    """A disc or track number as a key: "01" and "1" are one number, so compare decimal numbers by value."""
+    text = str(value)
+    return int(text) if text.isascii() and text.isdecimal() else text
+
+
 def _slot(disc, num):
-    """A disc and track number as a slot: "01" and "1" are one track, so compare decimal numbers by value."""
-    text = str(num)
-    return (disc, int(text) if text.isascii() and text.isdecimal() else text)
+    return (_norm(disc), _norm(num))
 
 
 def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, usable, update_track_numbers):

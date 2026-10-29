@@ -245,7 +245,7 @@ def test_edit_tracks_refuses_extra_text_on_the_disc_track_line_and_changes_nothi
     [
         ("Title: One", "x Title: One", 2),
         ("> A (main)", "x > A (main)", 4),
-        ("> A (main)", "> A (main) extra", 4),
+        ("> A (main)", "> A (main)extra", 4),
     ],
 )
 def test_edit_tracks_refuses_extra_text_on_title_and_artist_lines(monkeypatch, old, new, line) -> None:
