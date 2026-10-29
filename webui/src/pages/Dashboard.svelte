@@ -14,6 +14,8 @@
     tools: { required: Record<string, boolean>; optional: Record<string, boolean> }
     jobs: Record<string, number>
     max_jobs: number
+    config_warnings: string[]
+    config_path: string | null
   }
 
   /** What the connection check found for one tracker (`salmon checkconf -t`). */
@@ -41,6 +43,14 @@
   })
 
   const missing = $derived(overview ? Object.values(overview.tools.required).filter((found) => !found).length : 0)
+
+  // A warning is text, never HTML: split it around its URLs and render the links as anchors.
+  function parts(line: string): { text: string; href?: string }[] {
+    return line
+      .split(/(https?:\/\/[^\s)]+)/)
+      .filter(Boolean)
+      .map((text) => (/^https?:\/\//.test(text) ? { text, href: text } : { text }))
+  }
 
   function usedPercent(space: Space): number | null {
     if (space.free_bytes === null || !space.total_bytes) return null
@@ -128,6 +138,22 @@
 {:else if !overview}
   <p class="muted">Loading…</p>
 {:else}
+  {#if overview.config_warnings.length}
+    <div class="card">
+      <h2>Config warnings</h2>
+      {#each overview.config_warnings as line (line)}
+        <p class="small warning">
+          {#each parts(line) as part, i (i)}{#if part.href}<a href={part.href} target="_blank" rel="noopener noreferrer"
+                >{part.text}</a
+              >{:else}{part.text}{/if}{/each}
+        </p>
+      {/each}
+      {#if overview.config_path}
+        <p class="muted small">Config file: <span class="mono">{overview.config_path}</span></p>
+      {/if}
+    </div>
+  {/if}
+
   <div class="tiles">
     <div class="tile {running ? 'run' : ''}">
       <span class="figure">{running}<span class="of">/{overview.max_jobs}</span></span>
@@ -301,6 +327,9 @@
   }
   .small {
     font-size: 0.85rem;
+  }
+  .warning {
+    overflow-wrap: anywhere;
   }
   td.mono,
   td.problem {
