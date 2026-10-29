@@ -449,32 +449,63 @@ async def _edit_tracks(metadata):
         if not text_tracks:
             return
         try:
-            tracks_li = [tr for tr in re.split("\n-+\n", text_tracks) if tr.strip()]
-            for track_tx in tracks_li:
-                ident, title, _, *artists_li = [t.strip() for t in track_tx.split("\n") if t.strip()]
-                r_ident = re.search(r"Disc ([^ ]+) Track ([^ ]+)", ident)
-                if not r_ident:
-                    raise ValueError("Invalid track identifier format")
-                discnum, tracknum = r_ident[1], r_ident[2]
-                title_match = re.search(r"Title *: *(.+)", title)
-                if not title_match:
-                    raise ValueError("Invalid title format")
-                metadata["tracks"][discnum][tracknum]["title"] = title_match[1]
-
-                tuples_artists_list = []
-                for artist_line in artists_li:
-                    artist_line_name, artist_line_role = artist_line.rsplit(" ", 1)
-                    role_match = re.search(r"\((.+)\)", artist_line_role)
-                    name_match = re.search(r"> *(.+)", artist_line_name)
-                    if not role_match or not name_match:
-                        raise ValueError("Invalid artist format")
-                    tuples_artists_list.append((name_match[1], role_match[1].lower()))
-                metadata["tracks"][discnum][tracknum]["artists"] = tuples_artists_list
-            metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
-            return
-        except (TypeError, ValueError, KeyError) as e:
+            edits = _parse_edited_tracks(text_tracks, metadata["tracks"])
+        except ValueError as e:
             await interaction.confirm(
-                click.style(f"The tracks file is invalid ({type(e)}: {e}), retry?", fg="red"),
+                click.style(f"The tracks file is invalid ({e}), retry?", fg="red"),
                 default=True,
                 abort=True,
             )
+            continue
+        # Nothing is applied before all of the text is valid, so an error leaves the metadata as it was.
+        for discnum, tracknum, title, artists in edits:
+            metadata["tracks"][discnum][tracknum]["title"] = title
+            metadata["tracks"][discnum][tracknum]["artists"] = artists
+        metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
+        return
+
+
+def _parse_edited_tracks(text, tracks):
+    """The (disc, track, title, artists) of each block of the edited tracks text.
+
+    Raises ValueError, whose message says what is wrong and on which line, before anything is applied."""
+    blocks: list[list[tuple[int, str]]] = [[]]
+    for number, line in enumerate(text.split("\n"), 1):
+        if re.fullmatch(r"-+", line.strip()):
+            blocks.append([])
+        elif line.strip():
+            blocks[-1].append((number, line.strip()))
+
+    edits = []
+    seen: set[tuple[str, str]] = set()
+    for block in filter(None, blocks):
+        if len(block) < 3:
+            raise ValueError(f"line {block[0][0]}: a track needs a Disc/Track line, a Title line and an Artists line")
+        (id_no, ident), (title_no, title), (artists_no, artists_header) = block[:3]
+        r_ident = re.fullmatch(r"Disc ([^ ]+) Track ([^ ]+)", ident)
+        if not r_ident:
+            raise ValueError(f'line {id_no}: "{ident}" is not a "Disc X Track Y" line')
+        discnum, tracknum = r_ident[1], r_ident[2]
+        if tracknum not in tracks.get(discnum, {}):
+            raise ValueError(
+                f'line {id_no}: "Disc {discnum} Track {tracknum}" is not a track of this release: the Disc/Track '
+                "lines can't be changed, only the titles and artists under them."
+            )
+        if (discnum, tracknum) in seen:
+            raise ValueError(f'line {id_no}: "Disc {discnum} Track {tracknum}" is named twice')
+        seen.add((discnum, tracknum))
+        title_match = re.fullmatch(r"Title *: *(.+)", title)
+        if not title_match:
+            raise ValueError(f'line {title_no}: "{title}" is not a "Title: ..." line')
+        if not re.fullmatch(r"Artists *:", artists_header):
+            raise ValueError(f'line {artists_no}: "{artists_header}" is not the "Artists:" line')
+        artists = []
+        for artist_no, artist_line in block[3:]:
+            name_part, _, role_part = artist_line.rpartition(" ")
+            role_match = re.fullmatch(r"\((.+)\)", role_part)
+            name_match = re.fullmatch(r"> *(.+)", name_part)
+            if not role_match or not name_match:
+                raise ValueError(f'line {artist_no}: "{artist_line}" is not an artist line like "> Name (role)"')
+            artists.append((name_match[1], role_match[1].lower()))
+        edits.append((discnum, tracknum, title_match[1], artists))
+    return edits

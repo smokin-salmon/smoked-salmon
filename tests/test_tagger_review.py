@@ -1,4 +1,5 @@
 import anyio
+import pytest
 
 import salmon.tagger.review as review_module
 from salmon.errors import InvalidMetadataError
@@ -129,3 +130,132 @@ def test_the_artist_editor_points_to_aliases_for_renames(monkeypatch) -> None:
     _metadata, printed = _run_review(monkeypatch, ["a", "n"], lambda text: text)
 
     assert any("a[L]iases" in line for line in printed)
+
+
+def _tracks_metadata() -> dict:
+    metadata = make_metadata()
+    metadata["tracks"] = {
+        "1": {
+            "1": {"title": "One", "artists": [("A", "main")], "disc#": "1", "track#": "1"},
+            "2": {"title": "Two", "artists": [("A", "main")], "disc#": "1", "track#": "2"},
+        }
+    }
+    return metadata
+
+
+def _edit_tracks_with(monkeypatch, metadata, edits):
+    """Run `_edit_tracks`, the editor returning each of `edits` in turn (given the text it was shown)."""
+    shown: list[str] = []
+    confirms: list[str] = []
+    replies = iter(edits)
+
+    async def fake_edit(text, **_kwargs):
+        shown.append(text)
+        return next(replies)(text)
+
+    async def fake_confirm(message, **_kwargs):
+        confirms.append(str(message))
+        return True
+
+    monkeypatch.setattr(review_module.interaction, "edit", fake_edit)
+    monkeypatch.setattr(review_module.interaction, "confirm", fake_confirm)
+    anyio.run(review_module._edit_tracks, metadata)
+    return shown, confirms
+
+
+def test_edit_tracks_applies_a_valid_edit(monkeypatch) -> None:
+    metadata = _tracks_metadata()
+    _edit_tracks_with(monkeypatch, metadata, [lambda text: text.replace("Title: One", "Title: Uno")])
+    assert metadata["tracks"]["1"]["1"]["title"] == "Uno"
+    assert metadata["tracks"]["1"]["2"]["title"] == "Two"
+
+
+def test_edit_tracks_refuses_a_changed_track_number_and_reopens_the_edited_text(monkeypatch) -> None:
+    metadata = _tracks_metadata()
+
+    def bad(text):
+        return text.replace("Disc 1 Track 1", "Disc 1 Track S").replace("Title: Two", "Title: Deux")
+
+    def fixed(text):
+        return text.replace("Track S", "Track 1")
+
+    shown, confirms = _edit_tracks_with(monkeypatch, metadata, [bad, fixed])
+
+    assert len(confirms) == 1
+    assert '"Disc 1 Track S" is not a track of this release' in confirms[0]
+    assert "can't be changed, only the titles and artists under them" in confirms[0]
+    assert "ValueError" not in confirms[0] and "<class" not in confirms[0]
+    assert "Title: Deux" in shown[1] and "Track S" in shown[1]
+    assert metadata["tracks"]["1"]["2"]["title"] == "Deux"  # applied once the retry is valid
+
+
+def test_edit_tracks_applies_nothing_when_a_later_line_is_broken(monkeypatch) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace("Title: One", "Title: Uno").replace("Title: Two", "Two")
+
+    _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert metadata["tracks"]["1"]["1"]["title"] == "One"
+    assert metadata["tracks"]["1"]["2"]["title"] == "Two"
+
+
+def test_edit_tracks_refuses_a_deleted_artists_line_and_changes_nothing(monkeypatch) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace("Title: One", "Title: Uno").replace("Artists:\n> A (main)", "> A (main)", 1)
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and 'is not the "Artists:" line' in confirms[0]
+    assert metadata["tracks"]["1"]["1"]["title"] == "One"
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("A", "main")]
+
+
+def test_edit_tracks_refuses_a_track_named_twice_and_changes_nothing(monkeypatch) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace("Disc 1 Track 1", "Disc 1 Track 2").replace("Title: One", "Title: Uno")
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and '"Disc 1 Track 2" is named twice' in confirms[0]
+    assert metadata["tracks"]["1"]["1"]["title"] == "One"
+    assert metadata["tracks"]["1"]["2"]["title"] == "Two"
+
+
+@pytest.mark.parametrize("ident", ["Disc 1 Track 1 changed", "x Disc 1 Track 1"])
+def test_edit_tracks_refuses_extra_text_on_the_disc_track_line_and_changes_nothing(monkeypatch, ident) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace("Disc 1 Track 1", ident).replace("Title: One", "Title: Uno")
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and f'line 1: "{ident}" is not a "Disc X Track Y" line' in confirms[0]
+    assert metadata["tracks"]["1"]["1"]["title"] == "One"
+
+
+@pytest.mark.parametrize(
+    ("old", "new", "line"),
+    [
+        ("Title: One", "x Title: One", 2),
+        ("> A (main)", "x > A (main)", 4),
+        ("> A (main)", "> A (main)extra", 4),
+    ],
+)
+def test_edit_tracks_refuses_extra_text_on_title_and_artist_lines(monkeypatch, old, new, line) -> None:
+    metadata = _tracks_metadata()
+
+    def broken(text):
+        return text.replace(old, new, 1).replace("Title: Two", "Title: Deux")
+
+    _shown, confirms = _edit_tracks_with(monkeypatch, metadata, [broken, lambda _text: ""])
+
+    assert len(confirms) == 1 and f"line {line}: " in confirms[0] and new in confirms[0]
+    assert metadata["tracks"]["1"]["2"]["title"] == "Two"
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("A", "main")]
