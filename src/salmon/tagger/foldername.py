@@ -289,10 +289,14 @@ async def remove_source_folder(
         return
     shutil.rmtree(source)
     click.secho(f"Removed the source folder {source} (remove_source_dir).", fg="yellow")
-    # Local: the converter package imports this module. With the folder gone, its conversion record goes too.
-    from salmon.converter.conversions import carry_conversion
+    # Local: the converter package imports this module. With the folder gone, its conversion record goes too: to
+    # the renamed folder, unless remove_local_after_copy has removed that one already.
+    from salmon.converter.conversions import carry_conversion, forget_conversion
 
-    carry_conversion(source, final)
+    if os.path.isdir(final):
+        carry_conversion(source, final)
+    else:
+        forget_conversion(source)
 
 
 def _kept_reason(original: str) -> str:

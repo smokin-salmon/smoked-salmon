@@ -2,6 +2,7 @@
 
 Why it is kept is said as in #680."""
 
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ import anyio
 import pytest
 
 from salmon import cfg, dryrun, interaction
+from salmon.converter import conversions
 from salmon.tagger import foldername
 
 NEW_NAME = "Artist - Album (2020) [WEB FLAC]"
@@ -211,3 +213,19 @@ def test_the_setting_off_says_nothing_new(monkeypatch, dirs, capsys) -> None:
     assert "Removed the source folder" not in out
     assert album.exists()
     assert asked == []
+
+
+def test_a_renamed_folder_removed_already_gets_no_conversion_record(dirs) -> None:
+    # remove_local_after_copy removed the renamed folder, and its record, before the end of the run.
+    downloads, seeding = dirs
+    album = _album(seeding / "Album")
+    conversions.record_conversion(str(album), source="/x/src", kind="downconvert", bit_depth=16, sample_rate=44100)
+    new_path = _rename(album)
+    shutil.rmtree(new_path)
+    shutil.rmtree(downloads / conversions.REGISTRY_DIR)
+
+    _remove(album, new_path)
+
+    assert not album.exists()
+    assert conversions.conversion_of(str(album)) is None
+    assert conversions.conversion_of(new_path) is None

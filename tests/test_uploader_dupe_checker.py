@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, cast
 import anyio
 import pytest
 
+from salmon.errors import SkipTracker
 from salmon.uploader import dupe_checker
 from salmon.uploader.dupe_checker import (
     _prompt_for_recent_upload_results,
@@ -183,3 +184,24 @@ def test_held_formats_tell_editions_apart_by_their_fields(flac_fields, mp3_field
     found = dupe_checker.held_formats(group, _HELD_RELEASE, {"id": 1}, {"MP3 320": ("MP3", "320")}, uploaded=True)
 
     assert found == held
+
+
+def test_the_recent_upload_prompt_offers_to_skip_the_tracker_only_when_asked(monkeypatch: pytest.MonkeyPatch) -> None:
+    texts: list[str] = []
+    answers = iter(["s", "n", "s"])
+
+    async def fake_prompt(text: str, *_args, **_kwargs) -> str:
+        texts.append(text)
+        return next(answers)
+
+    monkeypatch.setattr(dupe_checker.click, "prompt", fake_prompt)
+    gazelle_site = cast("BaseGazelleApi", cast("object", FakeGazelleSite()))
+
+    # Not offered: "s" is no answer, and the prompt asks again.
+    assert anyio.run(_prompt_for_recent_upload_results, gazelle_site, [], "some search", False) is None
+    assert len(texts) == 2
+    assert "[s]kip this tracker" not in texts[0]
+
+    with pytest.raises(SkipTracker):
+        anyio.run(_prompt_for_recent_upload_results, gazelle_site, [], "some search", False, True)
+    assert "[s]kip this tracker" in texts[2]

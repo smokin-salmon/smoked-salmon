@@ -14,6 +14,7 @@ import asyncclick as click
 from salmon import cfg, dryrun
 from salmon.common.redaction import redact_command, redact_secrets, secret_values, url_secrets
 from salmon.config.validations import Seedbox
+from salmon.converter.conversions import forget_conversion
 from salmon.errors import DryRunRefused
 from salmon.uploader.torrent_client import TorrentClient, TorrentClientGenerator
 from salmon.webui import output
@@ -527,6 +528,7 @@ class UploadManager:
                 else:
                     click.secho(f"remove_local_after_copy: {folder} is gone, but removing it raised: {e}.", fg="red")
                 continue
+            forget_conversion(folder)
             click.secho(
                 f"Removed {folder} from download_directory: copied to and seeding on {', '.join(names)} "
                 "(remove_local_after_copy).",

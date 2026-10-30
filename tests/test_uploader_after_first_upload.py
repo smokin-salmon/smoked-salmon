@@ -39,6 +39,7 @@ from salmon.uploader.seedbox import UploadManager
 pytestmark = pytest.mark.usefixtures("image_uploads")
 
 DELETE = "[d]elete music folder"
+SKIP = "[s]kip this tracker"
 ANOTHER_TRACKER = "Would you like to upload to another tracker?"
 
 
@@ -301,6 +302,49 @@ def test_aborting_after_an_upload_keeps_the_source_folder(monkeypatch, tmp_path,
     assert "Aborting: nothing more is uploaded. Already uploaded:" in run.result.output
     assert f"remove_source_dir is on, but {album} is kept: the run was aborted." in run.result.output
     assert album.is_dir()
+
+
+def test_skipping_the_next_tracker_at_its_group_prompt_finishes_the_run(monkeypatch, tmp_path, dirs) -> None:
+    # OPS already has the release: skipping it is not an abort, so the source goes, while the local copies stay.
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    seedbox_runs = _seedbox_runs(monkeypatch)
+    removals = _removals(monkeypatch)
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+    album = _album(tmp_path / "Album")
+
+    run = _run_up(monkeypatch, album, torrents, input="\nOPS\ns\n")
+
+    assert run.result.exit_code == 0, run.result.output
+    output = run.result.output
+    # Offered once something is up, never before.
+    assert SKIP not in output[: output.index(ANOTHER_TRACKER)]
+    assert SKIP in output[output.index(ANOTHER_TRACKER) :]
+    assert "Skipping upload to OPS." in output
+    assert "Aborting" not in output
+    assert len(_uploads(run)) == 3
+    assert seedbox_runs == [True]
+    assert removals == ["the upload to OPS failed or was skipped"]
+    assert f"Removed the source folder {album} (remove_source_dir)." in output
+    assert not album.exists()
+
+
+def test_skipping_the_next_tracker_at_its_group_confirmation(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    _trackers(monkeypatch, "RED", "OPS")
+    _seedbox_runs(monkeypatch)
+    removals = _removals(monkeypatch)
+
+    # OPS: group 55, then skip at "Are you sure ...?"
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, input="\nOPS\n55\ns\n")
+
+    assert run.result.exit_code == 0, run.result.output
+    output = run.result.output
+    confirmation = output[output.index("Are you sure you would you like to upload this torrent to this group?") :]
+    assert SKIP in confirmation
+    assert "Skipping upload to OPS." in confirmation
+    assert len(_uploads(run)) == 3
+    assert removals == ["the upload to OPS failed or was skipped"]
 
 
 def test_the_check_after_the_upload_does_not_offer_to_delete_the_folder_and_abort_ends_the_run(
