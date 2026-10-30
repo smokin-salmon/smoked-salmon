@@ -468,3 +468,19 @@ def test_a_backup_name_that_cannot_be_claimed_fails_that_file_alone(monkeypatch,
     assert sanitized is False
     assert flac.read_bytes() == b"fLaC original"
     assert "no backup name could be claimed" in capsys.readouterr().out
+
+
+def test_a_working_copy_that_cannot_be_made_fails_that_mp3_alone(monkeypatch, tmp_path, capsys) -> None:
+    original = tmp_path / "01.mp3"
+    original.write_bytes(b"the original")
+
+    def refused(*_args: object, **_kwargs: object) -> tuple[int, str]:
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(integrity.tempfile, "mkstemp", refused)
+
+    sanitized = anyio.run(integrity._sanitize_mp3, str(original))
+
+    assert sanitized is False
+    assert original.read_bytes() == b"the original"
+    assert "no working copy could be made" in capsys.readouterr().out

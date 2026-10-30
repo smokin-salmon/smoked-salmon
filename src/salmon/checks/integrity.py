@@ -589,7 +589,12 @@ async def _sanitize_mp3(path: str) -> bool:
     Returns:
         True if sanitization succeeded, False otherwise.
     """
-    handle, work = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".salmon-sanitize-", suffix=".mp3")
+    try:
+        handle, work = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".salmon-sanitize-", suffix=".mp3")
+    except OSError as e:
+        # This file's failure, not the folder's: raised, it would stop the others being sanitized.
+        click.secho(f"Failed to sanitize {path}: no working copy could be made ({e})", fg="red", bold=True)
+        return False
     os.close(handle)
     try:
         # copy2: the copy has the original's times, which mp3val -t keeps on the fixed file.
