@@ -185,6 +185,63 @@ def print_recent_upload_results(gazelle_site: "BaseGazelleApi", recent_uploads: 
             )
 
 
+def _group_actions(offer_deletion: bool, offer_skip: bool) -> list[interaction.Option]:
+    """New group, Skip this tracker, Abort and Delete music folder, as the group questions offer them."""
+    return [
+        interaction.Option("n", "New group", action=True, empty=True),
+        *((interaction.Option("s", "Skip this tracker", action=True),) if offer_skip else ()),
+        interaction.Option("a", "Abort", action=True),
+        *((interaction.Option("d", "Delete music folder", action=True, danger=True),) if offer_deletion else ()),
+    ]
+
+
+def _search_result_options(gazelle_site: "BaseGazelleApi", results: list[dict]) -> list[interaction.Option]:
+    """Every search result as a card for salmon web, numbered as print_search_results numbers them.
+
+    The CLI reads each of these numbers as its row, printed or not, so each is listed: a row that cannot be described
+    (print_search_results skips it) shows its number, and its link when it has a group ID.
+    """
+    group = f"Search results on {gazelle_site.site_string}"
+    described = []
+    for number, r in enumerate(results, 1):
+        try:
+            link: str | None = f"{gazelle_site.base_url}/torrents.php?id={r['groupId']}"
+        except (KeyError, TypeError):
+            link = None
+        try:
+            label = html.unescape(f"{r['artist']} - {r['groupName']}")
+            fields = (
+                ("Year", html.unescape(str(r["groupYear"]))),
+                ("Release type", html.unescape(str(r["releaseType"]))),
+                ("Tags", html.unescape(", ".join(r["tags"]))),
+            )
+            card: interaction.Card | None = interaction.Card(fields, link=link)
+        except (KeyError, TypeError):
+            label, card = f"Result {number}", interaction.Card(link=link) if link else None
+        described.append(interaction.Option(str(number), label, group=group, card=card))
+    return described
+
+
+def _recent_upload_options(gazelle_site: "BaseGazelleApi", recent_uploads: list[tuple]) -> list[interaction.Option]:
+    """Every recent upload as a card for salmon web: the first five are printed, the CLI reads any of them as its row.
+
+    The rows past the fifth show their number and link only, so a typed number is never read as one of them.
+    """
+    group = f"Recent uploads on {gazelle_site.site_string}"
+    return [
+        interaction.Option(
+            str(number),
+            html.unescape(f"{u[1]} - {u[2]}") if number <= 5 else f"Recent upload {number}",
+            group=group,
+            card=interaction.Card(
+                link=f"{gazelle_site.base_url}/torrents.php?torrentid={u[0]}",
+                note="Not an exact group match" if number <= 5 else None,
+            ),
+        )
+        for number, u in enumerate(recent_uploads, 1)
+    ]
+
+
 async def _prompt_for_recent_upload_results(
     gazelle_site: "BaseGazelleApi",
     recent_uploads: list[tuple],
@@ -234,6 +291,10 @@ async def _prompt_for_recent_upload_results(
         group_id = await interaction.prompt(
             click.style(prompt_text, fg="magenta"),
             default="",
+            options=interaction.Options(
+                (*_recent_upload_options(gazelle_site, recent_uploads), *_group_actions(offer_deletion, offer_skip)),
+                free_text=interaction.FreeText("Group URL or ID", ids=True),
+            ),
         )
 
         # Handle numeric input (selecting from recent uploads or direct group ID)
@@ -630,11 +691,20 @@ async def _prompt_for_group_id(
                 fg="magenta",
             ),
             default=default,
+            options=interaction.Options(
+                (*_search_result_options(gazelle_site, results), *_group_actions(offer_deletion, offer_skip)),
+                free_text=interaction.FreeText("Group URL or ID", ids=True),
+            ),
         )
         if group_id.strip().isdigit():
             raw_input = int(group_id)
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
+                if results[list_index].get("groupId") is None:
+                    click.secho(
+                        f"Result {list_index + 1} has no group ID: pick another, or paste a group URL.", fg="red"
+                    )
+                    continue
                 return int(results[list_index]["groupId"])
             else:
                 click.echo(f"Interpreting {raw_input} as a group Id")
@@ -1004,7 +1074,7 @@ async def _confirm_group_id(
     """
     rset = None
     for r in results:
-        if group_id == r["groupId"]:
+        if group_id == r.get("groupId"):
             rset = r
             break
 

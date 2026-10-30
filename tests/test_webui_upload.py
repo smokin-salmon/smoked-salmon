@@ -663,7 +663,8 @@ def test_a_lost_answer_still_ends_the_job_as_unknown_outcome_when_the_run_is_abo
     monkeypatch.setattr(base, "_LOST_UPLOAD_SECOND_WAIT", 0)
     tracker = AnsweringTracker(uploads=(lambda: web.Response(status=502, text="Bad gateway"),))
     fake_upload_world(monkeypatch, torrents, tracker=tracker)
-    answers = iter(["", "a"])
+    # The group question is described: its abort is a pick, as the page sends it.
+    answers = iter(["", {"picks": ["a"], "texts": [], "mark": None}])
 
     async def test(client: TestClient, manager: JobManager) -> None:
         # RED's upload loses its answer; the run goes on to OPS, whose group question is answered with abort.

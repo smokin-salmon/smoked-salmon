@@ -709,3 +709,218 @@ def test_every_key_of_tracker_choice_is_accepted(monkeypatch: pytest.MonkeyPatch
         result, terminal, _described = ask(monkeypatch, site, [key])
         assert (key, result) == (key, outcome)
         assert len(terminal.calls) == 1
+
+
+# #7 dupe_checker._prompt_for_group_id and _prompt_for_recent_upload_results: upload to an existing group
+
+SEARCH_RESULTS: list[dict[str, Any]] = [
+    {
+        "groupId": 21,
+        "artist": "Tom &amp; Jerry",
+        "groupName": "Cat &amp; Mouse",
+        "groupYear": 2020,
+        "releaseType": "Album",
+        "tags": ["pop", "rock &amp; roll"],
+    },
+    {"groupId": 22, "artist": "Broken"},
+    {"groupId": 23, "artist": "B", "groupName": "Two", "groupYear": 2019, "releaseType": "EP", "tags": []},
+]
+RECENT_UPLOADS = [(31, "Artist", "Album"), (32, "Other", "Thing &amp; More")]
+
+
+def recent_site() -> Any:
+    async def redirect(torrent_id: Any) -> int:
+        return int(torrent_id) + 1000
+
+    return SimpleNamespace(site_string="RED", base_url="https://red.test", get_redirect_torrentgroupid=redirect)
+
+
+def search_group(
+    results: list[dict[str, Any]] | None = None,
+    offer_deletion: bool = True,
+    default: str = "",
+    offer_skip: bool = False,
+) -> Callable[[], Awaitable[Any]]:
+    rows = SEARCH_RESULTS if results is None else results
+    return partial(dupe_checker._prompt_for_group_id, SITE, rows, offer_deletion, default, offer_skip)
+
+
+def recent_group(
+    recent: list[tuple] | None = None, offer_deletion: bool = True, offer_skip: bool = False
+) -> Callable[[], Awaitable[Any]]:
+    rows = RECENT_UPLOADS if recent is None else recent
+    return partial(
+        dupe_checker._prompt_for_recent_upload_results, recent_site(), rows, "some search", offer_deletion, offer_skip
+    )
+
+
+def group_text(offer_deletion: bool, offer_skip: bool, found: bool = True) -> str:
+    return (
+        "\nWould you like to upload to an existing group?\n"
+        f"Paste a URL{', pick from groups found ' if found else ''}"
+        f"or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
+        f"{'/ [d]elete music folder ' if offer_deletion else ''}"
+    )
+
+
+def recent_text(offer_deletion: bool, offer_skip: bool) -> str:
+    return (
+        "\nThese are similar recent uploads from the site log, not exact group matches.\n"
+        "Pick one only if it is actually the same group.\n"
+        "Pick from recent uploads found, paste a URL"
+        f" or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
+        f"{'/ [d]elete music folder ' if offer_deletion else ''}"
+    )
+
+
+@pytest.mark.parametrize("offer_deletion", [True, False])
+@pytest.mark.parametrize("offer_skip", [True, False])
+@pytest.mark.parametrize("default", ["", "3"])
+def test_search_group_question_asks_as_on_master(
+    monkeypatch: pytest.MonkeyPatch, offer_deletion: bool, offer_skip: bool, default: str
+) -> None:
+    result, terminal, _described = ask(monkeypatch, search_group(None, offer_deletion, default, offer_skip), ["n"])
+    assert result is None
+    assert terminal.calls == [prompt_call(group_text(offer_deletion, offer_skip), default)]
+
+
+@pytest.mark.parametrize("offer_deletion", [True, False])
+@pytest.mark.parametrize("offer_skip", [True, False])
+def test_recent_uploads_question_asks_as_on_master(
+    monkeypatch: pytest.MonkeyPatch, offer_deletion: bool, offer_skip: bool
+) -> None:
+    result, terminal, _described = ask(monkeypatch, recent_group(None, offer_deletion, offer_skip), ["n"])
+    assert result is None
+    assert terminal.calls == [prompt_call(recent_text(offer_deletion, offer_skip), "")]
+
+
+@pytest.mark.parametrize("offer_deletion", [True, False])
+@pytest.mark.parametrize("offer_skip", [True, False])
+def test_every_key_of_the_search_group_question_is_accepted(
+    monkeypatch: pytest.MonkeyPatch, offer_deletion: bool, offer_skip: bool
+) -> None:
+    site = search_group(None, offer_deletion, "", offer_skip)
+    _result, _terminal, described = ask(monkeypatch, site, ["n"])
+    options = described.options[0]
+    # Row 2 is not printed (a KeyError): listed by number and link only, so a typed 2 is never read as that row.
+    assert keys(options) == [
+        ("1", "Tom & Jerry - Cat & Mouse"),
+        ("2", "Result 2"),
+        ("3", "B - Two"),
+        ("n", "New group"),
+        *([("s", "Skip this tracker")] if offer_skip else []),
+        ("a", "Abort"),
+        *([("d", "Delete music folder")] if offer_deletion else []),
+    ]
+    assert options is not None
+    assert {option.group for option in options.items[:3]} == {"Search results on RED"}
+    assert options.items[1].card == interaction.Card(link="https://red.test/torrents.php?id=22")
+    assert options.items[0].card == interaction.Card(
+        (("Year", "2020"), ("Release type", "Album"), ("Tags", "pop, rock & roll")),
+        link="https://red.test/torrents.php?id=21",
+    )
+    assert [(o.key, o.action, o.danger, o.empty) for o in options.items[3:]] == [
+        ("n", True, False, True),
+        *([("s", True, False, False)] if offer_skip else []),
+        ("a", True, False, False),
+        *([("d", True, True, False)] if offer_deletion else []),
+    ]
+    assert options.free_text == interaction.FreeText("Group URL or ID", ids=True)
+    expected = {"1": 21, "2": 22, "3": 23, "n": None, "a": click.Abort}
+    expected |= {"s": SkipTracker} if offer_skip else {}
+    expected |= {"d": AbortAndDeleteFolder} if offer_deletion else {}
+    for key, outcome in expected.items():
+        result, terminal, _described = ask(monkeypatch, site, [key])
+        assert (key, result) == (key, outcome)
+        assert len(terminal.calls) == 1
+    # What the web sends as a text: a group URL, or an ID above every numbered key.
+    for text, outcome in {"https://red.test/torrents.php?id=42": 42, "4": 4}.items():
+        result, terminal, _described = ask(monkeypatch, site, [text])
+        assert (text, result) == (text, outcome)
+    if not offer_skip:
+        # Without the offer, an s is not read as a skip, as on master.
+        result, terminal, _described = ask(monkeypatch, site, ["s", "n"])
+        assert result is None
+        assert len(terminal.calls) == 2
+
+
+@pytest.mark.parametrize("offer_deletion", [True, False])
+@pytest.mark.parametrize("offer_skip", [True, False])
+def test_every_key_of_the_recent_uploads_question_is_accepted(
+    monkeypatch: pytest.MonkeyPatch, offer_deletion: bool, offer_skip: bool
+) -> None:
+    site = recent_group(None, offer_deletion, offer_skip)
+    _result, _terminal, described = ask(monkeypatch, site, ["n"])
+    options = described.options[0]
+    assert keys(options) == [
+        ("1", "Artist - Album"),
+        ("2", "Other - Thing & More"),
+        ("n", "New group"),
+        *([("s", "Skip this tracker")] if offer_skip else []),
+        ("a", "Abort"),
+        *([("d", "Delete music folder")] if offer_deletion else []),
+    ]
+    assert options is not None
+    assert {option.group for option in options.items[:2]} == {"Recent uploads on RED"}
+    assert options.items[0].card == interaction.Card(
+        link="https://red.test/torrents.php?torrentid=31", note="Not an exact group match"
+    )
+    assert options.items[2].empty and options.free_text == interaction.FreeText("Group URL or ID", ids=True)
+    expected = {"1": 1031, "2": 1032, "n": None, "a": click.Abort, "3": 3, "https://red.test/torrents.php?id=42": 42}
+    expected |= {"s": SkipTracker} if offer_skip else {}
+    expected |= {"d": AbortAndDeleteFolder} if offer_deletion else {}
+    for key, outcome in expected.items():
+        result, terminal, _described = ask(monkeypatch, site, [key])
+        assert (key, result) == (key, outcome)
+        assert len(terminal.calls) == 1
+
+
+def test_recent_uploads_past_the_fifth_are_listed_by_number_and_link_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The CLI prints five but reads a number up to the list's length as that row: the web must not send 6 as an ID.
+    rows = [(n, "A", f"T{n}") for n in range(1, 8)]
+    _result, _terminal, described = ask(monkeypatch, recent_group(rows), ["n"])
+    options = described.options[0]
+    assert [key for key, _label in keys(options)][:8] == ["1", "2", "3", "4", "5", "6", "7", "n"]
+    assert options is not None
+    assert options.items[5].card == interaction.Card(link="https://red.test/torrents.php?torrentid=6")
+    assert options.items[5].label == "Recent upload 6"
+
+
+def test_picking_a_search_row_without_a_group_id_asks_again(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    rows = [{"artist": "Broken"}, *SEARCH_RESULTS[:1]]
+    result, terminal, _described = ask(monkeypatch, search_group(rows), ["1", "2"])
+    assert result == 21
+    assert len(terminal.calls) == 2
+    out = capsys.readouterr().out
+    assert "Result 1 has no group ID: pick another, or paste a group URL." in out
+
+
+def test_confirming_a_group_does_not_fail_on_an_earlier_row_without_a_group_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A row without a groupId before the match used to raise KeyError while the picked row was looked up.
+    results = [{"artist": "Broken"}, GROUP]
+    printed: list[dict | None] = []
+
+    async def fake_print_torrents(_site: Any, _group_id: int, rset: dict | None = None, *_args: Any) -> dict:
+        printed.append(rset)
+        return rset or GROUP
+
+    monkeypatch.setattr(dupe_checker, "print_torrents", fake_print_torrents)
+    for group_id in (7, 99):  # a picked row, then a typed group ID that is in no row
+        printed.clear()
+        site = partial(dupe_checker._confirm_group_id, SITE, group_id, results)
+        result, terminal, _described = ask(monkeypatch, site, ["y"])
+        assert result is True
+        assert len(terminal.calls) == 1
+        assert printed == [GROUP if group_id == 7 else None]
+
+
+def test_the_group_questions_with_yyy_ask_as_on_master(monkeypatch: pytest.MonkeyPatch) -> None:
+    # -yyy is not read by these prompts: the same call is made, with the same default, as without it.
+    result, terminal, _described = ask(monkeypatch, search_group(None, True, "3"), [""], yyy=True)
+    assert result is None
+    assert terminal.calls == [prompt_call(group_text(True, False), "3")]
+    result, terminal, _described = ask(monkeypatch, recent_group(), [""], yyy=True)
+    assert result is None
+    assert terminal.calls == [prompt_call(recent_text(True, False), "")]
