@@ -312,9 +312,10 @@ def test_a_pasted_url_to_an_internal_address_is_refused_in_an_upload_job(
     )
     store = FakeStore()
 
-    def answer(question: dict[str, Any]) -> str:
+    def answer(question: dict[str, Any]) -> Any:
         if "Paste URLs" in question["text"]:
-            return store.url(f"/album/x?token={PLANTED['qobuz']}")
+            # The URL typed in the question's Store URL field (#759).
+            return {"picks": [], "texts": [store.url(f"/album/x?token={PLANTED['qobuz']}")], "mark": None}
         return ""
 
     async def test(client: TestClient, manager: JobManager) -> None:

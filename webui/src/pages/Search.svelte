@@ -13,6 +13,8 @@
   interface Source {
     name: string
     status: 'found' | 'none' | 'inactive' | 'failed'
+    // In upload.search.preferred_sources: listed first, and marked.
+    preferred: boolean
     releases: Release[]
   }
 
@@ -195,7 +197,7 @@
 {#if searched}
   {#each searched.sources as source (source.name)}
     <div class="card">
-      <h2>{source.name}</h2>
+      <h2>{source.name}{#if source.preferred}&nbsp;<span class="muted">(preferred)</span>{/if}</h2>
       {#if source.status !== 'found'}
         <p class="muted">{STATUS[source.status]}</p>
       {:else}
