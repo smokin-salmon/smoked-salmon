@@ -237,7 +237,7 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
         raise NoncompliantFolderStructure
     if root_chars:
         click.secho(
-            "The release folder's own name cannot be renamed here. Run again and accept the proposed folder name.",
+            "Rename the release folder without these characters (or remove them from folder_template), then run again.",
             fg="red",
             bold=True,
         )
