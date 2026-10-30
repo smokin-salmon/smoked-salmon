@@ -287,6 +287,7 @@ def _stub_transcode(monkeypatch, out, items):
         return None
 
     monkeypatch.setattr(tc, "_validate_lossless", lambda _path: None)
+    monkeypatch.setattr(tc, "_validate_channel_count", lambda _items: None)
     monkeypatch.setattr(tc, "_build_output_path", lambda *_a: str(out))
     monkeypatch.setattr(tc, "_collect_transcode_items", lambda *_a: items)
     monkeypatch.setattr(tc, "_copy_extra_files", lambda *_a, **_k: None)
@@ -596,6 +597,7 @@ def test_parallel_conversions_keep_each_others_records(tmp_path, monkeypatch) ->
         await anyio.sleep(0)
 
     monkeypatch.setattr(tc, "_validate_lossless", lambda _path: None)
+    monkeypatch.setattr(tc, "_validate_channel_count", lambda _items: None)
     monkeypatch.setattr(tc, "_build_output_path", lambda path, bitrate, *_a: f"{path} [{bitrate}]")
     monkeypatch.setattr(
         tc, "_collect_transcode_items", lambda path, new: [SimpleNamespace(src=f"{path}/01.flac", dst=f"{new}/01.mp3")]

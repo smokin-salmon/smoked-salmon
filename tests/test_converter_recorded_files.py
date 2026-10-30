@@ -10,11 +10,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
 import anyio
+import asyncclick as click
 import pytest
 from test_uploader_shortened_conversions import _write_flac  # pyright: ignore[reportMissingImports]
 
 import salmon.uploader as uploader
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.converter import conversions
 from salmon.converter import downconverting as dc
 from salmon.converter import transcoding as tc
@@ -222,19 +223,73 @@ def test_a_recorded_transcode_missing_a_file_is_refused_not_removed(made, tmp_pa
     assert _snapshot(out) == before
 
 
-def test_a_transcode_without_a_record_missing_a_file_is_made_again(made, tmp_path, capsys) -> None:
+def test_a_transcode_without_a_record_missing_a_file_is_made_again(made, tmp_path, monkeypatch, capsys) -> None:
     album = _album(tmp_path)
     out = _transcode(album, tmp_path)
     os.remove(conversions._sidecar(str(out)))
     (out / "02. two.mp3").unlink()
     made.clear()
+    # A folder salmon has no record of is deleted only once the user says so.
+    asked: list[str] = []
+    monkeypatch.setattr(click, "confirm", lambda text, **_kwargs: asked.append(text) or True)
 
     again = _transcode(album, tmp_path)
 
+    assert len(asked) == 1
     assert again == out
     assert sorted(made) == ["01. " + LONG + ".mp3", "02. two.mp3"]
     assert (out / "02. two.mp3").is_file()
     assert "exists but appears incomplete, re-transcoding" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("assume_defaults", "answer", "refusal"),
+    [(True, None, "with -yyy"), (False, False, "Not overwriting existing folder"), (False, True, None)],
+    ids=["yyy_takes_the_default_no", "told_no", "told_yes"],
+)
+def test_a_folder_that_is_not_the_expected_transcode_goes_only_when_the_user_says_so(
+    made, tmp_path, monkeypatch, assume_defaults: bool, answer: bool | None, refusal: str | None
+) -> None:
+    album = _album(tmp_path)
+    existing = Path(tc._build_output_path(str(album), "V0", str(tmp_path)))
+    existing.mkdir(parents=True)
+    # Not salmon's: e.g. an upload made with another file template, which the user may be seeding.
+    (existing / "01 - seeding.mp3").write_bytes(b"seeded")
+    asked: list[str] = []
+
+    def confirm(text: str, **_kwargs: Any) -> bool | None:
+        asked.append(click.unstyle(text))
+        return answer
+
+    monkeypatch.setattr(click, "confirm", confirm)
+
+    async def run() -> str:
+        with interaction.assuming_defaults(assume_defaults):
+            return await tc.transcode_folder(str(album), "V0", output_dir=str(tmp_path))
+
+    if refusal is None:
+        anyio.run(run)
+        assert not (existing / "01 - seeding.mp3").exists()
+    else:
+        with pytest.raises(UploadError, match=refusal):
+            anyio.run(run)
+        assert (existing / "01 - seeding.mp3").read_bytes() == b"seeded"
+    assert len(asked) == (0 if assume_defaults else 1)
+
+
+def test_a_folder_is_never_removed_for_a_transcode_that_would_write_nothing(made, tmp_path, monkeypatch) -> None:
+    album = _album(tmp_path)
+    existing = Path(tc._build_output_path(str(album), "V0", str(tmp_path)))
+    existing.mkdir(parents=True)
+    (existing / "01 - seeding.mp3").write_bytes(b"seeded")
+    monkeypatch.setattr(tc, "_collect_transcode_items", lambda _path, _new_path: [])
+    # Whatever the user would answer: nothing would take the folder's place.
+    monkeypatch.setattr(click, "confirm", lambda _text, **_kwargs: True)
+
+    with pytest.raises(UploadError, match="no expected MP3 output"):
+        _transcode(album, tmp_path)
+
+    assert (existing / "01 - seeding.mp3").read_bytes() == b"seeded"
 
 
 def test_an_old_record_is_reused_by_its_names(made, tmp_path, capsys) -> None:
