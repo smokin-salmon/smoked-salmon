@@ -8,14 +8,12 @@ from urllib.parse import parse_qs, urlsplit
 import aiohttp
 import asyncclick as click
 import msgspec
-from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
 from salmon import cfg
 from salmon.common import handle_scrape_errors
 from salmon.config import get_user_cfg_path
 from salmon.errors import ScrapeError
-from salmon.proxy import session_kwargs
 from salmon.sources.base import BaseScraper
 
 
@@ -65,7 +63,13 @@ class TokenStorage(msgspec.Struct):
         return {"Authorization": f"Bearer {self.bearer}"}
 
 
+def _sentence(error: Exception) -> str:
+    """An error's text ending in one full stop, whether or not it had one."""
+    return str(error).rstrip(". \n") + "."
+
+
 class BeatportBase(BaseScraper):
+    store = "Beatport"
     proxy_service = "beatport"
     api_domain = "https://api.beatport.com"
     url = api_domain + "/v4"
@@ -82,32 +86,61 @@ class BeatportBase(BaseScraper):
         Loads the TokenStorage from the disk.
         Refreshes the token if expired.
         If it doesn't exist, runs the initial setup.
-        :return: TokenStorage containing a valid bearer token, or None if no credentials configured
+        :return: TokenStorage containing a valid bearer token, or None for the scraper: no credentials configured,
+            or the login or the refresh failed (the scraper needs no token)
         """
-        token_storage = TokenStorage.load() or await self.initial_setup()
+        token_storage = TokenStorage.load()
+        if not token_storage:
+            try:
+                token_storage = await self.initial_setup()
+            except ScrapeError as e:
+                click.secho(f"Beatport login failed: {_sentence(e)} Using the scraper.", fg="yellow")
+                return None
         if token_storage and token_storage.expires < time() + 10:  # leave some wiggle room
-            token_storage = await self.refresh_bearer_token(token_storage)
+            try:
+                token_storage = await self.refresh_bearer_token(token_storage)
+            except ScrapeError as e:
+                click.secho(
+                    f"Beatport token refresh failed: {_sentence(e)} Using the scraper. If this repeats, delete "
+                    f"{TokenStorage._get_storage_file()} so salmon logs in again.",
+                    fg="yellow",
+                )
+                return None
         return token_storage
+
+    async def _token_storage(self, resp: aiohttp.ClientResponse, client_id: str) -> TokenStorage:
+        """The TokenStorage a token endpoint answered with, saved.
+
+        Raises:
+            ScrapeError: If the endpoint failed or answered with something other than a token.
+        """
+        json = await self.handle_json_response(resp)
+        try:
+            return TokenStorage.from_response(json, client_id)
+        except (KeyError, TypeError) as e:
+            raise ScrapeError(f"Beatport: unexpected token response ({type(e).__name__}).") from e
 
     async def refresh_bearer_token(self, token_storage: TokenStorage) -> TokenStorage:
         """
         Refreshes a TokenStorage's bearer token. The new tokens are saved automatically.
         :param token_storage:
         :return: new TokenStorage with valid credentials.
+        :raises ScrapeError: If the refresh fails.
         """
         click.secho("Refreshing Beatport token", fg="yellow")
-        async with aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session:
-            headers = token_storage.get_auth_header()
-            payload = {
-                "client_id": token_storage.client_id,
-                "refresh_token": token_storage.refresh_token,
-                "grant_type": "refresh_token",
-            }
-            resp = await session.post(self.url + "/auth/o/token/", headers=headers, data=payload)
-            json = await self.handle_json_response(resp)
-            return TokenStorage.from_response(json, token_storage.client_id)
+        headers = token_storage.get_auth_header()
+        payload = {
+            "client_id": token_storage.client_id,
+            "refresh_token": token_storage.refresh_token,
+            "grant_type": "refresh_token",
+        }
+        async with (
+            self._session() as session,
+            session.post(self.url + "/auth/o/token/", headers=headers, data=payload) as resp,
+        ):
+            return await self._token_storage(resp, token_storage.client_id)
 
-    async def _get_client_id(self, session: ClientSession) -> str:
+    async def _get_client_id(self, session: aiohttp.ClientSession) -> str:
         """
         Scrapes the OAuth client ID used by the API docs
         :param session:
@@ -118,24 +151,26 @@ class BeatportBase(BaseScraper):
 
         for script in soup.find_all("script", src=True):
             url = self.api_domain + str(script.get("src"))
-            resp = await session.get(url)
-            text = await resp.text("utf-8")
+            async with session.get(url) as resp:
+                text = await resp.text("utf-8")
             client_id_matches = client_id_pattern.findall(text)
             if client_id_matches:
                 return client_id_matches[0]
-        raise Exception("Failed to find beatport client ID")
+        raise ScrapeError("Failed to find beatport client ID")
 
     async def initial_setup(self) -> TokenStorage | None:
         """
         Initial beatport setup. Uses user credentials to acquire a valid TokenStorage, which can be refreshed later.
         :return: TokenStorage containing valid auth tokens. It is persisted automatically.
+        :raises ScrapeError: If a step of the login fails.
         """
         username = cfg.metadata.beatport.username
         password = cfg.metadata.beatport.password
         if not username or not password:  # Not configured
             return None
 
-        async with aiohttp.ClientSession(**session_kwargs(self.proxy_service)) as session:
+        # One session from the script fetches on: the login's cookies are what the authorize step is answered with.
+        async with self._session() as session:
             click.secho("Logging into Beatport for the first time", fg="green")
 
             # Step 1: get client id from the docs. if this ever fails, we want it to fail first
@@ -145,8 +180,8 @@ class BeatportBase(BaseScraper):
             # Step 2: login with username / password to set cookies
             click.secho("Logging in...")
             payload = {"username": username, "password": password}
-            resp = await session.post(self.url + "/auth/login/", json=payload)
-            await self.handle_json_response(resp)
+            async with session.post(self.url + "/auth/login/", json=payload) as resp:
+                await self.handle_json_response(resp)
 
             # Step 3: get authorization code from the docs' OAuth request
             params = {
@@ -154,22 +189,22 @@ class BeatportBase(BaseScraper):
                 "redirect_uri": self.oauth_redirect_uri,
                 "response_type": "code",
             }
-            resp = await session.get(self.url + "/auth/o/authorize/", params=params, allow_redirects=False)
-            if resp.status < 300 or resp.status >= 400:
-                data = await resp.read()
-                soup = BeautifulSoup(data, "lxml")
-                error = (soup.find("body") or soup).get_text("\n")
-                raise Exception(f"Error during beatport OAuth flow:\n{error}")
-
-            location = resp.headers.get("location")
+            async with session.get(self.url + "/auth/o/authorize/", params=params, allow_redirects=False) as resp:
+                if resp.status < 300 or resp.status >= 400:
+                    data = await resp.read()
+                    soup = BeautifulSoup(data, "lxml")
+                    error = (soup.find("body") or soup).get_text("\n")
+                    raise ScrapeError(f"Error during beatport OAuth flow:\n{error}")
+                location = resp.headers.get("location")
             if not location:
-                raise Exception(
+                raise ScrapeError(
                     f"Error during beatport OAuth flow: status is {resp.status}, but Location header is missing"
                 )
             parsed = urlsplit(location)
             code = parse_qs(parsed.query).get("code")
             if not code:
-                raise Exception(f"Error during beatport OAuth flow: no authorization code in redirect: {location}")
+                # The redirect is not repeated: it is a URL, with its query
+                raise ScrapeError("Error during beatport OAuth flow: no authorization code in the redirect")
 
             # Step 4: finish code grant flow
             payload = {
@@ -178,9 +213,8 @@ class BeatportBase(BaseScraper):
                 "redirect_uri": self.oauth_redirect_uri,
                 "grant_type": "authorization_code",
             }
-            resp = await session.post(self.url + "/auth/o/token/", data=payload)
-            json = await self.handle_json_response(resp)
-            token_storage = TokenStorage.from_response(json, client_id)
+            async with session.post(self.url + "/auth/o/token/", data=payload) as resp:
+                token_storage = await self._token_storage(resp, client_id)
 
         click.secho("Done! Salmon will remember this login.", fg="green")
         return token_storage

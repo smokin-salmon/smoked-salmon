@@ -5,6 +5,7 @@ from salmon.sources.base import BaseScraper
 
 
 class BandcampBase(BaseScraper):
+    store = "Bandcamp"
     proxy_service = "bandcamp"
     is_json_api = False
     search_url = "https://bandcamp.com/search/"

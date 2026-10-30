@@ -1,4 +1,6 @@
 import re
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from random import choice
 from string import Formatter
 from typing import Any
@@ -36,6 +38,39 @@ class BaseScraper:
     is_json_api: bool = True
     # The store's key in [proxy.services], whose proxy its sessions go through. None for no proxy.
     proxy_service: str | None = None
+    # Seconds each request made through _session may take in all, unless the caller of _session passes its own.
+    timeout: float = 10
+    # The store's name in error messages ("Apple Music"), so a multi-store search says which one failed; None: the
+    # class's name.
+    store: str | None = None
+
+    @classmethod
+    @asynccontextmanager
+    async def _session(cls, timeout: float | None = None) -> AsyncIterator[aiohttp.ClientSession]:
+        """An aiohttp session with the store's timeout and proxy; its aiohttp errors and timeouts become ScrapeError.
+
+        It adds no headers, parameters or status checks: each caller keeps its own. A ScrapeError raised inside
+        passes through. aiohttp puts the request URL, query included, in some of its error texts, so a message
+        names the error type, except a refused internal address, which names the host.
+
+        Args:
+            timeout: Seconds for each request in all; ``timeout`` (10) when None.
+
+        Raises:
+            ScrapeError: If a request in the session fails or times out.
+        """
+        total = cls.timeout if timeout is None else timeout
+        name = cls.store or cls.__name__
+        try:
+            async with aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=total), **session_kwargs(cls.proxy_service)
+            ) as session:
+                yield session
+        except ssrf.NonPublicAddressError as e:
+            # Names the host it refused, never the URL.
+            raise ScrapeError(f"{name}: {e}") from e
+        except (TimeoutError, aiohttp.ClientError) as e:
+            raise ScrapeError(f"{name}: Request failed ({type(e).__name__}).") from e
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
@@ -68,7 +103,10 @@ class BaseScraper:
             except Exception:
                 error_data = None
             raise ScrapeError(error_msg, error_data)
-        return msgspec.json.decode(await resp.read())
+        try:
+            return msgspec.json.decode(await resp.read())
+        except msgspec.DecodeError as e:
+            raise ScrapeError(f"{self.store or self.__class__.__name__}: Did not receive JSON from API.") from e
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         """Make async GET request to JSON API.
@@ -90,22 +128,8 @@ class BaseScraper:
         params = {k: v for k, v in params.items() if v is not None}  # remove None values before serializing
         headers = {**(headers or {}), **HEADERS}
         full_url = url if url.startswith(("http://", "https://")) else self.url + url
-        timeout = aiohttp.ClientTimeout(total=10)
-        try:
-            async with (
-                aiohttp.ClientSession(timeout=timeout, **session_kwargs(self.proxy_service)) as session,
-                session.get(full_url, params=params, headers=headers) as resp,
-            ):
-                return await self.handle_json_response(resp)
-        except aiohttp.ContentTypeError as e:
-            raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
-        except msgspec.DecodeError as e:
-            raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
-        except ssrf.NonPublicAddressError as e:
-            raise ScrapeError(f"{self.__class__.__name__}: {e}") from e
-        except (TimeoutError, aiohttp.ClientError) as e:
-            # aiohttp repeats the request URL, query params included; name the type only.
-            raise ScrapeError(f"{self.__class__.__name__}: Request failed ({type(e).__name__}).") from e
+        async with self._session() as session, session.get(full_url, params=params, headers=headers) as resp:
+            return await self.handle_json_response(resp)
 
     async def fetch_page(
         self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
@@ -125,23 +149,14 @@ class BaseScraper:
             ScrapeError: If scraping fails.
         """
         params = params or {}
-        timeout = aiohttp.ClientTimeout(total=7)
-        try:
-            async with (
-                aiohttp.ClientSession(timeout=timeout, **session_kwargs(self.proxy_service)) as session,
-                session.get(
-                    url,
-                    params=params,
-                    headers=headers or HEADERS,
-                    allow_redirects=follow_redirects,
-                ) as r,
-            ):
-                if r.status != 200:
-                    raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
-                data = await r.read()
-                return BeautifulSoup(data, "lxml")
-        except (TimeoutError, aiohttp.ClientError) as e:
-            raise ScrapeError(f"Failed to scrape page: {e}") from e
+        async with (
+            self._session(timeout=7) as session,
+            session.get(url, params=params, headers=headers or HEADERS, allow_redirects=follow_redirects) as r,
+        ):
+            if r.status != 200:
+                raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
+            data = await r.read()
+            return BeautifulSoup(data, "lxml")
 
     async def fetch_data(
         self,

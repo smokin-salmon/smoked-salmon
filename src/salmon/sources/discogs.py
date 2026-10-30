@@ -9,6 +9,7 @@ from salmon.sources.base import BaseScraper
 
 
 class DiscogsBase(BaseScraper):
+    store = "Discogs"
     proxy_service = "discogs"
     url = "https://api.discogs.com"
     site_url = "https://www.discogs.com"

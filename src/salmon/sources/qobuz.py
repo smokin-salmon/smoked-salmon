@@ -12,6 +12,7 @@ _PLACEHOLDER_USER_AUTH_TOKEN = "user_auth_token"
 
 
 class QobuzBase(BaseScraper):
+    store = "Qobuz"
     proxy_service = "qobuz"
     url = "https://www.qobuz.com/api.json/0.2"
     site_url = "https://www.qobuz.com"

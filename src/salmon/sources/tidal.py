@@ -9,7 +9,6 @@ import msgspec
 from salmon import cfg
 from salmon.common.urls import parse_retry_after
 from salmon.errors import ScrapeError
-from salmon.proxy import session_kwargs
 from salmon.sources.base import BaseScraper
 
 # Tidal V2 mediaTags, best quality first.
@@ -54,6 +53,7 @@ class _UnauthorizedError(ScrapeError):
 
 
 class TidalBase(BaseScraper):
+    store = "Tidal"
     proxy_service = "tidal"
     url = "https://openapi.tidal.com/v2"
     token_url = "https://auth.tidal.com/v1/oauth2/token"
@@ -77,24 +77,20 @@ class TidalBase(BaseScraper):
         async with cls._token_lock:
             if TidalBase._access_token and monotonic() < TidalBase._token_expiry - 60:
                 return TidalBase._access_token
-            timeout = aiohttp.ClientTimeout(total=10)
-            try:
-                async with (
-                    aiohttp.ClientSession(timeout=timeout, **session_kwargs(cls.proxy_service)) as session,
-                    session.post(
-                        cls.token_url,
-                        data={
-                            "grant_type": "client_credentials",
-                            "client_id": cfg.metadata.tidal.client_id,
-                            "client_secret": cfg.metadata.tidal.client_secret,
-                        },
-                    ) as resp,
-                ):
-                    body = await resp.read()
-                    if resp.status != 200:
-                        raise ScrapeError(f"Tidal authentication failed (HTTP {resp.status}).")
-            except (TimeoutError, aiohttp.ClientError) as e:
-                raise ScrapeError(f"Tidal authentication failed: {e}") from e
+            async with (
+                cls._session() as session,
+                session.post(
+                    cls.token_url,
+                    data={
+                        "grant_type": "client_credentials",
+                        "client_id": cfg.metadata.tidal.client_id,
+                        "client_secret": cfg.metadata.tidal.client_secret,
+                    },
+                ) as resp,
+            ):
+                body = await resp.read()
+                if resp.status != 200:
+                    raise ScrapeError(f"Tidal authentication failed (HTTP {resp.status}).")
             try:
                 data = msgspec.json.decode(body)
                 token = data["access_token"]
