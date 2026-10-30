@@ -150,9 +150,17 @@ def carry_conversion(old: str, new: str) -> None:
 
 
 def forget_conversion(folder: str) -> None:
-    """Remove the record of a folder that is gone."""
-    with contextlib.suppress(OSError):
-        os.remove(_sidecar(folder))
+    """Remove the record of a folder that is gone. Nothing is removed where record_conversion writes nothing."""
+    sidecar = _sidecar(folder)
+    record_dir = os.path.dirname(sidecar)
+    if cfg.directory.protects(record_dir) or cfg.directory.protects(os.path.dirname(record_dir)):
+        return
+    try:
+        os.remove(sidecar)
+    except FileNotFoundError:
+        pass
+    except OSError as e:
+        click.secho(f"Could not remove the conversion record {sidecar}: {e}", fg="yellow")
 
 
 def _usable(data: Any, folder: str) -> bool:
