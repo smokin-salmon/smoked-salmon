@@ -196,37 +196,49 @@ def _group_actions(offer_deletion: bool, offer_skip: bool) -> list[interaction.O
 
 
 def _search_result_options(gazelle_site: "BaseGazelleApi", results: list[dict]) -> list[interaction.Option]:
-    """The search results print_search_results prints, as cards for salmon web, numbered as it numbers them."""
+    """Every search result as a card for salmon web, numbered as print_search_results numbers them.
+
+    The CLI reads each of these numbers as its row, printed or not, so each is listed: a row that cannot be described
+    (print_search_results skips it) shows its number, and its link when it has a group ID.
+    """
     group = f"Search results on {gazelle_site.site_string}"
     described = []
     for number, r in enumerate(results, 1):
+        try:
+            link: str | None = f"{gazelle_site.base_url}/torrents.php?id={r['groupId']}"
+        except (KeyError, TypeError):
+            link = None
         try:
             label = html.unescape(f"{r['artist']} - {r['groupName']}")
             fields = (
                 ("Year", html.unescape(str(r["groupYear"]))),
                 ("Release type", html.unescape(str(r["releaseType"]))),
-                ("Tags", ", ".join(html.unescape(str(tag)) for tag in r["tags"])),
+                ("Tags", html.unescape(", ".join(r["tags"]))),
             )
-            link = f"{gazelle_site.base_url}/torrents.php?id={r['groupId']}"
+            card: interaction.Card | None = interaction.Card(fields, link=link)
         except (KeyError, TypeError):
-            continue
-        described.append(interaction.Option(str(number), label, group=group, card=interaction.Card(fields, link=link)))
+            label, card = f"Result {number}", interaction.Card(link=link) if link else None
+        described.append(interaction.Option(str(number), label, group=group, card=card))
     return described
 
 
 def _recent_upload_options(gazelle_site: "BaseGazelleApi", recent_uploads: list[tuple]) -> list[interaction.Option]:
-    """The recent uploads printed (the first five), as cards for salmon web."""
+    """Every recent upload as a card for salmon web: the first five are printed, the CLI reads any of them as its row.
+
+    The rows past the fifth show their number and link only, so a typed number is never read as one of them.
+    """
     group = f"Recent uploads on {gazelle_site.site_string}"
     return [
         interaction.Option(
             str(number),
-            html.unescape(f"{u[1]} - {u[2]}"),
+            html.unescape(f"{u[1]} - {u[2]}") if number <= 5 else f"Recent upload {number}",
             group=group,
             card=interaction.Card(
-                link=f"{gazelle_site.base_url}/torrents.php?torrentid={u[0]}", note="Not an exact group match"
+                link=f"{gazelle_site.base_url}/torrents.php?torrentid={u[0]}",
+                note="Not an exact group match" if number <= 5 else None,
             ),
         )
-        for number, u in enumerate(recent_uploads[:5], 1)
+        for number, u in enumerate(recent_uploads, 1)
     ]
 
 
@@ -688,6 +700,11 @@ async def _prompt_for_group_id(
             raw_input = int(group_id)
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
+                if results[list_index].get("groupId") is None:
+                    click.secho(
+                        f"Result {list_index + 1} has no group ID: pick another, or paste a group URL.", fg="red"
+                    )
+                    continue
                 return int(results[list_index]["groupId"])
             else:
                 click.echo(f"Interpreting {raw_input} as a group Id")

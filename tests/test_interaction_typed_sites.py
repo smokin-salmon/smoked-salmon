@@ -802,9 +802,10 @@ def test_every_key_of_the_search_group_question_is_accepted(
     site = search_group(None, offer_deletion, "", offer_skip)
     _result, _terminal, described = ask(monkeypatch, site, ["n"])
     options = described.options[0]
-    # Row 2 is not printed (a KeyError): it is not listed, and a typed 2 is refused by the web.
+    # Row 2 is not printed (a KeyError): listed by number and link only, so a typed 2 is never read as that row.
     assert keys(options) == [
         ("1", "Tom & Jerry - Cat & Mouse"),
+        ("2", "Result 2"),
         ("3", "B - Two"),
         ("n", "New group"),
         *([("s", "Skip this tracker")] if offer_skip else []),
@@ -812,19 +813,20 @@ def test_every_key_of_the_search_group_question_is_accepted(
         *([("d", "Delete music folder")] if offer_deletion else []),
     ]
     assert options is not None
-    assert {option.group for option in options.items[:2]} == {"Search results on RED"}
+    assert {option.group for option in options.items[:3]} == {"Search results on RED"}
+    assert options.items[1].card == interaction.Card(link="https://red.test/torrents.php?id=22")
     assert options.items[0].card == interaction.Card(
         (("Year", "2020"), ("Release type", "Album"), ("Tags", "pop, rock & roll")),
         link="https://red.test/torrents.php?id=21",
     )
-    assert [(o.key, o.action, o.danger, o.empty) for o in options.items[2:]] == [
+    assert [(o.key, o.action, o.danger, o.empty) for o in options.items[3:]] == [
         ("n", True, False, True),
         *([("s", True, False, False)] if offer_skip else []),
         ("a", True, False, False),
         *([("d", True, True, False)] if offer_deletion else []),
     ]
     assert options.free_text == interaction.FreeText("Group URL or ID", ids=True)
-    expected = {"1": 21, "3": 23, "n": None, "a": click.Abort}
+    expected = {"1": 21, "2": 22, "3": 23, "n": None, "a": click.Abort}
     expected |= {"s": SkipTracker} if offer_skip else {}
     expected |= {"d": AbortAndDeleteFolder} if offer_deletion else {}
     for key, outcome in expected.items():
@@ -873,10 +875,23 @@ def test_every_key_of_the_recent_uploads_question_is_accepted(
         assert len(terminal.calls) == 1
 
 
-def test_recent_uploads_are_listed_only_up_to_the_five_printed(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_recent_uploads_past_the_fifth_are_listed_by_number_and_link_only(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The CLI prints five but reads a number up to the list's length as that row: the web must not send 6 as an ID.
     rows = [(n, "A", f"T{n}") for n in range(1, 8)]
     _result, _terminal, described = ask(monkeypatch, recent_group(rows), ["n"])
-    assert [key for key, _label in keys(described.options[0])][:6] == ["1", "2", "3", "4", "5", "n"]
+    options = described.options[0]
+    assert [key for key, _label in keys(options)][:8] == ["1", "2", "3", "4", "5", "6", "7", "n"]
+    assert options is not None
+    assert options.items[5].card == interaction.Card(link="https://red.test/torrents.php?torrentid=6")
+    assert options.items[5].label == "Recent upload 6"
+
+
+def test_picking_a_search_row_without_a_group_id_asks_again(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    rows = [{"artist": "Broken"}, *SEARCH_RESULTS[:1]]
+    result, terminal, _described = ask(monkeypatch, search_group(rows), ["1", "2"])
+    assert result == 21
+    assert len(terminal.calls) == 2
+    assert "Result 1 has no group ID: pick another, or paste a group URL." in capsys.readouterr().out
 
 
 def test_the_group_questions_with_yyy_ask_as_on_master(monkeypatch: pytest.MonkeyPatch) -> None:

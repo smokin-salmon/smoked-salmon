@@ -397,4 +397,11 @@ def test_a_typed_delete_or_row_number_is_refused_as_text(site: Any) -> None:
 def test_an_unprinted_search_row_number_typed_as_an_id_is_refused() -> None:
     result, browser = web(search_group(), [Picked(texts=["2"]), picks("n")])
     assert result is None
-    assert browser.questions[1]["error"] == "Error: An ID is a number above 3: paste the URL, or pick from the options."
+    assert browser.questions[1]["error"] == "Error: 2 is result 2 above: pick it there, or paste the URL."
+
+
+def test_a_recent_upload_past_the_fifth_typed_as_an_id_is_refused() -> None:
+    rows = [(n, "A", f"T{n}") for n in range(1, 8)]
+    result, browser = web(recent_group(rows), [Picked(texts=["6"]), Picked(texts=["8"])])
+    assert result == 8
+    assert browser.questions[1]["error"] == "Error: 6 is result 6 above: pick it there, or paste the URL."
