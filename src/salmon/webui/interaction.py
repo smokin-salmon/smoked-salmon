@@ -180,6 +180,7 @@ class WebInteraction:
         type: Any = None,
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
+        hide_input: bool = False,
         options: Options | None = None,
     ) -> Any:
         convert = value_proc if value_proc is not None else click.types.convert_type(type, default)
@@ -193,6 +194,9 @@ class WebInteraction:
                 "choices": choices,
                 "error": error,
             }
+            if hide_input:
+                # The page asks in a password field.
+                question["hide_input"] = True
             if options is not None:
                 question["options"] = _shown_options(options)
                 question["preselected"] = _preselected(options, default)

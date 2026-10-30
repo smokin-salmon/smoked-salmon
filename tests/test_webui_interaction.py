@@ -141,6 +141,14 @@ def test_a_question_without_options_is_sent_exactly_as_before() -> None:
     assert browser.questions == [{"kind": "prompt", "text": "Which?", "default": "x", "choices": None, "error": None}]
 
 
+def test_a_hidden_prompt_asks_for_a_password_field() -> None:
+    result, browser = _prompt(None, ["secret"], hide_input=True)
+    assert result == "secret"
+    assert browser.questions == [
+        {"kind": "prompt", "text": "Which?", "default": None, "choices": None, "error": None, "hide_input": True}
+    ]
+
+
 def test_a_confirm_without_labels_is_sent_exactly_as_before_and_with_labels_names_its_buttons() -> None:
     browser = Browser([True, False])
 

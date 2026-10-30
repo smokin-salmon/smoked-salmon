@@ -162,6 +162,29 @@ def test_a_missing_folder_is_created_only_when_the_user_agrees(tmp_path: Path, f
     assert loaded.directory.dottorrents_dir == str(created)
 
 
+def test_the_cookie_and_api_key_are_asked_with_hidden_input(tmp_path: Path, folders: tuple[Path, Path]) -> None:
+    music, torrents = folders
+    hidden: dict[str, bool] = {}
+
+    class Hidden(Scripted):
+        async def prompt(self, text: str, **kwargs: Any) -> Any:
+            hidden[text] = kwargs.get("hide_input", False)
+            return await super().prompt(text, **kwargs)
+
+    scripted = Hidden([str(music), str(torrents), "red, dic", "red-cookie", "red-key", "dic-cookie", False])
+    exit_code = run_flow(scripted, tmp_path / "config.toml")
+    assert exit_code == 0
+
+    assert hidden == {
+        f"{first_run.FOLDERS[0][1]} (download_directory)": False,
+        f"{first_run.FOLDERS[1][1]} (dottorrents_dir)": False,
+        "Trackers you upload to (RED, OPS, DIC; separate with commas)": False,
+        "RED session cookie": True,
+        "RED API key (Enter to skip)": True,
+        "DIC session cookie": True,
+    }
+
+
 def test_the_folder_defaults_are_the_short_files_made_absolute(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     defaults: list[Any] = []
