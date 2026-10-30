@@ -22,8 +22,10 @@ from test_interaction_typed_sites import (  # pyright: ignore[reportMissingImpor
     edit_metadata,
     edit_metadata_stubs,
     hold_the_edition,
+    recent_group,
     request_site,
     review_metadata,
+    search_group,
     spectral_ids,
 )
 from test_webui_interaction import Browser  # pyright: ignore[reportMissingImports]
@@ -309,3 +311,90 @@ def test_tracker_choice_preselects_the_first_and_each_pick_reaches_the_site(key:
     result, browser = web(partial(trackers.choose_tracker, ["OPS", "DIC"]), [picks(key)])
     assert result == outcome
     assert browser.questions[0]["preselected"] == sel("OPS")
+
+
+# #7 upload to an existing group: search results and recent uploads
+
+
+@pytest.mark.parametrize(("default", "preselected"), [("", sel("n")), ("3", sel("3"))])
+def test_the_search_group_question_preselects_its_default(default: str, preselected: dict[str, Any]) -> None:
+    result, browser = web(search_group(None, True, default), [picks("a")])
+    assert result is click.Abort
+    question = browser.questions[0]
+    assert question["preselected"] == preselected
+    assert question["options"]["free_text"] == {"placeholder": "Group URL or ID", "ids": True}
+    assert question["options"]["items"][0]["group"] == "Search results on RED"
+
+
+def test_the_recent_uploads_question_preselects_new_group() -> None:
+    result, browser = web(recent_group(), [picks("a")])
+    assert result is click.Abort
+    assert browser.questions[0]["preselected"] == sel("n")
+    assert browser.questions[0]["options"]["items"][0]["group"] == "Recent uploads on RED"
+
+
+GROUP_ANSWERS = [
+    (picks("1"), 21),
+    (picks("n"), None),
+    (picks("a"), click.Abort),
+    (picks("d"), AbortAndDeleteFolder),
+    (Picked(texts=["https://red.test/torrents.php?id=42"]), 42),
+    (Picked(texts=["4"]), 4),
+]
+
+
+@pytest.mark.parametrize(("answer", "outcome"), GROUP_ANSWERS)
+def test_each_answer_to_the_search_group_question_reaches_the_site(answer: Picked, outcome: Any) -> None:
+    result, browser = web(search_group(), [answer])
+    assert result == outcome
+    assert len(browser.questions) == 1
+
+
+@pytest.mark.parametrize(("answer", "outcome"), [(picks("2"), 1032), *GROUP_ANSWERS[1:4], GROUP_ANSWERS[4]])
+def test_each_answer_to_the_recent_uploads_question_reaches_the_site(answer: Picked, outcome: Any) -> None:
+    result, browser = web(recent_group(), [answer])
+    assert result == outcome
+    assert len(browser.questions) == 1
+
+
+@pytest.mark.parametrize("site", [search_group, recent_group])
+def test_skip_this_tracker_is_offered_in_the_group_question_only_with_the_cli(site: Any) -> None:
+    result, browser = web(site(offer_skip=True), [picks("s")])
+    assert result is SkipTracker
+    items = browser.questions[0]["options"]["items"]
+    skip = [o for o in items if o["key"] == "s"]
+    assert [(o["label"], o["action"], o["danger"]) for o in skip] == [("Skip this tracker", True, False)]
+    result, browser = web(site(), [picks("s"), picks("n")])
+    assert result is None
+    assert browser.questions[1]["error"] == "Error: s is not one of the options."
+    assert "s" not in [o["key"] for o in browser.questions[0]["options"]["items"]]
+
+
+@pytest.mark.parametrize("site", [search_group, recent_group])
+def test_delete_music_folder_is_a_danger_action_and_absent_without_the_offer(site: Any) -> None:
+    result, browser = web(site(), [picks("a")])
+    items = {o["key"]: o for o in browser.questions[0]["options"]["items"]}
+    assert (items["d"]["action"], items["d"]["danger"]) == (True, True)
+    result, browser = web(site(offer_deletion=False), [picks("d"), picks("n")])
+    assert result is None
+    assert browser.questions[1]["error"] == "Error: d is not one of the options."
+
+
+@pytest.mark.parametrize("site", [search_group, recent_group])
+def test_a_typed_delete_or_row_number_is_refused_as_text(site: Any) -> None:
+    # Search results 1 and 3 are listed (2 is not printed); recent uploads 1 and 2 are.
+    listed = "1" if site is search_group else "2"
+    answers = [Picked(texts=[text]) for text in ("d", "delete-me", listed)]
+    result, browser = web(site(), [*answers, picks("n")])
+    assert result is None
+    assert [q["error"] for q in browser.questions[1:]] == [
+        "Error: d is neither a URL nor an ID.",
+        "Error: delete-me is neither a URL nor an ID.",
+        f"Error: {listed} is result {listed} above: pick it there, or paste the URL.",
+    ]
+
+
+def test_an_unprinted_search_row_number_typed_as_an_id_is_refused() -> None:
+    result, browser = web(search_group(), [Picked(texts=["2"]), picks("n")])
+    assert result is None
+    assert browser.questions[1]["error"] == "Error: An ID is a number above 3: paste the URL, or pick from the options."
