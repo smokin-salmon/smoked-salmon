@@ -9,7 +9,7 @@ import asyncclick as click
 
 from salmon import cfg, dryrun, interaction
 from salmon.common import clean_name, has_visible_chars, strip_template_keys
-from salmon.common.files import shares_files
+from salmon.common.files import rewrite_refusal, shares_files
 from salmon.common.strings import artists_or_various
 from salmon.constants import (
     BLACKLISTED_CHARS,
@@ -79,13 +79,18 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
             raise UploadError(
                 f"Not replacing {new_path}: it is the folder this run started from. Give this album another name."
             )
+        # A folder salmon never rewrites in place, such as an earlier run's renamed folder, which shares its files
+        # through hardlinks and may be what a torrent seeds from: replacing it would break that torrent.
+        if (reason := rewrite_refusal(new_path)) is not None:
+            raise UploadError(f"Not replacing {new_path}: {reason}. Rename it, or give the upload another folder name.")
         if not check or await interaction.confirm(
             click.style(
                 f"A folder already exists with the new folder name '{new_path}', would you like to replace it?",
                 fg="magenta",
                 bold=True,
             ),
-            default=True,
+            # It may be an earlier upload a torrent seeds from, or another album of that name: kept unless told.
+            default=False,
         ):
             shutil.rmtree(new_path)
         else:

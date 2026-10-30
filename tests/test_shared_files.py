@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 import anyio
+import asyncclick as click
 import pytest
 from asyncclick.testing import CliRunner
 from mutagen.flac import FLAC
@@ -30,7 +31,7 @@ from test_library_dirs import (  # pyright: ignore[reportMissingImports]
 import salmon.checks
 import salmon.commands
 import salmon.tagger.foldername
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common.files import AlbumPath, rewrite_refusal, shares_files
 from salmon.config import validations
 from salmon.errors import AbortAndDeleteFolder, UploadError
@@ -375,21 +376,58 @@ def test_rename_folder_never_replaces_the_album_it_renames_a_copy_of(monkeypatch
     assert (_snapshot(original), _inodes(original)) == before
 
 
-def test_rename_folder_still_replaces_an_earlier_folder_of_that_name_that_shares_files(monkeypatch, seeded) -> None:
-    # An earlier run's renamed folder shares its files with that run's source when hardlinks is on.
+@pytest.mark.parametrize("how", SHARING)
+def test_rename_folder_never_replaces_an_earlier_folder_of_that_name_that_shares_files(
+    monkeypatch, seeded, how: str
+) -> None:
+    # An earlier run's renamed folder shares its files with that run's source when hardlinks is on, and a torrent
+    # may seed from it.
     downloads, seeding = seeded
     earlier = _album(downloads / RENAMED)
-    _share(earlier, seeding, "hardlinked file")
+    _share(earlier, seeding, how)
+    before = sorted(os.listdir(earlier))
     source = _album(seeding / "Other")
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
     monkeypatch.setattr(cfg.directory, "hardlinks", False)
 
-    new_path = anyio.run(
-        lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
-    )
+    with pytest.raises(UploadError, match=re.escape(f"Not replacing {earlier}: {rewrite_refusal(str(earlier))}")):
+        anyio.run(
+            lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
+        )
 
-    assert new_path == str(earlier)
-    assert _inodes(earlier).isdisjoint(_inodes(seeding / "Album"))
+    assert sorted(os.listdir(earlier)) == before
+    assert os.path.isdir(source)
+
+
+@pytest.mark.parametrize(("answer", "replaced"), [(None, False), (True, True)], ids=["default", "told_yes"])
+def test_rename_folder_replaces_an_earlier_folder_of_that_name_only_when_told_to(
+    monkeypatch, seeded, answer: bool | None, replaced: bool
+) -> None:
+    downloads, seeding = seeded
+    earlier = _album(downloads / RENAMED)
+    (earlier / "notes.txt").write_text("an earlier upload")
+    source = _album(seeding / "Other")
+    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
+    monkeypatch.setattr(cfg.directory, "hardlinks", False)
+    asked: list[str] = []
+
+    async def confirm(text: str, *, default: bool | None = False, **_kwargs: Any) -> bool | None:
+        asked.append(click.unstyle(text))
+        return default if answer is None else answer
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+
+    def rename() -> str:
+        return anyio.run(lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True))
+
+    if replaced:
+        assert rename() == str(earlier)
+        assert not (earlier / "notes.txt").exists()
+    else:
+        with pytest.raises(UploadError, match="New folder name already exists"):
+            rename()
+        assert (earlier / "notes.txt").read_text() == "an earlier upload"
+    assert any("would you like to replace it?" in question for question in asked)
 
 
 # Commands that rewrite a folder in place

@@ -3,6 +3,7 @@
 The runs go against the local fake tracker of test_uploader_dry_run, never a real one.
 """
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -74,6 +75,9 @@ def _red_alone(monkeypatch, tmp_path, torrents):
         gather_audio_info=_returning(_files(96000)),
     )
     assert run.result.exit_code == 0, run.result.output
+    # The next run's renamed folder takes the same name; salmon never replaces this one, hardlinked to its album.
+    for made in Path(cfg.directory.download_directory).iterdir():
+        shutil.rmtree(made)
     return run
 
 
