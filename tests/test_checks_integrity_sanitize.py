@@ -1,12 +1,19 @@
 """Sanitizing is checked again afterwards, and the upload stops on a file that still does not decode."""
 
+import asyncio
+import io
 import os
 import subprocess
 from importlib import import_module
+from pathlib import Path
 
 import anyio
 import asyncclick as click
 import pytest
+from mutagen.flac import FLAC, Picture
+from mutagen.id3 import PictureType
+from PIL import Image
+from test_uploader_shortened_conversions import _write_flac  # pyright: ignore[reportMissingImports]
 
 import salmon.uploader as uploader
 from salmon import cfg
@@ -196,3 +203,105 @@ def test_sanitize_and_verify_reports_the_recheck_not_the_sanitize_return(monkeyp
 
     assert calls == ["sanitize", "check"]
     assert not result.passed
+
+
+# What sanitizing must not lose: the artwork the re-encode drops, and the original if it stops partway
+
+
+def _png() -> bytes:
+    buffer = io.BytesIO()
+    Image.new("RGB", (4, 4), (200, 30, 30)).save(buffer, "png")
+    return buffer.getvalue()
+
+
+def _flac_with_front_cover(path: Path, data: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _write_flac(path, 44100, 16)
+    picture = Picture()
+    picture.type = PictureType.COVER_FRONT
+    picture.mime = "image/png"
+    picture.data = data
+    audio = FLAC(path)
+    audio.add_picture(picture)
+    audio.save()
+
+
+async def _encodes(commands: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+    """flac and metaflac succeeding; the re-encode writes its output, without the pictures."""
+    if commands[0] == "flac":
+        Path(commands[-1]).write_bytes(b"fLaC re-encoded")
+    return subprocess.CompletedProcess(commands, 0, b"", b"")
+
+
+def test_sanitizing_a_folder_keeps_its_only_artwork_as_a_cover_file_in_the_album_folder(monkeypatch, tmp_path) -> None:
+    album = tmp_path / "Album"
+    _flac_with_front_cover(album / "CD1" / "01.flac", _png())
+    monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
+
+    assert anyio.run(integrity.sanitize_integrity, str(album)) is True
+
+    assert (album / "cover.png").read_bytes() == _png()
+    # Not one per disc folder: the album's files are sanitized one by one.
+    assert sorted(os.listdir(album / "CD1")) == ["01.flac"]
+
+
+def test_sanitizing_one_flac_keeps_its_artwork_beside_it(monkeypatch, tmp_path) -> None:
+    album = tmp_path / "Album"
+    _flac_with_front_cover(album / "01.flac", _png())
+    monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
+
+    assert anyio.run(integrity.sanitize_integrity, str(album / "01.flac")) is True
+
+    assert (album / "cover.png").read_bytes() == _png()
+
+
+def test_a_folder_with_a_cover_file_gets_no_other(monkeypatch, tmp_path) -> None:
+    album = tmp_path / "Album"
+    _flac_with_front_cover(album / "01.flac", _png())
+    (album / "folder.jpg").write_bytes(b"the album's own")
+    monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
+
+    assert anyio.run(integrity.sanitize_integrity, str(album)) is True
+
+    assert sorted(os.listdir(album)) == ["01.flac", "folder.jpg"]
+
+
+def test_a_backup_left_by_a_crashed_run_is_never_overwritten(monkeypatch, tmp_path) -> None:
+    flac = tmp_path / "01.flac"
+    flac.write_bytes(b"fLaC damaged")
+    # The only copy of the original, if that run stopped before putting it back.
+    (tmp_path / "01.flac.corrupted").write_bytes(b"fLaC original")
+    monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
+
+    assert anyio.run(integrity.sanitize_integrity, str(flac)) is True
+
+    assert (tmp_path / "01.flac.corrupted").read_bytes() == b"fLaC original"
+    assert sorted(os.listdir(tmp_path)) == ["01.flac", "01.flac.corrupted"]
+
+
+def test_a_backup_name_is_claimed_once(tmp_path) -> None:
+    flac = tmp_path / "01.flac"
+    flac.write_bytes(b"fLaC")
+
+    claimed = [integrity._reserve_backup_path(str(flac)) for _ in range(3)]
+
+    assert claimed == [f"{flac}.corrupted", f"{flac}.corrupted.1", f"{flac}.corrupted.2"]
+    assert all(os.path.exists(path) for path in claimed)
+
+
+@pytest.mark.parametrize("name", ["01.flac", "01.mp3"])
+def test_a_cancelled_sanitize_puts_the_original_back(monkeypatch, tmp_path, name: str) -> None:
+    original = tmp_path / name
+    original.write_bytes(b"the original")
+
+    async def cancelled(*_args: object, **_kwargs: object) -> None:
+        raise asyncio.CancelledError
+
+    monkeypatch.setattr(integrity.anyio, "run_process", cancelled)
+    sanitize = integrity._sanitize_flac if name.endswith(".flac") else integrity._sanitize_mp3
+
+    with pytest.raises(asyncio.CancelledError):
+        anyio.run(sanitize, str(original))
+
+    assert sorted(os.listdir(tmp_path)) == [name]
+    assert original.read_bytes() == b"the original"

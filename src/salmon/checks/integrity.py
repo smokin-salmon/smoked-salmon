@@ -1,5 +1,6 @@
 import os
 import re
+from contextlib import suppress
 
 import anyio
 import asyncclick as click
@@ -432,6 +433,7 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
         click.Abort: If the path is neither a supported file nor a directory.
     """
     if path.lower().endswith(".flac"):
+        _save_embedded_cover(os.path.dirname(path) or ".")
         return await _sanitize_flac(path)
     elif path.lower().endswith(".mp3"):
         return await _sanitize_mp3(path)
@@ -444,11 +446,59 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
                     audio_files.append(os.path.join(root, f))
         if not audio_files:
             return True
-        results = await process_files(audio_files, sanitize_integrity, "Sanitizing audio files")
+        # Once, into the album folder, not into each disc folder: its files are sanitized one by one below.
+        _save_embedded_cover(path)
+        results = await process_files(audio_files, _sanitize_file, "Sanitizing audio files")
         for integrity in results:
             integrities = integrities and integrity
         return integrities
     raise click.Abort
+
+
+async def _sanitize_file(path: str, _: int | None = None) -> bool:
+    """Sanitize one FLAC or MP3 file of a folder whose cover was already saved."""
+    if path.lower().endswith(".flac"):
+        return await _sanitize_flac(path)
+    return await _sanitize_mp3(path)
+
+
+def _save_embedded_cover(folder: str) -> None:
+    """Save the first embedded front cover as the folder's cover file, if it has none: the re-encode drops it."""
+    # Imported here: the tagger package imports the checks.
+    from salmon.tagger.cover import extract_embedded_cover
+
+    extract_embedded_cover(folder)
+
+
+def _reserve_backup_path(path: str) -> str:
+    """Claim a free backup name for path (file.ext.corrupted, then .corrupted.1, ...) by creating it, never one in use.
+
+    A backup a crashed run left behind may be the only copy of that file: it is never overwritten.
+    """
+    backup_path = path + ".corrupted"
+    counter = 1
+    while True:
+        try:
+            os.close(os.open(backup_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            return backup_path
+        except FileExistsError:
+            backup_path = f"{path}.corrupted.{counter}"
+            counter += 1
+
+
+def _restore_backup(path: str, backup_path: str, moved: bool, *, clobber_partial: bool) -> None:
+    """Put the original back after a failure, or drop the unused claimed name if it was never moved there.
+
+    `clobber_partial`: replace what is at path (flac writes its output there; mp3val edits the backup itself).
+    """
+    if not moved:
+        with suppress(OSError):
+            os.remove(backup_path)
+        return
+    if not os.path.exists(backup_path) or (os.path.exists(path) and not clobber_partial):
+        return
+    with suppress(OSError):
+        os.replace(backup_path, path)
 
 
 async def _sanitize_flac(path: str) -> bool:
@@ -460,9 +510,12 @@ async def _sanitize_flac(path: str) -> bool:
     Returns:
         True if sanitization succeeded, False otherwise.
     """
-    backup_path = path + ".corrupted"
+    backup_path = _reserve_backup_path(path)
+    moved = False
     try:
-        os.rename(path, backup_path)
+        # os.replace: on Windows, os.rename refuses the claimed name.
+        os.replace(path, backup_path)
+        moved = True
         result = await anyio.run_process(
             ["flac", f"-{cfg.upload.compression.flac_compression_level}", backup_path, "-o", path],
             check=False,
@@ -489,9 +542,12 @@ async def _sanitize_flac(path: str) -> bool:
         click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
         # Put the original back whichever step failed. flac deletes its output when the re-encode fails, so
         # without this the file is gone from the release and the check after sanitizing passes without it.
-        if os.path.exists(backup_path):
-            os.replace(backup_path, path)
+        _restore_backup(path, backup_path, moved, clobber_partial=True)
         return False
+    except BaseException:
+        # A cancel (Ctrl-C, or a salmon web job's) is no Exception: the original goes back all the same.
+        _restore_backup(path, backup_path, moved, clobber_partial=True)
+        raise
 
 
 async def _sanitize_mp3(path: str) -> bool:
@@ -503,9 +559,12 @@ async def _sanitize_mp3(path: str) -> bool:
     Returns:
         True if sanitization succeeded, False otherwise.
     """
-    backup_path = path + ".corrupted"
+    backup_path = _reserve_backup_path(path)
+    moved = False
     try:
-        os.rename(path, backup_path)
+        # os.replace: on Windows, os.rename refuses the claimed name.
+        os.replace(path, backup_path)
+        moved = True
 
         result = await anyio.run_process(
             ["mp3val", "-f", "-si", "-nb", "-t", backup_path],
@@ -528,6 +587,9 @@ async def _sanitize_mp3(path: str) -> bool:
     except Exception as e:
         click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
         # Ensure we restore the original file if something went wrong
-        if os.path.exists(backup_path) and not os.path.exists(path):
-            os.rename(backup_path, path)
+        _restore_backup(path, backup_path, moved, clobber_partial=False)
         return False
+    except BaseException:
+        # A cancel (Ctrl-C, or a salmon web job's) is no Exception: the original goes back all the same.
+        _restore_backup(path, backup_path, moved, clobber_partial=False)
+        raise
