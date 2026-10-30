@@ -396,3 +396,22 @@ def test_a_flac_that_cannot_be_read_is_passed_over_for_the_cover(monkeypatch, tm
     anyio.run(integrity.sanitize_integrity, str(album))
 
     assert (album / "cover.png").read_bytes() == _png()
+
+
+def test_a_cancel_between_the_move_and_its_flag_still_puts_the_original_back(monkeypatch, tmp_path) -> None:
+    flac = tmp_path / "01.flac"
+    flac.write_bytes(b"fLaC original")
+    real_replace = os.replace
+
+    def moved_then_interrupted(src, dst, *args, **kwargs):
+        real_replace(src, dst, *args, **kwargs)
+        if str(dst).endswith(".corrupted"):
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(integrity.os, "replace", moved_then_interrupted)
+
+    with pytest.raises(KeyboardInterrupt):
+        anyio.run(integrity._sanitize_flac, str(flac))
+
+    assert sorted(os.listdir(tmp_path)) == ["01.flac"]
+    assert flac.read_bytes() == b"fLaC original"

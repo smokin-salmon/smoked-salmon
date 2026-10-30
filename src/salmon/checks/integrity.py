@@ -492,10 +492,13 @@ def _reserve_backup_path(path: str) -> str:
 def _restore_backup(path: str, backup_path: str, moved: bool) -> None:
     """Put the original back over what flac left at path after a failure, or drop the claimed name if never used.
 
+    The original counts as moved when `moved` says so, or when it is no longer at path.
+
     Raises:
         UploadError: If the original cannot be put back: the release would be missing that file.
     """
-    if not moved:
+    # From what is on disk, not only `moved`: a cancel can land after the move and before the flag is set.
+    if not moved and os.path.lexists(path):
         with suppress(OSError):
             os.remove(backup_path)
         return
