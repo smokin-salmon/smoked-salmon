@@ -167,3 +167,20 @@ def test_check_leaves_clean_names_alone(tmp_path, monkeypatch) -> None:
 
     assert _names(root) == before
     assert asked == []
+
+
+@POSIX_ONLY
+def test_check_reports_the_release_folder_name_and_ends_in_an_abort(tmp_path, monkeypatch, capsys) -> None:
+    root = tmp_path / "Artist: Album [WEB FLAC]"
+    root.mkdir()
+    (root / "01. Plain.flac").write_bytes(b"fLaC")
+    before = _names(root)
+    asked = _answer(monkeypatch, True)
+
+    with pytest.raises(click.Abort):
+        anyio.run(lambda: check_folder_structure(str(root), False))
+
+    assert _names(root) == before
+    assert asked == []
+    out = capsys.readouterr().out
+    assert "Artist: Album [WEB FLAC]" in out

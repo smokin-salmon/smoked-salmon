@@ -199,6 +199,10 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
     Offending names are renamed to the same substitution generated names get, sub-folders last so the
     paths stay valid while the renaming goes on. A scene release is never renamed: it raises.
 
+    The release folder itself is renamed by ``rename_folder``, which cleans the names it builds, and
+    is not renamed here, as the caller keeps its path: a release folder that still holds such a
+    character (the user kept the old name) makes the upload abort.
+
     Args:
         path: Absolute path to the release folder being checked.
         scene: Whether the release is a scene release.
@@ -206,6 +210,7 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
     Raises:
         NoncompliantFolderStructure: If a scene release has such names, the user declines the
             rename, a rename would replace a path that exists, or nothing would be left of a name.
+        click.Abort: If the release folder's own name holds such a character.
     """
     folder_name = os.path.basename(os.path.normpath(path))
     offending: list[tuple[str, str, list[str]]] = []
@@ -215,17 +220,28 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
                 offending.append(
                     (os.path.join(root, name), os.path.join(folder_name, os.path.relpath(root, path), name), chars)
                 )
+    root_chars = _forbidden_characters(folder_name)
 
-    if not offending:
+    if not offending and not root_chars:
         return click.secho("No names hold characters a tracker refuses.", fg="green")
 
     click.secho("The following names hold characters a tracker refuses:", fg="red", bold=True)
-    for _, shown, chars in offending:
+    listing = [(shown, chars) for _, shown, chars in offending]
+    if root_chars:
+        listing.append((folder_name, root_chars))
+    for shown, chars in listing:
         click.echo(f" >> {os.path.normpath(shown)}")
         for char in chars:
             click.echo(f"      {char}")
     if scene:
         raise NoncompliantFolderStructure
+    if root_chars:
+        click.secho(
+            "The release folder's own name cannot be renamed here. Run again and accept the proposed folder name.",
+            fg="red",
+            bold=True,
+        )
+        raise click.Abort
 
     renames = [
         (old, os.path.join(os.path.dirname(old), _substitute_forbidden_characters(os.path.basename(old))))
