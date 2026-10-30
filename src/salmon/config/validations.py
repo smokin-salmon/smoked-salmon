@@ -204,12 +204,25 @@ class BeatportSettings(BaseStruct):
     password: str | None = None
 
 
+class Corrections(BaseStruct):
+    # An artist's name (whole, any case, outer spaces ignored) and the name salmon writes instead.
+    artists: dict[str, str] = msgspec.field(default_factory=dict)
+
+    def __post_init__(self):
+        if any(not name.strip() for name in [*self.artists, *self.artists.values()]):
+            raise ValueError("metadata.corrections.artists has an empty name.")
+        keys = [name.strip().casefold() for name in self.artists]
+        if len(set(keys)) < len(keys):
+            raise ValueError("metadata.corrections.artists names an artist twice, in two cases or spacings.")
+
+
 class Metadata(BaseStruct):
     discogs_token: str | None = None
     qobuz: QobuzSettings = msgspec.field(default_factory=QobuzSettings)
     tidal: TidalSettings = msgspec.field(default_factory=TidalSettings)
     apple_music: AppleMusicSettings = msgspec.field(default_factory=AppleMusicSettings)
     beatport: BeatportSettings = msgspec.field(default_factory=BeatportSettings)
+    corrections: Corrections = msgspec.field(default_factory=Corrections)
 
 
 class GazelleTrackerSettings(BaseStruct):
