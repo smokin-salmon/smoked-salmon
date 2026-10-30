@@ -32,6 +32,8 @@ async def check_folder_structure(
     refuses (renamed, or reported for a scene release), that path lengths are within
     max_path_length characters, that there are no zero length folders, and that the file
     extensions are valid. Loops until the user has fixed all issues or the upload is aborted.
+    Under -yyy every question takes its default, and what it did is printed; a folder that still
+    needs fixing by hand aborts.
 
     Args:
         path: Absolute path to the release folder being checked.
@@ -64,6 +66,10 @@ async def check_folder_structure(
                     bold=True,
                 )
                 raise click.Abort() from None
+            if await interaction.assume_defaults():
+                # Nobody is there to fix the folder by hand.
+                click.secho("-yyy: aborting, as the folder needs fixing by hand.", fg="red", bold=True)
+                raise click.Abort() from None
             await interaction.confirm(
                 click.style(
                     "You need to manually fix the issues present in the upload's folder? "
@@ -92,6 +98,10 @@ async def _check_illegal_folders(path: str) -> None:
         for dirname in dirs:
             if dirname == "@eaDir":
                 target_dir = os.path.join(root, dirname)
+                if await interaction.assume_defaults():
+                    shutil.rmtree(target_dir)
+                    click.secho(f"-yyy: deleted {target_dir}", fg="yellow")
+                    continue
                 while True:
                     resp = (
                         await interaction.prompt(
@@ -170,11 +180,23 @@ async def _check_invisible_characters(path: str, scene: bool) -> None:
             click.secho(f"Cannot rename {old}: {new} already exists.", fg="red", bold=True)
             raise NoncompliantFolderStructure
         taken.add(new)
+    await _confirm_rename()
+    _rename_or_stop(path, renames)
+
+
+async def _confirm_rename() -> None:
+    """Ask whether to rename the names listed above; under -yyy, rename them without asking.
+
+    Raises:
+        NoncompliantFolderStructure: If the user declines the rename.
+    """
+    if await interaction.assume_defaults():
+        click.secho("-yyy: renaming them to the names without those characters.", fg="yellow")
+        return
     if not await interaction.confirm(
         click.style("Rename them to the names without those characters?", fg="magenta"), default=True
     ):
         raise NoncompliantFolderStructure
-    _rename_or_stop(path, renames)
 
 
 def _forbidden_characters(name: str) -> list[str]:
@@ -256,10 +278,7 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
             click.secho(f"Cannot rename {old}: {new} already exists.", fg="red", bold=True)
             raise NoncompliantFolderStructure
         taken.add(new)
-    if not await interaction.confirm(
-        click.style("Rename them to the names without those characters?", fg="magenta"), default=True
-    ):
-        raise NoncompliantFolderStructure
+    await _confirm_rename()
     _rename_or_stop(path, renames)
 
 
@@ -454,6 +473,9 @@ async def _handle_bad_extension(filepath: str) -> None:
     Raises:
         click.Abort: If the user chooses to abort.
     """
+    if await interaction.assume_defaults():
+        os.remove(filepath)
+        return click.secho(f"-yyy: deleted {filepath}", fg="yellow")
     while True:
         resp = (
             await interaction.prompt(
@@ -478,6 +500,9 @@ async def _handle_multiple_audio_exts() -> None:
     Raises:
         click.Abort: If the user chooses to abort.
     """
+    if await interaction.assume_defaults():
+        click.secho("-yyy: aborting, as there are multiple audio codecs in this folder.", fg="red", bold=True)
+        raise click.Abort
     while True:
         resp = (
             await interaction.prompt(
