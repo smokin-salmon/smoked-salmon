@@ -1,5 +1,7 @@
 import os
 import re
+import shutil
+import tempfile
 from contextlib import suppress
 
 import anyio
@@ -8,6 +10,7 @@ import msgspec
 
 from salmon import cfg, interaction
 from salmon.common.files import process_files, rewrite_refusal
+from salmon.errors import UploadError
 
 FLAC_IMPORTANT_REGEXES = [
     # A warning, then flac's "ok" for the decode.
@@ -486,19 +489,22 @@ def _reserve_backup_path(path: str) -> str:
             counter += 1
 
 
-def _restore_backup(path: str, backup_path: str, moved: bool, *, clobber_partial: bool) -> None:
-    """Put the original back after a failure, or drop the unused claimed name if it was never moved there.
+def _restore_backup(path: str, backup_path: str, moved: bool) -> None:
+    """Put the original back over what flac left at path after a failure, or drop the claimed name if never used.
 
-    `clobber_partial`: replace what is at path (flac writes its output there; mp3val edits the backup itself).
+    Raises:
+        UploadError: If the original cannot be put back: the release would be missing that file.
     """
     if not moved:
         with suppress(OSError):
             os.remove(backup_path)
         return
-    if not os.path.exists(backup_path) or (os.path.exists(path) and not clobber_partial):
+    if not os.path.exists(backup_path):
         return
-    with suppress(OSError):
+    try:
         os.replace(backup_path, path)
+    except OSError as e:
+        raise UploadError(f"Could not put {path} back ({e}): the original is at {backup_path}.") from None
 
 
 async def _sanitize_flac(path: str) -> bool:
@@ -542,16 +548,22 @@ async def _sanitize_flac(path: str) -> bool:
         click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
         # Put the original back whichever step failed. flac deletes its output when the re-encode fails, so
         # without this the file is gone from the release and the check after sanitizing passes without it.
-        _restore_backup(path, backup_path, moved, clobber_partial=True)
+        _restore_backup(path, backup_path, moved)
         return False
     except BaseException:
         # A cancel (Ctrl-C, or a salmon web job's) is no Exception: the original goes back all the same.
-        _restore_backup(path, backup_path, moved, clobber_partial=True)
+        try:
+            _restore_backup(path, backup_path, moved)
+        except UploadError as e:
+            click.secho(str(e), fg="red", bold=True)
         raise
 
 
 async def _sanitize_mp3(path: str) -> bool:
     """Sanitize an MP3 file using mp3val to fix structural issues.
+
+    mp3val fixes a copy, which replaces the original only once it succeeded: a failure or a cancel, even partway
+    through mp3val rewriting it, leaves the original as it was.
 
     Args:
         path: Path to the MP3 file.
@@ -559,37 +571,22 @@ async def _sanitize_mp3(path: str) -> bool:
     Returns:
         True if sanitization succeeded, False otherwise.
     """
-    backup_path = _reserve_backup_path(path)
-    moved = False
+    handle, work = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".salmon-sanitize-", suffix=".mp3")
+    os.close(handle)
     try:
-        # os.replace: on Windows, os.rename refuses the claimed name.
-        os.replace(path, backup_path)
-        moved = True
-
-        result = await anyio.run_process(
-            ["mp3val", "-f", "-si", "-nb", "-t", backup_path],
-            check=False,
-        )
-
-        if os.path.exists(backup_path):
-            os.rename(backup_path, path)
-
-        # Check if the operation was successful
-        if result.returncode == 0:
-            return True
-        else:
-            # If mp3val failed, restore the original file
-            if os.path.exists(backup_path) and not os.path.exists(path):
-                os.rename(backup_path, path)
+        # copy2: the copy has the original's times, which mp3val -t keeps on the fixed file.
+        shutil.copy2(path, work)
+        result = await anyio.run_process(["mp3val", "-f", "-si", "-nb", "-t", work], check=False)
+        if result.returncode != 0:
             stderr_text = result.stderr.decode() if result.stderr else ""
             raise Exception(f"mp3val failed with return code {result.returncode}: {stderr_text}")
-
+        os.replace(work, path)
+        return True
     except Exception as e:
         click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
-        # Ensure we restore the original file if something went wrong
-        _restore_backup(path, backup_path, moved, clobber_partial=False)
         return False
-    except BaseException:
-        # A cancel (Ctrl-C, or a salmon web job's) is no Exception: the original goes back all the same.
-        _restore_backup(path, backup_path, moved, clobber_partial=False)
-        raise
+    finally:
+        # The copy, unless it became path, and the backup mp3val makes of it while it rewrites it.
+        for leftover in (work, work + ".bak"):
+            with suppress(OSError):
+                os.remove(leftover)
