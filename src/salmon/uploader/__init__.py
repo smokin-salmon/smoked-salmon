@@ -1536,6 +1536,7 @@ async def edit_metadata(
         if await interaction.assume_defaults() or await interaction.confirm(
             click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
             default=True,
+            labels=("Upload", "Re-run the metadata step"),
         ):
             metadata["tags"] = convert_genres(metadata["genres"])
             break
@@ -1848,6 +1849,25 @@ async def prompt_downconversion_choice(
                     '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)', fg="magenta"
                 ),
                 default=default,
+                options=interaction.Options(
+                    (
+                        *(
+                            interaction.Option(
+                                str(i),
+                                option["name"],
+                                card=(
+                                    interaction.Card(note="DUPE RISK: this edition already has it")
+                                    if option["name"] in held
+                                    else None
+                                ),
+                            )
+                            for i, option in enumerate(options, 1)
+                        ),
+                        interaction.Option("*", "All formats", alone=True),
+                        interaction.Option("0", "None", alone=True),
+                    ),
+                    several=True,
+                ),
             )
 
             if choices.strip() == "0":
