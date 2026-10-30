@@ -516,17 +516,24 @@ def test_forgetting_a_record_removes_nothing_in_library_dirs(library_and_downloa
     assert in_library.read_text() == "{}"
 
 
-def test_a_record_that_cannot_be_removed_is_reported(tmp_path, capsys) -> None:
+def test_a_record_that_cannot_be_removed_is_reported(tmp_path, monkeypatch, capsys) -> None:
     folder = tmp_path / "Album [WEB FLAC]"
     conversions.record_conversion(str(folder), **DOWNCONVERT)
-    record_dir = tmp_path / conversions.REGISTRY_DIR
-    record_dir.chmod(0o500)
-    try:
-        conversions.forget_conversion(str(folder))
-    finally:
-        record_dir.chmod(0o700)
+    sidecar = conversions._sidecar(str(folder))
+    remove = os.remove
 
-    assert f"Could not remove the conversion record {conversions._sidecar(str(folder))}" in capsys.readouterr().out
+    def refuse(path, *args, **kwargs) -> None:
+        if path == sidecar:
+            raise PermissionError(13, "Permission denied", path)
+        remove(path, *args, **kwargs)
+
+    # Patched, not chmod: root ignores the mode, so a test run as root (in Docker) would remove the record.
+    monkeypatch.setattr(conversions.os, "remove", refuse)
+
+    conversions.forget_conversion(str(folder))
+
+    out = capsys.readouterr().out
+    assert f"Could not remove the conversion record {sidecar}" in out
     assert _facts(str(folder)) == DOWNCONVERT
 
 
