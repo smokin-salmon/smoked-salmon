@@ -215,15 +215,17 @@ def test_each_answer_to_fill_a_request_reaches_the_site(answer: Picked, outcome:
     assert len(browser.questions) == 1
 
 
-def test_a_row_number_typed_as_an_id_is_refused() -> None:
-    # 2 is the row the CLI skipped: as a text it would read as that row, not as request 2.
-    site = partial(request_checker._prompt_for_request_id, SITE, REQUESTS)
-    result, browser = web(site, [Picked(texts=["3"]), Picked(texts=["2"]), picks("n")])
-    assert result is None
+@pytest.mark.parametrize("rows", [REQUESTS, [*REQUESTS[:2], {"requestId": 14, "title": "No year"}]])
+def test_a_row_number_typed_as_an_id_is_refused(rows: list[dict[str, Any]]) -> None:
+    # The parser reads any number up to the row count as that row, printed or not: as a text it would not be an ID.
+    # The second list ends with a row the CLI does not print.
+    site = partial(request_checker._prompt_for_request_id, SITE, rows)
+    result, browser = web(site, [Picked(texts=["3"]), Picked(texts=["2"]), picks("3")])
+    assert result == rows[2]["requestId"]
     assert [q["error"] for q in browser.questions] == [
         None,
         "Error: 3 is result 3 above: pick it there, or paste the URL.",
-        "Error: An ID is a number above 3: paste the URL, or pick from the options.",
+        "Error: 2 is result 2 above: pick it there, or paste the URL.",
     ]
 
 

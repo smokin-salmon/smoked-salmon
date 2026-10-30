@@ -157,7 +157,7 @@ REQUESTS: list[dict[str, Any]] = [
         "mediaList": ["WEB", "CD"],
         "bounty": 104857600,
     },
-    # Printed without its year: the CLI skips the row, the web leaves it out.
+    # Without its year: the CLI does not print it, but reads 2 as this row; the web lists it by number.
     {"requestId": 12, "artists": [[{"name": "Artist"}]], "title": "Other"},
     {
         "requestId": 13,
@@ -511,10 +511,15 @@ def test_every_key_of_fill_a_request_is_accepted(monkeypatch: pytest.MonkeyPatch
     site = partial(request_checker._prompt_for_request_id, SITE, REQUESTS)
     _result, _terminal, described = ask(monkeypatch, site, ["n"])
     options = described.options[0]
-    # The row printed without its year is left out; the others keep the numbers the CLI prints.
-    assert keys(options) == [("1", "Artist - Album"), ("3", "Various Artists - Compilation"), ("n", "Don't fill")]
+    # Every row, with the number the CLI reads as that row: the one printed without its year by number and link only.
+    assert keys(options) == [
+        ("1", "Artist - Album"),
+        ("2", "Request 2"),
+        ("3", "Various Artists - Compilation"),
+        ("n", "Don't fill"),
+    ]
     assert options is not None
-    assert options.items[0].group == "Requests on RED"
+    assert {option.group for option in options.items[:3]} == {"Requests on RED"}
     assert options.items[0].card == interaction.Card(
         (
             ("Year", "2020"),
@@ -524,10 +529,11 @@ def test_every_key_of_fill_a_request_is_accepted(monkeypatch: pytest.MonkeyPatch
         ),
         link="https://red.test/requests.php?action=view&id=11",
     )
-    assert options.items[1].card is not None
-    assert [label for label, _value in options.items[1].card.fields] == ["Year", "Release type", "Requirements"]
+    assert options.items[1].card == interaction.Card(link="https://red.test/requests.php?action=view&id=12")
+    assert options.items[2].card is not None
+    assert [label for label, _value in options.items[2].card.fields] == ["Year", "Release type", "Requirements"]
     assert options.free_text == interaction.FreeText("Request URL or ID", ids=True)
-    for key, outcome in {"1": 11, "3": 13, "n": None}.items():
+    for key, outcome in {"1": 11, "2": 12, "3": 13, "n": None}.items():
         result, terminal, _described = ask(monkeypatch, site, [key])
         assert (key, result) == (key, outcome)
         assert len(terminal.calls) == 1
@@ -536,6 +542,14 @@ def test_every_key_of_fill_a_request_is_accepted(monkeypatch: pytest.MonkeyPatch
         result, terminal, _described = ask(monkeypatch, site, [text])
         assert (text, result) == (text, outcome)
         assert len(terminal.calls) == 1
+
+
+def test_a_request_row_without_an_id_is_still_listed_by_its_number(monkeypatch: pytest.MonkeyPatch) -> None:
+    site = partial(request_checker._prompt_for_request_id, SITE, [*REQUESTS[:1], {"title": "Broken"}])
+    _result, _terminal, described = ask(monkeypatch, site, ["n"])
+    options = described.options[0]
+    assert keys(options) == [("1", "Artist - Album"), ("2", "Request 2"), ("n", "Don't fill")]
+    assert options is not None and options.items[1].card is None
 
 
 def test_fill_a_request_with_no_results_still_describes_its_answers(monkeypatch: pytest.MonkeyPatch) -> None:

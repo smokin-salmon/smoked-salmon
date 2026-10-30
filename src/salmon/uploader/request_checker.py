@@ -97,14 +97,19 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
 
 
 def _request_options(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any]]) -> list[interaction.Option]:
-    """The requests print_request_results lists, as cards for salmon web, numbered as it numbers them.
+    """Every request of the results, as cards for salmon web, numbered as print_request_results numbers them.
 
-    A row it skips, or one that cannot be described, is left out: the CLI never sees the description, so describing
-    a row must not stop the question.
+    The CLI reads each of these numbers as its row, printed or not, so each is listed: a row that cannot be described
+    (print_request_results skips it) shows its number and link only. The CLI never sees the description, so
+    describing a row must not stop the question.
     """
     group = f"Requests on {gazelle_site.site_string}"
     described = []
-    for r_index, r in enumerate(results):
+    for n, r in enumerate(results, 1):
+        try:
+            link = gazelle_site.request_url(r["requestId"])
+        except (KeyError, TypeError):
+            link = None
         try:
             artists = r["artists"][0]
             artist = "Various Artists" if len(artists) > 3 else " ".join(a["name"] for a in artists)
@@ -112,10 +117,10 @@ def _request_options(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any
             fields = [("Year", str(r["year"])), ("Release type", str(r["releaseType"])), ("Requirements", requirements)]
             if "bounty" in r:
                 fields.append(("Bounty", humanfriendly.format_size(r["bounty"], binary=True)))
-            card = interaction.Card(tuple(fields), link=gazelle_site.request_url(r["requestId"]))
-            described.append(interaction.Option(str(r_index + 1), f"{artist} - {r['title']}", group=group, card=card))
+            label, card = f"{artist} - {r['title']}", interaction.Card(tuple(fields), link=link)
         except (KeyError, TypeError, ValueError, IndexError):
-            continue
+            label, card = f"Request {n}", interaction.Card(link=link) if link else None
+        described.append(interaction.Option(str(n), label, group=group, card=card))
     return described
 
 
