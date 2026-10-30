@@ -412,3 +412,57 @@ def test_a_refused_transcode_is_skipped_and_the_next_task_runs(monkeypatch, caps
 
     assert made == ["V0", "up /out [V0]"]
     assert "01.mp3 is missing" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("change", ["gained", "lost"])
+def test_a_transcode_of_the_album_before_it_gained_or_lost_a_track_is_refused_not_removed(
+    made, tmp_path, change
+) -> None:
+    album = _album(tmp_path)
+    out = _transcode(album, tmp_path)
+    if change == "gained":
+        _write_flac(album / "03. three.flac", 44100, 16, title="Three")
+    else:
+        (album / "02. two.flac").unlink()
+    before = _snapshot(out)
+
+    with pytest.raises(UploadError) as refused:
+        _transcode(album, tmp_path)
+
+    assert str(refused.value) == (
+        f"{out} holds a transcode of this album from before its files changed, not this transcode: "
+        "remove it and run again."
+    )
+    assert _snapshot(out) == before
+
+
+@pytest.mark.parametrize("change", ["gained", "lost"])
+def test_a_downconversion_of_the_album_before_it_gained_or_lost_a_track_is_refused(made, tmp_path, change) -> None:
+    album = _album(tmp_path, 24, 96000)
+    out = _downconvert(album, tmp_path)
+    if change == "gained":
+        _write_flac(album / "03. three.flac", 96000, 24, title="Three")
+    else:
+        (album / "02. two.flac").unlink()
+    before = _snapshot(out)
+
+    with pytest.raises(UploadError, match="incomplete or not salmon's conversion"):
+        _downconvert(album, tmp_path)
+
+    assert _snapshot(out) == before
+
+
+def test_a_downconversion_of_the_album_before_it_gained_a_16_bit_track_is_refused(made, tmp_path) -> None:
+    # The 16-bit track is copied as it is, so only the record's list of the album's files knows it is new.
+    album = tmp_path / "source" / "Mixed [WEB FLAC]"
+    album.mkdir(parents=True)
+    _write_flac(album / "01. one.flac", 96000, 24, title="One")
+    _write_flac(album / "02. two.flac", 44100, 16, title="Two")
+    out = _downconvert(album, tmp_path)
+    _write_flac(album / "03. three.flac", 44100, 16, title="Three")
+    before = _snapshot(out)
+
+    with pytest.raises(UploadError, match="incomplete or not salmon's conversion"):
+        _downconvert(album, tmp_path)
+
+    assert _snapshot(out) == before

@@ -3,7 +3,7 @@ import re
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 import anyio
 import asyncclick as click
@@ -12,7 +12,7 @@ import msgspec
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import get_audio_files, process_files
-from salmon.converter.conversions import conversion_of, missing_files, record_conversion
+from salmon.converter.conversions import conversion_of, missing_files, record_conversion, recorded_files
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -279,10 +279,13 @@ def _check_finished_conversion(path: str, new_path: str, items: list[ConvertItem
     record = conversion_of(new_path)
     # The name alone can match: a 16-bit conversion at 44.1 kHz and at 48 kHz can share one.
     wanted = {"kind": "downconvert", "bit_depth": bit_depth, "sample_rate": _recorded_rate(items)}
+    recorded = None if record is None else recorded_files(record)
     if (
         record is not None
         and os.path.realpath(record["source"]) == os.path.realpath(path)
         and all(record.get(key) == value for key, value in wanted.items())
+        # A track the album gained or lost since is not in this conversion, or no longer in the album.
+        and (recorded is None or _records_these_files(path, new_path, items, record, recorded))
     ):
         missing = missing_files(new_path, record)
         if missing:
@@ -295,6 +298,18 @@ def _check_finished_conversion(path: str, new_path: str, items: list[ConvertItem
     raise UploadError(
         f"{new_path} is incomplete or not salmon's conversion of this album at these settings: remove it and run again."
     )
+
+
+def _records_these_files(
+    path: str, new_path: str, items: list[ConvertItem], record: dict[str, Any], recorded: dict[str, str]
+) -> bool:
+    """Whether a record lists the album's files as they are now: each one to convert, and none since gone."""
+    album_files = record.get("album_files")
+    if isinstance(album_files, list):
+        return sorted(album_files) == sorted(get_audio_files(path))
+    # A record from before records listed the album's files: --essential-only leaves 16-bit ones out of it.
+    converted = {os.path.relpath(item.dst, new_path) for item in items}
+    return converted <= recorded.keys() and all(os.path.isfile(os.path.join(path, source)) for source in recorded)
 
 
 async def convert_folder(
@@ -347,6 +362,8 @@ async def convert_folder(
             bit_depth=bit_depth,
             sample_rate=_recorded_rate(items),
             files=files,
+            # Every audio file of the album, the 16-bit ones copied as they are too: to tell when it gains or loses one.
+            album_files=sorted(get_audio_files(path)),
         )
     return final_rate or sample_rate, new_path
 
