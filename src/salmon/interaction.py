@@ -121,6 +121,7 @@ class Interaction(Protocol):
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
         options: Options | None = None,
+        hide_input: bool = False,
     ) -> Any:
         """Ask for a line of text, and return it converted by `type` or `value_proc`.
 
@@ -196,15 +197,18 @@ class TerminalInteraction:
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
         options: Options | None = None,
+        hide_input: bool = False,
     ) -> Any:
         # The options are for the web: the terminal asks exactly as before.
-        return await click.prompt(
-            text,
-            default=default,
-            type=type,
-            value_proc=value_proc,
-            show_default=show_default,
-        )
+        prompt_args = {
+            "default": default,
+            "type": type,
+            "value_proc": value_proc,
+            "show_default": show_default,
+        }
+        if hide_input:
+            prompt_args["hide_input"] = True
+        return await click.prompt(text, **prompt_args)
 
     async def confirm(
         self,
@@ -271,11 +275,19 @@ async def prompt(
     value_proc: Callable[[str], Any] | None = None,
     show_default: bool = True,
     options: Options | None = None,
+    hide_input: bool = False,
 ) -> Any:
     """Ask for a line of text. See `Interaction.prompt`."""
-    return await current().prompt(
-        text, default=default, type=type, value_proc=value_proc, show_default=show_default, options=options
-    )
+    prompt_args = {
+        "default": default,
+        "type": type,
+        "value_proc": value_proc,
+        "show_default": show_default,
+        "options": options,
+    }
+    if hide_input:
+        prompt_args["hide_input"] = True
+    return await current().prompt(text, **prompt_args)
 
 
 async def confirm(

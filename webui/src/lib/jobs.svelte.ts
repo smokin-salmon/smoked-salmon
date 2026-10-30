@@ -48,6 +48,8 @@ export interface Question {
   text: string
   default?: string | boolean | null
   choices?: string[] | null
+  /** Do not echo the reply: a session cookie or API key. */
+  hide_input?: boolean
   initial?: string
   files?: string[]
   tracks?: Record<string, string>

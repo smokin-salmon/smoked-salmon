@@ -37,6 +37,7 @@ class Scripted:
     def __init__(self, answers: list[Any]) -> None:
         self.answers = list(answers)
         self.asked: list[tuple[str, str]] = []
+        self.prompt_calls: list[tuple[str, dict[str, Any]]] = []
 
     def _answer(self, kind: str, text: str) -> Any:
         self.asked.append((kind, text))
@@ -47,6 +48,7 @@ class Scripted:
         return answer
 
     async def prompt(self, text: str, **kwargs: Any) -> Any:
+        self.prompt_calls.append((text, kwargs))
         return self._answer("prompt", text)
 
     async def confirm(self, text: str, **kwargs: Any) -> bool:
@@ -94,6 +96,11 @@ def test_the_answers_make_a_config_that_loads(tmp_path: Path, folders: tuple[Pat
     assert exit_code == 0
 
     assert scripted.answers == []
+    assert [
+        kwargs.get("hide_input", False)
+        for text, kwargs in scripted.prompt_calls
+        if "session cookie" in text or "API key" in text
+    ] == [True, True, True, True]
     assert [text for _, text in scripted.asked] == [
         f"{first_run.FOLDERS[0][1]} (download_directory)",
         f"{first_run.FOLDERS[1][1]} (dottorrents_dir)",

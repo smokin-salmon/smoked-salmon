@@ -181,6 +181,7 @@ class WebInteraction:
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
         options: Options | None = None,
+        hide_input: bool = False,
     ) -> Any:
         convert = value_proc if value_proc is not None else click.types.convert_type(type, default)
         choices = [str(choice) for choice in type.choices] if isinstance(type, click.Choice) else None
@@ -193,6 +194,8 @@ class WebInteraction:
                 "choices": choices,
                 "error": error,
             }
+            if hide_input:
+                question["hide_input"] = True
             if options is not None:
                 question["options"] = _shown_options(options)
                 question["preselected"] = _preselected(options, default)

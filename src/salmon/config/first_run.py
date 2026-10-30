@@ -165,10 +165,12 @@ async def ask_trackers() -> list[TrackerAnswer]:
         click.echo(f"{code}: the value of the 'session' cookie your browser has for {SITES[code]}, while logged in.")
         session = ""
         while not session:
-            session = str(await interaction.prompt(f"{code} session cookie")).strip()
+            session = str(await interaction.prompt(f"{code} session cookie", hide_input=True)).strip()
         api_key = None
         if code in TAKES_API_KEY:
-            key = await interaction.prompt(f"{code} API key (Enter to skip)", default="", show_default=False)
+            key = await interaction.prompt(
+                f"{code} API key (Enter to skip)", default="", show_default=False, hide_input=True
+            )
             api_key = str(key).strip() or None
         trackers.append(TrackerAnswer(code=code, session=session, api_key=api_key))
     return trackers
