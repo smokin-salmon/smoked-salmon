@@ -100,8 +100,8 @@ def _request_options(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any
     """Every request of the results, as cards for salmon web, numbered as print_request_results numbers them.
 
     The CLI reads each of these numbers as its row, printed or not, so each is listed: a row that cannot be described
-    (print_request_results skips it) shows its number and link only. The CLI never sees the description, so
-    describing a row must not stop the question.
+    (print_request_results skips it) shows its number, and its link when it has a request ID. The CLI never sees the
+    description, so describing a row must not stop the question.
     """
     group = f"Requests on {gazelle_site.site_string}"
     described = []
