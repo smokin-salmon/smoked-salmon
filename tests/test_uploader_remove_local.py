@@ -7,6 +7,7 @@ import pytest
 
 from salmon import dryrun
 from salmon.config.validations import Seedbox
+from salmon.converter import conversions
 from salmon.uploader import seedbox as sb
 
 
@@ -101,6 +102,18 @@ def test_a_folder_is_removed_when_an_opted_in_seedbox_copied_it_and_added_everyt
         f"Removed {folder} from download_directory: copied to and seeding on nas (remove_local_after_copy)." in report
     )
     assert run.download_directory.is_dir()
+
+
+def test_a_removed_folder_takes_its_conversion_record_with_it(monkeypatch, tmp_path) -> None:
+    run = _Run(monkeypatch, tmp_path, [_rclone("nas")])
+    folder = run.release()
+    conversions.record_conversion(str(folder), source="/x/src", kind="downconvert", bit_depth=16, sample_rate=44100)
+    run.queue(folder, "RED")
+
+    run.finish()
+
+    assert not folder.exists()
+    assert conversions.conversion_of(str(folder)) is None
 
 
 def test_a_folder_is_removed_when_a_second_seedbox_without_the_key_also_has_it(monkeypatch, tmp_path) -> None:

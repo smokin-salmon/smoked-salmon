@@ -502,6 +502,41 @@ def test_nothing_is_recorded_in_library_dirs_or_in_a_folder_holding_it(tmp_path,
     assert _records_under(tmp_path) == []
 
 
+def test_forgetting_a_record_removes_nothing_in_library_dirs(library_and_downloads) -> None:
+    library, downloads = library_and_downloads
+    # A record left in the library, and a record directory beside download_directory's albums that leads into it.
+    in_library = library / conversions.REGISTRY_DIR / "Album [WEB FLAC].json"
+    in_library.parent.mkdir()
+    in_library.write_text("{}")
+    (downloads / conversions.REGISTRY_DIR).symlink_to(library / conversions.REGISTRY_DIR)
+
+    conversions.forget_conversion(str(library / "Album [WEB FLAC]"))
+    conversions.forget_conversion(str(downloads / "Album [WEB FLAC]"))
+
+    assert in_library.read_text() == "{}"
+
+
+def test_a_record_that_cannot_be_removed_is_reported(tmp_path, monkeypatch, capsys) -> None:
+    folder = tmp_path / "Album [WEB FLAC]"
+    conversions.record_conversion(str(folder), **DOWNCONVERT)
+    sidecar = conversions._sidecar(str(folder))
+    remove = os.remove
+
+    def refuse(path, *args, **kwargs) -> None:
+        if path == sidecar:
+            raise PermissionError(13, "Permission denied", path)
+        remove(path, *args, **kwargs)
+
+    # Patched, not chmod: root ignores the mode, so a test run as root (in Docker) would remove the record.
+    monkeypatch.setattr(conversions.os, "remove", refuse)
+
+    conversions.forget_conversion(str(folder))
+
+    out = capsys.readouterr().out
+    assert f"Could not remove the conversion record {sidecar}" in out
+    assert _facts(str(folder)) == DOWNCONVERT
+
+
 def test_a_conversion_cannot_land_in_the_library_nor_leave_a_record_there(
     tmp_path, monkeypatch, library_and_downloads
 ) -> None:

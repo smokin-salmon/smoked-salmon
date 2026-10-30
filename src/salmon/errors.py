@@ -8,6 +8,10 @@ class AbortAndDeleteFolder(Exception):
     pass
 
 
+class SkipTracker(Exception):
+    """The user skipped this tracker at its group questions: the run goes on to the next one."""
+
+
 class DownloadError(Exception):
     pass
 
