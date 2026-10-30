@@ -218,11 +218,8 @@ class CrossUploadParams(msgspec.Struct, forbid_unknown_fields=True):
     # --path: the album folder, when it is not download_directory/<the torrent's folder>.
     path: str | None = None
     group_id: Annotated[int, msgspec.Meta(gt=0)] | None = None
-    # --transcode, each bitrate once.
-    transcodes: list[str] = []
-    downconvert: bool = False
-    # --all
-    all_formats: bool = False
+    # --conversions: the kinds to make after the FLAC, none by default.
+    conversions: list[str] = []
 
 
 def _checked(params: SpectralsParams | ChecksParams, _dry_run: bool) -> SpectralsParams | ChecksParams:
@@ -352,9 +349,7 @@ def _cross_upload_options(params: CrossUploadParams, path: str | None) -> "Cross
         target=params.target,
         path=path,
         group_id=params.group_id,
-        transcodes=tuple(params.transcodes),
-        downconvert=params.downconvert,
-        all_formats=params.all_formats,
+        conversions=tuple(params.conversions),
     )
 
 
@@ -363,21 +358,18 @@ def _checked_cross_upload(params: CrossUploadParams, _dry_run: bool) -> CrossUpl
 
     Each INPUT is kept as the torrent ID it names: a URL is neither shown nor kept.
     """
-    from salmon.cross_upload import TRANSCODES, is_torrent_reference, torrent_id_of
+    from salmon.cross_upload import is_torrent_reference, torrent_id_of
 
-    transcodes: list[str] = []
-    for bitrate in params.transcodes:
-        code = bitrate.strip().upper()
-        if code not in TRANSCODES:
-            raise JobError(400, f"{bitrate} is not a transcode salmon makes: {' or '.join(TRANSCODES)}.")
-        if code not in transcodes:
-            transcodes.append(code)
+    try:
+        conversions = list(canonical_conversions(params.conversions))
+    except ValueError as e:
+        raise JobError(400, str(e)) from None
     checked = msgspec.structs.replace(
         params,
         inputs=[value.strip() for value in params.inputs],
         source=params.source.strip().upper(),
         target=params.target.strip().upper(),
-        transcodes=transcodes,
+        conversions=conversions,
     )
     # A tracker not in the config is refused here: no client of it is made.
     if (error := _cross_upload_options(checked, params.path).usage_error()) is not None:

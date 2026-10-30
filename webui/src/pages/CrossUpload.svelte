@@ -8,7 +8,7 @@
 
   interface Options {
     trackers: string[]
-    transcodes: string[]
+    conversion_kinds: string[]
     max_releases: number
   }
 
@@ -25,16 +25,15 @@
     uploads: Uploaded[]
   }
 
-  let options = $state<Options>({ trackers: [], transcodes: [], max_releases: 5 })
+  let options = $state<Options>({ trackers: [], conversion_kinds: [], max_releases: 5 })
 
   let inputs = $state('')
   let source = $state('')
   let target = $state('')
   let path = $state('')
   let groupId = $state('')
-  let transcodes = $state<string[]>([])
-  let downconvert = $state(false)
-  let allFormats = $state(false)
+  // None ticked at each visit, as salmon cross-upload makes none without --conversions.
+  let conversions = $state<string[]>([])
   let dryRun = $state(false)
   let assumeDefaults = $state(false)
   let showHelp = $state(false)
@@ -65,8 +64,8 @@
       })
   })
 
-  function toggleTranscode(bitrate: string) {
-    transcodes = transcodes.includes(bitrate) ? transcodes.filter((b) => b !== bitrate) : [...transcodes, bitrate]
+  function toggleConversion(kind: string) {
+    conversions = options.conversion_kinds.filter((k) => (k === kind) !== conversions.includes(k))
   }
 
   /** A group ID, or the ID in a torrents.php?id= link; null for none, undefined when it is neither. */
@@ -95,9 +94,7 @@
           target,
           path: path.trim() || null,
           group_id: group,
-          transcodes,
-          downconvert,
-          all_formats: allFormats,
+          conversions,
         },
         dry_run: dryRun,
         assume_defaults: assumeDefaults,
@@ -190,26 +187,23 @@
       {/if}
     </div>
 
-    <div class="opts">
-      {#each options.transcodes as bitrate (bitrate)}
-        <label class="check" title="Also upload this MP3 transcode of a FLAC (--transcode {bitrate}).">
-          <input type="checkbox" checked={transcodes.includes(bitrate)} onchange={() => toggleTranscode(bitrate)} />
-          MP3 {bitrate}
-        </label>
-      {/each}
-      <label class="check" title="Also upload the lossless downconversions of a 24-bit FLAC (--downconvert).">
-        <input type="checkbox" bind:checked={downconvert} /> Downconversions
-      </label>
-      <label class="check" title="Also upload every conversion salmon up would offer (--all).">
-        <input type="checkbox" bind:checked={allFormats} /> All formats
-      </label>
+    <div class="field conversions">
+      <span class="label">Conversions</span>
+      <div class="opts">
+        {#each options.conversion_kinds as kind (kind)}
+          <label class="check">
+            <input type="checkbox" checked={conversions.includes(kind)} onchange={() => toggleConversion(kind)} />
+            {kind}
+          </label>
+        {/each}
+      </div>
+      {#if showHelp}
+        <small class="hint">
+          Also uploaded, into the same group, each made from the files on disk, as salmon up makes them (--conversions).
+          A kind this FLAC cannot give is skipped, and a format the group already has in this edition is left out.
+        </small>
+      {/if}
     </div>
-    {#if showHelp}
-      <p class="hint">
-        The conversions go into the same group, each made from the files on disk, as salmon up makes them. A format
-        the group already has in this edition is left out.
-      </p>
-    {/if}
 
     <div class="row wrap chips">
       <button class="chip toggle" class:on={dryRun} aria-pressed={dryRun} onclick={() => (dryRun = !dryRun)}>
@@ -324,11 +318,13 @@
   .hint.warn {
     color: var(--err);
   }
+  .conversions {
+    margin-top: 0.9rem;
+  }
   .opts {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem 1.1rem;
-    margin-top: 0.9rem;
   }
   .chips {
     margin-top: 0.9rem;

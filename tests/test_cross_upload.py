@@ -36,10 +36,12 @@ import salmon.trackers
 import salmon.uploader
 import salmon.uploader.seedbox
 from salmon import cfg
-from salmon.config.validations import Seedbox
+from salmon.config.validations import CONVERSION_KINDS, Seedbox
 from salmon.cross_upload import (
+    CrossUploadOptions,
     CrossUploadRefused,
     Release,
+    _conversion_tasks,
     _images_to_rehost,
     _input_item,
     _refuse_secrets,
@@ -653,6 +655,120 @@ def test_a_flac_and_two_transcodes_into_an_existing_group(monkeypatch, dirs) -> 
     assert run.target.posts()[1].fields["release_desc"][0].startswith(f"[b]Source:[/b] {flac_url}\n")
 
 
+def test_conversions_give_the_two_transcodes_as_transcode_does(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.results = [_result([])]
+        target.groups[TARGET_GROUP_ID] = {"group": {"id": TARGET_GROUP_ID, "year": 2018}, "torrents": []}
+
+    run = _cross_upload(
+        monkeypatch,
+        dirs,
+        [str(TORRENT_ID), "-yyy", "--conversions", "320,v0"],
+        input="1\n\n",
+        prepare=prepare,
+        transcode=_transcode,
+    )
+
+    assert run.result.exit_code == 0, run.output
+    formats = [(post.fields["format"][0], post.fields["bitrate"][0]) for post in run.target.posts()]
+    assert formats == [("FLAC", "Lossless"), ("MP3", "320"), ("MP3", "V0 (VBR)")]
+    assert sorted(path.name for path in dirs.downloads.iterdir()) == [FOLDER, f"{FOLDER} [320]", f"{FOLDER} [V0]"]
+
+
+def test_a_conversion_that_is_not_a_kind_is_refused_by_the_command(monkeypatch, dirs) -> None:
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "--conversions", "128"])
+
+    assert run.result.exit_code == 2, run.output
+    assert "is not a conversion" in run.output
+    assert run.source.sent == run.target.sent == []
+
+
+def _flac_release(encoding: str, rate: int, format_: str = "FLAC") -> Release:
+    return Release(
+        label="1",
+        response={"torrent": {"format": format_, "encoding": encoding}, "group": {}},
+        path=Path("."),
+        data={},
+        track_data={"01.flac": {"sample rate": rate}},
+    )
+
+
+def _asked_for(**asked: Any) -> CrossUploadOptions:
+    return CrossUploadOptions(inputs=("1",), source="OPS", target="RED", **asked)
+
+
+def _task_names(release: Release, **asked: Any) -> list[str]:
+    return [task["name"] for task in _conversion_tasks(release, _asked_for(**asked))]
+
+
+@pytest.mark.parametrize(
+    ("alias", "conversions", "names"),
+    [
+        ({"transcodes": ("320", "V0")}, ("320", "V0"), ["MP3 320", "MP3 V0"]),
+        ({"transcodes": ("V0",)}, ("V0",), ["MP3 V0"]),
+        ({"downconvert": True}, ("24bit", "16bit"), ["24bit 96.0 kHz", "16bit 48.0 kHz"]),
+        ({"all_formats": True}, CONVERSION_KINDS, ["24bit 96.0 kHz", "16bit 48.0 kHz", "MP3 320", "MP3 V0"]),
+    ],
+    ids=["transcodes", "one transcode", "downconvert", "all"],
+)
+def test_conversions_give_the_tasks_of_the_flag_they_stand_for(alias, conversions, names) -> None:
+    release = _flac_release("24bit Lossless", 192000)
+
+    assert _task_names(release, **alias) == names
+    assert _task_names(release, conversions=conversions) == names
+
+
+def test_the_flags_and_conversions_add_up() -> None:
+    release = _flac_release("24bit Lossless", 192000)
+
+    assert _task_names(release, transcodes=("320",), conversions=("V0",)) == ["MP3 320", "MP3 V0"]
+    assert _task_names(release, downconvert=True, conversions=("V0", "320")) == [
+        "24bit 96.0 kHz",
+        "16bit 48.0 kHz",
+        "MP3 320",
+        "MP3 V0",
+    ]
+
+
+def test_no_conversions_asked_for_gives_no_tasks_for_any_source() -> None:
+    assert _conversion_tasks(_flac_release("Lossless", 44100), _asked_for(conversions=())) == []
+    assert _conversion_tasks(_flac_release("320", 44100, "MP3"), _asked_for(conversions=())) == []
+
+
+def test_a_kind_the_flac_cannot_give_is_skipped_with_a_line() -> None:
+    release = _flac_release("Lossless", 44100)
+
+    names = _task_names(release, conversions=("24bit", "16bit", "V0"))
+
+    assert names == ["MP3 V0"]
+    assert release.notes == [
+        "No 24bit conversion of this FLAC: skipped",
+        "No 16bit conversion of this FLAC: skipped",
+    ]
+
+
+def test_the_skip_line_stays_when_all_is_given_too() -> None:
+    release = _flac_release("Lossless", 44100)
+
+    names = _task_names(release, all_formats=True, conversions=("24bit",))
+
+    assert names == ["MP3 320", "MP3 V0"]
+    assert release.notes == ["No 24bit conversion of this FLAC: skipped"]
+
+
+def test_downconvert_with_no_lossless_downconversion_is_still_refused() -> None:
+    with pytest.raises(CrossUploadRefused, match="--downconvert: there is no lossless downconversion of this FLAC"):
+        _conversion_tasks(_flac_release("Lossless", 44100), _asked_for(downconvert=True))
+
+
+def test_conversions_of_a_source_that_is_not_a_flac_are_refused() -> None:
+    with pytest.raises(CrossUploadRefused, match="only a FLAC can be transcoded or downconverted"):
+        _conversion_tasks(_flac_release("320", 44100, "MP3"), _asked_for(conversions=("V0",)))
+
+
 def _filed_group(*others: dict[str, Any]) -> dict[str, Any]:
     """TARGET's group once the FLAC is up: the FLAC (700001) filed under CAT-1 in 2023, beside `others`."""
     flac = {
@@ -669,7 +785,9 @@ def _filed_group(*others: dict[str, Any]) -> dict[str, Any]:
     return {"group": {"id": TARGET_GROUP_ID, "year": 2018}, "torrents": [flac, *(({**flac, **o}) for o in others)]}
 
 
-def _transcode_into_filed_group(monkeypatch, dirs, group: dict[str, Any]) -> Run:
+def _transcode_into_filed_group(
+    monkeypatch, dirs, group: dict[str, Any], conversion: tuple[str, ...] = ("--transcode", "V0")
+) -> Run:
     album = _album(dirs.downloads / FOLDER)
 
     def prepare(source: FakeTracker, target: FakeTracker) -> None:
@@ -680,7 +798,7 @@ def _transcode_into_filed_group(monkeypatch, dirs, group: dict[str, Any]) -> Run
     return _cross_upload(
         monkeypatch,
         dirs,
-        [str(TORRENT_ID), "-yyy", "--transcode", "V0"],
+        [str(TORRENT_ID), "-yyy", *conversion],
         input="1\n\n",
         prepare=prepare,
         transcode=_transcode,
@@ -709,6 +827,15 @@ def test_a_transcode_held_in_the_edition_the_flac_was_filed_under_is_left_out(mo
     assert "Not uploading MP3 V0: the group already has it in this edition." in run.output
     assert [post.fields["format"][0] for post in run.target.posts()] == ["FLAC"]
     assert run.target.steps()["GET ajax.php?action=torrentgroup"] == 1
+
+
+def test_a_conversion_the_group_holds_is_left_out_of_conversions_too(monkeypatch, dirs) -> None:
+    held = {"id": 700002, "format": "MP3", "encoding": "V0 (VBR)", "remasterCatalogueNumber": "CAT1"}
+    run = _transcode_into_filed_group(monkeypatch, dirs, _filed_group(held), ("--conversions", "V0"))
+
+    assert run.result.exit_code == 0, run.output
+    assert "Not uploading MP3 V0: the group already has it in this edition." in run.output
+    assert [post.fields["format"][0] for post in run.target.posts()] == ["FLAC"]
 
 
 def test_a_new_group_with_transcodes_needs_no_group_fetch(monkeypatch, dirs) -> None:

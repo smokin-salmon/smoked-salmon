@@ -201,9 +201,9 @@ def test_a_web_cross_upload_sends_what_the_command_sends(
     # The same release and answers, as a web job.
     web_album = album(dirs.downloads)
     world = cross_upload_world(monkeypatch, dirs, transcode=_transcode)
-    params: dict[str, Any] = {"transcodes": ["V0"]} if conversion[:1] == ["--transcode"] else {}
+    params: dict[str, Any] = {"conversions": ["V0"]} if conversion[:1] == ["--transcode"] else {}
     if downconvert:
-        params["downconvert"] = True
+        params["conversions"] = ["16bit"]
 
     async def test(client: TestClient, manager: JobManager) -> None:
         job, asked = await _drive(client, manager, await _start(client, params=params))
@@ -235,7 +235,7 @@ def test_a_web_cross_upload_sends_what_the_command_sends(
     assert _snapshot(web_album) == _snapshot(cli_album)
 
 
-def test_the_form_offers_the_trackers_and_transcodes_cross_upload_takes(
+def test_the_form_offers_the_trackers_and_conversions_cross_upload_takes(
     monkeypatch: pytest.MonkeyPatch,
     dirs: SimpleNamespace,  # noqa: F811
 ) -> None:
@@ -245,7 +245,11 @@ def test_the_form_offers_the_trackers_and_transcodes_cross_upload_takes(
     async def test(client: TestClient, _manager: JobManager) -> None:
         response = await client.get("/api/cross-upload/options", headers=AUTH)
         assert response.status == 200
-        assert await response.json() == {"trackers": ["RED", "OPS"], "transcodes": ["320", "V0"], "max_releases": 5}
+        assert await response.json() == {
+            "trackers": ["RED", "OPS"],
+            "conversion_kinds": ["24bit", "16bit", "320", "V0"],
+            "max_releases": 5,
+        }
 
     _web(world, test)
     assert world.trackers["OPS"].sent == world.trackers["RED"].sent == []
@@ -270,7 +274,7 @@ def test_a_dry_run_job_reads_what_the_commands_dry_run_reads_and_sends_no_post(
     world = cross_upload_world(monkeypatch, dirs, transcode=_transcode)
 
     async def test(client: TestClient, manager: JobManager) -> None:
-        job_id = await _start(client, params={"transcodes": ["V0"]}, dry_run=True)
+        job_id = await _start(client, params={"conversions": ["V0"]}, dry_run=True)
         job, _asked = await _drive(client, manager, job_id)
         assert job.status == "done", (job.error, _log(job))
         assert job.result["uploads"] == []
@@ -381,7 +385,7 @@ def test_a_lossy_report_with_a_lost_answer_ends_the_job_as_unknown_outcome(
             target.uploads = ["ok", "Your torrent is too small"]
 
     async def test(client: TestClient, manager: JobManager) -> None:
-        job_id = await _start(client, [str(APPROVED_ID)], params={"transcodes": ["V0"]}, assume_defaults=True)
+        job_id = await _start(client, [str(APPROVED_ID)], params={"conversions": ["V0"]}, assume_defaults=True)
         job, _asked = await _drive(client, manager, job_id)
         assert job.status == "unknown_outcome", (job.error, _log(job))
         assert job.error is not None
@@ -412,7 +416,7 @@ def test_a_failed_second_format_stops_the_job_and_its_result_links_what_is_up(
         target.uploads = ["ok", "Your torrent is too small"]
 
     async def test(client: TestClient, manager: JobManager) -> None:
-        job_id = await _start(client, params={"transcodes": ["320", "V0"]}, assume_defaults=True)
+        job_id = await _start(client, params={"conversions": ["320", "V0"]}, assume_defaults=True)
         job, _asked = await _drive(client, manager, job_id)
         assert job.status == "failed", (job.error, _log(job))
         assert job.error == "API upload failed: Your torrent is too small"
@@ -442,7 +446,11 @@ def test_a_failed_second_format_stops_the_job_and_its_result_links_what_is_up(
         ({"inputs": ["{album}/release.torrent"]}, "{album}/release.torrent is not a OPS torrent ID or URL."),
         ({"inputs": ["https://elsewhere.test/torrents.php?torrentid=1"]}, "Expected a torrent URL from {OPS}, "),
         ({"inputs": ["{OPS}/torrents.php?id=500002"]}, "The torrent URL must hold a numeric torrentid."),
-        ({"transcodes": ["V2"]}, "V2 is not a transcode salmon makes: 320 or V0."),
+        ({"conversions": ["V2"]}, "'V2' is not a conversion; the choices are "),
+        ({"conversions": ["V0", "v0"]}, "'V0' is named twice"),
+        ({"transcodes": ["V0"]}, "Invalid parameters: Object contains unknown field `transcodes`"),
+        ({"downconvert": True}, "Invalid parameters: Object contains unknown field `downconvert`"),
+        ({"all_formats": True}, "Invalid parameters: Object contains unknown field `all_formats`"),
         ({"group_id": 0}, "Invalid parameters: Expected `int` >= 1"),
         ({"inputs": "600012"}, "Invalid parameters: Expected `array`, got `str`"),
         ({"torrent_file": "x"}, "Invalid parameters: Object contains unknown field `torrent_file`"),
@@ -667,7 +675,7 @@ def test_a_library_album_is_read_where_it_is_and_never_written(
 
     async def test(client: TestClient, manager: JobManager) -> None:
         job_id = await _start(
-            client, params={"path": str(album), "transcodes": ["V0"]}, dry_run=dry_run, assume_defaults=True
+            client, params={"path": str(album), "conversions": ["V0"]}, dry_run=dry_run, assume_defaults=True
         )
         job, _asked = await _drive(client, manager, job_id)
         assert job.status == "done", (job.error, _log(job))
@@ -811,7 +819,7 @@ def test_no_planted_secret_leaves_in_any_event_of_a_cross_upload_job(
     async def test(client: TestClient, manager: JobManager) -> None:
         events: list[Any] = []
         async with client.ws_connect("/api/ws", headers=AUTH) as socket:
-            job_id = await _start(client, params={"transcodes": ["V0"]}, dry_run=dry_run, assume_defaults=True)
+            job_id = await _start(client, params={"conversions": ["V0"]}, dry_run=dry_run, assume_defaults=True)
             job, _asked = await _drive(client, manager, job_id)
             assert job.status == "done", (job.error, _log(job))
             while not any(event["event"] == "finished" for event in events):
