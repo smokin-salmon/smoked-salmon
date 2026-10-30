@@ -28,6 +28,24 @@ _DEFERRED_PRE_AI_METADATA_ERRORS = {
 }
 
 
+# The answers to "Are there any metadata fields you would like to edit?", for salmon web.
+_FIELDS_TO_EDIT = interaction.Options(
+    (
+        interaction.Option("a", "Artists"),
+        interaction.Option("l", "Artist aliases"),
+        interaction.Option("t", "Title"),
+        interaction.Option("g", "Genres"),
+        interaction.Option("r", "Release type"),
+        interaction.Option("y", "Years"),
+        interaction.Option("e", "Edition info"),
+        interaction.Option("c", "Comment"),
+        interaction.Option("k", "Tracks"),
+        interaction.Option("u", "URLs"),
+        interaction.Option("n", "Nothing"),
+    )
+)
+
+
 async def review_metadata(metadata, validator, enforce_required_fields: bool = True, rls_type_hint: str | None = None):
     """
     Validate that the metadata is per the user's wishes and then offer the user
@@ -60,7 +78,8 @@ async def review_metadata(metadata, validator, enforce_required_fields: bool = T
                 "artist a[L]iases (rename or split an artist on every track), [t]itle, [g]enres, "
                 "[r]elease type, [y]ears, [e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing",
                 fg="magenta",
-            )
+            ),
+            options=_FIELDS_TO_EDIT,
         )
         r_let = r[0].lower()
         try:

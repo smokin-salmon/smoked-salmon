@@ -1,8 +1,9 @@
 <script lang="ts">
   import { tick } from 'svelte'
   import { apiPost } from './api'
-  import type { Job } from './jobs.svelte'
+  import type { Job, Picked } from './jobs.svelte'
   import SpectralViewer from './SpectralViewer.svelte'
+  import TypedQuestion from './TypedQuestion.svelte'
 
   let { job }: { job: Job } = $props()
 
@@ -80,7 +81,7 @@
     return `/api/jobs/${encodeURIComponent(job.id)}/spectrals/${encodeURIComponent(file)}`
   }
 
-  async function send(value: string | boolean | null) {
+  async function send(value: string | boolean | null | Picked) {
     if (!job.question || sending) return
     sending = true
     sendError = ''
@@ -103,10 +104,10 @@
     {#if q.kind === 'confirm'}
       <div class="row">
         <button class="btn" disabled={sending} onclick={() => send(true)}>
-          Yes{q.default === true ? ' (default)' : ''}
+          {q.labels?.[0] ?? 'Yes'}{q.default === true ? ' (default)' : ''}
         </button>
         <button class="btn secondary" disabled={sending} onclick={() => send(false)}>
-          No{q.default === false ? ' (default)' : ''}
+          {q.labels?.[1] ?? 'No'}{q.default === false ? ' (default)' : ''}
         </button>
       </div>
     {:else if q.kind === 'edit'}
@@ -146,6 +147,8 @@
       <div class="row actions done">
         <button class="btn" disabled={sending} onclick={() => send(true)}>Done</button>
       </div>
+    {:else if q.options}
+      <TypedQuestion {q} {sending} {send} />
     {:else}
       {#if q.choices}
         <div class="row wrap">

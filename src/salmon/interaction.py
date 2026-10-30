@@ -8,6 +8,11 @@ own. The default is the terminal one, which calls asyncclick as the code did bef
 `-yyy` is a context value too, set for the length of `assuming_defaults()`: it never outlives the run that set it,
 and nothing writes the config at runtime.
 
+A `prompt` may describe the answers it already accepts (`options`, an `Options`), and a `confirm` may name its two
+buttons (`labels`), as ADR 0006 decides. The terminal ignores both: asyncclick gets exactly the call's other
+arguments. salmon web draws the description, and turns what the browser picked into the line a terminal user would
+have typed, which the call site's own parser then reads.
+
 A test (tests/test_interaction_calls.py) fails on any direct call to asyncclick's `prompt`, `confirm` or `edit`,
 or to `input()`, outside the terminal implementation below.
 
@@ -21,8 +26,87 @@ from contextvars import ContextVar
 from typing import Any, Protocol
 
 import asyncclick as click
+import msgspec
 
 import salmon
+
+
+class Card(msgspec.Struct, frozen=True):
+    """What the web shows of an option on a card of its own."""
+
+    # (label, value) pairs, shown in order.
+    fields: tuple[tuple[str, str], ...] = ()
+    # The option's page on the tracker or store. The web shows only an http:// or https:// one.
+    link: str | None = None
+    # "Not an exact group match", "DUPE RISK: ...".
+    note: str | None = None
+
+
+class Option(msgspec.Struct, frozen=True):
+    """One answer a prompt accepts."""
+
+    # The reply the CLI accepts for it: "y", "3", "*", "OPS".
+    key: str
+    label: str
+    # The heading it is listed under: a store, "Requests on RED".
+    group: str | None = None
+    card: Card | None = None
+    # Drawn apart from the others, and answers at once: New group, Abort, Delete music folder.
+    action: bool = False
+    # Several only: a shortcut sent on its own (All "*", None "0", Random third "+").
+    alone: bool = False
+    # The option an empty reply means at this call site.
+    empty: bool = False
+    # Action only: the web asks for a second click before sending it.
+    danger: bool = False
+
+
+class FreeText(msgspec.Struct, frozen=True):
+    """A typed answer the prompt takes beside its options: a URL, and with `ids` a number above every numbered key."""
+
+    placeholder: str
+    ids: bool = False
+
+
+class Mark(msgspec.Struct, frozen=True):
+    """A prefix the reply puts before one of its picks or texts, as `*` marks the store the files came from."""
+
+    prefix: str
+    label: str
+
+
+class Options(msgspec.Struct, frozen=True):
+    """The answers a prompt accepts, for salmon web to draw (ADR 0006). The terminal ignores it."""
+
+    # In display order, which is also the order picks are put in the line.
+    items: tuple[Option, ...]
+    # Any number of options may be picked.
+    several: bool = False
+    free_text: FreeText | None = None
+    mark: Mark | None = None
+
+    def __post_init__(self) -> None:
+        seen: set[str] = set()
+        for option in self.items:
+            if not option.key or any(c.isspace() for c in option.key):
+                raise ValueError(f"The key {option.key!r} is empty or holds a space.")
+            # The default is read against the keys ignoring case, so two keys must differ in more than case.
+            if option.key.lower() in seen:
+                raise ValueError(f"The key {option.key!r} appears twice.")
+            seen.add(option.key.lower())
+            if option.alone and not self.several:
+                raise ValueError(f"{option.key!r} is alone, which only a question taking several answers has.")
+            if option.danger and not option.action:
+                raise ValueError(f"{option.key!r} is danger, which only an action is.")
+            if self.mark is not None and self.mark.prefix and option.key.startswith(self.mark.prefix):
+                raise ValueError(f"The key {option.key!r} starts with the mark's prefix.")
+        if sum(option.empty for option in self.items) > 1:
+            raise ValueError("More than one option is the empty reply.")
+        if self.mark is not None:
+            if not self.several:
+                raise ValueError("A mark goes only on a question taking several answers.")
+            if not self.mark.prefix or any(c.isspace() for c in self.mark.prefix):
+                raise ValueError(f"The mark's prefix {self.mark.prefix!r} is empty or holds a space.")
 
 
 class Interaction(Protocol):
@@ -36,8 +120,13 @@ class Interaction(Protocol):
         type: Any = None,
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
+        options: Options | None = None,
     ) -> Any:
-        """Ask for a line of text, and return it converted by `type` or `value_proc`."""
+        """Ask for a line of text, and return it converted by `type` or `value_proc`.
+
+        `options` describes the replies the caller accepts, for an implementation that draws them; the reply is
+        still a line the caller parses.
+        """
         ...
 
     async def confirm(
@@ -46,8 +135,12 @@ class Interaction(Protocol):
         *,
         default: bool | None = False,
         abort: bool = False,
+        labels: tuple[str, str] | None = None,
     ) -> bool:
-        """Ask a yes or no question. With `abort`, a no raises `click.Abort`."""
+        """Ask a yes or no question. With `abort`, a no raises `click.Abort`.
+
+        `labels` names the yes and no buttons, for an implementation that draws them.
+        """
         ...
 
     async def edit(
@@ -102,7 +195,9 @@ class TerminalInteraction:
         type: Any = None,
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
+        options: Options | None = None,
     ) -> Any:
+        # The options are for the web: the terminal asks exactly as before.
         return await click.prompt(
             text,
             default=default,
@@ -117,6 +212,7 @@ class TerminalInteraction:
         *,
         default: bool | None = False,
         abort: bool = False,
+        labels: tuple[str, str] | None = None,
     ) -> bool:
         return click.confirm(text, default=default, abort=abort)
 
@@ -174,14 +270,19 @@ async def prompt(
     type: Any = None,
     value_proc: Callable[[str], Any] | None = None,
     show_default: bool = True,
+    options: Options | None = None,
 ) -> Any:
     """Ask for a line of text. See `Interaction.prompt`."""
-    return await current().prompt(text, default=default, type=type, value_proc=value_proc, show_default=show_default)
+    return await current().prompt(
+        text, default=default, type=type, value_proc=value_proc, show_default=show_default, options=options
+    )
 
 
-async def confirm(text: str, *, default: bool | None = False, abort: bool = False) -> bool:
+async def confirm(
+    text: str, *, default: bool | None = False, abort: bool = False, labels: tuple[str, str] | None = None
+) -> bool:
     """Ask a yes or no question. See `Interaction.confirm`."""
-    return await current().confirm(text, default=default, abort=abort)
+    return await current().confirm(text, default=default, abort=abort, labels=labels)
 
 
 async def edit(text: str, *, editor: str | None = None, extension: str = ".txt") -> str | None:

@@ -863,6 +863,15 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
                     fg="magenta",
                 ),
                 default=_default_spectral_selection(spectral_ids, lossy_master),
+                options=interaction.Options(
+                    (
+                        *(interaction.Option(str(id_), f"{id_:02d} {name}") for id_, name in spectral_ids.items()),
+                        interaction.Option("*", "All", alone=True),
+                        interaction.Option("0", "None", alone=True),
+                        interaction.Option("+", "Random third", alone=True),
+                    ),
+                    several=True,
+                ),
             )
         )
         if ids.strip() == "+":
@@ -912,6 +921,19 @@ async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=Tr
                     ),
                     type=click.STRING,
                     default="y" if marks_found else "n",
+                    options=interaction.Options(
+                        (
+                            interaction.Option("y", "Lossy mastered"),
+                            interaction.Option("n", "Not lossy mastered"),
+                            interaction.Option("r", "Reopen spectrals"),
+                            interaction.Option("a", "Abort", action=True),
+                            *(
+                                (interaction.Option("d", "Delete music folder", action=True, danger=True),)
+                                if offer_deletion
+                                else ()
+                            ),
+                        )
+                    ),
                 )
             )[0].lower()
         )

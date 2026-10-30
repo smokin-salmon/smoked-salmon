@@ -1009,6 +1009,18 @@ async def _confirm_group_id(
                     fg="magenta",
                 ),
                 default="a" if held else "Y",
+                options=interaction.Options(
+                    (
+                        interaction.Option("y", "Upload to this group"),
+                        interaction.Option("n", "New group"),
+                        interaction.Option("a", "Abort", action=True),
+                        *(
+                            (interaction.Option("d", "Delete music folder", action=True, danger=True),)
+                            if offer_deletion
+                            else ()
+                        ),
+                    )
+                ),
             )
         )[0].lower()
         if resp == "a":

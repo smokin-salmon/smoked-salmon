@@ -39,6 +39,7 @@ from salmon.trackers import account
 from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers the job kinds)
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
 from salmon.webui.egress import Redactor, config_secrets
+from salmon.webui.interaction import Picked
 from salmon.webui.jobs import FINISHED, KINDS, Job, JobError, JobManager
 from salmon.webui.security import DEV_ORIGINS, host_allowed, is_loopback, origin_allowed
 
@@ -76,7 +77,8 @@ class StartJobRequest(msgspec.Struct, forbid_unknown_fields=True):
 
 class AnswerRequest(msgspec.Struct, forbid_unknown_fields=True):
     question_id: str
-    value: str | bool | None = None
+    # A Picked answers a question with options; the job checks it against them (ADR 0006).
+    value: str | bool | None | Picked = None
 
 
 def _error(status: int, detail: str) -> web.Response:
