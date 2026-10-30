@@ -345,15 +345,19 @@ def _track_count(value: str | None) -> int | None:
 
 
 def _search_answer(results: dict[str, Any]) -> list[dict[str, Any]]:
-    """Each source's releases, in the order ``salmon metas`` prints them, with the URL it prints."""
+    """Each searched source's releases, in the order ``salmon metas`` prints them, with the URL it prints; `preferred`
+    for a store in upload.search.preferred_sources."""
     sources = []
-    for name, module in salmon.search.SEARCHSOURCES.items():
+    searched = salmon.search.searched_sources()
+    for name in salmon.search.listing_order(searched):
+        module = searched[name]
+        preferred = name in cfg.upload.search.preferred_sources
         if name not in results:
-            sources.append({"name": name, "status": "failed", "releases": []})
+            sources.append({"name": name, "status": "failed", "preferred": preferred, "releases": []})
             continue
         found = results[name]
         if found is None:
-            sources.append({"name": name, "status": "inactive", "releases": []})
+            sources.append({"name": name, "status": "inactive", "preferred": preferred, "releases": []})
             continue
         releases = [
             {
@@ -366,7 +370,9 @@ def _search_answer(results: dict[str, Any]) -> list[dict[str, Any]]:
             }
             for rls_id, (ident, shown) in found.items()
         ]
-        sources.append({"name": name, "status": "found" if releases else "none", "releases": releases})
+        sources.append(
+            {"name": name, "status": "found" if releases else "none", "preferred": preferred, "releases": releases}
+        )
     return sources
 
 

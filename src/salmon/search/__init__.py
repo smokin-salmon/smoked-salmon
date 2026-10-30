@@ -1,5 +1,6 @@
 import asyncio
 import re
+from collections.abc import Iterable
 from itertools import chain
 from typing import Any
 
@@ -36,6 +37,24 @@ SEARCHSOURCES = {
 }
 
 
+def searched_sources() -> dict[str, Any]:
+    """The stores salmon searches: every one but those in upload.search.skipped_sources."""
+    return {name: module for name, module in SEARCHSOURCES.items() if name not in cfg.upload.search.skipped_sources}
+
+
+def listing_order(names: Iterable[str]) -> list[str]:
+    """`names` in the order salmon lists store results: those in upload.search.preferred_sources first, in its order,
+    then the others in the order given."""
+    names = list(names)
+    preferred = [name for name in cfg.upload.search.preferred_sources if name in names]
+    return preferred + [name for name in names if name not in preferred]
+
+
+def store_heading(name: str) -> str:
+    """The store's name as a heading over its results: marked when it is in upload.search.preferred_sources."""
+    return f"{name} (preferred)" if name in cfg.upload.search.preferred_sources else name
+
+
 @commandgroup.command()
 @click.argument("searchstr", nargs=-1, required=True)
 @click.option("--track-count", "-t", type=click.INT)
@@ -43,15 +62,17 @@ SEARCHSOURCES = {
 async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int) -> None:
     """Search for releases from metadata providers."""
     search_query = " ".join(searchstr)
-    click.secho(f"Searching {', '.join(SEARCHSOURCES)} (searchstrs: {search_query})", fg="cyan", bold=True)
+    searched = searched_sources()
+    click.secho(f"Searching {', '.join(searched)} (searchstrs: {search_query})", fg="cyan", bold=True)
 
     results = await run_metasearch([search_query], limit=limit, track_count=track_count)
     not_found: list[str] = []
     inactive_sources: list[str] = []
-    source_errors = set(SEARCHSOURCES.keys()) - set(results)
-    for source, releases in results.items():
+    source_errors = set(searched) - set(results)
+    for source in listing_order(results):
+        releases = results[source]
         if releases:
-            click.secho(f"\nResults from {source}:", fg="yellow", bold=True)
+            click.secho(f"\nResults from {store_heading(source)}:", fg="yellow", bold=True)
             for rls_id, release in releases.items():
                 rls_name = release[0].album
                 url = SEARCHSOURCES[source].Searcher.format_url(rls_id, rls_name)
@@ -88,7 +109,7 @@ async def run_metasearch(
     Args:
         searchstrs: List of search strings.
         limit: Maximum number of results per source.
-        sources: Dict of sources to search, defaults to all.
+        sources: Dict of sources to search, defaults to all but upload.search.skipped_sources.
         track_count: Filter by track count if specified.
         artists: Filter by artists if specified.
         album: Filter by album name if specified.
@@ -97,7 +118,7 @@ async def run_metasearch(
     Returns:
         Dict mapping source names to search results.
     """
-    sources = SEARCHSOURCES if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
+    sources = searched_sources() if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
     results: dict[str, Any] = {}
     tasks = [
         handle_scrape_errors(s.Searcher().search_releases(search, limit))

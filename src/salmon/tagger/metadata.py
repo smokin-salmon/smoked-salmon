@@ -12,7 +12,8 @@ from salmon import cfg, interaction
 from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.common.strings import artist_keys, comparable
-from salmon.search import SEARCHSOURCES, run_metasearch
+from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
+from salmon.search.base import IdentData
 from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.sources import METASOURCES
@@ -149,24 +150,41 @@ async def fill_upc_from_deezer(metadata: dict[str, Any], path: str) -> None:
     metadata["upc"] = await album_upc(f"https://www.deezer.com/album/{ids.pop()}")
 
 
+class _Choice(tuple[str, str]):
+    """A numbered search result: (source, release ID), plus the release the search found (its IdentData), which
+    the metadata question describes for salmon web."""
+
+    ident: IdentData | None
+
+    def __new__(cls, source: str, rls_id: str, ident: IdentData | None = None) -> "_Choice":
+        choice = super().__new__(cls, (source, rls_id))
+        choice.ident = ident
+        return choice
+
+
 def _print_search_results(results, rls_data=None):
-    """Print the results from the metadata source."""
+    """Print the results from the metadata source.
+
+    The stores in upload.search.preferred_sources come first, and the results are numbered in the order printed.
+    """
     if rls_data:
         _print_metadata(rls_data, metadata_name="Previous")
 
     choices = {}
     choice_id = 1
-    not_found = list(SEARCHSOURCES.keys())
+    searched = searched_sources()
+    not_found = list(searched.keys())
     inactive_sources = []
-    source_errors = SEARCHSOURCES.keys() - [r for r in results]
+    source_errors = searched.keys() - [r for r in results]
 
-    for source, releases in results.items():
+    for source in listing_order(results):
+        releases = results[source]
         if releases:
-            click.secho(f"\nResults for {source}:", fg="yellow", bold=True)
+            click.secho(f"\nResults for {store_heading(source)}:", fg="yellow", bold=True)
             not_found.remove(source)
-            results = dict(islice(releases.items(), cfg.upload.search.limit))
-            for rls_id, release in results.items():
-                choices[choice_id] = (source, rls_id)
+            shown = dict(islice(releases.items(), cfg.upload.search.limit))
+            for rls_id, release in shown.items():
+                choices[choice_id] = _Choice(source, rls_id, release[0])
                 url = SEARCHSOURCES[source].Searcher.format_url(rls_id)
                 click.secho(f"> {choice_id:02d} {release[1]} | {url}")
                 choice_id += 1
@@ -293,6 +311,39 @@ def suggest_choice(
     return " ".join(parts) or None
 
 
+def _choice_options(choices: dict[int, tuple[str, str]]) -> interaction.Options:
+    """The metadata question's answers, for salmon web (ADR 0006): a card per result under its store's heading, as
+    numbered when printed, Manual and Abort, store URLs, and the mark for the store the files came from.
+
+    A result shows its artist, title, year and track count when the search gave them (a _Choice), its number only
+    otherwise. The CLI never sees this.
+    """
+    items = []
+    for choice_id, choice in choices.items():
+        source, rls_id = choice
+        ident = getattr(choice, "ident", None)
+        fields: list[tuple[str, str]] = []
+        if ident is not None:
+            label = f"{ident.artist} - {ident.album}"
+            if ident.year:
+                fields.append(("Year", str(ident.year)))
+            if ident.track_count is not None:
+                fields.append(("Tracks", str(ident.track_count)))
+        else:
+            label = f"Result {choice_id}"
+        searcher = SEARCHSOURCES.get(source)
+        link = searcher.Searcher.format_url(rls_id) if searcher is not None else None
+        card = interaction.Card(tuple(fields), link=link)
+        items.append(interaction.Option(str(choice_id), label, group=store_heading(source), card=card))
+    items += [interaction.Option("m", "Manual", action=True), interaction.Option("a", "Abort", action=True)]
+    return interaction.Options(
+        tuple(items),
+        several=True,
+        free_text=interaction.FreeText("Store URL"),
+        mark=interaction.Mark("*", "The store the files came from (WEB)"),
+    )
+
+
 async def _select_choice(
     choices: dict[int, tuple[str, str]], rls_data: dict[str, Any] | None, default: str | None = None
 ) -> tuple[dict[str, Any], str | None]:
@@ -314,6 +365,7 @@ async def _select_choice(
     if "urls" not in rls_data:
         rls_data["urls"] = []
 
+    options = _choice_options(choices)
     while True:
         if choices:
             res = await interaction.prompt(
@@ -325,6 +377,7 @@ async def _select_choice(
                 ),
                 type=click.STRING,
                 default=default,
+                options=options,
             )
         else:
             res = await interaction.prompt(
@@ -335,6 +388,7 @@ async def _select_choice(
                 ),
                 type=click.STRING,
                 default=default,
+                options=options,
             )
 
         if res.lower().startswith("m"):

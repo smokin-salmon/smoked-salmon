@@ -253,6 +253,13 @@
 # limit = 3
 # excluded_labels = ["edm comps"]
 # blacklisted_genres = ["Soundtrack", "Asian Music"]
+# Stores whose results are listed first, in this order, and marked "preferred", wherever salmon lists
+# store results (upload, salmon metas, salmon web's Search): any of "Bandcamp", "MusicBrainz",
+# "Apple Music", "Discogs", "Beatport", "Qobuz", "Tidal", "Deezer". The result numbers follow the
+# listing, so the number you type is still the one printed.
+# preferred_sources = []
+# Stores salmon never searches for metadata, so never shows: the same names. A store cannot be in both.
+# skipped_sources = []
 
 [upload.formatting]
 # templates for folder and file naming

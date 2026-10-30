@@ -271,11 +271,49 @@ class Seedbox(BaseStruct):
             raise ValueError(f"Unknown tracker(s) for seedbox '{self.name}': {', '.join(unknown)}")
 
 
+# The stores salmon searches for metadata, as salmon.search.SEARCHSOURCES names them (a test keeps the two equal).
+# Spelled out here: salmon.search needs the config before it can be imported.
+SEARCH_STORES = ("Bandcamp", "MusicBrainz", "Apple Music", "Discogs", "Beatport", "Qobuz", "Tidal", "Deezer")
+
+
+def _search_stores(setting: str, names: list[str]) -> list[str]:
+    """`names` as the stores' own names, each once, in order; ValueError on a name that is not a store salmon searches.
+
+    Case does not matter: "bandcamp" is Bandcamp.
+    """
+    known = {store.lower(): store for store in SEARCH_STORES}
+    stores: list[str] = []
+    for name in names:
+        store = known.get(name.strip().lower())
+        if store is None:
+            raise ValueError(
+                f'upload.search.{setting} names "{name}", which is not a store salmon searches: '
+                f"{', '.join(SEARCH_STORES)}."
+            )
+        if store not in stores:
+            stores.append(store)
+    return stores
+
+
 class UploadSearch(BaseStruct):
     limit: int = 3
     # TODO: are these reasonable defaults?
     excluded_labels: list[str] = msgspec.field(default_factory=lambda: ["edm comps"])
     blacklisted_genres: list[str] = msgspec.field(default_factory=lambda: ["Soundtrack", "Asian Music"])
+    # Stores whose results are listed first, in this order, and marked "preferred".
+    preferred_sources: list[str] = msgspec.field(default_factory=list)
+    # Stores salmon never searches, so never shows.
+    skipped_sources: list[str] = msgspec.field(default_factory=list)
+
+    def __post_init__(self):
+        self.preferred_sources = _search_stores("preferred_sources", self.preferred_sources)
+        self.skipped_sources = _search_stores("skipped_sources", self.skipped_sources)
+        both = [store for store in self.preferred_sources if store in self.skipped_sources]
+        if both:
+            raise ValueError(
+                f"upload.search names {', '.join(both)} in both preferred_sources and skipped_sources: keep each "
+                "store in one of them."
+            )
 
 
 class UploadFormatting(BaseStruct):
