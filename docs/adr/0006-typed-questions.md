@@ -76,9 +76,9 @@ filter sees every string) and `preselected`. The browser answers `{"picks": [key
 answer today:
 
 1. a string, for a question with options;
-   *Amended 2026-10-30 (#816): an empty string is not refused. It takes the call site's default, as Enter
-   does in the terminal, and asks again when there is none. The page never sends one. A client of the API
-   may, and no text of its own reaches the call site's parser.*
+   *Amended 2026-10-30 (#816): an empty string takes the call site's default, as Enter does in the
+   terminal; with no default it is refused ("Pick from the options.") and asked again. The page never sends
+   one. A client of the API may, and no text of its own reaches the call site's parser.*
 2. a pick that is not a key, or a key picked twice;
 3. an action or an `alone` key with any other pick, text or mark;
 4. for a single question, anything but exactly one pick or exactly one text; for several, nothing at all;
