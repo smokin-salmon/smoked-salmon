@@ -368,8 +368,10 @@ def test_the_web_refuses_what_the_terminal_line_could_misread(monkeypatch, scrap
 
 
 def test_manual_and_abort_answer_at_once_in_the_web(monkeypatch, scrapes) -> None:
-    assert web(_select(_choices(), None), [Picked(picks=["m"])])[0] == ({"manual": True}, None)
-    assert web(_select(_choices(), None), [Picked(picks=["a"])])[0] is click.Abort
+    manual, _ = web(_select(_choices(), None), [Picked(picks=["m"])])
+    assert manual == ({"manual": True}, None)
+    aborted, _ = web(_select(_choices(), None), [Picked(picks=["a"])])
+    assert aborted is click.Abort
 
 
 # --- preferred_sources -----------------------------------------------------------------------------------------
@@ -464,7 +466,8 @@ def test_without_skipped_sources_every_store_is_searched(monkeypatch) -> None:
 def test_every_store_skipped_searches_nothing(monkeypatch) -> None:
     searches = _fake_stores(monkeypatch)
     monkeypatch.setattr(cfg.upload.search, "skipped_sources", list(SEARCH_STORES))
-    assert anyio.run(partial(run_metasearch, ["the album"])) == {}
+    results = anyio.run(partial(run_metasearch, ["the album"]))
+    assert results == {}
     assert searches == []
 
 
