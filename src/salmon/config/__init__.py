@@ -221,11 +221,17 @@ def find_config_path() -> Path:
         raise FileNotFoundError("Could not find config path")
 
 
+# The file setup_config() loaded: salmon web's Dashboard names it next to the warnings that file gave.
+loaded_config_path: Path | None = None
+
+
 def setup_config() -> Cfg:
+    global loaded_config_path
     try:
         path = find_config_path()
     except FileNotFoundError:
         _first_run(get_user_cfg_path())
+    loaded_config_path = path
     return _parse_config(path)
 
 
