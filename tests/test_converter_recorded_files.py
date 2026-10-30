@@ -128,16 +128,17 @@ def test_a_truncation_stopped_partway_leaves_a_record_of_what_is_on_disk(made, t
     album = _album(tmp_path)
     _write_flac(album / "CD1" / f"03. {LONG}.flac", 44100, 16, title="Three")
     out = _transcode(album, tmp_path)
-    real_rename, calls = os.rename, []
+    real_link, calls = os.link, []
 
-    def rename(old: str, new: str) -> None:
+    def link(old: str, new: str) -> None:
         calls.append(old)
         if len(calls) == 2:
             raise PermissionError(13, "Permission denied", old)
-        real_rename(old, new)
+        real_link(old, new)
 
+    # A file is renamed by a hard link.
     with monkeypatch.context() as patched:
-        patched.setattr(renames.os, "rename", rename)
+        patched.setattr(renames.os, "link", link)
         with pytest.raises(NoncompliantFolderStructure):
             _shorten(out)
 
@@ -412,3 +413,91 @@ def test_a_refused_transcode_is_skipped_and_the_next_task_runs(monkeypatch, caps
 
     assert made == ["V0", "up /out [V0]"]
     assert "01.mp3 is missing" in capsys.readouterr().out
+
+
+def _no_record_writes(monkeypatch) -> None:
+    def full_disk(*_args, **_kwargs) -> None:
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(conversions, "record_conversion", full_disk)
+
+
+def test_an_undone_rename_of_the_tracks_leaves_the_record_as_it_was(made, tmp_path, monkeypatch) -> None:
+    # A stopped rename_files batch is put back: the record must follow the undo too.
+    out = _transcode(_album(tmp_path), tmp_path)
+    before = _files(out)
+    assert before is not None
+    tags = {
+        os.path.join("CD1", f"01. {LONG}.mp3"): {"tracknumber": "1", "title": "One"},
+        "02. two.mp3": {"tracknumber": "2", "title": "Two"},
+    }
+    monkeypatch.setattr(
+        "salmon.tagger.retagger.generate_file_name", lambda tags, ext, _multi, **_kw: f"0{tags['tracknumber']}{ext}"
+    )
+    metadata = {"tracks": {"1": {"1": {"artists": [("A", "main")]}, "2": {"artists": [("A", "main")]}}}}
+    real_link, calls = os.link, []
+
+    def link(old: str, new: str) -> None:
+        calls.append(old)
+        if len(calls) == 2:
+            raise PermissionError(13, "Permission denied", old)
+        real_link(old, new)
+
+    monkeypatch.setattr(renames.os, "link", link)
+
+    with pytest.raises(UploadError):
+        anyio.run(lambda: rename_files(str(out), tags, metadata, auto_rename=True, spectral_ids=None, source="WEB"))
+
+    assert len(calls) == 3
+    assert _files(out) == before
+    assert all((out / path).is_file() for path in before.values())
+
+
+def test_a_record_that_cannot_follow_the_renamed_tracks_puts_them_back(made, tmp_path, monkeypatch) -> None:
+    # The record is written once the tracks are renamed, and a failed write puts every rename back.
+    out = _transcode(_album(tmp_path), tmp_path)
+    before = _snapshot(out)
+    tags = {
+        os.path.join("CD1", f"01. {LONG}.mp3"): {"tracknumber": "1", "title": "One"},
+        "02. two.mp3": {"tracknumber": "2", "title": "Two"},
+    }
+    monkeypatch.setattr(
+        "salmon.tagger.retagger.generate_file_name", lambda tags, ext, _multi, **_kw: f"0{tags['tracknumber']}{ext}"
+    )
+    metadata = {"tracks": {"1": {"1": {"artists": [("A", "main")]}, "2": {"artists": [("A", "main")]}}}}
+    _no_record_writes(monkeypatch)
+
+    with pytest.raises(UploadError, match="No space left on device"):
+        anyio.run(lambda: rename_files(str(out), tags, metadata, auto_rename=True, spectral_ids=None, source="WEB"))
+
+    assert _snapshot(out) == before
+
+
+def test_an_undo_that_stops_leaves_a_record_of_what_is_on_disk(made, tmp_path, monkeypatch) -> None:
+    out = _transcode(_album(tmp_path), tmp_path)
+    tags = {
+        os.path.join("CD1", f"01. {LONG}.mp3"): {"tracknumber": "1", "title": "One"},
+        "02. two.mp3": {"tracknumber": "2", "title": "Two"},
+    }
+    monkeypatch.setattr(
+        "salmon.tagger.retagger.generate_file_name", lambda tags, ext, _multi, **_kw: f"0{tags['tracknumber']}{ext}"
+    )
+    metadata = {"tracks": {"1": {"1": {"artists": [("A", "main")]}, "2": {"artists": [("A", "main")]}}}}
+    real_link, calls = os.link, []
+
+    def link(old: str, new: str) -> None:
+        calls.append(old)
+        # The first rename is made, the second fails, and putting the first back fails too.
+        if len(calls) in (2, 3):
+            raise PermissionError(13, "Permission denied", old)
+        real_link(old, new)
+
+    monkeypatch.setattr(renames.os, "link", link)
+
+    with pytest.raises(UploadError, match="partly renamed"):
+        anyio.run(lambda: rename_files(str(out), tags, metadata, auto_rename=True, spectral_ids=None, source="WEB"))
+
+    files = _files(out)
+    assert files is not None
+    assert set(files.values()) == {str(path.relative_to(out)) for path in out.rglob("*.mp3")}
+    assert "01.mp3" in files.values()
