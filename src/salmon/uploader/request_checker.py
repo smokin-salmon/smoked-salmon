@@ -205,6 +205,11 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
             raw_input = int(request_id)
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
+                if results[list_index].get("requestId") is None:
+                    click.secho(
+                        f"Result {list_index + 1} has no request ID: pick another, or paste a request URL.", fg="red"
+                    )
+                    continue
                 return int(results[list_index]["requestId"])
             else:
                 click.echo(f"Interpreting {raw_input} as a request id")

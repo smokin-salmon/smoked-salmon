@@ -232,6 +232,13 @@ def test_each_answer_to_fill_a_request_reaches_the_site(answer: Picked, outcome:
     assert len(browser.questions) == 1
 
 
+def test_picking_a_request_row_without_an_id_asks_again() -> None:
+    site = partial(request_checker._prompt_for_request_id, SITE, [*REQUESTS[:1], {"title": "Broken"}])
+    result, browser = web(site, [picks("2"), picks("n")])
+    assert result is None
+    assert len(browser.questions) == 2
+
+
 @pytest.mark.parametrize("rows", [REQUESTS, [*REQUESTS[:2], {"requestId": 14, "title": "No year"}]])
 def test_a_row_number_typed_as_an_id_is_refused(rows: list[dict[str, Any]]) -> None:
     # The parser reads any number up to the row count as that row, printed or not: as a text it would not be an ID.

@@ -586,6 +586,14 @@ def test_a_request_row_without_an_id_is_still_listed_by_its_number(monkeypatch: 
     assert options is not None and options.items[1].card is None
 
 
+def test_picking_a_request_row_without_an_id_asks_again(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    site = partial(request_checker._prompt_for_request_id, SITE, [*REQUESTS[:1], {"title": "Broken"}])
+    result, terminal, _described = ask(monkeypatch, site, ["2", "1"])
+    assert result == 11
+    assert len(terminal.calls) == 2
+    assert "Result 2 has no request ID: pick another, or paste a request URL." in capsys.readouterr().out
+
+
 def test_fill_a_request_with_no_results_still_describes_its_answers(monkeypatch: pytest.MonkeyPatch) -> None:
     site = partial(request_checker._prompt_for_request_id, SITE, [])
     result, _terminal, described = ask(monkeypatch, site, ["5"])
