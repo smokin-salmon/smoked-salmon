@@ -185,19 +185,22 @@ def test_a_library_reached_by_a_path_no_text_matches_is_matched(monkeypatch, tmp
 # AlbumPath
 
 
-def test_an_album_path_resolves_all_but_a_last_symlink(seeded, tmp_path, monkeypatch) -> None:
+def test_an_album_path_is_kept_as_given_but_walks_dot_dot_as_the_filesystem_does(seeded, tmp_path, monkeypatch) -> None:
     downloads, seeding = seeded
     link = _symlinked_album(downloads, seeding)
     (tmp_path / "shortcut").symlink_to(downloads, target_is_directory=True)
     monkeypatch.chdir(tmp_path)
 
+    # As given, symlinked folders and all: a library reached through one is still seen around the album.
     given = AlbumPath(exists=True).convert(os.path.join("shortcut", "Album"), None, None)
-    assert given == os.path.join(os.path.realpath(downloads), link.name)
+    assert given == os.path.join(os.getcwd(), "shortcut", link.name)
     assert os.path.islink(given)
     # The filesystem takes "link/.." from where the link leads, so the path does too.
     walked = AlbumPath(exists=True).convert(os.path.join("shortcut", "Album", "..", "Album"), None, None)
     assert walked == os.path.realpath(seeding / "Album")
-    assert AlbumPath(exists=True).convert(os.path.join("shortcut", "."), None, None) == os.path.realpath(downloads)
+    assert AlbumPath(exists=True).convert(os.path.join("shortcut", "."), None, None) == os.path.join(
+        os.getcwd(), "shortcut"
+    )
 
 
 # staged_source
