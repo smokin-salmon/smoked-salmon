@@ -33,8 +33,10 @@ from test_webui_jobs import (  # pyright: ignore[reportMissingImports]
     _with_app,
 )
 
+import salmon.config
 import salmon.trackers
 from salmon import cfg
+from salmon.config import _parse_config, compat
 from salmon.config.validations import GazelleTrackerSettings
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
@@ -666,6 +668,62 @@ def test_the_dashboard_shows_the_version_trackers_roots_and_jobs(roots: Roots, m
         assert answer["trackers"] == ["RED", "OPS"]
         assert [root["path"] for root in answer["roots"]] == [str(roots.downloads), str(roots.library)]
         assert answer["jobs"] == {"running": 0, "waiting": 0, "queued": 0, "finished": 1}
+
+    _with_app(test)
+
+
+def _config_file(tmp_path: Path, extra: str) -> Path:
+    music, torrents = tmp_path / "music", tmp_path / "torrents"
+    music.mkdir()
+    torrents.mkdir()
+    path = tmp_path / "config.toml"
+    path.write_text(
+        f'[directory]\ndownload_directory = "{music.as_posix()}"\ndottorrents_dir = "{torrents.as_posix()}"\n'
+        f'[tracker.red]\nsession = "a-real-cookie"\n{extra}'
+    )
+    return path
+
+
+def test_the_dashboard_returns_the_config_warnings(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(compat, "config_warnings", [])
+    path = _config_file(tmp_path, "[upload]\nqwertyuiop = true\ndebug_tracker_connection = true\n")
+    _parse_config(path)
+    assert len(compat.config_warnings) == 2
+    monkeypatch.setattr(salmon.config, "loaded_config_path", path)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await client.get("/api/dashboard", headers=AUTH)).json()
+        assert answer["config_warnings"] == compat.config_warnings
+        assert any(line.startswith("Unknown config key upload.qwertyuiop") for line in answer["config_warnings"])
+        assert any(line.startswith("upload.debug_tracker_connection is now") for line in answer["config_warnings"])
+        assert answer["config_path"] == str(path)
+
+    _with_app(test)
+
+
+def test_the_dashboard_names_the_loaded_config_not_the_one_found_now(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    loaded = _config_file(tmp_path, "")
+    monkeypatch.setattr(salmon.config, "loaded_config_path", loaded)
+    monkeypatch.setattr(salmon.config, "find_config_path", lambda: tmp_path / "another.toml")
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await client.get("/api/dashboard", headers=AUTH)).json()
+        assert answer["config_path"] == str(loaded)
+
+    _with_app(test)
+
+
+def test_the_dashboard_has_no_config_warnings_on_a_clean_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(compat, "config_warnings", [])
+    _parse_config(_config_file(tmp_path, ""))
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await client.get("/api/dashboard", headers=AUTH)).json()
+        assert answer["config_warnings"] == []
 
     _with_app(test)
 

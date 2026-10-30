@@ -23,7 +23,7 @@ dependencies = [
     "musicbrainzngs>=0.7.1",
     "mutagen>=1.48.1",
     "numpy>=2.4.6",
-    "openai>=3.36.0",
+    "openai>=3.37.0",
     "pillow>=13.0.0",
     "platformdirs>=4.13.5",
     "pycambia>=0.2.0",
@@ -44,14 +44,14 @@ dependencies = [
 salmon = "salmon.run:main"
 
 [build-system]
-requires = ["uv_build>=0.13.4,<0.14.0"]
+requires = ["uv_build>=0.13.5,<0.14.0"]
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "basedpyright>=1.40.2",
     "pytest>=9.1.1",
-    "ruff>=0.17.1",
+    "ruff>=0.17.2",
 ]
 
 [tool.ruff]
