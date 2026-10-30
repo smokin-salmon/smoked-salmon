@@ -122,7 +122,7 @@ def fake_tagger(monkeypatch: pytest.MonkeyPatch) -> list[str]:
                 file["album"] = metadata["title"]
                 file.save()
 
-    async def rename_files(path: str, *_args: Any) -> None:
+    async def rename_files(path: str, *_args: Any, **_kwargs: Any) -> None:
         for name in os.listdir(path):
             if name.endswith(".flac"):
                 os.rename(os.path.join(path, name), os.path.join(path, name.replace(" Track", ". Track")))

@@ -110,7 +110,6 @@ CALLS: list[tuple[str, Callable[[], Awaitable[Any]], str]] = [
     ("tidal", lambda: TidalBase._ensure_token(), "auth.tidal.com"),
     ("bandcamp", lambda: BandcampBase().fetch_page("https://bandcamp.com/search/"), "bandcamp.com"),
     ("deezer", lambda: DeezerBase().get_json("/album/1"), "api.deezer.com"),
-    ("deezer", lambda: DeezerBase()._ensure_api_token(), "www.deezer.com"),
     ("deezer", lambda: DeezerBase().get_internal_api_data("/ajax/gw-light.php"), "www.deezer.com"),
     ("beatport", lambda: BeatportBase().refresh_bearer_token(_TOKENS), "api.beatport.com"),
     ("beatport", lambda: BeatportBase().initial_setup(), "api.beatport.com"),

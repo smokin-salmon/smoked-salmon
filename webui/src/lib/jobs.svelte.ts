@@ -4,6 +4,44 @@ export type JobStatus = 'queued' | 'running' | 'waiting' | 'done' | 'failed' | '
 
 export const FINISHED: JobStatus[] = ['done', 'failed', 'cancelled', 'unknown_outcome']
 
+/** What the web shows of an option on a card of its own (salmon.interaction.Card). */
+export interface Card {
+  fields: [string, string][]
+  /** http:// or https:// only: the server drops any other. */
+  link: string | null
+  note: string | null
+}
+
+/** One answer a prompt accepts (salmon.interaction.Option): `key` is what the CLI would read for it. */
+export interface Option {
+  key: string
+  label: string
+  group: string | null
+  card: Card | null
+  /** Drawn apart, answers at once. */
+  action: boolean
+  /** Several only: sent on its own. */
+  alone: boolean
+  empty: boolean
+  /** Action only: a second click sends it. */
+  danger: boolean
+}
+
+/** The answers a prompt accepts (salmon.interaction.Options, ADR 0006). */
+export interface Options {
+  items: Option[]
+  several: boolean
+  free_text: { placeholder: string; ids: boolean } | null
+  mark: { prefix: string; label: string } | null
+}
+
+/** The answer to a prompt with options, and what its default preselects. */
+export interface Picked {
+  picks: string[]
+  texts: string[]
+  mark: string | null
+}
+
 export interface Question {
   id: string
   kind: 'prompt' | 'confirm' | 'edit' | 'spectrals'
@@ -14,6 +52,11 @@ export interface Question {
   files?: string[]
   tracks?: Record<string, string>
   error?: string | null
+  /** A prompt that describes its answers: drawn as buttons, checkboxes or cards, answered with a Picked. */
+  options?: Options
+  preselected?: Picked
+  /** A confirm's yes and no buttons. */
+  labels?: [string, string]
 }
 
 export interface LogLine {

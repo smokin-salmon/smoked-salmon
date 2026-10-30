@@ -50,6 +50,7 @@ from salmon.errors import (
     InvalidMetadataError,
     LogCheckSkipped,
     RequestError,
+    SkipTracker,
     UnknownOutcomeError,
     UploadError,
 )
@@ -1248,15 +1249,24 @@ async def _upload_staged(
                         continue
 
                     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
-                    # A torrent already seeds from the folder: never offer to delete it.
+                    # A torrent already seeds from the folder: never offer to delete it. Once one is up, a tracker
+                    # can be skipped (one that already has the release, say) and the run still finishes.
                     # Matched on the reviewed metadata: the review may have changed the artists, title or year.
                     try:
                         group_id = await check_existing_group(
-                            gazelle_site, searchstrs, offer_deletion=False, our_title=our_title, release=metadata
+                            gazelle_site,
+                            searchstrs,
+                            offer_deletion=False,
+                            our_title=our_title,
+                            release=metadata,
+                            offer_skip=bool(uploaded),
                         )
-                    except RequestError as e:
+                    except (RequestError, SkipTracker) as e:
                         # Like a failed upload: skip this tracker, and offer the next one.
-                        click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                        if isinstance(e, SkipTracker):
+                            click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="yellow", bold=True)
+                        else:
+                            click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
                         failed_trackers.append(gazelle_site.site_string)
                         remaining_gazelle_sites.remove(tracker)
                         tracker = None
@@ -1478,8 +1488,9 @@ async def edit_metadata(
             skip_initial_review=skip_initial_review,
             apply_suggestions=apply_ai_suggestions,
         )
+        tracks_by_file = None
         if not metadata["scene"]:
-            await tag_files(path, tags, metadata, auto_rename)
+            tracks_by_file = await tag_files(path, tags, metadata, auto_rename)
 
         tags = await check_tags(path)
         tag_messages = process_tag_issues(
@@ -1512,7 +1523,7 @@ async def edit_metadata(
                 carry_conversion(path, renamed)
         path = renamed
         if not metadata["scene"]:
-            await rename_files(path, tags, metadata, auto_rename, spectral_ids, source)
+            await rename_files(path, tags, metadata, auto_rename, spectral_ids, source, tracks_by_file=tracks_by_file)
         await check_folder_structure(
             path, metadata["scene"], essential_only=essential_only, max_path_length=max_path_length
         )
@@ -1525,6 +1536,7 @@ async def edit_metadata(
         if await interaction.assume_defaults() or await interaction.confirm(
             click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
             default=True,
+            labels=("Upload", "Re-run the metadata step"),
         ):
             metadata["tags"] = convert_genres(metadata["genres"])
             break
@@ -1837,6 +1849,25 @@ async def prompt_downconversion_choice(
                     '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)', fg="magenta"
                 ),
                 default=default,
+                options=interaction.Options(
+                    (
+                        *(
+                            interaction.Option(
+                                str(i),
+                                option["name"],
+                                card=(
+                                    interaction.Card(note="DUPE RISK: this edition already has it")
+                                    if option["name"] in held
+                                    else None
+                                ),
+                            )
+                            for i, option in enumerate(options, 1)
+                        ),
+                        interaction.Option("*", "All formats", alone=True),
+                        interaction.Option("0", "None", alone=True),
+                    ),
+                    several=True,
+                ),
             )
 
             if choices.strip() == "0":

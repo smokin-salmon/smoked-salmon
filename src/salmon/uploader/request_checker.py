@@ -96,6 +96,34 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
                 continue
 
 
+def _request_options(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any]]) -> list[interaction.Option]:
+    """Every request of the results, as cards for salmon web, numbered as print_request_results numbers them.
+
+    The CLI reads each of these numbers as its row, printed or not, so each is listed: a row that cannot be described
+    (print_request_results skips it) shows its number, and its link when it has a request ID. The CLI never sees the
+    description, so describing a row must not stop the question.
+    """
+    group = f"Requests on {gazelle_site.site_string}"
+    described = []
+    for n, r in enumerate(results, 1):
+        try:
+            link = gazelle_site.request_url(r["requestId"])
+        except (KeyError, TypeError):
+            link = None
+        try:
+            artists = r["artists"][0]
+            artist = "Various Artists" if len(artists) > 3 else " ".join(a["name"] for a in artists)
+            requirements = " / ".join(" or ".join(r[key]) for key in ("bitrateList", "formatList", "mediaList"))
+            fields = [("Year", str(r["year"])), ("Release type", str(r["releaseType"])), ("Requirements", requirements)]
+            if "bounty" in r:
+                fields.append(("Bounty", humanfriendly.format_size(r["bounty"], binary=True)))
+            label, card = f"{artist} - {r['title']}", interaction.Card(tuple(fields), link=link)
+        except (KeyError, TypeError, ValueError, IndexError):
+            label, card = f"Request {n}", interaction.Card(link=link) if link else None
+        described.append(interaction.Option(str(n), label, group=group, card=card))
+    return described
+
+
 def _print_request_details(gazelle_site: "BaseGazelleApi", req: dict[str, Any]) -> None:
     """Print detailed information for a selected request.
 
@@ -163,15 +191,25 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
     Returns:
         The selected request ID, or None if the user declines.
     """
+    options = interaction.Options(
+        (*_request_options(gazelle_site, results), interaction.Option("n", "Don't fill")),
+        free_text=interaction.FreeText("Request URL or ID", ids=True),
+    )
     while True:
         request_id = await interaction.prompt(
             click.style("\nFill a request? Choose from results, paste a url, or do[n]t.", fg="magenta"),
             default="N",
+            options=options,
         )
         if request_id.strip().isdigit():
             raw_input = int(request_id)
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
+                if results[list_index].get("requestId") is None:
+                    click.secho(
+                        f"Result {list_index + 1} has no request ID: pick another, or paste a request URL.", fg="red"
+                    )
+                    continue
                 return int(results[list_index]["requestId"])
             else:
                 click.echo(f"Interpreting {raw_input} as a request id")
@@ -218,6 +256,9 @@ async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | 
             await interaction.prompt(
                 click.style("\nAre you sure you would you like to fill this request [Y]es, [n]o", fg="magenta"),
                 default="Y",
+                options=interaction.Options(
+                    (interaction.Option("y", "Fill this request"), interaction.Option("n", "Don't fill it"))
+                ),
             )
         )[0].lower()
         if resp == "y":

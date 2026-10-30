@@ -54,6 +54,9 @@ async def choose_tracker(choices):
         tracker_input = await interaction.prompt(
             click.style(f"Your choices are {' , '.join(choices)} or [n]one.", fg="magenta"),
             default=choices[0],
+            options=interaction.Options(
+                (*(interaction.Option(choice, choice) for choice in choices), interaction.Option("n", "None"))
+            ),
         )
         tracker_input = tracker_input.strip().upper()
         if tracker_input in choices:

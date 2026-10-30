@@ -40,6 +40,7 @@ mb_module._safe_read = _bounded_safe_read
 
 
 class MusicBrainzBase(BaseScraper):
+    store = "MusicBrainz"
     url = site_url = "https://musicbrainz.org"
     release_format = "/release/{rls_id}"
     regex = re.compile(r"^https?://(?:www\.)?musicbrainz.org/release/([a-f0-9\-]+)$")
