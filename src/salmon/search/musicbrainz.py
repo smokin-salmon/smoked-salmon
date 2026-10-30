@@ -1,4 +1,3 @@
-import asyncio
 from typing import Any
 
 import musicbrainzngs
@@ -21,7 +20,7 @@ class Searcher(MusicBrainzBase, SearchMixin):
             Tuple of (source name, releases dict).
         """
         releases = {}
-        result = await asyncio.to_thread(musicbrainzngs.search_releases, searchstr, limit)
+        result = await self._call(musicbrainzngs.search_releases, searchstr, limit)
         for rls in result["release-list"]:
             try:
                 artists = rls["artist-credit-phrase"]

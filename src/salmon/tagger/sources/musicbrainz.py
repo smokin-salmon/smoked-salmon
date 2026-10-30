@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 
+import asyncclick as click
 import musicbrainzngs
 from musicbrainzngs import musicbrainz as mb_module
 
@@ -34,6 +35,10 @@ class Scraper(MusicBrainzBase, MetadataMixin):
             try:
                 r = musicbrainzngs.get_image_list(soup["id"])
             except mb_module.ResponseError:
+                return None
+            except (mb_module.WebServiceError, ValueError) as e:
+                # No cover rather than no release. ValueError: a 200 whose body is not the JSON image list.
+                click.secho(f"Cover Art Archive request failed ({type(e).__name__}): no cover.", fg="yellow")
                 return None
 
             for image in r["images"]:
