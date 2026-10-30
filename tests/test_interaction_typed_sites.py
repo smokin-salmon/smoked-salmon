@@ -19,7 +19,7 @@ import salmon.tagger.review as review
 import salmon.uploader as uploader
 from salmon import cfg, interaction, trackers
 from salmon.config.validations import CONVERSION_KINDS
-from salmon.errors import AbortAndDeleteFolder
+from salmon.errors import AbortAndDeleteFolder, SkipTracker
 from salmon.uploader import dupe_checker, request_checker, spectrals
 
 
@@ -87,7 +87,7 @@ def ask(
         with interaction.using(described), interaction.assuming_defaults(yyy):
             try:
                 return await site()
-            except (click.Abort, AbortAndDeleteFolder) as e:
+            except (click.Abort, AbortAndDeleteFolder, SkipTracker) as e:
                 return type(e)
 
     return anyio.run(run), terminal, described
@@ -134,8 +134,8 @@ def hold_the_edition(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(dupe_checker, "_catno_note", lambda *_args: "")
 
 
-def confirm_group(offer_deletion: bool = True) -> Callable[[], Awaitable[Any]]:
-    return partial(dupe_checker._confirm_group_id, SITE, 7, [GROUP], offer_deletion)
+def confirm_group(offer_deletion: bool = True, offer_skip: bool = False) -> Callable[[], Awaitable[Any]]:
+    return partial(dupe_checker._confirm_group_id, SITE, 7, [GROUP], offer_deletion, offer_skip=offer_skip)
 
 
 SPECTRAL_IDS = {1: "Intro.flac", 2: "Song.flac", 3: "Outro.flac"}
@@ -313,6 +313,40 @@ def test_every_key_of_upload_to_this_group_is_accepted(monkeypatch: pytest.Monke
     for key, outcome in expected.items():
         result, terminal, _described = ask(monkeypatch, confirm_group(offer_deletion), [key])
         assert (key, result) == (key, outcome)
+        assert len(terminal.calls) == 1
+
+
+@pytest.mark.parametrize("held", [False, True])
+@pytest.mark.parametrize("offer_skip", [True, False])
+def test_upload_to_this_group_offers_skip_this_tracker_only_when_the_cli_does(
+    monkeypatch: pytest.MonkeyPatch, offer_skip: bool, held: bool
+) -> None:
+    if held:
+        hold_the_edition(monkeypatch)
+    text = (
+        "\nAre you sure you would you like to upload this torrent to this group? [Y]es, [n]ew group, "
+        f"{'[s]kip this tracker, ' if offer_skip else ''}[a]bort, [d]elete music folder"
+    )
+    for yyy in (False, True):
+        # -yyy asks this question too, as on master.
+        result, terminal, described = ask(monkeypatch, confirm_group(offer_skip=offer_skip), ["y"], yyy=yyy)
+        assert result is True
+        assert terminal.calls == [prompt_call(text, "a" if held else "Y")]
+    assert keys(described.options[0]) == [
+        ("y", "Upload to this group"),
+        ("n", "New group"),
+        *([("s", "Skip this tracker")] if offer_skip else []),
+        ("a", "Abort"),
+        ("d", "Delete music folder"),
+    ]
+    options = described.options[0]
+    assert options is not None
+    assert [(o.key, o.action, o.danger) for o in options.items if o.key == "s"] == (
+        [("s", True, False)] if offer_skip else []
+    )
+    if offer_skip:
+        result, terminal, _described = ask(monkeypatch, confirm_group(offer_skip=True), ["s"])
+        assert result is SkipTracker
         assert len(terminal.calls) == 1
 
 

@@ -30,7 +30,7 @@ from test_webui_interaction import Browser  # pyright: ignore[reportMissingImpor
 
 from salmon import cfg, interaction, trackers
 from salmon.config.validations import CONVERSION_KINDS
-from salmon.errors import AbortAndDeleteFolder
+from salmon.errors import AbortAndDeleteFolder, SkipTracker
 from salmon.uploader import request_checker, spectrals
 from salmon.webui.interaction import Picked, WebInteraction
 
@@ -49,7 +49,7 @@ def web(site: Callable[[], Awaitable[Any]], answers: list[Any]) -> tuple[Any, Br
         with interaction.using(WebInteraction(browser)):
             try:
                 return await site()
-            except (click.Abort, AbortAndDeleteFolder) as e:
+            except (click.Abort, AbortAndDeleteFolder, SkipTracker) as e:
                 return type(e)
 
     return anyio.run(run), browser
@@ -91,6 +91,23 @@ def test_each_pick_of_upload_to_this_group_reaches_the_site(key: str, outcome: A
     result, browser = web(confirm_group(), [picks(key)])
     assert result == outcome
     assert len(browser.questions) == 1
+
+
+def test_skip_this_tracker_is_an_action_that_reaches_the_site() -> None:
+    result, browser = web(confirm_group(offer_skip=True), [picks("s")])
+    assert result is SkipTracker
+    items = browser.questions[0]["options"]["items"]
+    assert [(o["key"], o["label"], o["action"], o["danger"]) for o in items] == [
+        ("y", "Upload to this group", False, False),
+        ("n", "New group", False, False),
+        ("s", "Skip this tracker", True, False),
+        ("a", "Abort", True, False),
+        ("d", "Delete music folder", True, True),
+    ]
+    # Without the offer, an "s" sent anyway is refused, as the CLI would not read it.
+    result, browser = web(confirm_group(), [picks("s"), picks("y")])
+    assert result is True
+    assert browser.questions[1]["error"] == "Error: s is not one of the options."
 
 
 # #10 lossy master
