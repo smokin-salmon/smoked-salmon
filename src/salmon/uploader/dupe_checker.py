@@ -1074,7 +1074,7 @@ async def _confirm_group_id(
     """
     rset = None
     for r in results:
-        if group_id == r["groupId"]:
+        if group_id == r.get("groupId"):
             rset = r
             break
 

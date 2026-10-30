@@ -891,7 +891,29 @@ def test_picking_a_search_row_without_a_group_id_asks_again(monkeypatch: pytest.
     result, terminal, _described = ask(monkeypatch, search_group(rows), ["1", "2"])
     assert result == 21
     assert len(terminal.calls) == 2
-    assert "Result 1 has no group ID: pick another, or paste a group URL." in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Result 1 has no group ID: pick another, or paste a group URL." in out
+
+
+def test_confirming_a_group_does_not_fail_on_an_earlier_row_without_a_group_id(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # A row without a groupId before the match used to raise KeyError while the picked row was looked up.
+    results = [{"artist": "Broken"}, GROUP]
+    printed: list[dict | None] = []
+
+    async def fake_print_torrents(_site: Any, _group_id: int, rset: dict | None = None, *_args: Any) -> dict:
+        printed.append(rset)
+        return rset or GROUP
+
+    monkeypatch.setattr(dupe_checker, "print_torrents", fake_print_torrents)
+    for group_id in (7, 99):  # a picked row, then a typed group ID that is in no row
+        printed.clear()
+        site = partial(dupe_checker._confirm_group_id, SITE, group_id, results)
+        result, terminal, _described = ask(monkeypatch, site, ["y"])
+        assert result is True
+        assert len(terminal.calls) == 1
+        assert printed == [GROUP if group_id == 7 else None]
 
 
 def test_the_group_questions_with_yyy_ask_as_on_master(monkeypatch: pytest.MonkeyPatch) -> None:
