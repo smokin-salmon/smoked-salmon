@@ -98,4 +98,4 @@ def test_a_token_timeout_is_a_scrape_error(monkeypatch) -> None:
     with pytest.raises(ScrapeError) as excinfo:
         anyio.run(AppleMusicBase._get_token)
 
-    assert str(excinfo.value) == "AppleMusicBase: Request failed (TimeoutError)."
+    assert str(excinfo.value) == "Apple Music: Request failed (TimeoutError)."

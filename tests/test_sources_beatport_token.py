@@ -144,4 +144,4 @@ def test_a_token_refresh_that_gets_no_answer_times_out(monkeypatch) -> None:
     with pytest.raises(ScrapeError) as excinfo:
         anyio.run(_refresh_from_a_slow_endpoint, monkeypatch)
 
-    assert str(excinfo.value) == "BeatportBase: Request failed (TimeoutError)."
+    assert str(excinfo.value) == "Beatport: Request failed (TimeoutError)."

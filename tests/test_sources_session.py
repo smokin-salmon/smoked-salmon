@@ -5,7 +5,9 @@ import pytest
 from aiohttp import web
 
 from salmon.errors import ScrapeError
+from salmon.search import SEARCHSOURCES
 from salmon.sources import base
+from salmon.tagger.sources import METASOURCES
 
 
 async def _serve(handler) -> web.AppRunner:
@@ -40,3 +42,11 @@ def test_fetch_page_does_not_repeat_the_url_of_a_failed_request() -> None:
 
     assert "private-search-words" not in message
     assert "TooManyRedirects" in message
+
+
+def test_every_store_is_named_in_messages_as_the_search_and_tagger_name_it() -> None:
+    # "Searcher: Request failed (TimeoutError)." did not say which store of a multi-store search failed
+    for name, module in SEARCHSOURCES.items():
+        assert module.Searcher.store == name
+    for name, module in METASOURCES.items():
+        assert module.Scraper.store == name

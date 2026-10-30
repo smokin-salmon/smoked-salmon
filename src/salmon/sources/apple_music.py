@@ -11,6 +11,7 @@ APPLE_MUSIC_URL = "https://music.apple.com"
 
 
 class AppleMusicBase(BaseScraper):
+    store = "Apple Music"
     proxy_service = "apple_music"
     url = AMP_API_URL
     site_url = APPLE_MUSIC_URL

@@ -69,6 +69,7 @@ def _sentence(error: Exception) -> str:
 
 
 class BeatportBase(BaseScraper):
+    store = "Beatport"
     proxy_service = "beatport"
     api_domain = "https://api.beatport.com"
     url = api_domain + "/v4"

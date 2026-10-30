@@ -53,6 +53,7 @@ class _UnauthorizedError(ScrapeError):
 
 
 class TidalBase(BaseScraper):
+    store = "Tidal"
     proxy_service = "tidal"
     url = "https://openapi.tidal.com/v2"
     token_url = "https://auth.tidal.com/v1/oauth2/token"

@@ -40,6 +40,9 @@ class BaseScraper:
     proxy_service: str | None = None
     # Seconds each request made through _session may take in all, unless the caller of _session passes its own.
     timeout: float = 10
+    # The store's name in error messages ("Apple Music"), so a multi-store search says which one failed; None: the
+    # class's name.
+    store: str | None = None
 
     @classmethod
     @asynccontextmanager
@@ -57,6 +60,7 @@ class BaseScraper:
             ScrapeError: If a request in the session fails or times out.
         """
         total = cls.timeout if timeout is None else timeout
+        name = cls.store or cls.__name__
         try:
             async with aiohttp.ClientSession(
                 timeout=aiohttp.ClientTimeout(total=total), **session_kwargs(cls.proxy_service)
@@ -64,9 +68,9 @@ class BaseScraper:
                 yield session
         except ssrf.NonPublicAddressError as e:
             # Names the host it refused, never the URL.
-            raise ScrapeError(f"{cls.__name__}: {e}") from e
+            raise ScrapeError(f"{name}: {e}") from e
         except (TimeoutError, aiohttp.ClientError) as e:
-            raise ScrapeError(f"{cls.__name__}: Request failed ({type(e).__name__}).") from e
+            raise ScrapeError(f"{name}: Request failed ({type(e).__name__}).") from e
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
@@ -102,7 +106,7 @@ class BaseScraper:
         try:
             return msgspec.json.decode(await resp.read())
         except msgspec.DecodeError as e:
-            raise ScrapeError(f"{self.__class__.__name__}: Did not receive JSON from API.") from e
+            raise ScrapeError(f"{self.store or self.__class__.__name__}: Did not receive JSON from API.") from e
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         """Make async GET request to JSON API.
