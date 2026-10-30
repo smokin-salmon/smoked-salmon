@@ -33,6 +33,7 @@ from test_webui_jobs import (  # pyright: ignore[reportMissingImports]
     _with_app,
 )
 
+import salmon.config
 import salmon.trackers
 from salmon import cfg
 from salmon.config import _parse_config, compat
@@ -688,7 +689,7 @@ def test_the_dashboard_returns_the_config_warnings(tmp_path: Path, monkeypatch: 
     path = _config_file(tmp_path, "[upload]\nqwertyuiop = true\ndebug_tracker_connection = true\n")
     _parse_config(path)
     assert len(compat.config_warnings) == 2
-    monkeypatch.setattr("salmon.webui.server.find_config_path", lambda: path)
+    monkeypatch.setattr(salmon.config, "loaded_config_path", path)
 
     async def test(client: TestClient, _manager: JobManager) -> None:
         answer = await (await client.get("/api/dashboard", headers=AUTH)).json()
@@ -696,6 +697,20 @@ def test_the_dashboard_returns_the_config_warnings(tmp_path: Path, monkeypatch: 
         assert any(line.startswith("Unknown config key upload.qwertyuiop") for line in answer["config_warnings"])
         assert any(line.startswith("upload.debug_tracker_connection is now") for line in answer["config_warnings"])
         assert answer["config_path"] == str(path)
+
+    _with_app(test)
+
+
+def test_the_dashboard_names_the_loaded_config_not_the_one_found_now(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    loaded = _config_file(tmp_path, "")
+    monkeypatch.setattr(salmon.config, "loaded_config_path", loaded)
+    monkeypatch.setattr(salmon.config, "find_config_path", lambda: tmp_path / "another.toml")
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await client.get("/api/dashboard", headers=AUTH)).json()
+        assert answer["config_path"] == str(loaded)
 
     _with_app(test)
 

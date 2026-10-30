@@ -23,12 +23,13 @@ import msgspec
 from aiohttp import WSCloseCode, web
 from aiohttp.typedefs import Handler
 
+import salmon.config
 import salmon.search
 import salmon.tagger.sources
 import salmon.trackers
 from salmon import cfg, ssrf
 from salmon.checks.source import detect_source
-from salmon.config import compat, find_config_path
+from salmon.config import compat
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
 from salmon.errors import ScrapeError
@@ -238,14 +239,6 @@ def _folders() -> dict[str, Any]:
     }
 
 
-def _config_path() -> str | None:
-    """The config file this salmon loaded, or None when it cannot be found any more."""
-    try:
-        return str(find_config_path())
-    except FileNotFoundError:
-        return None
-
-
 async def dashboard(request: web.Request) -> web.Response:
     """The version, the trackers configured (names only), the roots with their free space, the tools found on PATH
     the job counts and the warnings the config printed at start. Contacts no tracker."""
@@ -265,7 +258,7 @@ async def dashboard(request: web.Request) -> web.Response:
             "jobs": counts,
             "max_jobs": request.app[JOBS].max_jobs,
             "config_warnings": list(compat.config_warnings),
-            "config_path": _config_path(),
+            "config_path": str(salmon.config.loaded_config_path) if salmon.config.loaded_config_path else None,
         },
     )
 
