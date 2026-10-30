@@ -1,13 +1,19 @@
 import os
+import re
 import shutil
 from pathlib import Path
 
 import asyncclick as click
 
-from salmon import interaction
+from salmon import cfg, interaction
 from salmon.checks.tag_rules import in_torrent_path
-from salmon.common import clean_name, invisible_chars, show_invisible
-from salmon.constants import ALLOWED_EXTENSIONS, ESSENTIAL_EXTENSIONS
+from salmon.common import clean_name, has_visible_chars, invisible_chars, show_invisible
+from salmon.constants import (
+    ALLOWED_EXTENSIONS,
+    BLACKLISTED_CHARS,
+    BLACKLISTED_FULLWIDTH_REPLACEMENTS,
+    ESSENTIAL_EXTENSIONS,
+)
 from salmon.errors import NoncompliantFolderStructure
 from salmon.tagger.renames import RenameStopped, name_key, rename_recorded
 
@@ -22,10 +28,10 @@ async def check_folder_structure(
     """Run through every filesystem check that causes uploads to violate the rules
     or be rejected on the upload form.
 
-    Verifies that no name holds invisible or odd Unicode characters (renamed, or reported for a scene
-    release), that path lengths are within max_path_length characters, that there are no zero
-    length folders, and that the file extensions are valid. Loops until the user has fixed all
-    issues or the upload is aborted.
+    Verifies that no name holds invisible or odd Unicode characters or a character a tracker
+    refuses (renamed, or reported for a scene release), that path lengths are within
+    max_path_length characters, that there are no zero length folders, and that the file
+    extensions are valid. Loops until the user has fixed all issues or the upload is aborted.
 
     Args:
         path: Absolute path to the release folder being checked.
@@ -44,6 +50,7 @@ async def check_folder_structure(
         try:
             await _check_illegal_folders(path)
             await _check_invisible_characters(path, scene)
+            await _check_forbidden_characters(path, scene)
             _check_path_lengths(path, scene, max_path_length)
             _check_zero_len_folder(path)
             await _check_extensions(path, scene, essential_only=essential_only)
@@ -158,6 +165,76 @@ async def _check_invisible_characters(path: str, scene: bool) -> None:
     for old, new in renames:
         if new == old:
             click.secho(f"Cannot rename {old}: nothing would be left of its name.", fg="red", bold=True)
+            raise NoncompliantFolderStructure
+        if os.path.lexists(new) or new in taken:
+            click.secho(f"Cannot rename {old}: {new} already exists.", fg="red", bold=True)
+            raise NoncompliantFolderStructure
+        taken.add(new)
+    if not await interaction.confirm(
+        click.style("Rename them to the names without those characters?", fg="magenta"), default=True
+    ):
+        raise NoncompliantFolderStructure
+    _rename_or_stop(path, renames)
+
+
+def _forbidden_characters(name: str) -> list[str]:
+    """The characters in *name* that a tracker refuses in a torrent's paths, each once."""
+    return sorted(set(re.findall(BLACKLISTED_CHARS, name)))
+
+
+def _substitute_forbidden_characters(name: str) -> str:
+    """Replace the forbidden characters in *name* the same way generated folder and file names are."""
+    if cfg.upload.formatting.fullwidth_replacements:
+        for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
+            name = name.replace(char, sub)
+    return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, name)
+
+
+async def _check_forbidden_characters(path: str, scene: bool) -> None:
+    """Verify that no file or sub-folder name holds a character a tracker refuses.
+
+    ``BLACKLISTED_CHARS`` is applied to the names salmon builds, but not to the names it only moves:
+    a log, cue or image the user named, a sub-folder, or an audio file whose rename was declined.
+    The tracker then refuses the torrent at the upload form, after the spectrals have been uploaded.
+    Offending names are renamed to the same substitution generated names get, sub-folders last so the
+    paths stay valid while the renaming goes on. A scene release is never renamed: it raises.
+
+    Args:
+        path: Absolute path to the release folder being checked.
+        scene: Whether the release is a scene release.
+
+    Raises:
+        NoncompliantFolderStructure: If a scene release has such names, the user declines the
+            rename, a rename would replace a path that exists, or nothing would be left of a name.
+    """
+    folder_name = os.path.basename(os.path.normpath(path))
+    offending: list[tuple[str, str, list[str]]] = []
+    for root, dirs, files in os.walk(path, topdown=False):
+        for name in [*files, *dirs]:
+            if chars := _forbidden_characters(name):
+                offending.append(
+                    (os.path.join(root, name), os.path.join(folder_name, os.path.relpath(root, path), name), chars)
+                )
+
+    if not offending:
+        return click.secho("No names hold characters a tracker refuses.", fg="green")
+
+    click.secho("The following names hold characters a tracker refuses:", fg="red", bold=True)
+    for _, shown, chars in offending:
+        click.echo(f" >> {os.path.normpath(shown)}")
+        for char in chars:
+            click.echo(f"      {char}")
+    if scene:
+        raise NoncompliantFolderStructure
+
+    renames = [
+        (old, os.path.join(os.path.dirname(old), _substitute_forbidden_characters(os.path.basename(old))))
+        for old, _, _ in offending
+    ]
+    taken: set[str] = set()
+    for old, new in renames:
+        if not has_visible_chars(os.path.basename(new)):
+            click.secho(f"Cannot rename {old}: nothing visible would be left of its name.", fg="red", bold=True)
             raise NoncompliantFolderStructure
         if os.path.lexists(new) or new in taken:
             click.secho(f"Cannot rename {old}: {new} already exists.", fg="red", bold=True)
