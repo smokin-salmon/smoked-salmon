@@ -281,12 +281,16 @@ async def upload_options(_request: web.Request) -> web.Response:
 
 
 async def cross_upload_options(_request: web.Request) -> web.Response:
-    """What the cross-upload form offers: the trackers configured, the transcodes and the most releases one
+    """What the cross-upload form offers: the trackers configured, the conversion kinds and the most releases one
     ``salmon cross-upload`` takes. Contacts no tracker."""
-    from salmon.cross_upload import MAX_RELEASES, TRANSCODES
+    from salmon.cross_upload import MAX_RELEASES
 
     return web.json_response(
-        {"trackers": list(salmon.trackers.tracker_list), "transcodes": list(TRANSCODES), "max_releases": MAX_RELEASES}
+        {
+            "trackers": list(salmon.trackers.tracker_list),
+            "conversion_kinds": list(CONVERSION_KINDS),
+            "max_releases": MAX_RELEASES,
+        }
     )
 
 

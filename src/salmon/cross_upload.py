@@ -36,6 +36,7 @@ from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.common import commandgroup, invisible_chars, show_invisible
 from salmon.config.image_hosts import HOST_RULES
+from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
 from salmon.errors import (
     DryRunRefused,
@@ -54,11 +55,13 @@ from salmon.tagger.tags import gather_tags
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import (
     _check_logs,
+    conversion_kind,
     downconversion_format,
     execute_downconversion_tasks,
     finish_upload,
     get_downconversion_options,
     red_api_for_covers,
+    validate_conversions,
 )
 from salmon.uploader.dupe_checker import (
     _confirm_group_id,
@@ -172,6 +175,10 @@ class CrossUploadOptions:
         source: SOURCE's site code, upper-cased.
         target: TARGET's site code, upper-cased.
         transcodes: The MP3 bitrates of --transcode, upper-cased.
+        downconvert: --downconvert: the lossless kinds, refused if the FLAC has none.
+        all_formats: --all: every conversion `up` would offer.
+        conversions: The kinds of --conversions (see CONVERSION_KINDS) and of salmon web's form; those this FLAC
+            cannot give are skipped.
     """
 
     inputs: tuple[str, ...]
@@ -182,6 +189,7 @@ class CrossUploadOptions:
     transcodes: tuple[str, ...] = ()
     downconvert: bool = False
     all_formats: bool = False
+    conversions: tuple[str, ...] = ()
 
     def usage_error(self) -> str | None:
         """Why these options cannot go together, as ``salmon cross-upload`` says it; None when they can.
@@ -250,6 +258,12 @@ class Release:
 )
 @click.option("--downconvert", is_flag=True, help="Also upload the lossless downconversions of a 24-bit FLAC.")
 @click.option("--all", "all_formats", is_flag=True, help="Also upload every conversion `up` would offer.")
+@click.option(
+    "--conversions",
+    callback=validate_conversions,
+    help="Also upload these conversions of a FLAC, as `salmon up` does: a comma-separated list of "
+    f"{', '.join(CONVERSION_KINDS)}, or none or all. Added to --transcode, --downconvert and --all.",
+)
 @click.option("-yyy", is_flag=True, help="Automatically pick the default answer for prompts.")
 @click.option(
     "--dry-run",
@@ -265,6 +279,7 @@ async def cross_upload(
     transcodes: tuple[str, ...],
     downconvert: bool,
     all_formats: bool,
+    conversions: tuple[str, ...] | None,
     yyy: bool,
     dry_run: bool,
 ) -> None:
@@ -287,6 +302,7 @@ async def cross_upload(
         transcodes=tuple(t.upper() for t in transcodes),
         downconvert=downconvert,
         all_formats=all_formats,
+        conversions=conversions or (),
     )
     if (error := options.usage_error()) is not None:
         raise click.UsageError(error)
@@ -481,7 +497,7 @@ async def _prepare(
         except click.Abort:
             raise CrossUploadRefused("the log check stopped it") from None
 
-    release.tasks = _conversion_tasks(release, options.transcodes, options.downconvert, options.all_formats)
+    release.tasks = _conversion_tasks(release, options)
     if not release.data["album_desc"]:
         release.data["album_desc"] = generate_description(_track_data(release), {"comment": None, "urls": []})
         release.notes.append(f"{source.site_string} has no album description: sending the tracklist from the tags")
@@ -936,28 +952,35 @@ def _track_data(release: Release) -> dict[str, Any]:
     return release.track_data
 
 
-def _conversion_tasks(
-    release: Release, transcodes: tuple[str, ...], downconvert: bool, all_formats: bool
-) -> list[dict[str, Any]]:
-    """The conversions asked for, as the tasks `up` makes for this source.
+def _conversion_tasks(release: Release, options: CrossUploadOptions) -> list[dict[str, Any]]:
+    """The conversions asked for, as the tasks `up` makes for this source, in the order `up` offers them.
+
+    A kind of ``conversions`` that this FLAC cannot give is skipped, with a note in the plan.
 
     Raises:
-        CrossUploadRefused: If one is asked for that this source cannot give.
+        CrossUploadRefused: If one is asked for and the source is not a FLAC, or --downconvert is asked for and
+            the FLAC has no lossless downconversion.
     """
-    if not (transcodes or downconvert or all_formats):
+    if not (options.transcodes or options.downconvert or options.all_formats or options.conversions):
         return []
     if release.torrent["format"] != "FLAC":
         raise CrossUploadRefused("only a FLAC can be transcoded or downconverted")
-    options = get_downconversion_options({"encoding": release.torrent["encoding"]}, _track_data(release))
-    if all_formats:
-        return options
-    tasks = [option for option in options if option["action"] == "downconvert"] if downconvert else []
-    if downconvert and not tasks:
+    offered = get_downconversion_options({"encoding": release.torrent["encoding"]}, _track_data(release))
+    if options.all_formats:
+        return offered
+    lossless = [option for option in offered if option["action"] == "downconvert"]
+    if options.downconvert and not lossless:
         if len({track["sample rate"] for track in _track_data(release).values()}) > 1:
             raise CrossUploadRefused("--downconvert: the files have different sample rates")
         raise CrossUploadRefused("--downconvert: there is no lossless downconversion of this FLAC")
-    tasks += [option for option in options if option["action"] == "transcode" and option["encoding"] in transcodes]
-    return tasks
+    offered_kinds = {conversion_kind(option) for option in offered}
+    release.notes.extend(
+        f"No {kind} conversion of this FLAC: skipped" for kind in options.conversions if kind not in offered_kinds
+    )
+    kinds = set(options.conversions) | set(options.transcodes)
+    if options.downconvert:
+        kinds |= {conversion_kind(option) for option in lossless}
+    return [option for option in offered if conversion_kind(option) in kinds]
 
 
 def _tracker_of(url: str, sites: tuple["BaseGazelleApi", ...]) -> str | None:
