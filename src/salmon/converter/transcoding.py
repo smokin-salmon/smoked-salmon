@@ -14,7 +14,7 @@ from mutagen.id3 import APIC, TXXX, Frames
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
-from salmon.converter.conversions import conversion_of, missing_files, record_conversion
+from salmon.converter.conversions import conversion_of, missing_files, record_conversion, source_of
 from salmon.errors import UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -441,7 +441,7 @@ async def transcode_folder(
 
     if items:
         files = {os.path.relpath(item.src, path): os.path.relpath(item.dst, new_path) for item in items}
-        record_conversion(new_path, source=path, kind="transcode", bitrate=bitrate, files=files)
+        record_conversion(new_path, source=source_of(path), kind="transcode", bitrate=bitrate, files=files)
     return new_path
 
 
@@ -482,7 +482,7 @@ def _is_finished_transcode(path: str, new_path: str, bitrate: Bitrate) -> bool:
 
 def _how_record_differs(record: dict[str, Any], path: str, bitrate: Bitrate) -> str | None:
     """What a conversion record is of, when it is not this transcode of path at bitrate; None when it is."""
-    if os.path.realpath(record["source"]) != os.path.realpath(path):
+    if os.path.realpath(record["source"]) != os.path.realpath(source_of(path)):
         return f"a conversion of another album ({record['source']})"
     if record["kind"] != "transcode":
         return "a downconversion of this album"

@@ -22,6 +22,7 @@ from salmon.errors import NoncompliantFolderStructure, UploadError
 from salmon.tagger import folderstructure, renames
 from salmon.tagger.retagger import rename_files
 from salmon.trackers.ops import OpsApi
+from salmon.uploader.staging import staged_source
 
 if TYPE_CHECKING:
     from salmon.uploader.seedbox import UploadManager
@@ -412,3 +413,42 @@ def test_a_refused_transcode_is_skipped_and_the_next_task_runs(monkeypatch, caps
 
     assert made == ["V0", "up /out [V0]"]
     assert "01.mp3 is missing" in capsys.readouterr().out
+
+
+def test_a_transcode_made_from_a_runs_copy_is_reused_from_a_later_runs_copy(made, tmp_path, monkeypatch) -> None:
+    # A run that works on a copy (--skip-flac-upload, a protected album kept unrenamed) makes a new one each time.
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    monkeypatch.setattr(cfg.directory, "download_directory", str(downloads))
+    album = _album(tmp_path)
+    with staged_source(str(album), scratch=True) as (copy, _rename_into):
+        out = _transcode(Path(copy), downloads)
+    made.clear()
+
+    with staged_source(str(album), scratch=True) as (copy, _rename_into):
+        again = _transcode(Path(copy), downloads)
+
+    assert again == out
+    assert made == []
+    record = conversions.conversion_of(str(out))
+    assert record is not None
+    assert record["source"] == str(album)
+
+
+def test_a_downconversion_made_from_a_runs_copy_is_reused_from_a_later_runs_copy(made, tmp_path, monkeypatch) -> None:
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    monkeypatch.setattr(cfg.directory, "download_directory", str(downloads))
+    album = _album(tmp_path, 24, 96000)
+    with staged_source(str(album), scratch=True) as (copy, _rename_into):
+        out = _downconvert(Path(copy), downloads)
+    made.clear()
+
+    with staged_source(str(album), scratch=True) as (copy, _rename_into):
+        again = _downconvert(Path(copy), downloads)
+
+    assert again == out
+    assert made == []
+    record = conversions.conversion_of(str(out))
+    assert record is not None
+    assert record["source"] == str(album)

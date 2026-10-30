@@ -9,7 +9,7 @@ import contextlib
 import json
 import os
 import tempfile
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import Any
 
 import asyncclick as click
@@ -33,6 +33,34 @@ def _inside_scratch(path: str) -> bool:
     except RuntimeError:
         return False
     return os.path.commonpath([scratch, os.path.realpath(path)]) == scratch
+
+
+# Each live run directory holding a copy of an album, and the album folder the user gave.
+_COPIED_FROM: dict[str, str] = {}
+
+
+@contextlib.contextmanager
+def copies_of(original: str, run_dir: str) -> Iterator[None]:
+    """While a run works on a copy of original in run_dir, conversions made from the copy are of original."""
+    key = os.path.realpath(run_dir)
+    _COPIED_FROM[key] = os.path.abspath(original)
+    try:
+        yield
+    finally:
+        _COPIED_FROM.pop(key, None)
+
+
+def source_of(path: str) -> str:
+    """The album folder a conversion of path is of: the one the user gave, when path is a run's copy of it.
+
+    A run directory is made afresh each run and removed after, so a later run knows a conversion by this name.
+    """
+    real = os.path.realpath(path)
+    for run_dir, original in list(_COPIED_FROM.items()):
+        with contextlib.suppress(ValueError):
+            if os.path.commonpath([run_dir, real]) == run_dir:
+                return original
+    return path
 
 
 def record_conversion(output: str, **facts: Any) -> None:
