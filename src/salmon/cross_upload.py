@@ -966,17 +966,19 @@ def _conversion_tasks(release: Release, options: CrossUploadOptions) -> list[dic
     if release.torrent["format"] != "FLAC":
         raise CrossUploadRefused("only a FLAC can be transcoded or downconverted")
     offered = get_downconversion_options({"encoding": release.torrent["encoding"]}, _track_data(release))
+    offered_kinds = {conversion_kind(option) for option in offered}
+    skipped = [
+        f"No {kind} conversion of this FLAC: skipped" for kind in options.conversions if kind not in offered_kinds
+    ]
     if options.all_formats:
+        release.notes.extend(skipped)
         return offered
     lossless = [option for option in offered if option["action"] == "downconvert"]
     if options.downconvert and not lossless:
         if len({track["sample rate"] for track in _track_data(release).values()}) > 1:
             raise CrossUploadRefused("--downconvert: the files have different sample rates")
         raise CrossUploadRefused("--downconvert: there is no lossless downconversion of this FLAC")
-    offered_kinds = {conversion_kind(option) for option in offered}
-    release.notes.extend(
-        f"No {kind} conversion of this FLAC: skipped" for kind in options.conversions if kind not in offered_kinds
-    )
+    release.notes.extend(skipped)
     kinds = set(options.conversions) | set(options.transcodes)
     if options.downconvert:
         kinds |= {conversion_kind(option) for option in lossless}

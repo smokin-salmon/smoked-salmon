@@ -741,11 +741,22 @@ def test_no_conversions_asked_for_gives_no_tasks_for_any_source() -> None:
 def test_a_kind_the_flac_cannot_give_is_skipped_with_a_line() -> None:
     release = _flac_release("Lossless", 44100)
 
-    assert _task_names(release, conversions=("24bit", "16bit", "V0")) == ["MP3 V0"]
+    names = _task_names(release, conversions=("24bit", "16bit", "V0"))
+
+    assert names == ["MP3 V0"]
     assert release.notes == [
         "No 24bit conversion of this FLAC: skipped",
         "No 16bit conversion of this FLAC: skipped",
     ]
+
+
+def test_the_skip_line_stays_when_all_is_given_too() -> None:
+    release = _flac_release("Lossless", 44100)
+
+    names = _task_names(release, all_formats=True, conversions=("24bit",))
+
+    assert names == ["MP3 320", "MP3 V0"]
+    assert release.notes == ["No 24bit conversion of this FLAC: skipped"]
 
 
 def test_downconvert_with_no_lossless_downconversion_is_still_refused() -> None:
