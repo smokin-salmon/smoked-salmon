@@ -18,6 +18,7 @@ from test_uploader_shortened_conversions import _write_flac  # pyright: ignore[r
 import salmon.uploader as uploader
 from salmon import cfg
 from salmon.errors import UploadError
+from salmon.tagger import cover as cover_module
 
 # salmon.checks.__init__ defines a click command also named `integrity`, which shadows the
 # submodule on the package object, so importlib is used to get the module itself.
@@ -239,7 +240,9 @@ def test_sanitizing_a_folder_keeps_its_only_artwork_as_a_cover_file_in_the_album
     _flac_with_front_cover(album / "CD1" / "01.flac", _png())
     monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
 
-    assert anyio.run(integrity.sanitize_integrity, str(album)) is True
+    sanitized = anyio.run(integrity.sanitize_integrity, str(album))
+
+    assert sanitized is True
 
     assert (album / "cover.png").read_bytes() == _png()
     # Not one per disc folder: the album's files are sanitized one by one.
@@ -251,7 +254,9 @@ def test_sanitizing_one_flac_keeps_its_artwork_beside_it(monkeypatch, tmp_path) 
     _flac_with_front_cover(album / "01.flac", _png())
     monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
 
-    assert anyio.run(integrity.sanitize_integrity, str(album / "01.flac")) is True
+    sanitized = anyio.run(integrity.sanitize_integrity, str(album / "01.flac"))
+
+    assert sanitized is True
 
     assert (album / "cover.png").read_bytes() == _png()
 
@@ -262,7 +267,9 @@ def test_a_folder_with_a_cover_file_gets_no_other(monkeypatch, tmp_path) -> None
     (album / "folder.jpg").write_bytes(b"the album's own")
     monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
 
-    assert anyio.run(integrity.sanitize_integrity, str(album)) is True
+    sanitized = anyio.run(integrity.sanitize_integrity, str(album))
+
+    assert sanitized is True
 
     assert sorted(os.listdir(album)) == ["01.flac", "folder.jpg"]
 
@@ -274,7 +281,9 @@ def test_a_backup_left_by_a_crashed_run_is_never_overwritten(monkeypatch, tmp_pa
     (tmp_path / "01.flac.corrupted").write_bytes(b"fLaC original")
     monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
 
-    assert anyio.run(integrity.sanitize_integrity, str(flac)) is True
+    sanitized = anyio.run(integrity.sanitize_integrity, str(flac))
+
+    assert sanitized is True
 
     assert (tmp_path / "01.flac.corrupted").read_bytes() == b"fLaC original"
     assert sorted(os.listdir(tmp_path)) == ["01.flac", "01.flac.corrupted"]
@@ -345,7 +354,9 @@ def test_a_fixed_mp3_replaces_the_original_and_keeps_its_times(monkeypatch, tmp_
     os.utime(original, (1_000_000_000, 1_000_000_000))
     monkeypatch.setattr(integrity.anyio, "run_process", _mp3val(b"fixed"))
 
-    assert anyio.run(integrity._sanitize_mp3, str(original)) is True
+    sanitized = anyio.run(integrity._sanitize_mp3, str(original))
+
+    assert sanitized is True
 
     assert sorted(os.listdir(tmp_path)) == ["01.mp3"]
     assert original.read_bytes() == b"fixed"
@@ -357,7 +368,9 @@ def test_an_mp3_mp3val_fails_on_is_left_as_it_was(monkeypatch, tmp_path) -> None
     original.write_bytes(b"the original")
     monkeypatch.setattr(integrity.anyio, "run_process", _mp3val(b"broken", returncode=1))
 
-    assert anyio.run(integrity._sanitize_mp3, str(original)) is False
+    sanitized = anyio.run(integrity._sanitize_mp3, str(original))
+
+    assert sanitized is False
 
     assert sorted(os.listdir(tmp_path)) == ["01.mp3"]
     assert original.read_bytes() == b"the original"
@@ -415,3 +428,43 @@ def test_a_cancel_between_the_move_and_its_flag_still_puts_the_original_back(mon
 
     assert sorted(os.listdir(tmp_path)) == ["01.flac"]
     assert flac.read_bytes() == b"fLaC original"
+
+
+def test_a_cover_that_cannot_be_saved_leaves_the_folder_unsanitized(monkeypatch, tmp_path, capsys) -> None:
+    album = tmp_path / "Album"
+    _flac_with_front_cover(album / "01.flac", _png())
+    before = (album / "01.flac").read_bytes()
+    ran: list[list[str]] = []
+
+    async def recorded(commands: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        ran.append(commands)
+        return subprocess.CompletedProcess(commands, 0, b"", b"")
+
+    def disk_full(_path: str, _data: bytes) -> None:
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(integrity.anyio, "run_process", recorded)
+    monkeypatch.setattr(cover_module, "_write_whole_file", disk_full)
+
+    sanitized = anyio.run(integrity.sanitize_integrity, str(album))
+
+    assert sanitized is False
+    assert ran == []
+    assert (album / "01.flac").read_bytes() == before
+    assert "its embedded cover could not be saved" in capsys.readouterr().out
+
+
+def test_a_backup_name_that_cannot_be_claimed_fails_that_file_alone(monkeypatch, tmp_path, capsys) -> None:
+    flac = tmp_path / "01.flac"
+    flac.write_bytes(b"fLaC original")
+
+    def refused(_path: str) -> str:
+        raise PermissionError(13, "Permission denied")
+
+    monkeypatch.setattr(integrity, "_reserve_backup_path", refused)
+
+    sanitized = anyio.run(integrity._sanitize_flac, str(flac))
+
+    assert sanitized is False
+    assert flac.read_bytes() == b"fLaC original"
+    assert "no backup name could be claimed" in capsys.readouterr().out

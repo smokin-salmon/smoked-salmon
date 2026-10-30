@@ -436,7 +436,8 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
         click.Abort: If the path is neither a supported file nor a directory.
     """
     if path.lower().endswith(".flac"):
-        _save_embedded_cover(os.path.dirname(path) or ".")
+        if not _save_embedded_cover(os.path.dirname(path) or "."):
+            return False
         return await _sanitize_flac(path)
     elif path.lower().endswith(".mp3"):
         return await _sanitize_mp3(path)
@@ -450,7 +451,8 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
         if not audio_files:
             return True
         # Once, into the album folder, not into each disc folder: its files are sanitized one by one below.
-        _save_embedded_cover(path)
+        if not _save_embedded_cover(path):
+            return False
         results = await process_files(audio_files, _sanitize_file, "Sanitizing audio files")
         for integrity in results:
             integrities = integrities and integrity
@@ -465,12 +467,20 @@ async def _sanitize_file(path: str, _: int | None = None) -> bool:
     return await _sanitize_mp3(path)
 
 
-def _save_embedded_cover(folder: str) -> None:
-    """Save the first embedded front cover as the folder's cover file, if it has none: the re-encode drops it."""
+def _save_embedded_cover(folder: str) -> bool:
+    """Save the first embedded front cover as the folder's cover file, if it has none: the re-encode drops it.
+
+    False, after saying why, if it could not be written: then nothing is sanitized, and the files keep their artwork.
+    """
     # Imported here: the tagger package imports the checks.
     from salmon.tagger.cover import extract_embedded_cover
 
-    extract_embedded_cover(folder)
+    try:
+        extract_embedded_cover(folder)
+    except OSError as e:
+        click.secho(f"Not sanitizing {folder}: its embedded cover could not be saved ({e}).", fg="red", bold=True)
+        return False
+    return True
 
 
 def _reserve_backup_path(path: str) -> str:
@@ -519,7 +529,12 @@ async def _sanitize_flac(path: str) -> bool:
     Returns:
         True if sanitization succeeded, False otherwise.
     """
-    backup_path = _reserve_backup_path(path)
+    try:
+        backup_path = _reserve_backup_path(path)
+    except OSError as e:
+        # This file's failure, not the folder's: raised, it would stop the others being sanitized.
+        click.secho(f"Failed to sanitize {path}: no backup name could be claimed ({e})", fg="red", bold=True)
+        return False
     moved = False
     try:
         # os.replace: on Windows, os.rename refuses the claimed name.
