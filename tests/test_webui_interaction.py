@@ -149,6 +149,19 @@ def test_a_hidden_prompt_asks_for_a_password_field() -> None:
     ]
 
 
+def test_a_hidden_answer_the_conversion_refuses_is_not_quoted_in_the_error(capsys: pytest.CaptureFixture[str]) -> None:
+    def convert(value: str) -> str:
+        if value == "bad-secret":
+            raise click.BadParameter(f"{value!r} is not a cookie")
+        return value
+
+    result, browser = _prompt(None, ["bad-secret", "good"], hide_input=True, value_proc=convert)
+    assert result == "good"
+    assert browser.questions[1]["error"] == "Error: invalid input"
+    assert "bad-secret" not in str(browser.questions)
+    assert "bad-secret" not in capsys.readouterr().out
+
+
 def test_a_confirm_without_labels_is_sent_exactly_as_before_and_with_labels_names_its_buttons() -> None:
     browser = Browser([True, False])
 

@@ -229,7 +229,8 @@ class WebInteraction:
                 if inspect.isawaitable(result):
                     result = await result
             except click.UsageError as e:
-                error = f"Error: {e.message}"
+                # A converter may quote the answer: a hidden one stays out of the question and the log.
+                error = "Error: invalid input" if hide_input else f"Error: {e.message}"
                 click.echo(error)
                 continue
             return result
