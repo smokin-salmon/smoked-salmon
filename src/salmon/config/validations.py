@@ -562,3 +562,11 @@ class Cfg(BaseStruct):
         red_host_users = [setting for setting, _kind, host in self.image.selections() if host == "red"]
         if red_host_users and not (self.tracker.red and self.tracker.red.api_key):
             raise ValueError(f'image.{red_host_users[0]} = "red" needs tracker.red.api_key to be set')
+        # A tracker's own dottorrents_dir gets .torrent files written with overwrite, as the global one does.
+        for code in _TRACKER_CODES:
+            settings = getattr(self.tracker, code)
+            folder = settings.dottorrents_dir if settings else None
+            if folder and (library := self.directory.library_of(folder)) is not None:
+                raise ValueError(
+                    f"library_dirs entry {library} must not contain tracker.{code}.dottorrents_dir ({folder})"
+                )
