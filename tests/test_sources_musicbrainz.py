@@ -97,7 +97,9 @@ def test_safe_read_keeps_the_signature_the_wrapper_calls() -> None:
 
 
 def test_a_release_is_fetched_through_the_bounded_read(server) -> None:
-    assert _fetch_release()["title"] == "Album"
+    release = _fetch_release()
+
+    assert release["title"] == "Album"
     assert len(server.requests) == 1
 
 
