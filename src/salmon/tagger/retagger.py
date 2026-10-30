@@ -12,7 +12,7 @@ from mutagen import mp4
 
 from salmon import cfg, interaction
 from salmon.common import clean_name, has_visible_chars
-from salmon.common.strings import artists_or_various, join_artists
+from salmon.common.strings import artists_or_various, join_artists, reaches_various_threshold
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
@@ -36,22 +36,25 @@ async def tag_files(path, tags, metadata, auto_rename):
     """
     Wrapper function that calls the functions that create and print the
     proposed changes, and then prompts for confirmation to retag the file.
+
+    Returns each retagged file's track, by filename, or None when the files were not retagged.
     """
     click.secho("\nRetagging files...", fg="cyan", bold=True)
     if not check_whether_to_tag(tags, metadata):
-        return
+        return None
     album_changes = collect_album_data(metadata)
     try:
-        track_changes = create_track_changes(tags, metadata)
+        pairs = pair_files_with_tracks(tags, metadata)
     except AmbiguousTrackOrderError as e:
         click.secho(str(e), fg="red")
         click.secho("Skipping retagging procedure...", fg="red")
-        return
+        return None
     except NumberedTrackMoveError as e:
         if not await _confirm_moves(e.moves):
             click.secho("Skipping retagging procedure...", fg="red")
-            return
-        track_changes = create_track_changes(tags, metadata, move_numbered=True)
+            return None
+        pairs = pair_files_with_tracks(tags, metadata, move_numbered=True)
+    track_changes = _track_changes(pairs)
     print_changes(album_changes, track_changes, next(iter(tags.values())))
     if (
         auto_rename
@@ -62,6 +65,8 @@ async def tag_files(path, tags, metadata, auto_rename):
         )
     ):
         retag_files(path, album_changes, track_changes)
+        return {filename: trackmeta for filename, _tagset, trackmeta in pairs}
+    return None
 
 
 async def _confirm_moves(moves):
@@ -133,12 +138,18 @@ def _generate_album_artist(artists):
 def create_track_changes(tags, metadata, *, move_numbered=False):
     """
     Compare the track data in the metadata to the track data in the tags
-    and record all differences.
-
-    Raises NumberedTrackMoveError when files that carry their own track numbers would
-    get other tracks' tags (their ISRC or title says so), unless `move_numbered`.
+    and record all differences. Raises as ``pair_files_with_tracks`` does.
     """
-    changes = {}
+    return _track_changes(pair_files_with_tracks(tags, metadata, move_numbered=move_numbered))
+
+
+def pair_files_with_tracks(tags, metadata, *, move_numbered=False):
+    """Each file as (filename, tagset, track): the metadata track whose tags it gets.
+
+    Raises AmbiguousTrackOrderError when the files' order can't be trusted and the content can't place them, and
+    NumberedTrackMoveError when files that carry their own track numbers would get other tracks' tags (their ISRC
+    or title says so), unless `move_numbered`.
+    """
     tracks = metadata_to_track_list(metadata["tracks"])
     ambiguous = None
 
@@ -187,7 +198,13 @@ def create_track_changes(tags, metadata, *, move_numbered=False):
     ]
     if numbered and moves and not move_numbered:
         raise NumberedTrackMoveError(moves)
-    for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False):
+    return [(filename, tagset, trackmeta) for (filename, tagset), trackmeta in zip(ordered_tags, tracks, strict=False)]
+
+
+def _track_changes(pairs):
+    """The changes that give each file of ``pair_files_with_tracks`` its track's tags."""
+    changes = {}
+    for filename, tagset, trackmeta in pairs:
         changes[filename] = []
 
         try:
@@ -593,10 +610,13 @@ def retag_files(path, album_changes, track_changes):
     click.secho("Retagged files.", fg="green")
 
 
-async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None):
+async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None, tracks_by_file=None):
     """
     Call functions that generate the proposed changes, then print and prompt
     for confirmation. Apply the changes if user agrees.
+
+    ``tracks_by_file`` is what ``tag_files`` returns: with it, a file's {artist} is the various artists word
+    when its track has that many main artists.
     """
     to_rename = []
     folders_to_create = set()
@@ -621,7 +641,10 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
 
     for filename, tracktags in tags.items():
         ext = os.path.splitext(filename)[1].lower()
-        new_name = generate_file_name(tracktags, ext, multiple_artists)
+        # Counted from the track's main artists, as the folder name is; a file not retagged keeps its ARTIST
+        track = (tracks_by_file or {}).get(filename)
+        various = track is not None and reaches_various_threshold(a for a, i in track["artists"] if i == "main")
+        new_name = generate_file_name(tracktags, ext, multiple_artists, various=various)
         disc_number = 1  # Default value
         if single_folder:
             disc_number = _get_tag_number(tracktags, "discnumber")
@@ -631,6 +654,7 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
                 ext,
                 multiple_artists,
                 trackno_or=f"{disc_number:0{disc_digits}d}.{track_number:0{track_digits}d}",
+                various=various,
             )
             folder = os.path.dirname(os.path.join(path, filename))
             if folder != path:
@@ -701,8 +725,11 @@ def print_filenames(to_rename):
         click.echo(f"   {filename} {ARROWS} {new_name}")
 
 
-def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
-    """Generate the template keys and format the template with the tags."""
+def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=False):
+    """Generate the template keys and format the template with the tags.
+
+    ``various`` puts ``various_artist_word`` in {artist}.
+    """
     template = cfg.upload.formatting.file_template
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
     if (
@@ -729,13 +756,9 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None):
             val = _parse_integer(raw_val if isinstance(raw_val, (str, int)) else str(raw_val))
             template_keys[k] = val
 
-    if "artist" in keys:
-        if isinstance(tags, dict):
-            artist_count = str(tags["artist"]).count(",") + str(tags["artist"]).count("&")
-        else:
-            artist_count = str(tags.artist).count(",") + str(tags.artist).count("&")
-        if artist_count > cfg.upload.formatting.various_artist_threshold:
-            template_keys["artist"] = cfg.upload.formatting.various_artist_word
+    # This counted "," and "&" in ARTIST, so "Earth, Wind & Fire" was two artists
+    if "artist" in keys and various:
+        template_keys["artist"] = cfg.upload.formatting.various_artist_word
     if "tracknumber" in keys and trackno_or is not None:
         template_keys["tracknumber"] = trackno_or
     new_base = template.format(**template_keys)

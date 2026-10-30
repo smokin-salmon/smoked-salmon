@@ -1096,7 +1096,8 @@ def test_tag_files_auto_tag_question(monkeypatch, assume) -> None:
     _refuse_confirm(monkeypatch, asked)
     monkeypatch.setattr(retagger, "check_whether_to_tag", lambda tags, metadata: True)
     monkeypatch.setattr(retagger, "collect_album_data", lambda metadata: {})
-    monkeypatch.setattr(retagger, "create_track_changes", lambda tags, metadata, **kw: {"x": 1})
+    monkeypatch.setattr(retagger, "pair_files_with_tracks", lambda tags, metadata, **kw: [])
+    monkeypatch.setattr(retagger, "_track_changes", lambda pairs: {"x": 1})
     monkeypatch.setattr(retagger, "print_changes", lambda *args: None)
     monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks: written.append(tracks))
 
@@ -1105,3 +1106,101 @@ def test_tag_files_auto_tag_question(monkeypatch, assume) -> None:
 
     assert len(asked) == (0 if assume else 1)
     assert bool(written) is assume
+
+
+def _one_track(root, artist, main_artists):
+    """One file tagged with ``artist``, the tags and metadata of its track by ``main_artists``, and the
+    tracks_by_file tag_files would return for it."""
+    (root / "a.flac").write_text("a.flac")
+    tags = {"a.flac": SimpleNamespace(artist=[artist], title="Song", tracknumber="1", discnumber=None)}
+    track = {"artists": [(name, "main") for name in main_artists]}
+    return tags, {"tracks": {"1": {"1": track}}}, {"a.flac": track}
+
+
+@pytest.mark.parametrize(
+    ("artist", "main_artists", "various"),
+    [
+        ("A, B, C, D", "ABCD", True),
+        ("Earth, Wind & Fire, Kool & the Gang, X", ["Earth, Wind & Fire", "Kool & the Gang", "X"], False),
+    ],
+    ids=["at the threshold", "names with separators"],
+)
+def test_file_name_artist_counts_the_tracks_main_artists(tmp_path, monkeypatch, artist, main_artists, various) -> None:
+    # The file name counted "," and "&" in ARTIST: four artists were not enough, and these three were too many.
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting(no_artist_in_filename_if_only_one_album_artist=False))
+    tags, metadata, tracks_by_file = _one_track(tmp_path, artist, main_artists)
+
+    anyio.run(
+        lambda: rename_files(
+            str(tmp_path),
+            tags,
+            metadata,
+            auto_rename=True,
+            spectral_ids=None,
+            source="WEB",
+            tracks_by_file=tracks_by_file,
+        )
+    )
+
+    shown = cfg.upload.formatting.various_artist_word if various else artist
+    assert [name for name, _ in _tree(tmp_path)] == [f"01. {shown} - Song.flac"]
+
+
+def test_file_name_artist_of_a_file_not_retagged_is_its_artist_tag(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting(no_artist_in_filename_if_only_one_album_artist=False))
+    tags, metadata, _ = _one_track(tmp_path, "A, B, C, D, E, F", "ABCDEF")
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="WEB"))
+
+    assert [name for name, _ in _tree(tmp_path)] == ["01. A, B, C, D, E, F - Song.flac"]
+
+
+@pytest.mark.parametrize("agrees", [True, False], ids=["retagged", "declined"])
+def test_tag_files_returns_each_retagged_files_track(monkeypatch, agrees) -> None:
+    async def confirm(*_args, **_kwargs):
+        return agrees
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+    monkeypatch.setattr("salmon.tagger.retagger.retag_files", lambda *_args: None)
+    track = _trackmeta("New", "1", "1")
+    metadata = {
+        "title": "Some Album",
+        "edition_title": None,
+        "genres": [],
+        "group_year": None,
+        "label": None,
+        "catno": None,
+        "artists": [("Some Artist", "main")],
+        "upc": None,
+        "comment": None,
+        "tracks": {"1": {"1": track}},
+    }
+    tags = {"a.flac": _tagset("Old", tracknumber="1", discnumber=None)}
+
+    tracks_by_file = anyio.run(lambda: tag_files("/unused", tags, metadata, auto_rename=False))
+
+    assert tracks_by_file == ({"a.flac": track} if agrees else None)
+
+
+def test_file_name_artist_counts_the_tracks_main_artists_in_one_folder(tmp_path, monkeypatch) -> None:
+    # A multi-disc release kept in one folder is named through generate_file_name's other call
+    _single_folder(monkeypatch, no_artist_in_filename_if_only_one_album_artist=False)
+    tags, metadata = _release(tmp_path, _two_discs(first=1, second=1))
+    for tagset in tags.values():
+        tagset.artist = ["A, B, C, D"]
+    track = {"artists": [(name, "main") for name in "ABCD"]}
+
+    anyio.run(
+        lambda: rename_files(
+            str(tmp_path),
+            tags,
+            metadata,
+            auto_rename=True,
+            spectral_ids=None,
+            source="CD",
+            tracks_by_file=dict.fromkeys(tags, track),
+        )
+    )
+
+    word = cfg.upload.formatting.various_artist_word
+    assert [name for name, _ in _tree(tmp_path)] == [f"1.01. {word} - Title 1-1.flac", f"2.01. {word} - Title 2-1.flac"]

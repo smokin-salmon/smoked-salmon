@@ -186,7 +186,7 @@ async def run_tag(options: TagOptions) -> str:
             skip_initial_review=options.skip_initial_review,
             apply_suggestions=options.apply_ai_suggestions,
         )
-        await tag_files(path, tags, metadata, options.auto_rename)
+        tracks_by_file = await tag_files(path, tags, metadata, options.auto_rename)
 
         await download_cover_if_nonexistent(path, metadata["cover"])
         tags = await check_tags(path)
@@ -197,7 +197,7 @@ async def run_tag(options: TagOptions) -> str:
             parent=rename_into,
             original=original,
         )
-        await rename_files(path, tags, metadata, options.auto_rename, None)
+        await rename_files(path, tags, metadata, options.auto_rename, None, tracks_by_file=tracks_by_file)
         await check_folder_structure(path, scene=False)
         await remove_source_folder(staged, path, original)
         click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
