@@ -36,8 +36,8 @@ class Scraper(MusicBrainzBase, MetadataMixin):
                 r = musicbrainzngs.get_image_list(soup["id"])
             except mb_module.ResponseError:
                 return None
-            except mb_module.WebServiceError as e:
-                # No cover rather than no release.
+            except (mb_module.WebServiceError, ValueError) as e:
+                # No cover rather than no release. ValueError: a 200 whose body is not the JSON image list.
                 click.secho(f"Cover Art Archive request failed ({type(e).__name__}): no cover.", fg="yellow")
                 return None
 

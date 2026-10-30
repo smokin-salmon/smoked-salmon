@@ -67,6 +67,9 @@ class _Server:
 def server(monkeypatch) -> Iterator[_Server]:
     """MusicBrainz and the Cover Art Archive pointed at a local server, with no rate limit and no real sleeps."""
     local = _Server()
+    # urllib honours an environment proxy: the local server must be reached directly.
+    for name in ("no_proxy", "NO_PROXY"):
+        monkeypatch.setenv(name, "127.0.0.1")
     for module in (mb_module, caa):
         monkeypatch.setattr(module, "hostname", local.host)
         monkeypatch.setattr(module, "https", False)
@@ -159,3 +162,16 @@ def test_a_failed_cover_art_archive_request_is_no_cover_and_says_so(server, slee
     assert cover is None
     assert "Cover Art Archive request failed (NetworkError): no cover." in out
     assert len(server.requests) == 2
+
+
+def test_a_cover_art_archive_answer_that_is_not_json_is_no_cover_and_says_so(server, capsys) -> None:
+    # A 200 with a page in place of the image list raised JSONDecodeError past the cover lookup and failed the scrape.
+    server.body = "<html>Not the image list</html>"
+    release = {"id": RELEASE_ID, "cover-art-archive": {"front": "true"}}
+
+    cover = musicbrainz_tagger.Scraper().parse_cover_url(release)
+
+    out = capsys.readouterr().out
+    assert cover is None
+    assert "Cover Art Archive request failed (JSONDecodeError): no cover." in out
+    assert len(server.requests) == 1
