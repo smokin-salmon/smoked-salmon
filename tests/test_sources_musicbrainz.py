@@ -110,7 +110,7 @@ def test_a_failing_server_gets_two_requests_and_one_sleep(server, sleeps) -> Non
     with pytest.raises(ScrapeError) as excinfo:
         _fetch_release()
 
-    assert str(excinfo.value) == "Scraper: Request failed (NetworkError)."
+    assert str(excinfo.value) == "MusicBrainz: Request failed (NetworkError)."
     assert len(server.requests) == 2
     assert sleeps == [2.0]
 
@@ -134,7 +134,7 @@ def test_a_release_not_on_musicbrainz_is_said_so(server) -> None:
     with pytest.raises(ScrapeError) as excinfo:
         _fetch_release()
 
-    assert str(excinfo.value) == "Scraper: Not found on MusicBrainz."
+    assert str(excinfo.value) == "MusicBrainz: Not found."
     assert len(server.requests) == 1
 
 
@@ -144,7 +144,7 @@ def test_a_failed_search_is_a_scrape_error(server, sleeps) -> None:
     with pytest.raises(ScrapeError) as excinfo:
         anyio.run(musicbrainz_search.Searcher().search_releases, "artist album", 5)
 
-    assert str(excinfo.value) == "Searcher: Request failed (NetworkError)."
+    assert str(excinfo.value) == "MusicBrainz: Request failed (NetworkError)."
     assert len(server.requests) == 2
 
 

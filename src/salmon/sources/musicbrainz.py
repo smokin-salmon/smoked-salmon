@@ -57,8 +57,8 @@ class MusicBrainzBase(BaseScraper):
             return await anyio.to_thread.run_sync(func, *args)
         except mb_module.WebServiceError as e:
             if isinstance(e.cause, HTTPError) and e.cause.code == 404:
-                raise ScrapeError(f"{self.__class__.__name__}: Not found on MusicBrainz.") from e
-            raise ScrapeError(f"{self.__class__.__name__}: Request failed ({type(e).__name__}).") from e
+                raise ScrapeError(f"{self.store or self.__class__.__name__}: Not found.") from e
+            raise ScrapeError(f"{self.store or self.__class__.__name__}: Request failed ({type(e).__name__}).") from e
 
     async def fetch_data(
         self,
