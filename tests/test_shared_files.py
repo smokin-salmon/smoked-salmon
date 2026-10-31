@@ -7,6 +7,7 @@ files and fail the torrent's recheck. No library_dirs is configured here: the ru
 
 import os
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -376,27 +377,81 @@ def test_rename_folder_never_replaces_the_album_it_renames_a_copy_of(monkeypatch
     assert (_snapshot(original), _inodes(original)) == before
 
 
+def _answering(monkeypatch, answer: bool | None, during=None) -> list[str]:
+    """Answer rename_folder's questions with `answer` (None: the default); run `during` while "replace it?" waits."""
+    asked: list[str] = []
+
+    async def confirm(text: str, *, default: bool | None = False, **_kwargs: Any) -> bool | None:
+        asked.append(click.unstyle(text))
+        if during is not None and "replace it?" in text:
+            during()
+        return default if answer is None else answer
+
+    monkeypatch.setattr(interaction, "confirm", confirm)
+    return asked
+
+
+def _rename_onto(source: Path) -> str:
+    return anyio.run(lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True))
+
+
 @pytest.mark.parametrize("how", SHARING)
-def test_rename_folder_never_replaces_an_earlier_folder_of_that_name_that_shares_files(
-    monkeypatch, seeded, how: str
+@pytest.mark.parametrize(("answer", "replaced"), [(None, False), (True, True)], ids=["default", "told_yes"])
+def test_rename_folder_asks_before_replacing_an_earlier_folder_that_shares_files_and_says_so(
+    monkeypatch, seeded, how: str, answer: bool | None, replaced: bool
 ) -> None:
     # An earlier run's renamed folder shares its files with that run's source when hardlinks is on, and a torrent
-    # may seed from it.
+    # may seed from it: kept unless the user says otherwise, which an earlier run they aborted is a reason to.
     downloads, seeding = seeded
     earlier = _album(downloads / RENAMED)
-    _share(earlier, seeding, how)
-    before = sorted(os.listdir(earlier))
+    shared = _share(earlier, seeding, how)
+    before = sorted(os.listdir(earlier)), _snapshot(shared)
     source = _album(seeding / "Other")
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
     monkeypatch.setattr(cfg.directory, "hardlinks", False)
+    asked = _answering(monkeypatch, answer)
 
-    with pytest.raises(UploadError, match=re.escape(f"Not replacing {earlier}: {rewrite_refusal(str(earlier))}")):
-        anyio.run(
-            lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True, check=False)
-        )
+    if replaced:
+        assert _rename_onto(source) == str(earlier)
+        assert _inodes(earlier).isdisjoint(_inodes(shared))
+    else:
+        with pytest.raises(UploadError, match="New folder name already exists"):
+            _rename_onto(source)
+        assert sorted(os.listdir(earlier)) == before[0]
+    # What it shared with stays as it was either way.
+    assert _snapshot(shared) == before[1]
+    assert any("it shares files with another folder" in question for question in asked)
 
-    assert sorted(os.listdir(earlier)) == before
-    assert os.path.isdir(source)
+
+def test_rename_folder_does_not_replace_a_folder_that_started_sharing_files_during_the_question(
+    monkeypatch, seeded
+) -> None:
+    downloads, seeding = seeded
+    earlier = _album(downloads / RENAMED)
+    source = _album(seeding / "Other")
+    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
+    monkeypatch.setattr(cfg.directory, "hardlinks", False)
+    late = seeding / "late"
+    late.mkdir()
+    asked = _answering(monkeypatch, True, during=lambda: _share(earlier, late, "hardlinked file"))
+
+    with pytest.raises(UploadError, match="started sharing files with another folder while you answered"):
+        _rename_onto(source)
+
+    assert os.path.isdir(earlier)
+    assert not any("it shares files" in question for question in asked)
+
+
+def test_rename_folder_goes_ahead_when_the_folder_went_during_the_question(monkeypatch, seeded) -> None:
+    downloads, seeding = seeded
+    earlier = _album(downloads / RENAMED)
+    source = _album(seeding / "Other")
+    monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
+    monkeypatch.setattr(cfg.directory, "hardlinks", False)
+    _answering(monkeypatch, True, during=lambda: shutil.rmtree(earlier))
+
+    assert _rename_onto(source) == str(earlier)
+    assert os.path.isdir(earlier)
 
 
 @pytest.mark.parametrize(("answer", "replaced"), [(None, False), (True, True)], ids=["default", "told_yes"])
