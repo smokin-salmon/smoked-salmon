@@ -376,7 +376,10 @@ def test_an_mp3_mp3val_fails_on_is_left_as_it_was(monkeypatch, tmp_path) -> None
     assert original.read_bytes() == b"the original"
 
 
-def test_an_original_that_cannot_be_put_back_stops_the_sanitize_and_says_where_it_is(monkeypatch, tmp_path) -> None:
+@pytest.mark.parametrize("given", ["file", "folder"])
+def test_an_original_that_cannot_be_put_back_stops_the_sanitize_and_says_where_it_is(
+    monkeypatch, tmp_path, given: str
+) -> None:
     flac = tmp_path / "01.flac"
     flac.write_bytes(b"fLaC original")
 
@@ -393,8 +396,9 @@ def test_an_original_that_cannot_be_put_back_stops_the_sanitize_and_says_where_i
     monkeypatch.setattr(integrity.anyio, "run_process", flac_fails)
     monkeypatch.setattr(integrity.os, "replace", replace)
 
+    # A folder's files are sanitized in a task group: the error still comes out bare, as run.main catches it.
     with pytest.raises(UploadError, match=r"the original is at .*01\.flac\.corrupted"):
-        anyio.run(integrity._sanitize_flac, str(flac))
+        anyio.run(integrity.sanitize_integrity, str(flac if given == "file" else tmp_path))
 
     assert (tmp_path / "01.flac.corrupted").read_bytes() == b"fLaC original"
 

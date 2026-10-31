@@ -453,7 +453,11 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
         # Once, into the album folder, not into each disc folder: its files are sanitized one by one below.
         if not _save_embedded_cover(path):
             return False
-        results = await process_files(audio_files, _sanitize_file, "Sanitizing audio files")
+        try:
+            results = await process_files(audio_files, _sanitize_file, "Sanitizing audio files")
+        except BaseExceptionGroup as group:
+            # The first error as it is, as for one file: run.main reports an UploadError, not a group.
+            raise group.exceptions[0] from None
         for integrity in results:
             integrities = integrities and integrity
         return integrities
