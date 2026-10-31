@@ -95,6 +95,7 @@ class MetadataMixin(ABC):
         lossless: bool | None = None,
         mp3_320: bool | None = None,
         duration: int | None = None,
+        credited_remixers: list[str] | None = None,
     ) -> dict[str, Any]:
         """Return a generated track dictionary containing the required values.
 
@@ -116,6 +117,8 @@ class MetadataMixin(ABC):
             mp3_320: Whether MP3 320 is available (Deezer).
             duration: Track length in seconds, used to match local files to this
                 tracklist when titles are ambiguous.
+            credited_remixers: The remixers the store credits, by name, as against those read from a
+                title: only these are written to the files' REMIXER tags.
 
         Returns:
             A dictionary containing track metadata.
@@ -139,6 +142,7 @@ class MetadataMixin(ABC):
             "lossless": lossless,
             "mp3_320": mp3_320,
             "duration": duration,
+            "credited_remixers": credited_remixers or [],
         }
 
     def determine_rls_type(self, data):

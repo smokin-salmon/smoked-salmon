@@ -169,6 +169,10 @@ def _correct_artists(tracks):
     for disc in tracks.values():
         for track in disc.values():
             track["artists"] = [(corrections.get(_correction_key(name), name), role) for name, role in track["artists"]]
+            if "credited_remixers" in track:
+                track["credited_remixers"] = [
+                    corrections.get(_correction_key(name), name) for name in track["credited_remixers"]
+                ]
 
 
 def sort_metadatas(metadatas):
@@ -400,6 +404,9 @@ def combine_tracks(base, meta, update_track_numbers):
                         btrack["artists"].append(remixer)
 
             btrack["artists"] = check_for_artist_fragments(btrack["artists"])
+            btrack["credited_remixers"] = list(
+                dict.fromkeys([*btrack.get("credited_remixers", []), *track.get("credited_remixers", [])])
+            )
 
             if track["explicit"]:
                 btrack["explicit"] = True

@@ -19,6 +19,7 @@ TAG_PRINT_ORDER = [
     "genre",
     "composer",
     "conductor",
+    "remixer",
     "tracknumber",
     "tracktotal",
     "discnumber",
