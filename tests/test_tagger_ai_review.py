@@ -15,6 +15,7 @@ from openai.types.responses.response_reasoning_item import Summary
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from salmon import cfg
+from salmon.errors import InvalidMetadataError
 from salmon.tagger import ai_review
 from salmon.tagger.ai_review import (
     SYSTEM_PROMPT,
@@ -692,6 +693,39 @@ def test_review_metadata_with_ai_runs_after_manual_review_and_reopens_after_appl
 
     assert result["year"] == "2003"
     assert sequence == ["manual:Old Label", "confirm", "ai", "manual:Old Label"]
+
+
+def test_a_failed_ai_review_after_a_skipped_review_still_validates(monkeypatch) -> None:
+    # With the first review skipped, nothing has validated the metadata yet: a track left with no artist (#831) must
+    # go back to the manual review, not on to the tagging.
+    reviewed: list[dict] = []
+
+    async def fake_manual_review(current_metadata, _validator):
+        reviewed.append(current_metadata)
+        return current_metadata
+
+    async def failing_request(*_args, **_kwargs):
+        raise RuntimeError("no connection")
+
+    def refuse(_metadata):
+        raise InvalidMetadataError("You must have at least one main artist per track.")
+
+    monkeypatch.setattr(cfg.upload.ai_review, "enabled", True)
+    monkeypatch.setattr(ai_review, "_request_ai_review", failing_request)
+
+    anyio.run(
+        lambda: ai_review.review_metadata_with_ai(
+            make_metadata(),
+            make_metadata(),
+            None,
+            refuse,
+            fake_manual_review,
+            skip_initial_review=True,
+            apply_suggestions=True,
+        )
+    )
+
+    assert len(reviewed) == 1
 
 
 def test_review_metadata_with_ai_skips_ai_when_user_declines(monkeypatch) -> None:

@@ -51,6 +51,7 @@ def test_uploaded_images_are_still_given(tmp_path, capsys: pytest.CaptureFixture
 
 def test_descgen_still_prints_the_description(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
     metadata = {
+        "artists": [("Artist", "main")],
         "tracks": {"1": {"1": {"artists": [("Artist", "main")], "title": "First"}}},
         "comment": None,
         "urls": [],
