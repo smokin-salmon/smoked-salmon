@@ -1098,8 +1098,8 @@ def test_tag_files_auto_tag_question(monkeypatch, assume) -> None:
     monkeypatch.setattr(retagger, "collect_album_data", lambda metadata: {})
     monkeypatch.setattr(retagger, "pair_files_with_tracks", lambda tags, metadata, **kw: [])
     monkeypatch.setattr(retagger, "_track_changes", lambda pairs: {"x": 1})
-    monkeypatch.setattr(retagger, "print_changes", lambda *args: None)
-    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks: written.append(tracks))
+    monkeypatch.setattr(retagger, "print_changes", lambda *args, **kwargs: None)
+    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks, **kwargs: written.append(tracks))
 
     with interaction.assuming_defaults(assume):
         anyio.run(lambda: tag_files("/unused", {"a.flac": object()}, {}, auto_rename=False))
@@ -1161,7 +1161,7 @@ def test_tag_files_returns_each_retagged_files_track(monkeypatch, agrees) -> Non
         return agrees
 
     monkeypatch.setattr(interaction, "confirm", confirm)
-    monkeypatch.setattr("salmon.tagger.retagger.retag_files", lambda *_args: None)
+    monkeypatch.setattr("salmon.tagger.retagger.retag_files", lambda *_args, **_kwargs: None)
     track = _trackmeta("New", "1", "1")
     metadata = {
         "title": "Some Album",
