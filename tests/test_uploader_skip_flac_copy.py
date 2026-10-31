@@ -11,6 +11,7 @@ import pytest
 from asyncclick.testing import CliRunner
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
+from PIL import Image
 
 import salmon.tagger.foldername
 import salmon.trackers
@@ -76,7 +77,8 @@ def _release(folder: Path) -> Path:
     # "year" is an alias standardize_tags rewrites to "date", in place.
     _write_flac(folder / "01 - one.flac", title="One", artist="Artist", year="2020")
     _write_flac(folder / "02 - two.flac", title="Two", artist="Artist", year="2020")
-    (folder / "cover.jpg").write_bytes(b"jpeg")
+    # A real image: with a cover file that does not read as one, the embedded pictures are kept.
+    Image.new("RGB", (1, 1)).save(folder / "cover.jpg", "jpeg")
     # Old mtimes, so a rewrite shows even within the filesystem's timestamp resolution.
     for entry in folder.iterdir():
         os.utime(entry, ns=(1_000_000_000, 1_000_000_000))
