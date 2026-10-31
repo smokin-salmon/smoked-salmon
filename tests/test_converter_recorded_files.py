@@ -556,3 +556,14 @@ def test_an_undo_that_stops_leaves_a_record_of_what_is_on_disk(made, tmp_path, m
     assert files is not None
     assert set(files.values()) == {str(path.relative_to(out)) for path in out.rglob("*.mp3")}
     assert "01.mp3" in files.values()
+
+
+def test_a_track_with_an_uppercase_extension_is_transcoded_too(made, tmp_path) -> None:
+    album = _album(tmp_path)
+    _write_flac(album / "03. three.FLAC", 44100, 16, title="Three")
+
+    out = _transcode(album, tmp_path)
+
+    assert (out / "03. three.mp3").is_file()
+    assert "03. three.mp3" in made
+    assert not [p for p in out.rglob("*") if p.suffix.lower() == ".flac"]

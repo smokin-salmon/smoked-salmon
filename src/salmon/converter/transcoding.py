@@ -237,7 +237,9 @@ def _collect_transcode_items(
     dst_path = Path(new_path)
     items: list[TranscodeItem] = []
 
-    for flac_file in sorted(src_path.rglob("*.flac")):
+    # Any case, as _copy_extra_files skips them: a .FLAC track would otherwise be neither transcoded nor copied.
+    flac_files = (p for p in src_path.rglob("*") if p.is_file() and p.suffix.lower() == ".flac")
+    for flac_file in sorted(flac_files):
         fl, tag_dict = _parse_flac_tags(flac_file)
         rel = flac_file.relative_to(src_path).with_suffix(".mp3")
         mp3_path = dst_path / rel
