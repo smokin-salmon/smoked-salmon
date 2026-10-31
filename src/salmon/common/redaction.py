@@ -4,7 +4,8 @@ import string
 from collections.abc import Iterable
 from urllib.parse import parse_qsl, quote, unquote, urlsplit
 
-_URL_USERINFO = re.compile(r"(://)[^/\s@]+@")
+# Up to the authority's end: a "@" later in the query or fragment is no userinfo.
+_URL_USERINFO = re.compile(r"(://)[^/?#\s@]+@")
 _USERINFO_PASSWORD = re.compile(r"://[^/\s@:]*:([^/\s@']+)@")
 _SECRET_WORDS = r"(?:pass|password|token|secret|key|session|header|cookie|auth)"
 # A quoted value is masked whole, doubled quotes included: rclone quotes values with spaces (a PEM key).
@@ -196,22 +197,25 @@ def redact_command(args: list[str], known: Iterable[str | None] = ()) -> str:
 
 # What a Gazelle tracker sends back carries its own secrets: the authkey (auth, authkey), the passkey
 # (passkey, torrent_pass), the session cookie and an api key.
-_TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|api_?key|authorization)"
+_TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|keeplogged|api_?key|authorization)"
 # "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script. A value ends at its closing
 # quote, or at its line's end when an excerpt cut it off; a backslash escapes the next character.
 _TRACKER_ASSIGNMENT = re.compile(
     rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\\\n]|\\.)*(\2?)""", re.IGNORECASE
 )
-# ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page.
-_TRACKER_QUERY = re.compile(rf"""([?&;]{_TRACKER_KEYS}=)[^&#\s"'<>]*""", re.IGNORECASE)
+# ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page, or a cookie's name=value in text.
+# A value ends at "; ", a cookie's attribute separator; a ";" with no space after stays in it, as in a URL query.
+# At least one character: a quoted value (authkey="...") is _TRACKER_ASSIGNMENT's, which a match here would hide.
+_TRACKER_QUERY = re.compile(rf"""\b({_TRACKER_KEYS}=)(?:[^&;#\s"'<>]|;(?!\s))+""", re.IGNORECASE)
 # The passkey in an announce URL, whatever its length: https://tracker/<passkey>/announce.
 _ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]+(?=/announce)")
 # A form field carrying one, <input name="auth" value="...">, its attributes in any order.
-_INPUT_TAG = re.compile(r"<input\b[^>]*>", re.IGNORECASE)
+# Quote-aware: a ">" inside a quoted attribute does not end the tag.
+_INPUT_TAG = re.compile(r"""<input\b(?:[^>"']|"[^"]*"|'[^']*')*>""", re.IGNORECASE)
 _SECRET_FIELD_NAME = re.compile(rf"""\bname\s*=\s*(["']?){_TRACKER_KEYS}\1(?=[\s/>])""", re.IGNORECASE)
 _FIELD_VALUE = re.compile(r"""(\bvalue\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s"'>]+)""", re.IGNORECASE)
 # A response header naming a credential. A cookie keeps its name and attributes, only its value is masked.
-_SECRET_HEADER_NAME = re.compile(r"auth|token|key|session|pass", re.IGNORECASE)
+_SECRET_HEADER_NAME = re.compile(r"auth|token|key|session|pass|secret", re.IGNORECASE)
 _COOKIE_VALUE = re.compile(r"^(\s*[^=;\s]+=)[^;]*")
 
 
