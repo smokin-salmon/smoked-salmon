@@ -67,6 +67,14 @@ TAG_FIELDS = {
 }
 
 
+def _salmon_comments(tags: id3.ID3) -> list[Any]:
+    """The COMM frames with an empty description, in any language: salmon's comment on an MP3.
+
+    A frame with a description (iTunNORM, iTunSMPB, ID3v1 Comment) belongs to another program and is left alone.
+    """
+    return [f for f in tags.getall("COMM") if f.desc == ""]
+
+
 class TagFile:
     mut: flac.FLAC | mp3.MP3 | mp4.MP4 | None
 
@@ -85,6 +93,8 @@ class TagFile:
                     return values
                 return "; ".join(values) or None
             elif isinstance(mut, mp3.MP3):
+                if attr == "comment":
+                    return self._mp3_comment()
                 return self.parse_tag(attr, "MP3")
             elif isinstance(mut, mp4.MP4):
                 tag = self.parse_tag(attr, "AAC")
@@ -92,6 +102,13 @@ class TagFile:
         except KeyError:
             return None
         return None
+
+    def _mp3_comment(self) -> str | None:
+        tags = self.mut.tags if self.mut is not None else None
+        if not isinstance(tags, id3.ID3):
+            return None
+        values = [str(text) for frame in _salmon_comments(tags) for text in frame.text]
+        return "; ".join(values) or None
 
     def parse_tag(self, attr: str, format: str) -> Any:
         """Parse a tag value from MP3 or AAC format.
@@ -208,6 +225,10 @@ class TagFile:
             frame = getattr(id3, tag_key)(text=f"{track}/{value}")
             tags.delall(tag_key)
             tags.add(frame)
+        elif key == "comment":
+            for stale in _salmon_comments(tags):
+                tags.delall(stale.HashKey)
+            tags.add(id3.COMM(text=value))
         else:
             try:
                 tag_key, desc = TAG_FIELDS["MP3"][key][0].split(":")
@@ -283,6 +304,10 @@ class TagFile:
             elif isinstance(mut, mp3.MP3):
                 tags = mut.tags
                 if not isinstance(tags, id3.ID3):
+                    return
+                if key == "comment":
+                    for stale in _salmon_comments(tags):
+                        tags.delall(stale.HashKey)
                     return
                 for field in TAG_FIELDS["MP3"][key]:
                     if ":" in field:
