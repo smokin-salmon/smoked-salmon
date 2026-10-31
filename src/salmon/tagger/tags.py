@@ -7,6 +7,7 @@ from mutagen import flac, mp3, mp4
 
 from salmon import cfg, interaction
 from salmon.common import get_audio_files
+from salmon.tagger.mutation import abort_partial
 from salmon.tagger.tagfile import TAG_FIELDS, TagFile
 
 TAG_PRINT_ORDER = [
@@ -173,8 +174,14 @@ def standardize_tags(path: str) -> None:
     Args:
         path: Path to the directory containing audio files.
     """
-    for filename in get_audio_files(path):
-        mut = MutagenFile(os.path.join(path, filename))
+    done: list[str] = []
+    filenames = list(get_audio_files(path))
+    for index, filename in enumerate(filenames):
+        try:
+            mut = MutagenFile(os.path.join(path, filename))
+        except Exception as e:
+            # Only save() writes: this file is as it was, with the rest.
+            abort_partial(f"Standardizing tags on {filename}", done, None, filenames[index:], e)
         if mut is None:
             continue
         tags = mut.tags
@@ -190,5 +197,9 @@ def standardize_tags(path: str) -> None:
                     del tags[alias]
                     found_aliased.add(alias)
         if found_aliased:
-            mut.save()
+            try:
+                mut.save()
+            except Exception as e:
+                abort_partial(f"Standardizing tags on {filename}", done, filename, filenames[index + 1 :], e)
+            done.append(filename)
             click.secho(f"Unaliased the following tags for {filename}: " + ", ".join(found_aliased))

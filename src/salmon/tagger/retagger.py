@@ -19,6 +19,7 @@ from salmon.constants import (
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
+from salmon.tagger.mutation import abort_partial
 from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
 from salmon.tagger.tagfile import TagFile
@@ -606,18 +607,31 @@ def _written(mut, value):
 
 
 def retag_files(path, album_changes, track_changes, clear=()):
-    """Apply the proposed metadata changes to the files."""
+    """Apply the proposed metadata changes to the files; a failed write says which files changed, and stops."""
+    done: list[str] = []
     for filename, changes in track_changes.items():
-        mut = TagFile(os.path.join(path, filename))
-        for change in changes:
-            if change.tag == "artists" and _is_aac(mut):
-                continue
-            setattr(mut, change.tag, _written(mut, change.new))
-        for tag, value in album_changes.items():
-            setattr(mut, tag, _written(mut, value))
-        for tag in clear:
-            mut.remove(tag)
-        mut.save()
+        try:
+            mut = TagFile(os.path.join(path, filename))
+            if mut.mut is None:
+                # Its save() would do nothing, and the file would be listed as changed.
+                raise ValueError("not an audio file mutagen can read")
+            for change in changes:
+                if change.tag == "artists" and _is_aac(mut):
+                    continue
+                setattr(mut, change.tag, _written(mut, change.new))
+            for tag, value in album_changes.items():
+                setattr(mut, tag, _written(mut, value))
+            for tag in clear:
+                mut.remove(tag)
+        except Exception as e:
+            # Only save() writes: this file is as it was, with the rest.
+            abort_partial(f"Retagging {filename}", done, None, [f for f in track_changes if f not in done], e)
+        try:
+            mut.save()
+        except Exception as e:
+            remaining = [f for f in track_changes if f not in done and f != filename]
+            abort_partial(f"Retagging {filename}", done, filename, remaining, e)
+        done.append(filename)
     click.secho("Retagged files.", fg="green")
 
 
