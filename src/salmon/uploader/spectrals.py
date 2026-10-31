@@ -36,7 +36,7 @@ from salmon.errors import (
     UploadError,
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
-from salmon.uploader import record
+from salmon.uploader import record, terminal_images
 from salmon.web import create_app_async, spectrals
 
 if TYPE_CHECKING:
@@ -671,6 +671,9 @@ async def view_spectrals(
 ) -> None:
     """Open the generated spectrals in an image viewer: the terminal's way of showing them.
 
+    The native viewer draws them in the terminal itself when it speaks the Kitty graphics protocol (over SSH too),
+    unless terminal_spectrals_viewer is off, and otherwise opens feh, Quick Look or the default Windows viewer.
+
     Args:
         spectrals_path: Path to spectrals folder.
         all_spectral_ids: Dict mapping spectral IDs to filenames.
@@ -679,6 +682,8 @@ async def view_spectrals(
     """
     if not cfg.upload.native_spectrals_viewer:
         await _open_specs_in_web_server(spectrals_path, all_spectral_ids, wait_for_enter)
+    elif cfg.upload.terminal_spectrals_viewer and await terminal_images.supports_kitty_graphics():
+        await terminal_images.show_spectrals_in_terminal(spectrals_path, all_spectral_ids)
     elif platform.system() == "Darwin":
         await _open_specs_in_preview(spectrals_path)
     elif platform.system() == "Windows":
