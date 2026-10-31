@@ -126,3 +126,44 @@ async def _valid_cookie_reads_every_page_after_the_first() -> None:
 
 def test_valid_cookie_reads_every_page_after_the_first() -> None:
     anyio.run(_valid_cookie_reads_every_page_after_the_first)
+
+
+OPS_ROW = (
+    '<tr class="rowb" id="log_10287529"><td>'
+    '<span class="log-uploaded">Torrent <a href="torrents.php?torrentid=3844069">3844069</a> '
+    "(OutKast \u2013 ATLiens [1996 Album]) (110.97 MiB) was uploaded by "
+    '<a href="user.php?id=1">someone</a></span></td></tr>'
+)
+
+
+def _parser() -> FakeApi:
+    return FakeApi("http://127.0.0.1:1", cookie="")
+
+
+def test_ops_log_row_is_parsed() -> None:
+    assert _parser().parse_uploads_from_log_html(OPS_ROW) == [("3844069", "OutKast", "ATLiens [1996 Album]")]
+
+
+def test_log_upload_row_with_a_hyphen_is_parsed() -> None:
+    row = '<span class="log_upload"><a href="torrents.php?torrentid=7">7</a> (Artist - Title) (x)</span>'
+    assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title")]
+
+
+def test_en_dash_wins_over_a_hyphen_in_the_title() -> None:
+    row = '<span class="log-uploaded"><a href="torrents.php?torrentid=7">7</a> (Artist \u2013 Title - Remix) (x)</span>'
+    assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title - Remix")]
+
+
+def test_en_dash_row_splits_once() -> None:
+    row = (
+        '<span class="log-uploaded"><a href="torrents.php?torrentid=7">7</a> '
+        "(Artist \u2013 Title \u2013 Subtitle) (x)</span>"
+    )
+    assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title \u2013 Subtitle")]
+
+
+def test_hyphen_row_with_an_en_dash_in_the_title() -> None:
+    row = (
+        '<span class="log_upload"><a href="torrents.php?torrentid=7">7</a> (Artist - Title \u2013 Subtitle) (x)</span>'
+    )
+    assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title \u2013 Subtitle")]

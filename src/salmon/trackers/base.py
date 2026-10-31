@@ -1623,18 +1623,24 @@ class BaseGazelleApi:
         (torrent id, 'Artist', 'title') tuples for uploads"""
         log_uploads: list[tuple[str, str, str]] = []
         soup = BeautifulSoup(text, "lxml")
-        for entry in soup.find_all("span", class_="log_upload"):
+        for entry in soup.find_all("span", class_=["log_upload", "log-uploaded"]):
             anchor = entry.find("a")
             if not anchor:
                 continue
             href = anchor.get("href", "")
             torrent_id = str(href)[23:]
             try:
-                # it having class log_upload is no guarantee that is what it is. Nice one log.
+                # having one of the upload classes is no guarantee that is what it is. Nice one log.
                 next_sib = anchor.next_sibling
                 if not next_sib:
                     continue
-                torrent_string = re.findall(r"\((.*?)\) \(", str(next_sib))[0].split(" - ")
+                names = re.findall(r"\((.*?)\) \(", str(next_sib))[0]
+                # OPS writes an en dash between artist and title, RED a hyphen: the first one is the separator.
+                dash, hyphen = names.find(" \u2013 "), names.find(" - ")
+                if dash != -1 and (hyphen == -1 or dash < hyphen):
+                    torrent_string = names.split(" \u2013 ", 1)
+                else:
+                    torrent_string = names.split(" - ")
             except (IndexError, TypeError):
                 continue
             artist = torrent_string[0]
