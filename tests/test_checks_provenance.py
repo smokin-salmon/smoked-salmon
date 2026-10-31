@@ -219,6 +219,8 @@ def test_a_file_without_tags_reads_as_empty_rather_than_raising() -> None:
         "24-bit.FLAC",
         "24bit.Hi-Res",
         "24 bit.Hi-Res",
+        "24-bit.Hi-Res",
+        "24 - bit.Hi-Res",
         "24 Bit.Master",
         "FLAC 24bit.WEB",
         "Artist.Album.2020.24bit.FLAC",
@@ -230,3 +232,10 @@ def test_a_claim_written_like_a_file_name_is_still_a_claim(tmp_path, marker: str
     contradictions = pv.gather_provenance(_album(tmp_path, bits=16, comment=marker))["contradictions"]
 
     assert len(contradictions) == 1, marker
+
+
+@pytest.mark.parametrize("marker", ["bit.ly/24bit-master", "https://bit.ly/24bit-master", "see bit.ly/24bit-master"])
+def test_a_domain_starting_with_bit_is_a_url_not_a_claim(tmp_path, marker: str) -> None:
+    contradictions = pv.gather_provenance(_album(tmp_path, bits=16, comment=marker))["contradictions"]
+
+    assert contradictions == [], marker

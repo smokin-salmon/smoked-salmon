@@ -30,9 +30,12 @@ MARKER_FIELDS = (
 
 # A domain swallows its port and path ("hd24bit.com/24bit"); any all-letter suffix is one ("hd24bit.de"),
 # but not after a claim ("24bit.Hi-Res", "24 bit.Hi-Res") or as a file extension ("24bit.flac", "EAC.log").
+# A name that merely starts with "bit." ("bit.ly/24bit-master") is still a domain: only a two-digit claim
+# right before it (lookbehinds, as `re` needs a fixed width) makes "bit." the rest of a claim.
+_AFTER_CLAIM = "".join(rf"(?!bit\.(?<=\d\d{gap}bit\.))" for gap in (r"\s", "-", r"\s-", r"-\s", r"\s-\s"))
 _URL_RE = re.compile(
     r"(?:https?://|www\.)\S+"
-    r"|(?<![\w-])(?!(?:\d{2}\s*-?\s*)?bit\.)[\w-]+\."
+    r"|(?<![\w-])(?!\d{2}\s*-?\s*bit\.)" + _AFTER_CLAIM + r"[\w-]+\."
     r"(?!(?:flac|wav|aiff?|alac|ape|wv|ogg|opus|dsf|dff|log|cue|txt|nfo|jpe?g|png|pdf)\b)[a-z]{2,24}\b"
     r"(?::\d+)?(?:[/?#]\S*)?",
     re.IGNORECASE,
