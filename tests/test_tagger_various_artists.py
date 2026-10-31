@@ -74,4 +74,5 @@ def test_descgen_leaves_a_various_credit_out(monkeypatch) -> None:
 def test_a_various_remixer_is_not_put_in_the_title(remixers, title) -> None:
     tracks = {"1": {"1": {"title": "Song", "artists": [("Dree Low", "main"), *((r, "remixer") for r in remixers)]}}}
 
-    assert append_remixers_to_track_titles(tracks)["1"]["1"]["title"] == title
+    append_remixers_to_track_titles(tracks)
+    assert tracks["1"]["1"]["title"] == title
