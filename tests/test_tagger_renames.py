@@ -100,6 +100,30 @@ def test_rename_all_renames_where_the_volume_has_no_hard_links(tmp_path, monkeyp
     assert sorted(path.name for path in tmp_path.iterdir()) == ["b"]
 
 
+@pytest.mark.parametrize(("winerror", "renamed"), [(1, True), (None, False)], ids=["fat-on-windows", "other-einval"])
+def test_einval_means_no_hard_links_only_as_windows_error_1(
+    tmp_path, monkeypatch, winerror: int | None, renamed: bool
+) -> None:
+    (a,) = _files(tmp_path, "a")
+
+    def refused(_old, _new):
+        # CPython gives Windows' ERROR_INVALID_FUNCTION the errno EINVAL, and keeps it as winerror.
+        e = OSError(errno.EINVAL, "Incorrect function")
+        if winerror is not None:
+            setattr(e, "winerror", winerror)  # noqa: B010
+        raise e
+
+    monkeypatch.setattr(renames.os, "link", refused)
+
+    if renamed:
+        rename_all([(a, str(tmp_path / "b"))])
+        assert sorted(path.name for path in tmp_path.iterdir()) == ["b"]
+    else:
+        with pytest.raises(RenameStopped, match="Incorrect function"):
+            rename_all([(a, str(tmp_path / "b"))])
+        assert sorted(path.name for path in tmp_path.iterdir()) == ["a"]
+
+
 def test_a_link_refused_for_another_reason_renames_nothing(tmp_path, monkeypatch) -> None:
     (a,) = _files(tmp_path, "a")
 
