@@ -136,13 +136,19 @@ def test_the_terminal_implementation_hands_each_argument_to_asyncclick(monkeypat
     async def ask() -> list[Any]:
         return [
             await interaction.prompt("Which?", default="a", type=click.STRING, show_default=False),
+            await interaction.prompt("Secret?", hide_input=True),
             await interaction.confirm("Sure?", default=True, abort=True),
             await interaction.edit("text", editor="vim", extension=".json"),
         ]
 
-    assert anyio.run(ask) == ["typed", True, "edited"]
+    assert anyio.run(ask) == ["typed", "typed", True, "edited"]
     assert calls == [
         ("prompt", ("Which?",), {"default": "a", "type": click.STRING, "value_proc": None, "show_default": False}),
+        (
+            "prompt",
+            ("Secret?",),
+            {"default": None, "type": None, "value_proc": None, "show_default": True, "hide_input": True},
+        ),
         ("confirm", ("Sure?",), {"default": True, "abort": True}),
         ("edit", ("text",), {"editor": "vim", "extension": ".json"}),
     ]

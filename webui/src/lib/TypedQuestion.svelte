@@ -222,7 +222,8 @@
         {#each rows as _row, i (i)}
           <div class="row">
             <input
-              type="text"
+              type={q.hide_input ? 'password' : 'text'}
+              autocomplete={q.hide_input ? 'new-password' : undefined}
               class="grow mono"
               placeholder={options.free_text.placeholder}
               bind:value={rows[i]}
@@ -246,7 +247,13 @@
           if (text.trim() !== '') send({ picks: [], texts: [text.trim()], mark: null })
         }}
       >
-        <input type="text" class="grow mono" bind:value={text} placeholder={options.free_text.placeholder} />
+        <input
+          type={q.hide_input ? 'password' : 'text'}
+          autocomplete={q.hide_input ? 'new-password' : undefined}
+          class="grow mono"
+          bind:value={text}
+          placeholder={options.free_text.placeholder}
+        />
         <button class="btn" disabled={sending || text.trim() === ''}>Send</button>
       </form>
     {/if}

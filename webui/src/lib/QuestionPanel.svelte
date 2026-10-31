@@ -164,7 +164,11 @@
           send(text)
         }}
       >
-        <input type="text" class="grow mono" bind:value={text} placeholder="Answer" />
+        {#if q.hide_input}
+          <input type="password" class="grow mono" bind:value={text} placeholder="Answer" autocomplete="new-password" />
+        {:else}
+          <input type="text" class="grow mono" bind:value={text} placeholder="Answer" />
+        {/if}
         <button class="btn" disabled={sending}>Send</button>
       </form>
       {#if typeof q.default === 'string'}
