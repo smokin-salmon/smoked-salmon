@@ -119,8 +119,10 @@ def test_a_record_found_under_another_case_is_the_same_folders(tmp_path) -> None
     """A case-insensitive volume opens the record of "Album [WEB FLAC]" for "album [web flac]"."""
     out = tmp_path / "album [web flac]"
     out.mkdir()
-    # The other case leads to the same folder, as it does on a case-insensitive volume.
-    (tmp_path / "Album [WEB FLAC]").symlink_to(out, target_is_directory=True)
+    other_case = tmp_path / "Album [WEB FLAC]"
+    # The other case leads to the same folder: on a case-insensitive volume it already does, elsewhere a symlink.
+    if not other_case.is_dir():
+        other_case.symlink_to(out, target_is_directory=True)
     _write_record(out, {**DOWNCONVERT, "output": "Album [WEB FLAC]"})
 
     assert _facts(str(out)) == DOWNCONVERT
@@ -188,7 +190,13 @@ def test_convert_folder_records_its_output(tmp_path, monkeypatch) -> None:
     rate, path = anyio.run(dc.convert_folder, str(src), 16, 44100)
 
     assert (rate, path) == (44100, str(out))
-    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src), "files": {"01.flac": "01.flac"}}
+    # album_files: the stubbed source folder holds no audio file of its own.
+    assert _facts(str(out)) == {
+        **DOWNCONVERT,
+        "source": str(src),
+        "files": {"01.flac": "01.flac"},
+        "album_files": [],
+    }
 
 
 def test_a_mixed_family_folder_records_every_target_rate(tmp_path, monkeypatch) -> None:
@@ -204,7 +212,13 @@ def test_a_mixed_family_folder_records_every_target_rate(tmp_path, monkeypatch) 
     anyio.run(dc.convert_folder, str(src), 16, None)
 
     files = {"01.flac": "01.flac", "02.flac": "02.flac"}
-    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src), "sample_rate": [44100, 48000], "files": files}
+    assert _facts(str(out)) == {
+        **DOWNCONVERT,
+        "source": str(src),
+        "sample_rate": [44100, 48000],
+        "files": files,
+        "album_files": [],
+    }
 
 
 def test_nothing_converted_means_nothing_recorded(tmp_path, monkeypatch) -> None:
@@ -287,6 +301,7 @@ def _stub_transcode(monkeypatch, out, items):
         return None
 
     monkeypatch.setattr(tc, "_validate_lossless", lambda _path: None)
+    monkeypatch.setattr(tc, "_validate_channel_count", lambda _items: None)
     monkeypatch.setattr(tc, "_build_output_path", lambda *_a: str(out))
     monkeypatch.setattr(tc, "_collect_transcode_items", lambda *_a: items)
     monkeypatch.setattr(tc, "_copy_extra_files", lambda *_a, **_k: None)
@@ -596,6 +611,7 @@ def test_parallel_conversions_keep_each_others_records(tmp_path, monkeypatch) ->
         await anyio.sleep(0)
 
     monkeypatch.setattr(tc, "_validate_lossless", lambda _path: None)
+    monkeypatch.setattr(tc, "_validate_channel_count", lambda _items: None)
     monkeypatch.setattr(tc, "_build_output_path", lambda path, bitrate, *_a: f"{path} [{bitrate}]")
     monkeypatch.setattr(
         tc, "_collect_transcode_items", lambda path, new: [SimpleNamespace(src=f"{path}/01.flac", dst=f"{new}/01.mp3")]

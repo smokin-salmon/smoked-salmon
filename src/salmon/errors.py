@@ -12,6 +12,10 @@ class SkipTracker(Exception):
     """The user skipped this tracker at its group questions: the run goes on to the next one."""
 
 
+class PickOtherResults(Exception):
+    """The user went back from the metadata review to pick other metadata results."""
+
+
 class DownloadError(Exception):
     pass
 

@@ -324,7 +324,7 @@ def test_rename_folder_refuses_a_name_that_is_not_a_folder_name(tmp_path, monkey
     monkeypatch.setattr("salmon.tagger.foldername.generate_folder_name", lambda _metadata: name)
     _default_answers(monkeypatch)
 
-    # The default answer to "replace the existing folder?" is yes, and that used to rmtree the directory.
+    # The default answer to "replace the existing folder?" was yes, and that used to rmtree the directory.
     with pytest.raises(UploadError, match="Invalid folder name"):
         anyio.run(lambda: rename_folder(str(album), FOLDER_METADATA, auto_rename=True))
 

@@ -967,9 +967,10 @@ def test_rename_files_stops_when_a_new_name_is_taken_after_the_check(tmp_path, m
             lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=False, spectral_ids=None, source="CD")
         )
 
+    # The rename made before the stop is put back.
     assert _tree(tmp_path) == [
-        ("01. Title 1-1.flac", "a.flac"),
         ("02. Title 1-2.flac", "someone else's"),
+        ("a.flac", "a.flac"),
         ("b.flac", "b.flac"),
     ]
     assert "b.flac" in str(raised.value)
@@ -978,26 +979,28 @@ def test_rename_files_stops_when_a_new_name_is_taken_after_the_check(tmp_path, m
 def test_rename_files_stops_at_the_first_failed_rename_and_names_the_files_left(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(cfg.upload, "formatting", _formatting())
     tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2), "c.flac": (1, 3)})
-    rename = os.rename
+    link = os.link
     calls = []
 
-    def failing_rename(src, dst):
+    def failing_link(src, dst):
         calls.append(src)
         if len(calls) == 2:
             raise PermissionError(13, "Permission denied", src)
-        rename(src, dst)
+        link(src, dst)
 
-    monkeypatch.setattr(os, "rename", failing_rename)
+    # A file is renamed by a hard link; the renames made before the stop are put back.
+    monkeypatch.setattr(os, "link", failing_link)
 
     with pytest.raises(UploadError) as raised:
         anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
-    assert len(calls) == 2
-    assert [name for name, _ in _tree(tmp_path)] == ["01. Title 1-1.flac", "b.flac", "c.flac"]
+    assert len(calls) == 3
+    assert [name for name, _ in _tree(tmp_path)] == ["a.flac", "b.flac", "c.flac"]
     message = str(raised.value)
     assert "a.flac" in message
     assert "b.flac" in message
     assert "c.flac" in message
+    assert "undone" in message
 
 
 def _write_flac(path, **tags: str) -> None:
@@ -1098,8 +1101,8 @@ def test_tag_files_auto_tag_question(monkeypatch, assume) -> None:
     monkeypatch.setattr(retagger, "collect_album_data", lambda metadata: {})
     monkeypatch.setattr(retagger, "pair_files_with_tracks", lambda tags, metadata, **kw: [])
     monkeypatch.setattr(retagger, "_track_changes", lambda pairs: {"x": 1})
-    monkeypatch.setattr(retagger, "print_changes", lambda *args: None)
-    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks: written.append(tracks))
+    monkeypatch.setattr(retagger, "print_changes", lambda *args, **kwargs: None)
+    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks, **kwargs: written.append(tracks))
 
     with interaction.assuming_defaults(assume):
         anyio.run(lambda: tag_files("/unused", {"a.flac": object()}, {}, auto_rename=False))
@@ -1161,7 +1164,7 @@ def test_tag_files_returns_each_retagged_files_track(monkeypatch, agrees) -> Non
         return agrees
 
     monkeypatch.setattr(interaction, "confirm", confirm)
-    monkeypatch.setattr("salmon.tagger.retagger.retag_files", lambda *_args: None)
+    monkeypatch.setattr("salmon.tagger.retagger.retag_files", lambda *_args, **_kwargs: None)
     track = _trackmeta("New", "1", "1")
     metadata = {
         "title": "Some Album",
@@ -1204,3 +1207,53 @@ def test_file_name_artist_counts_the_tracks_main_artists_in_one_folder(tmp_path,
 
     word = cfg.upload.formatting.various_artist_word
     assert [name for name, _ in _tree(tmp_path)] == [f"1.01. {word} - Title 1-1.flac", f"2.01. {word} - Title 2-1.flac"]
+
+
+def test_rename_files_says_the_files_are_partly_renamed_when_the_undo_stops_too(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2)})
+    link = os.link
+
+    def link_only_a(src, dst):
+        if os.path.basename(src) != "a.flac":
+            raise PermissionError(13, "Permission denied", src)
+        link(src, dst)
+
+    monkeypatch.setattr(os, "link", link_only_a)
+
+    with pytest.raises(UploadError, match="only partly renamed"):
+        anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert [name for name, _ in _tree(tmp_path)] == ["01. Title 1-1.flac", "b.flac"]
+
+
+def test_rename_files_puts_the_renames_back_when_the_run_is_interrupted(tmp_path, monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2), "c.flac": (1, 3)})
+    link = os.link
+
+    def interrupted_link(src, dst):
+        if os.path.basename(src) == "b.flac":
+            raise KeyboardInterrupt
+        link(src, dst)
+
+    monkeypatch.setattr(os, "link", interrupted_link)
+
+    with pytest.raises(KeyboardInterrupt):
+        anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    out = capsys.readouterr().out
+    assert [name for name, _ in _tree(tmp_path)] == ["a.flac", "b.flac", "c.flac"]
+    assert "undone" in out
+
+
+def test_rename_files_renames_nothing_onto_a_second_hard_link_to_the_track(tmp_path, monkeypatch, capsys) -> None:
+    # os.rename onto another link to the same file does nothing: the file would go up under both names.
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1)})
+    os.link(tmp_path / "a.flac", tmp_path / "01. Title 1-1.flac")
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert "these files would overwrite another file" in capsys.readouterr().out
+    assert [name for name, _ in _tree(tmp_path)] == ["01. Title 1-1.flac", "a.flac"]

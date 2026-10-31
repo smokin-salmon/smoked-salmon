@@ -161,8 +161,11 @@ class TagFile:
             return
         try:
             if isinstance(mut, flac.FLAC):
+                # A FLAC may have no Vorbis comment block at all: it gets one, as an MP3 gets an ID3 tag.
+                if mut.tags is None:
+                    mut.add_tags()
                 raw_tags = mut.tags
-                if raw_tags is not None and isinstance(raw_tags, VCommentDict):
+                if isinstance(raw_tags, VCommentDict):
                     # Vorbis comment names are case-insensitive; the spec recommends uppercase.
                     # Mutagen keeps the case it is given, so a lowercase map name would replace ARTIST with artist.
                     raw_tags[TAG_FIELDS["FLAC"][key].upper()] = value
@@ -220,10 +223,15 @@ class TagFile:
 
     def set_aac_tag(self, key: str, value: Any) -> None:
         mut = self.mut
-        if mut is None or not isinstance(mut, mp4.MP4) or mut.tags is None:
+        if mut is None or not isinstance(mut, mp4.MP4):
             return
-        tags = mut.tags
         tag_key = TAG_FIELDS["AAC"][key][0]
+        # A QuickTime-brand file may have no tags at all: it gets them, only for a tag M4A has a field for.
+        if mut.tags is None:
+            mut.add_tags()
+        tags = mut.tags
+        if not isinstance(tags, MP4Tags):
+            return
         if key in {"tracknumber", "discnumber"}:
             try:
                 _, total = tags[tag_key][0]
@@ -246,6 +254,50 @@ class TagFile:
                 raise e
         else:
             tags[tag_key] = value
+
+    def has_field(self, key: str) -> bool:
+        """Whether this file's format has a field for the TAG_FIELDS key (it may hold no value for it)."""
+        mut = self.mut
+        if isinstance(mut, flac.FLAC):
+            return key in TAG_FIELDS["FLAC"]
+        if isinstance(mut, mp3.MP3):
+            return key in TAG_FIELDS["MP3"]
+        if isinstance(mut, mp4.MP4):
+            return key in TAG_FIELDS["AAC"]
+        return False
+
+    def remove(self, key: str) -> None:
+        """Remove a tag by its TAG_FIELDS key. An unmapped key, or a file without tags, is a no-op."""
+        mut = self.mut
+        if mut is None:
+            return
+        try:
+            if isinstance(mut, flac.FLAC):
+                raw_tags = mut.tags
+                if raw_tags is not None and isinstance(raw_tags, VCommentDict):
+                    name = TAG_FIELDS["FLAC"][key]
+                    if name in raw_tags:  # Vorbis comment names are case-insensitive
+                        del raw_tags[name]
+            elif isinstance(mut, mp3.MP3):
+                tags = mut.tags
+                if not isinstance(tags, id3.ID3):
+                    return
+                for field in TAG_FIELDS["MP3"][key]:
+                    if ":" in field:
+                        frame_type, desc = field.split(":", 1)
+                        for stale in [f for f in tags.getall(frame_type) if f.desc.lower() == desc.lower()]:
+                            tags.delall(stale.HashKey)
+                    else:
+                        tags.delall(field)
+            elif isinstance(mut, mp4.MP4):
+                tags = mut.tags
+                if tags is None:
+                    return
+                for field in TAG_FIELDS["AAC"][key]:
+                    if field in tags:
+                        del tags[field]
+        except KeyError:
+            return
 
     def save(self) -> None:
         mut = self.mut

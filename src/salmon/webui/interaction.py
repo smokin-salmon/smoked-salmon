@@ -180,6 +180,7 @@ class WebInteraction:
         type: Any = None,
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
+        hide_input: bool = False,
         options: Options | None = None,
     ) -> Any:
         convert = value_proc if value_proc is not None else click.types.convert_type(type, default)
@@ -193,6 +194,9 @@ class WebInteraction:
                 "choices": choices,
                 "error": error,
             }
+            if hide_input:
+                # The page asks in a password field.
+                question["hide_input"] = True
             if options is not None:
                 question["options"] = _shown_options(options)
                 question["preselected"] = _preselected(options, default)
@@ -212,7 +216,8 @@ class WebInteraction:
             else:
                 value = _text(answer)
             if refused is not None:
-                error = f"Error: {refused}"
+                # A refusal may quote a typed answer: a hidden one stays out of the question and the log.
+                error = "Error: invalid input" if hide_input else f"Error: {refused}"
                 click.echo(error)
                 continue
             if not value:
@@ -225,7 +230,8 @@ class WebInteraction:
                 if inspect.isawaitable(result):
                     result = await result
             except click.UsageError as e:
-                error = f"Error: {e.message}"
+                # A converter may quote the answer: a hidden one stays out of the question and the log.
+                error = "Error: invalid input" if hide_input else f"Error: {e.message}"
                 click.echo(error)
                 continue
             return result

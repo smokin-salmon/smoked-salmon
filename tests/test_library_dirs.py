@@ -24,7 +24,8 @@ import salmon.tagger.foldername
 import salmon.trackers
 import salmon.uploader
 from salmon import cfg
-from salmon.config.validations import Directory
+from salmon.common.files import AlbumPath
+from salmon.config.validations import Cfg, Directory, GazelleTrackerSettings, Tracker
 from salmon.errors import AbortAndDeleteFolder, UploadError
 from salmon.trackers.base import TagRules
 from salmon.uploader import staging
@@ -125,6 +126,30 @@ def test_a_symlink_into_the_library_is_a_library_path(dirs, tmp_path) -> None:
     assert cfg.directory.protects(str(link))
 
 
+def test_an_album_symlinked_into_a_library_is_in_it(dirs, tmp_path) -> None:
+    library, _downloads = dirs
+    elsewhere = _album(tmp_path / "elsewhere" / "Album")
+    (library / "Artist").mkdir()
+    (library / "Artist" / "Linked").symlink_to(elsewhere)
+
+    assert cfg.directory.is_library_path(str(library / "Artist" / "Linked"))
+    assert cfg.directory.protects(str(library / "Artist" / "Linked"))
+    assert not cfg.directory.is_library_path(str(elsewhere))
+
+
+def test_an_album_under_a_folder_symlinked_into_a_library_is_in_it(dirs, tmp_path) -> None:
+    # The library's Artist folder is a symlink to another disk: its albums are the library's all the same.
+    library, _downloads = dirs
+    _album(tmp_path / "elsewhere" / "Artist" / "Album")
+    (library / "Artist").symlink_to(tmp_path / "elsewhere" / "Artist", target_is_directory=True)
+
+    given = AlbumPath(exists=True, file_okay=False).convert(str(library / "Artist" / "Album"), None, None)
+
+    assert given == str(library / "Artist" / "Album")
+    assert cfg.directory.is_library_path(given)
+    assert cfg.directory.protects(given)
+
+
 def test_a_library_behind_a_symlinked_entry_is_matched_on_its_real_path(monkeypatch, tmp_path) -> None:
     real = tmp_path / "disk" / "music"
     (real / "Album").mkdir(parents=True)
@@ -186,6 +211,27 @@ def test_a_library_entry_holding_a_folder_salmon_writes_in_is_refused(tmp_path, 
             tmp_dir=folders["tmp_dir"],
             library_dirs=[str(library)],
         )
+
+
+@pytest.mark.parametrize("code", ["red", "ops", "dic"])
+def test_a_library_entry_holding_a_trackers_own_dottorrents_dir_is_refused(tmp_path, code: str) -> None:
+    library = tmp_path / "data"
+    (library / "torrents").mkdir(parents=True)
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    directory = Directory(
+        dottorrents_dir=str(downloads), download_directory=str(downloads), library_dirs=[str(library)]
+    )
+
+    def tracker(dottorrents_dir: str) -> Tracker:
+        settings = GazelleTrackerSettings(session="session", dottorrents_dir=dottorrents_dir)
+        return {"red": Tracker(red=settings), "ops": Tracker(ops=settings), "dic": Tracker(dic=settings)}[code]
+
+    inside, beside = tracker(str(library / "torrents")), tracker(str(downloads))
+
+    with pytest.raises(ValueError, match=f"must not contain tracker.{code}.dottorrents_dir"):
+        Cfg(directory=directory, tracker=inside)
+    assert getattr(Cfg(directory=directory, tracker=beside).tracker, code) is not None
 
 
 @pytest.mark.parametrize("field", ["download_directory", "tmp_dir"])
@@ -273,7 +319,7 @@ def _returning_async(result: Any = None):
     return fake
 
 
-async def _retag(path: str, *_args: Any) -> None:
+async def _retag(path: str, *_args: Any, **_kwargs: Any) -> None:
     """Stands in for tag_files: rewrites a tag in every FLAC of the folder it is given."""
     for root, _dirs, files in os.walk(path):
         for name in files:
@@ -738,6 +784,38 @@ def _run_tag(monkeypatch, album: Path) -> Any:
     return anyio.run(run)
 
 
+def test_up_on_an_album_symlinked_into_a_library_leaves_its_target_byte_identical(monkeypatch, dirs, tmp_path) -> None:
+    library, downloads = dirs
+    elsewhere = _album(tmp_path / "elsewhere" / "Album")
+    (library / "Artist").mkdir()
+    (library / "Artist" / "Linked").symlink_to(elsewhere)
+    before = _snapshot(elsewhere)
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+
+    result, uploads, _transcodes = _run_up(monkeypatch, library / "Artist" / "Linked")
+
+    assert result.exit_code == 0, result.output
+    assert _snapshot(elsewhere) == before
+    assert (library / "Artist" / "Linked").is_symlink()
+    assert uploads[0] == str(downloads / RENAMED)
+
+
+def test_up_on_an_album_under_a_folder_symlinked_into_a_library_leaves_it_byte_identical(
+    monkeypatch, dirs, tmp_path
+) -> None:
+    library, downloads = dirs
+    album = _album(tmp_path / "elsewhere" / "Artist" / "Album")
+    (library / "Artist").symlink_to(tmp_path / "elsewhere" / "Artist", target_is_directory=True)
+    before = _snapshot(album)
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+
+    result, uploads, _transcodes = _run_up(monkeypatch, library / "Artist" / "Album")
+
+    assert result.exit_code == 0, result.output
+    assert _snapshot(album) == before
+    assert uploads[0] == str(downloads / RENAMED)
+
+
 def test_tag_works_on_a_copy_renamed_into_download_directory(monkeypatch, dirs) -> None:
     library, downloads = dirs
     album = _album(library / "Album")
@@ -928,6 +1006,35 @@ def test_conversions_never_follow_a_symlink_into_a_library(monkeypatch, dirs, co
         anyio.run(run)
 
     assert _snapshot(library) == before
+
+
+def test_transcode_never_writes_beside_an_album_under_a_folder_symlinked_into_a_library(
+    monkeypatch, dirs, tmp_path
+) -> None:
+    library, downloads = dirs
+    elsewhere = tmp_path / "elsewhere"
+    _album(elsewhere / "Artist" / "Album")
+    (library / "Artist").symlink_to(elsewhere / "Artist", target_is_directory=True)
+    output_dirs: list[str | None] = []
+
+    async def transcode_folder(path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> str:
+        output_dirs.append(output_dir)
+        return path
+
+    monkeypatch.setattr(salmon.converter, "transcode_folder", transcode_folder)
+
+    async def run():
+        return await CliRunner().invoke(
+            salmon.converter.transcode, [str(library / "Artist" / "Album"), "--bitrate", "V0"]
+        )
+
+    result = anyio.run(run)
+
+    # Redirected under download_directory, not refused: None would write beside the album, in the library.
+    assert result.exit_code == 0, result.output
+    assert len(output_dirs) == 1
+    assert output_dirs[0] is not None
+    assert Path(output_dirs[0]).is_relative_to(downloads)
 
 
 @pytest.mark.parametrize("converter", ["transcode_folder", "convert_folder"])
