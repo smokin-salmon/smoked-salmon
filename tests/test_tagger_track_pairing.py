@@ -163,8 +163,8 @@ def _run_tag_files(monkeypatch, tags, metadata, *, answer):
         return answer
 
     monkeypatch.setattr(interaction, "confirm", confirm)
-    monkeypatch.setattr(retagger, "print_changes", lambda *args: None)
-    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks: written.append(tracks))
+    monkeypatch.setattr(retagger, "print_changes", lambda *args, **kwargs: None)
+    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks, **kwargs: written.append(tracks))
     monkeypatch.setattr(retagger, "collect_album_data", lambda metadata: {})
     anyio.run(lambda: tag_files("/unused", tags, metadata, auto_rename=True))
     return asked, written

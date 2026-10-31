@@ -79,7 +79,7 @@ from salmon.tagger.foldername import remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
 from salmon.tagger.pre_data import construct_rls_data
-from salmon.tagger.retagger import rename_files, tag_files
+from salmon.tagger.retagger import collect_album_data, rename_files, tag_files
 from salmon.tagger.review import review_metadata, suggest_release_type
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.trackers.base import TagRules
@@ -1495,6 +1495,7 @@ async def edit_metadata(
     given = path
     # The metadata as the pick gave it: going back drops every change since, the AI review's included.
     picked = deepcopy(metadata) if offer_other_results else None
+    written: set[str] = set()  # The album fields the last pass that retagged the files wrote
     while True:
         metadata = await review_metadata_with_ai(
             metadata,
@@ -1507,7 +1508,11 @@ async def edit_metadata(
         )
         tracks_by_file = None
         if not metadata["scene"]:
-            tracks_by_file = await tag_files(path, tags, metadata, auto_rename)
+            # The first pass removes nothing: only what an earlier pass wrote can go.
+            clear = written - collect_album_data(metadata).keys() if written else set()
+            tracks_by_file = await tag_files(path, tags, metadata, auto_rename, clear=clear)
+            if tracks_by_file is not None:
+                written = set(collect_album_data(metadata))
 
         tags = await check_tags(path)
         tag_messages = process_tag_issues(

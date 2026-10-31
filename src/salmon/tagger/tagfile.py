@@ -247,6 +247,39 @@ class TagFile:
         else:
             tags[tag_key] = value
 
+    def remove(self, key: str) -> None:
+        """Remove a tag by its TAG_FIELDS key. An unmapped key, or a file without tags, is a no-op."""
+        mut = self.mut
+        if mut is None:
+            return
+        try:
+            if isinstance(mut, flac.FLAC):
+                raw_tags = mut.tags
+                if raw_tags is not None and isinstance(raw_tags, VCommentDict):
+                    name = TAG_FIELDS["FLAC"][key]
+                    if name in raw_tags:  # Vorbis comment names are case-insensitive
+                        del raw_tags[name]
+            elif isinstance(mut, mp3.MP3):
+                tags = mut.tags
+                if not isinstance(tags, id3.ID3):
+                    return
+                for field in TAG_FIELDS["MP3"][key]:
+                    if ":" in field:
+                        frame_type, desc = field.split(":", 1)
+                        for stale in [f for f in tags.getall(frame_type) if f.desc.lower() == desc.lower()]:
+                            tags.delall(stale.HashKey)
+                    else:
+                        tags.delall(field)
+            elif isinstance(mut, mp4.MP4):
+                tags = mut.tags
+                if tags is None:
+                    return
+                for field in TAG_FIELDS["AAC"][key]:
+                    if field in tags:
+                        del tags[field]
+        except KeyError:
+            return
+
     def save(self) -> None:
         mut = self.mut
         if mut is not None:

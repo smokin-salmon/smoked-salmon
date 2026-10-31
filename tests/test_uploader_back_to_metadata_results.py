@@ -106,9 +106,9 @@ def _up(monkeypatch, tmp_path, picks: list[tuple[str, str | None]], **fakes: Any
             raise PickOtherResults
         return metadata
 
-    async def tag_files(path: str, *args: Any) -> None:
+    async def tag_files(path: str, *args: Any, **kwargs: Any) -> None:
         events.append(("tag",))
-        await _retag(path, *args)
+        await _retag(path, *args, **kwargs)
 
     recheck_dupe = uploader.recheck_dupe
     prepare_and_upload = uploader.prepare_and_upload
