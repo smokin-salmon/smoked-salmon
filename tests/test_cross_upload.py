@@ -610,7 +610,7 @@ def test_the_site_log_is_read_when_the_search_is_empty_and_a_cookie_is_set(monke
     run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
 
     assert run.result.exit_code == 0, run.output
-    assert run.target.steps()["GET log.php"] == 9
+    assert run.target.steps()["GET log.php"] == 3
     assert run.target.steps()["POST ajax.php?action=upload"] == 1
     assert _within_the_plans_bound(run)
 
@@ -2330,14 +2330,14 @@ def test_an_upload_to_dic_goes_through_its_upload_page_with_its_session_and_no_m
     assert run.target.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=browse": len(_searchstrs()),
-        "GET log.php": 9,
+        "GET log.php": 3,
         "POST upload.php": 1,
         "GET torrents.php": 1,
     }
     assert all(sent.cookie and not sent.authorization for sent in run.target.sent)
     # The bound counts each: the search, a group pasted at its prompt, the site log, the page the upload redirects
     # to, and looking up an upload whose answer was lost.
-    assert f"at most {len(_searchstrs()) + 1 + 9 + 1 + 2} GET and 1 POST to DICMusic" in run.output
+    assert f"at most {len(_searchstrs()) + 1 + 3 + 1 + 2} GET and 1 POST to DICMusic" in run.output
     assert _within_the_plans_bound(run, "DICMusic")
     (post,) = _site_uploads(run)
     assert not set(DIC_MARKS) & set(post.fields)
@@ -2492,7 +2492,7 @@ def test_a_24bit_torrent_to_dic_and_its_downconversions_each_send_their_own_samp
     assert not any(set(DIC_MARKS) & set(post.fields) for post in uploads)
     assert run.target.steps()["GET torrents.php"] == 3
     # As for one upload, with the group read for the formats it has, and a redirect per upload.
-    assert f"at most {len(_searchstrs()) + 1 + 9 + 1 + 3 + 2} GET and 3 POST to DICMusic" in run.output
+    assert f"at most {len(_searchstrs()) + 1 + 3 + 1 + 3 + 2} GET and 3 POST to DICMusic" in run.output
     assert _within_the_plans_bound(run, "DICMusic")
 
 
