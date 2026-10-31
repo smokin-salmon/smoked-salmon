@@ -94,7 +94,7 @@ def searches(monkeypatch) -> list[str]:
 
     async def fake_select(_choices, _rls_data, default=None):
         asked.append("select")
-        return {"upc": "1", "catno": None, "tracks": {}, "genres": [], "title": "Searched"}, None
+        return {"artists": [], "upc": "1", "catno": None, "tracks": {}, "genres": [], "title": "Searched"}, None
 
     monkeypatch.setattr(metadata_mod, "run_metasearch", fake_search)
     monkeypatch.setattr(metadata_mod, "_select_choice", fake_select)
