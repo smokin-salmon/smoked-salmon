@@ -612,6 +612,9 @@ def retag_files(path, album_changes, track_changes, clear=()):
     for filename, changes in track_changes.items():
         try:
             mut = TagFile(os.path.join(path, filename))
+            if mut.mut is None:
+                # Its save() would do nothing, and the file would be listed as changed.
+                raise ValueError("not an audio file mutagen can read")
             for change in changes:
                 if change.tag == "artists" and _is_aac(mut):
                     continue

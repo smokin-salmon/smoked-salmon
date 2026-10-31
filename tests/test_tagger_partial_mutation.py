@@ -103,6 +103,21 @@ def test_a_retag_that_cannot_open_its_first_file_says_nothing_changed(tmp_path, 
     assert [FLAC(tmp_path / name)["title"] for name in ("01.flac", "02.flac")] == [["Old"], ["Old"]]
 
 
+def test_a_retag_of_a_file_mutagen_cannot_read_stops_before_calling_it_changed(tmp_path, capsys) -> None:
+    _write_flac(tmp_path / "01.flac", title="Old")
+    # No format claims it, so mutagen gives None rather than raising.
+    (tmp_path / "02.xyz").write_bytes(b"not audio at all")
+    changes = {name: [Change("title", "Old", "New")] for name in ("01.flac", "02.xyz")}
+
+    with pytest.raises(UploadError, match="Retagging 02.xyz failed \\(not an audio file mutagen can read\\)"):
+        retagger.retag_files(str(tmp_path), {}, changes)
+
+    out = capsys.readouterr().out
+    assert "Already changed: 01.flac" in out
+    assert "Not changed: 02.xyz" in out
+    assert "May be partially changed" not in out
+
+
 def test_standardizing_tags_that_fails_partway_names_what_it_changed_and_stops(tmp_path, monkeypatch, capsys) -> None:
     for name in ("01.flac", "02.flac", "03.flac"):
         _write_flac(tmp_path / name, year="2001")
