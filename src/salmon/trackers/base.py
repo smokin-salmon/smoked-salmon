@@ -363,8 +363,10 @@ _IMAGE_AUTH_ACTION = "imgauth"
 # LOG_WINDOW, and never past LOG_MAX_PAGES pages.
 LOG_WINDOW = timedelta(minutes=5)
 LOG_MAX_PAGES = 3
-# How a site log row's time is written, in the title of its span with class "time".
+# How a site log row's time is written, in the title of its span with class "time". strptime alone would read
+# "22:5" as 22:05: the title must have every digit.
 _LOG_TIME_FORMAT = "%Y-%m-%d %H:%M"
+_LOG_TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}")
 
 
 def _keep_little_unsent(writer: AbstractStreamWriter) -> None:
@@ -1214,7 +1216,7 @@ class BaseGazelleApi:
         """Read the site log's recent pages and return their uploads.
 
         Pages are read one after another, from page 1, until the rows read span LOG_WINDOW, and at most
-        LOG_MAX_PAGES. A log that cannot be read costs one request, not one per page (#432).
+        LOG_MAX_PAGES. A log behind the login page (an expired cookie) costs one request: page 1 raises (#432).
 
         Returns:
             List of (torrent_id, artist, title) tuples.
@@ -1632,8 +1634,11 @@ class BaseGazelleApi:
         """The times of a site log page's rows, all rows not only uploads; those that do not parse are left out."""
         times: list[datetime] = []
         for span in BeautifulSoup(text, "lxml").find_all("span", class_="time"):
+            title = str(span.get("title") or "").strip()
+            if not _LOG_TIME.fullmatch(title):
+                continue
             try:
-                times.append(datetime.strptime(str(span.get("title") or "").strip(), _LOG_TIME_FORMAT))
+                times.append(datetime.strptime(title, _LOG_TIME_FORMAT))
             except ValueError:
                 continue
         return times

@@ -195,6 +195,8 @@ def test_log_times_reads_every_row_not_only_uploads() -> None:
         "<td>Torrent 1 (Artist \u2013 Title) was deleted by someone</td></tr>"
         f"{_row(2, 'Title', '2026-10-30 22:37')}"
         f"{_row(3, 'Title', 'not a time')}"
+        # strptime would read a minute cut to one digit as 22:05.
+        f"{_row(4, 'Title', '2026-10-30 22:5')}"
         '<tr><td><span class="time tooltip">no title</span></td></tr></table>'
     )
     assert _parser().log_times(page) == [datetime(2026, 10, 30, 22, 55), datetime(2026, 10, 30, 22, 37)]
