@@ -1,3 +1,5 @@
+import pytest
+
 from salmon.tagger.pre_data import parse_artists
 
 
@@ -45,3 +47,25 @@ def test_non_numeric_bracket_is_kept() -> None:
 
 def test_list_of_artists_is_parsed_per_item() -> None:
     assert parse_artists(["Selena (5)", "X-Men"]) == [("Selena", "main"), ("X-Men", "main")]
+
+
+@pytest.mark.parametrize(
+    "tag",
+    [
+        "Dree Low (remixed by Owen)",
+        "Dree Low remixed by Owen",
+        "Dree Low (remixed Owen)",
+        "Dree Low (remix Owen)",
+        "Dree Low (Remixed By Owen)",
+        "Dree Low (Remixed by Owen)",
+        "Dree Low (remixed By Owen)",
+        "Dree Low (remix by Owen)",
+        "Dree Low (Remix by Owen)",
+    ],
+)
+def test_a_remix_credit_names_the_remixer(tag) -> None:
+    assert parse_artists(tag) == [("Owen", "remixer"), ("Dree Low", "main")]
+
+
+def test_a_name_with_remix_in_it_stays_one_artist() -> None:
+    assert parse_artists("The Remix Project") == [("The Remix Project", "main")]
