@@ -114,3 +114,17 @@ def test_the_upload_check_still_reports_no_upconverts_when_files_were_checked(mo
     monkeypatch.setattr(uc, "check_upconvert", clean)
 
     assert "No upconverts detected" in _upload_test_output(capsys, _flac_folder(tmp_path))
+
+
+def test_the_upload_check_makes_no_claim_when_some_files_could_not_be_checked(monkeypatch, tmp_path, capsys):
+    async def one_clean_the_rest_corrupt(filepath):
+        if filepath.endswith("01.flac"):
+            return uc.UpconvertCheckResult(filepath=filepath, is_upconverted=False, wasted_bits=0, bitdepth=24)
+        raise UpconvertCheckError("File appears to be corrupt")
+
+    monkeypatch.setattr(uc, "check_upconvert", one_clean_the_rest_corrupt)
+
+    output = _upload_test_output(capsys, _flac_folder(tmp_path, count=3))
+
+    assert "No upconverts detected" not in output
+    assert "corrupt" in output
