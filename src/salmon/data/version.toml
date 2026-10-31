@@ -1,4 +1,103 @@
-current = "0.20.0"
+current = "0.21.0"
+
+[[changelog]]
+version = "0.21.0"
+date = "2026-10-31"
+notes = """
+
+This release makes the common upload simpler: a short config for new users, a guided first run, a shorter Upload form in salmon web, fewer questions, and the remaining questions drawn as buttons and cards in the browser. Some config keys moved: your config keeps working in 0.21.0 and salmon tells you what to change. See [Upgrading to 0.21](https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21).
+
+## ⚠️ Behaviour changes
+
+- **Some config keys moved or were renamed.** Your config keeps working in 0.21.0: salmon reads each old name and prints a yellow warning naming the new one. From 0.22.0 an old name stops salmon at start with the same message. Two keys that did nothing were removed (`token` in `[metadata.tidal]`, `static_root_url` in `[upload.web_interface]`). Values left over from the old template (`get-from-site-cookie`, `api_key`, `discogs-token` and the like) now count as unset, with a warning; a tracker whose cookie is still the placeholder is left out. The full list is on the [Upgrading to 0.21](https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21) page.
+- **`default_tracker` is now `default_trackers`, a list** (`[tracker]`). Without `-t`, `salmon up` uploads to each tracker in the list in order without asking, then offers your other trackers if `multi_tracker_upload` is on. An old `default_tracker = "RED"` works as before, with a warning.
+- **Trackers named with `-t`, or ticked in salmon web, are final, even just one.** Before, a single `-t OPS` (or only OPS ticked) still offered RED and DIC afterwards. To be offered the others, run without `-t`.
+- **The folder cover is embedded in FLACs that have no picture**, before the torrents are made, shrunk to fit under 1 MiB. FLACs that already have a picture and the cover file itself are never changed. This replaces `auto_compress_cover`, now `embed_missing_cover`, on by default. `embed_missing_cover = false` under `[image]` keeps your files as they are.
+- **The "upload to an existing group?" question is skipped when nothing was found.** When the group search and the recent-uploads check both ran and found nothing, salmon says `No group found on RED: new group` and goes on. It still asks when either found something, or when the site log could not be read. `confirm_new_group = true` under `[upload.requests]` always asks.
+- **A conversion choice made for the run is final.** With `--conversions` (or the Conversions field in salmon web), salmon makes exactly those and asks nothing about conversions. `--conversions none`, or `conversions = []` under `[upload]`, makes none without asking. With `conversions` naming formats in your config and no `--conversions`, salmon asks as before.
+- **`-yyy` answers more questions.** It now accepts the retag, rename and folder name questions (the changes are still printed first), and picks the spectral IDs the way an empty answer would (`default_spectral_ids`, else a random third, all for a lossy master) instead of always all of them.
+- **`remove_source_dir` removes the source folder when the run ends, after an upload.** Before, it was removed at the folder rename, so a run stopped later left the album only under its new name. A run that uploads nothing, or is aborted, keeps it. Thanks @statelycurmudgeon
+- **Artist names follow one rule everywhere.** With the default `various_artist_threshold = 4`: four main artists give `Various` in the folder name too (it took five), and in the file name's `{artist}` (it took six). ALBUMARTIST and the folder name keep the main artists in the order given instead of sorting them. A name containing `&` is separated with `, ` in ARTIST as in ALBUMARTIST (`Simon & Garfunkel, Paul Desmond`), and three or more remixers read `(A, B, C Remix)`. Retagging an album salmon tagged before may propose these changes. Thanks @statelycurmudgeon
+
+## ✨ New Features & Improvements
+
+- **`preferred_sources` and `skipped_sources`** (`[upload.search]`): list your preferred stores first in the metadata results, and never search the stores you skip. Both apply to `salmon up`, `salmon metas` and the web Search page. Unset, nothing changes.
+- **`remove_local_after_copy`** (`[[seedbox]]`, rclone only): after `salmon up`, remove the release folder from `download_directory` once every seedbox that took it has copied it and added its torrents. It is kept when a seedbox failed or was skipped, when a `local` seedbox seeds it, or when the run stopped early.
+- **A guided first run.** With no config, in a terminal, salmon asks for the two folders, your trackers and their cookies (and API keys), writes a short config and offers a connection check. Without a terminal (Docker without `-it`), it copies the short config and says what to fill in.
+- **A short config.** New users start from a 30-line `config.default.toml`. Every setting is documented, commented out with its default, in `config.reference.toml` beside it.
+- **salmon web: a simpler Upload form.** It shows Folder, Trackers, Source, Store link, Conversions and the upload mode; everything else is folded into Overrides, whose summary says what is set. Source is preset from the files (a rip log, a store URL in the tags), else from a `[WEB FLAC]`-style bracket in the folder name, and says why. The same preset is on the Tag page and is the CLI's default answer.
+- **salmon web: questions as buttons, checkboxes and cards.** The upload's common questions (the existing group, lossy master, spectral IDs, the field to edit, upload or re-run, requests, conversions, the next tracker) no longer need typed answers. The existing-group question and the metadata results show as cards, with links. The CLI asks exactly as before.
+- **salmon web: spectrals one at a time**, with Previous / Next, arrow keys and Enter for Done. A toggle brings back the grid.
+- **salmon web: a filter in the folder picker** narrows the listed folders as you type.
+- **salmon web: config warnings on the Dashboard**, as printed at start, with the config file's path.
+- **`salmon cross-upload --conversions`** takes the conversions as one list, like `salmon up`. `--transcode`, `--downconvert` and `--all` still work.
+- **Skip a later tracker at its group questions.** Once a torrent is up, a later tracker's group question offers `[s]kip this tracker`, and the run then finishes normally. Thanks @statelycurmudgeon
+- **File and folder names are checked for forbidden characters** (`: ? < > \\ * | " /`) before anything is uploaded, logs, cues, images and sub-folders included. salmon offers to rename them; before, the tracker refused the torrent only at the upload, after the spectrals were on the image host. Thanks @bfs2021. Known issue: this question, like the folder check's other questions, does not take `-yyy` yet (#821).
+
+## 🐛 Bug Fixes
+
+- **A source's track numbers are used only when they are 1 to n on every disc.** Vinyl sides from Discogs (`A1`, `B2`) no longer overwrite the files' track numbers.
+- **Merging a source with no release date no longer empties Year and Group Year.** Thanks @arin30
+- **Store requests fail cleanly.** MusicBrainz requests time out after 10 s and are retried once, not 7 times. Beatport's token requests time out after 10 s (they could hold the search for 5 minutes), and a failed Beatport login falls back to the scraper. MusicBrainz and Apple Music token failures are reported as scrape failures instead of tracebacks. Thanks @statelycurmudgeon
+
+## 🔒 Tracker & Security Improvements
+
+- **Store error messages no longer repeat the request URL** with its query, which could hold a token: they name the error type instead. Thanks @statelycurmudgeon
+
+## What's Changed
+* Filter the folders listed in the folder picker as you type by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/763
+* View spectrals one at a time in salmon web by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/764
+* Add ADR 0005: config keys change with one release of warnings, never silently by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/766
+* Add ADR 0006: typed questions keep the CLI's text and parser, the web draws a description of the options by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/768
+* Read moved config keys under their old names with a warning, and old placeholders as unset by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/767
+* ADR 0005: removed config keys have no refused_from by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/769
+* Ship a short default config and a reference file with every setting by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/771
+* Make a conversion choice made for the run final: no conversion questions by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/772
+* Embed the folder cover in FLACs that have no picture, on by default by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/770
+* Upload to tracker.default_trackers in order without -t, then offer the other trackers by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/773
+* Bump certifi from 2026.2.25 to 2026.10.19 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/780
+* Bump pillow from 12.3.0 to 13.0.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/778
+* Keep the main artists' order in ALBUMARTIST and the folder name by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/784
+* Bump brotli from 1.2.0 to 1.2.1 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/779
+* Bump the python:3.13-slim-trixie base image digest by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/788
+* Bump astral-sh/uv from 0.13.1 to 0.13.6 in the minor-and-patch group across 1 directory by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/775
+* Bump the minor-and-patch group across 1 directory with 5 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/787
+* Update uv-build requirement from <0.13.0,>=0.12.24 to >=0.13.4,<0.14.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/777
+* Add a Conversions field to the web Upload form by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/792
+* Ask a new user for the folders and tracker cookies when there is no config by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/793
+* Preserve release years when metadata has no date by @arin30 in https://github.com/smokin-salmon/smoked-salmon/pull/794
+* Add remove_local_after_copy for rclone seedboxes by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/797
+* Show the Upload form's common fields and fold the rest into Overrides by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/796
+* Keep the files' track numbers when a source's numbering is not 1..n by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/799
+* Skip the existing-group question when the search and the recent-uploads check find nothing by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/798
+* Preset the source from the files, else the folder name's bracket by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/804
+* Remove the source folder when the run ends, after asking, not at the folder rename by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/782
+* Use one rule for artist strings: threshold, separator and order by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/800
+* Answer the retag, rename and spectral IDs questions with -yyy by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/805
+* Show the config warnings on the Dashboard by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/806
+* Bump the minor-and-patch group with 2 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/808
+* Bump ruff from 0.17.1 to 0.17.2 in the dev-tools group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/807
+* Bump openai from 3.36.0 to 3.37.0 in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/810
+* Update uv-build requirement from <0.14.0,>=0.13.4 to >=0.13.5,<0.14.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/811
+* Bump the minor-and-patch group in /webui with 2 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/809
+* Take cross-upload's conversions as one list, like salmon up by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/813
+* Offer to skip a later tracker at its group questions, once a torrent is up by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/814
+* Count the track's main artists for the file name's {artist} by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/801
+* Show nine upload questions in salmon web as buttons, checkboxes and cards by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/816
+* Check file and folder names for forbidden characters before uploading by @bfs2021 in https://github.com/smokin-salmon/smoked-salmon/pull/818
+* Open store requests through one session helper, with one error mapping by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/815
+* Show the existing-group question in salmon web as cards by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/819
+* Bound MusicBrainz requests, and report their failures as scrape errors by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/817
+* Show the metadata results in salmon web as cards, and list preferred stores first by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/820
+
+## New Contributors
+* @statelycurmudgeon made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/784
+* @arin30 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/794
+* @bfs2021 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/818
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.20.0...0.21.0
+
+"""
 
 [[changelog]]
 version = "0.20.0"
