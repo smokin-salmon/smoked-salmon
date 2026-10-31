@@ -161,8 +161,11 @@ class TagFile:
             return
         try:
             if isinstance(mut, flac.FLAC):
+                # A FLAC may have no Vorbis comment block at all: it gets one, as an MP3 gets an ID3 tag.
+                if mut.tags is None:
+                    mut.add_tags()
                 raw_tags = mut.tags
-                if raw_tags is not None and isinstance(raw_tags, VCommentDict):
+                if isinstance(raw_tags, VCommentDict):
                     # Vorbis comment names are case-insensitive; the spec recommends uppercase.
                     # Mutagen keeps the case it is given, so a lowercase map name would replace ARTIST with artist.
                     raw_tags[TAG_FIELDS["FLAC"][key].upper()] = value
@@ -220,10 +223,15 @@ class TagFile:
 
     def set_aac_tag(self, key: str, value: Any) -> None:
         mut = self.mut
-        if mut is None or not isinstance(mut, mp4.MP4) or mut.tags is None:
+        if mut is None or not isinstance(mut, mp4.MP4):
             return
-        tags = mut.tags
         tag_key = TAG_FIELDS["AAC"][key][0]
+        # A QuickTime-brand file may have no tags at all: it gets them, only for a tag M4A has a field for.
+        if mut.tags is None:
+            mut.add_tags()
+        tags = mut.tags
+        if not isinstance(tags, MP4Tags):
+            return
         if key in {"tracknumber", "discnumber"}:
             try:
                 _, total = tags[tag_key][0]
