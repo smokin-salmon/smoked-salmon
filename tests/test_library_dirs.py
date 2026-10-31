@@ -57,7 +57,8 @@ def _album(folder: Path) -> Path:
     tagged = FLAC(folder / "01 - one.flac")
     tagged.add_picture(picture)
     tagged.save()
-    (folder / "cover.jpg").write_bytes(b"jpeg")
+    # A readable image: embedded pictures are stripped only when the folder's cover is one.
+    Image.new("RGB", (1, 1)).save(folder / "cover.jpg", "JPEG")
     # Old mtimes, so a rewrite shows even within the filesystem's timestamp resolution.
     for entry in folder.rglob("*"):
         os.utime(entry, ns=(1_000_000_000, 1_000_000_000))

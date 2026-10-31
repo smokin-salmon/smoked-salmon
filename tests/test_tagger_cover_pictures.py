@@ -158,12 +158,13 @@ def test_only_warns_with_the_setting_off(album, monkeypatch, capsys) -> None:
 
 
 def test_an_existing_cover_file_is_not_overwritten(album) -> None:
-    (album / "folder.png").write_bytes(b"the folder's own cover")
+    own = _image("png")
+    (album / "folder.png").write_bytes(own)
 
     cover.check_embedded_pictures(str(album))
 
     assert FLAC(album / "01. One.flac").pictures == []
-    assert (album / "folder.png").read_bytes() == b"the folder's own cover"
+    assert (album / "folder.png").read_bytes() == own
     assert not (album / "cover.jpg").exists()
 
 
@@ -197,7 +198,7 @@ def test_a_front_cover_that_is_not_an_image_is_not_lost(tmp_path, capsys) -> Non
 
     # The file whose cover cannot be kept as a file keeps it embedded; the others are still stripped.
     output = capsys.readouterr().out
-    assert "01.flac as it is: its front cover could not be read" in output
+    assert "01.flac as it is: its artwork could not be read" in output
     assert "Stripped 1 file(s) to no embedded pictures and 8 KiB of padding." in output
     assert (tmp_path / "01.flac").read_bytes() == unreadable
     assert cover.pictures_and_padding_size(FLAC(tmp_path / "02.flac")) == 8 * KIB
@@ -461,3 +462,88 @@ def test_embed_missing_cover_embeds_the_cover_file_it_is_given(tmp_path) -> None
     cover.embed_missing_cover(str(tmp_path), str(odd))
 
     assert [picture.data for picture in FLAC(tmp_path / "01.flac").pictures] == [odd.read_bytes()]
+
+
+def test_a_truncated_cover_is_not_embedded(tmp_path, capsys) -> None:
+    noise = random.Random(7).randbytes(200 * 200 * 3)
+    buffer = io.BytesIO()
+    Image.frombytes("RGB", (200, 200), noise).save(buffer, "jpeg")
+    (tmp_path / "cover.jpg").write_bytes(buffer.getvalue()[: len(buffer.getvalue()) // 2])
+    _write_flac(tmp_path / "01.flac")
+
+    cover.embed_missing_cover(str(tmp_path))
+
+    output = capsys.readouterr().out
+    assert FLAC(tmp_path / "01.flac").pictures == []
+    assert "Could not read cover file" in output
+
+
+def test_a_32_bit_picture_that_has_no_8_bit_scale_is_kept_embedded(tmp_path) -> None:
+    buffer = io.BytesIO()
+    Image.new("I", (10, 10), 100_000).save(buffer, "tiff")
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, buffer.getvalue().ljust(2 * MIB, b"\0")),))
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert len(FLAC(tmp_path / "01.flac").pictures) == 1
+    assert not list(tmp_path.glob("cover.*"))
+
+
+@pytest.mark.parametrize("other_type", [PictureType.COVER_BACK, PictureType.OTHER])
+def test_an_unreadable_front_cover_falls_back_to_a_readable_picture(tmp_path, other_type: int) -> None:
+    back = _image("jpeg")
+    _write_flac(
+        tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, b"not an image" * 200_000), (other_type, back))
+    )
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert FLAC(tmp_path / "01.flac").pictures == []
+    assert (tmp_path / "cover.jpg").read_bytes() == back
+
+
+def test_artwork_not_tagged_as_the_front_cover_is_kept_as_the_cover_file(tmp_path) -> None:
+    other = _image("jpeg", 1500 * KIB)
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.OTHER, other),))
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert FLAC(tmp_path / "01.flac").pictures == []
+    assert (tmp_path / "cover.jpg").read_bytes() == other
+
+
+def test_a_cover_file_that_is_not_an_image_keeps_the_embedded_artwork(tmp_path, capsys) -> None:
+    (tmp_path / "cover.jpg").write_bytes(b"<html>403 Forbidden</html>")
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, FRONT),))
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert [picture.data for picture in FLAC(tmp_path / "01.flac").pictures] == [FRONT]
+    output = capsys.readouterr().out
+    assert (tmp_path / "cover.jpg").read_bytes() == b"<html>403 Forbidden</html>"
+    assert "could not be read as a JPEG or PNG image" in output
+
+
+def test_the_release_front_cover_is_kept_whichever_file_holds_it(tmp_path) -> None:
+    # Files are stripped in order: the first one's back cover must not stand in for the release's front cover.
+    back = _image("png", 1500 * KIB)
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_BACK, back),))
+    _write_flac(tmp_path / "02.flac", pictures=((PictureType.COVER_FRONT, FRONT),))
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert [FLAC(tmp_path / name).pictures for name in ("01.flac", "02.flac")] == [[], []]
+    assert (tmp_path / "cover.jpg").read_bytes() == FRONT
+    assert not (tmp_path / "cover.png").exists()
+
+
+def test_a_cover_over_the_pixel_limit_is_skipped_before_it_is_decoded(tmp_path, monkeypatch, capsys) -> None:
+    # Under PIL's own limit but over salmon's: checked before load(), which would decode every pixel.
+    monkeypatch.setattr(cover, "MAX_IMAGE_PIXELS", 10)
+    (tmp_path / "cover.png").write_bytes(_image("png"))
+    _write_flac(tmp_path / "01.flac")
+
+    cover.embed_missing_cover(str(tmp_path))
+
+    assert FLAC(tmp_path / "01.flac").pictures == []
+    assert "10x10 is over the limit of 10 pixels" in capsys.readouterr().out
