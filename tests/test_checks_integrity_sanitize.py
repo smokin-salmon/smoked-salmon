@@ -488,3 +488,37 @@ def test_a_working_copy_that_cannot_be_made_fails_that_mp3_alone(monkeypatch, tm
     assert sanitized is False
     assert original.read_bytes() == b"the original"
     assert "no working copy could be made" in capsys.readouterr().out
+
+
+def test_every_original_that_cannot_be_put_back_is_named(monkeypatch, tmp_path, capsys) -> None:
+    # Two files fail at once: the first error stops the folder, and the other file, cancelled, still says where it is.
+    for name in ("01.flac", "02.flac"):
+        (tmp_path / name).write_bytes(b"fLaC original")
+    started = 0
+    both = anyio.Event()
+
+    async def flac_fails(commands: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        nonlocal started
+        started += 1
+        if started == 2:
+            both.set()
+        await both.wait()
+        return subprocess.CompletedProcess(commands, 1, b"", b"bad")
+
+    real_replace = os.replace
+
+    def replace(src, dst, *args, **kwargs):
+        if str(src).endswith(".corrupted"):
+            raise PermissionError("not allowed")
+        return real_replace(src, dst, *args, **kwargs)
+
+    monkeypatch.setattr(integrity.anyio, "run_process", flac_fails)
+    monkeypatch.setattr(integrity.os, "replace", replace)
+
+    with pytest.raises(UploadError) as raised:
+        anyio.run(integrity.sanitize_integrity, str(tmp_path))
+
+    told = str(raised.value) + capsys.readouterr().out
+    for name in ("01.flac", "02.flac"):
+        assert f"the original is at {tmp_path / name}.corrupted" in told
+        assert (tmp_path / f"{name}.corrupted").read_bytes() == b"fLaC original"

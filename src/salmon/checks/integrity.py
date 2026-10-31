@@ -456,8 +456,12 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
         try:
             results = await process_files(audio_files, _sanitize_file, "Sanitizing audio files")
         except BaseExceptionGroup as group:
-            # The first error as it is, as for one file: run.main reports an UploadError, not a group.
-            raise group.exceptions[0] from None
+            # Bare, as for one file: run.main reports an UploadError, not a group. Every original that could not be
+            # put back is named: two files can fail at once.
+            stranded = [e for e in group.exceptions if isinstance(e, UploadError)]
+            if len(stranded) > 1:
+                raise UploadError("\n".join(str(e) for e in stranded)) from None
+            raise (stranded or group.exceptions)[0] from None
         for integrity in results:
             integrities = integrities and integrity
         return integrities
