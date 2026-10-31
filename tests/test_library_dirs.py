@@ -25,7 +25,7 @@ import salmon.trackers
 import salmon.uploader
 from salmon import cfg
 from salmon.common.files import AlbumPath
-from salmon.config.validations import Directory
+from salmon.config.validations import Cfg, Directory, GazelleTrackerSettings, Tracker
 from salmon.errors import AbortAndDeleteFolder, UploadError
 from salmon.trackers.base import TagRules
 from salmon.uploader import staging
@@ -211,6 +211,27 @@ def test_a_library_entry_holding_a_folder_salmon_writes_in_is_refused(tmp_path, 
             tmp_dir=folders["tmp_dir"],
             library_dirs=[str(library)],
         )
+
+
+@pytest.mark.parametrize("code", ["red", "ops", "dic"])
+def test_a_library_entry_holding_a_trackers_own_dottorrents_dir_is_refused(tmp_path, code: str) -> None:
+    library = tmp_path / "data"
+    (library / "torrents").mkdir(parents=True)
+    downloads = tmp_path / "downloads"
+    downloads.mkdir()
+    directory = Directory(
+        dottorrents_dir=str(downloads), download_directory=str(downloads), library_dirs=[str(library)]
+    )
+
+    def tracker(dottorrents_dir: str) -> Tracker:
+        settings = GazelleTrackerSettings(session="session", dottorrents_dir=dottorrents_dir)
+        return {"red": Tracker(red=settings), "ops": Tracker(ops=settings), "dic": Tracker(dic=settings)}[code]
+
+    inside, beside = tracker(str(library / "torrents")), tracker(str(downloads))
+
+    with pytest.raises(ValueError, match=f"must not contain tracker.{code}.dottorrents_dir"):
+        Cfg(directory=directory, tracker=inside)
+    assert getattr(Cfg(directory=directory, tracker=beside).tracker, code) is not None
 
 
 @pytest.mark.parametrize("field", ["download_directory", "tmp_dir"])
