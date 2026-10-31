@@ -152,7 +152,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
 
     _correct_artists(base["tracks"])
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
-    base["genres"] = standardize_genres(base["genres"])
+    base["genres"] = standardize_genres(_correct_genres(base["genres"]))
     base["label"] = determine_label_type(base["label"], base["artists"])
     return base
 
@@ -169,6 +169,20 @@ def _correct_artists(tracks):
     for disc in tracks.values():
         for track in disc.values():
             track["artists"] = [(corrections.get(_correction_key(name), name), role) for name, role in track["artists"]]
+
+
+def _correct_genres(genres):
+    """Each genre [metadata.corrections] genres names, replaced by its genres there (none drops it).
+
+    Matched on each genre standardized on its own, as the review shows it: the stores' genres already are, the
+    files' own may be an alias ("Electronica"). One at a time, so a combination does not first drop a genre it
+    contains ("Rock" beside "Pop & Rock").
+    """
+    corrections = {_correction_key(name): to for name, to in cfg.metadata.corrections.genres.items()}
+    if not corrections:
+        return genres
+    shown = [standardized for genre in genres for standardized in standardize_genres([genre])]
+    return list(dict.fromkeys(to for genre in shown for to in corrections.get(_correction_key(genre), [genre])))
 
 
 def sort_metadatas(metadatas):

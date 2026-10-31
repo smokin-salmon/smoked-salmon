@@ -213,16 +213,23 @@ class BeatportSettings(BaseStruct):
     password: str | None = None
 
 
+def _check_corrections(kind: str, table: dict, replacements: list[str], one: str) -> None:
+    if any(not name.strip() for name in [*table, *replacements]):
+        raise ValueError(f"metadata.corrections.{kind} has an empty name.")
+    keys = [name.strip().casefold() for name in table]
+    if len(set(keys)) < len(keys):
+        raise ValueError(f"metadata.corrections.{kind} names {one} twice, in two cases or spacings.")
+
+
 class Corrections(BaseStruct):
     # An artist's name (whole, any case, outer spaces ignored) and the name salmon writes instead.
     artists: dict[str, str] = msgspec.field(default_factory=dict)
+    # A genre (matched the same way) and the genres salmon writes in its place; none drops it.
+    genres: dict[str, list[str]] = msgspec.field(default_factory=dict)
 
     def __post_init__(self):
-        if any(not name.strip() for name in [*self.artists, *self.artists.values()]):
-            raise ValueError("metadata.corrections.artists has an empty name.")
-        keys = [name.strip().casefold() for name in self.artists]
-        if len(set(keys)) < len(keys):
-            raise ValueError("metadata.corrections.artists names an artist twice, in two cases or spacings.")
+        _check_corrections("artists", self.artists, list(self.artists.values()), "an artist")
+        _check_corrections("genres", self.genres, [g for to in self.genres.values() for g in to], "a genre")
 
 
 class Metadata(BaseStruct):
