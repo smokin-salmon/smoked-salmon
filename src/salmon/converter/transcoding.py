@@ -286,6 +286,8 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
                 del mp3_thing.tags[frame.HashKey]
             else:
                 mp3_thing.tags.add(replaced)
+            # With no padding: a later save would keep the space the picture took as padding, over the limit.
+            mp3_thing.save(v1=0, v2_version=4, padding=lambda _info: 0)
 
     mp3_thing.save(v1=0, v2_version=4)
 

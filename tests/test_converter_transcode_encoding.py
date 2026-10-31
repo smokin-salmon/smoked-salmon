@@ -61,6 +61,20 @@ def test_a_picture_too_big_for_the_tag_leaves_the_one_of_its_desc_before_it(tmp_
     assert [len(frame.data) for frame in ID3(mp3_path).getall("APIC")] == [500 * 1024]
 
 
+def test_a_picture_left_out_leaves_no_padding_over_the_limit(tmp_path) -> None:
+    # mutagen keeps freed space as padding up to about 1% of the audio: about 210 KiB on a 20 MB track.
+    mp3_path = tmp_path / "01.mp3"
+    _write_mp3(mp3_path)
+    mp3_path.write_bytes(mp3_path.read_bytes() * (20 * MIB // 1251))
+    pictures = [_picture(PictureType.COVER_FRONT, 900 * 1024), _picture(PictureType.COVER_BACK, 150 * 1024)]
+
+    transcoding._copy_tags({"title": ["Song"]}, SimpleNamespace(pictures=pictures), mp3_path)  # type: ignore[arg-type]
+
+    saved = ID3(mp3_path)
+    assert [len(frame.data) for frame in saved.getall("APIC")] == [900 * 1024]
+    assert saved.size <= MAX_PICTURES_AND_PADDING
+
+
 def test_a_cancelled_transcode_kills_flac_and_lame(monkeypatch, tmp_path) -> None:
     spawned: list = []
 
