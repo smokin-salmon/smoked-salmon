@@ -49,6 +49,8 @@ def build_report(checks: AlbumChecks) -> str:
     if checks.spectra:
         lines += [f"   {describe(result)}" for result in checks.spectra]
         lines += [f"   {note}" for note in summarize(checks.spectra)[1]]
+    elif depths:
+        lines.append("   Failed: see the Frequency analysis check below.")
     else:
         lines.append("   Not run: no lossless file.")
 

@@ -236,3 +236,20 @@ def test_a_file_that_is_not_mpeg_audio_is_a_decode_failure(monkeypatch, stdout, 
     assert result.passed is False
     assert result.decode_failures == ("a.mp3",)
     assert reported in result.details
+
+
+@pytest.mark.parametrize(("check", "tool"), [("_check_flac_integrity", "flac"), ("_check_mp3_integrity", "mp3val")])
+def test_a_tool_that_cannot_run_is_named_and_still_fails_closed(monkeypatch, check, tool):
+    import importlib
+
+    integrity = importlib.import_module("salmon.checks.integrity")
+
+    async def missing(*_args, **_kwargs):
+        raise FileNotFoundError(f"No such file or directory: '{tool}'")
+
+    monkeypatch.setattr(integrity.anyio, "run_process", missing)
+    result = anyio.run(getattr(integrity, check), "/album/01.x")
+
+    assert result.passed is False
+    assert result.decode_failures == ("01.x",)
+    assert f"01.x: could not run {tool} (No such file or directory: '{tool}')" in click.unstyle(result.details)

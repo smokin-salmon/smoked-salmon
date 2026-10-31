@@ -40,6 +40,7 @@ import salmon.trackers
 from salmon import cfg
 from salmon.checks import all_checks
 from salmon.trackers.base import BaseGazelleApi
+from salmon.uploader import frequency
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs
 
 FOLDER = "Artist - Album (2020) [WEB FLAC]"
@@ -360,3 +361,15 @@ def test_an_aac_album_is_lossy_and_gets_no_frequency_analysis(tmp_path):
     assert _rows(result.output)["Frequency analysis"] == "INFO"
     assert "No lossless file" in result.output
     assert "1. Lossless or lossy\n   Lossy." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_failed_analysis_is_reported_as_failed_not_as_no_lossless_file(album, monkeypatch):
+    async def boom(*_args):
+        raise RuntimeError("decoder exploded")
+
+    monkeypatch.setattr(frequency, "generate_frequency_plots", boom)
+    result = _run(str(album), "--report")
+    assert _rows(result.output)["Frequency analysis"] == "INFO"
+    assert "4. Frequency analysis (averaged spectrum per track)\n   Failed: see the Frequency analysis" in result.output
+    assert "no lossless file" not in result.output

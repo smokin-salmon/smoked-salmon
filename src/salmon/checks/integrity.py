@@ -329,9 +329,12 @@ async def _check_flac_integrity(path: str) -> IntegrityResult:
     name = os.path.basename(path)
     try:
         result = await anyio.run_process(["flac", "-wt", path], check=False)
-    except Exception:
+    except Exception as e:
         return IntegrityResult(
-            False, click.style(f"{name}: Failed integrity", fg="red", bold=True), decode_failures=(name,), checked=1
+            False,
+            click.style(f"{name}: could not run flac ({e})", fg="red", bold=True),
+            decode_failures=(name,),
+            checked=1,
         )
     result_text = result.stdout.decode(errors="replace") if result.stdout else ""
     if result.stderr:
@@ -372,9 +375,12 @@ async def _check_mp3_integrity(path: str) -> IntegrityResult:
     name = os.path.basename(path)
     try:
         result = await anyio.run_process(["mp3val", path], check=False)
-    except Exception:
+    except Exception as e:
         return IntegrityResult(
-            False, click.style(f"{name}: Failed integrity", fg="red", bold=True), decode_failures=(name,), checked=1
+            False,
+            click.style(f"{name}: could not run mp3val ({e})", fg="red", bold=True),
+            decode_failures=(name,),
+            checked=1,
         )
     result_text = result.stdout.decode(errors="replace") if result.stdout else ""
     if result.stderr:
