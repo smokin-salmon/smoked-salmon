@@ -159,7 +159,21 @@ def test_a_hidden_answer_the_conversion_refuses_is_not_quoted_in_the_error(capsy
     assert result == "good"
     assert browser.questions[1]["error"] == "Error: invalid input"
     assert "bad-secret" not in str(browser.questions)
-    assert "bad-secret" not in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "bad-secret" not in out
+
+
+def test_a_hidden_typed_answer_the_options_refuse_is_not_quoted_in_the_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    typed = Options((Option("a", "Abort", action=True),), free_text=FreeText("Cookie"))
+    picked = Picked(texts=["bad-secret"])
+    result, browser = _prompt(typed, [picked, Picked(picks=["a"])], hide_input=True)
+    assert result == "a"
+    assert browser.questions[1]["error"] == "Error: invalid input"
+    assert "bad-secret" not in str(browser.questions)
+    out = capsys.readouterr().out
+    assert "bad-secret" not in out
 
 
 def test_a_confirm_without_labels_is_sent_exactly_as_before_and_with_labels_names_its_buttons() -> None:

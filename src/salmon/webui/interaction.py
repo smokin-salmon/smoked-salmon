@@ -216,7 +216,8 @@ class WebInteraction:
             else:
                 value = _text(answer)
             if refused is not None:
-                error = f"Error: {refused}"
+                # A refusal may quote a typed answer: a hidden one stays out of the question and the log.
+                error = "Error: invalid input" if hide_input else f"Error: {refused}"
                 click.echo(error)
                 continue
             if not value:
