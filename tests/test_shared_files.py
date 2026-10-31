@@ -421,7 +421,8 @@ def test_rename_folder_replaces_an_earlier_folder_of_that_name_only_when_told_to
         return anyio.run(lambda: salmon.tagger.foldername.rename_folder(str(source), _metadata(), auto_rename=True))
 
     if replaced:
-        assert rename() == str(earlier)
+        renamed = rename()
+        assert renamed == str(earlier)
         assert not (earlier / "notes.txt").exists()
     else:
         with pytest.raises(UploadError, match="New folder name already exists"):
