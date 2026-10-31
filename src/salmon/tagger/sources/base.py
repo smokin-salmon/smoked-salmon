@@ -95,6 +95,7 @@ class MetadataMixin(ABC):
         lossless: bool | None = None,
         mp3_320: bool | None = None,
         duration: int | None = None,
+        credited_remixers: list[str] | None = None,
     ) -> dict[str, Any]:
         """Return a generated track dictionary containing the required values.
 
@@ -116,6 +117,8 @@ class MetadataMixin(ABC):
             mp3_320: Whether MP3 320 is available (Deezer).
             duration: Track length in seconds, used to match local files to this
                 tracklist when titles are ambiguous.
+            credited_remixers: The remixers the store credits, by name, as against those read from a
+                title: only these are written to the files' REMIXER tags.
 
         Returns:
             A dictionary containing track metadata.
@@ -139,6 +142,7 @@ class MetadataMixin(ABC):
             "lossless": lossless,
             "mp3_320": mp3_320,
             "duration": duration,
+            "credited_remixers": credited_remixers or [],
         }
 
     def determine_rls_type(self, data):
@@ -368,12 +372,13 @@ def filter_artists(artists, tracks=None):
         artist_pool = _generate_artist_pool_lower_case(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
-                # Deduplicate the artists before passing them to fix_artists_list
+                # Deduplicate the artists before passing them to fix_artists_list. Main and guest, the ARTIST credit,
+                # are one credit per name; another role (remixer, arranger, ...) is kept beside it.
                 deduplicated_artists = []
                 seen_normalized = set()
 
                 for art, imp in track["artists"]:
-                    normalized_art = normalize_accents(art.lower())  # Normalize and make lowercase
+                    normalized_art = (normalize_accents(art.lower()), imp if imp not in {"main", "guest"} else "")
                     if normalized_art not in seen_normalized:
                         deduplicated_artists.append((art, imp))  # Add the original artist with the importance
                         seen_normalized.add(normalized_art)

@@ -52,7 +52,9 @@ class Scraper(TidalBase, MetadataMixin):
         album_artists = soup.get("artists") or []
         tracks = defaultdict(dict)
         for track in soup["tracklist"]:
-            artists = self.parse_artists(track["artists"], track["title"], track["version"], album_artists)
+            artists, credited_remixers = self.parse_artists(
+                track["artists"], track["title"], track["version"], album_artists
+            )
             tracks[str(track["volumeNumber"])][str(track["trackNumber"])] = self.generate_track(
                 trackno=track["trackNumber"],
                 discno=track["volumeNumber"],
@@ -62,6 +64,7 @@ class Scraper(TidalBase, MetadataMixin):
                 explicit=track["explicit"],
                 format_=track["audioQuality"],
                 stream_id=track["id"],
+                credited_remixers=credited_remixers,
             )
         return dict(tracks)
 
@@ -78,8 +81,8 @@ class Scraper(TidalBase, MetadataMixin):
         title: str,
         version: str | None,
         album_artists: list[dict],
-    ) -> list[tuple[str, str]]:
-        """Iterate over all artists and roles, returning a compliant list of artist tuples.
+    ) -> tuple[list[tuple[str, str]], list[str]]:
+        """Iterate over all artists and roles, returning a compliant list of artist tuples and the credited remixers.
 
         Tidal's V2 API does not expose per-track artist roles (MAIN/FEATURED) or
         contributor credits, so roles are inferred from the album's main artists,
@@ -92,13 +95,16 @@ class Scraper(TidalBase, MetadataMixin):
             album_artists: List of the album's main artist dictionaries.
 
         Returns:
-            List of (artist_name, role) tuples.
+            List of (artist_name, role) tuples, and the remixers Tidal lists among the track's artists: those
+            only read from the title or version are not credited.
         """
         result: list[tuple[str, str]] = []
+        credited: list[str] = []
         artist_set: set[str] = set()
 
         def norm(s: str) -> str:
-            return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode().lower()
+            # Accents dropped, letters of every script kept: a name in another script must not compare as "".
+            return "".join(c for c in unicodedata.normalize("NFD", s) if not unicodedata.combining(c)).lower()
 
         album_artist_names = {norm(a["name"]) for a in album_artists}
         compilation = "various artists" in album_artist_names
@@ -128,11 +134,15 @@ class Scraper(TidalBase, MetadataMixin):
                 artist_without_feat = re.sub(re.escape(feat[0]) + "$", "", artist_without_feat).rstrip()
             for a in re_split(artist_without_feat):
                 name = unescape(a)
+                # Before the skip below: a featured guest can also be the one who remixed the track.
+                if norm(name) in remixer_names and name not in credited:
+                    result.append((name, "remixer"))
+                    credited.append(name)
+                    artist_set.add(norm(name))
+                    continue
                 if norm(name) in artist_set:
                     continue
-                if norm(name) in remixer_names:
-                    result.append((name, "remixer"))
-                elif compilation or not album_artist_names or norm(name) in album_artist_names:
+                if compilation or not album_artist_names or norm(name) in album_artist_names:
                     result.append((name, "main"))
                 else:
                     result.append((name, "guest"))
@@ -145,4 +155,4 @@ class Scraper(TidalBase, MetadataMixin):
                 artist_set.add(norm(remixer))
 
         # In case something is fucked, have a failsafe of returning all artists.
-        return result if result else [(unescape(a["name"]), "main") for a in artists]
+        return result or [(unescape(a["name"]), "main") for a in artists], credited

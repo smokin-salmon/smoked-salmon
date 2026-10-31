@@ -17,6 +17,7 @@ TAG_FIELDS = {
         "genre": "genre",
         "composer": "composer",
         "conductor": "conductor",
+        "remixer": "remixer",
         "tracknumber": "tracknumber",
         "discnumber": "discnumber",
         "tracktotal": "tracktotal",
@@ -37,6 +38,7 @@ TAG_FIELDS = {
         "genre": ["TCON"],
         "composer": ["TCOM"],
         "conductor": ["TPE3"],
+        "remixer": ["TPE4"],
         "tracknumber": ["TRCK"],  # Special
         "tracktotal": ["TRCK"],
         "discnumber": ["TPOS"],
@@ -79,7 +81,7 @@ class TagFile:
             if isinstance(mut, flac.FLAC):
                 # A Vorbis comment can repeat a field with the same value (TRACKNUMBER=1 twice); read it once.
                 values = list(dict.fromkeys(mut[TAG_FIELDS["FLAC"][attr]]))
-                if attr in {"artist", "artists", "genre"}:
+                if attr in {"artist", "artists", "remixer", "genre"}:
                     return values
                 return "; ".join(values) or None
             elif isinstance(mut, mp3.MP3):
@@ -129,7 +131,7 @@ class TagFile:
                         number, total = tag_val[0]
                         return (number if "number" in attr else total) or None
                 try:
-                    if attr in {"artist", "artists", "genre"}:
+                    if attr in {"artist", "artists", "remixer", "genre"}:
                         try:
                             # MP3: ID3 frames have .text attribute
                             frame = tags[field]

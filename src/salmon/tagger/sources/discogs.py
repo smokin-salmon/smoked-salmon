@@ -136,6 +136,11 @@ class Scraper(DiscogsBase, MetadataMixin):
                     artists=artists,
                     title=track["title"],
                     duration=parse_duration(track.get("duration")),
+                    # Each under the name the release credits it too (the ANV), which the files may use instead.
+                    credited_remixers=[
+                        *(name for name, role in artists if role == "remixer"),
+                        *(v["anv"] for v in variations if v["role"] == "remixer"),
+                    ],
                 )
                 # Only the merge reads this, to match tag artists spelled the way the release credits them.
                 tracks[disc_str][track_num]["artist_variations"] = variations

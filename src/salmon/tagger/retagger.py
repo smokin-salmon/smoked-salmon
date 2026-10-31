@@ -12,7 +12,7 @@ from mutagen import mp4
 
 from salmon import cfg, interaction
 from salmon.common import clean_name, has_visible_chars
-from salmon.common.strings import artists_or_various, join_artists, reaches_various_threshold
+from salmon.common.strings import artists_or_various, comparable, join_artists, reaches_various_threshold
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
@@ -223,6 +223,10 @@ def _track_changes(pairs):
             new_artists = create_artists_list(trackmeta["artists"])
             if new_artists and old_artists != new_artists:
                 changes[filename].append(Change("artists", old_artists or None, new_artists))
+            old_remixers = list(getattr(tagset, "remixer", None) or [])
+            new_remixers = create_remixer_list(trackmeta)
+            if new_remixers and old_remixers != new_remixers:
+                changes[filename].append(Change("remixer", old_remixers or None, new_remixers))
 
         old_composer = getattr(tagset, "composer", None) or "None"
         new_composer = create_composer_str(trackmeta["artists"])
@@ -512,6 +516,17 @@ def create_artists_list(artists):
     title, and has no conductors, composers or remixers: those are not the track's credited artists.
     """
     return _ordered_unique([*(a for a, i in artists if i == "main"), *(a for a, i in artists if i == "guest")])
+
+
+def create_remixer_list(track):
+    """The track's remixers the store credits, one per value of the REMIXER tag, spelled as in its artists.
+
+    A remixer only read from the title is not written (#189, #430, #719), nor one renamed at the review, which
+    no longer matches the credit.
+    """
+    # Tracks built from the files' tags have no credited remixers.
+    credited = {comparable(name) for name in track.get("credited_remixers", [])}
+    return _ordered_unique(a for a, i in track["artists"] if i == "remixer" and comparable(a) in credited)
 
 
 def _is_aac(tagset) -> bool:
