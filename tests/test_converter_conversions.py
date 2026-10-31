@@ -190,7 +190,13 @@ def test_convert_folder_records_its_output(tmp_path, monkeypatch) -> None:
     rate, path = anyio.run(dc.convert_folder, str(src), 16, 44100)
 
     assert (rate, path) == (44100, str(out))
-    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src), "files": {"01.flac": "01.flac"}}
+    # album_files: the stubbed source folder holds no audio file of its own.
+    assert _facts(str(out)) == {
+        **DOWNCONVERT,
+        "source": str(src),
+        "files": {"01.flac": "01.flac"},
+        "album_files": [],
+    }
 
 
 def test_a_mixed_family_folder_records_every_target_rate(tmp_path, monkeypatch) -> None:
@@ -206,7 +212,13 @@ def test_a_mixed_family_folder_records_every_target_rate(tmp_path, monkeypatch) 
     anyio.run(dc.convert_folder, str(src), 16, None)
 
     files = {"01.flac": "01.flac", "02.flac": "02.flac"}
-    assert _facts(str(out)) == {**DOWNCONVERT, "source": str(src), "sample_rate": [44100, 48000], "files": files}
+    assert _facts(str(out)) == {
+        **DOWNCONVERT,
+        "source": str(src),
+        "sample_rate": [44100, 48000],
+        "files": files,
+        "album_files": [],
+    }
 
 
 def test_nothing_converted_means_nothing_recorded(tmp_path, monkeypatch) -> None:
