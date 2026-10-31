@@ -12,6 +12,7 @@ from salmon.commands import descgen
 from salmon.tagger.sources import METASOURCES
 
 METADATA = {
+    "artists": [],
     "tracks": {
         "1": {
             "1": {"artists": [("Artist", "main")], "title": "First"},

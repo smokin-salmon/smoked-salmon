@@ -167,7 +167,7 @@ def test_fill_upc_from_deezer_makes_no_request_with_no_store_url(tmp_path, monke
 
 
 async def _fake_select_choice(_choices, _rls_data, default=None):
-    return {"upc": None, "catno": None, "tracks": {}, "genres": []}, None
+    return {"artists": [], "upc": None, "catno": None, "tracks": {}, "genres": []}, None
 
 
 async def _fake_run_metasearch(*_args, **_kwargs):

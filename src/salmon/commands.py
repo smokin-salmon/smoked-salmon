@@ -118,7 +118,7 @@ async def build_description(urls: Sequence[str]) -> str:
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
     metadatas = await asyncio.gather(*tasks)
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
-    remove_various_artists(metadata["tracks"])
+    remove_various_artists(metadata)
 
     description = "[b][size=4]Tracklist[/size][/b]\n\n"
     multi_disc = len(metadata["tracks"]) > 1

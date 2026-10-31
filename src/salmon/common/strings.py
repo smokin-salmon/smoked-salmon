@@ -104,6 +104,11 @@ def reaches_various_threshold(names) -> bool:
     return len(set(names)) >= cfg.upload.formatting.various_artist_threshold
 
 
+def names_no_artist(name: str) -> bool:
+    """Whether a credit is "Various Artists" or "Various", by its whole name in any case: it names no artist."""
+    return name.strip().casefold() in {"various artists", "various"}
+
+
 def artists_or_various(names) -> str:
     """``various_artist_word`` for ``various_artist_threshold`` or more names, otherwise ``join_artists(names)``."""
     names = list(names)

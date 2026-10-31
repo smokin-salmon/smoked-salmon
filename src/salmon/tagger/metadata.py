@@ -12,7 +12,7 @@ import msgspec
 from salmon import cfg, interaction
 from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
-from salmon.common.strings import artist_keys, comparable
+from salmon.common.strings import artist_keys, comparable, names_no_artist
 from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
 from salmon.search.base import IdentData
 from salmon.sources.deezer import DeezerBase, album_upc
@@ -110,7 +110,7 @@ def _explain_default(default: str | None, choices: dict[int, tuple[str, str]]) -
 async def _finish_metadata(metadata: dict[str, Any], path: str) -> dict[str, Any]:
     await fill_upc_from_deezer(metadata, path)
     _dedupe_catno_against_upc(metadata)
-    remove_various_artists(metadata["tracks"])
+    remove_various_artists(metadata)
     return fix_hardcore_genre(metadata)
 
 
@@ -539,14 +539,18 @@ def fix_hardcore_genre(metadata):
     return metadata
 
 
-def remove_various_artists(tracks):
-    for _dnum, disc in tracks.items():
-        for _tnum, track in disc.items():
-            artists = []
-            for artist, importance in track["artists"]:
-                if "various artists" not in artist.lower() or artist.lower().strip() != "various":
-                    artists.append((artist, importance))
-            track["artists"] = artists
+def remove_various_artists(metadata):
+    """Drop a "Various Artists" or "Various" credit, which names no artist, from the release's artists and each
+    track's. Matched on the whole name, in any case. A track left with no artist goes to the review, which asks
+    for one."""
+
+    def named(artists):
+        return [(a, i) for a, i in artists if not names_no_artist(a)]
+
+    metadata["artists"] = named(metadata["artists"])
+    for disc in metadata["tracks"].values():
+        for track in disc.values():
+            track["artists"] = named(track["artists"])
 
 
 def clean_metadata(metadata):
