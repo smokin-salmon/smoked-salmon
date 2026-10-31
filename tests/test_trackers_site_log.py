@@ -152,3 +152,11 @@ def test_log_upload_row_with_a_hyphen_is_parsed() -> None:
 def test_en_dash_wins_over_a_hyphen_in_the_title() -> None:
     row = '<span class="log-uploaded"><a href="torrents.php?torrentid=7">7</a> (Artist \u2013 Title - Remix) (x)</span>'
     assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title - Remix")]
+
+
+def test_en_dash_row_splits_once() -> None:
+    row = (
+        '<span class="log-uploaded"><a href="torrents.php?torrentid=7">7</a> '
+        "(Artist \u2013 Title \u2013 Subtitle) (x)</span>"
+    )
+    assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title \u2013 Subtitle")]
