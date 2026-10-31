@@ -370,7 +370,8 @@ def check_embedded_pictures(path: str) -> None:
         return
     if not cover_file:
         # The release's front cover first, whichever file holds it: else a file stripped earlier gives its back cover.
-        cover_file = _save_front_cover(path, oversized)
+        flacs = [filename for filename in get_audio_files(path) if filename.lower().endswith(".flac")]
+        cover_file = _save_front_cover(path, flacs)
     stripped = 0
     for filename in oversized:
         audio = FLAC(os.path.join(path, filename))

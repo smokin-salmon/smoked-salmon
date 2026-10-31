@@ -537,6 +537,19 @@ def test_the_release_front_cover_is_kept_whichever_file_holds_it(tmp_path) -> No
     assert not (tmp_path / "cover.png").exists()
 
 
+def test_the_release_front_cover_is_kept_from_a_file_within_the_limit(tmp_path) -> None:
+    # Only 01.flac is stripped, and it holds a back cover: the front cover in 02.flac is the release's.
+    small_front = _image("jpeg", 200 * KIB)
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_BACK, _image("png", 1500 * KIB)),))
+    _write_flac(tmp_path / "02.flac", pictures=((PictureType.COVER_FRONT, small_front),))
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert FLAC(tmp_path / "01.flac").pictures == []
+    assert (tmp_path / "cover.jpg").read_bytes() == small_front
+    assert not (tmp_path / "cover.png").exists()
+
+
 def test_a_cover_over_the_pixel_limit_is_skipped_before_it_is_decoded(tmp_path, monkeypatch, capsys) -> None:
     # Under PIL's own limit but over salmon's: checked before load(), which would decode every pixel.
     monkeypatch.setattr(cover, "MAX_IMAGE_PIXELS", 10)
