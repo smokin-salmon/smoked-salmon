@@ -246,6 +246,23 @@ def test_reading_keys_puts_the_terminal_back() -> None:
         os.close(slave)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="a pty and termios are POSIX only")
+def test_keys_left_unread_do_not_answer_the_next_question() -> None:
+    import pty
+    import select
+
+    master, slave = pty.openpty()
+    try:
+        with terminal_images._keypresses(slave):
+            # A second enter, pressed as the viewing ends: it would take the lossy-master question's default.
+            os.write(master, ENTER)
+            assert select.select([slave], [], [], 1)[0]
+        assert not select.select([slave], [], [], 0.1)[0]
+    finally:
+        os.close(master)
+        os.close(slave)
+
+
 @pytest.fixture
 def pressing(monkeypatch):
     """Feed the viewer the keys given, a read each, and record the heading of every page it draws."""

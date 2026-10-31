@@ -284,7 +284,8 @@ def _step(index: int, count: int, actions: list[str]) -> int | None:
 
 @contextlib.contextmanager
 def _keypresses(fd: int) -> Iterator[None]:
-    """For the block, let `fd` give each key as it is pressed, without echoing it, and throw away keys typed before.
+    """For the block, let `fd` give each key as it is pressed, without echoing it, and throw away keys typed before
+    and after.
 
     Ctrl-C still interrupts.
     """
@@ -300,7 +301,8 @@ def _keypresses(fd: int) -> Iterator[None]:
     try:
         yield
     finally:
-        termios.tcsetattr(fd, termios.TCSANOW, saved)
+        # TCSAFLUSH again: keys left unread (a second enter, a held arrow) must not answer the question that follows.
+        termios.tcsetattr(fd, termios.TCSAFLUSH, saved)
 
 
 async def _readable(fd: int) -> bytes:
