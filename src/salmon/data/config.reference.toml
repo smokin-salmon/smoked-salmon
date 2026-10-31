@@ -135,6 +135,15 @@
 # username = 'username'
 # password = 'password'
 
+# Corrections for what a store always gets wrong, applied once the stores' metadata is combined with the
+# files' own: by salmon up and salmon tag before the review, where they can still be changed for one release,
+# and by descgen.
+[metadata.corrections]
+# An artist's name and the name salmon writes instead, in every role (main, guest, remixer, ...), in the
+# release and in each track. Matched on the whole name, in any case, outer spaces ignored, accents exact.
+# Names inside titles, such as a remixer's in "(... Remix)", are not changed.
+# artists = { "Ryuichi Sakamoto" = "坂本龍一" }
+
 # ===============================
 # TRACKER SETTINGS
 # ===============================
@@ -252,6 +261,9 @@
 [upload.search]
 # limit = 3
 # excluded_labels = ["edm comps"]
+# Genres a store gives that salmon leaves out. Each is matched on the whole genre, in any case, as the
+# store's parser gives it: some parsers already split or rename a combined genre (Qobuz's "Pop/Rock" arrives
+# as Pop and Rock), the rest are split after this. Genres read from the files are kept.
 # blacklisted_genres = ["Soundtrack", "Asian Music"]
 # Stores whose results are listed first, in this order, and marked "preferred", wherever salmon lists
 # store results (upload, salmon metas, salmon web's Search): any of "Bandcamp", "MusicBrainz",
