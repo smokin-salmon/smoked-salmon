@@ -59,9 +59,11 @@ reviews:
         through a setting shared by all trackers (ADR 0002, HOST_RULES in config/image_hosts.py).
     - path: "src/salmon/config/**/*.py"
       instructions: |-
-        Config schema. A new setting has a default, is validated in __post_init__, and is documented in
-        src/salmon/data/config.default.toml. It must not change behaviour for existing configs unless the PR
-        says that is the point.
+        Config schema. A new setting has a default, is validated in __post_init__, and is documented, commented out
+        with its default, in src/salmon/data/config.reference.toml. It goes in config.default.toml (the short
+        template new users start from) only if a new user is likely to change it: do not ask for an advanced
+        setting there. Renaming, moving or removing a key, or changing a default, follows ADR 0005. A new setting
+        must not change behaviour for existing configs unless the PR says that is the point.
     - path: "src/salmon/data/version.toml"
       instructions: |-
         Only the release workflow changes this file. A PR must never change `current` or add a
