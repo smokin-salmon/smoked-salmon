@@ -12,7 +12,7 @@ import msgspec
 from salmon import cfg, interaction
 from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
-from salmon.common.strings import artist_keys, comparable
+from salmon.common.strings import artist_keys, comparable, names_no_artist
 from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
 from salmon.search.base import IdentData
 from salmon.sources.deezer import DeezerBase, album_upc
@@ -545,7 +545,7 @@ def remove_various_artists(metadata):
     for one."""
 
     def named(artists):
-        return [(a, i) for a, i in artists if a.strip().casefold() not in {"various artists", "various"}]
+        return [(a, i) for a, i in artists if not names_no_artist(a)]
 
     metadata["artists"] = named(metadata["artists"])
     for disc in metadata["tracks"].values():

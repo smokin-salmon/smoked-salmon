@@ -13,6 +13,7 @@ from salmon.errors import InvalidMetadataError
 from salmon.tagger import metadata_validator_base
 from salmon.tagger.metadata import _combine_scraped, remove_various_artists
 from salmon.tagger.review import _print_metadata
+from salmon.tagger.sources.base import append_remixers_to_track_titles
 
 URL = "https://www.qobuz.com/us-en/album/album/abc123"
 
@@ -63,3 +64,14 @@ def test_descgen_leaves_a_various_credit_out(monkeypatch) -> None:
 
     assert "Dree Low" in description
     assert "Various" not in description
+
+
+@pytest.mark.parametrize(
+    ("remixers", "title"),
+    [(["Various"], "Song"), (["Owen", "Various Artists"], "Song (Owen Remix)")],
+    ids=["alone", "beside"],
+)
+def test_a_various_remixer_is_not_put_in_the_title(remixers, title) -> None:
+    tracks = {"1": {"1": {"title": "Song", "artists": [("Dree Low", "main"), *((r, "remixer") for r in remixers)]}}}
+
+    assert append_remixers_to_track_titles(tracks)["1"]["1"]["title"] == title

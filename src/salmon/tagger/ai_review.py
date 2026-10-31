@@ -1209,7 +1209,7 @@ async def review_metadata_with_ai(
             raise click.Abort() from None
         except Exception as exc:
             click.secho(f"AI metadata review failed: {exc}", fg="red")
-            return current_metadata
+            return await _finalize_manual_review(current_metadata, validator, manual_review)
 
         review, guardrail_warnings = await _apply_ai_review_guardrails(current_metadata, review, source_url)
         diff_lines = build_ai_review_diff(current_metadata, review, source_url)
