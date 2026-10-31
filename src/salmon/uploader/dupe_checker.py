@@ -1048,6 +1048,23 @@ def held_in_group(rset: dict, release: dict[str, Any] | None) -> list[dict]:
     return matching_torrents(group, release)
 
 
+# The fields of a search row that print_torrents indexes directly (a missing one is a KeyError);
+# held_in_group reads groupYear and torrents from the same row.
+_PRINTED_GROUP_FIELDS = ("artist", "groupName", "groupYear", "torrents")
+# describe_torrent indexes these on every torrent of the row.
+_PRINTED_TORRENT_FIELDS = ("media", "format", "encoding")
+
+
+def _printable_row(row: dict) -> bool:
+    """Whether print_torrents can print this search row as it is, without fetching the group."""
+    torrents = row.get("torrents")
+    return (
+        all(key in row for key in _PRINTED_GROUP_FIELDS)
+        and isinstance(torrents, list)
+        and all(isinstance(t, dict) and all(key in t for key in _PRINTED_TORRENT_FIELDS) for t in torrents)
+    )
+
+
 async def _confirm_group_id(
     gazelle_site: "BaseGazelleApi",
     group_id: int,
@@ -1075,7 +1092,9 @@ async def _confirm_group_id(
     rset = None
     for r in results:
         if group_id == r.get("groupId"):
-            rset = r
+            # A row missing one of them is fetched instead, as a typed group ID is (#822).
+            if _printable_row(r):
+                rset = r
             break
 
     # The match reads the group just printed: it sends no request of its own.
