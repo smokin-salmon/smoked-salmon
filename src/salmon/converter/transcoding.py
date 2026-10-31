@@ -9,7 +9,7 @@ import asyncclick as click
 import msgspec
 from mutagen import flac, mp3
 from mutagen.flac import VCFLACDict
-from mutagen.id3 import APIC, TXXX, Frames
+from mutagen.id3 import APIC, ID3, TXXX, Frames
 
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
@@ -18,6 +18,7 @@ from salmon.converter.conversions import conversion_of, missing_files, record_co
 from salmon.errors import UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
+from salmon.tagger.cover import MAX_PICTURES_AND_PADDING
 from salmon.tagger.foldername import drop_resolution_token, resolution_token
 
 Bitrate = Literal["V0", "320"]
@@ -272,8 +273,19 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
     for k, v in tag_dict.items():
         mp3_thing.tags.add(_get_id3_frame(k, v))
 
+    # The FLAC's limit on pictures and padding holds the whole saved tag, text and padding included: a picture
+    # stays only if the tag saved with it still fits.
     for pic in flac_obj.pictures:
-        mp3_thing.tags.add(APIC(encoding=3, mime=pic.mime, type=pic.type, desc=pic.desc, data=pic.data))
+        frame = APIC(encoding=3, mime=pic.mime, type=pic.type, desc=pic.desc, data=pic.data)
+        # add() replaces a picture with the same desc, as it always did: that one goes back if this one does not fit.
+        replaced = mp3_thing.tags.get(frame.HashKey)
+        mp3_thing.tags.add(frame)
+        mp3_thing.save(v1=0, v2_version=4)
+        if ID3(mp3_path).size > MAX_PICTURES_AND_PADDING:
+            if replaced is None:
+                del mp3_thing.tags[frame.HashKey]
+            else:
+                mp3_thing.tags.add(replaced)
 
     mp3_thing.save(v1=0, v2_version=4)
 
@@ -362,8 +374,16 @@ async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> Non
         if read_fd >= 0:
             os.close(read_fd)
 
-    _, flac_err = await flac_proc.communicate()
-    _, lame_err = await lame_proc.communicate()
+    try:
+        _, flac_err = await flac_proc.communicate()
+        _, lame_err = await lame_proc.communicate()
+    except BaseException:
+        # Cancelled (Ctrl-C, a salmon web job): the encoders must not go on writing the MP3 after the run.
+        for proc in (flac_proc, lame_proc):
+            if proc.returncode is None:
+                proc.kill()
+        await asyncio.gather(flac_proc.wait(), lame_proc.wait(), return_exceptions=True)
+        raise
 
     if flac_proc.returncode:
         err = flac_err.decode()
