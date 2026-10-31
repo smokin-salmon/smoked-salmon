@@ -1099,7 +1099,7 @@ def test_tag_files_auto_tag_question(monkeypatch, assume) -> None:
     monkeypatch.setattr(retagger, "pair_files_with_tracks", lambda tags, metadata, **kw: [])
     monkeypatch.setattr(retagger, "_track_changes", lambda pairs: {"x": 1})
     monkeypatch.setattr(retagger, "print_changes", lambda *args: None)
-    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks: written.append(tracks))
+    monkeypatch.setattr(retagger, "retag_files", lambda path, album, tracks, *_cleared: written.append(tracks))
 
     with interaction.assuming_defaults(assume):
         anyio.run(lambda: tag_files("/unused", {"a.flac": object()}, {}, auto_rename=False))

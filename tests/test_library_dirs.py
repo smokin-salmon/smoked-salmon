@@ -319,7 +319,7 @@ def _returning_async(result: Any = None):
     return fake
 
 
-async def _retag(path: str, *_args: Any) -> None:
+async def _retag(path: str, *_args: Any, **_kwargs: Any) -> None:
     """Stands in for tag_files: rewrites a tag in every FLAC of the folder it is given."""
     for root, _dirs, files in os.walk(path):
         for name in files:

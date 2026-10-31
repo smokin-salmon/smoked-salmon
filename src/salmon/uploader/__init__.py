@@ -1495,6 +1495,8 @@ async def edit_metadata(
     given = path
     # The metadata as the pick gave it: going back drops every change since, the AI review's included.
     picked = deepcopy(metadata) if offer_other_results else None
+    # The album tags the passes have written, with their values: a re-run clears those its metadata no longer has.
+    written_album_tags: dict[str, Any] = {}
     while True:
         metadata = await review_metadata_with_ai(
             metadata,
@@ -1507,7 +1509,7 @@ async def edit_metadata(
         )
         tracks_by_file = None
         if not metadata["scene"]:
-            tracks_by_file = await tag_files(path, tags, metadata, auto_rename)
+            tracks_by_file = await tag_files(path, tags, metadata, auto_rename, written=written_album_tags)
 
         tags = await check_tags(path)
         tag_messages = process_tag_issues(

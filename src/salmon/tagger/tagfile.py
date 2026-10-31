@@ -173,6 +173,30 @@ class TagFile:
         except KeyError:
             super().__setattr__(key, value)
 
+    def __delattr__(self, key: str) -> None:
+        """Remove a tag from the file's fields for it."""
+        if not self.has_field(key):
+            return
+        tags = getattr(self.mut, "tags", None)
+        if isinstance(tags, VCommentDict):
+            if TAG_FIELDS["FLAC"][key] in tags:
+                del tags[TAG_FIELDS["FLAC"][key]]
+        elif isinstance(tags, id3.ID3):
+            for frame in TAG_FIELDS["MP3"][key]:
+                tags.delall(frame)
+        elif isinstance(tags, MP4Tags):
+            for atom in TAG_FIELDS["AAC"][key]:
+                tags.pop(atom, None)
+
+    def has_field(self, key: str) -> bool:
+        """Whether the file's format has a field for the tag. Setting one it has none for leaves the file as it was."""
+        mut = self.mut
+        if isinstance(mut, flac.FLAC):
+            return key in TAG_FIELDS["FLAC"]
+        if isinstance(mut, mp3.MP3):
+            return key in TAG_FIELDS["MP3"]
+        return isinstance(mut, mp4.MP4) and key in TAG_FIELDS["AAC"]
+
     def set_mp3_tag(self, key: str, value: Any) -> None:
         mut = self.mut
         if mut is None or not isinstance(mut, mp3.MP3):

@@ -32,10 +32,13 @@ class Change(msgspec.Struct, frozen=True):
     new: Any
 
 
-async def tag_files(path, tags, metadata, auto_rename):
+async def tag_files(path, tags, metadata, auto_rename, *, written=None):
     """
     Wrapper function that calls the functions that create and print the
     proposed changes, and then prompts for confirmation to retag the file.
+
+    ``written`` holds the album tags earlier passes of the run wrote, with their values, and is updated in place:
+    those the metadata no longer has are cleared from the files.
 
     Returns each retagged file's track, by filename, or None when the files were not retagged.
     """
@@ -43,6 +46,7 @@ async def tag_files(path, tags, metadata, auto_rename):
     if not check_whether_to_tag(tags, metadata):
         return None
     album_changes = collect_album_data(metadata)
+    cleared = {tag: value for tag, value in (written or {}).items() if tag not in album_changes}
     try:
         pairs = pair_files_with_tracks(tags, metadata)
     except AmbiguousTrackOrderError as e:
@@ -55,7 +59,7 @@ async def tag_files(path, tags, metadata, auto_rename):
             return None
         pairs = pair_files_with_tracks(tags, metadata, move_numbered=True)
     track_changes = _track_changes(pairs)
-    print_changes(album_changes, track_changes, next(iter(tags.values())))
+    print_changes(album_changes, track_changes, next(iter(tags.values())), cleared)
     if (
         auto_rename
         or await interaction.assume_defaults()
@@ -64,7 +68,15 @@ async def tag_files(path, tags, metadata, auto_rename):
             default=True,
         )
     ):
-        retag_files(path, album_changes, track_changes)
+        if written is not None:
+            for tag in cleared:
+                del written[tag]
+            written.update(
+                (tag, value)
+                for tag, value in album_changes.items()
+                if any(tagset.has_field(tag) for tagset in tags.values())
+            )
+        retag_files(path, album_changes, track_changes, cleared)
         return {filename: trackmeta for filename, _tagset, trackmeta in pairs}
     return None
 
@@ -534,8 +546,9 @@ def _ordered_unique(values):
     return list(dict.fromkeys(values))
 
 
-def print_changes(album_changes, track_changes, a_track):
-    """Print all the proposed track changes, then all the album data."""
+def print_changes(album_changes, track_changes, a_track, cleared=None):
+    """Print all the proposed track changes, then all the album data, and the album tags to clear with the value
+    an earlier pass wrote."""
     if any(t for t in track_changes.values()):
         click.secho("\nProposed tag changes:", fg="yellow", bold=True)
     for filename, changes in track_changes.items():
@@ -563,6 +576,11 @@ def print_changes(album_changes, track_changes, a_track):
                 f"> {click.style(str(field.ljust(13)), bold=True)} ••• {str(previous)} "
                 f"{ARROWS} {click.style(str(value), bold=True)}"
             )
+    for field, value in (cleared or {}).items():
+        previous, _ = _shown(value, None)
+        click.echo(
+            f"> {click.style(field.ljust(13), bold=True)} ••• {previous} {ARROWS} {click.style('None', bold=True)}"
+        )
 
 
 def _values(value):
@@ -596,8 +614,8 @@ def _written(mut, value):
     return str(value)
 
 
-def retag_files(path, album_changes, track_changes):
-    """Apply the proposed metadata changes to the files."""
+def retag_files(path, album_changes, track_changes, cleared=()):
+    """Apply the proposed metadata changes to the files, and remove the album tags in ``cleared``."""
     for filename, changes in track_changes.items():
         mut = TagFile(os.path.join(path, filename))
         for change in changes:
@@ -606,6 +624,8 @@ def retag_files(path, album_changes, track_changes):
             setattr(mut, change.tag, _written(mut, change.new))
         for tag, value in album_changes.items():
             setattr(mut, tag, _written(mut, value))
+        for tag in cleared:
+            delattr(mut, tag)
         mut.save()
     click.secho("Retagged files.", fg="green")
 
