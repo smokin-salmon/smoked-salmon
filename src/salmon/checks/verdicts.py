@@ -179,7 +179,9 @@ def sample_rate_row(audio_info: Mapping[str, dict[str, Any]]) -> Row:
             _notes(odd),
         )
     rates = ", ".join(_khz(rate) for rate in sorted({info["sample rate"] for info in audio_info.values()}))
-    return Row("OK", "Sample rate", f"Standard: {rates}." if rates else "No file read.")
+    if not rates:
+        return Row("INFO", "Sample rate", "No file read.")
+    return Row("OK", "Sample rate", f"Standard: {rates}.")
 
 
 def sixteen_bit_rows(audio_info: Mapping[str, dict[str, Any]], rules: Mapping[str, str]) -> list[Row]:
