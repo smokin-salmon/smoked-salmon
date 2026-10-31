@@ -184,7 +184,9 @@ def parse_artists(artist_list):
         guests, artist = _extract_feat(artist)
         for a in re_split(guests):
             artists.append((strip_numbered_suffixes(a), "guest"))
-        remix = re.search(r" \(?remix(?:\.|ed|ed by)? ([^\)]+)\)?", artist)
+        # "by" is part of the credit, not of the name. A capitalised "Remix" counts only when "by" follows, so a
+        # name such as "The Remix Project" stays one artist.
+        remix = re.search(r" \(?(?:remix(?:\.|ed)?(?: [Bb]y)?|[Rr]emix(?:ed)? [Bb]y) ([^\)]+)\)?", artist)
         if remix:
             for a in re_split(remix[1]):
                 artists.append((strip_numbered_suffixes(a), "remixer"))
