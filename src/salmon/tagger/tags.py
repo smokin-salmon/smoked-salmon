@@ -177,7 +177,11 @@ def standardize_tags(path: str) -> None:
     done: list[str] = []
     filenames = list(get_audio_files(path))
     for index, filename in enumerate(filenames):
-        mut = MutagenFile(os.path.join(path, filename))
+        try:
+            mut = MutagenFile(os.path.join(path, filename))
+        except Exception as e:
+            # Only save() writes: this file is as it was, with the rest.
+            abort_partial(f"Standardizing tags on {filename}", done, None, filenames[index:], e)
         if mut is None:
             continue
         tags = mut.tags

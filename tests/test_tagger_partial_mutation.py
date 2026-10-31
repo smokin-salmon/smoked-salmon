@@ -116,3 +116,25 @@ def test_standardizing_tags_that_fails_partway_names_what_it_changed_and_stops(t
     assert "May be partially changed: 02.flac" in out
     assert "Not changed: 03.flac" in out
     assert "date" in FLAC(tmp_path / "01.flac") and "year" in FLAC(tmp_path / "03.flac")
+
+
+def test_standardizing_tags_that_cannot_open_a_later_file_names_what_it_changed(tmp_path, monkeypatch, capsys) -> None:
+    for name in ("01.flac", "02.flac", "03.flac"):
+        _write_flac(tmp_path / name, year="2001")
+    opened = tags.MutagenFile
+
+    def unreadable_second(path, *args, **kwargs):
+        if os.path.basename(path) == "02.flac":
+            raise OSError(13, "Permission denied")
+        return opened(path, *args, **kwargs)
+
+    monkeypatch.setattr(tags, "MutagenFile", unreadable_second)
+
+    with pytest.raises(UploadError, match="inconsistent"):
+        tags.standardize_tags(str(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "Already changed: 01.flac" in out
+    assert "Not changed: 02.flac, 03.flac" in out
+    assert "May be partially changed" not in out
+    assert "date" in FLAC(tmp_path / "01.flac") and "year" in FLAC(tmp_path / "03.flac")
