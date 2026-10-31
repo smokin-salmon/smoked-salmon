@@ -214,7 +214,16 @@ def test_a_file_without_tags_reads_as_empty_rather_than_raising() -> None:
 
 @pytest.mark.parametrize(
     "marker",
-    ["24bit.flac", "24-bit.FLAC", "24bit.Hi-Res", "FLAC 24bit.WEB", "Artist.Album.2020.24bit.FLAC", "(24bit.Master)"],
+    [
+        "24bit.flac",
+        "24-bit.FLAC",
+        "24bit.Hi-Res",
+        "24 bit.Hi-Res",
+        "24 Bit.Master",
+        "FLAC 24bit.WEB",
+        "Artist.Album.2020.24bit.FLAC",
+        "(24bit.Master)",
+    ],
 )
 def test_a_claim_written_like_a_file_name_is_still_a_claim(tmp_path, marker: str) -> None:
     """Only a name before a dot is a domain: a claim before one, or a file extension after one, is not."""
