@@ -141,6 +141,41 @@ def test_a_question_without_options_is_sent_exactly_as_before() -> None:
     assert browser.questions == [{"kind": "prompt", "text": "Which?", "default": "x", "choices": None, "error": None}]
 
 
+def test_a_hidden_prompt_asks_for_a_password_field() -> None:
+    result, browser = _prompt(None, ["secret"], hide_input=True)
+    assert result == "secret"
+    assert browser.questions == [
+        {"kind": "prompt", "text": "Which?", "default": None, "choices": None, "error": None, "hide_input": True}
+    ]
+
+
+def test_a_hidden_answer_the_conversion_refuses_is_not_quoted_in_the_error(capsys: pytest.CaptureFixture[str]) -> None:
+    def convert(value: str) -> str:
+        if value == "bad-secret":
+            raise click.BadParameter(f"{value!r} is not a cookie")
+        return value
+
+    result, browser = _prompt(None, ["bad-secret", "good"], hide_input=True, value_proc=convert)
+    assert result == "good"
+    assert browser.questions[1]["error"] == "Error: invalid input"
+    assert "bad-secret" not in str(browser.questions)
+    out = capsys.readouterr().out
+    assert "bad-secret" not in out
+
+
+def test_a_hidden_typed_answer_the_options_refuse_is_not_quoted_in_the_error(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    typed = Options((Option("a", "Abort", action=True),), free_text=FreeText("Cookie"))
+    picked = Picked(texts=["bad-secret"])
+    result, browser = _prompt(typed, [picked, Picked(picks=["a"])], hide_input=True)
+    assert result == "a"
+    assert browser.questions[1]["error"] == "Error: invalid input"
+    assert "bad-secret" not in str(browser.questions)
+    out = capsys.readouterr().out
+    assert "bad-secret" not in out
+
+
 def test_a_confirm_without_labels_is_sent_exactly_as_before_and_with_labels_names_its_buttons() -> None:
     browser = Browser([True, False])
 

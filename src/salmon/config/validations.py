@@ -1,5 +1,5 @@
 import os
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from typing import Annotated, Literal, get_args
 
 import msgspec
@@ -17,37 +17,46 @@ def _real(path: str) -> str:
     return os.path.realpath(os.path.expanduser(path))
 
 
-def _holds(folder: str, path: str) -> bool:
-    """Whether the resolved path is the resolved folder or inside it, by its text or by device and inode.
+def _lexical(path: str) -> str:
+    return os.path.abspath(os.path.expanduser(path))
 
-    commonpath, not a string prefix: /music-old is not inside /music, and / holds everything.
-    """
-    folder, path = _real(folder), _real(path)
-    try:
-        if os.path.commonpath([folder, path]) == folder:
-            return True
-    except ValueError:  # Different drives on Windows.
-        pass
-    # The text misses /music/Library for /Music/Library on a case-insensitive volume, and a second bind mount.
+
+def _holds(folder: str, path: str) -> bool:
+    """Whether path is folder or inside it, resolved or as given (commonpath: /music-old is not in /music)."""
+    # As given too: an album symlinked into a library is in it, wherever the link points.
+    for norm in (_real, _lexical):
+        try:
+            if os.path.commonpath([norm(folder), norm(path)]) == norm(folder):
+                return True
+        except ValueError:  # Different drives on Windows.
+            continue
+    # Strings miss ~/music on a case-insensitive volume when the folder is ~/Music, and a second bind mount.
     return _same_dir_above(folder, path)
 
 
 def _same_dir_above(folder: str, path: str) -> bool:
-    """Whether path or a folder above it is the directory folder: the same device and inode."""
+    """Whether path or a parent of it, resolved or as given, is the directory folder (same device and inode)."""
     try:
-        target = os.stat(folder)
+        target = os.stat(_real(folder))
     except OSError:
         return False
+    return any(_same_as(above, target) for norm in (_real, _lexical) for above in _ancestors(norm(path)))
+
+
+def _ancestors(path: str) -> Iterator[str]:
     while True:
-        try:
-            if os.path.samestat(os.stat(path), target):
-                return True
-        except OSError:  # Not there (yet): a folder above it may still be.
-            pass
+        yield path
         parent = os.path.dirname(path)
         if parent == path:
-            return False
+            return
         path = parent
+
+
+def _same_as(path: str, target: os.stat_result) -> bool:
+    try:
+        return os.path.samestat(os.stat(path), target)
+    except OSError:
+        return False
 
 
 class Directory(BaseStruct):
@@ -83,11 +92,11 @@ class Directory(BaseStruct):
                     raise ValueError(f"library_dirs entry {entry} must not be inside {name} ({folder})")
 
     def library_of(self, path: str) -> str | None:
-        """The library_dirs entry path is or is inside, compared on resolved paths (see _holds), or None."""
+        """The library_dirs entry path is or is inside, compared resolved and as given, or None."""
         return next((entry for entry in self.library_dirs if _holds(entry, path)), None)
 
     def is_library_path(self, path: str) -> bool:
-        """Whether path is a library_dirs entry or inside one, compared on resolved paths (see _holds)."""
+        """Whether path is a library_dirs entry or inside one, compared resolved and as given."""
         return self.library_of(path) is not None
 
     def library_inside(self, path: str) -> str | None:
@@ -204,12 +213,25 @@ class BeatportSettings(BaseStruct):
     password: str | None = None
 
 
+class Corrections(BaseStruct):
+    # An artist's name (whole, any case, outer spaces ignored) and the name salmon writes instead.
+    artists: dict[str, str] = msgspec.field(default_factory=dict)
+
+    def __post_init__(self):
+        if any(not name.strip() for name in [*self.artists, *self.artists.values()]):
+            raise ValueError("metadata.corrections.artists has an empty name.")
+        keys = [name.strip().casefold() for name in self.artists]
+        if len(set(keys)) < len(keys):
+            raise ValueError("metadata.corrections.artists names an artist twice, in two cases or spacings.")
+
+
 class Metadata(BaseStruct):
     discogs_token: str | None = None
     qobuz: QobuzSettings = msgspec.field(default_factory=QobuzSettings)
     tidal: TidalSettings = msgspec.field(default_factory=TidalSettings)
     apple_music: AppleMusicSettings = msgspec.field(default_factory=AppleMusicSettings)
     beatport: BeatportSettings = msgspec.field(default_factory=BeatportSettings)
+    corrections: Corrections = msgspec.field(default_factory=Corrections)
 
 
 class GazelleTrackerSettings(BaseStruct):
@@ -562,3 +584,11 @@ class Cfg(BaseStruct):
         red_host_users = [setting for setting, _kind, host in self.image.selections() if host == "red"]
         if red_host_users and not (self.tracker.red and self.tracker.red.api_key):
             raise ValueError(f'image.{red_host_users[0]} = "red" needs tracker.red.api_key to be set')
+        # A tracker's own dottorrents_dir gets .torrent files written with overwrite, as the global one does.
+        for code in _TRACKER_CODES:
+            settings = getattr(self.tracker, code)
+            folder = settings.dottorrents_dir if settings else None
+            if folder and (library := self.directory.library_of(folder)) is not None:
+                raise ValueError(
+                    f"library_dirs entry {library} must not contain tracker.{code}.dottorrents_dir ({folder})"
+                )

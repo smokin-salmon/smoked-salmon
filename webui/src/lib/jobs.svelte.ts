@@ -57,6 +57,8 @@ export interface Question {
   preselected?: Picked
   /** A confirm's yes and no buttons. */
   labels?: [string, string]
+  /** A prompt for a secret (a cookie, an API key): asked in a password field. */
+  hide_input?: boolean
 }
 
 export interface LogLine {

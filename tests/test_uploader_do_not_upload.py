@@ -3,6 +3,7 @@
 The runs go against the local fake tracker of test_uploader_dry_run, never a real one.
 """
 
+import shutil
 from pathlib import Path
 
 import pytest
@@ -75,6 +76,9 @@ def test_a_release_on_opss_list_goes_to_red_only(monkeypatch, tmp_path, dirs) ->
     downloads, torrents = dirs
     red_only = _run_up(monkeypatch, _album(tmp_path / "alone" / "Album"), torrents, multi_tracker_upload=False)
     assert red_only.result.exit_code == 0, red_only.result.output
+    # The next run's renamed folder takes the same name; salmon never replaces this one, hardlinked to its album.
+    for made in downloads.iterdir():
+        shutil.rmtree(made)
     write_lists(monkeypatch, tmp_path / "lists", OPS=ARTIST)
 
     # OPS named after RED: it is not asked for.

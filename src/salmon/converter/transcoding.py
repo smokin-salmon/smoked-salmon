@@ -11,7 +11,7 @@ from mutagen import flac, mp3
 from mutagen.flac import VCFLACDict
 from mutagen.id3 import APIC, TXXX, Frames
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.converter.conversions import conversion_of, missing_files, record_conversion, recorded_files
@@ -237,7 +237,9 @@ def _collect_transcode_items(
     dst_path = Path(new_path)
     items: list[TranscodeItem] = []
 
-    for flac_file in sorted(src_path.rglob("*.flac")):
+    # Any case, as _copy_extra_files skips them: a .FLAC track would otherwise be neither transcoded nor copied.
+    flac_files = (p for p in src_path.rglob("*") if p.is_file() and p.suffix.lower() == ".flac")
+    for flac_file in sorted(flac_files):
         fl, tag_dict = _parse_flac_tags(flac_file)
         rel = flac_file.relative_to(src_path).with_suffix(".mp3")
         mp3_path = dst_path / rel
@@ -390,13 +392,18 @@ async def _transcode_audio_files(
 
     async def _transcode_one(file: str, idx: int) -> None:
         item = items[idx]
-        if item.flac_obj.info.channels > 2:
-            raise ValueError(f"{item.src} has {item.flac_obj.info.channels} channels. Cannot convert to MP3.")
         await _flac_to_mp3(bitrate, item.src, item.dst)
         _copy_tags(item.tags, item.flac_obj, Path(item.dst))
 
     file_paths = [item.src for item in items]
     await process_files(file_paths, _transcode_one, "Transcoding")
+
+
+def _validate_channel_count(items: list[TranscodeItem]) -> None:
+    """Refuse a source of more than two channels, before anything is written or a prior output deleted."""
+    for item in items:
+        if item.flac_obj.info.channels > 2:
+            raise ValueError(f"{item.src} has {item.flac_obj.info.channels} channels. Cannot convert to MP3.")
 
 
 # ---------------------------------------------------------------------------
@@ -425,17 +432,38 @@ async def transcode_folder(
     if cfg.directory.protects(new_path):
         raise UploadError(f"Not transcoding into {new_path}: it is in library_dirs, or holds one.")
 
+    # Before the overwrite below: a source that cannot be transcoded must not cost the output already there.
+    items = _collect_transcode_items(path, new_path)
+    _validate_channel_count(items)
+
     if os.path.isdir(new_path):
         if _is_finished_transcode(path, new_path, bitrate):
             click.secho(f"{new_path} already exists.", fg="yellow")
             return new_path
+        if not items:
+            raise UploadError(f"Refusing to overwrite {new_path}: no expected MP3 output was computed.")
+        # Not salmon's transcode of this album as far as it can tell, such as an upload made with another file
+        # template, which may be seeding: deleted only when the user says so. -yyy takes the default, no.
+        if await interaction.assume_defaults():
+            raise UploadError(
+                f"Not overwriting {new_path} with -yyy (upload.yes_all): it doesn't match the expected transcode, "
+                "and you may be seeding it. Run without -yyy, and with upload.yes_all off, to choose."
+            )
+        if not await interaction.confirm(
+            click.style(
+                f"{new_path} exists but doesn't match the expected transcode. Delete it and re-transcode?",
+                fg="magenta",
+                bold=True,
+            ),
+            default=False,
+        ):
+            raise UploadError(f"Not overwriting existing folder {new_path}.")
         click.secho(
             f"{new_path} exists but appears incomplete, re-transcoding...",
             fg="yellow",
         )
         shutil.rmtree(new_path)
 
-    items = _collect_transcode_items(path, new_path)
     _copy_extra_files(path, new_path, essential_only=essential_only)
     await _transcode_audio_files(items, bitrate)
 

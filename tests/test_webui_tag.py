@@ -114,7 +114,7 @@ def fake_tagger(monkeypatch: pytest.MonkeyPatch) -> list[str]:
             edited = await interaction.edit(metadata["title"])
             metadata["title"] = edited.strip() if edited else metadata["title"]
 
-    async def tag_files(path: str, _tags: dict, metadata: dict, _auto_rename: bool) -> None:
+    async def tag_files(path: str, _tags: dict, metadata: dict, _auto_rename: bool, **_kwargs: Any) -> None:
         tagged.append(path)
         for name in os.listdir(path):
             if name.endswith(".flac"):

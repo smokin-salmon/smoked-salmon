@@ -136,13 +136,19 @@ def test_the_terminal_implementation_hands_each_argument_to_asyncclick(monkeypat
     async def ask() -> list[Any]:
         return [
             await interaction.prompt("Which?", default="a", type=click.STRING, show_default=False),
+            await interaction.prompt("Secret?", hide_input=True),
             await interaction.confirm("Sure?", default=True, abort=True),
             await interaction.edit("text", editor="vim", extension=".json"),
         ]
 
-    assert anyio.run(ask) == ["typed", True, "edited"]
+    assert anyio.run(ask) == ["typed", "typed", True, "edited"]
     assert calls == [
         ("prompt", ("Which?",), {"default": "a", "type": click.STRING, "value_proc": None, "show_default": False}),
+        (
+            "prompt",
+            ("Secret?",),
+            {"default": None, "type": None, "value_proc": None, "show_default": True, "hide_input": True},
+        ),
         ("confirm", ("Sure?",), {"default": True, "abort": True}),
         ("edit", ("text",), {"editor": "vim", "extension": ".json"}),
     ]
@@ -241,6 +247,9 @@ def test_yyy_in_one_run_does_not_leak_into_the_next_run_in_the_process(monkeypat
     # -yyy sets nothing in the config: a later run in this process reads the same defaults.
     assert cfg.upload.yes_all is False
 
+    # salmon never replaces the first run's renamed folder, which shares files with its album: another downloads folder.
+    (tmp_path / "downloads2").mkdir()
+    monkeypatch.setattr(cfg.directory, "download_directory", str(tmp_path / "downloads2"))
     second = _run_up(
         monkeypatch, _album(tmp_path / "Second"), torrents, input=ANSWERS, yes_all=False, check_tags=record
     )

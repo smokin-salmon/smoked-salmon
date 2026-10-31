@@ -120,12 +120,13 @@ class Interaction(Protocol):
         type: Any = None,
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
+        hide_input: bool = False,
         options: Options | None = None,
     ) -> Any:
         """Ask for a line of text, and return it converted by `type` or `value_proc`.
 
         `options` describes the replies the caller accepts, for an implementation that draws them; the reply is
-        still a line the caller parses.
+        still a line the caller parses. With `hide_input`, what the user types is not shown: a cookie, an API key.
         """
         ...
 
@@ -195,9 +196,19 @@ class TerminalInteraction:
         type: Any = None,
         value_proc: Callable[[str], Any] | None = None,
         show_default: bool = True,
+        hide_input: bool = False,
         options: Options | None = None,
     ) -> Any:
-        # The options are for the web: the terminal asks exactly as before.
+        # The options are for the web: the terminal asks exactly as before, hiding the input only when asked to.
+        if hide_input:
+            return await click.prompt(
+                text,
+                default=default,
+                type=type,
+                value_proc=value_proc,
+                show_default=show_default,
+                hide_input=True,
+            )
         return await click.prompt(
             text,
             default=default,
@@ -270,11 +281,18 @@ async def prompt(
     type: Any = None,
     value_proc: Callable[[str], Any] | None = None,
     show_default: bool = True,
+    hide_input: bool = False,
     options: Options | None = None,
 ) -> Any:
     """Ask for a line of text. See `Interaction.prompt`."""
     return await current().prompt(
-        text, default=default, type=type, value_proc=value_proc, show_default=show_default, options=options
+        text,
+        default=default,
+        type=type,
+        value_proc=value_proc,
+        show_default=show_default,
+        hide_input=hide_input,
+        options=options,
     )
 
 
