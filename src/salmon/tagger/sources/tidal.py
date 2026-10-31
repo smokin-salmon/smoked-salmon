@@ -134,12 +134,15 @@ class Scraper(TidalBase, MetadataMixin):
                 artist_without_feat = re.sub(re.escape(feat[0]) + "$", "", artist_without_feat).rstrip()
             for a in re_split(artist_without_feat):
                 name = unescape(a)
-                if norm(name) in artist_set:
-                    continue
-                if norm(name) in remixer_names:
+                # Before the skip below: a featured guest can also be the one who remixed the track.
+                if norm(name) in remixer_names and name not in credited:
                     result.append((name, "remixer"))
                     credited.append(name)
-                elif compilation or not album_artist_names or norm(name) in album_artist_names:
+                    artist_set.add(norm(name))
+                    continue
+                if norm(name) in artist_set:
+                    continue
+                if compilation or not album_artist_names or norm(name) in album_artist_names:
                     result.append((name, "main"))
                 else:
                     result.append((name, "guest"))

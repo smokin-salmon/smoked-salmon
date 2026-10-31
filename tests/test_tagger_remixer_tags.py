@@ -130,6 +130,15 @@ def test_tidal_credits_a_remixer_it_lists_and_not_one_only_in_the_version() -> N
     assert credited == ["Owen"]
 
 
+def test_tidal_credits_a_featured_guest_who_also_remixed_the_track() -> None:
+    artists, credited = tidal.Scraper().parse_artists(
+        [{"name": "Dree Low"}, {"name": "Owen"}], "Song (feat. Owen)", "Owen Remix", [{"name": "Dree Low"}]
+    )
+
+    assert {("Owen", "guest"), ("Owen", "remixer")} <= set(artists)
+    assert credited == ["Owen"]
+
+
 def test_tidal_tells_names_in_another_script_apart() -> None:
     # Compared as "", only the first name in another script was kept, and taken for the "(X Remix)" remixer.
     artists, credited = tidal.Scraper().parse_artists(
