@@ -750,6 +750,58 @@ def test_a_named_tracker_whose_group_search_fails_moves_on_to_the_next(monkeypat
     assert sites == ["RED", "DIC"]
 
 
+def _first_trackers_search_fails(monkeypatch) -> None:
+    real = dupe_checker.fetch_existing_group_candidates
+
+    async def red_search_fails(gazelle_site, *args: Any, **kwargs: Any) -> Any:
+        if gazelle_site.site_code == "RED":
+            raise RequestError("search failed")
+        return await real(gazelle_site, *args, **kwargs)
+
+    monkeypatch.setattr(dupe_checker, "fetch_existing_group_candidates", red_search_fails)
+
+
+def test_a_first_tracker_whose_group_search_fails_is_skipped_for_the_next(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
+    sites = _uploads_by_tracker(monkeypatch)
+    _first_trackers_search_fails(monkeypatch)
+
+    run = _run_up(
+        monkeypatch,
+        _album(tmp_path / "Album"),
+        torrents,
+        args=("--request", "4242"),
+        trackers=("RED", "OPS"),
+        input="\n",
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Could not search RED for dupes (search failed): skipping it." in run.result.output
+    assert sites == ["OPS"]
+    # The request given is RED's: skipping RED must not send it to OPS.
+    assert "Not filling request 4242: it is RED's." in run.result.output
+    uploads = [dict(sent.fields) for sent in run.tracker.sent if sent.query.get("action") == "upload"]
+    assert uploads
+    assert all(upload.get("requestid") != "4242" for upload in uploads)
+
+
+def test_a_first_tracker_whose_group_search_fails_ends_the_run_when_none_can_follow(
+    monkeypatch, tmp_path, dirs
+) -> None:
+    _downloads, torrents = dirs
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
+    sites = _uploads_by_tracker(monkeypatch)
+    _first_trackers_search_fails(monkeypatch)
+
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, trackers=("RED",), input="")
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Could not search RED for dupes: search failed" in run.result.output
+    assert "Aborting upload" in run.result.output
+    assert sites == []
+
+
 def test_aborting_at_a_named_tracker_keeps_what_is_up(monkeypatch, tmp_path, dirs) -> None:
     _downloads, torrents = dirs
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])

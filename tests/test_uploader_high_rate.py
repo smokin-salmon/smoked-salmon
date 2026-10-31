@@ -109,6 +109,34 @@ def test_16bit_96khz_is_refused_for_ops_before_any_request_and_its_group_search(
     assert run.queued == []
 
 
+def test_16bit_96khz_for_ops_alone_stops_before_the_checks_and_the_review(monkeypatch, dirs) -> None:
+    downloads, torrents = dirs
+    reached: list[str] = []
+
+    async def mqa_test(*_args, **_kwargs) -> None:
+        reached.append("checks")
+
+    async def get_metadata(*_args, **_kwargs):
+        reached.append("review")
+        raise AssertionError("reviewed")
+
+    run = _run_up(
+        monkeypatch,
+        _album(downloads.parent / "seeding" / "Album"),
+        torrents,
+        trackers=("OPS",),
+        multi_tracker_upload=False,
+        gather_audio_info=_returning(_files(96000)),
+        mqa_test=mqa_test,
+        get_metadata=get_metadata,
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert run.result.output.count(REFUSED) == 1
+    assert "Aborting upload" in run.result.output
+    assert reached == []
+
+
 def test_16bit_96khz_is_warned_about_for_red_and_uploaded(monkeypatch, dirs) -> None:
     downloads, torrents = dirs
 
