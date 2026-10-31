@@ -372,12 +372,13 @@ def filter_artists(artists, tracks=None):
         artist_pool = _generate_artist_pool_lower_case(tracks)
         for _dnum, disc in tracks.items():
             for _tnum, track in disc.items():
-                # Deduplicate the artists before passing them to fix_artists_list
+                # Deduplicate the artists before passing them to fix_artists_list. Main and guest, the ARTIST credit,
+                # are one credit per name; another role (remixer, arranger, ...) is kept beside it.
                 deduplicated_artists = []
                 seen_normalized = set()
 
                 for art, imp in track["artists"]:
-                    normalized_art = normalize_accents(art.lower())  # Normalize and make lowercase
+                    normalized_art = (normalize_accents(art.lower()), imp if imp not in {"main", "guest"} else "")
                     if normalized_art not in seen_normalized:
                         deduplicated_artists.append((art, imp))  # Add the original artist with the importance
                         seen_normalized.add(normalized_art)

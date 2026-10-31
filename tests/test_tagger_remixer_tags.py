@@ -25,6 +25,7 @@ from salmon.tagger.combine import combine_tracks
 from salmon.tagger.metadata import _combine_scraped
 from salmon.tagger.retagger import create_remixer_list
 from salmon.tagger.sources import beatport, discogs, tidal
+from salmon.tagger.sources.base import generate_artists
 
 REMIXED = [("Dree Low", "main"), ("Owen", "remixer"), ("Jamm", "remixer")]
 
@@ -137,6 +138,49 @@ def test_tidal_credits_a_featured_guest_who_also_remixed_the_track() -> None:
 
     assert {("Owen", "guest"), ("Owen", "remixer")} <= set(artists)
     assert credited == ["Owen"]
+
+
+def _one_track(artists: list[tuple[str, str]], credited: list[str]) -> dict[str, Any]:
+    """The track as a scrape leaves it, after generate_artists."""
+    tracks = {"1": {"1": {"artists": artists, "credited_remixers": credited, "title": "Song"}}}
+    return generate_artists(tracks)[1]["1"]["1"]
+
+
+def test_a_featured_guest_who_remixed_the_track_is_written_as_remixer() -> None:
+    artists, credited = tidal.Scraper().parse_artists(
+        [{"name": "Dree Low"}, {"name": "Owen"}], "Song (feat. Owen)", "Owen Remix", [{"name": "Dree Low"}]
+    )
+
+    assert create_remixer_list(_one_track(artists, credited)) == ["Owen"]
+
+
+def test_an_artists_own_remix_is_written_as_remixer() -> None:
+    # Beatport credits the main artist as the remixer of their own track.
+    track = {
+        "id": 1,
+        "name": "Song",
+        "mix_name": "Dree Low Remix",
+        "artists": [{"name": "Dree Low"}],
+        "remixers": [{"name": "Dree Low"}],
+        "is_available_for_streaming": True,
+        "isrc": None,
+    }
+    scraped = asyncio.run(beatport.Scraper().parse_tracks({"tracks": [track]}))["1"]["1"]
+
+    track = _one_track(scraped["artists"], scraped["credited_remixers"])
+
+    assert ("Dree Low", "main") in track["artists"]
+    assert create_remixer_list(track) == ["Dree Low"]
+
+
+def test_one_name_as_main_and_guest_is_still_one_credit() -> None:
+    assert _one_track([("Dree Low", "main"), ("Dree Low", "guest")], [])["artists"] == [("Dree Low", "main")]
+
+
+def test_one_name_as_main_and_arranger_keeps_both_credits() -> None:
+    track = _one_track([("Dree Low", "main"), ("Dree Low", "arranger")], [])
+
+    assert track["artists"] == [("Dree Low", "main"), ("Dree Low", "arranger")]
 
 
 def test_tidal_tells_names_in_another_script_apart() -> None:
