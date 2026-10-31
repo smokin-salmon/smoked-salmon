@@ -45,7 +45,8 @@ REQUESTS_WHEN_A_GROUP_IS_FOUND = [
     *(f"requests {s}" for s in SEARCHES),
     "torrentgroup 5",
 ]
-LOG_PAGES = [f"log {page}" for page in range(1, 10)]
+# The fake's log pages have no rows, so no time to say they cover the window: the log is read up to its third page.
+LOG_PAGES = [f"log {page}" for page in range(1, 4)]
 
 
 class FakeTracker:

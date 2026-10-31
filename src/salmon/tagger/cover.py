@@ -8,7 +8,7 @@ from typing import IO
 import aiohttp
 import asyncclick as click
 import humanfriendly
-from mutagen import PaddingInfo
+from mutagen import MutagenError, PaddingInfo
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
 from PIL import Image
@@ -27,12 +27,35 @@ def get_cover_from_path(path):
     """
     Search a folder for a cover image, return its path.
     """
+    cover = _existing_cover(path)
+    if cover is None:
+        click.secho(f"Did not find a cover in path {path}", fg="red")
+    return cover
+
+
+def _existing_cover(path: str) -> str | None:
+    """The folder's cover image file, as get_cover_from_path finds it, without saying when there is none."""
     for filename in os.listdir(path):
         if re.match(r"^(cover|folder)\.(jpe?g|png)$", filename, flags=re.IGNORECASE):
-            fpath = os.path.join(path, filename)
-            return fpath
-    click.secho(f"Did not find a cover in path {path}", fg="red")
+            return os.path.join(path, filename)
     return None
+
+
+def extract_embedded_cover(path: str, only: str | None = None) -> str | None:
+    """The folder's cover file: its own, else the first embedded front cover saved as one; None if neither.
+
+    With `only`, a file name in the folder, that file alone is looked at for an embedded cover.
+    """
+    if existing := _existing_cover(path):
+        return existing
+    embedded = _find_embedded_front_cover(path, only)
+    if not embedded:
+        return None
+    extension, data = embedded
+    cover_path = os.path.join(path, f"cover.{extension}")
+    _write_whole_file(cover_path, data)
+    click.secho(f"Extracted embedded cover to: {cover_path}", fg="yellow")
+    return cover_path
 
 
 async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tuple[str | None, bool | None]:
@@ -57,33 +80,34 @@ async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tup
         if cover_path:
             return cover_path, True
     # fall back to an embedded FLAC front cover
-    embedded = _find_embedded_front_cover(path)
-    if embedded:
-        extension, data = embedded
-        cover_path = os.path.join(path, f"cover.{extension}")
-        _write_whole_file(cover_path, data)
-        click.secho(f"Extracted embedded cover to: {cover_path}", fg="yellow")
+    cover_path = extract_embedded_cover(path)
+    if cover_path:
         return cover_path, True
     click.secho("\nNo existing Cover Image found in Source Folder, no Cover Image downloaded", fg="red")
     return None, None
 
 
-def _find_embedded_front_cover(path: str) -> tuple[str, bytes] | None:
+def _find_embedded_front_cover(path: str, only: str | None = None) -> tuple[str, bytes] | None:
     """Find the first FLAC (by `get_audio_files` order) with an embedded front cover.
 
     Only the first FLAC that has a front cover picture is considered; if that picture cannot be
-    read as an image, no fallback to another FLAC is attempted.
+    read as an image, no fallback to another FLAC is attempted. A FLAC mutagen cannot read is skipped:
+    sanitizing looks here before it re-encodes files that may be damaged.
 
     Args:
         path: The release folder.
+        only: A file name in the folder: look at that file alone.
 
     Returns:
         The extension and bytes to save the cover as a file, or None if no FLAC has a usable one.
     """
-    for filename in get_audio_files(path):
+    for filename in [only] if only else get_audio_files(path):
         if not filename.lower().endswith(".flac"):
             continue
-        audio = FLAC(os.path.join(path, filename))
+        try:
+            audio = FLAC(os.path.join(path, filename))
+        except (MutagenError, OSError):
+            continue
         for picture in audio.pictures:
             if picture.type == PictureType.COVER_FRONT:
                 return _as_cover_file(picture)

@@ -6,6 +6,7 @@ from itertools import chain
 import asyncclick as click
 from unidecode import unidecode
 
+from salmon import cfg
 from salmon.common import re_strip
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
@@ -149,10 +150,25 @@ def combine_metadatas(*metadatas, base=None, source_url=None):
         for track in disc.values():
             track.pop("artist_variations", None)
 
+    _correct_artists(base["tracks"])
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
     base["genres"] = standardize_genres(base["genres"])
     base["label"] = determine_label_type(base["label"], base["artists"])
     return base
+
+
+def _correction_key(name):
+    return name.strip().casefold()
+
+
+def _correct_artists(tracks):
+    """Rename each track artist that [metadata.corrections] artists names, keeping its role."""
+    corrections = {_correction_key(name): to for name, to in cfg.metadata.corrections.artists.items()}
+    if not corrections:
+        return
+    for disc in tracks.values():
+        for track in disc.values():
+            track["artists"] = [(corrections.get(_correction_key(name), name), role) for name, role in track["artists"]]
 
 
 def sort_metadatas(metadatas):

@@ -36,8 +36,16 @@ class RenameStopped(Exception):
         return "\n".join(lines)
 
 
+def _folded(path: str) -> str:
+    """``path`` as a volume that ignores case and Unicode form compares it."""
+    return unicodedata.normalize("NFC", os.path.normpath(path)).casefold()
+
+
 def _same_entry(a: str, b: str) -> bool:
     """Whether the two paths name one directory entry (a name given in another case, on a volume that ignores it)."""
+    # A second hard link is another entry for the file: os.rename onto it does nothing and leaves both names.
+    if _folded(a) != _folded(b):
+        return False
     try:
         return os.path.samestat(os.lstat(a), os.lstat(b))
     except OSError:
@@ -57,7 +65,7 @@ def name_key(paths: Iterable[str]) -> Callable[[str], str]:
     Case-insensitive when a volume holding one of them is.
     """
     if any(_folds_case(path) for path in paths):
-        return lambda path: unicodedata.normalize("NFC", os.path.normpath(path)).casefold()
+        return _folded
     return os.path.normpath
 
 
@@ -91,11 +99,57 @@ def plan_renames(renames: Sequence[Rename]) -> tuple[list[Rename], list[str]]:
     return ordered, []
 
 
+# What os.link raises where the volume has no hard links, or no more for the file.
+_NO_HARD_LINKS = frozenset(
+    code
+    for code in (getattr(errno, name, None) for name in ("EPERM", "ENOTSUP", "EOPNOTSUPP", "EMLINK", "ENOSYS"))
+    if code is not None
+)
+# Windows' ERROR_INVALID_FUNCTION, from a FAT or exFAT volume; its errno, EINVAL, means other things elsewhere.
+_WINDOWS_NO_HARD_LINKS = 1
+
+
+def _rename_no_clobber(old: str, new: str) -> None:
+    """``os.rename`` by a hard link, which fails on a name in use where a rename replaces the file there.
+
+    A folder or a symlink, which have no hard link here, the file itself under another case, and a file on a volume
+    without hard links are renamed with os.rename.
+    """
+    if os.path.islink(old) or os.path.isdir(old) or _same_entry(old, new):
+        os.rename(old, new)
+        return
+    try:
+        os.link(old, new)
+    except OSError as e:
+        if e.errno not in _NO_HARD_LINKS and getattr(e, "winerror", None) != _WINDOWS_NO_HARD_LINKS:
+            raise
+        # A volume without hard links (FAT, many network shares): the rename rename_all checked, as before.
+        os.rename(old, new)
+        return
+    try:
+        linked = os.path.samestat(os.lstat(old), os.lstat(new))
+    except FileNotFoundError:
+        return  # The old name went in the meantime: the link is the rename.
+    if not linked:
+        raise OSError(errno.EPERM, "The file changed during its rename; both names are left", old)
+    try:
+        os.unlink(old)
+    except OSError as e:
+        # One file under both names would be uploaded twice.
+        try:
+            os.unlink(new)
+        except OSError:
+            raise OSError(e.errno, f"{e.strerror}; the file is left under both names", old) from e
+        raise
+
+
 def rename_all(renames: Sequence[Rename]) -> None:
     """Rename each pair in turn, its new path checked just before, so a path that already exists is never replaced.
 
-    The file itself under another case is not in the way. A file created between the check and the rename would
-    still be replaced; nothing else writes into the folder.
+    The file itself under another case is not in the way. A file created between the check and the rename is not
+    replaced either: a file is renamed by a hard link, which fails on a name in use (``_rename_no_clobber``). A
+    folder, a symlink, or a file on a volume without hard links is renamed with os.rename, which can still replace
+    what appears at its new name in that moment; nothing else writes into the folder.
 
     Raises:
         RenameStopped: A rename failed, or its new path was in use; the renames after it were not made.
@@ -104,7 +158,7 @@ def rename_all(renames: Sequence[Rename]) -> None:
         try:
             if os.path.lexists(new) and not _same_entry(old, new):
                 raise FileExistsError(errno.EEXIST, "Another file already has the new name", new)
-            os.rename(old, new)
+            _rename_no_clobber(old, new)
         except OSError as e:
             raise RenameStopped(e, renames[:done], (old, new), renames[done + 1 :]) from e
 

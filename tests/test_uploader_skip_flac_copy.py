@@ -92,7 +92,7 @@ def _snapshot(folder: Path) -> dict[str, tuple[bytes, int]]:
     }
 
 
-async def _retag(path: str, *_args: Any) -> None:
+async def _retag(path: str, *_args: Any, **_kwargs: Any) -> None:
     """Stands in for tag_files: rewrites a tag in every FLAC of the folder it is given."""
     for name in os.listdir(path):
         if name.endswith(".flac"):

@@ -20,7 +20,7 @@ from salmon.constants import (
 )
 from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
 from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
-from salmon.tagger.renames import RenameStopped, plan_renames, rename_recorded
+from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
 from salmon.tagger.tagfile import TagFile
 
 
@@ -32,10 +32,12 @@ class Change(msgspec.Struct, frozen=True):
     new: Any
 
 
-async def tag_files(path, tags, metadata, auto_rename):
+async def tag_files(path, tags, metadata, auto_rename, *, clear=()):
     """
     Wrapper function that calls the functions that create and print the
     proposed changes, and then prompts for confirmation to retag the file.
+
+    ``clear`` names album fields an earlier pass wrote and this metadata no longer has: they are removed.
 
     Returns each retagged file's track, by filename, or None when the files were not retagged.
     """
@@ -55,7 +57,7 @@ async def tag_files(path, tags, metadata, auto_rename):
             return None
         pairs = pair_files_with_tracks(tags, metadata, move_numbered=True)
     track_changes = _track_changes(pairs)
-    print_changes(album_changes, track_changes, next(iter(tags.values())))
+    print_changes(album_changes, track_changes, next(iter(tags.values())), clear=clear)
     if (
         auto_rename
         or await interaction.assume_defaults()
@@ -64,7 +66,7 @@ async def tag_files(path, tags, metadata, auto_rename):
             default=True,
         )
     ):
-        retag_files(path, album_changes, track_changes)
+        retag_files(path, album_changes, track_changes, clear=clear)
         return {filename: trackmeta for filename, _tagset, trackmeta in pairs}
     return None
 
@@ -534,7 +536,7 @@ def _ordered_unique(values):
     return list(dict.fromkeys(values))
 
 
-def print_changes(album_changes, track_changes, a_track):
+def print_changes(album_changes, track_changes, a_track, clear=()):
     """Print all the proposed track changes, then all the album data."""
     if any(t for t in track_changes.values()):
         click.secho("\nProposed tag changes:", fg="yellow", bold=True)
@@ -562,6 +564,13 @@ def print_changes(album_changes, track_changes, a_track):
             click.echo(
                 f"> {click.style(str(field.ljust(13)), bold=True)} ••• {str(previous)} "
                 f"{ARROWS} {click.style(str(value), bold=True)}"
+            )
+    for field in sorted(clear):
+        previous = getattr(a_track, field, None)
+        if previous:
+            click.echo(
+                f"> {click.style(str(field.ljust(13)), bold=True)} ••• {_joined(previous)} "
+                f"{ARROWS} {click.style('(removed)', bold=True)}"
             )
 
 
@@ -596,7 +605,7 @@ def _written(mut, value):
     return str(value)
 
 
-def retag_files(path, album_changes, track_changes):
+def retag_files(path, album_changes, track_changes, clear=()):
     """Apply the proposed metadata changes to the files."""
     for filename, changes in track_changes.items():
         mut = TagFile(os.path.join(path, filename))
@@ -606,6 +615,8 @@ def retag_files(path, album_changes, track_changes):
             setattr(mut, change.tag, _written(mut, change.new))
         for tag, value in album_changes.items():
             setattr(mut, tag, _written(mut, value))
+        for tag in clear:
+            mut.remove(tag)
         mut.save()
     click.secho("Retagged files.", fg="green")
 
@@ -698,10 +709,7 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
 
                 if old_dir != path:
                     directory_move_pairs.add((os.path.splitext(filename)[1], old_dir, new_dir))
-            try:
-                rename_recorded(path, renames)
-            except RenameStopped as e:
-                raise UploadError(f"{e.report(path)}\nThe album's files are only partly renamed.") from e
+            _rename_or_undo(path, renames)
 
             # Update spectral_ids with new filenames, if spectrals were generated
             if spectral_ids:
@@ -716,6 +724,52 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
             delete_empty_folders(path)
     else:
         click.secho("\nNo file renaming is recommended.", fg="green")
+
+
+def _rename_or_undo(path: str, renames: list[tuple[str, str]]) -> None:
+    """Rename each pair, then the conversion record; put the renames back if one fails, the record can't, or a stop.
+
+    Raises:
+        UploadError: A rename failed, or the conversion record could not be updated.
+    """
+    # Local: the converter package imports the tagger.
+    from salmon.converter.conversions import note_renamed
+
+    done: list[tuple[str, str]] = []
+    try:
+        # One at a time, so an interrupt knows what to put back too.
+        for rename in renames:
+            rename_all([rename])
+            done.append(rename)
+        # Once, after the last: a record that cannot be written leaves every rename to put back, and itself as it was.
+        note_renamed(path, renames)
+    except BaseException as e:
+        undone = _undo_renames(path, done)
+        if isinstance(e, RenameStopped):
+            stopped = RenameStopped(e.error, done, e.failed, renames[len(done) + 1 :])
+            raise UploadError(f"{stopped.report(path)}\n{undone}") from e
+        if isinstance(e, OSError):
+            raise UploadError(f"Could not update the record of how {path} was converted ({e}).\n{undone}") from e
+        click.secho(undone, fg="red", bold=True)
+        raise
+
+
+def _undo_renames(path: str, done: list[tuple[str, str]]) -> str:
+    """Put back the renames a stopped batch made, and say what names the album's files are left with."""
+    # Local: the converter package imports the tagger.
+    from salmon.converter.conversions import note_renamed
+
+    try:
+        rename_all([(new, old) for old, new in reversed(done)])
+    except RenameStopped as e:
+        message = f"Undoing them stopped too. {e.report(path)}\nThe album's files are only partly renamed."
+        try:
+            # The record follows the renames still in place, as the disk does.
+            note_renamed(path, done[: len(done) - len(e.done)])
+        except OSError as record_error:
+            message += f"\nCould not update the record of how {path} was converted ({record_error})."
+        return message
+    return "Those renames were undone: the album's files keep their old names."
 
 
 def print_filenames(to_rename):

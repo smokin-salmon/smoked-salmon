@@ -1,7 +1,8 @@
 import asyncio
 import json
 import re
-from copy import copy
+from copy import copy, deepcopy
+from dataclasses import dataclass
 from itertools import islice
 from typing import Any
 
@@ -21,6 +22,16 @@ from salmon.tagger.sources.base import generate_artists, standardize_genres
 from salmon.tagger.tag_urls import tag_urls
 
 
+@dataclass
+class MetadataSearch:
+    """A store search, kept so that its results can be picked from again with no second search."""
+
+    # The stores' results; None: no search ran (--skip-search took its URL).
+    results: dict[str, Any] | None = None
+    # A deep copy of rls_data from before any pick, which writes into rls_data.
+    base: dict[str, Any] | None = None
+
+
 async def get_metadata(
     path: str,
     tags: dict[str, Any],
@@ -28,6 +39,7 @@ async def get_metadata(
     *,
     skip_search_url: str | None = None,
     skip_search: bool = False,
+    search: MetadataSearch | None = None,
 ) -> tuple[dict[str, Any], str | None]:
     """Get metadata pertaining to a release from various metadata sources.
 
@@ -39,6 +51,7 @@ async def get_metadata(
         rls_data: Release data dictionary.
         skip_search_url: The --source-url the user gave.
         skip_search: --skip-search: take the metadata from skip_search_url without searching the stores.
+        search: Filled with the store search, when one runs, so that pick_metadata can pick from it again.
 
     Returns:
         Tuple of (metadata dict, source URL or None).
@@ -55,11 +68,27 @@ async def get_metadata(
     click.secho(f"Searching for '{searchstrs}' releases...")
     artists_list = [a for a, _ in rls_data["artists"]]
     album_title = rls_data["title"]
-    search_results = await run_metasearch(
+    if search is None:
+        search = MetadataSearch()
+    search.results = await run_metasearch(
         searchstrs, filter=False, track_count=len(tags), artists=artists_list, album=album_title
     )
-    choices = _print_search_results(search_results, rls_data)
-    default = suggest_choice(choices, search_results, rls_data, len(tags), files_store_url(path))
+    search.base = deepcopy(rls_data)
+    return await pick_metadata(search, rls_data, path, len(tags))
+
+
+async def pick_metadata(
+    search: MetadataSearch, rls_data: dict[str, Any], path: str, track_count: int
+) -> tuple[dict[str, Any], str | None]:
+    """Ask which of the search's results to use, from rls_data as it was before any pick: no new search.
+
+    rls_data is restored in place, as the caller holds it. Returns the metadata and the source URL, as get_metadata.
+    """
+    assert search.results is not None and search.base is not None  # Type narrowing: a search ran
+    rls_data.clear()
+    rls_data.update(deepcopy(search.base))
+    choices = _print_search_results(search.results, rls_data)
+    default = suggest_choice(choices, search.results, rls_data, track_count, files_store_url(path))
     _explain_default(default, choices)
     metadata, source_url = await _select_choice(choices, rls_data, default=default)
     return await _finish_metadata(metadata, path), source_url

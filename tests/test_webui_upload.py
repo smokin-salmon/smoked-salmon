@@ -434,6 +434,8 @@ def test_assume_defaults_of_one_job_does_not_answer_anothers_questions(
     downloads, _library, torrents = roots
     first, second = _album(downloads / "First" / "Album"), _album(downloads / "Second" / "Album")
     tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents, multi_tracker_upload=False)
+    # Copies: a renamed folder sharing its files through a hardlink is never replaced, whatever the answer.
+    monkeypatch.setattr(cfg.directory, "hardlinks", False)
 
     async def test(client: TestClient, manager: JobManager) -> None:
         asks = await _start(client, second, params={"trackers": ["RED"]})
@@ -442,7 +444,10 @@ def test_assume_defaults_of_one_job_does_not_answer_anothers_questions(
         await _until(lambda: manager.jobs[asks].question is not None)
         assumed, assumed_asked = await _drive(client, manager, assumes)
         assert assumed.status == "done", (assumed.error, _log(assumed))
-        asked, asked_asked = await _drive(client, manager, asks)
+        # Its renamed folder takes the name the other job's has: salmon keeps that one unless told to replace it.
+        asked, asked_asked = await _drive(
+            client, manager, asks, answer=lambda question: "y" if "replace it?" in question["text"] else ""
+        )
         assert asked.status == "done", (asked.error, _log(asked))
         # -yyy answers the yes or no questions; the group prompt is asked either way, as in the terminal.
         assert [question["kind"] for question in assumed_asked] == ["prompt"]

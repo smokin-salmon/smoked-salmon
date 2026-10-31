@@ -7,6 +7,7 @@ memory.
 """
 
 from collections.abc import Awaitable, Callable
+from copy import deepcopy
 from functools import partial
 from types import SimpleNamespace
 from typing import Any
@@ -19,7 +20,7 @@ import salmon.tagger.review as review
 import salmon.uploader as uploader
 from salmon import cfg, interaction, trackers
 from salmon.config.validations import CONVERSION_KINDS
-from salmon.errors import AbortAndDeleteFolder, SkipTracker
+from salmon.errors import AbortAndDeleteFolder, PickOtherResults, SkipTracker
 from salmon.uploader import dupe_checker, request_checker, spectrals
 
 
@@ -87,7 +88,7 @@ def ask(
         with interaction.using(described), interaction.assuming_defaults(yyy):
             try:
                 return await site()
-            except (click.Abort, AbortAndDeleteFolder, SkipTracker) as e:
+            except (click.Abort, AbortAndDeleteFolder, SkipTracker, PickOtherResults) as e:
                 return type(e)
 
     return anyio.run(run), terminal, described
@@ -247,8 +248,8 @@ FIELDS = {
 }
 
 
-def review_metadata(monkeypatch: pytest.MonkeyPatch) -> tuple[Callable[[], Awaitable[Any]], list[str]]:
-    """review_metadata with each field's editor recording its key instead of asking."""
+def review_metadata(monkeypatch: pytest.MonkeyPatch, **kwargs: Any) -> tuple[Callable[[], Awaitable[Any]], list[str]]:
+    """review_metadata, given `kwargs`, with each field's editor recording its key instead of asking."""
     edited: list[str] = []
     for key, name in FIELDS.items():
 
@@ -258,7 +259,10 @@ def review_metadata(monkeypatch: pytest.MonkeyPatch) -> tuple[Callable[[], Await
         monkeypatch.setattr(review, name, editor)
     monkeypatch.setattr(review, "_print_metadata", lambda *_args, **_kwargs: None)
     metadata = {"artists": [("Artist", "main")], "rls_type": "Album", "genres": ["Pop"], "tracks": {}}
-    return partial(review.review_metadata, metadata, lambda _metadata: None, False), edited
+    if kwargs.pop("offer_other_results", False):
+        # The metadata as the results gave it, before this review.
+        kwargs["picked"] = deepcopy(metadata)
+    return partial(review.review_metadata, metadata, lambda _metadata: None, False, **kwargs), edited
 
 
 # --- No existing test changed: see the PR. Each site's text, default and keys follow. ---------------------------------
@@ -494,6 +498,36 @@ def test_every_key_of_fields_to_edit_is_accepted(monkeypatch: pytest.MonkeyPatch
         assert edited == [key]
         assert len(terminal.calls) == 2
     assert "is not a valid editing option" not in capsys.readouterr().out
+
+
+def test_back_to_the_metadata_results_is_a_key_only_when_offered(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    offered, _edited = review_metadata(monkeypatch, offer_other_results=True)
+    # With no edits made, going back asks nothing more.
+    result, terminal, described = ask(monkeypatch, offered, ["b"])
+    assert result is PickOtherResults
+    assert terminal.calls == [prompt_call(FIELDS_TEXT + ", [b]ack to the metadata results", None)]
+    assert keys(described.options[0])[-1] == ("b", "Back to the metadata results")
+    # Without the offer, b is no answer, as on master.
+    site, _edited = review_metadata(monkeypatch)
+    result, terminal, _described = ask(monkeypatch, site, ["b", "n"])
+    assert result is not PickOtherResults
+    assert len(terminal.calls) == 2
+    assert "b is not a valid editing option" in capsys.readouterr().out
+
+
+def test_going_back_after_an_edit_asks_first_and_no_stays_at_the_review(monkeypatch: pytest.MonkeyPatch) -> None:
+    site, _edited = review_metadata(monkeypatch, offer_other_results=True)
+
+    async def edit_title(metadata: dict[str, Any], *_args: Any, **_kwargs: Any) -> None:
+        metadata["title"] = "Edited"
+
+    monkeypatch.setattr(review, "_edit_title", edit_title)
+    # An edit, then b: asked, and no (the default) stays. b again: yes goes back.
+    result, terminal, _described = ask(monkeypatch, site, ["t", "b", False, "b", True])
+    assert result is PickOtherResults
+    asked = click.style("Going back drops the changes made since the pick. Go back?", fg="magenta")
+    assert [call[0] for call in terminal.calls] == ["prompt", "prompt", "confirm", "prompt", "confirm"]
+    assert terminal.calls[2] == ("confirm", asked, {"default": False, "abort": False})
 
 
 # #26 uploader.edit_metadata: upload, or re-run the metadata step
