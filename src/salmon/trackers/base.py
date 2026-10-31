@@ -10,6 +10,7 @@ from collections.abc import AsyncIterator, Collection, Iterator
 from contextlib import AbstractAsyncContextManager, asynccontextmanager, contextmanager, suppress
 from contextvars import ContextVar
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from functools import partial
 from http import HTTPStatus
 from typing import Any, Literal, cast
@@ -357,6 +358,15 @@ _MAX_EXCERPT = 500
 _IMAGE_AUTH_MARGIN = 60
 # The ajax.php action giving them.
 _IMAGE_AUTH_ACTION = "imgauth"
+
+# A new upload reaches the group search within minutes: the site log is read only until its rows span
+# LOG_WINDOW, and never past LOG_MAX_PAGES pages.
+LOG_WINDOW = timedelta(minutes=5)
+LOG_MAX_PAGES = 3
+# How a site log row's time is written, in the title of its span with class "time". strptime alone would read
+# "22:5" as 22:05: the title must have every digit.
+_LOG_TIME_FORMAT = "%Y-%m-%d %H:%M"
+_LOG_TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}")
 
 
 def _keep_little_unsent(writer: AbstractStreamWriter) -> None:
@@ -1202,22 +1212,24 @@ class BaseGazelleApi:
         resp = await self._request("GET", url, params={"action": "loglist", "torrentid": torrentid})
         return re.sub(r" ?\([^)]+\)", "", resp.text)
 
-    async def get_uploads_from_log(self, max_pages: int = 10) -> list:
-        """Crawl log pages and return uploads.
+    async def get_uploads_from_log(self) -> list:
+        """Read the site log's recent pages and return their uploads.
 
-        Args:
-            max_pages: Maximum number of pages to crawl.
+        Pages are read one after another, from page 1, until the rows read span LOG_WINDOW, and at most
+        LOG_MAX_PAGES. A log behind the login page (an expired cookie) costs one request: page 1 raises (#432).
 
         Returns:
             List of (torrent_id, artist, title) tuples.
         """
-        # Page 1 goes alone first: if the log cannot be read, that costs one request,
-        # not one per page (#432).
-        pages = [await self.fetch_log(1)]
-        pages += await asyncio.gather(*(self.fetch_log(i) for i in range(2, max_pages)))
         recent_uploads = []
-        for page_text in pages:
+        times: list[datetime] = []
+        for page in range(1, LOG_MAX_PAGES + 1):
+            page_text = await self.fetch_log(page)
             recent_uploads += self.parse_uploads_from_log_html(page_text)
+            times += self.log_times(page_text)
+            # No readable time counts as not covering the window.
+            if times and max(times) - min(times) >= LOG_WINDOW:
+                break
         return recent_uploads
 
     async def api_key_upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
@@ -1617,6 +1629,19 @@ class BaseGazelleApi:
                 if torrent_url:
                     torrent_ids.append(int(torrent_url[1]))
         return max(torrent_ids)
+
+    def log_times(self, text: str) -> list[datetime]:
+        """The times of a site log page's rows, all rows not only uploads; those that do not parse are left out."""
+        times: list[datetime] = []
+        for span in BeautifulSoup(text, "lxml").find_all("span", class_="time"):
+            title = str(span.get("title") or "").strip()
+            if not _LOG_TIME.fullmatch(title):
+                continue
+            try:
+                times.append(datetime.strptime(title, _LOG_TIME_FORMAT))
+            except ValueError:
+                continue
+        return times
 
     def parse_uploads_from_log_html(self, text: str) -> list[tuple[str, str, str]]:
         """Parses a log page and returns best guess at
