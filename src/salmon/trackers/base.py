@@ -1635,8 +1635,12 @@ class BaseGazelleApi:
                 if not next_sib:
                     continue
                 names = re.findall(r"\((.*?)\) \(", str(next_sib))[0]
-                # OPS writes an en dash between artist and title, RED a hyphen.
-                torrent_string = names.split(" \u2013 ", 1) if " \u2013 " in names else names.split(" - ")
+                # OPS writes an en dash between artist and title, RED a hyphen: the first one is the separator.
+                dash, hyphen = names.find(" \u2013 "), names.find(" - ")
+                if dash != -1 and (hyphen == -1 or dash < hyphen):
+                    torrent_string = names.split(" \u2013 ", 1)
+                else:
+                    torrent_string = names.split(" - ")
             except (IndexError, TypeError):
                 continue
             artist = torrent_string[0]

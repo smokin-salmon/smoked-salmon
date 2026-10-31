@@ -160,3 +160,10 @@ def test_en_dash_row_splits_once() -> None:
         "(Artist \u2013 Title \u2013 Subtitle) (x)</span>"
     )
     assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title \u2013 Subtitle")]
+
+
+def test_hyphen_row_with_an_en_dash_in_the_title() -> None:
+    row = (
+        '<span class="log_upload"><a href="torrents.php?torrentid=7">7</a> (Artist - Title \u2013 Subtitle) (x)</span>'
+    )
+    assert _parser().parse_uploads_from_log_html(row) == [("7", "Artist", "Title \u2013 Subtitle")]
