@@ -12,7 +12,7 @@ import msgspec
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import get_audio_files, process_files
-from salmon.converter.conversions import conversion_of, missing_files, record_conversion, recorded_files
+from salmon.converter.conversions import conversion_of, missing_files, record_conversion, recorded_files, source_of
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -282,7 +282,7 @@ def _check_finished_conversion(path: str, new_path: str, items: list[ConvertItem
     recorded = None if record is None else recorded_files(record)
     if (
         record is not None
-        and os.path.realpath(record["source"]) == os.path.realpath(path)
+        and os.path.realpath(record["source"]) == os.path.realpath(source_of(path))
         and all(record.get(key) == value for key, value in wanted.items())
         # A track the album gained or lost since is not in this conversion, or no longer in the album.
         and (recorded is None or _records_these_files(path, new_path, items, record, recorded))
@@ -358,7 +358,7 @@ async def convert_folder(
         files = {name: name for name in sorted(set(written))}
         record_conversion(
             new_path,
-            source=path,
+            source=source_of(path),
             kind="downconvert",
             bit_depth=bit_depth,
             sample_rate=_recorded_rate(items),
