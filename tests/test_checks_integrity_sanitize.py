@@ -210,9 +210,9 @@ def test_sanitize_and_verify_reports_the_recheck_not_the_sanitize_return(monkeyp
 # What sanitizing must not lose: the artwork the re-encode drops, and the original if it stops partway
 
 
-def _png() -> bytes:
+def _png(color: tuple[int, int, int] = (200, 30, 30)) -> bytes:
     buffer = io.BytesIO()
-    Image.new("RGB", (4, 4), (200, 30, 30)).save(buffer, "png")
+    Image.new("RGB", (4, 4), color).save(buffer, "png")
     return buffer.getvalue()
 
 
@@ -259,6 +259,28 @@ def test_sanitizing_one_flac_keeps_its_artwork_beside_it(monkeypatch, tmp_path) 
     assert sanitized is True
 
     assert (album / "cover.png").read_bytes() == _png()
+
+
+def test_sanitizing_one_flac_keeps_its_own_artwork_not_a_siblings(monkeypatch, tmp_path) -> None:
+    album = tmp_path / "Album"
+    _flac_with_front_cover(album / "01.flac", _png((0, 0, 200)))
+    _flac_with_front_cover(album / "02.flac", _png())
+    monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
+
+    anyio.run(integrity.sanitize_integrity, str(album / "02.flac"))
+
+    assert (album / "cover.png").read_bytes() == _png()
+
+
+def test_sanitizing_one_flac_with_no_artwork_saves_no_siblings(monkeypatch, tmp_path) -> None:
+    album = tmp_path / "Album"
+    _flac_with_front_cover(album / "01.flac", _png())
+    _write_flac(album / "02.flac", 44100, 16)
+    monkeypatch.setattr(integrity.anyio, "run_process", _encodes)
+
+    anyio.run(integrity.sanitize_integrity, str(album / "02.flac"))
+
+    assert not (album / "cover.png").exists()
 
 
 def test_a_folder_with_a_cover_file_gets_no_other(monkeypatch, tmp_path) -> None:
@@ -490,8 +512,8 @@ def test_a_working_copy_that_cannot_be_made_fails_that_mp3_alone(monkeypatch, tm
     assert "no working copy could be made" in capsys.readouterr().out
 
 
-def test_every_original_that_cannot_be_put_back_is_named(monkeypatch, tmp_path, capsys) -> None:
-    # Two files fail at once: the first error stops the folder, and the other file, cancelled, still says where it is.
+def test_every_original_that_cannot_be_put_back_is_named(monkeypatch, tmp_path) -> None:
+    # Two files fail at once: both errors reach the task group, and the one raised names both backups.
     for name in ("01.flac", "02.flac"):
         (tmp_path / name).write_bytes(b"fLaC original")
     started = 0
@@ -518,7 +540,6 @@ def test_every_original_that_cannot_be_put_back_is_named(monkeypatch, tmp_path, 
     with pytest.raises(UploadError) as raised:
         anyio.run(integrity.sanitize_integrity, str(tmp_path))
 
-    told = str(raised.value) + capsys.readouterr().out
     for name in ("01.flac", "02.flac"):
-        assert f"the original is at {tmp_path / name}.corrupted" in told
+        assert f"the original is at {tmp_path / name}.corrupted" in str(raised.value)
         assert (tmp_path / f"{name}.corrupted").read_bytes() == b"fLaC original"

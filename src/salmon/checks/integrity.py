@@ -436,7 +436,8 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
         click.Abort: If the path is neither a supported file nor a directory.
     """
     if path.lower().endswith(".flac"):
-        if not _save_embedded_cover(os.path.dirname(path) or "."):
+        # Its own artwork only: a sibling's may be another disc's.
+        if not _save_embedded_cover(os.path.dirname(path) or ".", os.path.basename(path)):
             return False
         return await _sanitize_flac(path)
     elif path.lower().endswith(".mp3"):
@@ -475,8 +476,9 @@ async def _sanitize_file(path: str, _: int | None = None) -> bool:
     return await _sanitize_mp3(path)
 
 
-def _save_embedded_cover(folder: str) -> bool:
-    """Save the first embedded front cover as the folder's cover file, if it has none: the re-encode drops it.
+def _save_embedded_cover(folder: str, only: str | None = None) -> bool:
+    """Save the first embedded front cover (of the file `only` names, if given) as the folder's cover file, if it has
+    none: the re-encode drops it.
 
     False, after saying why, if it could not be written: then nothing is sanitized, and the files keep their artwork.
     """
@@ -484,7 +486,7 @@ def _save_embedded_cover(folder: str) -> bool:
     from salmon.tagger.cover import extract_embedded_cover
 
     try:
-        extract_embedded_cover(folder)
+        extract_embedded_cover(folder, only)
     except OSError as e:
         click.secho(f"Not sanitizing {folder}: its embedded cover could not be saved ({e}).", fg="red", bold=True)
         return False

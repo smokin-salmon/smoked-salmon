@@ -41,11 +41,14 @@ def _existing_cover(path: str) -> str | None:
     return None
 
 
-def extract_embedded_cover(path: str) -> str | None:
-    """The folder's cover file: its own, else the first embedded front cover saved as one; None if neither."""
+def extract_embedded_cover(path: str, only: str | None = None) -> str | None:
+    """The folder's cover file: its own, else the first embedded front cover saved as one; None if neither.
+
+    With `only`, a file name in the folder, that file alone is looked at for an embedded cover.
+    """
     if existing := _existing_cover(path):
         return existing
-    embedded = _find_embedded_front_cover(path)
+    embedded = _find_embedded_front_cover(path, only)
     if not embedded:
         return None
     extension, data = embedded
@@ -84,7 +87,7 @@ async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tup
     return None, None
 
 
-def _find_embedded_front_cover(path: str) -> tuple[str, bytes] | None:
+def _find_embedded_front_cover(path: str, only: str | None = None) -> tuple[str, bytes] | None:
     """Find the first FLAC (by `get_audio_files` order) with an embedded front cover.
 
     Only the first FLAC that has a front cover picture is considered; if that picture cannot be
@@ -93,11 +96,12 @@ def _find_embedded_front_cover(path: str) -> tuple[str, bytes] | None:
 
     Args:
         path: The release folder.
+        only: A file name in the folder: look at that file alone.
 
     Returns:
         The extension and bytes to save the cover as a file, or None if no FLAC has a usable one.
     """
-    for filename in get_audio_files(path):
+    for filename in [only] if only else get_audio_files(path):
         if not filename.lower().endswith(".flac"):
             continue
         try:
