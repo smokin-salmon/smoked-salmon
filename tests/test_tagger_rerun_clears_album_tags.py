@@ -25,31 +25,34 @@ from salmon.tagger.tagfile import TagFile
 ARTISTS = [("Dree Low", "main")]
 
 
-def _release(**fields: Any) -> dict[str, Any]:
-    metadata = _metadata(_trackmeta(ARTISTS), genres=())
+def _release(tracks: int = 1, **fields: Any) -> dict[str, Any]:
+    metadata = _metadata(*(_trackmeta(ARTISTS, f"Song {n}", str(n)) for n in range(1, tracks + 1)), genres=())
     metadata.update({"scene": False, "artists": ARTISTS, **fields})
     return metadata
 
 
 def _rerun(monkeypatch, tmp_path, file, passes: list[dict[str, Any]], answers: list[Any]) -> None:
-    """edit_metadata over the one file, its i-th review giving passes[i], with the real tag_files and its answers."""
+    """edit_metadata over the folder, its i-th review giving passes[i], with the real tag_files and its answers."""
     edit_metadata_stubs(monkeypatch)
     queue = [deepcopy(p) for p in passes]
 
     async def review(metadata: dict[str, Any], *_args: Any, **_kwargs: Any) -> dict[str, Any]:
         return queue.pop(0)
 
+    def gather_all(_path: str = "") -> dict[str, TagFile]:
+        return {f.name: TagFile(str(f)) for f in sorted(tmp_path.iterdir())}
+
     async def gather(_path: str) -> dict[str, TagFile]:
-        return {file.name: TagFile(str(file))}
+        return gather_all()
 
     monkeypatch.setattr(uploader, "review_metadata_with_ai", review)
     monkeypatch.setattr(uploader, "check_tags", gather)
-    monkeypatch.setattr(uploader, "gather_tags", lambda _path: {file.name: TagFile(str(file))})
+    monkeypatch.setattr(uploader, "gather_tags", gather_all)
     monkeypatch.setattr(uploader, "tag_files", tag_files)
     site = partial(
         uploader.edit_metadata,
         str(tmp_path),
-        {file.name: TagFile(str(file))},
+        gather_all(),
         passes[0],
         None,
         "WEB",
@@ -178,9 +181,48 @@ def test_print_changes_shows_a_cleared_field_as_removed(tmp_path, capsys) -> Non
     file = _flac_album(tmp_path, CATALOGNUMBER="CAT1", LABEL="L")
     tagfile = TagFile(str(file))
 
-    print_changes({}, {}, tagfile, clear={"catno", "upc"})
+    print_changes({}, {}, tagfile, clear={"catno": "CAT1", "upc": "0123"})
 
     out = capsys.readouterr().out
     assert "CAT1" in out
     assert "(removed)" in out
-    assert "upc" not in out  # the file has no value for it
+    assert "upc" in out  # shown with the value the last pass wrote, whatever the file reads back
+
+
+def test_mp3_rerun_shows_the_comment_it_removes(monkeypatch, tmp_path, capsys) -> None:
+    file = _mp3_album(tmp_path)
+    first = _release(comment="Ripped by me")
+    second = _release()
+
+    _rerun(monkeypatch, tmp_path, file, [first, second], [True, False, True, True])
+
+    out = capsys.readouterr().out
+    assert any("comment" in line and "Ripped by me" in line and "(removed)" in line for line in out.splitlines())
+    assert "COMM" not in [key.split(":")[0] for key, _ in _mp3_frames(file)]
+
+
+def test_a_flac_after_an_mp3_loses_its_catno_and_the_preview_shows_it(monkeypatch, tmp_path, capsys) -> None:
+    from mutagen.id3 import TRCK
+    from test_tagger_multi_value_tags import _write_flac, _write_mp3  # pyright: ignore[reportMissingImports]
+
+    _write_mp3(tmp_path / "01.mp3", TRCK(text="1"))
+    _write_flac(tmp_path / "02.flac", TRACKNUMBER="2", DISCNUMBER="1", TITLE="Song 2")
+    first = _release(2, catno="CAT1")
+    second = _release(2)
+
+    _rerun(monkeypatch, tmp_path, tmp_path / "01.mp3", [first, second], [True, False, True, True])
+
+    out = capsys.readouterr().out
+    assert any("catno" in line and "CAT1" in line and "(removed)" in line for line in out.splitlines())
+    assert "CATALOGNUMBER" not in {name.upper() for name, _ in _flac_tags(tmp_path / "02.flac")}
+
+
+def test_a_catno_no_file_has_a_field_for_is_not_listed_as_removed(monkeypatch, tmp_path, capsys) -> None:
+    file = _mp3_album(tmp_path)
+    first = _release(catno="CAT1")
+    second = _release()
+
+    _rerun(monkeypatch, tmp_path, file, [first, second], [True, False, True, True])
+
+    out = capsys.readouterr().out
+    assert "(removed)" not in out

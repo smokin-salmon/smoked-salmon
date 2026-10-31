@@ -1495,7 +1495,7 @@ async def edit_metadata(
     given = path
     # The metadata as the pick gave it: going back drops every change since, the AI review's included.
     picked = deepcopy(metadata) if offer_other_results else None
-    written: set[str] = set()  # The album fields the last pass that retagged the files wrote
+    written: dict[str, Any] = {}  # The album fields the last pass that retagged the files wrote, with their values
     while True:
         metadata = await review_metadata_with_ai(
             metadata,
@@ -1509,10 +1509,15 @@ async def edit_metadata(
         tracks_by_file = None
         if not metadata["scene"]:
             # The first pass removes nothing: only what an earlier pass wrote can go.
-            clear = written - collect_album_data(metadata).keys() if written else set()
+            clear = {}
+            if written:
+                album = collect_album_data(metadata)
+                clear = {tag: value for tag, value in written.items() if tag not in album}
             tracks_by_file = await tag_files(path, tags, metadata, auto_rename, clear=clear)
             if tracks_by_file is not None:
-                written = set(collect_album_data(metadata))
+                # A field no file has a place for (a catalogue number in MP3s) was not written, so is never cleared.
+                album = collect_album_data(metadata)
+                written = {tag: value for tag, value in album.items() if any(t.has_field(tag) for t in tags.values())}
 
         tags = await check_tags(path)
         tag_messages = process_tag_issues(

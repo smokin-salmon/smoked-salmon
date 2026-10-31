@@ -33,15 +33,17 @@ class Change(msgspec.Struct, frozen=True):
     new: Any
 
 
-async def tag_files(path, tags, metadata, auto_rename, *, clear=()):
+async def tag_files(path, tags, metadata, auto_rename, *, clear=None):
     """
     Wrapper function that calls the functions that create and print the
     proposed changes, and then prompts for confirmation to retag the file.
 
-    ``clear`` names album fields an earlier pass wrote and this metadata no longer has: they are removed.
+    ``clear`` maps the album fields an earlier pass wrote and this metadata no longer has to the value it wrote:
+    they are removed.
 
     Returns each retagged file's track, by filename, or None when the files were not retagged.
     """
+    clear = clear or {}
     click.secho("\nRetagging files...", fg="cyan", bold=True)
     if not check_whether_to_tag(tags, metadata):
         return None
@@ -537,7 +539,7 @@ def _ordered_unique(values):
     return list(dict.fromkeys(values))
 
 
-def print_changes(album_changes, track_changes, a_track, clear=()):
+def print_changes(album_changes, track_changes, a_track, clear=None):
     """Print all the proposed track changes, then all the album data."""
     if any(t for t in track_changes.values()):
         click.secho("\nProposed tag changes:", fg="yellow", bold=True)
@@ -566,13 +568,11 @@ def print_changes(album_changes, track_changes, a_track, clear=()):
                 f"> {click.style(str(field.ljust(13)), bold=True)} ••• {str(previous)} "
                 f"{ARROWS} {click.style(str(value), bold=True)}"
             )
-    for field in sorted(clear):
-        previous = getattr(a_track, field, None)
-        if previous:
-            click.echo(
-                f"> {click.style(str(field.ljust(13)), bold=True)} ••• {_joined(previous)} "
-                f"{ARROWS} {click.style('(removed)', bold=True)}"
-            )
+    for field, previous in sorted((clear or {}).items()):
+        click.echo(
+            f"> {click.style(str(field.ljust(13)), bold=True)} ••• {_joined(previous)} "
+            f"{ARROWS} {click.style('(removed)', bold=True)}"
+        )
 
 
 def _values(value):

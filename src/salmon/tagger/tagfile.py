@@ -255,6 +255,17 @@ class TagFile:
         else:
             tags[tag_key] = value
 
+    def has_field(self, key: str) -> bool:
+        """Whether this file's format has a field for the TAG_FIELDS key (it may hold no value for it)."""
+        mut = self.mut
+        if isinstance(mut, flac.FLAC):
+            return key in TAG_FIELDS["FLAC"]
+        if isinstance(mut, mp3.MP3):
+            return key in TAG_FIELDS["MP3"]
+        if isinstance(mut, mp4.MP4):
+            return key in TAG_FIELDS["AAC"]
+        return False
+
     def remove(self, key: str) -> None:
         """Remove a tag by its TAG_FIELDS key. An unmapped key, or a file without tags, is a no-op."""
         mut = self.mut
