@@ -9,15 +9,16 @@ import asyncclick as click
 import msgspec
 from mutagen import flac, mp3
 from mutagen.flac import VCFLACDict
-from mutagen.id3 import APIC, TXXX, Frames
+from mutagen.id3 import APIC, ID3, TXXX, Frames
 
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.converter.conversions import conversion_of, missing_files, record_conversion
 from salmon.errors import UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
+from salmon.tagger.cover import MAX_PICTURES_AND_PADDING
 from salmon.tagger.foldername import drop_resolution_token, resolution_token
 
 Bitrate = Literal["V0", "320"]
@@ -237,7 +238,9 @@ def _collect_transcode_items(
     dst_path = Path(new_path)
     items: list[TranscodeItem] = []
 
-    for flac_file in sorted(src_path.rglob("*.flac")):
+    # Any case, as _copy_extra_files skips them: a .FLAC track would otherwise be neither transcoded nor copied.
+    flac_files = (p for p in src_path.rglob("*") if p.is_file() and p.suffix.lower() == ".flac")
+    for flac_file in sorted(flac_files):
         fl, tag_dict = _parse_flac_tags(flac_file)
         rel = flac_file.relative_to(src_path).with_suffix(".mp3")
         mp3_path = dst_path / rel
@@ -272,8 +275,21 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
     for k, v in tag_dict.items():
         mp3_thing.tags.add(_get_id3_frame(k, v))
 
+    # The FLAC's limit on pictures and padding holds the whole saved tag, text and padding included: a picture
+    # stays only if the tag saved with it still fits.
     for pic in flac_obj.pictures:
-        mp3_thing.tags.add(APIC(encoding=3, mime=pic.mime, type=pic.type, desc=pic.desc, data=pic.data))
+        frame = APIC(encoding=3, mime=pic.mime, type=pic.type, desc=pic.desc, data=pic.data)
+        # add() replaces a picture with the same desc, as it always did: that one goes back if this one does not fit.
+        replaced = mp3_thing.tags.get(frame.HashKey)
+        mp3_thing.tags.add(frame)
+        mp3_thing.save(v1=0, v2_version=4)
+        if ID3(mp3_path).size > MAX_PICTURES_AND_PADDING:
+            if replaced is None:
+                del mp3_thing.tags[frame.HashKey]
+            else:
+                mp3_thing.tags.add(replaced)
+            # With no padding: a later save would keep the space the picture took as padding, over the limit.
+            mp3_thing.save(v1=0, v2_version=4, padding=lambda _info: 0)
 
     mp3_thing.save(v1=0, v2_version=4)
 
@@ -362,8 +378,16 @@ async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> Non
         if read_fd >= 0:
             os.close(read_fd)
 
-    _, flac_err = await flac_proc.communicate()
-    _, lame_err = await lame_proc.communicate()
+    try:
+        _, flac_err = await flac_proc.communicate()
+        _, lame_err = await lame_proc.communicate()
+    except BaseException:
+        # Cancelled (Ctrl-C, a salmon web job): the encoders must not go on writing the MP3 after the run.
+        for proc in (flac_proc, lame_proc):
+            if proc.returncode is None:
+                proc.kill()
+        await asyncio.gather(flac_proc.wait(), lame_proc.wait(), return_exceptions=True)
+        raise
 
     if flac_proc.returncode:
         err = flac_err.decode()
@@ -390,13 +414,18 @@ async def _transcode_audio_files(
 
     async def _transcode_one(file: str, idx: int) -> None:
         item = items[idx]
-        if item.flac_obj.info.channels > 2:
-            raise ValueError(f"{item.src} has {item.flac_obj.info.channels} channels. Cannot convert to MP3.")
         await _flac_to_mp3(bitrate, item.src, item.dst)
         _copy_tags(item.tags, item.flac_obj, Path(item.dst))
 
     file_paths = [item.src for item in items]
     await process_files(file_paths, _transcode_one, "Transcoding")
+
+
+def _validate_channel_count(items: list[TranscodeItem]) -> None:
+    """Refuse a source of more than two channels, before anything is written or a prior output deleted."""
+    for item in items:
+        if item.flac_obj.info.channels > 2:
+            raise ValueError(f"{item.src} has {item.flac_obj.info.channels} channels. Cannot convert to MP3.")
 
 
 # ---------------------------------------------------------------------------
@@ -425,17 +454,38 @@ async def transcode_folder(
     if cfg.directory.protects(new_path):
         raise UploadError(f"Not transcoding into {new_path}: it is in library_dirs, or holds one.")
 
+    # Before the overwrite below: a source that cannot be transcoded must not cost the output already there.
+    items = _collect_transcode_items(path, new_path)
+    _validate_channel_count(items)
+
     if os.path.isdir(new_path):
         if _is_finished_transcode(path, new_path, bitrate):
             click.secho(f"{new_path} already exists.", fg="yellow")
             return new_path
+        if not items:
+            raise UploadError(f"Refusing to overwrite {new_path}: no expected MP3 output was computed.")
+        # Not salmon's transcode of this album as far as it can tell, such as an upload made with another file
+        # template, which may be seeding: deleted only when the user says so. -yyy takes the default, no.
+        if await interaction.assume_defaults():
+            raise UploadError(
+                f"Not overwriting {new_path} with -yyy (upload.yes_all): it doesn't match the expected transcode, "
+                "and you may be seeding it. Run without -yyy, and with upload.yes_all off, to choose."
+            )
+        if not await interaction.confirm(
+            click.style(
+                f"{new_path} exists but doesn't match the expected transcode. Delete it and re-transcode?",
+                fg="magenta",
+                bold=True,
+            ),
+            default=False,
+        ):
+            raise UploadError(f"Not overwriting existing folder {new_path}.")
         click.secho(
             f"{new_path} exists but appears incomplete, re-transcoding...",
             fg="yellow",
         )
         shutil.rmtree(new_path)
 
-    items = _collect_transcode_items(path, new_path)
     _copy_extra_files(path, new_path, essential_only=essential_only)
     await _transcode_audio_files(items, bitrate)
 

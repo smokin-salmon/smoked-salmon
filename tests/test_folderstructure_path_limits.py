@@ -170,10 +170,11 @@ def test_truncation_stops_at_the_first_failed_rename_and_names_the_files_left(tm
     first, second = f"{SYMPHONY}: I. Allegro con brio.flac", f"{SYMPHONY}: II. Andante con moto.flac"
     folder = _movements(tmp_path, first, second)
 
-    def failing_rename(src, dst):
+    def failing_link(src, dst):
         raise PermissionError(13, "Permission denied", src)
 
-    monkeypatch.setattr(os, "rename", failing_rename)
+    # A file is renamed by a hard link.
+    monkeypatch.setattr(os, "link", failing_link)
 
     with pytest.raises(NoncompliantFolderStructure):
         _check_path_lengths(str(folder), scene=False, max_path_length=40)

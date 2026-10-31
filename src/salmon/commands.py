@@ -60,7 +60,7 @@ def format_spectral_urls(filenames: list[str], spectral_urls: dict[int, list[str
 
 
 @commandgroup.command()
-@click.argument("path", type=click.Path(exists=True, file_okay=False, resolve_path=True), nargs=1)
+@click.argument("path", type=AlbumPath(exists=True, file_okay=False), nargs=1)
 @click.option("--no-delete-specs", "-nd", is_flag=True)
 @click.option("--format-output", "-f", is_flag=True)
 async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
@@ -214,7 +214,7 @@ async def recompress_flacs(path: str) -> int:
 )
 @click.argument(
     "path",
-    type=click.Path(exists=True, file_okay=False, resolve_path=True),
+    type=AlbumPath(exists=True, file_okay=False),
     nargs=1,
     default=".",
 )

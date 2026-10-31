@@ -6,7 +6,7 @@ import asyncclick as click
 
 from salmon import cfg, interaction
 from salmon.constants import RELEASE_TYPES
-from salmon.errors import InvalidMetadataError
+from salmon.errors import InvalidMetadataError, PickOtherResults
 from salmon.tagger.metadata import _print_metadata
 from salmon.tagger.sources.base import generate_artists, standardize_genres
 
@@ -44,15 +44,29 @@ _FIELDS_TO_EDIT = interaction.Options(
         interaction.Option("n", "Nothing"),
     )
 )
+# The answer to it that goes back to the metadata results, when the review offers that.
+_BACK_TO_RESULTS = interaction.Option("b", "Back to the metadata results", action=True)
 
 
-async def review_metadata(metadata, validator, enforce_required_fields: bool = True, rls_type_hint: str | None = None):
+async def review_metadata(
+    metadata,
+    validator,
+    enforce_required_fields: bool = True,
+    rls_type_hint: str | None = None,
+    picked: dict | None = None,
+):
     """
     Validate that the metadata is per the user's wishes and then offer the user
     the ability to edit it.
 
     rls_type_hint (suggest_release_type) is the default answer when the release type has to be asked.
+    picked, the metadata as the metadata results gave it, adds [b]ack to the metadata results, which raises
+    PickOtherResults, asking first when the metadata has changed since.
     """
+    offer_other_results = picked is not None
+    fields_to_edit = _FIELDS_TO_EDIT
+    if offer_other_results:
+        fields_to_edit = interaction.Options((*_FIELDS_TO_EDIT.items, _BACK_TO_RESULTS))
     if enforce_required_fields:
         await _check_for_empty_release_type(metadata, rls_type_hint)
         await _check_for_empty_genre_list(metadata)
@@ -76,10 +90,11 @@ async def review_metadata(metadata, validator, enforce_required_fields: bool = T
             click.style(
                 "\nAre there any metadata fields you would like to edit? [a]rtists, "
                 "artist a[L]iases (rename or split an artist on every track), [t]itle, [g]enres, "
-                "[r]elease type, [y]ears, [e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing",
+                "[r]elease type, [y]ears, [e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing"
+                + (", [b]ack to the metadata results" if offer_other_results else ""),
                 fg="magenta",
             ),
-            options=_FIELDS_TO_EDIT,
+            options=fields_to_edit,
         )
         r_let = r[0].lower()
         try:
@@ -87,6 +102,13 @@ async def review_metadata(metadata, validator, enforce_required_fields: bool = T
         except KeyError:
             if r_let == "n":
                 break_ = True
+            elif r_let == "b" and offer_other_results:
+                if metadata == picked or await interaction.confirm(
+                    click.style("Going back drops the changes made since the pick. Go back?", fg="magenta"),
+                    default=False,
+                ):
+                    raise PickOtherResults from None
+                continue
             else:
                 hint = " The artist aliases key is the letter L." if r_let == "1" else ""
                 click.secho(f"{r_let} is not a valid editing option.{hint}", fg="red")

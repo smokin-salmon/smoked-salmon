@@ -67,27 +67,30 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
     if not same_location and cfg.directory.protects(new_path):
         raise UploadError(f"Not renaming into {new_path}: it is in library_dirs, or holds one.")
     if os.path.isdir(new_path) and not same_location:
-        # The album this run's copy was made from, already under the new name: replacing it would delete it.
-        if original is not None and os.path.samefile(new_path, original):
-            raise UploadError(
-                f"Not replacing {new_path}: it is the album this run works on a copy of. "
-                "Rename it, or give this album another name. "
-                "If it is already uploaded, salmon cross-upload sends it to another tracker."
-            )
-        # A metadata re-run can pick the name the source folder already has, when it sits in the same directory.
-        if source is not None and os.path.isdir(source) and os.path.samefile(new_path, source):
-            raise UploadError(
-                f"Not replacing {new_path}: it is the folder this run started from. Give this album another name."
-            )
+        if (refusal := _replace_refusal(new_path, original, source)) is not None:
+            raise UploadError(refusal)
+        # An earlier run's renamed folder shares its files through hardlinks, and a torrent may seed from it.
+        shared = shares_files(new_path)
+        note = " (it shares files with another folder through a hardlink or symlink: a torrent may seed from it)"
         if not check or await interaction.confirm(
             click.style(
-                f"A folder already exists with the new folder name '{new_path}', would you like to replace it?",
+                f"A folder already exists with the new folder name '{new_path}'{note if shared else ''}, "
+                "would you like to replace it?",
                 fg="magenta",
                 bold=True,
             ),
-            default=True,
+            # It may be an earlier upload a torrent seeds from, or another album of that name: kept unless told.
+            default=False,
         ):
-            shutil.rmtree(new_path)
+            # Checked again: another job can change the folder while the question waits.
+            if (refusal := _replace_refusal(new_path, original, source)) is not None:
+                raise UploadError(refusal)
+            if os.path.lexists(new_path):
+                if not shared and shares_files(new_path):
+                    raise UploadError(
+                        f"Not replacing {new_path}: it started sharing files with another folder while you answered."
+                    )
+                shutil.rmtree(new_path)
         else:
             raise UploadError("New folder name already exists.")
     new_path_dirname = os.path.dirname(new_path)
@@ -136,6 +139,25 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
 
     carry_conversion(path, new_path)
     return new_path
+
+
+def _replace_refusal(new_path: str, original: str | None, source: str | None) -> str | None:
+    """Why the folder at new_path must never be replaced by the rename, or None if the user may choose to."""
+    if cfg.directory.protects(new_path):
+        return f"Not renaming into {new_path}: it is in library_dirs, or holds one."
+    if not os.path.isdir(new_path):
+        return None
+    # The album this run's copy was made from, already under the new name: replacing it would delete it.
+    if original is not None and os.path.samefile(new_path, original):
+        return (
+            f"Not replacing {new_path}: it is the album this run works on a copy of. "
+            "Rename it, or give this album another name. "
+            "If it is already uploaded, salmon cross-upload sends it to another tracker."
+        )
+    # A metadata re-run can pick the name the source folder already has, when it sits in the same directory.
+    if source is not None and os.path.isdir(source) and os.path.samefile(new_path, source):
+        return f"Not replacing {new_path}: it is the folder this run started from. Give this album another name."
+    return None
 
 
 def _is_direct_child(child, parent):

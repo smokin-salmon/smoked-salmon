@@ -52,7 +52,7 @@ from salmon.images import red as red_images
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.tags import gather_tags
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.uploader import (
     _check_logs,
     conversion_kind,
@@ -1172,7 +1172,7 @@ def most_requests(
     else:
         gets = len(_searchstrs(data)) + 1  # The search, and a group pasted at the prompt
         if cfg.upload.requests.check_recent_uploads and target.has_session_cookie:
-            gets += 9  # The site log, read when the search finds nothing
+            gets += LOG_MAX_PAGES  # The pages of the site log, read when the search finds nothing
     if release.tasks:
         gets += 1  # The group, for the formats it already has
     if target.site_code == "RED":

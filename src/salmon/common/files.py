@@ -3,6 +3,7 @@ import re
 import stat
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, TypeVar, cast
 
 import anyio
@@ -15,19 +16,16 @@ T = TypeVar("T")
 
 
 class AlbumPath(click.Path):
-    """A click.Path resolved as resolve_path=True does, except a symlink as its last part, which is kept.
-
-    So an album folder or file that is a symlink reaches the command as one, and rewrite_refusal sees it, instead of
-    as the folder it leads to, which salmon would then rewrite in place.
-    """
+    """A click.Path made absolute without resolving symlinks, so an album symlinked into a library is seen there."""
 
     def convert(self, value: Any, param: click.Parameter | None, ctx: click.Context | None) -> Any:
         path = os.fsdecode(super().convert(value, param, ctx))
-        head, tail = os.path.split(path.rstrip(os.sep) or path)
-        if tail in ("", os.curdir, os.pardir):
-            return os.path.realpath(path)
-        # realpath, not abspath, on the rest: the filesystem takes "link/.." from where the link leads.
-        return os.path.join(os.path.realpath(head or os.curdir), tail)
+        parts = Path(path).parts
+        if os.pardir not in parts:
+            return os.path.abspath(path)
+        # The filesystem takes "link/.." from where the link leads; abspath would drop both as text.
+        last = len(parts) - parts[::-1].index(os.pardir)
+        return os.path.join(os.path.realpath(os.path.join(*parts[:last])), *parts[last:])
 
 
 def shares_files(path: str) -> bool:
