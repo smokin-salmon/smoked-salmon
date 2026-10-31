@@ -223,7 +223,7 @@
           <div class="row">
             <input
               type={q.hide_input ? 'password' : 'text'}
-              autocomplete={q.hide_input ? 'off' : undefined}
+              autocomplete={q.hide_input ? 'new-password' : undefined}
               class="grow mono"
               placeholder={options.free_text.placeholder}
               bind:value={rows[i]}
@@ -249,7 +249,7 @@
       >
         <input
           type={q.hide_input ? 'password' : 'text'}
-          autocomplete={q.hide_input ? 'off' : undefined}
+          autocomplete={q.hide_input ? 'new-password' : undefined}
           class="grow mono"
           bind:value={text}
           placeholder={options.free_text.placeholder}

@@ -165,7 +165,7 @@
         }}
       >
         {#if q.hide_input}
-          <input type="password" class="grow mono" bind:value={text} placeholder="Answer" autocomplete="off" />
+          <input type="password" class="grow mono" bind:value={text} placeholder="Answer" autocomplete="new-password" />
         {:else}
           <input type="text" class="grow mono" bind:value={text} placeholder="Answer" />
         {/if}
