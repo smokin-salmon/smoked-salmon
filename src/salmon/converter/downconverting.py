@@ -341,7 +341,8 @@ async def convert_folder(
     items = _collect_convert_items(path, new_path, sample_rate)
     if os.path.isdir(new_path):
         # Never removed: unlike a transcode's, this name can belong to a folder the user made.
-        if items:
+        # With nothing left to convert, a record still tells an album that lost its last 24-bit track.
+        if items or conversion_of(new_path) is not None:
             _check_finished_conversion(path, new_path, items, bit_depth)
         click.secho(f"{new_path} already exists.", fg="yellow")
         return sample_rate, new_path

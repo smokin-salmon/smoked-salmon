@@ -466,3 +466,19 @@ def test_a_downconversion_of_the_album_before_it_gained_a_16_bit_track_is_refuse
         _downconvert(album, tmp_path)
 
     assert _snapshot(out) == before
+
+
+def test_a_downconversion_of_the_album_before_it_lost_its_last_24_bit_track_is_refused(made, tmp_path) -> None:
+    # Nothing is left to convert, so only the record shows the folder still holds the track the album lost.
+    album = tmp_path / "source" / "Mixed [WEB FLAC]"
+    album.mkdir(parents=True)
+    _write_flac(album / "01. one.flac", 96000, 24, title="One")
+    _write_flac(album / "02. two.flac", 44100, 16, title="Two")
+    out = _downconvert(album, tmp_path)
+    (album / "01. one.flac").unlink()
+    before = _snapshot(out)
+
+    with pytest.raises(UploadError, match="incomplete or not salmon's conversion"):
+        _downconvert(album, tmp_path)
+
+    assert _snapshot(out) == before
