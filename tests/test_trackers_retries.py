@@ -3,6 +3,7 @@ import gc
 import signal
 import socket
 import sys
+import traceback
 from pathlib import Path
 
 import anyio
@@ -214,7 +215,8 @@ async def _lost_upload_lookup_that_fails_otherwise_is_not_repeated(
     try:
         with pytest.raises(UnknownOutcomeError, match="may still have gone through") as caught:
             await api.upload({"type": 0}, files)
-        assert isinstance(caught.value.__cause__, raised)
+        # Its context, not its cause: not chained, so a traceback does not print it.
+        assert isinstance(caught.value.__context__, raised)
         # The lookup failed, it did not come back empty.
         assert "did not confirm it" in str(caught.value)
         assert posts == ["upload"]
@@ -702,3 +704,26 @@ def test_exhausted_retries_raise_a_request_error() -> None:
 
 def test_upload_that_cannot_connect_is_retried() -> None:
     anyio.run(_upload_that_cannot_connect_is_retried)
+
+
+def test_a_failed_lookups_error_shows_none_of_the_clients_credentials(tmp_path: Path) -> None:
+    files, _ = _upload_files(tmp_path)
+    api = FakeApi("http://127.0.0.1:9")
+    api.cookie = "SYNTH-COOKIE-0123456789"
+
+    async def page_with_the_cookie(*_args: object, **_kwargs: object) -> object:
+        raise RequestError(f"<a href='x?session={api.cookie}'>")
+
+    api.api_call = page_with_the_cookie  # type: ignore[method-assign]
+
+    async def run() -> UnknownOutcomeError:
+        try:
+            with pytest.raises(UnknownOutcomeError, match="did not confirm it") as caught:
+                await api._find_lost_upload(files, UnknownOutcomeError("answer lost"))
+            return caught.value
+        finally:
+            await api.close()
+
+    error = anyio.run(run)
+
+    assert api.cookie not in "".join(traceback.format_exception(error))

@@ -269,7 +269,8 @@ def test_a_request_the_proxy_could_not_pass_on_is_retried_as_never_sent(
         assert tracker.requests == []
         # Every attempt went to the proxy (a proxy that is down gets them too, and refuses them).
         assert proxy.connections == (0 if failure == "proxy down" else attempts)
-        cause = raised.value.__cause__
+        # Its context, not its cause: not chained, so a traceback does not print it.
+        cause = raised.value.__context__
         expected = TimeoutError if failure == "proxy stalls" else aiohttp.ClientConnectorError
         assert isinstance(cause, expected)
         if failure in ("proxy down", "proxy refuses", "wrong password"):
