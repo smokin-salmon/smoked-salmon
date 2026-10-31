@@ -247,6 +247,9 @@ def test_yyy_in_one_run_does_not_leak_into_the_next_run_in_the_process(monkeypat
     # -yyy sets nothing in the config: a later run in this process reads the same defaults.
     assert cfg.upload.yes_all is False
 
+    # salmon never replaces the first run's renamed folder, which shares files with its album: another downloads folder.
+    (tmp_path / "downloads2").mkdir()
+    monkeypatch.setattr(cfg.directory, "download_directory", str(tmp_path / "downloads2"))
     second = _run_up(
         monkeypatch, _album(tmp_path / "Second"), torrents, input=ANSWERS, yes_all=False, check_tags=record
     )
