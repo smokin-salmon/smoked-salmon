@@ -255,10 +255,14 @@ def _as_cover_file(picture: Picture) -> tuple[str, bytes] | None:
     JPEG and PNG are kept as they are, whatever MIME type the picture claims; other formats are converted to PNG.
 
     Returns:
-        The extension and bytes, or None if the picture is not an image PIL can read.
+        The extension and bytes, or None if the picture is not an image PIL can read, or is over MAX_IMAGE_PIXELS.
     """
     try:
         with Image.open(io.BytesIO(picture.data)) as image:
+            # Before decoding, as _prepare_cover checks a cover file: a small picture can hold enough pixels to
+            # exhaust memory.
+            if image.width * image.height > MAX_IMAGE_PIXELS:
+                return None
             if image.format in ("JPEG", "PNG"):
                 image.load()
                 return ("jpg" if image.format == "JPEG" else "png"), picture.data

@@ -560,3 +560,15 @@ def test_a_cover_over_the_pixel_limit_is_skipped_before_it_is_decoded(tmp_path, 
 
     assert FLAC(tmp_path / "01.flac").pictures == []
     assert "10x10 is over the limit of 10 pixels" in capsys.readouterr().out
+
+
+def test_an_embedded_picture_over_the_pixel_limit_is_not_kept_as_the_cover(tmp_path, monkeypatch, capsys) -> None:
+    # Checked before it is decoded: a picture too big in pixels counts as one that does not read.
+    monkeypatch.setattr(cover, "MAX_IMAGE_PIXELS", 10)
+    _write_flac(tmp_path / "01.flac", pictures=((PictureType.COVER_FRONT, FRONT),))
+
+    cover.check_embedded_pictures(str(tmp_path))
+
+    assert len(FLAC(tmp_path / "01.flac").pictures) == 1
+    assert not list(tmp_path.glob("cover.*"))
+    assert "could not be read as an image" in capsys.readouterr().out
