@@ -5,6 +5,7 @@ import shutil
 import tempfile
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager, suppress
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
@@ -49,6 +50,7 @@ from salmon.errors import (
     EditedLogError,
     InvalidMetadataError,
     LogCheckSkipped,
+    PickOtherResults,
     RequestError,
     SkipTracker,
     UnknownOutcomeError,
@@ -75,7 +77,7 @@ from salmon.tagger.cover import (
 )
 from salmon.tagger.foldername import remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
-from salmon.tagger.metadata import get_metadata
+from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
 from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import rename_files, tag_files
 from salmon.tagger.review import review_metadata, suggest_release_type
@@ -1070,33 +1072,43 @@ async def _upload_staged(
                 )
                 lossy_master = lossy_result if lossy_result is not None else False
 
-            metadata, new_source_url = await get_metadata(
-                path, tags, rls_data, skip_search=skip_search, skip_search_url=source_url
+            run_source_url = source_url
+            metadata_search = MetadataSearch()
+            metadata, picked_source_url = await get_metadata(
+                path, tags, rls_data, skip_search=skip_search, skip_search_url=source_url, search=metadata_search
             )
-            if new_source_url is not None:
-                source_url = new_source_url
-                click.secho(f"New Source URL: {source_url}", fg="yellow")
-            path, metadata, tags, audio_info = await edit_metadata(
-                path,
-                tags,
-                metadata,
-                source_url,
-                source,
-                rls_data,
-                recompress,
-                auto_rename,
-                spectral_ids,
-                skip_integrity_check,
-                essential_only,
-                skip_initial_review,
-                apply_ai_suggestions,
-                rename_into=rename_into,
-                original=original,
-                max_path_length=max_path_length,
-                rls_type_hint=suggest_release_type(
-                    rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
-                ),
-            )
+            while True:
+                # Each pick's starred URL replaces the run's --source-url; a pick with none keeps the run's.
+                source_url = run_source_url if picked_source_url is None else picked_source_url
+                if picked_source_url is not None:
+                    click.secho(f"New Source URL: {source_url}", fg="yellow")
+                try:
+                    path, metadata, tags, audio_info = await edit_metadata(
+                        path,
+                        tags,
+                        metadata,
+                        source_url,
+                        source,
+                        rls_data,
+                        recompress,
+                        auto_rename,
+                        spectral_ids,
+                        skip_integrity_check,
+                        essential_only,
+                        skip_initial_review,
+                        apply_ai_suggestions,
+                        rename_into=rename_into,
+                        original=original,
+                        max_path_length=max_path_length,
+                        rls_type_hint=suggest_release_type(
+                            rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
+                        ),
+                        offer_other_results=metadata_search.results is not None,
+                    )
+                    break
+                except PickOtherResults:
+                    # Raised at a review before anything was written to the files.
+                    metadata, picked_source_url = await pick_metadata(metadata_search, rls_data, path, len(tags))
 
             # Before anything is made or sent for the first tracker: its group, spectrals, cover and upload.
             first_listed = (
@@ -1447,6 +1459,7 @@ async def edit_metadata(
     original: str | None = None,
     max_path_length: int = 180,
     rls_type_hint: str | None = None,
+    offer_other_results: bool = False,
 ) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
     """Edit release metadata in an interactive loop until the user confirms.
 
@@ -1470,21 +1483,25 @@ async def edit_metadata(
         original: The folder the user gave, when path is a copy of it, for the folder rename's remove_source_dir note.
         max_path_length: The longest in-torrent path the folder structure check allows.
         rls_type_hint: The release type prompt's default, when the release type has to be asked.
+        offer_other_results: Offer [b]ack to the metadata results at the reviews before the files are first written.
 
     Returns:
         A tuple of (path, metadata, tags, audio_info) after editing is complete.
 
     Raises:
         click.Abort: If a scene release fails the integrity check, or a file does not decode.
+        PickOtherResults: If the user went back to the metadata results, before anything was written.
     """
     given = path
+    # The metadata as the pick gave it: going back drops every change since, the AI review's included.
+    picked = deepcopy(metadata) if offer_other_results else None
     while True:
         metadata = await review_metadata_with_ai(
             metadata,
             rls_data,
             source_url,
             metadata_validator,
-            functools.partial(review_metadata, rls_type_hint=rls_type_hint),
+            functools.partial(review_metadata, rls_type_hint=rls_type_hint, picked=picked),
             skip_initial_review=skip_initial_review,
             apply_suggestions=apply_ai_suggestions,
         )
@@ -1543,6 +1560,8 @@ async def edit_metadata(
 
         # Refresh tags to accomodate differences in file structure.
         tags = gather_tags(path)
+        # The files now carry this pick: going back would leave its album tags in them.
+        picked = None
 
     tags = gather_tags(path)
     audio_info = gather_audio_info(path)

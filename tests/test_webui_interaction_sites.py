@@ -32,7 +32,7 @@ from test_webui_interaction import Browser  # pyright: ignore[reportMissingImpor
 
 from salmon import cfg, interaction, trackers
 from salmon.config.validations import CONVERSION_KINDS
-from salmon.errors import AbortAndDeleteFolder, SkipTracker
+from salmon.errors import AbortAndDeleteFolder, PickOtherResults, SkipTracker
 from salmon.uploader import request_checker, spectrals
 from salmon.webui.interaction import Picked, WebInteraction
 
@@ -51,7 +51,7 @@ def web(site: Callable[[], Awaitable[Any]], answers: list[Any]) -> tuple[Any, Br
         with interaction.using(WebInteraction(browser)):
             try:
                 return await site()
-            except (click.Abort, AbortAndDeleteFolder, SkipTracker) as e:
+            except (click.Abort, AbortAndDeleteFolder, SkipTracker, PickOtherResults) as e:
                 return type(e)
 
     return anyio.run(run), browser
@@ -187,6 +187,19 @@ def test_fields_to_edit_preselects_nothing_and_each_pick_reaches_its_editor(monk
         assert edited == [key]
         assert browser.questions[0]["preselected"] == sel()
         assert [q["error"] for q in browser.questions] == [None, None]
+
+
+def test_back_to_the_metadata_results_is_an_action_only_when_offered(monkeypatch: pytest.MonkeyPatch) -> None:
+    offered, _edited = review_metadata(monkeypatch, offer_other_results=True)
+    result, browser = web(offered, [picks("b")])
+    assert result is PickOtherResults
+    back = [o for o in browser.questions[0]["options"]["items"] if o["key"] == "b"]
+    assert [(o["label"], o["action"], o["danger"]) for o in back] == [("Back to the metadata results", True, False)]
+    # Without the offer, a "b" sent anyway is refused, as the CLI would not read it.
+    site, _edited = review_metadata(monkeypatch)
+    result, browser = web(site, [picks("b"), picks("n")])
+    assert result is not PickOtherResults
+    assert browser.questions[1]["error"] == "Error: b is not one of the options."
 
 
 # #26 upload, or re-run the metadata step
