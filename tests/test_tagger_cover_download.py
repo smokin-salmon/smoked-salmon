@@ -92,7 +92,9 @@ def test_a_successful_download_wins_over_the_embedded_cover(tmp_path, monkeypatc
     assert cover_path == str(tmp_path / "Cover.jpg")
     assert was_downloaded is True
     assert cover_path is not None
-    assert not (tmp_path / "cover.jpg").exists()
+    # The embedded cover is not saved too: as cover.jpg, it would replace Cover.jpg on a case-insensitive volume.
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["01.flac", "Cover.jpg"]
+    assert (tmp_path / "Cover.jpg").read_bytes() == b"downloaded cover"
 
 
 def test_an_existing_cover_file_wins_over_the_embedded_cover(tmp_path, monkeypatch) -> None:

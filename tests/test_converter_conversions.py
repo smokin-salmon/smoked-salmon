@@ -119,8 +119,10 @@ def test_a_record_found_under_another_case_is_the_same_folders(tmp_path) -> None
     """A case-insensitive volume opens the record of "Album [WEB FLAC]" for "album [web flac]"."""
     out = tmp_path / "album [web flac]"
     out.mkdir()
-    # The other case leads to the same folder, as it does on a case-insensitive volume.
-    (tmp_path / "Album [WEB FLAC]").symlink_to(out, target_is_directory=True)
+    other_case = tmp_path / "Album [WEB FLAC]"
+    # The other case leads to the same folder: on a case-insensitive volume it already does, elsewhere a symlink.
+    if not other_case.is_dir():
+        other_case.symlink_to(out, target_is_directory=True)
     _write_record(out, {**DOWNCONVERT, "output": "Album [WEB FLAC]"})
 
     assert _facts(str(out)) == DOWNCONVERT
