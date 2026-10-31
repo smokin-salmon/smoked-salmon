@@ -412,3 +412,14 @@ def test_a_refused_transcode_is_skipped_and_the_next_task_runs(monkeypatch, caps
 
     assert made == ["V0", "up /out [V0]"]
     assert "01.mp3 is missing" in capsys.readouterr().out
+
+
+def test_a_track_with_an_uppercase_extension_is_transcoded_too(made, tmp_path) -> None:
+    album = _album(tmp_path)
+    _write_flac(album / "03. three.FLAC", 44100, 16, title="Three")
+
+    out = _transcode(album, tmp_path)
+
+    assert (out / "03. three.mp3").is_file()
+    assert "03. three.mp3" in made
+    assert not [p for p in out.rglob("*") if p.suffix.lower() == ".flac"]
