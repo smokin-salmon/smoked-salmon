@@ -987,12 +987,20 @@ def test_conversions_never_follow_a_symlink_into_a_library(monkeypatch, dirs, co
     assert _snapshot(library) == before
 
 
-def test_transcode_never_writes_beside_an_album_under_a_folder_symlinked_into_a_library(dirs, tmp_path) -> None:
-    library, _downloads = dirs
+def test_transcode_never_writes_beside_an_album_under_a_folder_symlinked_into_a_library(
+    monkeypatch, dirs, tmp_path
+) -> None:
+    library, downloads = dirs
     elsewhere = tmp_path / "elsewhere"
     _album(elsewhere / "Artist" / "Album")
     (library / "Artist").symlink_to(elsewhere / "Artist", target_is_directory=True)
-    before = _snapshot(elsewhere)
+    output_dirs: list[str | None] = []
+
+    async def transcode_folder(path: str, *_args: Any, output_dir: str | None = None, **_kwargs: Any) -> str:
+        output_dirs.append(output_dir)
+        return path
+
+    monkeypatch.setattr(salmon.converter, "transcode_folder", transcode_folder)
 
     async def run():
         return await CliRunner().invoke(
@@ -1001,9 +1009,11 @@ def test_transcode_never_writes_beside_an_album_under_a_folder_symlinked_into_a_
 
     result = anyio.run(run)
 
-    assert result.exit_code != 0
-    assert "library_dirs" in result.output
-    assert _snapshot(elsewhere) == before
+    # Redirected under download_directory, not refused: None would write beside the album, in the library.
+    assert result.exit_code == 0, result.output
+    assert len(output_dirs) == 1
+    assert output_dirs[0] is not None
+    assert Path(output_dirs[0]).is_relative_to(downloads)
 
 
 @pytest.mark.parametrize("converter", ["transcode_folder", "convert_folder"])
