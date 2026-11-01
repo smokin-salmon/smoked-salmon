@@ -1,4 +1,104 @@
-current = "0.21.0"
+current = "0.22.0"
+
+[[changelog]]
+version = "0.22.0"
+date = "2026-11-01"
+notes = """
+
+This release is mostly about keeping your files and your tracker accounts safe: salmon no longer deletes, replaces or half-writes a folder or a file it cannot tell is its own, reads far fewer site log pages, and keeps more secrets out of its messages. It also corrects the artist names and genres a store always gets wrong, and shows spectrals in the terminal. The config key names 0.21.0 moved still work in 0.22.0, with the same warning: they stop salmon from 0.23.0, so rename them now (see [Upgrading to 0.21](https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21)).
+
+## ⚠️ Behaviour changes
+
+- **A `download_directory`, `tmp_dir` or `dottorrents_dir` inside one of your `library_dirs` is refused at start,** as written in the config, even when it is a symlink to a folder outside, and a tracker's own `dottorrents_dir` (`[tracker.red]`, `[tracker.ops]`, `[tracker.dic]`) too: salmon would write there through a folder that appears in your library. Move the folder out of the library. Thanks @chodeus
+- **Spectrals show in the terminal with kitty, Ghostty or WezTerm** when `native_spectrals_viewer = true`, instead of feh or Quick Look (see below). `terminal_spectrals_viewer = false` under `[upload]` keeps feh or Quick Look. Thanks @cy1der
+- **Replacing a folder that already has the new name now defaults to no.** At the folder rename, pressing Enter at "A folder already exists with the new folder name" now keeps that folder; before, it deleted it. A folder in a library, or one that shares files through a hardlink or symlink (such as an earlier upload that still seeds), is never replaced. Answer `y` to replace one. Thanks @chodeus
+- **An existing transcode folder salmon did not make is no longer deleted without asking.** salmon asks first, default no, and refuses under `-yyy`. Before, it printed "appears incomplete, re-transcoding" and removed it, which could break a torrent seeding from it. Thanks @chodeus
+
+## ✨ New Features & Improvements
+
+- **`[metadata.corrections]`**: correct what a store always gets wrong, before the review, so you can still change it for one release. Empty by default. Thanks @statelycurmudgeon
+  - `artists = { "Ryuichi Sakamoto" = "坂本龍一" }` writes the second name instead of the first, in every role (main, guest, remixer...), in the release and each track.
+  - `genres = { "Jazz contemporain" = ["Jazz"], "Free jazz & Avant-garde" = ["Free Jazz", "Avant-Garde"] }` replaces a genre with the ones listed; an empty list drops it.
+  - Both match the whole name, in any case, ignoring outer spaces, accents exact.
+- **Spectrals in the terminal.** With `native_spectrals_viewer = true`, a terminal that speaks the Kitty graphics protocol (kitty, Ghostty, WezTerm) shows the spectrals itself, a track at a time, over SSH too: ← and → move between tracks, Enter goes on, q or Esc stops. Other terminals, tmux and screen open feh, Quick Look or the Windows viewer as before. Thanks @cy1der
+- **`[b]ack to the metadata results`** at `salmon up`'s metadata review, before anything is written to the files, shows the same results again, without a second search, so you can pick another. Thanks @statelycurmudgeon
+- **Remixers are written to the files.** Retagging writes the remixers a store credits (Beatport, Discogs, Tidal): `REMIXER` in a FLAC, `TPE4` in an MP3. Thanks @statelycurmudgeon
+- **`-yyy` answers the folder check's questions** with their defaults, and prints what it did: it deletes an `@eaDir` folder or a file with an extension the tracker does not allow, renames invisible or forbidden characters, and stops on an album with several audio formats. An unattended run, or a web job, no longer waits there (the known issue in 0.21.0). Thanks @1AbdullahButt
+
+## 🐛 Bug Fixes
+
+- **Your files when something fails partway.** Thanks @chodeus
+  - Renaming files never replaces a file that appeared at the new name, never leaves a track under two names, and puts the renames back when a batch stops partway, Ctrl-C included.
+  - A tag write that fails on one file stops the run and says which files changed, which one may be half written, and which were not reached.
+  - Sanitizing keeps an album's only embedded artwork (saved as the cover file first), never replaces a backup a crashed run left behind, and puts the original back on any failure or Ctrl-C. One file that cannot be sanitized no longer stops the others.
+  - Stripping oversized pictures keeps a FLAC's only artwork, also one tagged as a back cover, and a broken or fake cover file is never trusted or embedded.
+  - An album reached through a symlinked folder inside a library counts as in the library, so salmon works on a copy and writes nothing beside it.
+- **Conversions.** Thanks @chodeus
+  - A track whose extension is in capitals (`03.FLAC`) is transcoded; before, it was left out of the MP3 folder without a word.
+  - A recorded transcode or downconversion of an album that has since gained or lost a track is refused, not reused as if complete.
+  - A conversion made by a `--skip-flac-upload` or `--dry-run` run is reused by the next one, instead of refused as "a conversion of another album".
+  - A cancelled transcode stops `flac` and `lame`, and an MP3 keeps only the embedded pictures that fit under 1 MiB.
+- **Tags.**
+  - A FLAC or an M4A with no tags at all is tagged; before, salmon said "Retagged files." and wrote nothing. Thanks @statelycurmudgeon
+  - A re-run of the metadata step removes the album tags the new metadata no longer has (catalogue number, label, comment, genres...), and the changes list each as `(removed)`. Thanks @statelycurmudgeon
+  - A store's "Various Artists" or "Various" credit is dropped, as `remove_various_artists` meant to: a folder name or ALBUMARTIST that read "A & Various Artists" now reads "A". Thanks @statelycurmudgeon
+  - A file's "remixed by X" credit is read as the remixer X, not "by X". Thanks @statelycurmudgeon
+  - An MP3's comment is read back, and writing the review as one keeps the file's other comment frames (iTunes' gapless and volume data).
+- **Checks.** When `flac` or `mp3val` cannot run, the integrity check says so instead of "Failed integrity"; a claim written like a file name (`24bit.flac`) is no longer taken for a website; and three report rows no longer claim more than was checked. Thanks @chodeus
+- **Picking a search result with missing fields** no longer stops the group check with a `KeyError`: salmon fetches the group instead. Thanks @redwing509
+
+## 🔒 Tracker & Security Improvements
+
+- **The recent-uploads check reads 1 to 3 pages of the site log, not 9.** It stops once the rows read span 5 minutes; a new upload shows in the group search within a minute or two.
+- **The recent-uploads check works on OPS.** It found nothing there before: OPS marks its upload rows differently.
+- **More secrets kept out of messages and debug output:** a cookie written as text, Gazelle's `keeplogged` cookie, a response header naming a secret, RED's signed image links and the link in OPS's lossy-master report are masked, and a network error's traceback no longer prints the request URL. Thanks @chodeus
+- **The first run hides the session cookie and API key** while you type or paste them, in the terminal and in salmon web. Thanks @1AbdullahButt
+
+## What's Changed
+* Answer the folder structure check's questions with their defaults under -yyy by @1AbdullahButt in https://github.com/smokin-salmon/smoked-salmon/pull/824
+* Hide the session cookie and API key while the first run asks for them by @1AbdullahButt in https://github.com/smokin-salmon/smoked-salmon/pull/825
+* Read OPS's site log rows in the recent-uploads check by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/829
+* fix(dupe_checker): fetch the group when a picked search row lacks printed fields (#822) by @redwing509 in https://github.com/smokin-salmon/smoked-salmon/pull/838
+* Count an album reached through a symlinked folder in a library as in it by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/840
+* Refuse a tracker's own dottorrents_dir inside library_dirs by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/839
+* Read the site log only until its rows span 5 minutes, at most 3 pages by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/844
+* Go back from the metadata review to pick other metadata results by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/834
+* Correct the artist names a store always gets wrong, from [metadata.corrections] artists by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/830
+* Pass the two tests that always failed on MacOS because they assumed a case-sensitive volume by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/845
+* Remove the album tags a metadata re-run no longer has by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/851
+* Ask before deleting a transcode folder salmon did not make by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/832
+* Keep a folder already at the new name unless told to replace it by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/836
+* Keep the artwork, a stale backup and the original when sanitizing by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/833
+* Tag a FLAC or M4A that has no tags at all by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/849
+* Rename a file without replacing one, and put a stopped batch back by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/837
+* Transcode a track whose extension is in capitals by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/846
+* Fix two small faults in the converters by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/857
+* List every album tag a metadata re-run removes by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/860
+* Refuse a recorded conversion of an album that has since gained or lost a track by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/841
+* Drop a "Various Artists" or "Various" credit, as remove_various_artists meant to by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/858
+* Write the remixers a store credits to the files as REMIXER tags by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/852
+* Read a file's "remixed by X" credit as the remixer X, not "by X" by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/859
+* Stop and say which files changed when a tag write fails partway by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/850
+* Record a conversion made from a run's copy as a conversion of the album given by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/842
+* Fix five small faults in the checks by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/856
+* Ask CodeRabbit for new settings in config.reference.toml, as AGENTS.md does by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/870
+* Keep a FLAC's only artwork when stripping oversized pictures by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/861
+* Correct the genres a store always gets wrong, from [metadata.corrections] genres by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/866
+* Display spectrals in a terminal that speaks the Kitty graphics protocol by @cy1der in https://github.com/smokin-salmon/smoked-salmon/pull/867
+* Read an MP3's comment, and write it without deleting the file's other comment frames by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/871
+* Write a corrected artist name without the outer spaces it was given by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/874
+* Keep a tracker client's credentials out of its errors and debug output by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/876
+* Mask five more forms of tracker secrets by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/873
+* Read old config key names with a warning in 0.22 too, and refuse them from 0.23.0 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/885
+
+## New Contributors
+* @1AbdullahButt made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/824
+* @redwing509 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/838
+* @chodeus made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/840
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.21.0...0.22.0
+
+"""
 
 [[changelog]]
 version = "0.21.0"
