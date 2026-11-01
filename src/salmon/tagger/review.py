@@ -96,7 +96,7 @@ async def review_metadata(
             ),
             options=fields_to_edit,
         )
-        r_let = r[0].lower()
+        r_let = (r or "n")[0].lower()
         try:
             await edit_functions[r_let](metadata)
         except KeyError:
