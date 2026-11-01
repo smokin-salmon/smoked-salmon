@@ -5,6 +5,7 @@ import asyncclick as click
 import humanfriendly
 
 from salmon import cfg, interaction
+from salmon.common.strings import numeric_id
 from salmon.errors import RequestError, RequestFailedError
 
 if TYPE_CHECKING:
@@ -88,7 +89,7 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
                 bitrates, formats = " or ".join(r["bitrateList"]), " or ".join(r["formatList"])
                 media = " or ".join(r["mediaList"])
             except (KeyError, TypeError, IndexError):
-                request_id = r.get("requestId") if isinstance(r, dict) else None
+                request_id = numeric_id(r.get("requestId")) if isinstance(r, dict) else None
                 link = f" | {gazelle_site.request_url(request_id)}" if request_id is not None else ""
                 click.secho(f" {r_index + 1:02d} >> This request could not be read{link}", fg="yellow")
                 continue
@@ -212,12 +213,13 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
             raw_input = int(request_id)
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
-                if results[list_index].get("requestId") is None:
+                request_number = numeric_id(results[list_index].get("requestId"))
+                if request_number is None:
                     click.secho(
                         f"Result {list_index + 1} has no request ID: pick another, or paste a request URL.", fg="red"
                     )
                     continue
-                return int(results[list_index]["requestId"])
+                return request_number
             else:
                 click.echo(f"Interpreting {raw_input} as a request id")
                 return raw_input

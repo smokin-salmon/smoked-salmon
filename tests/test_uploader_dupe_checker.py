@@ -258,6 +258,22 @@ def test_the_group_prompt_offers_a_pick_only_when_groups_were_found(monkeypatch)
     assert "pick from groups found" not in asked[0]
 
 
+@pytest.mark.parametrize("group_id", ["", "abc", None])
+def test_picking_a_search_result_whose_id_is_no_number_asks_again(monkeypatch, capsys, group_id) -> None:
+    asked = _answering(monkeypatch, "1", "n")
+    unreadable = {"groupId": group_id, "artist": "A"}
+    site = cast("BaseGazelleApi", cast("object", LogSite()))
+
+    print_search_results(site, [unreadable], "s")
+    picked = anyio.run(_prompt_for_group_id, site, [unreadable], False)
+    out = capsys.readouterr().out
+
+    assert picked is None
+    assert len(asked) == 2
+    assert " 01 >> This result could not be read\n" in out
+    assert "Result 1 has no group ID" in out
+
+
 def test_a_malformed_search_result_keeps_its_number_on_one_line(capsys) -> None:
     good = {"groupId": 1, "artist": "A", "groupName": "B", "groupYear": 2020, "releaseType": "Album", "tags": ["x"]}
     no_year = {"groupId": 2, "artist": "C", "groupName": "D", "releaseType": "Album", "tags": []}

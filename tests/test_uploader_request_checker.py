@@ -4,6 +4,7 @@ import anyio
 import asyncclick as click
 import pytest
 
+from salmon.common.strings import numeric_id
 from salmon.trackers import validate_request
 from salmon.uploader import request_checker
 from salmon.uploader.request_checker import _prompt_for_request_id, print_request_results
@@ -94,3 +95,32 @@ def test_an_answer_naming_no_request_says_so_and_asks_again(monkeypatch, capsys,
     assert picked is None
     assert answers == []
     assert said in out
+
+
+@pytest.mark.parametrize("request_id", ["", "abc", None])
+def test_picking_a_request_whose_id_is_no_number_asks_again(monkeypatch, capsys, request_id) -> None:
+    answers = ["1", "n"]
+
+    async def fake_prompt(*_args, **_kwargs) -> str:
+        return answers.pop(0)
+
+    monkeypatch.setattr(request_checker.click, "prompt", fake_prompt)
+    unreadable = _request(request_id)
+    del unreadable["title"]
+
+    print_request_results(SITE, [unreadable], "s")
+    picked = anyio.run(_prompt_for_request_id, SITE, [unreadable])
+    out = capsys.readouterr().out
+
+    assert picked is None
+    assert answers == []
+    assert " 01 >> This request could not be read\n" in out
+    assert "Result 1 has no request ID" in out
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [(7, 7), ("07", 7), ("", None), ("abc", None), ("4²", None), (-5, None), (True, None), (None, None)],
+)
+def test_numeric_id_takes_an_int_or_ascii_digits(value, expected) -> None:
+    assert numeric_id(value) == expected

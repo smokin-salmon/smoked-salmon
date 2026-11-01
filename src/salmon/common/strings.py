@@ -11,6 +11,12 @@ _RE_NUMBERED_SUFFIX = re.compile(r" \(\d+\)$")
 _RE_NUMBERED_SUFFIXES = re.compile(r" \(\d+\)(?= |$)")
 
 
+def numeric_id(value: object) -> int | None:
+    """An ID as a tracker's answer gives one, an int or a string of ASCII digits; None for anything else."""
+    text = str(value) if isinstance(value, int | str) and not isinstance(value, bool) else ""
+    return int(text) if text.isascii() and text.isdigit() else None
+
+
 def strip_numbered_suffix(name: str) -> str:
     """Drop the trailing ` (N)` Discogs adds to tell artists of the same name apart."""
     return _RE_NUMBERED_SUFFIX.sub("", name)

@@ -12,7 +12,7 @@ import asyncclick as click
 
 from salmon import cfg, interaction
 from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
-from salmon.common.strings import artist_keys, comparable
+from salmon.common.strings import artist_keys, comparable, numeric_id
 from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError, SkipTracker
 from salmon.trackers.base import hold_request_messages
 from salmon.uploader.upload import generate_catno
@@ -627,7 +627,7 @@ def print_search_results(gazelle_site: "BaseGazelleApi", results: list[dict], se
                 group_id, artist, name = r["groupId"], r["artist"], r["groupName"]
                 year, release_type, tags = r["groupYear"], r["releaseType"], ", ".join(r["tags"])
             except (KeyError, TypeError):
-                group_id = r.get("groupId") if isinstance(r, dict) else None
+                group_id = numeric_id(r.get("groupId")) if isinstance(r, dict) else None
                 link = f" | {gazelle_site.base_url}/torrents.php?id={group_id}" if group_id is not None else ""
                 click.secho(f" {r_index + 1:02d} >> This result could not be read{link}", fg="yellow")
                 continue
@@ -711,12 +711,13 @@ async def _prompt_for_group_id(
                 continue  # No group has the ID 0, and there is no first result to give.
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
-                if results[list_index].get("groupId") is None:
+                group_number = numeric_id(results[list_index].get("groupId"))
+                if group_number is None:
                     click.secho(
                         f"Result {list_index + 1} has no group ID: pick another, or paste a group URL.", fg="red"
                     )
                     continue
-                return int(results[list_index]["groupId"])
+                return group_number
             else:
                 click.echo(f"Interpreting {raw_input} as a group Id")
                 return raw_input
