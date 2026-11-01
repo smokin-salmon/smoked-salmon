@@ -1,6 +1,8 @@
 import functools
+import json
 from dataclasses import dataclass
 from itertools import chain
+from pathlib import Path
 from pprint import pprint
 
 import asyncclick as click
@@ -206,19 +208,33 @@ async def run_tag(options: TagOptions) -> str:
 
 @commandgroup.command()
 @click.argument("url")
-async def meta(url: str) -> None:
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(dir_okay=False, writable=True),
+    help="Save metadata as JSON to this file.",
+)
+async def meta(url: str, output: str | None = None) -> None:
     """Scrape metadata from release link.
 
     Args:
         url: URL to scrape metadata from.
+        output: Optional file path to save the JSON metadata.
     """
     try:
         metadata = await run_metadata(url)
         for key in NOT_SHOWN:
-            if key in metadata and isinstance(metadata, dict):
+            if isinstance(metadata, dict) and key in metadata:
                 del metadata[key]
-        click.echo()
-        pprint(metadata)
+        if output:
+            output_path = Path(output)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with output_path.open("w", encoding="utf-8") as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False)
+            click.secho(f"Metadata saved to {output}", fg="green")
+        else:
+            click.echo()
+            pprint(metadata)
     except ScrapeError as e:
         click.secho(f"Scrape failed: {e}", fg="red")
 
