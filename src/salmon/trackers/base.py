@@ -358,6 +358,9 @@ _MAX_EXCERPT = 500
 _IMAGE_AUTH_MARGIN = 60
 # The ajax.php action giving them.
 _IMAGE_AUTH_ACTION = "imgauth"
+# A signed image URL's query values: its expiry and user id are numbers that masking by value would miss.
+# A page may write the "&" between them as &amp; or as a numeric entity, &#38; or &#x26;.
+_SIGNED_IMAGE_QUERY = re.compile(r"((?:[?&]|&amp;|&#0*38;|&#x0*26;)(?:h|e|u)=)[^&#\s\"'<>\[\]]*", re.IGNORECASE)
 
 # A new upload reaches the group search within minutes: the site log is read only until its rows span
 # LOG_WINDOW, and never past LOG_MAX_PAGES pages.
@@ -658,7 +661,9 @@ class BaseGazelleApi:
 
     def _redact(self, text: str) -> str:
         """Mask this tracker's secrets in text about to be printed or raised."""
-        return redact_tracker_text(text, self._secrets())
+        text = redact_tracker_text(text, self._secrets())
+        # Its answers carry image URLs signed for this account, also before image_auth() has learned the key.
+        return _SIGNED_IMAGE_QUERY.sub(r"\1[REDACTED]", text) if self.SIGNED_IMAGES else text
 
     def _excerpt(self, text: str) -> str:
         """Redact text, then cut it to _MAX_EXCERPT characters: a tracker's answer may be a whole page."""
@@ -965,7 +970,11 @@ class BaseGazelleApi:
 
                         if _dumping():
                             _secho(f"[DEBUG] status: {resp.status}", fg="cyan")
-                            headers_shown = redact_tracker_headers(resp.headers.items(), self._secrets())
+                            # Through _redact as well: a header may carry an image link signed for this account.
+                            headers_shown = {
+                                name: self._redact(value)
+                                for name, value in redact_tracker_headers(resp.headers.items(), self._secrets()).items()
+                            }
                             _secho(
                                 f"[DEBUG] response headers: {msgspec.json.encode(headers_shown).decode()}", fg="cyan"
                             )
@@ -1113,7 +1122,8 @@ class BaseGazelleApi:
                 raise TLSCertificateError(host, self._redact(reason), self.site_code) from err
             # The body read's own timeout raises a TimeoutError with no message.
             reason = self._redact(str(err)) or f"no full answer within {timeout_secs} s"
-            raise failure(f"Network error: {reason}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from err
+            # Not chained: a traceback would print the raw error, whose URL may hold credentials.
+            raise failure(f"Network error: {reason}", not_acted_on=isinstance(err, _NOT_SENT_ERRORS)) from None
 
     async def api_call(self, action: str, params: dict[str, Any] | None = None) -> dict:
         """Make a request to the site API with rate limiting.
@@ -1503,10 +1513,10 @@ class BaseGazelleApi:
             torrent_id, group_id = int(found["torrent"]["id"]), int(found["group"]["id"])
         except (RequestError, TorfError, KeyError, TypeError, ValueError) as lookup_err:
             raise UnknownOutcomeError(
-                f"Could not tell whether {self.site_string} took the upload ({err}), and looking the torrent up "
-                f"by its infohash did not confirm it ({lookup_err}). The upload may still have gone through: "
-                f"check your uploads on {self.site_string} before uploading it again."
-            ) from lookup_err
+                f"Could not tell whether {self.site_string} took the upload ({self._redact(str(err))}), and looking "
+                f"the torrent up by its infohash did not confirm it ({self._redact(str(lookup_err))}). The upload may "
+                f"still have gone through: check your uploads on {self.site_string} before uploading it again."
+            ) from None  # Not chained: the lookup's error may hold a page whose links carry this client's credentials.
         except asyncio.CancelledError:
             # Ctrl-C while waiting: still warn before the user uploads it again.
             click.secho(

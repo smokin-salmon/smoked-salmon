@@ -2,8 +2,10 @@ import asyncio
 import contextlib
 import sys
 import time
+import traceback
 from pathlib import Path
 
+import aiohttp
 import anyio
 import pytest
 from aiohttp import web
@@ -12,7 +14,8 @@ from tenacity import wait_none
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 import salmon.trackers.base as trackers_base
-from salmon.errors import RequestFailedError, UnknownOutcomeError
+from salmon import cfg
+from salmon.errors import RequestError, RequestFailedError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi, RetryableError, hold_request_messages
 
 
@@ -409,3 +412,76 @@ def test_error_answer_without_an_error_key_keeps_the_body_as_message(body: str) 
 
 def test_error_answer_with_an_error_key_gives_that_message() -> None:
     assert anyio.run(_failed_with, '{"status": "failure", "error": "bad id"}', 400) == '"bad id"'
+
+
+SIGNED_KEY, SIGNED_EXPIRY, SIGNED_USER = "Unl3arnedK3yF0rTh1s", "4102444800", "7654321"
+
+
+def test_debug_output_masks_every_signed_image_url_in_an_answer_and_its_headers(monkeypatch, capsys) -> None:
+    # Signed for this account by the tracker itself, before image_auth() has learned the key.
+    query = f"h={SIGNED_KEY}&e={SIGNED_EXPIRY}&u={SIGNED_USER}"
+
+    async def run() -> None:
+        async def handle_ajax(_request: web.Request) -> web.Response:
+            body = {"wikiBody": f'<img src="https://x.test/i/1.jpg?{query.replace("&", "&amp;")}">'}
+            link = f"<https://x.test/i/2.jpg?{query}>; rel=preload"
+            return web.json_response({"status": "success", "response": body}, headers={"Link": link})
+
+        runner = await _serve(handle_ajax)
+        api = SignedImagesApi(_url(runner))
+        try:
+            await api.api_call("torrentgroup", {"id": 1})
+        finally:
+            await api.close()
+            await runner.cleanup()
+
+    monkeypatch.setattr(cfg.tracker, "debug_connection", True)
+    anyio.run(run)
+
+    out = capsys.readouterr().out
+    assert "/i/1.jpg" in out and "/i/2.jpg" in out
+    assert [value for value in (SIGNED_KEY, SIGNED_EXPIRY, SIGNED_USER) if value in out] == []
+
+
+@pytest.mark.parametrize("separator", ["&", "&amp;", "&#38;", "&#038;", "&#x26;", "&#X26;"])
+def test_a_signed_image_url_is_masked_whatever_its_separator(separator: str) -> None:
+    # A page may write the query's "&" as a named or a numeric HTML entity.
+    url = f"https://x.test/i/1.jpg?e={SIGNED_EXPIRY}{separator}u={SIGNED_USER}{separator}h={SIGNED_KEY}"
+
+    shown = SignedImagesApi("https://x.test")._redact(url)
+
+    assert [value for value in (SIGNED_KEY, SIGNED_EXPIRY, SIGNED_USER) if value in shown] == []
+
+
+def test_a_network_error_naming_a_signed_image_url_shows_none_of_it(monkeypatch) -> None:
+    monkeypatch.setattr(BaseGazelleApi._send.retry, "wait", wait_none())  # type: ignore[attr-defined]
+
+    async def run() -> RequestError:
+        async def handle_ajax(_request: web.Request) -> web.Response:
+            auth = {"h": SIGNED_KEY, "e": int(SIGNED_EXPIRY), "u": int(SIGNED_USER)}
+            return web.json_response({"status": "success", "response": auth})
+
+        runner = await _serve(handle_ajax)
+        api = SignedImagesApi(_url(runner))
+        try:
+            auth = await api.image_auth()
+
+            def cut_off(_session: aiohttp.ClientSession, method: str, url: str, **kwargs) -> None:
+                query = "&".join(f"{name}={value}" for name, value in kwargs["params"].items())
+                raise aiohttp.ClientConnectionError(f"Connection lost on {method} {url}?{query}")
+
+            monkeypatch.setattr(aiohttp.ClientSession, "request", cut_off)
+            with pytest.raises(RequestError) as caught:
+                await api._request(
+                    "GET", f"{api.base_url}/i/1.jpg", params=auth, timeout_secs=5, needs_authkey=False, binary=True
+                )
+            return caught.value
+        finally:
+            await api.close()
+            await runner.cleanup()
+
+    error = anyio.run(run)
+
+    shown = "".join(traceback.format_exception(error))
+    assert "Connection lost on GET" in shown
+    assert [value for value in (SIGNED_KEY, SIGNED_EXPIRY, SIGNED_USER) if value in shown] == []
