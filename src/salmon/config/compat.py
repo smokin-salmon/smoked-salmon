@@ -13,7 +13,7 @@ from typing import Any
 import asyncclick as click
 from packaging.version import InvalidVersion, Version
 
-REFUSED_FROM = "0.22.0"
+REFUSED_FROM = "0.23.0"
 UPGRADE_PAGE = "https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21"
 
 

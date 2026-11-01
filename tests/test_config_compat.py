@@ -92,7 +92,7 @@ def test_an_old_name_sets_the_new_key_and_warns(tmp_path: Path, capsys, old: str
     assert _read(cfg, new) == value
     section = new.rpartition(".")[0]
     assert warnings == [
-        f"{old} is now {new} (under [{section}]): it still works in 0.21, and stops salmon from 0.22.0. "
+        f"{old} is now {new} (under [{section}]): it still works in 0.22, and stops salmon from 0.23.0. "
         f"See {UPGRADE_PAGE}"
     ]
 
@@ -101,7 +101,7 @@ def test_the_warning_reads_as_the_brief_gives_it(tmp_path: Path, capsys) -> None
     _, warnings = _load(tmp_path, _put(_base(tmp_path), "upload.debug_tracker_connection", True), capsys)
     assert warnings == [
         "upload.debug_tracker_connection is now tracker.debug_connection (under [tracker]): it still works in "
-        "0.21, and stops salmon from 0.22.0. See https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21"
+        "0.22, and stops salmon from 0.23.0. See https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21"
     ]
 
 
@@ -113,16 +113,16 @@ def test_the_old_and_the_new_name_together_are_refused(tmp_path: Path, capsys, o
 
 
 @pytest.mark.parametrize(("old", "new", "value"), MOVES, ids=MOVE_IDS)
-def test_an_old_name_is_refused_from_0_22_0(
+def test_an_old_name_is_refused_from_0_23_0(
     tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch, old: str, new: str, value: Any
 ) -> None:
-    _version(monkeypatch, "0.22.0")
-    with pytest.raises(ValueError, match=f"{old} is now {new} .*stops salmon from 0.22.0"):
+    _version(monkeypatch, "0.23.0")
+    with pytest.raises(ValueError, match=f"{old} is now {new} .*stops salmon from 0.23.0"):
         _load(tmp_path, _put(_base(tmp_path), old, value), capsys)
 
 
-@pytest.mark.parametrize("version", ["0.21.9", None], ids=["0.21.9", "unknown version"])
-def test_an_old_name_still_works_before_0_22_0(
+@pytest.mark.parametrize("version", ["0.22.0", "0.22.9", None], ids=["0.22.0", "0.22.9", "unknown version"])
+def test_an_old_name_still_works_before_0_23_0(
     tmp_path: Path, capsys, monkeypatch: pytest.MonkeyPatch, version: str | None
 ) -> None:
     _version(monkeypatch, version)
@@ -297,8 +297,8 @@ def test_the_old_default_tracker_is_a_list_of_one_with_a_warning(tmp_path: Path,
     cfg, warnings = _load(tmp_path, raw, capsys)
     assert cfg.tracker.default_trackers == ["RED"]
     assert warnings == [
-        "tracker.default_tracker is now tracker.default_trackers (under [tracker]): it still works in 0.21, and "
-        f"stops salmon from 0.22.0. See {UPGRADE_PAGE}"
+        "tracker.default_tracker is now tracker.default_trackers (under [tracker]): it still works in 0.22, and "
+        f"stops salmon from 0.23.0. See {UPGRADE_PAGE}"
     ]
 
 
@@ -309,8 +309,8 @@ def test_the_old_and_the_new_default_trackers_together_are_refused(tmp_path: Pat
         _load(tmp_path, raw, capsys)
 
 
-def test_the_old_default_tracker_is_refused_from_0_22_0(tmp_path: Path, capsys, monkeypatch) -> None:
-    _version(monkeypatch, "0.22.0")
+def test_the_old_default_tracker_is_refused_from_0_23_0(tmp_path: Path, capsys, monkeypatch) -> None:
+    _version(monkeypatch, "0.23.0")
     raw = _base(tmp_path)
     raw["tracker"]["default_tracker"] = "RED"
     with pytest.raises(ValueError, match="tracker.default_tracker is now tracker.default_trackers"):
