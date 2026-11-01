@@ -1025,8 +1025,9 @@ async def _upload_staged(
     search_failed = False
     try:
         if rate_refused and not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
-            # Nothing the checks or the review change could let these files go up.
-            raise click.Abort
+            # Nothing the checks or the review change could let these files go up. Exit(1), not Abort: the run
+            # failed, and _upload_staged ends an Abort as a user's no.
+            raise click.exceptions.Exit(1)
         # The search for an existing group only reads from the tracker, so it runs in the background during
         # the MQA, upconvert and log checks below, and what it found is shown once they are done.
         async with fetch_existing_group_candidates_in_background(
@@ -1066,7 +1067,7 @@ async def _upload_staged(
                         click.secho(
                             f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True
                         )
-                        raise click.Abort from None
+                        raise click.exceptions.Exit(1) from None
                     click.secho(
                         f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
                         fg="red",

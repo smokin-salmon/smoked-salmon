@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 import anyio
+import asyncclick as click
 import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
@@ -360,7 +361,8 @@ def test_a_failed_search_is_reported_before_the_spectral_step_as_before(monkeypa
     tracker = FakeTracker(browse_status=400)
     flow = Flow(monkeypatch, tracker)
 
-    anyio.run(flow.run)
+    with pytest.raises(click.exceptions.Exit):
+        anyio.run(flow.run)
 
     assert flow.events == ["checks start", "checks end"]
     out = capsys.readouterr().out
@@ -374,7 +376,8 @@ def test_an_expired_cookie_is_reported_before_the_spectral_step_as_before(monkey
     tracker = FakeTracker(browse_results=[])
     flow = Flow(monkeypatch, tracker)
 
-    anyio.run(lambda: flow.run(cookie="expired"))
+    with pytest.raises(click.exceptions.Exit):
+        anyio.run(lambda: flow.run(cookie="expired"))
 
     assert tracker.hits.count("log 1") == 1
     assert "login" not in tracker.hits

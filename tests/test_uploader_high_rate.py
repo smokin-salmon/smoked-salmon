@@ -99,7 +99,7 @@ def test_16bit_96khz_is_refused_for_ops_before_any_request_and_its_group_search(
         resolve_existing_group=resolve_existing_group,
     )
 
-    assert run.result.exit_code == 0, run.result.output
+    assert run.result.exit_code == 1, run.result.output
     assert run.result.output.count(REFUSED) == 1
     assert "Traceback" not in run.result.output
     assert groups_resolved == []
@@ -131,9 +131,10 @@ def test_16bit_96khz_for_ops_alone_stops_before_the_checks_and_the_review(monkey
         get_metadata=get_metadata,
     )
 
-    assert run.result.exit_code == 0, run.result.output
+    # A failed run, not a user's no: it exits 1.
+    assert run.result.exit_code == 1, run.result.output
     assert run.result.output.count(REFUSED) == 1
-    assert "Aborting upload" in run.result.output
+    assert "Aborting upload" not in run.result.output
     assert reached == []
 
 

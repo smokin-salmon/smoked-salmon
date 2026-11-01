@@ -796,9 +796,10 @@ def test_a_first_tracker_whose_group_search_fails_ends_the_run_when_none_can_fol
 
     run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, trackers=("RED",), input="")
 
-    assert run.result.exit_code == 0, run.result.output
+    # A failed run, not a user's no: it exits 1, without the "Aborting upload" of a declined one.
+    assert run.result.exit_code == 1, run.result.output
     assert "Could not search RED for dupes: search failed" in run.result.output
-    assert "Aborting upload" in run.result.output
+    assert "Aborting upload" not in run.result.output
     assert sites == []
 
 
