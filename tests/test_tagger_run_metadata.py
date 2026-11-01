@@ -6,6 +6,7 @@ Discogs is a fake on 127.0.0.1: the scraper's API address is pointed at it.
 
 import json
 from collections.abc import Callable, Coroutine
+from pathlib import Path
 from typing import Any
 
 import anyio
@@ -16,6 +17,7 @@ from test_ssrf import LOOPBACK, FakeStore  # pyright: ignore[reportMissingImport
 
 import salmon.tagger
 from salmon import ssrf
+from salmon.errors import ScrapeError
 from salmon.tagger.sources import discogs, run_metadata
 
 RELEASE_URL = "https://www.discogs.com/release/2520452-Various-Dance-Anthems"
@@ -108,3 +110,82 @@ def test_salmon_meta_prints_no_artist_variations(monkeypatch: pytest.MonkeyPatch
     assert "K-Ci & JoJo" in result.output
     assert "artist_variations" not in result.output
     assert "K-Ci And JoJo" not in result.output
+
+
+def test_salmon_meta_saves_json(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    output_path = tmp_path / "metadata.json"
+
+    async def run() -> Result:
+        return await CliRunner().invoke(
+            salmon.tagger.meta,
+            [RELEASE_URL, "--output", str(output_path)],
+        )
+
+    result, _ = in_fake_discogs(monkeypatch, run)
+
+    assert result.exit_code == 0, result.output
+    assert output_path.exists()
+
+    metadata = json.loads(output_path.read_text(encoding="utf-8"))
+
+    assert metadata["title"] == "Dance Anthems"
+    track = metadata["tracks"]["3"]["3"]
+    assert track["artists"] == [
+        ["K-Ci & JoJo", "main"],
+        ["Club Asylum", "remixer"],
+    ]
+    assert "artist_variations" not in track
+
+
+def test_salmon_meta_preserves_existing_output_on_write_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "metadata.json"
+    original_contents = "This is the original file."
+    output_path.write_text(original_contents, encoding="utf-8")
+
+    def fail_dump(metadata, file, **kwargs):
+        file.write('{"partial":')
+        raise TypeError("Simulated JSON serialization failure")
+
+    monkeypatch.setattr(salmon.tagger.json, "dump", fail_dump)
+
+    async def run() -> Result:
+        return await CliRunner().invoke(
+            salmon.tagger.meta,
+            [RELEASE_URL, "--output", str(output_path)],
+        )
+
+    result, _ = in_fake_discogs(monkeypatch, run)
+
+    assert result.exit_code != 0
+    assert isinstance(result.exception, TypeError)
+    assert output_path.read_text(encoding="utf-8") == original_contents
+
+    temporary_files = list(tmp_path.glob(".salmon-*.tmp"))
+    assert temporary_files == []
+
+
+def test_salmon_meta_exits_with_error_when_scrape_fails(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "metadata.json"
+
+    async def fail_scrape(url: str) -> dict[str, Any]:
+        raise ScrapeError("Test scrape failure")
+
+    monkeypatch.setattr(salmon.tagger, "run_metadata", fail_scrape)
+
+    async def run() -> Result:
+        return await CliRunner().invoke(
+            salmon.tagger.meta,
+            [RELEASE_URL, "--output", str(output_path)],
+        )
+
+    result = anyio.run(run)
+
+    assert result.exit_code == 1
+    assert "Scrape failed: Test scrape failure" in result.output
+    assert not output_path.exists()

@@ -1,5 +1,7 @@
 import functools
 import json
+import os
+import tempfile
 from dataclasses import dataclass
 from itertools import chain
 from pathlib import Path
@@ -227,16 +229,32 @@ async def meta(url: str, output: str | None = None) -> None:
             if isinstance(metadata, dict) and key in metadata:
                 del metadata[key]
         if output:
-            output_path = Path(output)
+            output_path = Path(output).resolve()
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            with output_path.open("w", encoding="utf-8") as f:
-                json.dump(metadata, f, indent=2, ensure_ascii=False)
+            temp_path = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    mode="w",
+                    encoding="utf-8",
+                    dir=output_path.parent,
+                    prefix=".salmon-",
+                    suffix=".tmp",
+                    delete=False,
+                ) as f:
+                    temp_path = Path(f.name)
+                    json.dump(metadata, f, indent=2, ensure_ascii=False)
+                os.replace(temp_path, output_path)
+                temp_path = None
+            finally:
+                if temp_path is not None:
+                    temp_path.unlink(missing_ok=True)
             click.secho(f"Metadata saved to {output}", fg="green")
         else:
             click.echo()
             pprint(metadata)
     except ScrapeError as e:
         click.secho(f"Scrape failed: {e}", fg="red")
+        raise click.exceptions.Exit(1) from None
 
 
 def metadata_validator_base(metadata):
