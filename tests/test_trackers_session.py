@@ -423,7 +423,8 @@ async def _api_call_answered(body: str) -> str:
 
 @pytest.mark.parametrize("body", ['["a", "b"]', '"maintenance"', "null", "42"])
 def test_an_api_answer_that_is_no_json_object_fails_with_its_text(body: str) -> None:
-    assert anyio.run(_api_call_answered, body) == body
+    message = anyio.run(_api_call_answered, body)
+    assert message == body
 
 
 def test_an_api_answer_that_is_a_whole_page_fails_with_an_excerpt() -> None:

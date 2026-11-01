@@ -1285,28 +1285,25 @@ class BaseGazelleApi:
         try:
             if resp["status"] != "success":
                 raise RequestError(f"API upload failed: {self._excerpt(str(resp.get('error', resp)))}")
-            if ("requestid" in resp["response"] and resp["response"]["requestid"]) or (
-                "fillRequest" in resp["response"]
-                and resp["response"]["fillRequest"]
-                and resp["response"]["fillRequest"]["requestId"]
+            answer = resp.get("response")
+            if not isinstance(answer, dict):
+                answer = {}  # Names no torrent: looked up by its infohash below.
+            if ("requestid" in answer and answer["requestid"]) or (
+                "fillRequest" in answer and answer["fillRequest"] and answer["fillRequest"]["requestId"]
             ):
-                requestId = (
-                    resp["response"]["requestid"]
-                    if "requestid" in resp["response"]
-                    else resp["response"]["fillRequest"]["requestId"]
-                )
+                requestId = answer["requestid"] if "requestid" in answer else answer["fillRequest"]["requestId"]
                 if requestId == -1:
                     click.secho("Request fill failed!", fg="red")
                 else:
                     click.secho("Filled request: " + self.request_url(requestId), fg="green")
             torrent_id = 0
             group_id = 0
-            if "torrentid" in resp["response"]:
-                torrent_id = resp["response"]["torrentid"]
-                group_id = resp["response"].get("groupid")
-            elif "torrentId" in resp["response"]:
-                torrent_id = resp["response"]["torrentId"]
-                group_id = resp["response"].get("groupId")
+            if "torrentid" in answer:
+                torrent_id = answer["torrentid"]
+                group_id = answer.get("groupid")
+            elif "torrentId" in answer:
+                torrent_id = answer["torrentId"]
+                group_id = answer.get("groupId")
         except TypeError as err:
             raise RequestError(f"API upload failed, response: {self._redact(str(resp))}") from err
         if not torrent_id:

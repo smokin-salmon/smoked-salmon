@@ -290,7 +290,7 @@ def test_a_post_redirected_to_another_site_is_an_unknown_outcome(path: str) -> N
             other_hits.append(request.method)
             return web.Response(text="not the tracker")
 
-        other_runner, other_url = await _serve(torrents=elsewhere)
+        other_runner, other_url = await _serve(torrents=elsewhere, login=elsewhere)
 
         async def upload(request: web.Request) -> web.Response:
             posts.append(request.method)

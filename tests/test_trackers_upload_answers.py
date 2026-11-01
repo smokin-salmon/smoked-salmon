@@ -343,6 +343,39 @@ def test_an_api_upload_answer_that_is_not_json_is_looked_up_by_infohash(
     assert "its answer was not JSON (200): " in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("answer", [{"status": "success"}, {"status": "success", "response": None}], ids=["no", "null"])
+def test_an_api_success_without_its_response_is_looked_up_by_infohash(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], answer: dict
+) -> None:
+    files, infohash = _upload_files(tmp_path)
+    hits: list[str] = []
+
+    async def ajax(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append(request.method)
+        if request.method == "POST":
+            return web.json_response(answer)
+        assert request.query["hash"] == infohash
+        return _found(TORRENT_ID, GROUP_ID)
+
+    async def run() -> tuple[int, int]:
+        app = web.Application()
+        app.router.add_route("*", "/ajax.php", ajax)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        await web.TCPSite(runner, "127.0.0.1", 0).start()
+        api = FakeApi(f"http://127.0.0.1:{runner.addresses[0][1]}", api_key="an-api-key")
+        try:
+            return await api.upload({"type": 0}, files)
+        finally:
+            await api.close()
+            await runner.cleanup()
+
+    assert anyio.run(run) == (TORRENT_ID, GROUP_ID)
+    assert hits == ["POST", "GET"]
+    assert "its answer named no torrent" in capsys.readouterr().out
+
+
 # The group of an API upload
 
 
