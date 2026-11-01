@@ -215,8 +215,8 @@ For full rules, see the tracker's Classical Tagging Guide.""",
 async def _edit_artists(metadata):
     click.secho(
         "One artist per line as: Name (role). This changes the release's artists, and carries to the tracks a role "
-        "changed for another and a role deleted from an artist still listed; to rename or split an artist on every "
-        "track, use artist a[L]iases instead.",
+        "changed for another, a role deleted from an artist still listed, and a new order; to rename or split an "
+        "artist on every track, use artist a[L]iases instead.",
         fg="cyan",
     )
     artist_text = "\n".join(f"{a} ({i})" for a, i in metadata["artists"])
@@ -252,16 +252,29 @@ async def _edit_artists(metadata):
 def _carry_artist_edit(old, new, tracks):
     """Carry an [a]rtists edit of the release's credits, from `old` to `new`, to every track's credits (#854).
 
-    Roles change as `_role_changes` says. A track keeps one credit per `_slot`: when a change gives a track a credit
-    it already holds, it is kept once, and where main and guest meet, as main, in the earlier of their places (a guest
-    kept here would win at the next trac[k]s save, as filter_artists keeps a name's first ARTIST credit).
+    Roles change as `_role_changes` says. When the edit lists the main artists it kept in a new order, each track's
+    main credits take that order (#868), in the places its main credits hold, with names the list no longer holds as
+    main after them; other roles stay where they are. An edit that only changes roles, or only moves other roles,
+    leaves each track's order alone, as a track may rightly be led by another of its artists.
+
+    A track keeps one credit per `_slot`: when a change gives a track a credit it already holds, it is kept once, and
+    where main and guest meet, as main, in the earlier of their places (a guest kept here would win at the next trac[k]s
+    save, as filter_artists keeps a name's first ARTIST credit).
 
     Returns what this edit did to the tracks or left on them, naming each artist as the tracks spell it: a credit
     removed (#854 rule 3), and the credits of a name no longer listed (rule 4) or whose roles changed in a way
     `_role_changes` can't carry (rule 5).
     """
     changes, unclear = _role_changes(old, new)
-    listed = {_artist_key(name) for name, _ in new}
+    rank: dict[str, int] = {}
+    for name, _ in new:
+        rank.setdefault(_artist_key(name), len(rank))
+    main_rank: dict[str, int] = {}
+    for name, role in new:
+        if role == "main":
+            main_rank.setdefault(_artist_key(name), len(main_rank))
+    kept = [key for key in dict.fromkeys(_artist_key(name) for name, role in old if role == "main") if key in main_rank]
+    reordered = kept != [key for key in main_rank if key in kept]
     removed: dict[tuple[str, str], list[tuple[str, str]]] = {}
     left: dict[str, list[tuple[str, str]]] = {}
     spelled: dict[str, str] = {}
@@ -275,12 +288,19 @@ def _carry_artist_edit(old, new, tracks):
                 if to is None:
                     removed.setdefault((key, role), []).append((dnum, tnum))
                     continue
-                if key in unclear or key not in listed:
+                if key in unclear or key not in rank:
                     left.setdefault(key, []).append((dnum, tnum))
                 slot = _slot(key, to)
                 if slot not in credits or (to, credits[slot][1]) == ("main", "guest"):
                     credits[slot] = (name, to)
-            track["artists"] = list(credits.values())
+            artists = list(credits.values())
+            if reordered:
+                main_positions = [i for i, (_, role) in enumerate(artists) if role == "main"]
+                main_credits = [credit for credit in artists if credit[1] == "main"]
+                main_credits.sort(key=lambda credit: main_rank.get(_artist_key(credit[0]), len(main_rank)))
+                for position, credit in zip(main_positions, main_credits, strict=True):
+                    artists[position] = credit
+            track["artists"] = artists
 
     lines = [f"Removed {spelled[key]} ({role}) from {_track_list(on)}." for (key, role), on in removed.items()]
     for key in dict.fromkeys(_artist_key(name) for name, _ in old):
