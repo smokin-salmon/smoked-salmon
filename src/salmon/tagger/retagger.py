@@ -283,8 +283,15 @@ def append_guests_to_track_titles(track):
 
 
 def metadata_to_track_list(metadata):
-    """Turn the double nested dictionary of tracks into a flat list of tracks, discs in natural order."""
-    return list(chain.from_iterable(metadata[disc].values() for disc in sorted(metadata, key=_disc_track_sort_key)))
+    """Turn the double nested dictionary of tracks into a flat list of tracks, discs and their tracks in natural order.
+
+    Hand-edited metadata can list a disc's tracks in any order.
+    """
+    return [
+        metadata[disc][track]
+        for disc in sorted(metadata, key=_disc_track_sort_key)
+        for track in sorted(metadata[disc], key=_disc_track_sort_key)
+    ]
 
 
 def _track_key(track):
@@ -331,13 +338,15 @@ def _order_by_disc_folders(tags, discs):
     for item in by_path:
         folders.setdefault(os.path.dirname(item[0]), []).append(item)
     groups = [folders[folder] for folder in sorted(folders, key=_natural_key)]
-    disc_sizes = [len(discs[disc]) for disc in sorted(discs, key=_disc_track_sort_key)]
-    if not _names_distinct(folders) or [len(group) for group in groups] != disc_sizes:
+    disc_tracks = [sorted(discs[disc], key=_disc_track_sort_key) for disc in sorted(discs, key=_disc_track_sort_key)]
+    if not _names_distinct(folders) or [len(group) for group in groups] != [len(t) for t in disc_tracks]:
         raise _ambiguous_tracks()
-    return [item for group in groups for item in _order_within_disc(group)]
+    return [
+        item for group, tracks in zip(groups, disc_tracks, strict=True) for item in _order_within_disc(group, tracks)
+    ]
 
 
-def _order_within_disc(group):
+def _order_within_disc(group, tracks):
     """Order one disc folder's files: by track tag when every file has its own distinct one, else by file name.
 
     This is also the path a single-disc, single-folder release takes, so a folder full of duplicate or
@@ -353,18 +362,23 @@ def _order_within_disc(group):
     if not _names_distinct(names):
         raise _ambiguous_tracks()
     by_name = sorted(group, key=lambda item: _natural_key(item[0]))
-    if all(re.match(r"\d", os.path.basename(name)) for name in names):
-        return by_name
+    numbered = all(re.match(r"\d", os.path.basename(name)) for name in names)
     pinned = sum(1 for n in numbers if n is not None and numbers.count(n) == 1)
-    if pinned >= len(group) - 1 and not _names_move_a_pinned_file(by_name):
+    # Numbered names too are no order when they move a file off its own track tag.
+    if (numbered or pinned >= len(group) - 1) and not _names_move_a_pinned_file(by_name, tracks):
         return by_name
     raise _ambiguous_tracks()
 
 
-def _names_move_a_pinned_file(by_name) -> bool:
-    """Whether name order puts a file away from the place its track tag gives, when no other file has that tag."""
+def _names_move_a_pinned_file(by_name, tracks) -> bool:
+    """Whether name order puts a file away from the track its tag gives, when no other file has that tag.
+
+    The track at each place is the disc's own number for it (a second disc can run 4, 5, 6), or the place
+    itself where the metadata numbers its tracks otherwise (A1, A2).
+    """
     numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in by_name]
-    return any(n is not None and numbers.count(n) == 1 and n != place for place, n in enumerate(numbers, 1))
+    wanted = [n if isinstance(n := _to_number(track), int) else place for place, track in enumerate(tracks, 1)]
+    return any(n is not None and numbers.count(n) == 1 and n != want for n, want in zip(numbers, wanted, strict=True))
 
 
 def _names_distinct(names) -> bool:
@@ -393,9 +407,8 @@ def _natural_key(path: str) -> list[int | str]:
 
 
 def _disc_track_sort_key(value):
-    """Sort key that treats a numeric string as a number, so disc "10" sorts after "2"."""
-    s = str(value)
-    return (0, int(s)) if s.isdecimal() else (1, s.lower())
+    """Sort key that compares digit runs as numbers: disc "10" sorts after "2", and track "A10" after "A2"."""
+    return _natural_key(str(value))
 
 
 def _tagset_identity(tagset):
@@ -482,7 +495,8 @@ def _compare_tag(tagfield, metafield, tagset, trackmeta):
     Compare a tag to the equivalent metadata field. If the metadata field
     does not equal the existing tag, return a ``Change``.
     """
-    if trackmeta[metafield]:
+    # .get: hand-edited metadata can leave an optional field (isrc) out altogether.
+    if trackmeta.get(metafield):
         if not getattr(tagset, tagfield, False):
             return Change(tagfield, None, trackmeta[metafield])
         if str(getattr(tagset, tagfield, "")) != str(trackmeta[metafield]):

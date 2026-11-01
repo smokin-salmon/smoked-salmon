@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import anyio
 import pytest
 
@@ -259,3 +261,19 @@ def test_edit_tracks_refuses_extra_text_on_title_and_artist_lines(monkeypatch, o
     assert len(confirms) == 1 and f"line {line}: " in confirms[0] and new in confirms[0]
     assert metadata["tracks"]["1"]["2"]["title"] == "Two"
     assert metadata["tracks"]["1"]["1"]["artists"] == [("A", "main")]
+
+
+def test_an_empty_answer_at_the_review_prompt_edits_nothing(monkeypatch) -> None:
+    metadata = make_metadata()
+    before = deepcopy(metadata)
+
+    async def enter(*_args, **_kwargs):
+        return ""
+
+    monkeypatch.setattr(review_module, "_print_metadata", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(review_module.click, "prompt", enter)
+
+    result = anyio.run(review_module.review_metadata, metadata, lambda _metadata: None, False)
+
+    assert result is metadata
+    assert result == before
