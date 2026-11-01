@@ -96,6 +96,15 @@ def test_a_correction_matches_in_any_case_and_past_outer_spaces(corrections) -> 
     assert metadata["tracks"]["1"]["1"]["artists"] == [("坂本龍一", "main")]
 
 
+def test_a_corrected_name_is_written_without_outer_spaces(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.metadata, "corrections", Corrections(artists={"Ryuichi Sakamoto": " 坂本龍一  "}))
+
+    metadata = _combined([("Ryuichi Sakamoto", "main")])
+
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("坂本龍一", "main")]
+    assert metadata["artists"] == [("坂本龍一", "main")]
+
+
 def test_a_correction_does_not_match_a_name_with_other_accents(corrections) -> None:
     corrections({"Gael Horellou": "Another Name"})
 
