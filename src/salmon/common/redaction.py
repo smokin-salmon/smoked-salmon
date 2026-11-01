@@ -6,7 +6,7 @@ from urllib.parse import parse_qsl, quote, unquote, urlsplit
 
 # Up to the authority's end: a "@" later in the query or fragment is no userinfo.
 _URL_USERINFO = re.compile(r"(://)[^/?#\s@]+@")
-_USERINFO_PASSWORD = re.compile(r"://[^/\s@:]*:([^/\s@']+)@")
+_USERINFO_PASSWORD = re.compile(r"://[^/?#\s@:]*:([^/?#\s@']+)@")
 _SECRET_WORDS = r"(?:pass|password|token|secret|key|session|header|cookie|auth)"
 # A quoted value is masked whole, doubled quotes included: rclone quotes values with spaces (a PEM key).
 _SECRET_VALUE = r"""(?:'(?:[^']|'')*'|"(?:[^"]|"")*"|\S+)"""

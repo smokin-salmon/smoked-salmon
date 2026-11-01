@@ -257,6 +257,14 @@ def test_a_url_whose_query_holds_an_at_sign_has_no_userinfo_to_mask() -> None:
     assert redact_tracker_text(url) == url
 
 
+def test_a_urls_query_or_fragment_gives_no_password_to_mask() -> None:
+    args = ["https://box.test?u=a:MARK-QUERY-09@x", "https://box.test#k:MARK-FRAG-10@y", "sftp://u:MARK-PASS-11@box/x"]
+    found = secret_values(args)
+    assert "MARK-PASS-11" in found
+    assert "MARK-QUERY-09" not in found
+    assert "MARK-FRAG-10" not in found
+
+
 def test_a_long_run_of_keys_with_no_cookie_end_is_read_once() -> None:
     # Each key in a run with no "; " used to rescan the rest of it: 8000 of them took seconds.
     started = time.perf_counter()
