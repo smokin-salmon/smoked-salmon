@@ -230,8 +230,10 @@
 # miscellaneous settings
 # native_spectrals_viewer = false
 # with native_spectrals_viewer, a terminal that speaks the Kitty graphics protocol (kitty, Ghostty,
-# WezTerm...) shows the spectrals itself, a track at a time, over SSH too. false opens feh / Quick Look instead.
+# WezTerm...) shows the spectrals itself, a track at a time, over SSH too. false opens feh (or, on Linux
+# without feh, the desktop's default image viewer) / Quick Look instead.
 # terminal_spectrals_viewer = true
+# only when feh shows the spectrals
 # feh_fullscreen = true
 # prompt_puddletag = false
 # log_dupe_tolerance = 0.5

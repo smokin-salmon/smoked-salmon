@@ -411,7 +411,7 @@ def viewers(monkeypatch) -> list[str]:
     monkeypatch.setattr(spectrals.platform, "system", lambda: "Linux")
     monkeypatch.setattr(terminal_images, "supports_kitty_graphics", supported)
     monkeypatch.setattr(terminal_images, "show_spectrals_in_terminal", partial(record, "terminal"))
-    monkeypatch.setattr(spectrals, "_open_specs_in_feh", partial(record, "feh"))
+    monkeypatch.setattr(spectrals, "_open_specs_on_linux", partial(record, "linux"))
     monkeypatch.setattr(spectrals, "_open_specs_in_web_server", partial(record, "web"))
     monkeypatch.setattr(cfg.upload, "native_spectrals_viewer", True)
     monkeypatch.setattr(cfg.upload, "terminal_spectrals_viewer", True)
@@ -431,19 +431,19 @@ def test_the_native_viewer_draws_in_a_terminal_that_can(viewers) -> None:
     assert viewers == ["query", "terminal"]
 
 
-def test_the_native_viewer_opens_feh_in_a_terminal_that_cannot(monkeypatch, viewers) -> None:
+def test_the_native_viewer_opens_the_linux_viewer_in_a_terminal_that_cannot(monkeypatch, viewers) -> None:
     async def unsupported() -> bool:
         return False
 
     monkeypatch.setattr(terminal_images, "supports_kitty_graphics", unsupported)
     _view()
-    assert viewers == ["feh"]
+    assert viewers == ["linux"]
 
 
 def test_the_terminal_is_not_asked_with_terminal_spectrals_viewer_off(monkeypatch, viewers) -> None:
     monkeypatch.setattr(cfg.upload, "terminal_spectrals_viewer", False)
     _view()
-    assert viewers == ["feh"]
+    assert viewers == ["linux"]
 
 
 def test_the_web_viewer_does_not_ask_the_terminal(monkeypatch, viewers) -> None:
