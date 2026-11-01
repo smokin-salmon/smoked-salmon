@@ -471,9 +471,17 @@ def _rate_limit_wait(retry_after: str | None) -> int:
 
 
 def _query_id(query: dict[str, list[str]], name: str) -> int | None:
-    """Get an ID from a parsed URL query: None unless the parameter is there and holds ASCII digits only."""
+    """Get an ID from a parsed URL query: None unless the parameter is there and holds a number above 0."""
     value = query.get(name, [""])[0]
-    return int(value) if value.isascii() and value.isdigit() else None
+    if not (value.isascii() and value.isdigit()):
+        return None
+    # No torrent, group or request has the ID 0.
+    return int(value) or None
+
+
+def _cut(text: str) -> str:
+    """Cut text to _MAX_EXCERPT characters: a tracker's answer may be a whole page."""
+    return text if len(text) <= _MAX_EXCERPT else text[:_MAX_EXCERPT] + " [...]"
 
 
 class HttpResponse(msgspec.Struct, frozen=True):
@@ -662,8 +670,7 @@ class BaseGazelleApi:
 
     def _excerpt(self, text: str) -> str:
         """Redact text, then cut it to _MAX_EXCERPT characters: a tracker's answer may be a whole page."""
-        shown = self._redact(text)
-        return shown if len(shown) <= _MAX_EXCERPT else shown[:_MAX_EXCERPT] + " [...]"
+        return _cut(self._redact(text))
 
     async def _read_capped(self, resp: aiohttp.ClientResponse) -> bytes:
         """Read an answer's body as bytes, as it comes, and stop once it holds more than _MAX_BINARY_BODY.
@@ -1030,6 +1037,8 @@ class BaseGazelleApi:
                                 await asyncio.sleep(wait)
                                 raise failure("Rate limit exceeded", not_acted_on=True)
 
+                            # Cut only now: the rate limit check above reads the whole page.
+                            error_msg = _cut(error_msg)
                             if resp.status == HTTPStatus.UNAUTHORIZED:
                                 _secho(
                                     f"Authentication to {self.site_string} failed: {error_msg}.\n"
@@ -1068,6 +1077,9 @@ class BaseGazelleApi:
                             if redirected and not idempotent:
                                 # As for an error status on a later hop: the tracker has acted.
                                 raise UnknownOutcomeError(f"{self.site_string} sent a later hop to its login page")
+                            if not idempotent and (target.scheme, target.netloc) != (current.scheme, current.netloc):
+                                # Another site's login page is no sign the tracker turned the request away.
+                                raise UnknownOutcomeError(f"{self.site_string} redirected the request to another site")
                             _secho(
                                 f"{self.site_string} sent this request to its login page: your session cookie is "
                                 f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
@@ -1082,6 +1094,9 @@ class BaseGazelleApi:
                             )
                             if redirected and not idempotent:
                                 raise UnknownOutcomeError(f"{self.site_string} redirected a later hop to another site")
+                            if not idempotent:
+                                # A redirect is an answer: the tracker has acted on the request, whatever it did.
+                                raise UnknownOutcomeError(f"{self.site_string} redirected the request to another site")
                             raise RequestFailedError(f"{self.site_string} redirected to another site")
 
                         if resp.status == HTTPStatus.SEE_OTHER or (
@@ -1138,10 +1153,13 @@ class BaseGazelleApi:
         try:
             resp_json = msgspec.json.decode(resp.text)
         except (msgspec.DecodeError, ValueError):
+            resp_json = None
+        # Not JSON, or JSON that is no object (a maintenance answer): its text is the reason.
+        if not isinstance(resp_json, dict):
             resp_json = {"status": "error", "error": resp.text}
 
         if resp_json.get("status") != "success":
-            raise RequestFailedError(self._redact(str(resp_json.get("error", resp.text))))
+            raise RequestFailedError(self._excerpt(str(resp_json.get("error", resp.text))))
         return cast("dict", resp_json["response"])
 
     async def torrentgroup(self, group_id: int) -> dict:
@@ -1266,7 +1284,7 @@ class BaseGazelleApi:
 
         try:
             if resp["status"] != "success":
-                raise RequestError(f"API upload failed: {self._redact(str(resp['error']))}")
+                raise RequestError(f"API upload failed: {self._excerpt(str(resp.get('error', resp)))}")
             if ("requestid" in resp["response"] and resp["response"]["requestid"]) or (
                 "fillRequest" in resp["response"]
                 and resp["response"]["fillRequest"]
@@ -1289,10 +1307,13 @@ class BaseGazelleApi:
             elif "torrentId" in resp["response"]:
                 torrent_id = resp["response"]["torrentId"]
                 group_id = resp["response"].get("groupId")
-            # Sent into a known group, the torrent is there whether or not the answer says so.
-            return torrent_id, group_id or int(data.get("groupid") or 0)
         except TypeError as err:
             raise RequestError(f"API upload failed, response: {self._redact(str(resp))}") from err
+        if not torrent_id:
+            # A success naming no torrent: found by its infohash, never taken as torrent 0.
+            return await self._find_lost_upload(files, UnknownOutcomeError("its answer named no torrent"))
+        # Sent into a known group, the torrent is there whether or not the answer says so.
+        return torrent_id, group_id or int(data.get("groupid") or 0)
 
     async def site_page_upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via upload.php.
