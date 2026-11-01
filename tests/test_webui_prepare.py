@@ -121,6 +121,66 @@ def test_a_queued_job_is_prepared_while_it_waits_and_runs_with_what_was_prepared
     assert seen_by_the_run == [False]
 
 
+def test_the_dashboard_counts_a_job_preparing_or_ready_as_waiting_its_turn(kinds, tmp_path) -> None:
+    gate, gated = _gate()
+    release = threading.Event()
+
+    async def prepare(_params: Params, _made: Prepared) -> None:
+        while not release.is_set():
+            await asyncio.sleep(0.01)
+
+    async def run(_params: Params) -> str:
+        return "ran"
+
+    kinds("gated", gated)
+    kinds("prepared", run, prepare)
+
+    async def counts(client: TestClient) -> dict[str, int]:
+        response = await client.get("/api/dashboard", headers=AUTH)
+        assert response.status == 200, await response.text()
+        return (await response.json())["jobs"]
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        await _start_job(client, "gated", tmp_path / "a")
+        waiting = await _start_job(client, "prepared", tmp_path / "b")
+        await _until(lambda: manager.jobs[waiting].status == "preparing")
+        assert await counts(client) == {"running": 1, "waiting": 0, "queued": 1, "finished": 0}
+        release.set()
+        await _until(lambda: manager.jobs[waiting].status == "ready")
+        assert await counts(client) == {"running": 1, "waiting": 0, "queued": 1, "finished": 0}
+        gate.set()
+        await _finished(manager, waiting)
+
+    _with_app(test, max_jobs=1)
+
+
+def test_a_job_is_queued_and_runs_unprepared_when_its_preparation_has_no_folder(kinds, tmp_path, monkeypatch) -> None:
+    gate, gated = _gate()
+    prepared_jobs: list[str] = []
+
+    async def prepare(params: Params, _made: Prepared) -> None:
+        prepared_jobs.append(params.name)
+
+    async def run(_params: Params) -> str:
+        return "ran"
+
+    kinds("gated", gated)
+    kinds("prepared", run, prepare)
+    # A tmp_dir gone since salmon web started: no folder can be made in it.
+    monkeypatch.setattr(cfg.directory, "tmp_dir", str(tmp_path / "gone"))
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        await _start_job(client, "gated", tmp_path / "a")
+        waiting = await _start_job(client, "prepared", tmp_path / "b")
+        assert manager.jobs[waiting].status == "queued"
+        gate.set()
+        job = await _finished(manager, waiting)
+        assert (job.status, job.result) == ("done", "ran")
+
+    _with_app(test, max_jobs=1)
+    assert prepared_jobs == []
+
+
 def test_a_job_that_starts_at_once_is_not_prepared(kinds, tmp_path) -> None:
     prepared_jobs: list[str] = []
 

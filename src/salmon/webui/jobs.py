@@ -44,6 +44,8 @@ from salmon.webui.interaction import NoAnswerError, WebInteraction
 # A job waiting its turn is "queued", or while its preparation runs "preparing", then "ready" (see JobKind.prepare).
 Status = Literal["queued", "preparing", "ready", "running", "waiting", "done", "failed", "cancelled", "unknown_outcome"]
 FINISHED: frozenset[Status] = frozenset({"done", "failed", "cancelled", "unknown_outcome"})
+# Waiting its turn, prepared or not.
+QUEUED: frozenset[Status] = frozenset({"queued", "preparing", "ready"})
 
 # A question left unanswered this long stops its job: there is no terminal to fall back to.
 QUESTION_TIMEOUT = 30 * 60
@@ -548,9 +550,14 @@ class JobManager:
         for job in self._queue:
             if job.kind.prepare is None or job.folder is None or job.prepared is not None:
                 continue
-            folder = os.path.realpath(
-                tempfile.mkdtemp(prefix=f"{OWN_FOLDER_PREFIX}{job.id}-prepared-", dir=cfg.directory.tmp_dir or None)
-            )
+            try:
+                folder = os.path.realpath(
+                    tempfile.mkdtemp(prefix=f"{OWN_FOLDER_PREFIX}{job.id}-prepared-", dir=cfg.directory.tmp_dir or None)
+                )
+            except OSError as e:
+                # tmp_dir gone or full: the jobs run unprepared, as without preparation.
+                print(f"salmon web: not preparing {job.id}: {e}", file=output.real_stderr())
+                return
             if cfg.directory.protects(folder):
                 # The config does not let tmp_dir be in a library: nothing is prepared then.
                 os.rmdir(folder)
