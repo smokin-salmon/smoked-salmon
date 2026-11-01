@@ -5,6 +5,7 @@ import asyncclick as click
 import humanfriendly
 
 from salmon import cfg, interaction
+from salmon.common.strings import numeric_id
 from salmon.errors import RequestError, RequestFailedError
 
 if TYPE_CHECKING:
@@ -75,25 +76,31 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
+            # Every field read first: a malformed result keeps its number, which the prompt reads, on one line.
             try:
                 url = gazelle_site.request_url(r["requestId"])
-                # User doesn't get to pick a zero index
-                click.echo(f" {r_index + 1:02d} >> {url} | ", nl=False)
                 if len(r["artists"][0]) > 3:
                     r["artist"] = "Various Artists"
                 else:
                     r["artist"] = ""
                     for a in r["artists"][0]:
                         r["artist"] += a["name"] + " "
-                click.secho(f"{r['artist']}", fg="cyan", nl=False)
-                click.secho(f" - {r['title']} ", fg="cyan", nl=False)
-                click.secho(f"({r['year']}) [{r['releaseType']}] ", fg="yellow")
-                click.secho(f"Requirements: {' or '.join(r['bitrateList'])} / ", nl=False)
-                click.secho(f"{' or '.join(r['formatList'])} / ", nl=False)
-                click.secho(f"{' or '.join(r['mediaList'])} / ")
-
-            except (KeyError, TypeError):
+                title, year, release_type = r["title"], r["year"], r["releaseType"]
+                bitrates, formats = " or ".join(r["bitrateList"]), " or ".join(r["formatList"])
+                media = " or ".join(r["mediaList"])
+            except (KeyError, TypeError, IndexError):
+                request_id = numeric_id(r.get("requestId")) if isinstance(r, dict) else None
+                link = f" | {gazelle_site.request_url(request_id)}" if request_id is not None else ""
+                click.secho(f" {r_index + 1:02d} >> This request could not be read{link}", fg="yellow")
                 continue
+            # User doesn't get to pick a zero index
+            click.echo(f" {r_index + 1:02d} >> {url} | ", nl=False)
+            click.secho(f"{r['artist']}", fg="cyan", nl=False)
+            click.secho(f" - {title} ", fg="cyan", nl=False)
+            click.secho(f"({year}) [{release_type}] ", fg="yellow")
+            click.secho(f"Requirements: {bitrates} / ", nl=False)
+            click.secho(f"{formats} / ", nl=False)
+            click.secho(f"{media} / ")
 
 
 def _request_options(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any]]) -> list[interaction.Option]:
@@ -201,26 +208,32 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
             default="N",
             options=options,
         )
-        if request_id.strip().isdigit():
+        # ASCII digits: isdigit() also takes "4²", which int() refuses.
+        if request_id.strip().isascii() and request_id.strip().isdigit():
             raw_input = int(request_id)
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
-                if results[list_index].get("requestId") is None:
+                request_number = numeric_id(results[list_index].get("requestId"))
+                if request_number is None:
                     click.secho(
                         f"Result {list_index + 1} has no request ID: pick another, or paste a request URL.", fg="red"
                     )
                     continue
-                return int(results[list_index]["requestId"])
+                return request_number
             else:
                 click.echo(f"Interpreting {raw_input} as a request id")
                 return raw_input
 
         elif request_id.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
-            parsed_id = parse.parse_qs(parse.urlparse(request_id).query)["id"][0]
-            return int(parsed_id)
+            parsed_id = parse.parse_qs(parse.urlparse(request_id).query).get("id", [""])[0]
+            if parsed_id.isascii() and parsed_id.isdigit():
+                return int(parsed_id)
+            click.secho("That URL names no request: paste a request's URL, its ID, or [n]o.", fg="red")
         elif request_id.lower().startswith("n") or not request_id.strip():
             click.echo("Not filling a request")
             return None
+        else:
+            click.secho(f"'{request_id.strip()}' is not a request: paste its URL, its ID, or [n]o.", fg="red")
 
 
 async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | int) -> bool:
