@@ -14,7 +14,7 @@ import salmon.tagger.review as review
 import salmon.uploader as uploader
 from salmon import interaction
 from salmon.errors import AbortAndDeleteFolder, PickOtherResults, SkipTracker
-from salmon.uploader import dupe_checker, spectrals
+from salmon.uploader import conversion_choice, dupe_checker, spectrals
 
 
 class AskedAgain(Exception):
@@ -192,7 +192,7 @@ CONVERSIONS = ["16bit 48.0 kHz", "MP3 320", "MP3 V0"]
 
 def conversions(held: frozenset[str] = frozenset(), wanted: tuple[str, ...] | None = None) -> Callable[[], Any]:
     async def run() -> Any:
-        tasks = await uploader.prompt_downconversion_choice(RELEASE_24BIT, TRACKS_24BIT_48K, held, wanted)
+        tasks = await conversion_choice.prompt_downconversion_choice(RELEASE_24BIT, TRACKS_24BIT_48K, held, wanted)
         return [task["name"] for task in tasks]
 
     return run

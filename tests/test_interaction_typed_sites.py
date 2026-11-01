@@ -444,7 +444,7 @@ def test_fill_this_request_with_yyy_is_not_asked(monkeypatch: pytest.MonkeyPatch
     assert terminal.calls == []
 
 
-# #35 uploader.prompt_downconversion_choice: formats to convert
+# #35 conversion_choice.prompt_downconversion_choice: formats to convert
 
 CONVERSIONS_TEXT = '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)'
 

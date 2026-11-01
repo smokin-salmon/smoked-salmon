@@ -34,6 +34,7 @@ from salmon.errors import RequestError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
+from salmon.uploader import conversion_choice
 from salmon.uploader import spectrals as spectrals_module
 from salmon.uploader.seedbox import UploadManager
 
@@ -436,12 +437,13 @@ def test_an_upload_whose_group_id_does_not_come_back_offers_no_conversions(monke
     _trackers(monkeypatch, "RED")
     seedbox_runs = _seedbox_runs(monkeypatch)
     offered: list[bool] = []
-    choose = salmon.uploader.prompt_downconversion_choice
+    choose = conversion_choice.prompt_downconversion_choice
 
     async def recording(*args: Any, **kwargs: Any) -> Any:
         offered.append(True)
         return await choose(*args, **kwargs)
 
+    monkeypatch.setattr(conversion_choice, "prompt_downconversion_choice", recording)
     # A new group on RED.
     run = _run_up(
         monkeypatch,
@@ -449,7 +451,6 @@ def test_an_upload_whose_group_id_does_not_come_back_offers_no_conversions(monke
         torrents,
         input="\n\n",
         tracker=NoGroupIdTracker(),
-        prompt_downconversion_choice=recording,
     )
 
     assert run.result.exit_code == 0, run.result.output

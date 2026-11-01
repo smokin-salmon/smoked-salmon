@@ -30,6 +30,7 @@ import salmon.trackers
 import salmon.uploader as uploader
 from salmon import cfg, interaction
 from salmon.config.validations import CONVERSION_KINDS, Upload
+from salmon.uploader import conversion_choice
 
 TRACKS_24BIT_48K = {"01.flac": {"sample rate": 48000}}
 RELEASE_24BIT = {"format": "FLAC", "encoding": "24bit Lossless"}
@@ -65,7 +66,7 @@ def test_a_task_is_named_by_its_kind_whatever_the_rates() -> None:
     options = uploader.get_downconversion_options(RELEASE_24BIT, tracks)
 
     assert [option["name"] for option in options] == ["24bit 96.0 kHz", "16bit 48.0 kHz", "MP3 320", "MP3 V0"]
-    assert [uploader.conversion_kind(option) for option in options] == ["24bit", "16bit", "320", "V0"]
+    assert [conversion_choice.conversion_kind(option) for option in options] == ["24bit", "16bit", "320", "V0"]
 
 
 # The default answer
@@ -78,7 +79,9 @@ def _offered() -> list[dict[str, Any]]:
 def _prompt_yyy(held: frozenset[str] = frozenset(), conversions: tuple[str, ...] | None = None) -> list[str]:
     async def run() -> list[str]:
         with interaction.assuming_defaults():
-            tasks = await uploader.prompt_downconversion_choice(RELEASE_24BIT, TRACKS_24BIT_48K, held, conversions)
+            tasks = await conversion_choice.prompt_downconversion_choice(
+                RELEASE_24BIT, TRACKS_24BIT_48K, held, conversions
+            )
         return [task["name"] for task in tasks]
 
     return anyio.run(run)
@@ -128,7 +131,7 @@ def _interactive_choice(monkeypatch, answer: str | None = None, **kwargs: Any) -
         return default if answer is None else answer
 
     async def run() -> list[str]:
-        tasks = await uploader.prompt_downconversion_choice(RELEASE_24BIT, TRACKS_24BIT_48K, **kwargs)
+        tasks = await conversion_choice.prompt_downconversion_choice(RELEASE_24BIT, TRACKS_24BIT_48K, **kwargs)
         return [task["name"] for task in tasks]
 
     monkeypatch.setattr(click, "prompt", fake_prompt)
