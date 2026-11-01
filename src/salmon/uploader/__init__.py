@@ -4,7 +4,7 @@ import platform
 import shutil
 import tempfile
 from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack, asynccontextmanager, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, nullcontext, suppress
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
@@ -112,6 +112,7 @@ from salmon.uploader.spectrals import (
     prompt_lossy_master,
     report_lossy_master,
     specs_hosts_text,
+    spectrals_in_background,
 )
 from salmon.uploader.staging import staged_source
 from salmon.uploader.upload import (
@@ -1137,76 +1138,84 @@ async def _upload_staged(
         async with fetch_existing_group_candidates_in_background(
             gazelle_site, dupe_searchstrs, rls_data["title"]
         ) as group_fetch:
-            if not skip_mqa:
-                all_files = cfg.upload.mqa_check_all_tracks
-                checked = "every FLAC file" if all_files else "first FLAC file only"
-                click.secho(f"Checking for MQA release ({checked})", fg="cyan", bold=True)
-                await mqa_test(path, all_files=all_files)
-                click.secho("No MQA release detected", fg="green")
+            # The spectrals only read the album, so they are made in the background during the checks and the
+            # group question, and shown at the spectral step. None are made with --spectrals-after or given URLs.
+            async with (
+                nullcontext()
+                if spectrals_after or given_spectral_urls
+                else spectrals_in_background(path, audio_info, spectrals, rls_data["format"])
+            ) as spectrals_generation:
+                if not skip_mqa:
+                    all_files = cfg.upload.mqa_check_all_tracks
+                    checked = "every FLAC file" if all_files else "first FLAC file only"
+                    click.secho(f"Checking for MQA release ({checked})", fg="cyan", bold=True)
+                    await mqa_test(path, all_files=all_files)
+                    click.secho("No MQA release detected", fg="green")
 
-            if rls_data["encoding"] == "24bit Lossless" and not skip_up:
-                if not await interaction.assume_defaults():
-                    if await interaction.confirm(
-                        click.style(
-                            "\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"
-                        ),
-                        default=True,
-                    ):
+                if rls_data["encoding"] == "24bit Lossless" and not skip_up:
+                    if not await interaction.assume_defaults():
+                        if await interaction.confirm(
+                            click.style(
+                                "\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"
+                            ),
+                            default=True,
+                        ):
+                            await upload_upconvert_test(path)
+                    else:
                         await upload_upconvert_test(path)
-                else:
-                    await upload_upconvert_test(path)
 
-            if source == "CD" and not skip_log_check:
-                await _check_logs(path)
+                if source == "CD" and not skip_log_check:
+                    await _check_logs(path)
 
-            if provenance is not None:
-                _warn_about_provenance(provenance)
+                if provenance is not None:
+                    _warn_about_provenance(provenance)
 
-            if group_fetch is not None:
-                try:
-                    results, recent_uploads = await group_fetch.result()
-                except RequestError as e:
-                    # Skipped like a first tracker that refuses the release, when another can follow.
-                    if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+                if group_fetch is not None:
+                    try:
+                        results, recent_uploads = await group_fetch.result()
+                    except RequestError as e:
+                        # Skipped like a first tracker that refuses the release, when another can follow.
+                        if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+                            click.secho(
+                                f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True
+                            )
+                            raise click.exceptions.Exit(1) from None
                         click.secho(
-                            f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True
+                            f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
+                            fg="red",
+                            bold=True,
                         )
-                        raise click.exceptions.Exit(1) from None
-                    click.secho(
-                        f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
-                        fg="red",
-                        bold=True,
-                    )
-                    search_failed = True
-                else:
-                    group_id = await resolve_existing_group(
-                        gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
-                    )
-                    # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
-                    weighed_against = dict(rls_data)
+                        search_failed = True
+                    else:
+                        group_id = await resolve_existing_group(
+                            gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
+                        )
+                        # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
+                        weighed_against = dict(rls_data)
 
-            spectral_ids = None
-            lossy_master: bool = False
-            if spectrals_after:
-                # We tell the uploader not to worry about it being lossy until later.
-                pass
-            elif given_spectral_urls:
-                # As check_spectrals would: salmon's spectrals from an earlier run must not go into the torrents.
-                make_way_for_spectrals(get_spectrals_path(path))
-                lossy_master = await _lossy_master_without_spectrals(lossy, rls_data["format"])
-                # Numbered as --spectrals numbers tracks; the files' names go into the description.
-                audio_files = get_audio_files(path)
-                spectral_ids = {track: audio_files[track - 1] for track in given_spectral_urls}
-            else:
-                lossy_result, spectral_ids = await check_spectrals(
-                    path,
-                    audio_info,
-                    lossy,
-                    spectrals,
-                    format=rls_data["format"],
-                    hosts=specs_hosts_text(_trackers_for_run(gazelle_site.site_code, flac_group, reachable)),
-                )
-                lossy_master = lossy_result if lossy_result is not None else False
+                spectral_ids = None
+                lossy_master: bool = False
+                if spectrals_after:
+                    # We tell the uploader not to worry about it being lossy until later.
+                    pass
+                elif given_spectral_urls:
+                    # As check_spectrals would: salmon's spectrals from an earlier run must not go into the torrents.
+                    make_way_for_spectrals(get_spectrals_path(path))
+                    lossy_master = await _lossy_master_without_spectrals(lossy, rls_data["format"])
+                    # Numbered as --spectrals numbers tracks; the files' names go into the description.
+                    audio_files = get_audio_files(path)
+                    spectral_ids = {track: audio_files[track - 1] for track in given_spectral_urls}
+                else:
+                    lossy_result, spectral_ids = await check_spectrals(
+                        path,
+                        audio_info,
+                        lossy,
+                        spectrals,
+                        format=rls_data["format"],
+                        hosts=specs_hosts_text(_trackers_for_run(gazelle_site.site_code, flac_group, reachable)),
+                        generation=spectrals_generation,
+                    )
+                    lossy_master = lossy_result if lossy_result is not None else False
 
             run_source_url = source_url
             metadata_search = MetadataSearch()
