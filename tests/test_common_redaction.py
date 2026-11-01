@@ -217,8 +217,10 @@ def test_response_headers_mask_cookie_values_credentials_and_known_secrets() -> 
     assert shown["Server"] == "nginx [REDACTED]"
 
 
-def test_a_response_header_naming_a_secret_is_masked() -> None:
-    assert redact_tracker_headers([("X-Client-Secret", "newly-issued-0123")]) == {"X-Client-Secret": "[REDACTED]"}
+@pytest.mark.parametrize("name", ["X-Client-Secret", "X-Client-Secret-Cookie"])
+def test_a_response_header_naming_a_secret_is_masked(name: str) -> None:
+    # A name that also says "cookie" is no cookie header: its bare value has no name=value for the cookie mask.
+    assert redact_tracker_headers([(name, "newly-issued-0123")]) == {name: "[REDACTED]"}
 
 
 @pytest.mark.parametrize(
@@ -242,6 +244,8 @@ def test_redact_tracker_text_masks_every_form_a_tracker_secret_takes(text: str, 
 def test_redact_tracker_text_keeps_a_cookies_delimiter_and_leaves_a_masked_value_alone() -> None:
     assert redact_tracker_text("session=MARK-COOKIE-06; path=/") == "session=[REDACTED]; path=/"
     assert redact_tracker_text("session=[REDACTED]; path=/") == "session=[REDACTED]; path=/"
+    # A cookie's value may hold "&": only its "; " ends it, not a query's separator.
+    assert redact_tracker_text("session=MARK&COOKIE-07; path=/") == "session=[REDACTED]; path=/"
 
 
 def test_a_url_whose_query_holds_an_at_sign_has_no_userinfo_to_mask() -> None:
