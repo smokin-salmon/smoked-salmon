@@ -4,6 +4,7 @@ salmon never fetches a URL given here: whoever gives it vouches for the image. I
 that the URL is on one of its image hosts and that every tracker of the run may show that host's images.
 """
 
+import re
 from collections.abc import Iterable, Sequence
 from urllib.parse import urlsplit
 
@@ -12,6 +13,9 @@ from salmon.images import HOSTS, host_of_url
 
 # A track's spectral images: Full, then Zoom.
 MAX_SPECTRAL_URLS = 2
+# What a URL may hold: the characters RFC 3986 allows, but brackets (an IPv6 host, which no image host uses), so that
+# it cannot close the BBCode tag it goes into. No space, quote or angle bracket either.
+_URL_CHARACTERS = re.compile(r"[A-Za-z0-9\-._~:/?#@!$&'()*+,;=%]+")
 
 
 def parse_spectral_urls(values: Iterable[str]) -> tuple[tuple[int, tuple[str, ...]], ...]:
@@ -56,6 +60,9 @@ def url_refusal(url: str, trackers: Sequence[str], spectrals: bool = False) -> s
         trackers: The site codes of every tracker the run may upload to.
         spectrals: Whether the image is a spectral, which some hosts may not take.
     """
+    if not _URL_CHARACTERS.fullmatch(url):
+        # A "]" would end the description's [img=...] tag and let the rest of the text add an image of any host.
+        return f"{url} has characters an image URL in a description cannot have"
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https") or not parts.hostname:
         return f"{url} is not an http:// or https:// URL"

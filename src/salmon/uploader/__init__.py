@@ -106,6 +106,8 @@ from salmon.uploader.spectrals import (
     SpectralUploads,
     check_spectrals,
     generate_lossy_approval_comment,
+    get_spectrals_path,
+    make_way_for_spectrals,
     post_upload_spectral_check,
     prompt_lossy_master,
     report_lossy_master,
@@ -503,10 +505,11 @@ async def run_up(options: UpOptions) -> None:
         options.group_id,
         options.source,
         options.lossy,
-        # The spectrals given by URL are the run's: --lossy is reported with them.
-        options.spectrals or tuple(track for track, _urls in options.spectral_urls),
+        options.spectrals,
         options.encoding,
         options.spectrals_after,
+        # The run's spectrals, uploaded already: --lossy is reported with them.
+        spectral_url_tracks=tuple(track for track, _urls in options.spectral_urls),
     )
     flac_group = None
     if options.group_id:
@@ -1163,6 +1166,8 @@ async def _upload_staged(
                 # We tell the uploader not to worry about it being lossy until later.
                 pass
             elif given_spectral_urls:
+                # As check_spectrals would: salmon's spectrals from an earlier run must not go into the torrents.
+                make_way_for_spectrals(get_spectrals_path(path))
                 lossy_master = await _lossy_master_without_spectrals(lossy, rls_data["format"])
                 # Numbered as --spectrals numbers tracks; the files' names go into the description.
                 audio_files = get_audio_files(path)

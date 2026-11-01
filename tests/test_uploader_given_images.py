@@ -13,6 +13,7 @@ import pytest
 from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     _album,
     _run_up,
+    _torrent_lines,
     image_uploads,  # noqa: F401
 )
 
@@ -22,7 +23,7 @@ import salmon.uploader
 from salmon import cfg
 from salmon.images import host_of_url
 from salmon.uploader.given_images import parse_spectral_urls, url_refusal
-from salmon.uploader.spectrals import make_spectral_bbcode
+from salmon.uploader.spectrals import SpectralUploads, make_spectral_bbcode
 
 pytestmark = pytest.mark.usefixtures("image_uploads")
 
@@ -167,6 +168,8 @@ def test_spectral_urls_stand_for_the_spectrals(monkeypatch, tmp_path, dirs, uplo
     )
 
     assert run.result.exit_code == 0, run.result.output
+    assert "Using the spectrals given by URL for tracks 2, 1." in run.result.output
+    assert "Uploading spectrals" not in run.result.output
     assert "Spectrals given by URL (--spectral-url): none are made, shown or uploaded." in run.result.output
     # Only the cover went up, and no spectrals folder was made.
     assert [name for name, _url in uploaded] == ["cover.jpg"]
@@ -250,6 +253,9 @@ def test_reopening_spectrals_given_by_url_asks_again(monkeypatch, capsys) -> Non
         (("--spectral-url", f"1={FULL_1}", "--spectral-url", f"1={ZOOM_1}"), "track 1 is given twice"),
         (("--spectral-url", f"1={FULL_1},{ZOOM_1},{FULL_2}"), "has 3 URLs: a track takes at most two"),
         (("--spectral-url", f"1={FULL_1},"), "has an empty URL"),
+        # A "]" would close the description's [img=] tag and add an image on a host the check never saw.
+        (("--spectral-url", f"1={FULL_1}][img={RED_IMAGE}"), "has characters an image URL in a description cannot"),
+        (("--cover-url", f"{COVER} [img={RED_IMAGE}]"), "--cover-url: "),
         (("--spectral-url", f"3={FULL_1}"), "--spectral-url: track 3 is not one of the album's"),
         (("--spectral-url", "1=ftp://files.catbox.moe/a.png"), "is not an http:// or https:// URL"),
         (("--spectral-url", f"1={FULL_1}?h=signature"), "give the image's own URL, with no query"),
@@ -335,6 +341,38 @@ def test_spectral_urls_keep_the_order_given() -> None:
         (2, (FULL_2,)),
         (1, (FULL_1, ZOOM_1)),
     )
+
+
+def test_salmons_spectrals_from_an_earlier_run_stay_out_of_the_torrents(monkeypatch, tmp_path, dirs) -> None:
+    _library, _downloads, torrents = dirs
+    album = _album(tmp_path / "seeding" / "Album")
+    (album / "Spectrals").mkdir()
+    (album / "Spectrals" / "01 Full.png").write_bytes(b"png")
+
+    run = _run_up(
+        monkeypatch,
+        album,
+        torrents,
+        args=("--spectral-url", f"1={FULL_1},{ZOOM_1}"),
+        check_spectrals=_no_spectrals,
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    torrent_lines = [line for upload in _uploads(run) for line in _torrent_lines(upload["file_input"][1])]
+    assert torrent_lines
+    assert not any("Spectrals" in line or ".png" in line for line in torrent_lines)
+
+
+def test_spectral_urls_given_leave_the_spectrals_folder_alone(tmp_path) -> None:
+    album = tmp_path / "Album"
+    (album / "Spectrals").mkdir(parents=True)
+    (album / "Spectrals" / "01 Full.png").write_bytes(b"png")
+    uploads = SpectralUploads(str(album), ["RED"], given={1: [FULL_1]})
+
+    assert anyio.run(uploads.urls_for, "RED", {1: "01 - one.flac"}) == {1: [FULL_1]}
+    anyio.run(uploads.close)
+
+    assert (album / "Spectrals" / "01 Full.png").exists()
 
 
 def test_spectrals_bbcode_takes_a_track_with_its_full_image_only() -> None:

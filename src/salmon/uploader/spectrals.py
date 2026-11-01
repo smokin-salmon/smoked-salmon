@@ -285,7 +285,10 @@ class SpectralUploads:
         carry_specs_claim(old_real, self._path)
 
     async def close(self) -> None:
-        """Delete the spectral files, if they are still there."""
+        """Delete the spectral files, if they are still there. With spectrals given by URL, the run made none."""
+        if self._given is not None:
+            # What is at the spectrals path now is not this run's: a folder there may be in a torrent seeding.
+            return
         await _delete_spectrals(self._path)
         if self._scratch is not None:
             shutil.rmtree(self._scratch, ignore_errors=True)
