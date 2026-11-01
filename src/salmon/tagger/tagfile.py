@@ -95,6 +95,9 @@ class TagFile:
             elif isinstance(mut, mp3.MP3):
                 if attr == "comment":
                     return self._mp3_comment()
+                field = TAG_FIELDS["MP3"][attr][0]
+                if field.startswith("TXXX:") and isinstance(mut.tags, ID3Tags):
+                    return _txxx_values(mut.tags, field)
                 return self.parse_tag(attr, "MP3")
             elif isinstance(mut, mp4.MP4):
                 tag = self.parse_tag(attr, "AAC")
@@ -140,8 +143,8 @@ class TagFile:
                         val = str(frame.text[0])
                         if "number" in attr:
                             return val.split("/")[0]
-                        elif "total" in attr and "/" in val:
-                            return val.split("/")[1]
+                        # "3" alone holds no total.
+                        return val.split("/")[1] if "/" in val else None
                     except (AttributeError, KeyError):
                         # AAC: MP4 tags are tuples like (track, total)
                         tag_val = tags[field]
@@ -330,3 +333,9 @@ class TagFile:
         mut = self.mut
         if mut is not None:
             mut.save()
+
+
+def _txxx_values(tags: ID3Tags, field: str) -> list[str] | None:
+    """A TXXX field's values from every case of its description, as players read it and set_mp3_tag replaces it."""
+    desc = field.split(":", 1)[1].lower()
+    return [value for frame in tags.getall("TXXX") if frame.desc.lower() == desc for value in frame.text] or None
