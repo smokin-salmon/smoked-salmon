@@ -85,6 +85,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from salmon.cross_upload import CrossUploadOptions
+    from salmon.prepared import Prepared
     from salmon.uploader import UpOptions
     from salmon.uploader.record import RunRecord
 
@@ -615,6 +616,22 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     return {"folder": os.path.basename(path), "trackers": list(trackers), "uploads": record.uploads}
 
 
+async def prepare_upload(params: UploadParams, prepared: "Prepared") -> None:
+    """While the upload waits its turn: the checks it runs that only read the album (``uploader.preparation``)."""
+    from salmon.uploader.preparation import prepare_upload as prepare
+
+    await prepare(
+        prepared,
+        source=params.source,
+        skip_mqa=params.skip_mqa,
+        skip_up=params.skip_up,
+        skip_log_check=params.skip_log_check,
+        skip_integrity_check=params.skip_integrity_check,
+        spectrals_after=params.spectrals_after,
+        spectral_ids=tuple(params.spectrals),
+    )
+
+
 async def tag(params: TagParams) -> dict[str, Any]:
     """What ``salmon tag`` runs, its questions asked in the browser.
 
@@ -873,6 +890,7 @@ register(
         title=_upload_title,
         folder=lambda params: params.path,
         check=_checked_upload,
+        prepare=prepare_upload,
     )
 )
 register(

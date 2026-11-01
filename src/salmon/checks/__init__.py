@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import asyncclick as click
 
+from salmon import prepared
 from salmon.checks.integrity import handle_integrity_check
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import test_upconverted
@@ -202,7 +203,10 @@ async def mqa_test(path: str, all_files: bool = True) -> None:
     async def check(filepath: str, _: int) -> bool:
         return await check_mqa(filepath)
 
-    detected = await process_files(filepaths, check, "Checking for MQA")
+    # A file prepared before the upload ran is not checked again (salmon.prepared).
+    detected = await process_files(
+        filepaths, prepared.reusing("mqa", path, check) if os.path.isdir(path) else check, "Checking for MQA"
+    )
     hits = [filepath for filepath, found in zip(filepaths, detected, strict=True) if found]
     for filepath in hits:
         click.secho(f"MQA syncword present in '{filepath}'", fg="red", bold=True)

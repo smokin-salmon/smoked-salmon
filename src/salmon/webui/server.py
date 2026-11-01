@@ -40,7 +40,7 @@ from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers th
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
 from salmon.webui.egress import Redactor, config_secrets
 from salmon.webui.interaction import Picked
-from salmon.webui.jobs import FINISHED, KINDS, Job, JobError, JobManager
+from salmon.webui.jobs import FINISHED, KINDS, QUEUED, Job, JobError, JobManager
 from salmon.webui.security import DEV_ORIGINS, host_allowed, is_loopback, origin_allowed
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -246,7 +246,7 @@ async def dashboard(request: web.Request) -> web.Response:
     the job counts and the warnings the config printed at start. Contacts no tracker."""
     counts = {"running": 0, "waiting": 0, "queued": 0, "finished": 0}
     for job in request.app[JOBS].jobs.values():
-        counts["finished" if job.status in FINISHED else job.status] += 1
+        counts["finished" if job.status in FINISHED else "queued" if job.status in QUEUED else job.status] += 1
     # A worker thread: disk_usage on a slow or hung mount must not stall the server's loop.
     folders = await asyncio.to_thread(_folders)
     return _filtered(

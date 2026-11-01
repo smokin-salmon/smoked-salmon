@@ -8,7 +8,7 @@ import anyio
 import asyncclick as click
 import msgspec
 
-from salmon import cfg, interaction
+from salmon import cfg, interaction, prepared
 from salmon.common.files import process_files, rewrite_refusal
 from salmon.errors import UploadError
 
@@ -330,6 +330,10 @@ async def _check_flac_integrity(path: str) -> IntegrityResult:
     Returns:
         The file's result.
     """
+    # The same audio, checked clean before the upload ran, is not decoded again (salmon.prepared).
+    kept = await prepared.audio_result("integrity", path)
+    if kept is not None:
+        return kept
     name = os.path.basename(path)
     try:
         result = await anyio.run_process(["flac", "-wt", path], check=False)
