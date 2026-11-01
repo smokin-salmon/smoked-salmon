@@ -10,10 +10,10 @@ from pathlib import Path
 import anyio
 import asyncclick as click
 import pytest
+from helpers.uploader_shortened_conversions import _write_flac
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
 from PIL import Image
-from test_uploader_shortened_conversions import _write_flac  # pyright: ignore[reportMissingImports]
 
 import salmon.uploader as uploader
 from salmon import cfg

@@ -19,7 +19,7 @@ import anyio
 import pytest
 from aiohttp import web
 from aiohttp_socks import ProxyConnector
-from fake_proxy import FakeProxy
+from helpers.fake_proxy import FakeProxy
 
 import salmon.images as images
 import salmon.search

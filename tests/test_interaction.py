@@ -1,6 +1,6 @@
 """The interaction layer: who answers a command's questions, and what `-yyy` is (#630).
 
-The runs go against the local fake tracker of test_uploader_dry_run and a fake image host, never a real one.
+The runs go against the local fake tracker of helpers.uploader_dry_run and a fake image host, never a real one.
 """
 
 from pathlib import Path
@@ -9,9 +9,11 @@ from typing import Any
 import anyio
 import asyncclick as click
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     _run_up,
     _write_flac,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 

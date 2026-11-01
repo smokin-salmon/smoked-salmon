@@ -16,8 +16,7 @@ import anyio
 import asyncclick as click
 import pytest
 from asyncclick.testing import CliRunner
-from mutagen.flac import FLAC
-from test_library_dirs import (  # pyright: ignore[reportMissingImports]
+from helpers.library_dirs import (
     RENAMED,
     _album,
     _inodes,
@@ -28,6 +27,7 @@ from test_library_dirs import (  # pyright: ignore[reportMissingImports]
     _run_up,
     _snapshot,
 )
+from mutagen.flac import FLAC
 
 import salmon.checks
 import salmon.commands

@@ -1,13 +1,13 @@
 """Downconversion uploads: a converted folder that cannot be read is skipped, the rest go on."""
 
 import contextlib
-import struct
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 import anyio
 import pytest
+from helpers.uploader_downconversion import SOURCE_NAMES, _write_flac
 
 import salmon.trackers
 import salmon.uploader as uploader
@@ -16,8 +16,6 @@ from salmon.errors import UploadError
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
     from salmon.uploader.seedbox import UploadManager
-
-SOURCE_NAMES = ("01. Track.flac", "02. Track.flac")
 
 
 def _track_data(*rates: int) -> dict[str, Any]:
@@ -37,15 +35,6 @@ def _track_data(*rates: int) -> dict[str, Any]:
 
 def _metadata() -> dict[str, Any]:
     return {"format": "FLAC", "encoding": "24bit Lossless", "encoding_vbr": False, "scene": False, "cover": None}
-
-
-def _write_flac(path: Path, sample_rate: int, bits: int) -> None:
-    """Write a FLAC with only a STREAMINFO block, enough for its audio info to be read."""
-    streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
-    streaminfo += ((sample_rate << 44) | (1 << 41) | ((bits - 1) << 36) | sample_rate * 200).to_bytes(8, "big")
-    streaminfo += bytes(16)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
 
 
 def _unreadable_flac(folder: Path) -> None:

@@ -15,11 +15,12 @@ import msgspec
 import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
+from helpers.config_compat import _base, _load
 
 import salmon.release_notification
 import salmon.trackers.ops
 import salmon.trackers.red
-from salmon.config import _parse_config, compat
+from salmon.config import compat
 from salmon.config.validations import Cfg
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import dupe_checker
@@ -47,16 +48,6 @@ def _fresh_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(compat, "config_warnings", [])
 
 
-def _base(tmp_path: Path) -> dict[str, Any]:
-    music, torrents = tmp_path / "music", tmp_path / "torrents"
-    music.mkdir(exist_ok=True)
-    torrents.mkdir(exist_ok=True)
-    return {
-        "directory": {"download_directory": music.as_posix(), "dottorrents_dir": torrents.as_posix()},
-        "tracker": {"red": {"session": "a-real-cookie"}},
-    }
-
-
 def _put(raw: dict[str, Any], path: str, value: Any) -> dict[str, Any]:
     *tables, key = path.split(".")
     node = raw
@@ -71,15 +62,6 @@ def _read(cfg: Cfg, path: str) -> Any:
     for key in path.split("."):
         node = getattr(node, key)
     return node
-
-
-def _load(tmp_path: Path, raw: dict[str, Any], capsys: pytest.CaptureFixture[str]) -> tuple[Cfg, list[str]]:
-    """Load ``raw`` as a config file; return it and the warning lines printed."""
-    path = tmp_path / "config.toml"
-    path.write_bytes(msgspec.toml.encode(raw))
-    capsys.readouterr()
-    cfg = _parse_config(path)
-    return cfg, [line for line in capsys.readouterr().err.splitlines() if line.strip()]
 
 
 def _version(monkeypatch: pytest.MonkeyPatch, version: str | None) -> None:

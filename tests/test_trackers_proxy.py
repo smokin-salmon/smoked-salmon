@@ -19,7 +19,7 @@ import pytest
 from aiohttp import web
 from aiohttp_socks import ProxyConnector
 from aiolimiter import AsyncLimiter
-from fake_proxy import FakeProxy
+from helpers.fake_proxy import FakeProxy
 from tenacity import stop_after_attempt, wait_none
 from yarl import URL
 

@@ -4,27 +4,28 @@ In a multi-tracker run, the first tracker's turn makes a transcode or a downconv
 its long file names. The second tracker's turn used to recognise the conversion only by the names it would write, so
 it deleted the transcode the first torrent seeds from and made it again, and refused the downconversion.
 
-The runs go against the local fake tracker of test_uploader_dry_run, never a real one. transcode_folder and
+The runs go against the local fake tracker of helpers.uploader_dry_run, never a real one. transcode_folder and
 convert_folder are the real ones (their output names, their reuse of an existing folder), with only the MP3 encoding
 and sox faked; so is the folder check.
 """
 
 import os
 import shutil
-import struct
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import pytest
-from mutagen.flac import FLAC
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     RENAMED,
     TWO_TRACKERS,
     FakeTracker,
     _returning,
     _returning_async,
     _run_up,
+)
+from helpers.uploader_shortened_conversions import _write_flac
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 from torf import Torrent
@@ -59,17 +60,6 @@ class World:
     checked: list[tuple[str, dict[str, int]]] = field(default_factory=list)
     # Held open, so an inode cannot be handed to a new file while the test still compares it.
     handles: list[Any] = field(default_factory=list)
-
-
-def _write_flac(path: Path, rate: int, bits: int, **tags: str) -> None:
-    """Write a FLAC file with no audio: a STREAMINFO block at this rate and depth, and the given tags."""
-    streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
-    streaminfo += ((rate << 44) | (1 << 41) | ((bits - 1) << 36)).to_bytes(8, "big") + bytes(16)
-    path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
-    tagged = FLAC(path)
-    for key, value in tags.items():
-        tagged[key] = value
-    tagged.save()
 
 
 @pytest.fixture

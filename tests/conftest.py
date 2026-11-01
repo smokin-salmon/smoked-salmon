@@ -21,7 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
+from helpers.shipped_config import shipped_config
 
 _root = Path(tempfile.mkdtemp(prefix="salmon-tests-"))
 _music = _root / "music"

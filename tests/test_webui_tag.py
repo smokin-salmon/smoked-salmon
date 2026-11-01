@@ -22,9 +22,9 @@ import msgspec
 import pytest
 from aiohttp.test_utils import TestClient
 from asyncclick.testing import CliRunner
+from helpers.webui_jobs import AUTH, _finished, _log, _until, _with_app
+from helpers.webui_pages import _album, _refused_paths
 from mutagen.flac import FLAC
-from test_webui_jobs import AUTH, _finished, _log, _until, _with_app  # pyright: ignore[reportMissingImports]
-from test_webui_pages import _album, _refused_paths  # pyright: ignore[reportMissingImports]
 
 import salmon.tagger
 import salmon.tagger.foldername
@@ -459,7 +459,7 @@ def test_the_command_has_no_dry_run_so_the_job_refuses_one(roots: Roots) -> None
 def test_a_tag_job_refuses_the_folders_the_album_rule_refuses_before_it_starts(
     roots: Roots, fake_tagger: list[str]
 ) -> None:
-    from test_webui_pages import Roots as PagesRoots  # pyright: ignore[reportMissingImports]
+    from helpers.webui_pages import Roots as PagesRoots
 
     refused = _refused_paths(PagesRoots(roots.downloads, roots.library, roots.outside, roots.outside))
 

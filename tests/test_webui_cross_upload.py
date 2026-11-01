@@ -1,7 +1,7 @@
 """salmon web's cross-upload job: the same run as salmon cross-upload, through the HTTP API (#658, ADR 0004).
 
 Both trackers are local fakes on 127.0.0.1 serving on salmon web's request loop, and the image hosts and seedbox are
-in-process fakes, those of tests/test_cross_upload.py: nothing leaves the machine (the network guard in conftest.py
+in-process fakes, those of helpers.cross_upload: nothing leaves the machine (the network guard in conftest.py
 stands). The OPS answers come from tests/fixtures/cross_upload (a made-up release).
 """
 
@@ -16,13 +16,12 @@ from types import SimpleNamespace
 from typing import Any, cast
 
 import asyncclick as click
+import helpers.uploader_dry_run as up_world
 import msgspec
 import pytest
-import test_uploader_dry_run as up_world  # pyright: ignore[reportMissingImports]
 from aiohttp import WSMsgType, web
 from aiohttp.test_utils import TestClient
-from tenacity import wait_none
-from test_cross_upload import (  # pyright: ignore[reportMissingImports]
+from helpers.cross_upload import (
     API_KEYS,
     AUTHKEY,
     FOLDER,
@@ -41,13 +40,16 @@ from test_cross_upload import (  # pyright: ignore[reportMissingImports]
     _snapshot,
     _transcode,
     cross_upload_world,
+)
+from helpers.trackers_account import _most_within
+from helpers.webui_jobs import AUTH, _finished, _log, _until, _with_app
+from helpers.webui_upload import PARAMS as UP_PARAMS
+from helpers.webui_upload import _drive
+from tenacity import wait_none
+from test_cross_upload import (
     dirs,  # noqa: F401
     settings,  # noqa: F401
 )
-from test_trackers_account import _most_within  # pyright: ignore[reportMissingImports]
-from test_webui_jobs import AUTH, _finished, _log, _until, _with_app  # pyright: ignore[reportMissingImports]
-from test_webui_upload import PARAMS as UP_PARAMS  # pyright: ignore[reportMissingImports]
-from test_webui_upload import _drive  # pyright: ignore[reportMissingImports]
 
 import salmon.cross_upload as cross_upload_module
 import salmon.trackers

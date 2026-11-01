@@ -12,7 +12,7 @@ import msgspec
 import msgspec.inspect as mi
 import pytest
 from asyncclick.testing import CliRunner
-from shipped_config import (  # pyright: ignore[reportMissingImports]
+from helpers.shipped_config import (
     DEFAULT_CONFIG,
     REFERENCE_CONFIG,
     fake_trackers,

@@ -4,18 +4,20 @@ from copy import deepcopy
 from functools import partial
 from typing import Any
 
-from mutagen.id3 import COMM, TALB, TCON, TDRC, TPUB, TXXX, TYER
-from mutagen.mp4 import MP4
-from test_interaction_typed_sites import ask, edit_metadata_stubs  # pyright: ignore[reportMissingImports]
-from test_tagger_multi_value_tags import (  # pyright: ignore[reportMissingImports]
+from helpers.interaction_typed_sites import ask, edit_metadata_stubs
+from helpers.tagger_multi_value_tags import (
     _flac_album,
     _flac_tags,
-    _formatting,  # noqa: F401 (an autouse fixture)
     _metadata,
     _mp3_album,
     _mp3_frames,
     _trackmeta,
     _write_m4a,
+)
+from mutagen.id3 import COMM, TALB, TCON, TDRC, TPUB, TXXX, TYER
+from mutagen.mp4 import MP4
+from test_tagger_multi_value_tags import (
+    _formatting,  # noqa: F401 (an autouse fixture)
 )
 
 import salmon.uploader as uploader
@@ -202,8 +204,8 @@ def test_mp3_rerun_shows_the_comment_it_removes(monkeypatch, tmp_path, capsys) -
 
 
 def test_a_flac_after_an_mp3_loses_its_catno_and_the_preview_shows_it(monkeypatch, tmp_path, capsys) -> None:
+    from helpers.tagger_multi_value_tags import _write_flac, _write_mp3
     from mutagen.id3 import TRCK
-    from test_tagger_multi_value_tags import _write_flac, _write_mp3  # pyright: ignore[reportMissingImports]
 
     _write_mp3(tmp_path / "01.mp3", TRCK(text="1"))
     _write_flac(tmp_path / "02.flac", TRACKNUMBER="2", DISCNUMBER="1", TITLE="Song 2")

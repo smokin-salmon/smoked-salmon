@@ -1,7 +1,7 @@
 """The converted questions in salmon web, through their real call sites (ADR 0006, #760).
 
 For each site: what each default it can give preselects, and that the picks the browser sends reach the site's own
-parser as the line a terminal user would type. The sites get the in-memory fakes of test_interaction_typed_sites:
+parser as the line a terminal user would type. The sites get the in-memory fakes of helpers.interaction_typed_sites:
 nothing reaches a tracker.
 """
 
@@ -12,7 +12,7 @@ from typing import Any
 import anyio
 import asyncclick as click
 import pytest
-from test_interaction_typed_sites import (  # pyright: ignore[reportMissingImports]
+from helpers.interaction_typed_sites import (
     CONVERSIONS,
     REQUESTS,
     SITE,
@@ -28,7 +28,7 @@ from test_interaction_typed_sites import (  # pyright: ignore[reportMissingImpor
     search_group,
     spectral_ids,
 )
-from test_webui_interaction import Browser  # pyright: ignore[reportMissingImports]
+from helpers.webui_interaction import Browser
 
 from salmon import cfg, interaction, trackers
 from salmon.config.validations import CONVERSION_KINDS

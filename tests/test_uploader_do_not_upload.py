@@ -1,17 +1,19 @@
 """salmon up and the trackers' Do-Not-Upload lists (#533): a listed release never goes to that tracker.
 
-The runs go against the local fake tracker of test_uploader_dry_run, never a real one.
+The runs go against the local fake tracker of helpers.uploader_dry_run, never a real one.
 """
 
 import shutil
 from pathlib import Path
 
 import pytest
-from test_checks_do_not_upload import write_lists  # pyright: ignore[reportMissingImports]
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.checks_do_not_upload import write_lists
+from helpers.uploader_dry_run import (
     _album,
     _returning_async,
     _run_up,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see images)
 )
 from torf import Torrent

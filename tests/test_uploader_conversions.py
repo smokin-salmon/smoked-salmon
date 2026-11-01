@@ -1,7 +1,7 @@
 """Which conversions salmon up selects by default after a FLAC: upload.conversions and --conversions (#690).
 
 The setting changes only the default answer: every possible conversion is still listed and can be picked by number.
-The end-to-end runs go against the local fake tracker of test_uploader_dry_run, never a real one.
+The end-to-end runs go against the local fake tracker of helpers.uploader_dry_run, never a real one.
 """
 
 from pathlib import Path
@@ -13,7 +13,7 @@ import asyncclick as click
 import msgspec
 import pytest
 from asyncclick.testing import CliRunner
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     FIRST_TORRENT_ID,
     FakeTracker,
     _album,
@@ -21,6 +21,8 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     _returning_async,
     _run_up,
     _write_flac,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture)
 )
 

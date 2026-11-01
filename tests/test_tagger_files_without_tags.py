@@ -2,9 +2,9 @@
 
 import av
 import numpy as np
+from helpers.tagger_multi_value_tags import _write_flac
 from mutagen.flac import FLAC
 from mutagen.mp4 import MP4
-from test_tagger_multi_value_tags import _write_flac  # pyright: ignore[reportMissingImports]
 
 from salmon.tagger.retagger import retag_files
 
