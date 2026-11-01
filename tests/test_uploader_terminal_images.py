@@ -82,7 +82,11 @@ def test_the_terminal_is_asked_over_a_pty_and_its_settings_put_back(reply: bytes
 
         thread.join(timeout=1)
         assert bytes(received).startswith(b"\x1b_Gi=31,")
-        assert termios.tcgetattr(slave) == before
+        after = termios.tcgetattr(slave)
+        # macOS sets PENDIN, a flag of its own that the next read clears, when line editing is turned back on without
+        # flushing input, as _query_terminal does (TCSANOW). _keypresses restores with TCSAFLUSH, which does not set it.
+        after[3] &= ~getattr(termios, "PENDIN", 0)
+        assert after == before
     finally:
         os.close(master)
         os.close(slave)
