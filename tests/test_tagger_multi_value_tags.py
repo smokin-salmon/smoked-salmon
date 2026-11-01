@@ -397,3 +397,46 @@ def test_preview_leaves_an_m4a_genre_string_unchanged(tmp_path, capsys):
     _preview(tmp_path, _metadata(_trackmeta(CREDIT)), "01.m4a")
 
     assert ">>>" not in _preview_line(capsys.readouterr().out, "> genre")
+
+
+def test_mp3_txxx_artists_in_another_case_beside_a_matching_one_is_removed(tmp_path):
+    path = _mp3_album(
+        tmp_path,
+        TXXX(encoding=3, desc="ARTISTS", text=["Dree Low", "Owen"]),
+        TXXX(encoding=3, desc="artists", text=["X"]),
+    )
+
+    _, track_changes = _retag(tmp_path, _metadata(_trackmeta(CREDIT)))
+
+    tags = MP3(path).tags
+    assert tags is not None
+    assert "artists" in [c.tag for c in track_changes["01.mp3"]]
+    assert [frame.desc for frame in tags.getall("TXXX")] == ["ARTISTS"]
+    assert tags["TXXX:ARTISTS"].text == ["Dree Low", "Owen"]
+
+
+@pytest.mark.parametrize("kind", ["flac", "mp3"])
+def test_a_track_with_no_main_artist_or_guest_loses_a_stale_artists_tag(tmp_path, kind, capsys):
+    if kind == "flac":
+        path = _flac_album(tmp_path, ARTISTS=["Dree Low", "Owen"])
+    else:
+        path = _mp3_album(tmp_path, TXXX(encoding=3, desc="ARTISTS", text=["Dree Low", "Owen"]))
+    metadata = _metadata(_trackmeta([("Con Ductor", "conductor")]))
+
+    _preview(tmp_path, metadata, path.name)
+    line = _preview_line(capsys.readouterr().out, "artists")
+    _retag(tmp_path, metadata)
+
+    track = TagFile(str(path))
+    assert line == "Dree Low; Owen >>>"
+    assert track.artists is None
+    assert track.artist == ["Con Ductor"]
+
+
+def test_preview_quotes_an_m4a_genre_list_that_becomes_one_string(tmp_path, capsys):
+    _write_m4a(tmp_path / "01.m4a", trkn=[(1, 0)], **{"\xa9gen": ["Hip Hop", "Rap"]})
+
+    _preview(tmp_path, _metadata(_trackmeta(CREDIT)), "01.m4a")
+
+    out = capsys.readouterr().out
+    assert _preview_line(out, "> genre") == '"Hip Hop", "Rap" >>> "Hip Hop; Rap"'

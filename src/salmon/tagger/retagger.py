@@ -224,7 +224,8 @@ def _track_changes(pairs):
         if not _is_aac(tagset):
             old_artists = list(getattr(tagset, "artists", None) or [])
             new_artists = create_artists_list(trackmeta["artists"])
-            if new_artists and old_artists != new_artists:
+            # Also when it empties: a track with no main artist or guest loses a stale ARTISTS tag.
+            if old_artists != new_artists:
                 changes[filename].append(Change("artists", old_artists or None, new_artists))
             old_remixers = list(getattr(tagset, "remixer", None) or [])
             new_remixers = create_remixer_list(trackmeta)
@@ -598,11 +599,12 @@ def _values(value):
 def _shown(old, new):
     """The two sides of a change as text.
 
-    The values of a list are joined with a semicolon. When two different lists would read the same that
-    way (one value ``Hip Hop; Rap`` and the two values ``Hip Hop`` and ``Rap``), each value is quoted instead.
+    The values of a list are joined with a semicolon. When two different values would read the same that
+    way (one value ``Hip Hop; Rap`` and the two values ``Hip Hop`` and ``Rap``, as a list or as an M4A's one
+    string), each value is quoted instead.
     """
-    if isinstance(old, list) and isinstance(new, list) and old != new and _joined(old) == _joined(new):
-        return _quoted(old), _quoted(new)
+    if _values(old) != _values(new) and _joined(old) == _joined(new):
+        return _quoted(_values(old)), _quoted(_values(new))
     return _joined(old), _joined(new)
 
 
