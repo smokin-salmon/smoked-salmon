@@ -1,8 +1,16 @@
 """Masking secrets in rclone command lines and in what rclone prints (#501)."""
 
+import time
+
 import pytest
 
-from salmon.common.redaction import redact_command, redact_secrets, redact_tracker_text, secret_values
+from salmon.common.redaction import (
+    redact_command,
+    redact_secrets,
+    redact_tracker_headers,
+    redact_tracker_text,
+    secret_values,
+)
 
 
 @pytest.mark.parametrize(
@@ -154,3 +162,113 @@ def test_redact_tracker_text_masks_an_input_a_cut_off_value_runs_into() -> None:
     shown = redact_tracker_text("{'authkey': 'FAKEKEYEIGHT <input value='FAKEKEYNINE' name='auth'>")
 
     assert "FAKEKEY" not in shown
+
+
+def test_a_flag_value_a_known_secret_masked_keeps_what_follows_it() -> None:
+    assert redact_secrets("--sftp-pass=hunter2:/music/Album failed", known=["hunter2"]) == (
+        "--sftp-pass=[REDACTED]:/music/Album failed"
+    )
+
+
+@pytest.mark.parametrize(
+    ("text", "shown"),
+    [
+        ("{'authkey': 'FAKEKEYONE', 'id': 5}", "{'authkey': '[REDACTED]', 'id': 5}"),
+        ("{'passkey': \"FAKE'KEYTWO\"}", "{'passkey': \"[REDACTED]\"}"),
+        ('var authkey = "FAKEKEYTHREE";', 'var authkey = "[REDACTED]";'),
+        ("{auth: 'FAKEKEYFOUR'}", "{auth: '[REDACTED]'}"),
+        ('{"authkey": "FAKE\\"KEYFIVE"}', '{"authkey": "[REDACTED]"}'),
+        ("{'authkey': 'FAKEKEYSIX", "{'authkey': '[REDACTED]"),
+        # With no space before the quote, the query pattern must leave it to the assignment pattern.
+        ('authkey="FAKEKEYSEVEN"', 'authkey="[REDACTED]"'),
+        ("passkey='FAKEKEYEIGHT'", "passkey='[REDACTED]'"),
+    ],
+)
+def test_redact_tracker_text_masks_a_quoted_value_in_json_a_repr_or_a_script(text, shown) -> None:
+    assert redact_tracker_text(text) == shown
+
+
+@pytest.mark.parametrize(
+    "text", ["author = 'A Name'", '"authors": "A Name, B Name"', "https://tracker.example/torrents/download"]
+)
+def test_redact_tracker_text_leaves_a_longer_name_or_another_path_alone(text) -> None:
+    assert redact_tracker_text(text) == text
+
+
+def test_response_headers_mask_cookie_values_credentials_and_known_secrets() -> None:
+    headers = [
+        ("Set-Cookie", "session=new-session-0123; path=/; HttpOnly"),
+        ("Set-Cookie", "keeplogged=keep-0123; path=/"),
+        ("Set-Cookie", "cf_clearance=clear-0123; path=/"),
+        ("X-Api-Token", "token-0123"),
+        ("Location", "/torrents.php?id=1&authkey=key-0123"),
+        ("Server", "nginx known-secret-0123"),
+    ]
+
+    shown = redact_tracker_headers(headers, ["known-secret-0123"])
+
+    # A newly issued cookie is no known secret, yet its value is masked; the name and attributes stay.
+    assert shown["Set-Cookie"].startswith("session=[REDACTED]")
+    assert ", keeplogged=[REDACTED]" in shown["Set-Cookie"]
+    assert "path=/" in shown["Set-Cookie"]
+    assert "new-session-0123" not in shown["Set-Cookie"] and "keep-0123" not in shown["Set-Cookie"]
+    # A cookie that is no known secret: only the header rule masks it.
+    assert ", cf_clearance=[REDACTED]; path=/" in shown["Set-Cookie"]
+    assert shown["X-Api-Token"] == "[REDACTED]"
+    assert shown["Location"] == "/torrents.php?id=1&authkey=[REDACTED]"
+    assert shown["Server"] == "nginx [REDACTED]"
+
+
+@pytest.mark.parametrize("name", ["X-Client-Secret", "X-Client-Secret-Cookie"])
+def test_a_response_header_naming_a_secret_is_masked(name: str) -> None:
+    # A name that also says "cookie" is no cookie header: its bare value has no name=value for the cookie mask.
+    assert redact_tracker_headers([(name, "newly-issued-0123")]) == {name: "[REDACTED]"}
+
+
+@pytest.mark.parametrize(
+    ("text", "marker"),
+    [
+        pytest.param("<input name=auth value=MARK-UNQUOTED-01>", "MARK-UNQUOTED-01", id="input unquoted"),
+        pytest.param('<input name = "authkey" value = "MARK-SPACED-02">', "MARK-SPACED-02", id="input spaced"),
+        pytest.param("ajax.php?apikey=MARK-APIKEY-03&action=index", "MARK-APIKEY-03", id="apikey query"),
+        pytest.param("x.php?authorization=MARK-AUTHZ-04", "MARK-AUTHZ-04", id="authorization query"),
+        pytest.param("https://user:MARK-USERINFO-05@tracker.test/x", "MARK-USERINFO-05", id="url userinfo"),
+        pytest.param('<input name=auth value="MARK-GT-07>TAIL">', "MARK-GT-07", id="input value holding >"),
+        pytest.param("x.php?authorization=MARK-SEMI-08;MARK-SEMI-09&id=1", "MARK-SEMI-09", id="query value holding ;"),
+        pytest.param("keeplogged=MARK-KEEP-10; path=/", "MARK-KEEP-10", id="keeplogged cookie"),
+        pytest.param('{"keeplogged": "MARK-KEEP-11"}', "MARK-KEEP-11", id="keeplogged in json"),
+    ],
+)
+def test_redact_tracker_text_masks_every_form_a_tracker_secret_takes(text: str, marker: str) -> None:
+    assert marker not in redact_tracker_text(text)
+
+
+def test_redact_tracker_text_keeps_a_cookies_delimiter_and_leaves_a_masked_value_alone() -> None:
+    assert redact_tracker_text("session=MARK-COOKIE-06; path=/") == "session=[REDACTED]; path=/"
+    assert redact_tracker_text("session=[REDACTED]; path=/") == "session=[REDACTED]; path=/"
+    # A cookie's value may hold "&": only its "; " ends it, not a query's separator.
+    assert redact_tracker_text("session=MARK&COOKIE-07; path=/") == "session=[REDACTED]; path=/"
+    # With no "; " after it, it is a query: the fields after its "&" stay readable.
+    assert redact_tracker_text("?authkey=MARK-QUERY-08&id=5") == "?authkey=[REDACTED]&id=5"
+
+
+def test_a_url_whose_query_holds_an_at_sign_has_no_userinfo_to_mask() -> None:
+    url = "https://tracker.test?email=alice@example.test#x@y"
+    assert redact_tracker_text(url) == url
+
+
+def test_a_urls_query_or_fragment_gives_no_password_to_mask() -> None:
+    args = ["https://box.test?u=a:MARK-QUERY-09@x", "https://box.test#k:MARK-FRAG-10@y", "sftp://u:MARK-PASS-11@box/x"]
+    found = secret_values(args)
+    assert "MARK-PASS-11" in found
+    assert "MARK-QUERY-09" not in found
+    assert "MARK-FRAG-10" not in found
+
+
+def test_a_long_run_of_keys_with_no_cookie_end_is_read_once() -> None:
+    # Each key in a run with no "; " used to rescan the rest of it: 8000 of them took seconds.
+    started = time.perf_counter()
+    redacted = redact_tracker_text("session=" * 8000)
+    elapsed = time.perf_counter() - started
+    assert redacted == "session=[REDACTED]"
+    assert elapsed < 1
