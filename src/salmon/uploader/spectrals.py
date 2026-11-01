@@ -672,7 +672,8 @@ async def view_spectrals(
     """Open the generated spectrals in an image viewer: the terminal's way of showing them.
 
     The native viewer draws them in the terminal itself when it speaks the Kitty graphics protocol (over SSH too),
-    unless terminal_spectrals_viewer is off, and otherwise opens feh, Quick Look or the default Windows viewer.
+    unless terminal_spectrals_viewer is off, and otherwise opens feh (or the desktop's default image viewer),
+    Quick Look or the default Windows viewer.
 
     Args:
         spectrals_path: Path to spectrals folder.
@@ -689,7 +690,7 @@ async def view_spectrals(
     elif platform.system() == "Windows":
         _open_specs_in_windows(spectrals_path)
     else:
-        await _open_specs_in_feh(spectrals_path)
+        await _open_specs_on_linux(spectrals_path)
 
 
 async def _open_specs_in_preview(spectrals_path: str) -> None:
@@ -703,6 +704,68 @@ async def _open_specs_in_preview(spectrals_path: str) -> None:
         return
     args = ["qlmanage", "-p", *(os.path.join(spectrals_path, f) for f in files)]
     await anyio.run_process(args, check=False)
+
+
+async def _open_specs_on_linux(spectrals_path: str) -> None:
+    """Open spectral images in feh, or without it in the desktop's default image viewer.
+
+    feh speaks only X11, so it needs DISPLAY; a Wayland session without XWayland goes to the desktop's viewer.
+    Without any display, or any viewer, it says where the spectrals are instead.
+
+    Args:
+        spectrals_path: Path to the spectrals directory.
+    """
+    if not _spectral_images(spectrals_path):
+        return
+    if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
+        _say_no_viewer(spectrals_path, "there is no display to open an image viewer on")
+    elif os.environ.get("DISPLAY") and shutil.which("feh"):
+        await _open_specs_in_feh(spectrals_path)
+    elif failure := await _open_specs_in_default_viewer(spectrals_path):
+        feh = "feh needs an X display" if shutil.which("feh") else "feh is not installed"
+        _say_no_viewer(spectrals_path, f"{feh}, and {failure}")
+
+
+async def _default_png_viewer() -> str | None:
+    """The desktop entry xdg-mime names as the default viewer of PNGs, or None without one."""
+    if not shutil.which("xdg-mime"):
+        return None
+    result = await anyio.run_process(["xdg-mime", "query", "default", "image/png"], check=False, stderr=DEVNULL)
+    if result.returncode != 0:
+        return None
+    return result.stdout.decode(errors="replace").strip() or None
+
+
+async def _open_specs_in_default_viewer(spectrals_path: str) -> str | None:
+    """Open the first spectral in the desktop's default image viewer, and say where the others are.
+
+    Most viewers page through the rest of the folder, but not every PNG handler does (GIMP, a browser).
+
+    Args:
+        spectrals_path: Path to the spectrals directory.
+
+    Returns:
+        Why no viewer was opened, or None once one was.
+    """
+    viewer = await _default_png_viewer() if shutil.which("xdg-open") else None
+    if not viewer:
+        return "there is no default image viewer"
+    first = _spectral_images(spectrals_path)[0]
+    click.secho(f"Opening {first} with {viewer}. All the spectrals are in {spectrals_path}.", fg="cyan")
+    result = await anyio.run_process(
+        ["xdg-open", os.path.join(spectrals_path, first)], check=False, stdout=DEVNULL, stderr=DEVNULL
+    )
+    if result.returncode != 0:
+        return f"the default image viewer ({viewer}) failed to open"
+    return None
+
+
+def _say_no_viewer(spectrals_path: str, reason: str) -> None:
+    click.secho(
+        f"Could not show the spectrals: {reason}. They are in {spectrals_path}. Install feh, set a default "
+        "image viewer, or set native_spectrals_viewer = false to view them in the browser.",
+        fg="yellow",
+    )
 
 
 async def _open_specs_in_feh(spectrals_path: str) -> None:
