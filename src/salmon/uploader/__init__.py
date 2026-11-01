@@ -892,6 +892,11 @@ def _trackers_for_run(
     return [first_tracker, *(code for code in salmon.trackers.tracker_list if code != first_tracker)]
 
 
+def _another_can_follow(first_tracker: str, flac_group: dict[str, Any] | None, reachable: list[str] | None) -> bool:
+    """Whether the run can go on to a tracker after first_tracker."""
+    return len(_trackers_for_run(first_tracker, flac_group, reachable)) > 1
+
+
 def _reachable_trackers(trackers: list[str] | None, offer_others: bool) -> list[str] | None:
     """Every tracker a run given these trackers may upload to, in order; None when it is only known as it goes.
 
@@ -1017,7 +1022,12 @@ async def _upload_staged(
         )
 
     source_folder = path  # The folder the run started from: the metadata step renames path into a new folder
+    search_failed = False
     try:
+        if rate_refused and not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+            # Nothing the checks or the review change could let these files go up. Exit(1), not Abort: the run
+            # failed, and _upload_staged ends an Abort as a user's no.
+            raise click.exceptions.Exit(1)
         # The search for an existing group only reads from the tracker, so it runs in the background during
         # the MQA, upconvert and log checks below, and what it found is shown once they are done.
         async with fetch_existing_group_candidates_in_background(
@@ -1049,12 +1059,27 @@ async def _upload_staged(
                 _warn_about_provenance(provenance)
 
             if group_fetch is not None:
-                results, recent_uploads = await group_fetch.result()
-                group_id = await resolve_existing_group(
-                    gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
-                )
-                # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
-                weighed_against = dict(rls_data)
+                try:
+                    results, recent_uploads = await group_fetch.result()
+                except RequestError as e:
+                    # Skipped like a first tracker that refuses the release, when another can follow.
+                    if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+                        click.secho(
+                            f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True
+                        )
+                        raise click.exceptions.Exit(1) from None
+                    click.secho(
+                        f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
+                        fg="red",
+                        bold=True,
+                    )
+                    search_failed = True
+                else:
+                    group_id = await resolve_existing_group(
+                        gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
+                    )
+                    # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
+                    weighed_against = dict(rls_data)
 
             spectral_ids = None
             lossy_master: bool = False
@@ -1112,7 +1137,9 @@ async def _upload_staged(
 
             # Before anything is made or sent for the first tracker: its group, spectrals, cover and upload.
             first_listed = (
-                rate_refused or _do_not_upload_refusal(gazelle_site.site_code, metadata, said=tags_refusal) is not None
+                search_failed
+                or rate_refused
+                or _do_not_upload_refusal(gazelle_site.site_code, metadata, said=tags_refusal) is not None
             )
             if not group_id and not first_listed:
                 group_id = await recheck_dupe(gazelle_site, searchstrs, metadata)

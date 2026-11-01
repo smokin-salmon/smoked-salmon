@@ -15,13 +15,14 @@ from pathlib import Path
 from typing import Any
 
 import anyio
+import asyncclick as click
 import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
 
 import salmon.trackers
 import salmon.uploader
-from salmon.errors import AbortAndDeleteFolder, LoginError, RequestFailedError, UploadError
+from salmon.errors import AbortAndDeleteFolder, UploadError
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import dupe_checker
 
@@ -237,6 +238,8 @@ class Flow:
         self.monkeypatch.setattr(dupe_checker.click, "prompt", prompt)
         self.monkeypatch.setattr(salmon.uploader.click, "confirm", returning(False))
         self.monkeypatch.setattr(salmon.trackers, "choose_tracker", returning_async(None))
+        # RED alone: no tracker follows it, so a failed search ends the run.
+        self.monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED"])
         self.monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", False)
 
     async def run(self, cookie: str = "good", api_key: str = "", path: str = "/release") -> None:
@@ -358,20 +361,22 @@ def test_a_failed_search_is_reported_before_the_spectral_step_as_before(monkeypa
     tracker = FakeTracker(browse_status=400)
     flow = Flow(monkeypatch, tracker)
 
-    with pytest.raises(RequestFailedError, match="bad search"):
+    with pytest.raises(click.exceptions.Exit):
         anyio.run(flow.run)
 
     assert flow.events == ["checks start", "checks end"]
     out = capsys.readouterr().out
     assert _during_the_checks(out) == ""
     assert "Request to RED failed (400)" in _before_the_spectral_step(out)
+    assert "Could not search RED for dupes: " in _before_the_spectral_step(out)
+    assert "bad search" in _before_the_spectral_step(out)
 
 
 def test_an_expired_cookie_is_reported_before_the_spectral_step_as_before(monkeypatch, capsys) -> None:
     tracker = FakeTracker(browse_results=[])
     flow = Flow(monkeypatch, tracker)
 
-    with pytest.raises(LoginError):
+    with pytest.raises(click.exceptions.Exit):
         anyio.run(lambda: flow.run(cookie="expired"))
 
     assert tracker.hits.count("log 1") == 1
@@ -380,6 +385,7 @@ def test_an_expired_cookie_is_reported_before_the_spectral_step_as_before(monkey
     assert flow.events == ["checks start", "checks end"]
     assert _during_the_checks(out) == ""
     assert "sent this request to its login page" in _before_the_spectral_step(out)
+    assert "Could not search RED for dupes: " in _before_the_spectral_step(out)
 
 
 async def _leaves_nothing_behind(flow: Flow, run) -> None:
