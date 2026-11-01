@@ -190,12 +190,13 @@ def test_convert_folder_records_its_output(tmp_path, monkeypatch) -> None:
     rate, path = anyio.run(dc.convert_folder, str(src), 16, 44100)
 
     assert (rate, path) == (44100, str(out))
-    # album_files: the stubbed source folder holds no audio file of its own.
+    # The stubbed source folder holds no audio file of its own: no album_files, and none is fingerprinted.
     assert _facts(str(out)) == {
         **DOWNCONVERT,
         "source": str(src),
         "files": {"01.flac": "01.flac"},
         "album_files": [],
+        "source_fingerprints": {},
     }
 
 
@@ -218,6 +219,7 @@ def test_a_mixed_family_folder_records_every_target_rate(tmp_path, monkeypatch) 
         "sample_rate": [44100, 48000],
         "files": files,
         "album_files": [],
+        "source_fingerprints": {},
     }
 
 
@@ -322,6 +324,8 @@ def test_transcode_folder_records_its_output(tmp_path, monkeypatch) -> None:
         "kind": "transcode",
         "bitrate": "V0",
         "files": {"01.flac": "01.mp3"},
+        # The stubbed source is not on disk: its fingerprint is that of a file that cannot be read.
+        "source_fingerprints": {"01.flac": ""},
     }
 
 

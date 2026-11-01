@@ -2,17 +2,21 @@
 
 The record is only a hint for the description: it never changes the format, bitrate or media of an upload. It also
 lists the audio files the converter wrote, kept in step with the renames salmon makes in the folder afterwards, so a
-converter finding its own output again knows it for complete whatever the folder check made of its names.
+converter finding its own output again knows it for complete whatever the folder check made of its names, and a
+fingerprint of each source track, so it knows the output for out of date once a track is retagged.
 """
 
 import contextlib
+import hashlib
 import json
 import os
 import tempfile
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Any
 
 import asyncclick as click
+from mutagen import MutagenError
+from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg, dryrun
 
@@ -124,6 +128,52 @@ def recorded_files(record: dict[str, Any]) -> dict[str, str] | None:
     if not isinstance(files, dict) or not all(_relative(path) for item in files.items() for path in item):
         return None
     return files
+
+
+def source_fingerprints(folder: str, names: Iterable[str]) -> dict[str, str]:
+    """The fingerprint of each source FLAC a conversion is made from, by its path in folder."""
+    return {name: _fingerprint(os.path.join(folder, name)) for name in sorted(names)}
+
+
+def changed_sources(folder: str, record: dict[str, Any]) -> list[str]:
+    """The sources a record has fingerprints of that changed or went since, in order; none for a record without them."""
+    recorded = record.get("source_fingerprints")
+    if not isinstance(recorded, dict) or not all(_relative(name) for name in recorded):
+        return []
+    return sorted(
+        name for name, fingerprint in recorded.items() if _fingerprint(os.path.join(folder, name)) != fingerprint
+    )
+
+
+def changed_tracks(changed: Sequence[str]) -> str:
+    """The changed_sources of a record, in words."""
+    if len(changed) == 1:
+        return "one of its tracks changed or was renamed"
+    return f"{len(changed)} of its tracks changed or were renamed"
+
+
+def _fingerprint(path: str) -> str:
+    """What a conversion takes from a FLAC: its audio (by the MD5 in STREAMINFO), tags and pictures.
+
+    A retag or a new picture changes it; a copy, a touch, or a re-encode of the same audio with the same tags does not.
+    "" for a file that cannot be read, so one that becomes readable, or goes, counts as changed.
+    """
+    try:
+        audio = FLAC(path)
+        md5 = audio.info.md5_signature
+        digest = hashlib.sha256(f"{md5:032x} {audio.info.total_samples}".encode())
+        if not md5:
+            # FLAC lets the encoder leave the MD5 unset: the file itself stands for its audio then.
+            with open(path, "rb") as fh:
+                digest.update(hashlib.file_digest(fh, "sha256").digest())
+    except (OSError, MutagenError):
+        return ""
+    comments = audio.tags if isinstance(audio.tags, VCFLACDict) else []
+    for key, value in sorted(comments):
+        digest.update(f"\0{key.lower()}={value}".encode())
+    for picture in audio.pictures:
+        digest.update(b"\0" + picture.write())
+    return digest.hexdigest()
 
 
 def missing_files(folder: str, record: dict[str, Any]) -> list[str] | None:
