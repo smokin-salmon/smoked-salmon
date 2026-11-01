@@ -304,6 +304,56 @@ def test_a_broken_line_is_refused_and_changes_nothing(monkeypatch) -> None:
     assert "The artists text is invalid" in confirms[0]
 
 
+# #868: [a]rtists sets the order.
+
+
+def _gladiator() -> dict:
+    # The store's per-track order, alphabetical, where the album's is Per, Jan, Gary.
+    trio = [(GARY, "main"), (JAN, "main"), (PER, "main")]
+    return _metadata(trio, trio, [(JAN, "main"), (GARY, "main"), ("Owen", "guest")])
+
+
+def test_reordering_the_artists_reorders_every_track(monkeypatch) -> None:
+    metadata = _gladiator()
+
+    _edit_artists(monkeypatch, metadata, [f"{PER} (main)", f"{JAN} (main)", f"{GARY} (main)", "Owen (guest)"])
+
+    assert metadata["artists"] == [(PER, "main"), (JAN, "main"), (GARY, "main"), ("Owen", "guest")]
+    assert _track(metadata, 1) == [(PER, "main"), (JAN, "main"), (GARY, "main")]
+    assert _track(metadata, 2) == [(PER, "main"), (JAN, "main"), (GARY, "main")]
+    assert _track(metadata, 3) == [(JAN, "main"), (GARY, "main"), ("Owen", "guest")]
+
+
+def test_a_credit_the_list_does_not_hold_goes_after_the_reordered_ones(monkeypatch) -> None:
+    metadata = _gladiator()
+
+    # Owen deleted (the tracks keep him), and the rest reordered.
+    _edit_artists(monkeypatch, metadata, [f"{PER} (main)", f"{GARY} (main)", f"{JAN} (main)"])
+
+    assert _track(metadata, 3) == [(GARY, "main"), (JAN, "main"), ("Owen", "guest")]
+
+
+def test_a_role_change_without_a_new_order_leaves_each_tracks_order(monkeypatch) -> None:
+    # A track may rightly be led by another of its artists.
+    metadata = _metadata([(GARY, "main"), (JAN, "main")], [(JAN, "main"), (GARY, "main")])
+
+    _edit_artists(monkeypatch, metadata, [f"{GARY} (main)", f"{JAN} (guest)"])
+
+    assert _track(metadata, 1) == [(GARY, "main"), (JAN, "guest")]
+    assert _track(metadata, 2) == [(JAN, "guest"), (GARY, "main")]
+
+
+def test_a_line_changed_and_moved_still_takes_its_change(monkeypatch) -> None:
+    # B is a guest on track 1 and main on track 2; its guest line now says main and is moved to the top.
+    metadata = _metadata([("A", "main"), ("B", "guest")], [("B", "main")])
+
+    printed = _edit_artists(monkeypatch, metadata, ["B (main)", "A (main)", "B (main)"])
+
+    assert metadata["artists"] == [("B", "main"), ("A", "main")]
+    assert _track(metadata, 1) == [("B", "main"), ("A", "main")]
+    assert printed == []
+
+
 # #868: trac[k]s keeps the release's order.
 
 
