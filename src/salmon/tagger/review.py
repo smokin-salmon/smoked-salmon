@@ -1,10 +1,12 @@
 import re
 from collections import defaultdict
 from collections.abc import Sequence
+from typing import cast
 
 import asyncclick as click
 
 from salmon import cfg, interaction
+from salmon.common import normalize_accents
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError, PickOtherResults
 from salmon.tagger.metadata import _print_metadata
@@ -255,6 +257,12 @@ async def _edit_artists(metadata):
             )
 
 
+def _artist_key(name: str) -> str:
+    """An artist's name as generate_artists matches it (_generate_artist_pool_lower_case), in any case and with any
+    accents: trac[k]s respells a name by this key, so a match by any other key would miss or merge names."""
+    return cast("str", normalize_accents(name.lower()))  # One string in, one out.
+
+
 async def _alias_artists(metadata):
     existing_artists = {a for a, _ in metadata["artists"]}
     marker = "Enter aliases below this line:"
@@ -502,8 +510,32 @@ async def _edit_tracks(metadata):
         for discnum, tracknum, title, artists in edits:
             metadata["tracks"][discnum][tracknum]["title"] = title
             metadata["tracks"][discnum][tracknum]["artists"] = artists
-        metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
+        artists, metadata["tracks"] = generate_artists(metadata["tracks"])
+        metadata["artists"] = _in_release_order(artists, metadata["artists"])
         return
+
+
+def _in_release_order(artists, release):
+    """`artists`, which generate_artists lists in the tracks' order, in the order of the release's credits `release`.
+
+    generate_artists alone would undo an order set in [a]rtists (#868) at every trac[k]s save. A credit the release
+    holds keeps its place; a credit whose role changed takes the place of the credit of that name the tracks no
+    longer hold; any other goes last, in the tracks' order.
+    """
+    place: dict[tuple[str, str], int] = {}
+    for name, role in release:
+        place.setdefault((_artist_key(name), role), len(place))
+    held = {(_artist_key(name), role) for name, role in artists}
+    dropped: dict[str, int] = {}
+    for (key, role), rank in place.items():
+        if (key, role) not in held:
+            dropped.setdefault(key, rank)
+
+    def rank_of(credit: tuple[str, str]) -> int:
+        key = _artist_key(credit[0])
+        return place.get((key, credit[1]), dropped.get(key, len(place)))
+
+    return sorted(artists, key=rank_of)  # Stable: credits that tie keep the tracks' order.
 
 
 def _parse_edited_tracks(text, tracks):
