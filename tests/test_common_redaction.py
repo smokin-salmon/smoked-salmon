@@ -1,5 +1,7 @@
 """Masking secrets in rclone command lines and in what rclone prints (#501)."""
 
+import time
+
 import pytest
 
 from salmon.common.redaction import (
@@ -246,8 +248,19 @@ def test_redact_tracker_text_keeps_a_cookies_delimiter_and_leaves_a_masked_value
     assert redact_tracker_text("session=[REDACTED]; path=/") == "session=[REDACTED]; path=/"
     # A cookie's value may hold "&": only its "; " ends it, not a query's separator.
     assert redact_tracker_text("session=MARK&COOKIE-07; path=/") == "session=[REDACTED]; path=/"
+    # With no "; " after it, it is a query: the fields after its "&" stay readable.
+    assert redact_tracker_text("?authkey=MARK-QUERY-08&id=5") == "?authkey=[REDACTED]&id=5"
 
 
 def test_a_url_whose_query_holds_an_at_sign_has_no_userinfo_to_mask() -> None:
     url = "https://tracker.test?email=alice@example.test#x@y"
     assert redact_tracker_text(url) == url
+
+
+def test_a_long_run_of_keys_with_no_cookie_end_is_read_once() -> None:
+    # Each key in a run with no "; " used to rescan the rest of it: 8000 of them took seconds.
+    started = time.perf_counter()
+    redacted = redact_tracker_text("session=" * 8000)
+    elapsed = time.perf_counter() - started
+    assert redacted == "session=[REDACTED]"
+    assert elapsed < 1

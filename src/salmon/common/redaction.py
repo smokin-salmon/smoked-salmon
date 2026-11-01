@@ -207,8 +207,9 @@ _TRACKER_ASSIGNMENT = re.compile(
 # A value ends at "; ", a cookie's attribute separator; a ";" with no space after stays in it, as in a URL query.
 # At least one character: a quoted value (authkey="...") is _TRACKER_ASSIGNMENT's, which a match here would hide.
 _TRACKER_QUERY = re.compile(rf"""\b({_TRACKER_KEYS}=)(?:[^&;#\s"'<>]|;(?!\s))+""", re.IGNORECASE)
-# A cookie's name=value before its "; " attributes: its value may hold "&", which would end a query's.
-_TRACKER_COOKIE = re.compile(rf"""\b({_TRACKER_KEYS}=)(?:[^;\s"'<>]|;(?!\s))+(?=;\s)""", re.IGNORECASE)
+# A cookie's name=value before its "; " attributes: its value may hold "&", which would end a query's. A run with no
+# "; " is matched too and left whole for _TRACKER_QUERY, so it is read once, not once per key in it.
+_TRACKER_COOKIE = re.compile(rf"""\b({_TRACKER_KEYS}=)(?:[^;\s"'<>]|;(?!\s))+(;\s)?""", re.IGNORECASE)
 # The passkey in an announce URL, whatever its length: https://tracker/<passkey>/announce.
 _ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]+(?=/announce)")
 # A form field carrying one, <input name="auth" value="...">, its attributes in any order.
@@ -232,7 +233,7 @@ def redact_tracker_text(text: str, known: Iterable[str | None] = ()) -> str:
     """Mask a tracker's secrets in a page, an API answer or a URL before it reaches the terminal."""
     text = _mask_known(text, known)
     text = _INPUT_TAG.sub(_mask_secret_field, text)
-    text = _TRACKER_COOKIE.sub(r"\1[REDACTED]", text)
+    text = _TRACKER_COOKIE.sub(lambda m: f"{m[1]}[REDACTED]{m[2]}" if m[2] else m[0], text)
     text = _TRACKER_QUERY.sub(r"\1[REDACTED]", text)
     text = _ANNOUNCE_PASSKEY.sub("/[REDACTED]", text)
     text = _URL_USERINFO.sub(r"\1[REDACTED]@", text)
