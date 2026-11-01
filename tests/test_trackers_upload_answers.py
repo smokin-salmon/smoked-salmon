@@ -371,7 +371,8 @@ def test_an_api_success_without_its_response_is_looked_up_by_infohash(
             await api.close()
             await runner.cleanup()
 
-    assert anyio.run(run) == (TORRENT_ID, GROUP_ID)
+    uploaded = anyio.run(run)
+    assert uploaded == (TORRENT_ID, GROUP_ID)
     assert hits == ["POST", "GET"]
     assert "its answer named no torrent" in capsys.readouterr().out
 
