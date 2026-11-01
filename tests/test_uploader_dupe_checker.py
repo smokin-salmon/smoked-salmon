@@ -1,15 +1,19 @@
 from typing import TYPE_CHECKING, cast
 
 import anyio
+import asyncclick as click
 import pytest
 
-from salmon.errors import SkipTracker
+import salmon.uploader
+from salmon.errors import RequestFailedError, SkipTracker
 from salmon.uploader import dupe_checker
 from salmon.uploader.dupe_checker import (
+    _prompt_for_group_id,
     _prompt_for_recent_upload_results,
     _recent_upload_matches,
     _title_words,
     generate_dupe_check_searchstrs,
+    print_search_results,
 )
 
 if TYPE_CHECKING:
@@ -205,3 +209,109 @@ def test_the_recent_upload_prompt_offers_to_skip_the_tracker_only_when_asked(mon
     with pytest.raises(SkipTracker):
         anyio.run(_prompt_for_recent_upload_results, gazelle_site, [], "some search", False, True)
     assert "[s]kip this tracker" in texts[2]
+
+
+def _answering(monkeypatch: pytest.MonkeyPatch, *answers: str) -> list[str]:
+    """Answer each prompt in turn; returns the prompts' texts."""
+    asked: list[str] = []
+    queue = list(answers)
+
+    async def fake_prompt(text: str, *_args, **_kwargs) -> str:
+        asked.append(text)
+        return queue.pop(0)
+
+    monkeypatch.setattr(dupe_checker.click, "prompt", fake_prompt)
+    return asked
+
+
+class LogSite(FakeGazelleSite):
+    site_code = "RED"
+    has_session_cookie = True
+
+    def __init__(self) -> None:
+        self.redirected: list[int] = []
+
+    async def get_redirect_torrentgroupid(self, torrent_id: int) -> int:
+        self.redirected.append(torrent_id)
+        return 1000 + torrent_id
+
+
+def test_only_the_five_recent_uploads_listed_can_be_picked_by_number(monkeypatch) -> None:
+    _answering(monkeypatch, "7")
+    site = LogSite()
+    recent = [(torrent_id, "Artist", f"Album {torrent_id}") for torrent_id in range(1, 8)]
+
+    group_id = anyio.run(
+        _prompt_for_recent_upload_results, cast("BaseGazelleApi", cast("object", site)), recent, "s", False
+    )
+
+    # The seventh was never shown: 7 is a group ID, as any number past the list is.
+    assert group_id == 7
+    assert site.redirected == []
+
+
+def test_0_with_no_recent_upload_listed_asks_again(monkeypatch) -> None:
+    asked = _answering(monkeypatch, "0", "n")
+
+    group_id = anyio.run(
+        _prompt_for_recent_upload_results, cast("BaseGazelleApi", cast("object", LogSite())), [], "s", False
+    )
+
+    assert group_id is None
+    assert len(asked) == 2
+
+
+def test_the_group_prompt_offers_a_pick_only_when_groups_were_found(monkeypatch) -> None:
+    asked = _answering(monkeypatch, "0", "n")
+
+    group_id = anyio.run(_prompt_for_group_id, cast("BaseGazelleApi", cast("object", LogSite())), [], False)
+
+    # 0 is no group, and with none found there is no first one to give: asked again.
+    assert group_id is None
+    assert len(asked) == 2
+    assert "pick from groups found" not in asked[0]
+
+
+def test_a_malformed_search_result_is_skipped_whole(capsys) -> None:
+    good = {"groupId": 1, "artist": "A", "groupName": "B", "groupYear": 2020, "releaseType": "Album", "tags": ["x"]}
+    no_year = {"groupId": 2, "artist": "C", "groupName": "D", "releaseType": "Album", "tags": []}
+    bad_tags = {**good, "groupId": 3, "tags": None}
+
+    print_search_results(cast("BaseGazelleApi", cast("object", LogSite())), [good, no_year, bad_tags], "s")
+
+    out = capsys.readouterr().out
+    assert " 01 >> 1 | " in out
+    assert " 02 >> " not in out and " 03 >> " not in out
+
+
+def test_a_remixes_album_keeps_remixes_in_its_search() -> None:
+    # "Mix" removes an edition marker such as "(Original Mix)", not the word inside "(Remixes)".
+    assert generate_dupe_check_searchstrs([("Artist", "main")], "Album (Remixes)") == ["artist album remixes"]
+
+
+@pytest.mark.parametrize("upload_anyway", [True, False])
+def test_an_unreadable_site_log_asks_before_uploading_without_the_check(
+    monkeypatch: pytest.MonkeyPatch, capsys, upload_anyway: bool
+) -> None:
+    site = LogSite()
+    asked: list[str] = []
+
+    async def unreadable() -> list:
+        raise RequestFailedError("Server error 503")
+
+    async def answer(text: str, **kwargs) -> bool:
+        asked.append(text)
+        assert kwargs.get("default") is False
+        return upload_anyway
+
+    site.get_uploads_from_log = unreadable  # type: ignore[attr-defined]
+    monkeypatch.setattr(salmon.uploader.interaction, "confirm", answer)
+
+    if upload_anyway:
+        anyio.run(salmon.uploader.last_min_dupe_check, site, ["artist album"], "Album")
+    else:
+        with pytest.raises(click.Abort):
+            anyio.run(salmon.uploader.last_min_dupe_check, site, ["artist album"], "Album")
+
+    assert "Could not read the RED site log: Server error 503" in capsys.readouterr().out
+    assert len(asked) == 1 and "Upload without the last-minute dupe check?" in asked[0]

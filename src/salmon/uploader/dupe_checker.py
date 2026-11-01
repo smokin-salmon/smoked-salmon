@@ -261,15 +261,16 @@ async def _prompt_for_recent_upload_results(
     Returns:
         Group ID or None for new group.
     """
+    shown = recent_uploads[:5]
     # First, print the recent uploads if any
-    if recent_uploads:
+    if shown:
         click.secho(
             f"\nFound similar recent uploads in the {gazelle_site.site_string} log: ",
             fg="red",
             nl=False,
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
-        for u_index, u in enumerate(recent_uploads[:5]):
+        for u_index, u in enumerate(shown):
             click.echo(f" {u_index + 1:02d} >> ", nl=False)  # torrent_id
             click.secho(f"{u[1]} - {u[2]} ", fg="cyan", nl=False)  # artist - title
             click.echo(f"| {gazelle_site.base_url}/torrents.php?torrentid={u[0]}")
@@ -279,11 +280,11 @@ async def _prompt_for_recent_upload_results(
         prompt_header = (
             "\nThese are similar recent uploads from the site log, not exact group matches.\n"
             "Pick one only if it is actually the same group.\n"
-            if recent_uploads
+            if shown
             else "\nWould you like to upload to an existing group?\n"
         )
         prompt_text = (
-            prompt_header + f"{'Pick from recent uploads found, p' if recent_uploads else 'P'}aste a URL"
+            prompt_header + f"{'Pick from recent uploads found, p' if shown else 'P'}aste a URL"
             f" or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
             f"{'/ [d]elete music folder ' if offer_deletion else ''}"
         )
@@ -302,11 +303,13 @@ async def _prompt_for_recent_upload_results(
             group_id_num = int(group_id)
 
             if group_id_num == 0:
+                if not shown:
+                    continue  # No group has the ID 0, and there is no first choice to give.
                 group_id_num = 1  # If the user types 0 give them the first choice.
 
-            # If user picks from recent uploads list
-            if recent_uploads and 1 <= group_id_num <= len(recent_uploads):
-                torrent_id = recent_uploads[group_id_num - 1][0]
+            # Only the uploads listed above can be picked by number.
+            if shown and 1 <= group_id_num <= len(shown):
+                torrent_id = shown[group_id_num - 1][0]
                 # Need to convert torrent ID to group ID
                 try:
                     result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
@@ -578,7 +581,7 @@ def _sanitize_album_for_dupe_check(album):
         return ""
     album = RE_FEAT.sub("", album)
     album = re.sub(
-        r"[\(\[][^\)\]]*(Edition|Version|Deluxe|Original|Reissue|Remaster|Vol|Mix|Edit)"
+        r"[\(\[][^\)\]]*\b(Edition|Version|Deluxe|Original|Reissue|Remaster|Vol|Mix|Edit)"
         r"[^\)\]]*[\)\]]",
         "",
         album,
@@ -619,15 +622,18 @@ def print_search_results(gazelle_site: "BaseGazelleApi", results: list[dict], se
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
+            # Every field read first: a malformed result is skipped whole, not printed as half a row.
             try:
-                url = f"{gazelle_site.base_url}/torrents.php?id={r['groupId']}"
-                # User doesn't get to pick a zero index
-                click.echo(f" {r_index + 1:02d} >> {r['groupId']} | ", nl=False)
-                click.secho(f"{r['artist']} - {r['groupName']} ", fg="cyan", nl=False)
-                click.secho(f"({r['groupYear']}) [{r['releaseType']}] ", fg="yellow", nl=False)
-                click.echo(f"[Tags: {', '.join(r['tags'])}] | {url}")
+                group_id, artist, name = r["groupId"], r["artist"], r["groupName"]
+                year, release_type, tags = r["groupYear"], r["releaseType"], ", ".join(r["tags"])
             except (KeyError, TypeError):
                 continue
+            url = f"{gazelle_site.base_url}/torrents.php?id={group_id}"
+            # User doesn't get to pick a zero index
+            click.echo(f" {r_index + 1:02d} >> {group_id} | ", nl=False)
+            click.secho(f"{artist} - {name} ", fg="cyan", nl=False)
+            click.secho(f"({year}) [{release_type}] ", fg="yellow", nl=False)
+            click.echo(f"[Tags: {tags}] | {url}")
 
 
 def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
@@ -685,7 +691,7 @@ async def _prompt_for_group_id(
         group_id = await interaction.prompt(
             click.style(
                 "\nWould you like to upload to an existing group?\n"
-                f"Paste a URL{', pick from groups found ' if results is not None else ''}"
+                f"Paste a URL{', pick from groups found ' if results else ' '}"
                 f"or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
                 f"{'/ [d]elete music folder ' if offer_deletion else ''}",
                 fg="magenta",
@@ -698,6 +704,8 @@ async def _prompt_for_group_id(
         )
         if group_id.strip().isdigit():
             raw_input = int(group_id)
+            if raw_input == 0 and not results:
+                continue  # No group has the ID 0, and there is no first result to give.
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
                 if results[list_index].get("groupId") is None:
