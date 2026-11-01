@@ -155,21 +155,31 @@ async def process_files(
     files: list[str],
     process_func: Callable[[str, int], Awaitable[T]],
     desc: str,
+    on_done: Callable[[], None] | None = None,
 ) -> list[T]:
-    """Process files concurrently using anyio with a capacity limiter."""
+    """Process files concurrently using anyio with a capacity limiter.
+
+    Args:
+        on_done: Called each time a file is done, instead of showing a progress bar: nothing is printed.
+    """
     results: list[T | None] = [None] * len(files)
     limiter = anyio.CapacityLimiter(cfg.upload.simultaneous_threads)
 
-    with tqdm(total=len(files), desc=desc, colour="cyan") as pbar:
+    async def process_with_result(file: str, idx: int, done: Callable[..., Any]) -> None:
+        async with limiter:
+            result = await process_func(file, idx)
+        results[idx] = result
+        done()
 
-        async def process_with_result(file: str, idx: int) -> None:
-            async with limiter:
-                result = await process_func(file, idx)
-            results[idx] = result
-            pbar.update(1)
-
+    async def process_all(done: Callable[..., Any]) -> None:
         async with anyio.create_task_group() as tg:
             for idx, file in enumerate(files):
-                tg.start_soon(process_with_result, file, idx)
+                tg.start_soon(process_with_result, file, idx, done)
+
+    if on_done is not None:
+        await process_all(on_done)
+    else:
+        with tqdm(total=len(files), desc=desc, colour="cyan") as pbar:
+            await process_all(lambda: pbar.update(1))
 
     return cast("list[T]", results)
