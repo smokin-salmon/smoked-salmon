@@ -99,11 +99,9 @@ def _alive(pid: int) -> bool:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
-    # A zombie is dead: it only waits for its parent to read its status.
-    try:
-        return Path(f"/proc/{pid}/stat").read_text().split()[2] != "Z"
-    except FileNotFoundError:
-        return False
+    # A zombie is dead: it only waits for its parent to read its status. ps works off Linux too, unlike /proc.
+    state = subprocess.run(["ps", "-o", "stat=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
+    return bool(state) and not state.startswith("Z")
 
 
 def _album(tmp_path: Path) -> Path:
