@@ -222,13 +222,14 @@ def _check_corrections(kind: str, table: dict, replacements: list[str], one: str
 
 
 class Corrections(BaseStruct):
-    # An artist's name (whole, any case, outer spaces ignored) and the name salmon writes instead.
+    # An artist's name (whole, any case, outer spaces ignored) and the name salmon writes instead, trimmed.
     artists: dict[str, str] = msgspec.field(default_factory=dict)
     # A genre (matched the same way) and the genres salmon writes in its place; none drops it.
     genres: dict[str, list[str]] = msgspec.field(default_factory=dict)
 
     def __post_init__(self):
         _check_corrections("artists", self.artists, list(self.artists.values()), "an artist")
+        self.artists = {name: to.strip() for name, to in self.artists.items()}
         _check_corrections("genres", self.genres, [g for to in self.genres.values() for g in to], "a genre")
 
 
