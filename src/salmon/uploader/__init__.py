@@ -25,7 +25,7 @@ from salmon.checks.provenance import gather_provenance
 from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
-from salmon.common import clipboard_copy, commandgroup, tagify
+from salmon.common import clipboard_copy, commandgroup, get_audio_files, tagify
 from salmon.common.files import AlbumPath
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
@@ -98,6 +98,7 @@ from salmon.uploader.dupe_checker import (
     recheck_edition,
     resolve_existing_group,
 )
+from salmon.uploader.given_images import parse_spectral_urls, track_refusal, url_refusal
 from salmon.uploader.preassumptions import confirm_group_upload, print_preassumptions, validate_skip_flac_source
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
@@ -106,6 +107,7 @@ from salmon.uploader.spectrals import (
     check_spectrals,
     generate_lossy_approval_comment,
     post_upload_spectral_check,
+    prompt_lossy_master,
     report_lossy_master,
     specs_hosts_text,
 )
@@ -139,6 +141,18 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
         return canonical_conversions(entry.strip() for entry in value.split(","))
     except ValueError as e:
         raise click.BadParameter(f"{e}, or use none or all.") from None
+
+
+def validate_spectral_urls(ctx, param, value: tuple[str, ...]) -> tuple[tuple[int, tuple[str, ...]], ...]:
+    """Parse --spectral-url: TRACK=URL[,URL] each, into (track, URLs) pairs in the order given.
+
+    Raises:
+        click.BadParameter: A value is malformed, or names a track twice.
+    """
+    try:
+        return parse_spectral_urls(value)
+    except ValueError as e:
+        raise click.BadParameter(str(e)) from None
 
 
 @commandgroup.command()
@@ -206,6 +220,23 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
     "-a",
     is_flag=True,
     help="Assess / upload / report spectrals after torrent upload",
+)
+@click.option(
+    "--cover-url",
+    default=None,
+    help="The URL of the cover, uploaded already to one of salmon's image hosts: used for every new group of the "
+    "run instead of uploading the cover. Every tracker of the run must show that host's images.",
+)
+@click.option(
+    "--spectral-url",
+    "spectral_urls",
+    multiple=True,
+    callback=validate_spectral_urls,
+    metavar="TRACK=URL[,URL]",
+    help="A track's spectrals, uploaded already to one of salmon's image hosts: the Full image's URL, then the "
+    "Zoom one's. TRACK is numbered as --spectrals numbers tracks. Repeat it for each track, in the order the "
+    "description shows them. salmon then makes, shows and uploads no spectrals; it still asks whether the release is "
+    "lossy mastered, unless --lossy or --not-lossy says.",
 )
 @click.option(
     "--auto-rename",
@@ -289,6 +320,8 @@ async def up(
     trackers: tuple[str, ...],
     request: str | None,
     spectrals_after: bool,
+    cover_url: str | None,
+    spectral_urls: tuple[tuple[int, tuple[str, ...]], ...],
     auto_rename: bool,
     skip_up: bool,
     scene: bool,
@@ -319,6 +352,8 @@ async def up(
         compress=compress,
         request=request,
         spectrals_after=spectrals_after,
+        cover_url=cover_url.strip() if cover_url else None,
+        spectral_urls=spectral_urls,
         auto_rename=auto_rename,
         skip_up=skip_up,
         scene=scene,
@@ -360,6 +395,10 @@ class UpOptions:
         request: The request to fill, a URL or an ID, checked against the tracker by ``run_up``.
         conversions: The conversion kinds to make after a FLAC, without asking (``--conversions``); None follows
             upload.conversions, which is asked about.
+        cover_url: The cover's URL, uploaded already (``--cover-url``): every new group of the run takes it, and the
+            cover is not uploaded.
+        spectral_urls: The spectrals' URLs, uploaded already (``--spectral-url``): (track, (Full URL, Zoom URL)) in
+            the order the description shows them. No spectrals are made or uploaded.
     """
 
     path: str
@@ -387,9 +426,13 @@ class UpOptions:
     skip_integrity_check: bool = False
     essential_only: bool = False
     conversions: tuple[str, ...] | None = None
+    cover_url: str | None = None
+    spectral_urls: tuple[tuple[int, tuple[str, ...]], ...] = ()
 
     def usage_error(self, dry_run: bool) -> str | None:
         """Why these options cannot go together, as ``salmon up`` says it; None when they can."""
+        if (error := self._given_images_error()) is not None:
+            return error
         if self.skip_flac_upload and self.group_id is None:
             return "--skip-flac-upload requires --group-id."
         if self.skip_flac_upload and self.request:
@@ -405,6 +448,34 @@ class UpOptions:
                 "--dry-run cannot be used with --spectrals-after: that step edits the uploaded torrent, and a dry run "
                 "uploads none."
             )
+        return None
+
+    def _given_images_error(self) -> str | None:
+        """Why --cover-url or --spectral-url cannot be used for this run, None when they can; see given_images."""
+        if not self.cover_url and not self.spectral_urls:
+            return None
+        if self.spectral_urls and self.spectrals:
+            return "--spectral-url cannot be used with --spectrals: the URLs given are the spectrals."
+        if self.spectral_urls and self.spectrals_after:
+            return "--spectral-url cannot be used with --spectrals-after: the URLs given are the spectrals."
+        # Every tracker the run may reach, as the run itself works them out: --skip-flac-upload uploads to the first.
+        trackers = (
+            list(self.trackers[:1])
+            if self.skip_flac_upload
+            else _trackers_for_run(
+                self.trackers[0], None, _reachable_trackers(list(self.trackers), not self.trackers_named)
+            )
+        )
+        if self.cover_url and (reason := url_refusal(self.cover_url, trackers)) is not None:
+            return f"--cover-url: {reason}."
+        if self.spectral_urls:
+            tracks = (track for track, _urls in self.spectral_urls)
+            if (reason := track_refusal(tracks, get_audio_files(self.path))) is not None:
+                return f"--spectral-url: {reason}."
+            for _track, urls in self.spectral_urls:
+                for url in urls:
+                    if (reason := url_refusal(url, trackers, spectrals=True)) is not None:
+                        return f"--spectral-url: {reason}."
         return None
 
 
@@ -432,7 +503,8 @@ async def run_up(options: UpOptions) -> None:
         options.group_id,
         options.source,
         options.lossy,
-        options.spectrals,
+        # The spectrals given by URL are the run's: --lossy is reported with them.
+        options.spectrals or tuple(track for track, _urls in options.spectral_urls),
         options.encoding,
         options.spectrals_after,
     )
@@ -469,6 +541,8 @@ async def run_up(options: UpOptions) -> None:
         trackers=list(trackers),
         offer_others=not options.trackers_named,
         conversions=options.conversions,
+        given_cover_url=options.cover_url,
+        given_spectral_urls={track: list(urls) for track, urls in options.spectral_urls} or None,
     )
     if dryrun.active():
         dryrun.say(f"done. Nothing was sent, and {path} is unchanged.")
@@ -584,10 +658,12 @@ async def resolve_cover_url(
     path: str,
     cover_source: str | None,
     remove_downloaded: bool,
+    given_url: str | None = None,
 ) -> tuple[bool, str | None]:
     """Get the cover URL to upload to a tracker with, asking before a new group goes up without one.
 
-    An existing group already has its cover, so it needs none. For a new group with no cover,
+    An existing group already has its cover, so it needs none. A new group takes given_url, a cover uploaded
+    already, when there is one: nothing is uploaded. For a new group with no cover,
     -yyy stops the upload; otherwise the user can go on without one, retry, or stop. A retry
     after a failed upload (a cover file was found) asks which host to retry with; a retry with no
     cover found just looks at the folder again.
@@ -599,15 +675,17 @@ async def resolve_cover_url(
         path: The release folder.
         cover_source: URL to download the cover from if the folder has none.
         remove_downloaded: Delete the cover file after uploading, if it was downloaded.
+        given_url: The cover's URL, uploaded already (--cover-url), checked against the run's trackers.
 
     Returns:
         Whether to upload to this tracker, and the cover URL to upload with (None for none).
     """
     tracker = gazelle_site.site_code
-    if group_id:
+    if group_id or given_url:
+        # The folder gets its cover file as it would with an upload, which keeps a downloaded one.
         if not remove_downloaded:
             await download_cover_if_nonexistent(path, cover_source)
-        return True, None
+        return True, None if group_id else given_url
 
     default_host = cfg.image.host_for(tracker, "cover_uploader")
     host = default_host
@@ -746,6 +824,19 @@ def _warn_about_provenance(provenance: dict[str, Any]) -> None:
             click.secho(f"  - {note}", fg="yellow")
 
 
+async def _lossy_master_without_spectrals(lossy: bool | None, format: str) -> bool:
+    """Whether the release is lossy mastered, when its spectrals were given by URL: none are made to look at.
+
+    Asked as check_spectrals asks it, unless --lossy or --not-lossy said; only a FLAC is asked about.
+    """
+    click.secho("\nSpectrals given by URL (--spectral-url): none are made, shown or uploaded.", fg="cyan")
+    if lossy is not None or format != "FLAC":
+        return bool(lossy)
+    while (answer := await prompt_lossy_master()) is None:
+        click.secho("There are no spectrals to reopen: they were given by URL.", fg="yellow")
+    return answer
+
+
 async def upload(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -774,6 +865,8 @@ async def upload(
     conversions: tuple[str, ...] | None = None,
     skip_search: bool = False,
     offer_others: bool = False,
+    given_cover_url: str | None = None,
+    given_spectral_urls: dict[int, list[str]] | None = None,
 ) -> None:
     """Upload an album folder to Gazelle Site.
 
@@ -814,6 +907,10 @@ async def upload(
             follows upload.conversions, which is asked about.
         skip_search: Take the metadata from source_url without searching the stores, when a metadata source
             scrapes it.
+        given_cover_url: The cover's URL, uploaded already: every new group takes it, and the cover is not uploaded.
+            Checked against the run's trackers by the caller (``UpOptions.usage_error``).
+        given_spectral_urls: The spectrals' URLs, uploaded already, by track number as `spectrals` numbers them, in
+            the description's order: no spectrals are made, shown or uploaded. Checked by the caller too.
     """
     path = os.path.abspath(path)
     # Read before staging and renaming: the record knows the folder by the name the converter gave it.
@@ -859,6 +956,8 @@ async def upload(
             conversions=conversions,
             skip_search=skip_search,
             offer_others=offer_others,
+            given_cover_url=given_cover_url,
+            given_spectral_urls=given_spectral_urls,
         )
         # Once the run is done: an abort after the folder rename keeps the source folder, so a re-run can use it.
         final, uploaded, aborted = result or (None, False, False)
@@ -955,6 +1054,8 @@ async def _upload_staged(
     trackers: list[str] | None = None,
     conversions: tuple[str, ...] | None = None,
     offer_others: bool = False,
+    given_cover_url: str | None = None,
+    given_spectral_urls: dict[int, list[str]] | None = None,
 ) -> tuple[str, bool, bool] | None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
@@ -1061,6 +1162,11 @@ async def _upload_staged(
             if spectrals_after:
                 # We tell the uploader not to worry about it being lossy until later.
                 pass
+            elif given_spectral_urls:
+                lossy_master = await _lossy_master_without_spectrals(lossy, rls_data["format"])
+                # Numbered as --spectrals numbers tracks; the files' names go into the description.
+                audio_files = get_audio_files(path)
+                spectral_ids = {track: audio_files[track - 1] for track in given_spectral_urls}
             else:
                 lossy_result, spectral_ids = await check_spectrals(
                     path,
@@ -1186,7 +1292,9 @@ async def _upload_staged(
             return click.secho("\nDeleted folder, aborting upload...", fg="red")
 
     # Uploaded once per specs host; the files are deleted once no tracker of the run can need them.
-    spectral_uploads = SpectralUploads(path, _trackers_for_run(gazelle_site.site_code, flac_group, reachable))
+    spectral_uploads = SpectralUploads(
+        path, _trackers_for_run(gazelle_site.site_code, flac_group, reachable), given=given_spectral_urls
+    )
     try:
         lossy_comment = None
         spectral_urls = None
@@ -1290,7 +1398,13 @@ async def _upload_staged(
 
                 # Handle cover image for this tracker
                 proceed, cover_url = await resolve_cover_url(
-                    gazelle_site, group_id, cover_urls, path, metadata["cover"], remove_downloaded_cover_image
+                    gazelle_site,
+                    group_id,
+                    cover_urls,
+                    path,
+                    metadata["cover"],
+                    remove_downloaded_cover_image,
+                    given_url=given_cover_url,
                 )
                 if not proceed:
                     # Like a failed upload: skip this tracker, and offer the next one.

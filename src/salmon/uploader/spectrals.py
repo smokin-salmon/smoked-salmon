@@ -231,12 +231,14 @@ class SpectralUploads:
     deletes them.
     """
 
-    def __init__(self, album_path: str, trackers: Sequence[str]) -> None:
+    def __init__(self, album_path: str, trackers: Sequence[str], given: dict[int, list[str]] | None = None) -> None:
         """Set up the uploads for an album.
 
         Args:
             album_path: The album folder, as the spectrals were made from it.
             trackers: The site codes of every tracker the run may upload to.
+            given: The spectrals' URLs, uploaded already (--spectral-url), by spectral ID: every tracker takes them,
+                and nothing is uploaded.
         """
         self._album_path = album_path
         self._path = get_spectrals_path(album_path)
@@ -244,6 +246,7 @@ class SpectralUploads:
         self._hosts = {cfg.image.host_for(tracker, "specs_uploader") for tracker in self._trackers}
         self._urls: dict[str, dict[int, list[str]] | None] = {}
         self._scratch: str | None = None
+        self._given = given
 
     def hosts_text(self) -> str:
         """Name where the spectrals go, for prompts: see specs_hosts_text."""
@@ -259,6 +262,8 @@ class SpectralUploads:
         Returns:
             The URLs of each spectral by track ID, or None if there are none: see upload_spectrals.
         """
+        if self._given is not None:
+            return {sid: list(urls) for sid, urls in self._given.items()}
         host = cfg.image.host_for(tracker, "specs_uploader")
         if host not in self._urls:
             self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker)
@@ -1049,7 +1054,9 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
     bbcode = "[hide=Spectrals]"
     for spec_id, urls in spectral_urls.items():
         filename = re.sub(r"[\[\]]", "_", spectral_ids[spec_id])
-        bbcode += f"[b]{filename} Full[/b]\n[img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n"
+        bbcode += f"[b]{filename} Full[/b]\n[img={urls[0]}]\n"
+        # A track given by URL (--spectral-url) may have its Full image only.
+        bbcode += f"[hide=Zoomed][img={urls[1]}][/hide]\n\n" if len(urls) > 1 else "\n"
     bbcode += "[/hide]\n"
     return bbcode
 

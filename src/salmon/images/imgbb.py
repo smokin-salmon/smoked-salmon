@@ -9,6 +9,9 @@ from salmon.errors import ImageUploadFailed
 from salmon.images import base as images_base
 from salmon.images.base import BaseImageUploader
 
+# The domain its uploads' URLs are on (or a subdomain of it): how a URL given for an image is known as imgbb's.
+IMAGE_DOMAINS = ("i.ibb.co",)
+
 HEADERS = {"referer": "https://imgbb.com/", "User-Agent": cfg.upload.user_agent}
 
 
