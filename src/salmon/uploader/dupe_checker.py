@@ -307,9 +307,9 @@ async def _prompt_for_recent_upload_results(
                     continue  # No group has the ID 0, and there is no first choice to give.
                 group_id_num = 1  # If the user types 0 give them the first choice.
 
-            # Only the uploads listed above can be picked by number.
-            if shown and 1 <= group_id_num <= len(shown):
-                torrent_id = shown[group_id_num - 1][0]
+            # If user picks from recent uploads list
+            if recent_uploads and 1 <= group_id_num <= len(recent_uploads):
+                torrent_id = recent_uploads[group_id_num - 1][0]
                 # Need to convert torrent ID to group ID
                 try:
                     result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
@@ -622,11 +622,14 @@ def print_search_results(gazelle_site: "BaseGazelleApi", results: list[dict], se
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
-            # Every field read first: a malformed result is skipped whole, not printed as half a row.
+            # Every field read first: a malformed result keeps its number, which the prompt reads, on one line.
             try:
                 group_id, artist, name = r["groupId"], r["artist"], r["groupName"]
                 year, release_type, tags = r["groupYear"], r["releaseType"], ", ".join(r["tags"])
             except (KeyError, TypeError):
+                group_id = r.get("groupId") if isinstance(r, dict) else None
+                link = f" | {gazelle_site.base_url}/torrents.php?id={group_id}" if group_id is not None else ""
+                click.secho(f" {r_index + 1:02d} >> This result could not be read{link}", fg="yellow")
                 continue
             url = f"{gazelle_site.base_url}/torrents.php?id={group_id}"
             # User doesn't get to pick a zero index

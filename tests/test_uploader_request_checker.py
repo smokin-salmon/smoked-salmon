@@ -27,7 +27,8 @@ SITE = cast("BaseGazelleApi", cast("object", FakeSite()))
     ("given", "expected"), [(" 1234 ", "1234"), ("https://tracker.test/requests.php?action=view&id=99", "99")]
 )
 def test_a_request_is_an_id_or_this_trackers_request_url(given: str, expected: str) -> None:
-    assert validate_request(SITE, given) == expected
+    request_id = validate_request(SITE, given)
+    assert request_id == expected
 
 
 @pytest.mark.parametrize(
@@ -59,7 +60,7 @@ def _request(request_id: int, **fields) -> dict:
     }
 
 
-def test_a_malformed_request_is_skipped_whole(capsys) -> None:
+def test_a_malformed_request_keeps_its_number_on_one_line(capsys) -> None:
     no_title = _request(2)
     del no_title["title"]
 
@@ -67,7 +68,8 @@ def test_a_malformed_request_is_skipped_whole(capsys) -> None:
 
     out = capsys.readouterr().out
     assert " 01 >> " in out
-    assert " 02 >> " not in out and " 03 >> " not in out
+    assert " 02 >> This request could not be read | https://tracker.test/requests.php?action=view&id=2\n" in out
+    assert " 03 >> This request could not be read | https://tracker.test/requests.php?action=view&id=3\n" in out
 
 
 @pytest.mark.parametrize(
@@ -87,6 +89,8 @@ def test_an_answer_naming_no_request_says_so_and_asks_again(monkeypatch, capsys,
 
     monkeypatch.setattr(request_checker.click, "prompt", fake_prompt)
 
-    assert anyio.run(_prompt_for_request_id, SITE, []) is None
+    picked = anyio.run(_prompt_for_request_id, SITE, [])
+    out = capsys.readouterr().out
+    assert picked is None
     assert answers == []
-    assert said in capsys.readouterr().out
+    assert said in out

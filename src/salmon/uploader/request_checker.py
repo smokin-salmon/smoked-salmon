@@ -75,7 +75,7 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
         )
         click.secho(f" (searchstrs: {searchstr})", bold=True)
         for r_index, r in enumerate(results):
-            # Every field read first: a malformed result is skipped whole, not printed as half a row.
+            # Every field read first: a malformed result keeps its number, which the prompt reads, on one line.
             try:
                 url = gazelle_site.request_url(r["requestId"])
                 if len(r["artists"][0]) > 3:
@@ -88,6 +88,9 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
                 bitrates, formats = " or ".join(r["bitrateList"]), " or ".join(r["formatList"])
                 media = " or ".join(r["mediaList"])
             except (KeyError, TypeError, IndexError):
+                request_id = r.get("requestId") if isinstance(r, dict) else None
+                link = f" | {gazelle_site.request_url(request_id)}" if request_id is not None else ""
+                click.secho(f" {r_index + 1:02d} >> This request could not be read{link}", fg="yellow")
                 continue
             # User doesn't get to pick a zero index
             click.echo(f" {r_index + 1:02d} >> {url} | ", nl=False)

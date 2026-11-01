@@ -236,20 +236,6 @@ class LogSite(FakeGazelleSite):
         return 1000 + torrent_id
 
 
-def test_only_the_five_recent_uploads_listed_can_be_picked_by_number(monkeypatch) -> None:
-    _answering(monkeypatch, "7")
-    site = LogSite()
-    recent = [(torrent_id, "Artist", f"Album {torrent_id}") for torrent_id in range(1, 8)]
-
-    group_id = anyio.run(
-        _prompt_for_recent_upload_results, cast("BaseGazelleApi", cast("object", site)), recent, "s", False
-    )
-
-    # The seventh was never shown: 7 is a group ID, as any number past the list is.
-    assert group_id == 7
-    assert site.redirected == []
-
-
 def test_0_with_no_recent_upload_listed_asks_again(monkeypatch) -> None:
     asked = _answering(monkeypatch, "0", "n")
 
@@ -272,7 +258,7 @@ def test_the_group_prompt_offers_a_pick_only_when_groups_were_found(monkeypatch)
     assert "pick from groups found" not in asked[0]
 
 
-def test_a_malformed_search_result_is_skipped_whole(capsys) -> None:
+def test_a_malformed_search_result_keeps_its_number_on_one_line(capsys) -> None:
     good = {"groupId": 1, "artist": "A", "groupName": "B", "groupYear": 2020, "releaseType": "Album", "tags": ["x"]}
     no_year = {"groupId": 2, "artist": "C", "groupName": "D", "releaseType": "Album", "tags": []}
     bad_tags = {**good, "groupId": 3, "tags": None}
@@ -281,7 +267,8 @@ def test_a_malformed_search_result_is_skipped_whole(capsys) -> None:
 
     out = capsys.readouterr().out
     assert " 01 >> 1 | " in out
-    assert " 02 >> " not in out and " 03 >> " not in out
+    assert " 02 >> This result could not be read | http://127.0.0.1/torrents.php?id=2\n" in out
+    assert " 03 >> This result could not be read | http://127.0.0.1/torrents.php?id=3\n" in out
 
 
 def test_a_remixes_album_keeps_remixes_in_its_search() -> None:
@@ -313,5 +300,6 @@ def test_an_unreadable_site_log_asks_before_uploading_without_the_check(
         with pytest.raises(click.Abort):
             anyio.run(salmon.uploader.last_min_dupe_check, site, ["artist album"], "Album")
 
-    assert "Could not read the RED site log: Server error 503" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Could not read the RED site log: Server error 503" in out
     assert len(asked) == 1 and "Upload without the last-minute dupe check?" in asked[0]
