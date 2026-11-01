@@ -405,6 +405,36 @@ async def _failed_with(body: str, status: int) -> str:
         await runner.cleanup()
 
 
+def test_a_whole_error_page_is_cut_to_an_excerpt() -> None:
+    message = anyio.run(_failed_with, "<p>" + "x" * 5000 + "</p>", 400)
+    assert message.startswith("<p>xxx") and message.endswith(" [...]") and len(message) < 600
+
+
+async def _api_call_answered(body: str) -> str:
+    async def handle_ajax(_request: web.Request) -> web.Response:
+        return web.Response(text=body, content_type="application/json")
+
+    runner, api = await _rate_limited(handle_ajax)
+    try:
+        with pytest.raises(RequestFailedError) as raised:
+            await api.api_call("index")
+        return str(raised.value)
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+@pytest.mark.parametrize("body", ['["a", "b"]', '"maintenance"', "null", "42"])
+def test_an_api_answer_that_is_no_json_object_fails_with_its_text(body: str) -> None:
+    message = anyio.run(_api_call_answered, body)
+    assert message == body
+
+
+def test_an_api_answer_that_is_a_whole_page_fails_with_an_excerpt() -> None:
+    message = anyio.run(_api_call_answered, "<html>" + "x" * 5000 + "</html>")
+    assert message.startswith("<html>xxx") and message.endswith(" [...]") and len(message) < 600
+
+
 @pytest.mark.parametrize("body", ['{"status": "failure"}', '["a", "b"]', '"nope"', "42"])
 def test_error_answer_without_an_error_key_keeps_the_body_as_message(body: str) -> None:
     assert anyio.run(_failed_with, body, 400) == body

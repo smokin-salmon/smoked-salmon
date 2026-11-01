@@ -22,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from salmon.common import UploadFiles
 from salmon.errors import RequestError, UnknownOutcomeError
 from salmon.trackers import base
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import BaseGazelleApi, _query_id
 
 AUTHKEY = "authkey-0123456789abcdef"
 PASSKEY = "passkey-0123456789abcdef"
@@ -343,6 +343,40 @@ def test_an_api_upload_answer_that_is_not_json_is_looked_up_by_infohash(
     assert "its answer was not JSON (200): " in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("answer", [{"status": "success"}, {"status": "success", "response": None}], ids=["no", "null"])
+def test_an_api_success_without_its_response_is_looked_up_by_infohash(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], answer: dict
+) -> None:
+    files, infohash = _upload_files(tmp_path)
+    hits: list[str] = []
+
+    async def ajax(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append(request.method)
+        if request.method == "POST":
+            return web.json_response(answer)
+        assert request.query["hash"] == infohash
+        return _found(TORRENT_ID, GROUP_ID)
+
+    async def run() -> tuple[int, int]:
+        app = web.Application()
+        app.router.add_route("*", "/ajax.php", ajax)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        await web.TCPSite(runner, "127.0.0.1", 0).start()
+        api = FakeApi(f"http://127.0.0.1:{runner.addresses[0][1]}", api_key="an-api-key")
+        try:
+            return await api.upload({"type": 0}, files)
+        finally:
+            await api.close()
+            await runner.cleanup()
+
+    uploaded = anyio.run(run)
+    assert uploaded == (TORRENT_ID, GROUP_ID)
+    assert hits == ["POST", "GET"]
+    assert "its answer named no torrent" in capsys.readouterr().out
+
+
 # The group of an API upload
 
 
@@ -413,3 +447,44 @@ def test_the_lookup_after_an_upload_answered_with_a_rate_limit_page_waits_for_it
     # Sent once, then looked up once, after the wait the tracker asked for.
     assert [method for method, _ in arrivals] == ["POST", "GET"]
     assert arrivals[1][1] - arrivals[0][1] >= 1.9
+
+
+async def _api_upload_answered(tmp_path: Path, answer: dict, lookups: list[web.Response]) -> tuple[list, tuple]:
+    files, _ = _upload_files(tmp_path)
+    hits: list[tuple[str, str]] = []
+
+    async def ajax(request: web.Request) -> web.Response:
+        await request.read()
+        hits.append((request.method, request.query["action"]))
+        return web.json_response(answer) if request.method == "POST" else lookups.pop(0)
+
+    app = web.Application()
+    app.router.add_route("*", "/ajax.php", ajax)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    await web.TCPSite(runner, "127.0.0.1", 0).start()
+    api = FakeApi(f"http://127.0.0.1:{runner.addresses[0][1]}", api_key="an-api-key")
+    try:
+        return hits, await api.upload({"type": 0}, files)
+    finally:
+        await api.close()
+        await runner.cleanup()
+
+
+def test_an_api_upload_success_naming_no_torrent_is_looked_up_by_infohash(tmp_path: Path) -> None:
+    answer = {"status": "success", "response": {"groupid": GROUP_ID}}
+
+    hits, ids = anyio.run(_api_upload_answered, tmp_path, answer, [_found(TORRENT_ID, GROUP_ID)])
+
+    assert ids == (TORRENT_ID, GROUP_ID)
+    assert hits == [("POST", "upload"), ("GET", "torrent")]
+
+
+def test_an_api_upload_refused_without_a_reason_is_a_failed_upload(tmp_path: Path) -> None:
+    with pytest.raises(RequestError, match="API upload failed"):
+        anyio.run(_api_upload_answered, tmp_path, {"status": "failure"}, [])
+
+
+@pytest.mark.parametrize(("value", "expected"), [("42", 42), ("0", None), ("", None), ("4\u00b2", None)])
+def test_an_id_in_a_query_is_a_number_above_0(value: str, expected: int | None) -> None:
+    assert _query_id({"torrentid": [value]}, "torrentid") == expected
