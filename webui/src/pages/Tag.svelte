@@ -55,11 +55,12 @@
   async function start() {
     error = ''
     starting = true
+    const sent = path
     try {
       const started = await apiPost<Job>('/jobs', {
         kind: 'tag',
         params: {
-          path,
+          path: sent,
           source,
           encoding: encoding || null,
           overwrite,
@@ -71,6 +72,8 @@
       })
       jobId = started.id
       showLog = false
+      // The job renames the folder: the next one starts with nothing chosen, unless another was typed meanwhile.
+      if (path === sent) path = ''
     } catch (e) {
       error = String(e)
     } finally {

@@ -284,11 +284,12 @@
     }
     saveOptions()
     starting = true
+    const sent = path
     try {
       const started = await apiPost<Job>('/jobs', {
         kind: 'upload',
         params: {
-          path,
+          path: sent,
           source,
           trackers: chosen,
           group_id: group,
@@ -308,6 +309,9 @@
       })
       jobId = started.id
       showLog = false
+      // A real upload has taken the folder and may move or remove it: the next one starts with nothing chosen,
+      // unless another was typed meanwhile. A dry run leaves it, to be run for real.
+      if (!dryRun && path === sent) path = ''
     } catch (e) {
       error = String(e)
     } finally {

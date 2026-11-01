@@ -1,9 +1,13 @@
 <script lang="ts">
-  import { onMount, tick } from 'svelte'
-  import { apiGet } from './api'
+  import { tick } from 'svelte'
+  import { ApiError, apiGet } from './api'
 
-  /** `prefill`: start an empty box with download_directory and a separator, for a page that needs an album folder. */
-  let { value = $bindable(''), prefill = true }: { value: string; prefill?: boolean } = $props()
+  /**
+   * `value`: the folder the job uses, set by a Select or by typing it (a page empties it after a start); it starts
+   *   empty.
+   * `empty`: what the job uses when nothing is chosen, for a page where the folder is optional.
+   */
+  let { value = $bindable(''), empty = 'nothing chosen' }: { value: string; empty?: string } = $props()
 
   interface Folder {
     name: string
@@ -14,6 +18,7 @@
 
   interface Listing {
     path: string | null
+    missing: string | null
     parent: string | null
     library: boolean
     audio: boolean
@@ -23,8 +28,15 @@
     roots: { path: string; name: string; library: boolean }[]
   }
 
+  interface Summary {
+    path: string
+    summary: string
+  }
+
   type Sort = 'newest' | 'name'
   const SORT_KEY = 'salmon.folderSort'
+  const LAST_KEY = 'salmon.folderLast'
+  const DEBOUNCE_MS = 400
 
   /** The viewer's last choice; blocked or cleared storage (a private window) falls back to newest first. */
   function remembered(): Sort {
@@ -32,6 +44,25 @@
       return localStorage.getItem(SORT_KEY) === 'name' ? 'name' : 'newest'
     } catch {
       return 'newest'
+    }
+  }
+
+  /** The last folder browsed in this browser, where Browse opens; none (or blocked storage) opens the roots. */
+  function lastBrowsed(): string | null {
+    try {
+      return localStorage.getItem(LAST_KEY)
+    } catch {
+      return null
+    }
+  }
+
+  /** Remembered for Browse only: it never becomes the job's folder. */
+  function rememberBrowsed(path: string | null) {
+    try {
+      if (path) localStorage.setItem(LAST_KEY, path)
+      else localStorage.removeItem(LAST_KEY)
+    } catch {
+      // Not remembered: the next Browse opens the roots.
     }
   }
 
@@ -55,49 +86,97 @@
   )
 
   /**
-   * An empty box starts as download_directory and a separator, so a folder name pasted after it is an absolute path
-   * and Browse opens inside download_directory. The first root is always download_directory. A failure leaves the
-   * box empty, and a value set meanwhile (the page's, or typed) is never overwritten.
+   * What the server says about the folder in the box: the folder it resolves it to and one line counting its audio
+   * files, its reason for refusing it (a 4xx answer), or that the folder could not be checked (no answer, or a 5xx).
    */
-  onMount(async () => {
-    if (!prefill || value) return
-    try {
-      const answer = await apiGet<Listing>('/browse')
-      const root = answer.roots[0]
-      if (value || !root || root.library) return
-      const separator = root.path.includes('\\') ? '\\' : '/'
-      value = /[\\/]$/.test(root.path) ? root.path : root.path + separator
-    } catch {
-      // Not prefilled: the box stays empty.
+  let checked = $state<{ value: string; path: string; line: string; kind: 'count' | 'refused' | 'failed' } | null>(
+    null,
+  )
+  const current = $derived(checked?.value === value ? checked : null)
+  // The folder the job would use: the one the server resolved the box to, once it has.
+  const shownPath = $derived(current?.path || value)
+
+  $effect(() => {
+    const folder = value
+    if (!folder) {
+      checked = null
+      return
+    }
+    let stale = false
+    const timer = setTimeout(() => {
+      apiGet<Summary>(`/folder?path=${encodeURIComponent(folder)}`)
+        .then((found) => {
+          if (!stale) checked = { value: folder, path: found.path, line: found.summary, kind: 'count' }
+        })
+        .catch((e) => {
+          if (stale) return
+          const line = e instanceof Error ? e.message : String(e)
+          if (e instanceof ApiError && e.status === 401) {
+            // Logged out: the login screen takes over.
+            checked = null
+          } else if (e instanceof ApiError && e.status >= 400 && e.status < 500) {
+            checked = { value: folder, path: '', line, kind: 'refused' }
+          } else {
+            checked = { value: folder, path: '', line: `Could not check this folder: ${line}`, kind: 'failed' }
+          }
+        })
+    }, DEBOUNCE_MS)
+    return () => {
+      stale = true
+      clearTimeout(timer)
     }
   })
 
   let latest = 0
 
   /**
-   * The roots (no path), or the folders in one; the server refuses anything outside the roots. Only the latest
-   * request applies its answer, so a slower, older one (another folder, the other sort) cannot overwrite it.
+   * The roots (no path), or the folders in one; the server refuses anything outside the roots, and lists the nearest
+   * folder above one that is gone. Only the latest request applies its answer, so a slower, older one (another
+   * folder, the other sort) cannot overwrite it. The folder listed is remembered for Browse unless `remember` is
+   * false. The error when the latest request failed, else null.
    */
-  async function browse(path?: string | null, focus = false) {
+  async function browse(path?: string | null, focus = false, remember = true): Promise<unknown> {
     const mine = ++latest
     loading = true
     error = ''
     try {
       const query = path ? `path=${encodeURIComponent(path)}&sort=${sort}` : `sort=${sort}`
       const found = await apiGet<Listing>(`/browse?${query}`)
-      if (mine !== latest) return
+      if (mine !== latest) return null
       if ((found.path ?? null) !== (listing?.path ?? null)) filter = ''
       listing = found
       open = true
+      if (remember) rememberBrowsed(found.path)
       if (focus && window.matchMedia('(pointer: fine)').matches) {
         await tick()
         if (mine === latest) filterInput?.focus()
       }
     } catch (e) {
-      if (mine === latest) error = String(e)
+      if (mine !== latest) return null
+      error = String(e)
+      return e
     } finally {
       if (mine === latest) loading = false
     }
+    return null
+  }
+
+  /**
+   * Browse opens at the folder in the box, else at the last folder browsed, else at the roots; the server lists the
+   * nearest folder above one that is gone. A remembered folder the server refuses (400, 403, 404: the roots changed)
+   * is forgotten; one it could not answer for is kept.
+   */
+  async function openBrowser() {
+    const last = lastBrowsed()
+    for (const start of new Set([value, last])) {
+      if (!start) continue
+      const failed = await browse(start, true)
+      if (failed === null) return
+      if (start === last && failed instanceof ApiError && [400, 403, 404].includes(failed.status)) {
+        rememberBrowsed(null)
+      }
+    }
+    await browse(null, true, false)
   }
 
   function sortBy(next: Sort) {
@@ -138,12 +217,36 @@
 </script>
 
 <!-- Ported from the fork's FolderPicker (chodeus a18e0e25, styx-techno 6e91041a): roots side by side, and a
-     select button on each row, apart from the name that opens it. Only folders holding audio can be picked. -->
+     select button on each row, apart from the name that opens it. Only folders with audio files in them or in their
+     disc folders can be picked. -->
 <div class="picker">
   <div class="row">
-    <input type="text" class="mono grow" bind:value placeholder="/path/to/album" />
-    <button class="btn secondary" disabled={loading} onclick={() => browse(value || null, true)}>Browse</button>
+    <input
+      type="text"
+      class="mono grow"
+      bind:value
+      placeholder="Browse, or type an album folder's path"
+      aria-label="Album folder"
+    />
+    <button class="btn secondary" disabled={loading} onclick={openBrowser}>Browse</button>
   </div>
+  <p class="small will-use">
+    {#if current?.kind === 'refused'}
+      Cannot use: <span class="mono">{value}</span>
+    {:else if value && !current}
+      Checking: <span class="mono">{value}</span>
+    {:else}
+      Will use: {#if value}<span class="mono">{shownPath}</span>{:else}<span class="muted">{empty}</span>{/if}
+    {/if}
+  </p>
+  <p
+    class="small checked"
+    class:error={current?.kind === 'refused'}
+    class:muted={current?.kind !== 'refused'}
+    aria-live="polite"
+  >
+    {#if current}{current.line}{/if}
+  </p>
 
   {#if open && listing}
     <div class="listing">
@@ -159,6 +262,11 @@
             </button>
           {/each}
         </div>
+      {/if}
+      {#if listing.missing}
+        <p class="muted small missing">
+          There is no folder <span class="mono">{listing.missing}</span>: this is the nearest folder above it.
+        </p>
       {/if}
       <div class="row here">
         <span class="mono grow">{listing.path ?? 'Your folders'}</span>
@@ -208,7 +316,7 @@
               {folder.name}/{#if folder.library}<span class="muted"> (library)</span>{/if}
             </button>
             {#if folder.audio}
-              <span class="chip ok" title="Holds audio files">audio</span>
+              <span class="chip ok" title="Audio files in it or its disc folders">audio</span>
               <button class="btn small secondary" onclick={() => select(folder.path)}>Select</button>
             {/if}
           </li>
@@ -320,6 +428,17 @@
   .small {
     font-size: 0.8rem;
     margin: 0.4rem 0 0;
+  }
+  /* Kept in the page while empty, so a screen reader hears what arrives in it; it takes no room then. */
+  .checked:empty {
+    margin: 0;
+  }
+  .will-use .mono,
+  .missing .mono {
+    overflow-wrap: anywhere;
+  }
+  .missing {
+    margin: 0 0 0.4rem;
   }
   .error {
     color: var(--err);
