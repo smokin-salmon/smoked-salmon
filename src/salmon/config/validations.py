@@ -459,7 +459,7 @@ class Upload(BaseStruct):
     native_spectrals_viewer: bool = False
     # With native_spectrals_viewer: draw the spectrals in the terminal when it speaks the Kitty graphics protocol
     # (kitty, Ghostty, WezTerm...), over SSH too. False opens feh (or the desktop's default image viewer) /
-    # Quick Look / the Windows viewer in any.
+    # Quick Look / the Windows viewer in any terminal.
     terminal_spectrals_viewer: bool = True
     feh_fullscreen: bool = True
     prompt_puddletag: bool = False

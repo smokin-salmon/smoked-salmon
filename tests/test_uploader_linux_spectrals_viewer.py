@@ -83,6 +83,13 @@ def test_feh_goes_fullscreen_when_set(monkeypatch, system) -> None:
     assert system.ran[0][4] == "--fullscreen"
 
 
+def test_the_default_viewer_is_told_where_the_other_spectrals_are(system, capsys) -> None:
+    # Not every PNG handler pages through the folder (GIMP, a browser).
+    system.installed.discard("feh")
+    system.view()
+    assert f"Opening 01.png with {LOUPE}. All the spectrals are in {system.folder}." in capsys.readouterr().out
+
+
 def test_without_feh_the_default_viewer_opens_the_first_spectral(system) -> None:
     system.installed.discard("feh")
     system.view()

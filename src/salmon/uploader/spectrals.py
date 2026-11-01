@@ -737,7 +737,9 @@ async def _default_png_viewer() -> str | None:
 
 
 async def _open_specs_in_default_viewer(spectrals_path: str) -> str | None:
-    """Open the first spectral in the desktop's default image viewer, which pages through the rest of the folder.
+    """Open the first spectral in the desktop's default image viewer, and say where the others are.
+
+    Most viewers page through the rest of the folder, but not every PNG handler does (GIMP, a browser).
 
     Args:
         spectrals_path: Path to the spectrals directory.
@@ -748,8 +750,11 @@ async def _open_specs_in_default_viewer(spectrals_path: str) -> str | None:
     viewer = await _default_png_viewer() if shutil.which("xdg-open") else None
     if not viewer:
         return "there is no default image viewer"
-    first = os.path.join(spectrals_path, _spectral_images(spectrals_path)[0])
-    result = await anyio.run_process(["xdg-open", first], check=False, stdout=DEVNULL, stderr=DEVNULL)
+    first = _spectral_images(spectrals_path)[0]
+    click.secho(f"Opening {first} with {viewer}. All the spectrals are in {spectrals_path}.", fg="cyan")
+    result = await anyio.run_process(
+        ["xdg-open", os.path.join(spectrals_path, first)], check=False, stdout=DEVNULL, stderr=DEVNULL
+    )
     if result.returncode != 0:
         return f"the default image viewer ({viewer}) failed to open"
     return None
