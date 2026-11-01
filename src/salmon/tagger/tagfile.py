@@ -75,6 +75,20 @@ def _salmon_comments(tags: id3.ID3) -> list[Any]:
     return [f for f in tags.getall("COMM") if f.desc == ""]
 
 
+# mutagen fixes up only the first moof when saving tags grows the metadata, which breaks every later fragment:
+# https://github.com/quodlibet/mutagen/issues/748 (drop this once it is fixed)
+def is_fragmented_mp4(path: str | None) -> bool:
+    """Whether the M4A has more than one top-level moof atom. A file that does not parse as an MP4 counts as one."""
+    if path is None:
+        return True
+    try:
+        with open(path, "rb") as fh:
+            names = [atom.name for atom in mp4.Atoms(fh).atoms]
+        return b"moov" not in names or names.count(b"moof") > 1
+    except Exception:
+        return True
+
+
 class TagFile:
     mut: flac.FLAC | mp3.MP3 | mp4.MP4 | None
 
@@ -331,8 +345,16 @@ class TagFile:
 
     def save(self) -> None:
         mut = self.mut
-        if mut is not None:
-            mut.save()
+        if mut is None:
+            return
+        if isinstance(mut, mp4.MP4) and is_fragmented_mp4(mut.filename):
+            click.secho(
+                f"Left {mut.filename}'s tags as they are: it is a fragmented M4A, "
+                "and writing tags to one can break its audio.",
+                fg="yellow",
+            )
+            return
+        mut.save()
 
 
 def _txxx_values(tags: ID3Tags, field: str) -> list[str] | None:
