@@ -678,10 +678,10 @@ def test_a_skipped_named_tracker_moves_on_to_the_next(monkeypatch, tmp_path, dir
     sites = _uploads_by_tracker(monkeypatch)
     real = salmon.uploader.resolve_cover_url
 
-    async def no_cover_on_red(gazelle_site, *args: Any) -> tuple[bool, str | None]:
+    async def no_cover_on_red(gazelle_site, *args: Any, **kwargs: Any) -> tuple[bool, str | None]:
         if gazelle_site.site_code == "RED":
             return False, None
-        return await real(gazelle_site, *args)
+        return await real(gazelle_site, *args, **kwargs)
 
     monkeypatch.setattr(salmon.uploader, "resolve_cover_url", no_cover_on_red)
 

@@ -10,6 +10,8 @@ from salmon.images import base as images_base
 from salmon.images.base import BaseImageUploader
 
 UPLOAD_URL = "https://thesungod.xyz/api/image/upload"
+# The domain its uploads' URLs are on (or a subdomain of it): how a URL given for an image is known as Ra's.
+IMAGE_DOMAINS = ("thesungod.xyz",)
 
 
 class ImageUploader(BaseImageUploader):

@@ -6,6 +6,9 @@ from salmon.errors import ImageUploadFailed, RequestError
 from salmon.images.base import BaseImageUploader
 from salmon.trackers.red import RedApi
 
+# The domain its uploads' URLs are on (redacted.sh/i/...): how a URL given for an image is known as RED's.
+IMAGE_DOMAINS = ("redacted.sh",)
+
 
 class ImageUploader(BaseImageUploader):
     """Image uploader for RED's internal image host.

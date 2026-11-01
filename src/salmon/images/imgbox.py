@@ -4,6 +4,10 @@ from salmon import cfg
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 
+# The domain its uploads' URLs are on, as a subdomain (images2.imgbox.com): how a URL given for an image is known as
+# imgbox's.
+IMAGE_DOMAINS = ("imgbox.com",)
+
 
 class ImageUploader(BaseImageUploader):
     """Uploads a single image to imgbox.com using the pyimgbox library.
