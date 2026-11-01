@@ -706,6 +706,12 @@ def _change(path: Path, change: str) -> None:
                 fh.write(b"other audio")
         return
     tagged = FLAC(path)
+    if change == "rate":
+        # STREAMINFO's sample rate alone: the samples, so the MD5, stay as they were.
+        tagged.info.sample_rate = 48000
+        tagged.save()
+        assert FLAC(path).info.sample_rate == 48000
+        return
     if change == "tag":
         tagged["title"] = "Two (fixed)"
     else:
@@ -716,7 +722,7 @@ def _change(path: Path, change: str) -> None:
 
 
 @pytest.mark.parametrize("md5", ["set", "unset"])
-@pytest.mark.parametrize("change", ["tag", "picture", "audio"])
+@pytest.mark.parametrize("change", ["tag", "picture", "audio", "rate"])
 def test_a_transcode_of_the_tracks_before_a_retag_is_refused_not_reused(made, tmp_path, change: str, md5: str) -> None:
     # Its MP3s carry the old tags or pictures: an upload of it would not match the album as it is now.
     album = _album_with_md5(tmp_path, md5)

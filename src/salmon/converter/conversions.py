@@ -153,15 +153,17 @@ def changed_tracks(changed: Sequence[str]) -> str:
 
 
 def _fingerprint(path: str) -> str:
-    """What a conversion takes from a FLAC: its audio (by the MD5 in STREAMINFO), tags and pictures.
+    """What a conversion takes from a FLAC: its audio (the MD5 and sample rate in STREAMINFO), tags and pictures.
 
-    A retag or a new picture changes it; a copy, a touch, or a re-encode of the same audio with the same tags does not.
+    A retag or a new picture changes it; a copy or a touch does not, nor does a re-encode of the same audio and tags,
+    unless the encoder left the MD5 unset: the file's bytes then stand for its audio, and a re-encode changes them.
     "" for a file that cannot be read, so one that becomes readable, or goes, counts as changed.
     """
     try:
         audio = FLAC(path)
         md5 = audio.info.md5_signature
-        digest = hashlib.sha256(f"{md5:032x} {audio.info.total_samples}".encode())
+        # The MD5 covers the samples, not the rate they play at, which STREAMINFO can say alone.
+        digest = hashlib.sha256(f"{md5:032x} {audio.info.total_samples} {audio.info.sample_rate}".encode())
         if not md5:
             # FLAC lets the encoder leave the MD5 unset: the file itself stands for its audio then.
             with open(path, "rb") as fh:
