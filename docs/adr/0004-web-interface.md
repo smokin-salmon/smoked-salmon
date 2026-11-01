@@ -134,6 +134,10 @@ jobs in threads, every tracker request on one loop
   folder at a time: a job that learns its folder only once it runs (a cross-upload without a path, from
   SOURCE's answer) holds it from then on, and does not take a folder another running job holds. A question
   left unanswered for 30 minutes aborts its job, as in the fork.
+- A queued upload is prepared while it waits (#790): its checks that only read the album (MQA, upconvert,
+  log CRCs, spectrals, integrity) run for one waiting job at a time, besides the running ones, sending nothing
+  and writing only into a folder of the job's own. Its turn stops the preparation; the job takes each file's
+  result if the file is unchanged, and checks the rest as before (`salmon.prepared`).
 
 ### 2. Prompts go through one interface; output is captured per job
 

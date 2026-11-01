@@ -34,13 +34,15 @@ from typing import Any, Literal
 import asyncclick as click
 import msgspec
 
-from salmon import cfg, dryrun, interaction, ssrf
+from salmon import cfg, dryrun, interaction, prepared, ssrf
 from salmon.errors import UnknownOutcomeError
+from salmon.prepared import Prepared
 from salmon.webui import output
 from salmon.webui.egress import Redactor
 from salmon.webui.interaction import NoAnswerError, WebInteraction
 
-Status = Literal["queued", "running", "waiting", "done", "failed", "cancelled", "unknown_outcome"]
+# A job waiting its turn is "queued", or while its preparation runs "preparing", then "ready" (see JobKind.prepare).
+Status = Literal["queued", "preparing", "ready", "running", "waiting", "done", "failed", "cancelled", "unknown_outcome"]
 FINISHED: frozenset[Status] = frozenset({"done", "failed", "cancelled", "unknown_outcome"})
 
 # A question left unanswered this long stops its job: there is no terminal to fall back to.
@@ -75,6 +77,11 @@ class JobKind:
         preflight: Checks that block too long for the server's loop (reading files to see what they are). The
             server runs it in a worker thread on the decoded parameters before it asks ``check``, which stays quick;
             it raises JobError to refuse the job.
+        prepare: Work a job of a kind with a folder can do while it waits its turn, which only reads the folder and
+            sends nothing: it keeps each file's result in the Prepared it is given, which the job's checks take once
+            it runs (``salmon.prepared``). One job is prepared at a time, in a thread of its own, its output dropped;
+            its turn coming stops it, keeping what it made. It writes only into the Prepared's folder, which goes
+            with the job.
     """
 
     name: str
@@ -85,6 +92,7 @@ class JobKind:
     check: Callable[[Any, bool], Any] = lambda params, _dry_run: params
     exclusive: bool = False
     preflight: Callable[[Any], None] | None = None
+    prepare: Callable[[Any, Prepared], Awaitable[None]] | None = None
 
 
 KINDS: dict[str, JobKind] = {}
@@ -170,6 +178,14 @@ class Job:
         self._own_folders: list[str] = []
         # The album folders the job claimed once running (claim_folder), resolved; changed on the server's loop.
         self._claimed: set[str] = set()
+        # What its preparation made (JobKind.prepare), once one started; and the preparation's loop and task, from its
+        # thread, while it runs.
+        self.prepared: Prepared | None = None
+        self._prepare_loop: asyncio.AbstractEventLoop | None = None
+        self._prepare_task: asyncio.Task | None = None
+        self._prepare_stopped = False
+        # The preparation's folder, until it is removed.
+        self._prepare_folder: str | None = None
 
     def holds(self, folder: str) -> bool:
         """Whether the job works on the album folder (resolved): the one it was started on, or one it claimed."""
@@ -348,6 +364,10 @@ class JobManager:
         self._idle.set()
         # Folders of jobs dropped from the history, being removed in a worker thread.
         self._removals: set[asyncio.Future[None]] = set()
+        # The job whose preparation runs: one at a time.
+        self._preparing: Job | None = None
+        self._prepared_all = asyncio.Event()
+        self._prepared_all.set()
 
     def open(self) -> None:
         """Take jobs, run on the running loop."""
@@ -366,7 +386,13 @@ class JobManager:
         except TimeoutError:
             names = ", ".join(sorted(job.id for job in self._running))
             print(f"salmon web: stopped while jobs were still running: {names}", file=output.real_stderr())
+        if self._preparing is not None:
+            self._stop_preparing(self._preparing)
+        with suppress(TimeoutError):
+            async with asyncio.timeout(timeout):
+                await self._prepared_all.wait()
         folders = [folder for job in self.jobs.values() for folder in self._take_own_folders(job)]
+        folders += [folder for job in self.jobs.values() if (folder := self._take_prepare_folder(job)) is not None]
         await asyncio.to_thread(_remove_own_folders, folders)
         if self._removals:
             await asyncio.gather(*self._removals)
@@ -504,10 +530,101 @@ class JobManager:
             self._queue.remove(job)
             self._running.add(job)
             self._idle.clear()
+            if job is self._preparing:
+                # The job checks what is left itself: the preparation stops, and what it made stays.
+                self._stop_preparing(job)
             job.status = "running"
             job.started_at = _now()
             self._publish({"event": "status", "job_id": job.id, "status": job.status, "started_at": job.started_at})
             threading.Thread(target=self._thread_main, args=(job,), name=f"salmon web {job.id}", daemon=True).start()
+        self._prepare_next()
+
+    # --- Preparing jobs that wait ----------------------------------------------------------------
+
+    def _prepare_next(self) -> None:
+        """Start preparing the first waiting job of a kind that prepares, unless a preparation runs already."""
+        if self._stopping or self._preparing is not None:
+            return
+        for job in self._queue:
+            if job.kind.prepare is None or job.folder is None or job.prepared is not None:
+                continue
+            folder = os.path.realpath(
+                tempfile.mkdtemp(prefix=f"{OWN_FOLDER_PREFIX}{job.id}-prepared-", dir=cfg.directory.tmp_dir or None)
+            )
+            if cfg.directory.protects(folder):
+                # The config does not let tmp_dir be in a library: nothing is prepared then.
+                os.rmdir(folder)
+                return
+            job.prepared = Prepared(job.folder, folder)
+            job._prepare_folder = folder
+            self._preparing = job
+            self._prepared_all.clear()
+            job.status = "preparing"
+            self._publish({"event": "status", "job_id": job.id, "status": job.status})
+            threading.Thread(
+                target=self._prepare_main, args=(job,), name=f"salmon web {job.id} preparing", daemon=True
+            ).start()
+            return
+
+    def _prepare_main(self, job: Job) -> None:
+        """The preparation's thread: its own loop, until it ends or is stopped."""
+        try:
+            asyncio.run(self._prepare(job))
+        except BaseException as err:
+            traceback.print_exception(err, file=output.real_stderr())
+        self._call(self._prepared, job)
+
+    async def _prepare(self, job: Job) -> None:
+        with job._lock:
+            if job._prepare_stopped:
+                return
+            job._prepare_loop = asyncio.get_running_loop()
+            job._prepare_task = asyncio.current_task()
+        assert job.kind.prepare is not None and job.prepared is not None
+        # No one reads what it prints; it sends nothing, and asks nothing.
+        with output.to(lambda _text, _err: None), dryrun.mode(job.dry_run), ssrf.public_only():
+            try:
+                await job.kind.prepare(job.params, job.prepared)
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                # What it made is kept; the job checks the rest, and reports what fails then.
+                print(f"salmon web: preparing {job.id} failed:", file=output.real_stderr())
+                traceback.print_exc(file=output.real_stderr())
+
+    def _stop_preparing(self, job: Job) -> None:
+        with job._lock:
+            job._prepare_stopped = True
+            loop, task = job._prepare_loop, job._prepare_task
+        if loop is not None and task is not None:
+            # A closed loop: the preparation has ended meanwhile.
+            with suppress(RuntimeError):
+                loop.call_soon_threadsafe(task.cancel)
+
+    def _prepared(self, job: Job) -> None:
+        """A preparation ended: its job is ready, unless it runs or ended meanwhile; the next one starts."""
+        self._preparing = None
+        self._prepared_all.set()
+        if job.status == "preparing":
+            job.status = "ready"
+            self._publish({"event": "status", "job_id": job.id, "status": job.status})
+        elif job.status in FINISHED:
+            self._remove_prepare_folder(job)
+        self._prepare_next()
+
+    @staticmethod
+    def _take_prepare_folder(job: Job) -> str | None:
+        folder, job._prepare_folder = job._prepare_folder, None
+        return folder
+
+    def _remove_prepare_folder(self, job: Job) -> None:
+        """Remove a finished job's preparation folder, in a worker thread."""
+        folder = self._take_prepare_folder(job)
+        if folder is None:
+            return
+        removal = asyncio.get_running_loop().run_in_executor(None, _remove_own_folders, [folder])
+        self._removals.add(removal)
+        removal.add_done_callback(self._removals.discard)
 
     def _call(self, callback: Callable[..., None], *args: Any) -> None:
         """Run `callback` on the server's loop, from any thread."""
@@ -543,6 +660,7 @@ class JobManager:
                 dryrun.mode(job.dry_run),
                 # The URLs a job fetches come from the browser and from store pages: public addresses only.
                 ssrf.public_only(),
+                prepared.using(job.prepared),
             ):
                 try:
                     result = await job.kind.run(job.params)
@@ -628,6 +746,11 @@ class JobManager:
         job._question_id = None
         job._answer = None
         job.finished_at = _now()
+        if job is self._preparing:
+            # Its folder goes once the preparation has stopped (_prepared).
+            self._stop_preparing(job)
+        else:
+            self._remove_prepare_folder(job)
         self._running.discard(job)
         if not self._running:
             self._idle.set()

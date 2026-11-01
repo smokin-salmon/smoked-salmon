@@ -28,7 +28,7 @@ try:
 except ImportError:
     oxipng = None
 
-from salmon import cfg, dryrun, interaction
+from salmon import cfg, dryrun, interaction, prepared
 from salmon.common import flush_stdin, get_audio_files
 from salmon.common.files import process_files
 from salmon.errors import (
@@ -507,6 +507,16 @@ async def _generate_spectral_for_file(
 
     full_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Full.png")
     zoom_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Zoom.png")
+
+    # A file prepared before the upload ran is not run through sox again (salmon.prepared).
+    kept = prepared.result("spectral", path, os.path.join(path, filename))
+    if kept is not None:
+        try:
+            for made, wanted in zip(kept, (full_spectral_path, zoom_spectral_path), strict=True):
+                shutil.copyfile(made, wanted)
+            return (idx + 1, filename)
+        except OSError:
+            pass  # The preparation's images are gone: made again below.
 
     # Run the process for generating the spectrals
     await anyio.run_process(

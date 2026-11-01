@@ -5,6 +5,8 @@
 
   const chips: Record<JobStatus, { label: string; tone: string }> = {
     queued: { label: 'queued', tone: '' },
+    preparing: { label: 'preparing', tone: '' },
+    ready: { label: 'ready', tone: '' },
     running: { label: 'running', tone: 'run' },
     waiting: { label: 'waiting for an answer', tone: 'warn' },
     done: { label: 'done', tone: 'ok' },
