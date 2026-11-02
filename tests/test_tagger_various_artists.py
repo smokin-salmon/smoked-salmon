@@ -53,7 +53,9 @@ def test_a_track_left_with_no_artist_goes_to_the_review_which_asks_for_one() -> 
 
 
 def test_descgen_leaves_a_various_credit_out(monkeypatch) -> None:
-    scraped = _scraped([("Dree Low", "main"), ("Various", "guest")])
+    # The second track's artist keeps the first track's credit in its line: a track credited with only the album's
+    # artists is listed without them (#895).
+    scraped = _scraped([("Dree Low", "main"), ("Various", "guest")], [("Einár", "main")])
 
     async def fake_run_metadata(url, return_source_name=False):
         return scraped, "Qobuz"

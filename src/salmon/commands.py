@@ -39,7 +39,7 @@ from salmon.uploader.spectrals import (
     post_upload_spectral_check,
 )
 from salmon.uploader.torrent_client import TorrentClientGenerator
-from salmon.uploader.upload import generate_source_links
+from salmon.uploader.upload import album_credit_names, credits_only_the_album, generate_source_links
 
 
 def format_spectral_urls(filenames: list[str], spectral_urls: dict[int, list[str]], bbcode: bool) -> str:
@@ -121,6 +121,7 @@ async def build_description(urls: Sequence[str]) -> str:
     remove_various_artists(metadata)
 
     description = "[b][size=4]Tracklist[/size][/b]\n\n"
+    album = album_credit_names(metadata)
     multi_disc = len(metadata["tracks"]) > 1
     for dnum, disc in metadata["tracks"].items():
         for tnum, track in disc.items():
@@ -131,7 +132,10 @@ async def build_description(urls: Sequence[str]) -> str:
             else:
                 description += f"[b]{str_to_int_if_int(str(tnum), zpad=True)}.[/b] "
 
-            description += f"{create_artist_str(track['artists'])} - {track['title']}\n"
+            if album is not None and credits_only_the_album(track["artists"], track["title"], album):
+                description += f"{track['title']}\n"
+            else:
+                description += f"{create_artist_str(track['artists'])} - {track['title']}\n"
     if metadata["comment"]:
         description += f"\n{metadata['comment']}\n"
     if metadata["urls"]:

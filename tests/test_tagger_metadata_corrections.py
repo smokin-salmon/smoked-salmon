@@ -86,7 +86,11 @@ def test_descgen_writes_the_corrected_names_and_credits_a_main_artist_who_is_als
     # The cleanup of an artist credited as both main and guest must see the corrected names: descgen writes the
     # credits as they are, with no later merge of the same name.
     corrections({"Ryuichi Sakamoto": "坂本龍一"})
-    scraped = _scraped([("Ryuichi Sakamoto", "main"), ("Alva Noto", "main"), ("坂本龍一", "guest")])
+    # The second track's artist keeps the first track's credit in its line: a track credited with only the album's
+    # artists is listed without them (#895).
+    scraped = _scraped(
+        [("Ryuichi Sakamoto", "main"), ("Alva Noto", "main"), ("坂本龍一", "guest")], [("Ryoji Ikeda", "main")]
+    )
 
     async def fake_run_metadata(url, return_source_name=False):
         return scraped, "Qobuz"
