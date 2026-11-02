@@ -86,6 +86,7 @@
     assumeDefaults = false
     chosen = firstVisitTrackers(options)
     conversions = presetConversions(options)
+    askConversions = false
   }
 
   /** The conversions ticked at a visit: the config's upload.conversions, those that are kinds. */
