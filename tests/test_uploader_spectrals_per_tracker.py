@@ -16,6 +16,7 @@ from helpers.uploader_dry_run import (
     _album,
     _lossy_with_spectrals,
     _printed_uploads,
+    _returning_async,
     _run_up,
     _torrent_lines,
 )
@@ -391,6 +392,8 @@ def test_an_albums_own_spectrals_folder_survives_the_upload_and_goes_into_the_re
     album = _album(tmp_path / "seeding" / "Album")
     (album / "Spectrals").mkdir()
     (album / "Spectrals" / "notes.txt").write_bytes(b"mine")
+    # Uploaded on a yes to the question about it (#902): -yyy would stop the run.
+    monkeypatch.setattr(salmon.uploader, "foreign_spectrals_refusal", _returning_async(None))
     before = _entries(album)
     images_at_upload: list[list[Path]] = []
     upload_and_report = salmon.uploader.upload_and_report
