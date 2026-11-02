@@ -20,7 +20,6 @@ from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
-from salmon.uploader.upload import upload_footer
 
 FIXTURES = Path(__file__).parent / "fixtures" / "cross_upload"
 FORK = json.loads((FIXTURES / "fork-compiled.json").read_text(encoding="utf-8"))
@@ -49,18 +48,15 @@ def _direction(sample: str) -> tuple[str, str, str]:
     return (name, "OPS", "RED") if name.startswith("ops-") else (name, "RED", "OPS")
 
 
-def _upstream_credit_no_tracker_links_and_our_footer(value: str, _sample: str) -> str:
+def _upstream_credit_no_tracker_links_and_no_footer(value: str, _sample: str) -> str:
     header, _, description = value.partition("[/align]\n\n")
     credit = (
         f"Cross-uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]smoked-salmon[/url] v{get_version()}"
     )
-    footer = ""
-    if description.endswith(FORK_FOOTER):
-        description, footer = description.removesuffix(FORK_FOOTER), upload_footer()
+    description = description.removesuffix(FORK_FOOTER)
     parts = (
         f"{header.replace(FORK_CREDIT, credit)}[/align]",
         without_tracker_links(description, SITES).strip(),
-        footer,
     )
     return "\n\n".join(part for part in parts if part)
 
@@ -77,13 +73,15 @@ DIFFERENCES: dict[str, tuple[str, Callable[[Any, str], Any]]] = {
         'The fork\'s header, but its credit line links to upstream, with no "(chodeus fork)". Links to either '
         "tracker's site, and Gazelle's tags that open the site's own pages ([torrent], [pl], [collage], [forum], "
         "[thread]; [user] and [rule] keep their text), are taken out of the source description, their text kept: "
-        "on the target they would name the source tracker's pages. Upstream's footer instead of the fork's. The "
-        "header, the description (trimmed of white space at its ends) and the footer are one blank line apart, "
+        "on the target they would name the source tracker's pages. The fork's footer is "
+        "dropped: upstream's header already credits salmon, so a cross-upload adds none (a footer the source "
+        "description already holds stays). The header and the description (trimmed of white space at its ends) "
+        "are one blank line apart, "
         "and an empty description (or one emptied by the link removal) leaves no blank lines in their place. The "
         "fork decodes HTML entities in every source description; only RED's comes escaped (and DIC's, it is "
         "assumed), so OPS's, the text as written, is not decoded (no OPS sample holds an entity: test_cross_upload.py "
         "shows it).",
-        _upstream_credit_no_tracker_links_and_our_footer,
+        _upstream_credit_no_tracker_links_and_no_footer,
     ),
     "album_desc": (
         "RED's comes HTML-escaped (bbBody): its HTML entities are decoded, as in release_desc, and so are DIC's "

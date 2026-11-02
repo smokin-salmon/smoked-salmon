@@ -668,24 +668,12 @@ def generate_t_description(
     )
 
 
-# The footer's whole shape, any version and any fork's: a bare link to a repository whose path ends in
-# /smoked-salmon, around the bold name.
-_FOOTER = re.compile(
-    r"Uploaded with \[url=https://github\.com/[\w.-]+/smoked-salmon\]\[b\]smoked-salmon\[/b\][^\[]*\[/url\]"
-)
-
-
 def upload_footer() -> str:
     """The line every torrent description salmon writes ends with."""
     return (
         f"[hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon]"
         f"[b]smoked-salmon[/b] v{get_version()}[/url]"
     )
-
-
-def has_upload_footer(description: str) -> bool:
-    """Whether a description already carries a smoked-salmon footer, of any version or fork, anywhere in it."""
-    return _FOOTER.search(description) is not None
 
 
 def generate_source_links(metadata_urls: list[str], source_url: str | None = None) -> str:
