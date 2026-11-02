@@ -107,10 +107,14 @@ def test_save_says_whether_it_wrote(tmp_path):
     plain = tmp_path / "plain.m4a"
     _write_m4a(plain, False)
     tag_file = TagFile(str(plain))
-    assert tag_file.save() is True
-    assert TagFile(str(_fragmented(tmp_path))).save() is False
+    wrote_plain = tag_file.save()
+    frag = _fragmented(tmp_path)
+    wrote_fragmented = TagFile(str(frag)).save()
+    assert wrote_plain is True
+    assert wrote_fragmented is False
 
     tag_file = TagFile(str(plain))
     assert tag_file.mut is not None
     tag_file.mut.tags = None  # an M4A without a tags object: mutagen's save() writes nothing
-    assert tag_file.save() is False
+    wrote_without_tags = tag_file.save()
+    assert wrote_without_tags is False
