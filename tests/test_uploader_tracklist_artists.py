@@ -307,7 +307,9 @@ def _store_album(*tracks: list[tuple[str, str]], rls_type: str = "Album") -> dic
 def test_descgen_names_no_artist_on_a_one_artist_album(monkeypatch) -> None:
     album = _store_album([("Sullivan Murphy", "main")], [("Sullivan Murphy", "main"), ("A Composer", "composer")])
 
-    assert _descgen(monkeypatch, album) == ["[b]01.[/b] Song 1", "[b]02.[/b] Song 2"]
+    lines = _descgen(monkeypatch, album)
+
+    assert lines == ["[b]01.[/b] Song 1", "[b]02.[/b] Song 2"]
 
 
 def test_descgen_names_the_artist_of_a_track_that_credits_anyone_else(monkeypatch) -> None:
@@ -315,7 +317,9 @@ def test_descgen_names_the_artist_of_a_track_that_credits_anyone_else(monkeypatc
     remix = [("Sullivan Murphy", "main"), ("Remi Xer", "remixer")]
     album = _store_album([("Sullivan Murphy", "main")], guest, remix)
 
-    assert _descgen(monkeypatch, album) == [
+    lines = _descgen(monkeypatch, album)
+
+    assert lines == [
         "[b]01.[/b] Song 1",
         f"[b]02.[/b] {create_artist_str(guest)} - Song 2",
         f"[b]03.[/b] {create_artist_str(remix)} - Song 3",
@@ -325,7 +329,9 @@ def test_descgen_names_the_artist_of_a_track_that_credits_anyone_else(monkeypatc
 def test_descgen_names_every_tracks_artist_on_a_compilation(monkeypatch) -> None:
     album = _store_album([("Sullivan Murphy", "main")], rls_type="Compilation")
 
-    assert _descgen(monkeypatch, album) == ["[b]01.[/b] Sullivan Murphy - Song 1"]
+    lines = _descgen(monkeypatch, album)
+
+    assert lines == ["[b]01.[/b] Sullivan Murphy - Song 1"]
 
 
 def _write_flac(path: Path) -> None:
@@ -398,7 +404,9 @@ def test_descgen_names_no_artist_on_a_track_by_the_albums_orchestra_and_conducto
     guest = [("Orchestra", "main"), ("A Conductor", "conductor"), ("A Soloist", "guest")]
     album = _store_album(track, guest)
 
-    assert _descgen(monkeypatch, album) == [
+    lines = _descgen(monkeypatch, album)
+
+    assert lines == [
         "[b]01.[/b] Song 1",
         f"[b]02.[/b] {create_artist_str(guest)} - Song 2",
     ]
@@ -409,7 +417,9 @@ def test_descgen_names_the_artist_of_a_track_whose_title_alone_credits_a_guest(m
     album = _store_album([("Sullivan Murphy", "main")], [("Sullivan Murphy", "main")])
     album["tracks"]["1"]["2"]["title"] = "Song 2 (feat. Dierdre Simpson)"
 
-    assert _descgen(monkeypatch, album) == [
+    lines = _descgen(monkeypatch, album)
+
+    assert lines == [
         "[b]01.[/b] Song 1",
         "[b]02.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson)",
     ]
