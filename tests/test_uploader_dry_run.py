@@ -235,6 +235,8 @@ def test_a_dry_run_with_skip_flac_upload_prints_the_transcodes_into_the_group(
     assert os.listdir(downloads / staging.STAGING_DIR) == []
     uploads = _printed_uploads(run.result.output)
     assert [dict(fields)["bitrate"] for _line, fields, _torrent in uploads] == ["320", "V0 (VBR)"]
+    # The form's VBR box: ticked for V0 only.
+    assert [dict(fields).get("vbr") for _line, fields, _torrent in uploads] == [None, "on"]
     assert all(("groupid", str(GROUP_ID)) in fields for _line, fields, _torrent in uploads)
     assert all("torrentid=11" in dict(fields)["release_desc"] for _line, fields, _torrent in uploads)
 

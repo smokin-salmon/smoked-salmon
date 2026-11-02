@@ -198,6 +198,28 @@ def test_each_tracker_gets_the_spectrals_of_its_own_host_uploaded_once_per_host(
     assert _left_behind(downloads, scratch) == []
 
 
+def test_the_prompt_names_only_the_host_of_the_one_tracker_named_with_t(monkeypatch, tmp_path, dirs, hosts) -> None:
+    # With -t RED, the run uploads to RED only: OPS's host, configured but out of reach, is not named.
+    _library, _downloads, torrents = dirs
+    _image_settings(monkeypatch, red="imgbox")
+    prompted_hosts: list[str | None] = []
+
+    async def check_spectrals(path: str, *args: Any, hosts: str | None = None, **kwargs: Any) -> Any:
+        prompted_hosts.append(hosts)
+        return await _lossy_with_spectrals(path, *args, **kwargs)
+
+    run = _run_up(
+        monkeypatch,
+        _album(tmp_path / "seeding" / "Album"),
+        torrents,
+        trackers=("RED",),
+        check_spectrals=check_spectrals,
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert prompted_hosts == ["imgbox"]
+
+
 def test_trackers_sharing_a_host_share_one_upload(monkeypatch, tmp_path, dirs, hosts, scratch) -> None:
     _library, downloads, torrents = dirs
     _image_settings(monkeypatch, red="imgbox", ops="imgbox")
