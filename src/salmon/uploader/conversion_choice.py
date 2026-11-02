@@ -50,52 +50,77 @@ def get_downconversion_options(rls_data, track_data, quiet: bool = False):
         return []
 
     rates = sorted({track["sample rate"] for track in track_data.values()})
-    sample_rate = rates[0]
-    encoding = rls_data["encoding"]
-    mixed = len(rates) > 1
-    if mixed and not quiet and encoding == "24bit Lossless":
+    if len(rates) > 1 and not quiet and rls_data["encoding"] == "24bit Lossless":
         listed = ", ".join(f"{rate / 1000:g}" for rate in rates)
         click.secho(f"No lossless downconversion: the files have different sample rates ({listed} kHz).", fg="yellow")
 
-    options = []
+    return [option for option, _reason in _conversion_verdicts(rls_data, track_data).values() if option is not None]
 
-    # Tier 1: 24bit 176.4~192 kHz
-    if encoding == "24bit Lossless" and not mixed and sample_rate >= 176400:
-        # Can downconvert to 24bit lower sample rate
+
+def _conversion_verdicts(rls_data, track_data) -> dict[str, tuple[dict[str, Any] | None, str | None]]:
+    """For each conversion kind, the option this release is offered, or None and the reason it is not.
+
+    The one place the tiers' conditions are written: get_downconversion_options lists the options and
+    choose_conversions gives the reasons from it.
+    """
+    rates = sorted({track["sample rate"] for track in track_data.values()}) if track_data else []
+    sample_rate = rates[0] if rates else 0
+    encoding = rls_data["encoding"]
+    mixed = len(rates) > 1
+    lossless = encoding in ("Lossless", "24bit Lossless")
+    mixed_reason = f"the files have different sample rates ({', '.join(f'{rate / 1000:g}' for rate in rates)} kHz)."
+
+    verdicts: dict[str, tuple[dict[str, Any] | None, str | None]] = {}
+
+    # Tier 1: 24bit 176.4~192 kHz, down to 24bit at a lower rate
+    if not lossless:
+        verdicts["24bit"] = (None, "this release is not lossless.")
+    elif encoding != "24bit Lossless":
+        verdicts["24bit"] = (None, "this release is 16-bit, not 24-bit.")
+    elif mixed:
+        verdicts["24bit"] = (None, mixed_reason)
+    elif sample_rate < 176400:
+        verdicts["24bit"] = (None, f"its sample rate is {sample_rate / 1000:g} kHz; this needs 176.4 kHz or more.")
+    else:
         target_rate = 96000 if sample_rate % 48000 == 0 else 88200
-        options.append(
+        verdicts["24bit"] = (
             {
                 "name": f"24bit {target_rate / 1000:.1f} kHz",
                 "action": "downconvert",
                 "target_bitdepth": 24,
                 "target_sample_rate": target_rate,
-            }
+            },
+            None,
         )
 
-    # Tier 2: 24bit 44.1~96 kHz
-    if encoding == "24bit Lossless" and not mixed and sample_rate >= 44100:
-        # Can downconvert to 16bit
+    # Tier 2: 24bit 44.1~96 kHz, down to 16bit
+    if not lossless:
+        verdicts["16bit"] = (None, "this release is not lossless.")
+    elif encoding != "24bit Lossless":
+        verdicts["16bit"] = (None, "this release is already 16-bit.")
+    elif mixed:
+        verdicts["16bit"] = (None, mixed_reason)
+    elif sample_rate < 44100:
+        verdicts["16bit"] = (None, f"its sample rate is {sample_rate / 1000:g} kHz; this needs 44.1 kHz or more.")
+    else:
         target_rate = 48000 if sample_rate % 48000 == 0 else 44100
-        options.append(
+        verdicts["16bit"] = (
             {
                 "name": f"16bit {target_rate / 1000:.1f} kHz",
                 "action": "downconvert",
                 "target_bitdepth": 16,
                 "target_sample_rate": target_rate,
-            }
+            },
+            None,
         )
 
-    # Tier 3: 16bit 44.1~48 kHz
-    if (encoding == "Lossless") or (encoding == "24bit Lossless"):
-        # Can transcode to MP3
-        options.extend(
-            [
-                {"name": "MP3 320", "action": "transcode", "encoding": "320"},
-                {"name": "MP3 V0", "action": "transcode", "encoding": "V0"},
-            ]
-        )
-
-    return options
+    # Tier 3: any lossless release can be transcoded to MP3
+    if lossless:
+        verdicts["320"] = ({"name": "MP3 320", "action": "transcode", "encoding": "320"}, None)
+        verdicts["V0"] = ({"name": "MP3 V0", "action": "transcode", "encoding": "V0"}, None)
+    else:
+        verdicts["320"] = verdicts["V0"] = (None, "this release is not lossless.")
+    return verdicts
 
 
 def downconversion_format(task: dict[str, Any]) -> tuple[str, str]:
@@ -155,6 +180,11 @@ def _applicable_conversions(options: list[dict[str, Any]], conversions: tuple[st
     return any(conversion_kind(option) in kinds for option in options)
 
 
+def _unavailable_reason(kind: str, rls_data, track_data) -> str:
+    """Why a release is offered no conversion of this kind, from the rules get_downconversion_options applies."""
+    return _conversion_verdicts(rls_data, track_data)[kind][1] or "this release can't give it."
+
+
 def _warn_held_conversions(held: set[str] | frozenset[str]) -> None:
     for name in sorted(held):
         click.secho(
@@ -188,7 +218,13 @@ async def choose_conversions(
         ask_first: Whether to ask "check downconversion options?" before the choice.
     """
     if not _applicable_conversions(options, conversions):
-        click.secho("\nNo conversions selected for this upload.", fg="yellow")
+        kinds = cfg.upload.conversions if conversions is None else conversions
+        if kinds:
+            click.secho("\nNo conversion made for this upload:", fg="yellow")
+            for kind in kinds:
+                click.secho(f"  {kind}: {_unavailable_reason(kind, rls_data, track_data)}", fg="yellow")
+        else:
+            click.secho("\nNo conversions selected for this upload.", fg="yellow")
         return []
     if conversions is not None:
         _warn_held_conversions(held)

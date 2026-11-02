@@ -501,14 +501,24 @@ def test_a_run_selection_makes_the_transcodes_without_asking(monkeypatch) -> Non
     assert transcoded == [(["MP3 V0"], "https://tracker.test/torrents.php?torrentid=11")]
 
 
-@pytest.mark.parametrize("conversions", [(), ("16bit",)])
-def test_a_run_selection_naming_no_transcode_makes_none_without_asking(monkeypatch, capsys, conversions) -> None:
+def test_a_run_selection_naming_nothing_makes_none_without_asking(monkeypatch, capsys) -> None:
     _no_prompt(monkeypatch)
 
-    _calls, transcoded = _flow(monkeypatch, _group(_torrent(11)), conversions=conversions)
+    _calls, transcoded = _flow(monkeypatch, _group(_torrent(11)), conversions=())
 
     assert transcoded == []
     assert "No conversions selected for this upload." in capsys.readouterr().out
+
+
+def test_a_run_selection_naming_a_lossless_kind_says_why_none_is_made(monkeypatch, capsys) -> None:
+    _no_prompt(monkeypatch)
+
+    _calls, transcoded = _flow(monkeypatch, _group(_torrent(11)), conversions=("16bit",))
+
+    out = capsys.readouterr().out
+    assert transcoded == []
+    assert "No conversions selected" not in out
+    assert "16bit: this release is already 16-bit." in out
 
 
 def test_a_config_naming_no_transcode_asks_nothing(monkeypatch, capsys) -> None:
