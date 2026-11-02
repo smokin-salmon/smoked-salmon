@@ -296,11 +296,7 @@ async def _alias_artists(metadata):
         for artist, importa in credits:
             key = artist.lower()
             if key in artist_aliases:
-                updated.extend(
-                    (artist_name, importa)
-                    for artist_name in artist_aliases[key]
-                    if artist_name and artist_name.lower() not in artists_to_delete
-                )
+                updated.extend((artist_name, importa) for artist_name in artist_aliases[key] if artist_name)
             elif key not in artists_to_delete:
                 updated.append((artist, importa))
         return updated

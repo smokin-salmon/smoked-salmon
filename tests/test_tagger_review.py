@@ -146,6 +146,11 @@ def test_the_alias_editor_explains_its_syntax_and_splits_an_artist(monkeypatch) 
             "A --> X\nA --> Y\n",
             [("X", "main"), ("Y", "main"), ("B", "guest")],
         ),
+        (
+            [("A", "guest"), ("B", "main")],
+            "A --> X\nA --> Y\n",
+            [("X", "guest"), ("Y", "guest"), ("B", "main")],
+        ),
     ],
 )
 def test_alias_artists_applies_adjacent_renames_removals_and_splits_in_place(
