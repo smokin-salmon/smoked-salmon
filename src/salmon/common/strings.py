@@ -9,6 +9,9 @@ from salmon.errors import GenreNotInWhitelist
 
 _RE_NUMBERED_SUFFIX = re.compile(r" \(\d+\)$")
 _RE_NUMBERED_SUFFIXES = re.compile(r" \(\d+\)(?= |$)")
+# A store's release type ending an album title, left out of a search: "Title EP", "Title - EP", "Title - Single".
+# Only at the end and as a whole word, so "The Singles" and "Forever Single Mothers" keep theirs.
+_RE_TYPE_SUFFIX = re.compile(r"\s*(?:-\s*)?\b(?:EP|Single)\s*$")
 
 
 def numeric_id(value: object) -> int | None:
@@ -134,7 +137,7 @@ def make_searchstrs(artists, album, normalize=False) -> list[str]:
     """
     main_artists = [a for a, i in artists if i == "main"]
     album = album or ""
-    album = re.sub(r" ?(- )? (EP|Single)", "", album)
+    album = _RE_TYPE_SUFFIX.sub("", album)
     album = re.sub(r"\(?[Ff]eat(\.|uring)? [^\)]+\)?", "", album)
 
     search: str | list[str]

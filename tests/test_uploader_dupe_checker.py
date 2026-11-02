@@ -340,3 +340,25 @@ def test_an_unreadable_site_log_asks_before_uploading_without_the_check(
     out = capsys.readouterr().out
     assert "Could not read the RED site log: Server error 503" in out
     assert len(asked) == 1 and "Upload without the last-minute dupe check?" in asked[0]
+
+
+@pytest.mark.parametrize(
+    ("title", "searched"),
+    [
+        # A store's release type ending the title is left out, as before (without the trailing space master left).
+        ("Title EP", "artist title"),
+        ("Title - EP", "artist title"),
+        ("Title - Single", "artist title"),
+        ("Title Single", "artist title"),
+        # Inside the title it stays (#910): these became "artist thes", "artist forever mothers" and
+        # "artist thea tapes".
+        ("The Singles", "artist the singles"),
+        ("Forever Single Mothers", "artist forever single mothers"),
+        ("The EPA Tapes", "artist the epa tapes"),
+        ("Singles - EP", "artist singles"),
+        # Only as a whole word: the "EP" ending "STEP" stays.
+        ("ONE STEP", "artist one step"),
+    ],
+)
+def test_the_search_leaves_out_a_release_type_only_where_it_ends_the_title(title: str, searched: str) -> None:
+    assert generate_dupe_check_searchstrs([("Artist", "main")], title)[0] == searched

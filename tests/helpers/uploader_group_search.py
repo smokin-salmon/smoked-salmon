@@ -102,9 +102,10 @@ class FakeApi(BaseGazelleApi):
 class Flow:
     """upload() with every step that does not talk to the tracker stubbed out, and a log of what happened."""
 
-    def __init__(self, monkeypatch: pytest.MonkeyPatch, tracker: FakeTracker) -> None:
+    def __init__(self, monkeypatch: pytest.MonkeyPatch, tracker: FakeTracker, title: str = "Hits Vol. 2") -> None:
         self.monkeypatch = monkeypatch
         self.tracker = tracker
+        self.title = title
         self.events: list[str] = []
         # How the background search ended: "finished", "failed" or "cancelled".
         self.search = "not started"
@@ -180,7 +181,7 @@ class Flow:
             def remove_local_copies(self, keep_because: str | None = None) -> None:
                 pass
 
-        rls_data = {"format": "FLAC", "encoding": "Lossless", "artists": [("Artist", "main")], "title": "Hits Vol. 2"}
+        rls_data = {"format": "FLAC", "encoding": "Lossless", "artists": [("Artist", "main")], "title": self.title}
         rls_data["catno"] = None
         metadata = {**rls_data, "cover": None}
         stub_uploader(
