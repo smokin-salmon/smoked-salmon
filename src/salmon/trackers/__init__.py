@@ -138,16 +138,15 @@ async def validate_trackers(ctx, param, value):
 
 
 def validate_request(gazelle_site, request):
-    """Check the request id is a url or number. and return the number.
-    Should it check more? Currently not checking it is the right tracker.
-    """
+    """Check the request is an ID or a request URL of this tracker, and return its ID."""
     try:
         if request is None:
             return None
-        if request.strip().isdigit():
-            pass
-        elif request.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
+        request = request.strip()
+        if request.lower().startswith(gazelle_site.base_url + "/requests.php"):
             request = parse.parse_qs(parse.urlparse(request).query)["id"][0]
+        if not (request.isascii() and request.isdigit()):
+            raise click.BadParameter("This flag requires a request, either as a url or ID")
         click.secho(
             f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}",
             fg="green",
