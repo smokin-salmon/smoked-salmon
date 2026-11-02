@@ -907,7 +907,8 @@ async def upload(
         dryrun.writing_into(rename_into),
     ):
         original = path if staged != path else None
-        # Before the first tracker request: the question covers the conversions the run makes too.
+        # Before the upload's tracker requests (with -g, run_up has fetched the group already): the question covers
+        # the conversions the run makes too.
         if (refusal := await foreign_spectrals_refusal(path, staged)) is not None:
             return click.secho(f"\n{refusal}", fg="red", bold=True)
         result = await _upload_staged(
