@@ -50,7 +50,7 @@ from salmon.config.validations import GazelleTrackerSettings, ImageUploader, See
 from salmon.errors import ImageUploadFailed
 from salmon.tagger.sources import METASOURCES
 from salmon.trackers import base
-from salmon.webui import jobs, paths
+from salmon.webui import jobs, kinds, paths
 from salmon.webui.jobs import JobManager
 
 PASSKEY = "planted-passkey-0123456789abcdef0123"
@@ -871,7 +871,7 @@ def spectrals_job(monkeypatch: pytest.MonkeyPatch) -> None:
             for part in ("Full", "Zoom"):
                 Path(folder, f"{number} {part}.png").write_bytes(png(f"#{number}0000"))
         await interaction.show_spectrals(folder, {int(number): name for number, name in TRACKS.items()})
-        return {"folder": "Album", "tracks": TRACKS, "marks_found": False}
+        return {"folder": "Album", "tracks": TRACKS, "marks_found": False, "selection": [1, 2]}
 
     original = jobs.KINDS["spectrals"]
     stand_in = dataclasses.replace(
@@ -1062,6 +1062,115 @@ def test_a_dry_run_of_a_spectrals_upload_sends_nothing(
         assert job.status == "done", job.error
         assert hosts == []
         assert all(url.startswith("<catbox URL of ") for track in job.result["tracks"] for url in track["urls"])
+
+    _with_app(test)
+
+
+def _three_tracks(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[int, str]:
+    """The real spectrals job on three tracks, the audio and sox work stood in for."""
+    import salmon.tagger.audio_info
+    import salmon.uploader.spectrals as specs
+
+    tracks = {1: "01 A.flac", 2: "02 B.flac", 3: "03 C.flac"}
+
+    async def generate(path: str, folder: str, audio_info: dict[str, Any]) -> dict[int, str]:
+        for number in tracks:
+            for part in ("Full", "Zoom"):
+                Path(folder, f"{number:02d} {part}.png").write_bytes(png(f"#{number:02d}0000"))
+        return tracks
+
+    async def analysis(*_args: Any) -> bool:
+        return False
+
+    monkeypatch.setattr(salmon.tagger.audio_info, "gather_audio_info", lambda *_args: {})
+    monkeypatch.setattr(specs, "generate_spectrals_all", generate)
+    monkeypatch.setattr(specs, "print_frequency_analysis", analysis)
+    monkeypatch.setattr(kinds, "_album", lambda path: str(tmp_path))
+    stand_in = dataclasses.replace(
+        jobs.KINDS["spectrals"], folder=lambda _params: None, check=lambda params, _dry_run: params
+    )
+    monkeypatch.setitem(jobs.KINDS, "spectrals", stand_in)
+    return tracks
+
+
+def test_a_spectrals_job_records_the_default_selection_of_salmon_specs(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    _three_tracks(monkeypatch, tmp_path)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        for configured, expected in (("*", [1, 2, 3]), ("0", []), ("2 3 9", [2, 3]), ("+", None), (None, None)):
+            monkeypatch.setattr(cfg, "image", msgspec.convert({"default_spectral_ids": configured}, ImageUploader))
+            source = await _spectrals(client, manager)
+            selection = source.result["selection"]
+            if expected is None:
+                # A random third of three tracks, as prompt_spectrals picks it.
+                assert len(selection) == 1 and selection[0] in (1, 2, 3)
+            else:
+                assert selection == expected
+
+    _with_app(test)
+
+
+def test_a_spectrals_upload_takes_only_the_tracks_chosen(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, hosts: list[tuple[str, str]]
+) -> None:
+    _config(monkeypatch, specs_uploader="catbox")
+    _three_tracks(monkeypatch, tmp_path)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        job = await _run(client, manager, "spectrals_upload", {"job_id": source.id, "spectral_ids": [3, 1]})
+        assert job.status == "done", job.error
+        assert sorted(hosts) == [("catbox", f"{n:02d} {part}.png") for n in (1, 3) for part in ("Full", "Zoom")]
+        assert [track["id"] for track in job.result["tracks"]] == [1, 3]
+        assert job.result["text"] == "\n".join(
+            f"{name}: {' '.join(_urls('catbox', n))}" for n, name in ((1, "01 A.flac"), (3, "03 C.flac"))
+        )
+        assert "02 B.flac" not in job.result["text"] + job.result["bbcode"]
+
+    _with_app(test)
+
+
+def test_a_spectrals_upload_without_a_choice_takes_the_default_selection_never_every_track(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, hosts: list[tuple[str, str]]
+) -> None:
+    _three_tracks(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        cfg, "image", msgspec.convert({"specs_uploader": "catbox", "default_spectral_ids": "2"}, ImageUploader)
+    )
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        assert source.result["selection"] == [2]
+        job = await _run(client, manager, "spectrals_upload", {"job_id": source.id})
+        assert job.status == "done", job.error
+        assert [track["id"] for track in job.result["tracks"]] == [2]
+        assert sorted(name for _host, name in hosts) == ["02 Full.png", "02 Zoom.png"]
+
+        # A job that recorded no selection (made before this) falls back to the same default.
+        hosts.clear()
+        del source.result["selection"]
+        job = await _run(client, manager, "spectrals_upload", {"job_id": source.id})
+        assert [track["id"] for track in job.result["tracks"]] == [2]
+
+    _with_app(test)
+
+
+def test_a_spectrals_upload_of_no_track_or_a_track_the_job_lacks_is_refused(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, hosts: list[tuple[str, str]]
+) -> None:
+    _config(monkeypatch, specs_uploader="catbox")
+    _three_tracks(monkeypatch, tmp_path)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        detail = await _refused(client, "spectrals_upload", {"job_id": source.id, "spectral_ids": []}, status=400)
+        assert detail == "Pick at least one track."
+        detail = await _refused(client, "spectrals_upload", {"job_id": source.id, "spectral_ids": [1, 4]}, status=400)
+        assert "no track 4" in detail
+        await _refused(client, "spectrals_upload", {"job_id": source.id, "spectral_ids": [0]}, status=400)
+        assert hosts == []
 
     _with_app(test)
 

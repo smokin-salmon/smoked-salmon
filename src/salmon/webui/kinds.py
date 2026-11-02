@@ -152,6 +152,9 @@ class SpectralsUploadParams(msgspec.Struct, forbid_unknown_fields=True):
 
     job_id: str
     tracker: str | None = None
+    # The tracks to upload, by number: exactly these. None: the job's default selection (``salmon specs``' default),
+    # never every track.
+    spectral_ids: list[Annotated[int, msgspec.Meta(gt=0)]] | None = None
 
 
 # Track numbers count from 1: the command's -sp also takes 0 and negative numbers, which pick other tracks.
@@ -497,10 +500,34 @@ def _spectrals_source(job_id: str) -> tuple[str, dict[int, str]]:
     return folders[0], {int(spectral_id): name for spectral_id, name in tracks.items()}
 
 
+def _spectrals_chosen(job_id: str, tracks: dict[int, str], spectral_ids: list[int] | None) -> list[int]:
+    """The tracks of a spectrals upload: those asked for, else the default selection the job recorded.
+
+    Raises:
+        JobError: Nothing is asked for, or a track the job does not have (both 400).
+    """
+    if spectral_ids is None:
+        job = find_job(job_id)
+        recorded = (job.result or {}).get("selection") if job is not None and isinstance(job.result, dict) else None
+        if isinstance(recorded, list):
+            return [int(number) for number in recorded if int(number) in tracks]
+        from salmon.uploader.spectrals import default_spectral_ids
+
+        return default_spectral_ids(tracks)
+    if not spectral_ids:
+        raise JobError(400, "Pick at least one track.")
+    if unknown := sorted({number for number in spectral_ids if number not in tracks}):
+        raise JobError(400, f"This job has no track {', '.join(str(number) for number in unknown)}.")
+    return sorted(set(spectral_ids))
+
+
 def _checked_spectrals_upload(params: SpectralsUploadParams, _dry_run: bool) -> SpectralsUploadParams:
-    _spectrals_source(params.job_id)
+    _folder, tracks = _spectrals_source(params.job_id)
+    chosen = _spectrals_chosen(params.job_id, tracks, params.spectral_ids)
+    if not chosen:
+        raise JobError(400, "Pick at least one track.")
     _host, tracker = _spectrals_host(params.tracker)
-    return msgspec.structs.replace(params, tracker=tracker)
+    return msgspec.structs.replace(params, tracker=tracker, spectral_ids=chosen)
 
 
 def _album(path: str) -> str:
@@ -518,7 +545,11 @@ async def spectrals(params: SpectralsParams) -> dict[str, Any]:
     """
     # sox, numpy, PyAV and Pillow: loaded when the job runs, not when the server starts.
     from salmon.tagger.audio_info import gather_audio_info
-    from salmon.uploader.spectrals import generate_spectrals_all, print_frequency_analysis
+    from salmon.uploader.spectrals import (
+        default_spectral_ids,
+        generate_spectrals_all,
+        print_frequency_analysis,
+    )
 
     path = _album(params.path)
     audio_info = await anyio.to_thread.run_sync(gather_audio_info, path, True)
@@ -530,6 +561,8 @@ async def spectrals(params: SpectralsParams) -> dict[str, Any]:
         "folder": os.path.basename(path),
         "tracks": {f"{spectral_id:02d}": name for spectral_id, name in spectral_ids.items()},
         "marks_found": marks_found,
+        # What salmon specs offers to upload by default, worked out once so a reload shows the same choice.
+        "selection": default_spectral_ids(spectral_ids),
     }
 
 
@@ -816,15 +849,19 @@ async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
     from salmon.uploader.spectrals import upload_spectrals as upload_spectral_images
 
     try:
-        folder, tracks = _spectrals_source(params.job_id)
+        folder, all_tracks = _spectrals_source(params.job_id)
         host, tracker = _spectrals_host(params.tracker)
+        chosen = _spectrals_chosen(params.job_id, all_tracks, params.spectral_ids)
     except JobError as e:
         raise click.ClickException(e.detail) from None
+    if not chosen:
+        raise click.ClickException("Pick at least one track.")
+    tracks = {number: all_tracks[number] for number in chosen}
     await anyio.to_thread.run_sync(_spectral_images, folder, tracks)
     uploaded = await upload_spectral_images(folder, tracks, tracker)
     if not uploaded:
         raise click.ClickException("No spectral was uploaded.")
-    filenames = [tracks.get(number, "") for number in range(1, max(tracks) + 1)]
+    filenames = [all_tracks.get(number, "") for number in range(1, max(all_tracks) + 1)]
     return {
         "host": host,
         "tracker": tracker,

@@ -1086,6 +1086,26 @@ def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool
     return " ".join(track_ids) if track_ids else context_default
 
 
+def _random_third(spectral_ids: dict[int, str]) -> dict[int, str]:
+    """A random third of the tracks (at least one), in track order."""
+    all_ids = list(spectral_ids.keys())
+    subset_size = max(1, len(all_ids) // 3)  # Ensure at least one ID is selected
+    return {i: spectral_ids[i] for i in sorted(random.sample(all_ids, subset_size))}
+
+
+def default_spectral_ids(spectral_ids: dict[int, str]) -> list[int]:
+    """The tracks ``salmon specs`` would offer to upload by default, as track numbers: default_spectral_ids from the
+    config, else a random third. There is no lossy-master verdict, as in ``specs`` (``check_lma=False``)."""
+    selection = _default_spectral_selection(spectral_ids, None)
+    if selection == "*":
+        return list(spectral_ids)
+    if selection == "0":
+        return []
+    if selection == "+":
+        return list(_random_third(spectral_ids))
+    return [int(i) for i in selection.split()]
+
+
 async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False, hosts=None):
     """Ask which spectral IDs the user wants to upload, to hosts (see check_spectrals)."""
     hosts = hosts or cfg.image.specs_uploader
@@ -1112,10 +1132,7 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
             )
         )
         if ids.strip() == "+":
-            all_ids = list(spectral_ids.keys())
-            subset_size = max(1, len(all_ids) // 3)  # Ensure at least one ID is selected
-            ids = sorted([str(i) for i in random.sample(all_ids, subset_size)], key=int)
-            return {int(id_): spectral_ids[int(id_)] for id_ in ids}
+            return _random_third(spectral_ids)
         if ids.strip() == "*":
             return spectral_ids
         elif ids.strip() == "0":
