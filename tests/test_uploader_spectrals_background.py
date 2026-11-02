@@ -285,6 +285,25 @@ def test_aborting_during_the_checks_stops_the_generation(monkeypatch, tmp_path, 
     assert not (album / "Spectrals").exists()
 
 
+def test_leaving_the_block_before_the_spectral_step_stops_the_generation(tmp_path, sox) -> None:
+    album = _album(tmp_path)
+    sox.hold.touch()
+
+    async def leave_early() -> None:
+        # Bounded, so that a generation left running fails the test instead of holding it.
+        with anyio.fail_after(5):
+            async with spectrals.spectrals_in_background(str(album), AUDIO_INFO, (), "FLAC"):
+                await sox.wait_until_started(len(TRACKS))
+
+    try:
+        anyio.run(leave_early)
+    finally:
+        sox.hold.unlink()
+
+    assert [pid for pid in sox.started() if _alive(pid)] == []
+    assert sox.finished() == []
+
+
 def test_an_error_in_the_generation_is_raised_at_the_spectral_step(monkeypatch, tmp_path, sox) -> None:
     album = _album(tmp_path)
     sox.fail.touch()
