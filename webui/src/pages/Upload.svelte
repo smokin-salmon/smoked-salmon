@@ -225,7 +225,6 @@
       .then((answer) => {
         options = answer
         conversions = presetConversions(answer)
-        askConversions = false
         if (chosen.length || !answer.trackers.length) return
         const kept = storedOptions().trackers
         // In the order kept, which is the order the job uploads in.
