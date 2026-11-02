@@ -296,7 +296,7 @@ def test_an_error_in_the_generation_is_raised_at_the_spectral_step(monkeypatch, 
         await sox.wait_until_started(len(TRACKS))
         sox.hold.unlink()
 
-    # The question waits for the failure, so the failure comes before the step that reports it.
+    # The question returns once both runs have started and been let go; the spectral step waits for their failure.
     flow.at_the_group_question = both_started_then_fail
 
     # As in the foreground: the failed sox runs, grouped by the task group that ran them.
