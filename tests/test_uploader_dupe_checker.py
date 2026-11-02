@@ -5,7 +5,8 @@ import asyncclick as click
 import pytest
 
 import salmon.uploader
-from salmon.errors import RequestFailedError, SkipTracker
+from salmon import interaction
+from salmon.errors import RequestFailedError, SkipTracker, UploadError
 from salmon.uploader import dupe_checker
 from salmon.uploader.dupe_checker import (
     _prompt_for_group_id,
@@ -290,6 +291,26 @@ def test_a_malformed_search_result_keeps_its_number_on_one_line(capsys) -> None:
 def test_a_remixes_album_keeps_remixes_in_its_search() -> None:
     # "Mix" removes an edition marker such as "(Original Mix)", not the word inside "(Remixes)".
     assert generate_dupe_check_searchstrs([("Artist", "main")], "Album (Remixes)") == ["artist album remixes"]
+
+
+def test_an_unreadable_site_log_under_yyy_stops_without_asking(monkeypatch: pytest.MonkeyPatch, capsys) -> None:
+    # The terminal's confirm asks even under -yyy: an unattended run would wait at the question.
+    site = LogSite()
+
+    async def unreadable() -> list:
+        raise RequestFailedError("Server error 503")
+
+    async def ask(*_args, **_kwargs) -> bool:
+        pytest.fail("asked under -yyy")
+
+    site.get_uploads_from_log = unreadable  # type: ignore[attr-defined]
+    monkeypatch.setattr(salmon.uploader.interaction, "confirm", ask)
+
+    with interaction.assuming_defaults(True), pytest.raises(UploadError, match="-yyy"):
+        anyio.run(salmon.uploader.last_min_dupe_check, site, ["artist album"], "Album")
+
+    out = capsys.readouterr().out
+    assert "Could not read the RED site log: Server error 503" in out
 
 
 @pytest.mark.parametrize("upload_anyway", [True, False])

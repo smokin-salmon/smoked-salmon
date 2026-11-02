@@ -1872,6 +1872,12 @@ async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
         recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs, our_title)
     except RequestError as e:
         click.secho(f"Could not read the {gazelle_site.site_string} site log: {e}", fg="red", bold=True)
+        # -yyy takes the question's default, no: the confirm below would wait for an answer.
+        if await interaction.assume_defaults():
+            raise UploadError(
+                f"Not uploading to {gazelle_site.site_string} without the last-minute dupe check with -yyy "
+                "(upload.yes_all): run again once its site log can be read, or without -yyy to choose."
+            ) from None
         if not await interaction.confirm(
             click.style("\nUpload without the last-minute dupe check?", fg="red", bold=True),
             default=False,
