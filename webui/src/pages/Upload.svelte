@@ -86,6 +86,7 @@
     assumeDefaults = false
     chosen = firstVisitTrackers(options)
     conversions = presetConversions(options)
+    askConversions = false
   }
 
   /** The conversions ticked at a visit: the config's upload.conversions, those that are kinds. */
@@ -121,6 +122,8 @@
   let spectrals = $state('')
   // This upload only: preset from upload.conversions at every visit, never remembered.
   let conversions = $state<string[]>([])
+  // Ask during the run instead: no selection is sent, and the job asks as the terminal does.
+  let askConversions = $state(false)
   let flags = $state<Record<string, boolean>>(storedOptions().flags)
   let dryRun = $state(false)
   let assumeDefaults = $state(storedOptions().assumeDefaults)
@@ -206,7 +209,7 @@
       !!source &&
       (transcodes ? chosen.length === 1 : chosen.length > 0) &&
       !starting &&
-      (!transcodes || (parseGroupId(groupId) != null && conversions.length > 0)),
+      (!transcodes || (parseGroupId(groupId) != null && (askConversions || conversions.length > 0))),
   )
 
   // The job started here, else the newest upload: back on the page, the running upload is shown again.
@@ -297,7 +300,7 @@
           encoding: encoding || null,
           lossy: lossy === 'ask' ? null : lossy === 'yes',
           spectrals: tracks,
-          conversions,
+          conversions: askConversions ? null : conversions,
           ...sentFlags(),
         },
         dry_run: dryRun,
@@ -376,14 +379,19 @@
         <div class="row wrap">
           {#each options.conversion_kinds as kind (kind)}
             <label class="check">
-              <input type="checkbox" checked={conversions.includes(kind)} onchange={() => toggleConversion(kind)} />
+              <input type="checkbox" disabled={askConversions} checked={conversions.includes(kind)} onchange={() => toggleConversion(kind)} />
               {kind}
             </label>
           {/each}
+          <label class="check">
+            <input type="checkbox" bind:checked={askConversions} />
+            Ask during the run
+          </label>
         </div>
         <small class="hint">
-          This upload only. The default is upload.conversions in your config.{#if showHelp}
-            Made after the FLAC without asking, also with Transcodes only (--conversions).{/if}
+          This upload only. The ticked kinds are made after the FLAC without asking; with Ask during the run, salmon asks
+          which once it has searched the group, and upload.conversions is the default answer.{#if showHelp}
+            (--conversions, or none given){/if}
         </small>
       </div>
     </div>
@@ -406,7 +414,7 @@
       {#if transcodes}
         <small class="hint">
           The FLAC is already in that group: only its transcodes are uploaded, to exactly one ticked tracker, not with a request or
-          spectrals after upload (--skip-flac-upload). Tick at least one conversion.
+          spectrals after upload (--skip-flac-upload). Tick at least one conversion, or ask during the run.
         </small>
       {/if}
     </div>

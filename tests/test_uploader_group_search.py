@@ -65,6 +65,17 @@ def _before_the_spectral_step(out: str) -> str:
     return out.split("<<checks end>>", 1)[1].split("<<spectral step>>", 1)[0]
 
 
+def test_the_search_sent_to_the_tracker_keeps_a_type_word_inside_the_title(monkeypatch) -> None:
+    # "The Singles" was searched as "artist thes", which finds nothing on the tracker: a dupe missed (#910).
+    tracker = FakeTracker()
+    flow = Flow(monkeypatch, tracker, title="The Singles")
+
+    anyio.run(flow.run)
+
+    assert "browse artist the singles" in tracker.hits
+    assert not any("thes" in hit.split() for hit in tracker.hits)
+
+
 def test_the_search_runs_during_the_checks_and_sends_what_master_sends(monkeypatch, capsys) -> None:
     tracker = FakeTracker()
     flow = Flow(monkeypatch, tracker)

@@ -766,12 +766,76 @@ def made_by_salmon(spectrals_path: str) -> bool:
             is_file = {entry.name: entry.is_file(follow_symlinks=False) for entry in entries}
     except OSError:  # Not a folder, or gone.
         return False
-    if not all(is_file.values()):
+    if _foreign_entries(is_file):
         return False
     images = [name for name in is_file if not name.startswith(".") and name not in _BROWSER_LITTER]
-    if not all(_SALMON_SPECTRAL.fullmatch(name) for name in images):
-        return False
     return bool(images) or os.path.realpath(spectrals_path) in _made_specs_folders
+
+
+def _foreign_entries(is_file: dict[str, bool]) -> list[str]:
+    """The entries salmon never puts in a spectrals folder, from each entry's name and whether it is a plain file:
+    anything but a file, and a file that is not a spectral image, a hidden file or a file browser's litter."""
+    return [
+        name
+        for name, plain in is_file.items()
+        if not plain or not (name.startswith(".") or name in _BROWSER_LITTER or _SALMON_SPECTRAL.fullmatch(name))
+    ]
+
+
+# How many of the entries foreign_spectrals_entries finds the question names.
+_FOREIGN_ENTRIES_NAMED = 5
+
+
+def foreign_spectrals_entries(path: str) -> list[str] | None:
+    """The entries that make the album's Spectrals folder not salmon's (see made_by_salmon), sorted.
+
+    None when the album has no Spectrals folder, when salmon made it, or when nothing in it can be named: an empty
+    folder, or one holding only hidden files and a file browser's litter.
+    """
+    in_album = os.path.join(path, "Spectrals")
+    if not os.path.isdir(in_album) or made_by_salmon(in_album):
+        return None
+    try:
+        with os.scandir(in_album) as entries:
+            is_file = {entry.name: entry.is_file(follow_symlinks=False) for entry in entries}
+    except OSError:
+        return None
+    return sorted(_foreign_entries(is_file)) or None
+
+
+def foreign_entries_text(entries: Sequence[str]) -> str:
+    """Name the first entries foreign_spectrals_entries found, and how many more there are."""
+    named = ", ".join(entries[:_FOREIGN_ENTRIES_NAMED])
+    more = len(entries) - _FOREIGN_ENTRIES_NAMED
+    return f"{named} and {more} more" if more > 0 else named
+
+
+async def foreign_spectrals_refusal(album: str, staged: str) -> str | None:
+    """Ask whether to upload the album's Spectrals folder when salmon did not make it; why the run stops, if it does.
+
+    salmon leaves such a folder where it is, as the user's, so it goes into the torrent and into each conversion the
+    run makes. It is often what an earlier run left, with one file added (a sync client's copy on a name clash), so
+    it is uploaded only on a yes: under -yyy, the run stops. The folder is never moved, renamed or deleted.
+
+    Args:
+        album: The album folder the user gave: the question names its Spectrals folder.
+        staged: The folder the upload works on (see staged_source), whose Spectrals folder is checked.
+    """
+    entries = foreign_spectrals_entries(staged)
+    if entries is None:
+        return None
+    folder = os.path.join(album, "Spectrals")
+    click.secho(
+        f"\n{folder} is not a spectrals folder salmon made: it holds {foreign_entries_text(entries)}. "
+        "It goes into the torrent with the album, and into each conversion the run makes of it.",
+        fg="yellow",
+    )
+    refusal = f"Not uploading {folder}: move it out of the album and run salmon again."
+    if await interaction.assume_defaults():
+        return refusal
+    if await interaction.confirm(click.style("Upload it with the album anyway?", fg="magenta"), default=False):
+        return None
+    return refusal
 
 
 def carry_specs_claim(old_real: str, new_path: str) -> None:
