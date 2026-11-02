@@ -79,8 +79,6 @@ from salmon.uploader.upload import (
     finish_upload,
     generate_description,
     generate_torrent,
-    has_upload_footer,
-    upload_footer,
 )
 
 # The trackers a release can go between.
@@ -597,7 +595,8 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
     """Give TARGET's upload form for SOURCE's torrent: the fork's form, field for field, but for what it stops on.
 
     The torrent description is the fork's: a header naming SOURCE, the uploader and the source torrent, then
-    SOURCE's description and the footer. Links to either tracker's site are taken out of the copied descriptions.
+    SOURCE's description, which keeps a salmon footer it already has: the header credits salmon, so none is added.
+    Links to either tracker's site are taken out of the copied descriptions.
 
     Raises:
         CrossUploadRefused: If a value has no counterpart on TARGET.
@@ -619,8 +618,6 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
 
     sites = (source, target)
     description = without_tracker_links(_as_written(torrent.get("description") or "", source), sites).strip()
-    # The source description is the other tracker's, so it may already end with a footer.
-    footer = "" if has_upload_footer(description) else upload_footer()
     album_desc = _as_written(group.get("bbBody") or group.get("wikiBBcode") or "", source)
     album_desc = without_tracker_links(album_desc, sites)
     # The group's label and catalogue number are the original release's: a remaster with none of its own sends none.
@@ -652,9 +649,7 @@ def compile_data(response: dict[str, Any], source: "BaseGazelleApi", target: "Ba
         "image": html.unescape(group.get("wikiImage") or ""),
         "album_desc": album_desc.replace(_BROKEN_TRACKLIST_HEADER, _TRACKLIST_HEADER),
         # One blank line between the parts, and none for an empty description.
-        "release_desc": "\n\n".join(
-            part for part in (_source_header(torrent, source, target), description, footer) if part
-        ),
+        "release_desc": "\n\n".join(part for part in (_source_header(torrent, source, target), description) if part),
         **({"scene": True} if torrent.get("scene") else {}),
     }
 

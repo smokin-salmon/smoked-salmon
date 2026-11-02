@@ -1257,14 +1257,14 @@ def _header(source: str, target: str, uploader: str, source_url: str) -> str:
     )
 
 
-def test_the_torrent_description_is_the_forks_header_then_the_sources_and_our_footer(monkeypatch, dirs) -> None:
+def test_the_torrent_description_is_the_forks_header_then_the_sources(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER)
     run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
 
     (post,) = run.target.posts()
     source_description = _ops_answer(album)["torrent"]["description"]
     header = _header("OPS", "RED", "uploader", f"{run.source.url}/torrents.php?torrentid={TORRENT_ID}")
-    assert post.fields["release_desc"] == [f"{header}\n\n{source_description}\n\n{upload_footer()}"]
+    assert post.fields["release_desc"] == [f"{header}\n\n{source_description}"]
 
 
 def test_the_header_links_the_uploader_to_their_profile_when_the_source_names_them() -> None:
@@ -1277,7 +1277,7 @@ def test_the_header_links_the_uploader_to_their_profile_when_the_source_names_th
         f"[url={ops.base_url}/user.php?id=4321]Some & One[/url]",
         f"{ops.base_url}/torrents.php?torrentid=600005",
     )
-    assert compile_data(response, ops, RedApi())["release_desc"] == f"{header}\n\n{upload_footer()}"
+    assert compile_data(response, ops, RedApi())["release_desc"] == header
 
 
 @pytest.mark.parametrize(
@@ -1291,11 +1291,11 @@ def test_the_header_links_the_uploader_to_their_profile_when_the_source_names_th
     ],
     ids=["empty", "blank", "only a tracker link", "blank lines around"],
 )
-def test_the_header_the_description_and_the_footer_are_one_blank_line_apart(description: str, kept: str) -> None:
+def test_the_header_and_the_description_are_one_blank_line_apart(description: str, kept: str) -> None:
     response = _fixture("ops-torrent-cd-log.json")
     response["torrent"]["description"] = description
     header = _header("OPS", "RED", "uploader", f"{OpsApi().base_url}/torrents.php?torrentid=600005")
-    assert compile_data(response, OpsApi(), RedApi())["release_desc"] == f"{header}\n\n{kept}{upload_footer()}"
+    assert compile_data(response, OpsApi(), RedApi())["release_desc"] == f"{header}\n\n{kept}".rstrip("\n")
 
 
 def test_a_description_that_already_has_a_footer_does_not_get_a_second() -> None:
@@ -1304,6 +1304,24 @@ def test_a_description_that_already_has_a_footer_does_not_get_a_second() -> None
     response["torrent"]["description"] = f"Notes\n{footer}"
     release_desc = compile_data(response, OpsApi(), RedApi())["release_desc"]
     assert release_desc.endswith(f"[/align]\n\nNotes\n{footer}")
+
+
+def test_a_description_with_no_footer_credits_salmon_once_in_the_header() -> None:
+    response = _fixture("ops-torrent-cd-log.json")
+    response["torrent"]["description"] = "Notes"
+    release_desc = compile_data(response, OpsApi(), RedApi())["release_desc"]
+    assert release_desc.count("smoked-salmon") == 2  # the header's link and its name
+    assert "Uploaded with" not in release_desc
+    assert release_desc.endswith("[/align]\n\nNotes")
+
+
+def test_a_footer_in_the_source_description_is_kept_once_and_none_is_added() -> None:
+    footer = upload_footer()
+    response = _fixture("ops-torrent-cd-log.json")
+    response["torrent"]["description"] = f"Notes\n\n{footer}"
+    release_desc = compile_data(response, OpsApi(), RedApi())["release_desc"]
+    assert release_desc.endswith(f"[/align]\n\nNotes\n\n{footer}")
+    assert release_desc.count("Uploaded with") == 1
 
 
 # The dupe check
@@ -1744,7 +1762,7 @@ def test_reds_descriptions_are_unescaped_before_their_tracker_links_go() -> None
     assert "&#39;" not in data["album_desc"]
     assert "&bull;" not in data["album_desc"]
     assert data["album_desc"].endswith(f"\n{unescaped}")
-    assert f"[/align]\n\n{unescaped}\n\n" in data["release_desc"]
+    assert data["release_desc"].endswith(f"[/align]\n\n{unescaped}")
 
 
 def test_ops_descriptions_are_the_text_as_written_and_are_not_unescaped() -> None:
@@ -1757,7 +1775,7 @@ def test_ops_descriptions_are_the_text_as_written_and_are_not_unescaped() -> Non
     data = compile_data(response, OpsApi(), RedApi())
 
     assert data["album_desc"] == text
-    assert f"[/align]\n\n{text}\n\n" in data["release_desc"]
+    assert f"[/align]\n\n{text}" in data["release_desc"]
 
 
 def test_a_red_cover_goes_to_ops_as_its_bare_url_and_is_never_fetched(monkeypatch, dirs) -> None:
@@ -1857,7 +1875,7 @@ def test_a_dic_torrent_goes_with_its_entities_decoded_and_its_links_to_dic_out(m
         "购买自 an example store & tagged by hand.\nThanks to a friend, see the thread and \n"
         "[url=https://www.qobuz.com/album/x00041]Qobuz[/url]"
     )
-    assert post.fields["release_desc"] == [f"{header}\n\n{description}\n\n{upload_footer()}"]
+    assert post.fields["release_desc"] == [f"{header}\n\n{description}"]
     assert (post.fields["remaster_catalogue_number"], post.fields["bitrate"]) == (["EX-0041HR"], ["24bit Lossless"])
     assert "sample_rate" not in post.fields
     assert "lossy approval unknown on DICMusic: no lossy report" in run.output
