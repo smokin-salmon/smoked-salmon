@@ -87,7 +87,9 @@
   /** The tracks of a job, by number, as its result lists them. */
   function trackList(job: Job): { id: number; name: string }[] {
     const tracks = (job.result as { tracks?: Record<string, string> } | null)?.tracks ?? {}
-    return Object.entries(tracks).map(([id, name]) => ({ id: Number(id), name }))
+    return Object.entries(tracks)
+      .map(([id, name]) => ({ id: Number(id), name }))
+      .sort((a, b) => a.id - b.id)
   }
 
   /** The tracks `salmon specs` would upload by default, worked out by the server when the job finished. */
