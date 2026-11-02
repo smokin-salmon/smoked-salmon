@@ -700,8 +700,9 @@ def _album_with_md5(tmp_path: Path, md5: str) -> Path:
 
 
 def _change(path: Path, change: str) -> None:
-    if change == "audio":
-        # Other audio: with an MD5 its MD5 differs, and without one the file's bytes do.
+    if change == "audio-checksum":
+        # The fixture has no audio frames: what stands for its audio changes, the STREAMINFO MD5, or with none set,
+        # the file's bytes.
         if FLAC(path).info.md5_signature:
             _set_md5(path, bytes(range(1, 17)))
         else:
@@ -736,7 +737,7 @@ def _change(path: Path, change: str) -> None:
 
 
 @pytest.mark.parametrize("md5", ["set", "unset"])
-@pytest.mark.parametrize("change", ["tag", "picture", "audio", "rate", "bits", "swap"])
+@pytest.mark.parametrize("change", ["tag", "picture", "audio-checksum", "rate", "bits", "swap"])
 def test_a_transcode_of_the_tracks_before_a_retag_is_refused_not_reused(made, tmp_path, change: str, md5: str) -> None:
     # Its MP3s carry the old tags or pictures: an upload of it would not match the album as it is now.
     album = _album_with_md5(tmp_path, md5)
@@ -821,3 +822,36 @@ def test_a_track_gone_since_it_was_fingerprinted_counts_as_changed(tmp_path) -> 
     changed = conversions.changed_sources(str(tmp_path), record)
 
     assert changed == ["01.flac"]
+
+
+@pytest.mark.parametrize("kind", ["transcode", "downconvert"])
+def test_a_track_retagged_while_it_converts_is_refused_next_time(made, tmp_path, monkeypatch, kind: str) -> None:
+    # The record holds the tracks as the conversion read them, not as they are once it is done.
+    album = _album(tmp_path, 24, 96000) if kind == "downconvert" else _album(tmp_path)
+    module, name = (dc, "_convert_audio_files") if kind == "downconvert" else (tc, "_transcode_audio_files")
+    convert = getattr(module, name)
+
+    async def retag_midway(items, setting) -> None:
+        _change(album / "02. two.flac", "tag")
+        await convert(items, setting)
+
+    def run() -> Path:
+        return _downconvert(album, tmp_path) if kind == "downconvert" else _transcode(album, tmp_path)
+
+    monkeypatch.setattr(module, name, retag_midway)
+    run()
+    monkeypatch.setattr(module, name, convert)
+
+    with pytest.raises(UploadError, match="one of its tracks changed"):
+        run()
+
+
+def test_a_tag_value_holding_a_nul_does_not_read_as_two_tags(tmp_path) -> None:
+    one, two = tmp_path / "one.flac", tmp_path / "two.flac"
+    _write_flac(one, 44100, 16, artist="A\0title=B")
+    _write_flac(two, 44100, 16, artist="A", title="B")
+    # With an MD5 set, the file's bytes are not hashed: the tags alone tell the two apart.
+    for path in (one, two):
+        _set_md5(path, bytes(range(16)))
+
+    assert conversions._fingerprint(str(one)) != conversions._fingerprint(str(two))

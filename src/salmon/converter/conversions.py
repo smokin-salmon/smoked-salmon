@@ -174,7 +174,9 @@ def _fingerprint(path: str) -> str:
     comments = audio.tags if isinstance(audio.tags, VCFLACDict) else []
     # By key only: a key's values keep their order, which the MP3's frame keeps ("A/B" is not "B/A").
     for key, value in sorted(comments, key=lambda item: item[0].lower()):
-        digest.update(f"\0{key.lower()}={value}".encode())
+        # Length-prefixed: a value holding "\0" cannot read as two entries.
+        entry = f"{key.lower()}={value}".encode()
+        digest.update(len(entry).to_bytes(4, "big") + entry)
     for picture in audio.pictures:
         digest.update(b"\0" + picture.write())
     return digest.hexdigest()
