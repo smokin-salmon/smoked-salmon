@@ -30,6 +30,7 @@ from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
 from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources import METASOURCES, run_metadata
+from salmon.tagger.sources.base import generate_artists
 from salmon.trackers.connection import check_trackers
 from salmon.uploader.seedbox import seedbox_secrets
 from salmon.uploader.spectrals import (
@@ -118,6 +119,8 @@ async def build_description(urls: Sequence[str]) -> str:
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
     metadatas = await asyncio.gather(*tasks)
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
+    # As salmon up does: the album's artists from the tracks' cleaned credits.
+    metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
     remove_various_artists(metadata)
 
     description = "[b][size=4]Tracklist[/size][/b]\n\n"

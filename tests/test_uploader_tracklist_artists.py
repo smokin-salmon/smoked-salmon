@@ -313,14 +313,12 @@ def test_descgen_names_no_artist_on_a_one_artist_album(monkeypatch) -> None:
 def test_descgen_names_the_artist_of_a_track_that_credits_anyone_else(monkeypatch) -> None:
     guest = [("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest")]
     remix = [("Sullivan Murphy", "main"), ("Remi Xer", "remixer")]
-    album = _store_album([("Sullivan Murphy", "main")], guest, remix, [("Other Artist", "main")])
-    # Only the album's main artists count: the guest and the remixer are each on one track.
-    album["artists"] = [("Sullivan Murphy", "main"), ("Dierdre Simpson", "guest"), ("Remi Xer", "remixer")]
+    album = _store_album([("Sullivan Murphy", "main")], guest, remix)
 
-    assert _descgen(monkeypatch, album)[1:] == [
+    assert _descgen(monkeypatch, album) == [
+        "[b]01.[/b] Song 1",
         f"[b]02.[/b] {create_artist_str(guest)} - Song 2",
         f"[b]03.[/b] {create_artist_str(remix)} - Song 3",
-        "[b]04.[/b] Other Artist - Song 4",
     ]
 
 
@@ -397,13 +395,12 @@ def test_files_salmon_tagged_are_listed_by_the_same_rule_in_each_format(
 
 def test_descgen_names_no_artist_on_a_track_by_the_albums_orchestra_and_conductor(monkeypatch) -> None:
     track = [("Orchestra", "main"), ("A Conductor", "conductor"), ("A Composer", "composer")]
-    other = [("Orchestra", "main"), ("Another Conductor", "conductor")]
-    album = _store_album(track, other)
-    album["artists"] = track
+    guest = [("Orchestra", "main"), ("A Conductor", "conductor"), ("A Soloist", "guest")]
+    album = _store_album(track, guest)
 
     assert _descgen(monkeypatch, album) == [
         "[b]01.[/b] Song 1",
-        f"[b]02.[/b] {create_artist_str(other)} - Song 2",
+        f"[b]02.[/b] {create_artist_str(guest)} - Song 2",
     ]
 
 
@@ -416,3 +413,20 @@ def test_descgen_names_the_artist_of_a_track_whose_title_alone_credits_a_guest(m
         "[b]01.[/b] Song 1",
         "[b]02.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson)",
     ]
+
+
+def test_descgen_compares_with_the_albums_artists_after_the_tracks_are_cleaned(monkeypatch) -> None:
+    # B, credited as main artist and remixer on track 2, is its remixer alone once cleaned, as salmon up does it:
+    # the album is by A, so track 1 names no artist.
+    remix = [("A", "main"), ("B", "main"), ("B", "remixer")]
+    album = _store_album([("A", "main")], remix)
+    album["tracks"]["1"]["2"]["title"] = "Song 2 (B Remix)"
+
+    async def fake_run_metadata(url, return_source_name=False):
+        return album, "Qobuz"
+
+    monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
+    monkeypatch.setattr(salmon.commands, "combine_metadatas", lambda *_: album)
+    description = anyio.run(build_description, ["https://www.qobuz.com/album/x"])
+
+    assert _lines(description) == ["[b]01.[/b] Song 1", "[b]02.[/b] A - Song 2 (B Remix)"]
