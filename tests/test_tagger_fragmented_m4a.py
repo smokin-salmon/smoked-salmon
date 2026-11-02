@@ -101,3 +101,16 @@ def test_a_failure_after_a_skipped_fragmented_m4a_lists_it_as_not_changed(tmp_pa
     lines = {line.split(":")[0]: line for line in capsys.readouterr().out.splitlines()}
     assert "plain.m4a" in lines["Already changed"] and "frag.m4a" not in lines["Already changed"]
     assert "frag.m4a" in lines["Not changed"]
+
+
+def test_save_says_whether_it_wrote(tmp_path):
+    plain = tmp_path / "plain.m4a"
+    _write_m4a(plain, False)
+    tag_file = TagFile(str(plain))
+    assert tag_file.save() is True
+    assert TagFile(str(_fragmented(tmp_path))).save() is False
+
+    tag_file = TagFile(str(plain))
+    assert tag_file.mut is not None
+    tag_file.mut.tags = None  # an M4A without a tags object: mutagen's save() writes nothing
+    assert tag_file.save() is False

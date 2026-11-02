@@ -360,6 +360,8 @@ class TagFile:
                 fg="yellow",
             )
             return False
+        if isinstance(mut, mp4.MP4) and mut.tags is None:  # mutagen writes nothing without a tags object
+            return False
         mut.save()
         return True
 
