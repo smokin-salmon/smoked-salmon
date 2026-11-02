@@ -277,3 +277,37 @@ def test_post_asked_to_be_sent_again_elsewhere_is_not(status: int) -> None:
 
 def test_idempotent_post_is_sent_again_where_a_307_asks() -> None:
     anyio.run(_idempotent_post_is_sent_again_where_a_307_asks)
+
+
+@pytest.mark.parametrize("path", ["/torrents.php", "/login.php"])
+def test_a_post_redirected_to_another_site_is_an_unknown_outcome(path: str) -> None:
+    # Another site's login page too: only the tracker's own one means it turned the request away.
+    async def run() -> tuple[list[str], list[str]]:
+        posts: list[str] = []
+        other_hits: list[str] = []
+
+        async def elsewhere(request: web.Request) -> web.Response:
+            other_hits.append(request.method)
+            return web.Response(text="not the tracker")
+
+        other_runner, other_url = await _serve(torrents=elsewhere, login=elsewhere)
+
+        async def upload(request: web.Request) -> web.Response:
+            posts.append(request.method)
+            raise web.HTTPFound(other_url + path)
+
+        runner, url = await _serve(upload=upload)
+        api = FakeApi(url)
+        try:
+            # A redirect is an answer: the tracker acted on the upload, so it is neither failed nor sent again.
+            with pytest.raises(UnknownOutcomeError, match="another site"):
+                await api._request("POST", url + "/upload.php", data={"title": "x"})
+            return posts, other_hits
+        finally:
+            await api.close()
+            await runner.cleanup()
+            await other_runner.cleanup()
+
+    posts, other_hits = anyio.run(run)
+    assert posts == ["POST"]
+    assert other_hits == []

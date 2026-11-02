@@ -1,6 +1,6 @@
 """Spectrals go to each tracker's own specs host, uploaded once per host (#535).
 
-The runs here go against the local fake tracker of test_uploader_dry_run and fake image hosts, never a real one.
+The runs here go against the local fake tracker of helpers.uploader_dry_run and fake image hosts, never a real one.
 """
 
 import os
@@ -11,7 +11,7 @@ from typing import Any
 
 import anyio
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     RENAMED,
     _album,
     _lossy_with_spectrals,
@@ -19,6 +19,7 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     _run_up,
     _torrent_lines,
 )
+from helpers.uploader_fakes import stub_uploader
 
 import salmon.images
 import salmon.trackers
@@ -128,7 +129,7 @@ def _album_listings(monkeypatch) -> list[list[str]]:
         listings.append(sorted(os.listdir(path)))
         return await upload_and_report(gazelle_site, path, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", recording)
+    stub_uploader(monkeypatch, {"upload_and_report": recording})
     return listings
 
 
@@ -195,6 +196,28 @@ def test_each_tracker_gets_the_spectrals_of_its_own_host_uploaded_once_per_host(
     torrent_lines = [line for upload in uploads for line in _torrent_lines(upload["file_input"][1])]
     assert not any("Spectrals" in line or ".png" in line for line in torrent_lines)
     assert _left_behind(downloads, scratch) == []
+
+
+def test_the_prompt_names_only_the_host_of_the_one_tracker_named_with_t(monkeypatch, tmp_path, dirs, hosts) -> None:
+    # With -t RED, the run uploads to RED only: OPS's host, configured but out of reach, is not named.
+    _library, _downloads, torrents = dirs
+    _image_settings(monkeypatch, red="imgbox")
+    prompted_hosts: list[str | None] = []
+
+    async def check_spectrals(path: str, *args: Any, hosts: str | None = None, **kwargs: Any) -> Any:
+        prompted_hosts.append(hosts)
+        return await _lossy_with_spectrals(path, *args, **kwargs)
+
+    run = _run_up(
+        monkeypatch,
+        _album(tmp_path / "seeding" / "Album"),
+        torrents,
+        trackers=("RED",),
+        check_spectrals=check_spectrals,
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert prompted_hosts == ["imgbox"]
 
 
 def test_trackers_sharing_a_host_share_one_upload(monkeypatch, tmp_path, dirs, hosts, scratch) -> None:
@@ -376,7 +399,7 @@ def test_an_albums_own_spectrals_folder_survives_the_upload_and_goes_into_the_re
         images_at_upload.append(list(Path(path).rglob("*.png")))
         return await upload_and_report(gazelle_site, path, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", recording)
+    stub_uploader(monkeypatch, {"upload_and_report": recording})
 
     run = _run_up(monkeypatch, album, torrents)
 

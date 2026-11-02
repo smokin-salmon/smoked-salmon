@@ -9,6 +9,9 @@ from salmon.errors import ImageUploadFailed
 from salmon.images import base as images_base
 from salmon.images.base import BaseImageUploader
 
+# The domain its uploads' URLs are on (or a subdomain of it): how a URL given for an image is known as ptscreens's.
+IMAGE_DOMAINS = ("ptscreens.com",)
+
 HEADERS: dict[str, str] = {"X-API-Key": cfg.image.ptscreens_key or ""}
 
 

@@ -25,7 +25,7 @@ pass.
 The `salmon` package loads and validates its config at import time and exits if there is none.
 `tests/conftest.py` handles this for the test run by pointing `XDG_CONFIG_HOME` at a temporary
 config built from the short `src/salmon/data/config.default.toml`, with fake tracker tables added
-(`tests/shipped_config.py`). If you import `salmon` outside pytest, you need a
+(`tests/helpers/shipped_config.py`). If you import `salmon` outside pytest, you need a
 config at `~/.config/smoked-salmon/config.toml` (Linux) or a `config.toml` at the repo root, and
 every directory it names must exist.
 
@@ -45,7 +45,7 @@ the test run never reads a developer's config.
 | `src/salmon/data/config.reference.toml` | Documents every key, commented out with its default; a test keeps it in sync with the schema |
 | `src/salmon/data/version.toml` | Version and changelog. **See Releases below before touching it** |
 | `src/salmon/trackers/` | Tracker API clients. `base.py` (`BaseGazelleApi`) does all tracker HTTP |
-| `src/salmon/uploader/` | The upload flow (`__init__.py`), dupe/request checks, spectrals, seedbox, torrent clients |
+| `src/salmon/uploader/` | The upload flow (`__init__.py`; a torrent's upload in `upload.py`, its conversions' in `conversion_upload.py`), dupe/request checks, spectrals, seedbox, torrent clients |
 | `src/salmon/sources/` | Shared HTTP scraper per store (Qobuz, Tidal, Apple Music, Bandcamp, ...) |
 | `src/salmon/search/` | Store search, built on `sources/` |
 | `src/salmon/tagger/` | Metadata gathering, review, retagging, renaming; `tagger/sources/` parses store metadata |

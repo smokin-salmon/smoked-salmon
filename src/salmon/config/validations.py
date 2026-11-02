@@ -222,13 +222,14 @@ def _check_corrections(kind: str, table: dict, replacements: list[str], one: str
 
 
 class Corrections(BaseStruct):
-    # An artist's name (whole, any case, outer spaces ignored) and the name salmon writes instead.
+    # An artist's name (whole, any case, outer spaces ignored) and the name salmon writes instead, trimmed.
     artists: dict[str, str] = msgspec.field(default_factory=dict)
     # A genre (matched the same way) and the genres salmon writes in its place; none drops it.
     genres: dict[str, list[str]] = msgspec.field(default_factory=dict)
 
     def __post_init__(self):
         _check_corrections("artists", self.artists, list(self.artists.values()), "an artist")
+        self.artists = {name: to.strip() for name, to in self.artists.items()}
         _check_corrections("genres", self.genres, [g for to in self.genres.values() for g in to], "a genre")
 
 
@@ -458,7 +459,8 @@ class Upload(BaseStruct):
 
     native_spectrals_viewer: bool = False
     # With native_spectrals_viewer: draw the spectrals in the terminal when it speaks the Kitty graphics protocol
-    # (kitty, Ghostty, WezTerm...), over SSH too. False opens feh / Quick Look / the Windows viewer in any.
+    # (kitty, Ghostty, WezTerm...), over SSH too. False opens feh (or the desktop's default image viewer) /
+    # Quick Look / the Windows viewer in any terminal.
     terminal_spectrals_viewer: bool = True
     feh_fullscreen: bool = True
     prompt_puddletag: bool = False

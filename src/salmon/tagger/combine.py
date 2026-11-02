@@ -363,17 +363,23 @@ def combine_tracks(base, meta, update_track_numbers):
         role == "remixer" for tracks in meta.values() for track in tracks.values() for _, role in track["artists"]
     )
 
+    # Before the merge: combine_metadatas goes on past a TrackCombineError, keeping whatever was merged.
+    scraped = [
+        (disc, num) for disc, tracks in _sorted_naturally(meta.items()) for num, _ in _sorted_naturally(tracks.items())
+    ]
+    for (disc, num), btrack in zip(scraped, ordered_btracks, strict=True):
+        if btrack is None:
+            raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
+
     # Track numbers are applied after the merge loop; renumbering in place can
     # overwrite a base track that hasn't been visited yet once pairing reorders.
     renumbered = []
 
     # One entry per scraped track, in the order this loop visits them.
-    paired_btracks = iter(ordered_btracks)
-    for disc, tracks in _sorted_naturally(meta.items()):
-        for num, track in _sorted_naturally(tracks.items()):
+    paired_btracks = iter([btrack for btrack in ordered_btracks if btrack is not None])
+    for _disc, tracks in _sorted_naturally(meta.items()):
+        for _num, track in _sorted_naturally(tracks.items()):
             btrack = next(paired_btracks)
-            if btrack is None:
-                raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
 
             if (
                 # Use unidecode comparison when there are accents in the title

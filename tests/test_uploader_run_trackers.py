@@ -1,7 +1,7 @@
 """What an upload run keeps from one tracker to the next (#773): a request ID is only for the tracker it was
 given or found for, and the path limit is the one of the trackers the run reaches.
 
-The runs go against the local fake tracker of test_uploader_dry_run, never a real one.
+The runs go against the local fake tracker of helpers.uploader_dry_run, never a real one.
 """
 
 from pathlib import Path
@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 from aiohttp import web
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     API_KEYS,
     FakeTracker,
     Run,
@@ -17,6 +17,8 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     _album,
     _returning_async,
     _run_up,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see images)
 )
 

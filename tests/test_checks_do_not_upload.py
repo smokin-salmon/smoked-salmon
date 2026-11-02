@@ -1,8 +1,7 @@
 """The trackers' Do-Not-Upload lists (#533): what an entry matches, and the lists salmon ships."""
 
-from pathlib import Path
-
 import pytest
+from helpers.checks_do_not_upload import write_lists
 
 from salmon.checks import do_not_upload
 from salmon.checks.do_not_upload import LISTS, Candidate, do_not_upload_reason, load_list
@@ -10,18 +9,6 @@ from salmon.checks.do_not_upload import LISTS, Candidate, do_not_upload_reason, 
 
 def _release(*artists: str, title: str = "Album", edition_title: str = "", labels=(), media: str = "WEB"):
     return Candidate(artists=artists, title=title, edition_title=edition_title, labels=tuple(labels), media=media)
-
-
-# A list that reads, for a tracker a test gives no list: an empty one forbids everything.
-UNMATCHED = "[[entry]]\nartist = 'test-artist-unmatched'\nnote = 'Matches no test release.'\n"
-
-
-def write_lists(monkeypatch, folder: Path, **lists: str) -> None:
-    """Make salmon read its lists from folder: the TOML text given for each tracker, and UNMATCHED otherwise."""
-    folder.mkdir(exist_ok=True)
-    for tracker, name in LISTS.items():
-        (folder / name).write_text(lists.get(tracker, UNMATCHED), encoding="utf-8")
-    monkeypatch.setattr(do_not_upload, "LISTS_DIR", folder)
 
 
 # What the shipped lists match

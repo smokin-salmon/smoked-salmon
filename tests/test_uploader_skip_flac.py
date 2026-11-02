@@ -5,6 +5,7 @@ from typing import Any
 import anyio
 import pytest
 from asyncclick.testing import CliRunner
+from helpers.uploader_fakes import stub_uploader
 
 import salmon.trackers
 import salmon.uploader
@@ -217,8 +218,7 @@ def test_several_matching_flacs_stop_with_yes_all(monkeypatch, capsys) -> None:
 
 
 def _stub(monkeypatch, fakes: dict[str, Any]) -> None:
-    for name, fake in fakes.items():
-        monkeypatch.setattr(salmon.uploader, name, fake)
+    stub_uploader(monkeypatch, fakes)
 
 
 def _returning(result: Any = None, calls: list[str] | None = None, record: str | None = None):

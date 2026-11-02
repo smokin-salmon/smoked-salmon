@@ -15,6 +15,7 @@ from salmon.errors import RequestError, UploadRefusedError
 from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
+from salmon.uploader import conversion_upload
 from salmon.uploader.upload import compile_data_existing_group, compile_data_new_group, prepare_and_upload
 
 if TYPE_CHECKING:
@@ -193,9 +194,9 @@ def _downconvert_24bit(monkeypatch, tmp_path: Path, converted_names) -> list[dic
         uploads.append(_existing_group_data(gazelle_site, metadata, track_data))
         return 1, group_id, "", None, ""
 
-    monkeypatch.setattr(uploader, "convert_folder", convert_folder)
-    monkeypatch.setattr(uploader, "check_folder_structure", check_folder_structure)
-    monkeypatch.setattr(uploader, "upload_and_report", upload_and_report)
+    monkeypatch.setattr(conversion_upload, "convert_folder", convert_folder)
+    monkeypatch.setattr(conversion_upload, "check_folder_structure", check_folder_structure)
+    monkeypatch.setattr(conversion_upload, "upload_and_report", upload_and_report)
     [task] = [
         option
         for option in uploader.get_downconversion_options(_metadata(), source_track_data)
@@ -203,7 +204,7 @@ def _downconvert_24bit(monkeypatch, tmp_path: Path, converted_names) -> list[dic
     ]
 
     anyio.run(
-        uploader.execute_downconversion_tasks,
+        conversion_upload.execute_downconversion_tasks,
         [task],
         "/release",
         DICApi(),

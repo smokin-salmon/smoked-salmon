@@ -4,8 +4,9 @@ import string
 from collections.abc import Iterable
 from urllib.parse import parse_qsl, quote, unquote, urlsplit
 
-_URL_USERINFO = re.compile(r"(://)[^/\s@]+@")
-_USERINFO_PASSWORD = re.compile(r"://[^/\s@:]*:([^/\s@']+)@")
+# Up to the authority's end: a "@" later in the query or fragment is no userinfo.
+_URL_USERINFO = re.compile(r"(://)[^/?#\s@]+@")
+_USERINFO_PASSWORD = re.compile(r"://[^/?#\s@:]*:([^/?#\s@']+)@")
 _SECRET_WORDS = r"(?:pass|password|token|secret|key|session|header|cookie|auth)"
 # A quoted value is masked whole, doubled quotes included: rclone quotes values with spaces (a PEM key).
 _SECRET_VALUE = r"""(?:'(?:[^']|'')*'|"(?:[^"]|"")*"|\S+)"""
@@ -196,22 +197,28 @@ def redact_command(args: list[str], known: Iterable[str | None] = ()) -> str:
 
 # What a Gazelle tracker sends back carries its own secrets: the authkey (auth, authkey), the passkey
 # (passkey, torrent_pass), the session cookie and an api key.
-_TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|api_?key|authorization)"
+_TRACKER_KEYS = r"(?:auth|authkey|passkey|torrent_pass|session|keeplogged|api_?key|authorization)"
 # "authkey": "..." in JSON (or a Python repr of it), authkey = "..." in a page's script. A value ends at its closing
 # quote, or at its line's end when an excerpt cut it off; a backslash escapes the next character.
 _TRACKER_ASSIGNMENT = re.compile(
     rf"""(["']?\b{_TRACKER_KEYS}["']?\s*[:=]\s*)(["'])(?:(?!\2)[^\\\n]|\\.)*(\2?)""", re.IGNORECASE
 )
-# ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page.
-_TRACKER_QUERY = re.compile(rf"""([?&;]{_TRACKER_KEYS}=)[^&#\s"'<>]*""", re.IGNORECASE)
+# ?authkey=...&torrent_pass=... in a link or a redirect, &amp;-escaped in a page, or a cookie's name=value in text.
+# A value ends at "; ", a cookie's attribute separator; a ";" with no space after stays in it, as in a URL query.
+# At least one character: a quoted value (authkey="...") is _TRACKER_ASSIGNMENT's, which a match here would hide.
+_TRACKER_QUERY = re.compile(rf"""\b({_TRACKER_KEYS}=)(?:[^&;#\s"'<>]|;(?!\s))+""", re.IGNORECASE)
+# A cookie's name=value before its "; " attributes: its value may hold "&", which would end a query's. A run with no
+# "; " is matched too and left whole for _TRACKER_QUERY, so it is read once, not once per key in it.
+_TRACKER_COOKIE = re.compile(rf"""\b({_TRACKER_KEYS}=)(?:[^;\s"'<>]|;(?!\s))+(;\s)?""", re.IGNORECASE)
 # The passkey in an announce URL, whatever its length: https://tracker/<passkey>/announce.
 _ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]+(?=/announce)")
 # A form field carrying one, <input name="auth" value="...">, its attributes in any order.
-_INPUT_TAG = re.compile(r"<input\b[^>]*>", re.IGNORECASE)
+# Quote-aware: a ">" inside a quoted attribute does not end the tag.
+_INPUT_TAG = re.compile(r"""<input\b(?:[^>"']|"[^"]*"|'[^']*')*>""", re.IGNORECASE)
 _SECRET_FIELD_NAME = re.compile(rf"""\bname\s*=\s*(["']?){_TRACKER_KEYS}\1(?=[\s/>])""", re.IGNORECASE)
 _FIELD_VALUE = re.compile(r"""(\bvalue\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s"'>]+)""", re.IGNORECASE)
 # A response header naming a credential. A cookie keeps its name and attributes, only its value is masked.
-_SECRET_HEADER_NAME = re.compile(r"auth|token|key|session|pass", re.IGNORECASE)
+_SECRET_HEADER_NAME = re.compile(r"auth|token|key|session|pass|secret", re.IGNORECASE)
 _COOKIE_VALUE = re.compile(r"^(\s*[^=;\s]+=)[^;]*")
 
 
@@ -226,6 +233,7 @@ def redact_tracker_text(text: str, known: Iterable[str | None] = ()) -> str:
     """Mask a tracker's secrets in a page, an API answer or a URL before it reaches the terminal."""
     text = _mask_known(text, known)
     text = _INPUT_TAG.sub(_mask_secret_field, text)
+    text = _TRACKER_COOKIE.sub(lambda m: f"{m[1]}[REDACTED]{m[2]}" if m[2] else m[0], text)
     text = _TRACKER_QUERY.sub(r"\1[REDACTED]", text)
     text = _ANNOUNCE_PASSKEY.sub("/[REDACTED]", text)
     text = _URL_USERINFO.sub(r"\1[REDACTED]@", text)
@@ -238,10 +246,11 @@ def redact_tracker_headers(headers: Iterable[tuple[str, str]], known: Iterable[s
     known = list(known)
     shown: dict[str, str] = {}
     for name, value in headers:
-        if "cookie" in name.lower():
-            value = _COOKIE_VALUE.sub(r"\1[REDACTED]", value)
-        elif _SECRET_HEADER_NAME.search(name):
+        # The name first: one that also says "cookie" has a bare value the cookie mask would not match.
+        if _SECRET_HEADER_NAME.search(name):
             value = "[REDACTED]"
+        elif "cookie" in name.lower():
+            value = _COOKIE_VALUE.sub(r"\1[REDACTED]", value)
         value = redact_tracker_text(value, known)
         # A header sent more than once (Set-Cookie) is shown once, its values joined as HTTP folds them.
         shown[name] = f"{shown[name]}, {value}" if name in shown else value

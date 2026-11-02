@@ -1,6 +1,17 @@
 import { apiGet, wsUrl } from './api'
 
-export type JobStatus = 'queued' | 'running' | 'waiting' | 'done' | 'failed' | 'cancelled' | 'unknown_outcome'
+// A job waiting its turn is queued, or preparing (salmon web runs its local checks meanwhile), then ready.
+export type JobStatus =
+  | 'queued'
+  | 'preparing'
+  | 'ready'
+  | 'running'
+  | 'waiting'
+  | 'done'
+  | 'failed'
+  | 'cancelled'
+  | 'unknown_outcome'
+export const QUEUED: JobStatus[] = ['queued', 'preparing', 'ready']
 
 export const FINISHED: JobStatus[] = ['done', 'failed', 'cancelled', 'unknown_outcome']
 

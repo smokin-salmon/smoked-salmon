@@ -9,6 +9,7 @@ import anyio
 import asyncclick as click
 import pytest
 from asyncclick.testing import CliRunner
+from helpers.uploader_fakes import stub_uploader
 from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
 from PIL import Image
@@ -174,27 +175,29 @@ def _run_up(
         "cover": None,
         "genres": [],
     }
-    for name, fake in {
-        "gather_audio_info": _returning({}),
-        "check_hybrid": _returning(False),
-        "gather_tags": _returning({}),
-        "construct_rls_data": _returning_async(rls_data),
-        "mqa_test": _returning_async(),
-        "check_spectrals": _returning_async((False, None)),
-        "get_metadata": _returning_async((metadata, None)),
-        "review_metadata_with_ai": _returning_async(metadata),
-        "tag_files": _retag,
-        "check_tags": _returning_async({}),
-        "rename_files": _rename_files,
-        "check_folder_structure": _returning_async(),
-        "concat_track_data": _returning({"01. one.flac": {"sample rate": 44100}}),
-        "resolve_cover_url": _returning_async((True, None)),
-        "UploadManager": FakeUploadManager,
-        "transcode_folder": fake_transcode,
-        "upload_and_report": _returning_async((21, 5, "/t.torrent", b"", "https://tracker.test/t")),
-        **fakes,
-    }.items():
-        monkeypatch.setattr(salmon.uploader, name, fake)
+    stub_uploader(
+        monkeypatch,
+        {
+            "gather_audio_info": _returning({}),
+            "check_hybrid": _returning(False),
+            "gather_tags": _returning({}),
+            "construct_rls_data": _returning_async(rls_data),
+            "mqa_test": _returning_async(),
+            "check_spectrals": _returning_async((False, None)),
+            "get_metadata": _returning_async((metadata, None)),
+            "review_metadata_with_ai": _returning_async(metadata),
+            "tag_files": _retag,
+            "check_tags": _returning_async({}),
+            "rename_files": _rename_files,
+            "check_folder_structure": _returning_async(),
+            "concat_track_data": _returning({"01. one.flac": {"sample rate": 44100}}),
+            "resolve_cover_url": _returning_async((True, None)),
+            "UploadManager": FakeUploadManager,
+            "transcode_folder": fake_transcode,
+            "upload_and_report": _returning_async((21, 5, "/t.torrent", b"", "https://tracker.test/t")),
+            **fakes,
+        },
+    )
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
     monkeypatch.setattr(salmon.uploader.cfg.upload.formatting, "remove_source_dir", remove_source_dir)
     monkeypatch.setattr(salmon.uploader.cfg.upload.requests, "last_minute_dupe_check", False)

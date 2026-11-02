@@ -2,7 +2,7 @@
 
 The call site keeps its text and its parser: the web sends the browser a description of the answers it accepts, and
 turns what the browser picked into the line a terminal user would have typed. These tests drive WebInteraction with a
-scripted browser, and the server's answer route through test_webui_jobs's harness (local server, no tracker).
+scripted browser, and the server's answer route through helpers.webui_jobs's harness (local server, no tracker).
 """
 
 import json
@@ -14,7 +14,8 @@ import asyncclick as click
 import msgspec
 import pytest
 from aiohttp.test_utils import TestClient
-from test_webui_jobs import (  # pyright: ignore[reportMissingImports]
+from helpers.webui_interaction import Browser
+from helpers.webui_jobs import (
     AUTH,
     SECRETS,
     Params,
@@ -23,6 +24,8 @@ from test_webui_jobs import (  # pyright: ignore[reportMissingImports]
     _question,
     _start,
     _with_app,
+)
+from test_webui_jobs import (
     kind,  # noqa: F401 (a fixture)
     no_learned_secrets,  # noqa: F401 (an autouse fixture)
     planted,  # noqa: F401 (a fixture)
@@ -32,21 +35,6 @@ from salmon import interaction
 from salmon.interaction import Card, FreeText, Mark, Option, Options
 from salmon.webui.interaction import Picked, WebInteraction
 from salmon.webui.jobs import JobManager
-
-
-class Browser:
-    """Answers each question from a script, and keeps what it was asked."""
-
-    def __init__(self, answers: list[Any]) -> None:
-        self.answers = list(answers)
-        self.questions: list[dict[str, Any]] = []
-
-    async def ask(self, question: dict[str, Any]) -> Any:
-        self.questions.append(question)
-        return self.answers.pop(0)
-
-    def show_spectrals(self, folder: str, files: list[str]) -> None:
-        pass
 
 
 def _prompt(options: Options | None, answers: list[Any], **kwargs: Any) -> tuple[Any, Browser]:

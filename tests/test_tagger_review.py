@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import anyio
 import pytest
 
@@ -124,6 +126,48 @@ def test_the_alias_editor_explains_its_syntax_and_splits_an_artist(monkeypatch) 
     assert "README" not in shown[0]
     assert metadata["artists"] == [("Gorgon City", "main"), ("Jem Cooke", "main")]
     assert metadata["tracks"]["1"]["1"]["artists"] == [("Gorgon City", "main"), ("Jem Cooke", "main")]
+
+
+@pytest.mark.parametrize(
+    ("initial", "lines", "expected"),
+    [
+        (
+            [("A", "main"), ("B", "main"), ("C", "main")],
+            "A --> X\nB --> Y\n",
+            [("X", "main"), ("Y", "main"), ("C", "main")],
+        ),
+        (
+            [("A", "main"), ("B", "main"), ("C", "main")],
+            "A -->\nB -->\n",
+            [("C", "main")],
+        ),
+        (
+            [("A", "main"), ("B", "guest")],
+            "A --> X\nA --> Y\n",
+            [("X", "main"), ("Y", "main"), ("B", "guest")],
+        ),
+        (
+            [("A", "guest"), ("B", "main")],
+            "A --> X\nA --> Y\n",
+            [("X", "guest"), ("Y", "guest"), ("B", "main")],
+        ),
+    ],
+)
+def test_alias_artists_applies_adjacent_renames_removals_and_splits_in_place(
+    monkeypatch, initial, lines, expected
+) -> None:
+    metadata = make_metadata()
+    metadata["artists"] = list(initial)
+    metadata["tracks"]["1"]["1"]["artists"] = list(initial)
+
+    async def fake_edit(text, **_kwargs):
+        return text + lines
+
+    monkeypatch.setattr(review_module.interaction, "edit", fake_edit)
+    anyio.run(review_module._alias_artists, metadata)
+
+    assert metadata["artists"] == expected
+    assert metadata["tracks"]["1"]["1"]["artists"] == expected
 
 
 def test_the_artist_editor_points_to_aliases_for_renames(monkeypatch) -> None:
@@ -259,3 +303,19 @@ def test_edit_tracks_refuses_extra_text_on_title_and_artist_lines(monkeypatch, o
     assert len(confirms) == 1 and f"line {line}: " in confirms[0] and new in confirms[0]
     assert metadata["tracks"]["1"]["2"]["title"] == "Two"
     assert metadata["tracks"]["1"]["1"]["artists"] == [("A", "main")]
+
+
+def test_an_empty_answer_at_the_review_prompt_edits_nothing(monkeypatch) -> None:
+    metadata = make_metadata()
+    before = deepcopy(metadata)
+
+    async def enter(*_args, **_kwargs):
+        return ""
+
+    monkeypatch.setattr(review_module, "_print_metadata", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(review_module.click, "prompt", enter)
+
+    result = anyio.run(review_module.review_metadata, metadata, lambda _metadata: None, False)
+
+    assert result is metadata
+    assert result == before

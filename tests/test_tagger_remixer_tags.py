@@ -7,11 +7,9 @@ from typing import Any
 
 import msgspec
 import pytest
-from mutagen.flac import FLAC
-from mutagen.id3 import ID3, TPE4, TRCK
-from test_tagger_combine import one_track  # pyright: ignore[reportMissingImports]
-from test_tagger_metadata_corrections import _scraped  # pyright: ignore[reportMissingImports]
-from test_tagger_multi_value_tags import (  # pyright: ignore[reportMissingImports]
+from helpers.tagger_combine import one_track
+from helpers.tagger_metadata_corrections import _scraped
+from helpers.tagger_multi_value_tags import (
     _metadata,
     _retag,
     _trackmeta,
@@ -19,6 +17,8 @@ from test_tagger_multi_value_tags import (  # pyright: ignore[reportMissingImpor
     _write_m4a,
     _write_mp3,
 )
+from mutagen.flac import FLAC
+from mutagen.id3 import ID3, TPE4, TRCK
 
 from salmon import cfg
 from salmon.tagger.combine import combine_tracks

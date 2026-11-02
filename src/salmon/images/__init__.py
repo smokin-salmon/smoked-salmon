@@ -1,4 +1,5 @@
 from collections.abc import Callable, Sequence
+from urllib.parse import urlsplit
 
 import anyio
 import asyncclick as click
@@ -32,6 +33,19 @@ SKIP = "skip"
 
 class ImageHostRefused(ValueError):
     """An image host may not be used for a tracker's images; the message says why."""
+
+
+def host_of_url(url: str) -> str | None:
+    """The image host (a key of HOSTS) whose uploads are served on url's domain, or None if it is no host of salmon's.
+
+    Known by each host module's IMAGE_DOMAINS: the URL's host name is one of them or a subdomain of one.
+    """
+    name = (urlsplit(url).hostname or "").lower()
+    for host, module in HOSTS.items():
+        domains: tuple[str, ...] = getattr(module, "IMAGE_DOMAINS", ())
+        if any(name == domain or name.endswith(f".{domain}") for domain in domains):
+            return host
+    return None
 
 
 def validate_image_host(ctx: click.Context, param: click.Parameter, value: str | None) -> str | None:

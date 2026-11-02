@@ -5,56 +5,13 @@ from typing import Any
 
 import anyio
 import pytest
+from helpers.tagger_metadata_corrections import _scraped
 
 import salmon.commands
 from salmon import cfg
 from salmon.commands import build_description
 from salmon.config.validations import Corrections
 from salmon.tagger.metadata import _combine_scraped
-
-
-def _track(number: str, artists: list[tuple[str, str]]) -> dict[str, Any]:
-    return {
-        "track#": number,
-        "disc#": "1",
-        "tracktotal": "3",
-        "disctotal": "1",
-        "artists": artists,
-        "title": f"Song {number}",
-        "replay_gain": None,
-        "peak": None,
-        "isrc": None,
-        "explicit": None,
-        "format": None,
-        "streamable": None,
-    }
-
-
-def _scraped(*tracks: list[tuple[str, str]]) -> dict[str, Any]:
-    """A store's release, as a scraper returns it, with these artists on its tracks."""
-    return {
-        "artists": [],
-        "title": "Album",
-        "group_year": "2024",
-        "year": "2024",
-        "date": None,
-        "edition_title": None,
-        "label": None,
-        "catno": None,
-        "rls_type": "Album",
-        "genres": ["Jazz"],
-        "format": "FLAC",
-        "encoding": "Lossless",
-        "encoding_vbr": False,
-        "scene": False,
-        "source": "WEB",
-        "cover": None,
-        "upc": None,
-        "comment": None,
-        "url": "https://www.qobuz.com/us-en/album/album/abc123",
-        "urls": ["https://www.qobuz.com/us-en/album/album/abc123"],
-        "tracks": {"1": {str(n): _track(str(n), artists) for n, artists in enumerate(tracks, 1)}},
-    }
 
 
 def _combined(*tracks: list[tuple[str, str]]) -> dict[str, Any]:
@@ -94,6 +51,15 @@ def test_a_correction_matches_in_any_case_and_past_outer_spaces(corrections) -> 
     metadata = _combined([("RYUICHI sakamoto  ", "main")])
 
     assert metadata["tracks"]["1"]["1"]["artists"] == [("坂本龍一", "main")]
+
+
+def test_a_corrected_name_is_written_without_outer_spaces(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.metadata, "corrections", Corrections(artists={"Ryuichi Sakamoto": " 坂本龍一  "}))
+
+    metadata = _combined([("Ryuichi Sakamoto", "main")])
+
+    assert metadata["tracks"]["1"]["1"]["artists"] == [("坂本龍一", "main")]
+    assert metadata["artists"] == [("坂本龍一", "main")]
 
 
 def test_a_correction_does_not_match_a_name_with_other_accents(corrections) -> None:

@@ -21,13 +21,14 @@ import pytest
 from aiohttp import WSMsgType, web
 from aiohttp.test_utils import TestClient
 from asyncclick.testing import CliRunner
+from helpers.checks_all_command import _snapshot
+from helpers.checks_do_not_upload import UNMATCHED
+from helpers.checks_mqa import _write_flac
+from helpers.trackers_account import _most_within
+from helpers.webui_jobs import AUTH, _finished, _log, _with_app
 from mutagen.flac import FLAC
 from tenacity import wait_none
-from test_checks_all_command import _snapshot, fake_flac  # noqa: F401  # pyright: ignore[reportMissingImports]
-from test_checks_do_not_upload import UNMATCHED  # pyright: ignore[reportMissingImports]
-from test_checks_mqa import _write_flac  # pyright: ignore[reportMissingImports]
-from test_trackers_account import _most_within  # pyright: ignore[reportMissingImports]
-from test_webui_jobs import AUTH, _finished, _log, _with_app  # pyright: ignore[reportMissingImports]
+from test_checks_all_command import fake_flac  # noqa: F401
 
 import salmon.checks.album as album_checks
 import salmon.checks.do_not_upload as do_not_upload

@@ -10,6 +10,8 @@ Every step that does not touch this is stubbed out, including the two dupe-check
 own query is already correct (fetch_existing_group_candidates_in_background, recheck_dupe): what is
 under test is only what _upload_staged hands to last_min_dupe_check, check_requests and
 check_existing_group (for a second tracker), so those three are stubbed to record their arguments.
+
+The review may also rename the files: the upload must describe them by the names and audio info the review left.
 """
 
 from contextlib import asynccontextmanager
@@ -17,10 +19,12 @@ from typing import TYPE_CHECKING, Any, cast
 
 import anyio
 import pytest
+from helpers.uploader_fakes import stub_uploader
 
 import salmon.trackers
 import salmon.uploader
 from salmon.uploader import generate_dupe_check_searchstrs
+from salmon.uploader.upload import concat_track_data
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -102,28 +106,30 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         # other confirm in the flow (downconversion options) should decline, to keep the flow simple.
         return False
 
-    for name, fake in {
-        "gather_audio_info": _returning({}),
-        "check_hybrid": _returning(False),
-        "standardize_tags": _returning(),
-        "gather_tags": _returning({}),
-        "construct_rls_data": _returning_async(rls_data),
-        "check_spectrals": _returning_async((False, None)),
-        "get_metadata": _returning_async((dict(rls_data, cover=None), None)),
-        "edit_metadata": _returning_async((path, metadata, {}, {})),
-        "concat_track_data": _returning({}),
-        "resolve_cover_url": _returning_async((True, None)),
-        "print_torrents": _returning_async({}),
-        "recheck_edition": _same_group,
-        "UploadManager": FakeUploadManager,
-        "upload_and_report": fake_upload_and_report,
-        "fetch_existing_group_candidates_in_background": fake_group_candidates_in_background,
-        "recheck_dupe": fake_recheck_dupe,
-        "last_min_dupe_check": fake_last_min_dupe_check,
-        "check_requests": fake_check_requests,
-        "check_existing_group": fake_check_existing_group,
-    }.items():
-        monkeypatch.setattr(salmon.uploader, name, fake)
+    stub_uploader(
+        monkeypatch,
+        {
+            "gather_audio_info": _returning({}),
+            "check_hybrid": _returning(False),
+            "standardize_tags": _returning(),
+            "gather_tags": _returning({}),
+            "construct_rls_data": _returning_async(rls_data),
+            "check_spectrals": _returning_async((False, None)),
+            "get_metadata": _returning_async((dict(rls_data, cover=None), None)),
+            "edit_metadata": _returning_async((path, metadata, {}, {})),
+            "concat_track_data": _returning({}),
+            "resolve_cover_url": _returning_async((True, None)),
+            "print_torrents": _returning_async({}),
+            "recheck_edition": _same_group,
+            "UploadManager": FakeUploadManager,
+            "upload_and_report": fake_upload_and_report,
+            "fetch_existing_group_candidates_in_background": fake_group_candidates_in_background,
+            "recheck_dupe": fake_recheck_dupe,
+            "last_min_dupe_check": fake_last_min_dupe_check,
+            "check_requests": fake_check_requests,
+            "check_existing_group": fake_check_existing_group,
+        },
+    )
 
     monkeypatch.setattr(salmon.uploader.click, "confirm", fake_confirm)
     monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", False)
@@ -218,6 +224,38 @@ def test_a_caller_supplied_group_id_still_reaches_the_post_review_checks(monkeyp
     _, searchstrs, our_title = recorder.last_min_dupe_check_calls[0]
     assert searchstrs == new_searchstrs
     assert our_title == "New Title"
+
+
+def test_the_upload_describes_the_files_by_the_names_the_review_gave_them(monkeypatch: pytest.MonkeyPatch) -> None:
+    rls_data = {"format": "FLAC", "encoding": "Lossless", "artists": [("Artist", "main")], "title": "Album"}
+    rls_data["catno"] = None
+    metadata = {**rls_data, "cover": None}
+    _install(monkeypatch, rls_data, metadata, Recorder())
+    info = {"precision": 16, "sample rate": 44100, "duration": 200}
+    uploaded: list[dict[str, Any]] = []
+
+    async def upload_and_report(_site, _path, _group_id, _metadata, _cover_url, track_data, *_args, **_kwargs):
+        uploaded.append(track_data)
+        return 1, 5, None, None, "url"
+
+    stub_uploader(
+        monkeypatch,
+        {
+            "gather_audio_info": _returning({"01 one.flac": info}),
+            "gather_tags": _returning({"01 one.flac": "tags as given"}),
+            # The review renamed the file.
+            "edit_metadata": _returning_async(
+                ("/release", metadata, {"01. One.flac": "tags as reviewed"}, {"01. One.flac": info})
+            ),
+            "concat_track_data": concat_track_data,
+            "upload_and_report": upload_and_report,
+        },
+    )
+    monkeypatch.setattr(salmon.trackers, "choose_tracker", _returning_async(None))
+
+    anyio.run(salmon.uploader.upload, _as_gazelle_api(FakeSite("FAKE1")), "/release", None, "WEB", None, (), None)
+
+    assert uploaded == [{"01. One.flac": {**info, "t": "tags as reviewed"}}]
 
 
 async def _same_group(_site, group_id, *_args):

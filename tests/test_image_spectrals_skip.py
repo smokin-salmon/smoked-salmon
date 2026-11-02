@@ -1,12 +1,12 @@
 """Answering "skip" to the retry question goes on without the spectrals that failed to upload (#671).
 
-The real catbox and ptscreens uploaders run against the local fake hosts of test_image_upload_connections.
+The real catbox and ptscreens uploaders run against the local fake hosts of helpers.image_upload_connections.
 """
 
 from pathlib import Path
 
 import pytest
-from test_image_upload_connections import (  # pyright: ignore[reportMissingImports]
+from helpers.image_upload_connections import (
     FakeHost,
     _run,
     _spectrals,

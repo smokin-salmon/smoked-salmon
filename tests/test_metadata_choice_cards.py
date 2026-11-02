@@ -16,10 +16,10 @@ from typing import Any
 import anyio
 import asyncclick as click
 import pytest
-from test_config_compat import _base, _load  # pyright: ignore[reportMissingImports]
-from test_interaction_typed_sites import ask, keys, prompt_call  # pyright: ignore[reportMissingImports]
-from test_webui_interaction import Browser  # pyright: ignore[reportMissingImports]
-from test_webui_search import FOUND, _fake_stores  # pyright: ignore[reportMissingImports]
+from helpers.config_compat import _base, _load
+from helpers.interaction_typed_sites import ask, keys, prompt_call
+from helpers.webui_interaction import Browser
+from helpers.webui_search import FOUND, _fake_stores
 
 import salmon.search
 from salmon import cfg, interaction

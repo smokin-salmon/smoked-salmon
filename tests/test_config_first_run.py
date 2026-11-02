@@ -1,7 +1,7 @@
 """The guided first run: what salmon does when it finds no config (#761).
 
 The questions are answered by a scripted interaction, never the terminal. The connection check goes to the local
-fake tracker of test_checkconf_connection; the network guard in conftest.py stands.
+fake tracker of helpers.checkconf_connection; the network guard in conftest.py stands.
 """
 
 import os
@@ -15,7 +15,7 @@ import anyio
 import asyncclick as click
 import pytest
 from asyncclick.testing import CliRunner
-from test_checkconf_connection import FakeTracker, point_at  # pyright: ignore[reportMissingImports]
+from helpers.checkconf_connection import FakeTracker, point_at
 
 import salmon
 import salmon.config as config_module

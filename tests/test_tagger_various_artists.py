@@ -5,7 +5,7 @@ from typing import Any
 
 import anyio
 import pytest
-from test_tagger_metadata_corrections import _scraped  # pyright: ignore[reportMissingImports]
+from helpers.tagger_metadata_corrections import _scraped
 
 import salmon.commands
 from salmon.commands import build_description

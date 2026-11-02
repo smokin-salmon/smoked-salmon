@@ -8,8 +8,8 @@ upload a release whose tracks disagree with each other.
 import os
 
 import pytest
+from helpers.tagger_tags import _write_flac
 from mutagen.flac import FLAC
-from test_tagger_tags import _write_flac  # pyright: ignore[reportMissingImports]
 
 from salmon.errors import UploadError
 from salmon.tagger import retagger, tags

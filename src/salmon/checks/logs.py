@@ -10,6 +10,7 @@ import anyio.to_thread
 import asyncclick as click
 import cambia
 
+from salmon import prepared
 from salmon.common.files import process_files
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 from salmon.tagger.tagfile import TagFile
@@ -376,7 +377,10 @@ async def verify_log_crcs(cambia_output: Any, logpath: str, basepath: str) -> No
         range_crc = await _calculate_range_crc_async(files_to_check, toc_entries)
         found_crcs = Counter({range_crc: 1})
     else:
-        crc_results = await process_files(files_to_check, _calculate_file_crc_async, "Calculating CRC32 hashes")
+        # A file prepared before the upload ran is not decoded again (salmon.prepared).
+        crc_results = await process_files(
+            files_to_check, prepared.reusing("crc", basepath, _calculate_file_crc_async), "Calculating CRC32 hashes"
+        )
         # Counted, not a set: two tracks can share a CRC, and each needs a file of its own.
         found_crcs = Counter(crc_results)
 

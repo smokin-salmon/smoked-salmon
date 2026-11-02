@@ -8,7 +8,7 @@ same path an end user's config goes through, without ever contacting a real host
 from pathlib import Path
 
 import pytest
-from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
+from helpers.shipped_config import shipped_config
 
 from salmon.config import _parse_config
 

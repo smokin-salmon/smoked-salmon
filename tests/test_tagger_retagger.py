@@ -17,6 +17,7 @@ from salmon.tagger.retagger import (
     create_artist_str,
     create_track_changes,
     delete_empty_folders,
+    metadata_to_track_list,
     rename_files,
     retag_files,
     tag_files,
@@ -1257,3 +1258,69 @@ def test_rename_files_renames_nothing_onto_a_second_hard_link_to_the_track(tmp_p
 
     assert "these files would overwrite another file" in capsys.readouterr().out
     assert [name for name, _ in _tree(tmp_path)] == ["01. Title 1-1.flac", "a.flac"]
+
+
+def _new_titles(changes) -> dict[str, str]:
+    return {
+        name: change.new for name, file_changes in changes.items() for change in file_changes if change.tag == "title"
+    }
+
+
+def test_numbered_names_that_put_a_pinned_file_elsewhere_are_not_an_order():
+    # 1.flac's own tag says track 3: names that start with a number are no order when they move a file off its tag.
+    tags = {
+        "1.flac": _tagset("Old 1", tracknumber="3", discnumber=None),
+        "2.flac": _tagset("Old 2", tracknumber=None, discnumber=None),
+        "3.flac": _tagset("Old 3", tracknumber=None, discnumber=None),
+    }
+    metadata = {"tracks": {"1": {str(n): _trackmeta(f"New {n}", str(n), "1") for n in (1, 2, 3)}}}
+
+    with pytest.raises(AmbiguousTrackOrderError, match="DISCNUMBER and TRACKNUMBER"):
+        create_track_changes(tags, metadata)
+
+
+def test_a_disc_numbered_on_from_the_one_before_keeps_its_pinned_files_in_place():
+    # Disc 2 runs 4, 5, 6: 04.flac's tag 4 is its own track, not one off its place in the folder.
+    tags = {
+        "04.flac": _tagset("Old 4", tracknumber="4", discnumber=None),
+        "05.flac": _tagset("Old 5", tracknumber=None, discnumber=None),
+        "06.flac": _tagset("Old 6", tracknumber="6", discnumber=None),
+    }
+    metadata = {"tracks": {"2": {str(n): _trackmeta(f"New {n}", str(n), "2") for n in (4, 5, 6)}}}
+
+    changes = create_track_changes(tags, metadata)
+
+    assert _new_titles(changes) == {"04.flac": "New 4", "05.flac": "New 5", "06.flac": "New 6"}
+
+
+def test_track_keys_with_letters_are_listed_in_natural_order():
+    metadata = {"1": {key: {"title": key} for key in ("A1", "A10", "A2", "B1")}}
+
+    titles = [track["title"] for track in metadata_to_track_list(metadata)]
+
+    assert titles == ["A1", "A2", "A10", "B1"]
+
+
+def test_a_metadata_track_without_an_isrc_is_compared_without_one():
+    # Hand-edited metadata can leave an optional field out altogether.
+    track = _trackmeta("New", "1", "1")
+    del track["isrc"]
+
+    changes = create_track_changes(
+        {"01.flac": _tagset("Old", tracknumber="1", discnumber=None)}, {"tracks": {"1": {"1": track}}}
+    )
+
+    assert Change("title", "Old", "New") in changes["01.flac"]
+
+
+def test_tracks_the_metadata_lists_out_of_order_still_pair_by_their_numbers():
+    # Hand-edited metadata can list a disc's tracks in any order.
+    tags = {
+        "01.flac": _tagset("Old 1", tracknumber="1", discnumber=None),
+        "02.flac": _tagset("Old 2", tracknumber="2", discnumber=None),
+    }
+    metadata = {"tracks": {"1": {"2": _trackmeta("New 2", "2", "1"), "1": _trackmeta("New 1", "1", "1")}}}
+
+    changes = create_track_changes(tags, metadata)
+
+    assert _new_titles(changes) == {"01.flac": "New 1", "02.flac": "New 2"}

@@ -1,6 +1,6 @@
 [project]
 name = "salmon"
-version = "0.21.0"
+version = "0.22.0"
 description = "An uploading script for Gazelle-based music trackers."
 license = "Apache-2.0"
 readme = "README.md"
@@ -84,6 +84,8 @@ select = [
 line-ending = "lf"
 
 [tool.pyright]
+# pytest puts tests/ on the import path, so test modules import tests/helpers/ as `helpers`
+extraPaths = ["tests"]
 typeCheckingMode = "standard"
 reportPossiblyUnboundVariable = "warning"
 reportUnreachable = "warning"
