@@ -12,7 +12,16 @@ import msgspec
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import get_audio_files, process_files
-from salmon.converter.conversions import conversion_of, missing_files, record_conversion, recorded_files, source_of
+from salmon.converter.conversions import (
+    changed_sources,
+    changed_tracks,
+    conversion_of,
+    missing_files,
+    record_conversion,
+    recorded_files,
+    source_fingerprints,
+    source_of,
+)
 from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -287,6 +296,12 @@ def _check_finished_conversion(path: str, new_path: str, items: list[ConvertItem
         # A track the album gained or lost since is not in this conversion, or no longer in the album.
         and (recorded is None or _records_these_files(path, new_path, items, record, recorded))
     ):
+        # Its files carry the tags and pictures the tracks had then: a retag since would go up without them.
+        if changed := changed_sources(path, record):
+            raise UploadError(
+                f"{new_path} is salmon's conversion of this album at these settings, from before "
+                f"{changed_tracks(changed)}: remove it and run again."
+            )
         missing = missing_files(new_path, record)
         if missing:
             raise UploadError(
@@ -338,6 +353,9 @@ async def convert_folder(
     if cfg.directory.protects(new_path):
         raise UploadError(f"Not converting into {new_path}: it is in library_dirs, or holds one.")
 
+    # Before the tracks are read: one changed while the conversion runs then differs from its record.
+    album_files = sorted(get_audio_files(path))
+    fingerprints = source_fingerprints(path, album_files)
     items = _collect_convert_items(path, new_path, sample_rate)
     if os.path.isdir(new_path):
         # Never removed: unlike a transcode's, this name can belong to a folder the user made.
@@ -364,7 +382,8 @@ async def convert_folder(
             sample_rate=_recorded_rate(items),
             files=files,
             # Every audio file of the album, the 16-bit ones copied as they are too: to tell when it gains or loses one.
-            album_files=sorted(get_audio_files(path)),
+            album_files=album_files,
+            source_fingerprints=fingerprints,
         )
     return final_rate or sample_rate, new_path
 

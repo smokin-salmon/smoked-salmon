@@ -13,8 +13,17 @@ from mutagen.id3 import APIC, ID3, TXXX, Frames
 
 from salmon import cfg, interaction
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import process_files
-from salmon.converter.conversions import conversion_of, missing_files, record_conversion, recorded_files, source_of
+from salmon.common.files import get_audio_files, process_files
+from salmon.converter.conversions import (
+    changed_sources,
+    changed_tracks,
+    conversion_of,
+    missing_files,
+    record_conversion,
+    recorded_files,
+    source_fingerprints,
+    source_of,
+)
 from salmon.errors import UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
@@ -454,6 +463,8 @@ async def transcode_folder(
     if cfg.directory.protects(new_path):
         raise UploadError(f"Not transcoding into {new_path}: it is in library_dirs, or holds one.")
 
+    # Before the tags are read: a track retagged while the transcode runs then differs from its record.
+    fingerprints = source_fingerprints(path, get_audio_files(path))
     # Before the overwrite below: a source that cannot be transcoded must not cost the output already there.
     items = _collect_transcode_items(path, new_path)
     _validate_channel_count(items)
@@ -491,7 +502,15 @@ async def transcode_folder(
 
     if items:
         files = {os.path.relpath(item.src, path): os.path.relpath(item.dst, new_path) for item in items}
-        record_conversion(new_path, source=source_of(path), kind="transcode", bitrate=bitrate, files=files)
+        record_conversion(
+            new_path,
+            source=source_of(path),
+            kind="transcode",
+            bitrate=bitrate,
+            files=files,
+            # A source the snapshot could not read counts as one that changed, as _fingerprint reads it: "".
+            source_fingerprints={name: fingerprints.get(name, "") for name in files},
+        )
     return new_path
 
 
@@ -546,6 +565,9 @@ def _how_record_differs(record: dict[str, Any], path: str, bitrate: Bitrate, sou
     recorded = recorded_files(record)
     if recorded is not None and recorded.keys() != sources:
         return "a transcode of this album from before its files changed"
+    # Its MP3s carry the tags and pictures the tracks had then: a retag since would go up without them.
+    if changed := changed_sources(path, record):
+        return f"a transcode of this album from before {changed_tracks(changed)}"
     return None
 
 
