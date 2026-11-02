@@ -153,7 +153,7 @@ def changed_tracks(changed: Sequence[str]) -> str:
 
 
 def _fingerprint(path: str) -> str:
-    """What a conversion takes from a FLAC: its audio (the MD5 and sample rate in STREAMINFO), tags and pictures.
+    """What a conversion takes from a FLAC: its audio (STREAMINFO's MD5, sample rate and depth), tags and pictures.
 
     A retag or a new picture changes it; a copy or a touch does not, nor does a re-encode of the same audio and tags,
     unless the encoder left the MD5 unset: the file's bytes then stand for its audio, and a re-encode changes them.
@@ -161,9 +161,10 @@ def _fingerprint(path: str) -> str:
     """
     try:
         audio = FLAC(path)
-        md5 = audio.info.md5_signature
-        # The MD5 covers the samples, not the rate they play at, which STREAMINFO can say alone.
-        digest = hashlib.sha256(f"{md5:032x} {audio.info.total_samples} {audio.info.sample_rate}".encode())
+        info = audio.info
+        md5 = info.md5_signature
+        # The MD5 covers the samples, not their rate, nor their depth past 16 bits (17 to 24 pack alike).
+        digest = hashlib.sha256(f"{md5:032x} {info.total_samples} {info.sample_rate} {info.bits_per_sample}".encode())
         if not md5:
             # FLAC lets the encoder leave the MD5 unset: the file itself stands for its audio then.
             with open(path, "rb") as fh:
@@ -171,7 +172,8 @@ def _fingerprint(path: str) -> str:
     except (OSError, MutagenError):
         return ""
     comments = audio.tags if isinstance(audio.tags, VCFLACDict) else []
-    for key, value in sorted(comments):
+    # By key only: a key's values keep their order, which the MP3's frame keeps ("A/B" is not "B/A").
+    for key, value in sorted(comments, key=lambda item: item[0].lower()):
         digest.update(f"\0{key.lower()}={value}".encode())
     for picture in audio.pictures:
         digest.update(b"\0" + picture.write())

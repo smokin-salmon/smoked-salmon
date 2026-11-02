@@ -715,6 +715,17 @@ def _change(path: Path, change: str) -> None:
         tagged.save()
         assert FLAC(path).info.sample_rate == 48000
         return
+    if change == "bits":
+        # STREAMINFO's bit depth alone: the MD5 packs 17 to 24 bits alike, so it can stay as it was.
+        tagged.info.bits_per_sample = 20
+        tagged.save()
+        assert FLAC(path).info.bits_per_sample == 20
+        return
+    if change == "swap":
+        # The same values in another order: the MP3's TPE1 reads "B/A", not "A/B".
+        tagged["artist"] = ["B", "A"]
+        tagged.save()
+        return
     if change == "tag":
         tagged["title"] = "Two (fixed)"
     else:
@@ -725,10 +736,14 @@ def _change(path: Path, change: str) -> None:
 
 
 @pytest.mark.parametrize("md5", ["set", "unset"])
-@pytest.mark.parametrize("change", ["tag", "picture", "audio", "rate"])
+@pytest.mark.parametrize("change", ["tag", "picture", "audio", "rate", "bits", "swap"])
 def test_a_transcode_of_the_tracks_before_a_retag_is_refused_not_reused(made, tmp_path, change: str, md5: str) -> None:
     # Its MP3s carry the old tags or pictures: an upload of it would not match the album as it is now.
     album = _album_with_md5(tmp_path, md5)
+    if change == "swap":
+        two = FLAC(album / "02. two.flac")
+        two["artist"] = ["A", "B"]
+        two.save()
     out = _transcode(album, tmp_path)
     _change(album / "02. two.flac", change)
     before = _snapshot(out)
