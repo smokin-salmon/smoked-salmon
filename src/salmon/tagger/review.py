@@ -1,10 +1,12 @@
 import re
 from collections import defaultdict
 from collections.abc import Sequence
+from typing import cast
 
 import asyncclick as click
 
 from salmon import cfg, interaction
+from salmon.common import normalize_accents
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError, PickOtherResults
 from salmon.tagger.metadata import _print_metadata
@@ -212,8 +214,9 @@ For full rules, see the tracker's Classical Tagging Guide.""",
 
 async def _edit_artists(metadata):
     click.secho(
-        "One artist per line as: Name (role). This changes the release's artists and the roles on tracks; "
-        "to rename or split an artist on every track, use artist a[L]iases instead.",
+        "One artist per line as: Name (role). This changes the release's artists, and carries to the tracks a role "
+        "changed for another, a role deleted from an artist still listed, and a new order; to rename or split an "
+        "artist on every track, use artist a[L]iases instead.",
         fg="cyan",
     )
     artist_text = "\n".join(f"{a} ({i})" for a, i in metadata["artists"])
@@ -230,29 +233,147 @@ async def _edit_artists(metadata):
                 if not role_match:
                     raise ValueError(f"Invalid role format: {role}")
                 role = role_match[1].lower()
-                tuples_artists_list.append((name, role))
-            metadata["artists"] = tuples_artists_list
-
-            # Now update the track-level artists
-            for _disc_number, disc_data in metadata["tracks"].items():
-                for _track_number, track_info in disc_data.items():
-                    track_artists = track_info["artists"]
-                    updated_track_artists = []
-                    for artist_name, artist_role in track_artists:
-                        # Update role for each artist from the album-level metadata
-                        updated_role = next(
-                            (role for name, role in tuples_artists_list if name == artist_name), artist_role
-                        )
-                        updated_track_artists.append((artist_name, updated_role))
-                    track_info["artists"] = updated_track_artists
-
-            return
-        except (ValueError, KeyError, TypeError) as e:
+                # Stripped, as "Dree Low " would match no track credit and read as Dree Low gone from the list.
+                tuples_artists_list.append((name.strip(), role))
+        except ValueError as e:  # All the parsing above raises; the tracks are changed only after it.
             await interaction.confirm(
-                click.style(f"The tracks file is invalid ({type(e)}: {e}), retry?", fg="red"),
+                click.style(f"The artists text is invalid ({e}), retry?", fg="red"),
                 default=True,
                 abort=True,
             )
+            continue
+        # The lines as typed, a line given twice included: _role_changes pairs each name's lines one to one.
+        for line in _carry_artist_edit(metadata["artists"], tuples_artists_list, metadata["tracks"]):
+            click.secho(line, fg="yellow")
+        metadata["artists"] = list(dict.fromkeys(tuples_artists_list))
+        return
+
+
+def _carry_artist_edit(old, new, tracks):
+    """Carry an [a]rtists edit of the release's credits, from `old` to `new`, to every track's credits (#854).
+
+    Roles change as `_role_changes` says. When the edit lists the names it kept in a new order, each track's credits
+    take that order (#868), with names the list no longer holds after them; an edit that only changes roles leaves
+    each track's order alone, as a track may rightly be led by another of its artists.
+
+    A track keeps one credit per `_slot`: when a change gives a track a credit it already holds, it is kept once, and
+    where main and guest meet, as main, in the earlier of their places (a guest kept here would win at the next trac[k]s
+    save, as filter_artists keeps a name's first ARTIST credit).
+
+    Returns what this edit did to the tracks or left on them, naming each artist as the tracks spell it: a credit
+    removed (#854 rule 3), and the credits of a name no longer listed (rule 4) or whose roles changed in a way
+    `_role_changes` can't carry (rule 5).
+    """
+    changes, unclear = _role_changes(old, new)
+    rank: dict[str, int] = {}
+    for name, _ in new:
+        rank.setdefault(_artist_key(name), len(rank))
+    kept = [key for key in dict.fromkeys(_artist_key(name) for name, _ in old) if key in rank]
+    reordered = kept != [key for key in rank if key in kept]
+    removed: dict[tuple[str, str], list[tuple[str, str]]] = {}
+    left: dict[str, list[tuple[str, str]]] = {}
+    spelled: dict[str, str] = {}
+    for dnum, disc in tracks.items():
+        for tnum, track in disc.items():
+            credits: dict[tuple[str, str], tuple[str, str]] = {}
+            for name, role in track["artists"]:
+                key = _artist_key(name)
+                spelled.setdefault(key, name)
+                to = changes.get((key, role), role)
+                if to is None:
+                    removed.setdefault((key, role), []).append((dnum, tnum))
+                    continue
+                if key in unclear or key not in rank:
+                    left.setdefault(key, []).append((dnum, tnum))
+                slot = _slot(key, to)
+                if slot not in credits or (to, credits[slot][1]) == ("main", "guest"):
+                    credits[slot] = (name, to)
+            artists = list(credits.values())
+            if reordered:
+                artists.sort(key=lambda credit: rank.get(_artist_key(credit[0]), len(rank)))  # Stable.
+            track["artists"] = artists
+
+    lines = [f"Removed {spelled[key]} ({role}) from {_track_list(on)}." for (key, role), on in removed.items()]
+    for key in dict.fromkeys(_artist_key(name) for name, _ in old):
+        if key not in left:
+            continue
+        on = _track_list(list(dict.fromkeys(left[key])))
+        if key in unclear:
+            lines.append(
+                f"{spelled[key]}: more than one of its roles changed, so its credits on {on} are left as they were: "
+                "set them in trac[k]s."
+            )
+        else:
+            lines.append(
+                f"{spelled[key]} is no longer in the release's artists, but is still credited on {on}: remove it from "
+                "a track in trac[k]s, or put it back here and rename it everywhere with artist a[L]iases."
+            )
+    return lines
+
+
+def _role_changes(old, new):
+    """What an [a]rtists edit from `old` to `new` does to each (name key, role) credit on the tracks: the new role,
+    or None to remove the credit; a credit not in the dict keeps its role. Also the keys of the names whose change
+    can't be carried, which keep their credits.
+
+    #854's rules, decided for each name on its own, as other names' lines may move or go:
+    - Its lines only moved: nothing changes.
+    - Same number of lines: its old and new lines are paired in order. One line changed: its credits in the old role
+      take the new one (rule 2), even a role it already has on another line. Two or more changed: can't be carried
+      (rule 5). Pairing, not the roles it has before and after, as roles alone read guest-to-main plus remixer-to-guest
+      as remixer to main, and a remixer line changed to main as the remixer credit deleted.
+    - Another number of lines: a role it lost and none gained, the credits in each role it no longer has are removed
+      (rule 3); a role lost and another gained can't be carried (rule 5), as which credit took it can't be told; a
+      role only added is on no track yet, so nothing changes.
+    - Gone from the list: its credits stay (rule 4), as a track can't tell a typo fixed from an artist removed.
+    """
+    old_lines: dict[str, list[str]] = {}
+    new_lines: dict[str, list[str]] = {}
+    for name, role in old:
+        old_lines.setdefault(_artist_key(name), []).append(role)
+    for name, role in new:
+        new_lines.setdefault(_artist_key(name), []).append(role)
+
+    changes: dict[tuple[str, str], str | None] = {}
+    unclear: set[str] = set()
+    for key, was in old_lines.items():
+        now = new_lines.get(key)
+        if now is None or sorted(was) == sorted(now):  # Gone, or its lines only moved.
+            continue
+        if len(was) == len(now):
+            changed = [(before, after) for before, after in zip(was, now, strict=True) if before != after]
+            if len(changed) == 1:
+                changes[(key, changed[0][0])] = changed[0][1]
+            elif changed:
+                unclear.add(key)
+        else:
+            lost, gained = set(was) - set(now), set(now) - set(was)
+            if lost and gained:
+                unclear.add(key)
+            else:
+                changes.update(((key, role), None) for role in lost)
+    return changes, unclear
+
+
+def _slot(key: str, role: str) -> tuple[str, str]:
+    """A track holds one credit per slot: main and guest are one, the ARTIST credit, as filter_artists keeps them."""
+    return (key, "" if role in {"main", "guest"} else role)
+
+
+def _track_list(on: list[tuple[str, str]]) -> str:
+    """(disc, track) pairs as the trac[k]s editor names them, one disc at a time: "Disc 1 Tracks 2, 4"."""
+    discs: dict[str, list[str]] = {}
+    for dnum, tnum in on:
+        discs.setdefault(dnum, []).append(tnum)
+    return "; ".join(
+        f"Disc {dnum} Track{'s' if len(tnums) > 1 else ''} {', '.join(tnums)}" for dnum, tnums in discs.items()
+    )
+
+
+def _artist_key(name: str) -> str:
+    """An artist's name as generate_artists matches it (_generate_artist_pool_lower_case), in any case and with any
+    accents: trac[k]s respells a name by this key, so a match by any other key would miss or merge names."""
+    return cast("str", normalize_accents(name.lower()))  # One string in, one out.
 
 
 async def _alias_artists(metadata):
@@ -502,8 +623,32 @@ async def _edit_tracks(metadata):
         for discnum, tracknum, title, artists in edits:
             metadata["tracks"][discnum][tracknum]["title"] = title
             metadata["tracks"][discnum][tracknum]["artists"] = artists
-        metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
+        artists, metadata["tracks"] = generate_artists(metadata["tracks"])
+        metadata["artists"] = _in_release_order(artists, metadata["artists"])
         return
+
+
+def _in_release_order(artists, release):
+    """`artists`, which generate_artists lists in the tracks' order, in the order of the release's credits `release`.
+
+    generate_artists alone would undo an order set in [a]rtists (#868) at every trac[k]s save. A credit the release
+    holds keeps its place; a credit whose role changed takes the place of the credit of that name the tracks no
+    longer hold; any other goes last, in the tracks' order.
+    """
+    place: dict[tuple[str, str], int] = {}
+    for name, role in release:
+        place.setdefault((_artist_key(name), role), len(place))
+    held = {(_artist_key(name), role) for name, role in artists}
+    dropped: dict[str, int] = {}
+    for (key, role), rank in place.items():
+        if (key, role) not in held:
+            dropped.setdefault(key, rank)
+
+    def rank_of(credit: tuple[str, str]) -> int:
+        key = _artist_key(credit[0])
+        return place.get((key, credit[1]), dropped.get(key, len(place)))
+
+    return sorted(artists, key=rank_of)  # Stable: credits that tie keep the tracks' order.
 
 
 def _parse_edited_tracks(text, tracks):
