@@ -20,6 +20,7 @@ from helpers.uploader_dry_run import (
     FakeTracker,
     _album,
     _lossy_with_spectrals,
+    _returning_async,
     _run_up,
 )
 from test_uploader_dry_run import (
@@ -406,6 +407,8 @@ def test_the_check_after_the_upload_leaves_the_albums_own_spectrals_folder(monke
     album = _album(tmp_path / "Album")
     (album / "Spectrals").mkdir()
     (album / "Spectrals" / "notes.txt").write_bytes(b"mine")
+    # Uploaded on a yes to the question about it (#902): -yyy would stop the run.
+    monkeypatch.setattr(salmon.uploader, "foreign_spectrals_refusal", _returning_async(None))
 
     run = _run_up(monkeypatch, album, torrents, args=("-a",), input="\n\n")
 

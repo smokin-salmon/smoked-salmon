@@ -102,6 +102,7 @@ from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import (
     SpectralUploads,
     check_spectrals,
+    foreign_spectrals_refusal,
     generate_lossy_approval_comment,
     get_spectrals_path,
     make_way_for_spectrals,
@@ -906,6 +907,9 @@ async def upload(
         dryrun.writing_into(rename_into),
     ):
         original = path if staged != path else None
+        # Before the first tracker request: the question covers the conversions the run makes too.
+        if (refusal := await foreign_spectrals_refusal(path, staged)) is not None:
+            return click.secho(f"\n{refusal}", fg="red", bold=True)
         result = await _upload_staged(
             gazelle_site,
             staged,
