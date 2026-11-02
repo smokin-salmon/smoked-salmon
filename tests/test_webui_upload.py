@@ -312,6 +312,27 @@ def test_the_conversions_reach_the_run_as_conversions_gives_them(
     assert seen == [expected]
 
 
+@pytest.mark.parametrize(("sent", "asks"), [(None, True), (["320", "V0"], False)])
+def test_ask_during_the_run_sends_no_selection_and_the_job_asks_which_conversions(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path], sent: list[str] | None, asks: bool
+) -> None:
+    """The form's "Ask during the run" sends no conversions: the job asks as the terminal does, with
+    upload.conversions as the default; ticked boxes (a selection) are made without a question."""
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
+    monkeypatch.setattr(cfg.upload, "conversions", ["320", "V0"])
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job, asked = await _drive(client, manager, await _start(client, album, params={"conversions": sent}))
+        assert job.status == "done", (job.error, _log(job))
+        texts = [click.unstyle(question["text"]) for question in asked]
+        assert any("check downconversion options" in text for text in texts) is asks
+        assert any("Select formats to convert" in text for text in texts) is asks
+
+    _web_run(tracker, test)
+
+
 @pytest.mark.parametrize("conversions", [["mp3"], ["320", "320"]])
 def test_a_conversion_that_is_not_one_is_refused(
     monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path], conversions: list[str]
@@ -771,6 +792,31 @@ def test_the_job_refuses_what_salmon_up_refuses(
 
     _web_run(tracker, test)
     assert tracker.sent == []
+
+
+def test_transcodes_only_with_ask_during_the_run_is_accepted(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path]
+) -> None:
+    """No selection (the form's Ask) is a valid Transcodes only job; it still needs its group."""
+    downloads, _library, torrents = roots
+    album = _album(downloads / "Album")
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
+    seen: list[Any] = []
+
+    async def run_up(options: Any) -> None:
+        seen.append((options.skip_flac_upload, options.conversions))
+
+    monkeypatch.setattr("salmon.webui.kinds._run_up", run_up)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        params = {"skip_flac_upload": True, "group_id": 5, "conversions": None}
+        job, _asked = await _drive(client, manager, await _start(client, album, params=params))
+        assert job.status == "done", (job.error, _log(job))
+        response = await _post_upload(client, album, params={**params, "group_id": None})
+        assert response.status == 400
+
+    _web_run(tracker, test)
+    assert seen == [(True, None)]
 
 
 @pytest.mark.parametrize("params", [{"source": None}, {"group_id": 0}, {"spectrals": [0]}, {"unknown": True}])

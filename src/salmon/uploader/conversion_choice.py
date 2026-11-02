@@ -155,6 +155,29 @@ def _applicable_conversions(options: list[dict[str, Any]], conversions: tuple[st
     return any(conversion_kind(option) in kinds for option in options)
 
 
+def _unavailable_reason(kind: str, rls_data, track_data) -> str:
+    """Why a release is offered no conversion of this kind, by the rules get_downconversion_options applies."""
+    encoding = rls_data["encoding"]
+    lossless = encoding in ("Lossless", "24bit Lossless")
+    rates = sorted({track["sample rate"] for track in track_data.values()}) if track_data else []
+    if not lossless:
+        return "this release is not lossless."
+    if kind in ("320", "V0"):
+        return "this release is not offered it."
+    if kind == "16bit" and encoding == "Lossless":
+        return "this release is already 16-bit."
+    if kind == "24bit" and encoding == "Lossless":
+        return "this release is 16-bit, not 24-bit."
+    if len(rates) > 1:
+        listed = ", ".join(f"{rate / 1000:g}" for rate in rates)
+        return f"the files have different sample rates ({listed} kHz)."
+    if rates and kind == "24bit":
+        return f"its sample rate is {rates[0] / 1000:g} kHz, and this needs 176.4 kHz or more."
+    if rates and kind == "16bit":
+        return f"its sample rate is {rates[0] / 1000:g} kHz, and this needs 44.1 kHz or more."
+    return "this release is not offered it."
+
+
 def _warn_held_conversions(held: set[str] | frozenset[str]) -> None:
     for name in sorted(held):
         click.secho(
@@ -188,7 +211,13 @@ async def choose_conversions(
         ask_first: Whether to ask "check downconversion options?" before the choice.
     """
     if not _applicable_conversions(options, conversions):
-        click.secho("\nNo conversions selected for this upload.", fg="yellow")
+        kinds = cfg.upload.conversions if conversions is None else conversions
+        if kinds:
+            click.secho("\nNo conversion made for this upload:", fg="yellow")
+            for kind in kinds:
+                click.secho(f"  {kind}: {_unavailable_reason(kind, rls_data, track_data)}", fg="yellow")
+        else:
+            click.secho("\nNo conversions selected for this upload.", fg="yellow")
         return []
     if conversions is not None:
         _warn_held_conversions(held)
