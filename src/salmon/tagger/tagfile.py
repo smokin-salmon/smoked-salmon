@@ -348,18 +348,20 @@ class TagFile:
         except KeyError:
             return
 
-    def save(self) -> None:
+    def save(self) -> bool:
+        """Write the tags. False when the file was left as it is (no tags object, or a fragmented M4A)."""
         mut = self.mut
         if mut is None:
-            return
+            return False
         if isinstance(mut, mp4.MP4) and is_fragmented_mp4(mut.filename):
             click.secho(
                 f"Left {mut.filename}'s tags as they are: it is a fragmented M4A, "
                 "and writing tags to one can break its audio.",
                 fg="yellow",
             )
-            return
+            return False
         mut.save()
+        return True
 
 
 def _txxx_values(tags: ID3Tags, field: str) -> list[str] | None:

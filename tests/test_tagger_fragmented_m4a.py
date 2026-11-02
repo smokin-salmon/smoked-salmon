@@ -2,8 +2,10 @@
 
 import av
 import numpy as np
+import pytest
 from mutagen.mp4 import MP4, Atoms
 
+from salmon.errors import UploadError
 from salmon.tagger.retagger import Change, retag_files
 from salmon.tagger.tagfile import TagFile, is_fragmented_mp4
 
@@ -83,3 +85,19 @@ def test_is_fragmented_mp4(tmp_path):
     assert not is_fragmented_mp4(str(plain))
     assert is_fragmented_mp4(str(_fragmented(tmp_path)))
     assert is_fragmented_mp4(str(garbage))
+
+
+def test_a_failure_after_a_skipped_fragmented_m4a_lists_it_as_not_changed(tmp_path, capsys):
+    frag = _fragmented(tmp_path)
+    plain = tmp_path / "plain.m4a"
+    _write_m4a(plain, False)
+    bad = tmp_path / "bad.m4a"
+    bad.write_bytes(b"not audio" * 10)
+    change = [Change("album", "Old", "New")]
+
+    with pytest.raises(UploadError):
+        retag_files(str(tmp_path), {}, {frag.name: change, plain.name: change, bad.name: change})
+
+    lines = {line.split(":")[0]: line for line in capsys.readouterr().out.splitlines()}
+    assert "plain.m4a" in lines["Already changed"] and "frag.m4a" not in lines["Already changed"]
+    assert "frag.m4a" in lines["Not changed"]
