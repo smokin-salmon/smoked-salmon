@@ -291,29 +291,24 @@ async def _alias_artists(metadata):
         except AttributeError:
             return
 
-    for i, (artist, importa) in enumerate(metadata["artists"]):
-        if artist.lower() in artist_aliases:
-            metadata["artists"].pop(i)
-            for artist_name in artist_aliases[artist.lower()]:
-                if artist_name:
-                    metadata["artists"].append((artist_name, importa))
-    for i, (artist, _) in enumerate(metadata["artists"]):
-        if artist.lower() in artists_to_delete:
-            metadata["artists"].pop(i)
+    def apply_aliases(credits):
+        updated = []
+        for artist, importa in credits:
+            key = artist.lower()
+            if key in artist_aliases:
+                updated.extend(
+                    (artist_name, importa)
+                    for artist_name in artist_aliases[key]
+                    if artist_name and artist_name.lower() not in artists_to_delete
+                )
+            elif key not in artists_to_delete:
+                updated.append((artist, importa))
+        return updated
 
-    for dnum, disc in metadata["tracks"].items():
-        for tnum, track in disc.items():
-            for i, (artist, importa) in enumerate(track["artists"]):
-                if artist.lower() in artist_aliases:
-                    metadata["tracks"][dnum][tnum]["artists"].pop(i)
-                    for artist_name in artist_aliases[artist.lower()]:
-                        if artist_name:
-                            metadata["tracks"][dnum][tnum]["artists"].append((artist_name, importa))
-    for dnum, disc in metadata["tracks"].items():
-        for tnum, track in disc.items():
-            for i, (artist, _) in enumerate(track["artists"]):
-                if artist.lower() in artists_to_delete:
-                    metadata["tracks"][dnum][tnum]["artists"].pop(i)
+    metadata["artists"] = apply_aliases(metadata["artists"])
+    for disc in metadata["tracks"].values():
+        for track in disc.values():
+            track["artists"] = apply_aliases(track["artists"])
 
 
 # Where the track count stops meaning a single, then an EP. Past 30 minutes, any release is an album.

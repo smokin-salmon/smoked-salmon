@@ -128,6 +128,43 @@ def test_the_alias_editor_explains_its_syntax_and_splits_an_artist(monkeypatch) 
     assert metadata["tracks"]["1"]["1"]["artists"] == [("Gorgon City", "main"), ("Jem Cooke", "main")]
 
 
+@pytest.mark.parametrize(
+    ("initial", "lines", "expected"),
+    [
+        (
+            [("A", "main"), ("B", "main"), ("C", "main")],
+            "A --> X\nB --> Y\n",
+            [("X", "main"), ("Y", "main"), ("C", "main")],
+        ),
+        (
+            [("A", "main"), ("B", "main"), ("C", "main")],
+            "A -->\nB -->\n",
+            [("C", "main")],
+        ),
+        (
+            [("A", "main"), ("B", "guest")],
+            "A --> X\nA --> Y\n",
+            [("X", "main"), ("Y", "main"), ("B", "guest")],
+        ),
+    ],
+)
+def test_alias_artists_applies_adjacent_renames_removals_and_splits_in_place(
+    monkeypatch, initial, lines, expected
+) -> None:
+    metadata = make_metadata()
+    metadata["artists"] = list(initial)
+    metadata["tracks"]["1"]["1"]["artists"] = list(initial)
+
+    async def fake_edit(text, **_kwargs):
+        return text + lines
+
+    monkeypatch.setattr(review_module.interaction, "edit", fake_edit)
+    anyio.run(review_module._alias_artists, metadata)
+
+    assert metadata["artists"] == expected
+    assert metadata["tracks"]["1"]["1"]["artists"] == expected
+
+
 def test_the_artist_editor_points_to_aliases_for_renames(monkeypatch) -> None:
     _metadata, printed = _run_review(monkeypatch, ["a", "n"], lambda text: text)
 
