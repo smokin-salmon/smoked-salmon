@@ -358,6 +358,9 @@ def test_an_unreadable_site_log_asks_before_uploading_without_the_check(
         ("Singles - EP", "artist singles"),
         # Only as a whole word: the "EP" ending "STEP" stays.
         ("ONE STEP", "artist one step"),
+        # A title that is the type alone stays the title.
+        ("EP", "artist ep"),
+        ("Single", "artist single"),
     ],
 )
 def test_the_search_leaves_out_a_release_type_only_where_it_ends_the_title(title: str, searched: str) -> None:

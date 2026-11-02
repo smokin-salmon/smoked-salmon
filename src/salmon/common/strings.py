@@ -10,8 +10,9 @@ from salmon.errors import GenreNotInWhitelist
 _RE_NUMBERED_SUFFIX = re.compile(r" \(\d+\)$")
 _RE_NUMBERED_SUFFIXES = re.compile(r" \(\d+\)(?= |$)")
 # A store's release type ending an album title, left out of a search: "Title EP", "Title - EP", "Title - Single".
-# Only at the end and as a whole word, so "The Singles" and "Forever Single Mothers" keep theirs.
-_RE_TYPE_SUFFIX = re.compile(r"\s*(?:-\s*)?\b(?:EP|Single)\s*$")
+# Only at the end, as a whole word after a space, so "The Singles" and "Forever Single Mothers" keep theirs, and an
+# album called "EP" or "Single" keeps its title.
+_RE_TYPE_SUFFIX = re.compile(r"\s+(?:-\s*)?(?:EP|Single)\s*$")
 
 
 def numeric_id(value: object) -> int | None:
