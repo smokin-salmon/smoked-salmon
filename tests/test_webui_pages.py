@@ -36,7 +36,7 @@ import salmon.config
 import salmon.trackers
 from salmon import cfg
 from salmon.config import _parse_config, compat
-from salmon.config.validations import GazelleTrackerSettings
+from salmon.config.validations import GazelleTrackerSettings, Seedbox
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import spectrals
@@ -135,6 +135,133 @@ def test_a_folder_holding_a_library_is_refused(roots: Roots, monkeypatch: pytest
         paths.album_folder(str(inner))
     assert refused.value.status == 403
     assert "holds a library" in refused.value.detail
+
+
+def test_a_folder_holding_a_link_is_refused_naming_the_link_not_what_it_leads_to(roots: Roots) -> None:
+    album = _album(roots.downloads / "Album")
+    (roots.outside / "secret.txt").write_text("not the album's")
+    (album / "Scans").mkdir()
+    (album / "Scans" / "back.jpg").symlink_to(roots.outside / "secret.txt")
+
+    with pytest.raises(paths.PathRefused) as refused:
+        paths.album_folder(str(album))
+
+    assert refused.value.status == 403
+    assert os.path.join("Scans", "back.jpg") in refused.value.detail
+    assert str(roots.outside) not in refused.value.detail
+
+
+def test_an_album_with_a_hardlinked_file_is_accepted(roots: Roots) -> None:
+    # A hardlink is the usual seeding layout: the same file, reached by a path inside the roots.
+    album = _album(roots.downloads / "Album", tracks=1)
+    os.link(album / "01 Track 1.flac", album / "02 Track 2.flac")
+
+    assert paths.album_folder(str(album)) == str(album)
+
+
+def test_a_folder_of_torrents_or_a_seedboxs_is_refused_and_so_is_one_holding_it(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    holder = _album(roots.downloads / "Holder")
+    torrents = _album(holder / "torrents")
+    seedbox = roots.downloads / "seedbox"
+    _album(seedbox / "Album")
+    monkeypatch.setattr(cfg.directory, "dottorrents_dir", str(torrents))
+    monkeypatch.setattr(cfg, "seedbox", [Seedbox(name="box", type="local", directory=str(seedbox))])
+
+    for folder in (torrents, _album(torrents / "Album"), holder, seedbox / "Album", seedbox):
+        with pytest.raises(paths.PathRefused) as refused:
+            paths.album_folder(str(folder))
+        assert refused.value.status == 403, folder
+        assert "folder of .torrent files or a seedbox's" in refused.value.detail, folder
+
+
+@pytest.mark.parametrize("where", ["download_directory", "above it"])
+def test_albums_beside_the_torrents_in_a_root_are_accepted(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch, where: str
+) -> None:
+    # dottorrents_dir set to download_directory, or a folder holding it: the .torrent files are beside the albums.
+    album = _album(roots.downloads / "Album")
+    torrents = roots.downloads if where == "download_directory" else roots.downloads.parent
+    monkeypatch.setattr(cfg.directory, "dottorrents_dir", str(torrents))
+
+    assert paths.album_folder(str(album)) == str(album)
+
+
+@pytest.mark.parametrize(
+    ("entry", "link"),
+    [
+        (SimpleNamespace(is_symlink=lambda: True), True),
+        (
+            SimpleNamespace(
+                is_symlink=lambda: False, stat=lambda follow_symlinks: SimpleNamespace(st_reparse_tag=0xA0000003)
+            ),
+            True,
+        ),
+        (
+            SimpleNamespace(
+                is_symlink=lambda: False, stat=lambda follow_symlinks: SimpleNamespace(st_reparse_tag=0xA000000C)
+            ),
+            False,
+        ),
+        (SimpleNamespace(is_symlink=lambda: False, stat=lambda follow_symlinks: SimpleNamespace()), False),
+    ],
+    ids=["a symlink", "a Windows junction", "another reparse point", "a plain entry"],
+)
+def test_a_link_is_a_symlink_or_a_junction(entry: Any, link: bool) -> None:
+    assert paths._is_link(entry) is link
+
+
+def test_an_entry_that_cant_be_read_counts_as_a_link() -> None:
+    def unreadable(follow_symlinks: bool) -> None:
+        raise PermissionError
+
+    entry: Any = SimpleNamespace(is_symlink=lambda: False, stat=unreadable)
+    assert paths._is_link(entry)
+
+
+@pytest.mark.skipif(sys.platform == "win32" or os.geteuid() == 0, reason="needs a folder its owner can't read")
+def test_an_album_with_a_folder_salmon_cant_read_is_refused(roots: Roots) -> None:
+    album = _album(roots.downloads / "Album")
+    locked = album / "Scans"
+    locked.mkdir()
+    locked.chmod(0)
+    try:
+        with pytest.raises(paths.PathRefused) as refused:
+            paths.album_folder(str(album))
+    finally:
+        locked.chmod(stat.S_IRWXU)
+
+    assert refused.value.status == 403
+    assert "Scans" in refused.value.detail
+
+
+def test_a_folder_holding_more_folders_than_an_album_walks_is_refused(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(paths, "MAX_ALBUM_WALK", 3)
+    album = _album(roots.downloads / "Album")
+    for disc in range(1, 3):
+        _album(album / f"CD{disc}")
+
+    assert paths.album_folder(str(album)) == str(album)
+    _album(album / "CD3")
+    with pytest.raises(paths.PathRefused) as refused:
+        paths.album_folder(str(album))
+    assert refused.value.status == 422
+    assert "more than 3 folders" in refused.value.detail
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="needs a named pipe")
+def test_only_a_regular_file_counts_as_an_albums_audio(roots: Roots) -> None:
+    folder = roots.downloads / "Pipe"
+    folder.mkdir()
+    os.mkfifo(folder / "01 Track 1.flac")
+    (folder / "02 Track 2.flac").mkdir()
+
+    with pytest.raises(paths.PathRefused) as refused:
+        paths.album_folder(str(folder))
+    assert refused.value.status == 422
 
 
 @pytest.mark.parametrize("kind", ["spectrals", "checks"])

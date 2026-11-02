@@ -492,8 +492,11 @@ Also under `[web]`:
   clear. Reach it through a reverse proxy that does TLS and passes the `Host` header on, through an SSH tunnel, or
   over a VPN, unless you trust the whole network. Do not put it on the open internet.
 * The browser can list, and start jobs on, folders inside `download_directory` and `library_dirs` only.
-* A library album is never changed in place, nor is an album that shares files with another folder through a hardlink
-  or symlink. Jobs that retag, rename or delete work on a copy in `download_directory`.
+* A job is refused on a folder that holds a symlink anywhere in it (or a Windows junction), since the copy salmon
+  uploads from and the torrent would take what the link leads to, and on a folder of `.torrent` files or a local
+  seedbox's, or one that holds one. Hardlinks are fine. `salmon up` follows links, as before.
+* A library album is never changed in place, nor is an album that shares files with another folder through a hardlink.
+  Jobs that retag, rename or delete work on a copy in `download_directory`.
 * The web sends the same tracker requests as the CLI, under the same per-account rate limit, shared by all running
   jobs. The web adds no retries of its own.
 * When a request that changes something may have reached the tracker but salmon did not get the answer, the job ends

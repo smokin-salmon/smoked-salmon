@@ -29,8 +29,10 @@ MAX_LISTED = 500
 SORTS = ("newest", "name")
 # Entries looked at to mark a listed folder as holding audio (it or its disc folders).
 MAX_MARK_SCAN = 200
-# Folders walked to find an audio file in an album folder: past them, it is not an album.
+# Folders walked in an album folder, to find its audio and any link in it: past them, it is not an album.
 MAX_ALBUM_WALK = 500
+# A Windows junction's reparse tag: stat.IO_REPARSE_TAG_MOUNT_POINT, which the stat module defines only on Windows.
+_JUNCTION = 0xA0000003
 
 
 class PathRefused(JobError):
@@ -100,21 +102,80 @@ def _is_audio(name: str) -> bool:
     return os.path.splitext(name.lower())[1] in AUDIO_EXTENSIONS
 
 
+def _is_link(entry: os.DirEntry[str]) -> bool:
+    """Whether a folder entry is a symlink, or a Windows junction (which is_symlink() doesn't count before 3.12)."""
+    if entry.is_symlink():
+        return True
+    try:
+        reparse_tag = getattr(entry.stat(follow_symlinks=False), "st_reparse_tag", 0)
+    except OSError:
+        return True  # Unreadable: it could hide a link.
+    return reparse_tag == _JUNCTION
+
+
 def holds_audio(path: str, max_folders: int = MAX_ALBUM_WALK) -> bool:
-    """Whether an audio file is in the folder or below it, as salmon finds an album's files, within `max_folders`."""
-    for walked, (_root, _dirs, files) in enumerate(os.walk(path)):
+    """Whether an audio file is in the folder or below it, as salmon finds an album's files, within `max_folders`.
+
+    An audio file is a regular file with an audio extension: not a folder, a link or a named pipe so named.
+    """
+    for walked, (root, _dirs, files) in enumerate(os.walk(path)):
         if walked >= max_folders:
             return False
-        if any(_is_audio(name) for name in files):
+        if any(_is_audio(name) and _is_regular(os.path.join(root, name)) for name in files):
             return True
     return False
+
+
+def _is_regular(path: str) -> bool:
+    try:
+        return stat.S_ISREG(os.lstat(path).st_mode)
+    except OSError:
+        return False
+
+
+def _refuse_links(path: str) -> None:
+    """Refuse a folder holding a link of any kind, anywhere in it (#898).
+
+    salmon's copy of an album (``uploader/staging.py``) and the torrent made from it follow links, so a link would
+    bring in what it leads to: a log, a scan or a folder from outside the roots would go into the upload.
+
+    Raises:
+        PathRefused: The folder holds a symlink (or a junction), named by its path in the folder; more than
+            ``MAX_ALBUM_WALK`` folders, past which salmon doesn't look; or a folder that can't be read, which could
+            hide one.
+    """
+    pending = [path]
+    walked = 0
+    while pending:
+        if walked >= MAX_ALBUM_WALK:
+            raise PathRefused(
+                422, f"Refusing a folder holding more than {MAX_ALBUM_WALK} folders: pick one album folder in it."
+            )
+        folder = pending.pop()
+        walked += 1
+        try:
+            with os.scandir(folder) as entries:
+                for entry in entries:
+                    if _is_link(entry):
+                        name = os.path.relpath(entry.path, path)
+                        raise PathRefused(
+                            403,
+                            f"Refusing a folder that holds a link ({name}): salmon web works only on the files in "
+                            "download_directory and library_dirs. Put the file itself there, or use salmon up.",
+                        )
+                    if entry.is_dir(follow_symlinks=False):
+                        pending.append(entry.path)
+        except OSError:
+            name = os.path.relpath(folder, path)
+            raise PathRefused(403, f"salmon may not read the folder {name} in this album.") from None
 
 
 def album_folder(raw: str) -> str:
     """The album folder a job may work on: `raw` resolved, the rule every job kind on a folder applies.
 
     It must resolve inside a root, must not be a root itself or a folder holding a library, must not be a symlink
-    (the job would work on what it leads to, which the CLI never does), and must hold audio.
+    (the job would work on what it leads to, which the CLI never does), must not be, be in or hold a folder of
+    .torrent files or a seedbox's (see withheld_folders), must hold no symlink at all (#898), and must hold audio.
 
     Raises:
         PathRefused: The folder is refused, with a status and a reason a person can act on.
@@ -134,8 +195,11 @@ def album_folder(raw: str) -> str:
     # Reached through a link from a library to outside it, the folder would lose the copy salmon works on.
     if _named_in_library(given) and not cfg.directory.is_library_path(path):
         raise PathRefused(403, "Refusing an album linked into a library from outside it: open the folder itself.")
+    if any(_inside(path, folder) or _inside(folder, path) for folder in _withheld_from_albums(found)):
+        raise PathRefused(403, "Refusing a folder of .torrent files or a seedbox's, or one that holds one.")
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
+    _refuse_links(path)
     if not holds_audio(path):
         raise PathRefused(422, "No audio file (FLAC, MP3, M4A) in this folder.")
     return path
@@ -163,6 +227,15 @@ def withheld_folders() -> list[str]:
 
 def _is_withheld(path: str) -> bool:
     return any(_inside(path, folder) for folder in withheld_folders())
+
+
+def _withheld_from_albums(found: list[Root]) -> list[str]:
+    """The withheld folders an album folder may not be, be in or hold: those that are not a root and hold none.
+
+    A dottorrents_dir set to download_directory, or above it, would otherwise refuse every album; the .torrent files
+    there are beside the albums, not in them.
+    """
+    return [folder for folder in withheld_folders() if not any(_inside(root.path, folder) for root in found)]
 
 
 def image_file(raw: str, *, content: bool = True) -> str:
