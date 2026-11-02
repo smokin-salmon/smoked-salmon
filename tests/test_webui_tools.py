@@ -27,10 +27,9 @@ import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient
 from asyncclick.testing import CliRunner
-from PIL import Image
-from test_image_upload_connections import REAL_HOSTS, _redirect  # pyright: ignore[reportMissingImports]
-from test_ssrf import LOOPBACK, FakeStore, bandcamp_page  # pyright: ignore[reportMissingImports]
-from test_webui_jobs import (  # noqa: F401  # pyright: ignore[reportMissingImports]
+from helpers.image_upload_connections import REAL_HOSTS, _redirect
+from helpers.ssrf import LOOPBACK, FakeStore, bandcamp_page
+from helpers.webui_jobs import (  # noqa: F401
     AUTH,
     Params,
     _answer,
@@ -40,7 +39,8 @@ from test_webui_jobs import (  # noqa: F401  # pyright: ignore[reportMissingImpo
     _until,
     _with_app,
 )
-from test_webui_jobs import kind as register_job_kind  # noqa: F401  # pyright: ignore[reportMissingImports]
+from PIL import Image
+from test_webui_jobs import kind as register_job_kind  # noqa: F401
 
 import salmon.commands
 import salmon.images

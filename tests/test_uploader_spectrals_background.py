@@ -16,11 +16,14 @@ from typing import Any
 
 import anyio
 import pytest
-from test_uploader_dry_run import _write_flac  # pyright: ignore[reportMissingImports]
-from test_uploader_group_search import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import _write_flac
+from helpers.uploader_fakes import stub_uploader
+from helpers.uploader_group_search import (
     FakeApi,
     FakeTracker,
     Flow,
+)
+from test_uploader_group_search import (
     _fast_limiter,  # noqa: F401
 )
 
@@ -162,15 +165,17 @@ class SpectralsFlow(Flow):
         async def construct_rls_data(*_args: Any, **_kwargs: Any) -> dict[str, Any]:
             return rls_data
 
-        for name, fake in {
-            "check_spectrals": spectrals.check_spectrals,
-            "gather_audio_info": lambda *_a, **_k: AUDIO_INFO,
-            "construct_rls_data": construct_rls_data,
-            "resolve_existing_group": resolve_existing_group,
-            "edit_metadata": edit_metadata,
-            "post_upload_spectral_check": self.returning_async((False, None, None, None)),
-        }.items():
-            monkeypatch.setattr(salmon.uploader, name, fake)
+        stub_uploader(
+            monkeypatch,
+            {
+                "check_spectrals": spectrals.check_spectrals,
+                "gather_audio_info": lambda *_a, **_k: AUDIO_INFO,
+                "construct_rls_data": construct_rls_data,
+                "resolve_existing_group": resolve_existing_group,
+                "edit_metadata": edit_metadata,
+                "post_upload_spectral_check": self.returning_async((False, None, None, None)),
+            },
+        )
         for name, fake in {
             "print_frequency_analysis": self.returning_async(False),
             "prompt_lossy_master": self.returning_async(False),

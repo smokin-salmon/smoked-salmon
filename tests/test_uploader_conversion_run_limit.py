@@ -1,7 +1,7 @@
 """salmon up checks the conversions it makes against the run's path limit, the one its album folder was checked
 against: with -t OPS -t RED, a transcode made during OPS's turn is truncated to RED's 180 characters too.
 
-The runs go against the local fake tracker of test_uploader_dry_run, never a real one. transcode_folder is the real
+The runs go against the local fake tracker of helpers.uploader_dry_run, never a real one. transcode_folder is the real
 one (its output names, its reuse of an existing folder), with only the MP3 encoding faked; so is the folder check.
 """
 
@@ -11,10 +11,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     RENAMED,
     _run_up,
     _write_flac,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 from torf import Torrent

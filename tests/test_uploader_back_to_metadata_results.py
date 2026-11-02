@@ -1,7 +1,7 @@
 """[b]ack to the metadata results at salmon up's review (#802): the same results again with no second search, and
 nothing written to the files before the new pick is reviewed.
 
-The runs go against the local fake tracker of test_uploader_dry_run and a fake image host, never a real one.
+The runs go against the local fake tracker of helpers.uploader_dry_run and a fake image host, never a real one.
 """
 
 from copy import deepcopy
@@ -9,14 +9,16 @@ from functools import partial
 from typing import Any
 
 import pytest
-from test_interaction_typed_sites import ask, edit_metadata_stubs  # pyright: ignore[reportMissingImports]
-from test_tagger_ai_review import make_metadata, make_review  # pyright: ignore[reportMissingImports]
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.interaction_typed_sites import ask, edit_metadata_stubs
+from helpers.tagger_ai_review import make_metadata, make_review
+from helpers.uploader_dry_run import (
     SOURCE_URL,
     _album,
     _retag,
     _returning_async,
     _run_up,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 
@@ -25,6 +27,7 @@ from salmon.errors import PickOtherResults
 from salmon.search.base import IdentData
 from salmon.tagger import ai_review, review
 from salmon.tagger import metadata as metadata_mod
+from salmon.uploader.upload import prepare_and_upload
 
 # Covers and spectrals go to the fake image host.
 pytestmark = pytest.mark.usefixtures("image_uploads")
@@ -32,7 +35,7 @@ pytestmark = pytest.mark.usefixtures("image_uploads")
 FIRST_URL = "https://www.deezer.com/album/111"
 SECOND_URL = "https://www.deezer.com/album/222"
 TAGS_ARTISTS = [("Artist", "main")]
-# What a pick adds to the release, as the stubbed metadata of test_uploader_dry_run has it.
+# What a pick adds to the release, as the stubbed metadata of helpers.uploader_dry_run has it.
 PICKED = {
     "group_year": 2020,
     "date": "2020-01-01",
@@ -111,7 +114,6 @@ def _up(monkeypatch, tmp_path, picks: list[tuple[str, str | None]], **fakes: Any
         await _retag(path, *args, **kwargs)
 
     recheck_dupe = uploader.recheck_dupe
-    prepare_and_upload = uploader.prepare_and_upload
 
     async def recording_recheck_dupe(site: Any, searchstrs: Any, metadata: dict[str, Any]) -> Any:
         events.append(("dupe check", metadata["title"]))

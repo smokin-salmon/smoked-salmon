@@ -1,7 +1,7 @@
 """salmon up --cover-url / --spectral-url: images uploaded already are used instead of uploaded again (#795).
 
-The runs here go against the local fake tracker and fake image host of test_uploader_dry_run, never a real one. The
-URLs given are on real hosts' domains, but nothing ever fetches them.
+The runs here go against the local fake tracker of helpers.uploader_dry_run and the fake image host of
+test_uploader_dry_run, never a real one. The URLs given are on real hosts' domains, but nothing ever fetches them.
 """
 
 from pathlib import Path
@@ -10,10 +10,12 @@ from typing import Any
 
 import anyio
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     _album,
     _run_up,
     _torrent_lines,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401
 )
 

@@ -1,17 +1,19 @@
 """salmon up and 16bit files above 48 kHz (#618): OPS refuses them, RED warns, other files are untouched.
 
-The runs go against the local fake tracker of test_uploader_dry_run, never a real one.
+The runs go against the local fake tracker of helpers.uploader_dry_run, never a real one.
 """
 
 import shutil
 from pathlib import Path
 
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     _album,
     _returning,
     _returning_async,
     _run_up,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see images)
 )
 from torf import Torrent

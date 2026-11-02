@@ -18,8 +18,8 @@ import msgspec
 import pytest
 from aiohttp import ClientSession, web
 from aiohttp.test_utils import TestClient, TestServer
-from shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG  # pyright: ignore[reportMissingImports]
-from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
+from helpers.shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG
+from helpers.shipped_config import shipped_config
 
 from salmon import cfg
 from salmon.config import _parse_config

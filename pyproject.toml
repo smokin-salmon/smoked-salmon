@@ -84,6 +84,8 @@ select = [
 line-ending = "lf"
 
 [tool.pyright]
+# pytest puts tests/ on the import path, so test modules import tests/helpers/ as `helpers`
+extraPaths = ["tests"]
 typeCheckingMode = "standard"
 reportPossiblyUnboundVariable = "warning"
 reportUnreachable = "warning"
