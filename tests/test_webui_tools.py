@@ -1099,7 +1099,15 @@ def test_a_spectrals_job_records_the_default_selection_of_salmon_specs(
     _three_tracks(monkeypatch, tmp_path)
 
     async def test(client: TestClient, manager: JobManager) -> None:
-        for configured, expected in (("*", [1, 2, 3]), ("0", []), ("2 3 9", [2, 3]), ("+", None), (None, None)):
+        for configured, expected in (
+            ("*", [1, 2, 3]),
+            ("0", []),
+            ("2 3 9", [2, 3]),
+            ("2 1 2", [2, 1]),
+            ("3 3 9 3", [3]),
+            ("+", None),
+            (None, None),
+        ):
             monkeypatch.setattr(cfg, "image", msgspec.convert({"default_spectral_ids": configured}, ImageUploader))
             source = await _spectrals(client, manager)
             selection = source.result["selection"]

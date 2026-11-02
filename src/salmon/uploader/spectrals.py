@@ -1167,7 +1167,7 @@ def default_spectral_ids(spectral_ids: dict[int, str]) -> list[int]:
         return []
     if selection == "+":
         return list(_random_third(spectral_ids))
-    return [int(i) for i in selection.split()]
+    return list(dict.fromkeys(int(i) for i in selection.split()))  # repeats dropped, first occurrence kept
 
 
 async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_lossy_master=False, hosts=None):
