@@ -658,11 +658,12 @@ def retag_files(path, album_changes, track_changes, clear=()):
             # Only save() writes: this file is as it was, with the rest.
             abort_partial(f"Retagging {filename}", done, None, [f for f in track_changes if f not in done], e)
         try:
-            mut.save()
+            saved = mut.save()
         except Exception as e:
             remaining = [f for f in track_changes if f not in done and f != filename]
             abort_partial(f"Retagging {filename}", done, filename, remaining, e)
-        done.append(filename)
+        if saved:  # a file save() left as it is (a fragmented M4A) is not changed
+            done.append(filename)
     click.secho("Retagged files.", fg="green")
 
 

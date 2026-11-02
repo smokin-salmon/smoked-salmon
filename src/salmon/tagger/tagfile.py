@@ -1,3 +1,4 @@
+import struct
 from typing import Any
 
 import asyncclick as click
@@ -73,6 +74,24 @@ def _salmon_comments(tags: id3.ID3) -> list[Any]:
     A frame with a description (iTunNORM, iTunSMPB, ID3v1 Comment) belongs to another program and is left alone.
     """
     return [f for f in tags.getall("COMM") if f.desc == ""]
+
+
+# mutagen fixes up only the first moof when saving tags grows the metadata, which breaks every later fragment:
+# https://github.com/quodlibet/mutagen/issues/748 (drop this once it is fixed)
+def is_fragmented_mp4(path: str | None) -> bool:
+    """Whether the M4A has more than one top-level moof atom.
+
+    Fail closed: no path, no top-level moov atom, or atoms mutagen cannot parse also give True. An OSError
+    (the file cannot be read) is not a verdict and propagates.
+    """
+    if path is None:
+        return True
+    try:
+        with open(path, "rb") as fh:
+            names = [atom.name for atom in mp4.Atoms(fh).atoms]
+        return b"moov" not in names or names.count(b"moof") > 1
+    except (mp4.AtomError, mp4.error, struct.error, EOFError, ValueError):  # not OSError: a read failure is no verdict
+        return True
 
 
 class TagFile:
@@ -329,10 +348,22 @@ class TagFile:
         except KeyError:
             return
 
-    def save(self) -> None:
+    def save(self) -> bool:
+        """Write the tags. False when the file was left as it is (no tags object, or a fragmented M4A)."""
         mut = self.mut
-        if mut is not None:
-            mut.save()
+        if mut is None:
+            return False
+        if isinstance(mut, mp4.MP4) and is_fragmented_mp4(mut.filename):
+            click.secho(
+                f"Left {mut.filename}'s tags as they are: it is a fragmented M4A, "
+                "and writing tags to one can break its audio.",
+                fg="yellow",
+            )
+            return False
+        if isinstance(mut, mp4.MP4) and mut.tags is None:  # mutagen writes nothing without a tags object
+            return False
+        mut.save()
+        return True
 
 
 def _txxx_values(tags: ID3Tags, field: str) -> list[str] | None:
