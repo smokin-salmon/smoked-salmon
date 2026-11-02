@@ -1,6 +1,7 @@
 import functools
 import json
 import os
+import shutil
 import tempfile
 from dataclasses import dataclass
 from itertools import chain
@@ -231,23 +232,16 @@ async def meta(url: str, output: str | None = None) -> None:
         if output:
             output_path = Path(output).resolve()
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            temp_path = None
-            try:
-                with tempfile.NamedTemporaryFile(
-                    mode="w",
-                    encoding="utf-8",
-                    dir=output_path.parent,
-                    prefix=".salmon-",
-                    suffix=".tmp",
-                    delete=False,
-                ) as f:
-                    temp_path = Path(f.name)
+            with tempfile.TemporaryDirectory(
+                dir=output_path.parent,
+                prefix=".salmon-",
+            ) as temp_dir:
+                temp_path = Path(temp_dir) / "metadata.tmp"
+                with temp_path.open("w", encoding="utf-8") as f:
                     json.dump(metadata, f, indent=2, ensure_ascii=False)
+                if output_path.exists():
+                    shutil.copymode(output_path, temp_path)
                 os.replace(temp_path, output_path)
-                temp_path = None
-            finally:
-                if temp_path is not None:
-                    temp_path.unlink(missing_ok=True)
             click.secho(f"Metadata saved to {output}", fg="green")
         else:
             click.echo()

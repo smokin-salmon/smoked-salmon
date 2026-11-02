@@ -5,6 +5,8 @@ Discogs is a fake on 127.0.0.1: the scraper's API address is pointed at it.
 """
 
 import json
+import stat
+import sys
 from collections.abc import Callable, Coroutine
 from pathlib import Path
 from typing import Any
@@ -126,8 +128,8 @@ def test_salmon_meta_preserves_existing_output_on_write_failure(
     assert isinstance(result.exception, TypeError)
     assert output_path.read_text(encoding="utf-8") == original_contents
 
-    temporary_files = list(tmp_path.glob(".salmon-*.tmp"))
-    assert temporary_files == []
+    temporary_paths = list(tmp_path.glob(".salmon-*"))
+    assert temporary_paths == []
 
 
 def test_salmon_meta_exits_with_error_when_scrape_fails(
@@ -152,3 +154,24 @@ def test_salmon_meta_exits_with_error_when_scrape_fails(
     assert result.exit_code == 1
     assert "Scrape failed: Test scrape failure" in result.output
     assert not output_path.exists()
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Windows ignores the mode")
+def test_salmon_meta_preserves_existing_output_permissions(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    output_path = tmp_path / "metadata.json"
+    output_path.write_text("Original contents", encoding="utf-8")
+    output_path.chmod(0o740)
+
+    async def run() -> Result:
+        return await CliRunner().invoke(
+            salmon.tagger.meta,
+            [RELEASE_URL, "--output", str(output_path)],
+        )
+
+    result, _ = in_fake_discogs(monkeypatch, run)
+
+    assert result.exit_code == 0, result.output
+    assert stat.S_IMODE(output_path.stat().st_mode) == 0o740
