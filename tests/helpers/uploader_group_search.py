@@ -10,6 +10,7 @@ from aiohttp import web
 
 import salmon.trackers
 import salmon.uploader
+from helpers.uploader_fakes import stub_uploader
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import dupe_checker
 
@@ -182,22 +183,24 @@ class Flow:
         rls_data = {"format": "FLAC", "encoding": "Lossless", "artists": [("Artist", "main")], "title": "Hits Vol. 2"}
         rls_data["catno"] = None
         metadata = {**rls_data, "cover": None}
-        for name, fake in {
-            "gather_audio_info": returning({}),
-            "check_hybrid": returning(False),
-            "standardize_tags": returning(),
-            "gather_tags": returning({}),
-            "construct_rls_data": returning_async(rls_data),
-            "mqa_test": checks,
-            "check_spectrals": check_spectrals,
-            "get_metadata": returning_async((metadata, None)),
-            "edit_metadata": returning_async((path, metadata, {}, {})),
-            "concat_track_data": returning({}),
-            "resolve_cover_url": returning_async((True, None)),
-            "UploadManager": FakeUploadManager,
-            "upload_and_report": upload_and_report,
-        }.items():
-            self.monkeypatch.setattr(salmon.uploader, name, fake)
+        stub_uploader(
+            self.monkeypatch,
+            {
+                "gather_audio_info": returning({}),
+                "check_hybrid": returning(False),
+                "standardize_tags": returning(),
+                "gather_tags": returning({}),
+                "construct_rls_data": returning_async(rls_data),
+                "mqa_test": checks,
+                "check_spectrals": check_spectrals,
+                "get_metadata": returning_async((metadata, None)),
+                "edit_metadata": returning_async((path, metadata, {}, {})),
+                "concat_track_data": returning({}),
+                "resolve_cover_url": returning_async((True, None)),
+                "UploadManager": FakeUploadManager,
+                "upload_and_report": upload_and_report,
+            },
+        )
         self.monkeypatch.setattr(dupe_checker, "fetch_existing_group_candidates", watched_search)
         self.monkeypatch.setattr(dupe_checker.click, "prompt", prompt)
         self.monkeypatch.setattr(salmon.uploader.click, "confirm", returning(False))

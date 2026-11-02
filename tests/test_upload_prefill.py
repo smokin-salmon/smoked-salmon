@@ -21,6 +21,7 @@ from helpers.uploader_dry_run import (
     _run_up,
     _write_flac,
 )
+from helpers.uploader_fakes import stub_uploader
 from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
@@ -606,7 +607,7 @@ def _uploads_by_tracker(monkeypatch) -> list[str]:
             sites.append(gazelle_site.site_code)
         return await real(gazelle_site, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", recording)
+    stub_uploader(monkeypatch, {"upload_and_report": recording})
     return sites
 
 
@@ -706,7 +707,7 @@ def test_a_failed_named_tracker_moves_on_to_the_next(monkeypatch, tmp_path, dirs
             raise RequestError("refused")
         return await recording(gazelle_site, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", red_fails)
+    stub_uploader(monkeypatch, {"upload_and_report": red_fails})
 
     run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, trackers=("RED", "OPS"), input="\n\n")
 

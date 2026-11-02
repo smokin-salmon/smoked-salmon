@@ -27,6 +27,7 @@ from salmon.errors import PickOtherResults
 from salmon.search.base import IdentData
 from salmon.tagger import ai_review, review
 from salmon.tagger import metadata as metadata_mod
+from salmon.uploader.upload import prepare_and_upload
 
 # Covers and spectrals go to the fake image host.
 pytestmark = pytest.mark.usefixtures("image_uploads")
@@ -113,7 +114,6 @@ def _up(monkeypatch, tmp_path, picks: list[tuple[str, str | None]], **fakes: Any
         await _retag(path, *args, **kwargs)
 
     recheck_dupe = uploader.recheck_dupe
-    prepare_and_upload = uploader.prepare_and_upload
 
     async def recording_recheck_dupe(site: Any, searchstrs: Any, metadata: dict[str, Any]) -> Any:
         events.append(("dupe check", metadata["title"]))

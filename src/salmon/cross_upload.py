@@ -55,8 +55,6 @@ from salmon.tagger.tags import gather_tags
 from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.uploader import (
     _check_logs,
-    execute_downconversion_tasks,
-    finish_upload,
     red_api_for_covers,
 )
 from salmon.uploader.conversion_choice import (
@@ -65,6 +63,7 @@ from salmon.uploader.conversion_choice import (
     get_downconversion_options,
     validate_conversions,
 )
+from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.dupe_checker import (
     _confirm_group_id,
     check_existing_group,
@@ -77,6 +76,7 @@ from salmon.uploader.staging import run_directory
 from salmon.uploader.upload import (
     compile_files,
     concat_track_data,
+    finish_upload,
     generate_description,
     generate_torrent,
     has_upload_footer,

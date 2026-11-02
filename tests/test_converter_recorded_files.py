@@ -14,7 +14,6 @@ import asyncclick as click
 import pytest
 from helpers.uploader_shortened_conversions import _write_flac
 
-import salmon.uploader as uploader
 from salmon import cfg, interaction
 from salmon.converter import conversions
 from salmon.converter import downconverting as dc
@@ -23,6 +22,7 @@ from salmon.errors import NoncompliantFolderStructure, UploadError
 from salmon.tagger import folderstructure, renames
 from salmon.tagger.retagger import rename_files
 from salmon.trackers.ops import OpsApi
+from salmon.uploader import conversion_upload
 from salmon.uploader.staging import staged_source
 
 if TYPE_CHECKING:
@@ -412,13 +412,16 @@ def test_a_shortened_downconversion_reads_by_its_source_names(made, tmp_path) ->
     long_name = os.path.join("CD1", f"01. {LONG}.flac")
     on_disk = {os.path.join("CD1", shortened.name): {"track": 1}, "02. two.flac": {"track": 2}}
 
-    assert uploader._by_source_name(str(out), on_disk) == {long_name: {"track": 1}, "02. two.flac": {"track": 2}}
+    assert conversion_upload._by_source_name(str(out), on_disk) == {
+        long_name: {"track": 1},
+        "02. two.flac": {"track": 2},
+    }
 
 
 def test_a_folder_without_a_record_reads_by_its_names(tmp_path) -> None:
     info = {"01.flac": {"precision": 16}}
 
-    assert uploader._by_source_name(str(tmp_path / "Album"), info) == info
+    assert conversion_upload._by_source_name(str(tmp_path / "Album"), info) == info
 
 
 def test_a_refused_transcode_is_skipped_and_the_next_task_runs(monkeypatch, capsys) -> None:
@@ -437,16 +440,16 @@ def test_a_refused_transcode_is_skipped_and_the_next_task_runs(monkeypatch, caps
     async def check(*_args, **_kwargs) -> None:
         return None
 
-    monkeypatch.setattr(uploader, "transcode_folder", transcode_folder)
-    monkeypatch.setattr(uploader, "upload_and_report", upload_and_report)
-    monkeypatch.setattr(uploader, "check_folder_structure", check)
-    monkeypatch.setattr(uploader, "generate_transcode_description", lambda *_a, **_k: "desc")
+    monkeypatch.setattr(conversion_upload, "transcode_folder", transcode_folder)
+    monkeypatch.setattr(conversion_upload, "upload_and_report", upload_and_report)
+    monkeypatch.setattr(conversion_upload, "check_folder_structure", check)
+    monkeypatch.setattr(conversion_upload, "generate_transcode_description", lambda *_a, **_k: "desc")
     tasks = [
         {"name": "MP3 320", "action": "transcode", "encoding": "320"},
         {"name": "MP3 V0", "action": "transcode", "encoding": "V0"},
     ]
     anyio.run(
-        lambda: uploader.execute_downconversion_tasks(
+        lambda: conversion_upload.execute_downconversion_tasks(
             tasks,
             "/release",
             OpsApi(),

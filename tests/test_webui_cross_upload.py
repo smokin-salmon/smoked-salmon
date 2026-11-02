@@ -42,6 +42,7 @@ from helpers.cross_upload import (
     cross_upload_world,
 )
 from helpers.trackers_account import _most_within
+from helpers.uploader_fakes import stub_uploader
 from helpers.webui_jobs import AUTH, _finished, _log, _until, _with_app
 from helpers.webui_upload import PARAMS as UP_PARAMS
 from helpers.webui_upload import _drive
@@ -178,7 +179,7 @@ def test_a_web_cross_upload_sends_what_the_command_sends(
     formats: list[tuple[str, str]],
 ) -> None:
     downconvert = conversion == ["--downconvert"]
-    monkeypatch.setattr(salmon.uploader, "convert_folder", _converted)
+    stub_uploader(monkeypatch, {"convert_folder": _converted})
 
     def album(root: Path) -> Path:
         return _album(root / FOLDER, 96000, bits=24) if downconvert else _album(root / FOLDER)

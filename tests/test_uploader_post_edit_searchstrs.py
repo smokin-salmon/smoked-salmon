@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 import anyio
 import pytest
+from helpers.uploader_fakes import stub_uploader
 
 import salmon.trackers
 import salmon.uploader
@@ -102,28 +103,30 @@ def _install(monkeypatch: pytest.MonkeyPatch, rls_data: dict, metadata: dict, re
         # other confirm in the flow (downconversion options) should decline, to keep the flow simple.
         return False
 
-    for name, fake in {
-        "gather_audio_info": _returning({}),
-        "check_hybrid": _returning(False),
-        "standardize_tags": _returning(),
-        "gather_tags": _returning({}),
-        "construct_rls_data": _returning_async(rls_data),
-        "check_spectrals": _returning_async((False, None)),
-        "get_metadata": _returning_async((dict(rls_data, cover=None), None)),
-        "edit_metadata": _returning_async((path, metadata, {}, {})),
-        "concat_track_data": _returning({}),
-        "resolve_cover_url": _returning_async((True, None)),
-        "print_torrents": _returning_async({}),
-        "recheck_edition": _same_group,
-        "UploadManager": FakeUploadManager,
-        "upload_and_report": fake_upload_and_report,
-        "fetch_existing_group_candidates_in_background": fake_group_candidates_in_background,
-        "recheck_dupe": fake_recheck_dupe,
-        "last_min_dupe_check": fake_last_min_dupe_check,
-        "check_requests": fake_check_requests,
-        "check_existing_group": fake_check_existing_group,
-    }.items():
-        monkeypatch.setattr(salmon.uploader, name, fake)
+    stub_uploader(
+        monkeypatch,
+        {
+            "gather_audio_info": _returning({}),
+            "check_hybrid": _returning(False),
+            "standardize_tags": _returning(),
+            "gather_tags": _returning({}),
+            "construct_rls_data": _returning_async(rls_data),
+            "check_spectrals": _returning_async((False, None)),
+            "get_metadata": _returning_async((dict(rls_data, cover=None), None)),
+            "edit_metadata": _returning_async((path, metadata, {}, {})),
+            "concat_track_data": _returning({}),
+            "resolve_cover_url": _returning_async((True, None)),
+            "print_torrents": _returning_async({}),
+            "recheck_edition": _same_group,
+            "UploadManager": FakeUploadManager,
+            "upload_and_report": fake_upload_and_report,
+            "fetch_existing_group_candidates_in_background": fake_group_candidates_in_background,
+            "recheck_dupe": fake_recheck_dupe,
+            "last_min_dupe_check": fake_last_min_dupe_check,
+            "check_requests": fake_check_requests,
+            "check_existing_group": fake_check_existing_group,
+        },
+    )
 
     monkeypatch.setattr(salmon.uploader.click, "confirm", fake_confirm)
     monkeypatch.setattr(salmon.uploader.cfg.upload, "yes_all", False)

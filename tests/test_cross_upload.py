@@ -46,6 +46,7 @@ from helpers.cross_upload import (
     _transcode,
     _write_flac,
 )
+from helpers.uploader_fakes import stub_uploader
 from torf import Torrent
 
 import salmon.cross_upload as cross_upload_module
@@ -638,7 +639,7 @@ def test_transcodes_are_checked_against_the_targets_limit_as_the_album_is(
         answer = _red_answer(source_tracker.url) if source == "RED" else _ops_answer
         _source_has(album, answer=answer)(source_tracker, target_tracker)
         # After cross_upload_world, which stubs the check.
-        monkeypatch.setattr(salmon.uploader, "check_folder_structure", check)
+        stub_uploader(monkeypatch, {"check_folder_structure": check})
 
     run = _cross_upload(
         monkeypatch,
@@ -2054,7 +2055,7 @@ def test_reds_image_credentials_are_never_printed(monkeypatch, dirs) -> None:
 
 def test_a_24bit_torrent_to_dic_and_its_downconversions_each_send_their_own_sample_rate(monkeypatch, dirs) -> None:
     album = _album(dirs.downloads / FOLDER, 192000, bits=24)
-    monkeypatch.setattr(salmon.uploader, "convert_folder", _converted)
+    stub_uploader(monkeypatch, {"convert_folder": _converted})
 
     def prepare(source: FakeTracker, _target: FakeTracker) -> None:
         source.torrents[TORRENT_ID]["torrent"]["encoding"] = "24bit Lossless"

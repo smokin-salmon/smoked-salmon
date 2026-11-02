@@ -19,6 +19,7 @@ from helpers.uploader_dry_run import (
     _run_up,
     _torrent_lines,
 )
+from helpers.uploader_fakes import stub_uploader
 
 import salmon.images
 import salmon.trackers
@@ -128,7 +129,7 @@ def _album_listings(monkeypatch) -> list[list[str]]:
         listings.append(sorted(os.listdir(path)))
         return await upload_and_report(gazelle_site, path, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", recording)
+    stub_uploader(monkeypatch, {"upload_and_report": recording})
     return listings
 
 
@@ -376,7 +377,7 @@ def test_an_albums_own_spectrals_folder_survives_the_upload_and_goes_into_the_re
         images_at_upload.append(list(Path(path).rglob("*.png")))
         return await upload_and_report(gazelle_site, path, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", recording)
+    stub_uploader(monkeypatch, {"upload_and_report": recording})
 
     run = _run_up(monkeypatch, album, torrents)
 
