@@ -11,11 +11,14 @@ import asyncclick as click
 from torf import TorfError, Torrent
 
 from salmon import cfg, dryrun
-from salmon.common import UploadFiles, clipboard_copy, str_to_int_if_int
+from salmon.common import UploadFiles, clipboard_copy, re_split, str_to_int_if_int
+from salmon.common.strings import names_no_artist, reaches_various_threshold, strip_numbered_suffixes
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import UploadRefusedError
 from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
+from salmon.tagger.combine import _extract_remixers_from_title
+from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.sources import METASOURCES
 from salmon.uploader import record
 from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
@@ -456,8 +459,78 @@ def format_tracklist_artists(artists: list[str]) -> str:
     )
 
 
+# Release types whose tracklist names every track's artist: on a compilation, anthology or DJ mix, the artist is the
+# point of each line.
+_ARTIST_ON_EVERY_LINE = frozenset({"Anthology", "Compilation", "DJ Mix"})
+
+
+def album_credit_names(metadata: dict[str, Any]) -> frozenset[str] | None:
+    """The names a track must credit, and no others, for the tracklist to leave its artist out (#895).
+
+    They are the album's main artists and conductors, as ARTIST leads with them, each split as salmon splits the
+    artists it reads from tags ("Simon & Garfunkel" is Simon and Garfunkel), so a credit read from the files and
+    one from a store compare alike.
+
+    Returns:
+        The names, or None when every line keeps its artist: no album artists are given, the release is a
+        compilation, anthology or DJ mix, or its main artists are various (as ALBUMARTIST would name them).
+    """
+    artists = metadata.get("artists") or []
+    mains = [name for name, role in artists if role == "main"]
+    if not mains or metadata.get("rls_type") in _ARTIST_ON_EVERY_LINE:
+        return None
+    if reaches_various_threshold(mains) or any(names_no_artist(name) for name in mains):
+        return None
+    return _split_names([*mains, *(name for name, role in artists if role == "conductor")])
+
+
+# A feature or remix credit in a title, in any case: "feat.", "Featuring", "ft.", "Remix" or "remixed" as a whole word,
+# or a bracket opening with "with" or "vs." ("Song (with B)").
+_CREDIT_IN_TITLE = re.compile(
+    r"\b(?:feat|featuring|ft|remix(?:e[ds])?)\b|[(\[]\s*(?:with|vs\.?)\s", flags=re.IGNORECASE
+)
+
+
+def credits_only_the_album(credits: list[tuple[str, str]], title: str, album: frozenset[str]) -> bool:
+    """Whether a track credits the album's artists and no one else, so its tracklist line can leave them out: its
+    credits, as (name, role), have exactly the album's main artists and conductors (see album_credit_names) and no
+    guest or remixer, and its title credits no feature or remix (nor a remixer salmon reads from a title, as in
+    "Song (X Mix)"). The title is where salmon puts a remixer (REMIXER only names one the store credits) and, with
+    guests_in_track_title, a guest; an AAC file has neither ARTISTS nor REMIXER.
+
+    Its other roles (composer, producer, arranger) never show in the tracklist, so they don't count.
+    """
+    if any(role in {"guest", "remixer"} for _name, role in credits):
+        return False
+    if _CREDIT_IN_TITLE.search(title or "") or _extract_remixers_from_title(title or ""):
+        return False
+    return _split_names(name for name, role in credits if role in {"main", "conductor"}) == album
+
+
+def _split_names(names) -> frozenset[str]:
+    return frozenset(strip_numbered_suffixes(part) for name in names for part in re_split(name))
+
+
+def _tag_credits(tags: Any) -> list[tuple[str, str]]:
+    """A file's credits as (name, role), read from its tags as salmon reads them: ARTIST (with a feat. or remix
+    credit in it made a guest or remixer), every name in ARTISTS (the main artists, then the guests, as salmon writes
+    it), and REMIXER. No credits at all when the file has no ARTIST."""
+    if not tags.artist:
+        return []
+    credits = parse_artists(tags.artist)
+    if artists := getattr(tags, "artists", None):
+        credits += parse_artists(artists)
+    credits += [(name, "remixer") for name in getattr(tags, "remixer", None) or []]
+    return credits
+
+
 def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -> str:
     """Generate group description with tracklist.
+
+    A track whose tags credit only the album's artists is listed without them (#895): on a one-artist album, every
+    track. A track that credits anyone else (another main artist, a guest or remixer, also in its title) keeps its
+    artist, as do all tracks of a compilation, anthology, DJ mix or various-artists release, or when metadata gives
+    no artists.
 
     Args:
         track_data: Track information.
@@ -466,6 +539,7 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     Returns:
         BBCode description string.
     """
+    album = album_credit_names(metadata)
     description = "[b][size=4]Tracklist[/size][/b]\n"
     multi_disc = any(
         (
@@ -487,7 +561,10 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
         else:
             description += f"[b]{str_to_int_if_int(track['t'].tracknumber, zpad=True)}.[/b] "
 
-        description += f"{format_tracklist_artists(track['t'].artist)} - {track['t'].title} [i]({length})[/i]\n"
+        if album is not None and credits_only_the_album(_tag_credits(track["t"]), track["t"].title, album):
+            description += f"{track['t'].title} [i]({length})[/i]\n"
+        else:
+            description += f"{format_tracklist_artists(track['t'].artist)} - {track['t'].title} [i]({length})[/i]\n"
 
     if len(track_data.values()) > 1:
         description += f"\n[b]Total length: [/b]{total_duration // 60}:{total_duration % 60:02d}\n"

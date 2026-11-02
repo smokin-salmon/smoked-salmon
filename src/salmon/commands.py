@@ -30,6 +30,7 @@ from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
 from salmon.tagger.retagger import create_artist_str
 from salmon.tagger.sources import METASOURCES, run_metadata
+from salmon.tagger.sources.base import generate_artists
 from salmon.trackers.connection import check_trackers
 from salmon.uploader.seedbox import seedbox_secrets
 from salmon.uploader.spectrals import (
@@ -39,7 +40,7 @@ from salmon.uploader.spectrals import (
     post_upload_spectral_check,
 )
 from salmon.uploader.torrent_client import TorrentClientGenerator
-from salmon.uploader.upload import generate_source_links
+from salmon.uploader.upload import album_credit_names, credits_only_the_album, generate_source_links
 
 
 def format_spectral_urls(filenames: list[str], spectral_urls: dict[int, list[str]], bbcode: bool) -> str:
@@ -118,9 +119,12 @@ async def build_description(urls: Sequence[str]) -> str:
     tasks = [run_metadata(url, return_source_name=True) for url in urls]
     metadatas = await asyncio.gather(*tasks)
     metadata = clean_metadata(combine_metadatas(*((s, m) for m, s in metadatas)))
+    # As salmon up does: the album's artists from the tracks' cleaned credits.
+    metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
     remove_various_artists(metadata)
 
     description = "[b][size=4]Tracklist[/size][/b]\n\n"
+    album = album_credit_names(metadata)
     multi_disc = len(metadata["tracks"]) > 1
     for dnum, disc in metadata["tracks"].items():
         for tnum, track in disc.items():
@@ -131,7 +135,10 @@ async def build_description(urls: Sequence[str]) -> str:
             else:
                 description += f"[b]{str_to_int_if_int(str(tnum), zpad=True)}.[/b] "
 
-            description += f"{create_artist_str(track['artists'])} - {track['title']}\n"
+            if album is not None and credits_only_the_album(track["artists"], track["title"], album):
+                description += f"{track['title']}\n"
+            else:
+                description += f"{create_artist_str(track['artists'])} - {track['title']}\n"
     if metadata["comment"]:
         description += f"\n{metadata['comment']}\n"
     if metadata["urls"]:
