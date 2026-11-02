@@ -79,7 +79,11 @@ def _salmon_comments(tags: id3.ID3) -> list[Any]:
 # mutagen fixes up only the first moof when saving tags grows the metadata, which breaks every later fragment:
 # https://github.com/quodlibet/mutagen/issues/748 (drop this once it is fixed)
 def is_fragmented_mp4(path: str | None) -> bool:
-    """Whether the M4A has more than one top-level moof atom. A file that does not parse as an MP4 counts as one."""
+    """Whether the M4A has more than one top-level moof atom.
+
+    Fail closed: no path, no top-level moov atom, or atoms mutagen cannot parse also give True. An OSError
+    (the file cannot be read) is not a verdict and propagates.
+    """
     if path is None:
         return True
     try:
