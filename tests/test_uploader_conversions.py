@@ -513,7 +513,7 @@ def test_a_config_naming_only_kinds_the_release_cannot_give_says_why(monkeypatch
     assert asked == []
     assert len(_upload_posts(run)) == 1
     assert NO_CONVERSIONS not in run.result.output
-    assert "24bit: its sample rate is 48 kHz, and this needs 176.4 kHz or more." in run.result.output
+    assert "24bit: its sample rate is 48 kHz; this needs 176.4 kHz or more." in run.result.output
 
 
 def test_a_run_selection_makes_those_conversions_without_asking(monkeypatch, torrents: Path) -> None:
@@ -539,7 +539,7 @@ def test_a_run_selection_of_kinds_the_release_cannot_give_makes_nothing(monkeypa
     assert asked == []
     assert len(_upload_posts(run)) == 1
     assert NO_CONVERSIONS not in run.result.output
-    assert "24bit: its sample rate is 48 kHz, and this needs 176.4 kHz or more." in run.result.output
+    assert "24bit: its sample rate is 48 kHz; this needs 176.4 kHz or more." in run.result.output
 
 
 def test_a_run_selection_beats_a_config_that_would_ask(monkeypatch, torrents: Path) -> None:
@@ -597,3 +597,30 @@ def test_a_run_selection_asks_no_tracker_of_the_run(monkeypatch, torrents: Path)
     assert asked == []
     # Each tracker gets the FLAC and the two MP3s.
     assert _formats(run) == ["FLAC Lossless", "MP3 320", "MP3 V0 (VBR)"] * 2
+
+
+@pytest.mark.parametrize(
+    ("encoding", "rates", "kind", "reason"),
+    [
+        ("24bit Lossless", (96000,), "24bit", "its sample rate is 96 kHz; this needs 176.4 kHz or more."),
+        ("24bit Lossless", (44100, 96000), "16bit", "the files have different sample rates (44.1, 96 kHz)."),
+        ("24bit Lossless", (22050,), "16bit", "its sample rate is 22.05 kHz; this needs 44.1 kHz or more."),
+        ("Lossless", (44100,), "16bit", "this release is already 16-bit."),
+        ("Lossless", (44100,), "24bit", "this release is 16-bit, not 24-bit."),
+        ("320", (44100,), "V0", "this release is not lossless."),
+    ],
+)
+def test_a_kind_not_offered_gives_the_reason_the_options_rule_applies(
+    encoding: str, rates: tuple[int, ...], kind: str, reason: str
+) -> None:
+    from salmon.uploader.conversion_choice import _unavailable_reason, get_downconversion_options
+
+    rls_data = {"encoding": encoding}
+    track_data = {f"{i}.flac": {"sample rate": rate} for i, rate in enumerate(rates)}
+
+    assert _unavailable_reason(kind, rls_data, track_data) == reason
+    offered = [
+        option.get("encoding") or f"{option['target_bitdepth']}bit"
+        for option in get_downconversion_options(rls_data, track_data, quiet=True)
+    ]
+    assert kind not in offered
