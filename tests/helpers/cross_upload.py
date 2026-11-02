@@ -24,6 +24,7 @@ import salmon.images
 import salmon.trackers
 import salmon.uploader
 import salmon.uploader.seedbox
+from helpers.uploader_fakes import stub_uploader
 from salmon import cfg
 from salmon.config.validations import Seedbox
 from salmon.images.base import BaseImageUploader
@@ -428,8 +429,8 @@ def cross_upload_world(
     monkeypatch.setattr(QBittorrentClient, "add_to_downloader", add_to_downloader)
     monkeypatch.setattr(salmon.uploader.seedbox, "_rclone_upload_folder", rclone_copy)
     if transcode is not None:
-        monkeypatch.setattr(salmon.uploader, "transcode_folder", transcode)
-    monkeypatch.setattr(salmon.uploader, "check_folder_structure", _no_folder_check)
+        stub_uploader(monkeypatch, {"transcode_folder": transcode})
+    stub_uploader(monkeypatch, {"check_folder_structure": _no_folder_check})
 
     def get_class(code: str):
         return lambda: _client(code, trackers[code], dirs.torrents, unlimited=unlimited, red_session=red_session)

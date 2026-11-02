@@ -2,17 +2,13 @@ import functools
 import os
 import platform
 import shutil
-import tempfile
 from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack, asynccontextmanager, nullcontext, suppress
+from contextlib import AsyncExitStack, asynccontextmanager, nullcontext
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
-import anyio
 import asyncclick as click
-from mutagen import MutagenError
-from torf import TorfError
 
 import salmon.trackers
 from salmon import cfg, dryrun, interaction
@@ -25,22 +21,18 @@ from salmon.checks.provenance import gather_provenance
 from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
-from salmon.common import clipboard_copy, commandgroup, get_audio_files, tagify
+from salmon.common import commandgroup, get_audio_files, tagify
 from salmon.common.files import AlbumPath
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
-from salmon.converter.conversions import carry_conversion, conversion_of, recorded_files
+from salmon.converter.conversions import carry_conversion, conversion_of
 from salmon.converter.downconverting import (
     BitDepth,
     conversion_note,
-    convert_folder,
-    generate_conversion_description,
 )
 from salmon.converter.transcoding import (
     Bitrate,
-    generate_transcode_description,
-    transcode_folder,
     transcode_note,
 )
 from salmon.errors import (
@@ -82,16 +74,15 @@ from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.retagger import collect_album_data, rename_files, tag_files
 from salmon.tagger.review import review_metadata, suggest_release_type
 from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
-from salmon.trackers.base import TagRules
 from salmon.trackers.red import RedApi
 from salmon.uploader import record
 from salmon.uploader.conversion_choice import (
     _held_conversions,
     choose_conversions,
-    downconversion_format,
     get_downconversion_options,
     validate_conversions,
 )
+from salmon.uploader.conversion_upload import _max_path_length_for_run, execute_downconversion_tasks
 from salmon.uploader.dupe_checker import (
     can_check_site_log,
     check_existing_group,
@@ -116,21 +107,20 @@ from salmon.uploader.spectrals import (
     make_way_for_spectrals,
     post_upload_spectral_check,
     prompt_lossy_master,
-    report_lossy_master,
     specs_hosts_text,
     spectrals_in_background,
 )
 from salmon.uploader.staging import staged_source
 from salmon.uploader.upload import (
     concat_track_data,
-    prepare_and_upload,
+    upload_and_report,
 )
 
 if TYPE_CHECKING:
-    from torf import Torrent
-
     from salmon.tagger.tagfile import TagFile
     from salmon.trackers.base import BaseGazelleApi
+    from salmon.uploader.dupe_checker import GroupCandidatesFetch
+    from salmon.uploader.spectrals import SpectralsInBackground
 
 
 def validate_spectral_urls(ctx, param, value: tuple[str, ...]) -> tuple[tuple[int, tuple[str, ...]], ...]:
@@ -998,26 +988,6 @@ def _reachable_trackers(trackers: list[str] | None, offer_others: bool) -> list[
     return [*trackers, *(code for code in salmon.trackers.tracker_list if code not in trackers)]
 
 
-def _max_path_length_for_run(gazelle_site: "BaseGazelleApi", trackers: list[str] | None = None) -> int:
-    """The path limit to check the folder against: this tracker's, or the strictest among every
-    tracker configured, when the run might go on to upload to another of them afterward.
-
-    Which trackers a run actually reaches is only known one at a time: after each upload, the
-    user is offered a choice among the remaining configured trackers. The folder is checked once,
-    before the first upload, so it is checked against the strictest limit already knowable then.
-    Trackers named with -t are known up front: the strictest of theirs.
-    """
-    own_limit = getattr(gazelle_site, "TAG_RULES", TagRules()).max_path_length
-    if not trackers and not cfg.upload.multi_tracker_upload:
-        return own_limit
-    limits = [own_limit]
-    for code in trackers or salmon.trackers.tracker_list:
-        tracker_class = salmon.trackers.tracker_classes.get(code)
-        if tracker_class is not None:
-            limits.append(tracker_class.TAG_RULES.max_path_length)
-    return min(limits)
-
-
 async def _upload_staged(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -1132,115 +1102,60 @@ async def _upload_staged(
                 if spectrals_after or given_spectral_urls
                 else spectrals_in_background(path, audio_info, spectrals, rls_data["format"])
             ) as spectrals_generation:
-                if not skip_mqa:
-                    all_files = cfg.upload.mqa_check_all_tracks
-                    checked = "every FLAC file" if all_files else "first FLAC file only"
-                    click.secho(f"Checking for MQA release ({checked})", fg="cyan", bold=True)
-                    await mqa_test(path, all_files=all_files)
-                    click.secho("No MQA release detected", fg="green")
-
-                if rls_data["encoding"] == "24bit Lossless" and not skip_up:
-                    if not await interaction.assume_defaults():
-                        if await interaction.confirm(
-                            click.style(
-                                "\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"
-                            ),
-                            default=True,
-                        ):
-                            await upload_upconvert_test(path)
-                    else:
-                        await upload_upconvert_test(path)
-
-                if source == "CD" and not skip_log_check:
-                    await _check_logs(path)
-
-                if provenance is not None:
-                    _warn_about_provenance(provenance)
+                await _check_files(
+                    path,
+                    source,
+                    rls_data,
+                    provenance,
+                    skip_mqa=skip_mqa,
+                    skip_up=skip_up,
+                    skip_log_check=skip_log_check,
+                )
 
                 if group_fetch is not None:
-                    try:
-                        results, recent_uploads = await group_fetch.result()
-                    except RequestError as e:
-                        # Skipped like a first tracker that refuses the release, when another can follow.
-                        if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
-                            click.secho(
-                                f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True
-                            )
-                            raise click.exceptions.Exit(1) from None
-                        click.secho(
-                            f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
-                            fg="red",
-                            bold=True,
-                        )
-                        search_failed = True
-                    else:
-                        group_id = await resolve_existing_group(
-                            gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
-                        )
-                        # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
-                        weighed_against = dict(rls_data)
-
-                spectral_ids = None
-                lossy_master: bool = False
-                if spectrals_after:
-                    # We tell the uploader not to worry about it being lossy until later.
-                    pass
-                elif given_spectral_urls:
-                    # As check_spectrals would: salmon's spectrals from an earlier run must not go into the torrents.
-                    make_way_for_spectrals(get_spectrals_path(path))
-                    lossy_master = await _lossy_master_without_spectrals(lossy, rls_data["format"])
-                    # Numbered as --spectrals numbers tracks; the files' names go into the description.
-                    audio_files = get_audio_files(path)
-                    spectral_ids = {track: audio_files[track - 1] for track in given_spectral_urls}
-                else:
-                    lossy_result, spectral_ids = await check_spectrals(
-                        path,
-                        audio_info,
-                        lossy,
-                        spectrals,
-                        format=rls_data["format"],
-                        hosts=specs_hosts_text(_trackers_for_run(gazelle_site.site_code, flac_group, reachable)),
-                        generation=spectrals_generation,
-                    )
-                    lossy_master = lossy_result if lossy_result is not None else False
-
-            run_source_url = source_url
-            metadata_search = MetadataSearch()
-            metadata, picked_source_url = await get_metadata(
-                path, tags, rls_data, skip_search=skip_search, skip_search_url=source_url, search=metadata_search
-            )
-            while True:
-                # Each pick's starred URL replaces the run's --source-url; a pick with none keeps the run's.
-                source_url = run_source_url if picked_source_url is None else picked_source_url
-                if picked_source_url is not None:
-                    click.secho(f"New Source URL: {source_url}", fg="yellow")
-                try:
-                    path, metadata, tags, audio_info = await edit_metadata(
-                        path,
-                        tags,
-                        metadata,
-                        source_url,
-                        source,
+                    group_id, weighed_against, search_failed = await _take_group_search(
+                        gazelle_site,
+                        group_fetch,
+                        group_id,
+                        dupe_searchstrs,
                         rls_data,
-                        recompress,
-                        auto_rename,
-                        spectral_ids,
-                        skip_integrity_check,
-                        essential_only,
-                        skip_initial_review,
-                        apply_ai_suggestions,
-                        rename_into=rename_into,
-                        original=original,
-                        max_path_length=max_path_length,
-                        rls_type_hint=suggest_release_type(
-                            rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
-                        ),
-                        offer_other_results=metadata_search.results is not None,
+                        flac_group=flac_group,
+                        reachable=reachable,
                     )
-                    break
-                except PickOtherResults:
-                    # Raised at a review before anything was written to the files.
-                    metadata, picked_source_url = await pick_metadata(metadata_search, rls_data, path, len(tags))
+
+                spectral_ids, lossy_master = await _spectrals_before_upload(
+                    gazelle_site,
+                    path,
+                    audio_info,
+                    rls_data,
+                    lossy,
+                    spectrals,
+                    spectrals_generation,
+                    spectrals_after=spectrals_after,
+                    given_spectral_urls=given_spectral_urls,
+                    flac_group=flac_group,
+                    reachable=reachable,
+                )
+
+            path, metadata, tags, audio_info, source_url = await _review_until_confirmed(
+                path,
+                tags,
+                audio_info,
+                rls_data,
+                source,
+                source_url,
+                spectral_ids,
+                skip_search=skip_search,
+                recompress=recompress,
+                auto_rename=auto_rename,
+                skip_integrity_check=skip_integrity_check,
+                essential_only=essential_only,
+                skip_initial_review=skip_initial_review,
+                apply_ai_suggestions=apply_ai_suggestions,
+                rename_into=rename_into,
+                original=original,
+                max_path_length=max_path_length,
+            )
 
             # Before anything is made or sent for the first tracker: its group, spectrals, cover and upload.
             first_listed = (
@@ -1266,58 +1181,11 @@ async def _upload_staged(
                 if source_flac is None:
                     raise click.Abort
             if not scene:
-                # Before any torrent or transcode is made from the folder, so they all get the same files.
-                check_embedded_pictures(path)
-                if cfg.image.embed_missing_cover:
-                    # A missing cover is downloaded from the metadata first, as the per-tracker step used to.
-                    cover_path, downloaded = None, False
-                    if metadata["cover"] and has_flac_without_picture(path) and not get_cover_from_path(path):
-                        cover_path, downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
-                    embed_missing_cover(path, cover_path)
-                    if downloaded and remove_downloaded_cover_image and cover_path:
-                        # Not in the torrents; the cover upload downloads it again.
-                        os.remove(cover_path)
+                await _prepare_pictures(path, metadata, remove_downloaded_cover_image)
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
     except AbortAndDeleteFolder:
-        if dryrun.active():
-            dryrun.say("not deleting the music folder.")
-            return click.secho("\nAborting upload...", fg="red")
-        if flac_group is not None:
-            click.secho(
-                "\nNot deleting the music folder: with --skip-flac-upload the source is never modified.",
-                fg="yellow",
-                bold=True,
-            )
-            return click.secho("\nAborting upload...", fg="red")
-        if cfg.directory.protects(path):
-            click.secho(f"\nNot deleting {path}: it is in library_dirs, or holds one.", fg="yellow", bold=True)
-            return click.secho("\nAborting upload...", fg="red")
-        if original is not None:
-            click.secho(
-                f"\nDeleting the copy the upload worked on. {original} is kept.",
-                fg="yellow",
-                bold=True,
-            )
-        elif cfg.upload.formatting.remove_source_dir and path != source_folder and os.path.isdir(source_folder):
-            # The answer deletes the renamed folder only: the source is removed when a run ends, and this one aborts
-            click.secho(
-                f"\nremove_source_dir is on, but {source_folder} is kept: "
-                "remove it yourself if you meant the album too.",
-                fg="yellow",
-            )
-        if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
-            try:
-                import send2trash
-
-                send2trash.send2trash(path)
-                return click.secho("\nMoved folder to recycle bin, aborting upload...", fg="red")
-            except Exception as e:
-                click.secho(f"\nError moving folder to recycle bin: {e}", fg="red")
-                return click.secho("\nAborting upload...", fg="red")
-        else:
-            shutil.rmtree(path)
-            return click.secho("\nDeleted folder, aborting upload...", fg="red")
+        return _delete_after_abort(path, source_folder, original, flac_group)
 
     # Uploaded once per specs host; the files are deleted once no tracker of the run can need them.
     spectral_uploads = SpectralUploads(
@@ -1583,6 +1451,249 @@ async def _upload_staged(
     return path, bool(uploaded), aborted
 
 
+async def _check_files(
+    path: str,
+    source: str,
+    rls_data: dict[str, Any],
+    provenance: dict[str, Any] | None,
+    *,
+    skip_mqa: bool,
+    skip_up: bool,
+    skip_log_check: bool,
+) -> None:
+    """Check the files before the group question: MQA, an upconvert, the logs, and the tags' provenance markers."""
+    if not skip_mqa:
+        all_files = cfg.upload.mqa_check_all_tracks
+        checked = "every FLAC file" if all_files else "first FLAC file only"
+        click.secho(f"Checking for MQA release ({checked})", fg="cyan", bold=True)
+        await mqa_test(path, all_files=all_files)
+        click.secho("No MQA release detected", fg="green")
+
+    if rls_data["encoding"] == "24bit Lossless" and not skip_up:
+        if not await interaction.assume_defaults():
+            if await interaction.confirm(
+                click.style("\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"),
+                default=True,
+            ):
+                await upload_upconvert_test(path)
+        else:
+            await upload_upconvert_test(path)
+
+    if source == "CD" and not skip_log_check:
+        await _check_logs(path)
+
+    if provenance is not None:
+        _warn_about_provenance(provenance)
+
+
+async def _take_group_search(
+    gazelle_site: "BaseGazelleApi",
+    group_fetch: "GroupCandidatesFetch",
+    group_id: int | None,
+    dupe_searchstrs: list[str],
+    rls_data: dict[str, Any],
+    *,
+    flac_group: dict[str, Any] | None,
+    reachable: list[str] | None,
+) -> tuple[int | None, dict[str, Any] | None, bool]:
+    """Ask which group to upload into, from what the background search found.
+
+    Returns:
+        The group (group_id unchanged when the search failed), the release as it was when the group was picked (None
+        when the search failed), and whether the search failed: the first tracker is then skipped.
+    """
+    weighed_against: dict[str, Any] | None = None
+    search_failed = False
+    try:
+        results, recent_uploads = await group_fetch.result()
+    except RequestError as e:
+        # Skipped like a first tracker that refuses the release, when another can follow.
+        if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+            click.secho(f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True)
+            raise click.exceptions.Exit(1) from None
+        click.secho(
+            f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
+            fg="red",
+            bold=True,
+        )
+        search_failed = True
+    else:
+        group_id = await resolve_existing_group(
+            gazelle_site, dupe_searchstrs, results, recent_uploads, release=rls_data
+        )
+        # A copy: picking scraped metadata edits rls_data in place (it is combine_metadatas' base).
+        weighed_against = dict(rls_data)
+    return group_id, weighed_against, search_failed
+
+
+async def _spectrals_before_upload(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    audio_info: dict[str, Any],
+    rls_data: dict[str, Any],
+    lossy: bool | None,
+    spectrals: tuple[int, ...],
+    spectrals_generation: "SpectralsInBackground | None",
+    *,
+    spectrals_after: bool,
+    given_spectral_urls: dict[int, list[str]] | None,
+    flac_group: dict[str, Any] | None,
+    reachable: list[str] | None,
+) -> tuple[dict[int, str] | None, bool]:
+    """Show the spectrals, or take the ones given by URL, and ask whether the release is lossy mastered.
+
+    With --spectrals-after, all of that waits for the first upload.
+
+    Returns:
+        The spectral images by track, and whether the release is lossy mastered.
+    """
+    spectral_ids = None
+    lossy_master: bool = False
+    if spectrals_after:
+        # We tell the uploader not to worry about it being lossy until later.
+        pass
+    elif given_spectral_urls:
+        # As check_spectrals would: salmon's spectrals from an earlier run must not go into the torrents.
+        make_way_for_spectrals(get_spectrals_path(path))
+        lossy_master = await _lossy_master_without_spectrals(lossy, rls_data["format"])
+        # Numbered as --spectrals numbers tracks; the files' names go into the description.
+        audio_files = get_audio_files(path)
+        spectral_ids = {track: audio_files[track - 1] for track in given_spectral_urls}
+    else:
+        lossy_result, spectral_ids = await check_spectrals(
+            path,
+            audio_info,
+            lossy,
+            spectrals,
+            format=rls_data["format"],
+            hosts=specs_hosts_text(_trackers_for_run(gazelle_site.site_code, flac_group, reachable)),
+            generation=spectrals_generation,
+        )
+        lossy_master = lossy_result if lossy_result is not None else False
+    return spectral_ids, lossy_master
+
+
+async def _review_until_confirmed(
+    path: str,
+    tags: dict[str, "TagFile"],
+    audio_info: dict[str, Any],
+    rls_data: dict[str, Any],
+    source: str,
+    source_url: str | None,
+    spectral_ids: dict[int, str] | None,
+    *,
+    skip_search: bool,
+    recompress: bool,
+    auto_rename: bool,
+    skip_integrity_check: bool,
+    essential_only: bool,
+    skip_initial_review: bool,
+    apply_ai_suggestions: bool,
+    rename_into: str | None,
+    original: str | None,
+    max_path_length: int,
+) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, Any], str | None]:
+    """Pick the metadata and review it until the user uploads, picking again from the results if asked.
+
+    Returns:
+        The folder, the metadata, the tags and the audio info as the review left them, and the source URL.
+    """
+    run_source_url = source_url
+    metadata_search = MetadataSearch()
+    metadata, picked_source_url = await get_metadata(
+        path, tags, rls_data, skip_search=skip_search, skip_search_url=source_url, search=metadata_search
+    )
+    while True:
+        # Each pick's starred URL replaces the run's --source-url; a pick with none keeps the run's.
+        source_url = run_source_url if picked_source_url is None else picked_source_url
+        if picked_source_url is not None:
+            click.secho(f"New Source URL: {source_url}", fg="yellow")
+        try:
+            path, metadata, tags, audio_info = await edit_metadata(
+                path,
+                tags,
+                metadata,
+                source_url,
+                source,
+                rls_data,
+                recompress,
+                auto_rename,
+                spectral_ids,
+                skip_integrity_check,
+                essential_only,
+                skip_initial_review,
+                apply_ai_suggestions,
+                rename_into=rename_into,
+                original=original,
+                max_path_length=max_path_length,
+                rls_type_hint=suggest_release_type(
+                    rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
+                ),
+                offer_other_results=metadata_search.results is not None,
+            )
+            break
+        except PickOtherResults:
+            # Raised at a review before anything was written to the files.
+            metadata, picked_source_url = await pick_metadata(metadata_search, rls_data, path, len(tags))
+    return path, metadata, tags, audio_info, source_url
+
+
+async def _prepare_pictures(path: str, metadata: dict[str, Any], remove_downloaded_cover_image: bool) -> None:
+    """Check the files' embedded pictures, and embed a missing cover when configured to."""
+    # Before any torrent or transcode is made from the folder, so they all get the same files.
+    check_embedded_pictures(path)
+    if cfg.image.embed_missing_cover:
+        # A missing cover is downloaded from the metadata first, as the per-tracker step used to.
+        cover_path, downloaded = None, False
+        if metadata["cover"] and has_flac_without_picture(path) and not get_cover_from_path(path):
+            cover_path, downloaded = await download_cover_if_nonexistent(path, metadata["cover"])
+        embed_missing_cover(path, cover_path)
+        if downloaded and remove_downloaded_cover_image and cover_path:
+            # Not in the torrents; the cover upload downloads it again.
+            os.remove(cover_path)
+
+
+def _delete_after_abort(path: str, source_folder: str, original: str | None, flac_group: dict[str, Any] | None) -> None:
+    """Delete the folder an aborted run worked on, as the user asked, unless it must be kept."""
+    if dryrun.active():
+        dryrun.say("not deleting the music folder.")
+        return click.secho("\nAborting upload...", fg="red")
+    if flac_group is not None:
+        click.secho(
+            "\nNot deleting the music folder: with --skip-flac-upload the source is never modified.",
+            fg="yellow",
+            bold=True,
+        )
+        return click.secho("\nAborting upload...", fg="red")
+    if cfg.directory.protects(path):
+        click.secho(f"\nNot deleting {path}: it is in library_dirs, or holds one.", fg="yellow", bold=True)
+        return click.secho("\nAborting upload...", fg="red")
+    if original is not None:
+        click.secho(
+            f"\nDeleting the copy the upload worked on. {original} is kept.",
+            fg="yellow",
+            bold=True,
+        )
+    elif cfg.upload.formatting.remove_source_dir and path != source_folder and os.path.isdir(source_folder):
+        # The answer deletes the renamed folder only: the source is removed when a run ends, and this one aborts
+        click.secho(
+            f"\nremove_source_dir is on, but {source_folder} is kept: remove it yourself if you meant the album too.",
+            fg="yellow",
+        )
+    if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
+        try:
+            import send2trash
+
+            send2trash.send2trash(path)
+            return click.secho("\nMoved folder to recycle bin, aborting upload...", fg="red")
+        except Exception as e:
+            click.secho(f"\nError moving folder to recycle bin: {e}", fg="red")
+            return click.secho("\nAborting upload...", fg="red")
+    else:
+        shutil.rmtree(path)
+        return click.secho("\nDeleted folder, aborting upload...", fg="red")
+
+
 async def edit_metadata(
     path: str,
     tags: dict[str, "TagFile"],
@@ -1782,382 +1893,6 @@ def metadata_validator(metadata):
         raise InvalidMetadataError(f"{metadata['encoding']} is not a valid encoding.")
 
     return metadata
-
-
-def _by_source_name(folder: str, audio_info: dict[str, Any]) -> dict[str, Any]:
-    """A converted folder's audio info, by the names its files had in the source, as salmon recorded them.
-
-    The folder check may have shortened them since, on an earlier tracker's turn. Without a record listing exactly
-    these files, the info stays by the names they have.
-    """
-    record = conversion_of(folder)
-    files = None if record is None else recorded_files(record)
-    if files is None or set(files.values()) != audio_info.keys() or len(set(files.values())) != len(files):
-        return audio_info
-    return {source: audio_info[path] for source, path in files.items()}
-
-
-async def execute_downconversion_tasks(
-    selected_tasks: list[dict[str, Any]],
-    path: str,
-    gazelle_site: "BaseGazelleApi",
-    group_id: int | None,
-    metadata: dict[str, Any],
-    cover_url: str | None,
-    track_data: dict[str, Any],
-    hybrid: bool,
-    lossy_master: bool,
-    spectral_urls: dict[int, list[str]] | None,
-    spectral_ids: dict[int, str] | None,
-    lossy_comment: str | None,
-    request_id: int | str | None,
-    source_url: str | None,
-    seedbox_uploader: UploadManager,
-    source: str | None,
-    base_url: str,
-    *,
-    uploaded: list[str] | None = None,
-    max_path_length: int | None = None,
-) -> None:
-    """Execute the selected downconversion tasks.
-
-    Args:
-        selected_tasks: List of downconversion task dicts.
-        path: Path to the album folder.
-        gazelle_site: The tracker API instance.
-        group_id: Optional existing group ID.
-        metadata: Release metadata.
-        cover_url: Cover image URL.
-        track_data: Track information.
-        hybrid: Whether this is a hybrid release.
-        lossy_master: Whether this is lossy mastered.
-        spectral_urls: Spectral image URLs.
-        spectral_ids: Spectral IDs.
-        lossy_comment: Lossy approval comment.
-        request_id: Request ID to fill.
-        source_url: Source URL.
-        seedbox_uploader: Seedbox upload manager.
-        source: Media source.
-        base_url: Base URL for the original upload.
-        uploaded: Where to add the URL of each torrent uploaded.
-        max_path_length: The longest in-torrent path each conversion may have: the run's limit, the one its album
-            folder was checked against. None: gazelle_site's run limit, without the trackers named with -t.
-    """
-    if uploaded is None:
-        uploaded = []
-    if max_path_length is None:
-        max_path_length = _max_path_length_for_run(gazelle_site)
-
-    base_path = path
-    # A dry run's go into its scratch directory, removed with it.
-    output_dir = dryrun.scratch_dir() if dryrun.active() else cfg.directory.download_directory
-
-    override_lossy_comment = (
-        f"Transcode of {base_url}\n[hide=Lossy comment of original torrent]{lossy_comment}[/hide]\n"
-        if lossy_comment
-        else None
-    )
-
-    for task in selected_tasks:
-        click.secho(f"\nProcessing: {task['name']}", fg="cyan", bold=True)
-
-        if task["action"] == "downconvert":
-            # Execute downconversion
-            try:
-                sample_rate, new_path = await convert_folder(
-                    base_path,
-                    bit_depth=task["target_bitdepth"],
-                    sample_rate=task["target_sample_rate"],
-                    output_dir=output_dir,
-                )
-            except UploadError as e:
-                click.secho(f"  {e}", fg="red", bold=True)
-                continue
-            await anyio.sleep(0.1)
-
-            # The upload describes the converted files (their sample rate, for one), not the source's.
-            # A folder that was already there may hold other files: then it is not this conversion.
-            try:
-                converted_info = _by_source_name(new_path, gather_audio_info(new_path))
-            except (UploadError, MutagenError) as e:
-                click.secho(f"  Could not read {new_path} ({e}): not uploading it.", fg="red", bold=True)
-                continue
-            if converted_info.keys() != track_data.keys():
-                click.secho(
-                    f"  {new_path} does not hold the same audio files as the source: not uploading it.",
-                    fg="red",
-                    bold=True,
-                )
-                continue
-            # Nor is it this conversion if its files are not in the format the task makes.
-            expected = (task["target_bitdepth"], task["target_sample_rate"])
-            found = sorted({(info["precision"], info["sample rate"]) for info in converted_info.values()})
-            if found != [expected]:
-                found_formats = ", ".join(f"{bits} bit {rate / 1000:g} kHz" for bits, rate in found)
-                click.secho(
-                    f"  {new_path} holds {found_formats} files, not {expected[0]} bit {expected[1] / 1000:g} kHz: "
-                    "not uploading it.",
-                    fg="red",
-                    bold=True,
-                )
-                continue
-            conversion_track_data = {name: {**track, **converted_info[name]} for name, track in track_data.items()}
-
-            # Update metadata for this conversion
-            conversion_metadata = metadata.copy()
-            conversion_metadata["format"], conversion_metadata["encoding"] = downconversion_format(task)
-
-            # Generate description for conversion
-            description = generate_conversion_description(base_url, sample_rate, task["target_bitdepth"])
-            click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(new_path, conversion_metadata["scene"], max_path_length=max_path_length)
-
-            # Upload the converted version
-            torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
-                gazelle_site,
-                new_path,
-                group_id,
-                conversion_metadata,
-                cover_url,
-                conversion_track_data,
-                hybrid,
-                lossy_master,
-                spectral_urls,
-                spectral_ids,
-                lossy_comment,
-                request_id,
-                source_url,
-                seedbox_uploader,
-                source=source,
-                override_description=description,
-                override_lossy_comment=override_lossy_comment,
-            )
-            uploaded.append(new_url)
-
-            click.secho(f"  ✓ {task['name']} conversion completed", fg="green")
-
-        elif task["action"] == "transcode":
-            # Call transcode function
-            click.secho(f"  Target encoding: {task['encoding']}", fg="white")
-
-            # Execute transcoding
-            try:
-                transcoded_path = await transcode_folder(base_path, task["encoding"], output_dir=output_dir)
-            except UploadError as e:
-                click.secho(f"  {e}", fg="red", bold=True)
-                continue
-            await anyio.sleep(0.1)
-
-            # Update metadata for this transcode
-            transcode_metadata = metadata.copy()
-            transcode_metadata["format"], transcode_metadata["encoding"] = downconversion_format(task)
-            transcode_metadata["encoding_vbr"] = {"320": False, "V0": True}[task["encoding"]]
-
-            # Generate description for transcode
-            description = generate_transcode_description(base_url, task["encoding"])
-            click.secho(f"  Generated description: {description[:100]}...", fg="blue")
-            await check_folder_structure(transcoded_path, transcode_metadata["scene"], max_path_length=max_path_length)
-
-            # Upload the transcoded version
-            torrent_id, group_id, torrent_path, torrent_content, new_url = await upload_and_report(
-                gazelle_site,
-                transcoded_path,
-                group_id,
-                transcode_metadata,
-                cover_url,
-                track_data,
-                hybrid,
-                lossy_master,
-                spectral_urls,
-                spectral_ids,
-                lossy_comment,
-                request_id,
-                source_url,
-                seedbox_uploader,
-                source=source,
-                override_description=description,
-                override_lossy_comment=override_lossy_comment,
-            )
-            uploaded.append(new_url)
-
-            click.secho(f"  ✓ {task['name']} transcode completed", fg="green")
-
-
-async def upload_and_report(
-    gazelle_site: "BaseGazelleApi",
-    path: str,
-    group_id: int | None,
-    metadata: dict[str, Any],
-    cover_url: str | None,
-    track_data: dict[str, Any],
-    hybrid: bool,
-    lossy_master: bool,
-    spectral_urls: dict[int, list[str]] | None,
-    spectral_ids: dict[int, str] | None,
-    lossy_comment: str | None,
-    request_id: int | str | None,
-    source_url: str | None,
-    seedbox_uploader: UploadManager,
-    source: str | None = None,
-    override_description: str | None = None,
-    override_lossy_comment: str | None = None,
-    conversion_note: str | None = None,
-) -> tuple[int, int, str, Any, str]:
-    """Upload torrent and report lossy master if needed.
-
-    Args:
-        gazelle_site: The tracker API instance.
-        path: Path to the album folder.
-        group_id: Optional existing group ID.
-        metadata: Release metadata.
-        cover_url: Cover image URL.
-        track_data: Track information.
-        hybrid: Whether this is a hybrid release.
-        lossy_master: Whether this is lossy mastered.
-        spectral_urls: Spectral image URLs.
-        spectral_ids: Spectral IDs.
-        lossy_comment: Lossy approval comment.
-        request_id: Request ID to fill.
-        source_url: Source URL.
-        seedbox_uploader: Seedbox upload manager.
-        source: Media source.
-        override_description: Override torrent description.
-        override_lossy_comment: Override lossy comment.
-        conversion_note: How the folder was converted, added to the generated description.
-
-    Returns:
-        Tuple of (torrent_id, group_id, torrent_path, torrent_content, url). In a dry run, what
-        prepare_and_upload gives: nothing is reported, seeded or copied.
-    """
-    # Prepare upload parameters
-    upload_kwargs = {
-        "gazelle_site": gazelle_site,
-        "path": path,
-        "group_id": group_id,
-        "metadata": metadata,
-        "cover_url": cover_url,
-        "track_data": track_data,
-        "hybrid": hybrid,
-        "lossy_master": lossy_master,
-        "spectral_urls": spectral_urls,
-        "spectral_ids": spectral_ids,
-        "lossy_comment": lossy_comment,
-        "request_id": request_id,
-        "source_url": source_url,
-        **({"override_description": override_description} if override_description else {}),
-        **({"conversion_note": conversion_note} if conversion_note else {}),
-    }
-
-    # Execute upload
-    torrent_id, group_id, torrent_path, torrent_content = await prepare_and_upload(**upload_kwargs)
-
-    # Handle lossy master reporting
-    if lossy_master:
-        await report_lossy_master(
-            gazelle_site,
-            torrent_id,
-            spectral_urls,
-            spectral_ids,
-            source,
-            override_lossy_comment if override_lossy_comment else lossy_comment,
-            source_url=source_url,
-        )
-
-    url = finish_upload(
-        gazelle_site, path, torrent_id, torrent_path, torrent_content, metadata.get("format", ""), seedbox_uploader
-    )
-    return torrent_id, group_id, torrent_path, torrent_content, url
-
-
-def finish_upload(
-    gazelle_site: "BaseGazelleApi",
-    path: str,
-    torrent_id: int,
-    torrent_path: str,
-    torrent_content: Any,
-    format: str,
-    seedbox_uploader: UploadManager,
-    *,
-    copy_folder: bool = True,
-) -> str:
-    """Write the uploaded torrent with its URL, and queue it for the seedboxes.
-
-    The tracker has the torrent by now: the .torrent rewrite or the clipboard failing says so and does not stop the
-    rest, so the torrent is still reported and its seedbox tasks still queued.
-
-    Args:
-        gazelle_site: The tracker it was uploaded to.
-        path: The folder the torrent was made from.
-        torrent_id: The uploaded torrent's ID.
-        torrent_path: Where the .torrent file is.
-        torrent_content: The torrent.
-        format: The torrent's format, e.g. "FLAC".
-        seedbox_uploader: Seedbox upload manager.
-        copy_folder: Copy the folder to the seedboxes before adding the torrent. False when they already have
-            it, as for a cross-upload, whose files already seed the other tracker's torrent.
-
-    Returns:
-        The uploaded torrent's URL. In a dry run, nothing is written, seeded or copied.
-    """
-    url = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
-    if dryrun.active():
-        # Nothing was uploaded: nothing to seed, and no URL to copy.
-        if cfg.upload.upload_to_seedbox:
-            dryrun.say("not copying it to a seedbox or adding it to a torrent client.")
-        return url
-
-    torrent_content.comment = url
-    _rewrite_torrent(torrent_content, torrent_path)
-
-    # Display success message
-    click.secho(
-        f"Successfully uploaded {url} ({os.path.basename(path)}).",
-        fg="green",
-        bold=True,
-    )
-    record.note_upload(gazelle_site.site_code, format, url)
-
-    # Copy URL to clipboard
-    if cfg.upload.description.copy_uploaded_url_to_clipboard:
-        clipboard_copy(url)
-
-    # Add to seedbox upload queue
-    if cfg.upload.upload_to_seedbox:
-        click.secho("Add uploading task.", fg="green")
-        is_flac = format.upper() == "FLAC"
-        site_code = gazelle_site.site_code
-        if copy_folder:
-            seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac, site_code=site_code)
-        seedbox_uploader.add_upload_task(
-            torrent_path, task_type="seed", is_flac=is_flac, folder=path, site_code=site_code
-        )
-
-    return url
-
-
-def _rewrite_torrent(torrent_content: "Torrent", torrent_path: str) -> None:
-    """Write the torrent over its .torrent file whole, or not at all.
-
-    Written to a new file of its own beside it first, then moved over it: a write that fails part way (a full disk)
-    leaves the .torrent the upload was made from, without the URL, which seeds just as well. No other file is written
-    or removed, whatever its name.
-    """
-    folder, name = os.path.split(torrent_path)
-    temp = None
-    try:
-        handle, temp = tempfile.mkstemp(dir=folder or ".", prefix=f"{name}.", suffix=".part")
-        os.close(handle)
-        # mkstemp's file is readable by its owner only: give it the mode of the .torrent it replaces, which a
-        # torrent client running as another user may read.
-        with suppress(FileNotFoundError):
-            shutil.copymode(torrent_path, temp)
-        torrent_content.write(temp, overwrite=True)
-        os.replace(temp, torrent_path)
-    except (OSError, TorfError) as err:
-        if temp is not None:
-            with suppress(OSError):
-                os.remove(temp)
-        click.secho(f"Could not add the URL to {torrent_path} ({err}): it seeds without it.", fg="yellow")
 
 
 def convert_genres(genres):

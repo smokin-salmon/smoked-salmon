@@ -24,6 +24,7 @@ import salmon.tagger.foldername
 import salmon.trackers
 import salmon.uploader
 import salmon.uploader.spectrals
+from helpers.uploader_fakes import stub_uploader
 from salmon import cfg
 from salmon.config.validations import Seedbox
 from salmon.trackers.base import BaseGazelleApi
@@ -342,24 +343,26 @@ def fake_upload_world(
         "genres": ["Electronic"],
     }
     track_data = {"01. one.flac": _track(1, "One"), "02. two.flac": _track(2, "Two")}
-    for name, fake in {
-        "gather_audio_info": _returning({}),
-        "check_hybrid": _returning(False),
-        "gather_tags": _returning({}),
-        "construct_rls_data": _returning_async(rls_data),
-        "mqa_test": _returning_async(),
-        "check_spectrals": _lossy_with_spectrals,
-        "get_metadata": _returning_async((metadata, None)),
-        "review_metadata_with_ai": _returning_async(metadata),
-        "tag_files": _retag,
-        "check_tags": _returning_async({}),
-        "rename_files": _rename_files,
-        "check_folder_structure": _returning_async(),
-        "concat_track_data": _returning(track_data),
-        "transcode_folder": _transcode,
-        **fakes,
-    }.items():
-        monkeypatch.setattr(salmon.uploader, name, fake)
+    stub_uploader(
+        monkeypatch,
+        {
+            "gather_audio_info": _returning({}),
+            "check_hybrid": _returning(False),
+            "gather_tags": _returning({}),
+            "construct_rls_data": _returning_async(rls_data),
+            "mqa_test": _returning_async(),
+            "check_spectrals": _lossy_with_spectrals,
+            "get_metadata": _returning_async((metadata, None)),
+            "review_metadata_with_ai": _returning_async(metadata),
+            "tag_files": _retag,
+            "check_tags": _returning_async({}),
+            "rename_files": _rename_files,
+            "check_folder_structure": _returning_async(),
+            "concat_track_data": _returning(track_data),
+            "transcode_folder": _transcode,
+            **fakes,
+        },
+    )
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
     # A config with yes_all on would answer the questions the run is meant to ask.
     monkeypatch.setattr(cfg.upload, "yes_all", False)

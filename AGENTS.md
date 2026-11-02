@@ -45,7 +45,7 @@ the test run never reads a developer's config.
 | `src/salmon/data/config.reference.toml` | Documents every key, commented out with its default; a test keeps it in sync with the schema |
 | `src/salmon/data/version.toml` | Version and changelog. **See Releases below before touching it** |
 | `src/salmon/trackers/` | Tracker API clients. `base.py` (`BaseGazelleApi`) does all tracker HTTP |
-| `src/salmon/uploader/` | The upload flow (`__init__.py`), dupe/request checks, spectrals, seedbox, torrent clients |
+| `src/salmon/uploader/` | The upload flow (`__init__.py`; a torrent's upload in `upload.py`, its conversions' in `conversion_upload.py`), dupe/request checks, spectrals, seedbox, torrent clients |
 | `src/salmon/sources/` | Shared HTTP scraper per store (Qobuz, Tidal, Apple Music, Bandcamp, ...) |
 | `src/salmon/search/` | Store search, built on `sources/` |
 | `src/salmon/tagger/` | Metadata gathering, review, retagging, renaming; `tagger/sources/` parses store metadata |

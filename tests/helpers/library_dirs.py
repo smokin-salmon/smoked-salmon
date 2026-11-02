@@ -19,6 +19,7 @@ import salmon.tagger
 import salmon.tagger.foldername
 import salmon.trackers
 import salmon.uploader
+from helpers.uploader_fakes import stub_uploader
 from salmon import cfg
 from salmon.trackers.base import TagRules
 
@@ -161,30 +162,32 @@ def _run_up(
         "cover": cover_url,
         "genres": [],
     }
-    for name, fake in {
-        "confirm_group_upload": _returning_async({}),
-        "gather_audio_info": _returning({}),
-        "check_hybrid": _returning(False),
-        "gather_tags": _returning({}),
-        "construct_rls_data": _returning_async(rls_data),
-        "mqa_test": _returning_async(),
-        "check_spectrals": _returning_async((False, None)),
-        "get_metadata": _returning_async((metadata, None)),
-        "review_metadata_with_ai": _returning_async(metadata),
-        "tag_files": _retag,
-        "check_tags": _returning_async({}),
-        "rename_files": _rename_files,
-        "check_folder_structure": _returning_async(),
-        "concat_track_data": _returning({"01. one.flac": {"sample rate": 44100}}),
-        "resolve_cover_url": _returning_async((True, None)),
-        "print_torrents": _returning_async({}),
-        "recheck_edition": _same_group,
-        "UploadManager": FakeUploadManager,
-        "transcode_folder": transcode,
-        "upload_and_report": upload_and_report,
-        **fakes,
-    }.items():
-        monkeypatch.setattr(salmon.uploader, name, fake)
+    stub_uploader(
+        monkeypatch,
+        {
+            "confirm_group_upload": _returning_async({}),
+            "gather_audio_info": _returning({}),
+            "check_hybrid": _returning(False),
+            "gather_tags": _returning({}),
+            "construct_rls_data": _returning_async(rls_data),
+            "mqa_test": _returning_async(),
+            "check_spectrals": _returning_async((False, None)),
+            "get_metadata": _returning_async((metadata, None)),
+            "review_metadata_with_ai": _returning_async(metadata),
+            "tag_files": _retag,
+            "check_tags": _returning_async({}),
+            "rename_files": _rename_files,
+            "check_folder_structure": _returning_async(),
+            "concat_track_data": _returning({"01. one.flac": {"sample rate": 44100}}),
+            "resolve_cover_url": _returning_async((True, None)),
+            "print_torrents": _returning_async({}),
+            "recheck_edition": _same_group,
+            "UploadManager": FakeUploadManager,
+            "transcode_folder": transcode,
+            "upload_and_report": upload_and_report,
+            **fakes,
+        },
+    )
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
     # A config with yes_all on would answer the questions the run is meant to ask.
     monkeypatch.setattr(cfg.upload, "yes_all", False)

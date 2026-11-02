@@ -37,6 +37,7 @@ from salmon.trackers.red import RedApi
 from salmon.uploader import conversion_choice
 from salmon.uploader import spectrals as spectrals_module
 from salmon.uploader.seedbox import UploadManager
+from salmon.uploader.upload import _rewrite_torrent
 
 # Covers and spectrals go to the fake image host.
 pytestmark = pytest.mark.usefixtures("image_uploads")
@@ -564,7 +565,7 @@ def test_the_torrent_rewrite_touches_no_file_but_its_own(monkeypatch, tmp_path, 
 
         monkeypatch.setattr(Torrent, "write", full_disk)
 
-    salmon.uploader._rewrite_torrent(torrent, str(torrent_path))
+    _rewrite_torrent(torrent, str(torrent_path))
 
     assert beside.read_bytes() == b"not salmon's"
     assert beside.is_symlink() == (kind == "symlink")
@@ -581,7 +582,7 @@ def test_the_rewritten_torrent_keeps_the_mode_of_the_one_it_replaces(tmp_path) -
     # Readable by a torrent client running as another user of the same group.
     torrent_path.chmod(0o640)
 
-    salmon.uploader._rewrite_torrent(torrent, str(torrent_path))
+    _rewrite_torrent(torrent, str(torrent_path))
 
     assert Torrent.read(torrent_path).comment == torrent.comment
     assert torrent_path.stat().st_mode & 0o777 == 0o640
