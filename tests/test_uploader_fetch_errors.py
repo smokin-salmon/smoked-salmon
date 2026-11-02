@@ -1,9 +1,9 @@
 """What print_torrents (dupe_checker) and _confirm_request_id (request_checker) print and do when
 fetching a group or request fails.
 
-An unknown ID gives RequestFailedError, and only that case says "does not exist". A network
-failure (retried 5xx) or a login problem (401) must not: on master they wrongly print "does not
-exist" too, which could make a user believe a group is gone and upload a duplicate.
+None of them says "does not exist", an unknown ID included: RequestFailedError is also a redirect
+to another site, an oversized answer or any other failure, and a user who believes a group is gone
+may upload a duplicate. Each names the reason.
 """
 
 import sys
@@ -63,7 +63,7 @@ def _unauthorized(request: web.Request) -> web.Response:
     return web.json_response({"status": "failure", "error": "bad api key"}, status=401)
 
 
-async def _group_unknown_id_says_does_not_exist(status: int, capsys: pytest.CaptureFixture) -> None:
+async def _group_unknown_id_names_the_reason(status: int, capsys: pytest.CaptureFixture) -> None:
     hits = []
 
     async def ajax(request: web.Request) -> web.Response:
@@ -76,7 +76,8 @@ async def _group_unknown_id_says_does_not_exist(status: int, capsys: pytest.Capt
         with pytest.raises(click.exceptions.Abort):
             await print_torrents(api, 5)
         out = capsys.readouterr().out
-        assert "5 does not exist on RED" in out
+        assert "does not exist" not in out
+        assert "Could not fetch group 5 from RED" in out
         assert "bad id parameter" in out
         assert hits == ["torrentgroup"]
     finally:
@@ -126,7 +127,7 @@ async def _group_login_failure_says_could_not_fetch(capsys: pytest.CaptureFixtur
         await runner.cleanup()
 
 
-async def _request_unknown_id_says_does_not_exist(status: int, capsys: pytest.CaptureFixture) -> None:
+async def _request_unknown_id_names_the_reason(status: int, capsys: pytest.CaptureFixture) -> None:
     hits = []
 
     async def ajax(request: web.Request) -> web.Response:
@@ -139,7 +140,8 @@ async def _request_unknown_id_says_does_not_exist(status: int, capsys: pytest.Ca
         with pytest.raises(click.exceptions.Abort):
             await _confirm_request_id(api, 7)
         out = capsys.readouterr().out
-        assert "7 does not exist on RED" in out
+        assert "does not exist" not in out
+        assert "Could not fetch request 7 from RED" in out
         assert "bad id parameter" in out
         assert hits == ["request"]
     finally:
@@ -189,12 +191,12 @@ async def _request_login_failure_says_could_not_fetch(capsys: pytest.CaptureFixt
         await runner.cleanup()
 
 
-def test_group_unknown_id_200_says_does_not_exist(capsys: pytest.CaptureFixture) -> None:
-    anyio.run(_group_unknown_id_says_does_not_exist, 200, capsys)
+def test_group_unknown_id_200_names_the_reason(capsys: pytest.CaptureFixture) -> None:
+    anyio.run(_group_unknown_id_names_the_reason, 200, capsys)
 
 
-def test_group_unknown_id_400_says_does_not_exist(capsys: pytest.CaptureFixture) -> None:
-    anyio.run(_group_unknown_id_says_does_not_exist, 400, capsys)
+def test_group_unknown_id_400_names_the_reason(capsys: pytest.CaptureFixture) -> None:
+    anyio.run(_group_unknown_id_names_the_reason, 400, capsys)
 
 
 def test_group_network_failure_says_could_not_fetch(capsys: pytest.CaptureFixture) -> None:
@@ -205,12 +207,12 @@ def test_group_login_failure_says_could_not_fetch(capsys: pytest.CaptureFixture)
     anyio.run(_group_login_failure_says_could_not_fetch, capsys)
 
 
-def test_request_unknown_id_200_says_does_not_exist(capsys: pytest.CaptureFixture) -> None:
-    anyio.run(_request_unknown_id_says_does_not_exist, 200, capsys)
+def test_request_unknown_id_200_names_the_reason(capsys: pytest.CaptureFixture) -> None:
+    anyio.run(_request_unknown_id_names_the_reason, 200, capsys)
 
 
-def test_request_unknown_id_400_says_does_not_exist(capsys: pytest.CaptureFixture) -> None:
-    anyio.run(_request_unknown_id_says_does_not_exist, 400, capsys)
+def test_request_unknown_id_400_names_the_reason(capsys: pytest.CaptureFixture) -> None:
+    anyio.run(_request_unknown_id_names_the_reason, 400, capsys)
 
 
 def test_request_network_failure_says_could_not_fetch(capsys: pytest.CaptureFixture) -> None:

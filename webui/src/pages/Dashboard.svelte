@@ -1,6 +1,6 @@
 <script lang="ts">
   import { apiGet, apiPost } from '../lib/api'
-  import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
+  import { FINISHED, QUEUED, jobStore, type Job } from '../lib/jobs.svelte'
 
   interface Space {
     free_bytes: number | null
@@ -109,7 +109,7 @@
   // Live, from the job events.
   const running = $derived(jobStore.jobs.filter((j) => j.status === 'running').length)
   const waiting = $derived(jobStore.jobs.filter((j) => j.status === 'waiting').length)
-  const queued = $derived(jobStore.jobs.filter((j) => j.status === 'queued').length)
+  const queued = $derived(jobStore.jobs.filter((j) => QUEUED.includes(j.status)).length)
   const finished = $derived(jobStore.jobs.filter((j) => FINISHED.includes(j.status)).length)
 </script>
 

@@ -312,6 +312,26 @@ def test_making_spectrals_over_a_folder_that_is_not_salmons_is_refused(monkeypat
     assert (holder[theirs] / "theirs.txt").read_bytes() == b"theirs"
 
 
+def test_making_spectrals_over_a_folder_holding_a_link_named_like_a_spectral_is_refused(
+    monkeypatch, dirs, tmp_path
+) -> None:
+    _downloads, seeding = dirs
+    _tmp_dir(monkeypatch, tmp_path)
+    album = _album(seeding / "Album")
+    specs = _specs(album)
+    specs.mkdir()
+    (specs / "01 Zoom.png").write_bytes(b"png")
+    theirs = tmp_path / "theirs.png"
+    theirs.write_bytes(b"theirs")
+    (specs / "01 Full.png").symlink_to(theirs)
+
+    with pytest.raises(UploadError, match="salmon did not make"):
+        create_specs_folder(str(album))
+
+    assert (specs / "01 Full.png").is_symlink()
+    assert theirs.read_bytes() == b"theirs"
+
+
 def test_deleting_spectrals_leaves_a_folder_holding_files_salmon_did_not_make(monkeypatch, dirs) -> None:
     _downloads, seeding = dirs
     album = _album(seeding / "Album")

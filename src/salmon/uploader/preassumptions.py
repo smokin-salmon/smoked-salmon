@@ -22,6 +22,7 @@ def print_preassumptions(
     spectrals: tuple[int, ...],
     encoding: str | None,
     spectrals_after: bool,
+    spectral_url_tracks: tuple[int, ...] = (),
 ) -> None:
     """Print what all the passed CLI options will do.
 
@@ -34,6 +35,7 @@ def print_preassumptions(
         spectrals: Track numbers for spectrals.
         encoding: Audio encoding tuple.
         spectrals_after: Check spectrals after upload.
+        spectral_url_tracks: The tracks whose spectrals were given by URL (--spectral-url), uploaded already.
     """
     click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
     second = []
@@ -53,13 +55,18 @@ def print_preassumptions(
                 f"Uploading spectrals {', '.join(str(s) for s in spectrals)}.",
                 fg="yellow",
             )
+    if spectral_url_tracks:
+        click.secho(
+            f"Using the spectrals given by URL for tracks {', '.join(str(s) for s in spectral_url_tracks)}.",
+            fg="yellow",
+        )
     if spectrals_after:
         click.secho(
             "Assessing spectrals after upload.",
             fg="yellow",
         )
 
-    if lossy and not spectrals:
+    if lossy and not spectrals and not spectral_url_tracks:
         raise UploadError("\nYou cannot report a torrent for lossy master without spectrals.")
 
 

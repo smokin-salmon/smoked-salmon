@@ -4,10 +4,10 @@ import asyncio
 import socket
 
 import aiohttp
-import conftest  # pyright: ignore[reportMissingImports]
+import conftest
 import pytest
 from aiohttp import web
-from conftest import NetworkBlockedError  # pyright: ignore[reportMissingImports]
+from conftest import NetworkBlockedError
 
 
 def test_a_public_address_is_refused_and_named() -> None:

@@ -1,3 +1,4 @@
+import contextlib
 import errno
 import hashlib
 import os
@@ -7,7 +8,8 @@ import re
 import shutil
 import tempfile
 import textwrap
-from collections.abc import Awaitable, Callable, Sequence
+from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
+from contextlib import asynccontextmanager
 from functools import partial
 from pathlib import Path
 from subprocess import DEVNULL
@@ -16,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 import anyio
 import anyio.to_thread
 import asyncclick as click
+from tqdm import tqdm
 
 # pyoxipng 9.1.1 has wheels up to CPython 3.13 only, and building it needs Rust (and MSVC on Windows), so
 # pyproject.toml installs it below 3.14 only and spectrals are left uncompressed on newer Pythons (re-saving them with
@@ -25,7 +28,7 @@ try:
 except ImportError:
     oxipng = None
 
-from salmon import cfg, dryrun, interaction
+from salmon import cfg, dryrun, interaction, prepared
 from salmon.common import flush_stdin, get_audio_files
 from salmon.common.files import process_files
 from salmon.errors import (
@@ -53,6 +56,7 @@ async def check_spectrals(
     format: str = "FLAC",
     hosts: str | None = None,
     offer_deletion: bool = True,
+    generation: "SpectralsInBackground | None" = None,
 ) -> tuple[bool | None, dict[int, str] | None]:
     """Run spectral checker functions.
 
@@ -70,6 +74,8 @@ async def check_spectrals(
         hosts: Where the spectrals go, as the prompt names them: see specs_hosts_text. Defaults to
             the shared specs_uploader.
         offer_deletion: Whether the lossy master prompt offers to delete the music folder.
+        generation: The spectrals being made in the background for this album and spectral_ids (see
+            spectrals_in_background): used instead of making them.
 
     Returns:
         Tuple of (lossy_master, spectral_ids).
@@ -81,10 +87,16 @@ async def check_spectrals(
         )
         return None, None
     click.secho("\nChecking lossy master / spectrals...", fg="cyan", bold=True)
-    spectrals_path = create_specs_folder(path)
+    generated: dict[int, str] | None = None
+    if generation is not None:
+        spectrals_path, generated = await generation.result()
+    else:
+        spectrals_path = create_specs_folder(path)
     all_spectral_ids: dict[int, str] = {}
     if not spectral_ids:
-        all_spectral_ids = await generate_spectrals_all(path, spectrals_path, audio_info)
+        all_spectral_ids = (
+            generated if generated is not None else await generate_spectrals_all(path, spectrals_path, audio_info)
+        )
         # Printed whether or not the question follows: salmon specs prints it and asks nothing.
         marks_found = False
         if lossy_master is None:
@@ -108,7 +120,11 @@ async def check_spectrals(
             await _compress_spectrals(spectrals_path, spectral_ids)
     else:
         # Before the plots are written: this compresses every image in the folder.
-        spectral_ids = await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
+        spectral_ids = (
+            generated
+            if generated is not None
+            else await generate_spectrals_ids(path, spectral_ids, spectrals_path, audio_info)
+        )
         if lossy_master is None:
             marks_found = await print_frequency_analysis(path, spectrals_path, spectral_ids)
             lossy_master = await prompt_lossy_master(force_prompt_lossy_master, offer_deletion, marks_found)
@@ -231,12 +247,14 @@ class SpectralUploads:
     deletes them.
     """
 
-    def __init__(self, album_path: str, trackers: Sequence[str]) -> None:
+    def __init__(self, album_path: str, trackers: Sequence[str], given: dict[int, list[str]] | None = None) -> None:
         """Set up the uploads for an album.
 
         Args:
             album_path: The album folder, as the spectrals were made from it.
             trackers: The site codes of every tracker the run may upload to.
+            given: The spectrals' URLs, uploaded already (--spectral-url), by spectral ID: every tracker takes them,
+                and nothing is uploaded.
         """
         self._album_path = album_path
         self._path = get_spectrals_path(album_path)
@@ -244,6 +262,7 @@ class SpectralUploads:
         self._hosts = {cfg.image.host_for(tracker, "specs_uploader") for tracker in self._trackers}
         self._urls: dict[str, dict[int, list[str]] | None] = {}
         self._scratch: str | None = None
+        self._given = given
 
     def hosts_text(self) -> str:
         """Name where the spectrals go, for prompts: see specs_hosts_text."""
@@ -259,6 +278,8 @@ class SpectralUploads:
         Returns:
             The URLs of each spectral by track ID, or None if there are none: see upload_spectrals.
         """
+        if self._given is not None:
+            return {sid: list(urls) for sid, urls in self._given.items()}
         host = cfg.image.host_for(tracker, "specs_uploader")
         if host not in self._urls:
             self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker)
@@ -280,7 +301,10 @@ class SpectralUploads:
         carry_specs_claim(old_real, self._path)
 
     async def close(self) -> None:
-        """Delete the spectral files, if they are still there."""
+        """Delete the spectral files, if they are still there. With spectrals given by URL, the run made none."""
+        if self._given is not None:
+            # What is at the spectrals path now is not this run's: a folder there may be in a torrent seeding.
+            return
         await _delete_spectrals(self._path)
         if self._scratch is not None:
             shutil.rmtree(self._scratch, ignore_errors=True)
@@ -331,6 +355,131 @@ async def generate_spectrals_ids(
     return await _generate_spectrals(path, files_li, spectrals_path, audio_info)
 
 
+class SpectralsInBackground:
+    """An album's spectrals, made in the background: see spectrals_in_background."""
+
+    def __init__(self, path: str, audio_info: dict[str, Any], spectral_ids: tuple[int, ...]) -> None:
+        self._path = path
+        self._audio_info = audio_info
+        self._spectral_ids = spectral_ids
+        # Set once the files are listed, or the folder or the list failed.
+        self._listed = anyio.Event()
+        self._done = anyio.Event()
+        self._total: int | None = None
+        self._finished = 0
+        self._bar: tqdm | None = None
+        self._spectrals_path: str | None = None
+        self._results: list[tuple[int, str]] | None = None
+        self._error: Exception | None = None
+        self.taken = False
+
+    async def _run(self) -> None:
+        try:
+            self._spectrals_path = create_specs_folder(self._path)
+            if self._spectral_ids:
+                wanted = get_wanted_filenames(list(self._audio_info), self._spectral_ids)
+                files = [fn for fn in get_audio_files(self._path) if fn in wanted]
+            else:
+                files = get_audio_files(self._path, True)
+            self._total = len(files)
+            self._listed.set()
+            self._results = await _run_sox(
+                self._path, files, self._spectrals_path, self._audio_info, on_done=self._one_done
+            )
+        except Exception as e:
+            # Kept for result() to raise: raised here, it would cancel whatever the user is doing.
+            self._error = e
+        self._listed.set()
+        self._done.set()
+
+    def _one_done(self) -> None:
+        self._finished += 1
+        if self._bar is not None:
+            self._bar.update(1)
+
+    async def result(self) -> tuple[str, dict[int, str]]:
+        """Wait for the spectrals, printing what making them in the foreground prints, and compressing them as it does.
+
+        Returns:
+            The spectrals folder, and the spectrals by spectral ID: see generate_spectrals_all and
+            generate_spectrals_ids.
+        """
+        self.taken = True
+        await self._listed.wait()
+        if self._total is not None:
+            # The progress bar starts where the background work is.
+            with tqdm(total=self._total, initial=self._finished, desc="Generating Spectrals", colour="cyan") as bar:
+                self._bar = bar
+                try:
+                    await self._done.wait()
+                finally:
+                    self._bar = None
+        if self._error is not None:
+            raise self._error
+        assert self._spectrals_path is not None and self._results is not None
+        # Given IDs are compressed now, all spectrals once the user has picked some: as in the foreground.
+        return self._spectrals_path, await _finish_spectrals(
+            self._spectrals_path, self._results, compress=bool(self._spectral_ids)
+        )
+
+    def discard(self) -> None:
+        """Remove the spectrals folder, unless result() was called: the run left before its spectral step."""
+        if self.taken or self._spectrals_path is None:
+            return
+        with contextlib.suppress(OSError, UploadError):
+            make_way_for_spectrals(self._spectrals_path)
+
+
+@asynccontextmanager
+async def spectrals_in_background(
+    path: str, audio_info: dict[str, Any], spectral_ids: tuple[int, ...], format: str
+) -> AsyncIterator[SpectralsInBackground | None]:
+    """Make the spectrals check_spectrals would make, in the background while the block runs.
+
+    They are made as check_spectrals makes them: the same folder, images and number of sox runs at once. Nothing
+    is printed until the block passes the generation to check_spectrals, which prints what it would have
+    printed making them, so nothing lands in the middle of a question the block asks.
+
+    Leaving the block, whichever way, cancels the generation if it is still running (its sox processes are killed);
+    an error it had is dropped with it if check_spectrals never took it. If the block raised before check_spectrals
+    took it, the spectrals folder is removed: the run never reached its spectral step.
+
+    Args:
+        path: The album folder.
+        audio_info: Its audio file information.
+        spectral_ids: The spectral IDs given to check_spectrals, or () for all.
+        format: The release's format: spectrals are only made for FLAC.
+
+    Yields:
+        The running generation, to pass to check_spectrals, or None if check_spectrals makes none for these
+        arguments.
+    """
+    if format != "FLAC" or spectral_ids == (0,):
+        yield None
+        return
+    generation = SpectralsInBackground(path, audio_info, spectral_ids)
+    raised: BaseException | None = None
+    try:
+        try:
+            async with anyio.create_task_group() as tg:
+                tg.start_soon(generation._run)
+                try:
+                    yield generation
+                finally:
+                    tg.cancel_scope.cancel()
+        except BaseExceptionGroup as group:
+            # The generation keeps its own error for result(), so the group only holds what the block raised.
+            # Raise that as it is, as the block would have without a task group around it.
+            if len(group.exceptions) != 1:
+                raise
+            raised = group.exceptions[0]
+        if raised is not None:
+            raise raised
+    except BaseException:
+        generation.discard()
+        raise
+
+
 def get_wanted_filenames(filenames, track_ids):
     """Get the filenames from the spectrals specified as cli options."""
     try:
@@ -358,6 +507,16 @@ async def _generate_spectral_for_file(
 
     full_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Full.png")
     zoom_spectral_path = os.path.join(spectrals_path, f"{idx + 1:02d} Zoom.png")
+
+    # A file prepared before the upload ran is not run through sox again (salmon.prepared).
+    kept = prepared.result("spectral", path, os.path.join(path, filename))
+    if kept is not None:
+        try:
+            for made, wanted in zip(kept, (full_spectral_path, zoom_spectral_path), strict=True):
+                shutil.copyfile(made, wanted)
+            return (idx + 1, filename)
+        except OSError:
+            pass  # The preparation's images are gone: made again below.
 
     # Run the process for generating the spectrals
     await anyio.run_process(
@@ -426,26 +585,36 @@ async def _generate_spectrals(
     Returns:
         Sorted dictionary mapping track numbers to filenames.
     """
-    spectral_ids: dict[int, str] = {}
+    results = await _run_sox(path, files_li, spectrals_path, audio_info)
+    return await _finish_spectrals(spectrals_path, results, compress)
 
-    results = await process_files(
+
+async def _run_sox(
+    path: str,
+    files_li: list[str],
+    spectrals_path: str,
+    audio_info: dict[str, Any],
+    on_done: Callable[[], None] | None = None,
+) -> list[tuple[int, str]]:
+    """Make each file's spectral images, showing a progress bar, or with on_done, printing nothing: see process_files.
+
+    Returns:
+        The 1-based track number and filename of each file, in files_li's order.
+    """
+    return await process_files(
         files_li,
         lambda file, idx: _generate_spectral_for_file(path, file, spectrals_path, audio_info, idx),
         "Generating Spectrals",
+        on_done=on_done,
     )
 
+
+async def _finish_spectrals(spectrals_path: str, results: list[tuple[int, str]], compress: bool) -> dict[int, str]:
+    """Say the spectrals are made, compress them if asked and configured, and give them by spectral ID."""
     click.secho("Finished generating spectrals.", fg="green")
     if compress and cfg.upload.compression.compress_spectrals:
         await _compress_spectrals(spectrals_path)
-
-    for result in results:
-        if result:
-            track_num, filename = result
-            spectral_ids[track_num] = filename
-
-    sorted_spectrals = dict(sorted(spectral_ids.items()))
-
-    return sorted_spectrals
+    return dict(sorted(results))
 
 
 def _spectral_images(spectrals_path: str) -> list[str]:
@@ -672,7 +841,8 @@ async def view_spectrals(
     """Open the generated spectrals in an image viewer: the terminal's way of showing them.
 
     The native viewer draws them in the terminal itself when it speaks the Kitty graphics protocol (over SSH too),
-    unless terminal_spectrals_viewer is off, and otherwise opens feh, Quick Look or the default Windows viewer.
+    unless terminal_spectrals_viewer is off, and otherwise opens feh (or the desktop's default image viewer),
+    Quick Look or the default Windows viewer.
 
     Args:
         spectrals_path: Path to spectrals folder.
@@ -689,7 +859,7 @@ async def view_spectrals(
     elif platform.system() == "Windows":
         _open_specs_in_windows(spectrals_path)
     else:
-        await _open_specs_in_feh(spectrals_path)
+        await _open_specs_on_linux(spectrals_path)
 
 
 async def _open_specs_in_preview(spectrals_path: str) -> None:
@@ -703,6 +873,68 @@ async def _open_specs_in_preview(spectrals_path: str) -> None:
         return
     args = ["qlmanage", "-p", *(os.path.join(spectrals_path, f) for f in files)]
     await anyio.run_process(args, check=False)
+
+
+async def _open_specs_on_linux(spectrals_path: str) -> None:
+    """Open spectral images in feh, or without it in the desktop's default image viewer.
+
+    feh speaks only X11, so it needs DISPLAY; a Wayland session without XWayland goes to the desktop's viewer.
+    Without any display, or any viewer, it says where the spectrals are instead.
+
+    Args:
+        spectrals_path: Path to the spectrals directory.
+    """
+    if not _spectral_images(spectrals_path):
+        return
+    if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
+        _say_no_viewer(spectrals_path, "there is no display to open an image viewer on")
+    elif os.environ.get("DISPLAY") and shutil.which("feh"):
+        await _open_specs_in_feh(spectrals_path)
+    elif failure := await _open_specs_in_default_viewer(spectrals_path):
+        feh = "feh needs an X display" if shutil.which("feh") else "feh is not installed"
+        _say_no_viewer(spectrals_path, f"{feh}, and {failure}")
+
+
+async def _default_png_viewer() -> str | None:
+    """The desktop entry xdg-mime names as the default viewer of PNGs, or None without one."""
+    if not shutil.which("xdg-mime"):
+        return None
+    result = await anyio.run_process(["xdg-mime", "query", "default", "image/png"], check=False, stderr=DEVNULL)
+    if result.returncode != 0:
+        return None
+    return result.stdout.decode(errors="replace").strip() or None
+
+
+async def _open_specs_in_default_viewer(spectrals_path: str) -> str | None:
+    """Open the first spectral in the desktop's default image viewer, and say where the others are.
+
+    Most viewers page through the rest of the folder, but not every PNG handler does (GIMP, a browser).
+
+    Args:
+        spectrals_path: Path to the spectrals directory.
+
+    Returns:
+        Why no viewer was opened, or None once one was.
+    """
+    viewer = await _default_png_viewer() if shutil.which("xdg-open") else None
+    if not viewer:
+        return "there is no default image viewer"
+    first = _spectral_images(spectrals_path)[0]
+    click.secho(f"Opening {first} with {viewer}. All the spectrals are in {spectrals_path}.", fg="cyan")
+    result = await anyio.run_process(
+        ["xdg-open", os.path.join(spectrals_path, first)], check=False, stdout=DEVNULL, stderr=DEVNULL
+    )
+    if result.returncode != 0:
+        return f"the default image viewer ({viewer}) failed to open"
+    return None
+
+
+def _say_no_viewer(spectrals_path: str, reason: str) -> None:
+    click.secho(
+        f"Could not show the spectrals: {reason}. They are in {spectrals_path}. Install feh, set a default "
+        "image viewer, or set native_spectrals_viewer = false to view them in the browser.",
+        fg="yellow",
+    )
 
 
 async def _open_specs_in_feh(spectrals_path: str) -> None:
@@ -1049,7 +1281,9 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
     bbcode = "[hide=Spectrals]"
     for spec_id, urls in spectral_urls.items():
         filename = re.sub(r"[\[\]]", "_", spectral_ids[spec_id])
-        bbcode += f"[b]{filename} Full[/b]\n[img={urls[0]}]\n[hide=Zoomed][img={urls[1]}][/hide]\n\n"
+        bbcode += f"[b]{filename} Full[/b]\n[img={urls[0]}]\n"
+        # A track given by URL (--spectral-url) may have its Full image only.
+        bbcode += f"[hide=Zoomed][img={urls[1]}][/hide]\n\n" if len(urls) > 1 else "\n"
     bbcode += "[/hide]\n"
     return bbcode
 

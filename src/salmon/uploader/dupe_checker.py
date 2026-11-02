@@ -13,7 +13,7 @@ import asyncclick as click
 from salmon import cfg, interaction
 from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
 from salmon.common.strings import artist_keys, comparable
-from salmon.errors import AbortAndDeleteFolder, RequestError, RequestFailedError, SkipTracker
+from salmon.errors import AbortAndDeleteFolder, RequestError, SkipTracker
 from salmon.trackers.base import hold_request_messages
 from salmon.uploader.upload import generate_catno
 
@@ -803,10 +803,8 @@ async def print_torrents(
     if rset is None:
         try:
             rset = _group_as_result(await gazelle_site.torrentgroup(group_id))
-        except RequestFailedError as err:
-            click.secho(f"{group_id} does not exist on {gazelle_site.site_string} ({err}).", fg="red")
-            raise click.Abort from None
         except RequestError as err:
+            # Never "does not exist": a redirect, an oversized answer or any failure raises RequestFailedError too.
             click.secho(f"Could not fetch group {group_id} from {gazelle_site.site_string}: {err}", fg="red")
             raise click.Abort from None
 

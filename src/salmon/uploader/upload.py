@@ -1,22 +1,27 @@
 import os
 import re
+import shutil
+import tempfile
 import unicodedata
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Literal
 
 import anyio
 import asyncclick as click
-from torf import Torrent
+from torf import TorfError, Torrent
 
 from salmon import cfg, dryrun
-from salmon.common import UploadFiles, str_to_int_if_int
+from salmon.common import UploadFiles, clipboard_copy, str_to_int_if_int
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import UploadRefusedError
 from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.sources import METASOURCES
-from salmon.uploader.seedbox import warn_unmatched_normalization
+from salmon.uploader import record
+from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
 from salmon.uploader.spectrals import (
     make_spectral_bbcode,
+    report_lossy_master,
 )
 
 if TYPE_CHECKING:
@@ -648,3 +653,180 @@ def generate_source_links(metadata_urls: list[str], source_url: str | None = Non
         result += " | ".join(unmatched_urls)
 
     return result
+
+
+async def upload_and_report(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    group_id: int | None,
+    metadata: dict[str, Any],
+    cover_url: str | None,
+    track_data: dict[str, Any],
+    hybrid: bool,
+    lossy_master: bool,
+    spectral_urls: dict[int, list[str]] | None,
+    spectral_ids: dict[int, str] | None,
+    lossy_comment: str | None,
+    request_id: int | str | None,
+    source_url: str | None,
+    seedbox_uploader: UploadManager,
+    source: str | None = None,
+    override_description: str | None = None,
+    override_lossy_comment: str | None = None,
+    conversion_note: str | None = None,
+) -> tuple[int, int, str, Any, str]:
+    """Upload torrent and report lossy master if needed.
+
+    Args:
+        gazelle_site: The tracker API instance.
+        path: Path to the album folder.
+        group_id: Optional existing group ID.
+        metadata: Release metadata.
+        cover_url: Cover image URL.
+        track_data: Track information.
+        hybrid: Whether this is a hybrid release.
+        lossy_master: Whether this is lossy mastered.
+        spectral_urls: Spectral image URLs.
+        spectral_ids: Spectral IDs.
+        lossy_comment: Lossy approval comment.
+        request_id: Request ID to fill.
+        source_url: Source URL.
+        seedbox_uploader: Seedbox upload manager.
+        source: Media source.
+        override_description: Override torrent description.
+        override_lossy_comment: Override lossy comment.
+        conversion_note: How the folder was converted, added to the generated description.
+
+    Returns:
+        Tuple of (torrent_id, group_id, torrent_path, torrent_content, url). In a dry run, what
+        prepare_and_upload gives: nothing is reported, seeded or copied.
+    """
+    # Prepare upload parameters
+    upload_kwargs = {
+        "gazelle_site": gazelle_site,
+        "path": path,
+        "group_id": group_id,
+        "metadata": metadata,
+        "cover_url": cover_url,
+        "track_data": track_data,
+        "hybrid": hybrid,
+        "lossy_master": lossy_master,
+        "spectral_urls": spectral_urls,
+        "spectral_ids": spectral_ids,
+        "lossy_comment": lossy_comment,
+        "request_id": request_id,
+        "source_url": source_url,
+        **({"override_description": override_description} if override_description else {}),
+        **({"conversion_note": conversion_note} if conversion_note else {}),
+    }
+
+    # Execute upload
+    torrent_id, group_id, torrent_path, torrent_content = await prepare_and_upload(**upload_kwargs)
+
+    # Handle lossy master reporting
+    if lossy_master:
+        await report_lossy_master(
+            gazelle_site,
+            torrent_id,
+            spectral_urls,
+            spectral_ids,
+            source,
+            override_lossy_comment if override_lossy_comment else lossy_comment,
+            source_url=source_url,
+        )
+
+    url = finish_upload(
+        gazelle_site, path, torrent_id, torrent_path, torrent_content, metadata.get("format", ""), seedbox_uploader
+    )
+    return torrent_id, group_id, torrent_path, torrent_content, url
+
+
+def finish_upload(
+    gazelle_site: "BaseGazelleApi",
+    path: str,
+    torrent_id: int,
+    torrent_path: str,
+    torrent_content: Any,
+    format: str,
+    seedbox_uploader: UploadManager,
+    *,
+    copy_folder: bool = True,
+) -> str:
+    """Write the uploaded torrent with its URL, and queue it for the seedboxes.
+
+    The tracker has the torrent by now: the .torrent rewrite or the clipboard failing says so and does not stop the
+    rest, so the torrent is still reported and its seedbox tasks still queued.
+
+    Args:
+        gazelle_site: The tracker it was uploaded to.
+        path: The folder the torrent was made from.
+        torrent_id: The uploaded torrent's ID.
+        torrent_path: Where the .torrent file is.
+        torrent_content: The torrent.
+        format: The torrent's format, e.g. "FLAC".
+        seedbox_uploader: Seedbox upload manager.
+        copy_folder: Copy the folder to the seedboxes before adding the torrent. False when they already have
+            it, as for a cross-upload, whose files already seed the other tracker's torrent.
+
+    Returns:
+        The uploaded torrent's URL. In a dry run, nothing is written, seeded or copied.
+    """
+    url = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
+    if dryrun.active():
+        # Nothing was uploaded: nothing to seed, and no URL to copy.
+        if cfg.upload.upload_to_seedbox:
+            dryrun.say("not copying it to a seedbox or adding it to a torrent client.")
+        return url
+
+    torrent_content.comment = url
+    _rewrite_torrent(torrent_content, torrent_path)
+
+    # Display success message
+    click.secho(
+        f"Successfully uploaded {url} ({os.path.basename(path)}).",
+        fg="green",
+        bold=True,
+    )
+    record.note_upload(gazelle_site.site_code, format, url)
+
+    # Copy URL to clipboard
+    if cfg.upload.description.copy_uploaded_url_to_clipboard:
+        clipboard_copy(url)
+
+    # Add to seedbox upload queue
+    if cfg.upload.upload_to_seedbox:
+        click.secho("Add uploading task.", fg="green")
+        is_flac = format.upper() == "FLAC"
+        site_code = gazelle_site.site_code
+        if copy_folder:
+            seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=is_flac, site_code=site_code)
+        seedbox_uploader.add_upload_task(
+            torrent_path, task_type="seed", is_flac=is_flac, folder=path, site_code=site_code
+        )
+
+    return url
+
+
+def _rewrite_torrent(torrent_content: "Torrent", torrent_path: str) -> None:
+    """Write the torrent over its .torrent file whole, or not at all.
+
+    Written to a new file of its own beside it first, then moved over it: a write that fails part way (a full disk)
+    leaves the .torrent the upload was made from, without the URL, which seeds just as well. No other file is written
+    or removed, whatever its name.
+    """
+    folder, name = os.path.split(torrent_path)
+    temp = None
+    try:
+        handle, temp = tempfile.mkstemp(dir=folder or ".", prefix=f"{name}.", suffix=".part")
+        os.close(handle)
+        # mkstemp's file is readable by its owner only: give it the mode of the .torrent it replaces, which a
+        # torrent client running as another user may read.
+        with suppress(FileNotFoundError):
+            shutil.copymode(torrent_path, temp)
+        torrent_content.write(temp, overwrite=True)
+        os.replace(temp, torrent_path)
+    except (OSError, TorfError) as err:
+        if temp is not None:
+            with suppress(OSError):
+                os.remove(temp)
+        click.secho(f"Could not add the URL to {torrent_path} ({err}): it seeds without it.", fg="yellow")

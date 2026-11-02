@@ -1,17 +1,19 @@
 """salmon up and 16bit files above 48 kHz (#618): OPS refuses them, RED warns, other files are untouched.
 
-The runs go against the local fake tracker of test_uploader_dry_run, never a real one.
+The runs go against the local fake tracker of helpers.uploader_dry_run, never a real one.
 """
 
 import shutil
 from pathlib import Path
 
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     _album,
     _returning,
     _returning_async,
     _run_up,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see images)
 )
 from torf import Torrent
@@ -99,7 +101,7 @@ def test_16bit_96khz_is_refused_for_ops_before_any_request_and_its_group_search(
         resolve_existing_group=resolve_existing_group,
     )
 
-    assert run.result.exit_code == 0, run.result.output
+    assert run.result.exit_code == 1, run.result.output
     assert run.result.output.count(REFUSED) == 1
     assert "Traceback" not in run.result.output
     assert groups_resolved == []
@@ -107,6 +109,35 @@ def test_16bit_96khz_is_refused_for_ops_before_any_request_and_its_group_search(
     assert "browse" not in {sent.query.get("action") for sent in run.tracker.sent}
     assert images == []
     assert run.queued == []
+
+
+def test_16bit_96khz_for_ops_alone_stops_before_the_checks_and_the_review(monkeypatch, dirs) -> None:
+    downloads, torrents = dirs
+    reached: list[str] = []
+
+    async def mqa_test(*_args, **_kwargs) -> None:
+        reached.append("checks")
+
+    async def get_metadata(*_args, **_kwargs):
+        reached.append("review")
+        raise AssertionError("reviewed")
+
+    run = _run_up(
+        monkeypatch,
+        _album(downloads.parent / "seeding" / "Album"),
+        torrents,
+        trackers=("OPS",),
+        multi_tracker_upload=False,
+        gather_audio_info=_returning(_files(96000)),
+        mqa_test=mqa_test,
+        get_metadata=get_metadata,
+    )
+
+    # A failed run, not a user's no: it exits 1.
+    assert run.result.exit_code == 1, run.result.output
+    assert run.result.output.count(REFUSED) == 1
+    assert "Aborting upload" not in run.result.output
+    assert reached == []
 
 
 def test_16bit_96khz_is_warned_about_for_red_and_uploaded(monkeypatch, dirs) -> None:

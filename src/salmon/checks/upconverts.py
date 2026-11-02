@@ -8,7 +8,7 @@ import asyncclick as click
 import msgspec
 from mutagen import MutagenError, flac
 
-from salmon import interaction
+from salmon import interaction, prepared
 from salmon.common.files import process_files
 from salmon.errors import UpconvertCheckError, UpconvertCheckNotApplicable
 
@@ -76,11 +76,16 @@ async def test_upconverted(path: str) -> bool | None:
                     flac_files.append(os.path.join(root, f))
         if not flac_files:
             click.secho("No FLAC files found to check.", fg="yellow")
-        results = await process_files(
-            flac_files,
-            partial(_upconvert_check_handler, skipped=skipped),
-            "Checking FLAC files for upconverts",
-        )
+        handler = partial(_upconvert_check_handler, skipped=skipped)
+
+        async def check(filepath: str, idx: int) -> UpconvertCheckResult | None:
+            # A file prepared before the upload ran is not checked again (salmon.prepared), and is named as it is now.
+            kept = prepared.result("upconvert", path, filepath)
+            if kept is not None:
+                return msgspec.structs.replace(kept, filepath=filepath)
+            return await handler(filepath, idx)
+
+        results = await process_files(flac_files, check, "Checking FLAC files for upconverts")
         valid_results = [r for r in results if r is not None]
         _say_if_all_skipped(skipped, len(flac_files))
         _display_results(valid_results)

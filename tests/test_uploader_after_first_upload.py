@@ -1,7 +1,7 @@
 """What the tracker loop does once the first torrent is up: the --spectrals-after check runs once, right after
 it, however many trackers follow (#567), and nothing offers to delete the folder that torrent seeds from (#568).
 
-The runs here go against the local fake tracker of test_uploader_dry_run and a fake image host, never a real one.
+The runs here go against the local fake tracker of helpers.uploader_dry_run and a fake image host, never a real one.
 """
 
 import errno
@@ -13,7 +13,7 @@ from typing import Any
 import pyperclip
 import pytest
 from aiohttp import web
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     API_KEYS,
     FIRST_TORRENT_ID,
     RENAMED,
@@ -21,6 +21,8 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     _album,
     _lossy_with_spectrals,
     _run_up,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 from torf import Torrent, WriteError
@@ -32,8 +34,10 @@ from salmon.errors import RequestError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
+from salmon.uploader import conversion_choice
 from salmon.uploader import spectrals as spectrals_module
 from salmon.uploader.seedbox import UploadManager
+from salmon.uploader.upload import _rewrite_torrent
 
 # Covers and spectrals go to the fake image host.
 pytestmark = pytest.mark.usefixtures("image_uploads")
@@ -86,7 +90,7 @@ def _checks(monkeypatch) -> list[tuple[str, int]]:
         return await real(gazelle_site, path, torrent_id, *args, **kwargs)
 
     monkeypatch.setattr(salmon.uploader, "post_upload_spectral_check", recording)
-    # The check's spectrals, as test_uploader_dry_run makes them: a lossy master, track 1's spectrals.
+    # The check's spectrals, as helpers.uploader_dry_run makes them: a lossy master, track 1's spectrals.
     monkeypatch.setattr(spectrals_module, "check_spectrals", _lossy_with_spectrals)
     return checks
 
@@ -434,12 +438,13 @@ def test_an_upload_whose_group_id_does_not_come_back_offers_no_conversions(monke
     _trackers(monkeypatch, "RED")
     seedbox_runs = _seedbox_runs(monkeypatch)
     offered: list[bool] = []
-    choose = salmon.uploader.prompt_downconversion_choice
+    choose = conversion_choice.prompt_downconversion_choice
 
     async def recording(*args: Any, **kwargs: Any) -> Any:
         offered.append(True)
         return await choose(*args, **kwargs)
 
+    monkeypatch.setattr(conversion_choice, "prompt_downconversion_choice", recording)
     # A new group on RED.
     run = _run_up(
         monkeypatch,
@@ -447,7 +452,6 @@ def test_an_upload_whose_group_id_does_not_come_back_offers_no_conversions(monke
         torrents,
         input="\n\n",
         tracker=NoGroupIdTracker(),
-        prompt_downconversion_choice=recording,
     )
 
     assert run.result.exit_code == 0, run.result.output
@@ -561,7 +565,7 @@ def test_the_torrent_rewrite_touches_no_file_but_its_own(monkeypatch, tmp_path, 
 
         monkeypatch.setattr(Torrent, "write", full_disk)
 
-    salmon.uploader._rewrite_torrent(torrent, str(torrent_path))
+    _rewrite_torrent(torrent, str(torrent_path))
 
     assert beside.read_bytes() == b"not salmon's"
     assert beside.is_symlink() == (kind == "symlink")
@@ -578,7 +582,7 @@ def test_the_rewritten_torrent_keeps_the_mode_of_the_one_it_replaces(tmp_path) -
     # Readable by a torrent client running as another user of the same group.
     torrent_path.chmod(0o640)
 
-    salmon.uploader._rewrite_torrent(torrent, str(torrent_path))
+    _rewrite_torrent(torrent, str(torrent_path))
 
     assert Torrent.read(torrent_path).comment == torrent.comment
     assert torrent_path.stat().st_mode & 0o777 == 0o640

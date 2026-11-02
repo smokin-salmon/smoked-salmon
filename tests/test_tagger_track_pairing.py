@@ -570,3 +570,15 @@ def test_a_track_number_int_cannot_read_is_not_numbered():
     tracks = create_track_list(tags, False)
 
     assert tracks["1"]["1"]["numbered"] is False
+
+
+def test_a_scraped_track_without_a_local_one_merges_nothing():
+    # Pairing is checked before any track is merged, so base comes out as it went in.
+    base = {"1": {"1": _track("Work", "1")}}
+    meta = {"1": {"1": _track("Work (Original Mix)", "1"), "2": _track("Django (Original Mix)", "2")}}
+    untouched = deepcopy(base)
+
+    with pytest.raises(TrackCombineError, match="Disc 1 track 2 does not exist"):
+        combine_tracks(base, deepcopy(meta), True)
+
+    assert base == untouched

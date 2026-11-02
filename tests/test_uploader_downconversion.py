@@ -1,23 +1,23 @@
 """Downconversion uploads: a converted folder that cannot be read is skipped, the rest go on."""
 
 import contextlib
-import struct
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 import anyio
 import pytest
+from helpers.uploader_downconversion import SOURCE_NAMES, _write_flac
+from helpers.uploader_fakes import stub_uploader
 
 import salmon.trackers
 import salmon.uploader as uploader
 from salmon.errors import UploadError
+from salmon.uploader import conversion_upload
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
     from salmon.uploader.seedbox import UploadManager
-
-SOURCE_NAMES = ("01. Track.flac", "02. Track.flac")
 
 
 def _track_data(*rates: int) -> dict[str, Any]:
@@ -37,15 +37,6 @@ def _track_data(*rates: int) -> dict[str, Any]:
 
 def _metadata() -> dict[str, Any]:
     return {"format": "FLAC", "encoding": "24bit Lossless", "encoding_vbr": False, "scene": False, "cover": None}
-
-
-def _write_flac(path: Path, sample_rate: int, bits: int) -> None:
-    """Write a FLAC with only a STREAMINFO block, enough for its audio info to be read."""
-    streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
-    streaminfo += ((sample_rate << 44) | (1 << 41) | ((bits - 1) << 36) | sample_rate * 200).to_bytes(8, "big")
-    streaminfo += bytes(16)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
 
 
 def _unreadable_flac(folder: Path) -> None:
@@ -86,9 +77,9 @@ def _fake_conversion(monkeypatch, tmp_path: Path, broken) -> list[tuple[str, int
         seedbox_uploader.add_upload_task(path, task_type="folder", is_flac=True)
         return 1, 5, "", None, f"https://tracker.test/torrents.php?torrentid={len(uploads)}"
 
-    monkeypatch.setattr(uploader, "convert_folder", convert_folder)
-    monkeypatch.setattr(uploader, "check_folder_structure", check_folder_structure)
-    monkeypatch.setattr(uploader, "upload_and_report", upload_and_report)
+    monkeypatch.setattr(conversion_upload, "convert_folder", convert_folder)
+    monkeypatch.setattr(conversion_upload, "check_folder_structure", check_folder_structure)
+    monkeypatch.setattr(conversion_upload, "upload_and_report", upload_and_report)
     return uploads
 
 
@@ -181,7 +172,7 @@ def _run_downconversions() -> None:
     assert [(task["target_bitdepth"], task["target_sample_rate"]) for task in tasks] == [(24, 96000), (16, 48000)]
 
     anyio.run(
-        uploader.execute_downconversion_tasks,
+        conversion_upload.execute_downconversion_tasks,
         tasks,
         "/release",
         cast("BaseGazelleApi", cast("object", SimpleNamespace(site_string="RED"))),
@@ -243,7 +234,7 @@ def test_a_hybrid_release_is_offered_no_downconversion_and_no_file_is_converted(
     async def transcode_folder(path, encoding, output_dir=None):
         return str(tmp_path / f"mp3 {encoding}")
 
-    monkeypatch.setattr(uploader, "transcode_folder", transcode_folder)
+    monkeypatch.setattr(conversion_upload, "transcode_folder", transcode_folder)
     uploads, manager = _run_up(
         monkeypatch, tmp_path, _unreadable_flac, _track_data(96000, 44100), convert_folder=convert_folder, choice="*"
     )
@@ -259,14 +250,14 @@ def _run_up(monkeypatch, tmp_path: Path, broken, track_data, convert_folder=None
     read_audio_info = uploader.gather_audio_info
     uploads = _fake_conversion(monkeypatch, tmp_path, broken)
     if convert_folder is not None:
-        monkeypatch.setattr(uploader, "convert_folder", convert_folder)
-    conversion_upload = uploader.upload_and_report
+        monkeypatch.setattr(conversion_upload, "convert_folder", convert_folder)
+    upload_conversion = conversion_upload.upload_and_report
 
     async def main_upload_then_conversions(gazelle_site, path, *args, **kwargs):
         if path == "/release":
             args[11].add_upload_task(path, task_type="folder", is_flac=True)
             return 1, 5, "", None, "https://tracker.test/torrents.php?torrentid=1"
-        return await conversion_upload(gazelle_site, path, *args, **kwargs)
+        return await upload_conversion(gazelle_site, path, *args, **kwargs)
 
     def gather_audio_info(path, *args, **kwargs):
         # The release itself is stubbed; the converted folders are read for real.
@@ -274,28 +265,30 @@ def _run_up(monkeypatch, tmp_path: Path, broken, track_data, convert_folder=None
 
     manager = FakeUploadManager()
     metadata = {**_metadata(), "artists": [("Artist", "main")], "title": "Album", "catno": "CAT1"}
-    for name, fake in {
-        "staged_source": _staged_as_is,
-        "gather_audio_info": gather_audio_info,
-        "check_hybrid": _returning(False),
-        "standardize_tags": _returning(),
-        "gather_tags": _returning({}),
-        "construct_rls_data": _returning_async(metadata),
-        "mqa_test": _returning_async(),
-        "upload_upconvert_test": _returning_async(),
-        "check_spectrals": _returning_async((False, None)),
-        "get_metadata": _returning_async((metadata, None)),
-        "edit_metadata": _returning_async(("/release", metadata, {}, {})),
-        "concat_track_data": _returning(track_data),
-        "check_embedded_pictures": _returning(),
-        "resolve_cover_url": _returning_async((True, None)),
-        "UploadManager": lambda: manager,
-        "check_requests": _returning_async(None),
-        "upload_and_report": main_upload_then_conversions,
-        "print_torrents": _returning_async({}),
-        "recheck_edition": _same_group,
-    }.items():
-        monkeypatch.setattr(uploader, name, fake)
+    stub_uploader(
+        monkeypatch,
+        {
+            "staged_source": _staged_as_is,
+            "gather_audio_info": gather_audio_info,
+            "check_hybrid": _returning(False),
+            "standardize_tags": _returning(),
+            "gather_tags": _returning({}),
+            "construct_rls_data": _returning_async(metadata),
+            "mqa_test": _returning_async(),
+            "upload_upconvert_test": _returning_async(),
+            "check_spectrals": _returning_async((False, None)),
+            "get_metadata": _returning_async((metadata, None)),
+            "edit_metadata": _returning_async(("/release", metadata, {}, {})),
+            "concat_track_data": _returning(track_data),
+            "check_embedded_pictures": _returning(),
+            "resolve_cover_url": _returning_async((True, None)),
+            "UploadManager": lambda: manager,
+            "check_requests": _returning_async(None),
+            "upload_and_report": main_upload_then_conversions,
+            "print_torrents": _returning_async({}),
+            "recheck_edition": _same_group,
+        },
+    )
     monkeypatch.setattr(uploader.cfg.upload, "yes_all", False)
     monkeypatch.setattr(uploader.cfg.upload.requests, "last_minute_dupe_check", False)
     monkeypatch.setattr(uploader.cfg.image, "embed_missing_cover", False)

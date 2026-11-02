@@ -11,7 +11,6 @@ import shutil
 import stat
 import sys
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
@@ -20,11 +19,10 @@ from typing import Any
 import anyio
 import pytest
 from aiohttp.test_utils import TestClient
-from mutagen.flac import FLAC
-from test_checks_all_command import FAKE_FLAC, _snapshot  # pyright: ignore[reportMissingImports]
-from test_checks_mqa import _write_flac  # pyright: ignore[reportMissingImports]
-from test_uploader_frequency import RATE, music_like, write_flac  # pyright: ignore[reportMissingImports]
-from test_webui_jobs import (  # pyright: ignore[reportMissingImports]
+from helpers.checks_all_command import FAKE_FLAC, _snapshot
+from helpers.checks_mqa import _write_flac
+from helpers.uploader_frequency import RATE, music_like, write_flac
+from helpers.webui_jobs import (
     AUTH,
     _answer,
     _finished,
@@ -32,6 +30,7 @@ from test_webui_jobs import (  # pyright: ignore[reportMissingImports]
     _until,
     _with_app,
 )
+from helpers.webui_pages import Roots, _album, _refused_paths
 
 import salmon.config
 import salmon.trackers
@@ -45,26 +44,6 @@ from salmon.webui import jobs, paths
 from salmon.webui.jobs import FINISHED, JobManager
 
 SECRET = "planted-red-api-key-5e1d"
-
-
-@dataclass
-class Roots:
-    downloads: Path
-    library: Path
-    outside: Path
-    scratch: Path
-
-
-def _album(folder: Path, tracks: int = 2) -> Path:
-    folder.mkdir(parents=True)
-    for number in range(1, tracks + 1):
-        track = folder / f"{number:02d} Track {number}.flac"
-        _write_flac(track, mqa_marker=False)
-        tags = FLAC(track)
-        tags.update({"artist": "Artist", "album": "Album", "date": "2020", "title": f"Track {number}"})
-        tags["tracknumber"] = str(number)
-        tags.save()
-    return folder
 
 
 @pytest.fixture(autouse=True)
@@ -137,29 +116,6 @@ async def _browse(client: TestClient, path: str | None = None, **extra: str) -> 
 
 
 # --- The album folder rule ------------------------------------------------------------------
-
-
-def _refused_paths(roots: Roots) -> dict[str, tuple[str, int]]:
-    """Each folder the rule refuses, and the status it is refused with."""
-    _album(roots.outside / "Album")
-    album = _album(roots.downloads / "Album")
-    (roots.downloads / "out").symlink_to(roots.outside / "Album")
-    (roots.downloads / "linked").symlink_to(album)
-    (roots.downloads / "empty").mkdir()
-    (roots.library / "into").symlink_to(roots.downloads)
-    return {
-        "outside the roots": (str(roots.outside / "Album"), 403),
-        "..": (f"{roots.downloads}/../outside/Album", 403),
-        "encoded ..": (f"{roots.downloads}/%2e%2e/outside/Album", 404),
-        "a symlink out of a root": (str(roots.downloads / "out"), 403),
-        "a root": (str(roots.downloads), 403),
-        "a library root": (str(roots.library), 403),
-        "a symlinked album folder": (str(roots.downloads / "linked"), 403),
-        "a folder linked into a library from outside": (str(roots.library / "into" / "Album"), 403),
-        "a folder with no audio": (str(roots.downloads / "empty"), 422),
-        "a relative path": ("downloads/Album", 400),
-        "a missing folder": (str(roots.downloads / "missing"), 404),
-    }
 
 
 def test_the_album_folder_rule_refuses_each_folder_it_must(roots: Roots) -> None:

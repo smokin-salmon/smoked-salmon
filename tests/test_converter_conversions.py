@@ -8,15 +8,17 @@ from types import SimpleNamespace
 import anyio
 import pytest
 from asyncclick.testing import CliRunner
-from test_uploader_downconversion import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_downconversion import (
     SOURCE_NAMES,
     _write_flac,
 )
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     RENAMED,
     _album,
     _run_up,
     _torrent_lines,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see the tests that use it)
 )
 

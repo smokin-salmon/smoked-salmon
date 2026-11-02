@@ -2,7 +2,7 @@
 
 Every prompt stays and any typed answer still wins; only the answer an empty reply gives changes. Files
 that contradict themselves give no default. The runs here go against the local fake tracker of
-test_uploader_dry_run and a fake image host, never a real one.
+helpers.uploader_dry_run and a fake image host, never a real one.
 """
 
 from functools import partial
@@ -13,13 +13,16 @@ from typing import Any, cast
 import anyio
 import asyncclick as click
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     API_KEYS,
     _album,
     _returning,
     _returning_async,
     _run_up,
     _write_flac,
+)
+from helpers.uploader_fakes import stub_uploader
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 
@@ -604,7 +607,7 @@ def _uploads_by_tracker(monkeypatch) -> list[str]:
             sites.append(gazelle_site.site_code)
         return await real(gazelle_site, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", recording)
+    stub_uploader(monkeypatch, {"upload_and_report": recording})
     return sites
 
 
@@ -678,10 +681,10 @@ def test_a_skipped_named_tracker_moves_on_to_the_next(monkeypatch, tmp_path, dir
     sites = _uploads_by_tracker(monkeypatch)
     real = salmon.uploader.resolve_cover_url
 
-    async def no_cover_on_red(gazelle_site, *args: Any) -> tuple[bool, str | None]:
+    async def no_cover_on_red(gazelle_site, *args: Any, **kwargs: Any) -> tuple[bool, str | None]:
         if gazelle_site.site_code == "RED":
             return False, None
-        return await real(gazelle_site, *args)
+        return await real(gazelle_site, *args, **kwargs)
 
     monkeypatch.setattr(salmon.uploader, "resolve_cover_url", no_cover_on_red)
 
@@ -704,7 +707,7 @@ def test_a_failed_named_tracker_moves_on_to_the_next(monkeypatch, tmp_path, dirs
             raise RequestError("refused")
         return await recording(gazelle_site, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "upload_and_report", red_fails)
+    stub_uploader(monkeypatch, {"upload_and_report": red_fails})
 
     run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, trackers=("RED", "OPS"), input="\n\n")
 
@@ -748,6 +751,59 @@ def test_a_named_tracker_whose_group_search_fails_moves_on_to_the_next(monkeypat
     assert run.result.exit_code == 0, run.result.output
     assert "Upload to OPS failed: search failed" in run.result.output
     assert sites == ["RED", "DIC"]
+
+
+def _first_trackers_search_fails(monkeypatch) -> None:
+    real = dupe_checker.fetch_existing_group_candidates
+
+    async def red_search_fails(gazelle_site, *args: Any, **kwargs: Any) -> Any:
+        if gazelle_site.site_code == "RED":
+            raise RequestError("search failed")
+        return await real(gazelle_site, *args, **kwargs)
+
+    monkeypatch.setattr(dupe_checker, "fetch_existing_group_candidates", red_search_fails)
+
+
+def test_a_first_tracker_whose_group_search_fails_is_skipped_for_the_next(monkeypatch, tmp_path, dirs) -> None:
+    _downloads, torrents = dirs
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
+    sites = _uploads_by_tracker(monkeypatch)
+    _first_trackers_search_fails(monkeypatch)
+
+    run = _run_up(
+        monkeypatch,
+        _album(tmp_path / "Album"),
+        torrents,
+        args=("--request", "4242"),
+        trackers=("RED", "OPS"),
+        input="\n",
+    )
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Could not search RED for dupes (search failed): skipping it." in run.result.output
+    assert sites == ["OPS"]
+    # The request given is RED's: skipping RED must not send it to OPS.
+    assert "Not filling request 4242: it is RED's." in run.result.output
+    uploads = [dict(sent.fields) for sent in run.tracker.sent if sent.query.get("action") == "upload"]
+    assert uploads
+    assert all(upload.get("requestid") != "4242" for upload in uploads)
+
+
+def test_a_first_tracker_whose_group_search_fails_ends_the_run_when_none_can_follow(
+    monkeypatch, tmp_path, dirs
+) -> None:
+    _downloads, torrents = dirs
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
+    sites = _uploads_by_tracker(monkeypatch)
+    _first_trackers_search_fails(monkeypatch)
+
+    run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, trackers=("RED",), input="")
+
+    # A failed run, not a user's no: it exits 1, without the "Aborting upload" of a declined one.
+    assert run.result.exit_code == 1, run.result.output
+    assert "Could not search RED for dupes: search failed" in run.result.output
+    assert "Aborting upload" not in run.result.output
+    assert sites == []
 
 
 def test_aborting_at_a_named_tracker_keeps_what_is_up(monkeypatch, tmp_path, dirs) -> None:

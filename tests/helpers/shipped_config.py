@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-DATA = Path(__file__).parent.parent / "src" / "salmon" / "data"
+DATA = Path(__file__).parent.parent.parent / "src" / "salmon" / "data"
 DEFAULT_CONFIG = DATA / "config.default.toml"
 REFERENCE_CONFIG = DATA / "config.reference.toml"
 
@@ -21,6 +21,6 @@ def shipped_config(music: Path, torrents: Path) -> str:
         ("download_directory = '.music'", f"download_directory = '{music.as_posix()}'"),
         ("dottorrents_dir = '.torrents'", f"dottorrents_dir = '{torrents.as_posix()}'"),
     ):
-        assert old in text, f"default config no longer contains {old!r}; update tests/shipped_config.py"
+        assert old in text, f"default config no longer contains {old!r}; update tests/helpers/shipped_config.py"
         text = text.replace(old, new)
     return text + fake_trackers()
