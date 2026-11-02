@@ -26,6 +26,8 @@
   let uploadFor = $state<Record<string, string>>({})
   let uploading = $state<string[]>([])
   let copied = $state('')
+  // The tracks ticked for each job's upload: until the user changes it, the job's own default selection.
+  let pickedFor = $state<Record<string, number[]>>({})
 
   // The jobs still running, and the finished ones whose images are kept: newest first.
   const shown = $derived(
@@ -82,13 +84,31 @@
     return options?.trackers.find((t) => t.code === code)?.spectrals_host ?? options?.spectrals_host ?? '…'
   }
 
+  /** The tracks of a job, by number, as its result lists them. */
+  function trackList(job: Job): { id: number; name: string }[] {
+    const tracks = (job.result as { tracks?: Record<string, string> } | null)?.tracks ?? {}
+    return Object.entries(tracks)
+      .map(([id, name]) => ({ id: Number(id), name }))
+      .sort((a, b) => a.id - b.id)
+  }
+
+  /** The tracks `salmon specs` would upload by default, worked out by the server when the job finished. */
+  function picked(job: Job): number[] {
+    return pickedFor[job.id] ?? (job.result as { selection?: number[] } | null)?.selection ?? []
+  }
+
+  function toggle(job: Job, id: number, on: boolean) {
+    const rest = picked(job).filter((n) => n !== id)
+    pickedFor = { ...pickedFor, [job.id]: on ? [...rest, id].sort((a, b) => a - b) : rest }
+  }
+
   async function uploadSpectrals(job: Job) {
     error = ''
     uploading = [...uploading, job.id]
     try {
       const started = await apiPost<Job>('/jobs', {
         kind: 'spectrals_upload',
-        params: { job_id: job.id, tracker: trackerFor[job.id] || null },
+        params: { job_id: job.id, tracker: trackerFor[job.id] || null, spectral_ids: picked(job) },
       })
       void jobStore.show(started.id)
       uploadFor = { ...uploadFor, [job.id]: started.id }
@@ -192,9 +212,35 @@
       <div class="upload">
         <h3>Upload spectrals</h3>
         <p class="muted">
-          Sends the images of each track (not the frequency plots) to the spectrals host of the tracker you pick, as
-          <span class="mono">salmon specs</span> does.
+          Sends the images of the tracks you tick (not the frequency plots) to the spectrals host of the tracker you
+          pick, as <span class="mono">salmon specs</span> does. The ticks start where it would start: your
+          <span class="mono">default_spectral_ids</span>, else a random third of the tracks.
         </p>
+        <fieldset class="tracks">
+          <legend>Tracks to upload</legend>
+          <div class="row wrap shortcuts">
+            <button
+              class="btn small secondary"
+              onclick={() => (pickedFor = { ...pickedFor, [job.id]: trackList(job).map((t) => t.id) })}
+            >
+              All
+            </button>
+            <button class="btn small secondary" onclick={() => (pickedFor = { ...pickedFor, [job.id]: [] })}>
+              None
+            </button>
+            <span class="muted">{picked(job).length} of {trackList(job).length}</span>
+          </div>
+          {#each trackList(job) as t (t.id)}
+            <label class="track">
+              <input
+                type="checkbox"
+                checked={picked(job).includes(t.id)}
+                onchange={(e) => toggle(job, t.id, e.currentTarget.checked)}
+              />
+              <span class="mono">{String(t.id).padStart(2, '0')} {t.name}</span>
+            </label>
+          {/each}
+        </fieldset>
         <div class="row wrap">
           <label>
             For tracker
@@ -206,7 +252,9 @@
           <span class="muted">Host: {hostFor(job)}</span>
           <button
             class="btn small"
-            disabled={uploading.includes(job.id) || (upload !== undefined && !FINISHED.includes(upload.status))}
+            disabled={uploading.includes(job.id) ||
+              picked(job).length === 0 ||
+              (upload !== undefined && !FINISHED.includes(upload.status))}
             onclick={() => uploadSpectrals(job)}
           >
             Upload spectrals
@@ -284,6 +332,29 @@
     gap: 0.2rem;
     font-size: 0.85rem;
     color: var(--text-dim);
+  }
+  .tracks {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 0 0 0.8rem;
+    padding: 0.5rem 0.7rem;
+    min-width: 0;
+  }
+  .tracks legend {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    padding: 0 0.3rem;
+  }
+  .shortcuts {
+    margin-bottom: 0.4rem;
+  }
+  .upload .tracks label.track {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.5rem;
+    color: var(--text);
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
   }
   .result {
     background: var(--bg);
