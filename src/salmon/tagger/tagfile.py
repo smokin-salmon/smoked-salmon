@@ -1,3 +1,4 @@
+import struct
 from typing import Any
 
 import asyncclick as click
@@ -85,7 +86,7 @@ def is_fragmented_mp4(path: str | None) -> bool:
         with open(path, "rb") as fh:
             names = [atom.name for atom in mp4.Atoms(fh).atoms]
         return b"moov" not in names or names.count(b"moof") > 1
-    except Exception:
+    except (mp4.AtomError, mp4.error, struct.error, EOFError, ValueError):  # not OSError: a read failure is no verdict
         return True
 
 

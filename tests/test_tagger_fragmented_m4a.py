@@ -12,6 +12,7 @@ def _write_m4a(path, fragmented: bool) -> None:
     options = {"movflags": "frag_keyframe+empty_moov", "frag_duration": "200000"} if fragmented else {}
     rng = np.random.default_rng(1)
     with av.open(str(path), "w", format="ipod", options=options) as container:
+        container.metadata["album"] = "Old"
         stream = container.add_stream("aac", rate=44100, layout="stereo")
         for _ in range(40):
             samples = rng.uniform(-0.5, 0.5, (2, 4096)).astype(np.float32)
@@ -21,10 +22,6 @@ def _write_m4a(path, fragmented: bool) -> None:
                 container.mux(packet)
         for packet in stream.encode(None):
             container.mux(packet)
-    if not fragmented:  # tagging the fragmented one is exactly what must not happen
-        audio = MP4(path)
-        audio["\xa9alb"] = "Old"
-        audio.save()
 
 
 def _moofs(path) -> int:
@@ -55,6 +52,7 @@ def test_clearing_a_tag_leaves_a_fragmented_m4a_untouched(tmp_path):
     before = path.read_bytes()
 
     tag_file = TagFile(str(path))
+    assert tag_file.album == "Old"
     tag_file.remove("album")
     tag_file.save()
 
