@@ -60,10 +60,11 @@ class OpsApi(BaseGazelleApi):
     async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent, prompting once to set release type to Split for multi-artist releases.
 
-        If the upload is for a new group (has 'releasetype' in data) and two or more
-        main artists are listed, the user is asked once whether to set the release type
-        to Split (12). Guest-only additions should not trigger this prompt. The answer is
-        cached for subsequent uploads in the same session.
+        If the upload is for a new group (no 'groupid' in data: a cross-upload sends
+        'releasetype' into an existing group too) and two or more main artists are listed,
+        the user is asked once whether to set the release type to Split (12). Guest-only
+        additions should not trigger this prompt. The answer is cached for subsequent
+        uploads into a new group in the same session; an existing group keeps its type.
 
         Args:
             data: Upload form data.
@@ -77,7 +78,8 @@ class OpsApi(BaseGazelleApi):
             for importance in data.get("importance[]", [])
             if str(importance).strip() == str(ARTIST_IMPORTANCES["main"])
         )
-        if "releasetype" in data and main_artist_count >= 2 and not self._split_prompted:
+        new_group = "releasetype" in data and "groupid" not in data
+        if new_group and main_artist_count >= 2 and not self._split_prompted:
             self._use_split = await interaction.confirm(
                 click.style(
                     f"\nThis release has {main_artist_count} main artists. "
@@ -97,9 +99,7 @@ class OpsApi(BaseGazelleApi):
             )
             self._split_prompted = True
 
-        upload_data = (
-            {**data, "releasetype": self.release_types["Split"]} if self._use_split and "releasetype" in data else data
-        )
+        upload_data = {**data, "releasetype": self.release_types["Split"]} if self._use_split and new_group else data
         return await super().upload(upload_data, files)
 
     def parse_most_recent_torrent_and_group_id_from_group_page(self, text: str) -> tuple[int, int]:
