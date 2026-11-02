@@ -288,9 +288,16 @@ def test_aborting_during_the_checks_stops_the_generation(monkeypatch, tmp_path, 
 def test_an_error_in_the_generation_is_raised_at_the_spectral_step(monkeypatch, tmp_path, sox) -> None:
     album = _album(tmp_path)
     sox.fail.touch()
+    # Held until both have started: the first to fail would otherwise cancel the second before it starts.
+    sox.hold.touch()
     flow = SpectralsFlow(monkeypatch, sox)
+
+    async def both_started_then_fail() -> None:
+        await sox.wait_until_started(len(TRACKS))
+        sox.hold.unlink()
+
     # The question waits for the failure, so the failure comes before the step that reports it.
-    flow.at_the_group_question = lambda: sox.wait_until_started(len(TRACKS))
+    flow.at_the_group_question = both_started_then_fail
 
     # As in the foreground: the failed sox runs, grouped by the task group that ran them.
     with pytest.raises(ExceptionGroup) as raised:
