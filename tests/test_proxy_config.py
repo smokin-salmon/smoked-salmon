@@ -13,8 +13,8 @@ import anyio
 import msgspec
 import pytest
 from aiohttp_socks import ProxyConnector
-from shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG  # pyright: ignore[reportMissingImports]
-from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
+from helpers.shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG
+from helpers.shipped_config import shipped_config
 
 from salmon import cfg, proxy
 from salmon.config import _parse_config

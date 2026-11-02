@@ -25,7 +25,7 @@ pass.
 The `salmon` package loads and validates its config at import time and exits if there is none.
 `tests/conftest.py` handles this for the test run by pointing `XDG_CONFIG_HOME` at a temporary
 config built from the short `src/salmon/data/config.default.toml`, with fake tracker tables added
-(`tests/shipped_config.py`). If you import `salmon` outside pytest, you need a
+(`tests/helpers/shipped_config.py`). If you import `salmon` outside pytest, you need a
 config at `~/.config/smoked-salmon/config.toml` (Linux) or a `config.toml` at the repo root, and
 every directory it names must exist.
 

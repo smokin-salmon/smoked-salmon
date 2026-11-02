@@ -2,7 +2,7 @@
 
 Every prompt stays and any typed answer still wins; only the answer an empty reply gives changes. Files
 that contradict themselves give no default. The runs here go against the local fake tracker of
-test_uploader_dry_run and a fake image host, never a real one.
+helpers.uploader_dry_run and a fake image host, never a real one.
 """
 
 from functools import partial
@@ -13,13 +13,15 @@ from typing import Any, cast
 import anyio
 import asyncclick as click
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     API_KEYS,
     _album,
     _returning,
     _returning_async,
     _run_up,
     _write_flac,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 

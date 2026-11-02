@@ -16,11 +16,13 @@ from typing import Any
 
 import anyio
 import pytest
-from test_uploader_dry_run import _write_flac  # pyright: ignore[reportMissingImports]
-from test_uploader_group_search import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import _write_flac
+from helpers.uploader_group_search import (
     FakeApi,
     FakeTracker,
     Flow,
+)
+from test_uploader_group_search import (
     _fast_limiter,  # noqa: F401
 )
 

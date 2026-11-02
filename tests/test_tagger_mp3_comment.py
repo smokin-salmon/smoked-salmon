@@ -1,7 +1,7 @@
 """An MP3's comment is its COMM frame with no description; other programs' comment frames are left alone (#864)."""
 
+from helpers.tagger_multi_value_tags import _write_mp3
 from mutagen.id3 import COMM, ID3, TRCK
-from test_tagger_multi_value_tags import _write_mp3  # pyright: ignore[reportMissingImports]
 
 from salmon.tagger.tagfile import TagFile
 

@@ -14,28 +14,30 @@ import anyio
 import asyncclick as click
 import pytest
 from aiohttp.test_utils import TestClient
-from test_ssrf import LOOPBACK, FakeStore, bandcamp_page  # pyright: ignore[reportMissingImports]
-from test_tagger_run_metadata import (  # pyright: ignore[reportMissingImports]
+from helpers.ssrf import LOOPBACK, FakeStore, bandcamp_page
+from helpers.tagger_run_metadata import (
     RELEASE_URL,
     FakeDiscogs,
     pointed_at,
 )
-from test_uploader_dry_run import (  # noqa: F401  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     _album,
     fake_upload_world,
+)
+from helpers.webui_jobs import AUTH, _log, _with_app
+from helpers.webui_search import _fake_stores
+from helpers.webui_upload import _drive, _start, _web_run
+from test_uploader_dry_run import (  # noqa: F401
     image_uploads,
 )
-from test_webui_jobs import AUTH, _log, _with_app  # pyright: ignore[reportMissingImports]
-from test_webui_upload import _drive, _start, _web_run, roots  # noqa: F401  # pyright: ignore[reportMissingImports]
+from test_webui_upload import roots  # noqa: F401
 
 import salmon.search
 import salmon.tagger.metadata
 import salmon.uploader
 from salmon import cfg, ssrf
 from salmon.config.validations import ProxyCfg
-from salmon.errors import ScrapeError
 from salmon.search import SEARCHSOURCES, metas
-from salmon.search.base import IdentData, SearchMixin
 from salmon.trackers import base
 from salmon.webui.jobs import JobManager
 
@@ -54,48 +56,6 @@ PLANTED = {
 def isolated(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(base, "_learned_secrets", set())
     monkeypatch.setattr(cfg, "proxy", ProxyCfg())
-
-
-def _shown(artists: str, title: str, year: int) -> str:
-    return SearchMixin.format_result(artists, title, f"{year} Label", track_count=10)
-
-
-# What each fake store finds: a source's releases by ID, None when inactive, an exception when its search fails.
-FOUND: dict[str, Any] = {
-    "Bandcamp": {
-        ("artist.bandcamp.com", "album", "the-album"): ("The Artist", "The Album", 2020, 10),
-        ("artist.bandcamp.com", "track", "a-single"): ("The Artist", "A Single", 2021, 1),
-    },
-    "MusicBrainz": {},
-    "Apple Music": ScrapeError("Apple Music changed its page"),
-    "Discogs": None,
-    "Beatport": {654321: ("The Artist", "The Album", 2020, 10)},
-    "Qobuz": None,
-    "Tidal": {("US", 987654): ("The Artist", "The Album (Deluxe)", 2020, 11)},
-    "Deezer": {192837: ("The Artist", "The Album", 2020, None)},
-}
-
-
-def _fake_stores(monkeypatch: pytest.MonkeyPatch, found: dict[str, Any] = FOUND) -> list[tuple[str, str, int, bool]]:
-    """Replace every store's search with one answering `found`; returns each search made: (source, query, limit,
-    whether the guard was on)."""
-    searches: list[tuple[str, str, int, bool]] = []
-    for name, module in SEARCHSOURCES.items():
-
-        async def search(_self: Any, searchstr: str, limit: int, name: str = name) -> tuple[str, Any]:
-            searches.append((name, searchstr, limit, ssrf.active()))
-            answer = found[name]
-            if isinstance(answer, Exception):
-                raise answer
-            if answer is None:
-                return name, None
-            return name, {
-                rls_id: (IdentData(artist, album, year, tracks, "WEB"), _shown(artist, album, year))
-                for rls_id, (artist, album, year, tracks) in answer.items()
-            }
-
-        monkeypatch.setattr(module.Searcher, "search_releases", search)
-    return searches
 
 
 async def _search(client: TestClient, **query: Any) -> Any:

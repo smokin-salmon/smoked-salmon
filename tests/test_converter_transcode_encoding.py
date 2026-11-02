@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import anyio
 import pytest
+from helpers.tagger_tags import _write_mp3
 from mutagen.id3 import ID3, PictureType
-from test_tagger_tags import _write_mp3  # pyright: ignore[reportMissingImports]
 
 from salmon.converter import transcoding
 from salmon.tagger.cover import MAX_PICTURES_AND_PADDING

@@ -20,9 +20,9 @@ from typing import Any
 
 import anyio
 import pytest
+from helpers.checks_logs import _one_disc_log
+from helpers.checks_mqa import _write_flac
 from mutagen.flac import FLAC
-from test_checks_logs import _one_disc_log  # pyright: ignore[reportMissingImports]
-from test_checks_mqa import _write_flac  # pyright: ignore[reportMissingImports]
 
 from salmon import cfg, prepared
 from salmon.checks import mqa_test

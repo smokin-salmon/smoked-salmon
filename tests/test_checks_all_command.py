@@ -21,9 +21,9 @@ import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
 from asyncclick.testing import CliRunner
-from mutagen.flac import FLAC
-from test_checks_do_not_upload import UNMATCHED  # pyright: ignore[reportMissingImports]
-from test_checks_logs import (  # pyright: ignore[reportMissingImports]
+from helpers.checks_all_command import FAKE_FLAC, _snapshot
+from helpers.checks_do_not_upload import UNMATCHED
+from helpers.checks_logs import (
     FakeCambiaOutput,
     FakeChecksum,
     FakeEvaluationCombined,
@@ -33,7 +33,8 @@ from test_checks_logs import (  # pyright: ignore[reportMissingImports]
     _patch_cambia,
     _patch_file_crcs,
 )
-from test_checks_mqa import _write_flac  # pyright: ignore[reportMissingImports]
+from helpers.checks_mqa import _write_flac
+from mutagen.flac import FLAC
 
 import salmon.checks.do_not_upload as do_not_upload
 import salmon.trackers
@@ -44,16 +45,6 @@ from salmon.uploader import frequency
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs
 
 FOLDER = "Artist - Album (2020) [WEB FLAC]"
-
-# A stand-in for flac's test mode: a file that is a FLAC stream decodes, anything else fails as flac fails.
-FAKE_FLAC = """\
-import sys
-path = sys.argv[-1]
-with open(path, "rb") as handle:
-    good = handle.read(4) == b"fLaC"
-sys.stderr.write(f"{path}: ok\\n" if good else f"{path}: ERROR while decoding data\\n")
-sys.exit(0 if good else 1)
-"""
 
 
 @pytest.fixture(autouse=True)
@@ -112,12 +103,6 @@ def _rows(output: str) -> dict[str, str]:
             check = parts[1].split("  ")[0].strip()
             rows[check] = parts[0]
     return rows
-
-
-def _snapshot(path: Path) -> list[tuple[str, int, int]]:
-    return sorted(
-        (str(p.relative_to(path)), p.stat().st_size, p.stat().st_mtime_ns) for p in path.rglob("*") if p.is_file()
-    ) + [("", 0, path.stat().st_mtime_ns)]
 
 
 @pytest.mark.usefixtures("no_tracker")

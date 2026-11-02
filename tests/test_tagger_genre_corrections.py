@@ -6,7 +6,7 @@ from typing import Any
 
 import msgspec
 import pytest
-from test_tagger_metadata_corrections import _scraped  # pyright: ignore[reportMissingImports]
+from helpers.tagger_metadata_corrections import _scraped
 
 from salmon import cfg
 from salmon.config.validations import Corrections

@@ -1,7 +1,7 @@
 """The group an upload goes into is weighed against the reviewed edition, and so are the conversions offered after
 the FLAC goes up into it: what the edition already holds is a dupe risk the site removes.
 
-The runs here go against the local fake tracker of test_uploader_dry_run and a fake image host, never a real one.
+The runs here go against the local fake tracker of helpers.uploader_dry_run and a fake image host, never a real one.
 """
 
 from types import SimpleNamespace
@@ -11,7 +11,7 @@ import anyio
 import asyncclick as click
 import pytest
 from aiohttp import web
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     GROUP_ID,
     FakeTracker,
     Sent,
@@ -19,6 +19,8 @@ from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
     _returning_async,
     _run_up,
     _success,
+)
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
 

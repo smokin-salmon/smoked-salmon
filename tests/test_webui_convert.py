@@ -20,8 +20,8 @@ import msgspec
 import pytest
 from aiohttp.test_utils import TestClient
 from asyncclick.testing import CliRunner
-from test_webui_jobs import AUTH, _finished, _log, _until, _with_app  # pyright: ignore[reportMissingImports]
-from test_webui_pages import _album, _refused_paths  # pyright: ignore[reportMissingImports]
+from helpers.webui_jobs import AUTH, _finished, _log, _until, _with_app
+from helpers.webui_pages import _album, _refused_paths
 
 import salmon.commands
 import salmon.converter
@@ -379,7 +379,7 @@ def test_the_command_refuses_a_library_album_with_the_same_message(
 
 @pytest.mark.parametrize("kind", KINDS)
 def test_each_kind_refuses_the_folders_the_album_rule_refuses_before_it_starts(roots: Roots, kind: str) -> None:
-    from test_webui_pages import Roots as PagesRoots  # pyright: ignore[reportMissingImports]
+    from helpers.webui_pages import Roots as PagesRoots
 
     refused = _refused_paths(PagesRoots(roots.downloads, roots.library, roots.outside, roots.outside))
 

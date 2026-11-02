@@ -55,12 +55,14 @@ from salmon.tagger.tags import gather_tags
 from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.uploader import (
     _check_logs,
-    conversion_kind,
-    downconversion_format,
     execute_downconversion_tasks,
     finish_upload,
-    get_downconversion_options,
     red_api_for_covers,
+)
+from salmon.uploader.conversion_choice import (
+    conversion_kind,
+    downconversion_format,
+    get_downconversion_options,
     validate_conversions,
 )
 from salmon.uploader.dupe_checker import (

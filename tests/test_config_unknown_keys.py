@@ -12,8 +12,8 @@ import anyio
 import msgspec
 import pytest
 from asyncclick.testing import CliRunner
-from shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG  # pyright: ignore[reportMissingImports]
-from shipped_config import shipped_config  # pyright: ignore[reportMissingImports]
+from helpers.shipped_config import REFERENCE_CONFIG as _REFERENCE_CONFIG
+from helpers.shipped_config import shipped_config
 
 import salmon.commands
 from salmon.commands import checkconf

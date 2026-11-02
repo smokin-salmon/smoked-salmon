@@ -8,7 +8,7 @@ from functools import partial
 
 import anyio
 import pytest
-from test_uploader_frequency import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_frequency import (
     RATE,
     lowpass,
     mp3_decode,

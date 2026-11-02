@@ -1,6 +1,6 @@
 """Spectrals go to each tracker's own specs host, uploaded once per host (#535).
 
-The runs here go against the local fake tracker of test_uploader_dry_run and fake image hosts, never a real one.
+The runs here go against the local fake tracker of helpers.uploader_dry_run and fake image hosts, never a real one.
 """
 
 import os
@@ -11,7 +11,7 @@ from typing import Any
 
 import anyio
 import pytest
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     RENAMED,
     _album,
     _lossy_with_spectrals,

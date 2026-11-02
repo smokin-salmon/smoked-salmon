@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, cast
 import anyio
 import asyncclick as click
 import pytest
-from test_uploader_shortened_conversions import _write_flac  # pyright: ignore[reportMissingImports]
+from helpers.uploader_shortened_conversions import _write_flac
 
 import salmon.uploader as uploader
 from salmon import cfg, interaction

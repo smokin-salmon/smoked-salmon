@@ -14,14 +14,17 @@ from typing import Any
 import msgspec
 import pytest
 from aiohttp.test_utils import TestClient
-from test_uploader_dry_run import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_dry_run import (
     _album,
     _snapshot,
     fake_upload_world,
+)
+from helpers.webui_jobs import AUTH, _finished, _gate, _log, _until, _with_app
+from helpers.webui_upload import _drive, _start, _web_run
+from test_uploader_dry_run import (
     image_uploads,  # noqa: F401
 )
-from test_webui_jobs import AUTH, _finished, _gate, _log, _until, _with_app  # pyright: ignore[reportMissingImports]
-from test_webui_upload import _drive, _start, _web_run, roots  # noqa: F401  # pyright: ignore[reportMissingImports]
+from test_webui_upload import roots  # noqa: F401
 
 from salmon import cfg, prepared
 from salmon.prepared import Prepared

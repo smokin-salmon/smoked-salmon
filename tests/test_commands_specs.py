@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 import anyio
 import pytest
-from test_uploader_frequency import (  # pyright: ignore[reportMissingImports]
+from helpers.uploader_frequency import (
     RATE,
     lowpass,
     music_like,
