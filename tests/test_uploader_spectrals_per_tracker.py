@@ -392,7 +392,7 @@ def test_an_albums_own_spectrals_folder_survives_the_upload_and_goes_into_the_re
     album = _album(tmp_path / "seeding" / "Album")
     (album / "Spectrals").mkdir()
     (album / "Spectrals" / "notes.txt").write_bytes(b"mine")
-    # Uploaded on a yes to the question about it (#902): -yyy would stop the run.
+    # Uploaded on a "u" to the question about it (#902): -yyy would stop the run.
     monkeypatch.setattr(salmon.uploader, "foreign_spectrals_refusal", _returning_async(None))
     before = _entries(album)
     images_at_upload: list[list[Path]] = []

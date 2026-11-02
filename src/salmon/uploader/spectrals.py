@@ -810,12 +810,29 @@ def foreign_entries_text(entries: Sequence[str]) -> str:
     return f"{named} and {more} more" if more > 0 else named
 
 
+def _moved_name(album: str) -> str:
+    """The folder name a Spectrals folder moved out of `album` takes."""
+    return f"Spectrals (moved from {os.path.basename(album.rstrip(os.sep))})"
+
+
+def _free_destination(parent: str, name: str) -> str:
+    """parent/name, or parent/name (2), (3)... when that is taken: never a path that exists."""
+    candidate = os.path.join(parent, name)
+    number = 1
+    while os.path.lexists(candidate):
+        number += 1
+        candidate = os.path.join(parent, f"{name} ({number})")
+    return candidate
+
+
 async def foreign_spectrals_refusal(album: str, staged: str) -> str | None:
-    """Ask whether to upload the album's Spectrals folder when salmon did not make it; why the run stops, if it does.
+    """Ask what to do with the album's Spectrals folder when salmon did not make it; why the run stops, if it does.
 
     salmon leaves such a folder where it is, as the user's, so it goes into the torrent and into each conversion the
     run makes. It is often what an earlier run left, with one file added (a sync client's copy on a name clash), so
-    it is uploaded only on a yes: under -yyy, the run stops. The folder is never moved, renamed or deleted.
+    the user chooses: stop (the default, and the answer under -yyy), upload it with the album, or go on without it.
+    Going on without it removes it from the copy the upload works on, or, when salmon works on the album itself,
+    moves it to download_directory under a name that is free. It is never overwritten or deleted.
 
     Args:
         album: The album folder the user gave: the question names its Spectrals folder.
@@ -833,9 +850,65 @@ async def foreign_spectrals_refusal(album: str, staged: str) -> str | None:
     refusal = f"Not uploading {folder}: move it out of the album and run salmon again."
     if await interaction.assume_defaults():
         return refusal
-    if await interaction.confirm(click.style("Upload it with the album anyway?", fg="magenta"), default=False):
+    on_copy = os.path.abspath(staged) != os.path.abspath(album)
+    destination = None if on_copy else _free_destination(cfg.directory.download_directory, _moved_name(album))
+    where = (
+        "leave it out of this upload's copy (the album keeps it)"
+        if destination is None
+        else f"move it to {destination}"
+    )
+    answer = await interaction.prompt(
+        click.style(f"m: {where}\nu: upload it with the album\ns: stop\nWhat now?", fg="magenta"),
+        default="s",
+        type=click.Choice(["m", "u", "s"], case_sensitive=False),
+        show_default=True,
+        options=interaction.Options(
+            (
+                interaction.Option("m", f"Move it out and go on: {where}"),
+                interaction.Option("u", "Upload it with the album"),
+                interaction.Option("s", "Stop", empty=True),
+            )
+        ),
+    )
+    answer = str(answer).strip().lower()
+    if answer == "u":
         return None
-    return refusal
+    if answer != "m":
+        return refusal
+    if destination is None:
+        try:
+            shutil.rmtree(os.path.join(staged, "Spectrals"))
+        except OSError as error:
+            return f"Could not leave {folder} out of this upload's copy: {error}. Nothing was changed in {album}."
+        click.secho(
+            f"Left {folder} out of this upload. The album still holds it, so a later upload asks again.", fg="cyan"
+        )
+        return None
+    return _move_out(album, folder, destination)
+
+
+def _move_out(album: str, folder: str, destination: str) -> str | None:
+    """Move the album's Spectrals folder to destination; why the run stops, if the move fails."""
+    if cfg.directory.protects(album):
+        return (
+            f"Not moving {folder}: {album} is in or holds a library folder. Move it out yourself and run salmon again."
+        )
+    try:
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
+        # A free name was found; a rename onto an existing path is refused for a non-empty folder, and a copy
+        # across disks is checked below.
+        shutil.move(folder, destination)
+    except OSError as error:
+        in_source, in_destination = os.path.lexists(folder), os.path.lexists(destination)
+        if in_source and in_destination:
+            where = f"A partial copy is at {destination}; the original is still at {folder}."
+        elif in_destination:
+            where = f"The folder is at {destination}, not at {folder}."
+        else:
+            where = f"The folder is still at {folder}."
+        return f"Could not move {folder} to {destination}: {error}. {where}"
+    click.secho(f"Moved {folder} to {destination}.", fg="cyan")
+    return None
 
 
 def carry_specs_claim(old_real: str, new_path: str) -> None:
