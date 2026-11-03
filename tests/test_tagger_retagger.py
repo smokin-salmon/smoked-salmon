@@ -1389,11 +1389,15 @@ def test_rename_files_leaves_a_release_whose_disc_numbers_arent_numbers(tmp_path
     assert f"a.flac: {first}" in out or f"b.flac: {second}" in out
 
 
+@pytest.mark.parametrize("total", [None, "1"], ids=["no disc total", "a disc total of 1"])
 @pytest.mark.parametrize("disc", [None, "", "  "], ids=["no disc number", "an empty one", "only spaces"])
-def test_rename_files_still_renames_one_disc_in_one_folder_without_disc_numbers(tmp_path, monkeypatch, disc) -> None:
+def test_rename_files_still_renames_one_disc_in_one_folder_without_disc_numbers(
+    tmp_path, monkeypatch, disc, total
+) -> None:
     monkeypatch.setattr(cfg.upload, "formatting", _formatting())
     tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2)})
     tags["a.flac"].discnumber = tags["b.flac"].discnumber = disc
+    tags["a.flac"].disctotal = tags["b.flac"].disctotal = total
 
     anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
 
@@ -1417,3 +1421,31 @@ def test_rename_files_leaves_a_multi_disc_release_with_a_file_without_a_disc_num
     out = capsys.readouterr().out
     assert "Set DISCNUMBER to a plain number" in out
     assert all(f"{name}: no disc number" in out for name in without)
+
+
+def test_rename_files_leaves_a_release_whose_disc_total_says_several_when_a_disc_number_is_missing(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    # Both read as disc 1, so the release looks like one disc; its DISCTOTAL says two.
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (None, 2)})
+    tags["a.flac"].disctotal = tags["b.flac"].disctotal = "2"
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [("a.flac", "a.flac"), ("b.flac", "b.flac")]
+    assert "b.flac: no disc number" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("disc", ["1", None, "CD1"], ids=["disc 1", "no disc number", "CD1"])
+def test_rename_files_still_renames_one_disc_of_several_as_before(tmp_path, monkeypatch, disc) -> None:
+    # Every file has the same disc tag under a disc total over 1: one disc as far as the files tell, so renamed
+    # as master did (whether to refuse the contradiction is #922's).
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2)})
+    tags["a.flac"].discnumber = tags["b.flac"].discnumber = disc
+    tags["a.flac"].disctotal = tags["b.flac"].disctotal = "2"
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [("01. Title 1-1.flac", "a.flac"), ("02. Title 1-2.flac", "b.flac")]

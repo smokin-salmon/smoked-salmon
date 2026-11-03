@@ -562,9 +562,13 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     """
     album = album_credit_names(metadata)
     description = "[b][size=4]Tracklist[/size][/b]\n"
-    # Discs told apart only by tags that aren't numbers ("CD1", "CD2") are several discs too, listed as written.
+    # Discs told apart by tags that aren't numbers ("CD1" and "CD2", or "1" and "CD2") are several discs too; those
+    # are listed as written.
     unreadable_discs = {_unreadable_number(t["t"], "discnumber") for t in track_data.values()} - {None}
-    multi_disc = len(unreadable_discs) > 1 or any(_names_several_discs(t["t"]) for t in track_data.values())
+    numbered_discs = {_parse_tag_number(t["t"], "discnumber") for t in track_data.values()} - {None}
+    multi_disc = len(unreadable_discs | (numbered_discs if unreadable_discs else set())) > 1 or any(
+        _names_several_discs(t["t"]) for t in track_data.values()
+    )
     total_duration = 0
     for track in track_data.values():
         length = "{}:{:02d}".format(track["duration"] // 60, track["duration"] % 60)

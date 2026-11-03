@@ -317,6 +317,7 @@ def _numbers_listed(numbers: list[tuple[str | None, ...]]) -> list[str]:
         pytest.param([("CD1", "1"), ("CD2", "1")], ["CD1-01", "CD2-01"], id="discs named, not numbered"),
         pytest.param([("A", "1"), ("B", "1")], ["A-01", "B-01"], id="sides alone"),
         pytest.param([("CD1", "1"), ("CD1", "2")], ["01", "02"], id="one disc, named"),
+        pytest.param([("1", "1"), ("CD2", "1")], ["01-01", "CD2-01"], id="one disc numbered, one named"),
     ],
 )
 def test_the_tracklist_numbers_each_track_from_its_tags_as_written(numbers, listed) -> None:
@@ -332,6 +333,7 @@ def test_the_tracklist_numbers_each_track_from_its_tags_as_written(numbers, list
         pytest.param([("1", "1"), ("1", "2")], ["01", "02"], id="one disc"),
         pytest.param([(None, "1"), (None, "2")], ["01", "02"], id="no disc number"),
         pytest.param([("0", "1"), ("1", "1"), ("2", "1")], ["00-01", "01-01", "02-01"], id="disc 0 beside disc 1"),
+        pytest.param([("0", "1"), ("1", "1")], ["01", "01"], id="discs 0 and 1 alone"),
         pytest.param([("2", "A1"), ("2", "B1")], ["02-A1", "02-B1"], id="sides as track numbers"),
     ],
 )

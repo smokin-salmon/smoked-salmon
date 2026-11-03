@@ -692,10 +692,15 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
     )
 
     # Each file's disc is read from its tag, never guessed: a disc number that isn't one ("CD1"), or none, would
-    # be filed with the first disc and could merge the discs (#910).
+    # be filed with the first disc and could merge the discs (#910). So would files whose disc tags differ ("1" and
+    # none) under a disc total over 1, though they read as one disc.
     unreadable = {name: value for name, tagset in tags.items() if (value := _unreadable_number(tagset, "discnumber"))}
     missing = [name for name, tagset in tags.items() if not _tag_text(tagset, "discnumber").strip()]
-    if multi_disc and not single_folder and (unreadable or missing):
+    several_discs = multi_disc or (
+        len({_tag_text(tagset, "discnumber").strip() for tagset in tags.values()}) > 1
+        and any((_parse_tag_number(tagset, "disctotal") or 0) > 1 for tagset in tags.values())
+    )
+    if several_discs and not single_folder and (unreadable or missing):
         click.secho(
             "\nNot renaming: these files' disc numbers can't tell their discs apart. Set DISCNUMBER to a plain "
             "number (1, 2, ...) on each to rename them.",
