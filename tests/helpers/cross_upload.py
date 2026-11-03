@@ -181,7 +181,8 @@ class FakeTracker:
         # gives: RED's.
         self.image_auth = dict(IMAGE_AUTH) if code == "RED" else {}
 
-    async def _handle(self, request: web.Request) -> web.StreamResponse:
+    # One branch per tracker endpoint the fake answers: splitting it would only scatter the routing.
+    async def _handle(self, request: web.Request) -> web.StreamResponse:  # noqa: C901
         fields: dict[str, Any] = {}
         files: dict[str, list[bytes]] = {}
         if request.method == "POST":

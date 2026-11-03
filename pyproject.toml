@@ -85,8 +85,6 @@ max-complexity = 20
 [tool.ruff.lint.per-file-ignores]
 # run.py imports command modules for their side effects (registering CLI commands)
 "src/salmon/run.py" = ["F401"]
-# Fake servers branch on every request they answer
-"tests/**" = ["C901"]
 
 [tool.ruff.format]
 line-ending = "lf"
