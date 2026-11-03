@@ -6,7 +6,7 @@ rise by MARGIN over its entry, so a fix that adds a branch or two goes through, 
 more splits the function, or raises its entry and says why in its description. A new `# noqa: C901` fails too: a
 function over the limit must be listed here.
 
-The list only tightens: once a function is MARGIN under its entry, the entry must come down to its new score, and
+The list only tightens: once a function is more than MARGIN under its entry, the entry must come down, and
 a function back under the limit loses both its entry and its `# noqa`.
 """
 
