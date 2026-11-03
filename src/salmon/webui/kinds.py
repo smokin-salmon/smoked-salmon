@@ -23,9 +23,10 @@ the job is queued; it scrapes the stores behind the guard for web jobs (``salmon
 touching the server's clipboard. An image upload is ``salmon images up``: at most 20 files, each read before the job is
 queued and again when it starts, and sent only if it is an image by its content (``paths.image_file``), the host chosen
 by the command's rules, with a host whose images only display for some trackers (RED's) refused unless a tracker it
-displays on is named. A spectrals upload is ``salmon specs``' upload of a finished spectrals job's own images, to the
-spectrals host of the tracker picked, ``spectrals_refusal`` honoured. Image hosts are public: nothing but an image
-goes there, and a job never reads a file a request names for it outside what ``image_file`` lets through.
+displays on is named. A spectrals upload is ``salmon specs``' upload of a finished spectrals job's own images,
+compressed in that folder first when compress_spectrals is on (in a dry run too), to the spectrals host of the tracker
+picked, ``spectrals_refusal`` honoured. Image hosts are public: nothing but an image goes there, and a job never reads
+a file a request names for it outside what ``image_file`` lets through.
 
 The connection check is ``salmon checkconf -t`` for the trackers asked for: at most two requests each (the index
 call with the session cookie, then with the API key when one is set), through salmon web's request loop, and only
@@ -840,12 +841,14 @@ def _spectral_images(folder: str, tracks: dict[int, str]) -> None:
 
 async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
     """What ``salmon specs`` uploads, from a finished spectrals job: its images to the spectrals host of the tracker,
-    from the job's own folder only. A track that fails is offered to another host, as the command does.
+    from the job's own folder only, compressed as the command does. A track that fails is offered to another host, as
+    the command does.
 
     Returns:
         The host and the tracker, each track's URLs, and the text ``salmon specs`` prints (plain, and as BBCode).
     """
     from salmon.commands import format_spectral_urls
+    from salmon.uploader.spectrals import compress_chosen_spectrals
     from salmon.uploader.spectrals import upload_spectrals as upload_spectral_images
 
     try:
@@ -858,6 +861,8 @@ async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
         raise click.ClickException("Pick at least one track.")
     tracks = {number: all_tracks[number] for number in chosen}
     await anyio.to_thread.run_sync(_spectral_images, folder, tracks)
+    # After the checks: compressing first would swap a symlink for a plain copy of what it points to, which they pass.
+    await compress_chosen_spectrals(folder, tracks)
     uploaded = await upload_spectral_images(folder, tracks, tracker)
     if not uploaded:
         raise click.ClickException("No spectral was uploaded.")

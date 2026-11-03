@@ -50,6 +50,7 @@ from salmon.config.validations import GazelleTrackerSettings, ImageUploader, See
 from salmon.errors import ImageUploadFailed
 from salmon.tagger.sources import METASOURCES
 from salmon.trackers import base
+from salmon.uploader import spectrals as specs_module
 from salmon.webui import jobs, kinds, paths
 from salmon.webui.jobs import JobManager
 
@@ -1031,8 +1032,12 @@ def test_a_spectral_that_is_no_longer_an_image_is_not_uploaded(
     _with_app(test)
 
 
-def test_a_spectral_replaced_by_a_symlink_is_not_uploaded(
-    monkeypatch: pytest.MonkeyPatch, world: World, spectrals_job: None, hosts: list[tuple[str, str]]
+def test_a_spectral_replaced_by_a_symlink_is_neither_compressed_nor_uploaded(
+    monkeypatch: pytest.MonkeyPatch,
+    world: World,
+    spectrals_job: None,
+    hosts: list[tuple[str, str]],
+    oxipng_given: list[Path],
 ) -> None:
     _config(monkeypatch, specs_uploader="catbox")
     elsewhere = world.outside / "picture.png"
@@ -1047,6 +1052,7 @@ def test_a_spectral_replaced_by_a_symlink_is_not_uploaded(
         assert job.status == "failed"
         assert job.error is not None and "01 Full.png" in job.error
         assert hosts == []
+        assert oxipng_given == []
 
     _with_app(test)
 
@@ -1062,6 +1068,116 @@ def test_a_dry_run_of_a_spectrals_upload_sends_nothing(
         assert job.status == "done", job.error
         assert hosts == []
         assert all(url.startswith("<catbox URL of ") for track in job.result["tracks"] for url in track["urls"])
+
+    _with_app(test)
+
+
+@pytest.fixture
+def sent(monkeypatch: pytest.MonkeyPatch, hosts: list[tuple[str, str]]) -> dict[str, bytes]:
+    """Each file as the image host would receive it, by name."""
+    files: dict[str, bytes] = {}
+    upload = _Recorder.upload_file
+
+    async def upload_file(self: _Recorder, filename: str) -> tuple[str, None]:
+        files[os.path.basename(filename)] = Path(filename).read_bytes()
+        return await upload(self, filename)
+
+    monkeypatch.setattr(_Recorder, "upload_file", upload_file)
+    return files
+
+
+COMPRESSED_PNG = png("lime")
+
+
+@pytest.fixture
+def oxipng_given(monkeypatch: pytest.MonkeyPatch) -> list[Path]:
+    """oxipng on any Python, writing COMPRESSED_PNG: gives the path of each file it was handed."""
+    calls: list[Path] = []
+
+    def optimize(path: str, **_options: Any) -> None:
+        calls.append(Path(path))
+        Path(path).write_bytes(COMPRESSED_PNG)
+
+    oxipng = SimpleNamespace(optimize=optimize, StripChunks=SimpleNamespace(all=lambda: "all"))
+    monkeypatch.setattr(specs_module, "oxipng", oxipng)
+    monkeypatch.setattr(cfg.upload.compression, "compress_spectrals", True)
+    return calls
+
+
+def test_a_spectrals_upload_sends_the_tracks_chosen_compressed_and_no_others(
+    monkeypatch: pytest.MonkeyPatch, spectrals_job: None, sent: dict[str, bytes], oxipng_given: list[Path]
+) -> None:
+    _config(monkeypatch, specs_uploader="catbox")
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        (folder,) = jobs.own_folders(source)
+        other = Path(folder, "02 Full.png").read_bytes()
+        job = await _run(client, manager, "spectrals_upload", {"job_id": source.id, "spectral_ids": [1]})
+        assert job.status == "done", job.error
+        assert sent == {"01 Full.png": COMPRESSED_PNG, "01 Zoom.png": COMPRESSED_PNG}
+        assert len(oxipng_given) == 2
+        assert Path(folder, "01 Full.png").read_bytes() == COMPRESSED_PNG
+        assert Path(folder, "02 Full.png").read_bytes() == other
+        assert sorted(os.listdir(folder)) == ["01 Full.png", "01 Zoom.png", "02 Full.png", "02 Zoom.png"]
+
+    _with_app(test)
+
+
+def test_a_spectrals_upload_compresses_with_the_real_oxipng_and_the_picture_stays_the_same(
+    monkeypatch: pytest.MonkeyPatch, spectrals_job: None, sent: dict[str, bytes]
+) -> None:
+    pytest.importorskip("oxipng")  # Below Python 3.14 only: see uploader/spectrals.py.
+    _config(monkeypatch, specs_uploader="catbox")
+    monkeypatch.setattr(cfg.upload.compression, "compress_spectrals", True)
+    picture = Image.effect_noise((64, 64), 40).convert("RGB")
+    made = io.BytesIO()
+    picture.save(made, "PNG", compress_level=0)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        (folder,) = jobs.own_folders(source)
+        Path(folder, "01 Full.png").write_bytes(made.getvalue())
+        job = await _run(client, manager, "spectrals_upload", {"job_id": source.id, "spectral_ids": [1]})
+        assert job.status == "done", job.error
+        assert len(sent["01 Full.png"]) < len(made.getvalue())
+        with Image.open(io.BytesIO(sent["01 Full.png"])) as received:
+            assert received.convert("RGB").tobytes() == picture.tobytes()
+
+    _with_app(test)
+
+
+def test_a_spectrals_upload_with_compression_off_sends_them_as_made(
+    monkeypatch: pytest.MonkeyPatch, spectrals_job: None, sent: dict[str, bytes], oxipng_given: list[Path]
+) -> None:
+    _config(monkeypatch, specs_uploader="catbox")
+    monkeypatch.setattr(cfg.upload.compression, "compress_spectrals", False)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        (folder,) = jobs.own_folders(source)
+        made = {name: Path(folder, name).read_bytes() for name in ("01 Full.png", "01 Zoom.png")}
+        job = await _run(client, manager, "spectrals_upload", {"job_id": source.id, "spectral_ids": [1]})
+        assert job.status == "done", job.error
+        assert oxipng_given == []
+        assert sent == made
+
+    _with_app(test)
+
+
+def test_a_dry_run_of_a_spectrals_upload_compresses_as_a_real_one_does(
+    monkeypatch: pytest.MonkeyPatch, spectrals_job: None, hosts: list[tuple[str, str]], oxipng_given: list[Path]
+) -> None:
+    _config(monkeypatch, specs_uploader="catbox")
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        source = await _spectrals(client, manager)
+        (folder,) = jobs.own_folders(source)
+        job = await _run(client, manager, "spectrals_upload", {"job_id": source.id, "spectral_ids": [1]}, dry_run=True)
+        assert job.status == "done", job.error
+        assert hosts == []
+        assert len(oxipng_given) == 2
+        assert Path(folder, "01 Full.png").read_bytes() == COMPRESSED_PNG
 
     _with_app(test)
 

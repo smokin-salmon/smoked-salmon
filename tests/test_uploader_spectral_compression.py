@@ -1,6 +1,7 @@
 """Spectral PNGs are compressed with oxipng where it installs, and left as sox wrote them where it does not (3.14)."""
 
 import sys
+import threading
 from functools import partial
 from pathlib import Path
 
@@ -8,6 +9,11 @@ import anyio
 import pytest
 
 from salmon.uploader import spectrals
+
+
+def _spectral_of_copy(path) -> str:
+    """The name of the spectral whose working copy this is."""
+    return Path(path).name.removeprefix(".").split(".png")[0] + ".png"
 
 
 def _spectrals_dir(tmp_path: Path) -> Path:
@@ -50,7 +56,7 @@ def test_with_oxipng_it_is_used(monkeypatch, tmp_path) -> None:
 
         @staticmethod
         def optimize(path, **kwargs) -> None:
-            calls.append((Path(path).name, kwargs))
+            calls.append((_spectral_of_copy(path), kwargs))
 
     monkeypatch.setattr(spectrals, "oxipng", FakeOxipng)
     monkeypatch.setattr(spectrals, "_not_compressed_notice_shown", False, raising=False)
@@ -62,6 +68,160 @@ def test_with_oxipng_it_is_used(monkeypatch, tmp_path) -> None:
         ("01 Full.png", {"level": 2, "strip": "all"}),
         ("01 Zoom.png", {"level": 2, "strip": "all"}),
     ]
+
+
+class _FakeOxipng:
+    """pyoxipng on any Python: optimize() calls the function given, with the file's Path."""
+
+    class PngError(Exception):
+        pass
+
+    class StripChunks:
+        @staticmethod
+        def all() -> str:
+            return "all"
+
+    def __init__(self, optimize) -> None:
+        self.optimize = lambda path, **_kwargs: optimize(Path(path))
+
+
+def _hidden(path: Path) -> list[str]:
+    return [entry.name for entry in path.iterdir() if entry.name.startswith(".")]
+
+
+def test_the_file_stays_whole_until_its_compressed_copy_replaces_it(monkeypatch, tmp_path, capsys) -> None:
+    path = _spectrals_dir(tmp_path)
+    original = path / "01 Full.png"
+    while_compressing = []
+
+    def optimize(working: Path) -> None:
+        working.write_bytes(b"small")
+        if working.name.startswith(".01 Full"):
+            while_compressing.append((working.parent, original.read_bytes()))
+
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(optimize))
+
+    anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
+
+    assert while_compressing == [(path, b"png 1 Full")]
+    assert original.read_bytes() == b"small"
+    assert _hidden(path) == []
+    assert "Finished compressing spectrals." in capsys.readouterr().out
+
+
+def test_two_compressions_of_one_file_at_once_each_work_on_their_own_copy(monkeypatch, tmp_path) -> None:
+    path = _spectrals_dir(tmp_path)
+    both_running = threading.Barrier(2, timeout=10)
+    seen = []
+
+    def optimize(working: Path) -> None:
+        seen.append(working)
+        both_running.wait()
+        working.write_bytes(b"small")
+
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(optimize))
+
+    async def both() -> None:
+        async with anyio.create_task_group() as tg:
+            tg.start_soon(spectrals._compress_single_spectral, str(path / "01 Full.png"), 0)
+            tg.start_soon(spectrals._compress_single_spectral, str(path / "01 Full.png"), 0)
+
+    anyio.run(both)
+
+    assert len(set(seen)) == 2
+    assert (path / "01 Full.png").read_bytes() == b"small"
+    assert _hidden(path) == []
+
+
+def _refused(*_args) -> None:
+    raise OSError("no")
+
+
+@pytest.mark.parametrize("step", ["copyfile", "replace"], ids=["no-space-for-the-copy", "file-held-open-on-windows"])
+def test_a_spectral_that_cannot_be_compressed_is_left_as_it_is_and_the_run_goes_on(
+    monkeypatch, tmp_path, capsys, step
+) -> None:
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(lambda working: working.write_bytes(b"small")))
+    monkeypatch.setattr(spectrals.shutil if step == "copyfile" else spectrals.os, step, _refused)
+    path = _spectrals_dir(tmp_path)
+
+    anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
+
+    assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
+    assert _hidden(path) == []
+    out = capsys.readouterr().out
+    assert "Could not compress 01 Full.png" in out
+    assert "Could not compress 01 Zoom.png" in out
+    assert "Some spectrals could not be compressed." in out
+
+
+def test_one_spectral_failing_does_not_stop_the_next_being_compressed(monkeypatch, tmp_path, capsys) -> None:
+    copy = spectrals.shutil.copyfile
+
+    def refused_for_full(source: str, target: str) -> None:
+        if source.endswith("01 Full.png"):
+            _refused()
+        copy(source, target)
+
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(lambda working: working.write_bytes(b"small")))
+    monkeypatch.setattr(spectrals.shutil, "copyfile", refused_for_full)
+    path = _spectrals_dir(tmp_path)
+
+    anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
+
+    assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
+    assert (path / "01 Zoom.png").read_bytes() == b"small"
+    out = capsys.readouterr().out
+    assert "Could not compress 01 Full.png" in out
+    assert "Could not compress 01 Zoom.png" not in out
+    assert "Some spectrals could not be compressed." in out
+    assert "Finished compressing" not in out
+
+
+def test_a_copy_that_cannot_be_removed_does_not_end_the_run(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(lambda working: working.write_bytes(b"small")))
+    monkeypatch.setattr(spectrals.os, "replace", _refused)
+    monkeypatch.setattr(spectrals.os, "remove", _refused)
+    path = _spectrals_dir(tmp_path)
+
+    anyio.run(partial(spectrals._compress_spectrals, str(path), {1: "01.flac"}))
+
+    assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
+    assert "Could not compress 01 Full.png" in capsys.readouterr().out
+
+
+def test_a_cancelled_compression_leaves_the_file_and_no_copy(monkeypatch, tmp_path) -> None:
+    def optimize(_working: Path) -> None:
+        raise AssertionError("the cancellation comes first")
+
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(optimize))
+    path = _spectrals_dir(tmp_path)
+
+    async def cancelled() -> None:
+        with anyio.CancelScope() as scope:
+            scope.cancel()
+            await spectrals._compress_single_spectral(str(path / "01 Full.png"), 0)
+        assert scope.cancelled_caught
+
+    anyio.run(cancelled)
+
+    assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
+    assert _hidden(path) == []
+
+
+def test_a_png_error_from_pyoxipng_still_ends_the_run_and_leaves_the_file(monkeypatch, tmp_path) -> None:
+    # The command has no check_image: this is what stops a corrupt spectral going to the host.
+    def optimize(_working: Path) -> None:
+        raise _FakeOxipng.PngError("bad")
+
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(optimize))
+    path = _spectrals_dir(tmp_path)
+
+    with pytest.raises(_FakeOxipng.PngError):
+        anyio.run(spectrals._compress_single_spectral, str(path / "01 Full.png"), 0)
+
+    assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
+    assert _hidden(path) == []
 
 
 def _hide_pyoxipng(monkeypatch) -> None:
@@ -155,17 +315,7 @@ def test_without_pyoxipng_and_program_the_notice_names_the_program_option(monkey
 def test_with_pyoxipng_the_program_is_never_looked_up(monkeypatch, tmp_path) -> None:
     looked_up = []
 
-    class FakeOxipng:
-        class StripChunks:
-            @staticmethod
-            def all() -> str:
-                return "all"
-
-        @staticmethod
-        def optimize(path, **kwargs) -> None:
-            pass
-
-    monkeypatch.setattr(spectrals, "oxipng", FakeOxipng)
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(lambda _working: None))
     monkeypatch.setattr(spectrals.shutil, "which", lambda name: looked_up.append(name))
     path = _spectrals_dir(tmp_path)
 
@@ -177,17 +327,7 @@ def test_with_pyoxipng_the_program_is_never_looked_up(monkeypatch, tmp_path) -> 
 def test_a_hidden_leftover_is_neither_compressed_nor_shown(monkeypatch, tmp_path) -> None:
     compressed: list[str] = []
 
-    class FakeOxipng:
-        class StripChunks:
-            @staticmethod
-            def all() -> str:
-                return "all"
-
-        @staticmethod
-        def optimize(path, **kwargs) -> None:
-            compressed.append(Path(path).name)
-
-    monkeypatch.setattr(spectrals, "oxipng", FakeOxipng)
+    monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(lambda working: compressed.append(_spectral_of_copy(working))))
     path = _spectrals_dir(tmp_path)
     (path / ".01 Full.png.tmp.png").write_bytes(b"leftover")
 

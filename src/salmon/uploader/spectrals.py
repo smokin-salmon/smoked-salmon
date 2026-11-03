@@ -14,6 +14,7 @@ from functools import partial
 from pathlib import Path
 from subprocess import DEVNULL
 from typing import TYPE_CHECKING, Any
+from uuid import uuid4
 
 import anyio
 import anyio.to_thread
@@ -116,8 +117,7 @@ async def check_spectrals(
             force_prompt_lossy_master=force_prompt_lossy_master,
             hosts=hosts,
         )
-        if spectral_ids and cfg.upload.compression.compress_spectrals:
-            await _compress_spectrals(spectrals_path, spectral_ids)
+        await compress_chosen_spectrals(spectrals_path, spectral_ids)
     else:
         # Before the plots are written: this compresses every image in the folder.
         spectral_ids = (
@@ -323,9 +323,8 @@ async def generate_spectrals_all(path: str, spectrals_path: str, audio_info: dic
         Dictionary mapping track numbers to filenames.
     """
     files_li = get_audio_files(path, True)
-    # Compression happens after the user selects which spectrals to upload
-    # (see check_spectrals), not here, since most generated spectrals are
-    # only for viewing and are never uploaded.
+    # Compression happens once the spectrals to upload are chosen (see compress_chosen_spectrals), not here, since most
+    # generated spectrals are only for viewing and are never uploaded.
     return await _generate_spectrals(path, files_li, spectrals_path, audio_info, compress=False)
 
 
@@ -626,7 +625,8 @@ _not_compressed_notice_shown = False
 
 
 def _notify_spectrals_not_compressed() -> None:
-    """Say, once per run, that spectrals go up uncompressed because oxipng is not installed."""
+    """Say, once per process (under salmon web, in the first job only), that spectrals go up uncompressed because oxipng
+    is not installed."""
     global _not_compressed_notice_shown
     if _not_compressed_notice_shown:
         return
@@ -642,43 +642,53 @@ def _notify_spectrals_not_compressed() -> None:
 OXIPNG_PROGRAM_TIMEOUT = 60
 
 
-async def _compress_with_oxipng_program(program: str, filepath: str) -> bool:
-    """Compress a spectral with the oxipng program on a copy, replacing the original only on success.
+async def _run_oxipng(path: str, program: str | None) -> bool:
+    """Compress the file at path in place, so only ever a working copy: see _compress_single_spectral. With pyoxipng in
+    a thread if it is installed, else with the oxipng program.
 
-    Returns False, after printing one line, when the file was left as it was.
+    Returns:
+        Whether the program succeeded. pyoxipng raises its PngError instead, and the program's timeout or failure to
+        start is the caller's to handle.
     """
-    tmp_path = os.path.join(os.path.dirname(filepath), f".{os.path.basename(filepath)}.tmp.png")
-    try:
-        shutil.copyfile(filepath, tmp_path)
-        with anyio.fail_after(OXIPNG_PROGRAM_TIMEOUT):
-            result = await anyio.run_process(
-                [program, "-o", "2", "--strip", "all", tmp_path], check=False, stdout=DEVNULL, stderr=DEVNULL
-            )
-        if result.returncode == 0:
-            os.replace(tmp_path, filepath)
-            return True
-    except (TimeoutError, OSError):
-        pass
-    finally:
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
-    click.secho(f"Could not compress {os.path.basename(filepath)} with oxipng; it is uploaded as it is.", fg="yellow")
-    return False
+    if oxipng is not None:
+        await anyio.to_thread.run_sync(partial(oxipng.optimize, path, level=2, strip=oxipng.StripChunks.all()))
+        return True
+    assert program is not None
+    with anyio.fail_after(OXIPNG_PROGRAM_TIMEOUT):
+        result = await anyio.run_process(
+            [program, "-o", "2", "--strip", "all", path], check=False, stdout=DEVNULL, stderr=DEVNULL
+        )
+    return result.returncode == 0
 
 
-async def _compress_single_spectral(filepath: str, _idx: int, program: str | None = None) -> bool | None:
-    """Compress a single spectral PNG image with pyoxipng in a thread, or with the oxipng program.
+async def _compress_single_spectral(filepath: str, _idx: int, program: str | None = None) -> bool:
+    """Compress a spectral on a copy, which replaces the original only on success. oxipng rewrites a file in place, so
+    anything reading it meanwhile (salmon web showing it, or another upload) would get old and new mixed.
 
     Args:
         filepath: Path to the PNG file to compress.
         _idx: Unused index parameter for process_files compatibility.
         program: Path to the oxipng program, used when pyoxipng is not installed.
+
+    Returns:
+        Whether the file was compressed. When False, one line has been printed and the file is as it was.
     """
-    if oxipng is None:
-        assert program is not None
-        return await _compress_with_oxipng_program(program, filepath)
-    func = partial(oxipng.optimize, filepath, level=2, strip=oxipng.StripChunks.all())
-    return await anyio.to_thread.run_sync(func)
+    # Beside the file, so that the replace is atomic. Hidden, so that a copy left by a killed run is skipped: see
+    # _spectral_images and made_by_salmon. A name of its own: a spectrals upload holds no folder, so two uploads of a
+    # web job may compress the same file at once.
+    tmp_path = os.path.join(os.path.dirname(filepath), f".{os.path.basename(filepath)}.{uuid4().hex}.tmp.png")
+    try:
+        shutil.copyfile(filepath, tmp_path)
+        if await _run_oxipng(tmp_path, program):
+            os.replace(tmp_path, filepath)
+            return True
+    except (TimeoutError, OSError):
+        pass
+    finally:
+        with contextlib.suppress(OSError):
+            os.remove(tmp_path)
+    click.secho(f"Could not compress {os.path.basename(filepath)} with oxipng; it is uploaded as it is.", fg="yellow")
+    return False
 
 
 async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] | None = None) -> None:
@@ -723,6 +733,16 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
         click.secho("Finished compressing spectrals.", fg="green")
 
 
+async def compress_chosen_spectrals(spectrals_path: str, spectral_ids: dict[int, str] | None) -> None:
+    """Compress the spectrals chosen for upload, if compress_spectrals is on; the others are only for viewing.
+
+    With none chosen (None, when the user answers "0"), nothing is compressed, where _compress_spectrals would take
+    None to mean every image.
+    """
+    if spectral_ids and cfg.upload.compression.compress_spectrals:
+        await _compress_spectrals(spectrals_path, spectral_ids)
+
+
 def get_spectrals_path(path: str) -> str:
     """The folder salmon makes an album's spectrals in: never one salmon did not make, which it would replace.
 
@@ -747,7 +767,8 @@ def get_spectrals_path(path: str) -> str:
 # The spectrals folders this process made, by real path: an empty folder is salmon's only if it is one of these.
 _made_specs_folders: set[str] = set()
 # What salmon writes into a spectrals folder: the spectrals, the averaged spectra (spectrum_plot_name), and the copy
-# that oxipng compresses, which a killed run leaves behind.
+# oxipng compresses, under the unhidden name older versions gave it, which a killed run left behind. Today's copy is
+# hidden, so _foreign_entries skips it by its dot.
 _SALMON_SPECTRAL = re.compile(r"\d{2,} (?:Full|Zoom|Spectrum)\.png(?:\.tmp\.png)?")
 # What a file browser leaves beside them, besides hidden files.
 _BROWSER_LITTER = frozenset({"Thumbs.db", "desktop.ini"})
