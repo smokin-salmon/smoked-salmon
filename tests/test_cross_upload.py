@@ -71,7 +71,7 @@ from salmon.cross_upload import (
 )
 from salmon.release_notification import get_version
 from salmon.trackers import base
-from salmon.trackers.base import BaseGazelleApi
+from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
@@ -171,9 +171,7 @@ def test_one_release_sends_what_the_budget_says(monkeypatch, dirs) -> None:
     assert ", no more GET to OPS" in run.output
 
 
-def test_a_red_upload_with_a_log_goes_through_its_upload_page_and_the_budget_counts_its_redirect(
-    monkeypatch, dirs
-) -> None:
+def test_a_red_upload_with_a_log_goes_through_the_api_and_the_budget_counts_no_upload_page(monkeypatch, dirs) -> None:
     name = "ops-torrent-cd-log.json"
     album = _red_album(name, dirs.downloads)
     prepare = _source_has(album, answer=_red_fixture_answer(name))
@@ -183,12 +181,63 @@ def test_a_red_upload_with_a_log_goes_through_its_upload_page_and_the_budget_cou
     assert run.target.steps() == {
         "GET ajax.php?action=index": 1,
         "GET ajax.php?action=browse": 1,
+        "POST ajax.php?action=upload": 1,
+    }
+    (post,) = run.target.posts()
+    assert post.authorization
+    assert [unquote(log) for log in post.fields["logfiles[]"]] == ["Example Artist - Example Album.log"]
+    # The search, a group pasted at its prompt, a lost upload.
+    assert "at most 4 GET and 1 POST to RED" in run.output
+    assert _within_the_plans_bound(run)
+
+
+def test_a_red_upload_with_a_log_and_a_session_cookie_only_goes_through_its_upload_page(monkeypatch, dirs) -> None:
+    name = "ops-torrent-cd-log.json"
+    album = _red_album(name, dirs.downloads)
+    prepare = _source_has(album, answer=_red_fixture_answer(name))
+    monkeypatch.setitem(API_KEYS, "RED", "")
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare, red_session=True)
+
+    assert run.result.exit_code == 0, run.output
+    assert run.target.steps() == {
+        "GET ajax.php?action=index": 1,
+        "GET ajax.php?action=browse": 1,
+        "GET log.php": LOG_MAX_PAGES,  # The site log, read with the cookie when the search finds nothing
         "POST upload.php": 1,
         "GET torrents.php": 1,  # The new torrent's page, which the upload redirects to
     }
-    # The search, a group pasted at its prompt, RED's upload page for an existing group, the redirect, a lost upload.
-    assert "at most 6 GET and 1 POST to RED" in run.output
+    (post,) = run.target.posts()
+    assert (post.authorization, post.cookie) == (False, True)
+    assert [unquote(log) for log in post.fields["logfiles[]"]] == ["Example Artist - Example Album.log"]
+    # The search, a group pasted at its prompt, the site log, RED's upload page for an existing group, the redirect,
+    # a lost upload.
+    assert f"at most {1 + 1 + LOG_MAX_PAGES + 1 + 1 + 2} GET and 1 POST to RED" in run.output
     assert _within_the_plans_bound(run)
+
+
+@pytest.mark.parametrize(
+    ("api_key", "group_id", "gets"),
+    [
+        # The group given, to confirm it, and a lost upload.
+        ("red-api-key", TARGET_GROUP_ID, 1 + 2),
+        # The search, a group pasted at its prompt, the site log, and a lost upload.
+        ("red-api-key", None, 1 + 1 + LOG_MAX_PAGES + 2),
+        # Through the upload page: RED's upload page for an existing group's fields, and the redirect to the torrent.
+        ("", TARGET_GROUP_ID, 1 + 2 + 1 + 1),
+        ("", None, 1 + 1 + LOG_MAX_PAGES + 2 + 1 + 1),
+    ],
+    ids=["api-key-group-given", "api-key-searched", "cookie-only-group-given", "cookie-only-searched"],
+)
+def test_the_budget_counts_reds_upload_page_and_its_redirect_only_without_an_api_key(
+    api_key: str, group_id: int | None, gets: int
+) -> None:
+    target = RedApi()
+    target.api_key = api_key
+    response = _fixture("ops-torrent-cd-log.json")
+    release = Release(label="1", response=response, path=Path("."), data=_release_data())
+    assert len(cross_upload_module._searchstrs(release.data)) == 1
+
+    assert cross_upload_module.most_requests(release, OpsApi(), target, group_id) == (gets, 1, 0)
 
 
 def test_the_site_log_is_read_when_the_search_is_empty_and_a_cookie_is_set(monkeypatch, dirs) -> None:

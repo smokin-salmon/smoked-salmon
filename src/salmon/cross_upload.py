@@ -1172,12 +1172,12 @@ def most_requests(
             gets += LOG_MAX_PAGES  # The pages of the site log, read when the search finds nothing
     if release.tasks:
         gets += 1  # The group, for the formats it already has
-    if target.site_code == "RED":
-        gets += uploads  # RED's upload page, for an upload into an existing group through it
-    if target.site_code == "RED" or not target.api_key:
-        # The new torrent's page, which an upload through the upload page redirects to: DIC's (it has no API key),
-        # RED's with a log.
+    if not target.api_key:
+        # Without an API key an upload goes through the upload page (DIC's always), which redirects to the new
+        # torrent's page.
         gets += uploads
+        if target.site_code == "RED":
+            gets += uploads  # RED's upload page, which an upload into an existing group fills its form from
     gets += 2  # Looking up an upload whose answer was lost (then the run stops)
     posts = uploads
     if release.lossy_report is not None:

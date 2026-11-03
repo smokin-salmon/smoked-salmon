@@ -135,24 +135,6 @@ class RedApi(BaseGazelleApi):
 
         super().__init__()
 
-    async def upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
-        """Upload torrent, using site page upload when log files are present.
-
-        Temporary patch: API key upload has a bug where log scores are not
-        announced in IRC. Force site page upload until it's fixed.
-
-        Args:
-            data: Upload form data.
-            files: UploadFiles containing files to upload.
-
-        Returns:
-            Tuple of (torrent_id, group_id).
-        """
-        if files.log_files:
-            return await self.site_page_upload(data, files)
-
-        return await super().upload(data, files)
-
     async def site_page_upload(self, data: dict, files: UploadFiles) -> tuple[int, int]:
         """Upload torrent via upload.php with group data enrichment.
 
