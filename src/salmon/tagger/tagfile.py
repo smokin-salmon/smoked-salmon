@@ -165,10 +165,11 @@ class TagFile:
                         # "3" alone holds no total.
                         return val.split("/")[1] if "/" in val else None
                     except (AttributeError, KeyError):
-                        # AAC: MP4 tags are tuples like (track, total)
+                        # AAC: MP4 keeps (number, total) as ints, 0 for none; return text, as FLAC and MP3 do (#908).
                         tag_val = tags[field]
                         number, total = tag_val[0]
-                        return (number if "number" in attr else total) or None
+                        value = number if "number" in attr else total
+                        return str(value) if value else None
                 try:
                     if attr in {"artist", "artists", "remixer", "genre"}:
                         try:

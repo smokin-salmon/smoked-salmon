@@ -691,6 +691,27 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
         for t in track_list[1:]
     )
 
+    # Each file's disc is read from its tag, never guessed: a disc number that isn't one ("CD1"), or none, would
+    # be filed with the first disc and could merge the discs (#910). So would files whose disc tags differ ("1" and
+    # none) under a disc total over 1, though they read as one disc.
+    unreadable = {name: value for name, tagset in tags.items() if (value := _unreadable_number(tagset, "discnumber"))}
+    missing = [name for name, tagset in tags.items() if not _tag_text(tagset, "discnumber").strip()]
+    several_discs = multi_disc or (
+        len({_tag_text(tagset, "discnumber").strip() for tagset in tags.values()}) > 1
+        and any((_parse_tag_number(tagset, "disctotal") or 0) > 1 for tagset in tags.values())
+    )
+    if several_discs and not single_folder and (unreadable or missing):
+        click.secho(
+            "\nNot renaming: these files' disc numbers can't tell their discs apart. Set DISCNUMBER to a plain "
+            "number (1, 2, ...) on each to rename them.",
+            fg="red",
+        )
+        for name, value in unreadable.items():
+            click.secho(f"   {name}: {value}", fg="red")
+        for name in missing:
+            click.secho(f"   {name}: no disc number", fg="red")
+        return
+
     # In one folder, every disc and track number is padded to the width of the largest, so the files sort by
     # disc, then track
     disc_digits = len(str(max((_get_tag_number(t, "discnumber") for t in tags.values()), default=1)))
@@ -717,10 +738,8 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
             if folder != path:
                 folder_discs.setdefault(folder, set()).add(disc_number)
         elif multi_disc:
-            if isinstance(tracktags, dict):
-                disc_number = int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
-            else:
-                disc_number = int(tracktags.discnumber.split("/")[0]) or 1
+            # Every disc number here was read above; "or 1" files a disc 0 with the first, as before.
+            disc_number = _get_tag_number(tracktags, "discnumber") or 1
             new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
@@ -874,7 +893,7 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=
 
 
 def _parse_integer(value):
-    if isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
+    if isinstance(value, int) or (isinstance(value, str) and value.isdecimal()):
         return f"{int(value):02d}"
     return value
 
@@ -894,13 +913,27 @@ def _parse_tag_number(tracktags, field):
     if value is None:
         return None
     if isinstance(value, str):
-        value = value.split("/")[0]
-        # str.isdecimal(), not str.isdigit(): isdigit() accepts some Unicode digits (superscript
-        # "2") that int() then rejects, while isdecimal() is true for exactly what int() accepts.
+        value = value.split("/")[0].strip()
+        # Stripped, as int() would; str.isdecimal(), not str.isdigit(): isdigit() is also true for some
+        # Unicode digits (superscript "2") that int() then rejects.
         return int(value) if value.isdecimal() else None
     if isinstance(value, int):
         return value
     return None
+
+
+def _tag_text(tracktags, field):
+    """A tag object's or dict's value for ``field`` as written (its first, if a list); "" when it has none."""
+    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
+    if isinstance(value, list):
+        value = value[0] if value else None
+    return "" if value is None else str(value)
+
+
+def _unreadable_number(tracktags, field):
+    """A disc/track number that is there but can't be read as one ("CD1"), as written; None otherwise."""
+    text = _tag_text(tracktags, field)
+    return text if text.strip() and _parse_tag_number(tracktags, field) is None else None
 
 
 def _has_tag(tracktags, field):

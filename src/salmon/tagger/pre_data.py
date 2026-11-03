@@ -143,7 +143,7 @@ def create_track_list(tags, overwrite, audio_info=None):
     tracks = defaultdict(dict)
     for trackindex, (filename, track) in enumerate(sorted(tags.items(), key=lambda k: _tracknumber_sort_key(k[0])), 1):
         discnumber = track.discnumber or "1"
-        own_number = str(track.tracknumber).split("/")[0] if track.tracknumber else ""
+        own_number = str(track.tracknumber).split("/")[0].strip() if track.tracknumber else ""
         # isdecimal(), not isdigit(): isdigit() accepts some Unicode digits (superscript "2") that int() rejects.
         numbered = own_number.isdecimal() and int(own_number) > 0
         tracknumber = own_number if numbered else str(trackindex)

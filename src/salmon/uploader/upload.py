@@ -11,7 +11,7 @@ import asyncclick as click
 from torf import TorfError, Torrent
 
 from salmon import cfg, dryrun
-from salmon.common import UploadFiles, clipboard_copy, re_split, str_to_int_if_int
+from salmon.common import UploadFiles, clipboard_copy, re_split
 from salmon.common.strings import names_no_artist, reaches_various_threshold, strip_numbered_suffixes
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import UploadRefusedError
@@ -19,6 +19,7 @@ from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.combine import _extract_remixers_from_title
 from salmon.tagger.pre_data import parse_artists
+from salmon.tagger.retagger import _parse_tag_number, _unreadable_number
 from salmon.tagger.sources import METASOURCES
 from salmon.uploader import record
 from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
@@ -529,6 +530,21 @@ def _tag_credits(tags: Any) -> list[tuple[str, str]]:
     return credits
 
 
+def _names_several_discs(tags: Any) -> bool:
+    """Whether a track's disc tags name more than one disc: a disc number over 1, or a total over 1, in DISCTOTAL
+    or written after the disc number ("1/2", as a FLAC can hold it)."""
+    number, _, total = str(tags.discnumber or "").partition("/")
+    return (_parse_tag_number(tags, "disctotal") or 0) > 1 or any(
+        part.strip().isdecimal() and int(part) > 1 for part in (number, total)
+    )
+
+
+def _listed_number(tags: Any, field: str) -> str:
+    """A track or disc number as the tracklist gives it: "3/10" as "03"; one that is no number ("A1"), as written."""
+    number = _parse_tag_number(tags, field)
+    return str(getattr(tags, field) or "") if number is None else f"{number:02d}"
+
+
 def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -> str:
     """Generate group description with tracklist.
 
@@ -546,25 +562,23 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     """
     album = album_credit_names(metadata)
     description = "[b][size=4]Tracklist[/size][/b]\n"
-    multi_disc = any(
-        (
-            t["t"].discnumber
-            and t["t"].discnumber != "1/1"
-            and (t["t"].discnumber.startswith("1/") or int(t["t"].discnumber) > 1)
-        )
-        for t in track_data.values()
+    # Discs told apart by tags that aren't numbers ("CD1" and "CD2", or "1" and "CD2") are several discs too; those
+    # are listed as written.
+    unreadable_discs = {_unreadable_number(t["t"], "discnumber") for t in track_data.values()} - {None}
+    numbered_discs = {_parse_tag_number(t["t"], "discnumber") for t in track_data.values()} - {None}
+    multi_disc = len(unreadable_discs | (numbered_discs if unreadable_discs else set())) > 1 or any(
+        _names_several_discs(t["t"]) for t in track_data.values()
     )
     total_duration = 0
     for track in track_data.values():
         length = "{}:{:02d}".format(track["duration"] // 60, track["duration"] % 60)
         total_duration += track["duration"]
         if multi_disc:
-            description += (
-                f"[b]{str_to_int_if_int(track['t'].discnumber, zpad=True)}-"
-                f"{str_to_int_if_int(track['t'].tracknumber, zpad=True)}.[/b] "
-            )
+            # A disc with no number is listed as the first.
+            disc = _listed_number(track["t"], "discnumber") or "01"
+            description += f"[b]{disc}-{_listed_number(track['t'], 'tracknumber')}.[/b] "
         else:
-            description += f"[b]{str_to_int_if_int(track['t'].tracknumber, zpad=True)}.[/b] "
+            description += f"[b]{_listed_number(track['t'], 'tracknumber')}.[/b] "
 
         if album is not None and credits_only_the_album(_tag_credits(track["t"]), track["t"].title, album):
             description += f"{track['t'].title} [i]({length})[/i]\n"
