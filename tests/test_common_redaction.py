@@ -303,3 +303,8 @@ def test_redact_tracker_text_scans_unclosed_input_tags_in_bounded_time() -> None
 def test_redact_tracker_text_masks_an_input_after_unclosed_ones() -> None:
     shown = redact_tracker_text("<input " * 500 + '<input name="auth" value="MARK-AFTER-5">')
     assert "MARK-AFTER-5" not in shown
+
+
+def test_redact_tracker_text_masks_an_input_whose_tag_is_very_long() -> None:
+    shown = redact_tracker_text('<input title="' + "a" * 5000 + '" name="auth" value="MARK-LONG-6">')
+    assert "MARK-LONG-6" not in shown

@@ -216,8 +216,6 @@ _ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]+(?=/announce)")
 # Quote-aware: a ">" inside a quoted attribute does not end the tag. Possessive, so a failure costs one pass.
 _INPUT_START = re.compile(r"<input\b", re.IGNORECASE)
 _INPUT_TAG = re.compile(r"""<input\b(?:[^>"']|"[^"]*"|'[^']*')*+>""", re.IGNORECASE)
-# A real tag is far shorter; a longer one is left as it is rather than scanned without end.
-_MAX_INPUT_TAG = 4096
 _SECRET_FIELD_NAME = re.compile(rf"""\bname\s*=\s*(["']?){_TRACKER_KEYS}\1(?=[\s/>])""", re.IGNORECASE)
 _FIELD_VALUE = re.compile(r"""(\bvalue\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s"'>]+)""", re.IGNORECASE)
 # A response header naming a credential. A cookie keeps its name and attributes, only its value is masked.
@@ -234,7 +232,7 @@ def _mask_secret_field(tag: str) -> str:
 def _mask_input_fields(text: str) -> str:
     """Mask the secret fields of the <input> tags in text, each read within a window of its own.
 
-    The window ends at the next "<input" or after _MAX_INPUT_TAG characters. The tag ends at the first ">" outside
+    The window ends at the next "<input" or at the end of the text. The tag ends at the first ">" outside
     quotes; with none (a lone quote in an unquoted attribute), at the window's first ">"; with none, it is left as is.
     """
     out: list[str] = []
@@ -243,7 +241,7 @@ def _mask_input_fields(text: str) -> str:
     while start:
         begin = start.start()
         following = _INPUT_START.search(text, start.end())
-        end = min(following.start() if following else len(text), begin + _MAX_INPUT_TAG)
+        end = following.start() if following else len(text)
         tag = _INPUT_TAG.match(text, begin, end)
         tag_end = tag.end() if tag else text.find(">", begin, end) + 1
         if tag_end:
