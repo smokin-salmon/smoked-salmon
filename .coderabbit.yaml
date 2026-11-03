@@ -78,6 +78,17 @@ reviews:
       instructions: |-
         - Never add write permissions or registry login to a pull_request workflow; keep persist-credentials false.
         - Pin third-party actions; never interpolate untrusted input into run:, pass it through env.
+    - path: "src/salmon/**/*.py"
+      instructions: |-
+        Module growth is in scope here, as a suggestion, not a blocker.
+        - When a PR adds a sizeable block (a new function, or roughly 50 lines or more of feature logic) to a
+          module already over about 1000 lines (uploader/__init__.py, trackers/base.py, uploader/spectrals.py,
+          cross_upload.py, uploader/dupe_checker.py and the like), say so and name a module the new code could
+          live in, existing or new. A busy module should call into new logic, not hold it.
+        - Do not flag a small fix, or code that only makes sense next to what it changes.
+        - Flag new code that repeats an existing helper (a near copy, adapted) instead of using or extending it,
+          and name the helper. A torrent's upload (uploader/upload.py, uploader/__init__.py) and its
+          conversions' (uploader/conversion_upload.py) are where copies have appeared.
     - path: "**"
       instructions: |-
         - Report correctness, security, data loss and tracker safety. Do not flag style that is consistent

@@ -993,7 +993,7 @@ def _reachable_trackers(trackers: list[str] | None, offer_others: bool) -> list[
     return [*trackers, *(code for code in salmon.trackers.tracker_list if code not in trackers)]
 
 
-async def _upload_staged(
+async def _upload_staged(  # noqa: C901
     gazelle_site: "BaseGazelleApi",
     path: str,
     group_id: int | None,

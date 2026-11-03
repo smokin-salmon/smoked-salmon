@@ -101,6 +101,16 @@ the test run never reads a developer's config.
   `prompt`, `confirm` or `edit` or `input()`: a web job would hang on the server's terminal. A test walks `src/salmon`
   and fails on one. Whether a run answers with defaults (`-yyy`, or `yes_all` in the config) is
   `await interaction.assume_defaults()`; nothing writes `cfg` at runtime.
+- Before writing a helper, look for one that already does the job, and use or extend it rather than writing a
+  copy. A fix in a torrent's upload (`uploader/upload.py`, `uploader/__init__.py`) usually applies to its
+  conversions' (`uploader/conversion_upload.py`) too, and the other way round.
+- Put new feature logic in a module of its own, or one that fits it, and call it from the busy modules (any
+  over about 1000 lines, such as `uploader/__init__.py` or `trackers/base.py`) rather than growing them. A fix
+  stays where the bug is.
+- Functions are held to a complexity of 20 (ruff's C901). The few already over it when the rule came in (#927)
+  carry `# noqa: C901` and are listed in `tests/test_complexity.py`, each with a small margin: splitting one is
+  welcome, as a change of its own. When that test or ruff fails on a PR, split the function rather than adding a
+  `# noqa: C901` or raising its entry. Raise it only when the code belongs there, and say why in the PR description.
 - Keep PRs to one logical change. Maintainers squash-merge.
 - Image hosts that only display for one tracker's members (RED's) must never be usable through a
   setting shared by all trackers. See [ADR 0002](docs/adr/0002-per-tracker-cover-host.md).
