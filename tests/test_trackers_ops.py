@@ -84,6 +84,17 @@ def test_a_split_answer_for_a_new_group_leaves_a_later_existing_groups_type(monk
     assert sent[1]["releasetype"] == tracker.release_types["Album"]
 
 
+def test_a_split_answer_for_a_new_group_is_kept_for_a_later_new_group(monkeypatch) -> None:
+    tracker = OpsApi()
+    asked, sent = _split_answer(monkeypatch, True)
+
+    anyio.run(tracker.upload, _form(tracker), UploadFiles(torrent_data=b"torrent"))
+    anyio.run(tracker.upload, _form(tracker), UploadFiles(torrent_data=b"torrent"))
+
+    assert len(asked) == 1
+    assert [data["releasetype"] for data in sent] == [tracker.release_types["Split"]] * 2
+
+
 def test_a_failed_lossy_master_report_shows_none_of_its_credentials(monkeypatch) -> None:
     tracker = OpsApi()
     tracker.authkey = "ops-authkey-0123456789"
