@@ -104,10 +104,13 @@ the test run never reads a developer's config.
 - Before writing a helper, look for one that already does the job, and use or extend it rather than writing a
   copy. A fix in a torrent's upload (`uploader/upload.py`, `uploader/__init__.py`) usually applies to its
   conversions' (`uploader/conversion_upload.py`) too, and the other way round.
-- A module in `src/salmon` has at most 600 lines; the longer ones may grow only a little past their entry in
-  `tests/test_file_sizes.py`. When that test fails, move code out of the module rather than raising the entry. Raise
-  it only when the code belongs there, and say why in the PR description. Functions are held to a complexity of 20
-  (ruff's C901); split one rather than adding a `# noqa: C901`.
+- Put new feature logic in a module of its own, or one that fits it, and call it from the busy modules
+  (`uploader/__init__.py`, `trackers/base.py`, `uploader/spectrals.py`, `uploader/dupe_checker.py`,
+  `cross_upload.py`) rather than growing them. A fix stays where the bug is.
+- Functions are held to a complexity of 20 (ruff's C901). The few already over it are listed in
+  `tests/test_complexity.py`, each with a small margin. When that test or ruff fails, split the function rather
+  than adding a `# noqa: C901` or raising its entry. Raise it only when the code belongs there, and say why in the
+  PR description.
 - Keep PRs to one logical change. Maintainers squash-merge.
 - Image hosts that only display for one tracker's members (RED's) must never be usable through a
   setting shared by all trackers. See [ADR 0002](docs/adr/0002-per-tracker-cover-host.md).
