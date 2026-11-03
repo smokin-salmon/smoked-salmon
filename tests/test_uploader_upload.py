@@ -260,12 +260,19 @@ def _logs_sent(path) -> list[tuple[str, bytes]]:
     return sorted(anyio.run(collect_logfiles, str(path)))
 
 
-@pytest.mark.parametrize("name", ["rip.log", "Rip.LOG", "Rip.Log", ".log"])
+@pytest.mark.parametrize("name", ["rip.log", "Rip.LOG", "Rip.Log"])
 def test_a_log_is_sent_whatever_the_case_of_its_extension(tmp_path, name) -> None:
     # The log checks find a log by name.lower().endswith(".log"); what they check is what is sent (#910).
     (tmp_path / name).write_bytes(b"log")
 
     assert _logs_sent(tmp_path) == [(name, b"log")]
+
+
+def test_a_log_named_just_dot_log_is_sent(tmp_path) -> None:
+    # Matched by its name: Path.suffix is empty for ".log", which rglob("*.log") did send.
+    (tmp_path / ".log").write_bytes(b"log")
+
+    assert _logs_sent(tmp_path) == [(".log", b"log")]
 
 
 def test_logs_in_a_subfolder_are_sent(tmp_path) -> None:
