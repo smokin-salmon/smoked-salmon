@@ -28,6 +28,11 @@ GROUP_FORM = (
     '<select name="importance[]"><option value="1" selected>Main</option></select>'
     '<input name="title" value="Group Title"><input name="year" value="1999"></form></html>'
 )
+# The group page the upload page redirects to, with the new torrent.
+GROUP_PAGE = (
+    f'<html><a class="tooltip" href="torrents.php?torrentid={TORRENT_ID}">DL</a>'
+    f'<a class="brackets" href="upload.php?groupid={GROUP_ID}">Add format</a></html>'
+)
 
 
 def test_parse_upload_form_round_trips_arranger_importance() -> None:
@@ -70,22 +75,16 @@ class FakeRed:
                     self.parts.append((name, value.filename, value.file.read()))
                 else:
                     self.parts.append((name, None, str(value).encode()))
+        # The torrent goes into GROUP_ID, the group the form names or the new group.
         if request.path == "/ajax.php" and request.query.get("action") == "upload":
-            group_id = int(dict(self.fields()).get("groupid", GROUP_ID))
-            return web.json_response({"status": "success", "response": {"torrentid": TORRENT_ID, "groupid": group_id}})
+            return web.json_response({"status": "success", "response": {"torrentid": TORRENT_ID, "groupid": GROUP_ID}})
         if request.path == "/upload.php" and request.method == "GET":
             return web.Response(text=GROUP_FORM, content_type="text/html")
         if request.path == "/upload.php":
             # Gazelle's site answers an upload with a redirect to the new torrent on its group page.
-            group_id = int(dict(self.fields()).get("groupid", GROUP_ID))
-            raise web.HTTPFound(f"/torrents.php?id={group_id}&torrentid={TORRENT_ID}")
+            raise web.HTTPFound(f"/torrents.php?id={GROUP_ID}&torrentid={TORRENT_ID}")
         if request.path == "/torrents.php":
-            group_id = request.query["id"]
-            page = (
-                f'<html><a class="tooltip" href="torrents.php?torrentid={TORRENT_ID}">DL</a>'
-                f'<a class="brackets" href="upload.php?groupid={group_id}">Add format</a></html>'
-            )
-            return web.Response(text=page, content_type="text/html")
+            return web.Response(text=GROUP_PAGE, content_type="text/html")
         return web.Response(status=404)
 
     def fields(self) -> list[tuple[str, str]]:
