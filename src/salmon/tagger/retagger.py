@@ -717,10 +717,8 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
             if folder != path:
                 folder_discs.setdefault(folder, set()).add(disc_number)
         elif multi_disc:
-            if isinstance(tracktags, dict):
-                disc_number = int(tracktags["discnumber"][0].split("/")[0]) if "discnumber" in tracktags else 1
-            else:
-                disc_number = int(tracktags.discnumber.split("/")[0]) or 1
+            # A missing or unreadable disc number reads as 1; "or 1" puts a disc 0 there too (#910).
+            disc_number = _get_tag_number(tracktags, "discnumber") or 1
             new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
@@ -874,7 +872,7 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=
 
 
 def _parse_integer(value):
-    if isinstance(value, int) or (isinstance(value, str) and value.isdigit()):
+    if isinstance(value, int) or (isinstance(value, str) and value.isdecimal()):
         return f"{int(value):02d}"
     return value
 
@@ -894,9 +892,9 @@ def _parse_tag_number(tracktags, field):
     if value is None:
         return None
     if isinstance(value, str):
-        value = value.split("/")[0]
-        # str.isdecimal(), not str.isdigit(): isdigit() accepts some Unicode digits (superscript
-        # "2") that int() then rejects, while isdecimal() is true for exactly what int() accepts.
+        value = value.split("/")[0].strip()
+        # Stripped, as int() would; str.isdecimal(), not str.isdigit(): isdigit() is also true for some
+        # Unicode digits (superscript "2") that int() then rejects.
         return int(value) if value.isdecimal() else None
     if isinstance(value, int):
         return value

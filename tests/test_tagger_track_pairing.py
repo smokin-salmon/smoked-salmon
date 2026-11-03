@@ -572,6 +572,28 @@ def test_a_track_number_int_cannot_read_is_not_numbered():
     assert tracks["1"]["1"]["numbered"] is False
 
 
+def test_a_track_number_with_spaces_is_numbered():
+    # As the retagger reads it: " 2" is track 2, not a file to number by its place in the folder.
+    tags = {
+        name: SimpleNamespace(
+            artist=["Some Artist"],
+            title=name,
+            tracknumber=number,
+            discnumber=None,
+            tracktotal=None,
+            disctotal=None,
+            replay_gain=None,
+            peak=None,
+            isrc=None,
+        )
+        for name, number in {"a.flac": " 2", "b.flac": " 1"}.items()
+    }
+
+    tracks = create_track_list(tags, False)
+
+    assert {number: track["title"] for number, track in tracks["1"].items()} == {"2": "a.flac", "1": "b.flac"}
+
+
 def test_a_scraped_track_without_a_local_one_merges_nothing():
     # Pairing is checked before any track is merged, so base comes out as it went in.
     base = {"1": {"1": _track("Work", "1")}}

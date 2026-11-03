@@ -226,9 +226,12 @@ def _extract_remixers_from_title(title):
 
 
 def _natural_track_key(value):
-    """Sort keys numerically while still handling mixed values like A1/B2."""
+    """Sort keys numerically while still handling mixed values like A1/B2.
+
+    ``isdecimal()``, not ``isdigit()``, which is also true for a superscript "2" that ``int()`` refuses.
+    """
     return tuple(
-        (0, int(part)) if part.isdigit() else (1, part.lower()) for part in re.split(r"(\d+)", str(value)) if part
+        (0, int(part)) if part.isdecimal() else (1, part.lower()) for part in re.split(r"(\d+)", str(value)) if part
     )
 
 

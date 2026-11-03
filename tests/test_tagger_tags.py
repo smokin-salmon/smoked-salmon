@@ -2,6 +2,8 @@ from unittest.mock import MagicMock
 
 import anyio
 import asyncclick as click
+import pytest
+from helpers.tagger_multi_value_tags import _write_m4a
 from helpers.tagger_tags import _write_flac, _write_mp3
 from mutagen import mp4
 from mutagen.flac import FLAC, VCFLACDict
@@ -171,3 +173,20 @@ def test_an_mp3_number_without_a_total_gives_no_total(tmp_path):
     tag = TagFile(str(tmp_path / "01.mp3"))
 
     assert (tag.tracknumber, tag.tracktotal, tag.discnumber, tag.disctotal) == ("3", None, "1", None)
+
+
+@pytest.mark.parametrize(
+    ("atoms", "numbers"),
+    [
+        pytest.param({"trkn": [(3, 10)], "disk": [(2, 2)]}, ("3", "10", "2", "2"), id="numbers and totals"),
+        pytest.param({"trkn": [(3, 0)]}, ("3", None, None, None), id="no total, no disc"),
+        pytest.param({"trkn": [(0, 10)], "disk": [(0, 2)]}, (None, "10", None, "2"), id="totals only"),
+    ],
+)
+def test_an_m4a_gives_its_numbers_as_text_as_flac_and_mp3_do(tmp_path, atoms, numbers):
+    # MP4 keeps them as (number, total) ints, 0 for none (#908).
+    _write_m4a(tmp_path / "01.m4a", **atoms)
+
+    tag = TagFile(str(tmp_path / "01.m4a"))
+
+    assert (tag.tracknumber, tag.tracktotal, tag.discnumber, tag.disctotal) == numbers

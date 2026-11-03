@@ -5,6 +5,7 @@ various-artists release, and every track when no album artists are given (a cros
 credits from the files' tags; salmon descgen (and the web interface's Tools page) from the store's metadata.
 """
 
+import re
 import struct
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,6 +14,7 @@ from typing import Any
 import anyio
 import pytest
 from helpers.tagger_metadata_corrections import _track
+from helpers.tagger_multi_value_tags import _write_m4a
 from mutagen.mp3 import MP3
 
 import salmon.commands
@@ -280,6 +282,66 @@ def test_a_multi_disc_tracklist_keeps_its_disc_numbers() -> None:
     description = generate_description(tracks, _album(("Sullivan Murphy", "main")))
 
     assert _lines(description) == ["[b]01-01.[/b] Song 1 [i](3:20)[/i]", "[b]02-02.[/b] Song 2 [i](3:20)[/i]"]
+
+
+def _numbers(description: str) -> list[str]:
+    """The "[b]NN.[/b]" numbers that start the tracklist's lines."""
+    return re.findall(r"^\[b\](.+?)\.\[/b\] ", description, flags=re.MULTILINE)
+
+
+def _numbers_listed(numbers: list[tuple[str | None, str]]) -> list[str]:
+    """The numbers the tracklist gives tracks whose files hold these (disc, track) tags as written."""
+    tracks = _tracks(*({"artist": ["Sullivan Murphy"], "discnumber": d, "tracknumber": t} for d, t in numbers))
+    return _numbers(generate_description(tracks, _album(("Sullivan Murphy", "main"))))
+
+
+@pytest.mark.parametrize(
+    ("numbers", "listed"),
+    [
+        pytest.param([("2/2", "1"), ("1/2", "1")], ["02-01", "01-01"], id="disc with its total"),
+        pytest.param([("02/02", "1"), ("01/02", "1")], ["02-01", "01-01"], id="zero-padded disc with its total"),
+        pytest.param([("1/2", "1"), ("1/2", "2")], ["01-01", "01-02"], id="first of two discs alone"),
+        pytest.param([("1", "1"), (" 2 ", "1")], ["01-01", "02-01"], id="disc with spaces"),
+        pytest.param([("2", "1"), (None, "1")], ["02-01", "01-01"], id="one disc number missing"),
+        pytest.param([("A", "1"), ("2", "1")], ["A-01", "02-01"], id="a side among discs"),
+        pytest.param([("²", "1"), ("2", "1")], ["²-01", "02-01"], id="superscript disc"),
+        pytest.param([("1", "3/10")], ["03"], id="track with its total"),
+        pytest.param([("1/2", "3/10"), ("2/2", "1/10")], ["01-03", "02-01"], id="both with totals"),
+        pytest.param([("1", "1²")], ["1²"], id="superscript track"),
+        pytest.param([("A", "1"), ("B", "1")], ["01", "01"], id="sides alone"),
+    ],
+)
+def test_the_tracklist_numbers_each_track_from_its_tags_as_written(numbers, listed) -> None:
+    # A FLAC keeps DISCNUMBER and TRACKNUMBER as written, a total too; each of these raised or was listed as
+    # written ("1/2-01.") (#910).
+    assert _numbers_listed(numbers) == listed
+
+
+@pytest.mark.parametrize(
+    ("numbers", "listed"),
+    [
+        pytest.param([("1/1", "1"), ("1/1", "2")], ["01", "02"], id="one of one disc"),
+        pytest.param([("1", "1"), ("1", "2")], ["01", "02"], id="one disc"),
+        pytest.param([(None, "1"), (None, "2")], ["01", "02"], id="no disc number"),
+        pytest.param([("0", "1"), ("1", "1"), ("2", "1")], ["00-01", "01-01", "02-01"], id="disc 0 beside disc 1"),
+        pytest.param([("2", "A1"), ("2", "B1")], ["02-A1", "02-B1"], id="sides as track numbers"),
+    ],
+)
+def test_the_tracklist_still_numbers_tracks_as_before(numbers, listed) -> None:
+    assert _numbers_listed(numbers) == listed
+
+
+def test_the_tracklist_numbers_m4a_tracks(tmp_path) -> None:
+    # An M4A holds its numbers as (number, total) pairs (#908).
+    _write_m4a(
+        tmp_path / "01.m4a", trkn=[(1, 1)], disk=[(1, 2)], **{"\xa9nam": ["One"], "\xa9ART": ["Sullivan Murphy"]}
+    )
+    _write_m4a(
+        tmp_path / "02.m4a", trkn=[(1, 1)], disk=[(2, 2)], **{"\xa9nam": ["Two"], "\xa9ART": ["Sullivan Murphy"]}
+    )
+    tracks = {name: {"duration": 200, "t": tag} for name, tag in gather_tags(str(tmp_path)).items()}
+
+    assert _numbers(generate_description(tracks, _album(("Sullivan Murphy", "main")))) == ["01-01", "02-01"]
 
 
 def _descgen(monkeypatch, metadata: dict[str, Any]) -> list[str]:

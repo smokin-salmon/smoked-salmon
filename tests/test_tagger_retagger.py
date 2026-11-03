@@ -1324,3 +1324,66 @@ def test_tracks_the_metadata_lists_out_of_order_still_pair_by_their_numbers():
     changes = create_track_changes(tags, metadata)
 
     assert _new_titles(changes) == {"01.flac": "New 1", "02.flac": "New 2"}
+
+
+@pytest.mark.parametrize("disc", [None, "", "A"], ids=["no disc number", "an empty one", "a side"])
+def test_rename_files_puts_a_file_without_a_disc_number_on_the_first_disc(tmp_path, monkeypatch, disc) -> None:
+    # A multi-disc release whose files keep their own tags (#910).
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (2, 1)})
+    tags["a.flac"].discnumber = disc
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [
+        ("CD01", None),
+        ("CD01/01. Title 1-1.flac", "a.flac"),
+        ("CD02", None),
+        ("CD02/01. Title 2-1.flac", "b.flac"),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [("1", " 2"), ("1", "2 "), ("1", "2 / 2"), ("0", "2")],
+    ids=["disc with a space before", "disc with a space after", "disc with its total", "disc 0"],
+)
+def test_rename_files_still_files_these_discs_as_before(tmp_path, monkeypatch, first, second) -> None:
+    # As master did: _get_tag_number strips spaces as int() did, and "or 1" files a disc 0 with the first.
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (2, 1)})
+    tags["a.flac"].discnumber, tags["b.flac"].discnumber = first, second
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [
+        ("CD01", None),
+        ("CD01/01. Title 1-1.flac", "a.flac"),
+        ("CD02", None),
+        ("CD02/01. Title 2-1.flac", "b.flac"),
+    ]
+
+
+def test_rename_files_names_a_file_with_a_superscript_track_number(tmp_path, monkeypatch) -> None:
+    # isdigit() is true for a superscript "2", which int() refuses: the number is used as written.
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1)})
+    tags["a.flac"].tracknumber = "1²"
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [("1². Title 1-1.flac", "a.flac")]
+
+
+def test_create_track_changes_reads_a_track_number_with_spaces():
+    # As int() does: " 1" is track 1, not a number that can't be read.
+    tags = {
+        "a.flac": _tagset("Old A", tracknumber="2", discnumber="1"),
+        "b.flac": _tagset("Old B", tracknumber=" 1", discnumber="1"),
+    }
+    metadata = {"tracks": {"1": {"1": _trackmeta("New 1", "1", "1"), "2": _trackmeta("New 2", "2", "1")}}}
+
+    changes = create_track_changes(tags, metadata)
+
+    assert Change("title", "Old B", "New 1") in changes["b.flac"]
+    assert Change("title", "Old A", "New 2") in changes["a.flac"]
