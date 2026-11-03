@@ -19,7 +19,7 @@ from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.combine import _extract_remixers_from_title
 from salmon.tagger.pre_data import parse_artists
-from salmon.tagger.retagger import _parse_tag_number
+from salmon.tagger.retagger import _parse_tag_number, _unreadable_number
 from salmon.tagger.sources import METASOURCES
 from salmon.uploader import record
 from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
@@ -530,10 +530,13 @@ def _tag_credits(tags: Any) -> list[tuple[str, str]]:
     return credits
 
 
-def _names_several_discs(discnumber: Any) -> bool:
-    """Whether a disc number tag names more than one disc: "2", or a total in it, as a FLAC can hold ("1/2")."""
-    number, _, total = str(discnumber or "").partition("/")
-    return any(part.strip().isdecimal() and int(part) > 1 for part in (number, total))
+def _names_several_discs(tags: Any) -> bool:
+    """Whether a track's disc tags name more than one disc: a disc number over 1, or a total over 1, in DISCTOTAL
+    or written after the disc number ("1/2", as a FLAC can hold it)."""
+    number, _, total = str(tags.discnumber or "").partition("/")
+    return (_parse_tag_number(tags, "disctotal") or 0) > 1 or any(
+        part.strip().isdecimal() and int(part) > 1 for part in (number, total)
+    )
 
 
 def _listed_number(tags: Any, field: str) -> str:
@@ -559,7 +562,9 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     """
     album = album_credit_names(metadata)
     description = "[b][size=4]Tracklist[/size][/b]\n"
-    multi_disc = any(_names_several_discs(t["t"].discnumber) for t in track_data.values())
+    # Discs told apart only by tags that aren't numbers ("CD1", "CD2") are several discs too, listed as written.
+    unreadable_discs = {_unreadable_number(t["t"], "discnumber") for t in track_data.values()} - {None}
+    multi_disc = len(unreadable_discs) > 1 or any(_names_several_discs(t["t"]) for t in track_data.values())
     total_duration = 0
     for track in track_data.values():
         length = "{}:{:02d}".format(track["duration"] // 60, track["duration"] % 60)

@@ -1326,23 +1326,6 @@ def test_tracks_the_metadata_lists_out_of_order_still_pair_by_their_numbers():
     assert _new_titles(changes) == {"01.flac": "New 1", "02.flac": "New 2"}
 
 
-@pytest.mark.parametrize("disc", [None, "", "A"], ids=["no disc number", "an empty one", "a side"])
-def test_rename_files_puts_a_file_without_a_disc_number_on_the_first_disc(tmp_path, monkeypatch, disc) -> None:
-    # A multi-disc release whose files keep their own tags (#910).
-    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
-    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (2, 1)})
-    tags["a.flac"].discnumber = disc
-
-    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
-
-    assert _tree(tmp_path) == [
-        ("CD01", None),
-        ("CD01/01. Title 1-1.flac", "a.flac"),
-        ("CD02", None),
-        ("CD02/01. Title 2-1.flac", "b.flac"),
-    ]
-
-
 @pytest.mark.parametrize(
     ("first", "second"),
     [("1", " 2"), ("1", "2 "), ("1", "2 / 2"), ("0", "2")],
@@ -1387,3 +1370,50 @@ def test_create_track_changes_reads_a_track_number_with_spaces():
 
     assert Change("title", "Old B", "New 1") in changes["b.flac"]
     assert Change("title", "Old A", "New 2") in changes["a.flac"]
+
+
+@pytest.mark.parametrize(
+    ("first", "second"), [("CD1", "CD2"), ("A", "B"), ("1", "Disc 2")], ids=["CD1 and CD2", "sides", "one of them"]
+)
+def test_rename_files_leaves_a_release_whose_disc_numbers_arent_numbers(tmp_path, monkeypatch, capsys, first, second):
+    # Filed with the first disc, they would merge the discs; master raised ValueError (#910).
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (2, 1)})
+    tags["a.flac"].discnumber, tags["b.flac"].discnumber = first, second
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [("a.flac", "a.flac"), ("b.flac", "b.flac")]
+    out = capsys.readouterr().out
+    assert "Set DISCNUMBER to a plain number" in out
+    assert f"a.flac: {first}" in out or f"b.flac: {second}" in out
+
+
+@pytest.mark.parametrize("disc", [None, "", "  "], ids=["no disc number", "an empty one", "only spaces"])
+def test_rename_files_still_renames_one_disc_in_one_folder_without_disc_numbers(tmp_path, monkeypatch, disc) -> None:
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (1, 2)})
+    tags["a.flac"].discnumber = tags["b.flac"].discnumber = disc
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [("01. Title 1-1.flac", "a.flac"), ("02. Title 1-2.flac", "b.flac")]
+
+
+@pytest.mark.parametrize("disc", [None, "", "  "], ids=["no disc number", "an empty one", "only spaces"])
+@pytest.mark.parametrize("without", [["a.flac"], ["a.flac", "b.flac"]], ids=["one file", "two files"])
+def test_rename_files_leaves_a_multi_disc_release_with_a_file_without_a_disc_number(
+    tmp_path, monkeypatch, capsys, disc, without
+) -> None:
+    # Filed with the first disc, they could merge the discs; master raised (#910).
+    monkeypatch.setattr(cfg.upload, "formatting", _formatting())
+    tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (2, 1), "c.flac": (2, 2)})
+    for name in without:
+        tags[name].discnumber = disc
+
+    anyio.run(lambda: rename_files(str(tmp_path), tags, metadata, auto_rename=True, spectral_ids=None, source="CD"))
+
+    assert _tree(tmp_path) == [("a.flac", "a.flac"), ("b.flac", "b.flac"), ("c.flac", "c.flac")]
+    out = capsys.readouterr().out
+    assert "Set DISCNUMBER to a plain number" in out
+    assert all(f"{name}: no disc number" in out for name in without)

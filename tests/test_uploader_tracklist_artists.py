@@ -289,9 +289,14 @@ def _numbers(description: str) -> list[str]:
     return re.findall(r"^\[b\](.+?)\.\[/b\] ", description, flags=re.MULTILINE)
 
 
-def _numbers_listed(numbers: list[tuple[str | None, str]]) -> list[str]:
-    """The numbers the tracklist gives tracks whose files hold these (disc, track) tags as written."""
-    tracks = _tracks(*({"artist": ["Sullivan Murphy"], "discnumber": d, "tracknumber": t} for d, t in numbers))
+def _numbers_listed(numbers: list[tuple[str | None, ...]]) -> list[str]:
+    """The numbers the tracklist gives tracks whose files hold these (disc, track[, disc total]) tags as written."""
+    tracks = _tracks(
+        *(
+            {"artist": ["Sullivan Murphy"], "discnumber": d, "tracknumber": t, "disctotal": rest[0] if rest else None}
+            for d, t, *rest in numbers
+        )
+    )
     return _numbers(generate_description(tracks, _album(("Sullivan Murphy", "main"))))
 
 
@@ -301,6 +306,7 @@ def _numbers_listed(numbers: list[tuple[str | None, str]]) -> list[str]:
         pytest.param([("2/2", "1"), ("1/2", "1")], ["02-01", "01-01"], id="disc with its total"),
         pytest.param([("02/02", "1"), ("01/02", "1")], ["02-01", "01-01"], id="zero-padded disc with its total"),
         pytest.param([("1/2", "1"), ("1/2", "2")], ["01-01", "01-02"], id="first of two discs alone"),
+        pytest.param([("1", "1", "2"), ("1", "2", "2")], ["01-01", "01-02"], id="first of two discs alone, DISCTOTAL"),
         pytest.param([("1", "1"), (" 2 ", "1")], ["01-01", "02-01"], id="disc with spaces"),
         pytest.param([("2", "1"), (None, "1")], ["02-01", "01-01"], id="one disc number missing"),
         pytest.param([("A", "1"), ("2", "1")], ["A-01", "02-01"], id="a side among discs"),
@@ -308,7 +314,9 @@ def _numbers_listed(numbers: list[tuple[str | None, str]]) -> list[str]:
         pytest.param([("1", "3/10")], ["03"], id="track with its total"),
         pytest.param([("1/2", "3/10"), ("2/2", "1/10")], ["01-03", "02-01"], id="both with totals"),
         pytest.param([("1", "1²")], ["1²"], id="superscript track"),
-        pytest.param([("A", "1"), ("B", "1")], ["01", "01"], id="sides alone"),
+        pytest.param([("CD1", "1"), ("CD2", "1")], ["CD1-01", "CD2-01"], id="discs named, not numbered"),
+        pytest.param([("A", "1"), ("B", "1")], ["A-01", "B-01"], id="sides alone"),
+        pytest.param([("CD1", "1"), ("CD1", "2")], ["01", "02"], id="one disc, named"),
     ],
 )
 def test_the_tracklist_numbers_each_track_from_its_tags_as_written(numbers, listed) -> None:
@@ -342,6 +350,16 @@ def test_the_tracklist_numbers_m4a_tracks(tmp_path) -> None:
     tracks = {name: {"duration": 200, "t": tag} for name, tag in gather_tags(str(tmp_path)).items()}
 
     assert _numbers(generate_description(tracks, _album(("Sullivan Murphy", "main")))) == ["01-01", "02-01"]
+
+
+def test_the_tracklist_numbers_the_first_of_two_m4a_discs_on_its_own(tmp_path) -> None:
+    # An M4A keeps its disc total apart, as `disctotal` (#908).
+    _write_m4a(
+        tmp_path / "01.m4a", trkn=[(1, 1)], disk=[(1, 2)], **{"\xa9nam": ["One"], "\xa9ART": ["Sullivan Murphy"]}
+    )
+    tracks = {name: {"duration": 200, "t": tag} for name, tag in gather_tags(str(tmp_path)).items()}
+
+    assert _numbers(generate_description(tracks, _album(("Sullivan Murphy", "main")))) == ["01-01"]
 
 
 def _descgen(monkeypatch, metadata: dict[str, Any]) -> list[str]:
