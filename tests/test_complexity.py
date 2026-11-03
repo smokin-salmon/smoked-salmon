@@ -1,4 +1,4 @@
-"""No function in src/salmon grows more tangled without the PR saying so.
+"""No function in src/salmon or tests/ grows more tangled without the PR saying so.
 
 Ruff holds functions to a complexity of 20 (C901, `max-complexity` in pyproject.toml). The few that were already
 over it carry `# noqa: C901`, which would let them grow without limit, so ALLOWED gives each its score: it may
@@ -21,14 +21,16 @@ from ruff.__main__ import find_ruff_bin
 ROOT = Path(__file__).parent.parent
 MARGIN = 5
 
-# (path under src/salmon, function name): its complexity when the entry was last set. Keep it sorted.
+# (path in the repo, function name): its complexity when the entry was last set. Keep it sorted.
 ALLOWED = {
-    ("tagger/ai_review.py", "review_metadata_with_ai"): 22,
-    ("tagger/combine.py", "combine_metadatas"): 34,
-    ("tagger/combine.py", "combine_tracks"): 22,
-    ("tagger/retagger.py", "rename_files"): 21,
-    ("trackers/base.py", "_send"): 33,
-    ("uploader/__init__.py", "_upload_staged"): 49,
+    ("src/salmon/tagger/ai_review.py", "review_metadata_with_ai"): 22,
+    ("src/salmon/tagger/combine.py", "combine_metadatas"): 34,
+    ("src/salmon/tagger/combine.py", "combine_tracks"): 22,
+    ("src/salmon/tagger/retagger.py", "rename_files"): 21,
+    ("src/salmon/trackers/base.py", "_send"): 33,
+    ("src/salmon/uploader/__init__.py", "_upload_staged"): 49,
+    # The fake tracker server: one branch per endpoint it answers.
+    ("tests/helpers/cross_upload.py", "_handle"): 23,
 }
 
 
@@ -38,9 +40,19 @@ def max_complexity() -> int:
 
 
 def ruff_findings(*options: str) -> list[dict]:
-    """Ruff's C901 findings on src/salmon, with options added, as its JSON gives them."""
+    """Ruff's findings on src/salmon and tests/, with options added, as its JSON gives them."""
     result = subprocess.run(
-        [find_ruff_bin(), "check", "src/salmon", "--no-cache", "--output-format", "json", "--exit-zero", *options],
+        [
+            find_ruff_bin(),
+            "check",
+            "src/salmon",
+            "tests",
+            "--no-cache",
+            "--output-format",
+            "json",
+            "--exit-zero",
+            *options,
+        ],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -50,11 +62,11 @@ def ruff_findings(*options: str) -> list[dict]:
 
 
 def module(finding: dict) -> str:
-    return Path(finding["filename"]).relative_to(ROOT / "src" / "salmon").as_posix()
+    return Path(finding["filename"]).relative_to(ROOT).as_posix()
 
 
 def complexities() -> list[tuple[tuple[str, str], int]]:
-    """The complexity of each function in src/salmon over the limit, whatever its `# noqa` says."""
+    """The complexity of each function in src/salmon and tests/ over the limit, whatever its `# noqa` says."""
     scores = []
     for finding in ruff_findings("--select", "C901", "--ignore-noqa"):
         # "`name` is too complex (34 > 20)"

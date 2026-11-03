@@ -107,7 +107,7 @@ the test run never reads a developer's config.
 - Put new feature logic in a module of its own, or one that fits it, and call it from the busy modules (any
   over about 1000 lines, such as `uploader/__init__.py` or `trackers/base.py`) rather than growing them. A fix
   stays where the bug is.
-- Functions are held to a complexity of 20 (ruff's C901). The six already over it when the rule came in (#927)
+- Functions are held to a complexity of 20 (ruff's C901). The few already over it when the rule came in (#927)
   carry `# noqa: C901` and are listed in `tests/test_complexity.py`, each with a small margin: splitting one is
   welcome, as a change of its own. When that test or ruff fails on a PR, split the function rather than adding a
   `# noqa: C901` or raising its entry. Raise it only when the code belongs there, and say why in the PR description.
