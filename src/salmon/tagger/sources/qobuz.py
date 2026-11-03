@@ -331,8 +331,8 @@ class Scraper(QobuzBase, MetadataMixin):
 
     def parse_release_label(self, soup) -> str | None:
         """
-        Parse label name, marking as Self-Released if artist name appears in label.
-        Also attempts to extract label from copyright information.
+        Parse label name, also from the copyright information when the API gives none. Whether it is
+        Self-Released is decided by ``process_label``, as for the other sources.
         """
         # Try to get label directly from API
         label = safe_get(soup, ["label", "name"])
@@ -349,13 +349,7 @@ class Scraper(QobuzBase, MetadataMixin):
         if not label:
             return None
 
-        # Check if this is likely self-released
-        artist = safe_get(soup, ["artist", "name"])
-        label_str = str(label) if label else ""
-        if artist and isinstance(artist, str) and label_str and artist.lower() in label_str.lower():
-            return "Self-Released"
-
-        return label_str if label_str else None
+        return str(label)
 
     async def parse_tracks(self, soup):
         """Parse track information from the API response."""

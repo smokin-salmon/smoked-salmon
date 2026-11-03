@@ -4,6 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 
 from salmon.common import RE_FEAT, fetch_genre, re_split
+from salmon.common.strings import comparable, names_no_artist
 from salmon.errors import GenreNotInWhitelist, ScrapeError
 from salmon.sources import BandcampBase
 from salmon.tagger.sources.base import MetadataMixin
@@ -66,7 +67,7 @@ class Scraper(BandcampBase, MetadataMixin):
         try:
             context = resolve_release_context(soup)
             label = context["account_title"]
-            if label and normalize_release_key(context["artist"]) != normalize_release_key(label):
+            if label and comparable(context["artist"]) != comparable(label):
                 return label
         except IndexError as e:
             raise ScrapeError("Could not parse record label.") from e
@@ -79,16 +80,16 @@ class Scraper(BandcampBase, MetadataMixin):
         if catno:
             return catno
 
-        current_key = normalize_release_key(clean_title)
-        artist_key = normalize_release_key(artist)
+        current_key = comparable(clean_title)
+        artist_key = comparable(artist)
         for album in soup.select("li.recommended-album.footer-ar[data-albumtitle][data-artist]"):
             footer_title = album.get("data-albumtitle", "").strip()
             footer_artist = album.get("data-artist", "").strip()
             footer_catno, footer_clean_title = extract_catno_and_title(footer_title, footer_artist)
             if (
                 footer_catno
-                and normalize_release_key(footer_artist) == artist_key
-                and normalize_release_key(footer_clean_title) == current_key
+                and comparable(footer_artist) == artist_key
+                and comparable(footer_clean_title) == current_key
             ):
                 return footer_catno
         return None
@@ -159,10 +160,6 @@ def extract_catno_and_title(raw_title, artist=None):
     return match["catno"].strip(), clean_title
 
 
-def normalize_release_key(text):
-    return re.sub(r"[^a-z0-9]+", "", text.casefold())
-
-
 def resolve_release_context(soup):
     raw_title = parse_raw_release_title(soup)
     page_artist = parse_page_artist(soup)
@@ -171,11 +168,11 @@ def resolve_release_context(soup):
     release_artist = page_artist
     release_title = clean_title
 
-    if page_artist and account_title and normalize_release_key(page_artist) == normalize_release_key(account_title):
+    if page_artist and account_title and comparable(page_artist) == comparable(account_title):
         split_title = split_artist_prefixed_title(clean_title)
         if (
             split_title
-            and normalize_release_key(split_title[0]) != normalize_release_key(page_artist)
+            and comparable(split_title[0]) != comparable(page_artist)
             and tracklist_supports_release_title(soup, split_title[1])
         ):
             release_artist, release_title = split_title
@@ -196,12 +193,12 @@ def split_artist_prefixed_title(title):
 
 
 def tracklist_supports_release_title(soup, release_title):
-    candidate = normalize_release_key(release_title)
+    candidate = comparable(release_title)
     if not candidate:
         return False
 
     track_titles = [
-        normalize_release_key(track.get_text(strip=True))
+        comparable(track.get_text(strip=True))
         for track in soup.select("#track_table tr.track_row_view .track-title")
         if track.get_text(strip=True)
     ]
@@ -254,17 +251,17 @@ def parse_artists(artist, title, release_title=None):
         if feat_artists:
             # Remove featuring artists from track artists
             track_artists = track_artists.replace(feat_artists[0].split(" - ", 1)[0], "").strip()
-        normalized_track_artist = normalize_release_key(track_artists)
-        normalized_release_title = normalize_release_key(release_title) if release_title else ""
-        normalized_release_artist = normalize_release_key(artist)
+        normalized_track_artist = comparable(track_artists)
+        normalized_release_title = comparable(release_title) if release_title else ""
+        normalized_release_artist = comparable(artist)
         if normalized_track_artist not in {normalized_release_title, normalized_release_artist}:
-            if "various" in artist.lower():
+            if names_no_artist(artist):
                 track_artists = strip_track_side_prefix(track_artists)
             artists += [(a, "main") for a in re_split(track_artists)]
             strip_artist_prefix = True
     except (IndexError, TypeError):
         pass
-    if "various" not in artist.lower():
+    if not names_no_artist(artist):
         for a in re_split(artist):
             if (a, "main") not in artists:
                 artists.append((a, "main"))

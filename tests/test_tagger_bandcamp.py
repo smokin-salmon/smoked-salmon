@@ -1,9 +1,10 @@
 import asyncio
 import textwrap
 
+import pytest
 from bs4 import BeautifulSoup
 
-from salmon.tagger.sources.bandcamp import Scraper
+from salmon.tagger.sources.bandcamp import Scraper, parse_artists, parse_title
 
 
 def make_soup(html: str) -> BeautifulSoup:
@@ -211,3 +212,65 @@ def test_bandcamp_tracks_can_parse_unlinked_track_rows() -> None:
 
     assert tracks["1"]["1"]["title"] == "I Believe In You"
     assert tracks["1"]["2"]["title"] == "In Blood"
+
+
+@pytest.mark.parametrize(
+    ("artist", "title", "artists"),
+    [
+        pytest.param("Various Cruelties", "Song", [("Various Cruelties", "main")], id="a name with various in it"),
+        pytest.param("Various Artists", "A - Song", [("A", "main")], id="various artists"),
+        pytest.param("Various", "A - Song", [("A", "main")], id="various"),
+        # A side prefix ("A1") is taken off a track artist only on a various-artists release.
+        pytest.param("Various Artists", "A1 Foo - Song", [("Foo", "main")], id="various artists, a side prefix"),
+        pytest.param(
+            "Various Cruelties",
+            "A1 Foo - Song",
+            [("A1 Foo", "main"), ("Various Cruelties", "main")],
+            id="a name with various in it, a side prefix",
+        ),
+    ],
+)
+def test_only_a_various_artists_release_has_no_artist_of_its_own(artist, title, artists) -> None:
+    # "various" anywhere in the name dropped the artist (#910).
+    assert parse_artists(artist, title, release_title="Album")[0] == artists
+
+
+@pytest.mark.parametrize(
+    ("artist", "title", "artists"),
+    [
+        pytest.param("坂本龍一", "細野晴臣 - Song", [("細野晴臣", "main"), ("坂本龍一", "main")], id="another artist"),
+        pytest.param("坂本龍一", "坂本龍一 - Song", [("坂本龍一", "main")], id="the release's artist"),
+        pytest.param("Björk", "Bjork - Song", [("Björk", "main")], id="the release's artist, unaccented"),
+    ],
+)
+def test_a_track_artist_in_any_script_is_told_from_the_releases(artist, title, artists) -> None:
+    # The release key kept only [a-z0-9], so every non-Latin name was "" and equal to any other (#910).
+    assert parse_artists(artist, title, release_title="Album")[0] == artists
+
+
+@pytest.mark.parametrize(
+    ("title", "guests", "plain"),
+    [
+        pytest.param("Song (feat. A (UK))", [("A (UK)", "guest")], "Song", id="a bracket inside the credit"),
+        pytest.param("Song (feat. A)", [("A", "guest")], "Song", id="a plain credit"),
+    ],
+)
+def test_a_featured_credit_keeps_a_bracket_in_the_guests_name(title, guests, plain) -> None:
+    # The credit was cut at its first closing bracket: guest "A (UK", title "Song)" (#910).
+    assert parse_artists("Artist", title, release_title="Album")[0] == [*guests, ("Artist", "main")]
+    assert parse_title(title) == plain
+
+
+def test_a_label_in_another_script_than_the_artist_is_kept() -> None:
+    # The release key kept only [a-z0-9]: both names were "", so the label read as the artist's own (#910).
+    soup = make_soup("""
+        <div id="name-section">
+          <span>坂本龍一</span>
+          <div class="trackTitle">Album</div>
+        </div>
+        <div id="band-name-location">
+          <span class="title">細野レコード</span>
+        </div>
+    """)
+
+    assert Scraper().parse_release_label(soup) == "細野レコード"

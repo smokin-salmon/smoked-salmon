@@ -287,3 +287,20 @@ def test_fetch_data_reads_the_page_with_the_shipped_default_placeholders(monkeyp
     data = anyio.run(Scraper().fetch_data, QOBUZ_URL)
 
     assert data["title"] == "journaling"
+
+
+@pytest.mark.parametrize(
+    ("label", "artist", "processed"),
+    [
+        pytest.param("Fairmont Records", "Air", "Fairmont Records", id="artist's name inside a word"),
+        pytest.param("Daft Life", "Daft Punk", "Daft Life", id="label shares a word"),
+        pytest.param("Air", "Air", "Self-Released", id="label is the artist"),
+        pytest.param("Air Records", "Air", "Self-Released", id="label starts with the artist"),
+    ],
+)
+def test_a_label_is_self_released_by_the_rule_every_source_uses(label, artist, processed) -> None:
+    # Qobuz tested "artist in label", so "Fairmont Records" by Air was Self-Released (#910).
+    scraper = Scraper()
+    parsed = scraper.parse_release_label({"label": {"name": label}, "artist": {"name": artist}})
+
+    assert scraper.process_label({"label": parsed, "artists": [(artist, "main")]}) == processed
