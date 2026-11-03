@@ -339,6 +339,8 @@ async def compile_files(path: str, torrent_content: Torrent, metadata: dict[str,
 async def collect_logfiles(path: str) -> list[tuple[str, bytes]]:
     """Collect all log files for upload.
 
+    A log is any file ending ".log" in any case ("Rip.LOG" too), as the log checks find them.
+
     Args:
         path: Path to the album folder.
 
@@ -346,8 +348,11 @@ async def collect_logfiles(path: str) -> list[tuple[str, bytes]]:
         List of (filename, file_bytes) tuples for each log file found.
     """
     log_files: list[tuple[str, bytes]] = []
-    async for filepath in anyio.Path(path).rglob("*.log"):
-        log_files.append((filepath.name, await filepath.read_bytes()))
+    # Not rglob("*.log"), which matches case-sensitively; case_sensitive=False needs Python 3.12.
+    async for filepath in anyio.Path(path).rglob("*"):
+        # The name, not .suffix: a file named ".log" has no suffix.
+        if filepath.name.lower().endswith(".log") and await filepath.is_file():
+            log_files.append((filepath.name, await filepath.read_bytes()))
     return log_files
 
 

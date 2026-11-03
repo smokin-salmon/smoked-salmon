@@ -1,8 +1,12 @@
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
+import anyio
+import pytest
+
 from salmon import cfg
 from salmon.uploader.upload import (
+    collect_logfiles,
     compile_data_new_group,
     generate_description,
     generate_source_links,
@@ -250,3 +254,40 @@ def test_a_lossy_hybrid_tracklist_names_no_bit_depth(monkeypatch) -> None:
     monkeypatch.setattr(cfg.upload.description, "bitrates_in_t_desc", False)
 
     assert "01. Intro [i](3:05)[/i] [44.1 kHz]\n" in _hybrid_tracklist(None)
+
+
+def _logs_sent(path) -> list[tuple[str, bytes]]:
+    return sorted(anyio.run(collect_logfiles, str(path)))
+
+
+@pytest.mark.parametrize("name", ["rip.log", "Rip.LOG", "Rip.Log"])
+def test_a_log_is_sent_whatever_the_case_of_its_extension(tmp_path, name) -> None:
+    # The log checks find a log by name.lower().endswith(".log"); what they check is what is sent (#910).
+    (tmp_path / name).write_bytes(b"log")
+
+    assert _logs_sent(tmp_path) == [(name, b"log")]
+
+
+def test_a_log_named_just_dot_log_is_sent(tmp_path) -> None:
+    # Matched by its name: Path.suffix is empty for ".log", which rglob("*.log") did send.
+    (tmp_path / ".log").write_bytes(b"log")
+
+    assert _logs_sent(tmp_path) == [(".log", b"log")]
+
+
+def test_logs_in_a_subfolder_are_sent(tmp_path) -> None:
+    (tmp_path / "Logs").mkdir()
+    (tmp_path / "Logs" / "CD1.LOG").write_bytes(b"one")
+    (tmp_path / "Logs" / "CD2.log").write_bytes(b"two")
+
+    assert _logs_sent(tmp_path) == [("CD1.LOG", b"one"), ("CD2.log", b"two")]
+
+
+def test_only_logs_are_sent(tmp_path) -> None:
+    for name in ("rip.log.txt", "Rip.LOGS", "catalog", "01 Track.flac"):
+        (tmp_path / name).write_bytes(b"other")
+    # A folder named like a log is searched, not sent.
+    (tmp_path / "Extras.log").mkdir()
+    (tmp_path / "Extras.log" / "rip.log").write_bytes(b"log")
+
+    assert _logs_sent(tmp_path) == [("rip.log", b"log")]
