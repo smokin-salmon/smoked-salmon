@@ -213,8 +213,9 @@ _TRACKER_COOKIE = re.compile(rf"""\b({_TRACKER_KEYS}=)(?:[^;\s"'<>]|;(?!\s))+(;\
 # The passkey in an announce URL, whatever its length: https://tracker/<passkey>/announce.
 _ANNOUNCE_PASSKEY = re.compile(r"/[A-Za-z0-9]+(?=/announce)")
 # A form field carrying one, <input name="auth" value="...">, its attributes in any order.
-# Quote-aware: a ">" inside a quoted attribute does not end the tag.
-_INPUT_TAG = re.compile(r"""<input\b(?:[^>"']|"[^"]*"|'[^']*')*>""", re.IGNORECASE)
+# Quote-aware: a ">" inside a quoted attribute does not end the tag. Possessive, so a failure costs one pass.
+_INPUT_START = re.compile(r"<input\b", re.IGNORECASE)
+_INPUT_TAG = re.compile(r"""<input\b(?:[^>"']|"[^"]*"|'[^']*')*+>""", re.IGNORECASE)
 _SECRET_FIELD_NAME = re.compile(rf"""\bname\s*=\s*(["']?){_TRACKER_KEYS}\1(?=[\s/>])""", re.IGNORECASE)
 _FIELD_VALUE = re.compile(r"""(\bvalue\s*=\s*)(?:"[^"]*"|'[^']*'|[^\s"'>]+)""", re.IGNORECASE)
 # A response header naming a credential. A cookie keeps its name and attributes, only its value is masked.
@@ -222,17 +223,41 @@ _SECRET_HEADER_NAME = re.compile(r"auth|token|key|session|pass|secret", re.IGNOR
 _COOKIE_VALUE = re.compile(r"^(\s*[^=;\s]+=)[^;]*")
 
 
-def _mask_secret_field(match: re.Match[str]) -> str:
-    tag = match[0]
+def _mask_secret_field(tag: str) -> str:
     if not _SECRET_FIELD_NAME.search(tag):
         return tag
     return _FIELD_VALUE.sub(r'\1"[REDACTED]"', tag)
 
 
+def _mask_input_fields(text: str) -> str:
+    """Mask the secret fields of the <input> tags in text, each read within a window of its own.
+
+    The window ends at the next "<input" or at the end of the text. The tag ends at the first ">" outside
+    quotes; with none (a lone quote in an unquoted attribute), at the window's first ">"; with none, it is left as is.
+    """
+    out: list[str] = []
+    done = 0
+    start = _INPUT_START.search(text)
+    while start:
+        begin = start.start()
+        following = _INPUT_START.search(text, start.end())
+        end = following.start() if following else len(text)
+        tag = _INPUT_TAG.match(text, begin, end)
+        tag_end = tag.end() if tag else text.find(">", begin, end) + 1
+        if tag_end:
+            out += (text[done:begin], _mask_secret_field(text[begin:tag_end]))
+            done = tag_end
+            start = _INPUT_START.search(text, tag_end)
+        else:
+            start = following
+    out.append(text[done:])
+    return "".join(out)
+
+
 def redact_tracker_text(text: str, known: Iterable[str | None] = ()) -> str:
     """Mask a tracker's secrets in a page, an API answer or a URL before it reaches the terminal."""
     text = _mask_known(text, known)
-    text = _INPUT_TAG.sub(_mask_secret_field, text)
+    text = _mask_input_fields(text)
     text = _TRACKER_COOKIE.sub(lambda m: f"{m[1]}[REDACTED]{m[2]}" if m[2] else m[0], text)
     text = _TRACKER_QUERY.sub(r"\1[REDACTED]", text)
     text = _ANNOUNCE_PASSKEY.sub("/[REDACTED]", text)

@@ -272,3 +272,39 @@ def test_a_long_run_of_keys_with_no_cookie_end_is_read_once() -> None:
     elapsed = time.perf_counter() - started
     assert redacted == "session=[REDACTED]"
     assert elapsed < 1
+
+
+@pytest.mark.parametrize(
+    ("text", "marker"),
+    [
+        pytest.param("""<input placeholder=don't name="auth" value="MARK-LONE-1">""", "MARK-LONE-1", id="lone single"),
+        pytest.param('<input placeholder=a"b name=authkey value=MARK-LONE-2>', "MARK-LONE-2", id="lone double"),
+    ],
+)
+def test_redact_tracker_text_masks_an_input_after_a_lone_quote(text: str, marker: str) -> None:
+    assert marker not in redact_tracker_text(text)
+
+
+def test_redact_tracker_text_keeps_the_text_after_a_lone_quote_tag() -> None:
+    text = """<input placeholder=don't name="auth" value="MARK-LONE-3"><p>it's</p>"""
+    shown = redact_tracker_text(text)
+    assert "MARK-LONE-3" not in shown
+    assert shown.endswith("<p>it's</p>")
+
+
+def test_redact_tracker_text_scans_unclosed_input_tags_in_bounded_time() -> None:
+    text = "<input " * 8000
+    start = time.perf_counter()
+    shown = redact_tracker_text(text)
+    assert time.perf_counter() - start < 1
+    assert shown == text
+
+
+def test_redact_tracker_text_masks_an_input_after_unclosed_ones() -> None:
+    shown = redact_tracker_text("<input " * 500 + '<input name="auth" value="MARK-AFTER-5">')
+    assert "MARK-AFTER-5" not in shown
+
+
+def test_redact_tracker_text_masks_an_input_whose_tag_is_very_long() -> None:
+    shown = redact_tracker_text('<input title="' + "a" * 5000 + '" name="auth" value="MARK-LONG-6">')
+    assert "MARK-LONG-6" not in shown
