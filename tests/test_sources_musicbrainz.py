@@ -175,3 +175,18 @@ def test_a_cover_art_archive_answer_that_is_not_json_is_no_cover_and_says_so(ser
     assert cover is None
     assert "Cover Art Archive request failed (JSONDecodeError): no cover." in out
     assert len(server.requests) == 1
+
+
+@pytest.mark.parametrize("join", [" feat. ", " ft. ", " featuring ", " Feat. ", " ft "])
+def test_a_featured_join_makes_the_artists_after_it_guests(join) -> None:
+    # Only " feat. " did: B after " ft. " or " featuring " was a main artist (#910).
+    credits = [{"artist": {"name": "A"}}, join, {"artist": {"name": "B"}}]
+
+    assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "guest")]
+
+
+@pytest.mark.parametrize("join", [" & ", ", ", " x ", " with "])
+def test_another_join_keeps_the_artists_after_it_main(join) -> None:
+    credits = [{"artist": {"name": "A"}}, join, {"artist": {"name": "B"}}]
+
+    assert musicbrainz_tagger.parse_artists(credits) == [("A", "main"), ("B", "main")]

@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
 
+from salmon.common import RE_FEAT_JOIN
 from salmon.common.strings import strip_numbered_suffix
 from salmon.sources import DiscogsBase
 from salmon.tagger.sources.base import MetadataMixin
@@ -32,8 +33,6 @@ ROLES = {
     "Remix": "remixer",
     "Arranged By": "arranger",
 }
-
-RE_FEAT_JOIN = re.compile(r"(?:feat|featuring|ft)\.?", flags=re.IGNORECASE)
 
 RELEASE_TYPES = {
     "Album": "Album",

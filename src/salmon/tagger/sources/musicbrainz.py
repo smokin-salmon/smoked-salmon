@@ -5,6 +5,7 @@ import asyncclick as click
 import musicbrainzngs
 from musicbrainzngs import musicbrainz as mb_module
 
+from salmon.common import RE_FEAT_JOIN
 from salmon.errors import ScrapeError
 from salmon.sources import MusicBrainzBase
 from salmon.tagger.sources.base import MetadataMixin
@@ -119,14 +120,14 @@ class Scraper(MusicBrainzBase, MetadataMixin):
 
 def parse_artists(artist_credits):
     """
-    Create the artists list from the given list of artists. MusicBrainz does
-    some weird bullshit for guests, where it will separate the big list of
-    artists with the string ' feat. ', after which point all of the artists are guests.
+    Create the artists list from the given list of artists. MusicBrainz separates the
+    list with join phrases; after a feat. one (" feat. ", " ft. ", " featuring "), all of
+    the artists are guests, as for a Discogs join.
     """
     artists = []
     is_guest = False
     for artist in artist_credits:
-        if artist == " feat. ":
+        if isinstance(artist, str) and RE_FEAT_JOIN.fullmatch(artist.strip()):
             is_guest = True
         elif isinstance(artist, dict):
             artists.append((artist["artist"]["name"], "guest" if is_guest else "main"))

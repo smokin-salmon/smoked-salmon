@@ -35,10 +35,15 @@ COPYRIGHT_SUBS = (
 )
 
 
-RE_FEAT = re.compile(
-    r" [\(\[\{]?(?:f(?:ea)?t(?:uring)?\.?|with\.) ([^\)\]\}]+)[\)\]\}]?",
-    flags=re.IGNORECASE,
-)
+_NO_BRACKET = r"[^()\[\]{}]"
+# A bracket group, two deep: "(UK)", "(B (C))".
+_BRACKETS = rf"[\(\[\{{](?:{_NO_BRACKET}|[\(\[\{{]{_NO_BRACKET}*[\)\]\}}])*[\)\]\}}]"
+# The guests: a name and at most one bracket group of its own, "A (UK)" (#910). A group that doesn't close, or guests
+# that start with a bracket, are read as before, up to the first closing bracket.
+_GUESTS = rf"{_NO_BRACKET}+(?:{_BRACKETS}|[\(\[\{{][^\)\]\}}]*)?|[^\)\]\}}]+"
+RE_FEAT = re.compile(rf" [\(\[\{{]?(?:f(?:ea)?t(?:uring)?\.?|with\.) ({_GUESTS})[\)\]\}}]?", flags=re.IGNORECASE)
+# A join phrase between credited artists that makes those after it guests: " feat. ", " ft. ", " featuring ".
+RE_FEAT_JOIN = re.compile(r"(?:feat|featuring|ft)\.?", flags=re.IGNORECASE)
 # Only a whole (…) or […] ending the title's line, after its text, is a useless version: a word of the title stays.
 RE_USELESS_VERSION = re.compile(
     r"(?<=\S)[ \t]*(?:(?P<paren>\()|\[)[ \t]*(?P<version>"
