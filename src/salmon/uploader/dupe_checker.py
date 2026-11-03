@@ -84,7 +84,7 @@ async def dupe_check_recent_torrents(
 
 
 def _title_words(title: str | None) -> set[str]:
-    """Normalized words of a title, cleaned up the same way make_searchstrs cleans the album.
+    """Normalized words of a title, cleaned up as make_searchstrs cleans the album, but for the release type.
 
     Two releases can share every artist word and still be unrelated if their titles have nothing
     in common: comparing the full search strings alone lets a shared multi-word artist outweigh a
@@ -98,7 +98,9 @@ def _title_words(title: str | None) -> set[str]:
         The set of normalized words in the title, empty if there is no title.
     """
     album = _sanitize_album_for_dupe_check(title)
-    album = re.sub(r" ?(- )? (EP|Single)", "", album)
+    # Not _RE_TYPE_SUFFIX, which takes a type only at the end: here it goes wherever it follows a space, so it is seldom
+    # the one word two different titles share. These words are only compared, never searched.
+    album = re.sub(r" ?(- )? (EP|Single)\b", "", album)
     album = re.sub(r"\(?[Ff]eat(\.|uring)? [^\)]+\)?", "", album)
     normalized = re_strip(album, filter_nonscrape=False)
     accented = normalize_accents(normalized)

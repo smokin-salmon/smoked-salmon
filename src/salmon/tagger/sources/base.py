@@ -306,23 +306,25 @@ def strip_ep_suffix(title):
     return stripped.strip() or title
 
 
+def label_names_a_main_artist(label: str, artists) -> bool:
+    """Whether a label starts with a main artist's whole name: "Air Records" is Air's, "Airplane Records" isn't."""
+    label = label.lower()
+    # \b won't do: at "M.I.A.| Music" neither side is a word character. So a name ending in punctuation ends there,
+    # whatever follows ("M.I.A.Music" too), and any other name needs no letter or digit after it.
+    return any(i == "main" and re.match(re.escape(str(a).lower()) + r"(?:(?<=\W)|(?!\w))", label) for a, i in artists)
+
+
 def determine_label_type(label, artists):
     """
     Determine the type of label based on the label and artists.
     Return "Self-Released" if self-released, otherwise return the original label.
     """
-
-    def _compare(label, artist):
-        label, artist = label.lower(), artist.lower()
-        return label == artist or label.startswith(artist)
-
     if isinstance(label, str):
         # Check for "Not On Label" or "Self-Released" in the label
-        if re.search(r"(not on label|no label|self[- ]?released)", label, re.IGNORECASE):
+        if re.search(r"\b(?:not on label|no label|self[- ]?released)\b", label, re.IGNORECASE):
             return "Self-Released"
 
-        # Compare label to artist name
-        if any(_compare(label, str(a)) and i == "main" for a, i in artists):
+        if label_names_a_main_artist(label, artists):
             return "Self-Released"
     return label
 

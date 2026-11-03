@@ -5,7 +5,7 @@ from html import unescape
 
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.sources import TidalBase
-from salmon.tagger.sources.base import MetadataMixin
+from salmon.tagger.sources.base import MetadataMixin, label_names_a_main_artist
 
 RECORD_TYPES = {
     "ALBUM": "Album",
@@ -69,9 +69,9 @@ class Scraper(TidalBase, MetadataMixin):
         return dict(tracks)
 
     def process_label(self, data):
-        if isinstance(data["label"], str) and any(
-            data["label"].lower().startswith(a.lower()) and i == "main" for a, i in data["artists"]
-        ):
+        # Not the base rule: "Not On Label" stays as read, as the merge can replace it with another source's label and
+        # catalogue number, where it wouldn't replace "Self-Released". combine.py applies the base rule afterwards.
+        if isinstance(data["label"], str) and label_names_a_main_artist(data["label"], data["artists"]):
             return "Self-Released"
         return data["label"]
 
