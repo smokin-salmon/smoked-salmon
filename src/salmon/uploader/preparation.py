@@ -62,7 +62,7 @@ async def prepare_upload(
     for step in steps:
         try:
             await step()
-        except Exception:  # noqa: S112
+        except Exception:
             # Left to the upload, which reports it as it would have.
             continue
 

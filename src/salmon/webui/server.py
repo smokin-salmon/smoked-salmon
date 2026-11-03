@@ -36,7 +36,7 @@ from salmon.errors import ScrapeError
 from salmon.images.files import MAX_IMAGE_BYTES
 from salmon.release_notification import get_version
 from salmon.trackers import account
-from salmon.webui import kinds, output, paths  # noqa: F401  (kinds registers the job kinds)
+from salmon.webui import kinds, output, paths  # importing kinds also registers the job kinds
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
 from salmon.webui.egress import Redactor, config_secrets
 from salmon.webui.interaction import Picked

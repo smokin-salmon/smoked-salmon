@@ -76,6 +76,8 @@ select = [
     "TC",
     # mccabe: function complexity
     "C90",
+    # a `# noqa` that suppresses nothing, or names a rule not enabled here
+    "RUF100",
 ]
 
 [tool.ruff.lint.mccabe]
