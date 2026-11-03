@@ -1,4 +1,4 @@
-"""No function in src/salmon or tests/ grows more tangled without the PR saying so.
+"""No function in src/salmon or tests/ grows past the complexity limit, or past its allowance, unless the PR says why.
 
 Ruff holds functions to a complexity of 20 (C901, `max-complexity` in pyproject.toml). The few that were already
 over it carry `# noqa: C901`, which would let them grow without limit, so ALLOWED gives each its score: it may
