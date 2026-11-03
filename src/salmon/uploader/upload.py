@@ -350,7 +350,8 @@ async def collect_logfiles(path: str) -> list[tuple[str, bytes]]:
     log_files: list[tuple[str, bytes]] = []
     # Not rglob("*.log"), which matches case-sensitively; case_sensitive=False needs Python 3.12.
     async for filepath in anyio.Path(path).rglob("*"):
-        if filepath.suffix.lower() == ".log" and await filepath.is_file():
+        # The name, not .suffix: a file named ".log" has no suffix.
+        if filepath.name.lower().endswith(".log") and await filepath.is_file():
             log_files.append((filepath.name, await filepath.read_bytes()))
     return log_files
 

@@ -260,7 +260,7 @@ def _logs_sent(path) -> list[tuple[str, bytes]]:
     return sorted(anyio.run(collect_logfiles, str(path)))
 
 
-@pytest.mark.parametrize("name", ["rip.log", "Rip.LOG", "Rip.Log"])
+@pytest.mark.parametrize("name", ["rip.log", "Rip.LOG", "Rip.Log", ".log"])
 def test_a_log_is_sent_whatever_the_case_of_its_extension(tmp_path, name) -> None:
     # The log checks find a log by name.lower().endswith(".log"); what they check is what is sent (#910).
     (tmp_path / name).write_bytes(b"log")
