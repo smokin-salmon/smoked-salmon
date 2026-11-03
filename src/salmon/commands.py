@@ -21,6 +21,7 @@ from salmon import cfg, interaction
 from salmon.common import clipboard_copy, commandgroup, get_audio_files, str_to_int_if_int
 from salmon.common.files import AlbumPath, rewrite_refusal
 from salmon.common.redaction import redact_secrets
+from salmon.common.strings import numeric_id
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS
 from salmon.errors import UploadError
@@ -244,7 +245,6 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
             ),
         )
 
-    torrent_id_int: int
     if "/torrents.php" in torrent_id_input:
         base_url = parse.urlparse(torrent_id_input).netloc
         if base_url in salmon.trackers.tracker_url_code_map:
@@ -253,10 +253,11 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
         else:
             click.echo("Unrecognised tracker!")
             raise click.Abort
-        torrent_id_int = int(parse.parse_qs(parse.urlparse(torrent_id_input).query)["torrentid"][0])
-    elif torrent_id_input.strip().isdigit():
-        torrent_id_int = int(torrent_id_input)
+        query = parse.parse_qs(parse.urlparse(torrent_id_input).query)
+        torrent_id_int = numeric_id(query.get("torrentid", [""])[0].strip())
     else:
+        torrent_id_int = numeric_id(torrent_id_input.strip())
+    if torrent_id_int is None:
         click.echo("Not a valid torrent!")
         raise click.Abort
 
