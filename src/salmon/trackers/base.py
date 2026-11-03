@@ -896,7 +896,7 @@ class BaseGazelleApi:
         wait=wait_exponential(multiplier=1, min=1, max=30) + wait_random(0, 2),
         reraise=True,
     )
-    async def _send(
+    async def _send(  # noqa: C901
         self,
         method: str,
         url: str,

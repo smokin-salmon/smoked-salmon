@@ -1154,7 +1154,7 @@ async def _run_manual_review(
     return await manual_review(metadata, validator)
 
 
-async def review_metadata_with_ai(
+async def review_metadata_with_ai(  # noqa: C901
     metadata: dict[str, Any],
     tag_baseline: dict[str, Any],
     source_url: str | None,

@@ -34,7 +34,7 @@ def get_source_from_link(url):
             return name
 
 
-def combine_metadatas(*metadatas, base=None, source_url=None):
+def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     """
     This function takes a bunch of chosen metadata and splices
     together values to form one unified metadata dictionary.
@@ -341,7 +341,7 @@ def _print_pairing(mtracks, ordered, reasons):
         )
 
 
-def combine_tracks(base, meta, update_track_numbers):
+def combine_tracks(base, meta, update_track_numbers):  # noqa: C901
     """Combine the metadata for the tracks of two different sources."""
     # Track dictionaries reflect discovery order, so sort discs and tracks naturally before pairing.
     btracks_sorted = [

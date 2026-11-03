@@ -101,6 +101,13 @@ the test run never reads a developer's config.
   `prompt`, `confirm` or `edit` or `input()`: a web job would hang on the server's terminal. A test walks `src/salmon`
   and fails on one. Whether a run answers with defaults (`-yyy`, or `yes_all` in the config) is
   `await interaction.assume_defaults()`; nothing writes `cfg` at runtime.
+- Before writing a helper, look for one that already does the job, and use or extend it rather than writing a
+  copy. A fix in a torrent's upload (`uploader/upload.py`, `uploader/__init__.py`) usually applies to its
+  conversions' (`uploader/conversion_upload.py`) too, and the other way round.
+- A module in `src/salmon` has at most 600 lines; the longer ones may grow only a little past their entry in
+  `tests/test_file_sizes.py`. When that test fails, move code out of the module rather than raising the entry. Raise
+  it only when the code belongs there, and say why in the PR description. Functions are held to a complexity of 20
+  (ruff's C901); split one rather than adding a `# noqa: C901`.
 - Keep PRs to one logical change. Maintainers squash-merge.
 - Image hosts that only display for one tracker's members (RED's) must never be usable through a
   setting shared by all trackers. See [ADR 0002](docs/adr/0002-per-tracker-cover-host.md).

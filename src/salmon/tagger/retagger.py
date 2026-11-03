@@ -667,7 +667,7 @@ def retag_files(path, album_changes, track_changes, clear=()):
     click.secho("Retagged files.", fg="green")
 
 
-async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None, tracks_by_file=None):
+async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None, tracks_by_file=None):  # noqa: C901
     """
     Call functions that generate the proposed changes, then print and prompt
     for confirmation. Apply the changes if user agrees.
