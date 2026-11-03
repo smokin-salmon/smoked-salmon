@@ -32,6 +32,7 @@ except ImportError:
 from salmon import cfg, dryrun, interaction, prepared
 from salmon.common import flush_stdin, get_audio_files
 from salmon.common.files import process_files
+from salmon.common.strings import numeric_id
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
@@ -1240,7 +1241,8 @@ def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool
         return "*"  # a lossy master needs at least one spectral
     if configured in ("*", "+", "0"):
         return configured
-    track_ids = [i for i in configured.split() if int(i) in spectral_ids]
+    # In plain digits, which the prompt's answer must be: the config's pattern also takes other scripts' digits.
+    track_ids = [i if i.isascii() else str(int(i)) for i in configured.split() if int(i) in spectral_ids]
     return " ".join(track_ids) if track_ids else context_default
 
 
@@ -1302,8 +1304,9 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
                 fg="red",
             )
             continue
-        if all(i.isdigit() and int(i) in spectral_ids for i in ids):
-            return {int(id_): spectral_ids[int(id_)] for id_ in ids}
+        numbers = [numeric_id(i) for i in ids]
+        if all(number in spectral_ids for number in numbers):
+            return {number: spectral_ids[number] for number in numbers if number is not None}
         click.secho(
             f"Invalid IDs. Valid IDs are: {', '.join(str(s) for s in spectral_ids)}.",
             fg="red",

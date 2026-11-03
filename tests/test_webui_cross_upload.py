@@ -449,6 +449,8 @@ def test_a_failed_second_format_stops_the_job_and_its_result_links_what_is_up(
         ({"inputs": ["{album}/release.torrent"]}, "{album}/release.torrent is not a OPS torrent ID or URL."),
         ({"inputs": ["https://elsewhere.test/torrents.php?torrentid=1"]}, "Expected a torrent URL from {OPS}, "),
         ({"inputs": ["{OPS}/torrents.php?id=500002"]}, "The torrent URL must hold a numeric torrentid."),
+        ({"inputs": ["12²"]}, "12² is not a OPS torrent ID or URL."),
+        ({"inputs": ["{OPS}/torrents.php?torrentid=12²"]}, "The torrent URL must hold a numeric torrentid."),
         ({"conversions": ["V2"]}, "'V2' is not a conversion; the choices are "),
         ({"conversions": ["V0", "v0"]}, "'V0' is named twice"),
         ({"transcodes": ["V0"]}, "Invalid parameters: Object contains unknown field `transcodes`"),

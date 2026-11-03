@@ -8,6 +8,7 @@ import re
 from collections.abc import Iterable, Sequence
 from urllib.parse import urlsplit
 
+from salmon.common.strings import numeric_id
 from salmon.config.image_hosts import display_refusal, spectrals_refusal
 from salmon.images import HOSTS, host_of_url
 
@@ -30,9 +31,9 @@ def parse_spectral_urls(values: Iterable[str]) -> tuple[tuple[int, tuple[str, ..
         if not equals:
             raise ValueError(f"{value!r} is not TRACK=URL[,URL]")
         track_text = track_text.strip()
-        if not track_text.isdigit() or int(track_text) < 1:
+        track = numeric_id(track_text)
+        if not track:
             raise ValueError(f"{track_text!r} in {value!r} is not a track number")
-        track = int(track_text)
         if track in parsed:
             raise ValueError(f"track {track} is given twice")
         urls = tuple(url.strip() for url in urls_text.split(","))

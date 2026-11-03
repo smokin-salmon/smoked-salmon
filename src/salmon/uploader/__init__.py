@@ -138,7 +138,7 @@ def validate_spectral_urls(ctx, param, value: tuple[str, ...]) -> tuple[tuple[in
 
 @commandgroup.command()
 @click.argument("path", type=AlbumPath(exists=True, file_okay=False))
-@click.option("--group-id", "-g", default=None, help="Group ID to upload torrent to")
+@click.option("--group-id", "-g", type=click.IntRange(min=1), default=None, help="Group ID to upload torrent to")
 @click.option(
     "--skip-flac-upload",
     is_flag=True,
