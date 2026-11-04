@@ -17,16 +17,17 @@ from salmon.tagger.tagfile import TagFile
 
 
 def _get_audio_duration_sectors(filepath: str) -> int:
-    """Get the duration of an audio file in CD sectors using PyAV.
+    """Get the duration of an audio file in whole CD sectors using PyAV.
 
-    Uses duration_ts to calculate precise sector count:
-    duration_ts * 75 / 44100 = sectors (since 44100 samples/sec ÷ 75 sectors/sec = 588 samples/sector)
+    Works from duration_ts and time_base, with no float. For a 44.1 kHz FLAC, whose duration_ts counts samples, that
+    is duration_ts / 588 (44100 samples/sec ÷ 75 sectors/sec = 588 samples/sector). A part sector at the end is not
+    counted.
 
     Args:
         filepath: Path to the audio file.
 
     Returns:
-        Duration in CD sectors.
+        Duration in whole CD sectors.
 
     Raises:
         RuntimeError: If there's an error getting duration from the file.
@@ -44,8 +45,9 @@ def _get_audio_duration_sectors(filepath: str) -> int:
             time_base = audio_stream.time_base
             if time_base is None:
                 raise RuntimeError(f"Cannot determine time_base for {filepath}")
-            duration_seconds = float(duration_ts * time_base)
-            return int(duration_seconds * 75)
+            # time_base is a Fraction, so this is exact. Through a float, some lengths come out a sector short, and the
+            # range rip's rebuild then adds a silent sector, so its CRC no longer matches the log.
+            return int(duration_ts * time_base * 75)
     except (av.FFmpegError, IndexError) as e:
         raise RuntimeError(f"Error getting duration in sectors for {filepath}: {e}") from e
 
