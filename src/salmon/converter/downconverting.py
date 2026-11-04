@@ -11,7 +11,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import get_audio_files, process_files
+from salmon.common.files import get_audio_files, is_torrent_file, process_files
 from salmon.converter.conversions import (
     changed_sources,
     changed_tracks,
@@ -200,7 +200,7 @@ def _copy_extra_files(
     *,
     essential_only: bool = False,
 ) -> None:
-    """Copy non-conversion files (images, text, 16-bit audio) to the output directory.
+    """Copy non-conversion files (images, text, 16-bit audio) to the output directory, but no .torrent file.
 
     Args:
         path: Source album directory path.
@@ -215,7 +215,7 @@ def _copy_extra_files(
         if not p.is_file() or str(p) in convert_srcs:
             continue
         rel = p.relative_to(src_path)
-        if essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS:
+        if is_torrent_file(p.name) or (essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS):
             click.secho(f"Skip  {rel}", fg="yellow")
             continue
         out = dst_path / rel
