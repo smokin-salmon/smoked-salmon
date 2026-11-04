@@ -19,7 +19,7 @@ from test_uploader_skip_flac import _group, _release, _torrent
 import salmon.trackers
 import salmon.uploader
 from salmon import interaction
-from salmon.cross_upload import is_torrent_reference, torrent_id_of
+from salmon.cross_upload import _input_item, is_torrent_reference, torrent_id_of
 from salmon.tagger import metadata
 from salmon.uploader import dupe_checker, spectrals
 from salmon.uploader.dupe_checker import _prompt_for_group_id, _prompt_for_recent_upload_results
@@ -339,6 +339,14 @@ def test_a_cross_uploads_id_it_cant_read_is_no_reference_and_is_refused(value: s
 def test_a_cross_uploads_url_needs_a_torrentid_in_plain_digits(value: str) -> None:
     with pytest.raises(click.UsageError, match="numeric torrentid"):
         torrent_id_of(f"{URL}?torrentid={value}", _site()[1])
+
+
+@pytest.mark.parametrize("value", ["9" * 5000, "a" * 5000], ids=["5000 digits", "5000 letters"])
+def test_a_cross_uploads_input_too_long_for_a_path_is_refused(value: str) -> None:
+    _, site = _site()
+
+    with pytest.raises(click.UsageError, match="is not a RED torrent ID or URL"):
+        _input_item(value, site)
 
 
 @pytest.mark.parametrize("value", ["abc", ""])

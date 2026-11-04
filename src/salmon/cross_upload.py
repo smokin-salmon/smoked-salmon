@@ -17,7 +17,7 @@ import html
 import re
 import unicodedata
 from collections.abc import Awaitable, Callable, Iterable
-from contextlib import nullcontext
+from contextlib import nullcontext, suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -358,8 +358,10 @@ def _input_item(value: str, source_site: "BaseGazelleApi") -> int | Path:
     if is_torrent_reference(value):
         return torrent_id_of(value, source_site)
     path = Path(value).expanduser()
-    if path.is_file() and path.suffix.lower() == ".torrent":
-        return path
+    # Before Python 3.14, is_file() raises on a name too long for the filesystem.
+    with suppress(OSError):
+        if path.is_file() and path.suffix.lower() == ".torrent":
+            return path
     raise click.UsageError(f"{value} is not a {source_site.site_string} torrent ID or URL, or a .torrent file.")
 
 
