@@ -128,15 +128,18 @@ def find_tag_issues(path: str, audio_info: dict) -> list[str]:
         audio_info: Mapping of filename to the technical info `gather_audio_info` collects.
 
     Returns:
-        One line per problem found; empty when there is none.
+        One line per problem found, or per file it could not read to look; empty when there is none.
     """
     messages: list[str] = []
     for filename in get_audio_files(path):
         filepath = os.path.join(path, filename)
         lower = filename.lower()
         if lower.endswith(".flac"):
-            if has_id3_tag(filepath):
-                messages.append(_id3_in_flac(filename))
+            try:
+                if has_id3_tag(filepath):
+                    messages.append(_id3_in_flac(filename))
+            except OSError as e:
+                messages.append(f"{filename}: could not read it to look for an ID3 tag ({e}); check it by hand.")
             track = audio_info.get(filename)
             if track and is_uncompressed(track):
                 messages.append(_uncompressed(filename))

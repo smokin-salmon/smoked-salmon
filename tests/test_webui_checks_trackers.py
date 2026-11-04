@@ -21,7 +21,7 @@ import pytest
 from aiohttp import WSMsgType, web
 from aiohttp.test_utils import TestClient
 from asyncclick.testing import CliRunner
-from helpers.checks_all_command import _snapshot
+from helpers.checks_all_command import _fail_open, _fail_scandir, _snapshot
 from helpers.checks_do_not_upload import UNMATCHED
 from helpers.checks_mqa import _write_flac
 from helpers.trackers_account import _most_within
@@ -39,6 +39,7 @@ from salmon.config.validations import GazelleTrackerSettings
 from salmon.trackers import account, base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs
+from salmon.webui import paths
 from salmon.webui.jobs import Job, JobManager
 from salmon.webui.kinds import ChecksParams
 
@@ -266,6 +267,60 @@ def test_without_a_tracker_nothing_is_contacted_and_no_client_is_made(
 
     _web(fakes, test)
     assert fakes["RED"].sent == fakes["OPS"].sent == []
+
+
+def _album_with_unreadable_disc(monkeypatch: pytest.MonkeyPatch, downloads: Path) -> Path:
+    album = downloads / "Album"
+    _album(album / "Disc 1")
+    _album(album / "Disc 2")
+    _fail_scandir(monkeypatch, PermissionError, "Disc 2")
+    return album
+
+
+def test_a_folder_unreadable_after_the_jobs_own_check_is_a_blocking_row(
+    monkeypatch: pytest.MonkeyPatch, downloads: Path
+) -> None:
+    album = _album_with_unreadable_disc(monkeypatch, downloads)
+    # The job refuses such a folder when posted and as it starts: this is one that stops being readable after that.
+    monkeypatch.setattr(paths, "_refuse_links", lambda _path: None)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job = await _run_checks(client, manager, album, [])
+        assert _rows(job)["Folders"] == {
+            "verdict": "BLOCK",
+            "check": "Folders",
+            "detail": "Could not read 1 folder(s), so nothing in them was checked: Disc 2.",
+            "notes": [],
+        }
+        assert job.result["blocking"] == 1
+
+    _web({}, test)
+
+
+def test_an_m4a_that_cannot_be_opened_blocks_a_job(monkeypatch: pytest.MonkeyPatch, downloads: Path) -> None:
+    album = _album(downloads / "Album")
+    (album / "03 Track 3.m4a").touch()
+    _fail_open(monkeypatch, PermissionError, "03 Track 3.m4a")
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job = await _run_checks(client, manager, album, [])
+        assert _rows(job)["Files"]["verdict"] == "BLOCK"
+        assert job.result["blocking"] == 1
+
+    _web({}, test)
+
+
+def test_as_before_a_checks_job_refuses_an_album_with_an_unreadable_folder_and_names_it(
+    monkeypatch: pytest.MonkeyPatch, downloads: Path
+) -> None:
+    album = _album_with_unreadable_disc(monkeypatch, downloads)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        response = await _post_checks(client, album, [])
+        assert response.status == 403
+        assert (await response.json())["detail"] == "salmon may not read the folder Disc 2 in this album."
+
+    _web({}, test)
 
 
 @pytest.mark.parametrize("trackers", [["NOPE"], ["RED", "DIC"], ["RED,NOPE"]])

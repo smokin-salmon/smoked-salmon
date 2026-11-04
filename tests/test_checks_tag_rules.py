@@ -6,6 +6,7 @@ import struct
 import subprocess
 
 import pytest
+from helpers.checks_all_command import _fail_open
 from mutagen import MutagenError
 from mutagen.flac import FLAC
 from mutagen.id3 import TIT2, ID3UnsupportedVersionError
@@ -344,3 +345,11 @@ def test_a_clean_compressed_flac_has_no_messages(tmp_path) -> None:
     audio_info = {"01.flac": {"sample rate": 44100, "precision": 16, "channels": 2, "bit rate": 900_000}}
 
     assert process_tag_issues(str(tmp_path), audio_info, scene=False, recompress=False) == []
+
+
+def test_a_flac_that_cannot_be_read_is_noted_and_does_not_crash(tmp_path, monkeypatch) -> None:
+    (tmp_path / "a.flac").write_bytes(_flac_bytes())
+    _fail_open(monkeypatch, PermissionError, "a.flac")
+    [message] = find_tag_issues(str(tmp_path), {})
+    assert message.startswith("a.flac: could not read it to look for an ID3 tag (")
+    assert message.endswith("); check it by hand.")
