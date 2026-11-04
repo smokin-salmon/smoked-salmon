@@ -7,8 +7,9 @@ more splits the function, or raises its entry and says why in its description. A
 function over the limit must be listed here.
 
 The list only tightens: once a function is more than MARGIN under its entry, the entry must come down, and
-a function back under the limit loses both its entry and its `# noqa`. Entries are by module and name, so two
-functions of one name over the limit in one module fail rather than share one.
+a function back under the limit loses both its entry and its `# noqa` (ruff's RUF100 fails on the noqa left).
+Entries are by module and name, so two functions of one name over the limit in one module fail rather than share
+one.
 """
 
 import json
@@ -113,16 +114,6 @@ def complexity_problems(
 def test_functions_stay_within_their_allowed_complexity():
     problems = complexity_problems(complexities(), ALLOWED, MARGIN)
     assert not problems, "\n".join(problems)
-
-
-def test_no_noqa_c901_is_left_on_a_function_under_the_limit():
-    # A leftover one would hide the function from ruff if it grew again. C901 is enabled, so ruff names it "unused".
-    stale = [
-        f"{module(finding)}:{finding['location']['row']}"
-        for finding in ruff_findings("--select", "C901,RUF100")
-        if finding["code"] == "RUF100" and "`C901`" in finding["message"]
-    ]
-    assert not stale, f"remove the `# noqa: C901` at {', '.join(stale)}: the function is under the limit"
 
 
 def test_the_list_is_sorted_and_over_the_limit():

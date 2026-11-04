@@ -29,7 +29,7 @@ from aiohttp.test_utils import TestClient
 from asyncclick.testing import CliRunner
 from helpers.image_upload_connections import REAL_HOSTS, _redirect
 from helpers.ssrf import LOOPBACK, FakeStore, bandcamp_page
-from helpers.webui_jobs import (  # noqa: F401
+from helpers.webui_jobs import (
     AUTH,
     Params,
     _answer,

@@ -27,7 +27,7 @@ class _FakeUploader:
     def __init__(self, calls: list[str]) -> None:
         self._calls = calls
 
-    def ImageUploader(self) -> Any:  # noqa: N802 - mirrors the real modules' API
+    def ImageUploader(self) -> Any:  # named like the real modules' class
         calls = self._calls
 
         class _Instance(BaseImageUploader):
