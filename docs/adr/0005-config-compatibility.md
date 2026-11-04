@@ -40,6 +40,7 @@ Options considered:
    least one release after `refused_from`, so a user who skips releases gets the message, not a silent drop.
    *Amended 2026-10-20 (#767): only renamed and moved keys have a `refused_from`. A removed key has none:
    its warning, or its refusal (point 3), lasts for as long as its entry stays in the table.*
+   *Amended 2026-11-04 (#935): `refused_from` is the next minor version at the earliest. A maintainer may set a later one to give a key more releases of warnings, never fewer: 0.21.0's moved keys are refused from 0.25.0 (#885, #935).*
 2. **A renamed or moved key** is read under its old name, with a warning naming the new key and its
    section, until `refused_from`; from then on salmon refuses to start, with the same message. A config
    that sets both the old and the new name is refused: salmon does not guess which one is meant.
