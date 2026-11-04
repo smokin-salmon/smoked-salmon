@@ -29,7 +29,7 @@ from salmon.sources.tidal import credentials_configured as tidal_credentials_con
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
 from salmon.tagger.combine import combine_metadatas
 from salmon.tagger.metadata import clean_metadata, remove_various_artists
-from salmon.tagger.retagger import create_artist_str
+from salmon.tagger.retagger import append_guests_to_track_titles, create_artist_str
 from salmon.tagger.sources import METASOURCES, run_metadata
 from salmon.tagger.sources.base import generate_artists
 from salmon.trackers.connection import check_trackers
@@ -135,6 +135,9 @@ async def build_description(urls: Sequence[str]) -> str:
                 )
             else:
                 description += f"[b]{str_to_int_if_int(str(tnum), zpad=True)}.[/b] "
+
+            if cfg.upload.formatting.guests_in_track_title:
+                track["title"] = append_guests_to_track_titles(track)
 
             if album is not None and credits_only_the_album(track["artists"], track["title"], album):
                 description += f"{track['title']}\n"

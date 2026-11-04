@@ -1,4 +1,7 @@
-"""`salmon descgen` closes every BBCode tag it opens, and turns away what is not a store URL. No source is contacted."""
+"""`salmon descgen` closes every BBCode tag it opens, turns away what is not a store URL, and keeps a track's guest.
+
+No source is contacted.
+"""
 
 import re
 
@@ -8,7 +11,7 @@ from asyncclick.testing import CliRunner
 
 import salmon.commands
 from salmon import cfg
-from salmon.commands import descgen
+from salmon.commands import build_description, descgen
 from salmon.tagger.sources import METASOURCES
 
 METADATA = {
@@ -99,3 +102,125 @@ def test_descgen_never_echoes_a_refused_url(monkeypatch, url: str) -> None:
     assert "SECRET" not in result.output
     assert "announce" not in result.output
     assert "12345678901234567890abcdef" not in result.output
+
+
+MURPHY = ("Sullivan Murphy", "main")
+SIMPSON = ("Dierdre Simpson", "guest")
+
+
+def _release(*discs: list[tuple[list[tuple[str, str]], str]], rls_type: str = "Album") -> dict:
+    """A store's release: each disc a list of a track's (credits, title)."""
+    tracks = {
+        str(dnum): {
+            str(tnum): {"artists": list(credits), "title": title} for tnum, (credits, title) in enumerate(disc, 1)
+        }
+        for dnum, disc in enumerate(discs, 1)
+    }
+    return {
+        "rls_type": rls_type,
+        "tracks": tracks,
+        "comment": None,
+        "urls": [],
+    }
+
+
+def _description(monkeypatch, metadata: dict, guests_in_track_title: bool) -> str:
+    async def fake_run_metadata(url, return_source_name=False):
+        return metadata, "Qobuz"
+
+    monkeypatch.setattr(cfg.upload.formatting, "guests_in_track_title", guests_in_track_title)
+    monkeypatch.setattr(salmon.commands, "run_metadata", fake_run_metadata)
+    monkeypatch.setattr(salmon.commands, "combine_metadatas", lambda *_: metadata)
+    monkeypatch.setattr(salmon.commands, "clean_metadata", lambda metadata: metadata)
+    return anyio.run(build_description, ["https://www.qobuz.com/album/x"])
+
+
+HEADING = "[b][size=4]Tracklist[/size][/b]\n\n"
+
+
+def test_guest_goes_in_the_title_on_a_line_that_names_the_artist(monkeypatch) -> None:
+    # The artist string leaves the guest to the title, and only a retag put it there, so the guest was lost.
+    release = _release([([MURPHY, SIMPSON], "Song 1")], rls_type="Compilation")
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description == f"{HEADING}[b]01.[/b] Sullivan Murphy - Song 1 (feat. Dierdre Simpson)\n"
+
+
+def test_guest_goes_in_the_title_of_a_track_by_the_album_and_a_guest(monkeypatch) -> None:
+    release = _release([([MURPHY], "Song 1"), ([MURPHY, SIMPSON], "Song 2")])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson)\n"
+
+
+def test_guest_goes_in_the_title_on_each_disc(monkeypatch) -> None:
+    release = _release([([MURPHY], "Song 1")], [([MURPHY, SIMPSON], "Song 2")])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description == (
+        f"{HEADING}[b]01-01.[/b] Song 1\n[b]02-01.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson)\n"
+    )
+
+
+def test_guest_in_the_title_comes_before_a_remix_as_a_retag_puts_it(monkeypatch) -> None:
+    release = _release([([MURPHY], "Song 1"), ([MURPHY, SIMPSON], "Song 2 (Remi Xer Remix)")])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert "[b]02.[/b] Sullivan Murphy - Song 2 (feat. Dierdre Simpson) (Remi Xer Remix)\n" in description
+
+
+@pytest.mark.parametrize(
+    ("discs", "expected"),
+    [
+        (
+            [[([MURPHY], "Song 1"), ([MURPHY, SIMPSON], "Song 2")]],
+            "[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy (feat. Dierdre Simpson) - Song 2\n",
+        ),
+        (
+            [[([MURPHY], "Song 1")], [([MURPHY, SIMPSON], "Song 2")]],
+            "[b]01-01.[/b] Song 1\n[b]02-01.[/b] Sullivan Murphy (feat. Dierdre Simpson) - Song 2\n",
+        ),
+    ],
+    ids=["one disc", "two discs"],
+)
+def test_as_before_with_the_setting_off_the_guest_follows_the_artist(monkeypatch, discs, expected: str) -> None:
+    description = _description(monkeypatch, _release(*discs), guests_in_track_title=False)
+
+    assert description == f"{HEADING}{expected}"
+
+
+def test_as_before_with_the_setting_on_a_track_with_no_guest_is_unchanged(monkeypatch) -> None:
+    other = ("Other Artist", "main")
+    release = _release([([MURPHY], "Song 1"), ([MURPHY], "Song 2"), ([other], "Song 3")])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description.removeprefix(HEADING).splitlines() == [
+        "[b]01.[/b] Sullivan Murphy - Song 1",
+        "[b]02.[/b] Sullivan Murphy - Song 2",
+        "[b]03.[/b] Other Artist - Song 3",
+    ]
+
+
+def test_as_before_with_the_setting_on_a_track_by_the_album_alone_names_no_artist(monkeypatch) -> None:
+    release = _release([([MURPHY], "Song 1"), ([MURPHY], "Song 2")])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Song 2\n"
+
+
+@pytest.mark.parametrize(
+    "title", ["Song 2 (feat. Dierdre Simpson)", "Song 2 (Feat. Dierdre Simpson)", "Song 2 [ft. Dierdre Simpson]"]
+)
+def test_as_before_a_title_already_crediting_the_guest_gains_no_second_credit(monkeypatch, title: str) -> None:
+    # Qobuz keeps the credit in its titles and reads the guest from it too.
+    release = _release([([MURPHY], "Song 1"), ([MURPHY, SIMPSON], title)])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy - {title}\n"
