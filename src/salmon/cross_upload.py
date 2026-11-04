@@ -57,6 +57,7 @@ from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.uploader import (
     _check_logs,
     red_api_for_covers,
+    validate_group_id,
 )
 from salmon.uploader.conversion_choice import (
     conversion_kind,
@@ -249,7 +250,13 @@ class Release:
     type=click.Path(exists=True, file_okay=False),
     help="The album folder, if it is not download_directory/<the torrent's folder>. One INPUT only.",
 )
-@click.option("--group-id", "-g", type=click.IntRange(min=1), help="The TARGET group to upload into. One INPUT only.")
+@click.option(
+    "--group-id",
+    "-g",
+    metavar="INTEGER",
+    callback=validate_group_id,
+    help="The TARGET group to upload into. One INPUT only.",
+)
 @click.option(
     "--transcode",
     "transcodes",

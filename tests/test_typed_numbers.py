@@ -5,6 +5,7 @@ tracker as written. Digits of other scripts pass both, and read as an ID or a ro
 """
 
 import errno
+import shutil
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
@@ -13,7 +14,9 @@ import anyio
 import asyncclick as click
 import pytest
 from asyncclick.testing import CliRunner
+from helpers.uploader_dry_run import FakeTracker, Run, _album, _run_up
 from helpers.webui_interaction import Browser
+from test_uploader_dry_run import dirs, image_uploads  # noqa: F401 (fixtures)
 from test_uploader_dupe_checker import FakeGazelleSite, _answering
 from test_uploader_skip_flac import _group, _release, _torrent
 
@@ -405,3 +408,70 @@ def test_up_gives_the_group_id_as_a_number(monkeypatch, tmp_path: Path, given: s
 
     assert result.exit_code == 0, result.output
     assert seen == [group]
+
+
+def _up_with_group(monkeypatch, album: Path, torrents: Path, *args: str) -> Run:
+    return _run_up(
+        monkeypatch,
+        _album(album),
+        torrents,
+        args=args,
+        input="\n" * 5,
+        trackers=("RED",),
+        multi_tracker_upload=False,
+        tracker=FakeTracker(group_torrents=[]),
+    )
+
+
+@pytest.mark.parametrize("given", ["+1", "1_000", "１２", "٣", "12²", "   "])
+def test_up_reads_a_group_id_by_the_prompts_rule(monkeypatch, tmp_path, dirs, image_uploads, given: str) -> None:  # noqa: F811
+    run = _up_with_group(monkeypatch, tmp_path / "Album", dirs[2], "-g", given)
+
+    assert run.result.exit_code == 2
+    assert "is not a group ID" in run.result.output
+    assert run.tracker.sent == []
+
+
+def _sent(run: Run) -> list[tuple[str, str, dict[str, str], list[tuple[str, str]]]]:
+    """Each request in order, with the text fields of its form; the fake's address, a new port each run, taken out."""
+    assert run.result.exit_code == 0, run.result.output
+    return [
+        (
+            sent.method,
+            sent.path,
+            sent.query,
+            [(k, v.replace(run.tracker.url, "")) for k, v in sent.fields if isinstance(v, str)],
+        )
+        for sent in run.tracker.sent
+    ]
+
+
+def test_up_sends_a_group_id_as_a_number_as_before(monkeypatch, tmp_path, dirs, image_uploads) -> None:  # noqa: F811
+    run = _up_with_group(monkeypatch, tmp_path / "Album", dirs[2], "-g", "12")
+
+    assert next(sent.query["id"] for sent in run.tracker.sent if sent.query.get("action") == "torrentgroup") == "12"
+    # The FLAC's: the fake then answers with a group of its own, for what follows.
+    upload = next(sent for sent in run.tracker.sent if sent.query.get("action") == "upload")
+    assert dict(upload.fields)["groupid"] == "12"
+
+
+@pytest.mark.parametrize("given", ["012", " 12 "])
+def test_up_reads_a_padded_group_id_as_the_same_group(monkeypatch, tmp_path, dirs, image_uploads, given: str) -> None:  # noqa: F811
+    # As a prompt reads it. Master sent it as text: id=012.
+    _library, downloads, torrents = dirs
+    plain = _up_with_group(monkeypatch, tmp_path / "plain" / "Album", torrents, "-g", "12")
+    image_uploads.clear()  # Its URLs count up, and go in the form.
+    shutil.rmtree(downloads)
+    shutil.rmtree(torrents)
+    downloads.mkdir()
+    torrents.mkdir()
+    padded = _up_with_group(monkeypatch, tmp_path / "padded" / "Album", torrents, "-g", given)
+
+    assert _sent(padded) == _sent(plain)
+
+
+def test_up_without_a_group_id_searches_as_before(monkeypatch, tmp_path, dirs, image_uploads) -> None:  # noqa: F811
+    run = _up_with_group(monkeypatch, tmp_path / "Album", dirs[2])
+
+    assert run.result.exit_code == 0, run.result.output
+    assert any(sent.query.get("action") == "browse" for sent in run.tracker.sent)

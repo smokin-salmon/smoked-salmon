@@ -23,6 +23,7 @@ from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
 from salmon.common import commandgroup, get_audio_files, tagify
 from salmon.common.files import AlbumPath
+from salmon.common.strings import numeric_id
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
@@ -136,9 +137,30 @@ def validate_spectral_urls(ctx, param, value: tuple[str, ...]) -> tuple[tuple[in
         raise click.BadParameter(str(e)) from None
 
 
+def validate_group_id(ctx, param, value: str | None) -> int | None:
+    """Parse --group-id by the rule the prompts read a typed group ID by. None when not given.
+
+    Raises:
+        click.BadParameter: The value is not a number above 0 in ASCII digits.
+    """
+    if value is None:
+        return None
+    group_id = numeric_id(value.strip())
+    if not group_id:
+        raise click.BadParameter(f"{value!r} is not a group ID: give a number above 0, in the digits 0-9.")
+    return group_id
+
+
 @commandgroup.command()
 @click.argument("path", type=AlbumPath(exists=True, file_okay=False))
-@click.option("--group-id", "-g", type=click.IntRange(min=1), default=None, help="Group ID to upload torrent to")
+@click.option(
+    "--group-id",
+    "-g",
+    metavar="INTEGER",
+    default=None,
+    callback=validate_group_id,
+    help="Group ID to upload torrent to",
+)
 @click.option(
     "--skip-flac-upload",
     is_flag=True,
