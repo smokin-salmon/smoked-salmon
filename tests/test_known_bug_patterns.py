@@ -14,7 +14,10 @@ ROOT = Path(__file__).parent.parent
 
 
 def _isdigit_uses(path: Path) -> list[int]:
-    """The lines calling ``isdigit()`` with no ``isascii()`` on the same line; a guard on another line still counts."""
+    """The lines calling ``isdigit()`` with no ``isascii()`` of the same value on the same line.
+
+    A guard on another line still counts.
+    """
     source = path.read_text(encoding="utf-8")
     lines = source.splitlines()
     return [
@@ -23,19 +26,18 @@ def _isdigit_uses(path: Path) -> list[int]:
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Attribute)
         and node.func.attr == "isdigit"
-        and "isascii" not in lines[node.lineno - 1]
+        and f"{ast.unparse(node.func.value)}.isascii()" not in lines[node.lineno - 1]
     ]
 
 
 def _type_word_cuts(path: Path) -> list[int]:
-    """The lines of a regex that takes "EP" or "Single" from the middle of a title."""
+    """The lines of a regex that takes "EP" or "Single" from the middle of a title; the bare words are type names."""
 
     def cuts(text: str) -> bool:
         try:
-            return (
-                "EP" in text
-                and "Single" in text
-                and bool(re.search(text, "A Single Thing") or re.search(text, "An EP Thing"))
+            return text not in ("EP", "Single") and bool(
+                ("EP" in text and re.search(text, "An EP Thing"))
+                or ("Single" in text and re.search(text, "A Single Thing"))
             )
         except re.error:
             return False
@@ -87,15 +89,19 @@ def test_the_allowed_counts_come_down_with_each_fix() -> None:
 def test_the_isdigit_finder_counts_a_call_with_no_guard_on_its_line(tmp_path: Path) -> None:
     source = tmp_path / "source.py"
     source.write_text(
-        'x.isdigit()\nx.isascii() and x.isdigit()\n# x.isdigit()\n"x.isdigit()"\n(x.isascii()\n and x.isdigit())\n',
+        'x.isdigit()\nx.isascii() and x.isdigit()\n# x.isdigit()\n"x.isdigit()"\n(x.isascii()\n and x.isdigit())\n'
+        "y.isascii() and x.isdigit()\n",
         encoding="utf-8",
     )
 
-    assert _isdigit_uses(source) == [1, 6]
+    assert _isdigit_uses(source) == [1, 6, 7]
 
 
 def test_the_type_word_finder_counts_a_regex_that_cuts_from_the_middle(tmp_path: Path) -> None:
     source = tmp_path / "source.py"
-    source.write_text('CUT = r"(?:EP|Single)\\b"\nANCHORED = r"(?:EP|Single)$"\n', encoding="utf-8")
+    source.write_text(
+        'CUT = r"(?:EP|Single)\\b"\nANCHORED = r"(?:EP|Single)$"\nONE = r"Single\\b"\nTYPE = "EP"\n',
+        encoding="utf-8",
+    )
 
-    assert _type_word_cuts(source) == [1]
+    assert _type_word_cuts(source) == [1, 3]
