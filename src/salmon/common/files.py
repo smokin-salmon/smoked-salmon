@@ -1,5 +1,4 @@
 import os
-import re
 import stat
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -11,6 +10,7 @@ import asyncclick as click
 from tqdm import tqdm
 
 from salmon import cfg
+from salmon.common.numbers import leading_number_key
 
 T = TypeVar("T")
 
@@ -81,23 +81,8 @@ def get_audio_files(path, sort_by_tracknumber=False):
             if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}
         ]
     if sort_by_tracknumber:
-        return sorted(files, key=_tracknumber_sort_key)
+        return sorted(files, key=leading_number_key)
     return sorted(files)
-
-
-def _tracknumber_sort_key(filename):
-    """
-    Extract a sort key for the filename. Filenames with numbers are sorted
-    numerically by the first number found. Filenames without numbers are
-    sorted lexicographically.
-    """
-    match = re.search(r"^(\d+)", filename)
-    if match:
-        # Return a tuple: (0, track number as integer)
-        return (0, int(match.group(1)))
-    else:
-        # Return a tuple: (1, filename as-is for lexicographical sorting)
-        return (1, filename.lower())
 
 
 def create_relative_path(root, path, filename):

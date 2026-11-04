@@ -68,7 +68,6 @@ __all__ = [
     "prompt_async",
     "clipboard_copy",
     "flush_stdin",
-    "str_to_int_if_int",
     "handle_scrape_errors",
     "Prompt",
 ]
@@ -172,23 +171,6 @@ def flush_stdin():
                 msvcrt.getch()
         except Exception:
             pass
-
-
-def str_to_int_if_int(string: str, zpad: bool = False) -> str | int:
-    """Convert string to int if it's a digit string.
-
-    Args:
-        string: The string to convert.
-        zpad: Whether to zero-pad the result to 2 digits.
-
-    Returns:
-        The integer or zero-padded string if digit, original string otherwise.
-    """
-    if string.isdigit():
-        if zpad:
-            return f"{int(string):02d}"
-        return int(string)
-    return string
 
 
 def _format_scrape_error_message(error: BaseException) -> str:

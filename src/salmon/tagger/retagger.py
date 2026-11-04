@@ -12,6 +12,15 @@ from mutagen import mp4
 
 from salmon import cfg, interaction
 from salmon.common import clean_name, has_visible_chars
+from salmon.common.numbers import (
+    natural_key,
+    padded_number,
+    tag_number,
+    tag_number_or_one,
+    tag_text,
+    tag_value,
+    unreadable_number,
+)
 from salmon.common.strings import artists_or_various, comparable, join_artists, reaches_various_threshold
 from salmon.constants import (
     ARROWS,
@@ -91,8 +100,8 @@ async def _confirm_moves(moves):
 
 def _own_number(tagset):
     """The file's own DISCNUMBER and TRACKNUMBER, shaped like a track for ``_track_label``."""
-    disc = _parse_tag_number(tagset, "discnumber")
-    return {"disc#": None if disc is None else str(disc), "track#": str(_parse_tag_number(tagset, "tracknumber"))}
+    disc = tag_number(tagset, "discnumber")
+    return {"disc#": None if disc is None else str(disc), "track#": str(tag_number(tagset, "tracknumber"))}
 
 
 def _track_label(track):
@@ -159,20 +168,20 @@ def pair_files_with_tracks(tags, metadata, *, move_numbered=False):
     ambiguous = None
 
     def disc_track_key(tagset):
-        return (_get_tag_number(tagset, "discnumber"), _get_tag_number(tagset, "tracknumber"))
+        return (tag_number_or_one(tagset, "discnumber"), tag_number_or_one(tagset, "tracknumber"))
 
-    # An unparseable tag reads as 1 via _get_tag_number, so it can't vouch for a file's place: only
+    # An unparseable tag reads as 1 via tag_number_or_one, so it can't vouch for a file's place: only
     # a disc/track pair built from tags we actually trust identifies a file, and TRACKNUMBER must
     # be present and parseable everywhere either way.
-    tracknumber_readable = all(_parse_tag_number(tagset, "tracknumber") is not None for tagset in tags.values())
+    tracknumber_readable = all(tag_number(tagset, "tracknumber") is not None for tagset in tags.values())
     disc_track_keys = [disc_track_key(tagset) for tagset in tags.values()]
     keys_unique = len(set(disc_track_keys)) == len(disc_track_keys)
-    discnumber_tags = [_has_tag(tagset, "discnumber") for tagset in tags.values()]
+    discnumber_tags = [tag_value(tagset, "discnumber") is not None for tagset in tags.values()]
 
     # DISCNUMBER on no file keys every file (1, track), which proves the track order: all the zip below needs.
     # On every file, it must parse; on only some, a file without it would sort as disc 1 among real disc 1s.
     disc_tags_usable = not any(discnumber_tags) or (
-        all(discnumber_tags) and all(_parse_tag_number(tagset, "discnumber") is not None for tagset in tags.values())
+        all(discnumber_tags) and all(tag_number(tagset, "discnumber") is not None for tagset in tags.values())
     )
     if tracknumber_readable and keys_unique and disc_tags_usable and _zips_onto(disc_track_keys, metadata["tracks"]):
         ordered_tags = sorted(tags.items(), key=lambda item: disc_track_key(item[1]))
@@ -289,8 +298,8 @@ def metadata_to_track_list(metadata):
     """
     return [
         metadata[disc][track]
-        for disc in sorted(metadata, key=_disc_track_sort_key)
-        for track in sorted(metadata[disc], key=_disc_track_sort_key)
+        for disc in sorted(metadata, key=natural_key)
+        for track in sorted(metadata[disc], key=natural_key)
     ]
 
 
@@ -319,7 +328,7 @@ def _zips_onto(keys, discs) -> bool:
     if len(file_discs) == 1 or len(discs) == 1:
         return True
     return [file_discs[disc] for disc in sorted(file_discs)] == [
-        len(discs[disc]) for disc in sorted(discs, key=_disc_track_sort_key)
+        len(discs[disc]) for disc in sorted(discs, key=natural_key)
     ]
 
 
@@ -331,14 +340,14 @@ def _order_by_disc_folders(tags, discs):
     layout does not resolve to one folder per disc with the right number of tracks, we refuse rather than
     guess: silently mispairing files with the wrong disc's titles is worse than stopping the retag.
     """
-    by_path = sorted(tags.items(), key=lambda item: _natural_key(item[0]))
+    by_path = sorted(tags.items(), key=lambda item: natural_key(item[0]))
     if len(by_path) != sum(len(tracks) for tracks in discs.values()):
         return by_path  # the caller reports the track count mismatch
     folders: dict[str, list] = {}
     for item in by_path:
         folders.setdefault(os.path.dirname(item[0]), []).append(item)
-    groups = [folders[folder] for folder in sorted(folders, key=_natural_key)]
-    disc_tracks = [sorted(discs[disc], key=_disc_track_sort_key) for disc in sorted(discs, key=_disc_track_sort_key)]
+    groups = [folders[folder] for folder in sorted(folders, key=natural_key)]
+    disc_tracks = [sorted(discs[disc], key=natural_key) for disc in sorted(discs, key=natural_key)]
     if not _names_distinct(folders) or [len(group) for group in groups] != [len(t) for t in disc_tracks]:
         raise _ambiguous_tracks()
     return [
@@ -355,13 +364,13 @@ def _order_within_disc(group, tracks):
     all files but one and the name order keeps each pinned file at its tag's place: "Apple" before "Zebra"
     says nothing about which is track 1. Raise otherwise.
     """
-    numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in group]
+    numbers = [tag_number(tagset, "tracknumber") for _, tagset in group]
     if None not in numbers and len(set(numbers)) == len(numbers):
-        return sorted(group, key=lambda item: _get_tag_number(item[1], "tracknumber"))
+        return sorted(group, key=lambda item: tag_number_or_one(item[1], "tracknumber"))
     names = [filename for filename, _ in group]
     if not _names_distinct(names):
         raise _ambiguous_tracks()
-    by_name = sorted(group, key=lambda item: _natural_key(item[0]))
+    by_name = sorted(group, key=lambda item: natural_key(item[0]))
     numbered = all(re.match(r"\d", os.path.basename(name)) for name in names)
     pinned = sum(1 for n in numbers if n is not None and numbers.count(n) == 1)
     # Numbered names too are no order when they move a file off its own track tag.
@@ -376,14 +385,14 @@ def _names_move_a_pinned_file(by_name, tracks) -> bool:
     The track at each place is the disc's own number for it (a second disc can run 4, 5, 6), or the place
     itself where the metadata numbers its tracks otherwise (A1, A2).
     """
-    numbers = [_parse_tag_number(tagset, "tracknumber") for _, tagset in by_name]
+    numbers = [tag_number(tagset, "tracknumber") for _, tagset in by_name]
     wanted = [n if isinstance(n := _to_number(track), int) else place for place, track in enumerate(tracks, 1)]
     return any(n is not None and numbers.count(n) == 1 and n != want for n, want in zip(numbers, wanted, strict=True))
 
 
 def _names_distinct(names) -> bool:
     """Whether natural order tells these names apart (``01.flac`` and ``1.flac`` tie, as do CD01 and CD1)."""
-    keys = [tuple(_natural_key(name)) for name in names]
+    keys = [natural_key(name) for name in names]
     return len(set(keys)) == len(keys)
 
 
@@ -394,21 +403,6 @@ def _ambiguous_tracks() -> AmbiguousTrackOrderError:
         "neither the tags nor a folder per disc sort them out. Fix their DISCNUMBER and TRACKNUMBER tags, or "
         "put each disc in its own folder, before retagging."
     )
-
-
-def _natural_key(path: str) -> list[int | str]:
-    """Sort key that compares the digit runs in a path as numbers, so CD2 sorts before CD10.
-
-    Uses ``str.isdecimal()``, not ``str.isdigit()``: ``\\d+`` in the regex only matches ASCII-like decimal
-    digits, but a lone non-decimal digit character next to them (superscript "2" in "01²2.flac") still ends
-    up as its own split segment, where ``isdigit()`` would accept it and ``int()`` would then reject it.
-    """
-    return [int(part) if part.isdecimal() else part.lower() for part in re.split(r"(\d+)", path)]
-
-
-def _disc_track_sort_key(value):
-    """Sort key that compares digit runs as numbers: disc "10" sorts after "2", and track "A10" after "A2"."""
-    return _natural_key(str(value))
 
 
 def _tagset_identity(tagset):
@@ -474,10 +468,10 @@ def _numbered_by_tags(tags):
     disc shares (a promo folder whose files are all TRACKNUMBER 1 is not numbered)."""
     numbers = {}
     for filename, tagset in tags.items():
-        number = _parse_tag_number(tagset, "tracknumber")
+        number = tag_number(tagset, "tracknumber")
         if number is None or number < 1:
             return False
-        numbers.setdefault((os.path.dirname(filename), _parse_tag_number(tagset, "discnumber")), []).append(number)
+        numbers.setdefault((os.path.dirname(filename), tag_number(tagset, "discnumber")), []).append(number)
     return all(len(set(group)) == len(group) for group in numbers.values())
 
 
@@ -694,11 +688,11 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
     # Each file's disc is read from its tag, never guessed: a disc number that isn't one ("CD1"), or none, would
     # be filed with the first disc and could merge the discs (#910). So would files whose disc tags differ ("1" and
     # none) under a disc total over 1, though they read as one disc.
-    unreadable = {name: value for name, tagset in tags.items() if (value := _unreadable_number(tagset, "discnumber"))}
-    missing = [name for name, tagset in tags.items() if not _tag_text(tagset, "discnumber").strip()]
+    unreadable = {name: value for name, tagset in tags.items() if (value := unreadable_number(tagset, "discnumber"))}
+    missing = [name for name, tagset in tags.items() if not tag_text(tagset, "discnumber").strip()]
     several_discs = multi_disc or (
-        len({_tag_text(tagset, "discnumber").strip() for tagset in tags.values()}) > 1
-        and any((_parse_tag_number(tagset, "disctotal") or 0) > 1 for tagset in tags.values())
+        len({tag_text(tagset, "discnumber").strip() for tagset in tags.values()}) > 1
+        and any((tag_number(tagset, "disctotal") or 0) > 1 for tagset in tags.values())
     )
     if several_discs and not single_folder and (unreadable or missing):
         click.secho(
@@ -714,8 +708,8 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
 
     # In one folder, every disc and track number is padded to the width of the largest, so the files sort by
     # disc, then track
-    disc_digits = len(str(max((_get_tag_number(t, "discnumber") for t in tags.values()), default=1)))
-    track_digits = max(2, len(str(max((_get_tag_number(t, "tracknumber") for t in tags.values()), default=1))))
+    disc_digits = len(str(max((tag_number_or_one(t, "discnumber") for t in tags.values()), default=1)))
+    track_digits = max(2, len(str(max((tag_number_or_one(t, "tracknumber") for t in tags.values()), default=1))))
 
     for filename, tracktags in tags.items():
         ext = os.path.splitext(filename)[1].lower()
@@ -725,8 +719,8 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
         new_name = generate_file_name(tracktags, ext, multiple_artists, various=various)
         disc_number = 1  # Default value
         if single_folder:
-            disc_number = _get_tag_number(tracktags, "discnumber")
-            track_number = _get_tag_number(tracktags, "tracknumber")
+            disc_number = tag_number_or_one(tracktags, "discnumber")
+            track_number = tag_number_or_one(tracktags, "tracknumber")
             new_name = generate_file_name(
                 tracktags,
                 ext,
@@ -739,7 +733,7 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
                 folder_discs.setdefault(folder, set()).add(disc_number)
         elif multi_disc:
             # Every disc number here was read above; "or 1" files a disc 0 with the first, as before.
-            disc_number = _get_tag_number(tracktags, "discnumber") or 1
+            disc_number = tag_number_or_one(tracktags, "discnumber") or 1
             new_name = os.path.join(f"{md_word}{disc_number:02d}", new_name)
         if filename != new_name:
             to_rename.append((filename, new_name))
@@ -863,16 +857,16 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=
         for k in keys:
             tag_val = tags.get(k)
             if tag_val is not None and isinstance(tag_val, list) and tag_val:
-                template_keys[k] = _parse_integer(tag_val[0])
+                template_keys[k] = padded_number(tag_val[0])
             else:
-                template_keys[k] = _parse_integer("")
+                template_keys[k] = padded_number("")
     else:
         template_keys = {}
         for k in keys:
             raw_val = getattr(tags, k, "")
             if k == "artist" and isinstance(raw_val, list) and raw_val:
                 raw_val = raw_val[0]
-            val = _parse_integer(raw_val if isinstance(raw_val, (str, int)) else str(raw_val))
+            val = padded_number(raw_val if isinstance(raw_val, (str, int)) else str(raw_val))
             template_keys[k] = val
 
     # This counted "," and "&" in ARTIST, so "Earth, Wind & Fire" was two artists
@@ -890,56 +884,6 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=
     if not has_visible_chars(new_base):
         raise UploadError(f"Not naming a file {new_base!r}{ext}: its tags leave nothing visible in file_template.")
     return new_base + ext
-
-
-def _parse_integer(value):
-    if isinstance(value, int) or (isinstance(value, str) and value.isdecimal()):
-        return f"{int(value):02d}"
-    return value
-
-
-def _get_tag_number(tracktags, field):
-    """Read a disc/track number off a tag object or dict, defaulting to 1."""
-    number = _parse_tag_number(tracktags, field)
-    return 1 if number is None else number
-
-
-def _parse_tag_number(tracktags, field):
-    """The tag's number, or None when it is absent or not a number (unlike ``_get_tag_number``, no default)."""
-    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
-
-    if isinstance(value, list) and value:
-        value = value[0]
-    if value is None:
-        return None
-    if isinstance(value, str):
-        value = value.split("/")[0].strip()
-        # Stripped, as int() would; str.isdecimal(), not str.isdigit(): isdigit() is also true for some
-        # Unicode digits (superscript "2") that int() then rejects.
-        return int(value) if value.isdecimal() else None
-    if isinstance(value, int):
-        return value
-    return None
-
-
-def _tag_text(tracktags, field):
-    """A tag object's or dict's value for ``field`` as written (its first, if a list); "" when it has none."""
-    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
-    if isinstance(value, list):
-        value = value[0] if value else None
-    return "" if value is None else str(value)
-
-
-def _unreadable_number(tracktags, field):
-    """A disc/track number that is there but can't be read as one ("CD1"), as written; None otherwise."""
-    text = _tag_text(tracktags, field)
-    return text if text.strip() and _parse_tag_number(tracktags, field) is None else None
-
-
-def _has_tag(tracktags, field):
-    """Whether a tag object or dict carries a (possibly malformed) value for ``field``."""
-    value = tracktags.get(field) if isinstance(tracktags, dict) else getattr(tracktags, field, None)
-    return value is not None
 
 
 def move_non_audio_files(directory_move_pairs, disc_of_folder=None):

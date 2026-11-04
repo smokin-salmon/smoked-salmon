@@ -12,6 +12,7 @@ from torf import TorfError, Torrent
 
 from salmon import cfg, dryrun
 from salmon.common import UploadFiles, clipboard_copy, re_split
+from salmon.common.numbers import tag_number, unreadable_number
 from salmon.common.strings import names_no_artist, reaches_various_threshold, strip_numbered_suffixes
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import UploadRefusedError
@@ -19,7 +20,6 @@ from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.combine import _extract_remixers_from_title
 from salmon.tagger.pre_data import parse_artists
-from salmon.tagger.retagger import _parse_tag_number, _unreadable_number
 from salmon.tagger.sources import METASOURCES
 from salmon.uploader import record
 from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
@@ -534,14 +534,14 @@ def _names_several_discs(tags: Any) -> bool:
     """Whether a track's disc tags name more than one disc: a disc number over 1, or a total over 1, in DISCTOTAL
     or written after the disc number ("1/2", as a FLAC can hold it)."""
     number, _, total = str(tags.discnumber or "").partition("/")
-    return (_parse_tag_number(tags, "disctotal") or 0) > 1 or any(
+    return (tag_number(tags, "disctotal") or 0) > 1 or any(
         part.strip().isdecimal() and int(part) > 1 for part in (number, total)
     )
 
 
 def _listed_number(tags: Any, field: str) -> str:
     """A track or disc number as the tracklist gives it: "3/10" as "03"; one that is no number ("A1"), as written."""
-    number = _parse_tag_number(tags, field)
+    number = tag_number(tags, field)
     return str(getattr(tags, field) or "") if number is None else f"{number:02d}"
 
 
@@ -564,8 +564,8 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     description = "[b][size=4]Tracklist[/size][/b]\n"
     # Discs told apart by tags that aren't numbers ("CD1" and "CD2", or "1" and "CD2") are several discs too; those
     # are listed as written.
-    unreadable_discs = {_unreadable_number(t["t"], "discnumber") for t in track_data.values()} - {None}
-    numbered_discs = {_parse_tag_number(t["t"], "discnumber") for t in track_data.values()} - {None}
+    unreadable_discs = {unreadable_number(t["t"], "discnumber") for t in track_data.values()} - {None}
+    numbered_discs = {tag_number(t["t"], "discnumber") for t in track_data.values()} - {None}
     multi_disc = len(unreadable_discs | (numbered_discs if unreadable_discs else set())) > 1 or any(
         _names_several_discs(t["t"]) for t in track_data.values()
     )

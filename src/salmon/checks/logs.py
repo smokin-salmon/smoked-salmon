@@ -12,6 +12,7 @@ import cambia
 
 from salmon import prepared
 from salmon.common.files import process_files
+from salmon.common.numbers import read_number
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 from salmon.tagger.tagfile import TagFile
 
@@ -209,9 +210,7 @@ def _disc_number(path: str) -> int | None:
         value = TagFile(path).discnumber
     except Exception:
         return None
-    number = str(value).split("/")[0].strip() if value is not None else ""
-    # isdecimal(), as the retagger reads it: isdigit() also takes a superscript "2", which int() refuses.
-    return int(number) if number.isdecimal() else None
+    return read_number(value)
 
 
 def _audio_files_of_disc(audio_files: list[str], logpath: str) -> list[str]:

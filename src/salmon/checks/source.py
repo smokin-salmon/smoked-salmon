@@ -17,6 +17,7 @@ from urllib.parse import urlsplit
 from mutagen import File as MutagenFile
 
 from salmon.common.files import get_audio_files
+from salmon.common.numbers import number_text
 from salmon.constants import SOURCES
 from salmon.tagger.tag_urls import field_name, tag_pairs, tag_texts, tag_url_fields
 
@@ -224,7 +225,7 @@ def _tag_proofs(mut) -> dict[str, str]:
 
 def _tracknumbers(mut) -> list[str]:
     return [
-        text.split("/", 1)[0].strip()
+        number_text(text)
         for key, value in tag_pairs(mut)
         if field_name(key) in ("tracknumber", "trck")
         for text in tag_texts(value)

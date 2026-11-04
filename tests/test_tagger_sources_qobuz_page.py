@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from salmon import cfg
 from salmon.sources import qobuz as qobuz_base
 from salmon.tagger.sources import qobuz
-from salmon.tagger.sources.qobuz import Scraper, page_to_api_shape
+from salmon.tagger.sources.qobuz import Scraper, _duration_seconds, _page_tracks, page_to_api_shape
 
 QOBUZ_URL = "https://www.qobuz.com/au-en/album/journaling-illy/ul39e7xjbuqrb"
 ENGLISH_PAGE = "https://www.qobuz.com/gb-en/album/-/ul39e7xjbuqrb"
@@ -304,3 +304,29 @@ def test_a_label_is_self_released_by_the_rule_every_source_uses(label, artist, p
     parsed = scraper.parse_release_label({"label": {"name": label}, "artist": {"name": artist}})
 
     assert scraper.process_label({"label": parsed, "artists": [(artist, "main")]}) == processed
+
+
+def _qobuz_page(number: str) -> BeautifulSoup:
+    return BeautifulSoup(
+        f"""<div class="track"><div class="track__item--number"><span>{number}</span></div>
+        <div class="track__item--name"><span>Song</span></div></div>""",
+        "html.parser",
+    )
+
+
+def test_a_qobuz_pages_number_with_a_superscript_takes_the_tracks_place() -> None:
+    assert _page_tracks(_qobuz_page("1²"))[0]["track_number"] == 1
+
+
+@pytest.mark.parametrize(("number", "read"), [("7", 7), ("", 1), ("x", 1)])
+def test_a_qobuz_pages_number_is_read_as_before(number: str, read: int) -> None:
+    assert _page_tracks(_qobuz_page(number))[0]["track_number"] == read
+
+
+def test_a_qobuz_duration_with_a_superscript_doesnt_raise() -> None:
+    assert _duration_seconds("²:20") == 20
+
+
+@pytest.mark.parametrize(("text", "seconds"), [("3:20", 200), ("1:00:01", 3601), ("x", None)])
+def test_a_qobuz_duration_is_read_as_before(text: str, seconds: int | None) -> None:
+    assert _duration_seconds(text) == seconds

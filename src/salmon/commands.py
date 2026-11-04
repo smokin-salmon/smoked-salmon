@@ -18,8 +18,9 @@ import salmon.tagger
 import salmon.trackers
 import salmon.uploader
 from salmon import cfg, interaction
-from salmon.common import clipboard_copy, commandgroup, get_audio_files, str_to_int_if_int
+from salmon.common import clipboard_copy, commandgroup, get_audio_files
 from salmon.common.files import AlbumPath, rewrite_refusal
+from salmon.common.numbers import padded_number
 from salmon.common.redaction import redact_secrets
 from salmon.common.strings import numeric_id
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
@@ -130,11 +131,9 @@ async def build_description(urls: Sequence[str]) -> str:
     for dnum, disc in metadata["tracks"].items():
         for tnum, track in disc.items():
             if multi_disc:
-                description += (
-                    f"[b]{str_to_int_if_int(str(dnum), zpad=True)}-{str_to_int_if_int(str(tnum), zpad=True)}.[/b] "
-                )
+                description += f"[b]{padded_number(str(dnum))}-{padded_number(str(tnum))}.[/b] "
             else:
-                description += f"[b]{str_to_int_if_int(str(tnum), zpad=True)}.[/b] "
+                description += f"[b]{padded_number(str(tnum))}.[/b] "
 
             if album is not None and credits_only_the_album(track["artists"], track["title"], album):
                 description += f"{track['title']}\n"

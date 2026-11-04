@@ -68,7 +68,7 @@ def _clean_discogs_position(position: str, default_disc: int) -> tuple[str, str]
         return str(int(match[1])), str(int(match[2]))
 
     # Handles "01", "02", "1"
-    if pos.isdigit():
+    if pos.isdecimal():
         return str(default_disc), str(int(pos))
 
     return str(default_disc), pos

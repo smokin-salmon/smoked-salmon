@@ -9,10 +9,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from helpers.tagger_combine import make_tracks, one_track
 
+from salmon.common.numbers import natural_key
 from salmon.errors import TrackCombineError
 from salmon.tagger.combine import (
     _extract_remixers_from_title,
-    _natural_track_key,
     _refuse_renumbering_that_loses_a_track,
     check_for_artist_fragments,
     combine_metadatas,
@@ -539,4 +539,4 @@ def test_refusing_a_lost_track_treats_disc_01_and_1_as_one_disc():
 
 def test_a_superscript_digit_sorts_without_raising():
     # isdigit() is true for a superscript "2", which int() refuses; a disc is keyed by its tag as written (#910).
-    assert sorted(["10", "1²", "2"], key=_natural_track_key) == ["1²", "2", "10"]
+    assert sorted(["10", "1²", "2"], key=natural_key) == ["1²", "2", "10"]

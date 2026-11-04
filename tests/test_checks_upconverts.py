@@ -128,3 +128,15 @@ def test_the_upload_check_makes_no_claim_when_some_files_could_not_be_checked(mo
 
     assert "No upconverts detected" not in output
     assert "corrupt" in output
+
+
+def test_the_upconvert_results_go_by_each_files_own_number_as_before(capsys) -> None:
+    results = [
+        uc.UpconvertCheckResult(filepath=path, is_upconverted=False, wasted_bits=0, bitdepth=24)
+        for path in ("/z/10 a.flac", "/z/2 b.flac")
+    ]
+
+    uc._display_results(results)
+
+    out = capsys.readouterr().out
+    assert out.index("2 b.flac") < out.index("10 a.flac")

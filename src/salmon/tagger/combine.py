@@ -8,6 +8,7 @@ from unidecode import unidecode
 
 from salmon import cfg
 from salmon.common import re_strip
+from salmon.common.numbers import natural_key
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
@@ -225,18 +226,8 @@ def _extract_remixers_from_title(title):
     return []
 
 
-def _natural_track_key(value):
-    """Sort keys numerically while still handling mixed values like A1/B2.
-
-    ``isdecimal()``, not ``isdigit()``, which is also true for a superscript "2" that ``int()`` refuses.
-    """
-    return tuple(
-        (0, int(part)) if part.isdecimal() else (1, part.lower()) for part in re.split(r"(\d+)", str(value)) if part
-    )
-
-
 def _sorted_naturally(items):
-    return sorted(items, key=lambda item: _natural_track_key(item[0]))
+    return sorted(items, key=lambda item: natural_key(item[0]))
 
 
 def _pair_base_tracks(btracks, mtracks):
