@@ -1,4 +1,100 @@
-current = "0.22.0"
+current = "0.23.0"
+
+[[changelog]]
+version = "0.23.0"
+date = "2026-11-04"
+notes = """
+
+This release makes uploads faster and safer to leave running: `salmon up` makes the spectrals while its checks run, `salmon web` prepares a queued upload while it waits its turn, and you can give salmon the cover and spectral images you already uploaded. RED uploads with logs go through the API again when you have an API key, so multi-disc rips keep their logs. It also fixes a long list of tag and metadata bugs, most of them found by reading the code for duplicated logic. The config key names 0.21.0 moved still work in 0.23.0 and 0.24, with the same warning: they stop salmon from 0.25.0, so rename them when you can (see [Upgrading to 0.21](https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21)).
+
+## ⚠️ Behaviour changes
+
+- **An album holding a `Spectrals` folder salmon did not make now stops `salmon up` and asks.** Before, that folder went into the FLAC torrent and every transcode without a word. salmon names the files that make it think the folder is not its own, and offers three answers: `m` moves the folder out of the upload (out of the copy only for a library album, `--skip-flac-upload` or a dry run; to `download_directory` as `Spectrals (moved from <album>)` otherwise), `u` uploads it with the album as before, and `s` stops, the default. Under `-yyy` it stops and moves nothing, so an unattended run that relied on the old behaviour stops there: answer `u`, or move the folder out first. A folder salmon made itself gets no question.
+- **salmon web refuses a job on a folder that holds a link** (a symlink anywhere in it, or a Windows junction), or on a folder of `.torrent` files or of a local seedbox. salmon copies what a link leads to into the upload, so a linked `rip.log` or `Scans` folder would have sent a file from outside your folders to the tracker. Hardlinks are fine, and so are a `download_directory` or library folder that is itself a symlink. Setups that fill folders with symlinks (cross-seed in symlink mode, beets' `link` import, debrid mounts) can still upload with `salmon up`, which is unchanged. Thanks @statelycurmudgeon
+
+## ✨ New Features & Improvements
+
+- **Use images you already uploaded:** `salmon up --cover-url URL` for the cover, and `--spectral-url TRACK=URL[,URL]` (Full, then Zoom), once per track, for the spectrals. salmon then uploads neither, and makes no spectrals; it still asks whether the release is lossy mastered, unless you pass `--lossy` or `--not-lossy`. The URLs must be on one of salmon's image hosts and one that every tracker of the run displays (RED's host is fine for a cover on RED and OPS, never for DIC, never for spectrals). salmon does not download them, so check them yourself.
+- **`salmon meta --output FILE`** saves the metadata as JSON, for your own scripts. Thanks @JohnJones13
+- **Spectrals in the background.** `salmon up` makes the spectrals while the MQA, upconvert and log checks run and while it asks about the group, so the spectral step no longer waits for them. Same images, same CPU use, nothing printed in the middle of a question.
+- **salmon web prepares a queued upload while it waits** (`[web] max_jobs`): the MQA, upconvert, log CRC and integrity checks and the spectrals. The upload reuses each result for every file unchanged since. The Jobs page shows such an upload as "preparing", then "ready". It sends nothing to the tracker and writes nothing into the album.
+- **salmon web's Upload form can ask about conversions during the run:** pick "Ask during the run" under Conversions, and the job asks what `salmon up` asks, after the group search. When the conversions you picked can't be made from a release, salmon now says why for each (already 16-bit, sample rate too low, mixed rates, not lossless), in the terminal too. Thanks @statelycurmudgeon for the request
+- **salmon web's Spectrals page lets you pick the tracks to upload,** preselected as `salmon specs` would (`default_spectral_ids`, else a random third), and compresses them when `compress_spectrals` is on, as `salmon specs` does. Thanks @statelycurmudgeon
+- **A shorter tracklist in the group description:** a track's artist is left out when the track credits only the album's artists, so a one-artist album lists titles only. Any guest, remixer or other artist keeps the line as before, as do compilations, DJ mixes and various-artists albums. Thanks @kolrokmyth for the report, @statelycurmudgeon
+- **[a]rtists edits at the review reach the tracks:** a changed role changes that artist's credits on every track, a removed role is removed from the tracks, a new order of main artists applies to each track, and salmon says what it left alone. A trac[k]s save keeps the order you set. Thanks @statelycurmudgeon
+- **Spectrals on Linux without feh:** when feh can't run, salmon opens your desktop's default image viewer, or says why it can't show them, instead of crashing. Thanks @cy1der
+
+## 🐛 Bug Fixes
+
+- **Tags and metadata.**
+  - A fragmented M4A is never retagged: saving tags broke its audio (a bug in mutagen). salmon leaves it as it is and says so. Thanks @statelycurmudgeon for the report
+  - Track and disc numbers are read as files hold them: an M4A's numbers, a FLAC disc number with a total (`2/2`), spaces around a number, and digits like `²` no longer crash the tracklist, the track pairing or the rename. A multi-disc rename with a disc number that is missing or not a number (`CD1`) stops, lists each file with its value and says what to set, instead of crashing. Thanks @statelycurmudgeon
+  - Store metadata: a Qobuz label holding the artist's name ("Fairmont Records" by Air) is no longer Self-Released; a Bandcamp artist named "Various ..." is credited like any other; a featured artist with brackets ("feat. A (UK)") keeps the title whole; MusicBrainz guests after "ft." are guests; and a Bandcamp track artist in another script than the release's is kept. Thanks @statelycurmudgeon
+  - Artist a[L]iases no longer skips the artist after each one it renames or removes, and keeps credits in their place. Thanks @phatloi0010, and @statelycurmudgeon for the report
+  - Tracks listed out of order in a store's metadata are paired with the right files, numbered file names that contradict their track tags are refused as ambiguous, and a merge that would fail stops before it starts. Thanks @chodeus
+  - MP3 and M4A tags are read and written as players read them: an MP3 track number without a total, a `TXXX` frame in any case, a stale ARTISTS tag emptied, and an M4A genre list shown as a change in the preview. Thanks @chodeus
+- **Uploads.**
+  - A log whose extension is in capitals (`Rip.LOG`) is sent with the upload; before, it was checked but not sent. Thanks @statelycurmudgeon
+  - The dupe search keeps "EP" and "Single" when they are part of the title: "The Singles" was searched as "thes", which found nothing. Thanks @statelycurmudgeon
+  - A failed dupe search on the first tracker moves on to the next tracker, instead of ending the run. A group or request that could not be fetched says why, not "does not exist". Thanks @chodeus
+  - The dupe and request checks take only answers that name a group or request, print a result with missing fields on one line, and keep "(Remixes)" in the search. An unreadable site log asks, default no, whether to upload without the last-minute dupe check. Thanks @chodeus
+  - A recorded transcode or downconversion is reused only while its source tracks are as they were; after a retag it is refused, instead of uploading the old tags and pictures. Thanks @chodeus
+  - OPS asks about the Split release type only for a new group: a cross-upload into an existing group could have sent it. Thanks @statelycurmudgeon
+  - A cross-upload's description credits smoked-salmon once.
+  - `salmon checkspecs` refuses a link or an id that isn't a torrent's, instead of crashing. Thanks @statelycurmudgeon
+
+## 🔒 Tracker & Security Improvements
+
+- **RED uploads with logs go through the API again** when an API key is set. Through `upload.php`, RED dropped the logs of a multi-disc rip. An upload into an existing group also sends two requests fewer. Cookie-only configs are unchanged.
+- **Unexpected tracker answers are handled:** an answer that is not what the client expects fails with its text instead of a crash, an upload whose answer names no torrent is looked up rather than taken as torrent 0, an upload redirected to another site is looked up rather than sent again, and error pages are cut to 500 characters. Thanks @chodeus
+- **Tracker pages with broken `<input>` tags are masked,** and no longer take minutes to mask.
+
+## What's Changed
+* Move on from a first tracker whose dupe search fails by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/872
+* Handle tracker answers the client did not expect by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/878
+* Read and write MP3 and M4A tags as players do by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/880
+* Pair tracks by their numbers, and stop a bad merge before it starts by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/881
+* Open the desktop's default image viewer for spectrals when feh can't run by @cy1der in https://github.com/smokin-salmon/smoked-salmon/pull/875
+* Take already-uploaded cover and spectral URLs instead of uploading them again by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/887
+* Make the spectrals in the background while salmon up runs its checks and asks for the group by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/888
+* Prepare a queued upload's local checks and spectrals while it waits in salmon web by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/889
+* Pass the terminal query's pty test on macOS, which sets PENDIN itself by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/891
+* Refactor / #843 split tests, helpers, and uploader by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/890
+* Never write tags to a fragmented M4A by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/893
+* Refactor / #843 move the conversion uploads out of uploader/__init__.py, and split _upload_staged by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/896
+* Carry [a]rtists edits to the tracks, and keep the release's order at a trac[k]s save (#854, #868) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/894
+* Hold both sox runs until they have started in the spectrals generation error test by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/903
+* Test what the suite didn't check, found by mutation testing by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/905
+* Add --output option to meta command to save JSON by @JohnJones13 in https://github.com/smokin-salmon/smoked-salmon/pull/877
+* fix(tagger): rebuild artist lists in place in _alias_artists (#897) by @phatloi0010 in https://github.com/smokin-salmon/smoked-salmon/pull/901
+* Leave a track's artist out of the tracklist when it credits only the album's (#895) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/907
+* Refuse a salmon web job on a folder holding a link, or a withheld folder (#898) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/909
+* Credit smoked-salmon once in a cross-upload's description (#883) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/912
+* Take only answers that name a group or request in the dupe and request checks by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/879
+* Ask before uploading an album's Spectrals folder salmon did not make (#902) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/913
+* Reuse a conversion only while its tracks are as they were by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/886
+* Leave a release type out of a dupe search only where it ends the title (#910) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/916
+* Let the web Upload form ask about conversions during the run (#899) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/914
+* Upload only the chosen tracks' spectrals from salmon web by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/915
+* Offer to move a leftover Spectrals folder out of the upload by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/917
+* Ask about OPS's Split release type only for an upload into a new group (#910) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/918
+* Send a log whatever the case of its extension (#910) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/920
+* Read track and disc numbers as files hold them (#908, #910) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/921
+* Read store metadata as the store gives it (#910) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/923
+* Refuse a checkspecs torrent id that isn't one (#910) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/926
+* Upload to RED through the API when there are logs (#863) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/925
+* Mask an input field after a lone quote, and bound the scan of unclosed tags (#884) by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/928
+* Compress the spectrals salmon web uploads (#910) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/929
+* Hold function complexity to 20 in CI, and review module growth instead of capping it by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/927
+* Read old config key names with a warning until 0.25.0 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/935
+
+## New Contributors
+* @JohnJones13 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/877
+* @phatloi0010 made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/901
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.22.0...0.23.0
+
+"""
 
 [[changelog]]
 version = "0.22.0"
