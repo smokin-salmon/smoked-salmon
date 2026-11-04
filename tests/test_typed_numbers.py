@@ -4,6 +4,7 @@
 tracker as written. Digits of other scripts pass both, and read as an ID or a row nobody meant.
 """
 
+import errno
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
@@ -342,7 +343,12 @@ def test_a_cross_uploads_url_needs_a_torrentid_in_plain_digits(value: str) -> No
 
 
 @pytest.mark.parametrize("value", ["9" * 5000, "a" * 5000], ids=["5000 digits", "5000 letters"])
-def test_a_cross_uploads_input_too_long_for_a_path_is_refused(value: str) -> None:
+def test_a_cross_uploads_input_too_long_for_a_path_is_refused(monkeypatch, value: str) -> None:
+    # Before Python 3.14 is_file() raises this itself, and from 3.14 it answers False, so raise it on every version.
+    def too_long(_path: Path) -> bool:
+        raise OSError(errno.ENAMETOOLONG, "File name too long")
+
+    monkeypatch.setattr(Path, "is_file", too_long)
     _, site = _site()
 
     with pytest.raises(click.UsageError, match="is not a RED torrent ID or URL"):
