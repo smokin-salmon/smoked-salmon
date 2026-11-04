@@ -738,7 +738,11 @@ def test_as_before_an_m4a_gone_mid_check_has_no_files_row_and_exits_0(discs, mon
 @pytest.mark.usefixtures("no_tracker")
 def test_as_before_an_m4a_that_opens_but_does_not_parse_is_not_called_unreadable(discs):
     (discs / "03 Track 3.m4a").write_bytes(b"not an MP4 file" * 100)
-    assert "Files" not in _rows(_run(str(discs)).output)
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    rows = _rows(result.output)
+    assert "Integrity" in rows, result.output
+    assert "Files" not in rows
 
 
 @pytest.mark.usefixtures("no_tracker")
