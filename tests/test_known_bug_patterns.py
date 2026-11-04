@@ -1,8 +1,7 @@
 """Code patterns that have already caused a bug here may not spread (#932).
 
-Each pattern's uses in src/salmon are held to its entry in ALLOWED, in the way tests/test_complexity.py holds
-complexity. A new use fails: write what the entry says instead. A fix that removes a use fails too, until the entry
-comes down with it, so the list only tightens.
+Each pattern's uses in src/salmon are held to at most its entry in ALLOWED. A new use fails: write what the entry says
+instead. A fix that removes a use passes, so two PRs can't turn master red between them. Lower an entry when convenient.
 """
 
 import ast
@@ -91,12 +90,6 @@ def test_no_known_bug_pattern_spreads() -> None:
     for pattern, (find, allowed, instead) in ALLOWED.items():
         uses = _uses(find)
         assert len(uses) <= allowed, f"A new use of {pattern}. {instead} Uses now: {uses}"
-
-
-def test_the_allowed_counts_come_down_with_each_fix() -> None:
-    for pattern, (find, allowed, _) in ALLOWED.items():
-        uses = _uses(find)
-        assert len(uses) >= allowed, f"{pattern} has fewer uses now: lower its entry to {len(uses)}"
 
 
 def test_the_isdigit_finder_counts_a_call_with_no_guard_on_its_line(tmp_path: Path) -> None:
