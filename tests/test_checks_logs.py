@@ -1,10 +1,16 @@
 import os
 import struct
+import zlib
 from importlib import import_module
+from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import anyio
+import av
+import av.audio.stream
 import cambia
+import numpy as np
 import pytest
 from helpers.checks_logs import (
     FakeCambiaOutput,
@@ -689,3 +695,78 @@ def test_a_multi_disc_log_named_for_its_first_disc_passes_after_the_one_folder_r
 
     for log_path in log_paths:
         anyio.run(logs.check_log_cambia, log_path, str(tmp_path))
+
+
+SECTOR_SAMPLES = 588  # At 44.1 kHz, 75 sectors a second
+
+
+def _noise_flac(path: Path, samples: int, seed: int = 1) -> bytes:
+    """A real stereo FLAC of noise, and the PCM a ripper's CRC would have seen."""
+    pcm = np.random.default_rng(seed).integers(-8000, 8000, (2, samples), dtype=np.int16)
+    with av.open(str(path), "w", format="flac") as container:
+        stream = container.add_stream("flac", rate=44100, layout="stereo", format="s16")
+        assert isinstance(stream, av.audio.stream.AudioStream)
+        frame = av.AudioFrame.from_ndarray(pcm, format="s16p", layout="stereo")
+        frame.sample_rate = 44100
+        container.mux(stream.encode(frame))
+        container.mux(stream.encode(None))
+    return pcm.T.astype("<i2").tobytes()
+
+
+def _toc_entry(start: int, sectors: int) -> Any:
+    return SimpleNamespace(start_sector=start, end_sector=start + sectors - 1)
+
+
+def _crc(data: bytes) -> str:
+    return format(zlib.crc32(data), "08X")
+
+
+def _sectors_of(tmp_path: Path, samples: int) -> int:
+    _noise_flac(tmp_path / "t.flac", samples)
+    return logs._get_audio_duration_sectors(str(tmp_path / "t.flac"))
+
+
+@pytest.mark.parametrize("sectors", [55, 79])
+def test_a_track_of_a_length_a_float_reads_short_is_read_exactly(tmp_path, sectors: int) -> None:
+    # float(seconds) * 75 read these one sector short, as it does about 1 CD track length in 20.
+    assert _sectors_of(tmp_path, sectors * SECTOR_SAMPLES) == sectors
+
+
+@pytest.mark.parametrize("sectors", [21, 51])
+def test_a_tracks_sectors_are_read_exactly_as_before(tmp_path, sectors: int) -> None:
+    # Rounding a float up reads 21 and 51 a sector long.
+    assert _sectors_of(tmp_path, sectors * SECTOR_SAMPLES) == sectors
+
+
+def test_a_part_sector_at_a_tracks_end_is_not_counted_as_before(tmp_path) -> None:
+    assert _sectors_of(tmp_path, 55 * SECTOR_SAMPLES + 587) == 55
+
+
+def test_a_range_rips_crc_matches_when_its_toc_has_no_gap(tmp_path, monkeypatch) -> None:
+    first = _noise_flac(tmp_path / "01.flac", 55 * SECTOR_SAMPLES, 1)
+    second = _noise_flac(tmp_path / "02.flac", 79 * SECTOR_SAMPLES, 2)
+    toc = [_toc_entry(0, 55), _toc_entry(55, 79)]
+    _patch_cambia(monkeypatch, _one_disc_log(_crc(first + second), is_range=True, toc_entries=toc))
+
+    anyio.run(logs.check_log_cambia, str(tmp_path / "rip.log"), str(tmp_path))
+
+
+def test_a_range_rips_gaps_are_silence_after_their_own_tracks_as_before(tmp_path, monkeypatch) -> None:
+    first = _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1)
+    second = _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    pcm = first + bytes(SECTOR_SAMPLES * 4) + second + bytes(2 * SECTOR_SAMPLES * 4)
+    toc = [_toc_entry(0, 76), _toc_entry(76, 102)]
+    _patch_cambia(monkeypatch, _one_disc_log(_crc(pcm), is_range=True, toc_entries=toc))
+
+    anyio.run(logs.check_log_cambia, str(tmp_path / "rip.log"), str(tmp_path))
+
+
+def test_a_range_rips_files_are_taken_in_name_order_as_before(tmp_path) -> None:
+    first = _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1)
+    second = _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    files = [str(tmp_path / "02.flac"), str(tmp_path / "01.flac")]
+    toc = [_toc_entry(0, 75), _toc_entry(75, 100)]
+
+    rebuilt = b"".join(logs._iter_range_pcm_chunks(files, toc))
+
+    assert rebuilt == first + second
