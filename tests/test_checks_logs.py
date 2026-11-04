@@ -729,17 +729,23 @@ def _sectors_of(tmp_path: Path, samples: int) -> int:
 @pytest.mark.parametrize("sectors", [55, 79])
 def test_a_track_of_a_length_a_float_reads_short_is_read_exactly(tmp_path, sectors: int) -> None:
     # float(seconds) * 75 read these one sector short, as it does about 1 CD track length in 20.
-    assert _sectors_of(tmp_path, sectors * SECTOR_SAMPLES) == sectors
+    measured = _sectors_of(tmp_path, sectors * SECTOR_SAMPLES)
+
+    assert measured == sectors
 
 
 @pytest.mark.parametrize("sectors", [21, 51])
 def test_a_tracks_sectors_are_read_exactly_as_before(tmp_path, sectors: int) -> None:
-    # Rounding a float up reads 21 and 51 a sector long.
-    assert _sectors_of(tmp_path, sectors * SECTOR_SAMPLES) == sectors
+    # Floats just over these lengths: math.ceil of one would read a sector long, where the float's int() is right.
+    measured = _sectors_of(tmp_path, sectors * SECTOR_SAMPLES)
+
+    assert measured == sectors
 
 
 def test_a_part_sector_at_a_tracks_end_is_not_counted_as_before(tmp_path) -> None:
-    assert _sectors_of(tmp_path, 55 * SECTOR_SAMPLES + 587) == 55
+    measured = _sectors_of(tmp_path, 55 * SECTOR_SAMPLES + 587)
+
+    assert measured == 55
 
 
 def test_a_range_rips_crc_matches_when_its_toc_has_no_gap(tmp_path, monkeypatch) -> None:
