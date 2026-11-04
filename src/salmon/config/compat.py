@@ -1,4 +1,4 @@
-"""Old config keys and old template values, read with a warning for one release (ADR 0005).
+"""Old config keys and old template values, read with a warning (ADR 0005).
 
 ``apply`` rewrites the decoded TOML in place before the typed decode: a moved or renamed key is read under its old
 name until ``refused_from``, a removed one is dropped, and a value left over from the old template counts as unset.
@@ -13,7 +13,7 @@ from typing import Any
 import asyncclick as click
 from packaging.version import InvalidVersion, Version
 
-REFUSED_FROM = "0.23.0"
+REFUSED_FROM = "0.25.0"
 UPGRADE_PAGE = "https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21"
 
 
