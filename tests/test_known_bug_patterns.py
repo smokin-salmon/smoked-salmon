@@ -13,20 +13,32 @@ from pathlib import Path
 ROOT = Path(__file__).parent.parent
 
 
-def _isdigit_uses(path: Path) -> list[int]:
-    """The lines calling ``isdigit()`` with no ``isascii()`` of the same value on the same line.
+def _isascii_of(node: ast.expr) -> str | None:
+    """What ``node`` asks ``isascii()`` of, as source; None if it asks nothing of the kind."""
+    if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "isascii":
+        return ast.unparse(node.func.value)
+    return None
 
-    A guard on another line still counts.
-    """
-    source = path.read_text(encoding="utf-8")
-    lines = source.splitlines()
+
+def _isdigit_uses(path: Path) -> list[int]:
+    """The lines calling ``isdigit()`` that no earlier ``isascii()`` of the same value guards through an ``and``."""
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    guarded = {
+        id(value)
+        for node in ast.walk(tree)
+        if isinstance(node, ast.BoolOp) and isinstance(node.op, ast.And)
+        for position, value in enumerate(node.values)
+        if isinstance(value, ast.Call)
+        and isinstance(value.func, ast.Attribute)
+        and ast.unparse(value.func.value) in {_isascii_of(earlier) for earlier in node.values[:position]}
+    }
     return [
         node.lineno
-        for node in ast.walk(ast.parse(source))
+        for node in ast.walk(tree)
         if isinstance(node, ast.Call)
         and isinstance(node.func, ast.Attribute)
         and node.func.attr == "isdigit"
-        and f"{ast.unparse(node.func.value)}.isascii()" not in lines[node.lineno - 1]
+        and id(node) not in guarded
     ]
 
 
@@ -35,9 +47,10 @@ def _type_word_cuts(path: Path) -> list[int]:
 
     def cuts(text: str) -> bool:
         try:
+            lowered = text.lower()
             return text not in ("EP", "Single") and bool(
-                ("EP" in text and re.search(text, "An EP Thing"))
-                or ("Single" in text and re.search(text, "A Single Thing"))
+                ("ep" in lowered and re.search(text, "An EP Thing"))
+                or ("single" in lowered and re.search(text, "A Single Thing"))
             )
         except re.error:
             return False
@@ -90,18 +103,19 @@ def test_the_isdigit_finder_counts_a_call_with_no_guard_on_its_line(tmp_path: Pa
     source = tmp_path / "source.py"
     source.write_text(
         'x.isdigit()\nx.isascii() and x.isdigit()\n# x.isdigit()\n"x.isdigit()"\n(x.isascii()\n and x.isdigit())\n'
-        "y.isascii() and x.isdigit()\n",
+        "y.isascii() and x.isdigit()\nx.isascii() or x.isdigit()\nx.isdigit() and x.isascii()\n",
         encoding="utf-8",
     )
 
-    assert _isdigit_uses(source) == [1, 6, 7]
+    assert _isdigit_uses(source) == [1, 7, 8, 9]
 
 
 def test_the_type_word_finder_counts_a_regex_that_cuts_from_the_middle(tmp_path: Path) -> None:
     source = tmp_path / "source.py"
     source.write_text(
-        'CUT = r"(?:EP|Single)\\b"\nANCHORED = r"(?:EP|Single)$"\nONE = r"Single\\b"\nTYPE = "EP"\n',
+        'CUT = r"(?:EP|Single)\\b"\nANCHORED = r"(?:EP|Single)$"\nONE = r"Single\\b"\nTYPE = "EP"\n'
+        'ANY_CASE = r"(?i)single\\b"\n',
         encoding="utf-8",
     )
 
-    assert _type_word_cuts(source) == [1, 3]
+    assert _type_word_cuts(source) == [1, 3, 5]
