@@ -68,6 +68,8 @@ class Row:
     dry_run: bool = False
     # The answers to the questions the job asks, in turn; then the default. Starts it with assume_defaults.
     answers: tuple[Any, ...] = ()
+    # The result says a seedbox copy or a client add failed, for the page's warning.
+    seedbox_failed: bool = False
 
 
 V0 = {"conversions": ["V0"]}
@@ -118,6 +120,10 @@ CHANGED = {
         lambda: LostNth(2),
         lambda: _cover_on("OPS", click.Abort),
     ),
+    # Up, and a seedbox failed: what the CLI exits 3 for. Done, with nothing in the result to say so, on master
+    "seedbox_copy_failed": Row("done", 3, setup=_seedbox(copy_exit=1), seedbox_failed=True),
+    "seedbox_client_add_raises": Row("done", 3, setup=_a_client_add_raises, seedbox_failed=True),
+    "seedbox_never_configured": Row("done", 3, setup=_seedbox(clients=(BAD_CLIENT,)), seedbox_failed=True),
 }
 
 AS_BEFORE = {
@@ -130,10 +136,8 @@ AS_BEFORE = {
     # Up, and a side step failed: the log says what to do by hand
     "fill_refused": Row("done", 3, params={"request": "4242"}, tracker=lambda: Answer(groupid=7, requestid=-1)),
     "lossy_report_refused": Row("done", 3, setup=_lossy_report_raises(RequestFailedError("no report"))),
-    # Up, and a seedbox failed: what the CLI exits 3 for
-    "seedbox_copy_failed": Row("done", 3, setup=_seedbox(copy_exit=1)),
-    "seedbox_client_add_raises": Row("done", 3, setup=_a_client_add_raises),
-    "seedbox_never_configured": Row("done", 3, setup=_seedbox(clients=(BAD_CLIENT,))),
+    # Up, and the seedbox took it
+    "seedbox_ok": Row("done", 3, setup=_seedbox()),
     # Stopped with nothing up: the error, and no result
     "upload_error": Row("failed", None, "stopped", fakes=lambda: _cover_on("RED", STOP)),
     "a_bug": Row("failed", None, "RuntimeError: a bug", fakes=_at("check_requests", A_BUG)),
@@ -181,6 +185,7 @@ def _check(monkeypatch, roots, row: Row) -> None:  # noqa: F811
         assert (job.status, _uploads_listed(job)) == (row.status, row.uploads), (job.error, _log(job))
         if job.result is not None:
             assert (job.result["folder"], job.result["trackers"]) == ("Album", list(row.trackers))
+            assert job.result.get("seedbox_failed", False) is row.seedbox_failed
         if row.said is None:
             assert job.error is None
         else:
