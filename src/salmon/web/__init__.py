@@ -31,6 +31,7 @@ async def create_app_async(specs_path: str | None = None) -> "web.AppRunner":
     app = web.Application()
     add_routes(app, specs_path)
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader(join(dirname(__file__), "templates")))
+    app[aiohttp_jinja2.static_root_key] = "/static"
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, web_cfg.host, web_cfg.port)
@@ -40,6 +41,8 @@ async def create_app_async(specs_path: str | None = None) -> "web.AppRunner":
 
 def add_routes(app: "web.Application", specs_path: str | None = None) -> None:
     """Add routes to the web application.
+
+    The templates also need the jinja setup and its static root, which ``create_app_async`` adds.
 
     Args:
         app: The aiohttp web application.
@@ -53,7 +56,6 @@ def add_routes(app: "web.Application", specs_path: str | None = None) -> None:
     app.router.add_static("/static", join(dirname(__file__), "static"))
     app.router.add_route("GET", "/", handle_index)
     app.router.add_route("GET", "/spectrals", spectrals.handle_spectrals)
-    app["static_root_url"] = "/static"
 
 
 async def handle_index(request: "web.Request") -> "web.Response":

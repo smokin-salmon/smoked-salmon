@@ -13,8 +13,10 @@ directly, but that alone would not stop a repo-root ``config.toml`` or an
 already-set ``SALMON_CONFIG_DIR`` from winning.
 """
 
+import atexit
 import ipaddress
 import os
+import shutil
 import socket
 import tempfile
 from pathlib import Path
@@ -24,6 +26,8 @@ import pytest
 from helpers.shipped_config import shipped_config
 
 _root = Path(tempfile.mkdtemp(prefix="salmon-tests-"))
+# Each process removes its own: with xdist, the controller and every worker load this file.
+atexit.register(shutil.rmtree, _root, ignore_errors=True)
 _music = _root / "music"
 _torrents = _root / "torrents"
 _music.mkdir()

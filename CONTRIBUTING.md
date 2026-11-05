@@ -69,8 +69,8 @@ Use a descriptive branch name with a prefix:
 Before committing, make sure your code passes the checks that run in CI:
 
 ```bash
-# Tests
-uv run pytest
+# Tests (one worker per CPU; plain `uv run pytest` runs them one at a time)
+uv run pytest -n auto
 
 # Linting and auto-fix
 uv run ruff check . --fix

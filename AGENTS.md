@@ -13,7 +13,7 @@ traffic as the most sensitive part of the code.
 
 ```bash
 uv sync                          # install, including dev dependencies
-uv run pytest                    # tests
+uv run pytest -n auto            # tests, one worker per CPU (pytest-xdist), as in CI
 uv run ruff check .              # lint
 uv run ruff format --check .     # formatting
 uv run basedpyright              # type check (the version locked in the dev group, as in CI)
@@ -21,6 +21,18 @@ uv run basedpyright              # type check (the version locked in the dev gro
 
 `ruff`, `pyright` and `pytest` are required checks on `master`; a PR cannot merge unless all three
 pass.
+
+While iterating, run the tests of the package you change: the files named after it (`tests/test_<package>_*.py`;
+`images/` is `test_image*`) and the others that import it (pytest skips a file given twice). It is a quick subset,
+not the whole picture: run the full suite once before opening the PR.
+
+```bash
+uv run pytest -n auto tests/test_sources_*.py \
+  $(grep -lE '\bsalmon(\.sources\b| import .*\bsources\b)' tests/test_*.py)
+```
+
+Leave out `-n auto` for a file or two, where starting the workers costs more than it saves. A run that reports a
+warning fails (`max_warnings = 0` in `pyproject.toml`): fix the code that warns.
 
 The `salmon` package loads and validates its config at import time and exits if there is none.
 `tests/conftest.py` handles this for the test run by pointing `XDG_CONFIG_HOME` at a temporary
