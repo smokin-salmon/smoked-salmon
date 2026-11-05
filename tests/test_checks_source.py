@@ -594,3 +594,7 @@ def test_a_fifo_named_like_a_log_is_not_read(tmp_path) -> None:
 
     assert not hung
     assert result == [None]
+
+
+def test_a_track_numbers_text_ends_at_the_slash_with_no_space_as_before() -> None:
+    assert source_mod._tracknumbers(SimpleNamespace(tags={"TRACKNUMBER": ["2 /9"]})) == ["2"]

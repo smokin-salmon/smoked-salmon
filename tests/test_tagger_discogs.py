@@ -1,8 +1,10 @@
 import asyncio
 import json
 
+import pytest
+
 from salmon.tagger.sources.base import append_remixers_to_track_titles, generate_artists
-from salmon.tagger.sources.discogs import Scraper, parse_artists, parse_credits
+from salmon.tagger.sources.discogs import Scraper, _clean_discogs_position, parse_artists, parse_credits
 
 
 def make_soup(tracklist: list[dict]) -> dict:
@@ -284,3 +286,12 @@ def test_discogs_remix_credit_does_not_add_a_second_version_to_the_title() -> No
 
     assert tracks["1"]["1"]["title"] == "Nobody Else (London Connection Edit)"
     assert ("London Connection", "remixer") in tracks["1"]["1"]["artists"]
+
+
+def test_a_discogs_position_with_a_superscript_stays_as_written() -> None:
+    assert _clean_discogs_position("1²", 2) == ("2", "1²")
+
+
+@pytest.mark.parametrize(("position", "parsed"), [("03", ("2", "3")), ("a1", ("2", "A1")), ("1-05", ("1", "5"))])
+def test_a_discogs_position_is_read_as_before(position: str, parsed: tuple[str, str]) -> None:
+    assert _clean_discogs_position(position, 2) == parsed

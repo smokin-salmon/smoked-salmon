@@ -8,16 +8,17 @@ import pytest
 from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg, interaction
+from salmon.common.numbers import tag_number_or_one
 from salmon.errors import AmbiguousTrackOrderError, UploadError
 from salmon.tagger.retagger import (
     Change,
     _generate_album_artist,
-    _get_tag_number,
     append_guests_to_track_titles,
     create_artist_str,
     create_track_changes,
     delete_empty_folders,
     metadata_to_track_list,
+    pair_files_with_tracks,
     rename_files,
     retag_files,
     tag_files,
@@ -186,6 +187,18 @@ def test_create_track_changes_falls_back_when_only_some_files_carry_a_discnumber
 
     assert Change("title", "Old CD1", "New CD1") in changes["CD1/01.flac"]
     assert Change("title", "Old CD2", "New CD2") in changes["CD2/01.flac"]
+
+
+@pytest.mark.parametrize("disc", ["", "CD1"], ids=["blank", "unreadable"])
+def test_a_disc_tag_that_isnt_a_number_cant_order_files_across_folders_as_before(disc):
+    tags = {
+        "A/01.flac": _tagset("Old A", tracknumber="2", discnumber=disc),
+        "B/01.flac": _tagset("Old B", tracknumber="1", discnumber=disc),
+    }
+    metadata = {"tracks": {"1": {"1": _trackmeta("One", "1", "1"), "2": _trackmeta("Two", "2", "1")}}}
+
+    with pytest.raises(AmbiguousTrackOrderError):
+        pair_files_with_tracks(tags, metadata)
 
 
 def test_create_track_changes_trusts_continuous_track_numbers_with_no_discnumber_tag_anywhere():
@@ -539,23 +552,23 @@ def test_unnumbered_names_that_put_a_pinned_file_elsewhere_are_not_an_order():
         create_track_changes(tags, metadata)
 
 
-def test_get_tag_number_reads_the_number_part_of_a_slash_pair():
-    assert _get_tag_number(SimpleNamespace(discnumber="3/12"), "discnumber") == 3
+def test_tag_number_or_one_reads_the_number_part_of_a_slash_pair():
+    assert tag_number_or_one(SimpleNamespace(discnumber="3/12"), "discnumber") == 3
 
 
-def test_get_tag_number_defaults_missing_tags_to_one():
-    assert _get_tag_number(SimpleNamespace(discnumber=None), "discnumber") == 1
-    assert _get_tag_number({}, "discnumber") == 1
+def test_tag_number_or_one_defaults_missing_tags_to_one():
+    assert tag_number_or_one(SimpleNamespace(discnumber=None), "discnumber") == 1
+    assert tag_number_or_one({}, "discnumber") == 1
 
 
-def test_get_tag_number_unwraps_a_list_value():
-    assert _get_tag_number({"tracknumber": ["7"]}, "tracknumber") == 7
+def test_tag_number_or_one_unwraps_a_list_value():
+    assert tag_number_or_one({"tracknumber": ["7"]}, "tracknumber") == 7
 
 
-def test_get_tag_number_defaults_a_digit_like_value_int_cannot_parse():
+def test_tag_number_or_one_defaults_a_digit_like_value_int_cannot_parse():
     # "²" (superscript two) passes str.isdigit() but int() rejects it; a malformed
     # TRACKNUMBER like this must read as unparseable rather than raise out of retagging.
-    assert _get_tag_number({"tracknumber": ["²"]}, "tracknumber") == 1
+    assert tag_number_or_one({"tracknumber": ["²"]}, "tracknumber") == 1
 
 
 def _formatting(**settings):
@@ -1332,7 +1345,7 @@ def test_tracks_the_metadata_lists_out_of_order_still_pair_by_their_numbers():
     ids=["disc with a space before", "disc with a space after", "disc with its total", "disc 0"],
 )
 def test_rename_files_still_files_these_discs_as_before(tmp_path, monkeypatch, first, second) -> None:
-    # As master did: _get_tag_number strips spaces as int() did, and "or 1" files a disc 0 with the first.
+    # As master did: tag_number_or_one strips spaces as int() did, and "or 1" files a disc 0 with the first.
     monkeypatch.setattr(cfg.upload, "formatting", _formatting())
     tags, metadata = _release(tmp_path, {"a.flac": (1, 1), "b.flac": (2, 1)})
     tags["a.flac"].discnumber, tags["b.flac"].discnumber = first, second

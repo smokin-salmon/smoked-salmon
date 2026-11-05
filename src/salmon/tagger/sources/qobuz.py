@@ -139,7 +139,7 @@ def _released_on(text: str) -> str | None:
 
 
 def _duration_seconds(text: str) -> int | None:
-    parts = [part for part in text.strip().split(":") if part.isdigit()]
+    parts = [part for part in text.strip().split(":") if part.isdecimal()]
     if not parts:
         return None
     seconds = 0
@@ -165,7 +165,7 @@ def _page_tracks(soup: BeautifulSoup) -> list[dict[str, Any]]:
             tracks.append(
                 {
                     "media_number": disc,
-                    "track_number": int(number) if number.isdigit() else len(tracks) + 1,
+                    "track_number": int(number) if number.isdecimal() else len(tracks) + 1,
                     "title": unescape(str(title)),
                     "duration": _duration_seconds(_text(node.select_one(".track__item--duration"))),
                     "performers": infos[0] if infos else "",

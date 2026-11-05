@@ -573,7 +573,7 @@ def test_a_track_number_int_cannot_read_is_not_numbered():
 
 
 def test_a_track_number_with_spaces_is_numbered():
-    # As the retagger reads it: " 2" is track 2, not a file to number by its place in the folder.
+    # read_number strips spaces: " 2" is track 2, not a file to number by its place in the folder.
     tags = {
         name: SimpleNamespace(
             artist=["Some Artist"],
