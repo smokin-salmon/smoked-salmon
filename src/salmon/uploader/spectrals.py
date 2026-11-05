@@ -961,7 +961,7 @@ def make_way_for_spectrals(spectrals_path: str) -> None:
     """Clear spectrals_path for salmon's spectrals folder: remove salmon's own, or an empty folder.
 
     Raises:
-        UploadError: Something salmon did not make is there.
+        UploadError: Something salmon did not make is there, or salmon's own cannot be removed.
     """
     if not os.path.lexists(spectrals_path):
         return
@@ -971,7 +971,14 @@ def make_way_for_spectrals(spectrals_path: str) -> None:
         empty = False
     if not (empty or made_by_salmon(spectrals_path)):
         raise UploadError(f"Not replacing {spectrals_path} with spectrals: salmon did not make it. Move it away.")
-    shutil.rmtree(spectrals_path)
+    try:
+        shutil.rmtree(spectrals_path)
+    except OSError as error:
+        parent = os.path.dirname(spectrals_path)
+        name = os.path.relpath(error.filename or spectrals_path, parent)
+        raise UploadError(
+            f"Could not remove {name} in {parent} ({error.strerror}): fix its permissions or move it away."
+        ) from error
     drop_specs_claim(spectrals_path)
 
 
