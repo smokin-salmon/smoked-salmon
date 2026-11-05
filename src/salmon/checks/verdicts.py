@@ -52,6 +52,40 @@ def _khz(rate: int) -> str:
     return f"{rate / 1000:g} kHz"
 
 
+def unchecked_rows(folders: list[str], links: list[str], broken: list[str], files: list[str]) -> list[Row]:
+    """What album._unchecked found, what blocks first. Each kind is a row naming every one; a kind with none has none.
+
+    A link to a folder only warns: salmon up takes it as it is and runs its own checks on what it copies.
+    """
+    rows = []
+    if folders:
+        names = ", ".join(folders)
+        rows.append(
+            Row(
+                "BLOCK", "Folders", f"Could not read {len(folders)} folder(s), so nothing in them was checked: {names}."
+            )
+        )
+    if broken:
+        names = ", ".join(broken)
+        rows.append(
+            Row("BLOCK", "Broken links", f"{len(broken)} link(s) lead nowhere: {names}. salmon up stops on one.")
+        )
+    if files:
+        names = ", ".join(files)
+        rows.append(Row("BLOCK", "Files", f"Could not read {len(files)} file(s), so they were not checked: {names}."))
+    if links:
+        names = ", ".join(links)
+        rows.append(
+            Row(
+                "WARN",
+                "Links",
+                f"Did not follow {len(links)} link(s) to a folder, so what they lead to was not checked: {names}. "
+                "salmon up uploads what a link leads to; salmon web refuses the album.",
+            )
+        )
+    return rows
+
+
 def source_row(detected: DetectedSource | None) -> Row:
     if detected is None:
         return Row("INFO", "Source", "The files do not prove a media source; salmon up asks for it.")

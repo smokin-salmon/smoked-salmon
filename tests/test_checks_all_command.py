@@ -7,7 +7,8 @@ has none. The trackers are local fakes: no real tracker is contacted.
 import os
 import stat
 import sys
-from contextlib import asynccontextmanager
+from collections.abc import Iterator
+from contextlib import asynccontextmanager, contextmanager
 from functools import partial
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,7 @@ import pytest
 from aiohttp import web
 from aiolimiter import AsyncLimiter
 from asyncclick.testing import CliRunner
-from helpers.checks_all_command import FAKE_FLAC, _snapshot
+from helpers.checks_all_command import FAKE_FLAC, _fail_lstat, _fail_lstat_of, _fail_open, _fail_scandir, _snapshot
 from helpers.checks_do_not_upload import UNMATCHED
 from helpers.checks_logs import (
     FakeCambiaOutput,
@@ -36,6 +37,7 @@ from helpers.checks_logs import (
 from helpers.checks_mqa import _write_flac
 from mutagen.flac import FLAC
 
+import salmon.checks.album as album_checks
 import salmon.checks.do_not_upload as do_not_upload
 import salmon.trackers
 from salmon import cfg
@@ -45,6 +47,9 @@ from salmon.uploader import frequency
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs
 
 FOLDER = "Artist - Album (2020) [WEB FLAC]"
+needs_bound_permissions = pytest.mark.skipif(
+    sys.platform == "win32" or os.geteuid() == 0, reason="needs permissions that bind (not root)"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -358,3 +363,409 @@ def test_a_failed_analysis_is_reported_as_failed_not_as_no_lossless_file(album, 
     assert _rows(result.output)["Frequency analysis"] == "INFO"
     assert "4. Frequency analysis (averaged spectrum per track)\n   Failed: see the Frequency analysis" in result.output
     assert "no lossless file" not in result.output
+
+
+# A folder os.walk cannot list
+
+
+@pytest.fixture
+def discs(album) -> Path:
+    """The album with one track in Disc 1 and the other in Disc 2."""
+    for number in (1, 2):
+        disc = album / f"Disc {number}"
+        disc.mkdir()
+        (album / f"{number:02d} Track {number}.flac").rename(disc / f"{number:02d} Track {number}.flac")
+    return album
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_an_unreadable_disc_folder_blocks_names_the_folder_and_exits_1(discs, monkeypatch):
+    _fail_scandir(monkeypatch, PermissionError, "Disc 2")
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    rows = _rows(result.output)
+    assert rows["Folders"] == "BLOCK"
+    assert next(iter(rows)) == "Folders"
+    assert "Could not read 1 folder(s), so nothing in them was checked: Disc 2." in result.output
+    assert "1 blocking, 0 warning(s)." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_nested_unreadable_folder_is_named_from_the_album_and_the_rest_is_still_checked(discs, monkeypatch):
+    (discs / "Disc 2" / "Scans").mkdir()
+    _fail_scandir(monkeypatch, PermissionError, "Scans")
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    assert f"nothing in them was checked: {os.path.join('Disc 2', 'Scans')}." in result.output
+    assert "All 2 file(s) decode." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_each_unreadable_folder_is_named(discs, monkeypatch):
+    for folder in ("Disc 1", "Disc 2"):
+        (discs / folder / "Scans").mkdir()
+    (discs / "Art").mkdir()
+    _fail_scandir(monkeypatch, OSError, "Scans", "Art")
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    scans = (os.path.join(folder, "Scans") for folder in ("Disc 1", "Disc 2"))
+    assert f"Could not read 3 folder(s), so nothing in them was checked: Art, {', '.join(scans)}." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_the_row_and_the_report_name_nothing_above_the_album(discs, monkeypatch):
+    _fail_scandir(monkeypatch, PermissionError, "Disc 2")
+    result = _run(str(discs), "--report")
+    assert "BLOCK Folders: Could not read 1 folder(s), so nothing in them was checked: Disc 2." in result.output
+    assert str(discs.parent) not in result.output
+    assert os.path.join(FOLDER, "Disc 2") not in result.output
+
+
+def test_the_unreadable_folders_are_in_name_order_whatever_order_the_walk_finds_them(monkeypatch, tmp_path):
+    def walk(path, onerror):
+        for name in ("Disc 2", "Disc 1"):
+            onerror(PermissionError(13, "Permission denied", os.path.join(path, name)))
+        return iter(())
+
+    monkeypatch.setattr(os, "walk", walk)
+    assert album_checks._unchecked(str(tmp_path))[0] == ["Disc 1", "Disc 2"]
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_readable_album_in_disc_folders_has_no_folders_row_and_exits_0(discs):
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Folders" not in _rows(result.output)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_folder_gone_mid_walk_has_no_folders_row_and_exits_0(discs, monkeypatch):
+    _fail_scandir(monkeypatch, FileNotFoundError, "Disc 2")
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Folders" not in _rows(result.output)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_top_folder_that_fails_to_list_is_no_audio_file(album, monkeypatch):
+    _fail_scandir(monkeypatch, PermissionError, FOLDER)
+    result = _run(str(album))
+    assert result.exit_code == 1, result.output
+    assert f"No audio file in {FOLDER}." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_an_album_whose_only_audio_is_unreadable_is_no_audio_file(discs, monkeypatch):
+    _fail_scandir(monkeypatch, PermissionError, "Disc 1", "Disc 2")
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    assert f"No audio file in {FOLDER}." in result.output
+
+
+# A folder that lists its names but can't be entered (chmod 444)
+
+
+@contextmanager
+def _chmod(path: Path, mode: int) -> Iterator[None]:
+    """path at this mode; the mode tmp_path's clean-up can work with after."""
+    path.chmod(mode)
+    try:
+        yield
+    finally:
+        path.chmod(stat.S_IRWXU)
+
+
+@pytest.fixture
+def third_disc(discs) -> Path:
+    """The album's Disc 3, holding only an M4A: the one kind of audio no check says it failed to read."""
+    disc = discs / "Disc 3"
+    disc.mkdir()
+    _write_aac(disc / "03 Track 3.m4a")
+    return disc
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_folder_that_lists_but_cannot_be_entered_blocks_and_names_the_folder(discs, third_disc, monkeypatch):
+    _fail_lstat(monkeypatch, PermissionError, third_disc.name)
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    assert _rows(result.output)["Folders"] == "BLOCK"
+    assert "Could not read 1 folder(s), so nothing in them was checked: Disc 3." in result.output
+
+
+@needs_bound_permissions
+@pytest.mark.usefixtures("no_tracker")
+def test_a_real_chmod_444_folder_holding_an_m4a_blocks(discs, third_disc):
+    with _chmod(third_disc, 0o444):
+        result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    assert "Could not read 1 folder(s), so nothing in them was checked: Disc 3." in result.output
+    assert "Files" not in _rows(result.output)
+
+
+@needs_bound_permissions
+@pytest.mark.usefixtures("no_tracker")
+def test_a_flac_in_a_chmod_444_folder_prints_the_rows_rather_than_a_traceback(discs):
+    with _chmod(discs / "Disc 2", 0o444):
+        result = _run(str(discs))
+    assert isinstance(result.exception, SystemExit), result.exception
+    assert result.exit_code == 1, result.output
+    rows = _rows(result.output)
+    assert rows["Folders"] == "BLOCK"
+    assert rows["Tags"] == "WARN"
+    table = result.output[result.output.index(f"\n{FOLDER}") :]
+    assert "02 Track 2.flac: could not read it to look for an ID3 tag" in table
+    assert str(discs.parent) not in table
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_folder_that_cannot_be_entered_is_named_once_not_with_what_it_holds(discs, monkeypatch):
+    (discs / "Disc 3" / "Scans").mkdir(parents=True)
+    _fail_lstat(monkeypatch, PermissionError, "Disc 3")
+    _fail_scandir(monkeypatch, PermissionError, "Scans")
+    result = _run(str(discs))
+    assert "Could not read 1 folder(s), so nothing in them was checked: Disc 3." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_an_album_folder_that_cannot_be_entered_is_named_by_its_own_name(tmp_path, monkeypatch):
+    album = tmp_path / FOLDER
+    album.mkdir()
+    _write_aac(album / "01 Track 1.m4a")
+    _fail_lstat(monkeypatch, PermissionError, FOLDER)
+    result = _run(str(album))
+    assert result.exit_code == 1, result.output
+    assert f"nothing in them was checked: {FOLDER}." in result.output
+
+
+@needs_bound_permissions
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_an_empty_chmod_444_folder_hides_nothing_and_has_no_row(discs):
+    empty = discs / "Empty"
+    empty.mkdir()
+    with _chmod(empty, 0o444):
+        result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Folders" not in _rows(result.output)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_folder_with_one_entry_failing_lstat_has_no_row(discs, third_disc, monkeypatch):
+    # Whichever entry the listing gives first: an odd file (EIO, ENAMETOOLONG, EILSEQ) says nothing about its folder.
+    (third_disc / "odd.txt").touch()
+    _fail_lstat_of(monkeypatch, "odd.txt", "03 Track 3.m4a")
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Folders" not in _rows(result.output)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_folder_gone_once_it_is_listed_has_no_row(discs, third_disc, monkeypatch):
+    _fail_lstat(monkeypatch, FileNotFoundError, third_disc.name)
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Folders" not in _rows(result.output)
+
+
+# A link no walk follows
+
+
+@pytest.fixture
+def linked_disc(discs, tmp_path) -> Path:
+    """The album with Disc 2 moved out of it and a symlink left in its place; returns where it went."""
+    outside = tmp_path / "elsewhere"
+    outside.mkdir()
+    target = outside / "Disc 2"
+    (discs / "Disc 2").rename(target)
+    (discs / "Disc 2").symlink_to(target, target_is_directory=True)
+    return target
+
+
+@pytest.mark.usefixtures("no_tracker", "linked_disc")
+def test_a_symlinked_disc_folder_warns_names_the_link_and_exits_0(discs):
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    rows = _rows(result.output)
+    assert rows["Links"] == "WARN"
+    assert next(iter(rows)) == "Links"
+    assert "Folders" not in rows
+    assert "Broken links" not in rows
+    assert (
+        "Did not follow 1 link(s) to a folder, so what they lead to was not checked: Disc 2. "
+        "salmon up uploads what a link leads to; salmon web refuses the album." in result.output
+    )
+    assert "Nothing blocking, 1 warning(s) to read first." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_an_undecodable_flac_behind_a_symlinked_disc_is_not_seen_so_it_is_still_a_warning_and_exit_0(
+    discs, linked_disc
+):
+    (linked_disc / "02 Track 2.flac").write_bytes(b"not a FLAC stream")
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    rows = _rows(result.output)
+    assert rows["Links"] == "WARN"
+    assert rows["Integrity"] == "OK"
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_link_in_a_disc_folder_is_named_from_the_album(discs, tmp_path):
+    (discs / "Disc 1" / "Scans").symlink_to(tmp_path, target_is_directory=True)
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert f"was not checked: {os.path.join('Disc 1', 'Scans')}." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+@pytest.mark.parametrize("name", ["Disc 3", "03 Track 3.m4a"])
+def test_a_link_leading_nowhere_blocks_and_names_the_link(discs, tmp_path, name):
+    (discs / name).symlink_to(tmp_path / "nowhere")
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    rows = _rows(result.output)
+    assert rows["Broken links"] == "BLOCK"
+    assert "Links" not in rows
+    assert "Files" not in rows
+    assert f"1 link(s) lead nowhere: {name}. salmon up stops on one." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_link_leading_nowhere_in_a_disc_folder_is_named_from_the_album(discs, tmp_path):
+    (discs / "Disc 1" / "Scans").symlink_to(tmp_path / "nowhere")
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    assert f"1 link(s) lead nowhere: {os.path.join('Disc 1', 'Scans')}." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_link_in_a_loop_blocks_and_names_the_link(discs):
+    (discs / "Disc 3").symlink_to(discs / "Disc 4")
+    (discs / "Disc 4").symlink_to(discs / "Disc 3")
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    assert _rows(result.output)["Broken links"] == "BLOCK"
+    assert "2 link(s) lead nowhere: Disc 3, Disc 4." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_flac_link_leading_nowhere_prints_the_rows_rather_than_a_traceback(discs, tmp_path):
+    (discs / "03 Track 3.flac").symlink_to(tmp_path / "nowhere")
+    result = _run(str(discs))
+    assert isinstance(result.exception, SystemExit), result.exception
+    assert result.exit_code == 1, result.output
+    assert _rows(result.output)["Broken links"] == "BLOCK"
+    assert "03 Track 3.flac: could not read it to look for an ID3 tag" in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_symlinked_file_that_is_read_has_no_links_row_and_exits_0(discs, tmp_path):
+    target = tmp_path / "target.m4a"
+    _write_aac(target)
+    (discs / "03 Track 3.m4a").symlink_to(target)
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Links" not in _rows(result.output)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_an_album_folder_given_through_a_link_is_checked_where_it_leads(album, tmp_path):
+    link = tmp_path / "link"
+    link.symlink_to(album, target_is_directory=True)
+    result = _run(str(link))
+    assert result.exit_code == 0, result.output
+    assert "Links" not in _rows(result.output)
+
+
+# An M4A that can't be opened: the integrity check walks FLAC and MP3 only, and _audio_info passes over what fails
+
+
+@pytest.mark.usefixtures("no_tracker")
+@pytest.mark.parametrize("name", ["03 Track 3.m4a", "03 Track 3.M4A"])
+def test_an_m4a_that_cannot_be_opened_blocks_and_names_the_file(discs, monkeypatch, name):
+    _write_aac(discs / "Disc 2" / name)
+    _fail_open(monkeypatch, PermissionError, name)
+    result = _run(str(discs))
+    assert result.exit_code == 1, result.output
+    rows = _rows(result.output)
+    assert rows["Files"] == "BLOCK"
+    assert "Folders" not in rows
+    assert f"so they were not checked: {os.path.join('Disc 2', name)}." in result.output
+
+
+@needs_bound_permissions
+@pytest.mark.usefixtures("no_tracker")
+def test_a_real_chmod_000_m4a_that_is_the_albums_only_audio_blocks(tmp_path):
+    album = tmp_path / FOLDER
+    album.mkdir()
+    track = album / "01 Track 1.m4a"
+    _write_aac(track)
+    with _chmod(track, 0):
+        result = _run(str(album))
+    assert result.exit_code == 1, result.output
+    assert "Could not read 1 file(s), so they were not checked: 01 Track 1.m4a." in result.output
+
+
+@needs_bound_permissions
+@pytest.mark.usefixtures("no_tracker")
+def test_a_chmod_000_flac_is_left_to_integrity_and_prints_the_rows_rather_than_a_traceback(discs):
+    with _chmod(discs / "Disc 2" / "02 Track 2.flac", 0):
+        result = _run(str(discs))
+    assert isinstance(result.exception, SystemExit), result.exception
+    assert result.exit_code == 1, result.output
+    rows = _rows(result.output)
+    assert rows["Integrity"] == "BLOCK"
+    assert "Files" not in rows
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_readable_m4a_has_no_files_row_and_exits_0(discs):
+    _write_aac(discs / "03 Track 3.m4a")
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Files" not in _rows(result.output)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_an_m4a_gone_mid_check_has_no_files_row_and_exits_0(discs, monkeypatch):
+    _write_aac(discs / "03 Track 3.m4a")
+    _fail_open(monkeypatch, FileNotFoundError, "03 Track 3.m4a")
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Files" not in _rows(result.output)
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_an_m4a_that_opens_but_does_not_parse_is_not_called_unreadable(discs):
+    (discs / "03 Track 3.m4a").write_bytes(b"not an MP4 file" * 100)
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    rows = _rows(result.output)
+    assert "Integrity" in rows, result.output
+    assert "Files" not in rows
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_folder_named_like_an_m4a_has_no_files_row_and_exits_0(discs):
+    (discs / "Scans.m4a").mkdir()
+    result = _run(str(discs))
+    assert result.exit_code == 0, result.output
+    assert "Files" not in _rows(result.output)
+
+
+def test_the_links_and_files_are_in_name_order_whatever_order_the_walk_finds_them(monkeypatch, tmp_path):
+    for name in ("Disc 1", "Disc 2"):
+        (tmp_path / name).symlink_to(tmp_path, target_is_directory=True)
+    for name in ("Gone 1", "Gone 2"):
+        (tmp_path / name).symlink_to(tmp_path / "nowhere")
+    for name in ("a.m4a", "b.m4a"):
+        (tmp_path / name).touch()
+    _fail_open(monkeypatch, PermissionError, "a.m4a", "b.m4a")
+    walked = ["Disc 2", "Disc 1"], ["Gone 2", "Gone 1", "b.m4a", "a.m4a"]
+    monkeypatch.setattr(os, "walk", lambda path, onerror: iter([(path, *walked)]))
+    assert album_checks._unchecked(str(tmp_path)) == (
+        [],
+        ["Disc 1", "Disc 2"],
+        ["Gone 1", "Gone 2"],
+        ["a.m4a", "b.m4a"],
+    )

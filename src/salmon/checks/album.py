@@ -61,7 +61,8 @@ class AlbumChecks:
 
 
 def _audio_info(path: str) -> dict[str, dict[str, Any]]:
-    """gather_audio_info's, leaving out a file mutagen cannot read: the integrity check reports that one.
+    """gather_audio_info's, leaving out a file mutagen cannot read. The integrity check reports a FLAC or MP3 like that,
+    and _unchecked an M4A that cannot be opened.
 
     The precision is set for a lossless file only: an AAC stream reports 16 bits per sample too.
     """
@@ -115,6 +116,74 @@ def _log_paths(path: str) -> list[str]:
         for name in files
         if name.lower().endswith(".log")
     )
+
+
+def _cannot_enter(folder: str, names: list[str]) -> bool:
+    """Whether a folder that lists these names refuses to be entered: os.walk raises nothing for one (chmod 444).
+
+    Tried on the folder's own "." rather than judged from the mode, which says nothing for root or under an ACL, or from
+    an entry, which can fail by itself. With no entry, nothing is hidden. A folder that is gone is not refused.
+    """
+    if not names:
+        return False
+    try:
+        os.lstat(os.path.join(folder, os.curdir))
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
+    return False
+
+
+def _cannot_open(path: str) -> bool:
+    """Whether a file there refuses to open; one that is gone is not refused."""
+    try:
+        with open(path, "rb"):
+            return False
+    except FileNotFoundError:
+        return False
+    except OSError:
+        return True
+
+
+def _unchecked(path: str) -> tuple[list[str], list[str], list[str], list[str]]:
+    """What every check would pass over without a word, relative to the album, as (folders, links, broken, files).
+
+    folders: those that cannot be listed or entered, which the walks skip. links: those to a folder, which no walk
+    follows. broken: links leading nowhere, or in a loop. A link to a file is read like the file. files: the M4A files
+    that cannot be opened, as the integrity check walks FLAC and MP3 only and _audio_info leaves out what it can't read.
+
+    A folder or file that is gone is not one: it is no longer in the album.
+    """
+    folders: list[str] = []
+    links: list[str] = []
+    broken: list[str] = []
+    files: list[str] = []
+
+    def named(entry: str) -> str:
+        return os.path.relpath(entry, path)
+
+    def note(error: OSError) -> None:
+        if not isinstance(error, FileNotFoundError):
+            folders.append(named(error.filename))
+
+    for root, subfolders, names in os.walk(path, onerror=note):
+        if _cannot_enter(root, [*subfolders, *names]):
+            folders.append(os.path.basename(path) if root == path else named(root))
+            subfolders.clear()
+            continue
+        for name in (*subfolders, *names):
+            entry = os.path.join(root, name)
+            if os.path.islink(entry):
+                if os.path.isdir(entry):
+                    links.append(named(entry))
+                elif not os.path.exists(entry):
+                    broken.append(named(entry))
+        for name in names:
+            entry = os.path.join(root, name)
+            if name.lower().endswith(".m4a") and _cannot_open(entry):
+                files.append(named(entry))
+    return sorted(folders), sorted(links), sorted(broken), sorted(files)
 
 
 async def _log(logpath: str, path: str) -> dict[str, Any]:
@@ -226,7 +295,8 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     source = detected.source if detected else None
     flacs = [name for name in audio_files if name.lower().endswith(".flac")]
 
-    rows = [verdicts.source_row(detected)]
+    unchecked = await anyio.to_thread.run_sync(_unchecked, path)
+    rows = [*verdicts.unchecked_rows(*unchecked), verdicts.source_row(detected)]
     try:
         rows.append(verdicts.integrity_row(await check_integrity(path)))
     except click.Abort:

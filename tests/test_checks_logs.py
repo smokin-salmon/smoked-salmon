@@ -12,6 +12,7 @@ import av.audio.stream
 import cambia
 import numpy as np
 import pytest
+from helpers.checks_all_command import _fail_scandir
 from helpers.checks_logs import (
     FakeCambiaOutput,
     FakeChecksum,
@@ -389,17 +390,6 @@ def test_a_range_rip_with_more_files_than_its_toc_is_skipped_not_aborted(tmp_pat
         anyio.run(logs.check_log_cambia, str(tmp_path / "CD1.log"), basepath)
 
 
-def _fail_scandir(monkeypatch, folder: str, error: OSError) -> None:
-    real_scandir = os.scandir
-
-    def scandir(path):
-        if os.path.basename(path) == folder:
-            raise error
-        return real_scandir(path)
-
-    monkeypatch.setattr(os, "scandir", scandir)
-
-
 def test_a_multi_disc_track_rip_log_in_a_disc_folder_checks_every_disc(tmp_path, monkeypatch) -> None:
     basepath = _write_discs(tmp_path, {"CD1": ["d1-01.flac"], "CD2": ["d2-01.flac"]})
     output = FakeCambiaOutput(
@@ -478,7 +468,7 @@ def test_an_unreadable_disc_folder_is_an_error_not_a_skip(tmp_path, monkeypatch)
     )
     _patch_cambia(monkeypatch, output)
     _patch_file_crcs(monkeypatch, {"d1-01.flac": "D1-1", "d2-01.flac": "D2-1"})
-    _fail_scandir(monkeypatch, "CD2", PermissionError(13, "Permission denied"))
+    _fail_scandir(monkeypatch, PermissionError, "CD2")
     with pytest.raises(PermissionError):
         anyio.run(logs.check_log_cambia, str(tmp_path / "CD1" / "rip.log"), basepath)
 
@@ -512,7 +502,7 @@ def test_a_disc_folder_that_vanishes_mid_scan_is_an_error(tmp_path, monkeypatch)
     )
     _patch_cambia(monkeypatch, output)
     _patch_file_crcs(monkeypatch, {"d1-01.flac": "D1-1", "d2-01.flac": "D2-1"})
-    _fail_scandir(monkeypatch, "CD2", FileNotFoundError(2, "No such file or directory"))
+    _fail_scandir(monkeypatch, FileNotFoundError, "CD2")
     with pytest.raises(FileNotFoundError):
         anyio.run(logs.check_log_cambia, str(tmp_path / "CD1" / "rip.log"), basepath)
 

@@ -271,3 +271,43 @@ def test_no_group_found_passes():
 def test_no_file_read_is_no_sample_rate_verdict():
     row = verdicts.sample_rate_row({})
     assert (row.verdict, row.detail) == ("INFO", "No file read.")
+
+
+def test_unreadable_folders_block_and_every_one_is_named():
+    names = [f"Disc {number}" for number in range(1, 11)]
+    [row] = verdicts.unchecked_rows(names, [], [], [])
+    assert (row.verdict, row.check) == ("BLOCK", "Folders")
+    assert row.detail == f"Could not read 10 folder(s), so nothing in them was checked: {', '.join(names)}."
+
+
+def test_links_to_folders_warn_and_every_one_is_named():
+    names = [f"Disc {number}" for number in range(1, 11)]
+    [row] = verdicts.unchecked_rows([], names, [], [])
+    assert (row.verdict, row.check) == ("WARN", "Links")
+    assert row.detail == (
+        f"Did not follow 10 link(s) to a folder, so what they lead to was not checked: {', '.join(names)}. "
+        "salmon up uploads what a link leads to; salmon web refuses the album."
+    )
+
+
+def test_broken_links_block_and_every_one_is_named():
+    names = [f"Disc {number}" for number in range(1, 11)]
+    [row] = verdicts.unchecked_rows([], [], names, [])
+    assert (row.verdict, row.check) == ("BLOCK", "Broken links")
+    assert row.detail == f"10 link(s) lead nowhere: {', '.join(names)}. salmon up stops on one."
+
+
+def test_unreadable_files_block_and_every_one_is_named():
+    names = [f"{number:02d}.m4a" for number in range(1, 11)]
+    [row] = verdicts.unchecked_rows([], [], [], names)
+    assert (row.verdict, row.check) == ("BLOCK", "Files")
+    assert row.detail == f"Could not read 10 file(s), so they were not checked: {', '.join(names)}."
+
+
+def test_each_kind_gets_its_own_row_what_blocks_first():
+    rows = verdicts.unchecked_rows(["Disc 1"], ["Disc 2"], ["Disc 3"], ["a.m4a"])
+    assert [row.check for row in rows] == ["Folders", "Broken links", "Files", "Links"]
+
+
+def test_nothing_unchecked_is_no_row():
+    assert verdicts.unchecked_rows([], [], [], []) == []
