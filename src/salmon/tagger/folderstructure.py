@@ -8,6 +8,7 @@ import asyncclick as click
 from salmon import cfg, interaction
 from salmon.checks.tag_rules import in_torrent_path
 from salmon.common import clean_name, has_visible_chars, invisible_chars, show_invisible
+from salmon.common.files import is_torrent_file
 from salmon.constants import (
     ALLOWED_EXTENSIONS,
     BLACKLISTED_CHARS,
@@ -465,7 +466,8 @@ async def _handle_bad_extension(filepath: str) -> None:
     """Interactively handle a file with a disallowed extension.
 
     Prompts the user to delete the file, abort the upload, or continue without
-    taking action.
+    taking action. A .torrent file can't be kept: the torrent is made from every
+    file left in the folder.
 
     Args:
         filepath: Absolute path to the offending file.
@@ -476,18 +478,19 @@ async def _handle_bad_extension(filepath: str) -> None:
     if await interaction.assume_defaults():
         os.remove(filepath)
         return click.secho(f"-yyy: deleted {filepath}", fg="yellow")
+    may_stay = not is_torrent_file(filepath)
+    question = (
+        f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?"
+        if may_stay
+        else f"{filepath} is a .torrent file, which can't stay in an album. [D]elete or [a]bort?"
+    )
     while True:
-        resp = (
-            await interaction.prompt(
-                f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?",
-                default="D",
-            )
-        ).lower()
+        resp = (await interaction.prompt(question, default="D")).lower()
         if resp[0].lower() == "d":
             return os.remove(filepath)
         elif resp[0].lower() == "a":
             raise click.Abort
-        elif resp[0].lower() == "c":
+        elif resp[0].lower() == "c" and may_stay:
             return
 
 

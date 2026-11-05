@@ -75,6 +75,32 @@ def _inside(path: str, folder: str) -> bool:
         return False
 
 
+def _same_or_inside(path: str, folder: str) -> bool:
+    """Whether the resolved path is the resolved folder or inside it, by the folder itself, however it is spelled.
+
+    The same folder in another case on a volume that ignores case, or through a second mount of it, counts. It walks
+    up past a root on purpose, as a withheld folder can sit above one. For the withheld folders, where a True refuses;
+    confinement stays with `_inside`, by text, or a second mount of a root would count as inside it. Looks at the disk,
+    so only for a path already confined.
+    """
+    if _inside(path, folder):
+        return True
+    try:
+        target = os.stat(folder)
+    except OSError:
+        return False
+    while True:
+        try:
+            if os.path.samestat(os.stat(path), target):
+                return True
+        except OSError:  # Not there, or not to be looked at: what holds it may still be the folder.
+            pass
+        parent = os.path.dirname(path)
+        if parent == path:
+            return False
+        path = parent
+
+
 def _within(path: str, found: list[Root]) -> bool:
     return any(_inside(path, root.path) for root in found)
 
@@ -195,7 +221,7 @@ def album_folder(raw: str) -> str:
     # Reached through a link from a library to outside it, the folder would lose the copy salmon works on.
     if _named_in_library(given) and not cfg.directory.is_library_path(path):
         raise PathRefused(403, "Refusing an album linked into a library from outside it: open the folder itself.")
-    if any(_inside(path, folder) or _inside(folder, path) for folder in _withheld_from_albums(found)):
+    if any(_same_or_inside(path, folder) or _same_or_inside(folder, path) for folder in _withheld_from_albums(found)):
         raise PathRefused(403, "Refusing a folder of .torrent files or a seedbox's, or one that holds one.")
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
@@ -220,13 +246,13 @@ def withheld_folders() -> list[str]:
         if seedbox.type != "local" or not seedbox.directory:
             continue
         folder = os.path.realpath(seedbox.directory)
-        if not any(_inside(root.path, folder) for root in found):
+        if not any(_same_or_inside(root.path, folder) for root in found):
             folders.append(folder)
     return [os.path.realpath(folder) for folder in folders if folder]
 
 
 def _is_withheld(path: str) -> bool:
-    return any(_inside(path, folder) for folder in withheld_folders())
+    return any(_same_or_inside(path, folder) for folder in withheld_folders())
 
 
 def _withheld_from_albums(found: list[Root]) -> list[str]:
@@ -235,7 +261,7 @@ def _withheld_from_albums(found: list[Root]) -> list[str]:
     A dottorrents_dir set to download_directory, or above it, would otherwise refuse every album; the .torrent files
     there are beside the albums, not in them.
     """
-    return [folder for folder in withheld_folders() if not any(_inside(root.path, folder) for root in found)]
+    return [folder for folder in withheld_folders() if not any(_same_or_inside(root.path, folder) for root in found)]
 
 
 def image_file(raw: str, *, content: bool = True) -> str:

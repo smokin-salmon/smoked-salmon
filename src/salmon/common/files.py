@@ -15,6 +15,11 @@ from salmon.common.numbers import leading_number_key
 T = TypeVar("T")
 
 
+def is_torrent_file(name: str) -> bool:
+    """Whether a file's name makes it a .torrent file, in any case. By the end of the name: ".torrent" has no suffix."""
+    return name.lower().endswith(".torrent")
+
+
 class AlbumPath(click.Path):
     """A click.Path made absolute without resolving symlinks, so an album symlinked into a library is seen there."""
 
