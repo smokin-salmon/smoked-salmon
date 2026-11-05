@@ -13,7 +13,12 @@ from torf import TorfError, Torrent
 from salmon import cfg, dryrun
 from salmon.common import UploadFiles, clipboard_copy, re_split
 from salmon.common.numbers import tag_number, unreadable_number
-from salmon.common.strings import names_no_artist, reaches_various_threshold, strip_numbered_suffixes
+from salmon.common.strings import (
+    credit_in_title,
+    names_no_artist,
+    reaches_various_threshold,
+    strip_numbered_suffixes,
+)
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RateLimitedError, TLSCertificateError, UploadRefusedError
 from salmon.release_notification import get_version
@@ -501,11 +506,8 @@ def album_credit_names(metadata: dict[str, Any]) -> frozenset[str] | None:
     return _split_names([*mains, *(name for name, role in artists if role == "conductor")])
 
 
-# A feature or remix credit in a title, in any case: "feat.", "Featuring", "ft.", "Remix" or "remixed" as a whole word,
-# or a bracket opening with "with" or "vs." ("Song (with B)").
-_CREDIT_IN_TITLE = re.compile(
-    r"\b(?:feat|featuring|ft|remix(?:e[ds])?)\b|[(\[]\s*(?:with|vs\.?)\s", flags=re.IGNORECASE
-)
+# A remix credit in a title, in any case: "Remix", "remixed" or "Remixes" as a whole word.
+_REMIX_IN_TITLE = re.compile(r"\bremix(?:e[ds])?\b", flags=re.IGNORECASE)
 
 
 def credits_only_the_album(credits: list[tuple[str, str]], title: str, album: frozenset[str]) -> bool:
@@ -519,7 +521,8 @@ def credits_only_the_album(credits: list[tuple[str, str]], title: str, album: fr
     """
     if any(role in {"guest", "remixer"} for _name, role in credits):
         return False
-    if _CREDIT_IN_TITLE.search(title or "") or _extract_remixers_from_title(title or ""):
+    title = title or ""
+    if credit_in_title(title) or _REMIX_IN_TITLE.search(title) or _extract_remixers_from_title(title):
         return False
     return _split_names(name for name, role in credits if role in {"main", "conductor"}) == album
 
