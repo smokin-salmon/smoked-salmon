@@ -15,12 +15,13 @@ from salmon.common import UploadFiles, clipboard_copy, re_split
 from salmon.common.numbers import tag_number, unreadable_number
 from salmon.common.strings import names_no_artist, reaches_various_threshold, strip_numbered_suffixes
 from salmon.constants import ARTIST_IMPORTANCES
-from salmon.errors import UploadRefusedError
+from salmon.errors import RateLimitedError, TLSCertificateError, UploadRefusedError
 from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.combine import _extract_remixers_from_title
 from salmon.tagger.pre_data import parse_artists
 from salmon.tagger.sources import METASOURCES
+from salmon.trackers.base import RetryableError
 from salmon.uploader import record
 from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
 from salmon.uploader.spectrals import (
@@ -114,7 +115,17 @@ async def prepare_and_upload(
 
     if not dryrun.active():
         click.secho("Uploading torrent...", fg="yellow")
-    torrent_id, group_id = await gazelle_site.upload(data, files)
+    # Counts as sent unless it can't have been, so a bug counts. So does a GET that fails first
+    # (RedApi.site_page_upload): that only costs a person a look.
+    sent = not dryrun.active()
+    try:
+        torrent_id, group_id = await gazelle_site.upload(data, files)
+    except (click.Abort, RetryableError, RateLimitedError, TLSCertificateError):
+        sent = False  # A question before the POST (OPS's Split, DIC's marks), or the tracker can't have acted on it.
+        raise
+    finally:
+        if sent:
+            record.note_sent()
     if dryrun.active():
         # The group may be dryrun.NEW_GROUP_ID, which int() would turn into a plain -1.
         return torrent_id, group_id, torrent_path, torrent_content

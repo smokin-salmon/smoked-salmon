@@ -78,6 +78,7 @@ from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
 from salmon.trackers.red import RedApi
 from salmon.uploader import record
 from salmon.uploader.conversion_choice import (
+    _applicable_conversions,
     _held_conversions,
     choose_conversions,
     get_downconversion_options,
@@ -340,7 +341,14 @@ async def up(
     conversions: tuple[str, ...] | None,
     dry_run: bool,
 ) -> None:
-    """Command to upload an album folder to a Gazelle Site."""
+    """Command to upload an album folder to a Gazelle Site.
+
+    Exits with 0 when everything the run set out to upload went up (a tracker you skipped at its group question, or
+    did not pick when offered, counts as done).
+    1 when no tracker can have taken an upload: a retry is safe, keep the album. 2 on a usage error. 3 when a tracker
+    may have taken one, or refused one: a torrent is up, an upload was refused or an outcome is unknown. Don't retry
+    the whole run, and don't delete the album. A failed seedbox copy or client add is a 3.
+    """
     options = UpOptions(
         path=path,
         trackers=trackers,
@@ -372,6 +380,7 @@ async def up(
     )
     if (error := options.usage_error(dry_run)) is not None:
         raise click.UsageError(error)
+    record.note_up_command()
     with dryrun.mode(dry_run), interaction.assuming_defaults(yyy):
         try:
             await run_up(options)
@@ -1251,11 +1260,12 @@ async def _upload_staged(  # noqa: C901
 
         seedbox_uploader = UploadManager()
         uploaded: list[str] = []  # The URL of each torrent uploaded, for an abort to list
-        # Trackers whose upload failed or was skipped: the folder is needed to retry them. A first tracker refused
-        # before the loop is one of them.
+        # Trackers whose upload failed or was skipped, or that are missing a conversion the run wanted: the folder is
+        # needed to retry them. A first tracker refused before the loop is one of them.
         failed_trackers: list[str] = [gazelle_site.site_string] if first_listed else []
         finished = False  # The loop ended by itself: no abort, no exception
         aborted = False
+        chose_to_skip = 0  # Of failed_trackers, those the user skipped: the run still finishes.
         flac_url = f"{gazelle_site.base_url}/torrents.php?torrentid={source_flac['id']}" if source_flac else None
 
         try:
@@ -1307,6 +1317,7 @@ async def _upload_staged(  # noqa: C901
                     except (RequestError, SkipTracker) as e:
                         # Like a failed upload: skip this tracker, and offer the next one.
                         if isinstance(e, SkipTracker):
+                            chose_to_skip += 1
                             click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="yellow", bold=True)
                         else:
                             click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
@@ -1380,6 +1391,10 @@ async def _upload_staged(  # noqa: C901
                             click.secho(
                                 f"\nNo group id came back for {url}: no conversions are offered for it.", fg="yellow"
                             )
+                            if _applicable_conversions(
+                                get_downconversion_options(rls_data, track_data, quiet=True), conversions
+                            ):
+                                failed_trackers.append(gazelle_site.site_string)
                         elif not dryrun.active():
                             group = await print_torrents(gazelle_site, group_id, highlight_torrent_id=torrent_id)
                             # Read from the group just printed: no request of its own.
@@ -1420,6 +1435,7 @@ async def _upload_staged(  # noqa: C901
                             )
 
                             # Execute downconversion tasks
+                            before = len(uploaded)
                             await execute_downconversion_tasks(
                                 selected_tasks,
                                 path,
@@ -1441,6 +1457,8 @@ async def _upload_staged(  # noqa: C901
                                 uploaded=uploaded,
                                 max_path_length=max_path_length,
                             )
+                            if len(uploaded) - before < len(selected_tasks):
+                                failed_trackers.append(gazelle_site.site_string)
                 except RequestError as e:
                     click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
                     failed_trackers.append(gazelle_site.site_string)
@@ -1475,6 +1493,7 @@ async def _upload_staged(  # noqa: C901
                 seedbox_uploader.remove_local_copies()
     finally:
         await spectral_uploads.close()
+    record.note_complete(finished and len(failed_trackers) == chose_to_skip and not record.has_unknown_outcome())
     return path, bool(uploaded), aborted
 
 
