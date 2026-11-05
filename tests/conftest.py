@@ -111,6 +111,15 @@ socket.socket.connect_ex = _guarded_connect_ex  # type: ignore[method-assign]
 
 
 @pytest.fixture(autouse=True)
+def _spectral_image_check(monkeypatch: pytest.MonkeyPatch):
+    """Tests write placeholder bytes as spectrals: upload_spectrals does not decode them. A test of that check
+    overrides this fixture with one that does nothing."""
+    from salmon.uploader import spectrals
+
+    monkeypatch.setattr(spectrals, "check_image", lambda _path: "PNG")
+
+
+@pytest.fixture(autouse=True)
 def _network_guard(request: pytest.FixtureRequest):
     global _network_allowed
     _network_allowed = request.node.get_closest_marker("network") is not None

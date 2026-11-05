@@ -209,19 +209,19 @@ def test_a_cancelled_compression_leaves_the_file_and_no_copy(monkeypatch, tmp_pa
     assert _hidden(path) == []
 
 
-def test_a_png_error_from_pyoxipng_still_ends_the_run_and_leaves_the_file(monkeypatch, tmp_path) -> None:
-    # The command has no check_image: this is what stops a corrupt spectral going to the host.
+def test_a_png_error_from_pyoxipng_is_handled_like_a_failing_program(monkeypatch, tmp_path, capsys) -> None:
     def optimize(_working: Path) -> None:
         raise _FakeOxipng.PngError("bad")
 
     monkeypatch.setattr(spectrals, "oxipng", _FakeOxipng(optimize))
     path = _spectrals_dir(tmp_path)
 
-    with pytest.raises(_FakeOxipng.PngError):
-        anyio.run(spectrals._compress_single_spectral, str(path / "01 Full.png"), 0)
+    compressed = anyio.run(spectrals._compress_single_spectral, str(path / "01 Full.png"), 0)
 
+    assert compressed is False
     assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
     assert _hidden(path) == []
+    assert "Could not compress 01 Full.png with oxipng; it is uploaded as it is." in capsys.readouterr().out
 
 
 def _hide_pyoxipng(monkeypatch) -> None:

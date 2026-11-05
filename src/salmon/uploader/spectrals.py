@@ -41,6 +41,7 @@ from salmon.errors import (
     UploadError,
 )
 from salmon.images import upload_spectrals as upload_spectral_imgs
+from salmon.images.files import NotAnImage, check_image
 from salmon.uploader import record, terminal_images
 from salmon.web import create_app_async, spectrals
 
@@ -643,6 +644,11 @@ def _notify_spectrals_not_compressed() -> None:
 OXIPNG_PROGRAM_TIMEOUT = 60
 
 
+def _png_errors() -> tuple[type[Exception], ...]:
+    """What pyoxipng raises for a file it cannot read, handled like the program's failure; none when it is absent."""
+    return (oxipng.PngError,) if oxipng is not None else ()
+
+
 async def _run_oxipng(path: str, program: str | None) -> bool:
     """Compress the file at path in place, so only ever a working copy: see _compress_single_spectral. With pyoxipng in
     a thread if it is installed, else with the oxipng program.
@@ -683,7 +689,7 @@ async def _compress_single_spectral(filepath: str, _idx: int, program: str | Non
         if await _run_oxipng(tmp_path, program):
             os.replace(tmp_path, filepath)
             return True
-    except (TimeoutError, OSError):
+    except (TimeoutError, OSError, *_png_errors()):
         pass
     finally:
         with contextlib.suppress(OSError):
@@ -1215,6 +1221,16 @@ async def upload_spectrals(
                 ),
             )
         )
+
+    for _sid, _filename, paths in spectrals_list:
+        for path in paths:
+            try:
+                await anyio.to_thread.run_sync(check_image, path)
+            except (NotAnImage, OSError) as e:
+                click.secho(
+                    f"{os.path.basename(path)} is not a usable image ({e}): no spectrals are uploaded.", fg="red"
+                )
+                return None
 
     if dryrun.active():
         host = cfg.image.host_for(tracker, "specs_uploader")
