@@ -14,6 +14,7 @@ from salmon.common import (
     re_split,
     re_strip,
 )
+from salmon.common.strings import names_no_artist
 from salmon.search import (
     apple_music,
     bandcamp,
@@ -160,7 +161,7 @@ def filter_results(
                 split_artists += re_split(re_strip(normalize_accents(a)))
             stripped_rls_artist = re_strip(normalize_accents(result[0].artist))
 
-            if "Various" in result[0].artist:
+            if names_no_artist(result[0].artist):
                 if len(artists) == 1:
                     continue
             elif not any(a in stripped_rls_artist for a in split_artists) or not any(

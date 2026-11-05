@@ -145,6 +145,10 @@ def make_searchstrs(artists, album, normalize=False) -> list[str]:
     album = re.sub(r"\(?[Ff]eat(\.|uring)? [^\)]+\)?", "", album)
 
     search: str | list[str]
+    # Each string is one tracker search, so this sets how many are sent. So the fixed "> 3", not
+    # various_artist_threshold, which is about how a credit is written and can be set to anything. "Various" stays a
+    # substring test, not names_no_artist: a wider search mostly costs noise, a narrower one can miss a group listed
+    # under Various Artists.
     if len(main_artists) > 3 or (main_artists and any("Various" in a for a in main_artists)) or len(main_artists) == 0:
         search = re_strip(album, filter_nonscrape=False)
     elif len(main_artists) == 1:

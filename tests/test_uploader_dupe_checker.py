@@ -5,7 +5,7 @@ import asyncclick as click
 import pytest
 
 import salmon.uploader
-from salmon import interaction
+from salmon import cfg, interaction
 from salmon.errors import RequestFailedError, SkipTracker, UploadError
 from salmon.uploader import dupe_checker
 from salmon.uploader.dupe_checker import (
@@ -122,6 +122,45 @@ def test_an_html_escaped_edition_is_the_same_edition() -> None:
 @pytest.mark.parametrize(("ours", "logged"), [("Rock 'n' Roll", "Rock'n'Roll"), ("Lovin’", "Lovin'")])
 def test_title_words_ignore_punctuation(ours: str, logged: str) -> None:
     assert _title_words(ours) == _title_words(logged)
+
+
+@pytest.mark.parametrize(
+    ("title", "words"),
+    [
+        # "The Singles" was the one word "thes", so it shared no word with a logged "Singles" (#924).
+        ("The Singles", {"the", "singles"}),
+        ("The EPs", {"the", "eps"}),
+        ("The EPA Tapes", {"the", "epa", "tapes"}),
+    ],
+)
+def test_title_words_keep_a_word_that_only_starts_with_a_release_type(title: str, words: set[str]) -> None:
+    assert _title_words(title) == words
+
+
+@pytest.mark.parametrize(
+    ("title", "words"),
+    [
+        ("Title EP", {"title"}),
+        ("Title - EP", {"title"}),
+        ("Title Single", {"title"}),
+        ("Title - Single", {"title"}),
+        # So "EP" can't be the one word two different titles share.
+        ("Sunrise EP (Remixes)", {"sunrise", "remixes"}),
+        ("Forever Single Mothers", {"forever", "mothers"}),
+    ],
+)
+def test_title_words_leave_out_a_release_type_as_a_whole_word_as_before(title: str, words: set[str]) -> None:
+    assert _title_words(title) == words
+
+
+def test_the_singles_compares_with_a_logged_singles() -> None:
+    assert _recent_upload_matches(
+        ["artist the singles"],
+        ["artist singles"],
+        0.5,
+        our_title_words=_title_words("The Singles"),
+        candidate_title_words=_title_words("Singles"),
+    )
 
 
 _HELD_RELEASE = {"source": "WEB", "format": "FLAC", "encoding": "24bit Lossless", "year": "2024"}
@@ -365,3 +404,27 @@ def test_an_unreadable_site_log_asks_before_uploading_without_the_check(
 )
 def test_the_search_leaves_out_a_release_type_only_where_it_ends_the_title(title: str, searched: str) -> None:
     assert generate_dupe_check_searchstrs([("Artist", "main")], title)[0] == searched
+
+
+@pytest.mark.parametrize("threshold", [2, 10])
+@pytest.mark.parametrize(
+    ("artists", "searches"),
+    [
+        (["A"], ["a hits"]),
+        (["A", "B"], ["a hits", "b hits"]),
+        (["A", "B", "C"], ["a hits", "b hits", "c hits"]),
+        (["A", "B", "C", "D"], ["hits"]),
+        ([], ["hits"]),
+        (["Various Artists"], ["hits"]),
+        (["Various Cruelties"], ["hits"]),
+        (["Various Cruelties", "Air"], ["hits"]),
+        (["Air", "Various Cruelties"], ["hits"]),
+    ],
+)
+def test_the_searches_sent_are_as_before_whatever_the_various_artist_threshold(
+    monkeypatch: pytest.MonkeyPatch, artists: list[str], searches: list[str], threshold: int
+) -> None:
+    # Each string is a tracker request: see make_searchstrs.
+    monkeypatch.setattr(cfg.upload.formatting, "various_artist_threshold", threshold)
+
+    assert generate_dupe_check_searchstrs([(name, "main") for name in artists], "Hits") == searches
