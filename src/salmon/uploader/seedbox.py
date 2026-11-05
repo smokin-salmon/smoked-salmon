@@ -16,6 +16,7 @@ from salmon.common.redaction import redact_command, redact_secrets, secret_value
 from salmon.config.validations import Seedbox
 from salmon.converter.conversions import forget_conversion
 from salmon.errors import DryRunRefused
+from salmon.uploader import record
 from salmon.uploader.torrent_client import TorrentClient, TorrentClientGenerator
 from salmon.webui import output
 
@@ -348,11 +349,12 @@ class UploadManager:
         if task_type == "seed" and directory not in torrents:
             torrents.append(directory)
         for seedbox in _enabled_seedboxes():
-            if seedbox.torrent_client not in self._client_cache:
-                continue
             if seedbox.flac_only and not is_flac:
                 continue
             if seedbox.trackers and (site_code or "").upper() not in seedbox.trackers:
+                continue
+            if seedbox.torrent_client not in self._client_cache:
+                record.note_seedbox_failed()
                 continue
             task = (seedbox, directory, task_type, task_folder)
             if task in self.tasks:
@@ -442,6 +444,7 @@ class UploadManager:
                     failed_seeds += 1
 
         if failed_copies or failed_seeds:
+            record.note_seedbox_failed()
             parts = []
             if failed_copies:
                 parts.append(f"{failed_copies} {'copy' if failed_copies == 1 else 'copies'}")

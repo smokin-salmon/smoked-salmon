@@ -10,6 +10,7 @@ Each row of AS_BEFORE exits as master does; each row of CHANGED exited with some
 """
 
 import io
+import itertools
 import signal
 import socket
 import sys
@@ -45,6 +46,7 @@ import salmon.run
 import salmon.trackers
 from salmon import cfg
 from salmon.common import commandgroup
+from salmon.config.validations import Seedbox
 from salmon.errors import (
     AbortAndDeleteFolder,
     EditedLogError,
@@ -58,7 +60,7 @@ from salmon.errors import (
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
-from salmon.uploader import record
+from salmon.uploader import record, seedbox
 from salmon.uploader.seedbox import UploadManager
 
 # Covers and spectrals go to the fake image host.
@@ -68,6 +70,9 @@ TLS = TLSCertificateError("tracker.example", "certificate has expired", "OPS")
 TWO = ("RED", "OPS")
 KEPT_NOTHING_UP = "is kept: nothing was uploaded."
 REMOVED = "Removed the source folder"
+SEEDBOX_FAILED = "failed; see above"
+# fake_upload_world replaces it.
+QUEUE_A_SEEDBOX_TASK = UploadManager.add_upload_task
 STOPPED = "Aborting upload..."
 
 
@@ -281,6 +286,43 @@ def _with_a_log(_monkeypatch, album_path: Path) -> None:
     (album_path / "rip.log").write_text("not read: check_log_cambia is stubbed")
 
 
+GOOD_CLIENT = "qbittorrent+http://127.0.0.1:9"
+BAD_CLIENT = "nosuchclient://x"
+
+
+def _seedbox(
+    *, copy_exit: int = 0, added: bool = True, clients: tuple[str, ...] = (GOOD_CLIENT,), **box: Any
+) -> Callable[..., None]:
+    """A real UploadManager, one box a client: rclone exits with `copy_exit`, and the client answers `added`."""
+
+    def setup(monkeypatch, _album_path: Path) -> None:
+        boxes = [
+            Seedbox(name=f"box{i or ''}", type="rclone", url="box", torrent_client=client, **box)
+            for i, client in enumerate(clients)
+        ]
+        monkeypatch.setattr(cfg, "seedbox", boxes)
+        monkeypatch.setattr(UploadManager, "add_upload_task", QUEUE_A_SEEDBOX_TASK)
+        monkeypatch.setattr(seedbox, "_run_rclone", _returning_async(copy_exit))
+        monkeypatch.setattr(seedbox, "_add_to_downloader", _returning_async(added))
+
+    return setup
+
+
+def _one_box_of_two_fails_its_copies(monkeypatch, album_path: Path) -> None:
+    _seedbox(clients=(GOOD_CLIENT, f"{GOOD_CLIENT}1"))(monkeypatch, album_path)
+    copies = itertools.count()
+
+    async def run_rclone(_commands: Any, _secrets: Any) -> int:
+        return next(copies) % 2
+
+    monkeypatch.setattr(seedbox, "_run_rclone", run_rclone)
+
+
+def _a_client_add_raises(monkeypatch, album_path: Path) -> None:
+    _seedbox()(monkeypatch, album_path)
+    monkeypatch.setattr(seedbox, "_add_to_downloader", _raising(OSError("the torrent is gone")))
+
+
 def _upload_raises(error: Exception, site: type[BaseGazelleApi] = BaseGazelleApi) -> Callable[..., None]:
     def setup(monkeypatch, _album_path: Path) -> None:
         async def upload(_self: Any, _data: Any, _files: Any) -> None:
@@ -457,6 +499,39 @@ AS_BEFORE = {
     ),
     "lossy_report_refused": Row(
         0, 3, "no report", kept=False, setup=_lossy_report_raises(RequestFailedError("no report"))
+    ),
+    # A seedbox took it all
+    "seedbox_all_good": Row(0, 3, "All upload tasks processed", kept=False, setup=_seedbox()),
+    "seedbox_all_good_renamed_folder_goes": Row(
+        0, 3, "(remove_local_after_copy)", kept=False, setup=_seedbox(remove_local_after_copy=True)
+    ),
+    "seedbox_all_good_two_trackers": Row(
+        0, 6, "All upload tasks processed", kept=False, trackers=TWO, setup=_seedbox()
+    ),
+    # A seedbox that never configured, with no torrent for it to take
+    "bad_client_disabled": Row(0, 3, REMOVED, kept=False, setup=_seedbox(clients=(BAD_CLIENT,), enabled=False)),
+    "bad_client_nothing_to_do": Row(
+        0,
+        0,
+        "Failed to configure",
+        args=("-g", "7", "--skip-flac-upload", "--conversions", "none"),
+        setup=_seedbox(clients=(BAD_CLIENT,)),
+    ),
+    "bad_client_for_another_tracker": Row(
+        0, 3, "Failed to configure", kept=False, setup=_seedbox(clients=(BAD_CLIENT,), trackers=["OPS"])
+    ),
+    "bad_client_flac_only_and_no_flac": Row(
+        0,
+        1,
+        "Failed to configure",
+        args=("-g", "7", "--skip-flac-upload", "--conversions", "V0"),
+        setup=_seedbox(clients=(BAD_CLIENT,), flac_only=True),
+    ),
+    "bad_client_dry_run": Row(0, 0, "Dry run: done.", args=("--dry-run",), setup=_seedbox(clients=(BAD_CLIENT,))),
+    # A kind the release can't give is not a failure
+    "kind_it_cannot_give": Row(0, 1, "No conversion made", kept=False, args=("--conversions", "24bit")),
+    "skip_flac_kind_it_cannot_give": Row(
+        0, 0, "No conversion made", args=("-g", "7", "--skip-flac-upload", "--conversions", "24bit")
     ),
     # A dry run sends nothing
     "dry_run": Row(0, 0, "Dry run: done.", args=("--dry-run",)),
@@ -726,6 +801,36 @@ CHANGED = {
         args=("-g", "7", "--skip-flac-upload", "--conversions", "V0,320"),
         fakes=lambda: {"transcode_folder": _transcode_but_v0},
     ),
+    # Exit 3: the torrents are up, and a seedbox didn't get or seed them
+    "seedbox_copy_fails": Row(3, 3, SEEDBOX_FAILED, kept=False, setup=_seedbox(copy_exit=1)),
+    "seedbox_add_fails": Row(3, 3, SEEDBOX_FAILED, kept=False, setup=_seedbox(added=False)),
+    "seedbox_copy_and_add_fail": Row(3, 3, SEEDBOX_FAILED, kept=False, setup=_seedbox(copy_exit=1, added=False)),
+    "seedbox_copy_fails_two_trackers": Row(3, 6, SEEDBOX_FAILED, kept=False, trackers=TWO, setup=_seedbox(copy_exit=1)),
+    "bad_client_torrent_up": Row(3, 3, "Failed to configure", kept=False, setup=_seedbox(clients=(BAD_CLIENT,))),
+    "bad_client_one_box_of_two": Row(
+        3, 3, "Failed to configure", kept=False, setup=_seedbox(clients=(GOOD_CLIENT, BAD_CLIENT))
+    ),
+    "seedbox_one_box_of_two_fails": Row(3, 3, SEEDBOX_FAILED, kept=False, setup=_one_box_of_two_fails_its_copies),
+    "seedbox_client_add_raises": Row(3, 3, "the torrent is gone", kept=False, setup=_a_client_add_raises),
+    "bad_client_first_good_box_still_served": Row(
+        3, 3, "All upload tasks processed", kept=False, setup=_seedbox(clients=(BAD_CLIENT, GOOD_CLIENT))
+    ),
+    "bad_client_pinned_to_this_tracker": Row(
+        3, 3, "Failed to configure", kept=False, setup=_seedbox(clients=(BAD_CLIENT,), trackers=["RED"])
+    ),
+    "bad_client_flac_only_flac_up": Row(
+        3, 3, "Failed to configure", kept=False, setup=_seedbox(clients=(BAD_CLIENT,), flac_only=True)
+    ),
+    "bad_client_conversion_only": Row(
+        3,
+        1,
+        "Failed to configure",
+        args=("-g", "7", "--skip-flac-upload", "--conversions", "V0"),
+        setup=_seedbox(clients=(BAD_CLIENT,)),
+    ),
+    "seedbox_copy_fails_renamed_folder_stays": Row(
+        3, 3, "the copy to box failed", kept=False, setup=_seedbox(copy_exit=1, remove_local_after_copy=True)
+    ),
     # Exit 3: after a POST, something else failed
     "bug_between_the_post_and_its_note": Row(
         3, 1, "RuntimeError: a bug in the report", setup=_lossy_report_raises(RuntimeError("a bug in the report"))
@@ -766,6 +871,19 @@ def test_a_conversion_not_made_keeps_the_renamed_folder(monkeypatch, capsys, dir
     reason = _keep_reason(monkeypatch, capsys, dirs, CHANGED[name])
 
     assert reason == "the upload to RED failed or was skipped"
+
+
+def test_a_failed_copy_with_no_seed_queued_counts_as_failed(monkeypatch, tmp_path) -> None:
+    # A run always queues a seed with its copy, and a failed copy fails that seed too: this is the copy on its own.
+    fake_upload_world(monkeypatch, tmp_path)
+    _seedbox(copy_exit=1)(monkeypatch, tmp_path)
+    manager = UploadManager()
+    manager.add_upload_task(str(tmp_path), "folder", is_flac=True)
+
+    with record.recording() as run:
+        anyio.run(manager.execute_upload)
+
+    assert run.seedbox_failed
 
 
 def test_as_before_all_up_lets_the_renamed_folder_go(monkeypatch, capsys, dirs) -> None:
@@ -945,6 +1063,7 @@ def test_up_help_says_what_it_exits_with(monkeypatch, capsys) -> None:
     assert "a retry is safe, keep the album" in words
     assert "a torrent is up, an upload was refused or an outcome is unknown" in words
     assert "Don't retry the whole run, and don't delete the album" in words
+    assert "A failed seedbox copy or client add is a 3" in words
 
 
 # Other commands

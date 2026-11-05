@@ -30,6 +30,8 @@ class RunRecord:
     sent: bool = False
     # The tracker loop ended by itself, with everything it set out to upload up.
     complete: bool = False
+    # A seedbox copy or an add to a client failed, or a seedbox with a torrent to take never configured.
+    seedbox_failed: bool = False
 
     @property
     def may_be_on_a_tracker(self) -> bool:
@@ -41,7 +43,7 @@ class RunRecord:
         Worked out once, at the end of the run, in run.main, so a stop nobody listed is not 0. Ctrl-C, and a bug with
         nothing sent, go through as they always did.
         """
-        if self.complete and not ended:
+        if self.complete and not self.seedbox_failed and not ended:
             return 0
         return 3 if self.may_be_on_a_tracker else ended or 1
 
@@ -76,6 +78,12 @@ def note_up_command() -> None:
     record = _record.get()
     if record is not None:
         record.is_up_command = True
+
+
+def note_seedbox_failed() -> None:
+    record = _record.get()
+    if record is not None:
+        record.seedbox_failed = True
 
 
 def note_sent() -> None:

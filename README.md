@@ -389,7 +389,8 @@ into a tracker help thread; it names the album folder and no other path. It is a
 
 `salmon up` exits with 0 when everything it set out to upload went up, 1 when no tracker can have taken an upload (a
 retry is safe, keep the album), 2 on a usage error, and 3 when a tracker may have taken one, or refused one (a torrent
-is up, an upload was refused or an outcome is unknown: don't retry the whole run, and don't delete the album).
+is up, an upload was refused or an outcome is unknown: don't retry the whole run, and don't delete the album). A failed
+seedbox copy or client add is a 3.
 
 You can get help directly from the CLI by appending --help to any command. This is especially useful for the up command which has a lot of possible options.
 
