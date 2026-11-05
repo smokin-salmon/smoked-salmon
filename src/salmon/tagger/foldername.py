@@ -276,6 +276,31 @@ def drop_resolution_token(foldername, token):
     return name.strip()
 
 
+# The format words of a folder name, each a word of its own: "Flack" and "Flacco" hold the letters. Only a letter beside
+# one makes it part of another word; "_" and digits are separators in hand-made and scene names.
+FLAC_WORD_RE = re.compile(r"(?<![^\W\d_])(24 ?bit )?FLAC(?![^\W\d_])", flags=re.IGNORECASE)
+LOSSLESS_WORD_RE = re.compile(r"(?<![^\W\d_])Lossless(?![^\W\d_])", flags=re.IGNORECASE)
+# What closes a format's own bracket: at most a resolution. A word with more after it is a label's: [Flac Records].
+_ENDS_ITS_BRACKET_RE = re.compile(r" *(?:\d[^\]]*)?\]")
+
+
+def last_match(pattern: re.Pattern[str], foldername: str) -> re.Match[str] | None:
+    """The match that is the format. Templates put it after the artists and title, which may hold the word, and a label
+    may follow it, so: the last one that closes its square brackets (allowing a resolution before the `]`), else the
+    last one inside square brackets, else the last one.
+    """
+    matches = list(pattern.finditer(foldername))
+    in_square = [m for m in matches if foldername.rfind("[", 0, m.start()) > foldername.rfind("]", 0, m.start())]
+    ends_bracket = [m for m in in_square if _ENDS_ITS_BRACKET_RE.match(foldername, m.end())]
+    return (ends_bracket or in_square or matches)[-1] if matches else None
+
+
+def swap_last_match(pattern: re.Pattern[str], new: str, foldername: str) -> str:
+    """Replace the name's last match with new; a name without one is left as it is."""
+    match = last_match(pattern, foldername)
+    return foldername if match is None else foldername[: match.start()] + new + foldername[match.end() :]
+
+
 async def remove_source_folder(
     source: str, final: str | None, original: str | None = None, uploaded: bool = True, aborted: bool = False
 ) -> None:

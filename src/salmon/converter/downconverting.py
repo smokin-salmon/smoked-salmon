@@ -26,9 +26,12 @@ from salmon.errors import InvalidSampleRate, UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.foldername import (
+    FLAC_WORD_RE,
     drop_resolution_token,
     holds_resolution_token,
+    last_match,
     resolution_token,
+    swap_last_match,
     swap_resolution_token,
 )
 
@@ -115,20 +118,14 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         # token so the FLAC/bit-depth rewriting below does not have to work around it.
         foldername = drop_resolution_token(foldername, current_token)
 
-    if re.search(r"24 ?bit FLAC", foldername, flags=re.IGNORECASE):
-        foldername = re.sub(r"24 ?bit FLAC", "FLAC", foldername, flags=re.IGNORECASE)
-    elif re.search("FLAC", foldername, flags=re.IGNORECASE):
-        foldername = re.sub("FLAC", "16bit FLAC", foldername, flags=re.IGNORECASE)
-    else:
+    flac = last_match(FLAC_WORD_RE, foldername)
+    if flac is None:
         foldername += " [FLAC]"
+    else:
+        foldername = swap_last_match(FLAC_WORD_RE, "FLAC" if flac.group(1) else "16bit FLAC", foldername)
 
     if sample_rate and bit_depth == 24:
-        foldername = re.sub(
-            "FLAC",
-            f"24-{sample_rate / 1000:.0f}",
-            foldername,
-            flags=re.IGNORECASE,
-        )
+        foldername = swap_last_match(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
 
     return os.path.join(output_dir or os.path.dirname(path), foldername)
 
