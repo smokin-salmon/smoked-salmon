@@ -7,7 +7,7 @@ from pathlib import Path
 
 import anyio
 import pytest
-from helpers.uploader_dry_run import _album, _run_up, _snapshot
+from helpers.uploader_dry_run import RENAMED, _album, _lossy_with_spectrals, _run_up, _snapshot
 from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see pytestmark)
 )
@@ -16,7 +16,12 @@ from torf import Torrent
 import salmon.trackers
 import salmon.uploader.spectrals
 from salmon import cfg, interaction
-from salmon.uploader.spectrals import foreign_entries_text, foreign_spectrals_entries
+from salmon.uploader.spectrals import (
+    create_specs_folder,
+    foreign_entries_text,
+    foreign_spectrals_entries,
+    made_by_salmon,
+)
 
 pytestmark = pytest.mark.usefixtures("image_uploads")
 
@@ -267,3 +272,165 @@ def test_a_failed_move_stops_the_run_and_says_where_the_folder_is(monkeypatch, t
     assert "Successfully uploaded" not in run.result.output
     assert run.tracker.sent == []
     assert specs.is_dir()
+
+
+# salmon's own spectrals from an earlier run (salmon specs -nd, an interrupted run), whichever way the run goes.
+
+SALMONS = ("01 Full.png", "01 Zoom.png", "02 Full.png")
+GIVEN_URL = ("--spectral-url", "1=https://files.catbox.moe/spec1.png", "--lossy")
+ONE_TRACKER = ("--conversions", "none")
+
+
+def _up_one_tracker(monkeypatch, album: Path, torrents: Path, *args: str, **kwargs):
+    """`salmon up` to RED alone, with the check -a runs after the upload stubbed as the check before it is."""
+    monkeypatch.setattr(salmon.uploader.spectrals, "check_spectrals", _lossy_with_spectrals)
+    return _run_up(monkeypatch, album, torrents, args=(*ONE_TRACKER, *args), trackers=("RED",), **kwargs)
+
+
+def _tmp_dir(monkeypatch, tmp_path) -> None:
+    folder = tmp_path / "tmp_dir"
+    folder.mkdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", str(folder))
+
+
+def _no_spectrals_uploaded(run) -> None:
+    assert run.result.exit_code == 0, run.result.output
+    files = _uploaded_files(run)
+    assert files
+    assert not [name for torrent in files for name in torrent if name.startswith("Spectrals")]
+
+
+@pytest.mark.parametrize(
+    ("args", "tmp_dir"),
+    [
+        (("-a",), False),
+        (("-a",), True),
+        ((), True),
+        (GIVEN_URL, True),
+    ],
+)
+def test_salmons_leftover_stays_out_of_the_torrent(monkeypatch, tmp_path, torrents, args, tmp_dir) -> None:
+    if tmp_dir:
+        _tmp_dir(monkeypatch, tmp_path)
+    album = _album(tmp_path / "Album")
+    _with_spectrals(album, *SALMONS)
+
+    run = _up_one_tracker(monkeypatch, album, torrents, *args)
+
+    _no_spectrals_uploaded(run)
+    # Every file the torrent names is on disk to be seeded.
+    renamed = _download_dir() / RENAMED
+    assert all((renamed / name).is_file() for name in _uploaded_files(run)[0])
+
+
+def test_removing_a_leftover_says_so(monkeypatch, tmp_path, torrents) -> None:
+    album = _album(tmp_path / "Album")
+    _with_spectrals(album, *SALMONS)
+
+    run = _up_one_tracker(monkeypatch, album, torrents, "-a")
+
+    assert f"Removed the {len(SALMONS)} file(s) of a Spectrals folder" in run.result.output
+
+
+def test_two_trackers_get_the_same_files(monkeypatch, tmp_path, torrents) -> None:
+    monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
+    album = _album(tmp_path / "Album")
+    _with_spectrals(album, *SALMONS)
+
+    monkeypatch.setattr(salmon.uploader.spectrals, "check_spectrals", _lossy_with_spectrals)
+    run = _run_up(monkeypatch, album, torrents, args=("-a", *ONE_TRACKER), trackers=("RED", "OPS"))
+
+    _no_spectrals_uploaded(run)
+    first, second = _uploaded_files(run)
+    assert first == second
+
+
+def test_a_library_album_keeps_its_leftover_and_its_copy_loses_it(monkeypatch, tmp_path, torrents) -> None:
+    library = tmp_path / "library"
+    monkeypatch.setattr(cfg.directory, "library_dirs", [str(library)])
+    album = _album(library / "Artist" / "Album")
+    _with_spectrals(album, *SALMONS)
+    before = _snapshot(album)
+
+    run = _up_one_tracker(monkeypatch, album, torrents, "-a")
+
+    _no_spectrals_uploaded(run)
+    assert _snapshot(album) == before
+
+
+def test_an_empty_folder_of_its_own_goes_without_a_word(tmp_path, capsys) -> None:
+    album = tmp_path / "Album"
+    album.mkdir()
+    specs = Path(create_specs_folder(str(album)))
+
+    salmon.uploader.spectrals.remove_own_spectrals(str(album))
+
+    assert not specs.exists()
+    assert "Removed" not in capsys.readouterr().out
+
+
+def test_removing_salmons_leftover_drops_the_claim_on_the_folder(tmp_path) -> None:
+    album = tmp_path / "Album"
+    album.mkdir()
+    specs = Path(create_specs_folder(str(album)))
+    (specs / "01 Full.png").write_bytes(b"png")
+
+    salmon.uploader.spectrals.remove_own_spectrals(str(album))
+
+    assert not specs.exists()
+    # What is made there later is the user's.
+    specs.mkdir()
+    assert not made_by_salmon(str(specs))
+
+
+@pytest.mark.parametrize(
+    "args",
+    [(), GIVEN_URL],
+)
+def test_as_before_salmons_leftover_goes_without_tmp_dir(monkeypatch, tmp_path, torrents, args) -> None:
+    album = _album(tmp_path / "Album")
+    _with_spectrals(album, *SALMONS)
+
+    run = _up_one_tracker(monkeypatch, album, torrents, *args)
+
+    _no_spectrals_uploaded(run)
+
+
+@pytest.mark.parametrize("tmp_dir", [False, True])
+def test_as_before_a_folder_salmon_did_not_make_stops_a_yyy_run(monkeypatch, tmp_path, torrents, tmp_dir) -> None:
+    if tmp_dir:
+        _tmp_dir(monkeypatch, tmp_path)
+    album = _album(tmp_path / "Album")
+    specs = _with_spectrals(album, "01 Full.png", "01 Zoom (copy).png")
+    before = _snapshot(specs)
+
+    run = _up_one_tracker(monkeypatch, album, torrents, "-a")
+
+    assert f"Not uploading {specs}" in run.result.output
+    assert run.tracker.sent == []
+    assert _snapshot(specs) == before
+
+
+@pytest.mark.parametrize("args", [("-a",), ()])
+def test_as_before_u_uploads_a_folder_salmon_did_not_make(monkeypatch, tmp_path, torrents, args) -> None:
+    _tmp_dir(monkeypatch, tmp_path)
+    album = _album(tmp_path / "Album")
+    _with_spectrals(album, "01 Full.png", "01 Zoom (copy).png")
+
+    run = _up_one_tracker(monkeypatch, album, torrents, *args, input="u\n" + "\n" * 20, yes_all=False)
+
+    assert run.result.exit_code == 0, run.result.output
+    assert "Spectrals/01 Zoom (copy).png" in _uploaded_files(run)[0]
+    assert (_download_dir() / RENAMED / "Spectrals" / "01 Zoom (copy).png").is_file()
+
+
+def test_as_before_a_link_named_spectrals_is_left_alone(monkeypatch, tmp_path, torrents) -> None:
+    elsewhere = tmp_path / "elsewhere"
+    elsewhere.mkdir()
+    (elsewhere / "01 Full.png").write_bytes(b"png")
+    album = _album(tmp_path / "Album")
+    (album / "Spectrals").symlink_to(elsewhere, target_is_directory=True)
+
+    run = _up_one_tracker(monkeypatch, album, torrents, "-a")
+
+    assert (elsewhere / "01 Full.png").is_file(), run.result.output

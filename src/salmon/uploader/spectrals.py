@@ -969,6 +969,22 @@ def make_way_for_spectrals(spectrals_path: str) -> None:
     drop_specs_claim(spectrals_path)
 
 
+def remove_own_spectrals(album: str) -> None:
+    """Remove salmon's spectrals an earlier run left in the album: they must not go into the torrents.
+
+    The run may make none before the upload (--spectrals-after, given URLs, another format), or make them outside the
+    album (see get_spectrals_path). A folder salmon did not make stays: see foreign_spectrals_refusal.
+    """
+    in_album = os.path.join(album, "Spectrals")
+    if made_by_salmon(in_album):
+        left = len(os.listdir(in_album))
+        make_way_for_spectrals(in_album)
+        if left:
+            click.secho(
+                f"Removed the {left} file(s) of a Spectrals folder an earlier run left in the album.", fg="yellow"
+            )
+
+
 def create_specs_folder(path: str) -> str:
     """Create the spectrals folder of an album (see get_spectrals_path), replacing salmon's own from an earlier run.
 
