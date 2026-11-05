@@ -99,7 +99,7 @@ def _explain_default(default: str | None, choices: dict[int, tuple[str, str]]) -
     for part in (default or "").split():
         if part.startswith("*"):
             click.secho(f"Pre-typed {part}: the store page in the files' tags, starred as the source.", fg="cyan")
-        elif part.isdigit() and int(part) in choices:
+        elif part.isdecimal() and int(part) in choices:
             source = choices[int(part)][0]
             click.secho(
                 f"Pre-typed {part}: the {source} result matching the files' artist, title and track count.",

@@ -47,6 +47,11 @@ def test_anything_else_is_refused(given: str) -> None:
         validate_request(SITE, given)
 
 
+def test_another_scripts_digit_is_refused_as_before() -> None:
+    with pytest.raises(click.BadParameter, match="requires a request"):
+        validate_request(SITE, "٣")
+
+
 def _request(request_id: int, **fields) -> dict:
     return {
         "requestId": request_id,
@@ -135,3 +140,7 @@ def test_picking_a_request_whose_id_is_no_number_asks_again(monkeypatch, capsys,
 )
 def test_numeric_id_takes_an_int_or_ascii_digits(value, expected) -> None:
     assert numeric_id(value) == expected
+
+
+def test_numeric_id_refuses_another_scripts_digit_as_before() -> None:
+    assert numeric_id("٣") is None

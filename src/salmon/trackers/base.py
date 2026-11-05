@@ -476,7 +476,7 @@ def _rate_limit_wait(retry_after: str | None) -> int:
 def _query_id(query: dict[str, list[str]], name: str) -> int | None:
     """Get an ID from a parsed URL query: None unless the parameter is there and holds a number above 0."""
     value = query.get(name, [""])[0]
-    if not (value.isascii() and value.isdigit()):
+    if not (value.isascii() and value.isdecimal()):
         return None
     # No torrent, group or request has the ID 0.
     return int(value) or None

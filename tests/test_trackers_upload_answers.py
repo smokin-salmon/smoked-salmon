@@ -488,3 +488,7 @@ def test_an_api_upload_refused_without_a_reason_is_a_failed_upload(tmp_path: Pat
 @pytest.mark.parametrize(("value", "expected"), [("42", 42), ("0", None), ("", None), ("4\u00b2", None)])
 def test_an_id_in_a_query_is_a_number_above_0(value: str, expected: int | None) -> None:
     assert _query_id({"torrentid": [value]}, "torrentid") == expected
+
+
+def test_an_id_in_a_query_refuses_another_scripts_digit_as_before() -> None:
+    assert _query_id({"torrentid": ["٣"]}, "torrentid") is None

@@ -145,7 +145,7 @@ def validate_request(gazelle_site, request):
         request = request.strip()
         if request.lower().startswith(gazelle_site.base_url + "/requests.php"):
             request = parse.parse_qs(parse.urlparse(request).query)["id"][0]
-        if not (request.isascii() and request.isdigit()):
+        if not (request.isascii() and request.isdecimal()):
             raise click.BadParameter("This flag requires a request, either as a url or ID")
         click.secho(
             f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}",

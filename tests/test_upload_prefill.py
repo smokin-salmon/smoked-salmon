@@ -1068,6 +1068,19 @@ def test_the_pretyped_metadata_answer_is_explained(capsys) -> None:
     assert "Pre-typed 7: the Deezer result matching the files' artist, title and track count." in out
 
 
+def test_a_pretyped_part_int_refuses_is_not_explained(capsys) -> None:
+    metadata_mod._explain_default("1²", {1: ("Deezer", "1013507111")})
+
+    assert capsys.readouterr().out == ""
+
+
+@pytest.mark.parametrize("part", ["7", "７"])
+def test_a_pretyped_row_reads_as_a_number_as_before(capsys, part: str) -> None:
+    metadata_mod._explain_default(part, {7: ("Deezer", "1013507111")})
+
+    assert f"Pre-typed {part}: the Deezer result" in capsys.readouterr().out
+
+
 def test_the_metadata_prompt_says_how_several_answers_combine(monkeypatch) -> None:
     messages: list[str] = []
 

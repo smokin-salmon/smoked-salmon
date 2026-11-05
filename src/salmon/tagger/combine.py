@@ -111,7 +111,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
             if not base["year"]:
                 base["year"] = metadata["year"]
             if not base["group_year"] or (
-                str(metadata["group_year"]).isdigit() and int(metadata["group_year"]) < int(base["group_year"])
+                str(metadata["group_year"]).isdecimal() and int(metadata["group_year"]) < int(base["group_year"])
             ):
                 base["group_year"] = metadata["group_year"]
             if not base["date"] and metadata["date"]:

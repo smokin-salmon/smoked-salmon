@@ -540,3 +540,24 @@ def test_refusing_a_lost_track_treats_disc_01_and_1_as_one_disc():
 def test_a_superscript_digit_sorts_without_raising():
     # isdigit() is true for a superscript "2", which int() refuses; a disc is keyed by its tag as written (#910).
     assert sorted(["10", "1²", "2"], key=natural_key) == ["1²", "2", "10"]
+
+
+def test_a_source_group_year_int_refuses_is_passed_over():
+    base = make_metadata("Release")
+    base.update(group_year="2020")
+    source = make_metadata("Release")
+    source.update(group_year="1²")
+
+    assert combine_metadatas(("MusicBrainz", source), base=base)["group_year"] == "2020"
+
+
+@pytest.mark.parametrize(
+    ("group_year", "kept"), [("2019", "2019"), ("２０１９", "２０１９"), ("2021", "2020"), ("abc", "2020")]
+)
+def test_a_source_group_year_reads_as_a_number_as_before(group_year, kept):
+    base = make_metadata("Release")
+    base.update(group_year="2020")
+    source = make_metadata("Release")
+    source.update(group_year=group_year)
+
+    assert combine_metadatas(("MusicBrainz", source), base=base)["group_year"] == kept
