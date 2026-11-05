@@ -110,6 +110,7 @@ from salmon.uploader.spectrals import (
     make_way_for_spectrals,
     post_upload_spectral_check,
     prompt_lossy_master,
+    remove_own_spectrals,
     specs_hosts_text,
     spectrals_in_background,
 )
@@ -942,6 +943,7 @@ async def upload(
         # the conversions the run makes too.
         if (refusal := await foreign_spectrals_refusal(path, staged)) is not None:
             return click.secho(f"\n{refusal}", fg="red", bold=True)
+        remove_own_spectrals(staged)
         result = await _upload_staged(
             gazelle_site,
             staged,
