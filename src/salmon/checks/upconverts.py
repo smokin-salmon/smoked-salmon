@@ -10,7 +10,7 @@ from mutagen import MutagenError, flac
 
 from salmon import interaction, prepared
 from salmon.common.files import process_files
-from salmon.common.numbers import leading_number_key
+from salmon.common.numbers import file_order_key
 from salmon.errors import UpconvertCheckError, UpconvertCheckNotApplicable
 
 
@@ -183,7 +183,7 @@ def _display_results(results: list[UpconvertCheckResult]) -> None:
     Args:
         results: List of UpconvertCheckResult objects.
     """
-    sorted_results = sorted(results, key=lambda x: leading_number_key(os.path.basename(x.filepath)))
+    sorted_results = sorted(results, key=lambda x: file_order_key(x.filepath))
 
     for result in sorted_results:
         status = "likely upconverted" if result.is_upconverted else "does not have a high number of wasted bits"

@@ -83,7 +83,7 @@ async def check_tags(path: str) -> dict[str, TagFile]:
 def gather_tags(path):
     """Get the tags of each file."""
     tags = {}
-    for filename in get_audio_files(path, sort_by_tracknumber=True):
+    for filename in get_audio_files(path):
         tags[filename] = TagFile(os.path.join(path, filename))
     return tags
 

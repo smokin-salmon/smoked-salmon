@@ -5,6 +5,7 @@ policy built on these, such as which numbers a rename refuses or whether a store
 the code it decides for.
 """
 
+import os
 import re
 from typing import Any
 
@@ -64,10 +65,9 @@ def natural_key(value: Any) -> tuple[tuple[int, int | str], ...]:
     )
 
 
-def leading_number_key(name: str) -> tuple[int, int | str]:
-    """Sort key for a file name or relative path; only its start counts: a leading number, before the rest by name."""
-    match = re.match(r"\d+", name)
-    return (0, int(match.group())) if match else (1, name.lower())
+def file_order_key(path: str) -> tuple[tuple[tuple[tuple[int, int | str], ...], ...], str]:
+    """Sort key for an album's files: each folder, then the name, in natural order. The exact path breaks a tie."""
+    return tuple(natural_key(part) for part in path.split(os.sep)), path
 
 
 def padded_number(value: Any) -> str:

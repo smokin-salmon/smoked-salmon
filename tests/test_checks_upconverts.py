@@ -140,3 +140,27 @@ def test_the_upconvert_results_go_by_each_files_own_number_as_before(capsys) -> 
 
     out = capsys.readouterr().out
     assert out.index("2 b.flac") < out.index("10 a.flac")
+
+
+def test_the_upconvert_lines_go_disc_by_disc(capsys) -> None:
+    results = [
+        uc.UpconvertCheckResult(filepath=path, is_upconverted=False, wasted_bits=0, bitdepth=24)
+        for path in ("/z/Disc 2/01 c.flac", "/z/Disc 1/02 b.flac", "/z/Disc 1/01 a.flac", "/z/Disc 10/01 d.flac")
+    ]
+
+    uc._display_results(results)
+
+    lines = capsys.readouterr().out.splitlines()
+    assert [line.split(":")[0] for line in lines] == ["01 a.flac", "02 b.flac", "01 c.flac", "01 d.flac"]
+
+
+def test_the_upconvert_lines_of_a_tie_go_by_name_as_given_in_any_order(capsys) -> None:
+    paths = ["/z/01 b.flac", "/z/01 a.flac"]
+    for given in (paths, paths[::-1]):
+        results = [
+            uc.UpconvertCheckResult(filepath=path, is_upconverted=False, wasted_bits=0, bitdepth=24) for path in given
+        ]
+
+        uc._display_results(results)
+
+        assert [line.split(":")[0] for line in capsys.readouterr().out.splitlines()] == ["01 a.flac", "01 b.flac"]

@@ -10,7 +10,7 @@ import asyncclick as click
 from tqdm import tqdm
 
 from salmon import cfg
-from salmon.common.numbers import leading_number_key
+from salmon.common.numbers import file_order_key
 
 T = TypeVar("T")
 
@@ -73,10 +73,10 @@ def rewrite_refusal(path: str) -> str | None:
     return None
 
 
-def get_audio_files(path, sort_by_tracknumber=False):
+def get_audio_files(path):
     """
     Iterate over a path and return all the files that match the allowed
-    audio file extensions.
+    audio file extensions, in track order (see file_order_key).
     """
     files = []
     for root, _folders, files_ in os.walk(path):
@@ -85,9 +85,7 @@ def get_audio_files(path, sort_by_tracknumber=False):
             for f in files_
             if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}
         ]
-    if sort_by_tracknumber:
-        return sorted(files, key=leading_number_key)
-    return sorted(files)
+    return sorted(files, key=file_order_key)
 
 
 def create_relative_path(root, path, filename):

@@ -572,3 +572,19 @@ def test_an_embedded_picture_over_the_pixel_limit_is_not_kept_as_the_cover(tmp_p
     assert len(FLAC(tmp_path / "01.flac").pictures) == 1
     assert not list(tmp_path.glob("cover.*"))
     assert "could not be read as an image" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    "names",
+    [["9.flac", "10.flac"], ["CD2/01.flac", "CD10/01.flac"]],
+    ids=lambda names: names[0],
+)
+def test_the_cover_comes_from_the_first_file_in_track_order(tmp_path, names) -> None:
+    for name in names:
+        front = _image("PNG") if name == names[0] else _image("JPEG")
+        _write_flac(tmp_path / name, pictures=((PictureType.COVER_FRONT, front),))
+
+    found = cover._find_embedded_front_cover(str(tmp_path))
+
+    assert found is not None
+    assert found[0] == "png"

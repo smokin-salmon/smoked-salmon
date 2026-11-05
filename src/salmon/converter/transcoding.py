@@ -14,6 +14,7 @@ from mutagen.id3 import APIC, ID3, TXXX, Frames
 from salmon import cfg, interaction
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import get_audio_files, is_torrent_file, process_files
+from salmon.common.numbers import file_order_key
 from salmon.converter.conversions import (
     changed_sources,
     changed_tracks,
@@ -249,7 +250,7 @@ def _collect_transcode_items(
 
     # Any case, as _copy_extra_files skips them: a .FLAC track would otherwise be neither transcoded nor copied.
     flac_files = (p for p in src_path.rglob("*") if p.is_file() and p.suffix.lower() == ".flac")
-    for flac_file in sorted(flac_files):
+    for flac_file in sorted(flac_files, key=lambda p: file_order_key(str(p))):
         fl, tag_dict = _parse_flac_tags(flac_file)
         rel = flac_file.relative_to(src_path).with_suffix(".mp3")
         mp3_path = dst_path / rel

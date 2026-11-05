@@ -68,7 +68,7 @@ def format_spectral_urls(filenames: list[str], spectral_urls: dict[int, list[str
 @click.option("--format-output", "-f", is_flag=True)
 async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
     """Generate and open spectrals for a folder."""
-    audio_info = gather_audio_info(path, True)
+    audio_info = gather_audio_info(path)
     _, sids = await check_spectrals(path, audio_info, check_lma=False)
     spath = get_spectrals_path(path)
     spectral_urls = await handle_spectrals_upload_and_deletion(spath, sids, delete_spectrals=not no_delete_specs)

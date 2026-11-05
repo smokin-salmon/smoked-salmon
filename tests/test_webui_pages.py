@@ -32,15 +32,17 @@ from helpers.webui_jobs import (
 )
 from helpers.webui_pages import Roots, _album, _refused_paths
 
+import salmon.commands as commands
 import salmon.config
 import salmon.trackers
-from salmon import cfg
+from salmon import cfg, interaction
 from salmon.config import _parse_config, compat
 from salmon.config.validations import GazelleTrackerSettings, Seedbox
+from salmon.tagger.audio_info import gather_audio_info
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import spectrals
-from salmon.webui import jobs, paths
+from salmon.webui import jobs, kinds, paths
 from salmon.webui.jobs import FINISHED, JobManager
 
 SECRET = "planted-red-api-key-5e1d"
@@ -547,6 +549,110 @@ async def _spectrals_shown(client: TestClient, manager: JobManager, album: Path,
     assert question["kind"] == "spectrals"
     (folder,) = _own_folders(manager, job_id)
     return job_id, Path(folder)
+
+
+async def _tracks_as_the_page_reads_them(client: TestClient, manager: JobManager, album: Path) -> dict[str, Any]:
+    """A spectrals job run to its end: its result as GET /api/jobs/{id} gives it, which the Spectrals page reads."""
+    job_id = await _start(client, "spectrals", str(album))
+    question = await _question(manager, job_id)
+    await _answer(client, manager, job_id, True)
+    job = await _finished(manager, job_id)
+    assert job.status == "done", job.error
+    response = await client.get(f"/api/jobs/{job_id}", headers=AUTH)
+    assert response.status == 200
+    return {"question": question, "result": (await response.json())["result"]}
+
+
+def _spectrals_page_album(roots: Roots, monkeypatch: pytest.MonkeyPatch, names: list[str]) -> Path:
+    folder = roots.library / "Artist - Album (2020) [WEB FLAC]"
+    for name in names:
+        (folder / name).parent.mkdir(parents=True, exist_ok=True)
+        write_flac(folder / name, music_like(seconds=1), RATE)
+    monkeypatch.setattr(cfg.image, "default_spectral_ids", "2")
+    monkeypatch.setattr(cfg.upload, "yes_all", False)
+    monkeypatch.setattr(cfg.upload.compression, "compress_spectrals", False)
+    return folder
+
+
+def _numbers_of_salmon_specs(monkeypatch: pytest.MonkeyPatch, album: Path) -> dict[str, str]:
+    """The spectral numbers `salmon specs` gives this album, through the command, by its image host's arguments."""
+    from_specs: dict[int, str] = {}
+
+    async def capture(_path: str, ids: dict[int, str], **_: Any) -> dict[int, list[str]]:
+        from_specs.update(ids)
+        return {}
+
+    async def nothing(*_: Any, **__: Any) -> None:
+        return None
+
+    async def every_track(ids: dict[int, str], *_: Any, **__: Any) -> dict[int, str]:
+        return ids
+
+    monkeypatch.setattr(commands, "handle_spectrals_upload_and_deletion", capture)
+    monkeypatch.setattr(interaction, "show_spectrals", nothing)
+    monkeypatch.setattr(spectrals, "prompt_spectrals", every_track)
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    assert commands.specs.callback is not None
+    anyio.run(partial(commands.specs.callback, str(album), False, False))
+    return {f"{number:02d}": name for number, name in from_specs.items()}
+
+
+def _the_page_numbers_as_salmon_specs(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch, names: list[str]
+) -> dict[str, str]:
+    album = _spectrals_page_album(roots, monkeypatch, names)
+    seen: dict[str, Any] = {}
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        seen.update(await _tracks_as_the_page_reads_them(client, manager, album))
+
+    _with_app(test)
+    tracks = seen["result"]["tracks"]
+    # What the page lists, each image's own number, and the default selection: all one numbering.
+    assert seen["question"]["tracks"] == tracks
+    assert {f"{number} Full.png" for number in tracks} <= set(seen["question"]["files"])
+    assert seen["result"]["selection"] == [2]
+    assert _numbers_of_salmon_specs(monkeypatch, album) == tracks
+    return tracks
+
+
+def test_the_spectrals_page_numbers_as_salmon_specs(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    tracks = _the_page_numbers_as_salmon_specs(roots, monkeypatch, ["CD1/01.flac", "CD2/01.flac", "CD10/01.flac"])
+
+    assert tracks == {"01": "CD1/01.flac", "02": "CD2/01.flac", "03": "CD10/01.flac"}
+
+
+def test_as_before_the_spectrals_page_numbers_as_salmon_specs_by_leading_number(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    tracks = _the_page_numbers_as_salmon_specs(roots, monkeypatch, ["1 a.flac", "2 b.flac", "10 c.flac"])
+
+    assert tracks == {"01": "1 a.flac", "02": "2 b.flac", "03": "10 c.flac"}
+
+
+def test_a_number_on_the_spectrals_page_is_the_file_the_upload_form_makes(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    album = _spectrals_page_album(roots, monkeypatch, ["1 a.flac", "2 b.flac", "10 c.flac"])
+    seen: dict[str, Any] = {}
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        seen.update(await _tracks_as_the_page_reads_them(client, manager, album))
+
+    _with_app(test)
+    form = kinds.UploadParams(path=str(album), source="WEB", spectrals=[2])
+    out = tmp_path / "from the form"
+    out.mkdir()
+
+    made = anyio.run(
+        spectrals.generate_spectrals_ids,
+        str(album),
+        kinds._up_options(form, ())["spectrals"],
+        str(out),
+        gather_audio_info(str(album)),
+    )
+
+    assert list(made.values()) == [seen["result"]["tracks"]["02"]] == ["2 b.flac"]
 
 
 def test_spectrals_are_made_outside_a_library_album_and_served_until_discarded(
