@@ -109,9 +109,6 @@ testpaths = ["tests"]
 markers = [
     "network: the test needs the real network. Every other test refuses non-loopback connections; CI deselects these.",
 ]
-# A deprecation fails the run: fix our code, and filter a third-party one only when we cannot, with a comment why.
-# Each one used to print on every run, which an agent then reads.
-filterwarnings = [
-    "error::DeprecationWarning",
-    "error::PendingDeprecationWarning",
-]
+# A run that reports a warning fails (tests/conftest.py). Add an "ignore" entry here only for a third-party warning we
+# cannot fix, with a comment saying why.
+filterwarnings = []

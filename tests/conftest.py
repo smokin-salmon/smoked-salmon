@@ -13,8 +13,10 @@ directly, but that alone would not stop a repo-root ``config.toml`` or an
 already-set ``SALMON_CONFIG_DIR`` from winning.
 """
 
+import atexit
 import ipaddress
 import os
+import shutil
 import socket
 import tempfile
 from pathlib import Path
@@ -24,6 +26,8 @@ import pytest
 from helpers.shipped_config import shipped_config
 
 _root = Path(tempfile.mkdtemp(prefix="salmon-tests-"))
+# Each process removes its own: with xdist, the controller and every worker load this file.
+atexit.register(shutil.rmtree, _root, ignore_errors=True)
 _music = _root / "music"
 _torrents = _root / "torrents"
 _music.mkdir()
@@ -114,3 +118,33 @@ def _network_guard(request: pytest.FixtureRequest):
         yield
     finally:
         _network_allowed = False
+
+
+# --- No warnings -------------------------------------------------------------
+# A warning is printed on every run, and read each time by whoever runs the tests, agents included. So a run that
+# reports one fails, once every test has run. Warnings are not turned into errors: an `except Exception` in the code
+# would then swallow one silently. Fix the code that warns; a third-party warning we cannot fix gets an "ignore"
+# entry in pyproject.toml's `filterwarnings`, with a comment saying why.
+
+
+def _is_xdist_worker(config: pytest.Config) -> bool:
+    # A worker reports its warnings to the controller, which counts them.
+    return hasattr(config, "workerinput")
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_sessionfinish(session: pytest.Session) -> None:
+    reporter = session.config.pluginmanager.get_plugin("terminalreporter")
+    if _is_xdist_worker(session.config) or reporter is None or session.exitstatus != pytest.ExitCode.OK:
+        return
+    if reporter.stats.get("warnings"):
+        session.exitstatus = pytest.ExitCode.TESTS_FAILED
+
+
+def pytest_terminal_summary(terminalreporter: Any, config: pytest.Config) -> None:
+    if not _is_xdist_worker(config) and terminalreporter.stats.get("warnings"):
+        terminalreporter.write_line(
+            "The run fails on any warning: fix the code that warns (see the warnings summary above), or, for a "
+            "third-party one we cannot fix, add an ignore entry with a comment to filterwarnings in pyproject.toml.",
+            red=True,
+        )
