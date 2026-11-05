@@ -221,7 +221,7 @@ def test_a_png_error_from_pyoxipng_is_handled_like_a_failing_program(monkeypatch
     assert compressed is False
     assert (path / "01 Full.png").read_bytes() == b"png 1 Full"
     assert _hidden(path) == []
-    assert "Could not compress 01 Full.png with oxipng; it is uploaded as it is." in capsys.readouterr().out
+    assert "Could not compress 01 Full.png with oxipng; the original is kept." in capsys.readouterr().out
 
 
 def _hide_pyoxipng(monkeypatch) -> None:

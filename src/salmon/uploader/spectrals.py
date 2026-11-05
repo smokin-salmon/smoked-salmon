@@ -694,7 +694,7 @@ async def _compress_single_spectral(filepath: str, _idx: int, program: str | Non
     finally:
         with contextlib.suppress(OSError):
             os.remove(tmp_path)
-    click.secho(f"Could not compress {os.path.basename(filepath)} with oxipng; it is uploaded as it is.", fg="yellow")
+    click.secho(f"Could not compress {os.path.basename(filepath)} with oxipng; the original is kept.", fg="yellow")
     return False
 
 
