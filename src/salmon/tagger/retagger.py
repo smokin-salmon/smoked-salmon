@@ -21,7 +21,13 @@ from salmon.common.numbers import (
     tag_value,
     unreadable_number,
 )
-from salmon.common.strings import artists_or_various, comparable, join_artists, reaches_various_threshold
+from salmon.common.strings import (
+    artists_or_various,
+    comparable,
+    credit_in_title,
+    join_artists,
+    reaches_various_threshold,
+)
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
@@ -271,14 +277,10 @@ def _track_changes(pairs):
     return changes
 
 
-# A feature credit already in a title, as a whole word in any case: "feat", "Feat.", "featuring" or "ft."
-_FEATURE_CREDIT = re.compile(r"\b(?:feat|featuring|ft)\b", flags=re.IGNORECASE)
-
-
 def append_guests_to_track_titles(track):
     guest_artists = [a for a, i in track["artists"] if i == "guest"]
     # This looked for "feat" anywhere, so "Song (Feat. Alice)" gained a second credit and "Defeat" none
-    if not _FEATURE_CREDIT.search(track["title"]) and guest_artists:
+    if not credit_in_title(track["title"], guest_artists) and guest_artists:
         # If we find a remix parenthetical, remove it and re-add it after the guest artists.
         remix = re.search(r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE)
         if remix:

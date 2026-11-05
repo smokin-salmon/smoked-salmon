@@ -89,6 +89,77 @@ def test_guests_are_credited_when_a_title_word_only_contains_feat(title) -> None
     assert new_title == f"{title} (feat. Guest A & Guest B)"
 
 
+@pytest.mark.parametrize(
+    ("title", "guests"),
+    [
+        pytest.param("Song (with C)", ["C"], id="with"),
+        pytest.param("Song [with C]", ["C"], id="square brackets"),
+        pytest.param("Song (vs. C)", ["C"], id="vs."),
+        pytest.param("Song (vs C)", ["C"], id="vs"),
+        pytest.param("Song ( WITH c)", ["C"], id="a space and any case"),
+        pytest.param("Song (with C", ["C"], id="a bracket left open"),
+        pytest.param("Song (with Beyoncé)", ["Beyonce"], id="an accent"),
+        pytest.param("Song (with C & Strings)", ["C"], id="the guest and someone else"),
+        pytest.param("Song (with D, C)", ["C", "D"], id="both guests in any order"),
+        pytest.param("Song (with Simon & Garfunkel)", ["Simon & Garfunkel"], id="a guest of two names"),
+        pytest.param("Song (with AC/DC)", ["AC/DC"], id="a guest of two names by a slash"),
+        pytest.param("Song (with C (UK))", ["C (UK)"], id="a bracket in the guest's name"),
+        pytest.param("Song (with Strings) (with C)", ["C"], id="a later bracket"),
+        pytest.param("Song [with C] (Live)", ["C"], id="a square bracket, then another"),
+        pytest.param("Song (with C) (X Remix)", ["C"], id="before a remix"),
+    ],
+)
+def test_a_with_or_vs_bracket_naming_the_guests_is_their_credit(title, guests) -> None:
+    # "Song (with C)" became "Song (with C) (feat. C)"
+    track = {"title": title, "artists": [("Lead", "main"), *((g, "guest") for g in guests)]}
+
+    new_title = append_guests_to_track_titles(track)
+
+    assert new_title == title
+
+
+@pytest.mark.parametrize(
+    ("title", "guests", "expected"),
+    [
+        pytest.param("Song (with Strings)", ["C"], "Song (with Strings) (feat. C)", id="with names someone else"),
+        pytest.param("Song (vs. Strings)", ["C"], "Song (vs. Strings) (feat. C)", id="vs. names someone else"),
+        pytest.param("Song (with Cher)", ["C"], "Song (with Cher) (feat. C)", id="a name holding the guest's"),
+        pytest.param("Song (with C's Band)", ["C"], "Song (with C's Band) (feat. C)", id="a name after the guest's"),
+        pytest.param("Song (with C)", ["C", "D"], "Song (with C) (feat. C & D)", id="one guest of two"),
+        pytest.param("Song (with C) (with D)", ["C", "D"], "Song (with C) (with D) (feat. C & D)", id="two brackets"),
+        pytest.param("Song (with C and D)", ["C", "D"], "Song (with C and D) (feat. C & D)", id="and does not split"),
+        pytest.param("Song with C", ["C"], "Song with C (feat. C)", id="no bracket"),
+        pytest.param("Song (without C)", ["C"], "Song (without C) (feat. C)", id="without"),
+        pytest.param("Song (Live with C)", ["C"], "Song (Live with C) (feat. C)", id="with not opening the bracket"),
+        pytest.param(
+            "Song (with Strings) (X Remix)", ["C"], "Song (with Strings) (feat. C) (X Remix)", id="then a remix"
+        ),
+        pytest.param("Song (X Remix)", ["C"], "Song (feat. C) (X Remix)", id="a remix is not a guest's credit"),
+        pytest.param("Song (Remixed by X)", ["C"], "Song (Remixed by X) (feat. C)", id="nor remixed"),
+        pytest.param("The Remixes", ["C"], "The Remixes (feat. C)", id="nor remixes"),
+        pytest.param("Song (with C)", [], "Song (with C)", id="no guest"),
+    ],
+)
+def test_as_before_a_with_or_vs_bracket_not_naming_the_guests_still_gains_them(title, guests, expected) -> None:
+    track = {"title": title, "artists": [("Lead", "main"), *((g, "guest") for g in guests)]}
+
+    new_title = append_guests_to_track_titles(track)
+
+    assert new_title == expected
+
+
+@pytest.mark.parametrize(
+    "title",
+    ["Heroic Feat", "6 Ft Under", "Song (feat. B)", "Song ft. B", "Song (FEATURING B)"],
+)
+def test_as_before_a_credit_word_counts_whoever_it_names_or_if_it_names_no_one(title) -> None:
+    track = {"title": title, "artists": [("Lead", "main"), ("C", "guest")]}
+
+    new_title = append_guests_to_track_titles(track)
+
+    assert new_title == title
+
+
 def _tagset(title, tracknumber, discnumber):
     return SimpleNamespace(
         artist=["Some Artist"],

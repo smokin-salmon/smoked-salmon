@@ -224,3 +224,20 @@ def test_as_before_a_title_already_crediting_the_guest_gains_no_second_credit(mo
     description = _description(monkeypatch, release, guests_in_track_title=True)
 
     assert description == f"{HEADING}[b]01.[/b] Song 1\n[b]02.[/b] Sullivan Murphy - {title}\n"
+
+
+def test_guest_named_in_a_with_bracket_gains_no_second_credit(monkeypatch) -> None:
+    # Was "Sullivan Murphy - Song 1 (with Dierdre Simpson) (feat. Dierdre Simpson)"
+    release = _release([([MURPHY, SIMPSON], "Song 1 (with Dierdre Simpson)")])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description == f"{HEADING}[b]01.[/b] Sullivan Murphy - Song 1 (with Dierdre Simpson)\n"
+
+
+def test_as_before_a_with_bracket_naming_someone_else_gains_the_guest(monkeypatch) -> None:
+    release = _release([([MURPHY, SIMPSON], "Song 1 (with Strings)")])
+
+    description = _description(monkeypatch, release, guests_in_track_title=True)
+
+    assert description == f"{HEADING}[b]01.[/b] Sullivan Murphy - Song 1 (with Strings) (feat. Dierdre Simpson)\n"

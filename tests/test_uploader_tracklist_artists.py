@@ -226,6 +226,42 @@ def test_a_track_names_its_artist_only_when_it_credits_anyone_besides_the_albums
     assert _lines(description) == [f"[b]01.[/b] {expected} [i](3:20)[/i]"]
 
 
+@pytest.mark.parametrize(
+    "title",
+    [
+        "Song (with Strings)",
+        "Song [with B]",
+        "Song (vs. B)",
+        "Song (vs B)",
+        "Song ( WITH B)",
+        "Song (with B",
+        "Heroic Feat",
+        "6 Ft Under",
+        "Song (featuring B)",
+        "Song - B Remix",
+        "Song (Remixed by B)",
+        "The Remixes",
+        "Song - b remix",
+    ],
+)
+def test_as_before_a_title_that_may_credit_someone_keeps_the_artist(title: str) -> None:
+    # The tags may name no guest, as an AAC file's can't, so any with or vs. bracket counts here.
+    description = generate_description(_tracks({"artist": ["Alice"], "title": title}), _album(("Alice", "main")))
+
+    assert _lines(description) == [f"[b]01.[/b] Alice - {title} [i](3:20)[/i]"]
+
+
+@pytest.mark.parametrize("title", ["Song with B", "Song (without B)", "Song (Live with B)", "Defeat", "Remixing"])
+def test_as_before_a_title_crediting_no_one_leaves_the_artist_out(title: str) -> None:
+    description = generate_description(_tracks({"artist": ["Alice"], "title": title}), _album(("Alice", "main")))
+
+    assert _lines(description) == [f"[b]01.[/b] {title} [i](3:20)[/i]"]
+
+
+def test_as_before_a_track_with_no_title_does_not_fail() -> None:
+    generate_description(_tracks({"artist": ["Alice"], "title": None}), _album(("Alice", "main")))
+
+
 @pytest.mark.parametrize("rls_type", ["Compilation", "Anthology", "DJ Mix"])
 def test_every_track_of_a_compilation_anthology_or_dj_mix_keeps_its_artist(rls_type: str) -> None:
     tracks = _tracks({"artist": ["Sullivan Murphy"]})
