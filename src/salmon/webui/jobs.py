@@ -119,7 +119,7 @@ class JobError(Exception):
 
 class PartialResult(Exception):
     """Raised by a job's run from the error that ended it, to keep what the job did before as its result: the
-    torrents a cross-upload had uploaded when it stopped. The job's status is the error's."""
+    torrents an upload or a cross-upload had uploaded when it stopped. The job's status is the error's."""
 
     def __init__(self, result: Any) -> None:
         super().__init__("The job ended part way.")

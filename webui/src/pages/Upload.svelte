@@ -218,7 +218,7 @@
     (jobId ? jobStore.get(jobId) : undefined) ?? jobStore.jobs.find((j) => j.kind === 'upload'),
   )
   const live = $derived(job !== undefined && !FINISHED.includes(job.status))
-  const result = $derived(job?.status === 'done' ? (job.result as UploadResult | null) : null)
+  const result = $derived(job ? (job.result as UploadResult | null) : null)
 
   $effect(() => {
     apiGet<Options>('/upload/options')
@@ -535,6 +535,7 @@
 
     {#if result}
       {#if result.uploads.length}
+        {#if job.status !== 'done'}<p class="muted">Uploaded before it stopped:</p>{/if}
         <ul class="uploads">
           {#each result.uploads as each (each.url)}
             <li>

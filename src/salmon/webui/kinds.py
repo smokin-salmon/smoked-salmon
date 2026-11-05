@@ -45,7 +45,7 @@ import os
 import stat
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, NoReturn
 
 import aiohttp
 import anyio.to_thread
@@ -626,9 +626,12 @@ async def upload(params: UploadParams) -> dict[str, Any]:
         The folder, the trackers, and each torrent uploaded (none in a dry run).
 
     Raises:
-        UnknownOutcomeError: The run went on past a request that may have reached the tracker (an upload, a lossy
-            master report, a description edit), as the command does: the job then ends as unknown_outcome.
-        click.ClickException: A dry run stopped before a step that would have sent something.
+        PartialResult: The run stopped, or went on past a request that may have reached the tracker (an upload, a lossy
+            master report, a description edit), with something uploaded before. The job ends as unknown_outcome for
+            such a request, also when the run stopped after it, and as the failure otherwise.
+        UnknownOutcomeError: The same request, with nothing uploaded.
+        click.ClickException: The run stopped with nothing uploaded, or a dry run stopped before a step that would
+            have sent something.
     """
     from salmon.uploader import UpOptions
     from salmon.uploader.record import recording
@@ -638,16 +641,24 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     trackers = await salmon.trackers.validate_trackers(None, None, tuple(params.trackers))
     options = UpOptions(**{**_up_options(params, trackers), "path": path})
     with recording() as record:
+        result = {"folder": os.path.basename(path), "trackers": list(trackers), "uploads": record.uploads}
         try:
             await _run_up(options)
         except BaseException as err:
             # Also when the run stops later (an abort, a cancel): what may be on the tracker is what the job says.
-            if record.unknown_outcomes:
-                raise _unknown(record.unknown_outcomes) from err
-            raise
+            _upload_ended(record, result, err)
+    if not record.complete:
+        _upload_ended(record, result, click.ClickException("The run stopped before everything went up: see the log."))
+    return result
+
+
+def _upload_ended(record: "RunRecord", result: dict[str, Any], ended: BaseException) -> NoReturn:
+    """End an upload job that did not finish, as the status says: with what went up as its result, if anything did."""
     if record.unknown_outcomes:
-        raise _unknown(record.unknown_outcomes)
-    return {"folder": os.path.basename(path), "trackers": list(trackers), "uploads": record.uploads}
+        ended = _unknown(record.unknown_outcomes)
+    if record.uploads:
+        raise PartialResult(result) from ended
+    raise ended
 
 
 async def prepare_upload(params: UploadParams, prepared: "Prepared") -> None:

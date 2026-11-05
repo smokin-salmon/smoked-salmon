@@ -52,7 +52,7 @@ from salmon.errors import UnknownOutcomeError
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import seedbox, spectrals, staging
-from salmon.uploader.record import recording
+from salmon.uploader.record import note_complete, recording
 from salmon.webui import jobs
 from salmon.webui.jobs import JobKind, JobManager
 
@@ -300,6 +300,7 @@ def test_the_conversions_reach_the_run_as_conversions_gives_them(
 
     async def run_up(options: Any) -> None:
         seen.append(options.conversions)
+        note_complete(True)
 
     monkeypatch.setattr("salmon.webui.kinds._run_up", run_up)
 
@@ -488,6 +489,7 @@ def test_skip_search_reaches_the_run(
 
     async def run_up(options: Any) -> None:
         seen.append(options.skip_search)
+        note_complete(True)
 
     monkeypatch.setattr("salmon.webui.kinds._run_up", run_up)
 
@@ -805,6 +807,7 @@ def test_transcodes_only_with_ask_during_the_run_is_accepted(
 
     async def run_up(options: Any) -> None:
         seen.append((options.skip_flac_upload, options.conversions))
+        note_complete(True)
 
     monkeypatch.setattr("salmon.webui.kinds._run_up", run_up)
 
