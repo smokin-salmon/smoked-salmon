@@ -378,8 +378,10 @@ def test_main_points_at_checkconf_when_a_command_ends_on_a_certificate_failure(
     monkeypatch.setattr(salmon.run, "show_release_notification", lambda: None)
     monkeypatch.setattr(salmon.run, "commandgroup", command)
 
-    salmon.run.main()
+    with pytest.raises(SystemExit) as ended:
+        salmon.run.main()
 
+    assert ended.value.code == 1
     out = capsys.readouterr().out
     assert "There was an error: TLS certificate verification failed for tracker.example: certificate has expired" in out
     assert "salmon checkconf -t OPS" in out

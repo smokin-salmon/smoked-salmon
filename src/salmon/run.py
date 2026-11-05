@@ -1,6 +1,8 @@
 import os
 import shutil
+import sys
 import time
+import traceback
 
 import asyncclick as click
 
@@ -16,6 +18,7 @@ from salmon import cfg
 from salmon.common import commandgroup, tmp_lock
 from salmon.errors import FilterError, LoginError, TLSCertificateError, UploadError
 from salmon.release_notification import show_release_notification
+from salmon.uploader.record import recording
 
 # Without a lock, clean_tmp_dir keeps what changed more recently than this: a running salmon may own it.
 STALE_SECONDS = 24 * 60 * 60
@@ -82,6 +85,25 @@ def cleanup_tmp_dir():
 
 
 def main():
+    """Run the command. `salmon up` exits with what its record says: see RunRecord.exit_status."""
+    with recording() as run:
+        try:
+            _run_command()
+        except SystemExit as ended:
+            if not run.is_up_command:
+                raise
+            code = ended.code if isinstance(ended.code, int) else 0 if ended.code is None else 1
+            sys.exit(run.exit_status(code))
+        except (Exception, BaseExceptionGroup):
+            if not run.may_be_on_a_tracker:
+                raise
+            try:
+                traceback.print_exc()
+            finally:
+                sys.exit(run.exit_status(1))
+
+
+def _run_command():
     try:
         cleanup_tmp_dir()
         show_release_notification()
@@ -90,6 +112,7 @@ def main():
         commandgroup(obj={})
     except (UploadError, FilterError) as e:
         click.secho(f"There was an error: {e}", fg="red", bold=True)
+        sys.exit(1)
     except TLSCertificateError as e:
         # Where an upload ends when its first request to the tracker fails on it (the dupe check).
         click.secho(f"There was an error: {e}", fg="red", bold=True)
@@ -98,8 +121,10 @@ def main():
             " Python gets its CA certificates.",
             fg="yellow",
         )
+        sys.exit(1)
     except ImportError as e:
         click.secho(f"You are missing required dependencies: {e}", fg="red")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
