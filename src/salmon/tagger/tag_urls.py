@@ -87,7 +87,7 @@ def tag_url_fields(mut) -> list[tuple[str, str]]:
 def tag_urls(path: str) -> tuple[list[str], list[str]]:
     """URLs the files' tags hold whole: (under a source key such as SOURCE or WOAS, under any other key)."""
     sourced, other = [], []
-    for filename in get_audio_files(path, True):
+    for filename in get_audio_files(path):
         try:
             mut = MutagenFile(os.path.join(path, filename))
         except Exception:

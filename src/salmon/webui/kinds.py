@@ -553,7 +553,7 @@ async def spectrals(params: SpectralsParams) -> dict[str, Any]:
     )
 
     path = _album(params.path)
-    audio_info = await anyio.to_thread.run_sync(gather_audio_info, path, True)
+    audio_info = await anyio.to_thread.run_sync(gather_audio_info, path)
     folder = own_folder("spectrals")
     spectral_ids = await generate_spectrals_all(path, folder, audio_info)
     marks_found = await print_frequency_analysis(path, folder, spectral_ids)

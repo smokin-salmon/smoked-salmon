@@ -13,6 +13,7 @@ from salmon.errors import AmbiguousTrackOrderError, UploadError
 from salmon.tagger.retagger import (
     Change,
     _generate_album_artist,
+    _track_key,
     append_guests_to_track_titles,
     create_artist_str,
     create_track_changes,
@@ -1383,6 +1384,11 @@ def test_track_keys_with_letters_are_listed_in_natural_order():
     titles = [track["title"] for track in metadata_to_track_list(metadata)]
 
     assert titles == ["A1", "A2", "A10", "B1"]
+
+
+def test_a_metadata_tracks_key_reads_its_disc_and_track_numbers_as_before():
+    # Compared with a file's (disc, track) tag numbers, so "02" and "09" must read as 2 and 9.
+    assert _track_key({"disc#": "02", "track#": "09"}) == (2, 9)
 
 
 def test_a_metadata_track_without_an_isrc_is_compared_without_one():

@@ -123,7 +123,7 @@ def _tagged(monkeypatch, tags):
     from salmon.tagger import tag_urls as tag_urls_mod
 
     monkeypatch.setattr(tag_urls_mod, "MutagenFile", lambda _path: _FakeAudio(tags))
-    monkeypatch.setattr(tag_urls_mod, "get_audio_files", lambda _path, _sort=False: ["01.flac"])
+    monkeypatch.setattr(tag_urls_mod, "get_audio_files", lambda _path: ["01.flac"])
 
 
 def test_fill_upc_from_deezer_fills_only_a_missing_upc(tmp_path, monkeypatch) -> None:

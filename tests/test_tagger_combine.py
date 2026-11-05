@@ -13,6 +13,7 @@ from salmon.common.numbers import natural_key
 from salmon.errors import TrackCombineError
 from salmon.tagger.combine import (
     _extract_remixers_from_title,
+    _new_track_numbers,
     _refuse_renumbering_that_loses_a_track,
     check_for_artist_fragments,
     combine_metadatas,
@@ -535,6 +536,25 @@ def test_refusing_a_lost_track_treats_disc_01_and_1_as_one_disc():
 
     with pytest.raises(TrackCombineError, match="would hold two local tracks"):
         _refuse_renumbering_that_loses_a_track([kept, moved], mtracks, [moved], False, True)
+
+
+def test_refusing_a_lost_track_treats_12_in_any_script_as_one_slot():
+    # Both are track 12 to a tag's reader and to a rename, so the album would hold two track 12s.
+    kept = local_files("12")["1"]["12"]
+    other = local_files("１２")["1"]["１２"]
+    mtracks = [source_track("S", "1", 1, 1)]
+
+    with pytest.raises(TrackCombineError, match="would hold two local tracks"):
+        _refuse_renumbering_that_loses_a_track([kept, other], mtracks, [other], False, True)
+
+
+def test_unnumbered_files_on_disc_1_in_any_script_take_their_places_on_one_disc():
+    # A tag's reader reads both discs as disc 1, so the two files must not both become track 1.
+    first = local_files("7", numbered=False)["1"]["7"]
+    second = local_files("8", numbered=False, disc="１")["１"]["8"]
+    mtracks = [source_track("S", "1", 2, 1), source_track("T", "1", 2, 1)]
+
+    assert _new_track_numbers(mtracks, [first, second], False, True) == ["1", "2"]
 
 
 def test_a_superscript_digit_sorts_without_raising():

@@ -12,7 +12,7 @@ import cambia
 
 from salmon import prepared
 from salmon.common.files import process_files
-from salmon.common.numbers import read_number
+from salmon.common.numbers import file_order_key, read_number
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 from salmon.tagger.tagfile import TagFile
 
@@ -131,7 +131,7 @@ def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocE
         RuntimeError: If decoding fails.
     """
     # Sort track files by track number to match TOC entries order
-    sorted_files = sorted(track_files, key=lambda f: os.path.basename(f))
+    sorted_files = sorted(track_files, key=file_order_key)
 
     if len(sorted_files) != len(toc_entries):
         raise ValueError(f"Mismatch: {len(sorted_files)} track files but {len(toc_entries)} TOC entries")
