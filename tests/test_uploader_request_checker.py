@@ -120,7 +120,18 @@ def test_picking_a_request_whose_id_is_no_number_asks_again(monkeypatch, capsys,
 
 @pytest.mark.parametrize(
     ("value", "expected"),
-    [(7, 7), ("07", 7), ("", None), ("abc", None), ("4²", None), (-5, None), (True, None), (None, None)],
+    [
+        pytest.param("9" * 5000, None, id="5000 digits"),
+        pytest.param(10**5000, None, id="a 5000 digit int"),
+        (7, 7),
+        ("07", 7),
+        ("", None),
+        ("abc", None),
+        ("4²", None),
+        (-5, None),
+        (True, None),
+        (None, None),
+    ],
 )
 def test_numeric_id_takes_an_int_or_ascii_digits(value, expected) -> None:
     assert numeric_id(value) == expected

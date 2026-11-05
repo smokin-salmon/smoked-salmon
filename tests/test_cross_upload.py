@@ -1869,6 +1869,42 @@ def test_a_red_group_given_by_id_shows_its_held_cd_as_a_dupe(monkeypatch, dirs) 
     assert run.target.posts() == []
 
 
+@pytest.mark.parametrize("given", ["+1", "1_000", "１２", "٣"])
+def test_a_group_id_is_read_by_the_prompts_rule(monkeypatch, dirs, given: str) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-g", given], prepare=_source_has(album))
+
+    assert run.result.exit_code == 2
+    assert "is not a group ID" in run.output
+    assert run.source.sent == [] and run.target.sent == []
+
+
+@pytest.mark.parametrize("given", ["12²", "0", "-1", "abc", "", "   "])
+def test_a_group_id_that_is_no_number_is_refused_as_before(monkeypatch, dirs, given: str) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-g", given], prepare=_source_has(album))
+
+    assert run.result.exit_code == 2
+    assert "--group-id" in run.output
+    assert run.source.sent == [] and run.target.sent == []
+
+
+@pytest.mark.parametrize("given", ["12", "012", " 12 "])
+def test_a_group_id_goes_as_a_number_as_before(monkeypatch, dirs, given: str) -> None:
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.groups[12] = _fixture("red-torrentgroup.json")
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy", "-g", given], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert [post.fields["groupid"][0] for post in run.target.posts()] == ["12"]
+
+
 # DIC, from made-up answers (tests/fixtures/cross_upload/dic-torrent-web-24bit.json): no DIC answer has been seen
 
 DIC_FIXTURE = "dic-torrent-web-24bit.json"

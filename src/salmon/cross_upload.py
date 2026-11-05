@@ -17,7 +17,7 @@ import html
 import re
 import unicodedata
 from collections.abc import Awaitable, Callable, Iterable
-from contextlib import nullcontext
+from contextlib import nullcontext, suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -35,6 +35,7 @@ from salmon import cfg, dryrun, interaction
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.common import commandgroup, invisible_chars, show_invisible
+from salmon.common.strings import numeric_id
 from salmon.config.image_hosts import HOST_RULES
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
@@ -56,6 +57,7 @@ from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.uploader import (
     _check_logs,
     red_api_for_covers,
+    validate_group_id,
 )
 from salmon.uploader.conversion_choice import (
     conversion_kind,
@@ -248,7 +250,13 @@ class Release:
     type=click.Path(exists=True, file_okay=False),
     help="The album folder, if it is not download_directory/<the torrent's folder>. One INPUT only.",
 )
-@click.option("--group-id", "-g", type=click.IntRange(min=1), help="The TARGET group to upload into. One INPUT only.")
+@click.option(
+    "--group-id",
+    "-g",
+    metavar="INTEGER",
+    callback=validate_group_id,
+    help="The TARGET group to upload into. One INPUT only.",
+)
 @click.option(
     "--transcode",
     "transcodes",
@@ -344,7 +352,7 @@ async def run_cross_upload(options: CrossUploadOptions, *, claim_folder: FolderC
 def is_torrent_reference(value: str) -> bool:
     """A torrent ID or an http(s) URL, as opposed to a local path: decided without touching the filesystem."""
     value = value.strip()
-    return value.isdigit() or urlparse(value).scheme in ("http", "https")
+    return numeric_id(value) is not None or urlparse(value).scheme in ("http", "https")
 
 
 def _input_item(value: str, source_site: "BaseGazelleApi") -> int | Path:
@@ -357,8 +365,10 @@ def _input_item(value: str, source_site: "BaseGazelleApi") -> int | Path:
     if is_torrent_reference(value):
         return torrent_id_of(value, source_site)
     path = Path(value).expanduser()
-    if path.is_file() and path.suffix.lower() == ".torrent":
-        return path
+    # Before Python 3.14, is_file() raises on a name too long for the filesystem.
+    with suppress(OSError):
+        if path.is_file() and path.suffix.lower() == ".torrent":
+            return path
     raise click.UsageError(f"{value} is not a {source_site.site_string} torrent ID or URL, or a .torrent file.")
 
 
@@ -369,15 +379,16 @@ def torrent_id_of(value: str, source_site: "BaseGazelleApi") -> int:
         click.UsageError: If the URL is not SOURCE's, or holds no numeric torrentid.
     """
     value = value.strip()
-    if value.isdigit():
-        return int(value)
+    torrent_id = numeric_id(value)
+    if torrent_id is not None:
+        return torrent_id
     parsed = urlparse(value)
     if parsed.hostname != urlparse(source_site.base_url).hostname:
         raise click.UsageError(f"Expected a torrent URL from {source_site.base_url}, an ID, or a .torrent file.")
-    torrent_ids = parse_qs(parsed.query).get("torrentid")
-    if not torrent_ids or not torrent_ids[0].isdigit():
+    torrent_id = numeric_id(parse_qs(parsed.query).get("torrentid", [""])[0])
+    if torrent_id is None:
         raise click.UsageError("The torrent URL must hold a numeric torrentid.")
-    return int(torrent_ids[0])
+    return torrent_id
 
 
 async def _run(

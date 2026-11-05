@@ -16,9 +16,12 @@ _RE_TYPE_SUFFIX = re.compile(r"\s+(?:-\s*)?(?:EP|Single)\s*$")
 
 
 def numeric_id(value: object) -> int | None:
-    """An ID as a tracker's answer gives one, an int or a string of ASCII digits; None for anything else."""
-    text = str(value) if isinstance(value, int | str) and not isinstance(value, bool) else ""
-    return int(text) if text.isascii() and text.isdigit() else None
+    """An ID or a row, from a tracker's answer or typed: an int or a string of ASCII digits; None for anything else."""
+    try:
+        text = str(value) if isinstance(value, int | str) and not isinstance(value, bool) else ""
+        return int(text) if text.isascii() and text.isdigit() else None
+    except ValueError:  # More digits than Python converts.
+        return None
 
 
 def strip_numbered_suffix(name: str) -> str:

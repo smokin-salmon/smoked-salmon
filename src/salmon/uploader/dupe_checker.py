@@ -242,6 +242,24 @@ def _recent_upload_options(gazelle_site: "BaseGazelleApi", recent_uploads: list[
     ]
 
 
+async def _group_id_of_url(gazelle_site: "BaseGazelleApi", url: str) -> int | None:
+    """The group a pasted torrents.php URL names: its id, or with no id, its torrentid's group, asked of the tracker.
+
+    None, having said why, if it names none. An ID of 0 names none: a group ID of 0 would read as a new group.
+    """
+    query = parse.parse_qs(parse.urlparse(url).query)
+    if "torrentid" in query and "id" not in query:
+        torrent_id = numeric_id(query["torrentid"][0].strip())
+        if torrent_id and (group_id := await gazelle_site.get_redirect_torrentgroupid(torrent_id)):
+            return group_id
+        click.echo("Could not get group ID from torrent ID.")
+        return None
+    if group_id := numeric_id(query.get("id", [""])[0].strip()):
+        return group_id
+    click.echo("Could not find group ID in URL.")
+    return None
+
+
 async def _prompt_for_recent_upload_results(
     gazelle_site: "BaseGazelleApi",
     recent_uploads: list[tuple],
@@ -299,9 +317,8 @@ async def _prompt_for_recent_upload_results(
         )
 
         # Handle numeric input (selecting from recent uploads or direct group ID)
-        if group_id.strip().isdigit():
-            group_id_num = int(group_id)
-
+        group_id_num = numeric_id(group_id.strip())
+        if group_id_num is not None:
             if group_id_num == 0:
                 if not shown:
                     continue  # No group has the ID 0, and there is no first choice to give.
@@ -327,20 +344,9 @@ async def _prompt_for_recent_upload_results(
 
         # Handle URL input
         elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
-            parsed_query = parse.parse_qs(parse.urlparse(group_id).query)
-            if "id" in parsed_query:
-                group_id = parsed_query["id"][0]
-                return int(group_id)
-            elif "torrentid" in parsed_query:
-                torrent_id = parsed_query["torrentid"][0]
-                result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
-                if result_group_id is not None:
-                    return result_group_id
-                click.echo("Could not get group ID from torrent ID.")
-                continue
-            else:
-                click.echo("Could not find group ID in URL.")
-                continue
+            url_group_id = await _group_id_of_url(gazelle_site, group_id)
+            if url_group_id is not None:
+                return url_group_id
 
         # Handle action commands
         elif group_id.lower().startswith("a"):
@@ -705,8 +711,8 @@ async def _prompt_for_group_id(
                 free_text=interaction.FreeText("Group URL or ID", ids=True),
             ),
         )
-        if group_id.strip().isdigit():
-            raw_input = int(group_id)
+        raw_input = numeric_id(group_id.strip())
+        if raw_input is not None:
             if raw_input == 0 and not results:
                 continue  # No group has the ID 0, and there is no first result to give.
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
@@ -723,18 +729,9 @@ async def _prompt_for_group_id(
                 return raw_input
 
         elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
-            parsed_query = parse.parse_qs(parse.urlparse(group_id).query)
-            if "id" in parsed_query:
-                return int(parsed_query["id"][0])
-            elif "torrentid" in parsed_query:
-                torrent_id = parsed_query["torrentid"][0]
-                result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
-                if result_group_id is not None:
-                    return result_group_id
-                continue
-            else:
-                click.echo("Could not find group ID in URL.")
-                continue
+            url_group_id = await _group_id_of_url(gazelle_site, group_id)
+            if url_group_id is not None:
+                return url_group_id
         elif group_id.lower().startswith("a"):
             raise click.Abort
         elif group_id.lower().startswith("s") and offer_skip:
@@ -789,7 +786,7 @@ async def recheck_edition(
     if all(torrent.get("id") in named for torrent in held_in_group(group, release)):
         return group_id
     click.secho(f"\nThe reviewed edition is already in group {group_id}:", fg="red", bold=True)
-    # The fetched group's own id: one given with --group-id is text, which would not find it and fetch it again.
+    # The fetched group's own id, so the row is found and not fetched again.
     confirmed = await _confirm_group_id(gazelle_site, group["groupId"], [group], release=release)
     return group_id if confirmed else None
 
@@ -1002,8 +999,9 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
         choice = choice.strip().lower()
         if choice.startswith("a"):
             return None
-        if choice.isdigit() and 1 <= int(choice) <= len(flacs):
-            return flacs[int(choice) - 1]
+        number = numeric_id(choice)
+        if number is not None and 1 <= number <= len(flacs):
+            return flacs[number - 1]
         click.secho(f"Enter a number from 1 to {len(flacs)}, or a to abort.", fg="red")
 
 

@@ -359,6 +359,9 @@ def test_the_preselection_follows_the_default_even_when_it_is_not_shown() -> Non
         (RESULTS, Picked(texts=["02"]), "2 is result 2 above: pick it there, or paste the URL."),
         (RESULTS, Picked(texts=["0"]), "An ID is a number above 2: paste the URL, or pick from the options."),
         (RESULTS, Picked(texts=["n"]), "n is neither a URL nor an ID."),
+        pytest.param(
+            RESULTS, Picked(texts=["9" * 5000]), f"{'9' * 5000} is neither a URL nor an ID.", id="5000 digits"
+        ),
         (RESULTS, Picked(texts=["-5"]), "-5 is neither a URL nor an ID."),
         (RESULTS, Picked(texts=["٣"]), "neither a URL nor an ID"),
         (RESULTS, Picked(texts=[" 5"]), "neither a URL nor an ID"),

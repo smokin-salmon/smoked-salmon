@@ -12,7 +12,7 @@ import msgspec
 from salmon import cfg, interaction
 from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
-from salmon.common.strings import artist_keys, comparable, names_no_artist
+from salmon.common.strings import artist_keys, comparable, names_no_artist, numeric_id
 from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
 from salmon.search.base import IdentData
 from salmon.sources.deezer import DeezerBase, album_upc
@@ -448,13 +448,13 @@ async def _select_choice(
                         tasks.append(source.Scraper().scrape_release(stripped))
                         break
             # Handle numeric choices
-            elif stripped.strip().isdigit() and int(stripped.strip()) in choices:
-                scraper = METASOURCES[choices[int(stripped)][0]].Scraper()
-                sources.append(choices[int(stripped)][0])
-                tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(choices[int(stripped)][1])))
+            elif (number := numeric_id(stripped.strip())) in choices:
+                scraper = METASOURCES[choices[number][0]].Scraper()
+                sources.append(choices[number][0])
+                tasks.append(handle_scrape_errors(scraper.scrape_release_from_id(choices[number][1])))
                 # Set source_url if this is a starred choice
                 if r.startswith("*"):
-                    source_url = SEARCHSOURCES[choices[int(stripped)][0]].Searcher.format_url(choices[int(stripped)][1])
+                    source_url = SEARCHSOURCES[choices[number][0]].Searcher.format_url(choices[number][1])
 
         if not tasks:
             # Go to manual mode only if we have any URLs

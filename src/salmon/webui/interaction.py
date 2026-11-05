@@ -23,12 +23,12 @@ import asyncclick as click
 import msgspec
 
 from salmon import interaction
+from salmon.common.strings import numeric_id
 from salmon.interaction import Options
 
 # An http:// or https:// URL, in one piece: the only link a card shows, and the only text a typed question takes
 # besides an ID.
 _WEB_URL = re.compile(r"https?://[^\s\x00-\x1f\x7f/?#]+[^\s\x00-\x1f\x7f]*", re.IGNORECASE)
-_NUMBER = re.compile(r"[0-9]+")
 
 
 class Asker(Protocol):
@@ -142,10 +142,10 @@ def _text_error(options: Options, text: str) -> str | None:
         return None
     if options.free_text is None or not options.free_text.ids:
         return f"{text} is not a URL: paste one that starts with http:// or https://."
-    if not _NUMBER.fullmatch(text):
+    number = numeric_id(text)
+    if number is None:
         return f"{text} is neither a URL nor an ID."
-    numbered = [int(option.key) for option in options.items if _NUMBER.fullmatch(option.key)]
-    number = int(text)
+    numbered = [key for option in options.items if (key := numeric_id(option.key)) is not None]
     if number > 0 and number > max(numbered, default=0):
         return None
     if number in numbered:
