@@ -7,7 +7,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "aiohttp>=3.14.5",
-    "aiohttp-jinja2>=1.5.1",
+    "aiohttp-jinja2>=1.6",
     "aiohttp-socks>=0.12.0",
     "aiolimiter>=1.3.0",
     "anyio>=4.12.1",
@@ -51,6 +51,7 @@ build-backend = "uv_build"
 dev = [
     "basedpyright>=1.40.2",
     "pytest>=9.1.1",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.17.2",
 ]
 
@@ -107,4 +108,10 @@ reportPrivateImportUsage = "none"
 testpaths = ["tests"]
 markers = [
     "network: the test needs the real network. Every other test refuses non-loopback connections; CI deselects these.",
+]
+# A deprecation fails the run: fix our code, and filter a third-party one only when we cannot, with a comment why.
+# Each one used to print on every run, which an agent then reads.
+filterwarnings = [
+    "error::DeprecationWarning",
+    "error::PendingDeprecationWarning",
 ]

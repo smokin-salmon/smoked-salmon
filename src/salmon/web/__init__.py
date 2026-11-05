@@ -45,6 +45,8 @@ def add_routes(app: "web.Application", specs_path: str | None = None) -> None:
         app: The aiohttp web application.
         specs_path: The folder of spectral images to serve under the static URL's ``/specs``.
     """
+    import aiohttp_jinja2
+
     # The spectrals are served from their own folder, at the URL the templates use. Linking them into the package's
     # static folder needed a privilege Windows does not give by default (WinError 1314), wrote into the installed
     # package, and two salmon runs at once shared the one link.
@@ -53,7 +55,7 @@ def add_routes(app: "web.Application", specs_path: str | None = None) -> None:
     app.router.add_static("/static", join(dirname(__file__), "static"))
     app.router.add_route("GET", "/", handle_index)
     app.router.add_route("GET", "/spectrals", spectrals.handle_spectrals)
-    app["static_root_url"] = "/static"
+    app[aiohttp_jinja2.static_root_key] = "/static"
 
 
 async def handle_index(request: "web.Request") -> "web.Response":

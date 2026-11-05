@@ -1607,7 +1607,7 @@ class BaseGazelleApi:
         resp_text = resp.text
 
         soup = BeautifulSoup(resp_text, "lxml")
-        edit_error = soup.find("h2", text="Error")
+        edit_error = soup.find("h2", string="Error")
         if edit_error and edit_error.parent and edit_error.parent.parent:
             p_tag = edit_error.parent.parent.find("p")
             error_message = p_tag.text if p_tag else "Unknown error"

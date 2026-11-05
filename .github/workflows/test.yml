@@ -24,7 +24,7 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
-        run: uv run pytest -q -m "not network"
+        run: uv run pytest -q -m "not network" -n auto
 
   # CPython 3.14, with every dependency from a wheel. uv installs the newest Python by default, and a dependency
   # with no wheel for it gets built from source on users' machines (pyoxipng on 3.14 needed Rust and Visual Studio).
@@ -51,4 +51,4 @@ jobs:
         run: uv sync --locked
 
       - name: Run tests
-        run: uv run pytest -q -m "not network"
+        run: uv run pytest -q -m "not network" -n auto

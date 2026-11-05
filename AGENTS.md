@@ -13,7 +13,7 @@ traffic as the most sensitive part of the code.
 
 ```bash
 uv sync                          # install, including dev dependencies
-uv run pytest                    # tests
+uv run pytest -n auto            # tests, one worker per CPU (pytest-xdist), as in CI
 uv run ruff check .              # lint
 uv run ruff format --check .     # formatting
 uv run basedpyright              # type check (the version locked in the dev group, as in CI)
@@ -21,6 +21,12 @@ uv run basedpyright              # type check (the version locked in the dev gro
 
 `ruff`, `pyright` and `pytest` are required checks on `master`; a PR cannot merge unless all three
 pass.
+
+While iterating, run the tests of the area you change: test files are named after the package they cover,
+`tests/test_<package>_*.py` (`test_uploader_*`, `test_tagger_*`, `test_trackers_*`, `test_webui_*`...; `images/` is
+`test_image_*`). Add `-n auto` for a large area (the uploader's take 2 minutes serially, 16 s in parallel) but not for
+a file or two, where starting the workers costs more than it saves. Run the full suite once before opening the PR.
+A deprecation warning fails the run (`filterwarnings` in `pyproject.toml`): fix the code that triggers it.
 
 The `salmon` package loads and validates its config at import time and exits if there is none.
 `tests/conftest.py` handles this for the test run by pointing `XDG_CONFIG_HOME` at a temporary
