@@ -15,6 +15,7 @@ from salmon.commands import build_description
 from salmon.common.numbers import (
     file_order_key,
     natural_key,
+    number_or_text,
     number_text,
     padded_number,
     read_number,
@@ -94,6 +95,25 @@ def test_each_reader_of_a_tag_answers_as_before(
         assert tag_number_or_one(tags, "discnumber") == or_one
         assert tag_text(tags, "discnumber") == text
         assert unreadable_number(tags, "discnumber") == unreadable
+
+
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        ("1", 1),
+        ("01", 1),
+        (1, 1),
+        ("１２", 12),
+        ("٣", 3),
+        ("A1", "A1"),
+        ("1²", "1²"),
+        (" 1", " 1"),
+        ("", ""),
+        (None, "None"),
+    ],
+)
+def test_a_number_or_its_text_as_a_key(value: Any, key: int | str) -> None:
+    assert number_or_text(value) == key
 
 
 def test_a_tag_object_with_no_such_field_has_no_number_as_before() -> None:

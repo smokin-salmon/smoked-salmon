@@ -58,6 +58,15 @@ def unreadable_number(tags: Any, field: str) -> str | None:
     return text if text.strip() and tag_number(tags, field) is None else None
 
 
+def number_or_text(value: Any) -> int | str:
+    """A disc or track number as a key: "01", "1" and "１" are one number; anything else ("A1") is its text.
+
+    ``isdecimal()``, not ``isdigit()``: ``isdigit()`` is also true for some digits (superscript "2") ``int()`` refuses.
+    """
+    text = str(value)
+    return int(text) if text.isdecimal() else text
+
+
 def natural_key(value: Any) -> tuple[tuple[int, int | str], ...]:
     """Sort key that compares digit runs as numbers: CD2 sorts before CD10, and track A2 before A10."""
     return tuple(
