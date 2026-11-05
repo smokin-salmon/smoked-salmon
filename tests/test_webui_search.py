@@ -324,7 +324,8 @@ def test_a_cover_url_to_an_internal_address_is_refused_in_an_upload_job(
             job, _asked = await _drive(
                 client, manager, await _start(client, album, params={"trackers": ["RED"]}, dry_run=True)
             )
-        assert job.status == "done", (job.error, _log(job))
+        # With no cover the run stops, nothing sent.
+        assert job.status == "failed", (job.error, _log(job))
         assert any(
             "Failed to download cover image (ERROR Refused to connect to 127.0.0.1" in line for line in _log(job)
         )
