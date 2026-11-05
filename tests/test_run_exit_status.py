@@ -1059,7 +1059,7 @@ def test_up_help_says_what_it_exits_with(monkeypatch, capsys) -> None:
     assert "1 when no tracker can have taken an upload" in words
     assert "2 on a usage error" in words
     assert "3 when a tracker may have taken one, or refused one" in words
-    assert "a tracker you skipped or declined counts as done" in words
+    assert "a tracker you skipped at its group question, or did not pick when offered, counts as done" in words
     assert "a retry is safe, keep the album" in words
     assert "a torrent is up, an upload was refused or an outcome is unknown" in words
     assert "Don't retry the whole run, and don't delete the album" in words

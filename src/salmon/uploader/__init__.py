@@ -321,7 +321,8 @@ async def up(
 ) -> None:
     """Command to upload an album folder to a Gazelle Site.
 
-    Exits with 0 when everything the run set out to upload went up (a tracker you skipped or declined counts as done).
+    Exits with 0 when everything the run set out to upload went up (a tracker you skipped at its group question, or
+    did not pick when offered, counts as done).
     1 when no tracker can have taken an upload: a retry is safe, keep the album. 2 on a usage error. 3 when a tracker
     may have taken one, or refused one: a torrent is up, an upload was refused or an outcome is unknown. Don't retry
     the whole run, and don't delete the album. A failed seedbox copy or client add is a 3.
