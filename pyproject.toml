@@ -109,6 +109,6 @@ testpaths = ["tests"]
 markers = [
     "network: the test needs the real network. Every other test refuses non-loopback connections; CI deselects these.",
 ]
-# A run that reports a warning fails (tests/conftest.py). Add an "ignore" entry here only for a third-party warning we
-# cannot fix, with a comment saying why.
-filterwarnings = []
+# A run that reports a warning fails: each one is printed on every run, and read each time. Fix the code that warns;
+# for a third-party warning we cannot fix, add a `filterwarnings` "ignore" entry with a comment saying why.
+max_warnings = 0

@@ -23,14 +23,16 @@ uv run basedpyright              # type check (the version locked in the dev gro
 pass.
 
 While iterating, run the tests of the package you change: the files named after it (`tests/test_<package>_*.py`;
-`images/` is `test_image*`) and the others that import it (pytest skips a file given twice):
+`images/` is `test_image*`) and the others that import it (pytest skips a file given twice). It is a quick subset,
+not the whole picture: run the full suite once before opening the PR.
 
 ```bash
-uv run pytest -n auto tests/test_sources_*.py $(grep -l 'salmon\.sources' tests/test_*.py)
+uv run pytest -n auto tests/test_sources_*.py \
+  $(grep -lE '\bsalmon(\.sources\b| import .*\bsources\b)' tests/test_*.py)
 ```
 
-Leave out `-n auto` for a file or two, where starting the workers costs more than it saves. Run the full suite once
-before opening the PR. A run that reports a warning fails (`tests/conftest.py`): fix the code that warns.
+Leave out `-n auto` for a file or two, where starting the workers costs more than it saves. A run that reports a
+warning fails (`max_warnings = 0` in `pyproject.toml`): fix the code that warns.
 
 The `salmon` package loads and validates its config at import time and exits if there is none.
 `tests/conftest.py` handles this for the test run by pointing `XDG_CONFIG_HOME` at a temporary

@@ -42,6 +42,8 @@ async def create_app_async(specs_path: str | None = None) -> "web.AppRunner":
 def add_routes(app: "web.Application", specs_path: str | None = None) -> None:
     """Add routes to the web application.
 
+    The templates also need the jinja setup and its static root, which ``create_app_async`` adds.
+
     Args:
         app: The aiohttp web application.
         specs_path: The folder of spectral images to serve under the static URL's ``/specs``.
