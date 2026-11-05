@@ -113,11 +113,34 @@ async def _calculate_file_crc_async(filepath: str, _: Any = None) -> str:
     return await anyio.to_thread.run_sync(lambda: _crc32_from_chunks(_iter_pcm_chunks(filepath)))
 
 
+def _range_files(track_files: list[str]) -> list[str]:
+    """A range rip's track files in the order of its TOC entries: salmon's one order for an album's files."""
+    return sorted(track_files, key=file_order_key)
+
+
+def _range_lead_sectors(first_file: str, first_entry: cambia.TocEntry) -> int:
+    """The sectors before the first TOC entry that a range rip's rebuild adds as silence.
+
+    A whole-disc range's CRC starts at sector 0, not at the first entry. A first file longer than its entry holds those
+    sectors; one no longer than its entry can't.
+    """
+    entry_sectors = first_entry.end_sector - first_entry.start_sector + 1
+    if first_entry.start_sector > 0 and _get_audio_duration_sectors(first_file) <= entry_sectors:
+        return first_entry.start_sector
+    return 0
+
+
+def _starts_with_sound(filepath: str) -> bool:
+    """Whether an audio file's first sample isn't silent."""
+    # s16le stereo = 4 bytes per sample
+    return any(next(_iter_pcm_chunks(filepath), b"")[:4])
+
+
 def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocEntry]) -> Generator[bytes, None, None]:
     """Yield PCM chunks for a range rip reconstruction, including silence gaps.
 
     Streams audio frame-by-frame per track, inserting silence where TOC
-    indicates gaps, keeping memory usage constant.
+    indicates gaps or a lead before the first track, keeping memory usage constant.
 
     Args:
         track_files: List of paths to track audio files.
@@ -130,11 +153,18 @@ def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocE
         ValueError: If track file count doesn't match TOC entry count.
         RuntimeError: If decoding fails.
     """
-    # Sort track files by track number to match TOC entries order
-    sorted_files = sorted(track_files, key=file_order_key)
+    sorted_files = _range_files(track_files)
 
     if len(sorted_files) != len(toc_entries):
         raise ValueError(f"Mismatch: {len(sorted_files)} track files but {len(toc_entries)} TOC entries")
+
+    lead_sectors = _range_lead_sectors(sorted_files[0], toc_entries[0])
+    if lead_sectors:
+        click.secho(
+            f"Adding {lead_sectors / 75:.2f}s silence before the first track ({lead_sectors} sectors)", fg="yellow"
+        )
+        # 2,352 bytes a sector
+        yield b"\x00" * (lead_sectors * 2352)
 
     for track_file, toc_entry in zip(sorted_files, toc_entries, strict=True):
         track_length_sectors = toc_entry.end_sector - toc_entry.start_sector + 1
@@ -155,6 +185,27 @@ def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocE
                 )
                 # s16le stereo = 4 bytes per sample
                 yield b"\x00" * (gap_samples * 4)
+
+
+async def _skip_if_lead_may_not_be_silent(track_files: list[str], first_entry: cambia.TocEntry) -> None:
+    """Skip a range rip that mismatches with its lead rebuilt as silence, when track 1 starts with sound.
+
+    Sound at the very start of track 1 says the lead may hold more than silence, and no log says what it holds.
+
+    Raises:
+        LogCheckSkipped: If so. A damaged rip of this shape is skipped too, so it must never read as a pass.
+    """
+    first_file = _range_files(track_files)[0]
+
+    def lead_may_not_be_silent() -> bool:
+        return bool(_range_lead_sectors(first_file, first_entry)) and _starts_with_sound(first_file)
+
+    if await anyio.to_thread.run_sync(lead_may_not_be_silent):
+        raise LogCheckSkipped(
+            f"Range rip whose first track is at sector {first_entry.start_sector} and starts with sound, so what the "
+            "range holds before it isn't known and its CRC can't be rebuilt. The audio is not verified: a damaged rip "
+            "would look the same"
+        )
 
 
 async def _calculate_range_crc_async(track_files: list[str], toc_entries: list[cambia.TocEntry]) -> str:
@@ -377,6 +428,8 @@ async def verify_log_crcs(cambia_output: Any, logpath: str, basepath: str) -> No
         # Concatenate track files to recreate the original range rip for CRC verification
         range_crc = await _calculate_range_crc_async(files_to_check, toc_entries)
         found_crcs = Counter({range_crc: 1})
+        if expected_crcs - found_crcs:
+            await _skip_if_lead_may_not_be_silent(files_to_check, toc_entries[0])
     else:
         # A file prepared before the upload ran is not decoded again (salmon.prepared).
         crc_results = await process_files(

@@ -26,6 +26,7 @@ from helpers.checks_logs import (
 )
 from mutagen.flac import FLAC
 
+import salmon.uploader as uploader
 from salmon import cfg
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 from salmon.tagger.retagger import rename_files
@@ -288,7 +289,7 @@ def test_a_bad_track_fails_its_discs_log_in_a_one_folder_release(tmp_path, monke
 @pytest.mark.parametrize(("range_crc", "matches"), [("RANGE2", True), ("OTHER", False)])
 def test_a_range_rip_log_named_for_its_disc_rebuilds_only_that_disc(tmp_path, monkeypatch, range_crc, matches) -> None:
     log_paths = _one_folder_release(tmp_path, monkeypatch)
-    range_log = _one_disc_log("RANGE2", is_range=True, toc_entries=["track 1", "track 2"])
+    range_log = _one_disc_log("RANGE2", is_range=True, toc_entries=[_toc_entry(0, 1), _toc_entry(1, 1)])
     _patch_cambia_per_log(monkeypatch, {"rip.2.log": range_log})
     rebuilt_from: list[str] = []
 
@@ -709,9 +710,11 @@ def test_a_multi_disc_log_named_for_its_first_disc_passes_after_the_one_folder_r
 SECTOR_SAMPLES = 588  # At 44.1 kHz, 75 sectors a second
 
 
-def _noise_flac(path: Path, samples: int, seed: int = 1) -> bytes:
+def _noise_flac(path: Path, samples: int, seed: int = 1, first_sample: tuple[int, int] | None = None) -> bytes:
     """A real stereo FLAC of noise, and the PCM a ripper's CRC would have seen."""
     pcm = np.random.default_rng(seed).integers(-8000, 8000, (2, samples), dtype=np.int16)
+    if first_sample is not None:
+        pcm[:, 0] = first_sample
     with av.open(str(path), "w", format="flac") as container:
         stream = container.add_stream("flac", rate=44100, layout="stereo", format="s16")
         assert isinstance(stream, av.audio.stream.AudioStream)
@@ -785,3 +788,151 @@ def test_a_range_rips_files_are_taken_in_name_order_as_before(tmp_path) -> None:
     rebuilt = b"".join(logs._iter_range_pcm_chunks(files, toc))
 
     assert rebuilt == first + second
+
+
+def _silence(sectors: int) -> bytes:
+    return bytes(sectors * SECTOR_SAMPLES * 4)
+
+
+def _files_listed_out_of_order(tmp_path: Path, first: tuple[int, int], second: tuple[int, int]) -> list[str]:
+    """Two tracks in two folders, listed second first: salmon's file order, folder then name, gives the first."""
+    (tmp_path / "a").mkdir()
+    (tmp_path / "z").mkdir()
+    _noise_flac(tmp_path / "a" / "01.flac", 75 * SECTOR_SAMPLES, 1, first)
+    _noise_flac(tmp_path / "z" / "02.flac", 100 * SECTOR_SAMPLES, 2, second)
+    return [str(tmp_path / "z" / "02.flac"), str(tmp_path / "a" / "01.flac")]
+
+
+def _range_log(monkeypatch, tmp_path: Path, crc: str, toc: list[Any]) -> str:
+    _patch_cambia(monkeypatch, _one_disc_log(crc, is_range=True, toc_entries=toc))
+    return str(tmp_path / "rip.log")
+
+
+def test_a_range_past_sector_0_starts_with_silence_when_the_first_file_is_as_long_as_its_entry(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    first = _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1)
+    second = _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    toc = [_toc_entry(33, 75), _toc_entry(108, 100)]
+    log = _range_log(monkeypatch, tmp_path, _crc(_silence(33) + first + second), toc)
+
+    anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "All CRC values match the log file." in out
+    assert "Adding 0.44s silence before the first track (33 sectors)" in out
+
+
+def test_a_range_past_sector_0_starts_with_silence_when_the_first_file_is_shorter_than_its_entry(
+    tmp_path, monkeypatch
+) -> None:
+    first = _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1)
+    second = _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    toc = [_toc_entry(33, 76), _toc_entry(109, 100)]
+    pcm = _silence(33) + first + _silence(1) + second
+    log = _range_log(monkeypatch, tmp_path, _crc(pcm), toc)
+
+    anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+
+def test_a_range_past_sector_0_is_judged_by_the_first_file_in_name_order(tmp_path) -> None:
+    first = _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1)
+    second = _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    files = [str(tmp_path / "02.flac"), str(tmp_path / "01.flac")]
+    toc = [_toc_entry(33, 75), _toc_entry(108, 50)]
+
+    rebuilt = b"".join(logs._iter_range_pcm_chunks(files, toc))
+
+    assert rebuilt == _silence(33) + first + second
+
+
+@pytest.mark.parametrize("first_sample", [(1, 0), (256, 0), (0, 1), (0, 256)])
+def test_a_range_past_sector_0_is_not_verified_when_it_still_mismatches_and_track_1_starts_with_sound(
+    tmp_path, monkeypatch, first_sample: tuple[int, int]
+) -> None:
+    _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1, first_sample)
+    _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    log = _range_log(monkeypatch, tmp_path, "AAAAAAAA", [_toc_entry(37, 75), _toc_entry(112, 100)])
+
+    with pytest.raises(LogCheckSkipped, match=r"sector 37.*not verified"):
+        anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+
+def test_a_range_past_sector_0_is_not_verified_by_the_start_of_the_first_file_in_order(tmp_path, monkeypatch) -> None:
+    files = _files_listed_out_of_order(tmp_path, (1, 1), (0, 0))
+    monkeypatch.setattr(logs, "_find_audio_files", lambda _path: files)
+    log = _range_log(monkeypatch, tmp_path, "AAAAAAAA", [_toc_entry(37, 75), _toc_entry(112, 100)])
+
+    with pytest.raises(LogCheckSkipped, match="not verified"):
+        anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+
+def test_salmon_up_says_a_range_it_can_not_verify_was_not_checked_and_does_not_ask(
+    tmp_path, monkeypatch, capsys
+) -> None:
+    async def no_question(*_args: object, **_kwargs: object) -> bool:
+        raise AssertionError("asked about a CRC mismatch")
+
+    monkeypatch.setattr(uploader.interaction, "confirm", no_question)
+    _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1, (1, 1))
+    _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    (tmp_path / "rip.log").write_text("log")
+    _range_log(monkeypatch, tmp_path, "AAAAAAAA", [_toc_entry(37, 75), _toc_entry(112, 100)])
+
+    anyio.run(uploader._check_logs, str(tmp_path))
+
+    out = capsys.readouterr().out
+    assert "Log not checked: " in out
+    assert "The audio is not verified" in out
+    assert "All CRC values match" not in out
+
+
+@pytest.mark.parametrize("past_entry", [1, 32])
+def test_a_range_past_sector_0_adds_nothing_when_the_first_file_is_longer_than_its_entry_as_before(
+    tmp_path, monkeypatch, capsys, past_entry: int
+) -> None:
+    first = _noise_flac(tmp_path / "01.flac", (75 + past_entry) * SECTOR_SAMPLES, 1)
+    second = _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    toc = [_toc_entry(32, 75), _toc_entry(107, 100)]
+    log = _range_log(monkeypatch, tmp_path, _crc(first + second), toc)
+
+    anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+    assert "Adding" not in capsys.readouterr().out
+
+
+def test_a_range_is_a_mismatch_when_the_first_file_is_longer_than_its_entry_as_before(tmp_path, monkeypatch) -> None:
+    _noise_flac(tmp_path / "01.flac", 107 * SECTOR_SAMPLES, 1, (1, 1))
+    _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    log = _range_log(monkeypatch, tmp_path, "AAAAAAAA", [_toc_entry(32, 75), _toc_entry(107, 100)])
+
+    with pytest.raises(CRCMismatchError):
+        anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+
+def test_a_range_is_a_mismatch_when_track_1_starts_silent_as_before(tmp_path, monkeypatch) -> None:
+    # Only the first sample is silent: that is all the check reads.
+    _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1, (0, 0))
+    _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2, (1, 1))
+    log = _range_log(monkeypatch, tmp_path, "AAAAAAAA", [_toc_entry(37, 75), _toc_entry(112, 100)])
+
+    with pytest.raises(CRCMismatchError):
+        anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+
+def test_a_range_is_a_mismatch_when_the_first_entry_is_at_sector_0_as_before(tmp_path, monkeypatch) -> None:
+    _noise_flac(tmp_path / "01.flac", 75 * SECTOR_SAMPLES, 1, (1, 1))
+    _noise_flac(tmp_path / "02.flac", 100 * SECTOR_SAMPLES, 2)
+    log = _range_log(monkeypatch, tmp_path, "AAAAAAAA", [_toc_entry(0, 75), _toc_entry(75, 100)])
+
+    with pytest.raises(CRCMismatchError):
+        anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+
+def test_a_range_is_a_mismatch_by_the_start_of_the_first_file_in_order_as_before(tmp_path, monkeypatch) -> None:
+    files = _files_listed_out_of_order(tmp_path, (0, 0), (1, 1))
+    monkeypatch.setattr(logs, "_find_audio_files", lambda _path: files)
+    log = _range_log(monkeypatch, tmp_path, "AAAAAAAA", [_toc_entry(37, 75), _toc_entry(112, 100)])
+
+    with pytest.raises(CRCMismatchError):
+        anyio.run(logs.check_log_cambia, log, str(tmp_path))
