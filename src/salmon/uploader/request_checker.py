@@ -208,8 +208,8 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
             default="N",
             options=options,
         )
-        # ASCII digits: isdigit() also takes "4²", which int() refuses.
-        if request_id.strip().isascii() and request_id.strip().isdigit():
+        # ASCII digits: isdecimal() alone also takes "٣".
+        if request_id.strip().isascii() and request_id.strip().isdecimal():
             raw_input = int(request_id)
             list_index = max(0, raw_input - 1)  # 1-based → 0-based, clamp to 0
             if list_index < len(results):
@@ -226,7 +226,7 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
 
         elif request_id.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
             parsed_id = parse.parse_qs(parse.urlparse(request_id).query).get("id", [""])[0]
-            if parsed_id.isascii() and parsed_id.isdigit():
+            if parsed_id.isascii() and parsed_id.isdecimal():
                 return int(parsed_id)
             click.secho("That URL names no request: paste a request's URL, its ID, or [n]o.", fg="red")
         elif request_id.lower().startswith("n") or not request_id.strip():
