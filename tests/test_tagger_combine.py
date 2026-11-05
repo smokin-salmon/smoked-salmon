@@ -548,7 +548,20 @@ def test_a_source_group_year_int_refuses_is_passed_over():
     source = make_metadata("Release")
     source.update(group_year="1²")
 
-    assert combine_metadatas(("MusicBrainz", source), base=base)["group_year"] == "2020"
+    combined = combine_metadatas(("MusicBrainz", source), base=base)
+
+    assert combined["group_year"] == "2020"
+
+
+def test_a_dated_source_group_year_int_refuses_is_passed_over():
+    base = make_metadata("Release")
+    base.update(group_year="2020", date="")
+    source = make_metadata("Release")
+    source.update(group_year="1²", date="2020-05-01")
+
+    combined = combine_metadatas(("MusicBrainz", source), base=base)
+
+    assert combined["group_year"] == "2020"
 
 
 @pytest.mark.parametrize(
@@ -560,4 +573,6 @@ def test_a_source_group_year_reads_as_a_number_as_before(group_year, kept):
     source = make_metadata("Release")
     source.update(group_year=group_year)
 
-    assert combine_metadatas(("MusicBrainz", source), base=base)["group_year"] == kept
+    combined = combine_metadatas(("MusicBrainz", source), base=base)
+
+    assert combined["group_year"] == kept

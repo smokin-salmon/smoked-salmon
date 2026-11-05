@@ -118,7 +118,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                 base["date"] = metadata["date"]
                 if metadata["year"]:
                     base["year"] = metadata["year"]
-                if metadata["group_year"]:
+                if str(metadata["group_year"]).isdecimal():
                     base["group_year"] = metadata["group_year"]
             if not base["rls_type"] or base["rls_type"] == "Album":
                 base["rls_type"] = metadata["rls_type"]

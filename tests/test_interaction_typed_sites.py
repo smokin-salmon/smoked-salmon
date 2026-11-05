@@ -518,7 +518,8 @@ def test_formats_to_convert_asks_again_on_a_word_that_isnt_a_number(
     result, terminal, _described = ask(monkeypatch, conversions(), [typed, "0"])
     assert result == []
     assert len(terminal.calls) == 2
-    assert "Invalid input format" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Invalid input format" in out
 
 
 @pytest.mark.parametrize("typed", ["-1", "1_000"])
@@ -528,7 +529,8 @@ def test_formats_to_convert_asks_again_on_a_number_that_isnt_a_row(
     result, terminal, _described = ask(monkeypatch, conversions(), [typed, "0"])
     assert result == []
     assert len(terminal.calls) == 2
-    assert "Invalid choices" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Invalid choices" in out
 
 
 def test_formats_to_convert_reads_a_plus_sign_as_the_row(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -542,7 +544,8 @@ def test_formats_to_convert_asks_again_on_a_number_int_refuses_as_before(
     result, terminal, _described = ask(monkeypatch, conversions(), ["1²", "0"])
     assert result == []
     assert len(terminal.calls) == 2
-    assert "Invalid input format" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "Invalid input format" in out
 
 
 def test_formats_to_convert_reads_another_scripts_digit_as_a_row_as_before(monkeypatch: pytest.MonkeyPatch) -> None:
