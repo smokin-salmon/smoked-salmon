@@ -48,6 +48,17 @@ class Scraper(TidalBase, MetadataMixin):
     def parse_upc(self, soup):
         return soup["upc"]
 
+    def parse_genres(self, soup):
+        """Collect the genres Tidal gives on the album and its tracks, in the order it lists them."""
+        candidates = list(soup.get("genres") or [])
+        for track in soup["tracklist"]:
+            candidates += track.get("genres") or []
+        genres: list[str] = []
+        for genre in candidates:
+            if genre not in genres:
+                genres.append(genre)
+        return genres
+
     async def parse_tracks(self, soup):
         album_artists = soup.get("artists") or []
         tracks = defaultdict(dict)
