@@ -1,0 +1,699 @@
+album = "Lady Gaga, The Remix"
+why = "A remix album: a remixer on every track, the original singer the only main; two tracks keep their singles' featured guests."
+edition = "The 10-track US edition, Streamline/Interscope 2010 (Deezer 2383521 = MusicBrainz ec3baf33 by barcode, digital; Discogs 2384351, the US CD with the same barcode). Chosen because all three stores carry it under one UPC; the 17-track international edition is another release. Qobuz ow9fz03z2krna has the same UPC and the same 10 tracks."
+known_wrong = ["merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so the singles' guests (Colby O'Donis, Marilyn Manson, Beyoncé) are made main and ALBUMARTIST is 'Various'", "merge: remixers read from MusicBrainz's titles beside the stores' names: 'LLG vs. GLG radio mix', 'Chew Fu Ghettohouse', 'FrankMusik \"Cut Snare Edit\"', 'Glam as You', 'Sounds of Arrow', \"Monarchy 'Stylites'\"", "output: no REMIXER on 'Eh, Eh' or 'Dance In The Dark'"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Lady Gaga"]
+not_main = ["Richard Vission", "Richard \"Humpty\" Vission", "Guena LG", "Chew Fu", "Chew-Fu Phat", "Frankmusik", "FrankMusik", "Stuart Price", "Starsmith", "Passion Pit", "The Sound of Arrows", "The Sound Of Arrows", "Monarchy", "Colby O'Donis", "Colby O’Donis", "Marilyn Manson", "Beyoncé"]
+how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Lady Gaga alone as the release's artist and the singles' guests as featured; D1 keeps remixers out of ARTIST"
+open = "the remixers' exact set and name forms: Discogs credits them as remixers, Deezer as featured artists, MusicBrainz only in the titles, each spelling some differently"
+
+[today.deezer]
+release = ["Lady Gaga (main)", "Colby O'Donis (guest)", "Marilyn Manson (guest)", "Beyoncé (guest)"]
+tracks = 10
+
+[today.musicbrainz]
+release = ["Lady Gaga (main)", "Marilyn Manson (guest)", "Beyoncé (guest)"]
+tracks = 10
+
+[today.discogs]
+release = ["Lady Gaga (main)", "Richard \"Humpty\" Vission (remixer)", "Guena LG (remixer)", "Marilyn Manson (guest)", "Chew-Fu Phat (remixer)", "Frankmusik (remixer)", "Stuart Price (remixer)", "Starsmith (remixer)", "Beyoncé (guest)", "Passion Pit (remixer)", "The Sound Of Arrows (remixer)", "Monarchy (remixer)"]
+tracks = 10
+
+[today.qobuz]
+release = ["Lady Gaga (main)", "Colby O'Donis (guest)", "Marilyn Manson (guest)", "Beyoncé (guest)"]
+tracks = 10
+
+[today.merge]
+release = ["Lady Gaga (main)", "Colby O'Donis (main)", "Richard Vission (remixer)", "LLG vs. GLG radio mix (remixer)", "Guena LG (remixer)", "Marilyn Manson (main)", "Chew Fu Ghettohouse (remixer)", "Chew-Fu Phat (remixer)", "FrankMusik \"Cut Snare Edit\" (remixer)", "Stuart Price (remixer)", "Glam as You (remixer)", "Starsmith (remixer)", "Beyoncé (main)", "Passion Pit (remixer)", "The Sound of Arrows (remixer)", "Sounds of Arrow (remixer)", "Monarchy 'Stylites' (remixer)"]
+tracks = 10
+
+[today.output]
+albumartist = "Various"
+tracks = ["Lady Gaga & Colby O'Donis | Just Dance (Richard Vission Remix) | REMIXER Richard Vission", "Lady Gaga | Poker Face (Llg Vs Glg Radio Mix Remix) | REMIXER Guena LG", "Lady Gaga & Marilyn Manson | Lovegame (Chew Fu Ghettohouse Fix) | REMIXER Chew-Fu Phat", "Lady Gaga | Eh, Eh (Nothing Else I Can Say) (Frankmuzik Remix)", "Lady Gaga | Paparazzi (Stuart Price Remix) | REMIXER Stuart Price", "Lady Gaga | The Fame (Glam As You Remix) | REMIXER Guena LG", "Lady Gaga | Bad Romance (Starsmith Remix) | REMIXER Starsmith", "Lady Gaga & Beyoncé | Telephone (Passion Pit Remix) | REMIXER Passion Pit", "Lady Gaga | Alejandro (Sound Of Arrows Remix) | REMIXER The Sound of Arrows", "Lady Gaga | Dance In The Dark (Monarchy 'Stylites' Remix)"]
+
+[today."output-guests-in-title"]
+albumartist = "Various"
+tracks = ["Lady Gaga & Colby O'Donis | Just Dance (Richard Vission Remix) | REMIXER Richard Vission", "Lady Gaga | Poker Face (Llg Vs Glg Radio Mix Remix) | REMIXER Guena LG", "Lady Gaga & Marilyn Manson | Lovegame (Chew Fu Ghettohouse Fix) | REMIXER Chew-Fu Phat", "Lady Gaga | Eh, Eh (Nothing Else I Can Say) (Frankmuzik Remix)", "Lady Gaga | Paparazzi (Stuart Price Remix) | REMIXER Stuart Price", "Lady Gaga | The Fame (Glam As You Remix) | REMIXER Guena LG", "Lady Gaga | Bad Romance (Starsmith Remix) | REMIXER Starsmith", "Lady Gaga & Beyoncé | Telephone (Passion Pit Remix) | REMIXER Passion Pit", "Lady Gaga | Alejandro (Sound Of Arrows Remix) | REMIXER The Sound of Arrows", "Lady Gaga | Dance In The Dark (Monarchy 'Stylites' Remix)"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
+# the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Just Dance (Richard Vission Remix)"]
+artist = ["Lady Gaga", "Colby O'Donis", "Richard Vission"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Poker Face (LLG vs GLG Radio Mix)"]
+artist = ["Lady Gaga", "Guena LG"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["LoveGame (Chew Fu Ghettohouse Fix)"]
+artist = ["Lady Gaga", "Marilyn Manson", "Chew Fu"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Eh, Eh (Nothing Else I Can Say) (FrankMusik \"Cut Snare Edit\" Remix)"]
+artist = ["Lady Gaga", "Frankmusik"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Paparazzi (Stuart Price Remix)"]
+artist = ["Lady Gaga", "Stuart Price"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["The Fame (Glam As You Remix - Radio Edit Version)"]
+artist = ["Lady Gaga", "Guena LG"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Bad Romance (Starsmith Remix)"]
+artist = ["Lady Gaga", "Starsmith"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Telephone (Passion Pit Remix)"]
+artist = ["Lady Gaga", "Beyoncé", "Passion Pit"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Alejandro (The Sound of Arrows Remix)"]
+artist = ["Lady Gaga", "The Sound of Arrows"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Dance In The Dark (Monarchy 'Stylites' Remix)"]
+artist = ["Lady Gaga", "Monarchy"]
+album = ["The Remix"]
+albumartist = ["Lady Gaga"]
+date = ["2010-07-22"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 2383521,
+ "title": "The Remix",
+ "upc": "602527462943",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 132,
+    "name": "Pop"
+   }
+  ]
+ },
+ "label": "Streamline/Interscope",
+ "release_date": "2010-07-22",
+ "tracklist": [
+  {
+   "SNG_ID": "25042251",
+   "SNG_TITLE": "Just Dance",
+   "VERSION": "(Richard Vission Remix)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Colby O'Donis"
+    ],
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USUM70810296",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042261",
+   "SNG_TITLE": "Poker Face",
+   "VERSION": "(LLG vs GLG Radio Mix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USUM70844740",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042271",
+   "SNG_TITLE": "LoveGame",
+   "VERSION": "(Chew Fu Ghettohouse Fix)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Marilyn Manson"
+    ],
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USUM70973187",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042281",
+   "SNG_TITLE": "Eh, Eh (Nothing Else I Can Say)",
+   "VERSION": "(FrankMusik \"Cut Snare Edit\" Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USUM70901088",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042291",
+   "SNG_TITLE": "Paparazzi",
+   "VERSION": "(Stuart Price Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USUM70958189",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042301",
+   "SNG_TITLE": "The Fame",
+   "VERSION": "(Glam As You Remix - Radio Edit Version)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USUM70958190",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042311",
+   "SNG_TITLE": "Bad Romance",
+   "VERSION": "(Starsmith Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USUM70911081",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "25042321",
+   "SNG_TITLE": "Telephone",
+   "VERSION": "(Passion Pit Remix)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Beyoncé"
+    ],
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USUM71001576",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042331",
+   "SNG_TITLE": "Alejandro",
+   "VERSION": "(The Sound of Arrows Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USUM71009889",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "25042341",
+   "SNG_TITLE": "Dance In The Dark",
+   "VERSION": "(Monarchy 'Stylites' Remix)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Lady Gaga"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USUM71009697",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="ec3baf33-2d0f-4eea-a3ec-8bcd582bf939"><title>The Remix</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit><date>2010-07-22</date><release-event-list><release-event><date>2010-07-22</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Interscope Records</name></label></label-info><label-info><label><name>Streamline Records</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Lady Gaga</name></artist></name-credit><name-credit><artist><name>Colby O’Donis</name></artist></name-credit></artist-credit><recording><title>Just Dance (Richard Vission remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><title>Poker Face (LLG vs. GLG Radio Mix)</title><recording><title>Poker Face (LLG vs. GLG radio mix remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><title>LoveGame (Chew Fu Ghettohouse Fix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Lady Gaga</name></artist></name-credit><name-credit><artist><name>Marilyn Manson</name></artist></name-credit></artist-credit><recording><title>LoveGame (Chew Fu Ghettohouse mix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Lady Gaga</name></artist></name-credit><name-credit><artist><name>Marilyn Manson</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><title>Eh, Eh (Nothing Else I Can Say) (FrankMusik “Cut Snare Edit” remix)</title><recording><title>Eh, Eh (Nothing Else I Can Say) (FrankMusik remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>Paparazzi (Stuart Price remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><title>The Fame (Glam as You remix) (radio edit)</title><recording><title>The Fame (Glam as You remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>Bad Romance (Starsmith remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Telephone (Passion Pit remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Lady Gaga</name></artist></name-credit><name-credit><artist><name>Beyoncé</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><title>Alejandro (The Sound of Arrows remix)</title><recording><title>Alejandro (Sounds of Arrow remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><recording><title>Dance in the Dark (Monarchy ‘Stylites’ remix)</title><artist-credit><name-credit><artist><name>Lady Gaga</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 2384351,
+ "year": 2010,
+ "artists": [
+  {
+   "name": "Lady Gaga",
+   "anv": "",
+   "role": "",
+   "id": 1103159
+  }
+ ],
+ "labels": [
+  {
+   "name": "Streamline Records",
+   "catno": "B0014633-02",
+   "id": 122077
+  },
+  {
+   "name": "Konlive",
+   "catno": "B0014633-02",
+   "id": 122078
+  },
+  {
+   "name": "Cherrytree Records",
+   "catno": "B0014633-02",
+   "id": 52310
+  },
+  {
+   "name": "Interscope Records",
+   "catno": "B0014633-02",
+   "id": 2311
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Compilation"
+   ]
+  }
+ ],
+ "title": "The Remix",
+ "released": "2010-08-03",
+ "genres": [
+  "Electronic",
+  "Pop"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Just Dance (Richard Vission Remix)",
+   "extraartists": [
+    {
+     "name": "Richard \"Humpty\" Vission",
+     "anv": "Richard Vission",
+     "role": "Remix, Producer [Additional]",
+     "id": 416009
+    }
+   ],
+   "duration": "6:15"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Poker Face (Llg Vs Glg Radio Mix Remix)",
+   "extraartists": [
+    {
+     "name": "Guena LG",
+     "anv": "Guéna LG",
+     "role": "Remix, Producer [Additional]",
+     "id": 87237
+    }
+   ],
+   "duration": "4:03"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Lovegame (Chew Fu Ghettohouse Fix)",
+   "extraartists": [
+    {
+     "name": "Marilyn Manson (2)",
+     "anv": "",
+     "role": "Featuring [Vocals]",
+     "id": 392594
+    },
+    {
+     "name": "Chew-Fu Phat",
+     "anv": "Chew Fu",
+     "role": "Remix",
+     "id": 39279
+    }
+   ],
+   "duration": "5:21"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Eh, Eh (Nothing Else I Can Say) (Frankmuzik Remix)",
+   "extraartists": [
+    {
+     "name": "Frankmusik",
+     "anv": "Frankmuzik",
+     "role": "Remix, Producer [Additional]",
+     "id": 892572
+    }
+   ],
+   "duration": "3:49"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Paparazzi (Stuart Price Remix)",
+   "extraartists": [
+    {
+     "name": "Stuart Price",
+     "anv": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 125270
+    }
+   ],
+   "duration": "3:20"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "The Fame (Glam As You Remix)",
+   "extraartists": [
+    {
+     "name": "Guena LG",
+     "anv": "Guéna LG",
+     "role": "Remix, Producer [Additional]",
+     "id": 87237
+    }
+   ],
+   "duration": "3:57"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Bad Romance (Starsmith Remix)",
+   "extraartists": [
+    {
+     "name": "Starsmith",
+     "anv": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 1498791
+    }
+   ],
+   "duration": "4:57"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Telephone (Passion Pit Remix)",
+   "extraartists": [
+    {
+     "name": "Beyoncé",
+     "anv": "",
+     "role": "Featuring [Vocals]",
+     "id": 52835
+    },
+    {
+     "name": "Passion Pit",
+     "anv": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 1247036
+    }
+   ],
+   "duration": "5:14"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Alejandro (Sound Of Arrows Remix)",
+   "extraartists": [
+    {
+     "name": "The Sound Of Arrows",
+     "anv": "Sound Of Arrows",
+     "role": "Remix, Producer [Additional]",
+     "id": 1349507
+    }
+   ],
+   "duration": "3:59"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Dance In The Dark (Monarchy 'Stylites' Remix)",
+   "extraartists": [
+    {
+     "name": "Monarchy (2)",
+     "anv": "",
+     "role": "Remix, Producer [Additional]",
+     "id": 1692762
+    }
+   ],
+   "duration": "6:09"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Martin Kierszenbaum",
+   "anv": "",
+   "role": "A&R",
+   "id": 110364
+  },
+  {
+   "name": "Vincent Herbert",
+   "anv": "",
+   "role": "A&R",
+   "id": 52534
+  },
+  {
+   "name": "Vincent Herbert",
+   "anv": "",
+   "role": "Executive-Producer",
+   "id": 52534
+  },
+  {
+   "name": "Troy Carter (2)",
+   "anv": "",
+   "role": "Management",
+   "id": 1637972
+  },
+  {
+   "name": "Max Abadian",
+   "anv": "",
+   "role": "Photography By",
+   "id": 2322214
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "ow9fz03z2krna",
+ "upc": "0602527462943",
+ "title": "The Remix",
+ "version": null,
+ "tracks_count": 10,
+ "artist": {
+  "name": "Lady Gaga"
+ },
+ "genres_list": [
+  "Pop"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Just Dance",
+    "version": "Richard Vission Remix",
+    "track_number": 1,
+    "performers": "Aliaune \"Akon\" Thiam, ComposerLyricist, BackgroundVocalist - Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Dave Russell, RecordingEngineer - Redone, Producer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer - Robert Orton, MixingEngineer - Richard Vission, Remixer, AdditionalProducer - Colby O'Donis, Vocalist, FeaturedArtist"
+   },
+   {
+    "title": "Poker Face",
+    "version": "LLG vs GLG Radio Mix",
+    "track_number": 2,
+    "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Producer, Vocalist, MainArtist, ComposerLyricist - Dave Russell, Engineer - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist - Robert Orton, MixingEngineer - Guéna LG, Remixer"
+   },
+   {
+    "title": "LoveGame",
+    "version": "Chew Fu Ghettohouse Fix",
+    "track_number": 3,
+    "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer - Robert Orton, MixingEngineer - Marilyn Manson, FeaturedArtist - Chew Fu, Remixer"
+   },
+   {
+    "title": "Eh, Eh (Nothing Else I Can Say)",
+    "version": "FrankMusik \"Cut Snare Edit\" Remix",
+    "track_number": 4,
+    "performers": "Martin Kierszenbaum, ComposerLyricist - Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Redone, Producer, Engineer, Programmer, BackgroundVocalist, RecordingEngineer - Robert Orton, MixingEngineer - FrankMusik, Remixer"
+   },
+   {
+    "title": "Paparazzi",
+    "version": "Stuart Price Remix",
+    "track_number": 5,
+    "performers": "Robert Fusari, Producer, ComposerLyricist - Lady Gaga, Piano, Synthesizer, Vocalist, MainArtist, ComposerLyricist, CoProducer, AdditionalProducer - Stuart Price, Remixer - Robert Orton, MixingEngineer"
+   },
+   {
+    "title": "The Fame",
+    "version": "Glam As You Remix - Radio Edit Version",
+    "track_number": 6,
+    "performers": "Martin Kierszenbaum, ComposerLyricist - Lady Gaga, Vocalist, MainArtist, ComposerLyricist - Guéna LG, Producer, Remixer"
+   },
+   {
+    "title": "Bad Romance",
+    "version": "Starsmith Remix",
+    "track_number": 7,
+    "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, VocalArranger - Starsmith, Remixer - Mark 'Spike' Stent, MixingEngineer - Johnny Severin, VocalEditingEngineer - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer, CoProducer, VocalEditingEngineer, VocalArranger - Eelco Bakker, Engineer - Dave Russel, Engineer"
+   },
+   {
+    "title": "Telephone",
+    "version": "Passion Pit Remix",
+    "track_number": 8,
+    "performers": "LaShawn Daniels, ComposerLyricist - Rodney Jerkins, Producer, ComposerLyricist, MixingEngineer - Beyoncé Knowles, Vocalist, ComposerLyricist - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, RecordingEngineer, CoProducer - Paul Foley, RecordingEngineer - Mark 'Spike' Stent, MixingEngineer - Matty Green, MixingSecondEngineer - Passion Pit, Remixer - Redone, RecordingEngineer - Lazonate Franklin, ComposerLyricist - Hisashi Mizoguchi, RecordingEngineer - Mike \"Handz\" Donaldson, RecordingEngineer - Takayuki Matsushima, RecordingEngineer - Beyoncé, FeaturedArtist"
+   },
+   {
+    "title": "Alejandro",
+    "version": "The Sound of Arrows Remix",
+    "track_number": 9,
+    "performers": "Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, CoProducer, VocalArranger - Johnny Severin, VocalEditingEngineer - Redone, Producer, Engineer, Programmer, ComposerLyricist, BackgroundVocalist, RecordingEngineer, VocalEditingEngineer, VocalArranger - Robert Orton, MixingEngineer - The Sound of Arrows, Remixer - Eelco Bakker, Engineer"
+   },
+   {
+    "title": "Dance In The Dark",
+    "version": "Monarchy 'Stylites' Remix",
+    "track_number": 10,
+    "performers": "Fernando Garibay, Producer, Programmer, ComposerLyricist, RecordingArranger - Gene Grimaldi, MasteringEngineer - Lady Gaga, Vocalist, MainArtist, ComposerLyricist, CoProducer, RecordingArranger - Robert Orton, MixingEngineer - Dan Parry, RecordingEngineer - Christian DeLano, RecordingEngineer - Monarchy, Remixer - Jonas Westling, RecordingEngineer"
+   }
+  ]
+ }
+}
+'''

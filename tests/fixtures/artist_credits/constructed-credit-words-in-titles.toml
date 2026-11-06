@@ -1,0 +1,33 @@
+album = "Constructed: credit words in track titles"
+why = "Two title shapes left open by #947 and closed by #959: a credit word used as an ordinary word ('Heroic Feat', 'A Feat of Strength'), so the store's guest is never added; and a title crediting someone other than the store's guest ('Song (feat. Guest B)' with guest Guest C), so nothing is added. The last track is a control. Made-up titles and names, no store data."
+constructed = true
+known_wrong = []
+
+[right]
+open = "whether the guest is added to such titles: to decide with the model's precedence rules rather than patching credit_in_title before then (#869)"
+
+[today.output]
+albumartist = ""
+tracks = ["Artist A (feat. Guest B) | Heroic Feat", "Artist A (feat. Guest B) | A Feat of Strength", "Artist A (feat. Guest C) | Song (feat. Guest B)", "Artist A (feat. Guest B) | Plain Song"]
+
+[today."output-guests-in-title"]
+albumartist = ""
+tracks = ["Artist A | Heroic Feat", "Artist A | A Feat of Strength", "Artist A | Song (feat. Guest B)", "Artist A | Plain Song (feat. Guest B)"]
+
+# Each track's title and its credits as a store gives them, as (name, role).
+
+[[title_track]]
+title = "Heroic Feat"
+artists = [["Artist A", "main"], ["Guest B", "guest"]]
+
+[[title_track]]
+title = "A Feat of Strength"
+artists = [["Artist A", "main"], ["Guest B", "guest"]]
+
+[[title_track]]
+title = "Song (feat. Guest B)"
+artists = [["Artist A", "main"], ["Guest C", "guest"]]
+
+[[title_track]]
+title = "Plain Song"
+artists = [["Artist A", "main"], ["Guest B", "guest"]]

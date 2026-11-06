@@ -1,0 +1,843 @@
+album = "Queen, A Night at the Opera"
+why = "Edition sprawl: one album as standard, deluxe (18 tracks, Deezer 1007323081, UPC 602527644271) and the 1975 LP; credits must not change with the edition. Discogs makes Brian May a guest of his own band."
+edition = "2011 remaster, standard 12 tracks (Deezer 1007321681 = MusicBrainz 59c466a7 by barcode); Discogs 612780 is master 5863's main release (1975 EMI LP)"
+known_wrong = []
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Queen"]
+how_we_know = "Deezer, MusicBrainz and Discogs agree on Queen"
+
+[today.deezer]
+release = ["Queen (main)"]
+tracks = 12
+
+[today.musicbrainz]
+release = ["Queen (main)"]
+tracks = 12
+
+[today.discogs]
+release = ["Queen (main)", "Brian May (guest)", "Brian May (arranger)"]
+tracks = 12
+
+[today.qobuz]
+release = ["Queen (main)"]
+tracks = 12
+
+[today.merge]
+release = ["Queen (main)", "Brian May (guest)", "Brian May (arranger)"]
+tracks = 12
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Death On Two Legs (Dedicated To...)"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Lazing On A Sunday Afternoon"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["I'm In Love With My Car"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["You're My Best Friend"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["'39"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Sweet Lady"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Seaside Rendezvous"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["The Prophet's Song"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Love of My Life"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Good Company"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Bohemian Rhapsody"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["God Save the Queen"]
+artist = ["Queen"]
+album = ["A Night At The Opera"]
+albumartist = ["Queen"]
+date = ["2005-11-22"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 1007321681,
+ "title": "A Night At The Opera",
+ "upc": "602527644264",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 152,
+    "name": "Rock"
+   }
+  ]
+ },
+ "label": "Columbia",
+ "release_date": "2005-11-22",
+ "tracklist": [
+  {
+   "SNG_ID": "4091937281",
+   "SNG_TITLE": "Death On Two Legs (Dedicated To...)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBUM71100668",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937291",
+   "SNG_TITLE": "Lazing On A Sunday Afternoon",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBUM71100535",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937301",
+   "SNG_TITLE": "I'm In Love With My Car",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBUM71100534",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937311",
+   "SNG_TITLE": "You're My Best Friend",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBUM71029609",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937331",
+   "SNG_TITLE": "'39",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBUM71100531",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937341",
+   "SNG_TITLE": "Sweet Lady",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBUM71100538",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937361",
+   "SNG_TITLE": "Seaside Rendezvous",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBUM71100537",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937371",
+   "SNG_TITLE": "The Prophet's Song",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBUM71100539",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937381",
+   "SNG_TITLE": "Love of My Life",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBUM71100536",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937391",
+   "SNG_TITLE": "Good Company",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBUM71100533",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4091937401",
+   "SNG_TITLE": "Bohemian Rhapsody",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBUM71029604",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "4091937411",
+   "SNG_TITLE": "God Save the Queen",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "GBUM71100532",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="59c466a7-d981-4078-bffb-10bab7b023e6"><title>A Night at the Opera</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><release-group><title>A Night at the Opera</title><first-release-date>1975-11-21</first-release-date><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit></release-group><date>2011</date><release-event-list><release-event><date>2011</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>EMI</name></label></label-info><label-info><label><name>Virgin EMI Records</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Death on Two Legs (Dedicated to…)</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Lazing on a Sunday Afternoon</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>I’m in Love With My Car</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>You’re My Best Friend</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>’39</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Sweet Lady</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Seaside Rendezvous</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>The Prophet’s Song</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Love of My Life</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Good Company</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>Bohemian Rhapsody</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>God Save the Queen</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 612780,
+ "year": 1975,
+ "artists": [
+  {
+   "name": "Queen",
+   "anv": "",
+   "role": "",
+   "id": 81013
+  }
+ ],
+ "labels": [
+  {
+   "name": "EMI",
+   "catno": "EMTC 103",
+   "id": 26126
+  },
+  {
+   "name": "EMI",
+   "catno": "0C 066 ○ 97176",
+   "id": 26126
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl"
+  }
+ ],
+ "title": "A Night At The Opera",
+ "released": "1975-11-21",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "Death On Two Legs (Dedicated To...)",
+   "extraartists": [
+    {
+     "name": "Freddie Mercury",
+     "anv": "Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "3:37"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Lazing On A Sunday Afternoon",
+   "extraartists": [
+    {
+     "name": "Freddie Mercury",
+     "anv": "Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "1:06"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "I'm In Love With My Car",
+   "extraartists": [
+    {
+     "name": "Roger Taylor",
+     "anv": "",
+     "role": "Vocals [Vocal]",
+     "id": 208268
+    },
+    {
+     "name": "Roger Taylor",
+     "anv": "Taylor",
+     "role": "Written-By",
+     "id": 208268
+    }
+   ],
+   "duration": "3:00"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "You're My Best Friend",
+   "extraartists": [
+    {
+     "name": "John Deacon",
+     "anv": "",
+     "role": "Electric Piano",
+     "id": 268365
+    },
+    {
+     "name": "John Deacon",
+     "anv": "Deacon",
+     "role": "Written-By",
+     "id": 268365
+    }
+   ],
+   "duration": "2:47"
+  },
+  {
+   "position": "A5",
+   "type_": "track",
+   "title": "'39",
+   "extraartists": [
+    {
+     "name": "John Deacon",
+     "anv": "",
+     "role": "Double Bass",
+     "id": 268365
+    },
+    {
+     "name": "Brian May",
+     "anv": "",
+     "role": "Vocals [Vocal]",
+     "id": 253217
+    },
+    {
+     "name": "Brian May",
+     "anv": "May",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "3:13"
+  },
+  {
+   "position": "A6",
+   "type_": "track",
+   "title": "Sweet Lady",
+   "extraartists": [
+    {
+     "name": "Brian May",
+     "anv": "",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "4:09"
+  },
+  {
+   "position": "A7",
+   "type_": "track",
+   "title": "Seaside Rendezvous",
+   "extraartists": [
+    {
+     "name": "Roger Taylor",
+     "anv": "",
+     "role": "Orchestrated By [Vocal Orchestration Of Brass]",
+     "id": 208268
+    },
+    {
+     "name": "Freddie Mercury",
+     "anv": "",
+     "role": "Orchestrated By [Vocal Orchestration Of Woodwind]",
+     "id": 79949
+    },
+    {
+     "name": "Freddie Mercury",
+     "anv": "Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "2:12"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "The Prophet's Song",
+   "extraartists": [
+    {
+     "name": "Brian May",
+     "anv": "",
+     "role": "Koto [Toy Koto]",
+     "id": 253217
+    },
+    {
+     "name": "Brian May",
+     "anv": "May",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "7:31"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Love Of My Life",
+   "extraartists": [
+    {
+     "name": "Brian May",
+     "anv": "",
+     "role": "Harp",
+     "id": 253217
+    },
+    {
+     "name": "Freddie Mercury",
+     "anv": "Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "4:06"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "Good Company",
+   "extraartists": [
+    {
+     "name": "Brian May",
+     "anv": "",
+     "role": "Guitar [Guitar Jazz Band]",
+     "id": 253217
+    },
+    {
+     "name": "Brian May",
+     "anv": "",
+     "role": "Ukulele [Genuine Aloha Ukelele (Made In Japan)]",
+     "id": 253217
+    },
+    {
+     "name": "Brian May",
+     "anv": "",
+     "role": "Vocals",
+     "id": 253217
+    },
+    {
+     "name": "Brian May",
+     "anv": "May",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "3:22"
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "Bohemian Rhapsody",
+   "extraartists": [
+    {
+     "name": "Brian May",
+     "anv": "Brian",
+     "role": "Vocals [Operatic]",
+     "id": 253217
+    },
+    {
+     "name": "Freddie Mercury",
+     "anv": "Freddie",
+     "role": "Vocals [Operatic]",
+     "id": 79949
+    },
+    {
+     "name": "Roger Taylor",
+     "anv": "Roger",
+     "role": "Vocals [Operatic]",
+     "id": 208268
+    },
+    {
+     "name": "Freddie Mercury",
+     "anv": "Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "5:48"
+  },
+  {
+   "position": "B5",
+   "type_": "track",
+   "title": "God Save The Queen",
+   "extraartists": [
+    {
+     "name": "Brian May",
+     "anv": "May",
+     "role": "Arranged By",
+     "id": 253217
+    },
+    {
+     "name": "Traditional",
+     "anv": "Trad.",
+     "role": "Written-By",
+     "id": 151641
+    }
+   ],
+   "duration": "1:07"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "David Costa",
+   "anv": "",
+   "role": "Art Direction",
+   "id": 651437
+  },
+  {
+   "name": "Queen",
+   "anv": "",
+   "role": "Composed By [All Titles Composed], Arranged By [Arranged], Performer [Performed Exclusively By]",
+   "id": 81013
+  },
+  {
+   "name": "John Deacon",
+   "anv": "",
+   "role": "Electric Bass",
+   "id": 268365
+  },
+  {
+   "name": "Gary Lyons",
+   "anv": "",
+   "role": "Engineer  [Invaluable Additional Engineering]",
+   "id": 268319
+  },
+  {
+   "name": "Mike Stone",
+   "anv": "",
+   "role": "Engineer [Executive]",
+   "id": 94526
+  },
+  {
+   "name": "Rick Curtin",
+   "anv": "",
+   "role": "Engineer [Special Thanks]",
+   "id": 6607112
+  },
+  {
+   "name": "John Harris",
+   "anv": "",
+   "role": "Equipment [Supervision]",
+   "id": 255980
+  },
+  {
+   "name": "Brian May",
+   "anv": "",
+   "role": "Guitar [Guitars], Orchestra [Orchestral Backdrops]",
+   "id": 253217
+  },
+  {
+   "name": "Chris Blair",
+   "anv": "Blair's",
+   "role": "Lacquer Cut By",
+   "id": 336941
+  },
+  {
+   "name": "John Reid (8)",
+   "anv": "",
+   "role": "Management",
+   "id": 1649961
+  },
+  {
+   "name": "Roger Taylor",
+   "anv": "",
+   "role": "Percussion",
+   "id": 208268
+  },
+  {
+   "name": "Queen",
+   "anv": "",
+   "role": "Producer [Produced By]",
+   "id": 81013
+  },
+  {
+   "name": "Roy Thomas Baker",
+   "anv": "",
+   "role": "Producer [Produced By]",
+   "id": 164557
+  },
+  {
+   "name": "Freddie Mercury",
+   "anv": "",
+   "role": "Vocals [Vocals, Vocals And More Vocals], Piano [Bechstein Debauchery]",
+   "id": 79949
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "zw9o56jyjb644",
+ "upc": "0602527644264",
+ "title": "A Night At The Opera",
+ "tracks_count": 12,
+ "artist": {
+  "name": "Queen"
+ },
+ "genres_list": [
+  "Rock"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Death On Two Legs (Dedicated To...)",
+    "track_number": 1
+   },
+   {
+    "title": "Lazing On A Sunday Afternoon",
+    "track_number": 2
+   },
+   {
+    "title": "I'm In Love With My Car",
+    "track_number": 3
+   },
+   {
+    "title": "You're My Best Friend",
+    "track_number": 4
+   },
+   {
+    "title": "'39",
+    "track_number": 5
+   },
+   {
+    "title": "Sweet Lady",
+    "track_number": 6
+   },
+   {
+    "title": "Seaside Rendezvous",
+    "track_number": 7
+   },
+   {
+    "title": "The Prophet's Song",
+    "track_number": 8
+   },
+   {
+    "title": "Love Of My Life",
+    "track_number": 9
+   },
+   {
+    "title": "Good Company",
+    "track_number": 10
+   },
+   {
+    "title": "Bohemian Rhapsody",
+    "track_number": 11
+   },
+   {
+    "title": "God Save the Queen",
+    "track_number": 12
+   }
+  ]
+ }
+}
+'''

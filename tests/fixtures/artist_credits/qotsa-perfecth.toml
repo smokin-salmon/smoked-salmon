@@ -1,0 +1,611 @@
+album = "Queens of the Stone Age, Perfecth"
+why = "Bandcamp against the other stores, simple band: all four agree on the artist; only the capitalisation differs, and the page's UPC goes unread."
+edition = "Matador 2026-10-30, 9 tracks: Deezer 1116702872 and MusicBrainz 7995c76c by barcode; Bandcamp page carries the same UPC; Discogs 38870799 is master 4390572's main release (vinyl)"
+known_wrong = []
+bandcamp_url = "https://qotsa.bandcamp.com/album/perfecth"
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+bandcamp = "the album page, trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Queens of the Stone Age"]
+how_we_know = "MusicBrainz and the band's own Bandcamp page agree on the form; Deezer and Discogs agree on the artist, capitalised 'Of The'"
+
+[right.name_forms]
+"Queens of the Stone Age" = ["Queens Of The Stone Age"]
+
+[today.deezer]
+release = ["Queens Of The Stone Age (main)"]
+tracks = 9
+
+[today.musicbrainz]
+release = ["Queens of the Stone Age (main)"]
+tracks = 9
+
+[today.discogs]
+release = ["Queens Of The Stone Age (main)"]
+tracks = 9
+
+[today.bandcamp]
+release = ["Queens of the Stone Age (main)"]
+tracks = 9
+
+[today.qobuz]
+release = ["Queens Of The Stone Age (main)"]
+tracks = 9
+
+[today.merge]
+release = ["Queens Of The Stone Age (main)"]
+tracks = 9
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["It's Only Love"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Insignificant Other"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Where The Goth Girls At?"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Mono"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["From the Cliff"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Sunday"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Easy Street"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Phantom Limb"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Run Away From the Mob"]
+artist = ["Queens Of The Stone Age"]
+album = ["Perfecth"]
+albumartist = ["Queens Of The Stone Age"]
+date = ["2026-10-30"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 1116702872,
+ "title": "Perfecth",
+ "upc": "191401225359",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 85,
+    "name": "Alternative"
+   }
+  ]
+ },
+ "label": "Matador",
+ "release_date": "2026-10-30",
+ "tracklist": [
+  {
+   "SNG_ID": "4335528212",
+   "SNG_TITLE": "It's Only Love",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USMTD2600082",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528222",
+   "SNG_TITLE": "Insignificant Other",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USMTD2600083",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528232",
+   "SNG_TITLE": "Where The Goth Girls At?",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USMTD2600084",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528242",
+   "SNG_TITLE": "Mono",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USMTD2600085",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528252",
+   "SNG_TITLE": "From the Cliff",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USMTD2600086",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528262",
+   "SNG_TITLE": "Sunday",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USMTD2600087",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528272",
+   "SNG_TITLE": "Easy Street",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USMTD2600088",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528282",
+   "SNG_TITLE": "Phantom Limb",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USMTD2600089",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4335528292",
+   "SNG_TITLE": "Run Away From the Mob",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queens Of The Stone Age"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USMTD2600090",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="7995c76c-6471-4055-be66-3d384a0ba276"><title>Perfecth</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit><date>2026-10-30</date><release-event-list><release-event><date>2026-10-30</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Matador</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>It’s Only Love</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><recording><title>Insignificant Other</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><recording><title>Where the Goth Girls At?</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><recording><title>Mono</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>From the Cliff</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><recording><title>Sunday</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>Easy Street</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Phantom Limb</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><recording><title>Run Away From the Mob</title><artist-credit><name-credit><artist><name>Queens of the Stone Age</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 38870799,
+ "year": 2026,
+ "artists": [
+  {
+   "name": "Queens Of The Stone Age",
+   "id": 56168
+  }
+ ],
+ "labels": [
+  {
+   "name": "Matador",
+   "catno": "OLE2253LPE",
+   "id": 194
+  },
+  {
+   "name": "Matador",
+   "catno": "OLE2253LP",
+   "id": 194
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "descriptions": [
+    "LP",
+    "Album",
+    "Limited Edition"
+   ]
+  }
+ ],
+ "title": "Perfecth",
+ "released": "2026-10-30",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "It's Only Love"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Insignificant Other"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "Where The Goth Girls At?"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "Mono"
+  },
+  {
+   "position": "A5",
+   "type_": "track",
+   "title": "From The Cliff"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Sunday"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Easy Street"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "Phantom Limb"
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "Run Away From The Mob"
+  }
+ ]
+}
+'''
+bandcamp = '''
+<html><body>
+
+<div id="name-section">
+<h2 class="trackTitle">
+            Perfecth
+            
+        </h2>
+<h3 style="margin:0px;">by 
+        <span>
+<a href="https://qotsa.bandcamp.com">Queens of the Stone Age</a>
+</span>
+</h3>
+</div>
+
+<div id="tralbumArt">
+<a class="popupImage" href="https://f4.bcbits.com/img/a2179341760_10.jpg">
+<picture>
+
+<img src="https://f4.bcbits.com/img/a2179341760_2.jpg"/>
+</picture>
+</a>
+</div>
+<table class="track_list track_table" id="track_table">
+<tr class="track_row_view linked" rel="tracknum=1">
+
+<td class="track-number-col"><div class="track_number secondaryText">1.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/its-only-love"><span class="track-title">It's Only Love</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=2">
+
+<td class="track-number-col"><div class="track_number secondaryText">2.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/insignificant-other"><span class="track-title">Insignificant Other</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=3">
+
+<td class="track-number-col"><div class="track_number secondaryText">3.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/where-the-goth-girls-at"><span class="track-title">Where The Goth Girls At?</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=4">
+
+<td class="track-number-col"><div class="track_number secondaryText">4.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/mono"><span class="track-title">Mono</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=5">
+
+<td class="track-number-col"><div class="track_number secondaryText">5.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/from-the-cliff"><span class="track-title">From the Cliff</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=6">
+
+<td class="track-number-col"><div class="track_number secondaryText">6.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/sunday"><span class="track-title">Sunday</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=7">
+
+<td class="track-number-col"><div class="track_number secondaryText">7.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/easy-street-1"><span class="track-title">Easy Street</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=8">
+
+<td class="track-number-col"><div class="track_number secondaryText">8.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/phantom-limb"><span class="track-title">Phantom Limb</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=9">
+
+<td class="track-number-col"><div class="track_number secondaryText">9.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/run-away-from-the-mob"><span class="track-title">Run Away From the Mob</span></a>
+
+</div>
+</td>
+
+
+</tr>
+</table>
+<div class="tralbumData tralbum-credits">
+            
+                released October 30, 2026
+            
+            2026, Queens of the Stone Age under exclusive license to Matador Records
+            </div>
+
+<div class="tralbumData tralbum-tags tralbum-tags-nu hidden">
+
+<a class="tag" href="https://bandcamp.com/discover/alternative?from=tralbum&amp;artist=509038484">alternative</a>
+<a class="tag" href="https://bandcamp.com/discover/rock?from=tralbum&amp;artist=509038484">rock</a>
+
+</div>
+</body></html>
+'''
+qobuz = '''
+{
+ "id": "bwmuu6rf7umge",
+ "upc": "0191401225366",
+ "title": "Perfecth",
+ "tracks_count": 9,
+ "artist": {
+  "name": "Queens Of The Stone Age"
+ },
+ "genres_list": [
+  "Alternative & Indie"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "It's Only Love",
+    "track_number": 1
+   },
+   {
+    "title": "Insignificant Other",
+    "track_number": 2
+   },
+   {
+    "title": "Where The Goth Girls At?",
+    "track_number": 3
+   },
+   {
+    "title": "Mono",
+    "track_number": 4
+   },
+   {
+    "title": "From the Cliff",
+    "track_number": 5
+   },
+   {
+    "title": "Sunday",
+    "track_number": 6
+   },
+   {
+    "title": "Easy Street",
+    "track_number": 7
+   },
+   {
+    "title": "Phantom Limb",
+    "track_number": 8
+   },
+   {
+    "title": "Run Away From the Mob",
+    "track_number": 9
+   }
+  ]
+ }
+}
+'''

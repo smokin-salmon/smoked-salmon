@@ -1,0 +1,874 @@
+album = "Emerson String Quartet, Bartók: The String Quartets"
+why = "A string quartet as the performer, the composer in the title: the composer must not become the main artist."
+edition = "Qobuz 0002894236572 is the same UPC less its check digit, the same 23 tracks."
+known_wrong = ["Discogs parse: 0 tracks, no artists (index tracks)", "MusicBrainz parse and the merge: the four players made main beside the quartet"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Emerson String Quartet"]
+not_main = ["Béla Bartók"]
+how_we_know = "Deezer, MusicBrainz and Qobuz agree on the Emerson String Quartet"
+
+[today.deezer]
+release = ["Emerson String Quartet (main)"]
+tracks = 23
+
+[today.musicbrainz]
+release = ["Emerson String Quartet (main)", "David Finckel (main)", "Eugene Drucker (main)", "Lawrence Dutton (main)", "Philip Setzer (main)"]
+tracks = 23
+
+[today.discogs]
+release = []
+tracks = 0
+
+[today.qobuz]
+release = ["Emerson String Quartet (main)"]
+tracks = 23
+
+[today.merge]
+release = ["Emerson String Quartet (main)", "David Finckel (main)", "Eugene Drucker (main)", "Lawrence Dutton (main)", "Philip Setzer (main)"]
+tracks = 23
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["String Quartet No. 1, BB 52, Op. 7, Sz. 40 : Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: I. Lento"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["String Quartet No. 1, BB 52, Op. 7, Sz. 40 : Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: II. Allegretto"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["String Quartet No. 1, BB 52, Op. 7, Sz. 40 : Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: III. Introduzione. Allegro - Allegro vivace"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["String Quartet No. 3, BB 93, Sz.85 : Bartók: String Quartet No. 3, BB 93, Sz.85: I. Prima parte (Moderato)"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["String Quartet No. 3, BB 93, Sz.85 : Bartók: String Quartet No. 3, BB 93, Sz.85: II. Seconda parte. Allegro - attacca: Ricapitulazione della prima parte. Moderato"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["String Quartet No. 3, BB 93, Sz.85 : Bartók: String Quartet No. 3, BB 93, Sz.85: III. Coda. Allegro molto"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: I. Allegro"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: II. Adagio molto"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["String Quartet No. 5, Sz. 102 : Bartók: String Quartet No. 5, Sz. 102: III. Scherzo. Alla bulgarese – Trio"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: IV. Andante"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: V. Finale. Allegro vivace"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["1"]
+discnumber = ["2"]
+title = ["String Quartet No. 2, BB 75, Op. 17, Sz. 67 : Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: I. Moderato"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["2"]
+discnumber = ["2"]
+title = ["String Quartet No. 2, Sz. 67 : Bartók: String Quartet No. 2, Sz. 67: II. Allegro molto capriccioso"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["3"]
+discnumber = ["2"]
+title = ["String Quartet No. 2, BB 75, Op. 17, Sz. 67 : Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: III. Lento"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["4"]
+discnumber = ["2"]
+title = ["String Quartet No. 4, BB 95, Sz.91 : Bartók: String Quartet No. 4, BB 95, Sz.91: I. Allegro"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["5"]
+discnumber = ["2"]
+title = ["String Quartet No. 4, Sz. 91 : Bartók: String Quartet No. 4, Sz. 91: II. Prestissimo, con sordino"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "17.flac"
+tracknumber = ["6"]
+discnumber = ["2"]
+title = ["String Quartet No. 4, Sz. 91 : Bartók: String Quartet No. 4, Sz. 91: III. Non troppo lento"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "18.flac"
+tracknumber = ["7"]
+discnumber = ["2"]
+title = ["String Quartet No. 4, Sz. 91 : Bartók: String Quartet No. 4, Sz. 91: IV. Allegretto pizzicato"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "19.flac"
+tracknumber = ["8"]
+discnumber = ["2"]
+title = ["String Quartet No. 4, BB 95, Sz.91 : Bartók: String Quartet No. 4, BB 95, Sz.91: V. Allegro molto"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "20.flac"
+tracknumber = ["9"]
+discnumber = ["2"]
+title = ["String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: I. Mesto - Vivace"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "21.flac"
+tracknumber = ["10"]
+discnumber = ["2"]
+title = ["String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: II. Mesto - Marcia"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "22.flac"
+tracknumber = ["11"]
+discnumber = ["2"]
+title = ["String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: III. Mesto - Burletta (Moderato)"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+[[track]]
+file = "23.flac"
+tracknumber = ["12"]
+discnumber = ["2"]
+title = ["String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: IV. Mesto"]
+artist = ["Emerson String Quartet"]
+album = ["Bartók: The String Quartets"]
+albumartist = ["Emerson String Quartet"]
+date = ["1988-09-07"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 6450576,
+ "title": "Bartók: The String Quartets",
+ "upc": "028942365728",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 98,
+    "name": "Classical"
+   }
+  ]
+ },
+ "label": "Deutsche Grammophon (DG)",
+ "release_date": "1988-09-07",
+ "tracklist": [
+  {
+   "SNG_ID": "65797465",
+   "SNG_TITLE": "String Quartet No. 1, BB 52, Op. 7, Sz. 40 : Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: I. Lento",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "DEF058802011",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "65797466",
+   "SNG_TITLE": "String Quartet No. 1, BB 52, Op. 7, Sz. 40 : Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: II. Allegretto",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "DEF058802012",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797467",
+   "SNG_TITLE": "String Quartet No. 1, BB 52, Op. 7, Sz. 40 : Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: III. Introduzione. Allegro - Allegro vivace",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "DEF058802013",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797468",
+   "SNG_TITLE": "String Quartet No. 3, BB 93, Sz.85 : Bartók: String Quartet No. 3, BB 93, Sz.85: I. Prima parte (Moderato)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "DEF058802031",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797469",
+   "SNG_TITLE": "String Quartet No. 3, BB 93, Sz.85 : Bartók: String Quartet No. 3, BB 93, Sz.85: II. Seconda parte. Allegro - attacca: Ricapitulazione della prima parte. Moderato",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "DEF058802032",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "65797470",
+   "SNG_TITLE": "String Quartet No. 3, BB 93, Sz.85 : Bartók: String Quartet No. 3, BB 93, Sz.85: III. Coda. Allegro molto",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "DEF058802033",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797471",
+   "SNG_TITLE": "String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: I. Allegro",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "DEF058802051",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "65797472",
+   "SNG_TITLE": "String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: II. Adagio molto",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "DEF058802052",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797473",
+   "SNG_TITLE": "String Quartet No. 5, Sz. 102 : Bartók: String Quartet No. 5, Sz. 102: III. Scherzo. Alla bulgarese – Trio",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "DEF058802053",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797474",
+   "SNG_TITLE": "String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: IV. Andante",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "DEF058802054",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797475",
+   "SNG_TITLE": "String Quartet No. 5, BB 110, Sz.102 : Bartók: String Quartet No. 5, BB 110, Sz.102: V. Finale. Allegro vivace",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "DEF058802055",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "65797476",
+   "SNG_TITLE": "String Quartet No. 2, BB 75, Op. 17, Sz. 67 : Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: I. Moderato",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "1",
+   "ISRC": "DEF058802021",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797477",
+   "SNG_TITLE": "String Quartet No. 2, Sz. 67 : Bartók: String Quartet No. 2, Sz. 67: II. Allegro molto capriccioso",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "2",
+   "ISRC": "DEF058802022",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797478",
+   "SNG_TITLE": "String Quartet No. 2, BB 75, Op. 17, Sz. 67 : Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: III. Lento",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "3",
+   "ISRC": "DEF058802023",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797479",
+   "SNG_TITLE": "String Quartet No. 4, BB 95, Sz.91 : Bartók: String Quartet No. 4, BB 95, Sz.91: I. Allegro",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "4",
+   "ISRC": "DEF058802041",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "65797480",
+   "SNG_TITLE": "String Quartet No. 4, Sz. 91 : Bartók: String Quartet No. 4, Sz. 91: II. Prestissimo, con sordino",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "5",
+   "ISRC": "DEF058802042",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "65797481",
+   "SNG_TITLE": "String Quartet No. 4, Sz. 91 : Bartók: String Quartet No. 4, Sz. 91: III. Non troppo lento",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "6",
+   "ISRC": "DEF058802043",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797482",
+   "SNG_TITLE": "String Quartet No. 4, Sz. 91 : Bartók: String Quartet No. 4, Sz. 91: IV. Allegretto pizzicato",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "7",
+   "ISRC": "DEF058802044",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "65797483",
+   "SNG_TITLE": "String Quartet No. 4, BB 95, Sz.91 : Bartók: String Quartet No. 4, BB 95, Sz.91: V. Allegro molto",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "8",
+   "ISRC": "DEF058802045",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797484",
+   "SNG_TITLE": "String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: I. Mesto - Vivace",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "9",
+   "ISRC": "DEF058802061",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797485",
+   "SNG_TITLE": "String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: II. Mesto - Marcia",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "10",
+   "ISRC": "DEF058802062",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797486",
+   "SNG_TITLE": "String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: III. Mesto - Burletta (Moderato)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "11",
+   "ISRC": "DEF058802063",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "65797487",
+   "SNG_TITLE": "String Quartet No. 6, BB 119, Sz.114 : Bartók: String Quartet No. 6, BB 119, Sz.114: IV. Mesto",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Emerson String Quartet"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "12",
+   "ISRC": "DEF058802064",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="dbfbd5fa-d303-4584-9ea2-8b6525fc999c"><title>Die 6 Streichquartette</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit><date>1988</date><release-event-list><release-event><date>1988</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>423 657-2</catalog-number><label><name>Deutsche Grammophon</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><title>Streichquartett nr. 1, op. 7, Sz 40: I. Lento - attacca:</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 1, BB 52, op. 7, Sz. 40: I. Lento</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><title>Streichquartett nr. 1, op. 7, Sz 40: II. Poco a poco accellerato all'Allegretto -</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 1, BB 52, op. 7, Sz. 40: II. Allegretto</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><title>Streichquartett nr. 1, op. 7, Sz 40: II. Introduzione. Allegro - attacca: / III. Allegro Vivace</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 1, BB 52, op. 7, Sz. 40: III. Introduzione. Allegro: Allegro vivace</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><title>Streichquartett nr. 3, Sz 85: Prima parte: Moderato - attacca:</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 3, BB 93, Sz. 85: I. Prima parte (Moderato)</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><title>Streichquartett nr. 3, Sz 85: Seconda parte: Allegro - attacca: / Ricapitulazione della prima parte: Moderato</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 3, BB 93, Sz. 85: II. Seconda parte. Allegro: attacca: Ricapitulazione della prima parte. Moderato</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><title>Streichquartett nr. 3, Sz 85: Coda: Allegro molto</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 3, BB 93, Sz. 85: III. Coda. Allegro molto</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><title>Streichquartett nr. 5, Sz 102: I. Allegro</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 5, BB 110, Sz. 102: I. Allegro</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><title>Streichquartett nr. 5, Sz 102: II. Adagio molto</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 5, BB 110, Sz. 102: II. Adagio molto</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><title>Streichquartett nr. 5, Sz 102: III. Scherzo. Alla bulgarese</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 5, BB 110, Sz. 102: III. Scherzo. Alla bulgarese</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><title>Streichquartett nr. 5, Sz 102: IV. Andante</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 5, BB 110, Sz. 102: IV. Andante</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><title>Streichquartett nr. 5, Sz 102: V. Finale. Allegro vivace</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 5, BB 110, Sz. 102: V. Finale. Allegro vivace</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track></track-list></medium><medium><position>2</position><track-list><track><position>1</position><number>1</number><title>Streichquartett nr. 2, op. 17, Sz 67: I. Moderato</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 2, BB 75, op. 17, Sz. 67: I. Moderato</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><title>Streichquartett nr. 2, op. 17, Sz 67: II. Allegro molto capriccioso</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 2, BB 75, op. 17, Sz. 67: II. Allegro molto capriccioso</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><title>Streichquartett nr. 2, op. 17, Sz 67: III. Lento</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 2, BB 75, op. 17, Sz. 67: III. Lento</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><title>Streichquartett nr. 4, Sz 91: I. Allegro</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 4, BB 95, Sz. 91: I. Allegro</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><title>Streichquartett nr. 4, Sz 91: II. Prestissimo, con sordino</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 4, BB 95, Sz. 91: II. Prestissimo, con sordino</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><title>Streichquartett nr. 4, Sz 91: III. Non troppo lento</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 4, BB 95, Sz. 91: III. Non troppo lento</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><title>Streichquartett nr. 4, Sz 91: IV. Allegretto pizzicato</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 4, BB 95, Sz. 91: IV. Allegretto pizzicato</title><artist-credit><name-credit><artist><name>David Finckel</name></artist></name-credit><name-credit><artist><name>Eugene Drucker</name></artist></name-credit><name-credit><artist><name>Lawrence Dutton</name></artist></name-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit><name-credit><artist><name>Philip Setzer</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><title>Streichquartett nr. 4, Sz 91: V. Allegro molto</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 4, BB 95, Sz. 91: V. Allegro molto</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><title>Streichquartett nr. 6, Sz 114: I. Mesto - Più mosso, pesante - Vivace</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 6, BB 119, Sz. 114: I. Mesto: Vivace</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><title>Streichquartett nr. 6, Sz 114: II. Mesto - Marcia</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 6, BB 119, Sz. 114: II. Mesto: Marcia</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><title>Streichquartett nr. 6, Sz 114: III. Mesto - Burletta</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 6, BB 119, Sz. 114: III. Mesto: Burletta (Moderato)</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track><track><position>12</position><number>12</number><title>Streichquartett nr. 6, Sz 114: IV. Mesto</title><artist-credit><name-credit><name>Béla Bartók</name><artist><name>Bartók Béla</name></artist></name-credit></artist-credit><recording><title>String Quartet no. 6, BB 119, Sz. 114: IV. Mesto</title><artist-credit><name-credit><artist><name>Emerson String Quartet</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 1231299,
+ "year": 1988,
+ "labels": [
+  {
+   "name": "Deutsche Grammophon",
+   "catno": "423 657-2",
+   "id": 7703
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "6 String Quartets",
+ "genres": [
+  "Classical"
+ ],
+ "tracklist": [
+  {
+   "type_": "index",
+   "title": "Streichquartett Nr. 1 Op. 7, Sz 40 (1908-1909)"
+  },
+  {
+   "type_": "index",
+   "title": "Streichquartett Nr. 3, Sz 85 (1927)"
+  },
+  {
+   "type_": "index",
+   "title": "Streichquartett Nr. 5, Sz 102 (1934)"
+  },
+  {
+   "type_": "index",
+   "title": "Streichquartett Nr. 2 Op. 17, Sz 67 (1915-1917)"
+  },
+  {
+   "type_": "index",
+   "title": "Streichquartett Nr. 4, Sz 91 (1928)"
+  },
+  {
+   "type_": "index",
+   "title": "Streichquartett Nr. 6, Sz 114 (1939)"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0002894236572",
+ "upc": "0002894236572",
+ "title": "Bartók: The String Quartets",
+ "tracks_count": 23,
+ "artist": {
+  "name": "Emerson String Quartet"
+ },
+ "genres_list": [
+  "Classical"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: I. Lento",
+    "media_number": 1,
+    "track_number": 1
+   },
+   {
+    "title": "Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: II. Allegretto",
+    "media_number": 1,
+    "track_number": 2
+   },
+   {
+    "title": "Bartók: String Quartet No. 1, BB 52, Op. 7, Sz. 40: III. Introduzione. Allegro - Allegro vivace",
+    "media_number": 1,
+    "track_number": 3
+   },
+   {
+    "title": "Bartók: String Quartet No. 3, BB 93, Sz.85: I. Prima parte (Moderato)",
+    "media_number": 1,
+    "track_number": 4
+   },
+   {
+    "title": "Bartók: String Quartet No. 3, BB 93, Sz.85: II. Seconda parte. Allegro - attacca: Ricapitulazione della prima parte. Moderato",
+    "media_number": 1,
+    "track_number": 5
+   },
+   {
+    "title": "Bartók: String Quartet No. 3, BB 93, Sz.85: III. Coda. Allegro molto",
+    "media_number": 1,
+    "track_number": 6
+   },
+   {
+    "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: I. Allegro",
+    "media_number": 1,
+    "track_number": 7
+   },
+   {
+    "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: II. Adagio molto",
+    "media_number": 1,
+    "track_number": 8
+   },
+   {
+    "title": "Bartók: String Quartet No. 5, Sz. 102: III. Scherzo. Alla bulgarese – Trio",
+    "media_number": 1,
+    "track_number": 9
+   },
+   {
+    "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: IV. Andante",
+    "media_number": 1,
+    "track_number": 10
+   },
+   {
+    "title": "Bartók: String Quartet No. 5, BB 110, Sz.102: V. Finale. Allegro vivace",
+    "media_number": 1,
+    "track_number": 11
+   },
+   {
+    "title": "Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: I. Moderato",
+    "media_number": 2,
+    "track_number": 1
+   },
+   {
+    "title": "Bartók: String Quartet No. 2, Sz. 67: II. Allegro molto capriccioso",
+    "media_number": 2,
+    "track_number": 2
+   },
+   {
+    "title": "Bartók: String Quartet No. 2, BB 75, Op. 17, Sz. 67: III. Lento",
+    "media_number": 2,
+    "track_number": 3
+   },
+   {
+    "title": "Bartók: String Quartet No. 4, BB 95, Sz.91: I. Allegro",
+    "media_number": 2,
+    "track_number": 4
+   },
+   {
+    "title": "Bartók: String Quartet No. 4, Sz. 91: II. Prestissimo, con sordino",
+    "media_number": 2,
+    "track_number": 5
+   },
+   {
+    "title": "Bartók: String Quartet No. 4, Sz. 91: III. Non troppo lento",
+    "media_number": 2,
+    "track_number": 6
+   },
+   {
+    "title": "Bartók: String Quartet No. 4, Sz. 91: IV. Allegretto pizzicato",
+    "media_number": 2,
+    "track_number": 7
+   },
+   {
+    "title": "Bartók: String Quartet No. 4, BB 95, Sz.91: V. Allegro molto",
+    "media_number": 2,
+    "track_number": 8
+   },
+   {
+    "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: I. Mesto - Vivace",
+    "media_number": 2,
+    "track_number": 9
+   },
+   {
+    "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: II. Mesto - Marcia",
+    "media_number": 2,
+    "track_number": 10
+   },
+   {
+    "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: III. Mesto - Burletta (Moderato)",
+    "media_number": 2,
+    "track_number": 11
+   },
+   {
+    "title": "Bartók: String Quartet No. 6, BB 119, Sz.114: IV. Mesto",
+    "media_number": 2,
+    "track_number": 12
+   }
+  ]
+ }
+}
+'''

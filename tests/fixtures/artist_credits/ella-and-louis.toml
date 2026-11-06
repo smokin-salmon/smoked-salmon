@@ -1,0 +1,568 @@
+album = "Ella Fitzgerald and Louis Armstrong, Ella and Louis"
+why = "Two co-leaders that Deezer, MusicBrainz and Discogs agree on: the control for the co-leader shape, which Qobuz's parse gets wrong here too."
+edition = "Deezer 70493232: Verve Reissues digital, 11 tracks; MusicBrainz has no release with that barcode, so 54f13825 (Verve 2005 CD, 602498840214, same 11 tracks); Discogs 13662230 is master 173462's main release (1956 MG V-4003 LP)"
+known_wrong = ["Qobuz parse: Louis Armstrong made a guest. The parser takes the album's one `artist` as main and reads every other main artist as a guest (the Gladiator shape, #869)"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Ella Fitzgerald", "Louis Armstrong"]
+how_we_know = "Deezer, MusicBrainz and Discogs agree"
+
+[today.deezer]
+release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)"]
+tracks = 11
+
+[today.musicbrainz]
+release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)"]
+tracks = 11
+
+[today.discogs]
+release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)"]
+tracks = 11
+
+[today.qobuz]
+release = ["Ella Fitzgerald (main)", "Louis Armstrong (guest)"]
+tracks = 11
+
+[today.merge]
+release = ["Ella Fitzgerald (main)", "Louis Armstrong (main)"]
+tracks = 11
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Can't We Be Friends?"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Isn't This A Lovely Day?"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Moonlight In Vermont"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["They Can't Take That Away From Me"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Under A Blanket Of Blue"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Tenderly"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["A Foggy Day"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Stars Fell On Alabama"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Cheek To Cheek"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["The Nearness Of You"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["April In Paris"]
+artist = ["Ella Fitzgerald", "Louis Armstrong"]
+album = ["Ella and Louis"]
+albumartist = ["Ella Fitzgerald"]
+date = ["2011-07-14"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 70493232,
+ "title": "Ella and Louis",
+ "upc": "602567828808",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 129,
+    "name": "Jazz"
+   }
+  ]
+ },
+ "label": "Verve Reissues",
+ "release_date": "2011-07-14",
+ "tracklist": [
+  {
+   "SNG_ID": "540196202",
+   "SNG_TITLE": "Can't We Be Friends?",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USPR35600055",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "540196212",
+   "SNG_TITLE": "Isn't This A Lovely Day?",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USPR35600039",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "540196222",
+   "SNG_TITLE": "Moonlight In Vermont",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USPR35600041",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "540196232",
+   "SNG_TITLE": "They Can't Take That Away From Me",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USPR35600081",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "540196242",
+   "SNG_TITLE": "Under A Blanket Of Blue",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USPR35600042",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "540196252",
+   "SNG_TITLE": "Tenderly",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USPR35600044",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "540196262",
+   "SNG_TITLE": "A Foggy Day",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USPR35612073",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "540196272",
+   "SNG_TITLE": "Stars Fell On Alabama",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USPR35612074",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "540196282",
+   "SNG_TITLE": "Cheek To Cheek",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USPR35612075",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "540196292",
+   "SNG_TITLE": "The Nearness Of You",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USPR35612076",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "540196302",
+   "SNG_TITLE": "April In Paris",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ella Fitzgerald",
+     "Louis Armstrong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USPR35600043",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="54f13825-801d-4b1f-a06f-e3ffa3b79065"><title>Ella and Louis</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><release-group><title>Ella and Louis</title><first-release-date>1956</first-release-date><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit></release-group><date>2005</date><release-event-list><release-event><date>2005</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>MGV 4003</catalog-number><label><name>Verve Music Group</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><title>Can't We Be Friends?</title><recording><title>Can’t We Be Friends?</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>2</position><number>2</number><title>Isn't This a Lovely Day</title><recording><title>Isn’t This a Lovely Day</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Moonlight in Vermont</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>4</position><number>4</number><title>They Can't Take That Away From Me</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><recording><title>They Can’t Take That Away From Me</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Under a Blanket of Blue</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Tenderly</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>A Foggy Day</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Stars Fell on Alabama</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Cheek to Cheek</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>The Nearness of You</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>April in Paris</title><artist-credit><name-credit><artist><name>Ella Fitzgerald</name></artist></name-credit><name-credit><artist><name>Louis Armstrong</name></artist></name-credit></artist-credit><first-release-date>1956</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 13662230,
+ "year": 1956,
+ "artists": [
+  {
+   "name": "Ella Fitzgerald",
+   "id": 31615
+  },
+  {
+   "name": "Louis Armstrong",
+   "id": 38201
+  }
+ ],
+ "labels": [
+  {
+   "name": "Verve Records",
+   "catno": "MG V-4003",
+   "id": 5041
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "descriptions": [
+    "LP",
+    "Album",
+    "Mono"
+   ]
+  }
+ ],
+ "title": "Ella And Louis",
+ "genres": [
+  "Jazz"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "Can't We Be Friends",
+   "duration": "3:44"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Isn't This A Lovely Day",
+   "duration": "6:14"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "Moonlight In Vermont",
+   "duration": "3:42"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "They Can't Take That Away From Me",
+   "duration": "4:38"
+  },
+  {
+   "position": "A5",
+   "type_": "track",
+   "title": "Under A Blanket Of Blue",
+   "duration": "4:18"
+  },
+  {
+   "position": "A6",
+   "type_": "track",
+   "title": "Tenderly",
+   "duration": "5:10"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "A Foggy Day",
+   "duration": "4:30"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Stars Fell On Alabama",
+   "duration": "3:30"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "Cheek To Cheek",
+   "duration": "5:47"
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "The Nearness Of You",
+   "duration": "6:33"
+  },
+  {
+   "position": "B5",
+   "type_": "track",
+   "title": "April In Paris",
+   "duration": "6:30"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "maw7ul1wqbpoa",
+ "upc": "0602567832348",
+ "title": "Ella And Louis",
+ "tracks_count": 11,
+ "artist": {
+  "name": "Ella Fitzgerald"
+ },
+ "genres_list": [
+  "Vocal Jazz"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Can't We Be Friends?",
+    "track_number": 1,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Paul James, ComposerLyricist - Kay Swift, ComposerLyricist"
+   },
+   {
+    "title": "Isn't This A Lovely Day?",
+    "track_number": 2,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Irving Berlin, ComposerLyricist"
+   },
+   {
+    "title": "Moonlight In Vermont",
+    "track_number": 3,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - John M. Blackburn, ComposerLyricist - Karl Suessdorf, ComposerLyricist"
+   },
+   {
+    "title": "They Can't Take That Away From Me",
+    "track_number": 4,
+    "performers": "Ella Fitzgerald, MainArtist - Louis Armstrong, MainArtist - Norman Granz, Producer - RAY BROWN, BassVocalist - George Gershwin, Composer - Ira Gershwin, Lyricist"
+   },
+   {
+    "title": "Under A Blanket Of Blue",
+    "track_number": 5,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Al Neiburg, Lyricist - Marty Symes, Lyricist - Jerry Livingston, Composer"
+   },
+   {
+    "title": "Tenderly",
+    "track_number": 6,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Jack Lawrence, ComposerLyricist - WALTER GROSS, ComposerLyricist"
+   },
+   {
+    "title": "A Foggy Day",
+    "track_number": 7,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Ira Gershwin, Lyricist - George Gershwin, Composer"
+   },
+   {
+    "title": "Stars Fell On Alabama",
+    "track_number": 8,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Buddy Bregman, RecordingArranger, Conductor - Mitchell Parish, ComposerLyricist - Frank S. Perkins, ComposerLyricist"
+   },
+   {
+    "title": "Cheek To Cheek",
+    "track_number": 9,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Irving Berlin, ComposerLyricist - Hugo Cipolatti, Adapter"
+   },
+   {
+    "title": "The Nearness Of You",
+    "track_number": 10,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - HOAGY CARMICHAEL, ComposerLyricist - Ned Washington, ComposerLyricist"
+   },
+   {
+    "title": "April In Paris",
+    "track_number": 11,
+    "performers": "Ella Fitzgerald, MainArtist, Vocalist - Louis Armstrong, MainArtist, Vocalist - Norman Granz, Producer - Val Valentin, RecordingEngineer - Yip Harburg, Composer - Vernon Duke, Lyricist"
+   }
+  ]
+ }
+}
+'''

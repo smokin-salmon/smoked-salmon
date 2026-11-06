@@ -1,0 +1,547 @@
+album = "Thelonious Monk with John Coltrane"
+why = "'X with Y': a leader plus a famous sideman named on the cover. Four stores, three answers: Bandcamp Monk alone, Deezer Monk with Coltrane featured, MusicBrainz and Discogs both as main."
+edition = "Bandcamp: Craft 2023 remaster, 6 tracks (page UPC 888072479050; MusicBrainz edd0341d, no barcode). Deezer has no album for 888072479050, so 515710: OJC Remaster (888072319899, 7 tracks, another edition). Discogs 2062892 is master 75869's main release (1961 Jazzland JLP-46)"
+known_wrong = ["Bandcamp parse: UPC None (page has 888072479050); Coltrane nowhere"]
+bandcamp_url = "https://theloniousmonk.bandcamp.com/album/thelonious-monk-with-john-coltrane-remastered-2023"
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+bandcamp = "the album page, trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+settled = "nothing yet: see open"
+
+[today.deezer]
+release = ["Thelonious Monk (main)", "John Coltrane (guest)"]
+tracks = 7
+
+[today.musicbrainz]
+release = ["Thelonious Monk (main)", "John Coltrane (main)"]
+tracks = 6
+
+[today.discogs]
+release = ["Thelonious Monk (main)", "John Coltrane (main)"]
+tracks = 6
+
+[today.bandcamp]
+release = ["Thelonious Monk (main)"]
+tracks = 6
+
+[today.qobuz]
+release = ["Thelonious Monk (main)", "John Coltrane (guest)"]
+tracks = 6
+
+[today.merge]
+release = ["Thelonious Monk (main)", "John Coltrane (main)"]
+tracks = 7
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Ruby, My Dear"]
+artist = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
+albumartist = ["Thelonious Monk"]
+date = ["2021-05-31"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Trinkle, Tinkle"]
+artist = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
+albumartist = ["Thelonious Monk"]
+date = ["2021-05-31"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Off Minor (Take 4)"]
+artist = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
+albumartist = ["Thelonious Monk"]
+date = ["2021-05-31"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Nutty"]
+artist = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
+albumartist = ["Thelonious Monk"]
+date = ["2021-05-31"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Epistrophy (Alternate Take)"]
+artist = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
+albumartist = ["Thelonious Monk"]
+date = ["2021-05-31"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Functional (Alternate Take 1)"]
+artist = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
+albumartist = ["Thelonious Monk"]
+date = ["2021-05-31"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Monk's Mood"]
+artist = ["Thelonious Monk", "John Coltrane"]
+album = ["Thelonious Monk with John Coltrane (OJC Remaster)"]
+albumartist = ["Thelonious Monk"]
+date = ["2021-05-31"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 515710,
+ "title": "Thelonious Monk with John Coltrane (OJC Remaster)",
+ "upc": "888072319899",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 129,
+    "name": "Jazz"
+   }
+  ]
+ },
+ "label": "Original Jazz Classics",
+ "release_date": "2021-05-31",
+ "record_type": "album",
+ "tracklist": [
+  {
+   "SNG_ID": "5646672",
+   "SNG_TITLE": "Ruby, My Dear",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane"
+    ],
+    "main_artist": [
+     "Thelonious Monk"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USFI86100163",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "5646673",
+   "SNG_TITLE": "Trinkle, Tinkle",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane"
+    ],
+    "main_artist": [
+     "Thelonious Monk"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USFI86100164",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "5646674",
+   "SNG_TITLE": "Off Minor",
+   "VERSION": "(Take 4)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane"
+    ],
+    "main_artist": [
+     "Thelonious Monk"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USFI85700013",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "5646675",
+   "SNG_TITLE": "Nutty",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane"
+    ],
+    "main_artist": [
+     "Thelonious Monk"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USFI86100166",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "5646676",
+   "SNG_TITLE": "Epistrophy",
+   "VERSION": "(Alternate Take)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane"
+    ],
+    "main_artist": [
+     "Thelonious Monk"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USFI86100167",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "5646677",
+   "SNG_TITLE": "Functional",
+   "VERSION": "(Alternate Take 1)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane"
+    ],
+    "main_artist": [
+     "Thelonious Monk"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USFI86100168",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "5646678",
+   "SNG_TITLE": "Monk's Mood",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Coltrane"
+    ],
+    "main_artist": [
+     "Thelonious Monk"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USFI85700127",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="edd0341d-0c0a-4907-90d1-2841535d59a7"><title>Thelonious Monk With John Coltrane</title><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit><name-credit><artist><name>John Coltrane</name></artist></name-credit></artist-credit><release-group type="Album"><title>Thelonious Monk with John Coltrane</title><first-release-date>1961</first-release-date><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit><name-credit><artist><name>John Coltrane</name></artist></name-credit></artist-credit></release-group><date>2023-05-26</date><release-event-list><release-event><date>2023-05-26</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Craft Recordings</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Ruby, My Dear</title><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit><name-credit><artist><name>John Coltrane</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Trinkle, Tinkle</title><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit><name-credit><artist><name>John Coltrane</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>3</position><number>3</number><title>Off Minor (Take 4)</title><recording><title>Off Minor (take 4)</title><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit><name-credit><artist><name>John Coltrane</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Nutty</title><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit><name-credit><artist><name>John Coltrane</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>5</position><number>5</number><title>Epistrophy (Alternate Take)</title><recording><title>Epistrophy (alternate take)</title><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit><name-credit><artist><name>John Coltrane</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>6</position><number>6</number><title>Functional (Take 1)</title><recording><title>Functional (alternate take)</title><artist-credit><name-credit><artist><name>Thelonious Monk</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 2062892,
+ "year": 1961,
+ "artists": [
+  {
+   "name": "Thelonious Monk",
+   "id": 145256
+  },
+  {
+   "name": "John Coltrane",
+   "id": 97545
+  }
+ ],
+ "labels": [
+  {
+   "name": "Jazzland",
+   "catno": "JLP-46",
+   "id": 33967
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "descriptions": [
+    "LP",
+    "Album",
+    "Mono"
+   ]
+  }
+ ],
+ "title": "Thelonious Monk With John Coltrane",
+ "released": "1961-10-00",
+ "genres": [
+  "Jazz"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "Ruby, My Dear",
+   "duration": "6:17"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Trinkle, Tinkle",
+   "duration": "6:37"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "Off Minor",
+   "duration": "5:10"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Nutty",
+   "duration": "6:35"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Epistrophy",
+   "duration": "3:07"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "Functional",
+   "duration": "9:46"
+  }
+ ]
+}
+'''
+bandcamp = '''
+<html><body>
+
+<div id="name-section">
+<h2 class="trackTitle">
+            Thelonious Monk With John Coltrane (Remastered 2023)
+            
+        </h2>
+<h3 style="margin:0px;">by 
+        <span>
+<a href="https://theloniousmonk.bandcamp.com">Thelonious Monk</a>
+</span>
+</h3>
+</div>
+
+<div id="tralbumArt">
+<a class="popupImage" href="https://f4.bcbits.com/img/a0359082704_10.jpg">
+<picture>
+
+<img src="https://f4.bcbits.com/img/a0359082704_2.jpg"/>
+</picture>
+</a>
+</div>
+<table class="track_list track_table" id="track_table">
+<tr class="track_row_view linked" rel="tracknum=1">
+
+<td class="track-number-col"><div class="track_number secondaryText">1.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/ruby-my-dear"><span class="track-title">Ruby, My Dear</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=2">
+
+<td class="track-number-col"><div class="track_number secondaryText">2.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/trinkle-tinkle"><span class="track-title">Trinkle, Tinkle</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=3">
+
+<td class="track-number-col"><div class="track_number secondaryText">3.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/off-minor-take-4"><span class="track-title">Off Minor (Take 4)</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=4">
+
+<td class="track-number-col"><div class="track_number secondaryText">4.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/nutty-2"><span class="track-title">Nutty</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=5">
+
+<td class="track-number-col"><div class="track_number secondaryText">5.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/epistrophy-alternate-take"><span class="track-title">Epistrophy (Alternate Take)</span></a>
+
+</div>
+</td>
+
+
+</tr>
+<tr class="track_row_view linked" rel="tracknum=6">
+
+<td class="track-number-col"><div class="track_number secondaryText">6.</div></td>
+<td class="title-col">
+<div class="title">
+<a href="/track/functional-take-1"><span class="track-title">Functional (Take 1)</span></a>
+
+</div>
+</td>
+
+
+</tr>
+</table>
+<div class="tralbumData tralbum-credits">
+            
+                released October 1, 1961
+            
+            1961, © 1961 Craft Recordings.
+            </div>
+<div class="tralbumData tralbum-tags tralbum-tags-nu hidden">
+
+<a class="tag" href="https://bandcamp.com/discover/jazz?from=tralbum&amp;artist=3626222804">jazz</a>
+<a class="tag" href="https://bandcamp.com/discover/avant-garde?from=tralbum&amp;artist=3626222804">avant-garde</a>
+
+<a class="tag" href="https://bandcamp.com/discover/piano?from=tralbum&amp;artist=3626222804">piano</a>
+<a class="tag" href="https://bandcamp.com/discover/post-bop?from=tralbum&amp;artist=3626222804">post-bop</a>
+
+<a class="tag" href="https://bandcamp.com/discover/new-york?from=tralbum&amp;artist=3626222804">New York</a>
+</div>
+</body></html>
+'''
+qobuz = '''
+{
+ "id": "sv989vhbydyoa",
+ "upc": "0888072479050",
+ "title": "Thelonious Monk With John Coltrane",
+ "version": null,
+ "tracks_count": 6,
+ "artist": {
+  "name": "Thelonious Monk"
+ },
+ "genres_list": [
+  "Jazz"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Ruby, My Dear",
+    "version": null,
+    "track_number": 1,
+    "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
+   },
+   {
+    "title": "Trinkle, Tinkle",
+    "version": null,
+    "track_number": 2,
+    "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
+   },
+   {
+    "title": "Off Minor",
+    "version": "Take 4",
+    "track_number": 3,
+    "performers": "Thelonious Monk, MainArtist, Composer - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
+   },
+   {
+    "title": "Nutty",
+    "version": null,
+    "track_number": 4,
+    "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
+   },
+   {
+    "title": "Epistrophy",
+    "version": "Alternate Take",
+    "track_number": 5,
+    "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer - Kenneth Clarke, ComposerLyricist"
+   },
+   {
+    "title": "Functional",
+    "version": "Take 1",
+    "track_number": 6,
+    "performers": "Thelonious Monk, MainArtist, ComposerLyricist - John Coltrane, MainArtist - Orrin Keepnews, Producer - Kevin Gray, MasteringEngineer - Jack Higgins, RecordingEngineer"
+   }
+  ]
+ }
+}
+'''

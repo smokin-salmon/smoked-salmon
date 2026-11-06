@@ -1,0 +1,1652 @@
+album = "Various Artists, Pulp Fiction (soundtrack)"
+why = "A various-artists soundtrack with dialogue tracks: Deezer and MusicBrainz credit the actors; Discogs has 'No Artist' and makes some performers producers."
+edition = "Geffen 2019 digital, 20 tracks (Deezer 89920242 = MusicBrainz 729642fc by barcode); Discogs 1347833 is master 17468's main release (1994 MCA CD, 16 tracks)"
+known_wrong = ["Discogs parse: 'No Artist (main)' on the dialogue tracks; Urge Overkill, Maria McKee and Ricky Nelson as producers only, so their tracks have no performing artist"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+not_main = ["No Artist"]
+how_we_know = "'No Artist' is Discogs' placeholder for a track with no artist; no other store has it"
+
+[today.deezer]
+release = ["Tim Roth (main)", "Amanda Plummer (main)", "Dick Dale And His Del-Tones (main)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool (main)", "The Gang (main)", "Al Green (main)", "The Tornadoes (main)", "Ricky Nelson (main)", "Dusty Springfield (main)", "Maria De Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Maria McKee (main)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "The Statler Brothers (main)", "The Lively Ones (main)"]
+tracks = 20
+
+[today.musicbrainz]
+release = ["Tim Roth (main)", "Amanda Plummer (main)", "Dick Dale and His Del‐Tones (main)", "Samuel L. Jackson (main)", "John Travolta (main)", "Kool & the Gang (main)", "Al Green (main)", "The Tornadoes (main)", "Rick Nelson (main)", "Dusty Springfield (main)", "Maria de Medeiros (main)", "Bruce Willis (main)", "The Centurions (main)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Maria McKee (main)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "The Statler Brothers (main)", "The Lively Ones (main)"]
+tracks = 20
+
+[today.discogs]
+release = ["No Artist (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "Kool & The Gang (main)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "The Centurions (main)", "Bob Keene (producer)", "Chuck Berry (main)", "Kramer (producer)", "Urge Overkill (producer)", "Bruce Brody (producer)", "Maria McKee (producer)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
+tracks = 20
+
+[today.qobuz]
+release = ["Various Artists (main)", "Tim Roth (guest)", "Amanda Plummer (guest)", "Dick Dale and His Del-Tones (guest)", "John Travolta (guest)", "Samuel L. Jackson (guest)", "Kool & The Gang (guest)", "Al Green (guest)", "The Tornadoes (guest)", "Ricky Nelson (guest)", "Dusty Springfield (guest)", "Maria de Medeiros (guest)", "Bruce Willis (guest)", "The Centurians (guest)", "Jerome Patrick Hoban (guest)", "Chuck Berry (guest)", "Urge Overkill (guest)", "Maria McKee (guest)", "Peter Greene (guest)", "Duane Whitaker (guest)", "The Revels (guest)", "The Statler Brothers (guest)", "The Lively Ones (guest)"]
+tracks = 20
+
+[today.merge]
+release = ["Tim Roth (main)", "Amanda Plummer (main)", "No Artist (main)", "Dick Dale and His Del-Tones (main)", "Dick Dale & His Del-Tones (main)", "Jim Monsour (producer)", "John Travolta (main)", "Samuel L. Jackson (main)", "Kool & the Gang (guest)", "Al Green (main)", "Willie Mitchell (producer)", "The Tornadoes (main)", "Bob Irwin (producer)", "Ricky Nelson (main)", "Rick Nelson (main)", "Jimmie Haskell (producer)", "Ozzie Nelson (producer)", "Ricky Nelson (producer)", "Dusty Springfield (main)", "Arif Mardin (producer)", "Jerry Wexler (producer)", "Tom Dowd (producer)", "Maria de Medeiros (main)", "Bruce Willis (main)", "The Centurians (main)", "The Centurions (main)", "Bob Keene (producer)", "Jerome Patrick Hoban (main)", "Chuck Berry (main)", "Urge Overkill (main)", "Kramer (producer)", "Urge Overkill (producer)", "Maria McKee (main)", "Bruce Brody (producer)", "Maria McKee (producer)", "Peter Greene (main)", "Duane Whitaker (main)", "The Revels (main)", "Bill Wenzel (producer)", "The Statler Brothers (main)", "Jerry Kennedy (producer)", "The Lively Ones (main)"]
+tracks = 20
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Pumpkin And Honey Bunny"]
+artist = ["Tim Roth", "Amanda Plummer"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Misirlou"]
+artist = ["Dick Dale And His Del-Tones"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Royale With Cheese"]
+artist = ["John Travolta", "Samuel L. Jackson"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Jungle Boogie"]
+artist = ["Kool & The Gang"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Let's Stay Together"]
+artist = ["Al Green"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Bustin' Surfboards"]
+artist = ["The Tornadoes"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Lonesome Town"]
+artist = ["Ricky Nelson"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Son Of A Preacher Man"]
+artist = ["Dusty Springfield"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Zed's Dead Baby"]
+artist = ["Maria De Medeiros", "Bruce Willis"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Bullwinkle (Pt. II)"]
+artist = ["The Centurians"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Jack Rabbit Slims Twist Contest"]
+artist = ["Jerome Patrick Hoban"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["You Never Can Tell"]
+artist = ["Chuck Berry"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Girl, You'll Be A Woman Soon"]
+artist = ["Urge Overkill"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["If Love Is A Red Dress (Hang Me In Rags) (Acoustic Demo Version)"]
+artist = ["Maria McKee"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Bring Out The Gimp"]
+artist = ["Peter Greene", "Duane Whitaker"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["Comanche"]
+artist = ["The Revels"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["Flowers On The Wall"]
+artist = ["The Statler Brothers"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "18.flac"
+tracknumber = ["18"]
+discnumber = ["1"]
+title = ["Personality Goes A Long Way"]
+artist = ["John Travolta", "Samuel L. Jackson"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "19.flac"
+tracknumber = ["19"]
+discnumber = ["1"]
+title = ["Surf Rider"]
+artist = ["The Lively Ones"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+[[track]]
+file = "20.flac"
+tracknumber = ["20"]
+discnumber = ["1"]
+title = ["Ezekiel 25:17"]
+artist = ["Samuel L. Jackson"]
+album = ["Pulp Fiction (Music From The Motion Picture)"]
+albumartist = ["Various Artists"]
+date = ["2019-03-15"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 89920242,
+ "title": "Pulp Fiction (Music From The Motion Picture)",
+ "upc": "602577174391",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 132,
+    "name": "Pop"
+   }
+  ]
+ },
+ "label": "Geffen",
+ "release_date": "2019-03-15",
+ "tracklist": [
+  {
+   "SNG_ID": "646290842",
+   "SNG_TITLE": "Pumpkin And Honey Bunny",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Tim Roth",
+     "Amanda Plummer"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USUM70961291",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290852",
+   "SNG_TITLE": "Misirlou",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dick Dale And His Del-Tones"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USRHD0900292",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646290862",
+   "SNG_TITLE": "Royale With Cheese",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "John Travolta",
+     "Samuel L. Jackson"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USMC19443544",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290872",
+   "SNG_TITLE": "Jungle Boogie",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kool & The Gang"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USPR37308011",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290882",
+   "SNG_TITLE": "Let's Stay Together",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Al Green"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USHI27100002",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646290892",
+   "SNG_TITLE": "Bustin' Surfboards",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Tornadoes"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "US29S0800072",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646290902",
+   "SNG_TITLE": "Lonesome Town",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Ricky Nelson"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USEM38700117",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290912",
+   "SNG_TITLE": "Son Of A Preacher Man",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dusty Springfield"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USAT20004061",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646290922",
+   "SNG_TITLE": "Zed's Dead Baby",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Maria De Medeiros",
+     "Bruce Willis"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USUM70961292",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290932",
+   "SNG_TITLE": "Bullwinkle",
+   "VERSION": "(Pt. II)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Centurians"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USRH10450965",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646290942",
+   "SNG_TITLE": "Jack Rabbit Slims Twist Contest",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Jerome Patrick Hoban"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USUM70961293",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290952",
+   "SNG_TITLE": "You Never Can Tell",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Chuck Berry"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USMC16419660",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "9"
+  },
+  {
+   "SNG_ID": "646290962",
+   "SNG_TITLE": "Girl, You'll Be A Woman Soon",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Urge Overkill"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "USTG39208601",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646290972",
+   "SNG_TITLE": "If Love Is A Red Dress (Hang Me In Rags)",
+   "VERSION": "(Acoustic Demo Version)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Maria McKee"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "USUMG0000558",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290982",
+   "SNG_TITLE": "Bring Out The Gimp",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Peter Greene",
+     "Duane Whitaker"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "15",
+   "ISRC": "USUM70961294",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "646290992",
+   "SNG_TITLE": "Comanche",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Revels"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "16",
+   "ISRC": "USUG10900506",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646291002",
+   "SNG_TITLE": "Flowers On The Wall",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Statler Brothers"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "17",
+   "ISRC": "USPR37507134",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  },
+  {
+   "SNG_ID": "646291012",
+   "SNG_TITLE": "Personality Goes A Long Way",
+   "VERSION": "",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "John Travolta",
+     "Samuel L. Jackson"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "18",
+   "ISRC": "USMC10200816",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  },
+  {
+   "SNG_ID": "646291022",
+   "SNG_TITLE": "Surf Rider",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Lively Ones"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "19",
+   "ISRC": "USRH10721330",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "646291032",
+   "SNG_TITLE": "Ezekiel 25:17",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Samuel L. Jackson"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "20",
+   "ISRC": "USMC10110716",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="729642fc-cd24-416d-9f14-4611b04a0614"><title>Pulp Fiction: Music From the Motion Picture</title><artist-credit><name-credit><artist><name>Various Artists</name></artist></name-credit></artist-credit><release-group type="Soundtrack"><title>Pulp Fiction: Music From the Motion Picture</title><first-release-date>1994-09-26</first-release-date><artist-credit><name-credit><artist><name>Various Artists</name></artist></name-credit></artist-credit></release-group><date>2019-03-15</date><release-event-list><release-event><date>2019-03-15</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Geffen</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><artist><name>[dialogue]</name></artist></name-credit></artist-credit><recording><title>Pumpkin and Honey Bunny</title><artist-credit><name-credit><artist><name>Tim Roth</name></artist></name-credit><name-credit><artist><name>Amanda Plummer</name></artist></name-credit></artist-credit><first-release-date>2005-12-01</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Misirlou (single version)</title><artist-credit><name-credit><artist><name>Dick Dale and His Del‐Tones</name></artist></name-credit></artist-credit><first-release-date>2019-03-15</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Royale With Cheese</title><artist-credit><name-credit><artist><name>Samuel L. Jackson</name></artist></name-credit><name-credit><artist><name>John Travolta</name></artist></name-credit></artist-credit><first-release-date>1994-09-26</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Jungle Boogie</title><artist-credit><name-credit><artist><name>Kool &amp; the Gang</name></artist></name-credit></artist-credit><first-release-date>1973-09-09</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Let’s Stay Together</title><artist-credit><name-credit><artist><name>Al Green</name></artist></name-credit></artist-credit><first-release-date>1971-11</first-release-date></recording></track><track><position>6</position><number>6</number><title>Bustin’ Surfboards (single version)</title><recording><title>Bustin’ Surfboards</title><artist-credit><name-credit><artist><name>The Tornadoes</name></artist></name-credit></artist-credit><first-release-date>1963</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Lonesome Town</title><artist-credit><name-credit><name>Ricky Nelson</name><artist><name>Rick Nelson</name></artist></name-credit></artist-credit><first-release-date>1958-09-29</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Son of a Preacher Man</title><artist-credit><name-credit><artist><name>Dusty Springfield</name></artist></name-credit></artist-credit><first-release-date>1968-11-08</first-release-date></recording></track><track><position>9</position><number>9</number><artist-credit><name-credit><artist><name>[dialogue]</name></artist></name-credit></artist-credit><recording><title>Zed’s Dead Baby</title><artist-credit><name-credit><artist><name>Maria de Medeiros</name></artist></name-credit><name-credit><artist><name>Bruce Willis</name></artist></name-credit></artist-credit><first-release-date>2005-12-01</first-release-date></recording></track><track><position>10</position><number>10</number><title>Bullwinkle, Part 2</title><recording><title>Bullwinkle Part II</title><artist-credit><name-credit><artist><name>The Centurions</name></artist></name-credit></artist-credit><first-release-date>1963</first-release-date></recording></track><track><position>11</position><number>11</number><artist-credit><name-credit><artist><name>[dialogue]</name></artist></name-credit></artist-credit><recording><title>Jack Rabbit Slims Twist Contest</title><artist-credit><name-credit><artist><name>Jerome Patrick Hoban</name></artist></name-credit></artist-credit><first-release-date>2005-12-01</first-release-date></recording></track><track><position>12</position><number>12</number><title>You Never Can Tell (1964 single version) [mono]</title><recording><title>You Never Can Tell</title><artist-credit><name-credit><artist><name>Chuck Berry</name></artist></name-credit></artist-credit><first-release-date>1964-07</first-release-date></recording></track><track><position>13</position><number>13</number><recording><title>Girl, You’ll Be a Woman Soon</title><artist-credit><name-credit><artist><name>Urge Overkill</name></artist></name-credit></artist-credit><first-release-date>1992</first-release-date></recording></track><track><position>14</position><number>14</number><recording><title>If Love Is a Red Dress (Hang Me in Rags)</title><artist-credit><name-credit><artist><name>Maria McKee</name></artist></name-credit></artist-credit><first-release-date>1993</first-release-date></recording></track><track><position>15</position><number>15</number><artist-credit><name-credit><artist><name>[dialogue]</name></artist></name-credit></artist-credit><recording><title>Bring Out the Gimp</title><artist-credit><name-credit><artist><name>Peter Greene</name></artist></name-credit><name-credit><artist><name>Duane Whitaker</name></artist></name-credit></artist-credit><first-release-date>2005-12-01</first-release-date></recording></track><track><position>16</position><number>16</number><title>Comanche (single version)</title><recording><title>Comanche</title><artist-credit><name-credit><artist><name>The Revels</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>17</position><number>17</number><recording><title>Flowers on the Wall</title><artist-credit><name-credit><artist><name>The Statler Brothers</name></artist></name-credit></artist-credit><first-release-date>1966-04</first-release-date></recording></track><track><position>18</position><number>18</number><artist-credit><name-credit><artist><name>[dialogue]</name></artist></name-credit></artist-credit><recording><title>Personality Goes a Long Way</title><artist-credit><name-credit><artist><name>John Travolta</name></artist></name-credit><name-credit><artist><name>Samuel L. Jackson</name></artist></name-credit></artist-credit><first-release-date>1994-09-26</first-release-date></recording></track><track><position>19</position><number>19</number><recording><title>Surf Rider</title><artist-credit><name-credit><artist><name>The Lively Ones</name></artist></name-credit></artist-credit><first-release-date>1963</first-release-date></recording></track><track><position>20</position><number>20</number><artist-credit><name-credit><artist><name>[dialogue]</name></artist></name-credit></artist-credit><recording><title>Ezekiel 25:17</title><artist-credit><name-credit><artist><name>Samuel L. Jackson</name></artist></name-credit></artist-credit><first-release-date>1994-09-26</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 1347833,
+ "year": 1994,
+ "artists": [
+  {
+   "name": "Various",
+   "anv": "",
+   "role": "",
+   "id": 194
+  }
+ ],
+ "labels": [
+  {
+   "name": "MCA Records",
+   "catno": "MCAD-11103",
+   "id": 878
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "Pulp Fiction (Music From The Motion Picture)",
+ "released": "1994-09-00",
+ "genres": [
+  "Rock",
+  "Funk / Soul",
+  "Non-Music",
+  "Stage & Screen"
+ ],
+ "tracklist": [
+  {
+   "position": "1a",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "anv": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "Pumpkin And Honey Bunny",
+   "extraartists": [
+    {
+     "name": "Amanda Plummer",
+     "anv": "",
+     "role": "Voice",
+     "id": 252799
+    },
+    {
+     "name": "Tim Roth",
+     "anv": "",
+     "role": "Voice",
+     "id": 258999
+    },
+    {
+     "name": "Quentin Tarantino",
+     "anv": "",
+     "role": "Written-By [Dialogue]",
+     "id": 258993
+    }
+   ],
+   "duration": "0:11"
+  },
+  {
+   "position": "1b",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dick Dale & His Del-Tones",
+     "anv": "",
+     "role": "",
+     "id": 252794
+    }
+   ],
+   "title": "Misirlou",
+   "extraartists": [
+    {
+     "name": "Jim Monsour",
+     "anv": "",
+     "role": "Producer",
+     "id": 331404
+    },
+    {
+     "name": "Fred Wise",
+     "anv": "",
+     "role": "Written-By",
+     "id": 255831
+    },
+    {
+     "name": "Milton Leeds",
+     "anv": "",
+     "role": "Written-By",
+     "id": 727192
+    },
+    {
+     "name": "Nicholas Roubanis",
+     "anv": "",
+     "role": "Written-By",
+     "id": 692325
+    },
+    {
+     "name": "Sidney Keith Russell",
+     "anv": "S.K. Russell",
+     "role": "Written-By",
+     "id": 725888
+    }
+   ],
+   "duration": "2:16"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "anv": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "Royale With Cheese",
+   "extraartists": [
+    {
+     "name": "John Travolta",
+     "anv": "",
+     "role": "Voice",
+     "id": 195173
+    },
+    {
+     "name": "Samuel L. Jackson",
+     "anv": "",
+     "role": "Voice",
+     "id": 252791
+    },
+    {
+     "name": "Quentin Tarantino",
+     "anv": "",
+     "role": "Written-By [Dialogue]",
+     "id": 258993
+    }
+   ],
+   "duration": "1:42"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Kool & The Gang",
+     "anv": "",
+     "role": "",
+     "id": 48865
+    }
+   ],
+   "title": "Jungle Boogie",
+   "extraartists": [
+    {
+     "name": "Claydes Smith",
+     "anv": "",
+     "role": "Written-By",
+     "id": 387582
+    },
+    {
+     "name": "Dennis D.T. Thomas",
+     "anv": "Dennis Thomas",
+     "role": "Written-By",
+     "id": 387581
+    },
+    {
+     "name": "Don Boyce",
+     "anv": "Donald Boyce",
+     "role": "Written-By",
+     "id": 388956
+    },
+    {
+     "name": "George Brown",
+     "anv": "",
+     "role": "Written-By",
+     "id": 261265
+    },
+    {
+     "name": "Richard Westfield",
+     "anv": "",
+     "role": "Written-By",
+     "id": 635985
+    },
+    {
+     "name": "Robert Kool Bell",
+     "anv": "Robert Bell",
+     "role": "Written-By",
+     "id": 387580
+    },
+    {
+     "name": "Robert Spike Mickens",
+     "anv": "Robert Mickens",
+     "role": "Written-By",
+     "id": 387583
+    },
+    {
+     "name": "Ronald Bell",
+     "anv": "",
+     "role": "Written-By",
+     "id": 108893
+    }
+   ],
+   "duration": "3:05"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Al Green",
+     "anv": "",
+     "role": "",
+     "id": 25261
+    }
+   ],
+   "title": "Let's Stay Together",
+   "extraartists": [
+    {
+     "name": "Willie Mitchell",
+     "anv": "",
+     "role": "Producer, Written-By",
+     "id": 145293
+    },
+    {
+     "name": "Al Green",
+     "anv": "",
+     "role": "Written-By",
+     "id": 25261
+    },
+    {
+     "name": "Al Jackson Jr.",
+     "anv": "",
+     "role": "Written-By",
+     "id": 358683
+    }
+   ],
+   "duration": "3:15"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "The Tornadoes",
+     "anv": "",
+     "role": "",
+     "id": 252795
+    }
+   ],
+   "title": "Bustin' Surfboards",
+   "extraartists": [
+    {
+     "name": "Bob Irwin",
+     "anv": "",
+     "role": "Producer",
+     "id": 269418
+    },
+    {
+     "name": "Gerald Sanders",
+     "anv": "",
+     "role": "Written-By",
+     "id": 824539
+    },
+    {
+     "name": "Jesse Sanders",
+     "anv": "",
+     "role": "Written-By",
+     "id": 824536
+    },
+    {
+     "name": "Leonard Delaney",
+     "anv": "",
+     "role": "Written-By",
+     "id": 824537
+    },
+    {
+     "name": "Norman Sanders",
+     "anv": "",
+     "role": "Written-By",
+     "id": 824541
+    }
+   ],
+   "duration": "2:26"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Ricky Nelson (2)",
+     "anv": "",
+     "role": "",
+     "id": 257739
+    }
+   ],
+   "title": "Lonesome Town",
+   "extraartists": [
+    {
+     "name": "Jimmie Haskell",
+     "anv": "Jimmy Haskell",
+     "role": "Producer",
+     "id": 252860
+    },
+    {
+     "name": "Ozzie Nelson",
+     "anv": "",
+     "role": "Producer",
+     "id": 331403
+    },
+    {
+     "name": "Ricky Nelson (2)",
+     "anv": "",
+     "role": "Producer",
+     "id": 257739
+    },
+    {
+     "name": "Baker Knight",
+     "anv": "",
+     "role": "Written-By",
+     "id": 628221
+    }
+   ],
+   "duration": "2:13"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Dusty Springfield",
+     "anv": "",
+     "role": "",
+     "id": 31260
+    }
+   ],
+   "title": "Son Of A Preacher Man",
+   "extraartists": [
+    {
+     "name": "Arif Mardin",
+     "anv": "",
+     "role": "Producer",
+     "id": 15446
+    },
+    {
+     "name": "Jerry Wexler",
+     "anv": "",
+     "role": "Producer",
+     "id": 248847
+    },
+    {
+     "name": "Tom Dowd",
+     "anv": "",
+     "role": "Producer",
+     "id": 180298
+    },
+    {
+     "name": "John Hurley",
+     "anv": "",
+     "role": "Written-By",
+     "id": 255397
+    },
+    {
+     "name": "Ronnie Wilkins",
+     "anv": "",
+     "role": "Written-By",
+     "id": 255396
+    }
+   ],
+   "duration": "2:25"
+  },
+  {
+   "position": "8a",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "anv": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "Zed's Dead, Baby",
+   "extraartists": [
+    {
+     "name": "Bruce Willis",
+     "anv": "",
+     "role": "Voice",
+     "id": 252793
+    },
+    {
+     "name": "Maria De Medeiros",
+     "anv": "Marie De Medeiros",
+     "role": "Voice",
+     "id": 252792
+    },
+    {
+     "name": "Quentin Tarantino",
+     "anv": "",
+     "role": "Written-By [Dialogue]",
+     "id": 258993
+    }
+   ],
+   "duration": "0:12"
+  },
+  {
+   "position": "8b",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "The Centurions (2)",
+     "anv": "The Centurians",
+     "role": "",
+     "id": 424490
+    }
+   ],
+   "title": "Bullwinkle Part II",
+   "extraartists": [
+    {
+     "name": "Bob Keene",
+     "anv": "",
+     "role": "Producer",
+     "id": 331400
+    },
+    {
+     "name": "Dennis Rose",
+     "anv": "",
+     "role": "Written-By",
+     "id": 728017
+    },
+    {
+     "name": "Ernie Furrow",
+     "anv": "Ernest Furrow",
+     "role": "Written-By",
+     "id": 728018
+    }
+   ],
+   "duration": "2:27"
+  },
+  {
+   "position": "9a",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "anv": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "Jack Rabbit Slims Twist Contest",
+   "extraartists": [
+    {
+     "name": "Jerome Patrick Hoban",
+     "anv": "",
+     "role": "Voice",
+     "id": 252801
+    },
+    {
+     "name": "Quentin Tarantino",
+     "anv": "",
+     "role": "Written-By [Dialogue]",
+     "id": 258993
+    }
+   ],
+   "duration": "0:32"
+  },
+  {
+   "position": "9b",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Chuck Berry",
+     "anv": "",
+     "role": "",
+     "id": 180119
+    }
+   ],
+   "title": "You Never Can Tell",
+   "extraartists": [
+    {
+     "name": "Chuck Berry",
+     "anv": "",
+     "role": "Written-By",
+     "id": 180119
+    }
+   ],
+   "duration": "2:40"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Urge Overkill",
+     "anv": "",
+     "role": "",
+     "id": 252790
+    }
+   ],
+   "title": "Girl, You'll Be A Woman Soon",
+   "extraartists": [
+    {
+     "name": "Kramer (2)",
+     "anv": "",
+     "role": "Producer",
+     "id": 239431
+    },
+    {
+     "name": "Urge Overkill",
+     "anv": "",
+     "role": "Producer",
+     "id": 252790
+    },
+    {
+     "name": "Neil Diamond",
+     "anv": "",
+     "role": "Written-By",
+     "id": 271516
+    }
+   ],
+   "duration": "3:09"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Maria McKee",
+     "anv": "",
+     "role": "",
+     "id": 94241
+    }
+   ],
+   "title": "If Love Is A Red Dress (Hang Me In Rags)",
+   "extraartists": [
+    {
+     "name": "Bruce Brody",
+     "anv": "",
+     "role": "Producer, Mixed By",
+     "id": 325628
+    },
+    {
+     "name": "Maria McKee",
+     "anv": "",
+     "role": "Producer, Mixed By, Written-By",
+     "id": 94241
+    }
+   ],
+   "duration": "4:55"
+  },
+  {
+   "position": "12a",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "anv": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "Bring Out The Gimp",
+   "extraartists": [
+    {
+     "name": "Duane Whitaker",
+     "anv": "",
+     "role": "Voice",
+     "id": 252796
+    },
+    {
+     "name": "Peter Greene",
+     "anv": "",
+     "role": "Voice",
+     "id": 950671
+    },
+    {
+     "name": "Quentin Tarantino",
+     "anv": "",
+     "role": "Written-By [Dialogue]",
+     "id": 258993
+    }
+   ],
+   "duration": "0:08"
+  },
+  {
+   "position": "12b",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "The Revels",
+     "anv": "",
+     "role": "",
+     "id": 252800
+    }
+   ],
+   "title": "Comanche",
+   "extraartists": [
+    {
+     "name": "Bill Wenzel",
+     "anv": "",
+     "role": "Producer",
+     "id": 331402
+    },
+    {
+     "name": "The Revels",
+     "anv": "",
+     "role": "Written-By",
+     "id": 252800
+    }
+   ],
+   "duration": "2:02"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "The Statler Brothers",
+     "anv": "",
+     "role": "",
+     "id": 252797
+    }
+   ],
+   "title": "Flowers On The Wall",
+   "extraartists": [
+    {
+     "name": "Jerry Kennedy",
+     "anv": "",
+     "role": "Producer",
+     "id": 322813
+    },
+    {
+     "name": "Lewis De Witt",
+     "anv": "Lewis C. DeWitt",
+     "role": "Written-By",
+     "id": 754700
+    }
+   ],
+   "duration": "2:23"
+  },
+  {
+   "position": "14",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "anv": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "Personality Goes A Long Way",
+   "extraartists": [
+    {
+     "name": "John Travolta",
+     "anv": "",
+     "role": "Voice",
+     "id": 195173
+    },
+    {
+     "name": "Samuel L. Jackson",
+     "anv": "",
+     "role": "Voice",
+     "id": 252791
+    },
+    {
+     "name": "Quentin Tarantino",
+     "anv": "",
+     "role": "Written-By [Dialogue]",
+     "id": 258993
+    }
+   ],
+   "duration": "1:00"
+  },
+  {
+   "position": "15",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "The Lively Ones",
+     "anv": "",
+     "role": "",
+     "id": 251674
+    }
+   ],
+   "title": "Surf Rider",
+   "extraartists": [
+    {
+     "name": "Don Wilson",
+     "anv": "",
+     "role": "Written-By",
+     "id": 464545
+    },
+    {
+     "name": "Nokie Edwards",
+     "anv": "Nole Edwards",
+     "role": "Written-By",
+     "id": 727188
+    },
+    {
+     "name": "Robert Lenard Bogle",
+     "anv": "Bob Bogle",
+     "role": "Written-By",
+     "id": 727190
+    }
+   ],
+   "duration": "3:18"
+  },
+  {
+   "position": "16",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "anv": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "Ezekiel 25:17",
+   "extraartists": [
+    {
+     "name": "Samuel L. Jackson",
+     "anv": "",
+     "role": "Voice",
+     "id": 252791
+    },
+    {
+     "name": "Quentin Tarantino",
+     "anv": "",
+     "role": "Written-By [Dialogue]",
+     "id": 258993
+    }
+   ],
+   "duration": "0:51"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Tim Stedman",
+   "anv": "",
+   "role": "Art Direction",
+   "id": 1828021
+  },
+  {
+   "name": "Mary Ramos",
+   "anv": "",
+   "role": "Coordinator [Music]",
+   "id": 1860380
+  },
+  {
+   "name": "Christine Edwards (2)",
+   "anv": "",
+   "role": "Coordinator [Soundtrack Coordinator For MCA]",
+   "id": 4693606
+  },
+  {
+   "name": "Donna Mercer",
+   "anv": "",
+   "role": "Design",
+   "id": 2142662
+  },
+  {
+   "name": "Kathy Nelson",
+   "anv": "",
+   "role": "Executive-Producer [MCA Records], Supervised By",
+   "id": 359522
+  },
+  {
+   "name": "Karyn Rachtman",
+   "anv": "",
+   "role": "Executive-Producer [Soundtrack]",
+   "id": 1763565
+  },
+  {
+   "name": "Lawrence Bender",
+   "anv": "",
+   "role": "Executive-Producer [Soundtrack]",
+   "id": 592398
+  },
+  {
+   "name": "Quentin Tarantino",
+   "anv": "",
+   "role": "Executive-Producer [Soundtrack]",
+   "id": 258993
+  },
+  {
+   "name": "Steve Hall",
+   "anv": "",
+   "role": "Mastered By",
+   "id": 204416
+  },
+  {
+   "name": "Chuck Kelley",
+   "anv": "",
+   "role": "Music Consultant",
+   "id": 937574
+  },
+  {
+   "name": "Laura Lovelace",
+   "anv": "",
+   "role": "Music Consultant",
+   "id": 2869982
+  },
+  {
+   "name": "Karyn Rachtman",
+   "anv": "",
+   "role": "Supervised By [Music]",
+   "id": 1763565
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "arpo23jmqp3za",
+ "upc": "0602577174391",
+ "title": "Pulp Fiction",
+ "version": "Music From The Motion Picture",
+ "tracks_count": 20,
+ "artist": {
+  "name": "Various Artists"
+ },
+ "genres_list": [
+  "Film Soundtracks"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Pumpkin And Honey Bunny",
+    "version": "Dialogue Excerpt From \"Pulp Fiction\"",
+    "track_number": 1,
+    "performers": "Tim Roth, MainArtist, SpokenWord - Amanda Plummer, MainArtist, SpokenWord - Jim Monsour, Producer - Quentin Tarantino, ComposerLyricist",
+    "performer": {
+     "name": "Tim Roth"
+    }
+   },
+   {
+    "title": "Misirlou",
+    "version": "Single Version",
+    "track_number": 2,
+    "performer": {
+     "name": "Dick Dale and His Del-Tones"
+    }
+   },
+   {
+    "title": "Royale With Cheese",
+    "version": "Dialogue Excerpt From \"Pulp Fiction\"",
+    "track_number": 3,
+    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
+    "performer": {
+     "name": "John Travolta"
+    }
+   },
+   {
+    "title": "Jungle Boogie",
+    "version": null,
+    "track_number": 4,
+    "performers": "Kool & The Gang, MainArtist - Kool & The Gang Enterprises, Inc., Producer, RecordingArranger - Jeff Lesser, Engineer - Harvey Goldberg, Engineer - Donald Boyce, BackgroundVocalist, Vocalist, ComposerLyricist - Jay Landers, Other - Christopher B. Pearman, Other - Elliot Lurie, Other - Dennis Ronald Thomas, Vocalist, ComposerLyricist - Something Sweet, BackgroundVocalist - Ronald Bell, Vocalist - Robert Bell, Vocalist, ComposerLyricist - George Brown, Vocalist, ComposerLyricist - Amir Bayyan, Vocalist - Claydes Smith, Vocalist, ComposerLyricist - Caldwell MacMillan, Vocalist - Kevin W. Lassiter, Vocalist - Clifford Adams, Vocalist - Ricky West, Vocalist - Larry Gittens, Vocalist - Robert Spike Mickens, ComposerLyricist - Richard Westfield, ComposerLyricist - Ronald Nathan Bell, ComposerLyricist",
+    "performer": {
+     "name": "Kool & The Gang"
+    }
+   },
+   {
+    "title": "Let's Stay Together",
+    "version": "Single Version",
+    "track_number": 5,
+    "performer": {
+     "name": "Al Green"
+    }
+   },
+   {
+    "title": "Bustin' Surfboards",
+    "version": "Single Version",
+    "track_number": 6,
+    "performer": {
+     "name": "The Tornadoes"
+    }
+   },
+   {
+    "title": "Lonesome Town",
+    "version": "Single Version",
+    "track_number": 7,
+    "performers": "Ricky Nelson, MainArtist, Producer - Ozzie Nelson, Producer - Jimmie Haskell, Producer - BAKER KNIGHT, ComposerLyricist",
+    "performer": {
+     "name": "Ricky Nelson"
+    }
+   },
+   {
+    "title": "Son Of A Preacher Man",
+    "version": null,
+    "track_number": 8,
+    "performer": {
+     "name": "Dusty Springfield"
+    }
+   },
+   {
+    "title": "Zed's Dead Baby",
+    "version": "Dialogue Excerpt From \"Pulp Fiction\"",
+    "track_number": 9,
+    "performers": "Maria de Medeiros, MainArtist, SpokenWord - Bruce Willis, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
+    "performer": {
+     "name": "Maria de Medeiros"
+    }
+   },
+   {
+    "title": "Bullwinkle",
+    "version": "Pt. II",
+    "track_number": 10,
+    "performer": {
+     "name": "The Centurians"
+    }
+   },
+   {
+    "title": "Jack Rabbit Slims Twist Contest",
+    "version": "Dialogue Excerpt From \"Pulp Fiction\"",
+    "track_number": 11,
+    "performers": "Jerome Patrick Hoban, MainArtist - Quentin Tarantino, Producer, ComposerLyricist",
+    "performer": {
+     "name": "Jerome Patrick Hoban"
+    }
+   },
+   {
+    "title": "You Never Can Tell",
+    "version": "1964 Single Version",
+    "track_number": 12,
+    "performers": "Chuck Berry, MainArtist, Vocalist, ComposerLyricist - Phil Chess, Producer - Leonard Chess, Producer",
+    "performer": {
+     "name": "Chuck Berry"
+    }
+   },
+   {
+    "title": "Girl, You'll Be A Woman Soon",
+    "version": null,
+    "track_number": 13,
+    "performer": {
+     "name": "Urge Overkill"
+    }
+   },
+   {
+    "title": "If Love Is A Red Dress (Hang Me In Rags)",
+    "version": "Acoustic Demo Version",
+    "track_number": 14,
+    "performers": "Maria McKee, MainArtist, Producer, ComposerLyricist - Bruce Bennett Brody, Producer",
+    "performer": {
+     "name": "Maria McKee"
+    }
+   },
+   {
+    "title": "Bring Out The Gimp",
+    "version": "Dialogue Excerpt From \"Pulp Fiction\"",
+    "track_number": 15,
+    "performers": "Peter Greene, MainArtist, SpokenWord - Duane Whitaker, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
+    "performer": {
+     "name": "Peter Greene"
+    }
+   },
+   {
+    "title": "Comanche",
+    "version": "Single Version",
+    "track_number": 16,
+    "performer": {
+     "name": "The Revels"
+    }
+   },
+   {
+    "title": "Flowers On The Wall",
+    "version": "1975 Version",
+    "track_number": 17,
+    "performers": "The Statler Brothers, MainArtist - Jerry Kennedy, Producer - Tom Sparkman, Engineer - Lewis De Witt, ComposerLyricist",
+    "performer": {
+     "name": "The Statler Brothers"
+    }
+   },
+   {
+    "title": "Personality Goes A Long Way",
+    "version": "Dialogue Excerpt From \"Pulp Fiction\"",
+    "track_number": 18,
+    "performers": "John Travolta, MainArtist, SpokenWord - Samuel L. Jackson, MainArtist, SpokenWord - Quentin Tarantino, ComposerLyricist",
+    "performer": {
+     "name": "John Travolta"
+    }
+   },
+   {
+    "title": "Surf Rider",
+    "version": "Single Version",
+    "track_number": 19,
+    "performer": {
+     "name": "The Lively Ones"
+    }
+   },
+   {
+    "title": "Ezekiel 25:17",
+    "version": "Dialogue Excerpt From \"Pulp Fiction\"",
+    "track_number": 20,
+    "performers": "Samuel L. Jackson, MainArtist - Quentin Tarantino, ComposerLyricist",
+    "performer": {
+     "name": "Samuel L. Jackson"
+    }
+   }
+  ]
+ }
+}
+'''

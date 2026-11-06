@@ -1,0 +1,1563 @@
+album = "Puccini, La Bohème: Karajan, Berliner Philharmoniker"
+why = "A famous opera: Deezer makes the composer a main artist, and the stores list 14 or 15 performers. Discogs' parse loses every track."
+edition = "Decca 2024 remaster (Deezer, MusicBrainz); Qobuz ayakfjxmkegvb is another issue of the same recording, UPC 0028948712984"
+known_wrong = ["Deezer parse: Giacomo Puccini a main artist (and in ARTIST on every track of the files tagged from it); Herbert von Karajan a main, not conductor; no composer role", "MusicBrainz parse: chorus master Walter Hagen-Groll a main artist; Karajan a main, not conductor", "Discogs parse: 0 tracks", "merge: Puccini and Hagen-Groll both main"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+not_main = ["Giacomo Puccini"]
+how_we_know = "Qobuz credits Puccini as the composer; RED's guidance on classical keeps the composer out of the main artists"
+
+[today.deezer]
+release = ["Rolando Panerai (main)", "Luciano Pavarotti (main)", "Nicolai Ghiaurov (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)", "Giacomo Puccini (main)", "Gianni Maffeo (main)", "Michel Sénéchal (main)", "Mirella Freni (main)", "Schöneberger Sängerknaben (main)", "Chor der Deutschen Oper Berlin (main)", "Gernot Pietsch (main)", "Elizabeth Harwood (main)", "Hans-Dietrich Pohl (main)", "Hans-Dieter Appell (main)"]
+tracks = 31
+
+[today.musicbrainz]
+release = ["Walter Hagen-Groll (main)", "Chor der Deutschen Oper Berlin (main)", "Nicolaï Ghiaurov (main)", "Rolando Panerai (main)", "Luciano Pavarotti (main)", "Schöneberger Sängerknaben (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)", "Gianni Maffeo (main)", "Michel Sénéchal (main)", "Mirella Freni (main)", "Gernot Pietsch (main)", "Elizabeth Harwood (main)", "Hans-Dietrich Pohl (main)", "Hans-Dieter Appelt (main)"]
+tracks = 31
+
+[today.discogs]
+release = []
+tracks = 0
+
+[today.qobuz]
+release = ["Luciano Pavarotti (main)", "Rolando Panerai (guest)", "Nicolai Ghiaurov (guest)", "Berliner Philharmoniker (guest)", "Herbert Von Karajan (guest)", "Gianni Maffeo (guest)", "Michel Sénéchal (guest)", "Mirella Freni (guest)", "Schöneberger Sängerknaben (guest)", "Chor Der Deutschen Oper Berlin (guest)", "Gernot Pietsch (guest)", "Elizabeth Harwood (guest)", "Hans-Dietrich Pohl (guest)", "Hans-Dieter Appell (guest)"]
+tracks = 31
+
+[today.merge]
+release = ["Rolando Panerai (main)", "Luciano Pavarotti (main)", "Nicolai Ghiaurov (main)", "Berliner Philharmoniker (main)", "Herbert von Karajan (main)", "Giacomo Puccini (main)", "Walter Hagen-Groll (main)", "Chor der Deutschen Oper Berlin (main)", "Schöneberger Sängerknaben (main)", "Gianni Maffeo (main)", "Michel Sénéchal (main)", "Mirella Freni (main)", "Gernot Pietsch (main)", "Elizabeth Harwood (main)", "Hans-Dietrich Pohl (main)", "Hans-Dieter Appell (main)", "Hans-Dieter Appelt (main)"]
+tracks = 31
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Questo mar rosso (2024 Remaster)"]
+artist = ["Rolando Panerai", "Luciano Pavarotti", "Nicolai Ghiaurov", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Pensier profundo! (2024 Remaster)"]
+artist = ["Nicolai Ghiaurov", "Rolando Panerai", "Luciano Pavarotti", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Abasso, abbasso l'autor! (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Rolando Panerai", "Nicolai Ghiaurov", "Gianni Maffeo", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Si può – Chi è là? (2024 Remaster)"]
+artist = ["Michel Sénéchal", "Rolando Panerai", "Luciano Pavarotti", "Nicolai Ghiaurov", "Gianni Maffeo", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Io resto per terminar l'articolo (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Rolando Panerai", "Nicolai Ghiaurov", "Gianni Maffeo", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Chi è là? (2024 Remaster)"]
+artist = ["Mirella Freni", "Luciano Pavarotti", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Si sente meglio? (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Mirella Freni", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Che gelida manina (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: Sì. Mi chiamano Mimì (2024 Remaster)"]
+artist = ["Mirella Freni", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["La bohème, Act I : Puccini: La bohème, Act I: O soave fanciulla (Love Duet) (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Mirella Freni", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["La bohème, Act II : Puccini: La bohème, Act II: Arranci, datteri! (2024 Remaster)"]
+artist = ["Rolando Panerai", "Gianni Maffeo", "Luciano Pavarotti", "Mirella Freni", "Schöneberger Sängerknaben", "Chor der Deutschen Oper Berlin", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["La bohème, Act II : Puccini: La bohème, Act II: Chi guardi? – Ecco i giocattoli di Parpignol (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Nicolai Ghiaurov", "Mirella Freni", "Gianni Maffeo", "Gernot Pietsch", "Schöneberger Sängerknaben", "Chor der Deutschen Oper Berlin", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["La bohème, Act II : Puccini: La bohème, Act II: Viva Parpignol! (2024 Remaster)"]
+artist = ["Rolando Panerai", "Mirella Freni", "Gianni Maffeo", "Nicolai Ghiaurov", "Luciano Pavarotti", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["La bohème, Act II : Puccini: La bohème, Act II: Oh! ... Essa! ... Musetta! (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Gianni Maffeo", "Nicolai Ghiaurov", "Rolando Panerai", "Michel Sénéchal", "Elizabeth Harwood", "Schöneberger Sängerknaben", "Chor der Deutschen Oper Berlin", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["La bohème, Act II : Puccini: La bohème, Act II: Quando men vo – Fuori il danaro! (2024 Remaster)"]
+artist = ["Elizabeth Harwood", "Michel Sénéchal", "Mirella Freni", "Luciano Pavarotti", "Nicolai Ghiaurov", "Rolando Panerai", "Gianni Maffeo", "Schöneberger Sängerknaben", "Chor der Deutschen Oper Berlin", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["La bohème, Act II : Puccini: La bohème, Act II: Chi l'ha richiesto? – Caro! – Fuori il danaro! (2024 Remaster)"]
+artist = ["Nicolai Ghiaurov", "Gianni Maffeo", "Luciano Pavarotti", "Rolando Panerai", "Elizabeth Harwood", "Schöneberger Sängerknaben", "Chor der Deutschen Oper Berlin", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "17.flac"
+tracknumber = ["1"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Ohè, là, le guardie! Aprite! (2024 Remaster)"]
+artist = ["Hans-Dietrich Pohl", "Elizabeth Harwood", "Mirella Freni", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "18.flac"
+tracknumber = ["2"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Sa dirmi, scusi (2024 Remaster)"]
+artist = ["Mirella Freni", "Hans-Dieter Appell", "Hans-Dietrich Pohl", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "19.flac"
+tracknumber = ["3"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Mimì! – Speravo di trovarvi qui (2024 Remaster)"]
+artist = ["Rolando Panerai", "Mirella Freni", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "20.flac"
+tracknumber = ["4"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Marcello. Finalmente! (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Rolando Panerai", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "21.flac"
+tracknumber = ["5"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Mimì è una civetta (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Rolando Panerai", "Mirella Freni", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "22.flac"
+tracknumber = ["6"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Mimì è tanto malata! (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Mirella Freni", "Rolando Panerai", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "23.flac"
+tracknumber = ["7"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Donde lieta uscì (2024 Remaster)"]
+artist = ["Mirella Freni", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "24.flac"
+tracknumber = ["8"]
+discnumber = ["2"]
+title = ["La bohème, Act III : Puccini: La bohème, Act III: Dunque è propio finita! (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Mirella Freni", "Elizabeth Harwood", "Rolando Panerai", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "25.flac"
+tracknumber = ["9"]
+discnumber = ["2"]
+title = ["La bohème, Act IV : Puccini: La bohème, Act IV: In un coupé? (2024 Remaster)"]
+artist = ["Rolando Panerai", "Luciano Pavarotti", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "26.flac"
+tracknumber = ["10"]
+discnumber = ["2"]
+title = ["La bohème, Act IV : Puccini: La bohème, Act IV: O Mimì, tu più non torni – Che ora sia (2024 Remaster)"]
+artist = ["Luciano Pavarotti", "Rolando Panerai", "Gianni Maffeo", "Nicolai Ghiaurov", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "27.flac"
+tracknumber = ["11"]
+discnumber = ["2"]
+title = ["La bohème, Act IV : Puccini: La bohème, Act IV: Gavotta! ... Minuetto! (2024 Remaster)"]
+artist = ["Nicolai Ghiaurov", "Rolando Panerai", "Gianni Maffeo", "Luciano Pavarotti", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "28.flac"
+tracknumber = ["12"]
+discnumber = ["2"]
+title = ["La bohème, Act IV : Puccini: La bohème, Act IV: C'è Mimì... (2024 Remaster)"]
+artist = ["Elizabeth Harwood", "Luciano Pavarotti", "Rolando Panerai", "Nicolai Ghiaurov", "Gianni Maffeo", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "29.flac"
+tracknumber = ["13"]
+discnumber = ["2"]
+title = ["La bohème, Act IV : Puccini: La bohème, Act IV: Vecchia zimarra, senti (2024 Remaster)"]
+artist = ["Nicolai Ghiaurov", "Gianni Maffeo", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "30.flac"
+tracknumber = ["14"]
+discnumber = ["2"]
+title = ["La bohème, Act IV : Puccini: La bohème, Act IV: Sono andati? (2024 Remaster)"]
+artist = ["Mirella Freni", "Luciano Pavarotti", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+[[track]]
+file = "31.flac"
+tracknumber = ["15"]
+discnumber = ["2"]
+title = ["La bohème, Act IV : Puccini: La bohème, Act IV: Oh Dio! Mimi! – Che ha detto il medico? (2024 Remaster)"]
+artist = ["Gianni Maffeo", "Mirella Freni", "Luciano Pavarotti", "Elizabeth Harwood", "Rolando Panerai", "Berliner Philharmoniker", "Herbert von Karajan", "Giacomo Puccini"]
+album = ["Puccini: La bohème (2024 Remaster)"]
+albumartist = ["Luciano Pavarotti"]
+date = ["2025-04-04"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 734173451,
+ "title": "Puccini: La bohème (2024 Remaster)",
+ "upc": "028948712649",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 98,
+    "name": "Classical"
+   }
+  ]
+ },
+ "label": "Decca Music Group Ltd.",
+ "release_date": "2025-04-04",
+ "tracklist": [
+  {
+   "SNG_ID": "3298554971",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Questo mar rosso",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rolando Panerai",
+     "Luciano Pavarotti",
+     "Nicolai Ghiaurov",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBF072440001",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298554981",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Pensier profundo!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nicolai Ghiaurov",
+     "Rolando Panerai",
+     "Luciano Pavarotti",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBF072440002",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298554991",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Abasso, abbasso l'autor!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Rolando Panerai",
+     "Nicolai Ghiaurov",
+     "Gianni Maffeo",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBF072440003",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "3298555001",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Si può – Chi è là?",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Michel Sénéchal",
+     "Rolando Panerai",
+     "Luciano Pavarotti",
+     "Nicolai Ghiaurov",
+     "Gianni Maffeo",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBF072440004",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555011",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Io resto per terminar l'articolo",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Rolando Panerai",
+     "Nicolai Ghiaurov",
+     "Gianni Maffeo",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBF072440005",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555021",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Chi è là?",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Mirella Freni",
+     "Luciano Pavarotti",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBF072440006",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555031",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Si sente meglio?",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Mirella Freni",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBF072440007",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555041",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Che gelida manina",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBF072440008",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555051",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: Sì. Mi chiamano Mimì",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Mirella Freni",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBF072440009",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555061",
+   "SNG_TITLE": "La bohème, Act I : Puccini: La bohème, Act I: O soave fanciulla (Love Duet)",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Mirella Freni",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBF072440010",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555071",
+   "SNG_TITLE": "La bohème, Act II : Puccini: La bohème, Act II: Arranci, datteri!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rolando Panerai",
+     "Gianni Maffeo",
+     "Luciano Pavarotti",
+     "Mirella Freni",
+     "Schöneberger Sängerknaben",
+     "Chor der Deutschen Oper Berlin",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBF072440011",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555081",
+   "SNG_TITLE": "La bohème, Act II : Puccini: La bohème, Act II: Chi guardi? – Ecco i giocattoli di Parpignol",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Nicolai Ghiaurov",
+     "Mirella Freni",
+     "Gianni Maffeo",
+     "Gernot Pietsch",
+     "Schöneberger Sängerknaben",
+     "Chor der Deutschen Oper Berlin",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "GBF072440012",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555091",
+   "SNG_TITLE": "La bohème, Act II : Puccini: La bohème, Act II: Viva Parpignol!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rolando Panerai",
+     "Mirella Freni",
+     "Gianni Maffeo",
+     "Nicolai Ghiaurov",
+     "Luciano Pavarotti",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "GBF072440013",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555101",
+   "SNG_TITLE": "La bohème, Act II : Puccini: La bohème, Act II: Oh! ... Essa! ... Musetta!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Gianni Maffeo",
+     "Nicolai Ghiaurov",
+     "Rolando Panerai",
+     "Michel Sénéchal",
+     "Elizabeth Harwood",
+     "Schöneberger Sängerknaben",
+     "Chor der Deutschen Oper Berlin",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "GBF072440014",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555111",
+   "SNG_TITLE": "La bohème, Act II : Puccini: La bohème, Act II: Quando men vo – Fuori il danaro!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elizabeth Harwood",
+     "Michel Sénéchal",
+     "Mirella Freni",
+     "Luciano Pavarotti",
+     "Nicolai Ghiaurov",
+     "Rolando Panerai",
+     "Gianni Maffeo",
+     "Schöneberger Sängerknaben",
+     "Chor der Deutschen Oper Berlin",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "15",
+   "ISRC": "GBF072440015",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555121",
+   "SNG_TITLE": "La bohème, Act II : Puccini: La bohème, Act II: Chi l'ha richiesto? – Caro! – Fuori il danaro!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nicolai Ghiaurov",
+     "Gianni Maffeo",
+     "Luciano Pavarotti",
+     "Rolando Panerai",
+     "Elizabeth Harwood",
+     "Schöneberger Sängerknaben",
+     "Chor der Deutschen Oper Berlin",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "16",
+   "ISRC": "GBF072440016",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555131",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Ohè, là, le guardie! Aprite!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Hans-Dietrich Pohl",
+     "Elizabeth Harwood",
+     "Mirella Freni",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBF072440017",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555141",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Sa dirmi, scusi",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Mirella Freni",
+     "Hans-Dieter Appell",
+     "Hans-Dietrich Pohl",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBF072440018",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555151",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Mimì! – Speravo di trovarvi qui",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rolando Panerai",
+     "Mirella Freni",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBF072440019",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555161",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Marcello. Finalmente!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Rolando Panerai",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBF072440020",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555171",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Mimì è una civetta",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Rolando Panerai",
+     "Mirella Freni",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBF072440021",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555181",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Mimì è tanto malata!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Mirella Freni",
+     "Rolando Panerai",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBF072440022",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555191",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Donde lieta uscì",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Mirella Freni",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBF072440023",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555201",
+   "SNG_TITLE": "La bohème, Act III : Puccini: La bohème, Act III: Dunque è propio finita!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Mirella Freni",
+     "Elizabeth Harwood",
+     "Rolando Panerai",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBF072440024",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555211",
+   "SNG_TITLE": "La bohème, Act IV : Puccini: La bohème, Act IV: In un coupé?",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rolando Panerai",
+     "Luciano Pavarotti",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBF072440025",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555221",
+   "SNG_TITLE": "La bohème, Act IV : Puccini: La bohème, Act IV: O Mimì, tu più non torni – Che ora sia",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Luciano Pavarotti",
+     "Rolando Panerai",
+     "Gianni Maffeo",
+     "Nicolai Ghiaurov",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBF072440026",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555231",
+   "SNG_TITLE": "La bohème, Act IV : Puccini: La bohème, Act IV: Gavotta! ... Minuetto!",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nicolai Ghiaurov",
+     "Rolando Panerai",
+     "Gianni Maffeo",
+     "Luciano Pavarotti",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBF072440027",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555241",
+   "SNG_TITLE": "La bohème, Act IV : Puccini: La bohème, Act IV: C'è Mimì...",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Elizabeth Harwood",
+     "Luciano Pavarotti",
+     "Rolando Panerai",
+     "Nicolai Ghiaurov",
+     "Gianni Maffeo",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "12",
+   "ISRC": "GBF072440028",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555251",
+   "SNG_TITLE": "La bohème, Act IV : Puccini: La bohème, Act IV: Vecchia zimarra, senti",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Nicolai Ghiaurov",
+     "Gianni Maffeo",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "13",
+   "ISRC": "GBF072440029",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555261",
+   "SNG_TITLE": "La bohème, Act IV : Puccini: La bohème, Act IV: Sono andati?",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Mirella Freni",
+     "Luciano Pavarotti",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "14",
+   "ISRC": "GBF072440030",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "3298555271",
+   "SNG_TITLE": "La bohème, Act IV : Puccini: La bohème, Act IV: Oh Dio! Mimi! – Che ha detto il medico?",
+   "VERSION": "(2024 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Gianni Maffeo",
+     "Mirella Freni",
+     "Luciano Pavarotti",
+     "Elizabeth Harwood",
+     "Rolando Panerai",
+     "Berliner Philharmoniker",
+     "Herbert von Karajan",
+     "Giacomo Puccini"
+    ]
+   },
+   "DISK_NUMBER": "2",
+   "TRACK_NUMBER": "15",
+   "ISRC": "GBF072440031",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="da77668d-f9cd-4b63-b2d1-e5242ef6fb09"><title>Puccini: La bohème (2024 Remaster)</title><artist-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><name>Nicolai Ghiaurov</name><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><release-group><title>La bohème</title><first-release-date>1973</first-release-date><artist-credit><name-credit><name>Puccini</name><artist><name>Giacomo Puccini</name></artist></name-credit><name-credit><name>Freni</name><artist><name>Mirella Freni</name></artist></name-credit><name-credit><name>Pavarotti</name><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><name>Harwood</name><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><name>Panerai</name><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><name>Maffeo</name><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><name>Ghiaurov</name><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit></release-group><date>2025-04-04</date><release-event-list><release-event><date>2025-04-04</date></release-event></release-event-list><cover-art-archive><front>false</front></cover-art-archive><label-info-list><label-info><label><name>Decca Music Group</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><title>La bohème: Quadro I. “Questo mar rosso” (Marcello)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Questo mar rosso” (Marcello)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>2</position><number>2</number><title>La bohème: Quadro I. “Pensier profondo!” (Colline)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Pensier profondo!” (Colline)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>3</position><number>3</number><title>La bohème: Quadro I. “Legna!” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Abbasso, abbasso l'autor!” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>4</position><number>4</number><title>La bohème: Quadro I. “Si può?” (Benoit)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Si può” (Benoit)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Michel Sénéchal</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>5</position><number>5</number><title>La bohème: Quadro I. “Io resto” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Io resto” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>6</position><number>6</number><title>La bohème: Quadro I. “Chi è là?” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Chi è là?” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>7</position><number>7</number><title>La bohème: Quadro I. “Si sente meglio?” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Si sente meglio” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>8</position><number>8</number><title>La bohème: Quadro I. “Che gelida manina” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “Che gelida manina”</title><artist-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1982</first-release-date></recording></track><track><position>9</position><number>9</number><title>La bohème: Quadro I. “Sì. Mi chiamano Mimì” (Mimì)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: “Sì, mi chiamano Mimì”</title><artist-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>10</position><number>10</number><title>La bohème: Quadro I. “O soave fanciulla” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto I. “O soave fanciulla”</title><artist-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>11</position><number>11</number><title>La bohème: Quadro II. “Aranci, ninnoli! Caldi i marroni e caramelle!” (Monelli)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto II. “Aranci, datteri!” (Venditori ambulanti)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>12</position><number>12</number><title>La bohème: Quadro II. “Chi guardi?” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto II. “Chi guardi?” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Gernot Pietsch</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>13</position><number>13</number><title>La bohème: Quadro II. “Viva Parpignol! Parpignol! Parpignol!” (fanciulli, fanciulle)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto II. “Viva Parpignol!” (Fanciulli, fanciulle)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>14</position><number>14</number><title>La bohème: Quadro II. “Oh! ... Essa! ... Musetta!” (Rodolfo, Schaunard, Colline, Marcello)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto II. “Oh!... Essa!... Musetta!” (Rodolfo, Schaunard, Colline, Marcello)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Michel Sénéchal</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>15</position><number>15</number><title>La bohème: Quadro II. “Quando men vo” (Musetta)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto II. “Quando m'en vo” (Musetta)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Michel Sénéchal</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>16</position><number>16</number><title>La bohème: Quadro II. “Chi l’ha richiesto?” (Colline)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto II. “Chi l’ha richiesto?” (Colline)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track></track-list></medium><medium><position>2</position><track-list><track><position>1</position><number>1</number><title>La bohème: Quadro III. “Ohè là, le guardie! Aprite!” (Spazzini)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Ohè là, le guardie! Aprite!” (Spazzini)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Hans-Dietrich Pohl</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>2</position><number>2</number><title>La bohème: Quadro III. “Sa dirmi, scusi, qual’è l’osteria” (Mimì)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Sa dirmi, scusi, qual è l’osteria” (Mimì)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Hans-Dieter Appelt</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Hans-Dietrich Pohl</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>3</position><number>3</number><title>La bohème: Quadro III. “Mimì!” (Marcello)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Mimì! - Speravo di trovarvi qui” (Marcello)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>4</position><number>4</number><title>La bohème: Quadro III. “Marcello. Finalmente!” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Marcello. Finalmente!” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>5</position><number>5</number><title>La bohème: Quadro III. “Mimì è una civetta” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Mimì è una civetta” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>6</position><number>6</number><title>La bohème: Quadro III. “Mimì è tanto malata!” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Mimì è tanto malate!” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>7</position><number>7</number><title>La bohème: Quadro III. “Donde lieta uscì al tuo grido” (Mimì)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Donde lieta uscì” (Mimì)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>8</position><number>8</number><title>La bohème: Quadro III. “Dunque è proprio finita!” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto III. “Dunque è proprio finita” (Rodolfo, Mimi, Marcello, Musetta)</title><artist-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>9</position><number>9</number><title>La bohème: Quadro IV. “In un coupé?” (Marcello)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto IV. “In un coupé?” (Marcello)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>10</position><number>10</number><title>La bohème: Quadro IV. “O Mimì, tu più non torni” (Rodolfo)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto IV. “O Mimì, tu più non torni” (Rodolfo)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>11</position><number>11</number><title>La bohème: Quadro IV. “Si sgombrino le sale!” (Marcello)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto IV. “Gavotta! Minuetto!” (Colline, Marcello)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>12</position><number>12</number><title>La bohème: Quadro IV. “C’è Mimì ... c’è Mimì che mi segue” (Musetta)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto IV. “C'è Mimì... c'è Mimì che mi segue” (Musetta)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>13</position><number>13</number><title>La bohème: Quadro IV. “Vecchia zimarra, senti” (Colline)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto IV. “Vecchia zimarra, senti” (Colline, Schaunard)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>14</position><number>14</number><title>La bohème: Quadro IV. “Sono andati? Fingevo di dormire” (Mimì)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto IV. “Sono andati? Fingevo di dormire” (Mimì)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>15</position><number>15</number><title>La bohème: Quadro IV. “Che avvien?” (Schaunard)</title><artist-credit><name-credit><artist><name>Giacomo Puccini</name></artist></name-credit></artist-credit><recording><title>La bohème: Atto IV. “Che avvien?” (Schaunard)</title><artist-credit><name-credit><artist><name>Walter Hagen-Groll</name></artist></name-credit><name-credit><artist><name>Chor der Deutschen Oper Berlin</name></artist></name-credit><name-credit><artist><name>Mirella Freni</name></artist></name-credit><name-credit><artist><name>Nicolaï Ghiaurov</name></artist></name-credit><name-credit><artist><name>Elizabeth Harwood</name></artist></name-credit><name-credit><artist><name>Gianni Maffeo</name></artist></name-credit><name-credit><artist><name>Rolando Panerai</name></artist></name-credit><name-credit><artist><name>Luciano Pavarotti</name></artist></name-credit><name-credit><artist><name>Schöneberger Sängerknaben</name></artist></name-credit><name-credit><artist><name>Berliner Philharmoniker</name></artist></name-credit><name-credit><artist><name>Herbert von Karajan</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 3134534,
+ "year": 1973,
+ "labels": [
+  {
+   "name": "Decca",
+   "catno": "SET 565/66",
+   "id": 5320
+  },
+  {
+   "name": "Decca",
+   "catno": "SET 565-6",
+   "id": 5320
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl"
+  },
+  {
+   "name": "Box Set"
+  }
+ ],
+ "title": "La Bohème",
+ "genres": [
+  "Classical"
+ ],
+ "tracklist": [
+  {
+   "type_": "index",
+   "title": "La Bohème"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "ayakfjxmkegvb",
+ "upc": "0028948712984",
+ "title": "Puccini: La bohème",
+ "version": "2024 Remaster",
+ "tracks_count": 31,
+ "artist": {
+  "name": "Luciano Pavarotti"
+ },
+ "genres_list": [
+  "Classical"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Puccini: La bohème, Act I: Questo mar rosso",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 1,
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Pensier profundo!",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 2,
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Abasso, abbasso l'autor!",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 3,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Si può – Chi è là?",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 4,
+    "performers": "Michel Sénéchal, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Io resto per terminar l'articolo",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 5,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Chi è là?",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 6,
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Si sente meglio?",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 7,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Che gelida manina",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 8,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: Sì. Mi chiamano Mimì",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 9,
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act I: O soave fanciulla (Love Duet)",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 10,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act II: Arranci, datteri!",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 11,
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act II: Chi guardi? – Ecco i giocattoli di Parpignol",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 12,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Mirella Freni, MainArtist, SopranoVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Gernot Pietsch, MainArtist, TenorVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act II: Viva Parpignol!",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 13,
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act II: Oh! ... Essa! ... Musetta!",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 14,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Michel Sénéchal, MainArtist, TenorVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act II: Quando men vo – Fuori il danaro!",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 15,
+    "performers": "Elizabeth Harwood, MainArtist, SopranoVocalist - Michel Sénéchal, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - James Mallinson, Producer - Ray Minshull, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act II: Chi l'ha richiesto? – Caro! – Fuori il danaro!",
+    "version": "2024 Remaster",
+    "media_number": 1,
+    "track_number": 16,
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Schöneberger Sängerknaben, MainArtist, Choir - Chor Der Deutschen Oper Berlin, MainArtist, Choir - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Ohè, là, le guardie! Aprite!",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 1,
+    "performers": "Hans-Dietrich Pohl, MainArtist, BaritoneVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Sa dirmi, scusi",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 2,
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Hans-Dieter Appell, MainArtist, TenorVocalist - Hans-Dietrich Pohl, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Mimì! – Speravo di trovarvi qui",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 3,
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Marcello. Finalmente!",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 4,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Mimì è una civetta",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 5,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Mimì è tanto malata!",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 6,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Donde lieta uscì",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 7,
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - James Mallinson, Producer - Ray Minshull, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act III: Dunque è propio finita!",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 8,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Mirella Freni, MainArtist, SopranoVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act IV: In un coupé?",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 9,
+    "performers": "Rolando Panerai, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act IV: O Mimì, tu più non torni – Che ora sia",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 10,
+    "performers": "Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act IV: Gavotta! ... Minuetto!",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 11,
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act IV: C'è Mimì...",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 12,
+    "performers": "Elizabeth Harwood, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act IV: Vecchia zimarra, senti",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 13,
+    "performers": "Nicolai Ghiaurov, MainArtist, BassVocalist - Gianni Maffeo, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act IV: Sono andati?",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 14,
+    "performers": "Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   },
+   {
+    "title": "Puccini: La bohème, Act IV: Oh Dio! Mimi! – Che ha detto il medico?",
+    "version": "2024 Remaster",
+    "media_number": 2,
+    "track_number": 15,
+    "performers": "Gianni Maffeo, MainArtist, BaritoneVocalist - Mirella Freni, MainArtist, SopranoVocalist - Luciano Pavarotti, MainArtist, TenorVocalist - Elizabeth Harwood, MainArtist, SopranoVocalist - Rolando Panerai, MainArtist, BaritoneVocalist - Berliner Philharmoniker, MainArtist, Orchestra - Herbert Von Karajan, MainArtist, Conductor - Ray Minshull, Producer - James Mallinson, Producer - Gordon Parry, RecordingEngineer - James Lock, RecordingEngineer - Colin Moorfoot, RecordingEngineer - Giacomo Puccini, Composer - Giuseppe Giacosa, Lyricist - Luigi Illica, Lyricist"
+   }
+  ]
+ }
+}
+'''
