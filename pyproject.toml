@@ -50,9 +50,9 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "basedpyright>=1.40.2",
-    "pytest>=9.1.1",
+    "pytest>=9.2.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.17.2",
+    "ruff>=0.17.3",
 ]
 
 [tool.ruff]
