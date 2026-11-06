@@ -28,10 +28,10 @@ from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.foldername import (
     FLAC_WORD_RE,
     drop_resolution_token,
+    format_matches,
     holds_resolution_token,
-    last_match,
     resolution_token,
-    swap_last_match,
+    swap_format_matches,
     swap_resolution_token,
 )
 
@@ -118,14 +118,13 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         # token so the FLAC/bit-depth rewriting below does not have to work around it.
         foldername = drop_resolution_token(foldername, current_token)
 
-    flac = last_match(FLAC_WORD_RE, foldername)
-    if flac is None:
+    if not format_matches(FLAC_WORD_RE, foldername):
         foldername += " [FLAC]"
     else:
-        foldername = swap_last_match(FLAC_WORD_RE, "FLAC" if flac.group(1) else "16bit FLAC", foldername)
+        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
 
     if sample_rate and bit_depth == 24:
-        foldername = swap_last_match(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
+        foldername = swap_format_matches(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
 
     return os.path.join(output_dir or os.path.dirname(path), foldername)
 

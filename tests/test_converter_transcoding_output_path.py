@@ -172,8 +172,9 @@ def _stub_16_44(monkeypatch) -> None:
         ("[WEB FLAC] A - Flac Attack (2020) [Sony]", "V0", "[WEB MP3 V0] A - Flac Attack (2020) [Sony]"),
         ("A - B (2020) [WEB FLAC] [Flac Records]", "V0", "A - B (2020) [WEB MP3 V0] [Flac Records]"),
         ("A - B (2020) [WEB FLAC 24-96] [Flac Records]", "V0", "A - B (2020) [WEB MP3 V0 24-96] [Flac Records]"),
+        ("A - B (2020) [WEB FLAC 24-44.1] [Flac Records]", "V0", "A - B (2020) [WEB MP3 V0 24-44.1] [Flac Records]"),
+        ("A - B (2020) [WEB FLAC] [Flac 2020 Records]", "V0", "A - B (2020) [WEB MP3 V0] [Flac 2020 Records]"),
         ("A - B (2020) [WEB Lossless] [Lossless Records]", "V0", "A - B (2020) [WEB V0] [Lossless Records] [MP3]"),
-        ("A - B (2020) [FLAC Remaster]", "V0", "A - B (2020) [MP3 V0 Remaster]"),
         ("A - B (2020) [WEB FLAC Remaster] Flac Records", "V0", "A - B (2020) [WEB MP3 V0 Remaster] Flac Records"),
     ],
 )
@@ -200,6 +201,12 @@ def test_the_format_word_is_swapped_and_the_names_are_kept(monkeypatch, source, 
         ("Artist.Album.2020.WEB.FLAC-GROUP", "Artist.Album.2020.WEB.MP3 V0-GROUP"),
         ("Artist_Album_2020_FLAC_GROUP", "Artist_Album_2020_MP3 V0_GROUP"),
         ("Artist_Album_2020_Lossless_GROUP", "Artist_Album_2020_V0_GROUP [MP3]"),
+        ("A - B (2020) [FLAC Remaster]", "A - B (2020) [MP3 V0 Remaster]"),
+        ("A - B (2020) [WEB FLAC Remaster] [Flac Records]", "A - B (2020) [WEB MP3 V0 Remaster] [MP3 V0 Records]"),
+        (
+            "A - B (2020) [WEB FLAC Lossless Remaster] [Flac Records]",
+            "A - B (2020) [WEB MP3 V0 Remaster] [MP3 Records]",
+        ),
         ("A - Album (2020)", "A - Album (2020) [MP3 V0]"),
     ],
 )

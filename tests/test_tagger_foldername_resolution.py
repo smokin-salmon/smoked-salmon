@@ -156,4 +156,4 @@ def test_an_escaped_token_does_not_read_the_files(monkeypatch, tmp_path) -> None
 
 
 def test_a_name_without_the_word_is_left_as_it_is() -> None:
-    assert foldername.swap_last_match(foldername.FLAC_WORD_RE, "MP3", "A - Album (2020)") == "A - Album (2020)"
+    assert foldername.swap_format_matches(foldername.FLAC_WORD_RE, "MP3", "A - Album (2020)") == "A - Album (2020)"

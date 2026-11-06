@@ -177,6 +177,14 @@ def test_an_unbracketed_token_is_handled_when_the_template_places_resolution(mon
         ("Flacid (2020)", 16, None, "Flacid (2020) [FLAC]"),
         ("Flacid (2020)", 24, 48000, "Flacid (2020) [24-48]"),
         ("A - Album (2020) [WEB FLAC] {Flac Records}", 16, None, "A - Album (2020) [WEB 16bit FLAC] {Flac Records}"),
+        ("A - B (2020) [WEB FLAC] [Flac Records]", 16, None, "A - B (2020) [WEB 16bit FLAC] [Flac Records]"),
+        (
+            "A - B (2020) [WEB FLAC 24-48] [Flac Records]",
+            16,
+            None,
+            "A - B (2020) [WEB 16bit FLAC 24-48] [Flac Records]",
+        ),
+        ("A - B (2020) [WEB FLAC] [Flac 2020 Records]", 16, None, "A - B (2020) [WEB 16bit FLAC] [Flac 2020 Records]"),
     ],
 )
 def test_the_format_word_is_swapped_and_the_names_are_kept(
@@ -199,6 +207,12 @@ def test_the_format_word_is_swapped_and_the_names_are_kept(
         ("Artist_Album_2020_FLAC_GROUP", 16, None, "Artist_Album_2020_16bit FLAC_GROUP"),
         ("A - Album (2020)", 16, None, "A - Album (2020) [FLAC]"),
         ("A - Album (2020)", 24, 48000, "A - Album (2020) [24-48]"),
+        (
+            "A - B (2020) [WEB FLAC Remaster] [Flac Records]",
+            16,
+            None,
+            "A - B (2020) [WEB 16bit FLAC Remaster] [16bit FLAC Records]",
+        ),
     ],
 )
 def test_names_without_the_letters_elsewhere_come_out_as_before(

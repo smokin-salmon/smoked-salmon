@@ -32,9 +32,9 @@ from salmon.tagger.foldername import (
     FLAC_WORD_RE,
     LOSSLESS_WORD_RE,
     drop_resolution_token,
-    last_match,
+    format_matches,
     resolution_token,
-    swap_last_match,
+    swap_format_matches,
 )
 
 Bitrate = Literal["V0", "320"]
@@ -110,15 +110,15 @@ def _build_output_path(path: str, bitrate: Bitrate, output_dir: str | None = Non
     # files, not guessed at with a pattern, so it cannot also eat unrelated digits from the title.
     foldername = drop_resolution_token(foldername, resolution_token(gather_audio_info(path)))
 
-    flac = last_match(FLAC_WORD_RE, foldername)
-    lossless = last_match(LOSSLESS_WORD_RE, foldername)
-    if flac and lossless and not _bracket_between(foldername, flac, lossless):
-        foldername = swap_last_match(FLAC_WORD_RE, "MP3", foldername)
-        foldername = swap_last_match(LOSSLESS_WORD_RE, bitrate, foldername)
-    elif flac:
-        foldername = swap_last_match(FLAC_WORD_RE, f"MP3 {bitrate}", foldername)
-    elif lossless:
-        foldername = swap_last_match(LOSSLESS_WORD_RE, bitrate, foldername)
+    flacs = format_matches(FLAC_WORD_RE, foldername)
+    losslesses = format_matches(LOSSLESS_WORD_RE, foldername)
+    if any(not _bracket_between(foldername, flac, lossless) for flac in flacs for lossless in losslesses):
+        foldername = swap_format_matches(FLAC_WORD_RE, "MP3", foldername)
+        foldername = swap_format_matches(LOSSLESS_WORD_RE, bitrate, foldername)
+    elif flacs:
+        foldername = swap_format_matches(FLAC_WORD_RE, f"MP3 {bitrate}", foldername)
+    elif losslesses:
+        foldername = swap_format_matches(LOSSLESS_WORD_RE, bitrate, foldername)
         to_append.append("MP3")
     else:
         to_append.append(f"MP3 {bitrate}")
