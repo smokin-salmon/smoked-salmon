@@ -595,6 +595,33 @@ def test_a_release_on_the_targets_do_not_upload_list_stops_before_any_target_req
     assert run.target.sent == []
 
 
+def _no_search_string(answer: dict[str, Any]) -> None:
+    """The group of SOURCE's answer gets four main artists, so its title alone is searched, and that cleans to
+    nothing."""
+    answer["group"]["name"] = "(Remastered Edition)"
+    answer["group"]["musicInfo"]["artists"] = [
+        {"id": 700010 + n, "aliasid": 700110 + n, "artist": {"id": 700010 + n}, "name": f"Artist {n}"} for n in range(4)
+    ]
+
+
+def test_a_release_with_no_search_string_stops_before_any_target_request_under_yyy(monkeypatch, dirs) -> None:
+    """-yyy and no --group-id: nothing would look for a dupe on TARGET (#931)."""
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        _no_search_string(source.torrents[TORRENT_ID])
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 1, run.output
+    assert (
+        f"Not cross-uploading {TORRENT_ID}: No dupe search is possible for this title: check the tracker yourself. "
+        "Not with -yyy (upload.yes_all): give --group-id, or run without -yyy, and with upload.yes_all off"
+    ) in run.output
+    assert run.target.sent == []
+
+
 def test_a_listed_release_is_dropped_and_the_others_go(monkeypatch, dirs, tmp_path) -> None:
     albums = [_album(dirs.downloads / f"{FOLDER} {number}") for number in range(2)]
     # The SOURCE's list does not count: only TARGET's.

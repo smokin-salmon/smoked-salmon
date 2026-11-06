@@ -86,6 +86,7 @@ from salmon.uploader.conversion_choice import (
 )
 from salmon.uploader.conversion_upload import _max_path_length_for_run, execute_downconversion_tasks
 from salmon.uploader.dupe_checker import (
+    NO_DUPE_SEARCH,
     can_check_site_log,
     check_existing_group,
     choose_source_flac,
@@ -1303,6 +1304,19 @@ async def _upload_staged(  # noqa: C901
                         tracker = None
                         continue
 
+                    if not searchstrs and await interaction.assume_defaults():
+                        # As recheck_dupe for the first tracker (#931): with -yyy, nobody checks the tracker by hand.
+                        click.secho(
+                            f"\n{NO_DUPE_SEARCH} Not uploading to {gazelle_site.site_string} with -yyy "
+                            "(upload.yes_all): run without -yyy, and with upload.yes_all off, to choose its group.",
+                            fg="red",
+                            bold=True,
+                        )
+                        failed_trackers.append(gazelle_site.site_string)
+                        remaining_gazelle_sites.remove(tracker)
+                        tracker = None
+                        continue
+
                     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
                     # A torrent already seeds from the folder: never offer to delete it. Once one is up, a tracker
                     # can be skipped (one that already has the release, say) and the run still finishes.
@@ -1882,6 +1896,8 @@ async def edit_metadata(
 async def recheck_dupe(gazelle_site, searchstrs, metadata):
     """Rechecks for a dupe if the artist, album or catno have changed.
 
+    With no search string before the review or after it, asks for a group with nothing searched; -yyy stops instead.
+
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Original search strings.
@@ -1891,6 +1907,17 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
         Group ID if found, None otherwise.
     """
     new_searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
+    if not searchstrs and not new_searchstrs:
+        # No search string before the review or after it (#931): the group question has not been asked yet.
+        if await interaction.assume_defaults():
+            click.secho(
+                f"\n{NO_DUPE_SEARCH} Not uploading with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
+                "and with upload.yes_all off.",
+                fg="red",
+                bold=True,
+            )
+            raise click.exceptions.Exit(1)
+        return await check_existing_group(gazelle_site, [], our_title=metadata["title"], release=metadata)
     if searchstrs and any(n not in searchstrs for n in new_searchstrs) or not searchstrs and new_searchstrs:
         click.secho(
             f"\nRechecking for dupes on {gazelle_site.site_string} due to metadata changes...",
@@ -1912,7 +1939,7 @@ async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
         searchstrs: Search strings for dupe checking.
         our_title: Our release's title, passed through to dupe_check_recent_torrents.
     """
-    if not can_check_site_log(gazelle_site):
+    if not searchstrs or not can_check_site_log(gazelle_site):
         return
     # Should really avoid asking if already shown the same releases from the log.
     click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
