@@ -171,6 +171,12 @@ class TidalBase(BaseScraper):
             if artist_id in by_id
         ]
 
+    @staticmethod
+    def _parse_resource_genres(resource: dict, genres_by_id: dict[str, str]) -> list[str]:
+        """Get the genres of a resource, in order, from the included genre resources."""
+        genre_ids = [rel["id"] for rel in resource.get("relationships", {}).get("genres", {}).get("data", [])]
+        return [genres_by_id[genre_id] for genre_id in genre_ids if genre_id in genres_by_id]
+
     def _build_soup(self, album: dict[str, Any], included: list[dict], items: list[dict], cc: str) -> dict[str, Any]:
         """Build a normalized soup dict from an album resource and its included resources."""
         attributes = album["attributes"]
@@ -182,6 +188,7 @@ class TidalBase(BaseScraper):
                     cover = max(files, key=lambda f: f.get("meta", {}).get("width", 0))["href"]
                 break
 
+        genres_by_id = {obj["id"]: obj["attributes"]["genreName"] for obj in included if obj["type"] == "genres"}
         tracks = {obj["id"]: obj for obj in included if obj["type"] == "tracks"}
         tracklist = []
         for item in items:
@@ -201,6 +208,7 @@ class TidalBase(BaseScraper):
                     "explicit": track_attrs.get("explicit"),
                     "audioQuality": parse_quality(track_attrs.get("mediaTags", [])),
                     "artists": self._parse_resource_artists(track, included),
+                    "genres": self._parse_resource_genres(track, genres_by_id),
                 }
             )
 
@@ -215,6 +223,7 @@ class TidalBase(BaseScraper):
             "numberOfTracks": attributes.get("numberOfItems"),
             "explicit": attributes.get("explicit"),
             "artists": self._parse_resource_artists(album, included),
+            "genres": self._parse_resource_genres(album, genres_by_id),
             "tracklist": tracklist,
             "_country_code": cc,
         }
@@ -249,7 +258,7 @@ class TidalBase(BaseScraper):
         try:
             doc = await self.get_json(
                 f"/albums/{album_id}",
-                params={"countryCode": cc, "include": "artists,items,items.artists,coverArt"},
+                params={"countryCode": cc, "include": "genres,artists,items,items.artists,items.genres,coverArt"},
             )
             album = doc["data"]
             included = doc.get("included", [])
@@ -262,7 +271,7 @@ class TidalBase(BaseScraper):
                     break
                 page = await self.get_json(
                     f"/albums/{album_id}/relationships/items",
-                    params={"countryCode": cc, "include": "items,items.artists", "page[cursor]": cursor},
+                    params={"countryCode": cc, "include": "items,items.artists,items.genres", "page[cursor]": cursor},
                 )
                 items += page["data"]
                 included += page.get("included", [])

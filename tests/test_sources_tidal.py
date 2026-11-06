@@ -20,7 +20,17 @@ from salmon.tagger.sources.tidal import Scraper
 ALBUM_URL = "https://tidal.com/album/75194842"
 
 
-def _track(track_id: str, title: str, artist_ids: list[str], isrc: str, version: str | None = None) -> dict:
+def _track(
+    track_id: str,
+    title: str,
+    artist_ids: list[str],
+    isrc: str,
+    version: str | None = None,
+    genre_ids: list[str] | None = None,
+) -> dict:
+    relationships = {"artists": {"data": [{"id": a, "type": "artists"} for a in artist_ids]}}
+    if genre_ids:
+        relationships["genres"] = {"data": [{"id": g, "type": "genres"} for g in genre_ids]}
     return {
         "id": track_id,
         "type": "tracks",
@@ -31,7 +41,7 @@ def _track(track_id: str, title: str, artist_ids: list[str], isrc: str, version:
             "explicit": False,
             "mediaTags": ["LOSSLESS", "HIRES_LOSSLESS"],
         },
-        "relationships": {"artists": {"data": [{"id": a, "type": "artists"} for a in artist_ids]}},
+        "relationships": relationships,
     }
 
 
@@ -39,12 +49,16 @@ def _artist(artist_id: str, name: str) -> dict:
     return {"id": artist_id, "type": "artists", "attributes": {"name": name}}
 
 
+def _genre(genre_id: str, name: str) -> dict:
+    return {"id": genre_id, "type": "genres", "attributes": {"genreName": name}}
+
+
 def _item(track_id: str, disc: int, number: int) -> dict:
     return {"id": track_id, "type": "tracks", "meta": {"volumeNumber": disc, "trackNumber": number}}
 
 
-# A trimmed /albums/{id}?include=artists,items,items.artists,coverArt document: two tracks on
-# the first page of items, and a cursor to a second page.
+# A trimmed /albums/{id}?include=genres,artists,items,items.artists,items.genres,coverArt document:
+# two tracks on the first page of items, and a cursor to a second page.
 ALBUM_DOC = {
     "data": {
         "id": "75194842",
@@ -60,6 +74,7 @@ ALBUM_DOC = {
             "mediaTags": ["LOSSLESS"],
         },
         "relationships": {
+            "genres": {"data": [{"id": "g0", "type": "genres"}]},
             "artists": {"data": [{"id": "a1", "type": "artists"}]},
             "coverArt": {"data": [{"id": "art1", "type": "artworks"}]},
             "items": {
@@ -69,10 +84,12 @@ ALBUM_DOC = {
         },
     },
     "included": [
+        _genre("g0", "Electronic"),
+        _genre("g1", "Pop"),
         _artist("a1", "Kordz"),
         _artist("a2", "Guest Singer"),
         _artist("a3", "Tiësto"),
-        _track("t1", "Accept", ["a1", "a2"], "USUM71800001"),
+        _track("t1", "Accept", ["a1", "a2"], "USUM71800001", genre_ids=["g1"]),
         _track("t2", "Connect", ["a1", "a3"], "USUM71800002", version="Tiësto Remix"),
         {
             "id": "art1",
@@ -88,10 +105,14 @@ ALBUM_DOC = {
     ],
 }
 
-# The second page of items, whose track has an artist not seen on the first page.
+# The second page of items, whose track has an artist and a genre not seen on the first page.
 ITEMS_PAGE_2 = {
     "data": [_item("t3", 2, 1)],
-    "included": [_artist("a4", "Second Page Artist"), _track("t3", "Bonus", ["a1", "a4"], "USUM71800003")],
+    "included": [
+        _genre("g2", "Rock"),
+        _artist("a4", "Second Page Artist"),
+        _track("t3", "Bonus", ["a1", "a4"], "USUM71800003", genre_ids=["g2"]),
+    ],
     "links": {"self": "/albums/75194842/relationships/items?page[cursor]=page2"},
 }
 
@@ -223,9 +244,10 @@ def test_album_is_parsed_into_salmon_metadata_across_item_pages(
     data = _run(tidal, monkeypatch, lambda: Scraper().scrape_release(ALBUM_URL))
 
     album_request, page_request = tidal.api_requests
-    assert album_request.query["include"] == "artists,items,items.artists,coverArt"
+    assert album_request.query["include"] == "genres,artists,items,items.artists,items.genres,coverArt"
     assert page_request.query["page[cursor]"] == "page2"
     assert "items.artists" in page_request.query["include"].split(",")
+    assert "items.genres" in page_request.query["include"].split(",")
 
     assert data["title"] == "Accept & Connect"
     assert data["date"] == "2018-03-02"
@@ -233,6 +255,8 @@ def test_album_is_parsed_into_salmon_metadata_across_item_pages(
     assert data["label"] == "Majestic Casual Records"
     assert data["upc"] == "0617465881222"
     assert data["cover"] == "https://resources.tidal.com/images/a/b/1280x1280.jpg"
+    # The album genre and both tracks' genres, including the second page's.
+    assert data["genres"] == ["Electronic", "Pop", "Rock"]
     assert ("Kordz", "main") in data["artists"]
 
     tracks = data["tracks"]
