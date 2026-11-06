@@ -236,11 +236,11 @@ def withheld_folders() -> list[str]:
     folders of the local seedboxes, resolved. A seedbox folder that is a root or holds one (the default is
     download_directory) is the music itself and is left out of the list: the content check stands there."""
     folders = [cfg.directory.dottorrents_dir]
-    folders += [
-        tracker.dottorrents_dir
-        for tracker in (cfg.tracker.red, cfg.tracker.ops, cfg.tracker.dic)
-        if tracker is not None and tracker.dottorrents_dir
-    ]
+    if cfg.directory.cross_upload_dottorrents_dir:
+        folders.append(cfg.directory.cross_upload_dottorrents_dir)
+    for tracker in (cfg.tracker.red, cfg.tracker.ops, cfg.tracker.dic):
+        if tracker is not None:
+            folders += [folder for folder in (tracker.dottorrents_dir, tracker.cross_upload_dottorrents_dir) if folder]
     found = roots()
     for seedbox in cfg.seedbox:
         if seedbox.type != "local" or not seedbox.directory:

@@ -38,6 +38,7 @@ def _uncomment(text: str, music: Path, torrents: Path) -> str:
     folders = {
         "download_directory": f"'{music.as_posix()}'",
         "dottorrents_dir": f"'{torrents.as_posix()}'",
+        "cross_upload_dottorrents_dir": f"'{torrents.as_posix()}'",
         "tmp_dir": f"'{(music.parent / 'tmp').as_posix()}'",
         "library_dirs": f"['{(music.parent / 'library').as_posix()}']",
         "url": '"socks5://127.0.0.1:1080"',

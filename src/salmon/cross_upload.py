@@ -338,6 +338,9 @@ async def run_cross_upload(options: CrossUploadOptions, *, claim_folder: FolderC
     """
     source_site = salmon.trackers.get_class(options.source)()
     target_site = salmon.trackers.get_class(options.target)()
+    # Its .torrent files, and its conversions', go where cross_upload_dottorrents_dir says, when it is set.
+    if folder := cfg.cross_upload_dottorrents_dir(target_site.site_code):
+        target_site.dot_torrents_dir = folder
     # A cross-upload is a re-post: it is never marked as the user's own purchase or rip.
     target_site.skip_upload_marks()
     # The same ID or file given twice is read once.
@@ -437,7 +440,7 @@ async def _run(
     # Torrents and conversions go into a directory of the run's own in a dry run, removed when it ends.
     scratch = run_directory(str(releases[0].path)) if dryrun.active() else nullcontext(None)
     with scratch as scratch_dir, dryrun.writing_into(scratch_dir):
-        seedbox = UploadManager()
+        seedbox = UploadManager(cross_upload=True)
         uploaded: list[str] = []
         try:
             for release in releases:
