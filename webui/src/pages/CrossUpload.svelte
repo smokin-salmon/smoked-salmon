@@ -23,6 +23,8 @@
     target: string
     inputs: string[]
     uploads: Uploaded[]
+    // On a done job only.
+    seedbox_failed?: boolean
   }
 
   let options = $state<Options>({ trackers: [], conversion_kinds: [], max_releases: 5 })
@@ -256,6 +258,9 @@
     {#if result}
       {#if result.uploads.length}
         {#if job.status !== 'done'}<p class="muted">Uploaded before it stopped:</p>{/if}
+        {#if result.seedbox_failed}
+          <p><span class="chip warn">A seedbox copy or a client add failed: a torrent may be seeded nowhere. See the log.</span></p>
+        {/if}
         <ul class="uploads">
           {#each result.uploads as each (each.url)}
             <li>
