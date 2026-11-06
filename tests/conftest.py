@@ -23,7 +23,12 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from helpers import servers
 from helpers.shipped_config import shipped_config
+
+# A test server stopped as a client connects would otherwise fail the run at random, from garbage collection, on
+# Python 3.13 and 3.14 (tests/helpers/servers.py).
+servers.install()
 
 _root = Path(tempfile.mkdtemp(prefix="salmon-tests-"))
 # Each process removes its own: with xdist, the controller and every worker load this file.
