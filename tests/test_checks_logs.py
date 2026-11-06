@@ -795,12 +795,13 @@ def _silence(sectors: int) -> bytes:
 
 
 def _files_listed_out_of_order(tmp_path: Path, first: tuple[int, int], second: tuple[int, int]) -> list[str]:
-    """Two tracks in two folders, listed second first: salmon's file order, folder then name, gives the first."""
-    (tmp_path / "a").mkdir()
-    (tmp_path / "z").mkdir()
-    _noise_flac(tmp_path / "a" / "01.flac", 75 * SECTOR_SAMPLES, 1, first)
-    _noise_flac(tmp_path / "z" / "02.flac", 100 * SECTOR_SAMPLES, 2, second)
-    return [str(tmp_path / "z" / "02.flac"), str(tmp_path / "a" / "01.flac")]
+    """Two tracks in folders 2 and 10, listed second first: salmon's natural file order gives the first, where the
+    paths as text would put folder 10 first."""
+    (tmp_path / "2").mkdir()
+    (tmp_path / "10").mkdir()
+    _noise_flac(tmp_path / "2" / "01.flac", 75 * SECTOR_SAMPLES, 1, first)
+    _noise_flac(tmp_path / "10" / "02.flac", 100 * SECTOR_SAMPLES, 2, second)
+    return [str(tmp_path / "10" / "02.flac"), str(tmp_path / "2" / "01.flac")]
 
 
 def _range_log(monkeypatch, tmp_path: Path, crc: str, toc: list[Any]) -> str:
