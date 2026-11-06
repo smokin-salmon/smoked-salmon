@@ -355,9 +355,21 @@ def files_only_in(source: str, final: str) -> list[str]:
     return sorted(
         os.path.relpath(path, source)
         for path in _album_files(source)
-        if os.path.splitext(path.lower())[1] not in AUDIO_EXTENSIONS
-        and not any(os.path.samefile(path, other) or filecmp.cmp(path, other, shallow=False) for other in kept)
+        if os.path.splitext(path.lower())[1] not in AUDIO_EXTENSIONS and not _has_copy(path, kept)
     )
+
+
+def _has_copy(path: str, candidates: list[str]) -> bool:
+    """Whether a candidate is path's file or holds its bytes. A file that can't be read has none: the source stays."""
+    try:
+        size = os.stat(path).st_size
+        return any(
+            os.stat(other).st_size == size
+            and (os.path.samefile(path, other) or filecmp.cmp(path, other, shallow=False))
+            for other in candidates
+        )
+    except OSError:
+        return False
 
 
 def _album_files(folder: str) -> Iterator[str]:

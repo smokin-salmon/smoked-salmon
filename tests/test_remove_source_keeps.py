@@ -6,6 +6,7 @@ but with the real check_folder_structure, and `salmon tag` as tests/helpers/libr
 """
 
 import io
+import shutil
 import sys
 from pathlib import Path
 from typing import Any
@@ -150,6 +151,16 @@ def test_up_keeps_the_source_when_the_renamed_folder_went_to_a_seedbox(monkeypat
     seen = (code, (downloads / RENAMED).exists(), album.is_dir() and _names(album) >= set(EXTRAS))
     assert seen == (0, False, True), out
     assert _kept_naming(out, album, downloads / RENAMED) == list(EXTRAS), out
+
+
+def test_a_file_that_cannot_be_read_keeps_the_source(tmp_path) -> None:
+    from salmon.tagger.foldername import files_only_in  # new here: the file still imports on master
+
+    source, final = tmp_path / "Album", tmp_path / RENAMED
+    shutil.copytree(_with_extras(_album(source), "booklet.pdf"), final)
+    (source / "link.pdf").symlink_to(tmp_path / "gone.pdf")
+
+    assert files_only_in(str(source), str(final)) == ["link.pdf"]
 
 
 def test_tag_keeps_a_source_holding_files_the_check_deleted(monkeypatch, dirs) -> None:
