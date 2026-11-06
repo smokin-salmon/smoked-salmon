@@ -63,12 +63,25 @@ async def _race() -> list[TypeError]:
     return raised
 
 
+def _run_race() -> list[TypeError]:
+    # On a selector loop, whose accept is the two steps above (Linux and macOS use one by default). Windows' default
+    # proactor loop accepts otherwise and is not covered here.
+    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+        return runner.run(_race())
+
+
+@pytest.mark.skipif(sys.version_info < (3, 13), reason="3.11 and 3.12 count connections: the race raises nothing")
 def test_without_the_helper_the_race_raises(monkeypatch):
-    # What the helper is for: when this Python no longer raises, remove tests/helpers/servers.py.
+    # What the helper is for, so this fails if the race no longer raises.
     monkeypatch.setattr(base_events.Server, "_wakeup", servers.original_wakeup())
-    if not asyncio.run(_race()):
-        pytest.skip(f"Python {sys.version_info[:3]} does not raise here: once no CI Python does, remove the helper")
+    raised = _run_race()
+    assert raised, (
+        f"the race raised nothing on Python {sys.version_info[:3]}: either this test no longer stops the server "
+        "between the accept and the transport (fix the test), or this Python fixed the double wakeup (then remove "
+        "tests/helpers/servers.py, its install in conftest.py, and this file)"
+    )
 
 
 def test_the_race_leaves_nothing_to_raise():
-    assert asyncio.run(_race()) == []
+    raised = _run_race()
+    assert raised == []
