@@ -20,6 +20,8 @@
   let options = $state<Options>({ sources: [], encodings: [], ai_review: false })
 
   let path = $state('')
+  // Whether the picker has checked the folder and a job may start on it.
+  let usable = $state(false)
   let source = $state('')
   const preset = sourcePreset(
     () => path,
@@ -107,7 +109,7 @@
 
 {#if !live}
   <div class="card">
-    <FolderPicker bind:value={path} />
+    <FolderPicker bind:value={path} bind:usable />
 
     <div class="grid">
       <label>
@@ -165,7 +167,7 @@
     </div>
 
     <div class="row actions">
-      <button class="btn" onclick={start} disabled={!path || !source || starting}>Tag the album</button>
+      <button class="btn" onclick={start} disabled={!usable || !source || starting}>Tag the album</button>
     </div>
     {#if error}<p class="error">{error}</p>{/if}
   </div>

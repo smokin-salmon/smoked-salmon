@@ -6,8 +6,14 @@
    * `value`: the folder the job uses, set by a Select or by typing it (a page empties it after a start); it starts
    *   empty.
    * `empty`: what the job uses when nothing is chosen, for a page where the folder is optional.
+   * `usable`: set by the picker, true once the server has checked the folder in the box and not refused it (or could
+   *   not check it: the job checks it again). A page starts a job on the folder only then.
    */
-  let { value = $bindable(''), empty = 'nothing chosen' }: { value: string; empty?: string } = $props()
+  let {
+    value = $bindable(''),
+    empty = 'nothing chosen',
+    usable = $bindable(false),
+  }: { value: string; empty?: string; usable?: boolean } = $props()
 
   interface Folder {
     name: string
@@ -22,6 +28,7 @@
     parent: string | null
     library: boolean
     audio: boolean
+    refused: string | null
     folders: Folder[]
     truncated: boolean
     sort: Sort
@@ -95,6 +102,10 @@
   const current = $derived(checked?.value === value ? checked : null)
   // The folder the job would use: the one the server resolved the box to, once it has.
   const shownPath = $derived(current?.path || value)
+
+  $effect(() => {
+    usable = !!value && current !== null && current.kind !== 'refused'
+  })
 
   $effect(() => {
     const folder = value
@@ -290,6 +301,9 @@
         {/if}
         <button class="btn small secondary" onclick={closeListing}>Close</button>
       </div>
+      {#if listing.refused}
+        <p class="small error refused">Cannot select this folder: {listing.refused}</p>
+      {/if}
       {#if listing.folders.length > 0}
         <input
           type="text"
@@ -437,7 +451,8 @@
   .missing .mono {
     overflow-wrap: anywhere;
   }
-  .missing {
+  .missing,
+  .refused {
     margin: 0 0 0.4rem;
   }
   .error {
