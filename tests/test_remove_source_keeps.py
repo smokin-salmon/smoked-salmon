@@ -153,14 +153,36 @@ def test_up_keeps_the_source_when_the_renamed_folder_went_to_a_seedbox(monkeypat
     assert _kept_naming(out, album, downloads / RENAMED) == list(EXTRAS), out
 
 
-def test_a_file_that_cannot_be_read_keeps_the_source(tmp_path) -> None:
-    from salmon.tagger.foldername import files_only_in  # new here: the file still imports on master
+def test_a_file_that_cannot_be_read_keeps_the_source(monkeypatch, capsys, dirs) -> None:
+    downloads, _torrents = dirs
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+    album = _with_extras(_album(downloads.parent / "seeding" / "Album"), "booklet.pdf")
+    final = downloads / RENAMED
+    shutil.copytree(album, final)
+    (album / "link.pdf").symlink_to(downloads.parent / "gone.pdf")
 
-    source, final = tmp_path / "Album", tmp_path / RENAMED
-    shutil.copytree(_with_extras(_album(source), "booklet.pdf"), final)
-    (source / "link.pdf").symlink_to(tmp_path / "gone.pdf")
+    anyio.run(lambda: remove_source_folder(str(album), str(final)))
 
-    assert files_only_in(str(source), str(final)) == ["link.pdf"]
+    out = capsys.readouterr().out
+    assert album.is_dir(), out
+    assert _kept_naming(out, album, final) == ["link.pdf"], out
+
+
+def test_as_before_a_broken_link_in_the_renamed_folder_does_not_keep_the_source(monkeypatch, capsys, dirs) -> None:
+    downloads, _torrents = dirs
+    monkeypatch.setattr(cfg.upload.formatting, "remove_source_dir", True)
+    album = _with_extras(_album(downloads.parent / "seeding" / "Album"), "booklet.pdf")
+    final = downloads / RENAMED
+    shutil.copytree(album, final)
+    # os.walk gives a folder's files before its sub-folders', so the broken link is compared first.
+    (final / "z").mkdir()
+    (final / "booklet.pdf").rename(final / "z" / "booklet.pdf")
+    (final / "a.pdf").symlink_to(downloads.parent / "gone.pdf")
+
+    anyio.run(lambda: remove_source_folder(str(album), str(final)))
+
+    out = capsys.readouterr().out
+    assert not album.exists(), out
 
 
 def test_tag_keeps_a_source_holding_files_the_check_deleted(monkeypatch, dirs) -> None:

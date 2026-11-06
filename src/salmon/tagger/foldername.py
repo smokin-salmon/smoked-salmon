@@ -360,13 +360,19 @@ def files_only_in(source: str, final: str) -> list[str]:
 
 
 def _has_copy(path: str, candidates: list[str]) -> bool:
-    """Whether a candidate is path's file or holds its bytes. A file that can't be read has none: the source stays."""
+    """Whether a candidate is path's file or holds its bytes. A file that can't be read matches nothing, so a source
+    file that can't be read has no copy and the source stays."""
     try:
         size = os.stat(path).st_size
-        return any(
-            os.stat(other).st_size == size
-            and (os.path.samefile(path, other) or filecmp.cmp(path, other, shallow=False))
-            for other in candidates
+    except OSError:
+        return False
+    return any(_is_copy(path, size, other) for other in candidates)
+
+
+def _is_copy(path: str, size: int, other: str) -> bool:
+    try:
+        return os.stat(other).st_size == size and (
+            os.path.samefile(path, other) or filecmp.cmp(path, other, shallow=False)
         )
     except OSError:
         return False
