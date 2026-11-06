@@ -68,7 +68,7 @@ from salmon.tagger.cover import (
     get_cover_from_path,
     has_flac_without_picture,
 )
-from salmon.tagger.foldername import remove_source_folder, rename_folder
+from salmon.tagger.foldername import files_only_in, remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
 from salmon.tagger.pre_data import construct_rls_data
@@ -979,8 +979,8 @@ async def upload(
             given_spectral_urls=given_spectral_urls,
         )
         # Once the run is done: an abort after the folder rename keeps the source folder, so a re-run can use it.
-        final, uploaded, aborted = result or (None, False, False)
-        await remove_source_folder(path, final, original, uploaded=uploaded, aborted=aborted)
+        final, uploaded, aborted, only_here = result or (None, False, False, None)
+        await remove_source_folder(path, final, original, uploaded=uploaded, aborted=aborted, only_here=only_here)
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -1060,12 +1060,13 @@ async def _upload_staged(  # noqa: C901
     offer_others: bool = False,
     given_cover_url: str | None = None,
     given_spectral_urls: dict[int, list[str]] | None = None,
-) -> tuple[str, bool, bool] | None:
+) -> tuple[str, bool, bool, list[str] | None] | None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
     Returns:
-        The folder the run ended with, whether anything was uploaded, and whether the run was aborted after an
-        upload; None when it stopped early.
+        The folder the run ended with, whether anything was uploaded, whether the run was aborted after an
+        upload, and, with remove_source_dir on, the files of path that folder had no copy of before
+        remove_local_after_copy could remove it (see files_only_in); None when it stopped early.
 
     Args:
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
@@ -1483,6 +1484,8 @@ async def _upload_staged(  # noqa: C901
                 click.echo(f"  {line}")
         finally:
             await seedbox_uploader.execute_upload()
+            # Before remove_local_after_copy may remove the renamed folder: the source is compared with it (#967).
+            only_here = files_only_in(source_folder, path) if cfg.upload.formatting.remove_source_dir else None
             # Only a run that ended by itself with every upload done: a failed tracker needs the folder to retry,
             # and an abort or an error leaves the user deciding what is next.
             if failed_trackers:
@@ -1496,7 +1499,7 @@ async def _upload_staged(  # noqa: C901
     finally:
         await spectral_uploads.close()
     record.note_complete(finished and len(failed_trackers) == chose_to_skip and not record.has_unknown_outcome())
-    return path, bool(uploaded), aborted
+    return path, bool(uploaded), aborted, only_here
 
 
 async def _check_files(

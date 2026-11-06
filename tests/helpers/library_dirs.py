@@ -233,8 +233,11 @@ def _metadata() -> dict[str, Any]:
     }
 
 
-def _run_tag(monkeypatch, album: Path) -> Any:
-    """Run `salmon tag ALBUM` with the real staging, tag standardizing and folder rename, remove_source_dir on."""
+def _run_tag(monkeypatch, album: Path, **real: Any) -> Any:
+    """Run `salmon tag ALBUM` with the real staging, tag standardizing and folder rename, remove_source_dir on.
+
+    `real` gives a step its function back, by name, in place of the fake.
+    """
     metadata = {**_metadata(), "cover": None}
     for name, fake in {
         "gather_tags": _returning({}),
@@ -247,6 +250,7 @@ def _run_tag(monkeypatch, album: Path) -> Any:
         "check_tags": _returning_async({}),
         "rename_files": _rename_files,
         "check_folder_structure": _returning_async(),
+        **real,
     }.items():
         monkeypatch.setattr(salmon.tagger, name, fake)
     monkeypatch.setattr(salmon.tagger.foldername, "generate_folder_name", _returning(RENAMED))
