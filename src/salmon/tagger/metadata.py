@@ -388,7 +388,6 @@ async def _select_choice(
     Returns:
         Tuple of (metadata dict, source URL or None).
     """
-    source_url = None
     # Initialize rls_data if needed
     rls_data = rls_data or {}
     if "urls" not in rls_data:
@@ -396,6 +395,9 @@ async def _select_choice(
 
     options = _choice_options(choices)
     while True:
+        # An answer whose source fails leaves neither its source URL nor its URLs behind.
+        source_url = None
+        urls = list(rls_data["urls"])
         if choices:
             res = await interaction.prompt(
                 click.style(
@@ -445,7 +447,7 @@ async def _select_choice(
                 for name, source in METASOURCES.items():
                     if source.Scraper.regex.match(stripped):
                         sources.append(name)
-                        tasks.append(source.Scraper().scrape_release(stripped))
+                        tasks.append(handle_scrape_errors(source.Scraper().scrape_release(stripped)))
                         break
             # Handle numeric choices
             elif (number := numeric_id(stripped.strip())) in choices:
@@ -468,6 +470,10 @@ async def _select_choice(
             continue
 
         metadatas = await asyncio.gather(*tasks)
+        if None in metadatas:
+            # Said above, as a scrape error: the question again, for a number as for a URL (#968).
+            rls_data["urls"] = urls
+            continue
         return _combine_scraped(sources, list(metadatas), rls_data, source_url), source_url
 
 
