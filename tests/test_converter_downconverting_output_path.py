@@ -1,5 +1,7 @@
 """A downconversion output name must not keep a stale {resolution} token from the source name."""
 
+import pytest
+
 from salmon.converter import downconverting
 
 # What the tag/foldername step would produce with a template combining {format} and {resolution}
@@ -161,3 +163,61 @@ def test_an_unbracketed_token_is_handled_when_the_template_places_resolution(mon
     assert downconverting._build_output_path("/downloads/Artist - Title 24-96", 16, 48000) == (
         "/downloads/Artist - Title 16-48"
     )
+
+
+@pytest.mark.parametrize(
+    ("source", "bit_depth", "sample_rate", "expected"),
+    [
+        ("Roberta Flack - Album (2020) [WEB FLAC]", 16, None, "Roberta Flack - Album (2020) [WEB 16bit FLAC]"),
+        ("Roberta Flack - Album (2020) [WEB 24bit FLAC]", 24, 48000, "Roberta Flack - Album (2020) [WEB 24-48]"),
+        ("Aflac (2020)", 16, None, "Aflac (2020) [FLAC]"),
+        ("A - FLAC (2020) [WEB FLAC]", 16, None, "A - FLAC (2020) [WEB 16bit FLAC]"),
+        ("A - FLAC (2020) [WEB 24bit FLAC]", 24, 48000, "A - FLAC (2020) [WEB 24-48]"),
+        ("A - 24bit FLAC (2020) [WEB FLAC]", 16, None, "A - 24bit FLAC (2020) [WEB 16bit FLAC]"),
+        ("Flacid (2020)", 16, None, "Flacid (2020) [FLAC]"),
+        ("Flacid (2020)", 24, 48000, "Flacid (2020) [24-48]"),
+        ("A - Album (2020) [WEB FLAC] {Flac Records}", 16, None, "A - Album (2020) [WEB 16bit FLAC] {Flac Records}"),
+        ("A - B (2020) [WEB FLAC] [Flac Records]", 16, None, "A - B (2020) [WEB 16bit FLAC] [Flac Records]"),
+        (
+            "A - B (2020) [WEB FLAC 24-48] [Flac Records]",
+            16,
+            None,
+            "A - B (2020) [WEB 16bit FLAC 24-48] [Flac Records]",
+        ),
+        ("A - B (2020) [WEB FLAC] [Flac 2020 Records]", 16, None, "A - B (2020) [WEB 16bit FLAC] [Flac 2020 Records]"),
+    ],
+)
+def test_the_format_word_is_swapped_and_the_names_are_kept(
+    monkeypatch, source, bit_depth, sample_rate, expected
+) -> None:
+    _stub_24_96(monkeypatch)
+
+    assert downconverting._build_output_path(f"/downloads/{source}", bit_depth, sample_rate) == f"/downloads/{expected}"
+
+
+@pytest.mark.parametrize(
+    ("source", "bit_depth", "sample_rate", "expected"),
+    [
+        ("A - Album (2020) [WEB 24bit FLAC]", 16, None, "A - Album (2020) [WEB FLAC]"),
+        ("A - Album (2020) [WEB 24 bit FLAC]", 16, None, "A - Album (2020) [WEB FLAC]"),
+        ("A - Album (2020) [web 24bit flac]", 16, None, "A - Album (2020) [web FLAC]"),
+        ("A - Album (2020) [WEB FLAC]", 16, None, "A - Album (2020) [WEB 16bit FLAC]"),
+        ("A - Album (2020) [WEB 24bit FLAC]", 24, 48000, "A - Album (2020) [WEB 24-48]"),
+        ("Flacco - Album (2020) [WEB 24bit FLAC]", 16, None, "Flacco - Album (2020) [WEB FLAC]"),
+        ("Artist_Album_2020_FLAC_GROUP", 16, None, "Artist_Album_2020_16bit FLAC_GROUP"),
+        ("A - Album (2020)", 16, None, "A - Album (2020) [FLAC]"),
+        ("A - Album (2020)", 24, 48000, "A - Album (2020) [24-48]"),
+        (
+            "A - B (2020) [WEB FLAC Remaster] [Flac Records]",
+            16,
+            None,
+            "A - B (2020) [WEB 16bit FLAC Remaster] [16bit FLAC Records]",
+        ),
+    ],
+)
+def test_names_without_the_letters_elsewhere_come_out_as_before(
+    monkeypatch, source, bit_depth, sample_rate, expected
+) -> None:
+    _stub_24_96(monkeypatch)
+
+    assert downconverting._build_output_path(f"/downloads/{source}", bit_depth, sample_rate) == f"/downloads/{expected}"

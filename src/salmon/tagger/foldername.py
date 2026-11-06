@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Callable
 from copy import copy
 from string import Formatter
 
@@ -274,6 +275,34 @@ def drop_resolution_token(foldername, token):
     if 0 < start < len(name) and name[start - 1] in "[({" and name[start] in "])}":
         name = name[: start - 1].rstrip(" ") + name[start + 1 :]
     return name.strip()
+
+
+# The format words of a folder name, each a word of its own: "Flack" and "Flacco" hold the letters. Only a letter beside
+# one makes it part of another word; "_" and digits are separators in hand-made and scene names.
+FLAC_WORD_RE = re.compile(r"(?<![^\W\d_])(24 ?bit )?FLAC(?![^\W\d_])", flags=re.IGNORECASE)
+LOSSLESS_WORD_RE = re.compile(r"(?<![^\W\d_])Lossless(?![^\W\d_])", flags=re.IGNORECASE)
+# What closes a format's own bracket: at most a resolution, as `resolution_token` writes it ("24-96", "24-44.1"). A word
+# after it is a label's: [Flac Records], [Flac 2020 Records].
+_ENDS_ITS_BRACKET_RE = re.compile(r"(?: *\d+-\d+(?:\.\d+)?)? *\]")
+
+
+def format_matches(pattern: re.Pattern[str], foldername: str) -> list[re.Match[str]]:
+    """The matches that are the format. Templates put it after the artists and title, which may hold the word, and a
+    label may follow it, so: the last one that closes its square brackets (allowing a resolution before the `]`), else
+    every one inside square brackets, since a label there cannot be told from the format, else the last one.
+    """
+    matches = list(pattern.finditer(foldername))
+    in_square = [m for m in matches if foldername.rfind("[", 0, m.start()) > foldername.rfind("]", 0, m.start())]
+    ends_bracket = [m for m in in_square if _ENDS_ITS_BRACKET_RE.match(foldername, m.end())]
+    return ends_bracket[-1:] or in_square or matches[-1:]
+
+
+def swap_format_matches(pattern: re.Pattern[str], new: str | Callable[[re.Match[str]], str], foldername: str) -> str:
+    """Replace the name's format matches with new, or with what new gives for each; a name without one is unchanged."""
+    for match in reversed(format_matches(pattern, foldername)):
+        text = new if isinstance(new, str) else new(match)
+        foldername = foldername[: match.start()] + text + foldername[match.end() :]
+    return foldername
 
 
 async def remove_source_folder(
