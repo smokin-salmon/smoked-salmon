@@ -1308,7 +1308,7 @@ async def _upload_staged(  # noqa: C901
                         # As recheck_dupe for the first tracker (#931): with -yyy, nobody checks the tracker by hand.
                         click.secho(
                             f"\n{NO_DUPE_SEARCH} Not uploading to {gazelle_site.site_string} with -yyy "
-                            "(upload.yes_all): run without -yyy to choose its group.",
+                            "(upload.yes_all): run without -yyy, and with upload.yes_all off, to choose its group.",
                             fg="red",
                             bold=True,
                         )
@@ -1911,7 +1911,8 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
         # No search string before the review or after it (#931): the group question has not been asked yet.
         if await interaction.assume_defaults():
             click.secho(
-                f"\n{NO_DUPE_SEARCH} Not uploading with -yyy (upload.yes_all): give --group-id, or run without -yyy.",
+                f"\n{NO_DUPE_SEARCH} Not uploading with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
+                "and with upload.yes_all off.",
                 fg="red",
                 bold=True,
             )

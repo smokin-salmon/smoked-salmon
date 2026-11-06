@@ -598,7 +598,8 @@ def test_a_release_with_no_search_string_fails_the_job_under_yyy_before_any_targ
         assert job.error == "Nothing to cross-upload."
         assert (
             f"Not cross-uploading {TORRENT_ID}: No dupe search is possible for this title: check the tracker "
-            "yourself. Not with -yyy: give --group-id, or run without -yyy"
+            "yourself. Not with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
+            "and with upload.yes_all off"
         ) in _log(job)
 
     _web(world, test, _holding(album, change=_no_search_string))

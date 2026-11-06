@@ -617,7 +617,7 @@ def test_a_release_with_no_search_string_stops_before_any_target_request_under_y
     assert run.result.exit_code == 1, run.output
     assert (
         f"Not cross-uploading {TORRENT_ID}: No dupe search is possible for this title: check the tracker yourself. "
-        "Not with -yyy: give --group-id, or run without -yyy"
+        "Not with -yyy (upload.yes_all): give --group-id, or run without -yyy, and with upload.yes_all off"
     ) in run.output
     assert run.target.sent == []
 
