@@ -255,10 +255,6 @@ class GazelleTrackerSettings(BaseStruct):
     # Where salmon cross-upload writes this tracker's .torrent files. Unset: see Cfg.cross_upload_dottorrents_dir.
     cross_upload_dottorrents_dir: str | None = None
 
-    def __post_init__(self):
-        if self.cross_upload_dottorrents_dir and not os.path.isdir(self.cross_upload_dottorrents_dir):
-            raise ValueError("cross_upload_dottorrents_dir is not a valid directory")
-
 
 class Tracker(BaseStruct):
     red: GazelleTrackerSettings | None = None
@@ -614,6 +610,8 @@ class Cfg(BaseStruct):
             settings = getattr(self.tracker, code)
             for key in ("dottorrents_dir", "cross_upload_dottorrents_dir"):
                 folder = getattr(settings, key) if settings else None
+                if key == "cross_upload_dottorrents_dir" and folder and not os.path.isdir(folder):
+                    raise ValueError(f"tracker.{code}.{key} is not a valid directory")
                 if folder and (library := self.directory.library_of(folder)) is not None:
                     raise ValueError(f"library_dirs entry {library} must not contain tracker.{code}.{key} ({folder})")
 

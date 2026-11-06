@@ -109,13 +109,14 @@ def test_a_seed_task_carries_the_label_of_the_command_that_queued_it(
 def test_a_missing_cross_upload_folder_is_refused_naming_the_key(tmp_path, where) -> None:
     missing = str(tmp_path / "missing")
 
-    with pytest.raises(ValueError, match="cross_upload_dottorrents_dir is not a valid directory"):
-        if where == "global":
-            Directory(
-                dottorrents_dir=str(tmp_path), download_directory=str(tmp_path), cross_upload_dottorrents_dir=missing
-            )
-        else:
-            GazelleTrackerSettings(session="s", cross_upload_dottorrents_dir=missing)
+    here = str(tmp_path)
+    if where == "global":
+        with pytest.raises(ValueError, match="cross_upload_dottorrents_dir is not a valid directory"):
+            Directory(dottorrents_dir=here, download_directory=here, cross_upload_dottorrents_dir=missing)
+    else:
+        settings = GazelleTrackerSettings(session="s", cross_upload_dottorrents_dir=missing)
+        with pytest.raises(ValueError, match=r"tracker\.red\.cross_upload_dottorrents_dir is not a valid directory"):
+            Cfg(directory=Directory(dottorrents_dir=here, download_directory=here), tracker=Tracker(red=settings))
 
 
 @pytest.mark.parametrize("where", ["global", "red"])

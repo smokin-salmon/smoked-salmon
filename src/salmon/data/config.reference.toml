@@ -28,9 +28,10 @@
 # dottorrents_dir = '.torrents'
 
 # Where salmon cross-upload writes its .torrent files (the cross-uploaded torrent and its conversions), when that
-# should not be dottorrents_dir. Must exist, and follows the library_dirs rules of dottorrents_dir. A tracker's own
-# cross_upload_dottorrents_dir below comes first; unset, salmon cross-upload uses the tracker's dottorrents_dir, then
-# this dottorrents_dir. salmon up is not affected.
+# should not be dottorrents_dir. Must exist, and follows the library_dirs rules of dottorrents_dir. For a tracker,
+# salmon cross-upload uses the first set of: the tracker's cross_upload_dottorrents_dir (below), this key, the
+# tracker's dottorrents_dir, then dottorrents_dir. So this key outranks a tracker's own dottorrents_dir for a
+# cross-upload. salmon up is not affected.
 # cross_upload_dottorrents_dir = 'path to dir'
 
 # Set the TMP dir where spectrals are made, e.g. on a fast disk. Unset, they go in the album's Spectrals folder, or in
