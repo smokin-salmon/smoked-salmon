@@ -67,6 +67,7 @@ from salmon.uploader.conversion_choice import (
 )
 from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.dupe_checker import (
+    NO_DUPE_SEARCH,
     _confirm_group_id,
     check_existing_group,
     generate_dupe_check_searchstrs,
@@ -487,6 +488,9 @@ async def _prepare(
     release.data = compile_data(response, source, target)
     if reason := do_not_upload_reason(target.site_code, Candidate.from_form(release.data)):
         raise CrossUploadRefused(reason)
+    if options.group_id is None and not _searchstrs(release.data) and await interaction.assume_defaults():
+        # As salmon up stops under -yyy (#931): no dupe search, and nothing sent to TARGET yet.
+        raise CrossUploadRefused(f"{NO_DUPE_SEARCH} Not with -yyy: give --group-id, or run without -yyy")
     release.path = _release_path(response, options.path)
     if claim_folder is not None and (refusal := await claim_folder(release.path)):
         raise CrossUploadRefused(refusal)

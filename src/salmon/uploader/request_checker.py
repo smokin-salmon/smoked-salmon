@@ -22,8 +22,10 @@ async def check_requests(gazelle_site: "BaseGazelleApi", searchstrs: list[str]) 
     Returns:
         Request ID if user chooses to fill one, None otherwise.
     """
-    results = await get_request_results(gazelle_site, searchstrs)
-    print_request_results(gazelle_site, results, " / ".join(searchstrs))
+    results = []
+    if searchstrs:  # A title can give none (#931): nothing is searched then.
+        results = await get_request_results(gazelle_site, searchstrs)
+        print_request_results(gazelle_site, results, " / ".join(searchstrs))
     # Should add an option to still prompt if there are no results.
     if results or cfg.upload.requests.always_ask_for_request_fill:
         request_id = await _prompt_for_request_id(gazelle_site, results)

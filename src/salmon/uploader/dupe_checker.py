@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 
 LOG_DUPE_WORD_OVERLAP_THRESHOLD = 0.5
+NO_DUPE_SEARCH = "No dupe search is possible for this title: check the tracker yourself."
 
 
 def can_check_site_log(gazelle_site: "BaseGazelleApi") -> bool:
@@ -384,7 +385,7 @@ async def fetch_existing_group_candidates(
     recent_uploads = None
     # The test resolve_existing_group makes, with has_session_cookie for can_check_site_log: the notice
     # that one prints when the log cannot be read is for resolve_existing_group to show.
-    if not results and cfg.upload.requests.check_recent_uploads and gazelle_site.has_session_cookie:
+    if searchstrs and not results and cfg.upload.requests.check_recent_uploads and gazelle_site.has_session_cookie:
         recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs, our_title)
     return results, recent_uploads
 
@@ -414,7 +415,11 @@ async def resolve_existing_group(
     Returns:
         Group ID or None for new group.
     """
-    if not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
+    if not searchstrs:
+        # The title gave no search string (#931): nothing was searched, and nothing is shown as found.
+        click.secho(f"\n{NO_DUPE_SEARCH}", fg="yellow", bold=True)
+        group_id = await _prompt_for_group_id(gazelle_site, [], offer_deletion, offer_skip=offer_skip)
+    elif not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
         if recent_uploads == [] and not cfg.upload.requests.confirm_new_group:
             # The search ran and found nothing, and so did the log (None would be a log not read).
             click.echo(f"No group found on {gazelle_site.site_code}: new group")
@@ -581,7 +586,8 @@ def generate_dupe_check_searchstrs(artists, album, catno=None):
         searchstrs += make_searchstrs(artists, album.split("/")[0], normalize=True)
     elif catno and album is not None and catno.lower() in album.lower():
         searchstrs += make_searchstrs(artists, "untitled", normalize=True)
-    return filter_unnecessary_searchstrs(searchstrs)
+    # A string with no words, say the catalogue number search with no number, would cover every other one (#931).
+    return filter_unnecessary_searchstrs([s for s in searchstrs if s.split()])
 
 
 def _sanitize_album_for_dupe_check(album):
