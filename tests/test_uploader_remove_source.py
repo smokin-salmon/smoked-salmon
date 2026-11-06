@@ -51,7 +51,7 @@ def _staged_run(monkeypatch, *, abort: bool = False, uploaded: bool = True) -> N
         renamed = await foldername.rename_folder(path, METADATA, auto_rename=True, check=False)
         if abort:
             raise click.Abort
-        return renamed, uploaded, False
+        return renamed, uploaded, False, None
 
     monkeypatch.setattr(uploader, "_upload_staged", run)
 

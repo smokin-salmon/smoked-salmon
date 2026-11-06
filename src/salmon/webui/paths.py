@@ -16,10 +16,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from salmon import cfg
+from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.images.files import NotAnImage, check_image
 from salmon.webui.jobs import JobError
 
-AUDIO_EXTENSIONS = frozenset({".flac", ".mp3", ".m4a"})
 # The files the picker offers as images; what a file really is, the upload checks (``image_file``).
 IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".gif", ".webp"})
 # Entries of one folder looked at, and folders listed, at most: a listing past them says it was cut.
