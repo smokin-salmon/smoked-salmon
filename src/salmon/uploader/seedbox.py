@@ -269,7 +269,9 @@ class UploadManager:
     on the remote before the corresponding torrents are added to the client.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, cross_upload: bool = False) -> None:
+        # A cross-upload's torrents get each seedbox's cross_upload_label, when it has one.
+        self._cross_upload = cross_upload
         self._client_cache: dict[str, TorrentClient] = {}
         # Each task: (seedbox, local_path, task_type, folder). `folder` is the release folder the
         # task belongs to: itself for a "folder" task, and the folder its torrent was built from
@@ -423,7 +425,9 @@ class UploadManager:
                         client,
                         shell_path,
                         local_path,
-                        seedbox.label,
+                        seedbox.cross_upload_label
+                        if self._cross_upload and seedbox.cross_upload_label is not None
+                        else seedbox.label,
                         seedbox.add_paused,
                         secrets,
                         _seedbox_display_name(seedbox, secrets),
