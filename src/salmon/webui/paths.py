@@ -261,6 +261,7 @@ def album_folder(raw: str) -> str:
     if not _within(path, found):
         raise PathRefused(403, "Refusing a folder outside download_directory and library_dirs.")
     _check_album(path, found, _withheld_from_albums(found), given=os.path.abspath(raw))
+    _refuse_without_audio(path)
     return path
 
 
@@ -270,16 +271,19 @@ def _check_album(
     withheld: list[str],
     *,
     given: str | None = None,
+    libraries: bool = True,
     links: bool = True,
     walked: _Walked | None = None,
 ) -> None:
-    """``album_folder``'s rule on `path`, resolved and inside a root: the one answer for Start and the picker.
+    """``album_folder``'s rule on `path`, resolved and inside a root, but for its audio (``_refuse_without_audio``):
+    the one answer for Start and the picker.
 
     Args:
         path: The folder, resolved.
         found: The roots.
-        withheld: ``_withheld_from_albums(found)``.
+        withheld: ``_withheld_from_albums(found)``, or those of them that may concern `path`.
         given: The path as given, to refuse a symlink; None for a folder the browser lists, which is none.
+        libraries: Whether to look for a library directory in it; not for a folder in one that holds none.
         links: Whether to walk the folder for links (#898); a listing past ``MAX_OFFER_WALK`` does not.
         walked: Counts the folders walked for links.
 
@@ -288,7 +292,7 @@ def _check_album(
     """
     if any(path == root.path for root in found):
         raise PathRefused(403, "Refusing a root folder: pick one album folder in it.")
-    if cfg.directory.library_inside(path) is not None:
+    if libraries and cfg.directory.library_inside(path) is not None:
         raise PathRefused(403, "Refusing a folder that holds a library directory: pick one album folder in it.")
     if given is not None:
         if os.path.join(os.path.realpath(os.path.dirname(given)), os.path.basename(given)) != path:
@@ -302,6 +306,14 @@ def _check_album(
         raise PathRefused(404, "No such folder.")
     if links:
         _refuse_links(path, walked)
+
+
+def _refuse_without_audio(path: str) -> None:
+    """Refuse a folder with no audio in it or its disc folders (``holds_audio``), saying so when there is some deeper.
+
+    Raises:
+        PathRefused: The folder holds no audio an album folder would.
+    """
     if not holds_audio(path):
         if _audio_below(path):
             raise PathRefused(
@@ -319,11 +331,20 @@ class _Offers:
     ``MAX_MARK_SCAN`` entries), so a very large album folder may be left unoffered: it can still be typed in. One
     that passes is then checked as a job checks it, walking it for links, until the listing has walked
     ``MAX_OFFER_WALK`` folders; past that, only by its place and its audio.
+
+    What the folders in a folder are, are in or hold, the folder listed is, is in or holds too: the withheld folders
+    and library directories are looked for once, from the folder listed, not again for each folder in it.
     """
 
-    def __init__(self, found: list[Root]) -> None:
+    def __init__(self, found: list[Root], path: str) -> None:
+        """`path`: the folder listed, resolved."""
         self._found = found
-        self._withheld = _withheld_from_albums(found)
+        self._withheld = [
+            folder
+            for folder in _withheld_from_albums(found)
+            if _same_or_inside(path, folder) or _same_or_inside(folder, path)
+        ]
+        self._libraries = cfg.directory.library_inside(path) is not None
         self._walked = _Walked()
 
     def __call__(self, path: str) -> bool:
@@ -331,7 +352,7 @@ class _Offers:
             return False
         links = self._walked.count < MAX_OFFER_WALK
         try:
-            _check_album(path, self._found, self._withheld, links=links, walked=self._walked)
+            _check_album(path, self._found, self._withheld, libraries=self._libraries, links=links, walked=self._walked)
         except PathRefused:
             return False
         return True
@@ -344,8 +365,9 @@ class _Offers:
         """
         if any(path == root.path for root in self._found) or not (audio or holds_audio(path, MAX_MARK_SCAN)):
             return False, None
+        # Holding audio within the bound, it holds some read whole: _refuse_without_audio would pass.
         try:
-            _check_album(path, self._found, self._withheld)
+            _check_album(path, self._found, self._withheld, libraries=self._libraries)
         except PathRefused as e:
             return False, e.detail
         return True, None
@@ -524,7 +546,10 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
     path = asked
     # Up to the root it is in at most: inside a root, every folder above the path is in it too.
     while not os.path.isdir(path) and not any(path == root.path for root in found):
-        path = os.path.dirname(path)
+        parent = os.path.dirname(path)
+        if parent == path:  # A drive or share root spelled otherwise than its root: never loop on it.
+            break
+        path = parent
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
     names: list[tuple[str, str, float]] = []
@@ -558,14 +583,14 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
         names = names[:MAX_LISTED]
         pictures = pictures[:MAX_LISTED]
     parent = os.path.dirname(path)
-    offers = _Offers(found)
-    offered, refused = offers.here(path, audio)
+    offers = _Offers(found, path)
+    selectable, refused = offers.here(path, audio)
     answer: dict[str, Any] = {
         "path": path,
         "missing": asked if asked != path else None,
         "parent": parent if _within(parent, found) and parent != path else None,
         "library": cfg.directory.is_library_path(path),
-        "audio": offered,
+        "audio": selectable,
         "refused": refused,
         "folders": [{"name": name, "path": full, "audio": offers(full)} for name, full, _ in names],
         "truncated": truncated,

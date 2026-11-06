@@ -452,6 +452,39 @@ def test_a_listing_walks_its_albums_for_links_only_so_far(roots: Roots, monkeypa
     _with_app(test)
 
 
+def test_a_listing_looks_for_withheld_folders_and_libraries_once_not_for_each_album(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Beside the albums, not above them: each check walks up to the filesystem root, stat by stat.
+    monkeypatch.setattr(cfg.directory, "dottorrents_dir", str(roots.outside))
+    stats = 0
+    real = {name: getattr(os, name) for name in ("stat", "lstat")}
+
+    def counted(name: str) -> Callable[..., Any]:
+        def call(*args: Any, **kwargs: Any) -> Any:
+            nonlocal stats
+            stats += 1
+            return real[name](*args, **kwargs)
+
+        return call
+
+    def listing_stats(batch: str) -> int:
+        nonlocal stats
+        for number in range(40):
+            _album(roots.downloads / f"Album {batch}{number}", tracks=1)
+        stats = 0
+        with monkeypatch.context() as patched:
+            for name in real:
+                patched.setattr(paths.os, name, counted(name))
+            answer = paths.listing(str(roots.downloads))
+        assert all(folder["audio"] for folder in answer["folders"])
+        return stats
+
+    first = listing_stats("A")
+    # 40 more albums: about one stat each (is it a folder), where each used to walk up to "/" for every check.
+    assert listing_stats("B") - first < 40 * 2
+
+
 def test_browsing_a_removed_folder_lists_its_parent_and_says_which_it_opened(roots: Roots) -> None:
     album = _album(roots.downloads / "incoming" / "Album")
     _album(roots.downloads / "incoming" / "Next")
@@ -482,6 +515,27 @@ def test_browsing_a_path_whose_parents_are_all_gone_opens_the_root(roots: Roots)
         assert answer["library"] is True
 
     _with_app(test)
+
+
+def test_browsing_up_from_a_missing_path_stops_at_a_folder_that_is_its_own_parent(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A Windows share root ("\\srv\share\") is its own dirname; spelled otherwise than its root, the walk up from a
+    # missing folder never meets the root.
+    share = roots.downloads / "share"
+    real_dirname = os.path.dirname
+    calls = 0
+
+    def dirname(path: str) -> str:
+        nonlocal calls
+        calls += 1
+        assert calls < 50, "the walk up never stops"
+        return path if path == str(share) else real_dirname(path)
+
+    monkeypatch.setattr(paths.os.path, "dirname", dirname)
+    with pytest.raises(paths.PathRefused) as refused:
+        paths.listing(str(share / "Album" / "CD1"))
+    assert refused.value.status == 404
 
 
 async def _summary(client: TestClient, path: str) -> Any:
