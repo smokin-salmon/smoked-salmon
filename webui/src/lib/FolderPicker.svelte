@@ -107,8 +107,12 @@
     usable = !!value && current !== null && current.kind !== 'refused'
   })
 
+  // Bumped to check the same folder again: what is on disk may have changed since (a download that finished).
+  let recheck = $state(0)
+
   $effect(() => {
     const folder = value
+    void recheck
     if (!folder) {
       checked = null
       return
@@ -178,6 +182,7 @@
    * is forgotten; one it could not answer for is kept.
    */
   async function openBrowser() {
+    if (current && current.kind !== 'count') recheck++
     const last = lastBrowsed()
     for (const start of new Set([value, last])) {
       if (!start) continue
@@ -218,6 +223,7 @@
   }
 
   function select(path: string) {
+    if (path === value) recheck++
     value = path
     closeListing()
   }

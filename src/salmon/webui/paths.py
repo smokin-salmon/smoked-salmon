@@ -144,8 +144,9 @@ def _is_link(entry: os.DirEntry[str]) -> bool:
 
 def holds_audio(path: str, max_entries: int | None = None) -> bool:
     """Whether an audio file is in the folder or in one of its direct subfolders (disc folders): the one rule for an
-    album folder. The picker offers such a folder and ``album_folder`` refuses a job on any other, so a folder of
-    albums is never worked on whole, and a box set still is.
+    album folder. The picker offers such a folder and ``album_folder`` refuses a job on any other, so an inbox whose
+    albums are two levels down (``incoming/<store>/<album>/``) is never worked on whole, and a box set still is. A
+    folder holding albums directly has the shape of a box set: it passes, and the count before Start shows it.
 
     A job's check (`max_entries` None) reads each folder whole; ``_refuse_links`` has already bounded how many
     folders there are. The picker, marking many folders at once, looks at `max_entries` entries in each and as many
