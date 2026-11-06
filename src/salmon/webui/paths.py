@@ -31,6 +31,9 @@ SORTS = ("newest", "name")
 MAX_MARK_SCAN = 200
 # Folders walked in an album folder, to find any link in it: past them, it is not an album.
 MAX_ALBUM_WALK = 500
+# Folders walked in all, to check the album folders of one listing as a job would: past them, a folder is offered
+# by its place and its audio only, and the check at Start answers for the rest.
+MAX_OFFER_WALK = 2000
 # A Windows junction's reparse tag: stat.IO_REPARSE_TAG_MOUNT_POINT, which the stat module defines only on Windows.
 _JUNCTION = 0xA0000003
 
@@ -191,11 +194,22 @@ def _is_regular(path: str) -> bool:
         return False
 
 
-def _refuse_links(path: str) -> None:
+@dataclass
+class _Walked:
+    """Folders walked for links so far, counted also when a walk refuses."""
+
+    count: int = 0
+
+
+def _refuse_links(path: str, walked: _Walked | None = None) -> None:
     """Refuse a folder holding a link of any kind, anywhere in it (#898).
 
     salmon's copy of an album (``uploader/staging.py``) and the torrent made from it follow links, so a link would
     bring in what it leads to: a log, a scan or a folder from outside the roots would go into the upload.
+
+    Args:
+        path: The folder.
+        walked: Counts the folders this walk reads, for a caller that bounds several walks.
 
     Raises:
         PathRefused: The folder holds a symlink (or a junction), named by its path in the folder; more than
@@ -203,14 +217,16 @@ def _refuse_links(path: str) -> None:
             hide one.
     """
     pending = [path]
-    walked = 0
+    seen = 0
     while pending:
-        if walked >= MAX_ALBUM_WALK:
+        if seen >= MAX_ALBUM_WALK:
             raise PathRefused(
                 422, f"Refusing a folder holding more than {MAX_ALBUM_WALK} folders: pick one album folder in it."
             )
         folder = pending.pop()
-        walked += 1
+        seen += 1
+        if walked is not None:
+            walked.count += 1
         try:
             with os.scandir(folder) as entries:
                 for entry in entries:
@@ -244,21 +260,48 @@ def album_folder(raw: str) -> str:
     # Confined before anything probes the path.
     if not _within(path, found):
         raise PathRefused(403, "Refusing a folder outside download_directory and library_dirs.")
+    _check_album(path, found, _withheld_from_albums(found), given=os.path.abspath(raw))
+    return path
+
+
+def _check_album(
+    path: str,
+    found: list[Root],
+    withheld: list[str],
+    *,
+    given: str | None = None,
+    links: bool = True,
+    walked: _Walked | None = None,
+) -> None:
+    """``album_folder``'s rule on `path`, resolved and inside a root: the one answer for Start and the picker.
+
+    Args:
+        path: The folder, resolved.
+        found: The roots.
+        withheld: ``_withheld_from_albums(found)``.
+        given: The path as given, to refuse a symlink; None for a folder the browser lists, which is none.
+        links: Whether to walk the folder for links (#898); a listing past ``MAX_OFFER_WALK`` does not.
+        walked: Counts the folders walked for links.
+
+    Raises:
+        PathRefused: The folder is refused, with a status and a reason a person can act on.
+    """
     if any(path == root.path for root in found):
         raise PathRefused(403, "Refusing a root folder: pick one album folder in it.")
     if cfg.directory.library_inside(path) is not None:
         raise PathRefused(403, "Refusing a folder that holds a library directory: pick one album folder in it.")
-    given = os.path.abspath(raw)
-    if os.path.join(os.path.realpath(os.path.dirname(given)), os.path.basename(given)) != path:
-        raise PathRefused(403, "Refusing an album folder that is a symlink: open the folder it leads to.")
-    # Reached through a link from a library to outside it, the folder would lose the copy salmon works on.
-    if _named_in_library(given) and not cfg.directory.is_library_path(path):
-        raise PathRefused(403, "Refusing an album linked into a library from outside it: open the folder itself.")
-    if any(_same_or_inside(path, folder) or _same_or_inside(folder, path) for folder in _withheld_from_albums(found)):
+    if given is not None:
+        if os.path.join(os.path.realpath(os.path.dirname(given)), os.path.basename(given)) != path:
+            raise PathRefused(403, "Refusing an album folder that is a symlink: open the folder it leads to.")
+        # Reached through a link from a library to outside it, the folder would lose the copy salmon works on.
+        if _named_in_library(given) and not cfg.directory.is_library_path(path):
+            raise PathRefused(403, "Refusing an album linked into a library from outside it: open the folder itself.")
+    if any(_same_or_inside(path, folder) or _same_or_inside(folder, path) for folder in withheld):
         raise PathRefused(403, "Refusing a folder of .torrent files or a seedbox's, or one that holds one.")
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
-    _refuse_links(path)
+    if links:
+        _refuse_links(path, walked)
     if not holds_audio(path):
         if _audio_below(path):
             raise PathRefused(
@@ -267,7 +310,45 @@ def album_folder(raw: str) -> str:
                 "folder that holds them.",
             )
         raise PathRefused(422, "No audio file (FLAC, MP3, M4A) in this folder or its disc folders.")
-    return path
+
+
+class _Offers:
+    """Which folders of one listing the picker offers as albums: those ``album_folder`` accepts.
+
+    A folder is first looked at as the picker can afford for each of hundreds (``holds_audio`` within
+    ``MAX_MARK_SCAN`` entries), so a very large album folder may be left unoffered: it can still be typed in. One
+    that passes is then checked as a job checks it, walking it for links, until the listing has walked
+    ``MAX_OFFER_WALK`` folders; past that, only by its place and its audio.
+    """
+
+    def __init__(self, found: list[Root]) -> None:
+        self._found = found
+        self._withheld = _withheld_from_albums(found)
+        self._walked = _Walked()
+
+    def __call__(self, path: str) -> bool:
+        if not holds_audio(path, MAX_MARK_SCAN):
+            return False
+        links = self._walked.count < MAX_OFFER_WALK
+        try:
+            _check_album(path, self._found, self._withheld, links=links, walked=self._walked)
+        except PathRefused:
+            return False
+        return True
+
+    def here(self, path: str, audio: bool) -> tuple[bool, str | None]:
+        """Whether the folder listed is offered (checked whole, as at Start), and if not, why, when it holds audio.
+
+        A root is never offered, and says nothing: its albums are what its listing shows. `audio`: whether the
+        listing found an audio file in it, which saves looking again.
+        """
+        if any(path == root.path for root in self._found) or not (audio or holds_audio(path, MAX_MARK_SCAN)):
+            return False, None
+        try:
+            _check_album(path, self._found, self._withheld)
+        except PathRefused as e:
+            return False, e.detail
+        return True, None
 
 
 def summary(raw: str) -> dict[str, str]:
@@ -402,9 +483,10 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
     never above the root: ``path`` is the folder listed, and ``missing`` the path asked for, null when that is the
     folder listed. A path outside the roots is refused before anything probes it.
 
-    Folders whose name starts with a dot and symlinks are left out. Each folder listed says whether it holds
-    audio files (or its disc folders do), that is, whether the picker may offer it as an album. A root never is
-    (``album_folder`` refuses it), so a root says ``audio`` false, in the roots view and when listed itself.
+    Folders whose name starts with a dot and symlinks are left out. Each folder listed, and the folder listed
+    itself, says ``audio`` true when the picker offers it as an album: when ``album_folder`` accepts it, as a job
+    does at Start (see ``_Offers`` for its bounds). A root never is, in the roots view and when listed itself. The
+    folder listed says why it is not offered (``refused``) when it holds audio all the same, else null.
     At most ``MAX_LISTED`` folders are listed, out of the first
     ``MAX_SCANNED`` entries (in the order the disk gives them: a folder of more entries is not read past them);
     ``truncated`` says when the folder holds more. The folders are sorted before that cut: ``sort`` is
@@ -429,6 +511,7 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
             "parent": None,
             "library": False,
             "audio": False,
+            "refused": None,
             "folders": [{**root.shown(), "audio": False} for root in found],
             "truncated": False,
             "sort": sort,
@@ -475,13 +558,16 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
         names = names[:MAX_LISTED]
         pictures = pictures[:MAX_LISTED]
     parent = os.path.dirname(path)
+    offers = _Offers(found)
+    offered, refused = offers.here(path, audio)
     answer: dict[str, Any] = {
         "path": path,
         "missing": asked if asked != path else None,
         "parent": parent if _within(parent, found) and parent != path else None,
         "library": cfg.directory.is_library_path(path),
-        "audio": not any(path == root.path for root in found) and (audio or holds_audio(path, MAX_MARK_SCAN)),
-        "folders": [{"name": name, "path": full, "audio": holds_audio(full, MAX_MARK_SCAN)} for name, full, _ in names],
+        "audio": offered,
+        "refused": refused,
+        "folders": [{"name": name, "path": full, "audio": offers(full)} for name, full, _ in names],
         "truncated": truncated,
         "sort": sort,
         "roots": shown_roots,

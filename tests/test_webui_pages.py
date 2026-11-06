@@ -368,6 +368,90 @@ def test_the_picker_offers_exactly_the_folders_a_job_accepts(roots: Roots) -> No
     _with_app(test)
 
 
+def _accepted(path: Path) -> bool:
+    try:
+        paths.album_folder(str(path))
+    except paths.PathRefused:
+        return False
+    return True
+
+
+@pytest.mark.skipif(sys.platform == "win32" or os.geteuid() == 0, reason="needs a folder its owner can't read")
+def test_select_is_offered_on_a_folder_only_when_a_job_accepts_it(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Album-shaped folders a job refuses all the same: holding a link, a library root in download_directory,
+    # a local seedbox's folder and the albums in it, more folders than a job walks, a folder salmon can't read.
+    _refused_paths(roots)
+    _album(roots.downloads / "Box" / "CD1", tracks=1)
+    _album(roots.downloads / "Box" / "CD2", tracks=1)
+    _album(roots.downloads / "lib" / "Kept")
+    seedbox = roots.downloads / "seedbox"
+    _album(seedbox / "Album")
+    for disc in range(1, 4):
+        _album(roots.downloads / "Big" / f"CD{disc}", tracks=1)
+    locked = _album(roots.downloads / "Locked") / "Scans"
+    locked.mkdir()
+    monkeypatch.setattr(cfg.directory, "library_dirs", [str(roots.library), str(roots.downloads / "lib")])
+    monkeypatch.setattr(cfg, "seedbox", [Seedbox(name="box", type="local", directory=str(seedbox))])
+    monkeypatch.setattr(paths, "MAX_ALBUM_WALK", 3)
+    folders = [
+        Path(top) / name
+        for top, names, _files in os.walk(roots.downloads)
+        for name in names
+        if not (Path(top) / name).is_symlink()
+    ]
+    accepted = {folder: _accepted(folder) for folder in folders if folder != locked}
+    locked.chmod(0)
+    accepted[roots.downloads / "Locked"] = _accepted(roots.downloads / "Locked")
+    assert accepted[roots.downloads / "Box"] and accepted[roots.downloads / "Album"]
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        differ = []
+        for folder, accepts in accepted.items():
+            parent = await (await _browse(client, str(folder.parent))).json()
+            row = next(found for found in parent["folders"] if found["name"] == folder.name)
+            own = await (await _browse(client, str(folder))).json()
+            if (row["audio"], own["audio"]) != (accepts, accepts):
+                differ.append((str(folder.relative_to(roots.downloads)), accepts, row["audio"], own["audio"]))
+        assert differ == []
+
+    try:
+        _with_app(test)
+    finally:
+        locked.chmod(stat.S_IRWXU)
+
+
+def test_a_listed_folder_holding_audio_that_a_job_refuses_says_why(roots: Roots) -> None:
+    refused = _refused_paths(roots)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        linked = await (await _browse(client, refused["an audio file linked out of the roots"][0])).json()
+        assert linked["audio"] is False
+        assert linked["refused"] == (await (await _summary(client, linked["path"])).json())["detail"]
+        assert "holds a link" in linked["refused"]
+        # No audio in it or its disc folders: nothing to explain, as for the folders on the way to an album.
+        for folder in (roots.downloads / "incoming", roots.downloads / "empty", roots.downloads):
+            assert (await (await _browse(client, str(folder))).json())["refused"] is None, folder
+        assert (await (await _browse(client, str(roots.downloads / "Album"))).json())["refused"] is None
+
+    _with_app(test)
+
+
+def test_a_listing_walks_its_albums_for_links_only_so_far(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in ("A", "B", "C"):
+        album = _album(roots.downloads / name, tracks=1)
+        (album / "Scans").symlink_to(roots.outside)
+    monkeypatch.setattr(paths, "MAX_OFFER_WALK", 2)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _browse(client, str(roots.downloads), sort="name")).json()
+        # A and B walked (one folder each) and refused; C past the bound, offered: Start's check refuses it.
+        assert [(f["name"], f["audio"]) for f in answer["folders"]] == [("A", False), ("B", False), ("C", True)]
+
+    _with_app(test)
+
+
 def test_browsing_a_removed_folder_lists_its_parent_and_says_which_it_opened(roots: Roots) -> None:
     album = _album(roots.downloads / "incoming" / "Album")
     _album(roots.downloads / "incoming" / "Next")

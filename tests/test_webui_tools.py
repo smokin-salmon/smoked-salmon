@@ -674,7 +674,9 @@ def test_the_browser_lists_image_files_only_where_it_may_and_bounded(
             ("back.jpg", str(folder / "back.jpg"), len(jpeg())),
             ("Cover.PNG", str(folder / "Cover.PNG"), len(png())),
         ]
-        assert listed["audio"] is True
+        # It holds audio, but a job refuses it for its link (#898): not offered as an album, and the listing says why.
+        assert listed["audio"] is False
+        assert "holds a link (link.png)" in listed["refused"]
         # Without asking, the listing is what it was.
         plain = await (await client.get("/api/browse", params={"path": str(folder)}, headers=AUTH)).json()
         assert "images" not in plain
