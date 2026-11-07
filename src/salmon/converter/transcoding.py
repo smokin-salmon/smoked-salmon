@@ -173,7 +173,7 @@ def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
         New cleaned tag dictionary.
 
     Raises:
-        ValueError: If conflicting total values are found.
+        UploadError: If conflicting or invalid total values are found.
     """
     # Filter out unwanted tags
     result = {k: v for k, v in tags.items() if not k.startswith("replaygain") and k != "encoder"}
@@ -189,13 +189,28 @@ def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
         tot_vals: set[int] = set()
         invalid_entries: list[tuple[str, str]] = []
         for t in used:
+            raw_val = result[t][0] if result[t] else ""
+            stripped = raw_val.strip()
+            if not stripped:
+                continue
+            if "/" in stripped:
+                parts = stripped.split("/")
+                if len(parts) == 2 and parts[1].strip():
+                    try:
+                        tot_vals.add(int(parts[1].strip()))
+                        continue
+                    except ValueError:
+                        pass
+                invalid_entries.append((t, raw_val))
+                continue
             try:
-                tot_vals.add(int(result[t][0]))
+                tot_vals.add(int(stripped))
             except ValueError:
-                invalid_entries.append((t, result[t][0]))
+                invalid_entries.append((t, raw_val))
+
         if invalid_entries:
             details = ", ".join(f"{name}={value!r}" for name, value in invalid_entries)
-            raise ValueError(f"Non-integer total values for {tag}: {details}")
+            raise UploadError(f"Non-integer total values for {tag}: {details}")
 
         # Remove total keys
         result = {k: v for k, v in result.items() if k not in used}
@@ -204,8 +219,8 @@ def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
             total = str(tot_vals.pop())
             nr = result[tag][0]
             result = {**result, tag: [f"{nr}/{total}"]}
-        else:
-            raise ValueError(f"conflicting values of {' and '.join(used)}")
+        elif len(tot_vals) > 1:
+            raise UploadError(f"conflicting values of {' and '.join(sorted(used))}")
 
     return result
 

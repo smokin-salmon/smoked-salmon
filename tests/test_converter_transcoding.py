@@ -10,6 +10,7 @@ import anyio
 import pytest
 
 from salmon.converter import transcoding as tc
+from salmon.errors import UploadError
 
 
 def _streaminfo_only_flac() -> bytes:
@@ -60,3 +61,51 @@ def test_a_multichannel_source_writes_no_output_folder(tmp_path, monkeypatch) ->
 
     # The extra files are copied before any track is encoded.
     assert not os.path.exists(tc._build_output_path(str(source), "320"))
+
+
+@pytest.mark.parametrize(
+    ("tags", "expected_track"),
+    [
+        ({"tracknumber": ["1"], "tracktotal": ["12"]}, ["1/12"]),
+        ({"tracknumber": ["1"], "tracktotal": [""]}, ["1"]),
+        ({"tracknumber": ["1"], "tracktotal": ["   "]}, ["1"]),
+        ({"tracknumber": ["12"], "tracktotal": ["12/12"]}, ["12/12"]),
+        ({"tracknumber": ["1"], "tracktotal": ["1/12"]}, ["1/12"]),
+        ({"tracknumber": ["1"], "tracktotal": ["12"], "totaltracks": [""]}, ["1/12"]),
+        ({"tracknumber": ["1"], "tracktotal": ["-1"]}, ["1/-1"]),
+        ({"tracknumber": ["1"], "tracktotal": ["１２"]}, ["1/12"]),
+    ],
+)
+def test_prepare_tags_merges_totals(tags: dict[str, list[str]], expected_track: list[str]) -> None:
+    result = tc._prepare_tags(tags)
+    assert result["tracknumber"] == expected_track
+    assert "tracktotal" not in result
+    assert "totaltracks" not in result
+
+
+def test_prepare_tags_both_totals_empty_merges_nothing() -> None:
+    tags = {"tracknumber": ["1"], "tracktotal": [""], "totaltracks": ["  "]}
+    result = tc._prepare_tags(tags)
+    assert result["tracknumber"] == ["1"]
+    assert "tracktotal" not in result
+    assert "totaltracks" not in result
+
+
+def test_prepare_tags_disctotal_slash() -> None:
+    tags = {"discnumber": ["1"], "disctotal": ["2/2"]}
+    result = tc._prepare_tags(tags)
+    assert result["discnumber"] == ["1/2"]
+    assert "disctotal" not in result
+
+
+@pytest.mark.parametrize("invalid_val", ["abc", "12/abc", "12/12/12", "12/"])
+def test_prepare_tags_non_integer_total_raises_upload_error(invalid_val: str) -> None:
+    tags = {"tracknumber": ["1"], "tracktotal": [invalid_val]}
+    with pytest.raises(UploadError, match="Non-integer total values for tracknumber"):
+        tc._prepare_tags(tags)
+
+
+def test_prepare_tags_conflicting_totals_raise_upload_error() -> None:
+    tags = {"tracknumber": ["1"], "tracktotal": ["12"], "totaltracks": ["13"]}
+    with pytest.raises(UploadError, match="conflicting values of"):
+        tc._prepare_tags(tags)
