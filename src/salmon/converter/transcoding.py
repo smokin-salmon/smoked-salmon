@@ -161,6 +161,29 @@ def _get_id3_frame(tag_name: str, tag_value: list[str]) -> TXXX:
     return TXXX(encoding=3, desc=tag_name, text=tag_value)
 
 
+def _parse_total(value: str) -> int | None:
+    """Read one track or disc total value.
+
+    Args:
+        value: The raw tag value, such as ``12`` or ``12/12``.
+
+    Returns:
+        The total, or None for an empty value.
+
+    Raises:
+        ValueError: If the value is not a total.
+    """
+    stripped = value.strip()
+    if not stripped:
+        return None
+    if "/" in stripped:
+        parts = stripped.split("/")
+        if len(parts) != 2 or not parts[1].strip():
+            raise ValueError(value)
+        stripped = parts[1].strip()
+    return int(stripped)
+
+
 def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
     """Clean and normalize FLAC tags for ID3 conversion.
 
@@ -188,25 +211,15 @@ def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
 
         tot_vals: set[int] = set()
         invalid_entries: list[tuple[str, str]] = []
-        for t in used:
-            raw_val = result[t][0] if result[t] else ""
-            stripped = raw_val.strip()
-            if not stripped:
-                continue
-            if "/" in stripped:
-                parts = stripped.split("/")
-                if len(parts) == 2 and parts[1].strip():
-                    try:
-                        tot_vals.add(int(parts[1].strip()))
-                        continue
-                    except ValueError:
-                        pass
-                invalid_entries.append((t, raw_val))
-                continue
-            try:
-                tot_vals.add(int(stripped))
-            except ValueError:
-                invalid_entries.append((t, raw_val))
+        for t in sorted(used):
+            for raw_val in result[t]:
+                try:
+                    total = _parse_total(raw_val)
+                except ValueError:
+                    invalid_entries.append((t, raw_val))
+                    continue
+                if total is not None:
+                    tot_vals.add(total)
 
         if invalid_entries:
             details = ", ".join(f"{name}={value!r}" for name, value in invalid_entries)
@@ -217,7 +230,8 @@ def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
 
         if len(tot_vals) == 1:
             total = str(tot_vals.pop())
-            nr = result[tag][0]
+            # A number tag may already carry a total (TRACKNUMBER=1/12): keep only the number.
+            nr = result[tag][0].split("/")[0].strip()
             result = {**result, tag: [f"{nr}/{total}"]}
         elif len(tot_vals) > 1:
             raise UploadError(f"conflicting values of {' and '.join(sorted(used))}")
@@ -258,6 +272,9 @@ def _collect_transcode_items(
 
     Returns:
         List of TranscodeItem structs.
+
+    Raises:
+        UploadError: If a file's tags cannot be converted, naming that file.
     """
     src_path = Path(path)
     dst_path = Path(new_path)
@@ -266,7 +283,11 @@ def _collect_transcode_items(
     # Any case, as _copy_extra_files skips them: a .FLAC track would otherwise be neither transcoded nor copied.
     flac_files = (p for p in src_path.rglob("*") if p.is_file() and p.suffix.lower() == ".flac")
     for flac_file in sorted(flac_files, key=lambda p: file_order_key(str(p))):
-        fl, tag_dict = _parse_flac_tags(flac_file)
+        try:
+            fl, tag_dict = _parse_flac_tags(flac_file)
+        except UploadError as e:
+            # _prepare_tags cannot tell which track it read: name it.
+            raise UploadError(f"{flac_file}: {e}") from e
         rel = flac_file.relative_to(src_path).with_suffix(".mp3")
         mp3_path = dst_path / rel
         items.append(TranscodeItem(src=str(flac_file), dst=str(mp3_path), flac_obj=fl, tags=tag_dict))

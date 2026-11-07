@@ -8,6 +8,7 @@ from typing import Any
 
 import anyio
 import pytest
+from mutagen import flac
 
 from salmon.converter import transcoding as tc
 from salmon.errors import UploadError
@@ -72,7 +73,9 @@ def test_a_multichannel_source_writes_no_output_folder(tmp_path, monkeypatch) ->
         ({"tracknumber": ["12"], "tracktotal": ["12/12"]}, ["12/12"]),
         ({"tracknumber": ["1"], "tracktotal": ["1/12"]}, ["1/12"]),
         ({"tracknumber": ["1"], "tracktotal": ["12"], "totaltracks": [""]}, ["1/12"]),
-        ({"tracknumber": ["1"], "tracktotal": ["-1"]}, ["1/-1"]),
+        ({"tracknumber": ["1"], "tracktotal": ["", "12"]}, ["1/12"]),
+        ({"tracknumber": ["1/12"], "tracktotal": ["12"]}, ["1/12"]),
+        ({"tracknumber": ["1/12"], "tracktotal": ["12/12"]}, ["1/12"]),
         ({"tracknumber": ["1"], "tracktotal": ["１２"]}, ["1/12"]),
     ],
 )
@@ -98,6 +101,13 @@ def test_prepare_tags_disctotal_slash() -> None:
     assert "disctotal" not in result
 
 
+def test_prepare_tags_discnumber_with_total_keeps_one_total() -> None:
+    tags = {"discnumber": ["1/2"], "disctotal": ["2"]}
+    result = tc._prepare_tags(tags)
+    assert result["discnumber"] == ["1/2"]
+    assert "disctotal" not in result
+
+
 @pytest.mark.parametrize("invalid_val", ["abc", "12/abc", "12/12/12", "12/"])
 def test_prepare_tags_non_integer_total_raises_upload_error(invalid_val: str) -> None:
     tags = {"tracknumber": ["1"], "tracktotal": [invalid_val]}
@@ -109,3 +119,23 @@ def test_prepare_tags_conflicting_totals_raise_upload_error() -> None:
     tags = {"tracknumber": ["1"], "tracktotal": ["12"], "totaltracks": ["13"]}
     with pytest.raises(UploadError, match="conflicting values of"):
         tc._prepare_tags(tags)
+
+
+def test_conflicting_values_within_one_total_tag_raise_upload_error() -> None:
+    tags = {"tracknumber": ["1"], "tracktotal": ["12", "13"]}
+    with pytest.raises(UploadError, match="conflicting values of tracktotal"):
+        tc._prepare_tags(tags)
+
+
+def test_an_unreadable_total_names_the_file(tmp_path) -> None:
+    source = _source(tmp_path / "Artist - Album (2024) [FLAC]")
+    track = source / "01.flac"
+    fl = flac.FLAC(track)
+    fl["tracknumber"] = "1"
+    fl["tracktotal"] = "abc"
+    fl.save()
+
+    with pytest.raises(UploadError) as raised:
+        tc._collect_transcode_items(str(source), str(tmp_path / "out"))
+
+    assert str(raised.value) == f"{track}: Non-integer total values for tracknumber: tracktotal='abc'"
