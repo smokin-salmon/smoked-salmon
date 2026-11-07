@@ -267,6 +267,349 @@ def test_only_a_regular_file_counts_as_an_albums_audio(roots: Roots) -> None:
 
 
 @pytest.mark.parametrize("kind", ["spectrals", "checks"])
+def test_a_job_refuses_a_folder_whose_audio_is_two_levels_down_and_says_why(roots: Roots, kind: str) -> None:
+    _album(roots.downloads / "incoming" / "Store" / "Album")
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        response = await _post_job(client, kind, str(roots.downloads / "incoming"))
+        assert response.status == 422
+        assert (await response.json())["detail"] == (
+            "No audio file in this folder or its disc folders, but there are some deeper down. Pick the album folder "
+            "that holds them."
+        )
+        assert manager.jobs == {}
+
+    _with_app(test)
+
+
+@pytest.mark.parametrize("kind", ["spectrals", "checks"])
+def test_a_job_accepts_a_box_set_whose_audio_is_in_its_disc_folders(roots: Roots, kind: str) -> None:
+    box = roots.downloads / "Box"
+    _album(box / "CD1", tracks=1)
+    _album(box / "CD2", tracks=1)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        manager.max_jobs = 0
+        job_id = await _start(client, kind, str(box))
+        job = await (await client.get(f"/api/jobs/{job_id}", headers=AUTH)).json()
+        assert job["params"]["path"] == str(box)
+        await client.post(f"/api/jobs/{job_id}/cancel", json={}, headers=AUTH)
+
+    _with_app(test)
+
+
+class _AudioLast:
+    """os.scandir with the audio files last, whatever order the disk gives: an album read only in part misses them."""
+
+    def __init__(self, path: Any = ".") -> None:
+        with _real_scandir(path) as entries:
+            self._entries = sorted(entries, key=lambda entry: entry.name.endswith(".flac"))
+
+    def __iter__(self) -> "_AudioLast":
+        return self
+
+    def __next__(self) -> os.DirEntry[str]:
+        if not self._entries:
+            raise StopIteration
+        return self._entries.pop(0)
+
+    def __enter__(self) -> "_AudioLast":
+        return self
+
+    def __exit__(self, *_exc: object) -> None:
+        self.close()
+
+    def close(self) -> None:
+        self._entries = []
+
+
+_real_scandir = os.scandir
+
+
+def test_a_job_reads_an_album_folder_whole(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    album = roots.downloads / "Album"
+    album.mkdir()
+    # More than the picker's MAX_MARK_SCAN, the track last: a job reads past both bounds.
+    for scan in range(300):
+        (album / f"scan{scan:03d}.jpg").write_bytes(b"jpeg")
+    _write_flac(album / "zz track.flac", mqa_marker=False)
+    monkeypatch.setattr(paths.os, "scandir", _AudioLast)
+    # Far fewer than the folder's entries: the folders walked, not the entries of the folder itself.
+    monkeypatch.setattr(paths, "MAX_ALBUM_WALK", 1)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        manager.max_jobs = 0
+        job_id = await _start(client, "checks", str(album))
+        await client.post(f"/api/jobs/{job_id}/cancel", json={}, headers=AUTH)
+
+    _with_app(test)
+
+
+def test_the_picker_offers_exactly_the_folders_a_job_accepts(roots: Roots) -> None:
+    _album(roots.downloads / "Album")
+    _album(roots.downloads / "Box" / "CD1", tracks=1)
+    _album(roots.downloads / "incoming" / "Store" / "Album")
+    (roots.downloads / "Scans").mkdir()
+    # A disc folder that is a symlink is not looked into, as salmon's own file gathering (os.walk) does not.
+    (roots.downloads / "Linked").mkdir()
+    (roots.downloads / "Linked" / "CD1").symlink_to(_album(roots.outside / "Album"))
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        manager.max_jobs = 0
+        answer = await (await _browse(client, str(roots.downloads), sort="name")).json()
+        offered = {folder["name"]: folder["audio"] for folder in answer["folders"]}
+        assert offered == {"Album": True, "Box": True, "incoming": False, "Linked": False, "Scans": False}
+        for name, audio in offered.items():
+            response = await _post_job(client, "checks", str(roots.downloads / name))
+            assert (response.status == 201) is audio, (name, await response.text())
+            if audio:
+                await client.post(f"/api/jobs/{(await response.json())['id']}/cancel", json={}, headers=AUTH)
+
+    _with_app(test)
+
+
+def _accepted(path: Path) -> bool:
+    try:
+        paths.album_folder(str(path))
+    except paths.PathRefused:
+        return False
+    return True
+
+
+@pytest.mark.skipif(sys.platform == "win32" or os.geteuid() == 0, reason="needs a folder its owner can't read")
+def test_select_is_offered_on_a_folder_only_when_a_job_accepts_it(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Album-shaped folders a job refuses all the same: holding a link, a library root in download_directory,
+    # a local seedbox's folder and the albums in it, more folders than a job walks, a folder salmon can't read.
+    _refused_paths(roots)
+    _album(roots.downloads / "Box" / "CD1", tracks=1)
+    _album(roots.downloads / "Box" / "CD2", tracks=1)
+    _album(roots.downloads / "lib" / "Kept")
+    seedbox = roots.downloads / "seedbox"
+    _album(seedbox / "Album")
+    for disc in range(1, 4):
+        _album(roots.downloads / "Big" / f"CD{disc}", tracks=1)
+    locked = _album(roots.downloads / "Locked") / "Scans"
+    locked.mkdir()
+    monkeypatch.setattr(cfg.directory, "library_dirs", [str(roots.library), str(roots.downloads / "lib")])
+    monkeypatch.setattr(cfg, "seedbox", [Seedbox(name="box", type="local", directory=str(seedbox))])
+    monkeypatch.setattr(paths, "MAX_ALBUM_WALK", 3)
+    folders = [
+        Path(top) / name
+        for top, names, _files in os.walk(roots.downloads)
+        for name in names
+        if not (Path(top) / name).is_symlink()
+    ]
+    accepted = {folder: _accepted(folder) for folder in folders if folder != locked}
+    locked.chmod(0)
+    accepted[roots.downloads / "Locked"] = _accepted(roots.downloads / "Locked")
+    assert accepted[roots.downloads / "Box"] and accepted[roots.downloads / "Album"]
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        differ = []
+        for folder, accepts in accepted.items():
+            parent = await (await _browse(client, str(folder.parent))).json()
+            row = next(found for found in parent["folders"] if found["name"] == folder.name)
+            own = await (await _browse(client, str(folder))).json()
+            if (row["audio"], own["audio"]) != (accepts, accepts):
+                differ.append((str(folder.relative_to(roots.downloads)), accepts, row["audio"], own["audio"]))
+        assert differ == []
+
+    try:
+        _with_app(test)
+    finally:
+        locked.chmod(stat.S_IRWXU)
+
+
+def test_a_listed_folder_holding_audio_that_a_job_refuses_says_why(roots: Roots) -> None:
+    refused = _refused_paths(roots)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        linked = await (await _browse(client, refused["an audio file linked out of the roots"][0])).json()
+        assert linked["audio"] is False
+        assert linked["refused"] == (await (await _summary(client, linked["path"])).json())["detail"]
+        assert "holds a link" in linked["refused"]
+        # No audio in it or its disc folders: nothing to explain, as for the folders on the way to an album.
+        for folder in (roots.downloads / "incoming", roots.downloads / "empty", roots.downloads):
+            assert (await (await _browse(client, str(folder))).json())["refused"] is None, folder
+        assert (await (await _browse(client, str(roots.downloads / "Album"))).json())["refused"] is None
+
+    _with_app(test)
+
+
+def test_a_listing_walks_its_albums_for_links_only_so_far(roots: Roots, monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in ("A", "B", "C"):
+        album = _album(roots.downloads / name, tracks=1)
+        (album / "Scans").symlink_to(roots.outside)
+    monkeypatch.setattr(paths, "MAX_OFFER_WALK", 2)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _browse(client, str(roots.downloads), sort="name")).json()
+        # A and B walked (one folder each) and refused; C past the bound, offered: Start's check refuses it.
+        assert [(f["name"], f["audio"]) for f in answer["folders"]] == [("A", False), ("B", False), ("C", True)]
+
+    _with_app(test)
+
+
+def test_a_listing_looks_for_withheld_folders_and_libraries_once_not_for_each_album(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Beside the albums, not above them: each check walks up to the filesystem root, stat by stat.
+    monkeypatch.setattr(cfg.directory, "dottorrents_dir", str(roots.outside))
+    stats = 0
+    real = {name: getattr(os, name) for name in ("stat", "lstat")}
+
+    def counted(name: str) -> Callable[..., Any]:
+        def call(*args: Any, **kwargs: Any) -> Any:
+            nonlocal stats
+            stats += 1
+            return real[name](*args, **kwargs)
+
+        return call
+
+    def listing_stats(batch: str) -> int:
+        nonlocal stats
+        for number in range(40):
+            _album(roots.downloads / f"Album {batch}{number}", tracks=1)
+        stats = 0
+        with monkeypatch.context() as patched:
+            for name in real:
+                patched.setattr(paths.os, name, counted(name))
+            answer = paths.listing(str(roots.downloads))
+        assert all(folder["audio"] for folder in answer["folders"])
+        return stats
+
+    first = listing_stats("A")
+    # 40 more albums: about one stat each (is it a folder), where each used to walk up to "/" for every check.
+    assert listing_stats("B") - first < 40 * 2
+
+
+def test_browsing_a_removed_folder_lists_its_parent_and_says_which_it_opened(roots: Roots) -> None:
+    album = _album(roots.downloads / "incoming" / "Album")
+    _album(roots.downloads / "incoming" / "Next")
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        here = await (await _browse(client, str(album))).json()
+        assert here["path"] == str(album)
+        assert here["missing"] is None
+        shutil.rmtree(album)
+        response = await _browse(client, str(album))
+        assert response.status == 200
+        answer = await response.json()
+        assert answer["path"] == str(roots.downloads / "incoming")
+        assert answer["missing"] == str(album)
+        assert [f["name"] for f in answer["folders"]] == ["Next"]
+
+    _with_app(test)
+
+
+def test_browsing_a_path_whose_parents_are_all_gone_opens_the_root(roots: Roots) -> None:
+    gone = roots.library / "a" / "b" / "c"
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _browse(client, str(gone))).json()
+        assert answer["path"] == str(roots.library)
+        assert answer["missing"] == str(gone)
+        assert answer["parent"] is None
+        assert answer["library"] is True
+
+    _with_app(test)
+
+
+def test_browsing_up_from_a_missing_path_stops_at_a_folder_that_is_its_own_parent(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A Windows share root ("\\srv\share\") is its own dirname; spelled otherwise than its root, the walk up from a
+    # missing folder never meets the root.
+    share = roots.downloads / "share"
+    real_dirname = os.path.dirname
+    calls = 0
+
+    def dirname(path: str) -> str:
+        nonlocal calls
+        calls += 1
+        assert calls < 50, "the walk up never stops"
+        return path if path == str(share) else real_dirname(path)
+
+    monkeypatch.setattr(paths.os.path, "dirname", dirname)
+    with pytest.raises(paths.PathRefused) as refused:
+        paths.listing(str(share / "Album" / "CD1"))
+    assert refused.value.status == 404
+
+
+async def _summary(client: TestClient, path: str) -> Any:
+    return await client.get("/api/folder", params={"path": path}, headers=AUTH)
+
+
+def test_the_folder_summary_counts_the_audio_files_and_the_folders_holding_them(roots: Roots) -> None:
+    box = roots.downloads / "Box"
+    _album(box / "CD1", tracks=2)
+    _album(box / "CD2", tracks=3)
+    (box / "Scans").mkdir()
+    (box / "Scans" / "front.jpg").write_bytes(b"jpeg")
+    album = _album(roots.library / "Album", tracks=1)
+    before = _snapshot(roots.downloads)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        response = await _summary(client, str(box))
+        assert response.status == 200
+        assert await response.json() == {"path": str(box), "summary": "5 audio files in 2 folders"}
+        single = await (await _summary(client, f"{roots.library}/Scans/../Album")).json()
+        assert single == {"path": str(album), "summary": "1 audio file in 1 folder"}
+
+    _with_app(test)
+    assert _snapshot(roots.downloads) == before
+
+
+def test_the_folder_summary_refuses_a_folder_of_more_folders_than_an_album_walks(
+    roots: Roots, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    box = roots.downloads / "Box"
+    for disc in range(3):
+        _album(box / f"CD{disc}", tracks=1)
+    monkeypatch.setattr(paths, "MAX_ALBUM_WALK", 3)
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        response = await _summary(client, str(box))
+        assert response.status == 422
+        assert "more than 3 folders" in (await response.json())["detail"]
+
+    _with_app(test)
+
+
+@pytest.mark.skipif(not hasattr(os, "mkfifo"), reason="needs a named pipe")
+def test_the_picker_and_the_folder_summary_count_only_regular_files_as_audio(roots: Roots) -> None:
+    album = _album(roots.downloads / "Album", tracks=1)
+    os.mkfifo(album / "02 Track 2.flac")
+    disc = roots.downloads / "Pipes" / "CD1"
+    disc.mkdir(parents=True)
+    os.mkfifo(disc / "01 Track 1.flac")
+
+    async def test(client: TestClient, _manager: JobManager) -> None:
+        answer = await (await _summary(client, str(album))).json()
+        assert answer["summary"] == "1 audio file in 1 folder"
+        listed = await (await _browse(client, str(roots.downloads), sort="name")).json()
+        assert {folder["name"]: folder["audio"] for folder in listed["folders"]} == {"Album": True, "Pipes": False}
+
+    _with_app(test)
+
+
+def test_the_folder_summary_refuses_what_a_job_refuses_with_the_same_reason(roots: Roots) -> None:
+    refused = _refused_paths(roots)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        for case, (path, status) in refused.items():
+            response = await _summary(client, path)
+            job = await _post_job(client, "checks", path)
+            assert response.status == status == job.status, case
+            assert (await response.json())["detail"] == (await job.json())["detail"], case
+        assert manager.jobs == {}
+
+    _with_app(test)
+
+
+@pytest.mark.parametrize("kind", ["spectrals", "checks"])
 def test_each_job_kind_refuses_those_folders_before_it_starts(roots: Roots, kind: str) -> None:
     refused = _refused_paths(roots)
 
@@ -509,8 +852,8 @@ def test_the_browser_refuses_every_path_out_of_the_roots(roots: Roots) -> None:
         str(roots.downloads / "out"): 403,
         "/": 403,
         "downloads": 400,
-        f"{roots.downloads}/%2e%2e/outside": 404,
-        str(roots.downloads / "missing"): 404,
+        # Missing, and outside: refused, never replaced by a folder above it.
+        str(roots.outside / "gone" / "deeper"): 403,
     }
 
     async def test(client: TestClient, _manager: JobManager) -> None:
@@ -518,6 +861,10 @@ def test_the_browser_refuses_every_path_out_of_the_roots(roots: Roots) -> None:
             response = await _browse(client, path)
             assert response.status == status, path
             assert "secret folder" not in await response.text()
+        # A folder named %2e%2e is not there: its parent, the root, is listed, and nothing outside it.
+        literal = await _browse(client, f"{roots.downloads}/%2e%2e/outside")
+        assert (await literal.json())["path"] == str(roots.downloads)
+        assert "secret folder" not in await literal.text()
         # Encoded once more in the URL, ".." is still resolved before the check.
         encoded = await client.get(f"/api/browse?path={roots.downloads}/%2e%2e/outside", headers=AUTH)
         assert encoded.status == 403
@@ -1102,7 +1449,6 @@ def test_the_source_endpoint_refuses_what_browse_refuses(roots: Roots) -> None:
     cases = {
         str(roots.outside / "Album [WEB]"): 403,
         f"{roots.downloads}/../outside/Album [WEB]": 403,
-        str(roots.downloads / "missing"): 404,
         "relative/path": 400,
     }
 
@@ -1112,5 +1458,8 @@ def test_the_source_endpoint_refuses_what_browse_refuses(roots: Roots) -> None:
             browse = await _browse(client, path)
             assert response.status == status == browse.status, path
             assert "WEB" not in await response.text()
+        # The browser lists the folder above a missing one; the source of a missing folder is refused.
+        missing = await client.get("/api/source", params={"path": str(roots.downloads / "missing")}, headers=AUTH)
+        assert missing.status == 404
 
     _with_app(test)

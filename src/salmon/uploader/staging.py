@@ -86,7 +86,16 @@ def _copy_into(path: str, into: str, scratch: bool, refusal: str | None) -> str:
         why = "A dry run works on a copy, so the source is never modified."
     else:
         why = "--skip-flac-upload works on a copy, so the source is never modified."
-    size = sum(os.path.getsize(os.path.join(root, f)) for root, _, files in os.walk(path) for f in files)
+    try:
+        size = sum(
+            os.path.getsize(os.path.join(root, f)) for root, _, files in os.walk(path, onerror=_raise) for f in files
+        )
+    except OSError as error:
+        name = os.path.relpath(error.filename or path, path)
+        raise UploadError(
+            f"Could not read {name} in {path} ({error.strerror}): "
+            "fix it or remove it from the album, then run salmon again."
+        ) from error
     free = shutil.disk_usage(into).free
     if size > free:
         raise UploadError(
@@ -105,6 +114,11 @@ def _copy_into(path: str, into: str, scratch: bool, refusal: str | None) -> str:
     with dryrun.writing_into(into):  # A dry run writes the record only into its run directory.
         carry_conversion(path, dest)
     return dest
+
+
+def _raise(error: OSError) -> None:
+    """os.walk's onerror: a folder it cannot list stops the walk, as a file it cannot read does."""
+    raise error
 
 
 def _remove_scratch_dir(scratch_dir: str, source: str) -> None:

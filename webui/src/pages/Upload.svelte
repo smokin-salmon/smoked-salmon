@@ -106,6 +106,8 @@
   let options = $state<Options>({ trackers: [], default_trackers: [], sources: [], encodings: [], conversions: [], conversion_kinds: [], ai_review: false })
 
   let path = $state('')
+  // Whether the picker has checked the folder and a job may start on it.
+  let usable = $state(false)
   let chosen = $state<string[]>([])
   let source = $state('')
   let lossy = $state<'ask' | 'yes' | 'no'>('ask')
@@ -207,7 +209,7 @@
   })
   const summary = $derived(overridden.length ? `Overrides (${overridden.length} set: ${overridden.join(', ')})` : 'Overrides')
   const canStart = $derived(
-    !!path &&
+    usable &&
       !!source &&
       (transcodes ? chosen.length === 1 : chosen.length > 0) &&
       !starting &&
@@ -286,11 +288,12 @@
     }
     saveOptions()
     starting = true
+    const sent = path
     try {
       const started = await apiPost<Job>('/jobs', {
         kind: 'upload',
         params: {
-          path,
+          path: sent,
           source,
           trackers: chosen,
           group_id: group,
@@ -310,6 +313,9 @@
       })
       jobId = started.id
       showLog = false
+      // A real upload has taken the folder and may move or remove it: the next one starts with nothing chosen,
+      // unless another was typed meanwhile. A dry run leaves it, to be run for real.
+      if (!dryRun && path === sent) path = ''
     } catch (e) {
       error = String(e)
     } finally {
@@ -342,7 +348,7 @@
 
 {#if !live}
   <div class="card">
-    <FolderPicker bind:value={path} />
+    <FolderPicker bind:value={path} bind:usable />
 
     <div class="grid">
       <div class="field">

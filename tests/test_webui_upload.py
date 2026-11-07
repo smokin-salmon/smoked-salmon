@@ -758,6 +758,30 @@ def test_a_folder_the_rule_refuses_never_starts(
     assert tracker.sent == []
 
 
+@pytest.mark.parametrize("folder", ["downloads", "library"])
+def test_an_upload_of_a_folder_of_albums_is_refused_before_anything_is_copied(
+    monkeypatch: pytest.MonkeyPatch, roots: tuple[Path, Path, Path], tmp_path: Path, folder: str
+) -> None:
+    downloads, library, torrents = roots
+    root = downloads if folder == "downloads" else library
+    _album(root / "incoming" / "Store" / "Album")
+    staging_dir = tmp_path / "staging"
+    staging_dir.mkdir()
+    monkeypatch.setattr(cfg.directory, "tmp_dir", str(staging_dir))
+    before = _snapshot(tmp_path)
+    tracker, _queued, _logins = fake_upload_world(monkeypatch, torrents)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        response = await _post_upload(client, root / "incoming", dry_run=True)
+        assert response.status == 422
+        assert (await response.json())["detail"].startswith("No audio file in this folder or its disc folders, but")
+        assert manager.jobs == {}
+
+    _web_run(tracker, test)
+    assert tracker.sent == []
+    assert _snapshot(tmp_path) == before
+
+
 @pytest.mark.parametrize(
     ("params", "dry_run", "detail"),
     [
