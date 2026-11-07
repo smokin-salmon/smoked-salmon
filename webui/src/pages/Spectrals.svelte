@@ -11,6 +11,8 @@
   import { loadToolsOptions, type SpectralsUploadResult, type ToolsOptions } from '../lib/tools'
 
   let path = $state('')
+  // Whether the picker has checked the folder and a job may start on it.
+  let usable = $state(false)
   let error = $state('')
   let starting = $state(false)
   let lightbox = $state<{ job: Job; index: number } | null>(null)
@@ -173,9 +175,9 @@
 </p>
 
 <div class="card">
-  <FolderPicker bind:value={path} />
+  <FolderPicker bind:value={path} bind:usable />
   <div class="row actions">
-    <button class="btn" onclick={start} disabled={!path || starting}>Make spectrals</button>
+    <button class="btn" onclick={start} disabled={!usable || starting}>Make spectrals</button>
   </div>
   {#if error}<p class="error">{error}</p>{/if}
 </div>

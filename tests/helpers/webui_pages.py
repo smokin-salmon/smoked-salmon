@@ -35,6 +35,7 @@ def _refused_paths(roots: Roots) -> dict[str, tuple[str, int]]:
     (roots.downloads / "out").symlink_to(roots.outside / "Album")
     (roots.downloads / "linked").symlink_to(album)
     (roots.downloads / "empty").mkdir()
+    _album(roots.downloads / "incoming" / "Store" / "Album")
     (roots.library / "into").symlink_to(roots.downloads)
     # Albums holding a link (#898): the copy salmon uploads from, and the torrent, would take what it leads to.
     outside_track = roots.outside / "Album" / "01 Track 1.flac"
@@ -64,6 +65,7 @@ def _refused_paths(roots: Roots) -> dict[str, tuple[str, int]]:
         "a symlinked album folder": (str(roots.downloads / "linked"), 403),
         "a folder linked into a library from outside": (str(roots.library / "into" / "Album"), 403),
         "a folder with no audio": (str(roots.downloads / "empty"), 422),
+        "a folder of albums": (str(roots.downloads / "incoming"), 422),
         "a relative path": ("downloads/Album", 400),
         "a missing folder": (str(roots.downloads / "missing"), 404),
         "an audio file linked out of the roots": (str(roots.downloads / "Linked track"), 403),
