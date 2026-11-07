@@ -405,7 +405,10 @@ CLI cannot do.
 The pages:
 * **Dashboard** – the salmon version, which command line tools (`flac`, `sox`, `lame`, ...) are installed, free space
   in your folders, and a button for the tracker connection check. The check runs only when you press it.
-* **Folder browser** – pick an album folder inside `download_directory` or `library_dirs`.
+* **Folder browser** – pick an album folder inside `download_directory` or `library_dirs`: one with audio files in
+  it or in its disc folders. A job uses only the folder you select or type, shown with a count of its audio files
+  before you start; a folder a job would refuse says why, and Start stays off. Browse opens at the folder in the
+  box, else at the last folder you browsed.
 * **Upload** – `salmon up`, with its options and dry run.
 * **Spectrals** – make and view an album's spectrals, and upload them to the spectrals host.
 * **Checks** – `salmon check all`. Pick trackers to add the dupe search.
