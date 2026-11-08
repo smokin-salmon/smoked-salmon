@@ -274,9 +274,3 @@ def tagify(genre: str) -> str:
     tag = re.sub(r"\s*&\s*", ".and.", genre)
     tag = re.sub(r"[-_ /]+", ".", tag)
     return re.sub(r"\.+", ".", tag).strip(".")
-
-
-def truncate(string, length):
-    if len(string) < length:
-        return string
-    return f"{string[: length - 3]}..."
