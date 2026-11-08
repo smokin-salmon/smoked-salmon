@@ -652,6 +652,7 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     if not record.complete:
         _upload_ended(record, result, click.ClickException("The run stopped before everything went up: see the log."))
     result["seedbox_failed"] = record.seedbox_failed
+    result["seedbox_failures"] = list(record.seedbox_failures)
     return result
 
 
@@ -730,7 +731,11 @@ async def cross_upload(params: CrossUploadParams) -> dict[str, Any]:
             raise PartialResult(_cross_upload_result(params, record)) from ended
     if record.unknown_outcomes:
         raise PartialResult(_cross_upload_result(params, record)) from _unknown(record.unknown_outcomes)
-    return {**_cross_upload_result(params, record), "seedbox_failed": record.seedbox_failed}
+    return {
+        **_cross_upload_result(params, record),
+        "seedbox_failed": record.seedbox_failed,
+        "seedbox_failures": list(record.seedbox_failures),
+    }
 
 
 async def _run_cross_upload(options: "CrossUploadOptions") -> None:
