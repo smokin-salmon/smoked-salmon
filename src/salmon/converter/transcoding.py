@@ -1,7 +1,9 @@
 import asyncio
+import contextlib
 import os
 import re
 import shutil
+import uuid
 from pathlib import Path
 from typing import Any, Literal
 
@@ -472,8 +474,18 @@ async def _transcode_audio_files(
 
     async def _transcode_one(file: str, idx: int) -> None:
         item = items[idx]
-        await _flac_to_mp3(bitrate, item.src, item.dst)
-        _copy_tags(item.tags, item.flac_obj, Path(item.dst))
+        # Finished and tagged before it takes its name: a later run reuses a folder with every MP3 in it. Beside the
+        # MP3 and short, as its name may be as long as the filesystem allows.
+        partial = Path(item.dst).with_name(f".{uuid.uuid4().hex}.part")
+        try:
+            await _flac_to_mp3(bitrate, item.src, str(partial))
+            _copy_tags(item.tags, item.flac_obj, partial)
+            os.replace(partial, item.dst)
+        except BaseException:
+            # The encoder's own error is the one to report, not a failed cleanup.
+            with contextlib.suppress(OSError):
+                partial.unlink()
+            raise
 
     file_paths = [item.src for item in items]
     await process_files(file_paths, _transcode_one, "Transcoding")
