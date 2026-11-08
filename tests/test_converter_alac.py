@@ -334,7 +334,7 @@ def test_a_failed_verification_keeps_every_m4a_and_leaves_no_flac(monkeypatch, t
     def flipped(path: str, bits: int, channels: int) -> Iterator[bytes]:
         for chunk in decode(path, bits, channels):
             # The FLAC of 02 decodes to other samples.
-            yield bytes([chunk[0] ^ 1]) + chunk[1:] if path.endswith("02.flac") else chunk
+            yield bytes([chunk[0] ^ 1]) + chunk[1:] if "02.flac" in path else chunk
 
     monkeypatch.setattr(alac, "_pcm_chunks", flipped)
 
@@ -430,6 +430,30 @@ def test_a_failed_track_stops_the_tracks_not_started_yet(monkeypatch, tmp_path) 
     assert refusal is not None and "01.m4a" in refusal
     assert encoded == ["01.m4a"]
     assert _snapshot(tmp_path) == before
+
+
+def test_a_flac_another_run_puts_in_place_meanwhile_is_never_overwritten_or_removed(monkeypatch, tmp_path) -> None:
+    _write_alac(tmp_path / "01.m4a", 16, 44100, seed=1)
+    _write_alac(tmp_path / "02.m4a", 16, 44100, seed=2)
+    before = _snapshot(tmp_path)
+    monkeypatch.setattr(cfg.upload, "simultaneous_threads", 1)
+    encode = alac._encode
+
+    def raced(track: alac.AlacTrack) -> bytes:
+        digest = encode(track)
+        if track.name == "02.m4a":
+            # Another upload of the album converted it since this run's checks.
+            (tmp_path / "02.flac").write_bytes(b"the other run's FLAC")
+        return digest
+
+    monkeypatch.setattr(alac, "_encode", raced)
+
+    refusal = _convert(tmp_path, FakeInteraction())
+
+    assert refusal is not None and "02.flac" in refusal
+    after = _snapshot(tmp_path)
+    assert (tmp_path / "02.flac").read_bytes() == b"the other run's FLAC"
+    assert after == {**before, "02.flac": after["02.flac"]}
 
 
 def test_an_album_with_no_alac_is_left_as_it_is(tmp_path) -> None:

@@ -10,6 +10,7 @@ import hashlib
 import os
 import subprocess
 import tempfile
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import IO, TYPE_CHECKING, cast
@@ -62,6 +63,7 @@ class AlacTrack:
 
     source: str
     target: str
+    partial: str  # The FLAC while this run writes it: a hidden name next to target, of this run's own.
     name: str  # The .m4a's path in the album, for messages.
     bits: int
     sample_rate: int
@@ -132,6 +134,7 @@ def _find_alac(folder: str) -> tuple[list[AlacTrack], list[str], list[str]]:
     tracks: list[AlacTrack] = []
     others: list[str] = []
     unreadable: list[str] = []
+    run = uuid.uuid4().hex[:8]
     for path in album_files(folder, AUDIO_EXTENSIONS | LOSSY_EXTENSIONS):
         name = os.path.relpath(path, folder)
         if not path.lower().endswith(".m4a"):
@@ -140,7 +143,8 @@ def _find_alac(folder: str) -> tuple[list[AlacTrack], list[str], list[str]]:
             unreadable.append(name)
         elif info.codec == "alac":
             target = os.path.splitext(path)[0] + ".flac"
-            tracks.append(AlacTrack(path, target, name, info.bits_per_sample, info.sample_rate, info.channels))
+            partial = os.path.join(os.path.dirname(target), f".{os.path.basename(target)}.{run}.partial")
+            tracks.append(AlacTrack(path, target, partial, name, info.bits_per_sample, info.sample_rate, info.channels))
         else:
             others.append(name)
     return tracks, others, unreadable
@@ -185,10 +189,11 @@ def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str]
 
 
 async def _convert_all(tracks: list[AlacTrack]) -> str | None:
-    """Write and verify every track's FLAC; why it stopped, if it did.
+    """Write and verify every track's FLAC under a name of this run's own, then put each at its .flac name, never over
+    a file already there; why it stopped, if it did.
 
-    After a failure, every FLAC this run wrote is removed, or named in a warning if it cannot be (see _remove); the
-    .m4a files are never touched here.
+    After a failure, every file this run wrote is removed, or named in a warning if it cannot be (see _remove). A FLAC
+    another run put at a .flac name is never touched, nor are the .m4a files.
     """
 
     failed = False
@@ -205,16 +210,47 @@ async def _convert_all(tracks: list[AlacTrack]) -> str | None:
             return f"Could not convert {track.name} to FLAC: {error}. Nothing was converted."
         return None
 
+    published: list[str] = []
     done = False
     try:
         errors = await process_files([track.source for track in tracks], convert, "Converting ALAC to FLAC")
         if error := next((error for error in errors if error), None):
             return error
+        if error := _publish(tracks, published):
+            return error
         done = True
     finally:
+        for track in tracks:
+            _remove(track.partial)
         if not done:
-            for track in tracks:
-                _remove(track.target)
+            for target in published:
+                _remove(target)
+    return None
+
+
+def _publish(tracks: list[AlacTrack], published: list[str]) -> str | None:
+    """Move each verified FLAC to its .flac name, adding each name to published once this run holds it; why it
+    stopped, if it did.
+
+    Each name is claimed by creating it, which fails if it exists: a FLAC another run of salmon put there since the
+    checks before the question (two uploads of one album at once) is never overwritten.
+    """
+    for track in tracks:
+        flac = os.path.splitext(track.name)[0] + ".flac"
+        try:
+            os.close(os.open(track.target, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+        except FileExistsError:
+            return (
+                f"{flac} appeared while salmon converted {track.name}, perhaps from another run on the album. "
+                "Nothing was converted."
+            )
+        except OSError as error:
+            return f"Could not write {flac} ({error.strerror}). Nothing was converted."
+        published.append(track.target)
+        try:
+            os.replace(track.partial, track.target)
+        except OSError as error:
+            return f"Could not write {flac} ({error.strerror}). Nothing was converted."
     return None
 
 
@@ -230,7 +266,7 @@ def _remove_sources(tracks: list[AlacTrack]) -> list[str]:
 
 
 def _remove(path: str) -> None:
-    """Remove a FLAC this run wrote, if it is there."""
+    """Remove a file this run wrote, if it is there."""
     try:
         os.remove(path)
     except FileNotFoundError:
@@ -240,15 +276,15 @@ def _remove(path: str) -> None:
 
 
 def _convert(track: AlacTrack) -> None:
-    """Write track's FLAC, copy its tags and cover, and check it holds the ALAC's samples.
+    """Write track's FLAC at its partial name, copy its tags and cover, and check it holds the ALAC's samples.
 
     Raises:
         ConversionError: Saying what went wrong.
     """
     digest = _encode(track)
     try:
-        _copy_tags(track.source, track.target)
-        info = FLAC(track.target).info
+        _copy_tags(track.source, track.partial)
+        info = FLAC(track.partial).info
     except (MutagenError, OSError) as error:
         raise ConversionError(f"could not tag its FLAC ({error})") from error
     if (info.bits_per_sample, info.sample_rate, info.channels) != (track.bits, track.sample_rate, track.channels):
@@ -257,14 +293,14 @@ def _convert(track: AlacTrack) -> None:
             f"is {track.bits}-bit {track.sample_rate} Hz, {track.channels} channels"
         )
     check = hashlib.sha256()
-    for chunk in _pcm_chunks(track.target, track.bits, track.channels):
+    for chunk in _pcm_chunks(track.partial, track.bits, track.channels):
         check.update(chunk)
     if check.digest() != digest:
         raise ConversionError("its FLAC does not decode to the same samples")
 
 
 def _encode(track: AlacTrack) -> bytes:
-    """Encode track's samples into its FLAC with the flac binary; the SHA-256 of the samples given to it."""
+    """Encode track's samples into its partial FLAC with the flac binary; the SHA-256 of the samples given to it."""
     command = [
         "flac",
         f"-{cfg.upload.compression.flac_compression_level}",
@@ -277,7 +313,7 @@ def _encode(track: AlacTrack) -> bytes:
         f"--bps={track.bits}",
         f"--sample-rate={track.sample_rate}",
         "-o",
-        track.target,
+        track.partial,
         "-",
     ]
     digest = hashlib.sha256()
