@@ -1,7 +1,9 @@
+import filecmp
 import os
 import re
 import shutil
 import sys
+from collections.abc import Iterator
 from copy import copy
 from string import Formatter
 
@@ -9,6 +11,7 @@ import asyncclick as click
 
 from salmon import cfg, dryrun, interaction
 from salmon.common import clean_name, has_visible_chars, strip_template_keys
+from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.files import shares_files
 from salmon.common.strings import artists_or_various
 from salmon.constants import (
@@ -277,14 +280,20 @@ def drop_resolution_token(foldername, token):
 
 
 async def remove_source_folder(
-    source: str, final: str | None, original: str | None = None, uploaded: bool = True, aborted: bool = False
+    source: str,
+    final: str | None,
+    original: str | None = None,
+    uploaded: bool = True,
+    aborted: bool = False,
+    only_here: list[str] | None = None,
 ) -> None:
     """With remove_source_dir on, remove the folder the run started from, once the run is done with it.
 
     Called when a run ends, never at the folder rename: a run stopped after the rename (an abort at a later
     question, a failed upload) leaves the source folder where it was, and running salmon on it again works.
     Turning remove_source_dir on is the user's yes, so nothing is asked. A run that uploaded nothing, or was
-    aborted after an upload, keeps the folder and says so.
+    aborted after an upload, keeps the folder and says so, as does one whose folder holds files the renamed folder
+    no longer has (the folder check deleted them there): those are named.
 
     Args:
         source: The folder the run started from.
@@ -292,6 +301,8 @@ async def remove_source_folder(
         original: The folder the user gave, when `source` is a copy of it: it is kept, and the output says why.
         uploaded: Whether the run uploaded anything. A run that uploaded nothing keeps the source folder.
         aborted: Whether the run was aborted after an upload, at a later tracker's questions.
+        only_here: The files of source the renamed folder had no hardlink or copy of, found before
+            remove_local_after_copy removed it (see files_only_in). None compares them now.
     """
     if not cfg.upload.formatting.remove_source_dir:
         return
@@ -309,6 +320,15 @@ async def remove_source_folder(
     if aborted:
         click.secho(f"remove_source_dir is on, but {source} is kept: the run was aborted.", fg="yellow")
         return
+    if only_here is None:
+        only_here = files_only_in(source, final)
+    if only_here:
+        click.secho(
+            f"remove_source_dir is on, but {source} is kept: it holds files {final} no longer has:", fg="yellow"
+        )
+        for name in only_here:
+            click.echo(f" >> {name}")
+        return
     shutil.rmtree(source)
     click.secho(f"Removed the source folder {source} (remove_source_dir).", fg="yellow")
     # Local: the converter package imports this module. With the folder gone, its conversion record goes too: to
@@ -319,6 +339,50 @@ async def remove_source_folder(
         carry_conversion(source, final)
     else:
         forget_conversion(source)
+
+
+def files_only_in(source: str, final: str) -> list[str]:
+    """The files of source, audio aside, that final holds no hardlink or copy of, by their paths in source.
+
+    Empty when final is gone. The folder check never deletes audio, which salmon may rewrite in final after the rename
+    (a sanitize, a re-run's tags). The other files are matched by inode or bytes, never by name, as salmon may have
+    renamed them. Hidden files and @eaDir folders, a file browser's and a NAS's, don't count: the folder check deletes
+    them as litter.
+    """
+    if not os.path.isdir(final):
+        return []
+    kept = list(_album_files(final))
+    return sorted(
+        os.path.relpath(path, source)
+        for path in _album_files(source)
+        if os.path.splitext(path.lower())[1] not in AUDIO_EXTENSIONS and not _has_copy(path, kept)
+    )
+
+
+def _has_copy(path: str, candidates: list[str]) -> bool:
+    """Whether a candidate is path's file or holds its bytes. A file that can't be read matches nothing, so a source
+    file that can't be read has no copy and the source stays."""
+    try:
+        size = os.stat(path).st_size
+    except OSError:
+        return False
+    return any(_is_copy(path, size, other) for other in candidates)
+
+
+def _is_copy(path: str, size: int, other: str) -> bool:
+    try:
+        return os.stat(other).st_size == size and (
+            os.path.samefile(path, other) or filecmp.cmp(path, other, shallow=False)
+        )
+    except OSError:
+        return False
+
+
+def _album_files(folder: str) -> Iterator[str]:
+    """Every file under folder but hidden files and what hidden or @eaDir folders hold."""
+    for root, dirs, files in os.walk(folder):
+        dirs[:] = [name for name in dirs if not name.startswith(".") and name != "@eaDir"]
+        yield from (os.path.join(root, name) for name in files if not name.startswith("."))
 
 
 def _kept_reason(original: str) -> str:
