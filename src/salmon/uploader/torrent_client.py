@@ -12,6 +12,8 @@ from deluge_client import DelugeRPCClient
 from salmon import dryrun
 from salmon.common.redaction import redact_client_url, redact_secrets, url_secrets
 
+REQUEST_TIMEOUT = 60  # Seconds per socket operation
+
 
 class TorrentClient:
     def __init__(
@@ -116,7 +118,7 @@ class TransmissionClient(TorrentClient):
                 port=port,
                 username=self.username,
                 password=self.password,
-                timeout=60,
+                timeout=REQUEST_TIMEOUT,
             )
             click.secho("Successfully connected to Transmission", fg="green")
             return trt
@@ -215,11 +217,35 @@ class DelugeClient(TorrentClient):
             return False
 
 
+# xmlrpc.client has no timeout, so a server that accepts the connection and never answers would hang the run. It's
+# the connection that is bounded, before it connects.
+class _TimeoutTransport(xmlrpc.client.Transport):
+    """An XML-RPC transport whose connections time out after REQUEST_TIMEOUT seconds."""
+
+    def make_connection(self, host):
+        connection = super().make_connection(host)
+        connection.timeout = REQUEST_TIMEOUT
+        return connection
+
+
+class _TimeoutSafeTransport(xmlrpc.client.SafeTransport):
+    """_TimeoutTransport for https."""
+
+    def make_connection(self, host):
+        connection = super().make_connection(host)
+        connection.timeout = REQUEST_TIMEOUT
+        return connection
+
+
+def _rutorrent_transport(url: str) -> xmlrpc.client.Transport:
+    return _TimeoutSafeTransport() if urlparse(url).scheme == "https" else _TimeoutTransport()
+
+
 class RuTorrentClient(TorrentClient):
     def login(self):
         try:
             url = str(self.url) if self.url else ""
-            rt_client = xmlrpc.client.Server(url)
+            rt_client = xmlrpc.client.Server(url, transport=_rutorrent_transport(url))
             version = rt_client.system.client_version()
             click.secho(f"Successfully connected to ruTorrent, version: {version}", fg="green")
             return rt_client
