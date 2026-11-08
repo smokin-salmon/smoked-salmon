@@ -371,7 +371,7 @@ def test_a_dry_run_job_sends_no_post_and_prints_the_forms(
         )
         assert job.status == "done", (job.error, _log(job))
         assert job.dry_run is True
-        assert job.result == {"folder": "Album", "trackers": ["RED"], "uploads": []}
+        assert job.result == {"folder": "Album", "trackers": ["RED"], "uploads": [], "seedbox_failed": False}
         log = _log(job)
         would_send = (
             f"Dry run: not uploading to RED. It would send POST {tracker.url}/ajax.php?action=upload with the API key:"

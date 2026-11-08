@@ -57,11 +57,12 @@ import salmon.cross_upload as cross_upload_module
 import salmon.trackers
 import salmon.uploader
 from salmon import cfg
-from salmon.config.validations import GazelleTrackerSettings
+from salmon.config.validations import GazelleTrackerSettings, Seedbox
 from salmon.errors import CRCMismatchError
 from salmon.trackers import account, base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.uploader import staging, upload_checks
+from salmon.uploader.torrent_client import QBittorrentClient
 from salmon.webui import jobs
 from salmon.webui.jobs import UNKNOWN_OUTCOME, JobKind, JobManager
 
@@ -432,6 +433,61 @@ def test_a_failed_second_format_stops_the_job_and_its_result_links_what_is_up(
     assert len(_target_uploads(world.trackers["RED"])) == 2
     # What is up is still seeded.
     assert world.seeded == [("/seed", FOLDER)]
+
+
+# --- The seedbox ---------------------------------------------------------------------------------------------
+
+
+def _client_refuses(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(QBittorrentClient, "add_to_downloader", lambda *_args, **_kwargs: False)
+
+
+def _client_raises(monkeypatch: pytest.MonkeyPatch) -> None:
+    def add_to_downloader(*_args: Any, **_kwargs: Any) -> bool:
+        raise OSError("the client is gone")
+
+    monkeypatch.setattr(QBittorrentClient, "add_to_downloader", add_to_downloader)
+
+
+def _client_never_configured(monkeypatch: pytest.MonkeyPatch) -> None:
+    box = Seedbox(name="box", type="rclone", url="remote", directory="/seed", torrent_client="nosuchclient://x")
+    monkeypatch.setattr(cfg, "seedbox", [box])
+
+
+def _seedbox_job(monkeypatch: pytest.MonkeyPatch, dirs: SimpleNamespace, setup: Callable[..., None] | None) -> Any:  # noqa: F811
+    """A cross-upload job, `setup` breaking the seedbox's client add: the job, once ended."""
+    album = _album(dirs.downloads / FOLDER)
+    world = cross_upload_world(monkeypatch, dirs)
+    if setup is not None:
+        setup(monkeypatch)
+    ended: list[Any] = []
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job, _asked = await _drive(client, manager, await _start(client, assume_defaults=True))
+        ended.append(job)
+
+    _web(world, test, _holding(album))
+    return ended[0]
+
+
+@pytest.mark.parametrize("setup", [_client_refuses, _client_raises, _client_never_configured])
+def test_a_job_whose_seedbox_failed_stays_done_and_its_result_says_so(
+    monkeypatch: pytest.MonkeyPatch,
+    dirs: SimpleNamespace,  # noqa: F811
+    setup: Callable[..., None],
+) -> None:
+    job = _seedbox_job(monkeypatch, dirs, setup)
+    assert (job.status, len(job.result["uploads"])) == ("done", 1), (job.error, _log(job))
+    assert job.result.get("seedbox_failed") is True
+
+
+def test_as_before_a_job_whose_seedbox_took_it_has_no_seedbox_failure(
+    monkeypatch: pytest.MonkeyPatch,
+    dirs: SimpleNamespace,  # noqa: F811
+) -> None:
+    job = _seedbox_job(monkeypatch, dirs, None)
+    assert (job.status, len(job.result["uploads"])) == ("done", 1), (job.error, _log(job))
+    assert not job.result.get("seedbox_failed")
 
 
 # --- Usage rules, inputs --------------------------------------------------------------------------------

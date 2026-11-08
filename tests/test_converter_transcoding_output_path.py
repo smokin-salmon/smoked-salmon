@@ -1,5 +1,7 @@
 """An MP3 transcode output name must not keep a stale {resolution} token from the source name."""
 
+import pytest
+
 from salmon.converter import transcoding
 
 # What the tag/foldername step would produce with a template combining {format} and {resolution}:
@@ -127,3 +129,88 @@ def test_an_unbracketed_token_is_dropped_when_the_template_places_resolution(mon
     new_path = transcoding._build_output_path("/downloads/Artist - Title 24-96", "V0")
 
     assert new_path == "/downloads/Artist - Title [MP3 V0]"
+
+
+def _stub_16_44(monkeypatch) -> None:
+    monkeypatch.setattr(
+        transcoding,
+        "gather_audio_info",
+        lambda path: {"01.flac": {"precision": 16, "sample rate": 44100}},
+    )
+
+
+@pytest.mark.parametrize(
+    ("source", "bitrate", "expected"),
+    [
+        ("Roberta Flack - Album (2020) [WEB FLAC]", "V0", "Roberta Flack - Album (2020) [WEB MP3 V0]"),
+        ("Flacco - Album (2020) [WEB 24bit FLAC]", "V0", "Flacco - Album (2020) [WEB MP3 V0]"),
+        ("Flaco Jimenez - Album (2020) [CD FLAC]", "320", "Flaco Jimenez - Album (2020) [CD MP3 320]"),
+        ("Aflac (2020)", "V0", "Aflac (2020) [MP3 V0]"),
+        ("Éflac (2020)", "V0", "Éflac (2020) [MP3 V0]"),
+        ("Flossless (2020)", "V0", "Flossless (2020) [MP3 V0]"),
+        ("A - FLAC (2020) [WEB FLAC]", "V0", "A - FLAC (2020) [WEB MP3 V0]"),
+        ("A - 24bit FLAC (2020) [WEB FLAC]", "V0", "A - 24bit FLAC (2020) [WEB MP3 V0]"),
+        ("A - Lossless Love (2020) [WEB FLAC]", "V0", "A - Lossless Love (2020) [WEB MP3 V0]"),
+        ("A - Lossless Love (2020) [WEB FLAC Lossless]", "V0", "A - Lossless Love (2020) [WEB MP3 V0]"),
+        ("A - Lossless Love (2020) [WEB Lossless]", "320", "A - Lossless Love (2020) [WEB 320] [MP3]"),
+        ("A - Losslessness (2020) [WEB FLAC]", "V0", "A - Losslessness (2020) [WEB MP3 V0]"),
+        ("A - Album (2020) [WEB FLAC] (Lossless Love)", "V0", "A - Album (2020) [WEB MP3 V0] (Lossless Love)"),
+        ("A - [Lossless] FLAC", "V0", "A - [Lossless] MP3 V0"),
+        ("A - (Lossless) FLAC", "V0", "A - (Lossless) MP3 V0"),
+        ("A - {Lossless} FLAC", "V0", "A - {Lossless} MP3 V0"),
+        ("A - Lossless [FLAC]", "V0", "A - Lossless [MP3 V0]"),
+        ("A - Lossless (FLAC)", "V0", "A - Lossless (MP3 V0)"),
+        ("A - Lossless {FLAC}", "V0", "A - Lossless {MP3 V0}"),
+        ("Flacid (2020)", "V0", "Flacid (2020) [MP3 V0]"),
+        ("Losslessly (2020)", "V0", "Losslessly (2020) [MP3 V0]"),
+        ("[FLAC] A - Flac Attack (2020)", "V0", "[MP3 V0] A - Flac Attack (2020)"),
+        ("A - Album (2020) [WEB FLAC] {Flac Records}", "V0", "A - Album (2020) [WEB MP3 V0] {Flac Records}"),
+        ("[WEB FLAC Lossless] A - Lossless Love", "V0", "[WEB MP3 V0] A - Lossless Love"),
+        ("A - [FLAC] (2020) [WEB FLAC]", "V0", "A - [FLAC] (2020) [WEB MP3 V0]"),
+        ("A - FLAC - WEB FLAC", "V0", "A - FLAC - WEB MP3 V0"),
+        ("A - Flac Love [WEB] FLAC", "V0", "A - Flac Love [WEB] MP3 V0"),
+        ("[WEB FLAC] A - Flac Attack (2020) [Sony]", "V0", "[WEB MP3 V0] A - Flac Attack (2020) [Sony]"),
+        ("A - B (2020) [WEB FLAC] [Flac Records]", "V0", "A - B (2020) [WEB MP3 V0] [Flac Records]"),
+        ("A - B (2020) [WEB FLAC 24-96] [Flac Records]", "V0", "A - B (2020) [WEB MP3 V0 24-96] [Flac Records]"),
+        ("A - B (2020) [WEB FLAC 24-44.1] [Flac Records]", "V0", "A - B (2020) [WEB MP3 V0 24-44.1] [Flac Records]"),
+        ("A - B (2020) [WEB FLAC] [Flac 2020 Records]", "V0", "A - B (2020) [WEB MP3 V0] [Flac 2020 Records]"),
+        ("A - B (2020) [WEB Lossless] [Lossless Records]", "V0", "A - B (2020) [WEB V0] [Lossless Records] [MP3]"),
+        ("A - B (2020) [WEB FLAC Remaster] Flac Records", "V0", "A - B (2020) [WEB MP3 V0 Remaster] Flac Records"),
+    ],
+)
+def test_the_format_word_is_swapped_and_the_names_are_kept(monkeypatch, source, bitrate, expected) -> None:
+    _stub_16_44(monkeypatch)
+
+    assert transcoding._build_output_path(f"/downloads/{source}", bitrate) == f"/downloads/{expected}"
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("A - Album (2020) [WEB FLAC]", "A - Album (2020) [WEB MP3 V0]"),
+        ("A - Album (2020) [web flac]", "A - Album (2020) [web MP3 V0]"),
+        ("A - Album (2020) [WEB 24bit FLAC]", "A - Album (2020) [WEB MP3 V0]"),
+        ("A - Album (2020) [WEB 24 bit FLAC]", "A - Album (2020) [WEB MP3 V0]"),
+        ("A - Album (2020) [WEB FLAC Lossless]", "A - Album (2020) [WEB MP3 V0]"),
+        ("A - Album (2020) [WEB Lossless FLAC]", "A - Album (2020) [WEB V0 MP3]"),
+        ("A - Album (2020) [Lossless WEB FLAC]", "A - Album (2020) [V0 WEB MP3]"),
+        ("A - Album (2020) [FLAC WEB Lossless]", "A - Album (2020) [MP3 WEB V0]"),
+        ("A - Album (2020) [WEB Lossless]", "A - Album (2020) [WEB V0] [MP3]"),
+        ("A - Album (2020) [WEB lossless]", "A - Album (2020) [WEB V0] [MP3]"),
+        ("A - Album FLAC", "A - Album MP3 V0"),
+        ("Artist.Album.2020.WEB.FLAC-GROUP", "Artist.Album.2020.WEB.MP3 V0-GROUP"),
+        ("Artist_Album_2020_FLAC_GROUP", "Artist_Album_2020_MP3 V0_GROUP"),
+        ("Artist_Album_2020_Lossless_GROUP", "Artist_Album_2020_V0_GROUP [MP3]"),
+        ("A - B (2020) [FLAC Remaster]", "A - B (2020) [MP3 V0 Remaster]"),
+        ("A - B (2020) [WEB FLAC Remaster] [Flac Records]", "A - B (2020) [WEB MP3 V0 Remaster] [MP3 V0 Records]"),
+        (
+            "A - B (2020) [WEB FLAC Lossless Remaster] [Flac Records]",
+            "A - B (2020) [WEB MP3 V0 Remaster] [MP3 Records]",
+        ),
+        ("A - Album (2020)", "A - Album (2020) [MP3 V0]"),
+    ],
+)
+def test_names_without_the_letters_elsewhere_come_out_as_before(monkeypatch, source, expected) -> None:
+    _stub_16_44(monkeypatch)
+
+    assert transcoding._build_output_path(f"/downloads/{source}", "V0") == f"/downloads/{expected}"

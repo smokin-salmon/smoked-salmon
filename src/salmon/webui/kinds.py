@@ -623,7 +623,9 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     """What ``salmon up`` runs, its questions asked in the browser.
 
     Returns:
-        The folder, the trackers, and each torrent uploaded (none in a dry run).
+        The folder, the trackers, each torrent uploaded (none in a dry run), and whether a seedbox step (a copy, a
+        client add, or setting up the client) failed: the job is done, everything went up, but a torrent may be
+        seeded nowhere.
 
     Raises:
         PartialResult: The run stopped, or went on past a request that may have reached the tracker (an upload, a lossy
@@ -649,6 +651,7 @@ async def upload(params: UploadParams) -> dict[str, Any]:
             _upload_ended(record, result, err)
     if not record.complete:
         _upload_ended(record, result, click.ClickException("The run stopped before everything went up: see the log."))
+    result["seedbox_failed"] = record.seedbox_failed
     return result
 
 
@@ -708,7 +711,8 @@ async def cross_upload(params: CrossUploadParams) -> dict[str, Any]:
     is not cross-uploaded, as one that fails a check is not; a job started on that folder later waits for this one.
 
     Returns:
-        SOURCE, TARGET, the torrent IDs, and each torrent uploaded (none in a dry run).
+        SOURCE, TARGET, the torrent IDs, each torrent uploaded (none in a dry run), and whether a seedbox step (a copy,
+        a client add, or setting up the client) failed, as in ``upload``.
 
     Raises:
         PartialResult: The run stopped (a refusal, a failed step, an abort, a cancel), with what it uploaded before.
@@ -726,7 +730,7 @@ async def cross_upload(params: CrossUploadParams) -> dict[str, Any]:
             raise PartialResult(_cross_upload_result(params, record)) from ended
     if record.unknown_outcomes:
         raise PartialResult(_cross_upload_result(params, record)) from _unknown(record.unknown_outcomes)
-    return _cross_upload_result(params, record)
+    return {**_cross_upload_result(params, record), "seedbox_failed": record.seedbox_failed}
 
 
 async def _run_cross_upload(options: "CrossUploadOptions") -> None:
