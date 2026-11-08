@@ -1,7 +1,7 @@
 """Bandcamp's "Client Challenge" page (#985).
 
 From some networks Bandcamp answers a page with HTTP 200 and a JavaScript check titled "Client Challenge" instead of
-the release. A page of Bandcamp's own hosts is then asked for once more as a browser (curl_cffi impersonating Chrome),
+the release. A page of Bandcamp's own hosts is then asked for once more as a browser (curl_cffi impersonating Firefox),
 as yt-dlp does; if that still fails, or the page is on an artist's own domain, a ScrapeError says so.
 """
 
@@ -48,7 +48,7 @@ async def retry_as_browser(url: str, params: dict | None, timeout: float) -> Bea
 
 
 async def _impersonated_get(url: str, params: dict | None, proxy: str | None, timeout: float) -> tuple[int, bytes]:
-    """GET `url` impersonating Chrome, without following a redirect; returns the status and body.
+    """GET `url` impersonating Firefox, without following a redirect; returns the status and body.
 
     Without `proxy`, it connects directly: libcurl would otherwise take a proxy from the environment (http_proxy,
     ALL_PROXY), which salmon's other requests ignore.
@@ -70,7 +70,7 @@ async def _impersonated_get(url: str, params: dict | None, proxy: str | None, ti
                 proxies={"all": proxy or ""},
                 timeout=timeout,
                 allow_redirects=False,
-                impersonate="chrome",
+                impersonate="firefox",
             )
     except (CurlError, TimeoutError) as e:
         raise ScrapeError(f"Bandcamp: Request failed when asked again as a browser ({type(e).__name__}).") from e

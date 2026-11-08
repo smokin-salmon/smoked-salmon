@@ -177,7 +177,7 @@ def test_a_check_page_is_asked_for_once_more_as_a_browser(first_fetches, retries
             "proxies": {"all": ""},
             "timeout": 7,
             "allow_redirects": False,
-            "impersonate": "chrome",
+            "impersonate": "firefox",
         }
     ]
 
