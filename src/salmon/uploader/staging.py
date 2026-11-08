@@ -9,7 +9,7 @@ from contextlib import contextmanager
 import asyncclick as click
 
 from salmon import cfg, dryrun
-from salmon.common.files import rewrite_refusal
+from salmon.common.files import rewrite_refusal, unreadable_error
 from salmon.converter.conversions import carry_conversion, copies_of
 from salmon.errors import UploadError
 
@@ -91,11 +91,7 @@ def _copy_into(path: str, into: str, scratch: bool, refusal: str | None) -> str:
             os.path.getsize(os.path.join(root, f)) for root, _, files in os.walk(path, onerror=_raise) for f in files
         )
     except OSError as error:
-        name = os.path.relpath(error.filename or path, path)
-        raise UploadError(
-            f"Could not read {name} in {path} ({error.strerror}): "
-            "fix it or remove it from the album, then run salmon again."
-        ) from error
+        raise unreadable_error(error, path) from error
     free = shutil.disk_usage(into).free
     if size > free:
         raise UploadError(

@@ -11,6 +11,7 @@ import asyncclick as click
 import cambia
 
 from salmon import prepared
+from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.common.numbers import file_order_key, read_number
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
@@ -245,7 +246,7 @@ def _find_audio_files(path: str) -> list[str]:
     # An unreadable or vanished disc folder would otherwise pass as "audio missing" and skip the check.
     for root, _folders, files_ in os.walk(path, onerror=_raise_scan_error):
         for f in files_:
-            if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}:
+            if os.path.splitext(f.lower())[1] in AUDIO_EXTENSIONS:
                 audio_files.append(os.path.join(root, f))
     return audio_files
 
