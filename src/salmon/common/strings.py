@@ -243,7 +243,30 @@ _GENRE_SEPARATORS = re.compile(r"\s*[/;,\u2192]\s*(?:&\s*)?|\s+\\\s+")
 
 def split_genre(genre: str) -> list[str]:
     """Split one genre string into the separate genres it names."""
-    return [part.strip() for part in _GENRE_SEPARATORS.split(genre) if part.strip()]
+    parts: list[str] = []
+    start = 0
+    depths = _bracket_depths(genre)
+    for match in _GENRE_SEPARATORS.finditer(genre):
+        if depths is not None and depths[match.start()] > 0:
+            continue
+        parts.append(genre[start : match.start()])
+        start = match.end()
+    parts.append(genre[start:])
+    return [part.strip() for part in parts if part.strip()]
+
+
+def _bracket_depths(text: str) -> list[int] | None:
+    """The bracket depth before each character, or None when round or square brackets are unbalanced."""
+    depths: list[int] = []
+    stack: list[str] = []
+    pairs = {")": "(", "]": "["}
+    for char in text:
+        depths.append(len(stack))
+        if char in "([":
+            stack.append(char)
+        elif char in pairs and (not stack or stack.pop() != pairs[char]):
+            return None
+    return depths if not stack else None
 
 
 def tagify(genre: str) -> str:

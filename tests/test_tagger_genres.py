@@ -215,3 +215,23 @@ def test_real_ai_values_still_apply():
     out = apply_ai_metadata_result(_md(), {"metadata": {"title": "Better Title", "label": "Real Records"}}, None)
     assert out["title"] == "Better Title"
     assert out["label"] == "Real Records"
+
+
+def test_split_genre_never_splits_inside_brackets():
+    assert split_genre("Techno (Peak Time / Driving)") == ["Techno (Peak Time / Driving)"]
+    assert split_genre("House [Deep / Tech]") == ["House [Deep / Tech]"]
+    assert split_genre("Rock / Pop") == ["Rock", "Pop"]
+    assert split_genre("House (Deep / Tech) / Rock") == ["House (Deep / Tech)", "Rock"]
+
+
+def test_split_genre_splits_as_before_when_brackets_are_unbalanced():
+    assert split_genre("Techno (Peak Time / Driving") == ["Techno (Peak Time", "Driving"]
+
+
+def test_bracketed_genre_leaves_no_half_bracket_piece():
+    genres = standardize_genres(["Techno (Peak Time / Driving)"])
+
+    assert genres
+    for genre in genres:
+        assert genre.count("(") == genre.count(")")
+        assert not genre.startswith(")") and not genre.endswith("(")
