@@ -11,7 +11,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import get_audio_files, is_torrent_file, process_files
+from salmon.common.files import get_audio_files, is_torrent_file, process_tracks
 from salmon.converter.conversions import (
     changed_sources,
     changed_tracks,
@@ -251,13 +251,13 @@ async def _convert_audio_files(
 
         result = await anyio.run_process(command, check=False)
         if result.returncode != 0:
-            err = result.stderr.decode() if result.stderr else ""
+            err = result.stderr.decode(errors="replace") if result.stderr else ""
             if err:
                 click.secho(err, fg="yellow")
-            raise RuntimeError(f"sox conversion failed for {os.path.basename(item.src)} with code {result.returncode}")
+            raise UploadError(f"sox conversion failed for {os.path.basename(item.src)} with code {result.returncode}")
 
     file_paths = [item.src for item in items]
-    await process_files(file_paths, _convert_one, "Converting")
+    await process_tracks(file_paths, _convert_one, "Converting")
 
 
 # ---------------------------------------------------------------------------

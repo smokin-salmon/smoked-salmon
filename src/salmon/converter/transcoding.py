@@ -15,7 +15,7 @@ from mutagen.id3 import APIC, ID3, TXXX, Frames
 
 from salmon import cfg, interaction
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import get_audio_files, is_torrent_file, process_files
+from salmon.common.files import get_audio_files, is_torrent_file, process_tracks
 from salmon.common.numbers import file_order_key
 from salmon.converter.conversions import (
     changed_sources,
@@ -396,9 +396,10 @@ async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> Non
         mp3_path: Destination path for the MP3 file.
 
     Raises:
-        RuntimeError: If FLAC decoding or LAME encoding fails.
+        UploadError: If FLAC decoding or LAME encoding fails.
     """
     Path(mp3_path).parent.mkdir(parents=True, exist_ok=True)
+    track = os.path.basename(flac_path)
 
     read_fd, write_fd = os.pipe()
     try:
@@ -449,14 +450,17 @@ async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> Non
         await asyncio.gather(flac_proc.wait(), lame_proc.wait(), return_exceptions=True)
         raise
 
-    if flac_proc.returncode:
-        err = flac_err.decode()
+    # A flac killed because lame stopped reading says nothing of why: lame's own failure does.
+    if flac_proc.returncode and not (flac_proc.returncode < 0 and lame_proc.returncode):
+        err = flac_err.decode(errors="replace")
         if err:
             click.secho(err, fg="yellow")
-        raise RuntimeError(f"FLAC decoding failed with code {flac_proc.returncode}")
+        raise UploadError(f"FLAC decoding of {track} failed with code {flac_proc.returncode}")
 
     if lame_proc.returncode:
-        raise RuntimeError(lame_err.decode() or "LAME encoding failed")
+        # Its message names at most the temporary file.
+        reason = lame_err.decode(errors="replace").strip() or f"code {lame_proc.returncode}"
+        raise UploadError(f"LAME encoding of {track} failed: {reason}")
 
 
 async def _transcode_audio_files(
@@ -488,7 +492,7 @@ async def _transcode_audio_files(
             raise
 
     file_paths = [item.src for item in items]
-    await process_files(file_paths, _transcode_one, "Transcoding")
+    await process_tracks(file_paths, _transcode_one, "Transcoding")
 
 
 def _validate_channel_count(items: list[TranscodeItem]) -> None:
