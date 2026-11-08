@@ -29,6 +29,8 @@ if TYPE_CHECKING:
 # (but by salmon web's guard, see _PublicOnlyProxyConnector):
 # socks4 works as SOCKS4A, and socks5 as socks5h.
 SCHEMES = {"http": "http", "socks4": "socks4", "socks4a": "socks4", "socks5": "socks5", "socks5h": "socks5"}
+# The same schemes as libcurl knows them, where the proxy resolves hostnames too (see curl_url).
+CURL_SCHEMES = {"http": "http", "socks4": "socks4a", "socks4a": "socks4a", "socks5": "socks5h", "socks5h": "socks5h"}
 
 
 def is_valid_url(url: str) -> bool:
@@ -57,6 +59,18 @@ def proxy_url(service: str | None) -> str | None:
     if url is None:
         url = cfg.proxy.url
     return url or None
+
+
+def curl_url(service: str | None) -> str | None:
+    """Get the URL of `service`'s proxy for a libcurl request (curl_cffi), or None to connect directly.
+
+    As with salmon's other connections, the proxy resolves the name of the site a request goes to.
+    """
+    url = proxy_url(service)
+    if url is None:
+        return None
+    parts = urlsplit(url)
+    return parts._replace(scheme=CURL_SCHEMES[parts.scheme]).geturl()
 
 
 def connector(service: str | None, *, fixed_hosts: bool = False, **kwargs: Any) -> aiohttp.TCPConnector:
