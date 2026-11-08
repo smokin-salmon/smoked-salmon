@@ -15,30 +15,6 @@ class IdentData(msgspec.Struct, frozen=True):
     source: str
 
 
-class ArtistRlsData(msgspec.Struct, frozen=True):
-    """Data structure for artist release search results."""
-
-    url: str
-    quality: str | None
-    year: int | str | None
-    artist: str
-    album: str
-    label: str | None
-    explicit: bool
-
-
-class LabelRlsData(msgspec.Struct, frozen=True):
-    """Data structure for label release search results."""
-
-    url: str
-    quality: str | None
-    year: int | str | None
-    artist: str
-    album: str
-    type: str | None
-    explicit: bool
-
-
 class SearchMixin(ABC):
     @abstractmethod
     async def search_releases(self, searchstr: str, limit: int) -> tuple[str, dict[str, Any] | None]:

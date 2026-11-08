@@ -16,23 +16,11 @@ class PickOtherResults(Exception):
     """The user went back from the metadata review to pick other metadata results."""
 
 
-class DownloadError(Exception):
-    pass
-
-
 class UploadError(Exception):
     pass
 
 
-class FilterError(Exception):
-    pass
-
-
 class TrackCombineError(Exception):
-    pass
-
-
-class SourceNotFoundError(Exception):
     pass
 
 
@@ -49,10 +37,6 @@ class InvalidSampleRate(Exception):
 
 
 class GenreNotInWhitelist(Exception):
-    pass
-
-
-class NotAValidInputFile(Exception):
     pass
 
 

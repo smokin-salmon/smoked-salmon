@@ -1803,7 +1803,6 @@ dependencies = [
     { name = "aiohttp" },
     { name = "aiohttp-jinja2" },
     { name = "aiohttp-socks" },
-    { name = "aiolimiter" },
     { name = "anyio" },
     { name = "asyncclick" },
     { name = "av" },
@@ -1819,6 +1818,7 @@ dependencies = [
     { name = "mutagen" },
     { name = "numpy" },
     { name = "openai" },
+    { name = "packaging" },
     { name = "pillow" },
     { name = "platformdirs" },
     { name = "pycambia" },
@@ -1837,6 +1837,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "aiolimiter" },
     { name = "basedpyright" },
     { name = "pytest" },
     { name = "pytest-xdist" },
@@ -1848,7 +1849,6 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.14.5" },
     { name = "aiohttp-jinja2", specifier = ">=1.6" },
     { name = "aiohttp-socks", specifier = ">=0.12.0" },
-    { name = "aiolimiter", specifier = ">=1.3.0" },
     { name = "anyio", specifier = ">=4.12.1" },
     { name = "asyncclick", specifier = ">=8.4.2.1" },
     { name = "av", specifier = ">=18.1.0" },
@@ -1864,6 +1864,7 @@ requires-dist = [
     { name = "mutagen", specifier = ">=1.48.1" },
     { name = "numpy", specifier = ">=2.4.6" },
     { name = "openai", specifier = ">=3.41.0" },
+    { name = "packaging", specifier = ">=26.0" },
     { name = "pillow", specifier = ">=13.0.0" },
     { name = "platformdirs", specifier = ">=4.14.0" },
     { name = "pycambia", specifier = ">=0.2.0" },
@@ -1882,6 +1883,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "aiolimiter", specifier = ">=1.3.0" },
     { name = "basedpyright", specifier = ">=1.40.2" },
     { name = "pytest", specifier = ">=9.2.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },

@@ -16,8 +16,6 @@ BLACKLISTED_FULLWIDTH_REPLACEMENTS = {
     "\\": "＼",
 }
 
-QUALITY_INDEX = ["LOSSLESS", "HIGH", "LOW"]
-
 SOURCES = {
     "web": "WEB",
     "cd": "CD",

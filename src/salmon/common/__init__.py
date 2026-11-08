@@ -33,7 +33,6 @@ from salmon.common.strings import (
     split_genre,
     strip_template_keys,
     tagify,
-    truncate,
 )
 from salmon.errors import ScrapeError
 
@@ -59,7 +58,6 @@ __all__ = [
     "split_genre",
     "strip_template_keys",
     "tagify",
-    "truncate",
     "ScrapeError",
     "commandgroup",
     "prompt_async",

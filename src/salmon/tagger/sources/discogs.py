@@ -45,12 +45,6 @@ RELEASE_TYPES = {
     "Mixtape": "Mixtape",
 }
 
-SOURCES = {
-    "Vinyl": "Vinyl",
-    "File": "WEB",
-    "CD": "CD",
-}
-
 
 def _clean_discogs_position(position: str, default_disc: int) -> tuple[str, str]:
     """Parse raw Discogs position string into clean disc and track numbers.
@@ -218,13 +212,3 @@ def sanitize_artist_name(name):
     as well as the asterisk stuff.
     """
     return strip_numbered_suffix(re.sub(r"\*+$", "", name))
-
-
-def parse_source(formats):
-    """
-    Take the list of format strings provided by Discogs and iterate over them
-    to find a possible source for the release.
-    """
-    for format_s, source in SOURCES.items():
-        if any(format_s in f for f in formats):
-            return source

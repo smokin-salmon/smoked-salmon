@@ -55,7 +55,6 @@ class DeezerBase(BaseScraper):
 
     def __init__(self) -> None:
         """Initialize Deezer scraper."""
-        self.country_code = None
         super().__init__()
 
     @classmethod

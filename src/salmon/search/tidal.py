@@ -1,14 +1,13 @@
 import asyncio
 import html
 import re
-from itertools import chain, zip_longest
+from itertools import zip_longest
 
 from salmon import cfg
 from salmon.common import parse_copyright
-from salmon.errors import ScrapeError
-from salmon.search.base import ArtistRlsData, IdentData, SearchMixin
+from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import TidalBase
-from salmon.sources.tidal import MAX_PAGES, credentials_configured, parse_quality
+from salmon.sources.tidal import credentials_configured
 
 COUNTRIES = [cc.upper() for cc in cfg.metadata.tidal.regions]
 
@@ -119,67 +118,6 @@ class Searcher(TidalBase, SearchMixin):
             )
         return releases
 
-    async def get_artist_releases(self, artiststr):
-        """
-        Get the releases of an artist on Tidal: find their artist page and request
-        all their releases (albums, EPs and singles).
-        """
-        artist_ids = await self.get_artist_ids(artiststr)
-        tasks = [self._get_artist_albums(artist_id, cc) for artist_id in artist_ids for cc in COUNTRIES]
-        return (
-            "Tidal",
-            self._filter_dupes(chain.from_iterable(await asyncio.gather(*tasks))),
-        )
-
-    async def get_artist_ids(self, artiststr):
-        artist_ids = set()
-        tasks = [self._search_artists_country(artiststr, cc) for cc in COUNTRIES]
-        for artist_ids_new in await asyncio.gather(*tasks):
-            artist_ids |= artist_ids_new
-        return artist_ids
-
-    async def _search_artists_country(self, artiststr, country_code):
-        _, included = await self._search(artiststr, country_code, "artists")
-        return {
-            obj["id"]
-            for obj in included
-            if obj["type"] == "artists" and obj["attributes"]["name"].lower() == artiststr.lower()
-        }
-
-    async def _get_artist_albums(self, artist_id, country_code):
-        """Fetch an artist's releases of every album type."""
-        albums: list[dict] = []
-        included: list[dict] = []
-        cursor = None
-        try:
-            for _ in range(MAX_PAGES):
-                params = {"countryCode": country_code, "include": "albums,albums.artists"}
-                if cursor:
-                    params["page[cursor]"] = cursor
-                resp = await self.get_json(f"/artists/{artist_id}/relationships/albums", params=params)
-                page_included = resp.get("included", [])
-                by_id = {obj["id"]: obj for obj in page_included if obj["type"] == "albums"}
-                albums += [by_id[rls["id"]] for rls in resp["data"] if rls["id"] in by_id]
-                included += page_included
-                cursor = self.next_cursor(resp.get("links", {}))
-                if not cursor:
-                    break
-        except ScrapeError:
-            return []
-
-        return [
-            ArtistRlsData(
-                url=self.format_url(rls_id=rls["id"]),
-                quality=parse_quality(rls["attributes"].get("mediaTags", [])),
-                year=self._parse_year(rls["attributes"].get("releaseDate")),
-                artist=", ".join(a["name"] for a in self._parse_resource_artists(rls, included)),
-                album=rls["attributes"]["title"],
-                label=parse_copyright((rls["attributes"].get("copyright") or {}).get("text")),
-                explicit=rls["attributes"]["explicit"],
-            )
-            for rls in albums
-        ]
-
     @staticmethod
     def _parse_year(date):
         try:
@@ -187,24 +125,3 @@ class Searcher(TidalBase, SearchMixin):
             return int(match[0]) if match else None
         except (ValueError, IndexError, TypeError):
             return None
-
-    @staticmethod
-    def _filter_dupes(results):
-        filtered = []
-        existing_urls = set()
-        for rls in results:
-            if rls.url not in existing_urls:
-                existing_urls.add(rls.url)
-                filtered.append(rls)
-
-        # Filter hi-res and lossless dupes.
-        lossless = {rls.album for rls in filtered if rls.quality == "LOSSLESS"}
-        for rls in [r for r in filtered if r.quality == "HI_RES"]:
-            if rls.album in lossless:
-                filtered.remove(rls)
-
-        return sorted(filtered, key=lambda r: r.year, reverse=True)
-
-
-def strip_parens(stri):
-    return re.sub(r" [Ff]eat\..+| \(.+\)", "", stri).lower()

@@ -50,7 +50,6 @@ from salmon.config.validations import Seedbox
 from salmon.errors import (
     AbortAndDeleteFolder,
     EditedLogError,
-    FilterError,
     LoginError,
     RequestFailedError,
     TLSCertificateError,
@@ -1097,7 +1096,6 @@ def _raises(error: BaseException) -> Callable[[], None]:
     ("error", "said"),
     [
         pytest.param(UploadError("no room"), ["There was an error: no room"], id="UploadError"),
-        pytest.param(FilterError("no match"), ["There was an error: no match"], id="FilterError"),
         pytest.param(
             TLS,
             ["There was an error: TLS certificate verification failed", "salmon checkconf -t OPS"],
