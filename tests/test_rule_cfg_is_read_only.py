@@ -6,10 +6,10 @@ What a run decides goes through its own state, e.g. `await interaction.assume_de
 anything under `cfg` (however it was imported) in `src/salmon`: an assignment (plain, augmented, unpacked, or the
 target of `for` or `with`), `del`, `setattr` / `delattr` (`object.__setattr__` too), and a call of a method that
 changes a list, dict or set in place (`append`, `update`...). A module-level alias (`tracker_cfg = cfg.tracker`,
-annotated or not) counts as `cfg`. It also refuses binding `salmon.cfg` itself (`salmon.cfg = other`), which every
-module reading `salmon.cfg` would then see; the one place that sets it, while salmon is still importing, is listed
-below. What it cannot see: a part of the config bound to another name inside a function, or an alias imported from
-another module.
+annotated or not) counts as `cfg`. It also refuses binding `salmon.cfg` itself (`salmon.cfg = other`,
+`setattr(salmon, "cfg", other)`), which every module reading `salmon.cfg` would then see; the one place that sets
+it, while salmon is still importing, is listed below for one binding: a second in that function is new. What it
+cannot see: a part of the config bound to another name inside a function, or an alias imported from another module.
 """
 
 import ast
@@ -92,6 +92,8 @@ def config_writes(source: str) -> list[tuple[int, str, str]]:
     """The (line, enclosing function, what) of each write to the config, or binding of `salmon.cfg` itself."""
     tree = ast.parse(source)
     names = _cfg_names(tree)
+    # The names the salmon module itself is bound to, for `setattr(salmon, "cfg", other)`.
+    modules = {name.removesuffix(".cfg") for name in names}
 
     def is_config(node: ast.expr) -> bool:
         return _dotted(node) in names or _under(node, names)
@@ -107,7 +109,9 @@ def config_writes(source: str) -> list[tuple[int, str, str]]:
             setter = isinstance(func, ast.Name) and func.id in ("setattr", "delattr")
             setter |= isinstance(func, ast.Attribute) and _dotted(func) in ("object.__setattr__", "object.__delattr__")
             if setter and node.args:
-                if is_config(node.args[0]):
+                rebinds = len(node.args) > 1 and _dotted(node.args[0]) in modules
+                rebinds &= isinstance(node.args[1], ast.Constant) and node.args[1].value == "cfg"
+                if is_config(node.args[0]) or rebinds:
                     found.append((node.lineno, where, ast.unparse(node)))
             elif isinstance(func, ast.Attribute) and func.attr in MUTATING and is_config(func.value):
                 found.append((node.lineno, where, ast.unparse(node)))
@@ -134,11 +138,14 @@ def _all_writes() -> list[tuple[str, int, str, str]]:
 
 
 def test_nothing_in_salmon_writes_the_config() -> None:
-    found = [
-        f"src/salmon/{file}:{line}: {what} (in {where})"
-        for file, line, where, what in _all_writes()
-        if (file, where, what) not in ALLOWED
-    ]
+    found: list[str] = []
+    listed: set[tuple[str, str, str]] = set()
+    for file, line, where, what in _all_writes():
+        # A listed function holds one such binding: the first is the one listed, a second is new.
+        if (file, where, what) in ALLOWED and (file, where, what) not in listed:
+            listed.add((file, where, what))
+        else:
+            found.append(f"src/salmon/{file}:{line}: {what} (in {where})")
     assert found == [], (
         "cfg is the config as loaded, shared by every job of the process: keep what a run decides in the run's own "
         "state (salmon.interaction.assume_defaults() for -yyy) instead of writing it to cfg:\n" + "\n".join(found)
@@ -175,7 +182,9 @@ config.upload.formats.difference_update({"MP3"})
 def load(new):
     salmon.cfg = new
     config = new
+    setattr(s, "cfg", new)
+    setattr(s, "other", new)
 """
     found = config_writes(source)
-    assert [line for line, _, _ in found] == [4, 5, 6, 7, 8, 10, 10, 11, 12, 15, 16, 18, 20, 21, 23]
-    assert found[-1] == (23, "load", "salmon.cfg")
+    assert [line for line, _, _ in found] == [4, 5, 6, 7, 8, 10, 10, 11, 12, 15, 16, 18, 20, 21, 23, 25]
+    assert found[-2:] == [(23, "load", "salmon.cfg"), (25, "load", "setattr(s, 'cfg', new)")]
