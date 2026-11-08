@@ -50,8 +50,10 @@ from salmon.config.validations import Seedbox
 from salmon.errors import (
     AbortAndDeleteFolder,
     EditedLogError,
+    ImageUploadFailed,
     LoginError,
     RequestFailedError,
+    ScrapeError,
     TLSCertificateError,
     UnknownOutcomeError,
     UploadError,
@@ -568,12 +570,12 @@ def _stop_at_ops_after_a_skip(route: str, error: Exception) -> dict[str, Any]:
     return {**(_forbidden_on("RED") if route == "forbidden" else {}), "resolve_cover_url": cover}
 
 
-def _stops_at_ops(*, tracker: Callable[[], FakeTracker], posts: int) -> dict[str, Row]:
+def _stops_at_ops(*, tracker: Callable[[], FakeTracker], posts: int, kept: bool = True) -> dict[str, Row]:
     """A request failure at OPS's request search, after RED's turn has gone one way or the other."""
     rows: dict[str, Row] = {}
     for name, error in (("tls", TLS), ("request_failure", RequestFailedError("the request failed"))):
         rows[f"{name}_at_the_request_search"] = Row(
-            3, posts, str(error), trackers=TWO, tracker=tracker, fakes=_at_ops("check_requests", error)
+            3, posts, str(error), kept=kept, trackers=TWO, tracker=tracker, fakes=_at_ops("check_requests", error)
         )
     return rows
 
@@ -584,7 +586,16 @@ CHANGED = {
     "upload_error_first_tracker": Row(
         1, 0, "There was an error: stopped", fakes=_at("resolve_cover_url", UploadError("stopped"))
     ),
-    "tls_first_tracker": Row(1, 0, "salmon checkconf -t OPS", fakes=_at("check_requests", TLS)),
+    "tls_first_tracker": Row(1, 0, "salmon checkconf -t OPS", fakes=_at("recheck_dupe", TLS)),
+    "request_failure_at_the_recheck": Row(
+        1,
+        0,
+        "There was an error: the request failed",
+        fakes=_at("recheck_dupe", RequestFailedError("the request failed")),
+    ),
+    "request_failure_first_tracker": Row(
+        1, 0, KEPT_NOTHING_UP, fakes=_at("check_requests", RequestFailedError("the request failed"))
+    ),
     "mqa": Row(1, 0, STOPPED, fakes=_at("mqa_test", click.Abort)),
     "you_say_no": Row(1, 0, STOPPED, fakes=_at("_review_until_confirmed", click.Abort)),
     "edited_log": Row(
@@ -691,7 +702,7 @@ CHANGED = {
     # Exit 3: one tracker's turn went one way, and the next stopped or failed
     "red_up_ops_refused": Row(3, 4, OPS_REFUSED_SAID, kept=False, trackers=TWO, tracker=lambda: RefusingTracker("OPS")),
     "red_refused_ops_up": Row(3, 4, REFUSED_SAID, kept=False, trackers=TWO, tracker=lambda: RefusingTracker("RED")),
-    **{f"red_up_{name}": row for name, row in _stops_at_ops(tracker=FakeTracker, posts=3).items()},
+    **{f"red_up_{name}": row for name, row in _stops_at_ops(tracker=FakeTracker, posts=3, kept=False).items()},
     **{
         f"red_refused_{name}": row
         for name, row in _stops_at_ops(tracker=lambda: RefusingTracker("RED"), posts=1).items()
@@ -1101,6 +1112,11 @@ def _raises(error: BaseException) -> Callable[[], None]:
             ["There was an error: TLS certificate verification failed", "salmon checkconf -t OPS"],
             id="TLSCertificateError",
         ),
+        pytest.param(
+            RequestFailedError("the tracker said no"), ["There was an error: the tracker said no"], id="RequestError"
+        ),
+        pytest.param(ImageUploadFailed("no host"), ["There was an error: no host"], id="ImageUploadFailed"),
+        pytest.param(ScrapeError("no store"), ["There was an error: no store"], id="ScrapeError"),
         pytest.param(ImportError("no sox"), ["You are missing required dependencies: no sox"], id="ImportError"),
     ],
 )

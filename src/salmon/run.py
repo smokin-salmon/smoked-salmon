@@ -16,7 +16,7 @@ import salmon.uploader
 import salmon.webui
 from salmon import cfg
 from salmon.common import commandgroup, tmp_lock
-from salmon.errors import TLSCertificateError, UploadError
+from salmon.errors import ImageUploadFailed, RequestError, ScrapeError, TLSCertificateError, UploadError
 from salmon.release_notification import show_release_notification
 from salmon.uploader.record import recording
 
@@ -110,9 +110,6 @@ def _run_command():
         click.echo()
 
         commandgroup(obj={})
-    except UploadError as e:
-        click.secho(f"There was an error: {e}", fg="red", bold=True)
-        sys.exit(1)
     except TLSCertificateError as e:
         # Where an upload ends when its first request to the tracker fails on it (the dupe check).
         click.secho(f"There was an error: {e}", fg="red", bold=True)
@@ -121,6 +118,10 @@ def _run_command():
             " Python gets its CA certificates.",
             fg="yellow",
         )
+        sys.exit(1)
+    except (UploadError, RequestError, ImageUploadFailed, ScrapeError) as e:
+        # After TLSCertificateError: it is a RequestError too.
+        click.secho(f"There was an error: {e}", fg="red", bold=True)
         sys.exit(1)
     except ImportError as e:
         click.secho(f"You are missing required dependencies: {e}", fg="red")

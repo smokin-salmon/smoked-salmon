@@ -1069,10 +1069,10 @@ async def _upload_staged(  # noqa: C901
                     # Uploaded to this tracker's specs host, unless a tracker using the same host already did.
                     spectral_urls = await spectral_uploads.urls_for(gazelle_site.site_code, spectral_ids)
 
-                if not flac_url and not request_id and cfg.upload.requests.check_requests:
-                    request_id = await check_requests(gazelle_site, searchstrs)
-
                 try:
+                    if not flac_url and not request_id and cfg.upload.requests.check_requests:
+                        request_id = await check_requests(gazelle_site, searchstrs)
+
                     held: set[str] = set()
                     if flac_url and source_flac is not None:
                         click.secho(f"\nNot uploading the FLAC: transcoding from {flac_url}", fg="yellow")
