@@ -1,11 +1,13 @@
 album = "Marcus King, El Dorado"
-why = "The control: one artist, three stores agreeing; any change that moves it is a regression."
+why = "The control: one artist, every store agreeing; any change that moves it is a regression."
+edition = "Discogs 16764408 is the digital issue under master 1669263."
 known_wrong = []
 files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
@@ -21,6 +23,10 @@ tracks = 12
 release = ["Marcus King (main)"]
 tracks = 12
 
+[today.discogs]
+release = ["Marcus King (main)"]
+tracks = 12
+
 [today.qobuz]
 release = ["Marcus King (main)"]
 tracks = 12
@@ -28,6 +34,7 @@ tracks = 12
 [today.merge]
 release = ["Marcus King (main)"]
 tracks = 12
+
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -384,6 +391,110 @@ musicbrainz = '''
 <?xml version='1.0' encoding='utf-8'?>
 <metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="60134dd5-b1f0-40cc-adc8-6a346b0b32a1"><title>El Dorado</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit><date>2020-01-17</date><release-event-list><release-event><date>2020-01-17</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Easy Eye Sound</name></label></label-info><label-info><label><name>Fantasy</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Young Man’s Dream</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><recording><title>The Well</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><recording><title>Wildflowers &amp; Wine</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><recording><title>One Day She’s Here</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>Sweet Mariona</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><recording><title>Beautiful Stranger</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>Break</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Say You Will</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><recording><title>Turn It Up</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><recording><title>Too Much Whiskey</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><recording><title>Love Song</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>12</position><number>12</number><recording><title>No Pain</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
 '''
+discogs = '''
+{
+ "id": 16764408,
+ "year": 2020,
+ "artists": [
+  {
+   "name": "Marcus King (2)",
+   "id": 6362532
+  }
+ ],
+ "labels": [
+  {
+   "name": "Fantasy",
+   "catno": "none",
+   "id": 1329
+  }
+ ],
+ "formats": [
+  {
+   "name": "File"
+  }
+ ],
+ "title": "El Dorado",
+ "released": "2020-01-17",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Young Man's Dream",
+   "duration": "3:08"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "The Well",
+   "duration": "2:57"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Wildflowers & Wine",
+   "duration": "4:48"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "One Day She's Here",
+   "duration": "3:47"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Sweet Mariona",
+   "duration": "2:34"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Beautiful Stranger",
+   "duration": "4:07"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Break",
+   "duration": "3:00"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Say You Will",
+   "duration": "3:54"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Turn It Up",
+   "duration": "3:38"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Too Much Whiskey",
+   "duration": "3:54"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "title": "Love Song",
+   "duration": "2:30"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "title": "No Pain",
+   "duration": "3:53"
+  }
+ ]
+}
+'''
+
 qobuz = '''
 {
  "id": "edxtab347et3b",

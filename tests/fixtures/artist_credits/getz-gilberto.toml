@@ -1,17 +1,19 @@
 album = "Stan Getz and João Gilberto, Getz/Gilberto"
 why = "A famous two-leader album: Qobuz lists both as main-artist and salmon's parser makes Gilberto a guest; Deezer's roles give 'Various'."
+edition = "Discogs 170884 is master 85178's main release (1964 LP), the 8 tracks of the 18 here."
 known_wrong = ["Deezer parse: Jobim both guest and main, ALBUMARTIST 'Various'"]
 files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
 release_main = ["Stan Getz", "João Gilberto"]
-how_we_know = "Qobuz's album artists (both main-artist), MusicBrainz and Deezer's album contributors agree"
+how_we_know = "Qobuz's album artists (both main-artist), MusicBrainz, Discogs and Deezer's album contributors agree"
 open = "Antônio Carlos Jobim (piano, composer): guest, or nothing? Astrud Gilberto on two tracks: guest (feat.)"
 
 [today.deezer]
@@ -22,13 +24,18 @@ tracks = 18
 release = ["Stan Getz (main)", "João Gilberto (main)", "Antônio Carlos Jobim (guest)"]
 tracks = 8
 
+[today.discogs]
+release = ["Stan Getz (main)", "João Gilberto (main)", "Astrud Gilberto (guest)"]
+tracks = 8
+
 [today.qobuz]
 release = ["Stan Getz (main)", "Joao Gilberto (guest)", "António Carlos Jobim (guest)", "Astrud Gilberto (guest)", "João Gilberto Quintet (guest)"]
 tracks = 18
 
 [today.merge]
-release = ["Stan Getz (main)", "João Gilberto (main)", "Antonio Carlos Jobim (main)", "Astrud Gilberto (main)", "João Gilberto Quintet (main)", "Antonio Carlos Jobim (guest)"]
+release = ["Stan Getz (main)", "João Gilberto (main)", "Antonio Carlos Jobim (main)", "Astrud Gilberto (main)", "João Gilberto Quintet (main)", "Antonio Carlos Jobim (guest)", "Astrud Gilberto (guest)"]
 tracks = 18
+
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -665,6 +672,289 @@ musicbrainz = '''
 <?xml version='1.0' encoding='utf-8'?>
 <metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="fa3e9ca1-81e1-366a-b5fb-48bf4e7c5fd4"><title>Getz/Gilberto</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><release-group><title>Getz / Gilberto</title><first-release-date>1964-03</first-release-date><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit></release-group><date>1989-04</date><release-event-list><release-event><date>1989-04</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>810048-2</catalog-number><label><name>Verve</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>The Girl From Ipanema</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track><track><position>2</position><number>2</number><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>Doralice</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>Para machucar meu coração</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track><track><position>4</position><number>4</number><title>Desafinado</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>Desafinado (Off Key)</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track><track><position>5</position><number>5</number><title>Corcovado</title><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>Corcovado (Quiet Nights of Quiet Stars)</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>Só danço samba</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>O grande amor</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track><track><position>8</position><number>8</number><artist-credit><name-credit joinphrase=" &amp; "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" feat. "><artist><name>João Gilberto</name></artist></name-credit><name-credit><name>Antonio Carlos Jobim</name><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><recording><title>Vivo sonhando</title><artist-credit><name-credit joinphrase=" / "><artist><name>Stan Getz</name></artist></name-credit><name-credit joinphrase=" featuring "><artist><name>João Gilberto</name></artist></name-credit><name-credit><artist><name>Antônio Carlos Jobim</name></artist></name-credit></artist-credit><first-release-date>1964-03</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
 '''
+discogs = '''
+{
+ "id": 170884,
+ "year": 1964,
+ "artists": [
+  {
+   "name": "Stan Getz",
+   "anv": "",
+   "role": "",
+   "id": 30486
+  },
+  {
+   "name": "João Gilberto",
+   "anv": "Joao Gilberto",
+   "role": "",
+   "id": 346760
+  }
+ ],
+ "labels": [
+  {
+   "name": "Verve Records",
+   "catno": "V-8545",
+   "id": 5041
+  },
+  {
+   "name": "MGM Records",
+   "catno": "V-8545",
+   "id": 33261
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "descriptions": [
+    "LP",
+    "Album",
+    "Mono"
+   ]
+  }
+ ],
+ "title": "Getz / Gilberto",
+ "genres": [
+  "Jazz"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "The Girl From Ipanema",
+   "extraartists": [
+    {
+     "name": "Astrud Gilberto",
+     "anv": "",
+     "role": "Vocals",
+     "id": 8699
+    },
+    {
+     "name": "Antonio Carlos Jobim",
+     "anv": "Jobim",
+     "role": "Written-By",
+     "id": 27991
+    },
+    {
+     "name": "Norman Gimbel",
+     "anv": "Gimbel",
+     "role": "Written-By",
+     "id": 566915
+    },
+    {
+     "name": "Vinicius De Moraes",
+     "anv": "deMoraes",
+     "role": "Written-By",
+     "id": 315789
+    }
+   ],
+   "duration": "5:15"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Doralice",
+   "extraartists": [
+    {
+     "name": "Antônio Almeida",
+     "anv": "Almeida",
+     "role": "Written-By",
+     "id": 3015584
+    },
+    {
+     "name": "Dorival Caymmi",
+     "anv": "Caymmi",
+     "role": "Written-By",
+     "id": 406673
+    }
+   ],
+   "duration": "2:45"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "Para Machucar Meu Coracao = To Hurt My Heart",
+   "extraartists": [
+    {
+     "name": "Ary Barroso",
+     "anv": "",
+     "role": "Written-By",
+     "id": 449215
+    }
+   ],
+   "duration": "5:07"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "Desafinado",
+   "extraartists": [
+    {
+     "name": "Antonio Carlos Jobim",
+     "anv": "Jobim",
+     "role": "Written-By",
+     "id": 27991
+    },
+    {
+     "name": "Newton Mendonça",
+     "anv": "Mendonca",
+     "role": "Written-By",
+     "id": 566916
+    }
+   ],
+   "duration": "4:05"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Corcovado",
+   "extraartists": [
+    {
+     "name": "Antonio Carlos Jobim",
+     "anv": "Jobim",
+     "role": "Written-By",
+     "id": 27991
+    },
+    {
+     "name": "Gene Lees",
+     "anv": "Lees",
+     "role": "Written-By",
+     "id": 566918
+    }
+   ],
+   "duration": "4:15"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "So Danco Samba (Jazz Samba)",
+   "extraartists": [
+    {
+     "name": "Antonio Carlos Jobim",
+     "anv": "Jobim",
+     "role": "Written-By",
+     "id": 27991
+    },
+    {
+     "name": "Vinicius De Moraes",
+     "anv": "deMoraes",
+     "role": "Written-By",
+     "id": 315789
+    }
+   ],
+   "duration": "3:30"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "O Grande Amor",
+   "extraartists": [
+    {
+     "name": "Antonio Carlos Jobim",
+     "anv": "Jobim",
+     "role": "Written-By",
+     "id": 27991
+    },
+    {
+     "name": "Vinicius De Moraes",
+     "anv": "deMoraes",
+     "role": "Written-By",
+     "id": 315789
+    }
+   ],
+   "duration": "5:25"
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "Vivo Sohando",
+   "extraartists": [
+    {
+     "name": "Antonio Carlos Jobim",
+     "anv": "Jobim",
+     "role": "Written-By",
+     "id": 27991
+    }
+   ],
+   "duration": "2:52"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Milton Banana",
+   "anv": "",
+   "role": "Drums",
+   "id": 14077
+  },
+  {
+   "name": "Val Valentin",
+   "anv": "",
+   "role": "Engineer [Director Of Engineering]",
+   "id": 339187
+  },
+  {
+   "name": "Phil Ramone",
+   "anv": "",
+   "role": "Engineer [Recording]",
+   "id": 125450
+  },
+  {
+   "name": "João Gilberto",
+   "anv": "Joao Gilberto",
+   "role": "Guitar, Vocals",
+   "id": 346760
+  },
+  {
+   "name": "Gene Lees",
+   "anv": "",
+   "role": "Liner Notes",
+   "id": 566918
+  },
+  {
+   "name": "João Gilberto",
+   "anv": "",
+   "role": "Liner Notes",
+   "id": 346760
+  },
+  {
+   "name": "Stan Getz",
+   "anv": "",
+   "role": "Liner Notes",
+   "id": 30486
+  },
+  {
+   "name": "Olga Albizu",
+   "anv": "",
+   "role": "Painting [Cover]",
+   "id": 461609
+  },
+  {
+   "name": "David Drew Zingg",
+   "anv": "",
+   "role": "Photography By",
+   "id": 2070860
+  },
+  {
+   "name": "Antonio Carlos Jobim",
+   "anv": "",
+   "role": "Piano, Featuring",
+   "id": 27991
+  },
+  {
+   "name": "Creed Taylor",
+   "anv": "",
+   "role": "Producer",
+   "id": 97480
+  },
+  {
+   "name": "Stan Getz",
+   "anv": "",
+   "role": "Tenor Saxophone",
+   "id": 30486
+  }
+ ]
+}
+'''
+
 qobuz = '''
 {
  "id": "i3fft268rbbka",

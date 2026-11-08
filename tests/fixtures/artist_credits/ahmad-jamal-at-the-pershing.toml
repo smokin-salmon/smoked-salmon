@@ -1,17 +1,18 @@
 album = "Ahmad Jamal, At the Pershing: But Not for Me"
 why = "A leader whose trio plays throughout: the leader's own group as a credit, or not."
-edition = "Qobuz rx2gtsiik9hjb has the same UPC and the same 8 tracks."
+edition = "Qobuz rx2gtsiik9hjb has the same UPC and the same 8 tracks. Discogs 15510594 is master 59857's main release (1958 LP)."
 known_wrong = []
 files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
-how_we_know = "the stores disagree: Deezer credits the Ahmad Jamal Trio, MusicBrainz both Ahmad Jamal and The Ahmad Jamal Trio, Qobuz Ahmad Jamal on the album and the Ahmad Jamal Trio (MainArtist) on every track"
+how_we_know = "the stores disagree: Deezer credits the Ahmad Jamal Trio, MusicBrainz both Ahmad Jamal and The Ahmad Jamal Trio, Qobuz Ahmad Jamal on the album and the Ahmad Jamal Trio (MainArtist) on every track, Discogs the Ahmad Jamal Trio"
 open = "Ahmad Jamal, or the Ahmad Jamal Trio as the release credit with him in ARTIST?"
 settled = "nothing yet: see open"
 
@@ -23,6 +24,10 @@ tracks = 8
 release = ["Ahmad Jamal (main)", "The Ahmad Jamal Trio (main)"]
 tracks = 8
 
+[today.discogs]
+release = ["Ahmad Jamal Trio (main)"]
+tracks = 8
+
 [today.qobuz]
 release = ["Ahmad Jamal (main)", "Ahmad Jamal Trio (guest)"]
 tracks = 8
@@ -30,6 +35,7 @@ tracks = 8
 [today.merge]
 release = ["Ahmad Jamal Trio (main)", "The Ahmad Jamal Trio (main)"]
 tracks = 8
+
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -286,6 +292,90 @@ musicbrainz = '''
 <?xml version='1.0' encoding='utf-8'?>
 <metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="c66c7ee9-6ab4-4c06-aac9-64e734926593"><title>Ahmad Jamal at the Pershing: But Not for Me</title><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><release-group type="Live"><title>Ahmad Jamal at the Pershing: But Not for Me</title><first-release-date>1958</first-release-date><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit></release-group><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Verve Reissues</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><recording><title>But Not for Me</title><artist-credit><name-credit><artist><name>Ahmad Jamal</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>2</position><number>2</number><title>Surrey With the Fringe on the Top</title><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><recording><title>Surrey With the Fringe on Top</title><artist-credit><name-credit><artist><name>Ahmad Jamal</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><recording><title>Moonlight in Vermont</title><artist-credit><name-credit><artist><name>Ahmad Jamal</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>4</position><number>4</number><title>Music, Music, Music</title><recording><title>(Put Another Nickel in) Music! Music! Music!</title><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><recording><title>No Greater Love</title><artist-credit><name-credit><artist><name>Ahmad Jamal</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><recording><title>Poinciana</title><artist-credit><name-credit><artist><name>Ahmad Jamal</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><recording><title>Woody’n You</title><artist-credit><name-credit><artist><name>Ahmad Jamal</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>8</position><number>8</number><artist-credit><name-credit><name>Ahmad Jamal Trio</name><artist><name>The Ahmad Jamal Trio</name></artist></name-credit></artist-credit><recording><title>What’s New</title><artist-credit><name-credit><artist><name>Ahmad Jamal</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
 '''
+discogs = '''
+{
+ "id": 15510594,
+ "year": 1958,
+ "artists": [
+  {
+   "name": "Ahmad Jamal Trio",
+   "id": 276214
+  }
+ ],
+ "labels": [
+  {
+   "name": "Argo (6)",
+   "catno": "LP-628",
+   "id": 1365351
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl",
+   "descriptions": [
+    "LP",
+    "Album",
+    "Mono"
+   ]
+  }
+ ],
+ "title": "Ahmad Jamal At The Pershing",
+ "genres": [
+  "Jazz"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "But Not For Me",
+   "duration": "3:15"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Surrey With The Fringe On Top",
+   "duration": "2:23"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "Moonlight In Vermont",
+   "duration": "2:55"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "Music, Music, Music",
+   "duration": "2:43"
+  },
+  {
+   "position": "A5",
+   "type_": "track",
+   "title": "No Greater Love",
+   "duration": "3:08"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Poinciana",
+   "duration": "7:38"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Wood'yn You",
+   "duration": "3:18"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "What's New",
+   "duration": "3:43"
+  }
+ ]
+}
+'''
+
 qobuz = '''
 {
  "id": "rx2gtsiik9hjb",

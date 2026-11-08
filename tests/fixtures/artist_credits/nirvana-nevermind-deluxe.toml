@@ -1,19 +1,20 @@
 album = "Nirvana, Nevermind (Super Deluxe Edition)"
 why = "A deluxe edition full of versions (demos, rough mixes, live, BBC sessions): no remixer may be read from a version."
-edition = "Qobuz has no Super Deluxe Edition under this UPC: 0060253749865 is the 13-track standard Nevermind, another edition, so its tracks are not compared with the case's 70 (salmon's merge leaves out a store whose track count differs)."
+edition = "Qobuz has no Super Deluxe Edition under this UPC: 0060253749865 is the 13-track standard Nevermind, another edition. Discogs 8199204 is the 2011 2-CD Deluxe Edition, 41 tracks. Their tracks merge with their matches among the 70."
 known_wrong = ["merge: 'Devonshire' read as a remixer from the 'Devonshire Mixes' versions"]
 files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
 [right]
 release_main = ["Nirvana"]
 remixers = []
-how_we_know = "Deezer and MusicBrainz agree on Nirvana, as does Qobuz's standard edition; the versions name no remixer"
+how_we_know = "Deezer, MusicBrainz and Discogs agree on Nirvana, as does Qobuz's standard edition; the versions name no remixer"
 
 [today.deezer]
 release = ["Nirvana (main)"]
@@ -23,6 +24,10 @@ tracks = 70
 release = ["Nirvana (main)"]
 tracks = 70
 
+[today.discogs]
+release = ["Nirvana (main)"]
+tracks = 41
+
 [today.qobuz]
 release = ["Nirvana (main)"]
 tracks = 13
@@ -30,6 +35,7 @@ tracks = 13
 [today.merge]
 release = ["Nirvana (main)", "Devonshire (remixer)"]
 tracks = 70
+
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -2022,6 +2028,329 @@ musicbrainz = '''
 <?xml version='1.0' encoding='utf-8'?>
 <metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="3cec910f-3885-41c4-9c3f-d7918cdf5663"><title>Nevermind (super deluxe)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><release-group><title>Nevermind</title><first-release-date>1991-09-24</first-release-date><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit></release-group><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Geffen</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Smells Like Teen Spirit</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-10</first-release-date></recording></track><track><position>2</position><number>2</number><title>In Bloom (Nevermind version)</title><recording><title>In Bloom</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Come as You Are</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Breed</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Lithium</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Polly</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Territorial Pissings</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Drain You</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-10</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Lounge Act</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Stay Away</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>On a Plain</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>Something in the Way</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>13</position><number>13</number><recording><title>Endless, Nameless</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>14</position><number>14</number><title>Even in His Youth (B‐side)</title><recording><title>Even in His Youth</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-10</first-release-date></recording></track><track><position>15</position><number>15</number><title>Aneurysm (B‐side)</title><recording><title>Aneurysm</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-10</first-release-date></recording></track><track><position>16</position><number>16</number><title>Curmudgeon (B‐side)</title><recording><title>Curmudgeon</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1992-07-20</first-release-date></recording></track><track><position>17</position><number>17</number><title>D‐7 (live at the BBC)</title><recording><title>D-7</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1992-01-27</first-release-date></recording></track><track><position>18</position><number>18</number><title>Been a Son (live at Paramount Theatre B‐side)</title><recording><title>Been a Son</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1992-07-20</first-release-date></recording></track><track><position>19</position><number>19</number><title>School (live at Paramount Theatre B‐side)</title><recording><title>School</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1992-02</first-release-date></recording></track><track><position>20</position><number>20</number><title>Drain You (live at Paramount Theatre B‐side)</title><recording><title>Drain You</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1992-02</first-release-date></recording></track><track><position>21</position><number>21</number><title>Sliver (live at Del Mar B‐side)</title><recording><title>Sliver</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track><track><position>22</position><number>22</number><title>Polly (live at Del Mar B‐side)</title><recording><title>Polly</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991-09-24</first-release-date></recording></track></track-list></medium><medium><position>2</position><track-list><track><position>1</position><number>1</number><recording><title>In Bloom (Smart Sessions)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Immodium (Breed) (Smart Sessions)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Lithium (Smart Sessions)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Polly (Smart Sessions)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Pay to Play (Smart Sessions)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1994-06-09</first-release-date></recording></track><track><position>6</position><number>6</number><title>Here She Comes Now (Smart Sessions)</title><recording><title>Here She Comes Now</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1990-12-25</first-release-date></recording></track><track><position>7</position><number>7</number><title>Dive (Smart Sessions)</title><recording><title>Dive</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1990-09</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Sappy (Smart Sessions)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1991</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Smells Like Teen Spirit (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2004-11-23</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Verse Chorus Verse (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>Territorial Pissings (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>Lounge Act (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>13</position><number>13</number><recording><title>Come as You Are (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2005-10-31</first-release-date></recording></track><track><position>14</position><number>14</number><recording><title>Old Age (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>15</position><number>15</number><recording><title>Something in the Way (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>16</position><number>16</number><recording><title>On a Plain (Boombox Rehearsals)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-23</first-release-date></recording></track><track><position>17</position><number>17</number><title>Drain You (live at the BBC)</title><recording><title>Drain You</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2002</first-release-date></recording></track><track><position>18</position><number>18</number><title>Something in the Way (live at the BBC)</title><recording><title>Something in the Way</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2007</first-release-date></recording></track></track-list></medium><medium><position>3</position><track-list><track><position>1</position><number>1</number><recording><title>Smells Like Teen Spirit (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>In Bloom (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Come as You Are (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Breed (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Lithium (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Territorial Pissings (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Drain You (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Lounge Act (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Stay Away (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>On a Plain (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>Something in the Way (Devonshire mix)</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track></track-list></medium><medium><position>4</position><track-list><track><position>1</position><number>1</number><title>Jesus Doesn’t Want Me for a Sunbeam (live at the Paramount)</title><recording><title>Jesus Doesn’t Want Me for a Sunbeam</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>2</position><number>2</number><title>Aneurysm (live at the Paramount)</title><recording><title>Aneurysm</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1995</first-release-date></recording></track><track><position>3</position><number>3</number><title>Drain You (live at the Paramount/1991)</title><recording><title>Drain You</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>4</position><number>4</number><title>School (live at the Paramount)</title><recording><title>School</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>5</position><number>5</number><title>Floyd the Barber (live at the Paramount)</title><recording><title>Floyd the Barber</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>6</position><number>6</number><title>Smells Like Teen Spirit (live at the Paramount)</title><recording><title>Smells Like Teen Spirit</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>7</position><number>7</number><title>About a Girl (live at the Paramount)</title><recording><title>About a Girl</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1995</first-release-date></recording></track><track><position>8</position><number>8</number><title>Polly (live at the Paramount)</title><recording><title>Polly</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>9</position><number>9</number><title>Breed (live at the Paramount)</title><recording><title>Breed</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>10</position><number>10</number><title>Sliver (live at the Paramount)</title><recording><title>Sliver</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>11</position><number>11</number><title>Love Buzz (live at the Paramount)</title><recording><title>Love Buzz</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>12</position><number>12</number><title>Lithium (live at the Paramount)</title><recording><title>Lithium</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>13</position><number>13</number><title>Been a Son (live at the Paramount)</title><recording><title>Been a Son</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>14</position><number>14</number><title>Negative Creep (live at the Paramount)</title><recording><title>Negative Creep</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>1996-09-30</first-release-date></recording></track><track><position>15</position><number>15</number><title>On a Plain (live at the Paramount)</title><recording><title>On a Plain</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>16</position><number>16</number><title>Blew (live at the Paramount)</title><recording><title>Blew</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>17</position><number>17</number><title>Rape Me (live at the Paramount)</title><recording><title>Rape Me</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>18</position><number>18</number><title>Territorial Pissings (live at the Paramount)</title><recording><title>Territorial Pissings</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track><track><position>19</position><number>19</number><title>Endless, Nameless (live at the Paramount)</title><recording><title>Endless, Nameless</title><artist-credit><name-credit><artist><name>Nirvana</name></artist></name-credit></artist-credit><first-release-date>2011-09-26</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
 '''
+discogs = '''
+{
+ "id": 8199204,
+ "year": 2011,
+ "artists": [
+  {
+   "name": "Nirvana",
+   "id": 125246
+  }
+ ],
+ "labels": [
+  {
+   "name": "DGC",
+   "catno": "B0015883-02",
+   "id": 86487
+  },
+  {
+   "name": "UMe",
+   "catno": "B0015883-02",
+   "id": 68029
+  },
+  {
+   "name": "Sub Pop",
+   "catno": "0602527779034",
+   "id": 77343
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Album",
+    "Deluxe Edition",
+    "Reissue",
+    "Remastered"
+   ]
+  }
+ ],
+ "title": "Nevermind",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "Original Album",
+   "duration": ""
+  },
+  {
+   "position": "1-1",
+   "type_": "track",
+   "title": "Smells Like Teen Spirit",
+   "duration": "5:01"
+  },
+  {
+   "position": "1-2",
+   "type_": "track",
+   "title": "In Bloom",
+   "duration": "4:15"
+  },
+  {
+   "position": "1-3",
+   "type_": "track",
+   "title": "Come As You Are",
+   "duration": "3:38"
+  },
+  {
+   "position": "1-4",
+   "type_": "track",
+   "title": "Breed",
+   "duration": "3:04"
+  },
+  {
+   "position": "1-5",
+   "type_": "track",
+   "title": "Lithium",
+   "duration": "4:17"
+  },
+  {
+   "position": "1-6",
+   "type_": "track",
+   "title": "Polly",
+   "duration": "2:57"
+  },
+  {
+   "position": "1-7",
+   "type_": "track",
+   "title": "Territorial Pissings",
+   "duration": "2:22"
+  },
+  {
+   "position": "1-8",
+   "type_": "track",
+   "title": "Drain You",
+   "duration": "3:43"
+  },
+  {
+   "position": "1-9",
+   "type_": "track",
+   "title": "Lounge Act",
+   "duration": "2:36"
+  },
+  {
+   "position": "1-10",
+   "type_": "track",
+   "title": "Stay Away",
+   "duration": "3:32"
+  },
+  {
+   "position": "1-11",
+   "type_": "track",
+   "title": "On A Plain",
+   "duration": "3:16"
+  },
+  {
+   "position": "1-12a",
+   "type_": "track",
+   "title": "Something In The Way",
+   "duration": "3:50"
+  },
+  {
+   "position": "1-12b",
+   "type_": "track",
+   "title": "[silence]",
+   "duration": "0:16"
+  },
+  {
+   "position": "1-12c",
+   "type_": "track",
+   "title": "Endless, Nameless",
+   "duration": "6:56"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "B-Sides",
+   "duration": ""
+  },
+  {
+   "position": "1-13",
+   "type_": "track",
+   "title": "Even In His Youth",
+   "duration": "3:03"
+  },
+  {
+   "position": "1-14",
+   "type_": "track",
+   "title": "Aneurysm",
+   "duration": "4:46"
+  },
+  {
+   "position": "1-15",
+   "type_": "track",
+   "title": "Curmudgeon",
+   "duration": "2:59"
+  },
+  {
+   "position": "1-16",
+   "type_": "track",
+   "title": "D-7 (Live At The BBC)",
+   "duration": "3:45"
+  },
+  {
+   "position": "1-17",
+   "type_": "track",
+   "title": "Been A Son (Live)",
+   "duration": "2:31"
+  },
+  {
+   "position": "1-18",
+   "type_": "track",
+   "title": "School (Live)",
+   "duration": "2:33"
+  },
+  {
+   "position": "1-19",
+   "type_": "track",
+   "title": "Drain You (Live)",
+   "duration": "3:53"
+  },
+  {
+   "position": "1-20",
+   "type_": "track",
+   "title": "Sliver (Live)",
+   "duration": "2:04"
+  },
+  {
+   "position": "1-21",
+   "type_": "track",
+   "title": "Polly (Live)",
+   "duration": "2:47"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "The Smart Studio Sessions",
+   "duration": ""
+  },
+  {
+   "position": "2-1",
+   "type_": "track",
+   "title": "In Bloom",
+   "duration": "4:32"
+  },
+  {
+   "position": "2-2",
+   "type_": "track",
+   "title": "Immodium (Breed)",
+   "duration": "3:15"
+  },
+  {
+   "position": "2-3",
+   "type_": "track",
+   "title": "Lithium",
+   "duration": "4:31"
+  },
+  {
+   "position": "2-4",
+   "type_": "track",
+   "title": "Polly",
+   "duration": "2:58"
+  },
+  {
+   "position": "2-5",
+   "type_": "track",
+   "title": "Pay To Play",
+   "duration": "3:29"
+  },
+  {
+   "position": "2-6",
+   "type_": "track",
+   "title": "Here She Comes Now",
+   "duration": "5:01"
+  },
+  {
+   "position": "2-7",
+   "type_": "track",
+   "title": "Dive",
+   "duration": "3:55"
+  },
+  {
+   "position": "2-8",
+   "type_": "track",
+   "title": "Sappy",
+   "duration": "3:37"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "The Boombox Rehearsals",
+   "duration": ""
+  },
+  {
+   "position": "2-9",
+   "type_": "track",
+   "title": "Smells Like Teen Spirit",
+   "duration": "5:40"
+  },
+  {
+   "position": "2-10",
+   "type_": "track",
+   "title": "Verse Chorus Verse",
+   "duration": "3:14"
+  },
+  {
+   "position": "2-11",
+   "type_": "track",
+   "title": "Territorial Pissings",
+   "duration": "2:12"
+  },
+  {
+   "position": "2-12",
+   "type_": "track",
+   "title": "Lounge Act",
+   "duration": "2:38"
+  },
+  {
+   "position": "2-13",
+   "type_": "track",
+   "title": "Come As Your Are",
+   "duration": "4:12"
+  },
+  {
+   "position": "2-14",
+   "type_": "track",
+   "title": "Old Age",
+   "duration": "4:22"
+  },
+  {
+   "position": "2-15",
+   "type_": "track",
+   "title": "Something In The Way",
+   "duration": "5:31"
+  },
+  {
+   "position": "2-16",
+   "type_": "track",
+   "title": "On A Plain",
+   "duration": "3:21"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "BBC Sessions",
+   "duration": ""
+  },
+  {
+   "position": "2-17",
+   "type_": "track",
+   "title": "Drain You",
+   "duration": "4:04"
+  },
+  {
+   "position": "2-18",
+   "type_": "track",
+   "title": "Something In The Way",
+   "duration": "3:23"
+  }
+ ]
+}
+'''
+
 qobuz = '''
 {
  "id": "0060253749865",

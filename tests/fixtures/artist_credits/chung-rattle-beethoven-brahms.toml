@@ -1,12 +1,13 @@
 album = "Kyung-Wha Chung, Wiener Philharmoniker, Simon Rattle: Beethoven 5, Brahms Violin Concerto"
 why = "A symphony (orchestra + conductor) and a concerto (soloist + orchestra + conductor) on one album; Deezer drops the orchestra and conductor from the concerto, MusicBrainz writes the soloist in Hangul."
-edition = "EMI Classics 2001 (recorded live, Vienna), 7 tracks: Deezer 393087 (digital, UPC 724355716552); MusicBrainz bb465a9d is the CD (724355716521, same catalogue 5 57165); no Discogs master linked"
-known_wrong = ["Deezer parse: concerto tracks 5-7 ARTIST 'Kyung-Wha Chung' alone: orchestra and conductor lost", "both: ALBUMARTIST 'Wiener Philharmoniker, Sir Simon Rattle, Kyung-Wha Chung' (soloist last; conductor as a main); no COMPOSER on any track"]
+edition = "EMI Classics 2001 (recorded live, Vienna), 7 tracks: Deezer 393087 (digital, UPC 724355716552); MusicBrainz bb465a9d is the CD (724355716521, same catalogue 5 57165); Discogs 8091122 is master 997896's main release"
+known_wrong = ["Discogs parse: 0 tracks", "Deezer parse: concerto tracks 5-7 ARTIST 'Kyung-Wha Chung' alone: orchestra and conductor lost", "both: ALBUMARTIST 'Wiener Philharmoniker, Sir Simon Rattle, Kyung-Wha Chung' (soloist last; conductor as a main); no COMPOSER on any track"]
 files_from = "deezer"
 
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
@@ -26,6 +27,10 @@ tracks = 7
 release = ["Wiener Philharmoniker (main)", "Simon Rattle (main)", "정경화 (main)"]
 tracks = 7
 
+[today.discogs]
+release = []
+tracks = 0
+
 [today.qobuz]
 release = ["Kyung Wha Chung (main)", "Wiener Philharmonic Orchestra (guest)", "Sir Simon Rattle (guest)", "Wiener Philharmoniker (guest)", "Kyung-Wha Chung (guest)"]
 tracks = 7
@@ -33,6 +38,7 @@ tracks = 7
 [today.merge]
 release = ["Wiener Philharmoniker (main)", "Sir Simon Rattle (main)", "Kyung Wha Chung (main)", "Wiener Philharmonic Orchestra (guest)", "Kyung-Wha Chung (main)", "정경화 (main)", "Simon Rattle (main)"]
 tracks = 7
+
 
 # The files' tags.
 # Constructed from Deezer data, not copied from anyone's files: the case's own
@@ -263,6 +269,44 @@ musicbrainz = '''
 <?xml version='1.0' encoding='utf-8'?>
 <metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="bb465a9d-e465-451c-ab84-9dbe6e4e6917"><title>Brahms: Violinkonzert / Beethoven: Symphonie 5</title><artist-credit><name-credit><name>Brahms</name><artist><name>Johannes Brahms</name></artist></name-credit><name-credit><name>Beethoven</name><artist><name>Ludwig van Beethoven</name></artist></name-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit><release-group type="Album"><title>Brahms: Violinkonzert / Beethoven: Symphonie 5</title><artist-credit><name-credit><name>Brahms</name><artist><name>Johannes Brahms</name></artist></name-credit><name-credit><name>Beethoven</name><artist><name>Ludwig van Beethoven</name></artist></name-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></release-group><date>2001-09-03</date><release-event-list><release-event><date>2001-09-03</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>7243 5 57165 2 1</catalog-number><label><name>EMI Classics</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony no. 5 in C minor, op. 67: I. Allegro con brio</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony no. 5 in C minor, op. 67: II. Andante con moto</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony no. 5 in C minor, op. 67: III. Allegro -</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony No. 5 in C minor, op. 67: IV. Allegro</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Concerto for Violin and Orchestra in D major, op. 77: I. Allegro non troppo</title><artist-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Concerto for Violin and Orchestra in D major, op. 77: II. Adagio</title><artist-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Concerto for Violin and Orchestra in D major, op. 77: III. Allegro giocoso, ma non troppo vivace - Poco più presto</title><artist-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
 '''
+discogs = '''
+{
+ "id": 8091122,
+ "year": 2001,
+ "labels": [
+  {
+   "name": "EMI Classics",
+   "catno": "7243 5 57165 2 1",
+   "id": 34406
+  },
+  {
+   "name": "EMI Classics",
+   "catno": "5 57165 2",
+   "id": 34406
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "Violinkonzert / Symphonie 5",
+ "genres": [
+  "Classical"
+ ],
+ "tracklist": [
+  {
+   "type_": "index",
+   "title": "Symphonie Nr. 5 C-Moll, Op.67 = Symphony No. 5 In C Minor = Symphonie N° 5 En Ut Mineur"
+  },
+  {
+   "type_": "index",
+   "title": "Violinkonzert D-Dur, Op.77 = Violin Concerto In D = Concerto Pour Violon En Ré Majeur"
+  }
+ ]
+}
+'''
+
 qobuz = '''
 {
  "id": "0724355716552",

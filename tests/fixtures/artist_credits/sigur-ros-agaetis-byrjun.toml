@@ -1,0 +1,524 @@
+album = "Sigur Rós, Ágætis byrjun"
+why = "A name one store spells two ways: Qobuz has Sigur Rós on the album and Sigur Ros, without the accent, in every track's performers."
+edition = "10 tracks, as sold digitally (Deezer 82417442; MusicBrainz b1e3799d is a digital edition under another barcode); Discogs 2115975 is master 9621's main release; Qobuz has the same UPC as Deezer"
+known_wrong = ["Qobuz parse: the band a guest of itself: each track's performers line has 'Sigur Ros' as MainArtist, which doesn't match the album's 'Sigur Rós'"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Sigur Rós"]
+how_we_know = "Every store credits the band"
+
+[today.deezer]
+release = ["Sigur Rós (main)"]
+tracks = 10
+
+[today.musicbrainz]
+release = ["Sigur Rós (main)"]
+tracks = 10
+
+[today.discogs]
+release = ["Sigur Rós (main)"]
+tracks = 10
+
+[today.qobuz]
+release = ["Sigur Rós (main)", "Sigur Rós (guest)"]
+tracks = 10
+
+[today.merge]
+release = ["Sigur Rós (main)"]
+tracks = 10
+
+[today.output]
+albumartist = "Sigur Rós"
+tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný Batterí", "Sigur Rós | Hjartað Hamast (Bamm Bamm Bamm)", "Sigur Rós | Viðrar Vel Til Loftárása", "Sigur Rós | Olsen Olsen", "Sigur Rós | Ágætis Byrjun", "Sigur Rós | Avalon"]
+
+[today."output-guests-in-title"]
+albumartist = "Sigur Rós"
+tracks = ["Sigur Rós | Intro", "Sigur Rós | Svefn-g-englar", "Sigur Rós | Starálfur", "Sigur Rós | Flugufrelsarinn", "Sigur Rós | Ný Batterí", "Sigur Rós | Hjartað Hamast (Bamm Bamm Bamm)", "Sigur Rós | Viðrar Vel Til Loftárása", "Sigur Rós | Olsen Olsen", "Sigur Rós | Ágætis Byrjun", "Sigur Rós | Avalon"]
+
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Intro"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Svefn-g-englar"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Starálfur"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Flugufrelsarinn"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Ný batterí"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Hjartað hamast (bamm bamm bamm)"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Viðrar vel til loftárása"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Olsen olsen"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Ágætis byrjun"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Avalon"]
+artist = ["Sigur Rós"]
+album = ["Ágætis byrjun"]
+albumartist = ["Sigur Rós"]
+date = ["2018-03-22"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 82417442,
+ "title": "Ágætis byrjun",
+ "upc": "190296941856",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 85,
+    "name": "Alternative"
+   },
+   {
+    "id": 152,
+    "name": "Rock"
+   },
+   {
+    "id": 154,
+    "name": "Indie Rock/Rock pop"
+   }
+  ]
+ },
+ "label": "Krunk",
+ "release_date": "2018-03-22",
+ "tracklist": [
+  {
+   "SNG_ID": "607726912",
+   "SNG_TITLE": "Intro",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBDCA9900066",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726922",
+   "SNG_TITLE": "Svefn-g-englar",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBDCA9900067",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726932",
+   "SNG_TITLE": "Starálfur",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBDCA9900068",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726942",
+   "SNG_TITLE": "Flugufrelsarinn",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBDCA9900069",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726952",
+   "SNG_TITLE": "Ný batterí",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBDCA9900070",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726962",
+   "SNG_TITLE": "Hjartað hamast (bamm bamm bamm)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBDCA9900071",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726972",
+   "SNG_TITLE": "Viðrar vel til loftárása",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBDCA9900072",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726982",
+   "SNG_TITLE": "Olsen olsen",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBDCA9900073",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607726992",
+   "SNG_TITLE": "Ágætis byrjun",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBDCA9900074",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "607727002",
+   "SNG_TITLE": "Avalon",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sigur Rós"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBDCA9900075",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  }
+ ]
+}
+'''
+
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="b1e3799d-2d1c-47fd-b2f2-ad0d23ac2554"><title>Ágætis byrjun</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><release-group><title>Ágætis byrjun</title><first-release-date>1999-06</first-release-date><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit></release-group><date>2018-03-22</date><release-event-list><release-event><date>2018-03-22</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Smekkleysa</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Intro</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Svefn‐g‐englar</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Starálfur</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Flugufrelsarinn</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Ný batterí</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Hjartað hamast (bamm bamm bamm)</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Viðrar vel til loftárása</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Olsen Olsen</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Ágætis byrjun</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Avalon</title><artist-credit><name-credit><artist><name>Sigur Rós</name></artist></name-credit></artist-credit><first-release-date>1999-06</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+
+discogs = '''
+{
+ "id": 2115975,
+ "year": 1999,
+ "artists": [
+  {
+   "name": "Sigur Rós",
+   "id": 8299
+  }
+ ],
+ "labels": [
+  {
+   "name": "Smekkleysa",
+   "catno": "SM 79 CD",
+   "id": 1012
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Album",
+    "Limited Edition"
+   ]
+  }
+ ],
+ "title": "Ágætis Byrjun",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Intro",
+   "duration": "1:36"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Svefn-g-englar",
+   "duration": "10:03"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Starálfur",
+   "duration": "6:45"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Flugufrelsarinn",
+   "duration": "7:47"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Ný Batterí",
+   "duration": "8:09"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Hjartað Hamast (Bamm Bamm Bamm)",
+   "duration": "7:09"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Viðrar Vel Til Loftárása",
+   "duration": "10:16"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Olsen Olsen",
+   "duration": "8:02"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Ágætis Byrjun",
+   "duration": "7:55"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Avalon",
+   "duration": "4:01"
+  }
+ ]
+}
+'''
+
+qobuz = '''
+{
+ "id": "n41lasrtg8blc",
+ "upc": "0190296941856",
+ "title": "Ágætis byrjun",
+ "tracks_count": 10,
+ "artist": {
+  "name": "Sigur Rós"
+ },
+ "genres_list": [
+  "Alternative & Indie"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Intro",
+    "track_number": 1,
+    "performers": "Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Svefn-g-englar",
+    "track_number": 2,
+    "performers": "KEN THOMAS, Producer - Sigur Ros , Producer, MainArtist - Holm, Composer"
+   },
+   {
+    "title": "Starálfur",
+    "track_number": 3,
+    "performers": "G. Holm, Composer - J T Birgisson, Composer - K. Sveinsson, Composer - Ágúst Ævar Gunnarsson, Composer - Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Flugufrelsarinn",
+    "track_number": 4,
+    "performers": "Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Ný batterí",
+    "track_number": 5,
+    "performers": "Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Hjartað hamast (bamm bamm bamm)",
+    "track_number": 6,
+    "performers": "Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Viðrar vel til loftárása",
+    "track_number": 7,
+    "performers": "Arni & Kinski, Director - Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Olsen olsen",
+    "track_number": 8,
+    "performers": "G. Holm, Composer - J T Birgisson, Composer - K Sveinsson, Composer - Ágúst Ævar Gunnarsson, Composer - Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Ágætis byrjun",
+    "track_number": 9,
+    "performers": "Sigur Ros , MainArtist"
+   },
+   {
+    "title": "Avalon",
+    "track_number": 10,
+    "performers": "Sigur Ros , MainArtist"
+   }
+  ]
+ }
+}
+'''

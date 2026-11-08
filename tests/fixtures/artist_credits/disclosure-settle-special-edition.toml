@@ -1,6 +1,6 @@
 album = "Disclosure, Settle (Special Edition)"
 why = "A duo's album with a featured singer on most tracks, then remixes of those tracks by others: guest and remixer on one track; one track where the duo are the remixers of someone else."
-edition = "Settle (Special Edition), Island 2014, 37 tracks: the album, the deluxe extras and the remixes (Deezer 7480190 = MusicBrainz 8117004b by barcode). Chosen because it is the edition with the remix tracks. No Discogs: its master lists no 37-track release. Qobuz 0060253778113 is the same UPC less its check digit, the same 37 tracks."
+edition = "Settle (Special Edition), Island 2014, 37 tracks: the album, the deluxe extras and the remixes (Deezer 7480190 = MusicBrainz 8117004b by barcode). Chosen because it is the edition with the remix tracks. Discogs 4617239 is the UK Deluxe Edition: its master lists no 37-track release, and these 17 tracks merge with their matches among the 37. Qobuz 0060253778113 is the same UPC less its check digit, the same 37 tracks."
 known_wrong = ["Deezer parse: Sam Smith main on 'Latch'", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest or remixer, so the singers, and Dixon, KAYTRANADA and Hudson Mohawke (remixers), are made main; ALBUMARTIST 'Various' (with other shapes too, from the stores' own mains: see `open`)", "merge: 'Disclosure & Edward Macfarlane (feat. Ed MacFarlane)', one singer in two spellings and two roles", "merge: the TEED remix retitled 'Totally Enormous Extinct Dinosaurs remix'"]
 files_from = "deezer"
 output = true
@@ -8,6 +8,7 @@ output = true
 [sources]
 deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
 musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
 qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
 tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
 
@@ -24,21 +25,26 @@ tracks = 37
 release = ["Disclosure (main)", "Sam Smith (guest)", "AlunaGeorge (guest)", "Ed MacFarlane (guest)", "Sasha Keable (guest)", "Eliza (guest)", "Jamie Woon (guest)", "Jessie Ware (guest)", "London Grammar (guest)", "Sinéad Harnett (guest)", "Jessie Ware (main)", "Sam Smith (main)", "Nile Rodgers (main)", "Jimmy Napes (main)", "Mary J. Blige (guest)"]
 tracks = 37
 
+[today.discogs]
+release = ["Disclosure (main)", "Sam Smith (guest)", "AlunaGeorge (guest)", "Edward Macfarlane (guest)", "Sasha Keable (guest)", "Eliza Doolittle (guest)", "Jamie Woon (guest)", "Jessie Ware (guest)", "London Grammar (guest)", "Sinead Harnett (guest)", "Jessie Ware (main)", "Disclosure (remixer)"]
+tracks = 17
+
 [today.qobuz]
 release = ["Disclosure (main)", "Sam Smith (guest)", "AlunaGeorge (guest)", "Edward MacFarlane (guest)", "Sasha Keable (guest)", "Eliza Doolittle (guest)", "Jamie Woon (guest)", "Jessie Ware (guest)", "London Grammar (guest)", "Sinead Harnett (guest)", "Mary J. Blige (guest)"]
 tracks = 37
 
 [today.merge]
-release = ["Disclosure (main)", "Sam Smith (main)", "AlunaGeorge (main)", "Edward Macfarlane (main)", "Ed MacFarlane (guest)", "Sasha Keable (main)", "Eliza Doolittle (main)", "Jamie Woon (main)", "Jessie Ware (main)", "London Grammar (main)", "Sinead Harnett (main)", "Disclosure (remixer)", "Dixon (main)", "Medlar (remixer)", "Joe Goddard (remixer)", "TEED (remixer)", "Totally Enormous Extinct Dinosaurs (remixer)", "Paul Woolford (remixer)", "Larry Heard (remixer)", "SOHN (remixer)", "KAYTRANADA (main)", "DJ Premier (remixer)", "T.Williams (remixer)", "Preditah (remixer)", "Wookie (remixer)", "Midland (remixer)", "Hudson Mohawke (main)", "HudMo (remixer)", "Flume (remixer)", "Baauer (remixer)", "Nile Rodgers (main)", "Jimmy Napes (main)", "Mary J. Blige (main)"]
+release = ["Disclosure (main)", "Sinead Harnett (main)", "Dixon (main)", "Medlar (remixer)", "Joe Goddard (remixer)", "TEED (remixer)", "Totally Enormous Extinct Dinosaurs (remixer)", "London Grammar (main)", "Paul Woolford (remixer)", "Larry Heard (remixer)", "SOHN (remixer)", "Jamie Woon (main)", "KAYTRANADA (main)", "Sam Smith (main)", "DJ Premier (remixer)", "T.Williams (remixer)", "Preditah (remixer)", "Sasha Keable (main)", "Wookie (remixer)", "Midland (remixer)", "Hudson Mohawke (main)", "AlunaGeorge (main)", "HudMo (remixer)", "Eliza Doolittle (main)", "Flume (remixer)", "Baauer (remixer)", "Nile Rodgers (main)", "Jimmy Napes (main)", "Mary J. Blige (main)", "Edward Macfarlane (main)", "Ed MacFarlane (guest)", "Jessie Ware (main)", "Disclosure (remixer)"]
 tracks = 37
 
 [today.output]
 albumartist = "Various"
-tracks = ["Disclosure | Intro", "Disclosure | When a Fire Starts to Burn", "Disclosure & Sam Smith | Latch", "Disclosure | F for You", "Disclosure & AlunaGeorge | White Noise", "Disclosure & Edward Macfarlane (feat. Ed MacFarlane) | Defeated No More", "Disclosure | Stimulation", "Disclosure & Sasha Keable | Voices", "Disclosure | Second Chance", "Disclosure | Grab Her!", "Disclosure & Eliza Doolittle | You & Me", "Disclosure & Jamie Woon | January", "Disclosure & Jessie Ware | Confess to Me", "Disclosure & London Grammar | Help Me Lose My Mind", "Disclosure & Sinead Harnett | Boiling", "Disclosure | What’s in Your Head", "Disclosure | Tenderly", "Jessie Ware | Running (Disclosure remix)", "Disclosure | Apollo", "Disclosure, Sinead Harnett, Dixon | Boiling (Dixon rework)", "Disclosure & Sinead Harnett | Boiling (Medlar remix)", "Disclosure | Control (Joe Goddard remix)", "Disclosure | F for You (Totally Enormous Extinct Dinosaurs remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Paul Woolford remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Larry Heard remix)", "Disclosure & London Grammar | Help Me Lose My Mind (SOHN remix)", "Disclosure, Jamie Woon, KAYTRANADA | January (Kaytranada edition)", "Disclosure & Sam Smith | Latch (DJ Premier remix)", "Disclosure & Sam Smith | Latch (T.Williams club remix)", "Disclosure | Stimulation (Preditah remix)", "Disclosure & Sasha Keable | Voices (Wookie remix)", "Disclosure | When a Fire Starts to Burn (Midland remix)", "Disclosure, Hudson Mohawke, AlunaGeorge | White Noise (HudMo remix)", "Disclosure & Eliza Doolittle | You & Me (Flume remix)", "Disclosure & Eliza Doolittle | You & Me (Baauer remix)", "Disclosure, Sam Smith, Nile Rodgers, Jimmy Napes | Together", "Disclosure & Mary J. Blige | F for You"]
+tracks = ["Disclosure | Intro", "Disclosure | When A Fire Starts To Burn", "Disclosure & Sam Smith | Latch", "Disclosure | F For You", "Disclosure & AlunaGeorge | White Noise", "Disclosure & Edward Macfarlane (feat. Ed MacFarlane) | Defeated No More", "Disclosure | Stimulation", "Disclosure & Sasha Keable | Voices", "Disclosure | Second Chance", "Disclosure | Grab Her!", "Disclosure & Eliza Doolittle | You & Me", "Disclosure & Jamie Woon | January", "Disclosure & Jessie Ware | Confess To Me", "Disclosure & London Grammar | Help Me Lose My Mind", "Disclosure & Sinead Harnett | Boiling", "Disclosure | What's In Your Head", "Disclosure | Tenderly", "Jessie Ware | Running (Disclosure Remix) | REMIXER Disclosure", "Disclosure | Apollo", "Disclosure, Sinead Harnett, Dixon | Boiling (Dixon rework)", "Disclosure & Sinead Harnett | Boiling (Medlar remix)", "Disclosure | Control (Joe Goddard remix)", "Disclosure | F for You (Totally Enormous Extinct Dinosaurs remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Paul Woolford remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Larry Heard remix)", "Disclosure & London Grammar | Help Me Lose My Mind (SOHN remix)", "Disclosure, Jamie Woon, KAYTRANADA | January (Kaytranada edition)", "Disclosure & Sam Smith | Latch (DJ Premier remix)", "Disclosure & Sam Smith | Latch (T.Williams club remix)", "Disclosure | Stimulation (Preditah remix)", "Disclosure & Sasha Keable | Voices (Wookie remix)", "Disclosure | When a Fire Starts to Burn (Midland remix)", "Disclosure, Hudson Mohawke, AlunaGeorge | White Noise (HudMo remix)", "Disclosure & Eliza Doolittle | You & Me (Flume remix)", "Disclosure & Eliza Doolittle | You & Me (Baauer remix)", "Disclosure, Sam Smith, Nile Rodgers, Jimmy Napes | Together", "Disclosure & Mary J. Blige | F for You"]
 
 [today."output-guests-in-title"]
 albumartist = "Various"
-tracks = ["Disclosure | Intro", "Disclosure | When a Fire Starts to Burn", "Disclosure & Sam Smith | Latch", "Disclosure | F for You", "Disclosure & AlunaGeorge | White Noise", "Disclosure & Edward Macfarlane | Defeated No More (feat. Ed MacFarlane)", "Disclosure | Stimulation", "Disclosure & Sasha Keable | Voices", "Disclosure | Second Chance", "Disclosure | Grab Her!", "Disclosure & Eliza Doolittle | You & Me", "Disclosure & Jamie Woon | January", "Disclosure & Jessie Ware | Confess to Me", "Disclosure & London Grammar | Help Me Lose My Mind", "Disclosure & Sinead Harnett | Boiling", "Disclosure | What’s in Your Head", "Disclosure | Tenderly", "Jessie Ware | Running (Disclosure remix)", "Disclosure | Apollo", "Disclosure, Sinead Harnett, Dixon | Boiling (Dixon rework)", "Disclosure & Sinead Harnett | Boiling (Medlar remix)", "Disclosure | Control (Joe Goddard remix)", "Disclosure | F for You (Totally Enormous Extinct Dinosaurs remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Paul Woolford remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Larry Heard remix)", "Disclosure & London Grammar | Help Me Lose My Mind (SOHN remix)", "Disclosure, Jamie Woon, KAYTRANADA | January (Kaytranada edition)", "Disclosure & Sam Smith | Latch (DJ Premier remix)", "Disclosure & Sam Smith | Latch (T.Williams club remix)", "Disclosure | Stimulation (Preditah remix)", "Disclosure & Sasha Keable | Voices (Wookie remix)", "Disclosure | When a Fire Starts to Burn (Midland remix)", "Disclosure, Hudson Mohawke, AlunaGeorge | White Noise (HudMo remix)", "Disclosure & Eliza Doolittle | You & Me (Flume remix)", "Disclosure & Eliza Doolittle | You & Me (Baauer remix)", "Disclosure, Sam Smith, Nile Rodgers, Jimmy Napes | Together", "Disclosure & Mary J. Blige | F for You"]
+tracks = ["Disclosure | Intro", "Disclosure | When A Fire Starts To Burn", "Disclosure & Sam Smith | Latch", "Disclosure | F For You", "Disclosure & AlunaGeorge | White Noise", "Disclosure & Edward Macfarlane | Defeated No More (feat. Ed MacFarlane)", "Disclosure | Stimulation", "Disclosure & Sasha Keable | Voices", "Disclosure | Second Chance", "Disclosure | Grab Her!", "Disclosure & Eliza Doolittle | You & Me", "Disclosure & Jamie Woon | January", "Disclosure & Jessie Ware | Confess To Me", "Disclosure & London Grammar | Help Me Lose My Mind", "Disclosure & Sinead Harnett | Boiling", "Disclosure | What's In Your Head", "Disclosure | Tenderly", "Jessie Ware | Running (Disclosure Remix) | REMIXER Disclosure", "Disclosure | Apollo", "Disclosure, Sinead Harnett, Dixon | Boiling (Dixon rework)", "Disclosure & Sinead Harnett | Boiling (Medlar remix)", "Disclosure | Control (Joe Goddard remix)", "Disclosure | F for You (Totally Enormous Extinct Dinosaurs remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Paul Woolford remix)", "Disclosure & London Grammar | Help Me Lose My Mind (Larry Heard remix)", "Disclosure & London Grammar | Help Me Lose My Mind (SOHN remix)", "Disclosure, Jamie Woon, KAYTRANADA | January (Kaytranada edition)", "Disclosure & Sam Smith | Latch (DJ Premier remix)", "Disclosure & Sam Smith | Latch (T.Williams club remix)", "Disclosure | Stimulation (Preditah remix)", "Disclosure & Sasha Keable | Voices (Wookie remix)", "Disclosure | When a Fire Starts to Burn (Midland remix)", "Disclosure, Hudson Mohawke, AlunaGeorge | White Noise (HudMo remix)", "Disclosure & Eliza Doolittle | You & Me (Flume remix)", "Disclosure & Eliza Doolittle | You & Me (Baauer remix)", "Disclosure, Sam Smith, Nile Rodgers, Jimmy Napes | Together", "Disclosure & Mary J. Blige | F for You"]
+
 
 # The files' tags.
 # Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
@@ -1216,6 +1222,339 @@ musicbrainz = '''
 <?xml version='1.0' encoding='utf-8'?>
 <metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="8117004b-e3b9-4203-882c-45b9db809f3a"><title>Settle: special edition</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><release-group><title>Settle</title><first-release-date>2013-05-31</first-release-date><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit></release-group><date>2014-03-05</date><release-event-list><release-event><date>2014-03-05</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>13UAEIM36153</catalog-number><label><name>Island</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Intro</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>When a Fire Starts to Burn</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Latch</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sam Smith</name></artist></name-credit></artist-credit><first-release-date>2012-10-08</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>F for You</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-01-01</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>White Noise</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>AlunaGeorge</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><name>Edward Macfarlane</name><artist><name>Ed MacFarlane</name></artist></name-credit></artist-credit><recording><title>Defeated No More</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Ed MacFarlane</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Stimulation</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Voices</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sasha Keable</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Second Chance</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Grab Her!</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>You &amp; Me</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><name>Eliza Doolittle</name><artist><name>Eliza</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>January</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Jamie Woon</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>13</position><number>13</number><recording><title>Confess to Me</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Jessie Ware</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>14</position><number>14</number><recording><title>Help Me Lose My Mind</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>London Grammar</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>15</position><number>15</number><recording><title>Boiling</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sinéad Harnett</name></artist></name-credit></artist-credit><first-release-date>2012-06-04</first-release-date></recording></track><track><position>16</position><number>16</number><title>What's in Your Head</title><recording><title>What’s in Your Head</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2012-06-04</first-release-date></recording></track><track><position>17</position><number>17</number><recording><title>Tenderly</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2012-01-30</first-release-date></recording></track><track><position>18</position><number>18</number><recording><title>Running (Disclosure remix)</title><artist-credit><name-credit><artist><name>Jessie Ware</name></artist></name-credit></artist-credit><first-release-date>2013-05-31</first-release-date></recording></track><track><position>19</position><number>19</number><recording><title>Apollo</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>20</position><number>20</number><recording><title>Boiling (Dixon rework)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sinéad Harnett</name></artist></name-credit></artist-credit><first-release-date>2013-04-02</first-release-date></recording></track><track><position>21</position><number>21</number><recording><title>Boiling (Medlar remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sinéad Harnett</name></artist></name-credit></artist-credit><first-release-date>2013-03-25</first-release-date></recording></track><track><position>22</position><number>22</number><recording><title>Control (Joe Goddard remix)</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2014-03-05</first-release-date></recording></track><track><position>23</position><number>23</number><title>F for You (TEED remix)</title><recording><title>F for You (Totally Enormous Extinct Dinosaurs remix)</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>24</position><number>24</number><recording><title>Help Me Lose My Mind (Paul Woolford remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>London Grammar</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>25</position><number>25</number><recording><title>Help Me Lose My Mind (Larry Heard remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>London Grammar</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>26</position><number>26</number><recording><title>Help Me Lose My Mind (SOHN remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>London Grammar</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>27</position><number>27</number><recording><title>January (Kaytranada edition)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Jamie Woon</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>28</position><number>28</number><recording><title>Latch (DJ Premier remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sam Smith</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>29</position><number>29</number><title>Latch (T. Williams club remix)</title><recording><title>Latch (T.Williams club remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sam Smith</name></artist></name-credit></artist-credit><first-release-date>2012-11-09</first-release-date></recording></track><track><position>30</position><number>30</number><recording><title>Stimulation (Preditah remix)</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>31</position><number>31</number><recording><title>Voices (Wookie remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Sasha Keable</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>32</position><number>32</number><recording><title>When a Fire Starts to Burn (Midland remix)</title><artist-credit><name-credit><artist><name>Disclosure</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>33</position><number>33</number><title>White Noise (Hudmo remix)</title><recording><title>White Noise (HudMo remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>AlunaGeorge</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>34</position><number>34</number><recording><title>You &amp; Me (Flume remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><name>Eliza Doolittle</name><artist><name>Eliza</name></artist></name-credit></artist-credit><first-release-date>2012-11-09</first-release-date></recording></track><track><position>35</position><number>35</number><recording><title>You &amp; Me (Baauer remix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><name>Eliza Doolittle</name><artist><name>Eliza</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>36</position><number>36</number><artist-credit><name-credit joinphrase=", "><artist><name>Disclosure</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Sam Smith</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Nile Rodgers</name></artist></name-credit><name-credit><name>James Napier</name><artist><name>Jimmy Napes</name></artist></name-credit></artist-credit><recording><title>Together</title><artist-credit><name-credit joinphrase=", "><artist><name>Disclosure</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Sam Smith</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Nile Rodgers</name></artist></name-credit><name-credit><artist><name>Jimmy Napes</name></artist></name-credit></artist-credit><first-release-date>2013-06-11</first-release-date></recording></track><track><position>37</position><number>37</number><recording><title>F for You</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Disclosure</name></artist></name-credit><name-credit><artist><name>Mary J. Blige</name></artist></name-credit></artist-credit><first-release-date>2013</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
 '''
+discogs = '''
+{
+ "id": 4617239,
+ "year": 2013,
+ "artists": [
+  {
+   "name": "Disclosure (3)",
+   "role": "",
+   "id": 2330068
+  }
+ ],
+ "labels": [
+  {
+   "name": "PMR Records (2)",
+   "catno": "00602537394968",
+   "id": 229076
+  },
+  {
+   "name": "Island Records",
+   "catno": "00602537394968",
+   "id": 8377
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Album",
+    "Deluxe Edition"
+   ]
+  }
+ ],
+ "title": "Settle",
+ "released": "2013-06-03",
+ "genres": [
+  "Electronic"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Intro",
+   "duration": "1:00"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "When A Fire Starts To Burn",
+   "duration": "4:43"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Latch",
+   "extraartists": [
+    {
+     "name": "Sam Smith (12)",
+     "role": "Featuring",
+     "id": 1376377
+    }
+   ],
+   "duration": "4:16"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "F For You",
+   "duration": "4:29"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "White Noise",
+   "extraartists": [
+    {
+     "name": "AlunaGeorge",
+     "role": "Featuring",
+     "id": 2204391
+    }
+   ],
+   "duration": "4:38"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Defeated No More",
+   "extraartists": [
+    {
+     "name": "Edward Macfarlane",
+     "role": "Featuring",
+     "id": 995592
+    }
+   ],
+   "duration": "6:09"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Stimulation",
+   "duration": "5:22"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Voices",
+   "extraartists": [
+    {
+     "name": "Sasha Keable",
+     "role": "Featuring",
+     "id": 3242909
+    }
+   ],
+   "duration": "4:05"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Second Chance",
+   "duration": "2:22"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Grab Her!",
+   "duration": "5:15"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "You & Me",
+   "extraartists": [
+    {
+     "name": "Eliza Doolittle",
+     "role": "Featuring",
+     "id": 373654
+    }
+   ],
+   "duration": "4:29"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "January",
+   "extraartists": [
+    {
+     "name": "Jamie Woon",
+     "role": "Featuring",
+     "id": 747927
+    }
+   ],
+   "duration": "5:55"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Confess To Me",
+   "extraartists": [
+    {
+     "name": "Jessie Ware",
+     "role": "Featuring",
+     "id": 1885206
+    }
+   ],
+   "duration": "4:11"
+  },
+  {
+   "position": "14",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Help Me Lose My Mind",
+   "extraartists": [
+    {
+     "name": "London Grammar",
+     "role": "Featuring",
+     "id": 3180942
+    }
+   ],
+   "duration": "4:05"
+  },
+  {
+   "position": "15",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "Boiling",
+   "extraartists": [
+    {
+     "name": "Sinead Harnett",
+     "role": "Featuring",
+     "id": 2815554
+    }
+   ],
+   "duration": "3:48"
+  },
+  {
+   "position": "16",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "",
+     "id": 2330068
+    }
+   ],
+   "title": "What's In Your Head",
+   "duration": "5:31"
+  },
+  {
+   "position": "17",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Jessie Ware",
+     "role": "",
+     "id": 1885206
+    }
+   ],
+   "title": "Running (Disclosure Remix)",
+   "extraartists": [
+    {
+     "name": "Disclosure (3)",
+     "role": "Remix",
+     "id": 2330068
+    }
+   ],
+   "duration": "5:32"
+  }
+ ]
+}
+'''
+
 qobuz = '''
 {
  "id": "0060253778113",

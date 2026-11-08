@@ -20,15 +20,17 @@ Each `<album>.toml` holds, in this order:
   comment above them names the store and the shape). Nobody's real files.
 - `[salmon_tags]` (optional): each track's ARTIST and TITLE as salmon itself writes them, the other tags as in
   `[[track]]`. A control for the tags' shape: `today.output-salmon-tags` is the output from those files.
-- `[stores]`: what each store sent (`deezer`, `musicbrainz`, `discogs`, `bandcamp`, `qobuz`), as the response's
-  text, trimmed to the fields salmon's parser reads (the parse is the same as from the full response).
+- `[stores]`: what each store sent (`deezer`, `musicbrainz`, `discogs`, `qobuz`, and `bandcamp` where the album is
+  there), as the response's text, trimmed to the fields salmon's parser reads (the parse is the same as from the full
+  response).
 
 ## Add a case
 
 1. Make `<album>.toml` with `why`, `files_from` (the store the tags come from), `bandcamp_url` if there is
    Bandcamp data, and an empty `[right]` and `[today]` (the test needs both tables; `[right]` may hold only `open`).
-2. Add the `[[track]]` tags and each store's response under `[stores]` as a `'''` string. Trimming is optional: a
-   full response works, and trimming only keeps the repo small.
+2. Add the `[[track]]` tags and each store's response under `[stores]` as a `'''` string, trimmed: take out what the
+   parser doesn't read and check the parse is unchanged. A full Discogs response can be tens of KB, so untrimmed
+   cases would grow the repo quickly.
 3. Run the test and paste each stage's value from its failure into `[today.<stage>]`.
 
 ## The scoreboard

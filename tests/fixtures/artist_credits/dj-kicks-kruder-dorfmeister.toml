@@ -1,0 +1,983 @@
+album = "Kruder & Dorfmeister, DJ-Kicks"
+why = "A DJ mix: the DJs' name is the release's artist on every store and each track is by someone else."
+edition = "Studio !K7, 17 tracks, as sold digitally (Deezer 1127108 = MusicBrainz aa2eae9d by barcode); Discogs 2951 is master 252625's main release; Qobuz has the same UPC"
+known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "Deezer parse: Kruder & Dorfmeister split in two", "merge: 'Soundtrack', 'full length' and 'Rude Boy Fandango' read as remixers from the words of a mix's name"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+open = "Whether the release's main artist is the DJ or Various: every store names Kruder & Dorfmeister on the release and other artists on the tracks"
+settled = "nothing yet: see open"
+
+[today.deezer]
+release = ["Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Hardfloor (main)", "Thievery Corporation (main)", "Kruder (main)", "Dorfmeister (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
+tracks = 17
+
+[today.musicbrainz]
+release = ["The Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Hardfloor (main)", "Thievery Corporation (main)", "Kruder & Dorfmeister (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
+tracks = 17
+
+[today.discogs]
+release = ["The Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Hardfloor (main)", "Thievery Corporation (main)", "Kruder & Dorfmeister (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
+tracks = 17
+
+[today.qobuz]
+release = ["Kruder & Dorfmeister (main)", "Herbaliser (guest)", "Small World (guest)", "Tango (guest)", "The Lab Rats (guest)", "Statik Sound System (guest)", "JMJ (guest)", "Aquasky (guest)", "James Bong (guest)", "Hardfloor (guest)", "Thievery Corporation (guest)", "Beanfield (guest)", "Sapien (guest)", "Shantel (guest)", "KARMA (guest)", "Showroom Recordings (guest)"]
+tracks = 17
+
+[today.merge]
+release = ["Kruder & Dorfmeister (main)", "The Herbaliser (main)", "Small World (main)", "Soundtrack (remixer)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Big Brothers Dubbing You Full On - Dub Tractor (remixer)", "full length (remixer)", "Hardfloor (main)", "Thievery Corporation (main)", "Beanfield (main)", "Sapien (main)", "Rude Boy Fandango (remixer)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
+tracks = 17
+
+[today.output]
+albumartist = "Various"
+tracks = ["Kruder & Dorfmeister, The Herbaliser | A Mother (For Your Mind)", "Small World, Kruder & Dorfmeister | Livin' Free", "Tango, Kruder & Dorfmeister | Spellbound", "The Lab Rats, Kruder & Dorfmeister | Give My Soul", "Statik Sound System, Kruder & Dorfmeister | Revolutionary Pilot", "JMJ, Flytronix, Kruder & Dorfmeister | In Too Deep", "Aquasky, Kruder & Dorfmeister | Kauna", "James Bong, Kruder & Dorfmeister | Mr. Kiss Kiss Bong Bong (Big Brother's Dubbing You Full On / Full Length Remix)", "Hardfloor, Kruder & Dorfmeister | Dubdope", "Thievery Corporation, Kruder & Dorfmeister | Shaolin Satellite", "Kruder & Dorfmeister | High Noon", "Beanfield, Kruder & Dorfmeister | Keep On Believing", "Sapien, Kruder & Dorfmeister | Que Dolor (Rude Boy Fandango Mix)", "Shantel, Kruder & Dorfmeister | Bass And Several Cars", "Karma, Kruder & Dorfmeister | Look Up Dere", "Showroom Recordings, Kruder & Dorfmeister | Radio Burning Chrome", "Kruder & Dorfmeister | Black Baby (DJ-Kicks)"]
+
+[today."output-guests-in-title"]
+albumartist = "Various"
+tracks = ["Kruder & Dorfmeister, The Herbaliser | A Mother (For Your Mind)", "Small World, Kruder & Dorfmeister | Livin' Free", "Tango, Kruder & Dorfmeister | Spellbound", "The Lab Rats, Kruder & Dorfmeister | Give My Soul", "Statik Sound System, Kruder & Dorfmeister | Revolutionary Pilot", "JMJ, Flytronix, Kruder & Dorfmeister | In Too Deep", "Aquasky, Kruder & Dorfmeister | Kauna", "James Bong, Kruder & Dorfmeister | Mr. Kiss Kiss Bong Bong (Big Brother's Dubbing You Full On / Full Length Remix)", "Hardfloor, Kruder & Dorfmeister | Dubdope", "Thievery Corporation, Kruder & Dorfmeister | Shaolin Satellite", "Kruder & Dorfmeister | High Noon", "Beanfield, Kruder & Dorfmeister | Keep On Believing", "Sapien, Kruder & Dorfmeister | Que Dolor (Rude Boy Fandango Mix)", "Shantel, Kruder & Dorfmeister | Bass And Several Cars", "Karma, Kruder & Dorfmeister | Look Up Dere", "Showroom Recordings, Kruder & Dorfmeister | Radio Burning Chrome", "Kruder & Dorfmeister | Black Baby (DJ-Kicks)"]
+
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["A Mother (Mixed)"]
+artist = ["Herbaliser"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Livin' Free (Soundtrack Mix) (Mixed)"]
+artist = ["Small World"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Spellbound (Mixed)"]
+artist = ["Tango"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Give My Soul (Mixed)"]
+artist = ["The Lab Rats"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Revolutionary Pilot (Mixed)"]
+artist = ["Statik Sound System"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["In Too Deep (Mixed)"]
+artist = ["JMJ", "Flytronix"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Kauna (Mixed)"]
+artist = ["Aquasky"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Mr. Kiss Kiss Bong Bong (Big Brothers Dubbing You Full On - Dub Tractor Remix) (Mixed)"]
+artist = ["James Bong"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Dubdope (Mixed)"]
+artist = ["Hardfloor"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Shaolin Satellite (Mixed)"]
+artist = ["Thievery Corporation"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["High Noon (Mixed)"]
+artist = ["Kruder & Dorfmeister"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Keep On Believing (Mixed)"]
+artist = ["Beanfield"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Que Dolor (Mixed)"]
+artist = ["Sapien"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Bass And Several Cars (Mixed)"]
+artist = ["Shantel"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Look Up Dere (Mixed)"]
+artist = ["Karma"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["Radio Burning Chrome (Mixed)"]
+artist = ["Showroom Recordings"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+[[track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["Black Baby (DJ-Kicks) (Mixed)"]
+artist = ["Kruder & Dorfmeister"]
+album = ["DJ-Kicks"]
+albumartist = ["Kruder & Dorfmeister"]
+date = ["1996-08-19"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 1127108,
+ "title": "DJ-Kicks",
+ "upc": "730003704628",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 106,
+    "name": "Electro"
+   }
+  ]
+ },
+ "label": "!K7 Records",
+ "release_date": "1996-08-19",
+ "tracklist": [
+  {
+   "SNG_ID": "12266079",
+   "SNG_TITLE": "A Mother",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Herbaliser"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "DEG930890026",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266080",
+   "SNG_TITLE": "Livin' Free (Soundtrack Mix)",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Small World"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "DEQ490700018",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266081",
+   "SNG_TITLE": "Spellbound",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Tango"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "DEQ490700016",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266082",
+   "SNG_TITLE": "Give My Soul",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Lab Rats"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "DEG930890027",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266083",
+   "SNG_TITLE": "Revolutionary Pilot",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Statik Sound System"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "DEG930890028",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266084",
+   "SNG_TITLE": "In Too Deep",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "JMJ",
+     "Flytronix"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "DEQ490700014",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266085",
+   "SNG_TITLE": "Kauna",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Aquasky"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "DEQ490700012",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266086",
+   "SNG_TITLE": "Mr. Kiss Kiss Bong Bong (Big Brothers Dubbing You Full On - Dub Tractor Remix)",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "James Bong"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "DEG930890029",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266087",
+   "SNG_TITLE": "Dubdope",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Hardfloor"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "DEQ490700013",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266088",
+   "SNG_TITLE": "Shaolin Satellite",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Thievery Corporation"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "DEQ490700017",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "12266089",
+   "SNG_TITLE": "High Noon",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kruder & Dorfmeister"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "DEG939600441",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266090",
+   "SNG_TITLE": "Keep On Believing",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Beanfield"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "DEG930890030",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266091",
+   "SNG_TITLE": "Que Dolor",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Sapien"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "DEG930890031",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266092",
+   "SNG_TITLE": "Bass And Several Cars",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Shantel"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "DEQ490700015",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266093",
+   "SNG_TITLE": "Look Up Dere",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Karma"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "15",
+   "ISRC": "DEG930890032",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266094",
+   "SNG_TITLE": "Radio Burning Chrome",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Showroom Recordings"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "16",
+   "ISRC": "DEG930890033",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "12266095",
+   "SNG_TITLE": "Black Baby (DJ-Kicks)",
+   "VERSION": "(Mixed)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kruder & Dorfmeister"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "17",
+   "ISRC": "DEG939600003",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  }
+ ]
+}
+'''
+
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="aa2eae9d-05be-411c-80c2-60f7a15da57f"><title>DJ‐Kicks: Kruder &amp; Dorfmeister</title><artist-credit><name-credit><artist><name>Kruder &amp; Dorfmeister</name></artist></name-credit></artist-credit><release-group><title>DJ‐Kicks: Kruder &amp; Dorfmeister</title><first-release-date>1996-08-19</first-release-date><artist-credit><name-credit><artist><name>Kruder &amp; Dorfmeister</name></artist></name-credit></artist-credit></release-group><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>!K7</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><title>A Mother</title><recording><title>A Mother (For Your Mind)</title><artist-credit><name-credit><artist><name>The Herbaliser</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Livin’ Free</title><artist-credit><name-credit><artist><name>Small World</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Spellbound</title><artist-credit><name-credit><artist><name>Tango</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>4</position><number>4</number><artist-credit><name-credit><artist><name>Lab Rats</name></artist></name-credit></artist-credit><recording><title>Give My Soul</title><artist-credit><name-credit><artist><name>The Lab Rats</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Revolutionary Pilot</title><artist-credit><name-credit><artist><name>Statik Sound System</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>In Too Deep</title><artist-credit><name-credit><artist><name>JMJ</name></artist></name-credit><name-credit><artist><name>Flytronix</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Kauna</title><artist-credit><name-credit><artist><name>Aquasky</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>8</position><number>8</number><title>Never Say?</title><recording><title>Mr. Kiss Kiss Bong Bong (Big Brother’s Dubbing You Full On / full length remix)</title><artist-credit><name-credit><artist><name>James Bong</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Dubdope</title><artist-credit><name-credit><artist><name>Hardfloor</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Shaolin Satellite</title><artist-credit><name-credit><artist><name>Thievery Corporation</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>High Noon</title><artist-credit><name-credit><artist><name>Kruder &amp; Dorfmeister</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>Keep On Believing</title><artist-credit><name-credit><artist><name>Beanfield</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>13</position><number>13</number><title>Que dolor</title><recording><title>Que dolor (Rude Boy Fandango mix)</title><artist-credit><name-credit><artist><name>Sapien</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>14</position><number>14</number><recording><title>Bass and Several Cars</title><artist-credit><name-credit><artist><name>Shantel</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>15</position><number>15</number><recording><title>Look Up Dere</title><artist-credit><name-credit><artist><name>Karma</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>16</position><number>16</number><recording><title>Radio Burning Chrome</title><artist-credit><name-credit><artist><name>Showroom Recordings</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track><track><position>17</position><number>17</number><recording><title>Black Baby (DJ‐Kicks)</title><artist-credit><name-credit><artist><name>Kruder &amp; Dorfmeister</name></artist></name-credit></artist-credit><first-release-date>1996-08-19</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+
+discogs = '''
+{
+ "id": 2951,
+ "year": 1996,
+ "artists": [
+  {
+   "name": "Kruder & Dorfmeister",
+   "anv": "",
+   "id": 1434
+  }
+ ],
+ "labels": [
+  {
+   "name": "!K7",
+   "catno": "!K7046cd",
+   "id": 30192
+  },
+  {
+   "name": "!K7",
+   "catno": "046cd",
+   "id": 30192
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Mixed"
+   ]
+  }
+ ],
+ "title": "DJ-Kicks:",
+ "released": "1996-08-19",
+ "genres": [
+  "Electronic"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "The Herbaliser",
+     "anv": "Herbalizer",
+     "id": 968
+    }
+   ],
+   "title": "A Mother (For Your Mind)",
+   "duration": "5:16"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Small World",
+     "anv": "",
+     "id": 3203
+    }
+   ],
+   "title": "Livin' Free",
+   "duration": "5:09"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Tango",
+     "anv": "",
+     "id": 2309
+    }
+   ],
+   "title": "Spellbound",
+   "duration": "4:00"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "The Lab Rats",
+     "anv": "",
+     "id": 34659
+    }
+   ],
+   "title": "Give My Soul",
+   "duration": "3:10"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Statik Sound System",
+     "anv": "",
+     "id": 3587
+    }
+   ],
+   "title": "Revolutionary Pilot",
+   "duration": "2:15"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "JMJ",
+     "anv": "",
+     "id": 10140
+    },
+    {
+     "name": "Flytronix",
+     "anv": "",
+     "id": 1859
+    }
+   ],
+   "title": "In Too Deep",
+   "duration": "5:41"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Aquasky",
+     "anv": "",
+     "id": 1716
+    }
+   ],
+   "title": "Kauna",
+   "duration": "4:04"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "James Bong",
+     "anv": "",
+     "id": 3588
+    }
+   ],
+   "title": "Mr. Kiss Kiss Bong Bong (Big Brother's Dubbing You Full On / Full Length Remix)",
+   "duration": "4:30"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Hardfloor",
+     "anv": "",
+     "id": 858
+    }
+   ],
+   "title": "Dubdope",
+   "duration": "5:25"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Thievery Corporation",
+     "anv": "",
+     "id": 1035
+    }
+   ],
+   "title": "Shaolin Satellite",
+   "duration": "4:22"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Kruder & Dorfmeister",
+     "anv": "",
+     "id": 1434
+    }
+   ],
+   "title": "High Noon",
+   "duration": "6:01"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Beanfield",
+     "anv": "",
+     "id": 234
+    }
+   ],
+   "title": "Keep On Believing",
+   "duration": "5:39"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Sapien",
+     "anv": "",
+     "id": 3589
+    }
+   ],
+   "title": "Que Dolor (Rude Boy Fandango Mix)",
+   "duration": "4:47"
+  },
+  {
+   "position": "14",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Shantel",
+     "anv": "",
+     "id": 2489
+    }
+   ],
+   "title": "Bass And Several Cars",
+   "duration": "2:45"
+  },
+  {
+   "position": "15",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Karma",
+     "anv": "Kama",
+     "id": 1391
+    }
+   ],
+   "title": "Look Up Dere",
+   "duration": "1:22"
+  },
+  {
+   "position": "16",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Showroom Recordings",
+     "anv": "",
+     "id": 3591
+    }
+   ],
+   "title": "Radio Burning Chrome",
+   "duration": "2:01"
+  },
+  {
+   "position": "17",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Kruder & Dorfmeister",
+     "anv": "",
+     "id": 1434
+    }
+   ],
+   "title": "Black Baby (DJ-Kicks)",
+   "duration": "6:19"
+  }
+ ]
+}
+'''
+
+qobuz = '''
+{
+ "id": "0730003704628",
+ "upc": "0730003704628",
+ "title": "DJ-Kicks",
+ "version": "Mixed",
+ "tracks_count": 17,
+ "artist": {
+  "name": "Kruder & Dorfmeister"
+ },
+ "genres_list": [
+  "Chill-out"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "A Mother",
+    "version": "Mixed",
+    "track_number": 1,
+    "performer": {
+     "name": "Herbaliser"
+    }
+   },
+   {
+    "title": "Livin' Free (Soundtrack Mix)",
+    "version": "Mixed",
+    "track_number": 2,
+    "performer": {
+     "name": "Small World"
+    }
+   },
+   {
+    "title": "Spellbound",
+    "version": "Mixed",
+    "track_number": 3,
+    "performer": {
+     "name": "Tango"
+    }
+   },
+   {
+    "title": "Give My Soul",
+    "version": "Mixed",
+    "track_number": 4,
+    "performer": {
+     "name": "The Lab Rats"
+    }
+   },
+   {
+    "title": "Revolutionary Pilot",
+    "version": "Mixed",
+    "track_number": 5,
+    "performer": {
+     "name": "Statik Sound System"
+    }
+   },
+   {
+    "title": "In Too Deep",
+    "version": "Mixed",
+    "track_number": 6,
+    "performer": {
+     "name": "JMJ"
+    }
+   },
+   {
+    "title": "Kauna",
+    "version": "Mixed",
+    "track_number": 7,
+    "performer": {
+     "name": "Aquasky"
+    }
+   },
+   {
+    "title": "Mr. Kiss Kiss Bong Bong (Big Brothers Dubbing You Full On - Dub Tractor Remix)",
+    "version": "Mixed",
+    "track_number": 8,
+    "performer": {
+     "name": "James Bong"
+    }
+   },
+   {
+    "title": "Dubdope",
+    "version": "Mixed",
+    "track_number": 9,
+    "performer": {
+     "name": "Hardfloor"
+    }
+   },
+   {
+    "title": "Shaolin Satellite",
+    "version": "Mixed",
+    "track_number": 10,
+    "performer": {
+     "name": "Thievery Corporation"
+    }
+   },
+   {
+    "title": "High Noon",
+    "version": "Mixed",
+    "track_number": 11,
+    "performer": {
+     "name": "Kruder & Dorfmeister"
+    }
+   },
+   {
+    "title": "Keep On Believing",
+    "version": "Mixed",
+    "track_number": 12,
+    "performer": {
+     "name": "Beanfield"
+    }
+   },
+   {
+    "title": "Que Dolor",
+    "version": "Mixed",
+    "track_number": 13,
+    "performer": {
+     "name": "Sapien"
+    }
+   },
+   {
+    "title": "Bass And Several Cars",
+    "version": "Mixed",
+    "track_number": 14,
+    "performer": {
+     "name": "Shantel"
+    }
+   },
+   {
+    "title": "Look Up Dere",
+    "version": "Mixed",
+    "track_number": 15,
+    "performer": {
+     "name": "KARMA"
+    }
+   },
+   {
+    "title": "Radio Burning Chrome",
+    "version": "Mixed",
+    "track_number": 16,
+    "performer": {
+     "name": "Showroom Recordings"
+    }
+   },
+   {
+    "title": "Black Baby (DJ-Kicks)",
+    "version": "Mixed",
+    "track_number": 17,
+    "performer": {
+     "name": "Kruder & Dorfmeister"
+    }
+   }
+  ]
+ }
+}
+'''
