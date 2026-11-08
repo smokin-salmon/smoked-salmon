@@ -29,7 +29,14 @@ from salmon.errors import UploadError
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.cover import MAX_PICTURES_AND_PADDING
-from salmon.tagger.foldername import drop_resolution_token, resolution_token
+from salmon.tagger.foldername import (
+    FLAC_WORD_RE,
+    LOSSLESS_WORD_RE,
+    drop_resolution_token,
+    format_matches,
+    resolution_token,
+    swap_format_matches,
+)
 
 Bitrate = Literal["V0", "320"]
 
@@ -40,8 +47,6 @@ LAME_COMMAND_MAP: dict[Bitrate, list[str]] = {
 }
 
 SKIP_EXTENSIONS = frozenset((".cue", ".log", ".m3u", ".m3u8", ".accurip"))
-FLAC_FOLDER_RE = re.compile(r"(24 ?bit )?FLAC", flags=re.IGNORECASE)
-LOSSLESS_FOLDER_RE = re.compile(r"Lossless", flags=re.IGNORECASE)
 
 # Vorbis comment → ID3v2 frame mapping
 VORBIS_TO_ID3_MAP: dict[str, str] = {
@@ -106,14 +111,15 @@ def _build_output_path(path: str, bitrate: Bitrate, output_dir: str | None = Non
     # files, not guessed at with a pattern, so it cannot also eat unrelated digits from the title.
     foldername = drop_resolution_token(foldername, resolution_token(gather_audio_info(path)))
 
-    if FLAC_FOLDER_RE.search(foldername):
-        if LOSSLESS_FOLDER_RE.search(foldername):
-            foldername = FLAC_FOLDER_RE.sub("MP3", foldername)
-            foldername = LOSSLESS_FOLDER_RE.sub(bitrate, foldername)
-        else:
-            foldername = FLAC_FOLDER_RE.sub(f"MP3 {bitrate}", foldername)
-    elif LOSSLESS_FOLDER_RE.search(foldername):
-        foldername = LOSSLESS_FOLDER_RE.sub(bitrate, foldername)
+    flacs = format_matches(FLAC_WORD_RE, foldername)
+    losslesses = format_matches(LOSSLESS_WORD_RE, foldername)
+    if any(not _bracket_between(foldername, flac, lossless) for flac in flacs for lossless in losslesses):
+        foldername = swap_format_matches(FLAC_WORD_RE, "MP3", foldername)
+        foldername = swap_format_matches(LOSSLESS_WORD_RE, bitrate, foldername)
+    elif flacs:
+        foldername = swap_format_matches(FLAC_WORD_RE, f"MP3 {bitrate}", foldername)
+    elif losslesses:
+        foldername = swap_format_matches(LOSSLESS_WORD_RE, bitrate, foldername)
         to_append.append("MP3")
     else:
         to_append.append(f"MP3 {bitrate}")
@@ -122,6 +128,12 @@ def _build_output_path(path: str, bitrate: Bitrate, output_dir: str | None = Non
         foldername += f" [{' '.join(to_append)}]"
 
     return os.path.join(output_dir or os.path.dirname(path), foldername)
+
+
+def _bracket_between(foldername: str, flac: re.Match[str], lossless: re.Match[str]) -> bool:
+    """Whether the two words sit in different bracket groups: a Lossless outside the format's group is the title's."""
+    between = foldername[min(flac.end(), lossless.end()) : max(flac.start(), lossless.start())]
+    return any(char in "[](){}" for char in between)
 
 
 def _validate_lossless(path: str) -> None:
