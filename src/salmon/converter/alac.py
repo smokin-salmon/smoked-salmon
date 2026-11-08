@@ -1,7 +1,8 @@
 """salmon up on an album of ALAC tracks: convert each .m4a holding ALAC to a FLAC, which the upload then takes (#981).
 
-The FLAC keeps the ALAC's samples exactly (bit depth, sample rate and channels), its tags and its first cover. Each
-FLAC is checked to decode to the same samples as its ALAC before any .m4a is removed.
+The FLAC keeps the ALAC's samples exactly (bit depth, sample rate and channels), the tags in _TEXT_TAGS and
+_NUMBER_TAGS and its first cover; other tags are dropped. Each FLAC is checked to decode to the same samples as its
+ALAC before any .m4a is removed.
 """
 
 import contextlib
@@ -82,7 +83,8 @@ async def convert_alac(album: str, staged: str) -> str | None:
     where = f"in {album}" if os.path.abspath(staged) == os.path.abspath(album) else "in the copy salmon works on"
     click.secho(
         f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads them as FLAC, with the same samples, bit "
-        f"depth and sample rate, the same tags and cover; each .m4a {where} is replaced by its .flac.",
+        "depth and sample rate. It keeps the title, artists, album, date, genre, composer, track and disc numbers, "
+        f"copyright, ISRC, label and first cover, and drops other tags. Each .m4a {where} is replaced by its .flac.",
         fg="yellow",
     )
     if not await interaction.assume_defaults() and not await interaction.confirm(
