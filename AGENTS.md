@@ -74,7 +74,9 @@ the test run never reads a developer's config.
   limiter (5 requests in any 10.5 s: 10 s plus a margin for network jitter, one budget per
   tracker) and the tracker's kept-alive connection pool, both in `trackers/account.py`, and the
   retry policy (`BaseGazelleApi._send`). Do not open a new `aiohttp.ClientSession` to a tracker
-  anywhere else. That state belongs to one event loop: while `salmon web` runs, `_request`
+  anywhere else (`tests/test_rule_tracker_sessions.py` fails on one, or on the pool reached past `_send`, in
+  `salmon.trackers`). That
+  state belongs to one event loop: while `salmon web` runs, `_request`
   called from a job's own loop runs on the server's loop instead (`run_on_request_loop`), so
   every job shares it. Anything new that touches a client's loop-bound state does the same.
 - **Do not add request loops without a bound.** A feature that issues one request per item (per
@@ -85,7 +87,7 @@ the test run never reads a developer's config.
 - **Never re-send a request that changes state once it may have reached the tracker.** `_request`
   treats a POST as not idempotent: it retries it only when the tracker cannot have acted on it,
   and raises `UnknownOutcomeError` otherwise (#446). Pass `idempotent=True` only for a POST that
-  sets a fixed state.
+  sets a fixed state, and list it with why in `tests/test_rule_idempotent_posts.py`.
 - **Never test against a live tracker from code or CI.** Use a local fake server; see
   `tests/test_trackers_session.py` for the pattern. The test suite refuses every non-loopback
   connection (`tests/conftest.py`): a test that misses its fake fails with `NetworkBlockedError`
@@ -95,6 +97,9 @@ the test run never reads a developer's config.
   `_request` enforces this; keep it that way.
 
 ## Conventions
+
+Several rules in this file have a test, named next to the rule (`tests/test_rule_*.py`,
+`tests/test_interaction_calls.py`, `tests/test_complexity.py`). Each names its rule, and its failure says what to do.
 
 - Python 3.11+, ruff line length 120, async throughout (`anyio`, `aiohttp`, `asyncclick`).
 - Config: add new settings to the msgspec schema with a default, validate them in
@@ -111,8 +116,9 @@ the test run never reads a developer's config.
   step that writes into, or removes, a folder checks `cfg.directory.protects(path)` first (#531).
 - **Ask the user only through `salmon.interaction`** (`await interaction.confirm(...)`), never asyncclick's
   `prompt`, `confirm` or `edit` or `input()`: a web job would hang on the server's terminal. A test walks `src/salmon`
-  and fails on one. Whether a run answers with defaults (`-yyy`, or `yes_all` in the config) is
-  `await interaction.assume_defaults()`; nothing writes `cfg` at runtime.
+  and fails on one (`tests/test_interaction_calls.py`). Whether a run answers with defaults (`-yyy`, or `yes_all`
+  in the config) is `await interaction.assume_defaults()`; nothing writes `cfg` at runtime
+  (`tests/test_rule_cfg_is_read_only.py`).
 - Before writing a helper, look for one that already does the job, and use or extend it rather than writing a
   copy. A fix in a torrent's upload (`uploader/upload.py`, `uploader/__init__.py`) usually applies to its
   conversions' (`uploader/conversion_upload.py`) too, and the other way round.
@@ -141,7 +147,14 @@ comment, the `Dockerfile`'s base and uv images by tag and digest, Python package
 (ruff, pytest, basedpyright) by `uv.lock`.
 Dependabot (`.github/dependabot.yml`) proposes every update to them as a PR, except the job-local
 `registry:3` service in the publishing workflows, whose digest is bumped by hand. Pin a new action or
-image the same way, checking that the SHA is the commit its release tag points to.
+image the same way, checking that the SHA is the commit its release tag points to
+(`tests/test_rule_pinned.py`).
+
+A `pull_request` workflow runs the PR's code: it declares its permissions, none of them `write`, logs
+in to no registry, and each checkout in it sets `persist-credentials: false`
+(`tests/test_rule_pull_request_workflows.py`). No script interpolates a value an outsider writes (a
+title, a body, a commit message, a PR's branch name): it goes through `env:` and is read as
+`"$VALUE"` (`tests/test_rule_workflow_untrusted_input.py`).
 
 Every workflow that builds the image scans it with `.github/actions/scan-image` (Trivy): fixable
 HIGH and CRITICAL vulnerabilities are listed in the job summary, and a fixable CRITICAL fails the
@@ -177,7 +190,8 @@ secret is fixed.
 
 `release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
 new version exists, so that bump commit is the release announcement, and the release description
-is the changelog users read. A PR must never change `current` or add a `[[changelog]]` entry.
+is the changelog users read. A PR must never change `current` or add a `[[changelog]]` entry
+(`tests/test_rule_version_toml.py` fails when one changes without the others).
 
 ## Scratch work
 
