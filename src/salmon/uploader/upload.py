@@ -3,8 +3,9 @@ import re
 import shutil
 import tempfile
 import unicodedata
+from collections.abc import Sequence
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import anyio
 import asyncclick as click
@@ -559,6 +560,53 @@ def _listed_number(tags: Any, field: str) -> str:
     return str(getattr(tags, field) or "") if number is None else f"{number:02d}"
 
 
+class TracklistLine(NamedTuple):
+    """One line of a group description's tracklist, as ``tracklist_description`` writes it."""
+
+    number: str  # "01", or "01-03" when the release has several discs
+    title: str
+    artist: str | None  # None: the line leaves the artist out (#895)
+    seconds: int | None  # None: the source gave no length
+
+
+def _clock(seconds: int) -> str:
+    """A length as a tracklist gives it, in minutes and seconds: 3723 is "62:03"."""
+    return f"{seconds // 60}:{seconds % 60:02d}"
+
+
+def tracklist_description(lines: Sequence[TracklistLine], comment: str | None, urls: list[str] | None) -> str:
+    """A group description: the tracklist, its total length, the comment and the links to the release's sources.
+
+    It knows nothing of tags or stores: each caller reads its own numbers, artists and lengths into the lines.
+
+    Args:
+        lines: The tracklist, in order.
+        comment: A note to add after the tracklist, if any.
+        urls: The release's source links, if any.
+
+    Returns:
+        BBCode description string. The total is shown for more than one line, and only when every line has a
+        length, as a total of some of them would be wrong.
+    """
+    description = "[b][size=4]Tracklist[/size][/b]\n"
+    for line in lines:
+        credit = "" if line.artist is None else f"{line.artist} - "
+        length = "" if line.seconds is None else f" [i]({_clock(line.seconds)})[/i]"
+        description += f"[b]{line.number}.[/b] {credit}{line.title}{length}\n"
+
+    known = [line.seconds for line in lines if line.seconds is not None]
+    if len(lines) > 1 and len(known) == len(lines):
+        description += f"\n[b]Total length: [/b]{_clock(sum(known))}\n"
+
+    if comment:
+        description += f"\n{comment}\n"
+
+    if urls:
+        description += "\n[b]More info:[/b] " + generate_source_links(urls)
+
+    return description
+
+
 def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -> str:
     """Generate group description with tracklist.
 
@@ -575,7 +623,6 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
         BBCode description string.
     """
     album = album_credit_names(metadata)
-    description = "[b][size=4]Tracklist[/size][/b]\n"
     # Discs told apart by tags that aren't numbers ("CD1" and "CD2", or "1" and "CD2") are several discs too; those
     # are listed as written.
     unreadable_discs = {unreadable_number(t["t"], "discnumber") for t in track_data.values()} - {None}
@@ -583,32 +630,18 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     multi_disc = len(unreadable_discs | (numbered_discs if unreadable_discs else set())) > 1 or any(
         _names_several_discs(t["t"]) for t in track_data.values()
     )
-    total_duration = 0
+    lines: list[TracklistLine] = []
     for track in track_data.values():
-        length = "{}:{:02d}".format(track["duration"] // 60, track["duration"] % 60)
-        total_duration += track["duration"]
+        number = _listed_number(track["t"], "tracknumber")
         if multi_disc:
             # A disc with no number is listed as the first.
-            disc = _listed_number(track["t"], "discnumber") or "01"
-            description += f"[b]{disc}-{_listed_number(track['t'], 'tracknumber')}.[/b] "
-        else:
-            description += f"[b]{_listed_number(track['t'], 'tracknumber')}.[/b] "
+            number = f"{_listed_number(track['t'], 'discnumber') or '01'}-{number}"
 
-        if album is not None and credits_only_the_album(_tag_credits(track["t"]), track["t"].title, album):
-            description += f"{track['t'].title} [i]({length})[/i]\n"
-        else:
-            description += f"{format_tracklist_artists(track['t'].artist)} - {track['t'].title} [i]({length})[/i]\n"
+        only_album = album is not None and credits_only_the_album(_tag_credits(track["t"]), track["t"].title, album)
+        artist = None if only_album else format_tracklist_artists(track["t"].artist)
+        lines.append(TracklistLine(number, track["t"].title, artist, track["duration"]))
 
-    if len(track_data.values()) > 1:
-        description += f"\n[b]Total length: [/b]{total_duration // 60}:{total_duration % 60:02d}\n"
-
-    if metadata["comment"]:
-        description += f"\n{metadata['comment']}\n"
-
-    if metadata["urls"]:
-        description += "\n[b]More info:[/b] " + generate_source_links(metadata["urls"])
-
-    return description
+    return tracklist_description(lines, metadata["comment"], metadata["urls"])
 
 
 def generate_t_description(
@@ -663,11 +696,10 @@ def generate_t_description(
     tracklist = ""
     if cfg.upload.description.include_tracklist_in_t_desc or hybrid:
         for filename, track in track_data.items():
-            mins, secs = track["duration"] // 60, track["duration"] % 60
             bitrate = f" [{track['bit rate'] / 1000:.01f}kbps]" if cfg.upload.description.bitrates_in_t_desc else ""
             bits = f"{track['precision']} bit / " if track["precision"] is not None else ""
             hybrid_info = f" [{bits}{track['sample rate'] / 1000} kHz]" if hybrid else ""
-            tracklist += f"{os.path.splitext(filename)[0]} [i]({mins}:{secs:02d})[/i]{bitrate}{hybrid_info}\n"
+            tracklist += f"{os.path.splitext(filename)[0]} [i]({_clock(track['duration'])})[/i]{bitrate}{hybrid_info}\n"
         tracklist += "\n"
 
     lossy_notes = (

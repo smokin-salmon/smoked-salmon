@@ -42,7 +42,12 @@ from salmon.uploader.spectrals import (
     post_upload_spectral_check,
 )
 from salmon.uploader.torrent_client import TorrentClientGenerator
-from salmon.uploader.upload import album_credit_names, credits_only_the_album, generate_source_links
+from salmon.uploader.upload import (
+    TracklistLine,
+    album_credit_names,
+    credits_only_the_album,
+    tracklist_description,
+)
 
 
 def format_spectral_urls(filenames: list[str], spectral_urls: dict[int, list[str]], bbcode: bool) -> str:
@@ -125,28 +130,23 @@ async def build_description(urls: Sequence[str]) -> str:
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
     remove_various_artists(metadata)
 
-    description = "[b][size=4]Tracklist[/size][/b]\n\n"
     album = album_credit_names(metadata)
     multi_disc = len(metadata["tracks"]) > 1
+    lines: list[TracklistLine] = []
     for dnum, disc in metadata["tracks"].items():
         for tnum, track in disc.items():
+            number = padded_number(str(tnum))
             if multi_disc:
-                description += f"[b]{padded_number(str(dnum))}-{padded_number(str(tnum))}.[/b] "
-            else:
-                description += f"[b]{padded_number(str(tnum))}.[/b] "
+                number = f"{padded_number(str(dnum))}-{number}"
 
             if cfg.upload.formatting.guests_in_track_title:
                 track["title"] = append_guests_to_track_titles(track)
 
-            if album is not None and credits_only_the_album(track["artists"], track["title"], album):
-                description += f"{track['title']}\n"
-            else:
-                description += f"{create_artist_str(track['artists'])} - {track['title']}\n"
-    if metadata["comment"]:
-        description += f"\n{metadata['comment']}\n"
-    if metadata["urls"]:
-        description += "\n[b]More info:[/b] " + generate_source_links(metadata["urls"])
-    return description
+            only_album = album is not None and credits_only_the_album(track["artists"], track["title"], album)
+            artist = None if only_album else create_artist_str(track["artists"])
+            # Most stores give no length, and a store's 0 is no length either.
+            lines.append(TracklistLine(number, track["title"], artist, track.get("duration") or None))
+    return tracklist_description(lines, metadata["comment"], metadata["urls"])
 
 
 @commandgroup.command()
