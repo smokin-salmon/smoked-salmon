@@ -12,6 +12,7 @@ from tqdm import tqdm
 from salmon import cfg
 from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.numbers import file_order_key
+from salmon.errors import UploadError
 
 T = TypeVar("T")
 
@@ -74,22 +75,44 @@ def rewrite_refusal(path: str) -> str | None:
     return None
 
 
-def album_files(path: str, extensions: Iterable[str]) -> list[str]:
+def unreadable_error(error: OSError, path: str) -> UploadError:
+    """The error for the album at path, or something in it, that salmon could not read."""
+    name = os.path.relpath(error.filename or path, path)
+    where = path if name == os.curdir else f"{name} in {path}"
+    return UploadError(
+        f"Could not read {where} ({error.strerror}): fix it or remove it from the album, then run salmon again."
+    )
+
+
+def album_files(path: str, extensions: Iterable[str], *, skip_unreadable: bool = False) -> list[str]:
     """The files under path whose lower-cased name ends in one of extensions, joined to path, in track order (see
-    file_order_key)."""
+    file_order_key).
+
+    Raises:
+        UploadError: Naming a folder that cannot be read, unless skip_unreadable leaves it out. A folder gone
+            mid-walk, or a path that is not a folder, lists nothing.
+    """
+
+    def stop(error: OSError) -> None:
+        if not skip_unreadable and not isinstance(error, (FileNotFoundError, NotADirectoryError)):
+            raise unreadable_error(error, path) from error
+
     suffixes = tuple(extensions)
     found = [
         os.path.join(root, name)
-        for root, _folders, names in os.walk(path)
+        for root, _folders, names in os.walk(path, onerror=stop)
         for name in names
         if name.lower().endswith(suffixes)
     ]
     return sorted(found, key=file_order_key)
 
 
-def get_audio_files(path: str) -> list[str]:
-    """The audio files under path, named from it, in track order (see file_order_key)."""
-    return [os.path.relpath(file, path) for file in album_files(path, AUDIO_EXTENSIONS)]
+def get_audio_files(path: str, *, skip_unreadable: bool = False) -> list[str]:
+    """The audio files under path, named from it, in track order (see file_order_key). See album_files for what it
+    raises."""
+    return [
+        os.path.relpath(file, path) for file in album_files(path, AUDIO_EXTENSIONS, skip_unreadable=skip_unreadable)
+    ]
 
 
 @dataclass

@@ -278,8 +278,8 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     Raises:
         click.ClickException: If the folder holds no audio file.
     """
-    # Listed once: every check reads these files.
-    audio_files = get_audio_files(path)
+    # Listed once, leaving out what can't be read (the Folders row names it): every check reads these files.
+    audio_files = get_audio_files(path, skip_unreadable=True)
     if not audio_files:
         raise click.ClickException(f"No audio file in {os.path.basename(path)}.")
     audio_info = await anyio.to_thread.run_sync(_audio_info, path, audio_files)
@@ -295,7 +295,7 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
         rows.append(Row("INFO", "Integrity", "No FLAC or MP3 file to check."))
     rows.append(verdicts.mqa_row(await _mqa(path, flacs)))
     rows.append(verdicts.upconvert_row(await _upconverts(path, flacs)))
-    log_paths = album_files(path, [".log"]) if source in (None, "CD") else []
+    log_paths = album_files(path, [".log"], skip_unreadable=True) if source in (None, "CD") else []
     rows += verdicts.log_rows(source, [await _log(logpath, path) for logpath in log_paths])
     rows.append(verdicts.tag_issues_row(await anyio.to_thread.run_sync(find_tag_issues, path, audio_info, audio_files)))
     rows.append(verdicts.sample_rate_row(audio_info))
