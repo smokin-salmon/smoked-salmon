@@ -100,8 +100,8 @@ def test_without_the_helper_the_race_raises_where_expected(monkeypatch):
         )
     else:
         assert raised == [], (
-            f"the race raised on Python {version}, which FIXED_IN says has CPython's fix: move its entry to the "
-            "release that has it"
+            f"the race raised on Python {version}, which has_the_race() says has no race (3.11 and 3.12, or a release "
+            "FIXED_IN lists as fixed): correct FIXED_IN, or has_the_race() for 3.11 and 3.12"
         )
 
 
