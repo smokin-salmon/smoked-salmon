@@ -45,7 +45,7 @@ from salmon.uploader.torrent_client import TorrentClientGenerator
 from salmon.uploader.upload import (
     TracklistLine,
     album_credit_names,
-    credits_only_the_album,
+    listed_bare,
     tracklist_description,
 )
 
@@ -130,22 +130,24 @@ async def build_description(urls: Sequence[str]) -> str:
     metadata["artists"], metadata["tracks"] = generate_artists(metadata["tracks"])
     remove_various_artists(metadata)
 
-    album = album_credit_names(metadata)
     multi_disc = len(metadata["tracks"]) > 1
+    numbered = [(dnum, tnum, track) for dnum, disc in metadata["tracks"].items() for tnum, track in disc.items()]
+    if cfg.upload.formatting.guests_in_track_title:
+        for _dnum, _tnum, track in numbered:
+            track["title"] = append_guests_to_track_titles(track)
+    bare = listed_bare(
+        [(track["artists"], track["title"]) for _dnum, _tnum, track in numbered],
+        album_credit_names(metadata),
+        metadata.get("rls_type"),
+    )
     lines: list[TracklistLine] = []
-    for dnum, disc in metadata["tracks"].items():
-        for tnum, track in disc.items():
-            number = padded_number(str(tnum))
-            if multi_disc:
-                number = f"{padded_number(str(dnum))}-{number}"
-
-            if cfg.upload.formatting.guests_in_track_title:
-                track["title"] = append_guests_to_track_titles(track)
-
-            only_album = album is not None and credits_only_the_album(track["artists"], track["title"], album)
-            artist = None if only_album else create_artist_str(track["artists"])
-            # Most stores give no length, and a store's 0 is no length either.
-            lines.append(TracklistLine(number, track["title"], artist, track.get("duration") or None))
+    for (dnum, tnum, track), is_bare in zip(numbered, bare, strict=True):
+        number = padded_number(str(tnum))
+        if multi_disc:
+            number = f"{padded_number(str(dnum))}-{number}"
+        artist = None if is_bare else create_artist_str(track["artists"])
+        # Most stores give no length, and a store's 0 is no length either.
+        lines.append(TracklistLine(number, track["title"], artist, track.get("duration") or None))
     return tracklist_description(lines, metadata["comment"], metadata["urls"])
 
 

@@ -482,9 +482,9 @@ def format_tracklist_artists(artists: list[str]) -> str:
     )
 
 
-# Release types whose tracklist names every track's artist: on a compilation, anthology or DJ mix, the artist is the
-# point of each line.
-_ARTIST_ON_EVERY_LINE = frozenset({"Anthology", "Compilation", "DJ Mix"})
+# Release types whose lines all name their artist or all leave it out (#971): on a compilation, anthology or DJ mix,
+# the artist is the point of each line, until all the lines would say the same.
+_ALL_LINES_OR_NONE = frozenset({"Anthology", "Compilation", "DJ Mix"})
 
 
 def album_credit_names(metadata: dict[str, Any]) -> frozenset[str] | None:
@@ -495,12 +495,12 @@ def album_credit_names(metadata: dict[str, Any]) -> frozenset[str] | None:
     one from a store compare alike.
 
     Returns:
-        The names, or None when every line keeps its artist: no album artists are given, the release is a
-        compilation, anthology or DJ mix, or its main artists are various (as ALBUMARTIST would name them).
+        The names, or None when every line keeps its artist: no album artists are given, or the album's main artists
+        are various (as ALBUMARTIST would name them).
     """
     artists = metadata.get("artists") or []
     mains = [name for name, role in artists if role == "main"]
-    if not mains or metadata.get("rls_type") in _ARTIST_ON_EVERY_LINE:
+    if not mains:
         return None
     if reaches_various_threshold(mains) or any(names_no_artist(name) for name in mains):
         return None
@@ -525,22 +525,39 @@ def credits_only_the_album(credits: list[tuple[str, str]], title: str, album: fr
     title = title or ""
     if credit_in_title(title) or _REMIX_IN_TITLE.search(title) or _extract_remixers_from_title(title):
         return False
-    return _split_names(name for name, role in credits if role in {"main", "conductor"}) == album
+    return _lead_names(credits) == album
+
+
+def listed_bare(
+    tracks: Sequence[tuple[list[tuple[str, str]], str]], album: frozenset[str] | None, rls_type: str | None
+) -> list[bool]:
+    """For each track, as (its credits, its title), whether its tracklist line leaves its artist out (#895). On a
+    compilation, anthology or DJ mix, either every line does or none does (#971)."""
+    if album is None:
+        return [False] * len(tracks)
+    only_album = [credits_only_the_album(credits, title, album) for credits, title in tracks]
+    return [False] * len(tracks) if rls_type in _ALL_LINES_OR_NONE and not all(only_album) else only_album
+
+
+def _lead_names(credits: list[tuple[str, str]]) -> frozenset[str]:
+    return _split_names(name for name, role in credits if role in {"main", "conductor"})
 
 
 def _split_names(names) -> frozenset[str]:
     return frozenset(strip_numbered_suffixes(part) for name in names for part in re_split(name))
 
 
-def _tag_credits(tags: Any) -> list[tuple[str, str]]:
+def _tag_credits(tags: Any, album: frozenset[str] | None) -> list[tuple[str, str]]:
     """A file's credits as (name, role), read from its tags as salmon reads them: ARTIST (with a feat. or remix
-    credit in it made a guest or remixer), every name in ARTISTS (the main artists, then the guests, as salmon writes
-    it), and REMIXER. No credits at all when the file has no ARTIST."""
+    credit in it made a guest or remixer), the names in ARTISTS (the main artists, then the guests, as salmon writes
+    it), and REMIXER. When ARTIST alone is the album's credit, a plain name in ARTISTS credits no one more: it may be
+    a band's member (#971). No credits at all when the file has no ARTIST."""
     if not tags.artist:
         return []
     credits = parse_artists(tags.artist)
     if artists := getattr(tags, "artists", None):
-        credits += parse_artists(artists)
+        artist_is_the_album = _lead_names(credits) == album
+        credits += [credit for credit in parse_artists(artists) if not (artist_is_the_album and credit[1] == "main")]
     credits += [(name, "remixer") for name in getattr(tags, "remixer", None) or []]
     return credits
 
@@ -612,8 +629,8 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
 
     A track whose tags credit only the album's artists is listed without them (#895): on a one-artist album, every
     track. A track that credits anyone else (another main artist, a guest or remixer, also in its title) keeps its
-    artist, as do all tracks of a compilation, anthology, DJ mix or various-artists release, or when metadata gives
-    no artists.
+    artist, as do all tracks of a various-artists release, or when metadata gives no artists, and all tracks of a
+    compilation, anthology or DJ mix unless every one credits only the album's artists (#971).
 
     Args:
         track_data: Track information.
@@ -630,15 +647,19 @@ def generate_description(track_data: dict[str, Any], metadata: dict[str, Any]) -
     multi_disc = len(unreadable_discs | (numbered_discs if unreadable_discs else set())) > 1 or any(
         _names_several_discs(t["t"]) for t in track_data.values()
     )
+    bare = listed_bare(
+        [(_tag_credits(track["t"], album), track["t"].title) for track in track_data.values()],
+        album,
+        metadata.get("rls_type"),
+    )
     lines: list[TracklistLine] = []
-    for track in track_data.values():
+    for track, is_bare in zip(track_data.values(), bare, strict=True):
         number = _listed_number(track["t"], "tracknumber")
         if multi_disc:
             # A disc with no number is listed as the first.
             number = f"{_listed_number(track['t'], 'discnumber') or '01'}-{number}"
 
-        only_album = album is not None and credits_only_the_album(_tag_credits(track["t"]), track["t"].title, album)
-        artist = None if only_album else format_tracklist_artists(track["t"].artist)
+        artist = None if is_bare else format_tracklist_artists(track["t"].artist)
         lines.append(TracklistLine(number, track["t"].title, artist, track["duration"]))
 
     return tracklist_description(lines, metadata["comment"], metadata["urls"])
