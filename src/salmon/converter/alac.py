@@ -1,8 +1,8 @@
 """salmon up on an album of ALAC tracks: convert each .m4a holding ALAC to a FLAC, which the upload then takes (#981).
 
 The FLAC keeps the ALAC's samples exactly (bit depth, sample rate and channels), the tags in _TEXT_TAGS and
-_NUMBER_TAGS and its first cover; other tags are dropped. Each FLAC is checked to decode to the same samples as its
-ALAC before any .m4a is removed.
+_NUMBER_TAGS and its first cover if it is a JPEG or PNG; other tags are dropped. Each FLAC is checked to decode to the
+same samples as its ALAC before any .m4a is removed.
 """
 
 import contextlib
@@ -46,6 +46,10 @@ _TEXT_TAGS = {
 }
 _NUMBER_TAGS = {"trkn": ("TRACKNUMBER", "TRACKTOTAL"), "disk": ("DISCNUMBER", "DISCTOTAL")}
 _COVER_MIMES = {MP4Cover.FORMAT_JPEG: "image/jpeg", MP4Cover.FORMAT_PNG: "image/png"}
+# The FLAC fields the conversion fills, for the message before the question.
+_KEPT_FIELDS = ", ".join(
+    field.lower() for field in (*_TEXT_TAGS.values(), *(name for pair in _NUMBER_TAGS.values() for name in pair))
+)
 
 
 class ConversionError(Exception):
@@ -81,10 +85,11 @@ async def convert_alac(album: str, staged: str) -> str | None:
         return refusal
     count = f"{len(tracks)} ALAC file{'s' if len(tracks) > 1 else ''}"
     where = f"in {album}" if os.path.abspath(staged) == os.path.abspath(album) else "in the copy salmon works on"
+    them = "them" if len(tracks) > 1 else "it"
     click.secho(
-        f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads them as FLAC, with the same samples, bit "
-        "depth and sample rate. It keeps the title, artists, album, date, genre, composer, track and disc numbers, "
-        f"copyright, ISRC, label and first cover, and drops other tags. Each .m4a {where} is replaced by its .flac.",
+        f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads {them} as FLAC, with the same samples, "
+        f"bit depth, sample rate and channels. It keeps these tags: {_KEPT_FIELDS}, and the first cover if it is a "
+        f"JPEG or PNG; it drops the others. Each .m4a {where} is replaced by its .flac.",
         fg="yellow",
     )
     if not await interaction.assume_defaults() and not await interaction.confirm(
@@ -337,7 +342,8 @@ def _packed(frame: "av.audio.frame.AudioFrame", bits: int, channels: int) -> byt
 
 
 def _copy_tags(source: str, target: str) -> None:
-    """Copy the tags of the .m4a at source that a FLAC carries, and its first cover, into the FLAC at target."""
+    """Copy the tags of the .m4a at source named in _TEXT_TAGS and _NUMBER_TAGS, and its first cover if it is a JPEG
+    or PNG, into the FLAC at target."""
     tags = MP4(source).tags or {}
     flac = FLAC(target)
     for atom, field in _TEXT_TAGS.items():
