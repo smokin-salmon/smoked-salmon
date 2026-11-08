@@ -187,7 +187,8 @@ def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str]
 async def _convert_all(tracks: list[AlacTrack]) -> str | None:
     """Write and verify every track's FLAC; why it stopped, if it did.
 
-    A failure removes every FLAC this run wrote; the .m4a files are never touched here.
+    After a failure, every FLAC this run wrote is removed, or named in a warning if it cannot be (see _remove); the
+    .m4a files are never touched here.
     """
 
     failed = False
