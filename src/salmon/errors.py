@@ -103,10 +103,10 @@ class TLSCertificateError(RequestError):
 
 
 class UploadRefusedError(RequestError):
-    """The tracker's upload form has no value that describes this torrent.
+    """The torrent cannot go to this tracker: no value on its form describes it, or its .torrent cannot be written.
 
-    Raised while the upload form data is built, before the upload request and the authentication
-    it needs, so the torrent is not uploaded to that tracker and other trackers are not affected.
+    Raised before the upload request and the authentication it needs, so the torrent is not uploaded
+    to that tracker and other trackers are not affected.
     Earlier requests to that tracker (group search, request check) may already have been sent.
     """
 
