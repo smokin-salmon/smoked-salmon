@@ -412,7 +412,7 @@ class UploadManager:
                     if (id(seedbox), folder) in failed_folders:
                         click.secho(
                             redact_secrets(
-                                f"Skipping seed on {_seedbox_display_name(seedbox, secrets)}: "
+                                f"Skipping seed on {name}: "
                                 f"the Rclone upload of {folder} failed, "
                                 f"so {local_path} was not added to the client there. Add it by hand once "
                                 "the files have been copied.",
@@ -437,7 +437,7 @@ class UploadManager:
                         else seedbox.label,
                         seedbox.add_paused,
                         secrets,
-                        _seedbox_display_name(seedbox, secrets),
+                        name,
                     )
                     if not added:
                         failed_seeds += 1
