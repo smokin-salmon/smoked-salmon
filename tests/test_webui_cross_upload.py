@@ -48,6 +48,7 @@ from helpers.webui_upload import PARAMS as UP_PARAMS
 from helpers.webui_upload import _drive
 from tenacity import wait_none
 from test_cross_upload import (
+    _no_search_string,
     dirs,  # noqa: F401
     settings,  # noqa: F401
 )
@@ -580,6 +581,28 @@ def test_the_log_check_asks_in_the_browser_and_its_no_drops_the_release(
         assert f"Not cross-uploading {TORRENT_ID}: the log check stopped it" in _log(job)
 
     _web(world, test, _holding(album, change=cd))
+    assert world.trackers["RED"].sent == []
+
+
+def test_a_release_with_no_search_string_fails_the_job_under_yyy_before_any_target_request(
+    monkeypatch: pytest.MonkeyPatch,
+    dirs: SimpleNamespace,  # noqa: F811
+) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    world = cross_upload_world(monkeypatch, dirs)
+
+    async def test(client: TestClient, manager: JobManager) -> None:
+        job, asked = await _drive(client, manager, await _start(client, assume_defaults=True))
+        assert asked == []
+        assert job.status == "failed", (job.error, _log(job))
+        assert job.error == "Nothing to cross-upload."
+        assert (
+            f"Not cross-uploading {TORRENT_ID}: No dupe search is possible for this title: check the tracker "
+            "yourself. Not with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
+            "and with upload.yes_all off"
+        ) in _log(job)
+
+    _web(world, test, _holding(album, change=_no_search_string))
     assert world.trackers["RED"].sent == []
 
 
