@@ -8,6 +8,7 @@ same samples as its ALAC before any .m4a is removed.
 import contextlib
 import hashlib
 import os
+import stat
 import subprocess
 import tempfile
 import uuid
@@ -102,11 +103,10 @@ async def convert_alac(album: str, staged: str) -> str | None:
     count = f"{len(tracks)} ALAC file{'s' if len(tracks) > 1 else ''}"
     in_place = os.path.samefile(staged, album)
     where = f"in {album}" if in_place else "in the copy salmon works on"
-    them = "them" if len(tracks) > 1 else "it"
     click.secho(
-        f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads {them} as FLAC, with the same samples, "
-        f"bit depth, sample rate and channels. It keeps these tags: {_KEPT_FIELDS}, and the first cover if it is a "
-        f"JPEG or PNG; it drops the others. Each .m4a {where} is replaced by its .flac.",
+        f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads {_it(tracks)} as FLAC, with the same "
+        f"samples, bit depth, sample rate and channels. It keeps these tags: {_KEPT_FIELDS}, and the first cover if "
+        f"it is a JPEG or PNG; it drops the others. Each .m4a {where} is replaced by its .flac.",
         fg="yellow",
     )
     if not await interaction.assume_defaults() and not await interaction.confirm(
@@ -182,7 +182,7 @@ def _scan(folder: str) -> _Scan:
     return scan
 
 
-def _it(names: list[str]) -> str:
+def _it(names: list[str] | list[AlacTrack]) -> str:
     """ "it" for one name, "them" for more."""
     return "it" if len(names) == 1 else "them"
 
@@ -211,12 +211,16 @@ def _refusal(album: str, staged: str, scan: _Scan) -> str | None:
         return f"{odd.name} is {odd.bits}-bit ALAC: salmon converts only 16-bit and 24-bit ALAC to FLAC."
     taken: dict[str, AlacTrack] = {}
     for track in tracks:
-        if os.path.isfile(track.target) and not os.path.islink(track.target) and not os.path.getsize(track.target):
+        try:
+            existing = os.lstat(track.target)
+        except FileNotFoundError:
+            existing = None
+        if existing is not None and stat.S_ISREG(existing.st_mode) and not existing.st_size:
             return (
-                f"{track.flac_name} in {album} is empty, left by a conversion that stopped: "
-                "remove it and run salmon again."
+                f"{track.flac_name} in {album} is empty: left by a conversion that stopped, or claimed by one going "
+                "on now. Once no other salmon run is converting the album, remove it and run salmon again."
             )
-        if os.path.lexists(track.target):
+        if existing is not None:
             return (
                 f"{track.flac_name} is already in {album}, where salmon would convert {track.name} to: "
                 "move one of them out of the album and run salmon again."
@@ -280,37 +284,35 @@ def _publish(written: list[tuple[AlacTrack, str]]) -> str | None:
     """Move each verified FLAC from its partial name to its .flac name, never over a file; why it stopped, if it did.
 
     Each .flac name is claimed by creating it, which fails on a name in use, then replaced by the FLAC: a FLAC another
-    run of salmon put there since the checks before the question (two uploads of one album at once) stays. A kill
-    between the two leaves an empty .flac, which the next run names as such. After a failure, the names this run
-    claimed go.
+    run of salmon put there since the checks before the question (two uploads of one album at once) stays. After a
+    failure, the names this run claimed go. A kill between the claim and the move leaves an empty .flac beside the
+    track's partial FLAC: the next run stops on the partial, the one after on the empty .flac.
     """
     claimed: list[str] = []
-
-    def undo(message: str) -> str:
-        for target in claimed:
-            _remove(target)
-        return message
-
+    done = False
     try:
         for track, partial in written:
             try:
-                os.close(os.open(track.target, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+                # 0o666 as open() gives, less the umask: os.open's default would make the file executable.
+                os.close(os.open(track.target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o666))
             except FileExistsError:
-                return undo(
+                return (
                     f"{track.flac_name} appeared while salmon converted {track.name}, perhaps from another run on the "
                     "album. Nothing was converted."
                 )
             except OSError as error:
-                return undo(f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted.")
+                return f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted."
             claimed.append(track.target)
             try:
                 os.replace(partial, track.target)
             except OSError as error:
-                return undo(f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted.")
-    except BaseException:
-        undo("")
-        raise
-    return None
+                return f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted."
+        done = True
+        return None
+    finally:
+        if not done:
+            for target in claimed:
+                _remove(target)
 
 
 def _remove_sources(tracks: list[AlacTrack]) -> list[str]:
