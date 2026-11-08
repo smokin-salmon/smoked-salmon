@@ -8,6 +8,8 @@
   import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
 
   let path = $state('')
+  // Whether the picker has checked the folder and a job may start on it.
+  let usable = $state(false)
   let report = $state(false)
   // The trackers in the config, and those picked: none by default, so nothing is sent unless asked.
   let trackers = $state<string[]>([])
@@ -79,7 +81,7 @@
 </p>
 
 <div class="card">
-  <FolderPicker bind:value={path} />
+  <FolderPicker bind:value={path} bind:usable />
   {#if trackers.length}
     <div class="trackers">
       <span class="label">Search for a dupe on</span>
@@ -110,7 +112,7 @@
     </label>
   </div>
   <div class="row actions">
-    <button class="btn" onclick={run} disabled={!path || starting}>Run checks</button>
+    <button class="btn" onclick={run} disabled={!usable || starting}>Run checks</button>
   </div>
   {#if error}<p class="error">{error}</p>{/if}
 </div>

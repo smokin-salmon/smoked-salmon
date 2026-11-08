@@ -1,5 +1,7 @@
 """What track and disc number text reads as in common/numbers.py, and what changed on the way there."""
 
+import os
+import random
 from types import SimpleNamespace
 from typing import Any
 
@@ -10,10 +12,10 @@ from helpers.tagger_metadata_corrections import _scraped
 import salmon.commands
 from salmon import cfg
 from salmon.commands import build_description
-from salmon.common.files import get_audio_files
 from salmon.common.numbers import (
-    leading_number_key,
+    file_order_key,
     natural_key,
+    number_or_text,
     number_text,
     padded_number,
     read_number,
@@ -95,6 +97,25 @@ def test_each_reader_of_a_tag_answers_as_before(
         assert unreadable_number(tags, "discnumber") == unreadable
 
 
+@pytest.mark.parametrize(
+    ("value", "key"),
+    [
+        ("1", 1),
+        ("01", 1),
+        (1, 1),
+        ("１２", 12),
+        ("٣", 3),
+        ("A1", "A1"),
+        ("1²", "1²"),
+        (" 1", " 1"),
+        ("", ""),
+        (None, "None"),
+    ],
+)
+def test_a_number_or_its_text_as_a_key(value: Any, key: int | str) -> None:
+    assert number_or_text(value) == key
+
+
 def test_a_tag_object_with_no_such_field_has_no_number_as_before() -> None:
     assert tag_number(SimpleNamespace(), "discnumber") is None
 
@@ -123,32 +144,110 @@ def test_a_natural_key_orders_any_scripts_digits_by_value_as_before() -> None:
 
 
 @pytest.mark.parametrize(
-    ("names", "ordered"),
+    "names",
     [
-        (
-            ["10 a.flac", "2 b.flac", "b.flac", "A.flac", "C.flac"],
-            ["2 b.flac", "10 a.flac", "A.flac", "b.flac", "C.flac"],
-        ),
-        (["1/02.flac", "1/01.flac"], ["1/02.flac", "1/01.flac"]),
-        (["x 2.flac", "x 10.flac"], ["x 10.flac", "x 2.flac"]),
+        ["1.flac", "2.flac", "10.flac"],
+        ["1-1.flac", "1-2.flac", "1-10.flac"],
+        ["CD1/01.flac", "CD2/01.flac", "CD10/01.flac"],
+        ["Disc 1/2.flac", "Disc 1/10.flac", "Disc 2/1.flac"],
+        ["A1.flac", "A2.flac", "B1.flac"],
+        ["CD1/01.flac", "CD1 Bonus/01.flac", "CD2/01.flac"],
+        ["x 2.flac", "x 10.flac"],
+        ["1/01.flac", "1 a.flac", "01.flac"],
     ],
 )
-def test_file_names_sort_by_their_leading_number_as_before(names: list[str], ordered: list[str]) -> None:
-    assert sorted(names, key=leading_number_key) == ordered
+def test_file_order_key_each_folder_then_the_name(names: list[str]) -> None:
+    assert sorted(names[::-1], key=file_order_key) == names
 
 
-def test_a_leading_number_in_any_scripts_digits_goes_by_value_as_before() -> None:
-    assert sorted(["١٠ a.flac", "٣ b.flac"], key=leading_number_key) == ["٣ b.flac", "١٠ a.flac"]
+@pytest.mark.parametrize(
+    "names",
+    [
+        ["01.flac", "02.flac", "(bonus).flac"],
+        ["01.flac", "02.flac", "!x.flac"],
+        ["01.flac", "02.flac", "-1.flac"],
+        ["01.flac", "02.flac", ".a.flac"],
+        ["CD01/01.flac", "CD01-Bonus/01.flac", "CD02/01.flac"],
+    ],
+)
+def test_file_order_key_moves_padded_names_that_text_puts_first(names: list[str]) -> None:
+    assert sorted(names[::-1], key=file_order_key) == names
+    assert sorted(names) != names
 
 
-def test_an_albums_files_go_by_their_leading_number_as_before(tmp_path) -> None:
-    for name in ("10 a.flac", "2 b.flac"):
-        (tmp_path / name).write_bytes(b"")
+@pytest.mark.parametrize(
+    "names",
+    [["01.flac", "1.flac"], ["Track.flac", "track.flac"], ["CD01/a.flac", "CD1/a.flac"]],
+)
+def test_file_order_key_breaks_a_tie_by_the_exact_path(names: list[str]) -> None:
+    assert sorted(names, key=file_order_key) == sorted(names[::-1], key=file_order_key) == names
+    assert len({file_order_key(name) for name in names}) == len(names)
+    # Without the path they tie: the path is what decides.
+    assert len({file_order_key(name)[0] for name in names}) == 1
 
-    assert get_audio_files(str(tmp_path), True) == ["2 b.flac", "10 a.flac"]
+
+@pytest.mark.parametrize(
+    "names",
+    [
+        ["٢.flac", "١٠.flac"],
+        ["٢.flac", "10.flac"],
+        ["２.flac", "１０.flac"],
+        ["1.flac", "1².flac", "2.flac"],
+    ],
+)
+def test_file_order_key_any_scripts_digits(names: list[str]) -> None:
+    assert sorted(names[::-1], key=file_order_key) == names
 
 
-def test_a_tracks_place_goes_by_its_files_leading_number_as_before() -> None:
+def test_file_order_key_with_the_other_separator(monkeypatch) -> None:
+    monkeypatch.setattr(os, "sep", "\\")
+    names = ["CD1\\2.flac", "CD1\\10.flac", "CD1 Bonus\\01.flac", "CD2\\01.flac", "CD10\\01.flac"]
+    assert sorted(names[::-1], key=file_order_key) == names
+    # A walk from a top written with a forward slash: that slash is in every path, in one part they all share.
+    prefixed = [f"C:/music/album\\{name}" for name in names]
+    assert sorted(prefixed[::-1], key=file_order_key) == prefixed
+
+
+def test_file_order_key_absolute_as_relative() -> None:
+    names = ["CD1/01.flac", "CD1/02.flac", "CD2/01.flac", "CD10/01.flac"]
+    absolute = [f"/music/Album/{name}" for name in names]
+    assert sorted(absolute[::-1], key=file_order_key) == absolute
+
+
+def test_file_order_key_one_order_from_any_shuffle() -> None:
+    rng = random.Random(940)
+    pieces = [
+        "1",
+        "2",
+        "0",
+        "10",
+        "٣",
+        "²",
+        "é",
+        "É",
+        " ",
+        ".",
+        "-",
+        "/",
+        "a",
+        "B",
+        "\\",
+        "_",
+        "１",
+        "ß",
+        "İ",
+        "\udcff",
+    ]
+    names = list({"".join(rng.choice(pieces) for _ in range(rng.randint(1, 12))) for _ in range(5000)})
+    # No comparison of a number with text raises, and no two paths tie.
+    ordered = sorted(names, key=file_order_key)
+    assert len(ordered) > 4000
+    for _ in range(5):
+        assert sorted(rng.sample(names, len(names)), key=file_order_key) == ordered
+    assert len({file_order_key(name) for name in names}) == len(names)
+
+
+def test_a_tracks_place_goes_by_its_files_number_as_before() -> None:
     tags = {name: _untagged(title) for name, title in (("10 a.flac", "Ten"), ("2 b.flac", "Two"))}
 
     assert create_track_list(tags, False)["1"]["1"]["title"] == "Two"

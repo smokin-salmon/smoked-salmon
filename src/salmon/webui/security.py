@@ -45,7 +45,7 @@ def split_host(value: str) -> tuple[str, int | None]:
         raise ValueError(value)
     if port is None:
         return name, None
-    if not port.isdigit() or not 0 < int(port) < 65536:
+    if not port.isdecimal() or not 0 < int(port) < 65536:
         raise ValueError(value)
     return name, int(port)
 

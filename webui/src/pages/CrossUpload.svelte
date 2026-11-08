@@ -31,6 +31,8 @@
   let source = $state('')
   let target = $state('')
   let path = $state('')
+  // Whether the picker has checked the folder and a job may start on it.
+  let usable = $state(false)
   let groupId = $state('')
   // None ticked at each visit, as salmon cross-upload makes none without --conversions.
   let conversions = $state<string[]>([])
@@ -178,7 +180,7 @@
 
     <div class="field folder">
       <span class="label">Album folder (optional)</span>
-      <FolderPicker bind:value={path} prefill={false} />
+      <FolderPicker bind:value={path} bind:usable empty="the folder each torrent names, in download_directory" />
       {#if showHelp}
         <small class="hint">
           Only when the files are not in download_directory under the torrent's folder name (--path). One torrent
@@ -232,7 +234,7 @@
       <button
         class="btn"
         onclick={start}
-        disabled={!given.length || given.length > options.max_releases || !source || !target || starting}
+        disabled={!given.length || given.length > options.max_releases || !source || !target || (!!path && !usable) || starting}
       >
         {dryRun ? 'Start the dry run' : 'Start the cross-upload'}
       </button>

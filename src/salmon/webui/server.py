@@ -191,7 +191,8 @@ def _filtered(request: web.Request, answer: Any, status: int = 200) -> web.Respo
 
 async def browse(request: web.Request) -> web.Response:
     """The roots, or the folders inside a folder of one (``?path=``), each marked when it holds audio; with
-    ``?images=1``, the folder's image files too. ``?sort=`` is ``newest`` (the default) or ``name``."""
+    ``?images=1``, the folder's image files too. ``?sort=`` is ``newest`` (the default) or ``name``. A path in a root
+    that is not a folder lists the nearest folder above it, and says so (``missing``)."""
     try:
         # A worker thread: a folder on a slow disk must not stall the server's loop.
         answer = await asyncio.to_thread(
@@ -200,6 +201,18 @@ async def browse(request: web.Request) -> web.Response:
             request.query.get("images") == "1",
             request.query.get("sort", "newest"),
         )
+    except paths.PathRefused as e:
+        return _filtered(request, {"detail": e.detail}, e.status)
+    return _filtered(request, answer)
+
+
+async def folder_summary(request: web.Request) -> web.Response:
+    """The folder a job on ``?path=`` would work on and one line counting its audio files and their folders:
+    ``{"path", "summary"}``, or the refusal of ``album_folder``, the check every job on a folder makes. Changes
+    nothing."""
+    try:
+        # A worker thread: the count walks the folder.
+        answer = await asyncio.to_thread(paths.summary, request.query.get("path", ""))
     except paths.PathRefused as e:
         return _filtered(request, {"detail": e.detail}, e.status)
     return _filtered(request, answer)
@@ -601,6 +614,7 @@ def create_app(
     app.router.add_get("/api/health", health)
     app.router.add_get("/api/dashboard", dashboard)
     app.router.add_get("/api/browse", browse)
+    app.router.add_get("/api/folder", folder_summary)
     app.router.add_get("/api/source", source_preset)
     app.router.add_get("/api/upload/options", upload_options)
     app.router.add_get("/api/cross-upload/options", cross_upload_options)

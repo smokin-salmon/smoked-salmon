@@ -8,7 +8,7 @@ import asyncclick as click
 
 from salmon import cfg, interaction
 from salmon.common import RE_USELESS_VERSION, re_split, split_genre
-from salmon.common.numbers import leading_number_key, number_text, read_number
+from salmon.common.numbers import file_order_key, number_text, read_number
 from salmon.common.strings import strip_numbered_suffixes
 from salmon.constants import FORMATS, TAG_ENCODINGS
 from salmon.tagger.tags import is_classical
@@ -141,7 +141,7 @@ def create_track_list(tags, overwrite, audio_info=None):
     """Generate the track data from each track tag."""
     audio_info = audio_info or {}
     tracks = defaultdict(dict)
-    for trackindex, (filename, track) in enumerate(sorted(tags.items(), key=lambda k: leading_number_key(k[0])), 1):
+    for trackindex, (filename, track) in enumerate(sorted(tags.items(), key=lambda k: file_order_key(k[0])), 1):
         discnumber = track.discnumber or "1"
         own_number = number_text(track.tracknumber) if track.tracknumber else ""
         numbered = (read_number(own_number) or 0) > 0

@@ -153,6 +153,25 @@ def test_a_log_in_a_disc_folder_checks_only_that_disc(tmp_path, monkeypatch) -> 
     assert sorted(checked) == [str(tmp_path / "CD1" / "d1-01.flac"), str(tmp_path / "CD1" / "d1-02.flac")]
 
 
+@pytest.mark.parametrize(
+    "names",
+    [
+        ["1 - a.flac", "2 - b.flac", "11 - k.flac"],
+        ["apple.flac", "Banana.flac"],
+        ["Disc 1/02.flac", "Disc 2/01.flac"],
+    ],
+    ids=lambda names: names[-1],
+)
+def test_a_range_rebuilds_in_track_order(monkeypatch, names) -> None:
+    monkeypatch.setattr(logs, "_get_audio_duration_sectors", lambda _path: 75)
+    monkeypatch.setattr(logs, "_iter_pcm_chunks", lambda path: iter([path.encode()]))
+    toc = [SimpleNamespace(start_sector=0, end_sector=74) for _ in names]
+
+    chunks = list(logs._iter_range_pcm_chunks([f"/album/{name}" for name in names[::-1]], toc))
+
+    assert chunks == [f"/album/{name}".encode() for name in names]
+
+
 def test_a_range_rip_log_in_a_disc_folder_rebuilds_only_that_disc(tmp_path, monkeypatch) -> None:
     basepath = _write_files(
         tmp_path, ["CD1/CD1.log", "CD1/d1-01.flac", "CD1/d1-02.flac", "CD2/CD2.log", "CD2/d2-01.flac", "CD2/d2-02.flac"]

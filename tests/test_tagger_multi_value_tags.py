@@ -146,6 +146,31 @@ def test_artists_lists_every_main_and_guest_by_name(tmp_path, monkeypatch, guest
         assert audio["artist"] == [f"Main One & Main Two (feat. {cfg.upload.formatting.various_artist_word})"]
 
 
+def _retagged_title(tmp_path, monkeypatch, title):
+    monkeypatch.setattr(
+        cfg.upload,
+        "formatting",
+        msgspec.structs.replace(cfg.upload.formatting, guests_in_track_title=True),
+    )
+    path = _flac_album(tmp_path)
+
+    _retag(tmp_path, _metadata(_trackmeta(CREDIT, title=title)))
+
+    return FLAC(path)["title"]
+
+
+def test_a_retag_leaves_a_with_bracket_naming_the_guest(tmp_path, monkeypatch):
+    title = _retagged_title(tmp_path, monkeypatch, "Song (with Owen)")
+
+    assert title == ["Song (with Owen)"]
+
+
+def test_as_before_a_retag_adds_the_guest_after_a_with_bracket_naming_someone_else(tmp_path, monkeypatch):
+    title = _retagged_title(tmp_path, monkeypatch, "Song (with Strings)")
+
+    assert title == ["Song (with Strings) (feat. Owen)"]
+
+
 def test_artists_leaves_out_remixers_and_composers(tmp_path):
     path = _flac_album(tmp_path)
     artists = [("Dree Low", "main"), ("Owen", "guest"), ("Rem Ixer", "remixer"), ("Com Poser", "composer")]

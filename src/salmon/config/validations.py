@@ -65,12 +65,16 @@ class Directory(BaseStruct):
     hardlinks: bool = True
     tmp_dir: str | None = None
     clean_tmp_dir: bool = False
+    # Where salmon cross-upload writes its .torrent files, instead of dottorrents_dir. Unset: dottorrents_dir.
+    cross_upload_dottorrents_dir: str | None = None
     # Curated music folders: salmon works on a copy of an album inside one, and never changes or deletes it.
     library_dirs: list[str] = msgspec.field(default_factory=list)
 
     def __post_init__(self):
         if not os.path.isdir(self.dottorrents_dir):
             raise ValueError("dottorrents_dir is not a valid directory")
+        if self.cross_upload_dottorrents_dir and not os.path.isdir(self.cross_upload_dottorrents_dir):
+            raise ValueError("cross_upload_dottorrents_dir is not a valid directory")
         if not os.path.isdir(self.download_directory):
             raise ValueError("download_directory is not a valid directory")
         if self.tmp_dir and not os.path.isdir(self.tmp_dir):
@@ -82,6 +86,7 @@ class Directory(BaseStruct):
             for name, folder in (
                 ("download_directory", self.download_directory),
                 ("dottorrents_dir", self.dottorrents_dir),
+                ("cross_upload_dottorrents_dir", self.cross_upload_dottorrents_dir),
                 ("tmp_dir", self.tmp_dir),
             ):
                 if folder and _holds(entry, folder):
@@ -247,6 +252,8 @@ class GazelleTrackerSettings(BaseStruct):
     api_key: str | None = None
     # TODO: validate this
     dottorrents_dir: str | None = None
+    # Where salmon cross-upload writes this tracker's .torrent files. Unset: see Cfg.cross_upload_dottorrents_dir.
+    cross_upload_dottorrents_dir: str | None = None
 
 
 class Tracker(BaseStruct):
@@ -286,6 +293,8 @@ class Seedbox(BaseStruct):
     extra_args: list[str] = msgspec.field(default_factory=list)  # pass these arguments to rclone
     torrent_client: str = ""
     label: str = ""  # Label to apply to torrents in download client
+    # The label for torrents salmon cross-upload queues here. Unset: label.
+    cross_upload_label: str | None = None
     add_paused: bool = False  # If true, add torrents to client in paused state
     # rclone only: salmon up removes the folder from download_directory once every seedbox has it and seeds it.
     remove_local_after_copy: bool = False
@@ -599,8 +608,20 @@ class Cfg(BaseStruct):
         # A tracker's own dottorrents_dir gets .torrent files written with overwrite, as the global one does.
         for code in _TRACKER_CODES:
             settings = getattr(self.tracker, code)
-            folder = settings.dottorrents_dir if settings else None
-            if folder and (library := self.directory.library_of(folder)) is not None:
-                raise ValueError(
-                    f"library_dirs entry {library} must not contain tracker.{code}.dottorrents_dir ({folder})"
-                )
+            for key in ("dottorrents_dir", "cross_upload_dottorrents_dir"):
+                folder = getattr(settings, key) if settings else None
+                if key == "cross_upload_dottorrents_dir" and folder and not os.path.isdir(folder):
+                    raise ValueError(f"tracker.{code}.{key} is not a valid directory")
+                if folder and (library := self.directory.library_of(folder)) is not None:
+                    raise ValueError(f"library_dirs entry {library} must not contain tracker.{code}.{key} ({folder})")
+
+    def cross_upload_dottorrents_dir(self, code: str) -> str | None:
+        """The folder salmon cross-upload writes tracker `code`'s .torrent files to, or None when none is set for it.
+
+        First set wins: the tracker's cross_upload_dottorrents_dir, then the global one. None leaves the folder
+        the tracker client already chose (its dottorrents_dir, then the global one), as salmon up uses.
+        """
+        settings: GazelleTrackerSettings | None = getattr(self.tracker, code.lower(), None)
+        return (
+            settings.cross_upload_dottorrents_dir if settings else None
+        ) or self.directory.cross_upload_dottorrents_dir

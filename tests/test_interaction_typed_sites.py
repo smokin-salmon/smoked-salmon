@@ -394,6 +394,16 @@ def test_every_key_of_fill_a_request_is_accepted(monkeypatch: pytest.MonkeyPatch
         assert len(terminal.calls) == 1
 
 
+@pytest.mark.parametrize("typed", ["٣", "https://red.test/requests.php?action=view&id=٣"])
+def test_fill_a_request_asks_again_on_another_scripts_digit_as_before(
+    monkeypatch: pytest.MonkeyPatch, typed: str
+) -> None:
+    site = partial(request_checker._prompt_for_request_id, SITE, REQUESTS)
+    result, terminal, _described = ask(monkeypatch, site, [typed, "n"])
+    assert result is None
+    assert len(terminal.calls) == 2
+
+
 def test_a_request_row_without_an_id_is_still_listed_by_its_number(monkeypatch: pytest.MonkeyPatch) -> None:
     site = partial(request_checker._prompt_for_request_id, SITE, [*REQUESTS[:1], {"title": "Broken"}])
     _result, _terminal, described = ask(monkeypatch, site, ["n"])
@@ -499,6 +509,48 @@ def test_every_key_of_formats_to_convert_is_accepted(monkeypatch: pytest.MonkeyP
         assert [call[0] for call in terminal.calls] == ["prompt", "confirm"]
         assert terminal.calls[1][1] == click.style("Confirm selection?", fg="magenta")
         assert described.labels == [None]
+
+
+@pytest.mark.parametrize("typed", ["abc", "1 abc"])
+def test_formats_to_convert_asks_again_on_a_word_that_isnt_a_number(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], typed: str
+) -> None:
+    result, terminal, _described = ask(monkeypatch, conversions(), [typed, "0"])
+    assert result == []
+    assert len(terminal.calls) == 2
+    out = capsys.readouterr().out
+    assert "Invalid input format" in out
+
+
+@pytest.mark.parametrize("typed", ["-1", "1_000"])
+def test_formats_to_convert_asks_again_on_a_number_that_isnt_a_row(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], typed: str
+) -> None:
+    result, terminal, _described = ask(monkeypatch, conversions(), [typed, "0"])
+    assert result == []
+    assert len(terminal.calls) == 2
+    out = capsys.readouterr().out
+    assert "Invalid choices" in out
+
+
+def test_formats_to_convert_reads_a_plus_sign_as_the_row(monkeypatch: pytest.MonkeyPatch) -> None:
+    result, _terminal, _described = ask(monkeypatch, conversions(), ["+1", True])
+    assert result == ["16bit 48.0 kHz"]
+
+
+def test_formats_to_convert_asks_again_on_a_number_int_refuses_as_before(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    result, terminal, _described = ask(monkeypatch, conversions(), ["1²", "0"])
+    assert result == []
+    assert len(terminal.calls) == 2
+    out = capsys.readouterr().out
+    assert "Invalid input format" in out
+
+
+def test_formats_to_convert_reads_another_scripts_digit_as_a_row_as_before(monkeypatch: pytest.MonkeyPatch) -> None:
+    result, _terminal, _described = ask(monkeypatch, conversions(), ["٣", True])
+    assert result == ["MP3 V0"]
 
 
 def test_formats_to_convert_with_yyy_is_not_asked(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -3,7 +3,7 @@ import re
 import unicodedata
 
 from salmon import cfg
-from salmon.common.regexes import re_strip
+from salmon.common.regexes import re_split, re_strip
 from salmon.constants import GENRE_LIST
 from salmon.errors import GenreNotInWhitelist
 
@@ -13,13 +13,17 @@ _RE_NUMBERED_SUFFIXES = re.compile(r" \(\d+\)(?= |$)")
 # Only at the end, as a whole word after a space, so "The Singles" and "Forever Single Mothers" keep theirs, and an
 # album called "EP" or "Single" keeps its title.
 _RE_TYPE_SUFFIX = re.compile(r"\s+(?:-\s*)?(?:EP|Single)\s*$")
+# A credit in a title, in any case: "feat", "Feat.", "featuring" or "ft." as a whole word, or a bracket opening with
+# "with" or "vs." ("Song (with B)"), with the names it holds.
+_RE_CREDIT_WORD = re.compile(r"\b(?:feat|featuring|ft)\b", flags=re.IGNORECASE)
+_RE_CREDIT_BRACKET = re.compile(r"[(\[]\s*(?:with|vs\.?)\s([^)\]]*)", flags=re.IGNORECASE)
 
 
 def numeric_id(value: object) -> int | None:
     """An ID or a row, from a tracker's answer or typed: an int or a string of ASCII digits; None for anything else."""
     try:
         text = str(value) if isinstance(value, int | str) and not isinstance(value, bool) else ""
-        return int(text) if text.isascii() and text.isdigit() else None
+        return int(text) if text.isascii() and text.isdecimal() else None
     except ValueError:  # More digits than Python converts.
         return None
 
@@ -120,6 +124,21 @@ def reaches_various_threshold(names) -> bool:
 def names_no_artist(name: str) -> bool:
     """Whether a credit is "Various Artists" or "Various", by its whole name in any case: it names no artist."""
     return name.strip().casefold() in {"various artists", "various"}
+
+
+def credit_in_title(title: str, guests=()) -> bool:
+    """Whether a title already credits someone.
+
+    A credit word always counts. A with or vs. bracket counts only when it names every one of ``guests``, so
+    "Song (with Strings)" does not credit guest C. Given no guests to check, as a tracklist reading tags is, any such
+    bracket counts.
+    """
+    if _RE_CREDIT_WORD.search(title):
+        return True
+    wanted = {comparable(name) for guest in guests for name in re_split(guest)}
+    return any(
+        wanted <= {comparable(name) for name in re_split(bracket[1])} for bracket in _RE_CREDIT_BRACKET.finditer(title)
+    )
 
 
 def artists_or_various(names) -> str:

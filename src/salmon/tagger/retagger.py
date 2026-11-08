@@ -14,6 +14,7 @@ from salmon import cfg, interaction
 from salmon.common import clean_name, has_visible_chars
 from salmon.common.numbers import (
     natural_key,
+    number_or_text,
     padded_number,
     tag_number,
     tag_number_or_one,
@@ -21,7 +22,13 @@ from salmon.common.numbers import (
     tag_value,
     unreadable_number,
 )
-from salmon.common.strings import artists_or_various, comparable, join_artists, reaches_various_threshold
+from salmon.common.strings import (
+    artists_or_various,
+    comparable,
+    credit_in_title,
+    join_artists,
+    reaches_various_threshold,
+)
 from salmon.constants import (
     ARROWS,
     BLACKLISTED_CHARS,
@@ -271,14 +278,10 @@ def _track_changes(pairs):
     return changes
 
 
-# A feature credit already in a title, as a whole word in any case: "feat", "Feat.", "featuring" or "ft."
-_FEATURE_CREDIT = re.compile(r"\b(?:feat|featuring|ft)\b", flags=re.IGNORECASE)
-
-
 def append_guests_to_track_titles(track):
     guest_artists = [a for a, i in track["artists"] if i == "guest"]
     # This looked for "feat" anywhere, so "Song (Feat. Alice)" gained a second credit and "Defeat" none
-    if not _FEATURE_CREDIT.search(track["title"]) and guest_artists:
+    if not credit_in_title(track["title"], guest_artists) and guest_artists:
         # If we find a remix parenthetical, remove it and re-add it after the guest artists.
         remix = re.search(r"( \([^\)]+Remix(?:er)?\))", track["title"], flags=re.IGNORECASE)
         if remix:
@@ -305,17 +308,7 @@ def metadata_to_track_list(metadata):
 
 def _track_key(track):
     """A track's (disc, track) pair, read the way a file's own tags are (no disc is disc 1)."""
-    return (_to_number(track.get("disc#") or 1), _to_number(track["track#"]))
-
-
-def _to_number(value):
-    """A digit string read as an int, so it compares equal to the number a tag parses to; anything else as is.
-
-    ``str.isdecimal()``, not ``str.isdigit()``: ``isdigit()`` accepts some Unicode digits (superscript "2")
-    that ``int()`` then rejects, while ``isdecimal()`` is true for exactly what ``int()`` accepts.
-    """
-    s = str(value)
-    return int(s) if s.isdecimal() else s
+    return (number_or_text(track.get("disc#") or 1), number_or_text(track["track#"]))
 
 
 def _zips_onto(keys, discs) -> bool:
@@ -386,7 +379,7 @@ def _names_move_a_pinned_file(by_name, tracks) -> bool:
     itself where the metadata numbers its tracks otherwise (A1, A2).
     """
     numbers = [tag_number(tagset, "tracknumber") for _, tagset in by_name]
-    wanted = [n if isinstance(n := _to_number(track), int) else place for place, track in enumerate(tracks, 1)]
+    wanted = [n if isinstance(n := number_or_text(track), int) else place for place, track in enumerate(tracks, 1)]
     return any(n is not None and numbers.count(n) == 1 and n != want for n, want in zip(numbers, wanted, strict=True))
 
 

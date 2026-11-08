@@ -22,7 +22,7 @@ def _stub_audio_info(monkeypatch, tracks):
     """Replace gather_audio_info with one that returns `tracks` and records whether it was called."""
     calls = []
 
-    def fake_gather(path, sort_by_tracknumber=False):
+    def fake_gather(path):
         calls.append(path)
         return tracks
 

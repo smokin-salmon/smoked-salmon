@@ -7,12 +7,22 @@ export function onUnauthorized(cb: () => void) {
   unauthorizedHandler = cb
 }
 
+/** A request the server answered with an error: its status, and its detail as the message. */
+export class ApiError extends Error {
+  status: number
+
+  constructor(status: number, detail: string) {
+    super(detail)
+    this.status = status
+  }
+}
+
 async function handle<T>(res: Response): Promise<T> {
   if (res.status === 401) {
     unauthorizedHandler?.()
-    throw new Error('Authentication required.')
+    throw new ApiError(401, 'Authentication required.')
   }
-  if (!res.ok) throw new Error(await errorDetail(res))
+  if (!res.ok) throw new ApiError(res.status, await errorDetail(res))
   return res.json()
 }
 

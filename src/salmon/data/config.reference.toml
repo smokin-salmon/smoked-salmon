@@ -27,6 +27,13 @@
 # You still need to have it set even if using direct torrent injection with qbittorrent
 # dottorrents_dir = '.torrents'
 
+# Where salmon cross-upload writes its .torrent files (the cross-uploaded torrent and its conversions), when that
+# should not be dottorrents_dir. Must exist, and follows the library_dirs rules of dottorrents_dir. For a tracker,
+# salmon cross-upload uses the first set of: the tracker's cross_upload_dottorrents_dir (below), this key, the
+# tracker's dottorrents_dir, then dottorrents_dir. So this key outranks a tracker's own dottorrents_dir for a
+# cross-upload. salmon up is not affected.
+# cross_upload_dottorrents_dir = 'path to dir'
+
 # Set the TMP dir where spectrals are made, e.g. on a fast disk. Unset, they go in the album's Spectrals folder, or in
 # download_directory for a library album or an album that has a Spectrals folder of its own.
 # tmp_dir = 'path to tmp dir'
@@ -167,18 +174,24 @@
 # api_key = 'red-api-key'          # Needs uploading privileges (optional for now)
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to dir'
+# salmon cross-upload's own folder for this tracker's .torrent files (see directory.cross_upload_dottorrents_dir)
+# cross_upload_dottorrents_dir = 'path to dir'
 
 # [tracker.ops]
 # session = 'get-from-site-cookie'
 # api_key = 'ops-api-key'          # Needs uploading privileges (optional for now)
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to ops dir'
+# salmon cross-upload's own folder for this tracker's .torrent files (see directory.cross_upload_dottorrents_dir)
+# cross_upload_dottorrents_dir = 'path to ops dir'
 
 # [tracker.dic]
 # session = 'get-from-site-cookie'
 # api_key = 'dic-api-key'          # DIC does not take API keys: ignored, with a warning
 # In case you want separate output folders for .torrent files
 # dottorrents_dir = 'path to dic dir'
+# salmon cross-upload's own folder for this tracker's .torrent files (see directory.cross_upload_dottorrents_dir)
+# cross_upload_dottorrents_dir = 'path to dic dir'
 
 # ===============================
 # SEEDING SETTINGS
@@ -205,6 +218,8 @@
 # empty to use download_directory.
 # directory = ""
 # label = "smoked-salmon" # Label to apply to torrents in download client
+# Label for the torrents salmon cross-upload queues on this seedbox. Unset: label. salmon up keeps label.
+# cross_upload_label = "cross-upload"
 # add_paused = false # If true, add torrents to client in paused state
 # "rclone" only. After salmon up, remove the release folder from download_directory once this seedbox has copied
 # it and added its torrents, and every other seedbox that took it did too. It is kept when a "local" seedbox seeds
@@ -295,7 +310,8 @@
 # file_template = "{tracknumber}. {artist} - {title}"
 # true removes the source folder when the run ends, without asking: salmon up once it has uploaded the release from
 # its new name in download_directory, salmon tag once it has renamed it. A run that uploaded nothing, or was aborted
-# after an upload, keeps it.
+# after an upload, keeps it, as does a source holding files the folder check deleted from the renamed folder (salmon
+# names them).
 # It never applies to an album in library_dirs, or to a run that works on a copy (--skip-flac-upload,
 # --dry-run), and salmon says so when it keeps the folder.
 # remove_source_dir = false

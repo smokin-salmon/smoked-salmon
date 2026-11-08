@@ -8,7 +8,7 @@ from unidecode import unidecode
 
 from salmon import cfg
 from salmon.common import re_strip
-from salmon.common.numbers import natural_key
+from salmon.common.numbers import natural_key, number_or_text
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
@@ -111,14 +111,14 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
             if not base["year"]:
                 base["year"] = metadata["year"]
             if not base["group_year"] or (
-                str(metadata["group_year"]).isdigit() and int(metadata["group_year"]) < int(base["group_year"])
+                str(metadata["group_year"]).isdecimal() and int(metadata["group_year"]) < int(base["group_year"])
             ):
                 base["group_year"] = metadata["group_year"]
             if not base["date"] and metadata["date"]:
                 base["date"] = metadata["date"]
                 if metadata["year"]:
                     base["year"] = metadata["year"]
-                if metadata["group_year"]:
+                if str(metadata["group_year"]).isdecimal():
                     base["group_year"] = metadata["group_year"]
             if not base["rls_type"] or base["rls_type"] == "Album":
                 base["rls_type"] = metadata["rls_type"]
@@ -276,7 +276,7 @@ def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
         if btrack is None:
             result.append(None)
             continue
-        disc = _norm(btrack["disc#"])
+        disc = number_or_text(btrack["disc#"])
         seen[disc] = place = seen.get(disc, 0) + 1
         if usable:
             new_num = mtrack["track#"] if (update_track_numbers and mtrack["track#"]) else btrack["track#"]
@@ -288,14 +288,8 @@ def _new_track_numbers(mtracks, ordered, usable, update_track_numbers):
     return result
 
 
-def _norm(value):
-    """A disc or track number as a key: "01" and "1" are one number, so compare decimal numbers by value."""
-    text = str(value)
-    return int(text) if text.isascii() and text.isdecimal() else text
-
-
 def _slot(disc, num):
-    return (_norm(disc), _norm(num))
+    return (number_or_text(disc), number_or_text(num))
 
 
 def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, usable, update_track_numbers):

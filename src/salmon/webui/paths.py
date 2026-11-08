@@ -16,10 +16,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from salmon import cfg
+from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.images.files import NotAnImage, check_image
 from salmon.webui.jobs import JobError
 
-AUDIO_EXTENSIONS = frozenset({".flac", ".mp3", ".m4a"})
 # The files the picker offers as images; what a file really is, the upload checks (``image_file``).
 IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".gif", ".webp"})
 # Entries of one folder looked at, and folders listed, at most: a listing past them says it was cut.
@@ -29,8 +29,11 @@ MAX_LISTED = 500
 SORTS = ("newest", "name")
 # Entries looked at to mark a listed folder as holding audio (it or its disc folders).
 MAX_MARK_SCAN = 200
-# Folders walked in an album folder, to find its audio and any link in it: past them, it is not an album.
+# Folders walked in an album folder, to find any link in it: past them, it is not an album.
 MAX_ALBUM_WALK = 500
+# Folders walked in all, to check the album folders of one listing as a job would: past them, a folder is offered
+# by its place and its audio only, and the check at Start answers for the rest.
+MAX_OFFER_WALK = 2000
 # A Windows junction's reparse tag: stat.IO_REPARSE_TAG_MOUNT_POINT, which the stat module defines only on Windows.
 _JUNCTION = 0xA0000003
 
@@ -139,14 +142,47 @@ def _is_link(entry: os.DirEntry[str]) -> bool:
     return reparse_tag == _JUNCTION
 
 
-def holds_audio(path: str, max_folders: int = MAX_ALBUM_WALK) -> bool:
-    """Whether an audio file is in the folder or below it, as salmon finds an album's files, within `max_folders`.
+def holds_audio(path: str, max_entries: int | None = None) -> bool:
+    """Whether an audio file is in the folder or in one of its direct subfolders (disc folders): the one rule for an
+    album folder. The picker offers such a folder and ``album_folder`` refuses a job on any other, so an inbox whose
+    albums are two levels down (``incoming/<store>/<album>/``) is never worked on whole, and a box set still is. A
+    folder holding albums directly has the shape of a box set: it passes, and the count before Start shows it.
 
-    An audio file is a regular file with an audio extension: not a folder, a link or a named pipe so named.
+    A job's check (`max_entries` None) reads each folder whole; ``_refuse_links`` has already bounded how many
+    folders there are. The picker, marking many folders at once, looks at `max_entries` entries in each and as many
+    disc folders, so it may leave a very large album folder unmarked: it can still be typed in. An audio file is a
+    regular file with an audio extension: not a folder, a link or a named pipe so named. A disc folder that is a
+    symlink is not looked into. A folder that cannot be read holds none.
     """
-    for walked, (root, _dirs, files) in enumerate(os.walk(path)):
-        if walked >= max_folders:
-            return False
+    subfolders: list[str] = []
+    try:
+        with os.scandir(path) as entries:
+            for seen, entry in enumerate(entries):
+                if max_entries is not None and seen >= max_entries:
+                    break
+                if entry.is_dir(follow_symlinks=False):
+                    subfolders.append(entry.path)
+                elif _is_audio(entry.name) and entry.is_file(follow_symlinks=False):
+                    return True
+    except OSError:
+        return False
+    for subfolder in subfolders[:max_entries]:
+        try:
+            with os.scandir(subfolder) as entries:
+                for seen, entry in enumerate(entries):
+                    if max_entries is not None and seen >= max_entries:
+                        break
+                    if _is_audio(entry.name) and entry.is_file(follow_symlinks=False):
+                        return True
+        except OSError:
+            continue
+    return False
+
+
+def _audio_below(path: str) -> bool:
+    """Whether a regular audio file is anywhere below the folder: only to say why a folder is refused, on a folder
+    ``_refuse_links`` has passed."""
+    for root, _dirs, files in os.walk(path):
         if any(_is_audio(name) and _is_regular(os.path.join(root, name)) for name in files):
             return True
     return False
@@ -159,11 +195,22 @@ def _is_regular(path: str) -> bool:
         return False
 
 
-def _refuse_links(path: str) -> None:
+@dataclass
+class _Walked:
+    """Folders walked for links so far, counted also when a walk refuses."""
+
+    count: int = 0
+
+
+def _refuse_links(path: str, walked: _Walked | None = None) -> None:
     """Refuse a folder holding a link of any kind, anywhere in it (#898).
 
     salmon's copy of an album (``uploader/staging.py``) and the torrent made from it follow links, so a link would
     bring in what it leads to: a log, a scan or a folder from outside the roots would go into the upload.
+
+    Args:
+        path: The folder.
+        walked: Counts the folders this walk reads, for a caller that bounds several walks.
 
     Raises:
         PathRefused: The folder holds a symlink (or a junction), named by its path in the folder; more than
@@ -171,14 +218,16 @@ def _refuse_links(path: str) -> None:
             hide one.
     """
     pending = [path]
-    walked = 0
+    seen = 0
     while pending:
-        if walked >= MAX_ALBUM_WALK:
+        if seen >= MAX_ALBUM_WALK:
             raise PathRefused(
                 422, f"Refusing a folder holding more than {MAX_ALBUM_WALK} folders: pick one album folder in it."
             )
         folder = pending.pop()
-        walked += 1
+        seen += 1
+        if walked is not None:
+            walked.count += 1
         try:
             with os.scandir(folder) as entries:
                 for entry in entries:
@@ -201,7 +250,8 @@ def album_folder(raw: str) -> str:
 
     It must resolve inside a root, must not be a root itself or a folder holding a library, must not be a symlink
     (the job would work on what it leads to, which the CLI never does), must not be, be in or hold a folder of
-    .torrent files or a seedbox's (see withheld_folders), must hold no symlink at all (#898), and must hold audio.
+    .torrent files or a seedbox's (see withheld_folders), must hold no symlink at all (#898), and must hold audio in
+    it or in its disc folders (``holds_audio``), checked before the job copies or changes anything.
 
     Raises:
         PathRefused: The folder is refused, with a status and a reason a person can act on.
@@ -211,24 +261,135 @@ def album_folder(raw: str) -> str:
     # Confined before anything probes the path.
     if not _within(path, found):
         raise PathRefused(403, "Refusing a folder outside download_directory and library_dirs.")
+    _check_album(path, found, _withheld_from_albums(found), given=os.path.abspath(raw))
+    _refuse_without_audio(path)
+    return path
+
+
+def _check_album(
+    path: str,
+    found: list[Root],
+    withheld: list[str],
+    *,
+    given: str | None = None,
+    libraries: bool = True,
+    links: bool = True,
+    walked: _Walked | None = None,
+) -> None:
+    """``album_folder``'s rule on `path`, resolved and inside a root, but for its audio (``_refuse_without_audio``):
+    the one answer for Start and the picker.
+
+    Args:
+        path: The folder, resolved.
+        found: The roots.
+        withheld: ``_withheld_from_albums(found)``, or those of them that may concern `path`.
+        given: The path as given, to refuse a symlink; None for a folder the browser lists, which is none.
+        libraries: Whether to look for a library directory in it; not for a folder in one that holds none.
+        links: Whether to walk the folder for links (#898); a listing past ``MAX_OFFER_WALK`` does not.
+        walked: Counts the folders walked for links.
+
+    Raises:
+        PathRefused: The folder is refused, with a status and a reason a person can act on.
+    """
     if any(path == root.path for root in found):
         raise PathRefused(403, "Refusing a root folder: pick one album folder in it.")
-    if cfg.directory.library_inside(path) is not None:
+    if libraries and cfg.directory.library_inside(path) is not None:
         raise PathRefused(403, "Refusing a folder that holds a library directory: pick one album folder in it.")
-    given = os.path.abspath(raw)
-    if os.path.join(os.path.realpath(os.path.dirname(given)), os.path.basename(given)) != path:
-        raise PathRefused(403, "Refusing an album folder that is a symlink: open the folder it leads to.")
-    # Reached through a link from a library to outside it, the folder would lose the copy salmon works on.
-    if _named_in_library(given) and not cfg.directory.is_library_path(path):
-        raise PathRefused(403, "Refusing an album linked into a library from outside it: open the folder itself.")
-    if any(_same_or_inside(path, folder) or _same_or_inside(folder, path) for folder in _withheld_from_albums(found)):
+    if given is not None:
+        if os.path.join(os.path.realpath(os.path.dirname(given)), os.path.basename(given)) != path:
+            raise PathRefused(403, "Refusing an album folder that is a symlink: open the folder it leads to.")
+        # Reached through a link from a library to outside it, the folder would lose the copy salmon works on.
+        if _named_in_library(given) and not cfg.directory.is_library_path(path):
+            raise PathRefused(403, "Refusing an album linked into a library from outside it: open the folder itself.")
+    if any(_same_or_inside(path, folder) or _same_or_inside(folder, path) for folder in withheld):
         raise PathRefused(403, "Refusing a folder of .torrent files or a seedbox's, or one that holds one.")
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
-    _refuse_links(path)
+    if links:
+        _refuse_links(path, walked)
+
+
+def _refuse_without_audio(path: str) -> None:
+    """Refuse a folder with no audio in it or its disc folders (``holds_audio``), saying so when there is some deeper.
+
+    Raises:
+        PathRefused: The folder holds no audio an album folder would.
+    """
     if not holds_audio(path):
-        raise PathRefused(422, "No audio file (FLAC, MP3, M4A) in this folder.")
-    return path
+        if _audio_below(path):
+            raise PathRefused(
+                422,
+                "No audio file in this folder or its disc folders, but there are some deeper down. Pick the album "
+                "folder that holds them.",
+            )
+        raise PathRefused(422, "No audio file (FLAC, MP3, M4A) in this folder or its disc folders.")
+
+
+class _Offers:
+    """Which folders of one listing the picker offers as albums: those ``album_folder`` accepts.
+
+    A folder is first looked at as the picker can afford for each of hundreds (``holds_audio`` within
+    ``MAX_MARK_SCAN`` entries), so a very large album folder may be left unoffered: it can still be typed in. One
+    that passes is then checked as a job checks it, walking it for links, until the listing has walked
+    ``MAX_OFFER_WALK`` folders; past that, only by its place and its audio.
+
+    What the folders in a folder are, are in or hold, the folder listed is, is in or holds too: the withheld folders
+    and library directories are looked for once, from the folder listed, not again for each folder in it.
+    """
+
+    def __init__(self, found: list[Root], path: str) -> None:
+        """`path`: the folder listed, resolved."""
+        self._found = found
+        self._withheld = [
+            folder
+            for folder in _withheld_from_albums(found)
+            if _same_or_inside(path, folder) or _same_or_inside(folder, path)
+        ]
+        self._libraries = cfg.directory.library_inside(path) is not None
+        self._walked = _Walked()
+
+    def __call__(self, path: str) -> bool:
+        if not holds_audio(path, MAX_MARK_SCAN):
+            return False
+        links = self._walked.count < MAX_OFFER_WALK
+        try:
+            _check_album(path, self._found, self._withheld, libraries=self._libraries, links=links, walked=self._walked)
+        except PathRefused:
+            return False
+        return True
+
+    def here(self, path: str, audio: bool) -> tuple[bool, str | None]:
+        """Whether the folder listed is offered (checked whole, as at Start), and if not, why, when it holds audio.
+
+        A root is never offered, and says nothing: its albums are what its listing shows. `audio`: whether the
+        listing found an audio file in it, which saves looking again.
+        """
+        if any(path == root.path for root in self._found) or not (audio or holds_audio(path, MAX_MARK_SCAN)):
+            return False, None
+        # Holding audio within the bound, it holds some read whole: _refuse_without_audio would pass.
+        try:
+            _check_album(path, self._found, self._withheld, libraries=self._libraries)
+        except PathRefused as e:
+            return False, e.detail
+        return True, None
+
+
+def summary(raw: str) -> dict[str, str]:
+    """What a job on `raw` would work on: the folder ``album_folder`` resolves it to (or its refusal), and one line
+    counting the regular audio files in it and below it and the folders holding them. Changes nothing.
+
+    Raises:
+        PathRefused: ``album_folder`` refuses the folder, as it does one of more than ``MAX_ALBUM_WALK`` folders.
+    """
+    path = album_folder(raw)
+    files = folders = 0
+    for root, _dirs, names in os.walk(path):
+        found = sum(1 for name in names if _is_audio(name) and _is_regular(os.path.join(root, name)))
+        if found:
+            files += found
+            folders += 1
+    line = f"{files} audio file{'' if files == 1 else 's'} in {folders} folder{'' if folders == 1 else 's'}"
+    return {"path": path, "summary": line}
 
 
 def withheld_folders() -> list[str]:
@@ -236,11 +397,11 @@ def withheld_folders() -> list[str]:
     folders of the local seedboxes, resolved. A seedbox folder that is a root or holds one (the default is
     download_directory) is the music itself and is left out of the list: the content check stands there."""
     folders = [cfg.directory.dottorrents_dir]
-    folders += [
-        tracker.dottorrents_dir
-        for tracker in (cfg.tracker.red, cfg.tracker.ops, cfg.tracker.dic)
-        if tracker is not None and tracker.dottorrents_dir
-    ]
+    if cfg.directory.cross_upload_dottorrents_dir:
+        folders.append(cfg.directory.cross_upload_dottorrents_dir)
+    for tracker in (cfg.tracker.red, cfg.tracker.ops, cfg.tracker.dic):
+        if tracker is not None:
+            folders += [folder for folder in (tracker.dottorrents_dir, tracker.cross_upload_dottorrents_dir) if folder]
     found = roots()
     for seedbox in cfg.seedbox:
         if seedbox.type != "local" or not seedbox.directory:
@@ -310,33 +471,6 @@ def image_file(raw: str, *, content: bool = True) -> str:
     return path
 
 
-def _marked_audio(path: str) -> bool:
-    """Whether the folder holds audio files, or its disc folders do: the folders the picker offers as albums."""
-    try:
-        with os.scandir(path) as entries:
-            subfolders = []
-            for seen, entry in enumerate(entries):
-                if seen >= MAX_MARK_SCAN:
-                    break
-                if entry.is_file(follow_symlinks=False) and _is_audio(entry.name):
-                    return True
-                if entry.is_dir(follow_symlinks=False):
-                    subfolders.append(entry.path)
-    except OSError:
-        return False
-    for subfolder in subfolders[:MAX_MARK_SCAN]:
-        try:
-            with os.scandir(subfolder) as entries:
-                for seen, entry in enumerate(entries):
-                    if seen >= MAX_MARK_SCAN:
-                        break
-                    if entry.is_file(follow_symlinks=False) and _is_audio(entry.name):
-                        return True
-        except OSError:
-            continue
-    return False
-
-
 def _changed(entry: os.DirEntry[str]) -> float:
     """When the folder entry last changed or was copied in: the later of its mtime and ctime, not following a link.
 
@@ -368,9 +502,14 @@ def browsable_folder(raw: str) -> str:
 def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict[str, Any]:
     """What the folder browser shows: the roots, or the folders inside one folder of a root. Changes nothing.
 
-    Folders whose name starts with a dot and symlinks are left out. Each folder listed says whether it holds
-    audio files (or its disc folders do), that is, whether the picker may offer it as an album. A root never is
-    (``album_folder`` refuses it), so a root says ``audio`` false, in the roots view and when listed itself.
+    A path in a root that is not a folder (an album an upload has removed since) lists the nearest folder above it,
+    never above the root: ``path`` is the folder listed, and ``missing`` the path asked for, null when that is the
+    folder listed. A path outside the roots is refused before anything probes it.
+
+    Folders whose name starts with a dot and symlinks are left out. Each folder listed, and the folder listed
+    itself, says ``audio`` true when the picker offers it as an album: when ``album_folder`` accepts it, as a job
+    does at Start (see ``_Offers`` for its bounds). A root never is, in the roots view and when listed itself. The
+    folder listed says why it is not offered (``refused``) when it holds audio all the same, else null.
     At most ``MAX_LISTED`` folders are listed, out of the first
     ``MAX_SCANNED`` entries (in the order the disk gives them: a folder of more entries is not read past them);
     ``truncated`` says when the folder holds more. The folders are sorted before that cut: ``sort`` is
@@ -382,7 +521,7 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
     seedbox's. What a file is, the upload checks again.
 
     Raises:
-        PathRefused: A path outside the roots, or not a folder, or a sort that is not one of ``SORTS``.
+        PathRefused: A path outside the roots, a root that is not a folder, or a sort that is not one of ``SORTS``.
     """
     if sort not in SORTS:
         raise PathRefused(400, f"Unknown sort: use one of {', '.join(SORTS)}.")
@@ -391,18 +530,27 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
     if not raw:
         return {
             "path": None,
+            "missing": None,
             "parent": None,
             "library": False,
             "audio": False,
+            "refused": None,
             "folders": [{**root.shown(), "audio": False} for root in found],
             "truncated": False,
             "sort": sort,
             "roots": shown_roots,
             **({"images": []} if images else {}),
         }
-    path = _resolve(raw)
-    if not _within(path, found):
+    asked = _resolve(raw)
+    if not _within(asked, found):
         raise PathRefused(403, "Refusing to list a folder outside download_directory and library_dirs.")
+    path = asked
+    # Up to the root it is in at most: inside a root, every folder above the path is in it too.
+    while not os.path.isdir(path) and not any(path == root.path for root in found):
+        parent = os.path.dirname(path)
+        if parent == path:  # A drive or share root spelled otherwise than its root: never loop on it.
+            break
+        path = parent
     if not os.path.isdir(path):
         raise PathRefused(404, "No such folder.")
     names: list[tuple[str, str, float]] = []
@@ -436,12 +584,16 @@ def listing(raw: str | None, images: bool = False, sort: str = "newest") -> dict
         names = names[:MAX_LISTED]
         pictures = pictures[:MAX_LISTED]
     parent = os.path.dirname(path)
+    offers = _Offers(found, path)
+    selectable, refused = offers.here(path, audio)
     answer: dict[str, Any] = {
         "path": path,
+        "missing": asked if asked != path else None,
         "parent": parent if _within(parent, found) and parent != path else None,
         "library": cfg.directory.is_library_path(path),
-        "audio": not any(path == root.path for root in found) and (audio or _marked_audio(path)),
-        "folders": [{"name": name, "path": full, "audio": _marked_audio(full)} for name, full, _ in names],
+        "audio": selectable,
+        "refused": refused,
+        "folders": [{"name": name, "path": full, "audio": offers(full)} for name, full, _ in names],
         "truncated": truncated,
         "sort": sort,
         "roots": shown_roots,

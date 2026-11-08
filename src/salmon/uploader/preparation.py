@@ -129,7 +129,7 @@ async def _prepare_spectrals_of_album(prepared: Prepared, spectral_ids: tuple[in
     # Imported here: it reads every file's tags, which salmon web loads when a job needs it.
     from salmon.tagger.audio_info import gather_audio_info
 
-    audio_info = await anyio.to_thread.run_sync(gather_audio_info, prepared.album, True)
+    audio_info = await anyio.to_thread.run_sync(gather_audio_info, prepared.album)
     await prepare_spectrals(prepared, audio_info, spectral_ids)
 
 
@@ -140,7 +140,7 @@ async def prepare_spectrals(prepared: Prepared, audio_info: dict[str, Any], spec
         wanted = spectrals.get_wanted_filenames(list(audio_info), spectral_ids)
         files = [name for name in get_audio_files(album) if name in wanted]
     else:
-        files = get_audio_files(album, True)
+        files = get_audio_files(album)
     files = [name for name in files if name.lower().endswith(".flac") and name in audio_info]
 
     async def make(name: str, index: int) -> None:

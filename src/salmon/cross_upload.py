@@ -67,6 +67,7 @@ from salmon.uploader.conversion_choice import (
 )
 from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.dupe_checker import (
+    NO_DUPE_SEARCH,
     _confirm_group_id,
     check_existing_group,
     generate_dupe_check_searchstrs,
@@ -338,6 +339,9 @@ async def run_cross_upload(options: CrossUploadOptions, *, claim_folder: FolderC
     """
     source_site = salmon.trackers.get_class(options.source)()
     target_site = salmon.trackers.get_class(options.target)()
+    # Its .torrent files, and its conversions', go where cross_upload_dottorrents_dir says, when it is set.
+    if folder := cfg.cross_upload_dottorrents_dir(target_site.site_code):
+        target_site.dot_torrents_dir = folder
     # A cross-upload is a re-post: it is never marked as the user's own purchase or rip.
     target_site.skip_upload_marks()
     # The same ID or file given twice is read once.
@@ -437,7 +441,7 @@ async def _run(
     # Torrents and conversions go into a directory of the run's own in a dry run, removed when it ends.
     scratch = run_directory(str(releases[0].path)) if dryrun.active() else nullcontext(None)
     with scratch as scratch_dir, dryrun.writing_into(scratch_dir):
-        seedbox = UploadManager()
+        seedbox = UploadManager(cross_upload=True)
         uploaded: list[str] = []
         try:
             for release in releases:
@@ -487,6 +491,12 @@ async def _prepare(
     release.data = compile_data(response, source, target)
     if reason := do_not_upload_reason(target.site_code, Candidate.from_form(release.data)):
         raise CrossUploadRefused(reason)
+    if options.group_id is None and not _searchstrs(release.data) and await interaction.assume_defaults():
+        # As salmon up stops under -yyy (#931): no dupe search, and nothing sent to TARGET yet.
+        raise CrossUploadRefused(
+            f"{NO_DUPE_SEARCH} Not with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
+            "and with upload.yes_all off"
+        )
     release.path = _release_path(response, options.path)
     if claim_folder is not None and (refusal := await claim_folder(release.path)):
         raise CrossUploadRefused(refusal)

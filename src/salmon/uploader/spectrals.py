@@ -174,7 +174,7 @@ async def print_frequency_analysis(path: str, spectrals_path: str, spectral_ids:
         plot_paths = {
             filename: os.path.join(spectrals_path, spectrum_plot_name(sid)) for sid, filename in spectral_ids.items()
         }
-        results = await frequency.generate_frequency_plots(path, get_audio_files(path, True), plot_paths)
+        results = await frequency.generate_frequency_plots(path, get_audio_files(path), plot_paths)
         level, notes = frequency.assess(results)
     except Exception as e:
         click.secho(f"\nFrequency analysis failed, so it says nothing about this release: {e!r}", fg="yellow")
@@ -324,7 +324,7 @@ async def generate_spectrals_all(path: str, spectrals_path: str, audio_info: dic
     Returns:
         Dictionary mapping track numbers to filenames.
     """
-    files_li = get_audio_files(path, True)
+    files_li = get_audio_files(path)
     # Compression happens once the spectrals to upload are chosen (see compress_chosen_spectrals), not here, since most
     # generated spectrals are only for viewing and are never uploaded.
     return await _generate_spectrals(path, files_li, spectrals_path, audio_info, compress=False)
@@ -381,7 +381,7 @@ class SpectralsInBackground:
                 wanted = get_wanted_filenames(list(self._audio_info), self._spectral_ids)
                 files = [fn for fn in get_audio_files(self._path) if fn in wanted]
             else:
-                files = get_audio_files(self._path, True)
+                files = get_audio_files(self._path)
             self._total = len(files)
             self._listed.set()
             self._results = await _run_sox(
@@ -961,7 +961,7 @@ def make_way_for_spectrals(spectrals_path: str) -> None:
     """Clear spectrals_path for salmon's spectrals folder: remove salmon's own, or an empty folder.
 
     Raises:
-        UploadError: Something salmon did not make is there.
+        UploadError: Something salmon did not make is there, or salmon's own cannot be removed.
     """
     if not os.path.lexists(spectrals_path):
         return
@@ -971,7 +971,14 @@ def make_way_for_spectrals(spectrals_path: str) -> None:
         empty = False
     if not (empty or made_by_salmon(spectrals_path)):
         raise UploadError(f"Not replacing {spectrals_path} with spectrals: salmon did not make it. Move it away.")
-    shutil.rmtree(spectrals_path)
+    try:
+        shutil.rmtree(spectrals_path)
+    except OSError as error:
+        parent = os.path.dirname(spectrals_path)
+        name = os.path.relpath(error.filename or spectrals_path, parent)
+        raise UploadError(
+            f"Could not remove {name} in {parent} ({error.strerror}): fix its permissions or move it away."
+        ) from error
     drop_specs_claim(spectrals_path)
 
 

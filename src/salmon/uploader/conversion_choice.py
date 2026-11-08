@@ -331,7 +331,7 @@ async def prompt_downconversion_choice(
                 break
 
             # Parse choices - now using space separation
-            choice_nums = [int(x.strip()) for x in choices.split() if x.strip().isdigit()]
+            choice_nums = [int(word) for word in choices.split()]
 
             # Validate choices
             invalid_choices = [x for x in choice_nums if x < 1 or x > len(options)]

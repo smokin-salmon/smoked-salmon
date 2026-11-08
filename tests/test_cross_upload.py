@@ -17,6 +17,7 @@ from urllib.parse import unquote
 
 import anyio
 import asyncclick as click
+import msgspec
 import pytest
 from aiohttp import web
 from asyncclick.testing import CliRunner
@@ -55,7 +56,7 @@ import salmon.trackers
 import salmon.uploader
 import salmon.uploader.seedbox
 from salmon import cfg
-from salmon.config.validations import CONVERSION_KINDS
+from salmon.config.validations import CONVERSION_KINDS, GazelleTrackerSettings
 from salmon.cross_upload import (
     CrossUploadOptions,
     CrossUploadRefused,
@@ -592,6 +593,33 @@ def test_a_release_on_the_targets_do_not_upload_list_stops_before_any_target_req
         "only. If yours is a legitimate copy, RED wants a message to its staff, with proof, before it is uploaded."
     ) in run.output
     assert "Nothing to cross-upload." in run.output
+    assert run.target.sent == []
+
+
+def _no_search_string(answer: dict[str, Any]) -> None:
+    """The group of SOURCE's answer gets four main artists, so its title alone is searched, and that cleans to
+    nothing."""
+    answer["group"]["name"] = "(Remastered Edition)"
+    answer["group"]["musicInfo"]["artists"] = [
+        {"id": 700010 + n, "aliasid": 700110 + n, "artist": {"id": 700010 + n}, "name": f"Artist {n}"} for n in range(4)
+    ]
+
+
+def test_a_release_with_no_search_string_stops_before_any_target_request_under_yyy(monkeypatch, dirs) -> None:
+    """-yyy and no --group-id: nothing would look for a dupe on TARGET (#931)."""
+    album = _album(dirs.downloads / FOLDER)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        _no_search_string(source.torrents[TORRENT_ID])
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 1, run.output
+    assert (
+        f"Not cross-uploading {TORRENT_ID}: No dupe search is possible for this title: check the tracker yourself. "
+        "Not with -yyy (upload.yes_all): give --group-id, or run without -yyy, and with upload.yes_all off"
+    ) in run.output
     assert run.target.sent == []
 
 
@@ -2674,3 +2702,75 @@ def test_downconvert_of_a_release_with_mixed_sample_rates_is_refused_before_any_
     assert run.result.exit_code == 1
     assert f"Not cross-uploading {TORRENT_ID}: --downconvert: the files have different sample rates" in run.output
     assert run.target.sent == []
+
+
+# cross_upload_dottorrents_dir and cross_upload_label (#952)
+
+
+def _cross_folder(dirs) -> Path:
+    folder = dirs.torrents.parent / "cross-torrents"
+    folder.mkdir()
+    return folder
+
+
+def test_a_cross_upload_writes_its_torrent_and_a_conversions_into_its_own_folder(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    cross = _cross_folder(dirs)
+    monkeypatch.setattr(cfg.directory, "cross_upload_dottorrents_dir", str(cross))
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        target.results = [_result([])]
+        target.groups[TARGET_GROUP_ID] = {"group": {"id": TARGET_GROUP_ID, "year": 2018}, "torrents": []}
+
+    run = _cross_upload(
+        monkeypatch,
+        dirs,
+        [str(TORRENT_ID), "-yyy", "--conversions", "320"],
+        input="1\n\n",
+        prepare=prepare,
+        transcode=_transcode,
+    )
+
+    assert run.result.exit_code == 0, run.output
+    assert sorted(path.name for path in cross.iterdir()) == [f"{FOLDER} - RED.torrent", f"{FOLDER} [320] - RED.torrent"]
+    assert list(dirs.torrents.iterdir()) == []
+
+
+def test_a_trackers_cross_upload_folder_comes_before_the_global_one(monkeypatch, dirs) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    cross = _cross_folder(dirs)
+    monkeypatch.setattr(cfg.directory, "cross_upload_dottorrents_dir", str(dirs.torrents))
+    settings = GazelleTrackerSettings(session="s", cross_upload_dottorrents_dir=str(cross))
+    monkeypatch.setattr(cfg.tracker, "red", settings)
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
+
+    assert run.result.exit_code == 0, run.output
+    assert [path.name for path in cross.iterdir()] == [f"{FOLDER} - RED.torrent"]
+    assert list(dirs.torrents.iterdir()) == []
+
+
+@pytest.mark.parametrize(("cross_label", "expected"), [("cross", "cross"), (None, "up")])
+def test_a_cross_upload_queues_its_torrents_with_the_cross_upload_label(
+    monkeypatch, dirs, cross_label: str | None, expected: str
+) -> None:
+    album = _album(dirs.downloads / FOLDER)
+    labels: list[str] = []
+    real = salmon.uploader.seedbox._add_to_downloader
+
+    async def recording(client, shell_path, torrent, label, *args):
+        labels.append(label)
+        return await real(client, shell_path, torrent, label, *args)
+
+    monkeypatch.setattr(salmon.uploader.seedbox, "_add_to_downloader", recording)
+
+    def prepare(source: FakeTracker, target: FakeTracker) -> None:
+        _source_has(album)(source, target)
+        box = msgspec.structs.replace(cfg.seedbox[0], label="up", cross_upload_label=cross_label)
+        monkeypatch.setattr(cfg, "seedbox", [box])
+
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=prepare)
+
+    assert run.result.exit_code == 0, run.output
+    assert labels == [expected]

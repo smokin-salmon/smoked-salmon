@@ -351,13 +351,16 @@ def test_a_wildcard_bind_is_no_host_name(bind_host: str) -> None:
         ("Example.org:80", ("example.org", 80)),
         ("[::1]:55155", ("::1", 55155)),
         ("[::1]", ("::1", None)),
+        ("host:８０", ("host", 80)),
     ],
 )
 def test_split_host(value: str, expected: tuple[str, int | None]) -> None:
     assert split_host(value) == expected
 
 
-@pytest.mark.parametrize("value", ["", ":80", "[::1", "[::1]x", "host:", "host:http", "host:0", "host:70000"])
+@pytest.mark.parametrize(
+    "value", ["", ":80", "[::1", "[::1]x", "host:", "host:http", "host:0", "host:70000", "host:8²"]
+)
 def test_split_host_refuses_garbage(value: str) -> None:
     with pytest.raises(ValueError):
         split_host(value)

@@ -67,7 +67,7 @@ def _audio_info(path: str) -> dict[str, dict[str, Any]]:
     The precision is set for a lossless file only: an AAC stream reports 16 bits per sample too.
     """
     info = {}
-    for filename in get_audio_files(path, True):
+    for filename in get_audio_files(path):
         try:
             mut = MutagenFile(os.path.join(path, filename))
         except Exception:
@@ -287,7 +287,7 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     Raises:
         click.ClickException: If the folder holds no audio file.
     """
-    audio_files = get_audio_files(path, True)
+    audio_files = get_audio_files(path)
     if not audio_files:
         raise click.ClickException(f"No audio file in {os.path.basename(path)}.")
     audio_info = await anyio.to_thread.run_sync(_audio_info, path)

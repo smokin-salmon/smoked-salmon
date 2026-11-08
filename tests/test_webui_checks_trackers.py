@@ -282,7 +282,7 @@ def test_a_folder_unreadable_after_the_jobs_own_check_is_a_blocking_row(
 ) -> None:
     album = _album_with_unreadable_disc(monkeypatch, downloads)
     # The job refuses such a folder when posted and as it starts: this is one that stops being readable after that.
-    monkeypatch.setattr(paths, "_refuse_links", lambda _path: None)
+    monkeypatch.setattr(paths, "_refuse_links", lambda *_args: None)
 
     async def test(client: TestClient, manager: JobManager) -> None:
         job = await _run_checks(client, manager, album, [])

@@ -16,6 +16,8 @@
   }
 
   let path = $state('')
+  // Whether the picker has checked the folder and a job may start on it.
+  let usable = $state(false)
   let bitrate = $state<'V0' | '320'>('V0')
   let essentialOnly = $state(false)
   let error = $state('')
@@ -67,7 +69,7 @@
 </p>
 
 <div class="card">
-  <FolderPicker bind:value={path} />
+  <FolderPicker bind:value={path} bind:usable />
   <div class="row actions">
     <select bind:value={bitrate} class="bitrate" aria-label="MP3 bitrate">
       <option value="V0">MP3 V0</option>
@@ -79,11 +81,11 @@
     </label>
   </div>
   <div class="row actions">
-    <button class="btn" onclick={() => run('transcode')} disabled={!path || starting}>Transcode</button>
-    <button class="btn secondary" onclick={() => run('downconvert')} disabled={!path || starting}>
+    <button class="btn" onclick={() => run('transcode')} disabled={!usable || starting}>Transcode</button>
+    <button class="btn secondary" onclick={() => run('downconvert')} disabled={!usable || starting}>
       Downconvert to 16-bit
     </button>
-    <button class="btn secondary" onclick={() => run('compress')} disabled={!path || starting}>
+    <button class="btn secondary" onclick={() => run('compress')} disabled={!usable || starting}>
       Recompress FLACs in place
     </button>
   </div>

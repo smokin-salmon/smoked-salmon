@@ -68,7 +68,7 @@ from salmon.tagger.cover import (
     get_cover_from_path,
     has_flac_without_picture,
 )
-from salmon.tagger.foldername import remove_source_folder, rename_folder
+from salmon.tagger.foldername import files_only_in, remove_source_folder, rename_folder
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
 from salmon.tagger.pre_data import construct_rls_data
@@ -86,6 +86,7 @@ from salmon.uploader.conversion_choice import (
 )
 from salmon.uploader.conversion_upload import _max_path_length_for_run, execute_downconversion_tasks
 from salmon.uploader.dupe_checker import (
+    NO_DUPE_SEARCH,
     can_check_site_log,
     check_existing_group,
     choose_source_flac,
@@ -979,8 +980,8 @@ async def upload(
             given_spectral_urls=given_spectral_urls,
         )
         # Once the run is done: an abort after the folder rename keeps the source folder, so a re-run can use it.
-        final, uploaded, aborted = result or (None, False, False)
-        await remove_source_folder(path, final, original, uploaded=uploaded, aborted=aborted)
+        final, uploaded, aborted, only_here = result or (None, False, False, None)
+        await remove_source_folder(path, final, original, uploaded=uploaded, aborted=aborted, only_here=only_here)
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -1060,12 +1061,13 @@ async def _upload_staged(  # noqa: C901
     offer_others: bool = False,
     given_cover_url: str | None = None,
     given_spectral_urls: dict[int, list[str]] | None = None,
-) -> tuple[str, bool, bool] | None:
+) -> tuple[str, bool, bool, list[str] | None] | None:
     """Run upload() on a folder that is safe to change; see upload() for the arguments.
 
     Returns:
-        The folder the run ended with, whether anything was uploaded, and whether the run was aborted after an
-        upload; None when it stopped early.
+        The folder the run ended with, whether anything was uploaded, whether the run was aborted after an
+        upload, and, with remove_source_dir on, the files of path that folder had no copy of before
+        remove_local_after_copy could remove it (see files_only_in); None when it stopped early.
 
     Args:
         conversion: What the folder was converted from, when a converter made it: the upload describes it.
@@ -1303,6 +1305,19 @@ async def _upload_staged(  # noqa: C901
                         tracker = None
                         continue
 
+                    if not searchstrs and await interaction.assume_defaults():
+                        # As recheck_dupe for the first tracker (#931): with -yyy, nobody checks the tracker by hand.
+                        click.secho(
+                            f"\n{NO_DUPE_SEARCH} Not uploading to {gazelle_site.site_string} with -yyy "
+                            "(upload.yes_all): run without -yyy, and with upload.yes_all off, to choose its group.",
+                            fg="red",
+                            bold=True,
+                        )
+                        failed_trackers.append(gazelle_site.site_string)
+                        remaining_gazelle_sites.remove(tracker)
+                        tracker = None
+                        continue
+
                     click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
                     # A torrent already seeds from the folder: never offer to delete it. Once one is up, a tracker
                     # can be skipped (one that already has the release, say) and the run still finishes.
@@ -1483,6 +1498,8 @@ async def _upload_staged(  # noqa: C901
                 click.echo(f"  {line}")
         finally:
             await seedbox_uploader.execute_upload()
+            # Before remove_local_after_copy may remove the renamed folder: the source is compared with it (#967).
+            only_here = files_only_in(source_folder, path) if cfg.upload.formatting.remove_source_dir else None
             # Only a run that ended by itself with every upload done: a failed tracker needs the folder to retry,
             # and an abort or an error leaves the user deciding what is next.
             if failed_trackers:
@@ -1496,7 +1513,7 @@ async def _upload_staged(  # noqa: C901
     finally:
         await spectral_uploads.close()
     record.note_complete(finished and len(failed_trackers) == chose_to_skip and not record.has_unknown_outcome())
-    return path, bool(uploaded), aborted
+    return path, bool(uploaded), aborted, only_here
 
 
 async def _check_files(
@@ -1882,6 +1899,8 @@ async def edit_metadata(
 async def recheck_dupe(gazelle_site, searchstrs, metadata):
     """Rechecks for a dupe if the artist, album or catno have changed.
 
+    With no search string before the review or after it, asks for a group with nothing searched; -yyy stops instead.
+
     Args:
         gazelle_site: The tracker API instance.
         searchstrs: Original search strings.
@@ -1891,6 +1910,17 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
         Group ID if found, None otherwise.
     """
     new_searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
+    if not searchstrs and not new_searchstrs:
+        # No search string before the review or after it (#931): the group question has not been asked yet.
+        if await interaction.assume_defaults():
+            click.secho(
+                f"\n{NO_DUPE_SEARCH} Not uploading with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
+                "and with upload.yes_all off.",
+                fg="red",
+                bold=True,
+            )
+            raise click.exceptions.Exit(1)
+        return await check_existing_group(gazelle_site, [], our_title=metadata["title"], release=metadata)
     if searchstrs and any(n not in searchstrs for n in new_searchstrs) or not searchstrs and new_searchstrs:
         click.secho(
             f"\nRechecking for dupes on {gazelle_site.site_string} due to metadata changes...",
@@ -1912,7 +1942,7 @@ async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
         searchstrs: Search strings for dupe checking.
         our_title: Our release's title, passed through to dupe_check_recent_torrents.
     """
-    if not can_check_site_log(gazelle_site):
+    if not searchstrs or not can_check_site_log(gazelle_site):
         return
     # Should really avoid asking if already shown the same releases from the log.
     click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
