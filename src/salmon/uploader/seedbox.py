@@ -14,6 +14,7 @@ import asyncclick as click
 from salmon import cfg, dryrun
 from salmon.common.redaction import redact_command, redact_secrets, secret_values, url_secrets
 from salmon.config.validations import Seedbox
+from salmon.containment import is_within
 from salmon.converter.conversions import forget_conversion
 from salmon.errors import DryRunRefused
 from salmon.uploader import record
@@ -472,10 +473,7 @@ class UploadManager:
         """Why the local copy of a folder must stay, or None when every seedbox has it and seeds it."""
         download_directory = os.path.realpath(cfg.directory.download_directory)
         real = os.path.realpath(folder)
-        try:
-            inside = real != download_directory and os.path.commonpath([download_directory, real]) == download_directory
-        except ValueError:  # Different drives on Windows.
-            inside = False
+        inside = real != download_directory and is_within(real, download_directory)
         if not inside or not os.path.isdir(real) or os.path.islink(folder):
             return "it is not a folder inside download_directory"
         if cfg.directory.protects(folder):

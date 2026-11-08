@@ -19,6 +19,7 @@ from mutagen import MutagenError
 from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg, dryrun
+from salmon.containment import is_within
 
 # One hidden directory per parent with one file per converted folder: never inside the album, never shared by writers.
 REGISTRY_DIR = ".salmon-conversions"
@@ -36,7 +37,7 @@ def _inside_scratch(path: str) -> bool:
         scratch = os.path.realpath(dryrun.scratch_dir())
     except RuntimeError:
         return False
-    return os.path.commonpath([scratch, os.path.realpath(path)]) == scratch
+    return is_within(os.path.realpath(path), scratch)
 
 
 # Each live run directory holding a copy of an album, and the album folder the user gave.
@@ -61,9 +62,8 @@ def source_of(path: str) -> str:
     """
     real = os.path.realpath(path)
     for run_dir, original in list(_COPIED_FROM.items()):
-        with contextlib.suppress(ValueError):
-            if os.path.commonpath([run_dir, real]) == run_dir:
-                return original
+        if is_within(real, run_dir):
+            return original
     return path
 
 
