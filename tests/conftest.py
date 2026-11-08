@@ -30,7 +30,7 @@ from helpers import servers
 from helpers.shipped_config import shipped_config
 
 # A test server stopped as a client connects would otherwise fail the run at random, from garbage collection, on
-# Python 3.13 and 3.14 (tests/helpers/servers.py).
+# Python 3.13, and on 3.14 and later before CPython's fix (tests/helpers/servers.py).
 servers.install()
 
 _root = Path(tempfile.mkdtemp(prefix="salmon-tests-"))
