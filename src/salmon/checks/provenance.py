@@ -105,20 +105,23 @@ def _contradictions(files: list[dict[str, Any]]) -> list[str]:
     return found
 
 
-def gather_provenance(path: str) -> dict[str, Any]:
-    """Encoder and source markers across an album, plus any claim the audio contradicts."""
+def gather_provenance(path: str, files: list[str] | None = None) -> dict[str, Any]:
+    """Encoder and source markers across an album, plus any claim the audio contradicts.
+
+    files are the album's audio files, named from it, as get_audio_files lists them; None lists them.
+    """
     try:
-        tags = gather_tags(path)
+        tags = gather_tags(path, files)
     except Exception:
         return {"files": [], "vendors": [], "markers": [], "urls": [], "contradictions": []}
 
-    files = [_file_provenance(name, tagfile) for name, tagfile in tags.items()]
-    markers = {f"{field}: {text}" for entry in files for field, text in entry["markers"].items()}
-    urls = {match for entry in files for text in entry["markers"].values() for match in _URL_RE.findall(text)}
+    entries = [_file_provenance(name, tagfile) for name, tagfile in tags.items()]
+    markers = {f"{field}: {text}" for entry in entries for field, text in entry["markers"].items()}
+    urls = {match for entry in entries for text in entry["markers"].values() for match in _URL_RE.findall(text)}
     return {
-        "files": files,
-        "vendors": sorted({entry["vendor"] for entry in files if entry["vendor"]}),
+        "files": entries,
+        "vendors": sorted({entry["vendor"] for entry in entries if entry["vendor"]}),
         "markers": sorted(markers),
         "urls": sorted(urls),
-        "contradictions": _contradictions(files),
+        "contradictions": _contradictions(entries),
     }

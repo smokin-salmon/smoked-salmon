@@ -80,10 +80,10 @@ async def check_tags(path: str) -> dict[str, TagFile]:
     return tags
 
 
-def gather_tags(path):
-    """Get the tags of each file."""
+def gather_tags(path: str, files: list[str] | None = None) -> dict[str, TagFile]:
+    """Get the tags of each file: of files, named from path, if given."""
     tags = {}
-    for filename in get_audio_files(path):
+    for filename in get_audio_files(path) if files is None else files:
         tags[filename] = TagFile(os.path.join(path, filename))
     return tags
 

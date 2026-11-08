@@ -1,6 +1,6 @@
 import os
 import stat
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TypeVar, cast
@@ -10,6 +10,7 @@ import asyncclick as click
 from tqdm import tqdm
 
 from salmon import cfg
+from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.numbers import file_order_key
 
 T = TypeVar("T")
@@ -73,30 +74,22 @@ def rewrite_refusal(path: str) -> str | None:
     return None
 
 
-def get_audio_files(path):
-    """
-    Iterate over a path and return all the files that match the allowed
-    audio file extensions, in track order (see file_order_key).
-    """
-    files = []
-    for root, _folders, files_ in os.walk(path):
-        files += [
-            create_relative_path(root, path, f)
-            for f in files_
-            if os.path.splitext(f.lower())[1] in {".flac", ".mp3", ".m4a"}
-        ]
-    return sorted(files, key=file_order_key)
+def album_files(path: str, extensions: Iterable[str]) -> list[str]:
+    """The files under path whose lower-cased name ends in one of extensions, joined to path, in track order (see
+    file_order_key)."""
+    suffixes = tuple(extensions)
+    found = [
+        os.path.join(root, name)
+        for root, _folders, names in os.walk(path)
+        for name in names
+        if name.lower().endswith(suffixes)
+    ]
+    return sorted(found, key=file_order_key)
 
 
-def create_relative_path(root, path, filename):
-    """
-    Create a relative path to a filename. For example, given:
-        root     = '/home/xxx/Tidal/Album/Disc 1'
-        path     = '/home/xxx/Tidal/Album'
-        filename = '01. Track.flac'
-    'Disc 1/01. Track.flac' would be returned.
-    """
-    return os.path.join(root.split(path, 1)[1][1:], filename)  # [1:] to get rid of the slash.
+def get_audio_files(path: str) -> list[str]:
+    """The audio files under path, named from it, in track order (see file_order_key)."""
+    return [os.path.relpath(file, path) for file in album_files(path, AUDIO_EXTENSIONS)]
 
 
 @dataclass

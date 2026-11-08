@@ -15,7 +15,6 @@ from salmon.common.aliases import AliasedCommands
 from salmon.common.constants import RE_FEAT, RE_FEAT_JOIN, RE_USELESS_VERSION
 from salmon.common.files import (
     compress,
-    create_relative_path,
     get_audio_files,
 )
 from salmon.common.regexes import (
@@ -46,7 +45,6 @@ __all__ = [
     "RE_USELESS_VERSION",
     "UploadFiles",
     "compress",
-    "create_relative_path",
     "get_audio_files",
     "parse_copyright",
     "re_split",

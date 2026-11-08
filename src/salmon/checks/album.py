@@ -29,7 +29,7 @@ from salmon.checks.source import DetectedSource, detect_source
 from salmon.checks.tag_rules import find_tag_issues, in_torrent_path
 from salmon.checks.upconverts import check_upconvert
 from salmon.checks.verdicts import Row
-from salmon.common.files import get_audio_files, process_files
+from salmon.common.files import album_files, get_audio_files, process_files
 from salmon.errors import (
     CRCMismatchError,
     LogCheckSkipped,
@@ -60,14 +60,14 @@ class AlbumChecks:
         return [row for row in self.rows if row.verdict == "BLOCK"]
 
 
-def _audio_info(path: str) -> dict[str, dict[str, Any]]:
+def _audio_info(path: str, files: list[str]) -> dict[str, dict[str, Any]]:
     """gather_audio_info's, leaving out a file mutagen cannot read. The integrity check reports a FLAC or MP3 like that,
     and _unchecked an M4A that cannot be opened.
 
     The precision is set for a lossless file only: an AAC stream reports 16 bits per sample too.
     """
     info = {}
-    for filename in get_audio_files(path):
+    for filename in files:
         try:
             mut = MutagenFile(os.path.join(path, filename))
         except Exception:
@@ -107,15 +107,6 @@ async def _upconverts(path: str, flacs: list[str]) -> list[dict[str, Any]]:
         }
 
     return await process_files(flacs, one, "Checking for upconverts")
-
-
-def _log_paths(path: str) -> list[str]:
-    return sorted(
-        os.path.join(root, name)
-        for root, _dirs, files in os.walk(path)
-        for name in files
-        if name.lower().endswith(".log")
-    )
 
 
 def _cannot_enter(folder: str, names: list[str]) -> bool:
@@ -287,25 +278,26 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     Raises:
         click.ClickException: If the folder holds no audio file.
     """
+    # Listed once: every check reads these files.
     audio_files = get_audio_files(path)
     if not audio_files:
         raise click.ClickException(f"No audio file in {os.path.basename(path)}.")
-    audio_info = await anyio.to_thread.run_sync(_audio_info, path)
-    detected: DetectedSource | None = await anyio.to_thread.run_sync(detect_source, path)
+    audio_info = await anyio.to_thread.run_sync(_audio_info, path, audio_files)
+    detected: DetectedSource | None = await anyio.to_thread.run_sync(detect_source, path, audio_files)
     source = detected.source if detected else None
     flacs = [name for name in audio_files if name.lower().endswith(".flac")]
 
     unchecked = await anyio.to_thread.run_sync(_unchecked, path)
     rows = [*verdicts.unchecked_rows(*unchecked), verdicts.source_row(detected)]
     try:
-        rows.append(verdicts.integrity_row(await check_integrity(path)))
+        rows.append(verdicts.integrity_row(await check_integrity(path, files=audio_files)))
     except click.Abort:
         rows.append(Row("INFO", "Integrity", "No FLAC or MP3 file to check."))
     rows.append(verdicts.mqa_row(await _mqa(path, flacs)))
     rows.append(verdicts.upconvert_row(await _upconverts(path, flacs)))
-    log_paths = _log_paths(path) if source in (None, "CD") else []
+    log_paths = album_files(path, [".log"]) if source in (None, "CD") else []
     rows += verdicts.log_rows(source, [await _log(logpath, path) for logpath in log_paths])
-    rows.append(verdicts.tag_issues_row(await anyio.to_thread.run_sync(find_tag_issues, path, audio_info)))
+    rows.append(verdicts.tag_issues_row(await anyio.to_thread.run_sync(find_tag_issues, path, audio_info, audio_files)))
     rows.append(verdicts.sample_rate_row(audio_info))
 
     rule_trackers = trackers or list(DEFAULT_TRACKERS)
@@ -313,7 +305,7 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     rows += verdicts.sixteen_bit_rows(audio_info, {code: rule.sixteen_bit_above_48khz for code, rule in rules.items()})
     rows += verdicts.path_rows(_in_torrent_paths(path), {code: rule.max_path_length for code, rule in rules.items()})
 
-    provenance = await anyio.to_thread.run_sync(gather_provenance, path)
+    provenance = await anyio.to_thread.run_sync(gather_provenance, path, audio_files)
     rows.append(verdicts.provenance_row(provenance))
 
     # numpy, PyAV and Pillow: loaded when the analysis runs.

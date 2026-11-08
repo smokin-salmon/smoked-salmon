@@ -120,18 +120,19 @@ def _dual_id3(filename: str, filepath: str) -> str | None:
     return None
 
 
-def find_tag_issues(path: str, audio_info: dict) -> list[str]:
+def find_tag_issues(path: str, audio_info: dict, files: list[str] | None = None) -> list[str]:
     """The tagging problems process_tag_issues fixes or warns about, without fixing any: it changes no file.
 
     Args:
         path: Path to the release folder.
         audio_info: Mapping of filename to the technical info `gather_audio_info` collects.
+        files: The audio files, named from path, as get_audio_files lists them; None lists them.
 
     Returns:
         One line per problem found, or per file it could not read to look; empty when there is none.
     """
     messages: list[str] = []
-    for filename in get_audio_files(path):
+    for filename in get_audio_files(path) if files is None else files:
         filepath = os.path.join(path, filename)
         lower = filename.lower()
         if lower.endswith(".flac"):
