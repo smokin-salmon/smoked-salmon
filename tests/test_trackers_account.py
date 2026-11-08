@@ -60,8 +60,17 @@ def short_period(monkeypatch: pytest.MonkeyPatch) -> float:
     return 1.0
 
 
-def test_two_clients_of_one_tracker_share_one_budget() -> None:
-    # The real period: what the tracker sees.
+def test_two_clients_of_one_tracker_share_one_budget(monkeypatch: pytest.MonkeyPatch) -> None:
+    # The real period. Each entry is noted with its limiter and the time the limiter itself noted.
+    entered: list[tuple[account.SlidingWindowLimiter, float]] = []
+    enter = account.SlidingWindowLimiter.__aenter__
+
+    async def noting_entry(limiter: account.SlidingWindowLimiter) -> None:
+        await enter(limiter)
+        entered.append((limiter, limiter._entered[-1]))
+
+    monkeypatch.setattr(account.SlidingWindowLimiter, "__aenter__", noting_entry)
+
     async def body(tracker: FakeTracker) -> None:
         first, second = _clients(await tracker.start(), "RED", "RED")
         try:
@@ -71,11 +80,20 @@ def test_two_clients_of_one_tracker_share_one_budget() -> None:
             await second.close()
 
     tracker = _run(body)
+    assert len(entered) == 6
+    assert len({id(limiter) for limiter, _ in entered}) == 1, "the two clients did not enter one limiter"
+    # The sixth enters once the first is a period and the margin old: 10.5 s, where a limiter without the margin lets
+    # it in at 10 s and a leaky bucket at 2 s. Timed at the limiter, not at the fake tracker: arrival times also hold
+    # the network's jitter (the first request opens a connection, the sixth reuses a pooled one), which is what the
+    # margin absorbs, and which made a check on arrival times fail under a parallel run.
+    gap = entered[5][1] - entered[0][1]
+    expected = account.RATE_LIMIT_PERIOD + account.RATE_LIMIT_MARGIN
+    assert gap >= expected, f"the sixth request entered {gap:.2f} s after the first, before the {expected} s it waits"
+    # What the tracker sees.
     times = tracker.times()
     assert len(times) == 6
-    assert _most_within(times, account.RATE_LIMIT_PERIOD) == 5
-    # The sixth waits until the first is a period and the margin old, not 2 s as a leaky bucket lets it.
-    assert times[5] - times[0] >= account.RATE_LIMIT_PERIOD + account.RATE_LIMIT_MARGIN - 0.05
+    most = _most_within(times, account.RATE_LIMIT_PERIOD)
+    assert most == 5, f"the tracker saw {most} requests within one period, not 5"
 
 
 def test_a_request_waiting_for_a_pooled_connection_enters_the_limit_once_it_has_one(short_period: float) -> None:
