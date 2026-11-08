@@ -26,6 +26,7 @@ from salmon import cfg, interaction
 from salmon.common.constants import AUDIO_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import album_files, process_files
 from salmon.tagger.cover import get_8kib_padding
+from salmon.tagger.renames import rename_no_clobber
 
 if TYPE_CHECKING:
     import av.audio.frame
@@ -47,6 +48,9 @@ _TEXT_TAGS = {
 }
 _NUMBER_TAGS = {"trkn": ("TRACKNUMBER", "TRACKTOTAL"), "disk": ("DISCNUMBER", "DISCTOTAL")}
 _COVER_MIMES = {MP4Cover.FORMAT_JPEG: "image/jpeg", MP4Cover.FORMAT_PNG: "image/png"}
+# A FLAC while a run writes it, next to its .m4a: hidden, of a fixed length, one run's own.
+_PARTIAL_PREFIX = ".salmon-alac-"
+_PARTIAL_SUFFIX = ".part"
 # The FLAC fields the conversion fills, for the message before the question.
 _KEPT_FIELDS = ", ".join(
     field.lower() for field in (*_TEXT_TAGS.values(), *(name for pair in _NUMBER_TAGS.values() for name in pair))
@@ -63,11 +67,15 @@ class AlacTrack:
 
     source: str
     target: str
-    partial: str  # The FLAC while this run writes it: a hidden name next to target, of this run's own.
     name: str  # The .m4a's path in the album, for messages.
     bits: int
     sample_rate: int
     channels: int
+
+    @property
+    def flac_name(self) -> str:
+        """The FLAC's path in the album, for messages."""
+        return os.path.splitext(self.name)[0] + ".flac"
 
 
 async def convert_alac(album: str, staged: str) -> str | None:
@@ -134,7 +142,6 @@ def _find_alac(folder: str) -> tuple[list[AlacTrack], list[str], list[str]]:
     tracks: list[AlacTrack] = []
     others: list[str] = []
     unreadable: list[str] = []
-    run = uuid.uuid4().hex[:8]
     for path in album_files(folder, AUDIO_EXTENSIONS | LOSSY_EXTENSIONS):
         name = os.path.relpath(path, folder)
         if not path.lower().endswith(".m4a"):
@@ -143,8 +150,7 @@ def _find_alac(folder: str) -> tuple[list[AlacTrack], list[str], list[str]]:
             unreadable.append(name)
         elif info.codec == "alac":
             target = os.path.splitext(path)[0] + ".flac"
-            partial = os.path.join(os.path.dirname(target), f".{os.path.basename(target)}.{run}.partial")
-            tracks.append(AlacTrack(path, target, partial, name, info.bits_per_sample, info.sample_rate, info.channels))
+            tracks.append(AlacTrack(path, target, name, info.bits_per_sample, info.sample_rate, info.channels))
         else:
             others.append(name)
     return tracks, others, unreadable
@@ -169,19 +175,28 @@ def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str]
             f"{album} holds ALAC files and lossy files ({_named(lossy)}): salmon converts ALAC to FLAC, and an upload "
             "holds one format. Move the lossy files out of the album and run salmon again."
         )
+    # Hidden, so nothing else in salmon sees it, but it would go into the torrent.
+    if partials := [
+        os.path.relpath(path, staged)
+        for path in album_files(staged, (_PARTIAL_SUFFIX,))
+        if os.path.basename(path).startswith(_PARTIAL_PREFIX)
+    ]:
+        return (
+            f"{album} holds {_named(partials)}, left by a conversion that stopped, or written by one running now: "
+            "once no other salmon run is converting the album, remove it and run salmon again."
+        )
     if odd := next((track for track in tracks if track.bits not in _BIT_DEPTHS), None):
         return f"{odd.name} is {odd.bits}-bit ALAC: salmon converts only 16-bit and 24-bit ALAC to FLAC."
     taken: dict[str, AlacTrack] = {}
     for track in tracks:
-        flac = os.path.relpath(track.target, staged)
         if os.path.lexists(track.target):
             return (
-                f"{flac} is already in {album}, where salmon would convert {track.name} to: "
+                f"{track.flac_name} is already in {album}, where salmon would convert {track.name} to: "
                 "move one of them out of the album and run salmon again."
             )
         if (other := taken.get(key := os.path.normcase(track.target).lower())) is not None:
             return (
-                f"{other.name} and {track.name} would both be converted to {flac}: "
+                f"{other.name} and {track.name} would both be converted to {track.flac_name}: "
                 "rename one of them and run salmon again."
             )
         taken[key] = track
@@ -189,13 +204,13 @@ def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str]
 
 
 async def _convert_all(tracks: list[AlacTrack]) -> str | None:
-    """Write and verify every track's FLAC under a name of this run's own, then put each at its .flac name, never over
-    a file already there; why it stopped, if it did.
+    """Write and verify every track's FLAC under a name of this run's own, then move each to its .flac name, never
+    over a file already there; why it stopped, if it did.
 
     After a failure, every file this run wrote is removed, or named in a warning if it cannot be (see _remove). A FLAC
     another run put at a .flac name is never touched, nor are the .m4a files.
     """
-
+    partials: dict[int, str] = {}
     failed = False
 
     async def convert(_source: str, index: int) -> str | None:
@@ -204,54 +219,61 @@ async def _convert_all(tracks: list[AlacTrack]) -> str | None:
             return None
         track = tracks[index]
         try:
-            await anyio.to_thread.run_sync(_convert, track)
+            partials[index] = _claim_partial(track)
+            await anyio.to_thread.run_sync(_convert, track, partials[index])
         except ConversionError as error:
             failed = True
             return f"Could not convert {track.name} to FLAC: {error}. Nothing was converted."
         return None
 
-    published: list[str] = []
-    done = False
     try:
         errors = await process_files([track.source for track in tracks], convert, "Converting ALAC to FLAC")
         if error := next((error for error in errors if error), None):
             return error
-        if error := _publish(tracks, published):
-            return error
-        done = True
+        return _publish([(track, partials[index]) for index, track in enumerate(tracks)])
     finally:
-        for track in tracks:
-            _remove(track.partial)
-        if not done:
-            for target in published:
-                _remove(target)
-    return None
+        # A published one is at its .flac name already, and its partial name holds nothing.
+        for partial in partials.values():
+            _remove(partial)
 
 
-def _publish(tracks: list[AlacTrack], published: list[str]) -> str | None:
-    """Move each verified FLAC to its .flac name, adding each name to published once this run holds it; why it
-    stopped, if it did.
+def _claim_partial(track: AlacTrack) -> str:
+    """Create an empty file under a new partial name next to track's FLAC, so this run holds it; its path."""
+    partial = os.path.join(os.path.dirname(track.target), f"{_PARTIAL_PREFIX}{uuid.uuid4().hex}{_PARTIAL_SUFFIX}")
+    try:
+        # "x" claims a new name: a file already there raises instead of being written over, and is never removed.
+        with open(partial, "xb"):
+            pass
+    except OSError as error:
+        raise ConversionError(f"could not write next to it ({error.strerror})") from error
+    return partial
 
-    Each name is claimed by creating it, which fails if it exists: a FLAC another run of salmon put there since the
-    checks before the question (two uploads of one album at once) is never overwritten.
+
+def _publish(written: list[tuple[AlacTrack, str]]) -> str | None:
+    """Move each verified FLAC from its partial name to its .flac name; why it stopped, if it did.
+
+    The move never replaces a file where the volume has hard links (see rename_no_clobber): a FLAC another run of
+    salmon put there since the checks before the question (two uploads of one album at once) stays. After a failure,
+    the FLACs this run moved go.
     """
-    for track in tracks:
-        flac = os.path.splitext(track.name)[0] + ".flac"
-        try:
-            os.close(os.open(track.target, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
-        except FileExistsError:
-            return (
-                f"{flac} appeared while salmon converted {track.name}, perhaps from another run on the album. "
-                "Nothing was converted."
-            )
-        except OSError as error:
-            return f"Could not write {flac} ({error.strerror}). Nothing was converted."
-        published.append(track.target)
-        try:
-            os.replace(track.partial, track.target)
-        except OSError as error:
-            return f"Could not write {flac} ({error.strerror}). Nothing was converted."
-    return None
+    moved: list[str] = []
+    try:
+        for track, partial in written:
+            try:
+                rename_no_clobber(partial, track.target)
+            except FileExistsError:
+                return (
+                    f"{track.flac_name} appeared while salmon converted {track.name}, perhaps from another run on the "
+                    "album. Nothing was converted."
+                )
+            except OSError as error:
+                return f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted."
+            moved.append(track.target)
+        moved = []  # All are in place: none to take back.
+        return None
+    finally:
+        for target in moved:
+            _remove(target)
 
 
 def _remove_sources(tracks: list[AlacTrack]) -> list[str]:
@@ -275,16 +297,17 @@ def _remove(path: str) -> None:
         click.secho(f"Could not remove {path}: {error}", fg="yellow")
 
 
-def _convert(track: AlacTrack) -> None:
-    """Write track's FLAC at its partial name, copy its tags and cover, and check it holds the ALAC's samples.
+def _convert(track: AlacTrack, partial: str) -> None:
+    """Write track's FLAC at the partial name this run holds, copy its tags and cover, and check it holds the ALAC's
+    samples.
 
     Raises:
         ConversionError: Saying what went wrong.
     """
-    digest = _encode(track)
+    digest = _encode(track, partial)
     try:
-        _copy_tags(track.source, track.partial)
-        info = FLAC(track.partial).info
+        _copy_tags(track.source, partial)
+        info = FLAC(partial).info
     except (MutagenError, OSError) as error:
         raise ConversionError(f"could not tag its FLAC ({error})") from error
     if (info.bits_per_sample, info.sample_rate, info.channels) != (track.bits, track.sample_rate, track.channels):
@@ -293,19 +316,23 @@ def _convert(track: AlacTrack) -> None:
             f"is {track.bits}-bit {track.sample_rate} Hz, {track.channels} channels"
         )
     check = hashlib.sha256()
-    for chunk in _pcm_chunks(track.partial, track.bits, track.channels):
+    for chunk in _pcm_chunks(partial, track.bits, track.channels):
         check.update(chunk)
     if check.digest() != digest:
         raise ConversionError("its FLAC does not decode to the same samples")
 
 
-def _encode(track: AlacTrack) -> bytes:
-    """Encode track's samples into its partial FLAC with the flac binary; the SHA-256 of the samples given to it."""
+def _encode(track: AlacTrack, partial: str) -> bytes:
+    """Encode track's samples into the FLAC at partial with the flac binary; the SHA-256 of the samples given to it.
+
+    flac writes over the empty file this run claimed there (-f).
+    """
     command = [
         "flac",
         f"-{cfg.upload.compression.flac_compression_level}",
         "-V",
         "-s",
+        "-f",
         "--force-raw-format",
         "--endian=little",
         "--sign=signed",
@@ -313,7 +340,7 @@ def _encode(track: AlacTrack) -> bytes:
         f"--bps={track.bits}",
         f"--sample-rate={track.sample_rate}",
         "-o",
-        track.partial,
+        partial,
         "-",
     ]
     digest = hashlib.sha256()

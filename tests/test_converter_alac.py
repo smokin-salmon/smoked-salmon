@@ -34,16 +34,12 @@ import av
 import numpy as np
 
 args = sys.argv[1:]
-expected = {"-V", "-s", "--force-raw-format", "--endian=little", "--sign=signed", "-o", "-"}
+expected = {"-V", "-s", "-f", "--force-raw-format", "--endian=little", "--sign=signed", "-o", "-"}
 if not expected <= set(args) or args[0] != "-%(level)d" or args[-1] != "-":
     sys.exit(f"unexpected command line: {args}")
 options = dict(arg[2:].split("=", 1) for arg in args if arg.startswith("--") and "=" in arg)
 channels, bits, rate = int(options["channels"]), int(options["bps"]), int(options["sample-rate"])
 output = args[args.index("-o") + 1]
-try:
-    open(output, "xb").close()  # flac without -f never overwrites a file.
-except FileExistsError:
-    sys.exit(f"{output}: ERROR: output file exists")
 raw = sys.stdin.buffer.read()
 if bits == 16:
     samples, fmt = np.frombuffer(raw, "<i2"), "s16"
@@ -330,11 +326,20 @@ def test_a_failed_verification_keeps_every_m4a_and_leaves_no_flac(monkeypatch, t
     _write_alac(tmp_path / "02.m4a", 16, 44100, seed=2)
     before = _snapshot(tmp_path)
     decode = alac._pcm_chunks
+    convert = alac._convert
+    partials_of_02: set[str] = set()
+
+    def noted(track: alac.AlacTrack, partial: str) -> None:
+        if track.name == "02.m4a":
+            partials_of_02.add(partial)
+        convert(track, partial)
+
+    monkeypatch.setattr(alac, "_convert", noted)
 
     def flipped(path: str, bits: int, channels: int) -> Iterator[bytes]:
         for chunk in decode(path, bits, channels):
             # The FLAC of 02 decodes to other samples.
-            yield bytes([chunk[0] ^ 1]) + chunk[1:] if "02.flac" in path else chunk
+            yield bytes([chunk[0] ^ 1]) + chunk[1:] if path in partials_of_02 else chunk
 
     monkeypatch.setattr(alac, "_pcm_chunks", flipped)
 
@@ -419,7 +424,7 @@ def test_a_failed_track_stops_the_tracks_not_started_yet(monkeypatch, tmp_path) 
     monkeypatch.setattr(cfg.upload, "simultaneous_threads", 1)
     encoded: list[str] = []
 
-    def failing(track: alac.AlacTrack) -> bytes:
+    def failing(track: alac.AlacTrack, partial: str) -> bytes:
         encoded.append(track.name)
         raise alac.ConversionError("flac failed")
 
@@ -439,8 +444,8 @@ def test_a_flac_another_run_puts_in_place_meanwhile_is_never_overwritten_or_remo
     monkeypatch.setattr(cfg.upload, "simultaneous_threads", 1)
     encode = alac._encode
 
-    def raced(track: alac.AlacTrack) -> bytes:
-        digest = encode(track)
+    def raced(track: alac.AlacTrack, partial: str) -> bytes:
+        digest = encode(track, partial)
         if track.name == "02.m4a":
             # Another upload of the album converted it since this run's checks.
             (tmp_path / "02.flac").write_bytes(b"the other run's FLAC")
@@ -454,6 +459,57 @@ def test_a_flac_another_run_puts_in_place_meanwhile_is_never_overwritten_or_remo
     after = _snapshot(tmp_path)
     assert (tmp_path / "02.flac").read_bytes() == b"the other run's FLAC"
     assert after == {**before, "02.flac": after["02.flac"]}
+
+
+def test_a_failed_move_to_a_flac_name_removes_the_flacs_already_moved(monkeypatch, tmp_path) -> None:
+    _write_alac(tmp_path / "01.m4a", 16, 44100, seed=1)
+    _write_alac(tmp_path / "02.m4a", 16, 44100, seed=2)
+    before = _snapshot(tmp_path)
+    rename = alac.rename_no_clobber
+
+    def refused(old: str, new: str) -> None:
+        if new.endswith("02.flac"):
+            raise PermissionError(13, "Permission denied", new)
+        rename(old, new)
+
+    monkeypatch.setattr(alac, "rename_no_clobber", refused)
+
+    refusal = _convert(tmp_path, FakeInteraction())
+
+    assert refusal is not None and "02.flac" in refusal and "Permission denied" in refusal
+    assert _snapshot(tmp_path) == before
+
+
+def test_a_partial_flac_left_by_a_stopped_conversion_stops_the_next_one(tmp_path) -> None:
+    _write_alac(tmp_path / "01.m4a", 16, 44100)
+    leftover = ".salmon-alac-0123456789abcdef0123456789abcdef.part"
+    (tmp_path / leftover).write_bytes(b"half a FLAC")
+    before = _snapshot(tmp_path)
+    fake = FakeInteraction()
+
+    refusal = _convert(tmp_path, fake)
+
+    assert refusal is not None and leftover in refusal
+    assert fake.confirms == []
+    assert _snapshot(tmp_path) == before
+
+
+def test_a_partial_name_is_short_whatever_the_track_is_called(monkeypatch, tmp_path) -> None:
+    name = "a" * 240 + ".m4a"
+    _write_alac(tmp_path / name, 16, 44100, tags=False)
+    seen: list[str] = []
+    convert = alac._convert
+
+    def noted(track: alac.AlacTrack, partial: str) -> None:
+        seen.append(os.path.basename(partial))
+        convert(track, partial)
+
+    monkeypatch.setattr(alac, "_convert", noted)
+
+    assert _convert(tmp_path, FakeInteraction()) is None
+
+    assert sorted(_snapshot(tmp_path)) == ["a" * 240 + ".flac"]
+    assert len(seen) == 1 and len(seen[0]) == len(".salmon-alac-.part") + 32
 
 
 def test_an_album_with_no_alac_is_left_as_it_is(tmp_path) -> None:
