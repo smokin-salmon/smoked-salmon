@@ -11,6 +11,7 @@ from collections.abc import Iterator
 from contextlib import asynccontextmanager, contextmanager
 from functools import partial
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import anyio
@@ -212,6 +213,20 @@ def test_a_log_with_a_low_score_no_checksum_and_other_crcs_warns(album, monkeypa
         "rip.log: no checksum to verify it (EAC signs its logs from 1.0 beta 3); score 95/100; "
         "the audio does not match its CRCs." in result.output
     )
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_range_rip_past_sector_0_that_can_not_be_verified_warns_as_not_checked(album, monkeypatch):
+    _rip(album)
+    toc = [SimpleNamespace(start_sector=37, end_sector=149), SimpleNamespace(start_sector=150, end_sector=262)]
+    log = FakeParsedLog([FakeTrack(1, "AAAAAAAA", is_range=True)], toc_entries=toc)
+    _patch_cambia(monkeypatch, FakeCambiaOutput(FakeParsedCombined([log])))
+    result = _run(str(album))
+    assert result.exit_code == 0, result.output
+    assert _rows(result.output)["Rip log"] == "WARN"
+    assert "rip.log: CRCs not checked: " in result.output
+    assert "The audio is not verified" in result.output
+    assert "CRCs match" not in result.output
 
 
 def test_a_tracker_not_in_the_config_is_refused(album):
