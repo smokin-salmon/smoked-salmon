@@ -20,6 +20,12 @@ def is_torrent_file(name: str) -> bool:
     return name.lower().endswith(".torrent")
 
 
+def is_apple_double(name: str) -> bool:
+    """Whether a file's name or path makes it a macOS metadata file: written beside each file macOS copies to a volume
+    that can't hold its metadata (exFAT, SMB), and named after that file, so "._01.flac" looks like a track."""
+    return os.path.basename(name).startswith("._")
+
+
 class AlbumPath(click.Path):
     """A click.Path made absolute without resolving symlinks, so an album symlinked into a library is seen there."""
 
@@ -84,7 +90,7 @@ def unreadable_error(error: OSError, path: str) -> UploadError:
 
 def album_files(path: str, extensions: Iterable[str], *, skip_unreadable: bool = False) -> list[str]:
     """The files under path whose lower-cased name ends in one of extensions, joined to path, in track order (see
-    file_order_key).
+    file_order_key), without macOS's metadata files.
 
     Raises:
         UploadError: Naming a folder that cannot be read, unless skip_unreadable leaves it out. A folder gone
@@ -100,7 +106,7 @@ def album_files(path: str, extensions: Iterable[str], *, skip_unreadable: bool =
         os.path.join(root, name)
         for root, _folders, names in os.walk(path, onerror=stop)
         for name in names
-        if name.lower().endswith(suffixes)
+        if name.lower().endswith(suffixes) and not is_apple_double(name)
     ]
     return sorted(found, key=file_order_key)
 

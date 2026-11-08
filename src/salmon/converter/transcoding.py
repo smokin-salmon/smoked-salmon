@@ -13,7 +13,7 @@ from mutagen.id3 import APIC, ID3, TXXX, Frames
 
 from salmon import cfg, interaction
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import get_audio_files, is_torrent_file, process_files
+from salmon.common.files import get_audio_files, is_apple_double, is_torrent_file, process_files
 from salmon.common.numbers import file_order_key
 from salmon.converter.conversions import (
     changed_sources,
@@ -293,7 +293,9 @@ def _collect_transcode_items(
     items: list[TranscodeItem] = []
 
     # Any case, as _copy_extra_files skips them: a .FLAC track would otherwise be neither transcoded nor copied.
-    flac_files = (p for p in src_path.rglob("*") if p.is_file() and p.suffix.lower() == ".flac")
+    flac_files = (
+        p for p in src_path.rglob("*") if p.is_file() and p.suffix.lower() == ".flac" and not is_apple_double(p.name)
+    )
     for flac_file in sorted(flac_files, key=lambda p: file_order_key(str(p))):
         try:
             fl, tag_dict = _parse_flac_tags(flac_file)
@@ -355,7 +357,7 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
 def _copy_extra_files(path: str, new_path: str, *, essential_only: bool = False) -> None:
     """Copy non-audio files to the output directory.
 
-    By default all non-FLAC files are copied except those in SKIP_EXTENSIONS and .torrent files.
+    By default all non-FLAC files are copied except those in SKIP_EXTENSIONS, .torrent files and macOS metadata files.
     When essential_only is True, only image files (matching IMAGE_EXTENSIONS) are kept.
 
     Args:
@@ -370,7 +372,7 @@ def _copy_extra_files(path: str, new_path: str, *, essential_only: bool = False)
         if not p.is_file() or p.suffix.lower() == ".flac":
             continue
         rel = p.relative_to(src_path)
-        if p.suffix.lower() in SKIP_EXTENSIONS or is_torrent_file(p.name):
+        if p.suffix.lower() in SKIP_EXTENSIONS or is_torrent_file(p.name) or is_apple_double(p.name):
             click.secho(f"Skip  {rel}", fg="yellow")
             continue
         if essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS:
