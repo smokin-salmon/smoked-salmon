@@ -201,23 +201,31 @@ def _judge_written(right: dict[str, Any], today: dict[str, Any], forms: dict[str
     name among a track's ARTIST before its "(feat. ...)"."""
     wrong = []
     main = right.get("release_main", [])
-    leads = [
-        {forms.get(n, n) for n in re.split(r", | & ", line.split(" | ")[0].split(" (feat. ")[0])}
-        for line in today["tracks"]
-    ]
+    leads = [line.split(" | ")[0].split(" (feat. ")[0] for line in today["tracks"]]
     if len(main) == 1:
         wrong += (
             ["ALBUMARTIST not the release's main"]
             if forms.get(today["albumartist"], today["albumartist"]) != main[0]
             else []
         )
-        wrong += ["a track's ARTIST without the release's main"] if any(main[0] not in lead for lead in leads) else []
+        wrong += (
+            ["a track's ARTIST without the release's main"]
+            if any(not _credited(main[0], lead, forms) for lead in leads)
+            else []
+        )
     wrong += (
         ["a never-main name in a track's ARTIST"]
-        if any(set(right.get("not_main", [])) & lead for lead in leads)
+        if any(_credited(name, lead, forms) for name in right.get("not_main", []) for lead in leads)
         else []
     )
     return wrong
+
+
+def _credited(name: str, lead: str, forms: dict[str, str]) -> bool:
+    """Whether `lead` ("A, B & C") credits `name`, in any of its forms, as a whole name: "Tyler, The Creator" holds
+    a ", " of its own, so the lead isn't split first."""
+    spellings = [name, *(alt for alt, canonical in forms.items() if canonical == name)]
+    return any(re.search(rf"(?:^|, | & ){re.escape(s)}(?=$|, | & )", lead) for s in spellings)
 
 
 def _params() -> list[Any]:
@@ -240,6 +248,21 @@ def test_today(case: Path, stage: str, monkeypatch: pytest.MonkeyPatch) -> None:
     shown = "\n".join(f"{key} = {json.dumps(value, ensure_ascii=False)}" for key, value in got.items())
     update = f"today changed: if the change is meant, set [today.{stage}] in {case.name} to:\n{shown}"
     assert got == want, update
+
+
+def test_each_case_records_exactly_the_stages_it_runs() -> None:
+    """A [today] entry for a stage no longer run would be counted by the scoreboard but enforced by nothing."""
+    for case in _cases():
+        record = _record(case)
+        assert set(record["today"]) == set(_stages(record)), case.name
+
+
+def test_a_name_holding_a_separator_is_judged_whole() -> None:
+    right = {"release_main": ["Tyler, The Creator"], "not_main": ["Earth, Wind & Fire"]}
+    output = {"albumartist": "Tyler, The Creator", "tracks": ["Tyler, The Creator", "Tyler, The Creator & Kali Uchis"]}
+    assert judge(right, output) == []
+    guest_as_main = {**output, "tracks": ["Tyler, The Creator & Earth, Wind & Fire"]}
+    assert judge(right, guest_as_main) == ["a never-main name in a track's ARTIST"]
 
 
 def test_scoreboard() -> None:
