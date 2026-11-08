@@ -27,8 +27,7 @@ FIXED_IN: dict[tuple[int | str, ...], tuple[int | str, ...]] = {
 
 
 def has_the_race(version: tuple[int | str, ...] = tuple(sys.version_info)) -> bool:
-    """Whether a server closed as a client connects raises TypeError on this Python with asyncio's own _wakeup
-    (3.11 and 3.12 count connections: they raise nothing)."""
+    """Whether a server closed as a client connects raises TypeError on this Python with asyncio's own _wakeup."""
     minor = version[:2]
     return minor == (3, 13) or (minor in FIXED_IN and version < FIXED_IN[minor])
 
@@ -100,16 +99,14 @@ def test_without_the_helper_the_race_raises_where_expected(monkeypatch):
         )
     else:
         assert raised == [], (
-            f"the race raised on Python {version}, which has_the_race() says has no race (3.11 and 3.12, or a release "
-            "FIXED_IN lists as fixed): correct FIXED_IN, or has_the_race() for 3.11 and 3.12"
+            f"the race raised on Python {version}, which has_the_race() says has no race (a release FIXED_IN lists "
+            "as fixed): correct FIXED_IN"
         )
 
 
 @pytest.mark.parametrize(
     ("version", "expected"),
     [
-        ((3, 11, 15, "final", 0), False),
-        ((3, 12, 14, "final", 0), False),
         ((3, 13, 14, "final", 0), True),
         ((3, 14, 10, "final", 0), True),
         ((3, 14, 11, "final", 0), False),

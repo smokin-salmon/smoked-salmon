@@ -4,7 +4,6 @@ import platform
 import sys
 import traceback
 from collections.abc import Awaitable
-from typing import TypeVar
 
 import aiohttp
 import asyncclick as click
@@ -179,10 +178,7 @@ def _format_scrape_error_message(error: BaseException) -> str:
     return error.__class__.__name__
 
 
-ReturnType = TypeVar("ReturnType")
-
-
-async def handle_scrape_errors(task: Awaitable[ReturnType], mute: bool = False) -> ReturnType | None:
+async def handle_scrape_errors[ReturnType](task: Awaitable[ReturnType], mute: bool = False) -> ReturnType | None:
     """Handle errors during scraping tasks.
 
     Args:

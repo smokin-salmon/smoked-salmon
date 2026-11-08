@@ -101,7 +101,7 @@ the test run never reads a developer's config.
 Several rules in this file have a test, named next to the rule (`tests/test_rule_*.py`,
 `tests/test_interaction_calls.py`, `tests/test_complexity.py`). Each names its rule, and its failure says what to do.
 
-- Python 3.11+, ruff line length 120, async throughout (`anyio`, `aiohttp`, `asyncclick`).
+- Python 3.13+, ruff line length 120, async throughout (`anyio`, `aiohttp`, `asyncclick`).
 - Config: add new settings to the msgspec schema with a default, validate them in
   `__post_init__`, and document them, commented out with their default, in `config.reference.toml` (add a key to
   `config.default.toml` only if a new user is likely to change it). New

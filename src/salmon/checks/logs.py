@@ -54,7 +54,7 @@ def _get_audio_duration_sectors(filepath: str) -> int:
         raise RuntimeError(f"Error getting duration in sectors for {filepath}: {e}") from e
 
 
-def _iter_pcm_chunks(filepath: str) -> Generator[bytes, None, None]:
+def _iter_pcm_chunks(filepath: str) -> Generator[bytes]:
     """Yield raw s16le PCM chunks from an audio file.
 
     Decodes audio frame-by-frame and yields each resampled chunk,
@@ -137,7 +137,7 @@ def _starts_with_sound(filepath: str) -> bool:
     return any(next(_iter_pcm_chunks(filepath), b"")[:4])
 
 
-def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocEntry]) -> Generator[bytes, None, None]:
+def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocEntry]) -> Generator[bytes]:
     """Yield PCM chunks for a range rip reconstruction, including silence gaps.
 
     Streams audio frame-by-frame per track, inserting silence where TOC

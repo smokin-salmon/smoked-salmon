@@ -3,7 +3,7 @@ import stat
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, TypeVar, cast
+from typing import Any, cast
 
 import anyio
 import asyncclick as click
@@ -13,8 +13,6 @@ from salmon import cfg
 from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.numbers import file_order_key
 from salmon.errors import UploadError
-
-T = TypeVar("T")
 
 
 def is_torrent_file(name: str) -> bool:
@@ -155,7 +153,7 @@ async def compress(filepath: str) -> CompressResult:
     return CompressResult(filepath, True)
 
 
-async def process_files(
+async def process_files[T](
     files: list[str],
     process_func: Callable[[str, int], Awaitable[T]],
     desc: str,

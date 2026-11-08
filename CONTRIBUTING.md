@@ -12,7 +12,7 @@ Thank you for your interest in contributing to smoked-salmon! This guide walks y
 
 ### Prerequisites
 
-- Python 3.11 or later
+- Python 3.13 or later
 - [uv](https://github.com/astral-sh/uv) (package manager)
 - System dependencies: `sox`, `flac`, `mp3val`, `lame` (see the [README](README.md) for platform-specific instructions)
 
