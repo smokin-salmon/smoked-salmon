@@ -20,10 +20,6 @@ class UploadError(Exception):
     pass
 
 
-class FilterError(Exception):
-    pass
-
-
 class TrackCombineError(Exception):
     pass
 

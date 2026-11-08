@@ -16,7 +16,7 @@ import salmon.uploader
 import salmon.webui
 from salmon import cfg
 from salmon.common import commandgroup, tmp_lock
-from salmon.errors import FilterError, LoginError, TLSCertificateError, UploadError
+from salmon.errors import TLSCertificateError, UploadError
 from salmon.release_notification import show_release_notification
 from salmon.uploader.record import recording
 
@@ -110,7 +110,7 @@ def _run_command():
         click.echo()
 
         commandgroup(obj={})
-    except (UploadError, FilterError) as e:
+    except UploadError as e:
         click.secho(f"There was an error: {e}", fg="red", bold=True)
         sys.exit(1)
     except TLSCertificateError as e:
