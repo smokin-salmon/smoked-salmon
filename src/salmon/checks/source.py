@@ -95,7 +95,7 @@ class _Evidence:
     above_cd_quality: bool
 
 
-def detect_source(path: str) -> DetectedSource | None:
+def detect_source(path: str, files: list[str] | None = None) -> DetectedSource | None:
     """The media source the album's files prove, or None when they do not prove one.
 
     A rip log, a store URL in the tags, a tag only a store writes or a media tag each prove a
@@ -105,9 +105,11 @@ def detect_source(path: str) -> DetectedSource | None:
 
     When the files hold no proof at all, the one source named in a bracket of the folder's name
     (`[WEB FLAC]`, `(CD)`) is the answer, under the same rule-outs. Conflicting proofs still give None.
+
+    files are the album's audio files, named from it, as get_audio_files lists them; None lists them.
     """
     try:
-        evidence = _gather(path)
+        evidence = _gather(path, files)
     except OSError:
         # A log or folder salmon cannot read could hide a rip log, so nothing is proven.
         return None
@@ -141,11 +143,11 @@ def _name_source(path: str) -> str | None:
     return found.pop() if len(found) == 1 else None
 
 
-def _gather(path: str) -> _Evidence:
+def _gather(path: str, files: list[str] | None) -> _Evidence:
     evidence = _Evidence(proofs={}, tracknumbers=[], above_cd_quality=False)
     if log := _rip_log(path):
         evidence.proofs[f"rip log found ({log})"] = "CD"
-    for filename in get_audio_files(path):
+    for filename in get_audio_files(path) if files is None else files:
         try:
             mut = MutagenFile(os.path.join(path, filename))
         except Exception:  # A truncated or corrupt file must not sink the whole scan.

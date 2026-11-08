@@ -46,3 +46,24 @@ def test_beatport_name_padded_with_a_space_gets_no_double_space() -> None:
 
 def test_beatport_track_without_a_mix_name_keeps_its_name() -> None:
     assert titles(make_soup(track(1, "Django", None))) == ["Django"]
+
+
+def test_beatport_genres_drop_the_bracketed_sub_category() -> None:
+    names = [
+        "Techno (Peak Time / Driving)",
+        "Trance (Main Floor)",
+        "Techno (Raw / Deep / Hypnotic)",
+        "Melodic House & Techno",
+    ]
+    soup = make_soup(*({"genre": {"name": name}} for name in names))
+
+    genres = Scraper().parse_genres(soup)
+
+    assert genres == {"Electronic", "Techno", "Trance", "Melodic House"}
+    assert not any("(" in genre or ")" in genre for genre in genres)
+
+
+def test_beatport_genre_that_is_only_a_bracket_adds_nothing() -> None:
+    soup = make_soup({"genre": {"name": "(Peak Time / Driving)"}}, {"genre": {"name": "Trance (Main Floor)"}})
+
+    assert Scraper().parse_genres(soup) == {"Electronic", "Trance"}

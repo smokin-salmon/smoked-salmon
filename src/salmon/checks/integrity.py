@@ -9,8 +9,11 @@ import asyncclick as click
 import msgspec
 
 from salmon import cfg, interaction, prepared
-from salmon.common.files import process_files, rewrite_refusal
+from salmon.common.files import album_files, process_files, rewrite_refusal
 from salmon.errors import UploadError
+
+# What the integrity check decodes, with flac and mp3val.
+_INTEGRITY_EXTENSIONS = (".mp3", ".flac")
 
 FLAC_IMPORTANT_REGEXES = [
     # A warning, then flac's "ok" for the decode.
@@ -271,12 +274,13 @@ async def sanitize_and_verify(path: str) -> IntegrityResult:
     return result
 
 
-async def check_integrity(path: str, _: int | None = None) -> IntegrityResult:
+async def check_integrity(path: str, _: int | None = None, *, files: list[str] | None = None) -> IntegrityResult:
     """Check the integrity of audio files at the given path.
 
     Args:
         path: Path to a FLAC/MP3 file or a directory containing audio files.
         _: Unused index parameter for process_files compatibility.
+        files: The directory's audio files, named from it, as get_audio_files lists them; None lists them.
 
     Returns:
         The combined result for every file checked.
@@ -291,11 +295,10 @@ async def check_integrity(path: str, _: int | None = None) -> IntegrityResult:
     elif os.path.isdir(path):
         integrities_out: list[str] = []
         integrities = True
-        audio_files: list[str] = []
-        for root, _dirs, files in os.walk(path):
-            for f in files:
-                if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
-                    audio_files.append(os.path.join(root, f))
+        if files is None:
+            audio_files = album_files(path, _INTEGRITY_EXTENSIONS)
+        else:
+            audio_files = [os.path.join(path, f) for f in files if f.lower().endswith(_INTEGRITY_EXTENSIONS)]
         if not audio_files:
             click.secho("No audio files found in directory", fg="red", bold=True)
             raise click.Abort
@@ -454,11 +457,7 @@ async def sanitize_integrity(path: str, _: int | None = None) -> bool:
         return await _sanitize_mp3(path)
     elif os.path.isdir(path):
         integrities = True
-        audio_files: list[str] = []
-        for root, _dirs, files in os.walk(path):
-            for f in files:
-                if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
-                    audio_files.append(os.path.join(root, f))
+        audio_files = album_files(path, _INTEGRITY_EXTENSIONS)
         if not audio_files:
             return True
         # Once, into the album folder, not into each disc folder: its files are sanitized one by one below.

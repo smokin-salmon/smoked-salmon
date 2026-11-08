@@ -280,6 +280,15 @@ def test_a_rip_log_and_a_store_url_conflict(tmp_path) -> None:
     assert detect_source(str(album)) is None
 
 
+def test_given_the_album_s_files_it_reads_only_those(tmp_path) -> None:
+    """check all lists the album once and gives each check that list: a file left out of it proves nothing."""
+    _write_flac(tmp_path / "01.flac", {"TRACKNUMBER": "1"})
+    _write_flac(tmp_path / "02.flac", {"TRACKNUMBER": "2", "COMMENT": QOBUZ_URL})
+
+    assert detect_source(str(tmp_path), ["01.flac"]) is None
+    assert detect_source(str(tmp_path)) == DetectedSource("WEB", "Qobuz URL in the tags")
+
+
 def test_a_media_tag_that_disagrees_with_a_store_url_conflicts(tmp_path) -> None:
     album = _album(tmp_path, {"MEDIA": "CD", "SOURCE": QOBUZ_URL})
 

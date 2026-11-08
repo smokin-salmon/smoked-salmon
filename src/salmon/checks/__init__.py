@@ -8,7 +8,7 @@ from salmon.checks.integrity import handle_integrity_check
 from salmon.checks.logs import check_log_cambia
 from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
-from salmon.common.files import AlbumPath, process_files
+from salmon.common.files import AlbumPath, album_files, process_files
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 
 if TYPE_CHECKING:
@@ -32,12 +32,9 @@ async def log(path: str) -> None:
     if os.path.isfile(path):
         await _check_log(path, os.path.dirname(path))
     elif os.path.isdir(path):
-        for root, _, files in os.walk(path):
-            for f in files:
-                if f.lower().endswith(".log"):
-                    filepath = os.path.join(root, f)
-                    click.secho(f"\nScoring {filepath}...", fg="cyan")
-                    await _check_log(filepath, path)
+        for filepath in album_files(path, [".log"]):
+            click.secho(f"\nScoring {filepath}...", fg="cyan")
+            await _check_log(filepath, path)
 
 
 async def _check_log(path: str, basepath: str) -> None:
@@ -94,15 +91,12 @@ async def mqa(path):
         else:
             click.secho("Did not find MQA syncword", fg="green")
     elif os.path.isdir(path):
-        for root, _, files in os.walk(path):
-            for f in files:
-                if any(f.lower().endswith(ext) for ext in [".mp3", ".flac"]):
-                    filepath = os.path.join(root, f)
-                    click.secho(f"\nChecking {filepath}...", fg="cyan")
-                    if await check_mqa(filepath):
-                        click.secho("MQA syncword present", fg="red")
-                    else:
-                        click.secho("Did not find MQA syncword", fg="green")
+        for filepath in album_files(path, [".mp3", ".flac"]):
+            click.secho(f"\nChecking {filepath}...", fg="cyan")
+            if await check_mqa(filepath):
+                click.secho("MQA syncword present", fg="red")
+            else:
+                click.secho("Did not find MQA syncword", fg="green")
 
 
 _VERDICT_STYLES = {
@@ -182,7 +176,7 @@ async def mqa_test(path: str, all_files: bool = True) -> None:
 
     Args:
         path: Path to the FLAC file or directory to check.
-        all_files: Check every FLAC file in a directory; False checks only the first one by path.
+        all_files: Check every FLAC file in a directory; False checks only the first track.
 
     Raises:
         click.Abort: If MQA syncword is detected.
@@ -192,9 +186,7 @@ async def mqa_test(path: str, all_files: bool = True) -> None:
     if os.path.isfile(path):
         filepaths = [path]
     elif os.path.isdir(path):
-        filepaths = sorted(
-            os.path.join(root, f) for root, _, files in os.walk(path) for f in files if f.lower().endswith(".flac")
-        )
+        filepaths = album_files(path, [".flac"])
         if not all_files:
             filepaths = filepaths[:1]
     else:

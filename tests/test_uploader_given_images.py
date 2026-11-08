@@ -24,6 +24,7 @@ import salmon.trackers
 import salmon.uploader
 from salmon import cfg
 from salmon.images import host_of_url
+from salmon.uploader import cover_upload, upload_checks
 from salmon.uploader.given_images import parse_spectral_urls, url_refusal
 from salmon.uploader.spectrals import SpectralUploads, make_spectral_bbcode
 
@@ -196,7 +197,7 @@ def test_the_lossy_master_question_is_asked_with_spectral_urls(monkeypatch, tmp_
         asked.append(True)
         return True
 
-    monkeypatch.setattr(salmon.uploader, "prompt_lossy_master", prompt_lossy_master)
+    monkeypatch.setattr(upload_checks, "prompt_lossy_master", prompt_lossy_master)
 
     run = _run_up(
         monkeypatch,
@@ -219,7 +220,7 @@ def test_not_lossy_answers_the_lossy_master_question(monkeypatch, tmp_path, dirs
     async def prompt_lossy_master(*_args: Any, **_kwargs: Any) -> bool:
         raise AssertionError("asked whether the release is lossy mastered")
 
-    monkeypatch.setattr(salmon.uploader, "prompt_lossy_master", prompt_lossy_master)
+    monkeypatch.setattr(upload_checks, "prompt_lossy_master", prompt_lossy_master)
 
     run = _run_up(
         monkeypatch,
@@ -240,7 +241,7 @@ def test_reopening_spectrals_given_by_url_asks_again(monkeypatch, capsys) -> Non
     async def prompt_lossy_master(*_args: Any, **_kwargs: Any) -> bool | None:
         return next(answers)
 
-    monkeypatch.setattr(salmon.uploader, "prompt_lossy_master", prompt_lossy_master)
+    monkeypatch.setattr(upload_checks, "prompt_lossy_master", prompt_lossy_master)
 
     assert anyio.run(salmon.uploader._lossy_master_without_spectrals, None, "FLAC") is False
     assert "There are no spectrals to reopen: they were given by URL." in capsys.readouterr().out
@@ -389,7 +390,7 @@ def test_a_cover_url_is_not_needed_for_an_existing_group(monkeypatch) -> None:
     async def no_download(*_args: Any, **_kwargs: Any) -> Any:
         raise AssertionError("looked for a cover")
 
-    monkeypatch.setattr(salmon.uploader, "download_cover_if_nonexistent", no_download)
+    monkeypatch.setattr(cover_upload, "download_cover_if_nonexistent", no_download)
     site: Any = SimpleNamespace(site_code="RED")
 
     # remove_downloaded: the group branch looks for no cover file.

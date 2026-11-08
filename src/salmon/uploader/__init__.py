@@ -1,10 +1,7 @@
-import functools
 import os
 import platform
 import shutil
-from collections.abc import AsyncIterator
-from contextlib import AsyncExitStack, asynccontextmanager, nullcontext
-from copy import deepcopy
+from contextlib import nullcontext
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
@@ -13,21 +10,15 @@ import asyncclick as click
 import salmon.trackers
 from salmon import cfg, dryrun, interaction
 from salmon.checks import mqa_test
-from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
-from salmon.checks.high_rate import sixteen_bit_notice
-from salmon.checks.integrity import resolve_integrity_for_upload
-from salmon.checks.logs import check_log_cambia
 from salmon.checks.provenance import gather_provenance
 from salmon.checks.source import DetectedSource, detect_source
-from salmon.checks.tag_rules import process_tag_issues
 from salmon.checks.upconverts import upload_upconvert_test
-from salmon.common import commandgroup, get_audio_files, tagify
+from salmon.common import commandgroup, get_audio_files
 from salmon.common.files import AlbumPath
 from salmon.common.strings import numeric_id
-from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import CONVERSION_KINDS
-from salmon.constants import ENCODINGS, FORMATS, SOURCES, TAG_ENCODINGS
-from salmon.converter.conversions import carry_conversion, conversion_of
+from salmon.constants import SOURCES, TAG_ENCODINGS
+from salmon.converter.conversions import conversion_of
 from salmon.converter.downconverting import (
     BitDepth,
     conversion_note,
@@ -38,28 +29,19 @@ from salmon.converter.transcoding import (
 )
 from salmon.errors import (
     AbortAndDeleteFolder,
-    CRCMismatchError,
     DryRunRefused,
-    EditedLogError,
-    InvalidMetadataError,
-    LogCheckSkipped,
     PickOtherResults,
     RequestError,
     SkipTracker,
     UnknownOutcomeError,
-    UploadError,
 )
-from salmon.images import HOSTS, upload_cover
 from salmon.tagger import (
-    metadata_validator_base,
     validate_encoding,
     validate_source,
 )
-from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import (
     check_hybrid,
     gather_audio_info,
-    recompress_path,
 )
 from salmon.tagger.cover import (
     check_embedded_pictures,
@@ -68,14 +50,11 @@ from salmon.tagger.cover import (
     get_cover_from_path,
     has_flac_without_picture,
 )
-from salmon.tagger.foldername import files_only_in, remove_source_folder, rename_folder
-from salmon.tagger.folderstructure import check_folder_structure
+from salmon.tagger.foldername import files_only_in, remove_source_folder
 from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
 from salmon.tagger.pre_data import construct_rls_data
-from salmon.tagger.retagger import collect_album_data, rename_files, tag_files
-from salmon.tagger.review import review_metadata, suggest_release_type
-from salmon.tagger.tags import check_tags, gather_tags, standardize_tags
-from salmon.trackers.red import RedApi
+from salmon.tagger.review import suggest_release_type
+from salmon.tagger.tags import gather_tags, standardize_tags
 from salmon.uploader import record
 from salmon.uploader.conversion_choice import (
     _applicable_conversions,
@@ -85,20 +64,19 @@ from salmon.uploader.conversion_choice import (
     validate_conversions,
 )
 from salmon.uploader.conversion_upload import _max_path_length_for_run, execute_downconversion_tasks
+from salmon.uploader.cover_upload import resolve_cover_url
 from salmon.uploader.dupe_checker import (
     NO_DUPE_SEARCH,
-    can_check_site_log,
     check_existing_group,
     choose_source_flac,
-    dupe_check_recent_torrents,
     fetch_existing_group_candidates_in_background,
     generate_dupe_check_searchstrs,
-    print_recent_upload_results,
     print_torrents,
     recheck_edition,
     resolve_existing_group,
 )
 from salmon.uploader.given_images import parse_spectral_urls, track_refusal, url_refusal
+from salmon.uploader.metadata_review import edit_metadata, last_min_dupe_check, recheck_dupe
 from salmon.uploader.preassumptions import confirm_group_upload, print_preassumptions, validate_skip_flac_source
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
@@ -110,7 +88,6 @@ from salmon.uploader.spectrals import (
     get_spectrals_path,
     make_way_for_spectrals,
     post_upload_spectral_check,
-    prompt_lossy_master,
     remove_own_spectrals,
     specs_hosts_text,
     spectrals_in_background,
@@ -119,6 +96,13 @@ from salmon.uploader.staging import staged_source
 from salmon.uploader.upload import (
     concat_track_data,
     upload_and_report,
+)
+from salmon.uploader.upload_checks import (
+    _check_logs,
+    _do_not_upload_refusal,
+    _lossy_master_without_spectrals,
+    _sixteen_bit_refusal,
+    _warn_about_provenance,
 )
 
 if TYPE_CHECKING:
@@ -561,295 +545,6 @@ async def run_up(options: UpOptions) -> None:
     )
     if dryrun.active():
         dryrun.say(f"done. Nothing was sent, and {path} is unchanged.")
-
-
-async def get_cover_url(
-    tracker: str,
-    cover_urls: dict[str, str | None],
-    path: str,
-    cover_source: str | None,
-    remove_downloaded: bool,
-    red_api: RedApi | None = None,
-    host: str | None = None,
-) -> tuple[str | None, bool]:
-    """Get the cover URL for a new group on a tracker, uploading the cover if needed.
-
-    Each tracker can have its own cover host, so a cover uploaded for one tracker is
-    only reused by trackers that share its host. A failed upload is retried next time.
-
-    Args:
-        tracker: The tracker site code, e.g. "RED".
-        cover_urls: Cover URLs already uploaded in this run, by image host. Updated in place.
-        path: The release folder.
-        cover_source: URL to download the cover from if the folder has none.
-        remove_downloaded: Delete the cover file after uploading, if it was downloaded.
-        red_api: The RED client that RED's image host uploads through.
-        host: Upload to this host instead of the tracker's configured one, for a retry on
-            another host. The URL is still cached in cover_urls under this host.
-
-    Returns:
-        The cover URL (None if none is cached and the upload failed or no cover was found), and
-        whether a cover file was found: False means there is nothing to retry uploading, True
-        with a None URL means the upload itself failed. A dry run uploads nothing: the URL is
-        what stands in for it.
-    """
-    host = host or cfg.image.host_for(tracker, "cover_uploader")
-    if not cover_urls.get(host):
-        cover_path, is_downloaded = await download_cover_if_nonexistent(path, cover_source)
-        if dryrun.active() and cover_path:
-            dryrun.say(f"not uploading the cover {os.path.basename(cover_path)} to {host}.")
-            cover_urls[host] = dryrun.image_url(cover_path, host)
-        else:
-            cover_urls[host] = await upload_cover(cover_path, host, red_api)
-        if is_downloaded and remove_downloaded and cover_path:
-            click.secho("Removing downloaded Cover Image File", fg="yellow")
-            os.remove(cover_path)
-        return cover_urls[host], cover_path is not None
-    return cover_urls[host], True
-
-
-@asynccontextmanager
-async def red_api_for_covers(gazelle_site: "BaseGazelleApi", host: str | None = None) -> AsyncIterator[RedApi | None]:
-    """Get the RED client that a cover upload to `host` for gazelle_site's tracker goes through, if any.
-
-    RED's image host authenticates with the RED API key, whichever tracker the cover is for. An
-    upload to RED uses its own client. An upload to another tracker gets one RED client of its
-    own, closed once the upload it was made for is done.
-
-    Args:
-        gazelle_site: The tracker API instance the upload is to.
-        host: The image host the cover is going to. Defaults to the tracker's configured cover host.
-
-    Yields:
-        The RED client, or None if the cover is not going to RED's image host.
-    """
-    if isinstance(gazelle_site, RedApi):
-        yield gazelle_site
-    elif (host if host is not None else cfg.image.host_for(gazelle_site.site_code, "cover_uploader")) == "red":
-        red_api = RedApi()
-        try:
-            yield red_api
-        finally:
-            await red_api.close()
-    else:
-        yield None
-
-
-async def _choose_cover_host(tracker: str, default_host: str) -> str:
-    """Ask which image host to retry a failed cover upload with.
-
-    Args:
-        tracker: The tracker site code the cover is for, e.g. "RED".
-        default_host: The host offered as the default answer.
-
-    Returns:
-        The chosen host, valid as a cover host for tracker.
-    """
-    while True:
-        forbidden = {host: reason for host in HOSTS if (reason := cover_refusal(host, tracker)) is not None}
-        allowed_hosts = [host for host in HOSTS if host not in forbidden]
-        host_input: str = await interaction.prompt(
-            click.style(
-                "Which image host would you like to retry the cover upload with? "
-                f"(Options: {', '.join(allowed_hosts)})",
-                fg="magenta",
-                bold=True,
-            ),
-            default=default_host,
-        )
-        host = host_input.strip().lower()
-        if host in forbidden:
-            click.secho(f"{host} can't be used as a cover host for {tracker}: {forbidden[host]}.", fg="red")
-        elif host not in HOSTS:
-            click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
-        else:
-            return host
-
-
-async def resolve_cover_url(
-    gazelle_site: "BaseGazelleApi",
-    group_id: int | None,
-    cover_urls: dict[str, str | None],
-    path: str,
-    cover_source: str | None,
-    remove_downloaded: bool,
-    given_url: str | None = None,
-) -> tuple[bool, str | None]:
-    """Get the cover URL to upload to a tracker with, asking before a new group goes up without one.
-
-    An existing group already has its cover, so it needs none. A new group takes given_url, a cover uploaded
-    already, when there is one: nothing is uploaded. For a new group with no cover,
-    -yyy stops the upload; otherwise the user can go on without one, retry, or stop. A retry
-    after a failed upload (a cover file was found) asks which host to retry with; a retry with no
-    cover found just looks at the folder again.
-
-    Args:
-        gazelle_site: The tracker API instance the upload is to.
-        group_id: The existing group to upload to, or None for a new group.
-        cover_urls: Cover URLs already uploaded in this run, by image host. Updated in place.
-        path: The release folder.
-        cover_source: URL to download the cover from if the folder has none.
-        remove_downloaded: Delete the cover file after uploading, if it was downloaded.
-        given_url: The cover's URL, uploaded already (--cover-url), checked against the run's trackers.
-
-    Returns:
-        Whether to upload to this tracker, and the cover URL to upload with (None for none).
-    """
-    tracker = gazelle_site.site_code
-    if group_id or given_url:
-        # The folder gets its cover file as it would with an upload, which keeps a downloaded one.
-        if not remove_downloaded:
-            await download_cover_if_nonexistent(path, cover_source)
-        return True, None if group_id else given_url
-
-    default_host = cfg.image.host_for(tracker, "cover_uploader")
-    host = default_host
-    async with AsyncExitStack() as stack:
-        red_api: RedApi | None = None
-        while True:
-            if host == "red" and red_api is None:
-                red_api = await stack.enter_async_context(red_api_for_covers(gazelle_site, host))
-            cover_url, cover_found = await get_cover_url(
-                tracker, cover_urls, path, cover_source, remove_downloaded, red_api if host == "red" else None, host
-            )
-            if cover_url:
-                return True, cover_url
-
-            click.secho(
-                f"\nNo cover image for this new group on {tracker}: none was found, its download failed, or the upload "
-                f"to {host} failed.",
-                fg="yellow",
-                bold=True,
-            )
-            if await interaction.assume_defaults():
-                click.secho(
-                    "Not uploading a new group without a cover image with -yyy (upload.yes_all).", fg="red", bold=True
-                )
-                return False, None
-
-            choice = await interaction.prompt(
-                click.style("Continue without a cover image? [y/N/r]", fg="magenta"),
-                default="n",
-                show_default=False,
-            )
-            choice = choice.strip().lower()
-            if choice in ("r", "retry"):
-                if cover_found:
-                    host = await _choose_cover_host(tracker, default_host)
-                else:
-                    click.secho("Looking for a cover image again...", fg="cyan")
-            elif choice in ("y", "yes"):
-                return True, None
-            else:
-                return False, None
-
-
-async def _check_logs(path: str) -> None:
-    """Score every rip log under the album and check its CRCs against the audio.
-
-    Args:
-        path: Album folder.
-
-    Raises:
-        click.Abort: If a log was edited, the audio could not be verified, or the user declines to
-            continue after a CRC mismatch.
-    """
-    click.secho("\nChecking logs", fg="green")
-
-    def _abort_on_scan_error(error: OSError) -> None:
-        # os.walk would otherwise skip the folder, and its log, silently.
-        click.secho(f"Could not scan {error.filename} for logs: {error}", fg="red")
-        raise click.Abort() from error
-
-    for root, _, files in os.walk(path, onerror=_abort_on_scan_error):
-        for f in files:
-            if not f.lower().endswith(".log"):
-                continue
-            filepath = os.path.join(root, f)
-            click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
-            try:
-                await check_log_cambia(filepath, path)
-            except EditedLogError as e:
-                raise click.Abort() from e
-            except CRCMismatchError as e:
-                click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
-                if not await interaction.confirm(
-                    click.style(
-                        "Log file CRC does not match audio files. Do you want to continue upload anyway?",
-                        fg="magenta",
-                    ),
-                    default=False,
-                ):
-                    raise click.Abort() from e
-            except LogCheckSkipped as e:
-                click.secho(f"Log not checked: {e}", fg="yellow")
-            except Exception as e:
-                # Any other failure is one while verifying the audio, which must not pass as verified.
-                click.secho(f"Could not verify the audio against {filepath}: {e}", fg="red")
-                raise click.Abort() from e
-
-
-def _do_not_upload_refusal(tracker: str, release: dict[str, Any], said: str | None = None) -> str | None:
-    """Why the tracker's Do-Not-Upload list forbids the release, if it does, saying it unless it was said already.
-
-    Nothing skips it, -yyy included.
-
-    Args:
-        release: The release's rls_data or metadata.
-        said: The reason a check of the same tracker gave before the review, if any.
-    """
-    reason = do_not_upload_reason(tracker, Candidate.from_metadata(release))
-    if reason is not None and reason != said:
-        click.secho(f"\nNot uploading to {tracker}: {reason}", fg="red", bold=True)
-    elif reason is None and said is not None:
-        click.secho(f"\nAs reviewed, the release is not on {tracker}'s Do-Not-Upload list.", fg="yellow")
-    return reason
-
-
-def _sixteen_bit_refusal(tracker: str, audio_info: dict[str, Any]) -> bool:
-    """Say what the tracker's rule on 16bit files above 48 kHz means for the files, and whether it refuses them.
-
-    A tracker that only trumps them gets a warning and the upload goes on. Nothing skips a refusal, -yyy included.
-    """
-    site_class = salmon.trackers.tracker_classes.get(tracker)
-    rule = site_class.TAG_RULES.sixteen_bit_above_48khz if site_class else ""
-    notice = sixteen_bit_notice(tracker, rule, audio_info)
-    if notice is None:
-        return False
-    if rule == "refused":
-        click.secho(f"\nNot uploading to {tracker}: {notice}", fg="red", bold=True)
-        return True
-    click.secho(f"\n{notice}", fg="yellow")
-    return False
-
-
-def _warn_about_provenance(provenance: dict[str, Any]) -> None:
-    """Print each ripper or store marker in the tags that the audio contradicts.
-
-    `provenance` is `gather_provenance` of the files as they were given: read before they are retagged, which can
-    blank or replace their comments. Only warns: it never stops the upload or changes an answer, and prints
-    nothing when no marker contradicts the audio.
-    """
-    if not provenance["files"]:
-        click.secho("\nTag markers not checked: the tags could not be read.", fg="yellow")
-        return
-    if contradictions := provenance["contradictions"]:
-        click.secho("\nTag markers the audio contradicts:", fg="yellow", bold=True)
-        for note in contradictions:
-            click.secho(f"  - {note}", fg="yellow")
-
-
-async def _lossy_master_without_spectrals(lossy: bool | None, format: str) -> bool:
-    """Whether the release is lossy mastered, when its spectrals were given by URL: none are made to look at.
-
-    Asked as check_spectrals asks it, unless --lossy or --not-lossy said; only a FLAC is asked about.
-    """
-    click.secho("\nSpectrals given by URL (--spectral-url): none are made, shown or uploaded.", fg="cyan")
-    if lossy is not None or format != "FLAC":
-        return bool(lossy)
-    while (answer := await prompt_lossy_master()) is None:
-        click.secho("There are no spectrals to reopen: they were given by URL.", fg="yellow")
-    return answer
 
 
 async def upload(
@@ -1757,240 +1452,6 @@ def _delete_after_abort(path: str, source_folder: str, original: str | None, fla
     else:
         shutil.rmtree(path)
         return click.secho("\nDeleted folder, aborting upload...", fg="red")
-
-
-async def edit_metadata(
-    path: str,
-    tags: dict[str, "TagFile"],
-    metadata: dict[str, Any],
-    source_url: str | None,
-    source: str,
-    rls_data: dict[str, Any],
-    recompress: bool,
-    auto_rename: bool,
-    spectral_ids: dict[int, str] | None,
-    skip_integrity_check: bool = False,
-    essential_only: bool = False,
-    skip_initial_review: bool = False,
-    apply_ai_suggestions: bool = False,
-    rename_into: str | None = None,
-    original: str | None = None,
-    max_path_length: int = 180,
-    rls_type_hint: str | None = None,
-    offer_other_results: bool = False,
-) -> tuple[str, dict[str, Any], dict[str, "TagFile"], dict[str, dict[str, Any]]]:
-    """Edit release metadata in an interactive loop until the user confirms.
-
-    Repeatedly prompts the user to review and edit metadata, then applies tags,
-    renames files and folder, checks integrity, and confirms readiness for upload.
-
-    Args:
-        path: Path to the release directory.
-        tags: Mapping of filename to TagFile objects.
-        metadata: Release metadata dictionary.
-        source: Source string (e.g. "WEB", "CD").
-        rls_data: Release data dictionary from pre_data construction.
-        recompress: Whether to recompress audio files after tagging.
-        auto_rename: Whether to automatically rename files and folder.
-        spectral_ids: Mapping of track index to spectral image ID, or None.
-        skip_integrity_check: Whether to skip the integrity check step.
-        essential_only: If True, only essential extensions are allowed.
-        skip_initial_review: Skip the first manual metadata review before AI review.
-        apply_ai_suggestions: Automatically apply AI review suggestions when present.
-        rename_into: The directory the renamed folder goes into, instead of download_directory.
-        original: The folder the user gave, when path is a copy of it, for the folder rename's remove_source_dir note.
-        max_path_length: The longest in-torrent path the folder structure check allows.
-        rls_type_hint: The release type prompt's default, when the release type has to be asked.
-        offer_other_results: Offer [b]ack to the metadata results at the reviews before the files are first written.
-
-    Returns:
-        A tuple of (path, metadata, tags, audio_info) after editing is complete.
-
-    Raises:
-        click.Abort: If a scene release fails the integrity check, or a file does not decode.
-        PickOtherResults: If the user went back to the metadata results, before anything was written.
-    """
-    given = path
-    # The metadata as the pick gave it: going back drops every change since, the AI review's included.
-    picked = deepcopy(metadata) if offer_other_results else None
-    written: dict[str, Any] = {}  # The album fields the last pass that retagged the files wrote, with their values
-    while True:
-        metadata = await review_metadata_with_ai(
-            metadata,
-            rls_data,
-            source_url,
-            metadata_validator,
-            functools.partial(review_metadata, rls_type_hint=rls_type_hint, picked=picked),
-            skip_initial_review=skip_initial_review,
-            apply_suggestions=apply_ai_suggestions,
-        )
-        tracks_by_file = None
-        if not metadata["scene"]:
-            # The first pass removes nothing: only what an earlier pass wrote can go.
-            clear = {}
-            if written:
-                album = collect_album_data(metadata)
-                clear = {tag: value for tag, value in written.items() if tag not in album}
-            tracks_by_file = await tag_files(path, tags, metadata, auto_rename, clear=clear)
-            if tracks_by_file is not None:
-                # A field no file has a place for (a catalogue number in MP3s) was not written, so is never cleared.
-                album = collect_album_data(metadata)
-                written = {tag: value for tag, value in album.items() if any(t.has_field(tag) for t in tags.values())}
-
-        tags = await check_tags(path)
-        tag_messages = process_tag_issues(
-            path,
-            gather_audio_info(path),
-            scene=metadata["scene"],
-            recompress=recompress and not metadata["scene"],
-        )
-        if tag_messages:
-            click.secho("\nTag notes:", fg="yellow", bold=True)
-            for message in tag_messages:
-                click.secho(f"  - {message}", fg="yellow")
-        if not metadata["scene"] and recompress:
-            try:
-                await recompress_path(path)
-            except UploadError as e:
-                raise UploadError(f"{e} Rerun without -c.") from e
-        renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original, source=given)
-        if renamed != path:
-            original = None  # A re-run renames the renamed folder, which is no longer the copy of the original.
-            if (
-                path != given
-                and cfg.upload.formatting.remove_source_dir
-                and os.path.isdir(path)
-                and not os.path.samefile(path, renamed)
-                and not cfg.directory.protects(path)
-            ):
-                # Made by an earlier pass of this loop, not the user's: the source itself is removed when the run ends.
-                shutil.rmtree(path)
-                carry_conversion(path, renamed)
-        path = renamed
-        if not metadata["scene"]:
-            await rename_files(path, tags, metadata, auto_rename, spectral_ids, source, tracks_by_file=tracks_by_file)
-        await check_folder_structure(
-            path, metadata["scene"], essential_only=essential_only, max_path_length=max_path_length
-        )
-
-        if not skip_integrity_check:
-            await resolve_integrity_for_upload(
-                path, scene=metadata["scene"], assume_yes=await interaction.assume_defaults()
-            )
-
-        if await interaction.assume_defaults() or await interaction.confirm(
-            click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
-            default=True,
-            labels=("Upload", "Re-run the metadata step"),
-        ):
-            metadata["tags"] = convert_genres(metadata["genres"])
-            break
-
-        # Refresh tags to accomodate differences in file structure.
-        tags = gather_tags(path)
-        # The files now carry this pick: going back would leave its album tags in them.
-        picked = None
-
-    tags = gather_tags(path)
-    audio_info = gather_audio_info(path)
-    return path, metadata, tags, audio_info
-
-
-async def recheck_dupe(gazelle_site, searchstrs, metadata):
-    """Rechecks for a dupe if the artist, album or catno have changed.
-
-    With no search string before the review or after it, asks for a group with nothing searched; -yyy stops instead.
-
-    Args:
-        gazelle_site: The tracker API instance.
-        searchstrs: Original search strings.
-        metadata: Release metadata.
-
-    Returns:
-        Group ID if found, None otherwise.
-    """
-    new_searchstrs = generate_dupe_check_searchstrs(metadata["artists"], metadata["title"], metadata["catno"])
-    if not searchstrs and not new_searchstrs:
-        # No search string before the review or after it (#931): the group question has not been asked yet.
-        if await interaction.assume_defaults():
-            click.secho(
-                f"\n{NO_DUPE_SEARCH} Not uploading with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
-                "and with upload.yes_all off.",
-                fg="red",
-                bold=True,
-            )
-            raise click.exceptions.Exit(1)
-        return await check_existing_group(gazelle_site, [], our_title=metadata["title"], release=metadata)
-    if searchstrs and any(n not in searchstrs for n in new_searchstrs) or not searchstrs and new_searchstrs:
-        click.secho(
-            f"\nRechecking for dupes on {gazelle_site.site_string} due to metadata changes...",
-            fg="cyan",
-            bold=True,
-            nl=False,
-        )
-        return await check_existing_group(gazelle_site, new_searchstrs, our_title=metadata["title"], release=metadata)
-    return None
-
-
-async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
-    """Check for dupes in the log one last time before upload.
-
-    Helpful if you are uploading something in race like conditions.
-
-    Args:
-        gazelle_site: The tracker API instance.
-        searchstrs: Search strings for dupe checking.
-        our_title: Our release's title, passed through to dupe_check_recent_torrents.
-    """
-    if not searchstrs or not can_check_site_log(gazelle_site):
-        return
-    # Should really avoid asking if already shown the same releases from the log.
-    click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
-    try:
-        recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs, our_title)
-    except RequestError as e:
-        click.secho(f"Could not read the {gazelle_site.site_string} site log: {e}", fg="red", bold=True)
-        # -yyy takes the question's default, no: the confirm below would wait for an answer.
-        if await interaction.assume_defaults():
-            raise UploadError(
-                f"Not uploading to {gazelle_site.site_string} without the last-minute dupe check with -yyy "
-                "(upload.yes_all): run again once its site log can be read, or without -yyy to choose."
-            ) from None
-        if not await interaction.confirm(
-            click.style("\nUpload without the last-minute dupe check?", fg="red", bold=True),
-            default=False,
-        ):
-            raise click.Abort from None
-        return
-    if recent_uploads:
-        print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
-        if not await interaction.confirm(
-            click.style(
-                "\nWould you still like to upload?",
-                fg="red",
-                bold=True,
-            ),
-            default=False,
-        ):
-            raise click.Abort
-    else:
-        click.secho(f"Nothing found on {gazelle_site.site_code}", fg="green")
-
-
-def metadata_validator(metadata):
-    """Validate that the provided metadata is not an issue."""
-    metadata = metadata_validator_base(metadata)
-    if metadata["format"] not in FORMATS.values():
-        raise InvalidMetadataError(f"{metadata['format']} is not a valid format.")
-    if metadata["encoding"] not in ENCODINGS:
-        raise InvalidMetadataError(f"{metadata['encoding']} is not a valid encoding.")
-
-    return metadata
-
-
-def convert_genres(genres):
-    """Convert the weirdly spaced genres to RED-compliant genres."""
-    return ",".join(t for t in (tagify(g) for g in genres) if t)
 
 
 async def _prompt_source(detected: DetectedSource | None = None) -> str:

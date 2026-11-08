@@ -8,6 +8,7 @@ import asyncclick as click
 from mutagen.flac import FLAC
 
 import salmon.uploader as uploader
+from salmon.uploader import metadata_review
 
 
 def _write_flac(path, *, title: str | None = None) -> None:
@@ -30,14 +31,14 @@ def _edit_metadata_stubs(monkeypatch, audio_info: dict) -> None:
     async def returns(value=None):
         return value
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
-    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
-    monkeypatch.setattr(uploader, "rename_folder", lambda path, *a, **k: returns(path))
-    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
-    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: audio_info)
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
+    monkeypatch.setattr(metadata_review, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(metadata_review, "rename_folder", lambda path, *a, **k: returns(path))
+    monkeypatch.setattr(metadata_review, "rename_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "gather_audio_info", lambda *a, **k: audio_info)
 
 
 async def _edit_metadata(path: str, *, scene: bool = False, recompress: bool = False):

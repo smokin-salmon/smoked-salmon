@@ -415,6 +415,23 @@ def test_a_nested_unreadable_folder_is_named_from_the_album_and_the_rest_is_stil
     assert "All 2 file(s) decode." in result.output
 
 
+def _row_lines(output: str) -> dict[str, str]:
+    """Each row's printed line, by its check."""
+    return {check: line for line in output.splitlines() for check in _rows(line) if line.startswith("  ")}
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_as_before_a_nested_unreadable_folder_leaves_every_other_row_as_it_reads_the_rest(discs, monkeypatch):
+    (discs / "Disc 2" / "Scans").mkdir()
+    readable = _row_lines(_run(str(discs)).output)
+    _fail_scandir(monkeypatch, PermissionError, "Scans")
+    unreadable = _row_lines(_run(str(discs)).output)
+    # A folder that can't be read could hide a rip log, so the source is not proven, and the log row says so.
+    del readable["Source"], readable["Rip log"]
+    assert {check: unreadable[check] for check in readable} == readable
+    assert "Folders" in unreadable
+
+
 @pytest.mark.usefixtures("no_tracker")
 def test_each_unreadable_folder_is_named(discs, monkeypatch):
     for folder in ("Disc 1", "Disc 2"):

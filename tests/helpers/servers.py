@@ -1,17 +1,19 @@
 """An asyncio Server woken twice does not raise (installed by tests/conftest.py; tests/test_helpers_servers.py).
 
 asyncio accepts a connection in two steps: a reader callback accepts the socket, then a task builds its transport
-and attaches it to the Server. On Python 3.13 and 3.14, a server closed between the two leaves that transport
-half-built: `_attach` fails its assert, but the transport keeps its socket and server, and when it is
-garbage-collected its `__del__` closes the socket and detaches it, which wakes the closed server a second time:
-`_wakeup` iterates `_waiters`, set to None by the first, and raises TypeError. pytest reports that as a warning,
-which fails the run (`max_warnings = 0`), at random. A client connecting as a server stops does this: salmon
-cancelling a request mid-connect as its run ends (an authentication no request waits for any more, #468), as a
-test's fake stops.
+and attaches it to the Server. On Python 3.13, and on 3.14 and later before CPython's fix (below), a server closed
+between the two leaves that transport half-built: `_attach` fails its assert, but the transport keeps its socket
+and server, and when it is garbage-collected its `__del__` closes the socket and detaches it, which wakes the closed
+server a second time: `_wakeup` iterates `_waiters`, set to None by the first, and raises TypeError. pytest reports
+that as a warning, which fails the run (`max_warnings = 0`), at random. A client connecting as a server stops does
+this: salmon cancelling a request mid-connect as its run ends (an authentication no request waits for any more,
+#468), as a test's fake stops.
 
 So, on those Pythons, `_wakeup` does nothing once it has run: what it does has been done. Not a `filterwarnings`
 entry: one matching this warning would hide any exception raised in a transport's `__del__`, this only the second
-wakeup. Remove it once no Python CI runs raises (the first test in tests/test_helpers_servers.py then skips).
+wakeup. CPython fixed the race in 3.14 and later (python/cpython#109564), from the releases listed in
+tests/test_helpers_servers.py; 3.13 keeps it. The patch changes nothing on a fixed Python, so it is installed on all
+of 3.13+. Remove it once no Python CI runs has the race (that file's first test then says so).
 """
 
 import sys

@@ -9,7 +9,7 @@ import msgspec
 from mutagen import MutagenError, flac
 
 from salmon import interaction, prepared
-from salmon.common.files import process_files
+from salmon.common.files import album_files, process_files
 from salmon.common.numbers import file_order_key
 from salmon.errors import UpconvertCheckError, UpconvertCheckNotApplicable
 
@@ -70,11 +70,7 @@ async def test_upconverted(path: str) -> bool | None:
         _display_results([result])
         return result.is_upconverted
     elif os.path.isdir(path):
-        flac_files = []
-        for root, _, files in os.walk(path):
-            for f in files:
-                if f.lower().endswith(".flac"):
-                    flac_files.append(os.path.join(root, f))
+        flac_files = album_files(path, [".flac"])
         if not flac_files:
             click.secho("No FLAC files found to check.", fg="yellow")
         handler = partial(_upconvert_check_handler, skipped=skipped)

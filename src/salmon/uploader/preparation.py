@@ -19,7 +19,7 @@ from typing import Any
 import anyio.to_thread
 
 from salmon import cfg
-from salmon.common.files import get_audio_files, process_files
+from salmon.common.files import album_files, get_audio_files, process_files
 from salmon.errors import UpconvertCheckError, UpconvertCheckNotApplicable
 from salmon.prepared import Prepared, audio_key
 from salmon.uploader import spectrals
@@ -69,12 +69,7 @@ async def prepare_upload(
 
 def _flacs(album: str) -> list[str]:
     """The FLAC files under the album, in the order the MQA, upconvert and integrity checks list them."""
-    return sorted(
-        os.path.join(root, name)
-        for root, _, names in os.walk(album)
-        for name in names
-        if name.lower().endswith(".flac")
-    )
+    return album_files(album, [".flac"])
 
 
 async def _each(paths: list[str], prepare: Callable[[str], Awaitable[None]]) -> None:
@@ -115,7 +110,7 @@ async def prepare_upconverts(prepared: Prepared) -> None:
 async def prepare_log_crcs(prepared: Prepared) -> None:
     """The CRC of each audio file's decoded audio, if the album holds a log: what verify_log_crcs compares."""
     album = prepared.album
-    if not any(name.lower().endswith(".log") for _, _, names in os.walk(album) for name in names):
+    if not album_files(album, [".log"]):
         return
 
     async def crc(path: str) -> None:

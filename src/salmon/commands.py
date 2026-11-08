@@ -198,7 +198,8 @@ async def recompress_flacs(path: str) -> int:
         How many FLACs were recompressed (none, and a message, if the folder has none).
 
     Raises:
-        UploadError: The folder is one ``compress_refusal`` refuses, or a file failed to recompress.
+        UploadError: The folder is one ``compress_refusal`` refuses, holds a folder that cannot be read, or a file
+            failed to recompress.
     """
     if (refusal := compress_refusal(path)) is not None:
         raise UploadError(refusal)

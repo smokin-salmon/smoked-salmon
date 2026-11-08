@@ -19,6 +19,7 @@ import salmon.uploader as uploader
 from salmon import cfg
 from salmon.errors import UploadError
 from salmon.tagger import cover as cover_module
+from salmon.uploader import metadata_review
 
 # salmon.checks.__init__ defines a click command also named `integrity`, which shadows the
 # submodule on the package object, so importlib is used to get the module itself.
@@ -111,14 +112,14 @@ def _edit_metadata_stubs(monkeypatch, scene: bool = False) -> None:
     async def returns(value=None):
         return value
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
-    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
-    monkeypatch.setattr(uploader, "rename_folder", lambda path, *a, **k: returns(path))
-    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
-    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
+    monkeypatch.setattr(metadata_review, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(metadata_review, "rename_folder", lambda path, *a, **k: returns(path))
+    monkeypatch.setattr(metadata_review, "rename_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "gather_audio_info", lambda *a, **k: {})
 
 
 async def _edit_metadata(path: str, scene: bool = False):

@@ -29,7 +29,7 @@ from test_uploader_group_search import (
 
 import salmon.uploader
 from salmon import cfg
-from salmon.uploader import spectrals
+from salmon.uploader import spectrals, upload_checks
 
 pytestmark = pytest.mark.usefixtures("_fast_limiter")
 
@@ -184,7 +184,7 @@ class SpectralsFlow(Flow):
         }.items():
             monkeypatch.setattr(spectrals, name, fake)
         monkeypatch.setattr(spectrals.interaction, "show_spectrals", self.returning_async(None))
-        monkeypatch.setattr(salmon.uploader, "prompt_lossy_master", self.returning_async(False))
+        monkeypatch.setattr(upload_checks, "prompt_lossy_master", self.returning_async(False))
         monkeypatch.setattr(cfg.upload.compression, "compress_spectrals", False)
         monkeypatch.setattr(cfg.directory, "tmp_dir", None)
 

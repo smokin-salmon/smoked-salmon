@@ -30,8 +30,13 @@ class RunRecord:
     sent: bool = False
     # The tracker loop ended by itself, with everything it set out to upload up.
     complete: bool = False
-    # A seedbox copy or an add to a client failed, or a seedbox with a torrent to take never configured.
-    seedbox_failed: bool = False
+    # Each seedbox step that failed (a copy, an add to a client, a client never set up): the seedbox's display name,
+    # the step, and the basename of the folder or torrent. Never a secret or a full path.
+    seedbox_failures: list[dict[str, str]] = field(default_factory=list)
+
+    @property
+    def seedbox_failed(self) -> bool:
+        return bool(self.seedbox_failures)
 
     @property
     def may_be_on_a_tracker(self) -> bool:
@@ -80,10 +85,12 @@ def note_up_command() -> None:
         record.is_up_command = True
 
 
-def note_seedbox_failed() -> None:
+def note_seedbox_failure(seedbox: str, step: str, item: str) -> None:
     record = _record.get()
     if record is not None:
-        record.seedbox_failed = True
+        failure = {"seedbox": seedbox, "step": step, "item": item}
+        if failure not in record.seedbox_failures:
+            record.seedbox_failures.append(failure)
 
 
 def note_sent() -> None:
