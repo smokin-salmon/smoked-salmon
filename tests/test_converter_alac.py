@@ -406,8 +406,10 @@ def test_an_m4a_that_cannot_be_removed_from_a_copy_never_asks_to_remove_the_albu
     refusal = _convert(album, FakeInteraction(), staged=copy)
 
     assert refusal is not None and "01.m4a" in refusal
-    assert "copy" in refusal and "keep its .m4a files" in refusal
+    assert "The album is unchanged: keep its .m4a files" in refusal
     assert "remove it" not in refusal
+    assert sorted(_snapshot(album)) == ["01.m4a"]
+    assert sorted(_snapshot(copy)) == ["01.flac", "01.m4a"]
 
 
 def test_a_failed_track_stops_the_tracks_not_started_yet(monkeypatch, tmp_path) -> None:
