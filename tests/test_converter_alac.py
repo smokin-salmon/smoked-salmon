@@ -388,6 +388,28 @@ def test_an_m4a_that_cannot_be_removed_does_not_keep_the_others(monkeypatch, tmp
     assert sorted(_snapshot(tmp_path)) == ["01.flac", "01.m4a", "02.flac"]
 
 
+def test_an_m4a_that_cannot_be_removed_from_a_copy_never_asks_to_remove_the_albums(monkeypatch, tmp_path) -> None:
+    album, copy = tmp_path / "album", tmp_path / "copy"
+    album.mkdir()
+    _write_alac(album / "01.m4a", 16, 44100)
+    copy.mkdir()
+    (copy / "01.m4a").write_bytes((album / "01.m4a").read_bytes())
+    remove = os.remove
+
+    def locked(path: str) -> None:
+        if path.endswith("01.m4a"):
+            raise PermissionError(13, "Permission denied", path)
+        remove(path)
+
+    monkeypatch.setattr(alac.os, "remove", locked)
+
+    refusal = _convert(album, FakeInteraction(), staged=copy)
+
+    assert refusal is not None and "01.m4a" in refusal
+    assert "copy" in refusal and "keep its .m4a files" in refusal
+    assert "remove it" not in refusal
+
+
 def test_a_failed_track_stops_the_tracks_not_started_yet(monkeypatch, tmp_path) -> None:
     for number in (1, 2, 3):
         _write_alac(tmp_path / f"0{number}.m4a", 16, 44100, seed=number, tags=False)

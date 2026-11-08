@@ -84,7 +84,8 @@ async def convert_alac(album: str, staged: str) -> str | None:
     if refusal := _refusal(album, staged, tracks, others, unreadable):
         return refusal
     count = f"{len(tracks)} ALAC file{'s' if len(tracks) > 1 else ''}"
-    where = f"in {album}" if os.path.abspath(staged) == os.path.abspath(album) else "in the copy salmon works on"
+    in_place = os.path.abspath(staged) == os.path.abspath(album)
+    where = f"in {album}" if in_place else "in the copy salmon works on"
     them = "them" if len(tracks) > 1 else "it"
     click.secho(
         f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads {them} as FLAC, with the same samples, "
@@ -98,7 +99,7 @@ async def convert_alac(album: str, staged: str) -> str | None:
         labels=("Convert", "Stop"),
     ):
         return f"Not uploading {album}: salmon uploads ALAC only once converted to FLAC."
-    if error := await _convert_all(tracks):
+    if error := await _convert_all(tracks, album if in_place else None):
         return error
     depths = " and ".join(f"{bits}-bit" for bits in sorted({track.bits for track in tracks}))
     click.secho(f"Converted {count} to {depths} FLAC.", fg="green")
@@ -171,10 +172,14 @@ def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str]
     return None
 
 
-async def _convert_all(tracks: list[AlacTrack]) -> str | None:
+async def _convert_all(tracks: list[AlacTrack], album: str | None) -> str | None:
     """Convert every track, then remove the .m4a files; why it stopped, if it did.
 
     Every FLAC is verified before any .m4a is removed, so a failure leaves every .m4a in place and no FLAC behind.
+
+    Args:
+        tracks: The tracks to convert.
+        album: The album folder when the tracks are in it, None when they are in a copy of it.
     """
 
     failed = False
@@ -207,12 +212,18 @@ async def _convert_all(tracks: list[AlacTrack]) -> str | None:
             os.remove(track.source)
         except OSError as error:
             kept.append(f"{track.name} ({error.strerror})")
-    if kept:
+    if not kept:
+        return None
+    if album is None:
+        # The copy goes when the run ends, its FLACs with it: the album's own .m4a files are the only ones left.
         return (
-            f"Converted the ALAC files to FLAC, but could not remove {', '.join(kept)}: "
-            f"remove {'it' if len(kept) == 1 else 'them'} and run salmon again."
+            f"Converted the ALAC files to FLAC in the copy salmon works on, but could not remove {', '.join(kept)} "
+            "there. The album is unchanged: keep its .m4a files, fix what stopped the removal and run salmon again."
         )
-    return None
+    return (
+        f"Converted the ALAC files in {album} to FLAC, but could not remove {', '.join(kept)}: "
+        f"remove {'it' if len(kept) == 1 else 'them'} and run salmon again."
+    )
 
 
 def _remove(path: str) -> None:
