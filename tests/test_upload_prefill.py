@@ -737,7 +737,7 @@ def test_a_named_tracker_whose_group_search_fails_moves_on_to_the_next(monkeypat
             raise RequestError("search failed")
         return await real(gazelle_site, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "check_existing_group", ops_search_fails)
+    stub_uploader(monkeypatch, {"check_existing_group": ops_search_fails})
 
     run = _run_up(
         monkeypatch,

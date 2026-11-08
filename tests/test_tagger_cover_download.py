@@ -16,6 +16,7 @@ import salmon.uploader
 from salmon import interaction
 from salmon.tagger import cover
 from salmon.trackers.red import RedApi
+from salmon.uploader import cover_upload
 
 KIB = 1024
 AUDIO = b"\xff\xf8 not really audio " * 1000
@@ -140,7 +141,7 @@ def test_embedded_cover_is_removed_after_upload_through_resolve_cover_url(tmp_pa
         assert Path(cover_path).exists()
         return f"https://{host}/uploaded.jpg"
 
-    monkeypatch.setattr(salmon.uploader, "upload_cover", fake_upload_cover)
+    monkeypatch.setattr(cover_upload, "upload_cover", fake_upload_cover)
 
     result = anyio.run(salmon.uploader.resolve_cover_url, RedApi(), None, {}, str(tmp_path), None, True)
 
@@ -275,7 +276,7 @@ def test_the_no_cover_message_for_a_new_group_names_a_failed_download(tmp_path, 
     async def no_cover(*_args, **_kwargs) -> tuple[None, bool]:
         return None, False
 
-    monkeypatch.setattr(salmon.uploader, "get_cover_url", no_cover)
+    monkeypatch.setattr(cover_upload, "get_cover_url", no_cover)
 
     with interaction.assuming_defaults():
         result = anyio.run(

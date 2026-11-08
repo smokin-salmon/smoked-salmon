@@ -10,7 +10,7 @@ from salmon.tagger.ai_review import apply_ai_metadata_result
 from salmon.tagger.pre_data import split_genres
 from salmon.tagger.sources import beatport, qobuz
 from salmon.tagger.sources.base import standardize_genres
-from salmon.uploader import convert_genres
+from salmon.uploader.metadata_review import convert_genres
 
 
 def test_slash_combined_genres_are_split_into_whitelisted_parts():

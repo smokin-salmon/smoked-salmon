@@ -23,6 +23,7 @@ from test_tagger_multi_value_tags import (
 import salmon.uploader as uploader
 from salmon.tagger.retagger import print_changes, tag_files
 from salmon.tagger.tagfile import TagFile
+from salmon.uploader import metadata_review
 
 ARTISTS = [("Dree Low", "main")]
 
@@ -47,10 +48,10 @@ def _rerun(monkeypatch, tmp_path, file, passes: list[dict[str, Any]], answers: l
     async def gather(_path: str) -> dict[str, TagFile]:
         return gather_all()
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", review)
-    monkeypatch.setattr(uploader, "check_tags", gather)
-    monkeypatch.setattr(uploader, "gather_tags", gather_all)
-    monkeypatch.setattr(uploader, "tag_files", tag_files)
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", review)
+    monkeypatch.setattr(metadata_review, "check_tags", gather)
+    monkeypatch.setattr(metadata_review, "gather_tags", gather_all)
+    monkeypatch.setattr(metadata_review, "tag_files", tag_files)
     site = partial(
         uploader.edit_metadata,
         str(tmp_path),

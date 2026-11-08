@@ -27,6 +27,7 @@ from salmon.errors import PickOtherResults
 from salmon.search.base import IdentData
 from salmon.tagger import ai_review, review
 from salmon.tagger import metadata as metadata_mod
+from salmon.uploader import metadata_review
 from salmon.uploader.upload import prepare_and_upload
 
 # Covers and spectrals go to the fake image host.
@@ -201,7 +202,7 @@ def test_after_rerunning_the_metadata_step_there_is_no_way_back(monkeypatch, tmp
         offers.append(manual_review.keywords["picked"] is not None)
         return metadata
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", review)
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", review)
     site = partial(
         uploader.edit_metadata,
         str(tmp_path),
@@ -232,8 +233,8 @@ def test_going_back_after_the_ai_review_applied_its_changes_asks_first(monkeypat
         asked_ai.append("ai")
         return make_review(year="2003"), "response-1"
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", ai_review.review_metadata_with_ai)
-    monkeypatch.setattr(uploader, "metadata_validator", lambda _metadata: None)
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", ai_review.review_metadata_with_ai)
+    monkeypatch.setattr(metadata_review, "metadata_validator", lambda _metadata: None)
     monkeypatch.setattr(review, "_print_metadata", lambda *_args, **_kwargs: None)
     monkeypatch.setattr(ai_review, "_request_ai_review", request_ai_review)
     monkeypatch.setattr(uploader.cfg.upload.ai_review, "enabled", True)

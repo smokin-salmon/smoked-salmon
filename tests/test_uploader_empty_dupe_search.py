@@ -15,7 +15,7 @@ from helpers.uploader_dry_run import _album, _returning_async, _run_up
 
 import salmon.uploader
 from salmon import cfg, interaction
-from salmon.uploader import dupe_checker, recheck_dupe, request_checker
+from salmon.uploader import dupe_checker, metadata_review, recheck_dupe, request_checker
 from salmon.uploader.dupe_checker import check_existing_group, generate_dupe_check_searchstrs
 from salmon.uploader.record import recording
 
@@ -195,7 +195,7 @@ def test_no_request_search_without_a_search_string(monkeypatch: pytest.MonkeyPat
 
 
 def test_no_last_minute_log_read_without_a_search_string(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(salmon.uploader, "can_check_site_log", lambda _site: True)
+    monkeypatch.setattr(metadata_review, "can_check_site_log", lambda _site: True)
     site = Site()
 
     anyio.run(salmon.uploader.last_min_dupe_check, _site(site), [], EMPTY)

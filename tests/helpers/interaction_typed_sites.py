@@ -14,7 +14,7 @@ import salmon.tagger.review as review
 import salmon.uploader as uploader
 from salmon import interaction
 from salmon.errors import AbortAndDeleteFolder, PickOtherResults, SkipTracker
-from salmon.uploader import conversion_choice, dupe_checker, spectrals
+from salmon.uploader import conversion_choice, dupe_checker, metadata_review, spectrals
 
 
 class AskedAgain(Exception):
@@ -209,14 +209,14 @@ def edit_metadata_stubs(monkeypatch: pytest.MonkeyPatch) -> list[str]:
         reviews.append("reviewed")
         return metadata
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", review_metadata_with_ai)
-    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
-    monkeypatch.setattr(uploader, "rename_folder", lambda path, *a, **k: returns(path))
-    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
-    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", review_metadata_with_ai)
+    monkeypatch.setattr(metadata_review, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(metadata_review, "rename_folder", lambda path, *a, **k: returns(path))
+    monkeypatch.setattr(metadata_review, "rename_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "gather_audio_info", lambda *a, **k: {})
     return reviews
 
 

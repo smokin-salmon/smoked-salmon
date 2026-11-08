@@ -55,8 +55,6 @@ from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.tags import gather_tags
 from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.uploader import (
-    _check_logs,
-    red_api_for_covers,
     validate_group_id,
 )
 from salmon.uploader.conversion_choice import (
@@ -66,6 +64,7 @@ from salmon.uploader.conversion_choice import (
     validate_conversions,
 )
 from salmon.uploader.conversion_upload import execute_downconversion_tasks
+from salmon.uploader.cover_upload import red_api_for_covers
 from salmon.uploader.dupe_checker import (
     NO_DUPE_SEARCH,
     _confirm_group_id,
@@ -83,6 +82,7 @@ from salmon.uploader.upload import (
     generate_description,
     generate_torrent,
 )
+from salmon.uploader.upload_checks import _check_logs
 
 # The trackers a release can go between.
 TRACKERS = ("RED", "OPS", "DIC")
