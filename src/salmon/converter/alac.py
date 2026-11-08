@@ -73,10 +73,10 @@ async def convert_alac(album: str, staged: str) -> str | None:
         album: The album folder the user gave.
         staged: The folder the upload works on (see staged_source): the conversion writes there.
     """
-    tracks, others = _find_alac(staged)
+    tracks, others, unreadable = _find_alac(staged)
     if not tracks:
         return None
-    if refusal := _refusal(album, staged, tracks, others):
+    if refusal := _refusal(album, staged, tracks, others, unreadable):
         return refusal
     count = f"{len(tracks)} ALAC file{'s' if len(tracks) > 1 else ''}"
     where = f"in {album}" if os.path.abspath(staged) == os.path.abspath(album) else "in the copy salmon works on"
@@ -98,52 +98,69 @@ async def convert_alac(album: str, staged: str) -> str | None:
     return None
 
 
-def _alac_info(path: str) -> MP4Info | None:
-    """The stream info of the .m4a at path if it holds ALAC; None if it does not, or cannot be read."""
+def _mp4_info(path: str) -> MP4Info | None:
+    """The stream info of the .m4a at path; None if it cannot be read."""
     try:
-        info = MP4(path).info
+        return MP4(path).info
     except (MutagenError, OSError):
         return None
-    return info if info.codec == "alac" else None
 
 
-def _find_alac(folder: str) -> tuple[list[AlacTrack], list[str]]:
-    """The ALAC tracks under folder, and the other audio files' paths in it (FLACs, lossy files)."""
+def _find_alac(folder: str) -> tuple[list[AlacTrack], list[str], list[str]]:
+    """The ALAC tracks under folder, the other audio files' paths in it (FLACs, lossy files), and the .m4a files
+    that cannot be read."""
     tracks: list[AlacTrack] = []
     others: list[str] = []
+    unreadable: list[str] = []
     for path in album_files(folder, AUDIO_EXTENSIONS | LOSSY_EXTENSIONS):
         name = os.path.relpath(path, folder)
-        if path.lower().endswith(".m4a") and (info := _alac_info(path)) is not None:
+        if not path.lower().endswith(".m4a"):
+            others.append(name)
+        elif (info := _mp4_info(path)) is None:
+            unreadable.append(name)
+        elif info.codec == "alac":
             target = os.path.splitext(path)[0] + ".flac"
             tracks.append(AlacTrack(path, target, name, info.bits_per_sample, info.sample_rate, info.channels))
         else:
             others.append(name)
-    return tracks, others
+    return tracks, others, unreadable
 
 
-def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str]) -> str | None:
+def _named(names: list[str]) -> str:
+    """The first few names, then how many more."""
+    return ", ".join(names[:_NAMED]) + (f" and {len(names) - _NAMED} more" if len(names) > _NAMED else "")
+
+
+def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str], unreadable: list[str]) -> str | None:
     """Why the ALAC files cannot be converted, or None."""
-    lossy = [name for name in others if not name.lower().endswith(".flac")]
-    if lossy:
-        named = ", ".join(lossy[:_NAMED]) + (f" and {len(lossy) - _NAMED} more" if len(lossy) > _NAMED else "")
+    if cfg.directory.protects(staged):  # Never so: staged_source copies such an album. Kept for other callers.
+        return f"Not converting the ALAC files in {staged}: it is or holds a library_dirs entry."
+    if unreadable:
         return (
-            f"{album} holds ALAC files and lossy files ({named}): salmon converts ALAC to FLAC, and an upload holds "
-            "one format. Move the lossy files out of the album and run salmon again."
+            f"{album} holds ALAC files, and .m4a files salmon cannot read ({_named(unreadable)}): "
+            "fix or remove them and run salmon again."
+        )
+    if lossy := [name for name in others if not name.lower().endswith(".flac")]:
+        return (
+            f"{album} holds ALAC files and lossy files ({_named(lossy)}): salmon converts ALAC to FLAC, and an upload "
+            "holds one format. Move the lossy files out of the album and run salmon again."
         )
     if odd := next((track for track in tracks if track.bits not in _BIT_DEPTHS), None):
         return f"{odd.name} is {odd.bits}-bit ALAC: salmon converts only 16-bit and 24-bit ALAC to FLAC."
-    taken: set[str] = set()
+    taken: dict[str, AlacTrack] = {}
     for track in tracks:
-        key = os.path.normcase(track.target).lower()
-        if os.path.lexists(track.target) or key in taken:
-            flac = os.path.relpath(track.target, staged)
+        flac = os.path.relpath(track.target, staged)
+        if os.path.lexists(track.target):
             return (
                 f"{flac} is already in {album}, where salmon would convert {track.name} to: "
                 "move one of them out of the album and run salmon again."
             )
-        taken.add(key)
-    if cfg.directory.protects(staged):  # Never so: staged_source copies such an album. Kept for other callers.
-        return f"Not converting the ALAC files in {staged}: it is in library_dirs."
+        if (other := taken.get(key := os.path.normcase(track.target).lower())) is not None:
+            return (
+                f"{other.name} and {track.name} would both be converted to {flac}: "
+                "rename one of them and run salmon again."
+            )
+        taken[key] = track
     return None
 
 
@@ -153,11 +170,17 @@ async def _convert_all(tracks: list[AlacTrack]) -> str | None:
     Every FLAC is verified before any .m4a is removed, so a failure leaves every .m4a in place and no FLAC behind.
     """
 
+    failed = False
+
     async def convert(_source: str, index: int) -> str | None:
+        nonlocal failed
+        if failed:  # Every FLAC goes once one track fails: the tracks not started yet are not converted.
+            return None
         track = tracks[index]
         try:
             await anyio.to_thread.run_sync(_convert, track)
         except ConversionError as error:
+            failed = True
             return f"Could not convert {track.name} to FLAC: {error}. Nothing was converted."
         return None
 
@@ -171,14 +194,17 @@ async def _convert_all(tracks: list[AlacTrack]) -> str | None:
         if not done:
             for track in tracks:
                 _remove(track.target)
+    kept: list[str] = []
     for track in tracks:
         try:
             os.remove(track.source)
         except OSError as error:
-            return (
-                f"Converted {track.name} to FLAC but could not remove it ({error.strerror}): "
-                "remove it and run salmon again."
-            )
+            kept.append(f"{track.name} ({error.strerror})")
+    if kept:
+        return (
+            f"Converted the ALAC files to FLAC, but could not remove {', '.join(kept)}: "
+            f"remove {'it' if len(kept) == 1 else 'them'} and run salmon again."
+        )
     return None
 
 

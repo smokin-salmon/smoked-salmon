@@ -344,6 +344,70 @@ def test_a_failed_verification_keeps_every_m4a_and_leaves_no_flac(monkeypatch, t
     assert _snapshot(tmp_path) == before
 
 
+def test_an_unreadable_m4a_beside_alac_is_named_as_unreadable_not_lossy(tmp_path) -> None:
+    _write_alac(tmp_path / "01.m4a", 16, 44100)
+    (tmp_path / "02.m4a").write_bytes(b"not an mp4")
+    before = _snapshot(tmp_path)
+    fake = FakeInteraction()
+
+    refusal = _convert(tmp_path, fake)
+
+    assert refusal is not None and "02.m4a" in refusal
+    assert "cannot read" in refusal and "lossy" not in refusal
+    assert fake.confirms == []
+    assert _snapshot(tmp_path) == before
+
+
+def test_two_alac_files_converting_to_one_name_stop_naming_both(tmp_path) -> None:
+    _write_alac(tmp_path / "01.m4a", 16, 44100, seed=1)
+    _write_alac(tmp_path / "01.M4A", 16, 44100, seed=2)
+    before = _snapshot(tmp_path)
+
+    refusal = _convert(tmp_path, FakeInteraction())
+
+    assert refusal is not None and "01.m4a" in refusal and "01.M4A" in refusal
+    assert "already in" not in refusal
+    assert _snapshot(tmp_path) == before
+
+
+def test_an_m4a_that_cannot_be_removed_does_not_keep_the_others(monkeypatch, tmp_path) -> None:
+    _write_alac(tmp_path / "01.m4a", 16, 44100, seed=1)
+    _write_alac(tmp_path / "02.m4a", 16, 44100, seed=2)
+    remove = os.remove
+
+    def locked(path: str) -> None:
+        if path.endswith("01.m4a"):
+            raise PermissionError(13, "Permission denied", path)
+        remove(path)
+
+    monkeypatch.setattr(alac.os, "remove", locked)
+
+    refusal = _convert(tmp_path, FakeInteraction())
+
+    assert refusal is not None and "01.m4a" in refusal and "02.m4a" not in refusal
+    assert sorted(_snapshot(tmp_path)) == ["01.flac", "01.m4a", "02.flac"]
+
+
+def test_a_failed_track_stops_the_tracks_not_started_yet(monkeypatch, tmp_path) -> None:
+    for number in (1, 2, 3):
+        _write_alac(tmp_path / f"0{number}.m4a", 16, 44100, seed=number, tags=False)
+    before = _snapshot(tmp_path)
+    monkeypatch.setattr(cfg.upload, "simultaneous_threads", 1)
+    encoded: list[str] = []
+
+    def failing(track: alac.AlacTrack) -> bytes:
+        encoded.append(track.name)
+        raise alac.ConversionError("flac failed")
+
+    monkeypatch.setattr(alac, "_encode", failing)
+
+    refusal = _convert(tmp_path, FakeInteraction())
+
+    assert refusal is not None and "01.m4a" in refusal
+    assert encoded == ["01.m4a"]
+    assert _snapshot(tmp_path) == before
+
+
 def test_an_album_with_no_alac_is_left_as_it_is(tmp_path) -> None:
     _write_aac(tmp_path / "01.m4a")
     (tmp_path / "02.flac").write_bytes(b"flac")
