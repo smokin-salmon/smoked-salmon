@@ -18,6 +18,7 @@ from salmon.common.files import AlbumPath
 from salmon.common.strings import numeric_id
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import SOURCES, TAG_ENCODINGS
+from salmon.converter.alac import convert_alac
 from salmon.converter.conversions import conversion_of
 from salmon.converter.downconverting import (
     BitDepth,
@@ -640,6 +641,9 @@ async def upload(
         if (refusal := await foreign_spectrals_refusal(path, staged)) is not None:
             return click.secho(f"\n{refusal}", fg="red", bold=True)
         remove_own_spectrals(staged)
+        # An ALAC album is uploaded as FLAC: converted in the folder the upload works on, before its checks read it.
+        if (refusal := await convert_alac(path, staged)) is not None:
+            return click.secho(f"\n{refusal}", fg="red", bold=True)
         result = await _upload_staged(
             gazelle_site,
             staged,
