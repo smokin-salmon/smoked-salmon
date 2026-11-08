@@ -10,8 +10,6 @@ import unicodedata
 from collections import Counter
 from collections.abc import Callable, Iterable, Sequence
 
-from salmon.common.files import lacks_hard_links
-
 Rename = tuple[str, str]
 
 
@@ -101,6 +99,16 @@ def plan_renames(renames: Sequence[Rename]) -> tuple[list[Rename], list[str]]:
     return ordered, []
 
 
+# What os.link raises where the volume has no hard links, or no more for the file.
+_NO_HARD_LINKS = frozenset(
+    code
+    for code in (getattr(errno, name, None) for name in ("EPERM", "ENOTSUP", "EOPNOTSUPP", "EMLINK", "ENOSYS"))
+    if code is not None
+)
+# Windows' ERROR_INVALID_FUNCTION, from a FAT or exFAT volume; its errno, EINVAL, means other things elsewhere.
+_WINDOWS_NO_HARD_LINKS = 1
+
+
 def _rename_no_clobber(old: str, new: str) -> None:
     """``os.rename`` by a hard link, which fails on a name in use where a rename replaces the file there.
 
@@ -113,7 +121,7 @@ def _rename_no_clobber(old: str, new: str) -> None:
     try:
         os.link(old, new)
     except OSError as e:
-        if not lacks_hard_links(e):
+        if e.errno not in _NO_HARD_LINKS and getattr(e, "winerror", None) != _WINDOWS_NO_HARD_LINKS:
             raise
         # A volume without hard links (FAT, many network shares): the rename rename_all checked, as before.
         os.rename(old, new)

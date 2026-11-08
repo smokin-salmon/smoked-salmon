@@ -1,4 +1,3 @@
-import errno
 import os
 import stat
 from collections.abc import Awaitable, Callable, Iterable
@@ -74,21 +73,6 @@ def rewrite_refusal(path: str) -> str | None:
     if shares_files(path):
         return "it shares files with another folder through a hardlink or symlink"
     return None
-
-
-# What os.link raises where the volume has no hard links, or no more for the file.
-_NO_HARD_LINKS = frozenset(
-    code
-    for code in (getattr(errno, name, None) for name in ("EPERM", "ENOTSUP", "EOPNOTSUPP", "EMLINK", "ENOSYS"))
-    if code is not None
-)
-# Windows' ERROR_INVALID_FUNCTION, from a FAT or exFAT volume; its errno, EINVAL, means other things elsewhere.
-_WINDOWS_NO_HARD_LINKS = 1
-
-
-def lacks_hard_links(error: OSError) -> bool:
-    """Whether os.link failed with error because the volume has no hard links, or no more for the file."""
-    return error.errno in _NO_HARD_LINKS or getattr(error, "winerror", None) == _WINDOWS_NO_HARD_LINKS
 
 
 def unreadable_error(error: OSError, path: str) -> UploadError:

@@ -6,14 +6,13 @@ same samples as its ALAC before any .m4a is removed.
 """
 
 import contextlib
-import dataclasses
 import hashlib
 import os
 import subprocess
 import tempfile
 import uuid
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import IO, TYPE_CHECKING, cast
 
 import anyio
@@ -25,7 +24,7 @@ from mutagen.mp4 import MP4, AtomDataType, MP4Cover, MP4FreeForm, MP4Info
 
 from salmon import cfg, interaction
 from salmon.common.constants import AUDIO_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import album_files, lacks_hard_links, process_files
+from salmon.common.files import album_files, process_files
 from salmon.tagger.cover import get_8kib_padding
 
 if TYPE_CHECKING:
@@ -147,21 +146,31 @@ def _mp4_info(path: str) -> MP4Info | None:
 class _Scan:
     """What a folder holds, for the conversion."""
 
-    tracks: list[AlacTrack] = dataclasses.field(default_factory=list)
-    others: list[str] = dataclasses.field(default_factory=list)  # The other audio files (FLACs, lossy files).
-    unreadable: list[str] = dataclasses.field(default_factory=list)  # The .m4a files that cannot be read.
-    partials: list[str] = dataclasses.field(default_factory=list)  # FLACs a conversion was writing (_PARTIAL_PREFIX).
+    tracks: list[AlacTrack] = field(default_factory=list)
+    others: list[str] = field(default_factory=list)  # The other audio files (FLACs, lossy files).
+    unreadable: list[str] = field(default_factory=list)  # The .m4a files that cannot be read.
+    partials: list[str] = field(default_factory=list)  # FLACs a conversion was writing (_PARTIAL_PREFIX).
 
 
 def _scan(folder: str) -> _Scan:
-    """The ALAC tracks under folder, and the other files the conversion looks at, named from folder."""
+    """The ALAC tracks under folder, and the other files the conversion looks at, named from folder.
+
+    With a partial FLAC there, only the partials: the run stops on them before any .m4a is read.
+    """
     scan = _Scan()
-    for path in album_files(folder, AUDIO_EXTENSIONS | LOSSY_EXTENSIONS | {_PARTIAL_SUFFIX}):
+    paths = album_files(folder, AUDIO_EXTENSIONS | LOSSY_EXTENSIONS | {_PARTIAL_SUFFIX})
+    scan.partials = [
+        os.path.relpath(path, folder)
+        for path in paths
+        if path.lower().endswith(_PARTIAL_SUFFIX) and os.path.basename(path).startswith(_PARTIAL_PREFIX)
+    ]
+    if scan.partials:
+        return scan
+    for path in paths:
         name = os.path.relpath(path, folder)
         if path.lower().endswith(_PARTIAL_SUFFIX):
-            if os.path.basename(path).startswith(_PARTIAL_PREFIX):
-                scan.partials.append(name)
-        elif not path.lower().endswith(".m4a"):
+            continue
+        if not path.lower().endswith(".m4a"):
             scan.others.append(name)
         elif (info := _mp4_info(path)) is None:
             scan.unreadable.append(name)
@@ -202,6 +211,11 @@ def _refusal(album: str, staged: str, scan: _Scan) -> str | None:
         return f"{odd.name} is {odd.bits}-bit ALAC: salmon converts only 16-bit and 24-bit ALAC to FLAC."
     taken: dict[str, AlacTrack] = {}
     for track in tracks:
+        if os.path.isfile(track.target) and not os.path.islink(track.target) and not os.path.getsize(track.target):
+            return (
+                f"{track.flac_name} in {album} is empty, left by a conversion that stopped: "
+                "remove it and run salmon again."
+            )
         if os.path.lexists(track.target):
             return (
                 f"{track.flac_name} is already in {album}, where salmon would convert {track.name} to: "
@@ -245,7 +259,7 @@ async def _convert_all(tracks: list[AlacTrack]) -> str | None:
             return error
         return _publish([(track, partials[index]) for index, track in enumerate(tracks)])
     finally:
-        # A moved FLAC is at its .flac name too: only the partial name goes.
+        # A moved FLAC left its partial name: only the ones not moved are still there.
         for partial in partials.values():
             _remove(partial)
 
@@ -263,55 +277,40 @@ def _claim_partial(track: AlacTrack) -> str:
 
 
 def _publish(written: list[tuple[AlacTrack, str]]) -> str | None:
-    """Move each verified FLAC from its partial name to its .flac name, never over a file (see _move_no_clobber); why
-    it stopped, if it did.
+    """Move each verified FLAC from its partial name to its .flac name, never over a file; why it stopped, if it did.
 
-    A FLAC another run of salmon put at a .flac name since the checks before the question (two uploads of one album at
-    once) stays. After a failure, the FLACs this run moved go.
+    Each .flac name is claimed by creating it, which fails on a name in use, then replaced by the FLAC: a FLAC another
+    run of salmon put there since the checks before the question (two uploads of one album at once) stays. A kill
+    between the two leaves an empty .flac, which the next run names as such. After a failure, the names this run
+    claimed go.
     """
-    moved: list[str] = []
-    track = written[0][0]
+    claimed: list[str] = []
+
+    def undo(message: str) -> str:
+        for target in claimed:
+            _remove(target)
+        return message
+
     try:
         for track, partial in written:
-            _move_no_clobber(partial, track.target)
-            moved.append(track.target)
-    except BaseException as error:
-        for target in moved:
-            _remove(target)
-        if isinstance(error, FileExistsError):
-            return (
-                f"{track.flac_name} appeared while salmon converted {track.name}, perhaps from another run on the "
-                "album. Nothing was converted."
-            )
-        if isinstance(error, OSError):
-            return f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted."
+            try:
+                os.close(os.open(track.target, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+            except FileExistsError:
+                return undo(
+                    f"{track.flac_name} appeared while salmon converted {track.name}, perhaps from another run on the "
+                    "album. Nothing was converted."
+                )
+            except OSError as error:
+                return undo(f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted.")
+            claimed.append(track.target)
+            try:
+                os.replace(partial, track.target)
+            except OSError as error:
+                return undo(f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted.")
+    except BaseException:
+        undo("")
         raise
     return None
-
-
-def _move_no_clobber(partial: str, target: str) -> None:
-    """Give the file at partial the name target too, never replacing a file there; partial's name stays (the caller
-    removes it).
-
-    By a hard link, which fails on a name in use. Where the volume has none (FAT, exFAT, many network shares), target
-    is claimed by creating it, then replaced: a kill between the two leaves it empty, so the next run stops on it.
-
-    Raises:
-        FileExistsError: A file is at target.
-        OSError: The move failed; nothing is left at target.
-    """
-    try:
-        os.link(partial, target)
-        return
-    except OSError as error:
-        if not lacks_hard_links(error):
-            raise
-    os.close(os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
-    try:
-        os.replace(partial, target)
-    except BaseException:
-        _remove(target)
-        raise
 
 
 def _remove_sources(tracks: list[AlacTrack]) -> list[str]:
@@ -461,10 +460,10 @@ def _copy_tags(source: str, target: str) -> None:
     or PNG, into the FLAC at target."""
     tags = MP4(source).tags or {}
     flac = FLAC(target)
-    for atom, field in _TEXT_TAGS.items():
+    for atom, tag in _TEXT_TAGS.items():
         values = [_text(value) for value in tags.get(atom) or []]
         if values := [value for value in values if value]:
-            flac[field] = values
+            flac[tag] = values
     for atom, (number_field, total_field) in _NUMBER_TAGS.items():
         pairs = tags.get(atom) or []
         if not pairs:
