@@ -5,9 +5,11 @@ at once, and a run that changed a setting for itself (`-yyy` once set `yes_all`)
 What a run decides goes through its own state, e.g. `await interaction.assume_defaults()`. The walk refuses, on
 anything under `cfg` (however it was imported) in `src/salmon`: an assignment (plain, augmented, unpacked, or the
 target of `for` or `with`), `del`, `setattr` / `delattr` (`object.__setattr__` too), and a call of a method that
-changes a list, dict or set in place (`append`, `update`...). A module-level alias (`tracker_cfg = cfg.tracker`)
-counts as `cfg`. No exception. What it cannot see: a part of the config bound to another name inside a function,
-or an alias imported from another module.
+changes a list, dict or set in place (`append`, `update`...). A module-level alias (`tracker_cfg = cfg.tracker`,
+annotated or not) counts as `cfg`. It also refuses binding `salmon.cfg` itself (`salmon.cfg = other`), which every
+module reading `salmon.cfg` would then see; the one place that sets it, while salmon is still importing, is listed
+below. What it cannot see: a part of the config bound to another name inside a function, or an alias imported from
+another module.
 """
 
 import ast
@@ -17,8 +19,15 @@ SRC = Path(__file__).resolve().parents[1] / "src" / "salmon"
 # The methods of list, dict and set that change them in place.
 MUTATING = {
     "append", "extend", "insert", "remove", "pop", "popitem", "clear", "update", "setdefault", "add", "discard",
-    "sort", "reverse", "__setitem__", "__delitem__", "__setattr__", "__delattr__",
+    "sort", "reverse", "difference_update", "intersection_update", "symmetric_difference_update", "__setitem__",
+    "__delitem__", "__setattr__", "__delattr__",
 }  # fmt: skip
+# (file under src/salmon, enclosing function, what it binds): why it is not a write at runtime.
+ALLOWED = {
+    ("config/first_run.py", "check_connection", "salmon.cfg"): (
+        "sets cfg the first time, for a new user's config, while salmon is still importing and nothing has read it"
+    ),
+}
 
 
 def _cfg_names(tree: ast.Module) -> set[str]:
@@ -29,10 +38,16 @@ def _cfg_names(tree: ast.Module) -> set[str]:
             names |= {alias.asname or alias.name for alias in node.names if alias.name == "cfg"}
         elif isinstance(node, ast.Import):
             names |= {f"{alias.asname}.cfg" for alias in node.names if alias.name == "salmon" and alias.asname}
-    # Module-level aliases of a part of it, in order: `tracker_cfg = cfg.tracker`.
+    # Module-level aliases of a part of it, in order: `tracker_cfg = cfg.tracker`, annotated or not.
     for statement in tree.body:
-        if isinstance(statement, ast.Assign) and (_dotted(statement.value) in names or _under(statement.value, names)):
-            names |= {target.id for target in statement.targets if isinstance(target, ast.Name)}
+        if isinstance(statement, ast.Assign):
+            value, targets = statement.value, statement.targets
+        elif isinstance(statement, ast.AnnAssign) and statement.value is not None:
+            value, targets = statement.value, [statement.target]
+        else:
+            continue
+        if _dotted(value) in names or _under(value, names):
+            names |= {target.id for target in targets if isinstance(target, ast.Name)}
     return names
 
 
@@ -73,45 +88,66 @@ def _targets(node: ast.AST) -> list[ast.expr]:
     return []
 
 
-def config_writes(source: str) -> list[tuple[int, str]]:
-    """The (line, what) of each write to the config."""
+def config_writes(source: str) -> list[tuple[int, str, str]]:
+    """The (line, enclosing function, what) of each write to the config, or binding of `salmon.cfg` itself."""
     tree = ast.parse(source)
     names = _cfg_names(tree)
 
     def is_config(node: ast.expr) -> bool:
         return _dotted(node) in names or _under(node, names)
 
-    found: list[tuple[int, str]] = []
-    for node in ast.walk(tree):
+    found: list[tuple[int, str, str]] = []
+
+    def visit(node: ast.AST, scope: list[str]) -> None:
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            scope = [*scope, node.name]
+        where = ".".join(scope) or "the module"
         if isinstance(node, ast.Call):
             func = node.func
             setter = isinstance(func, ast.Name) and func.id in ("setattr", "delattr")
             setter |= isinstance(func, ast.Attribute) and _dotted(func) in ("object.__setattr__", "object.__delattr__")
             if setter and node.args:
                 if is_config(node.args[0]):
-                    found.append((node.lineno, ast.unparse(node)))
+                    found.append((node.lineno, where, ast.unparse(node)))
             elif isinstance(func, ast.Attribute) and func.attr in MUTATING and is_config(func.value):
-                found.append((node.lineno, ast.unparse(node)))
-            continue
-        found += [
-            (each.lineno, ast.unparse(each))
+                found.append((node.lineno, where, ast.unparse(node)))
+        # An attribute bound as `salmon.cfg` rebinds the config itself; a plain name (`cfg = ...`) is local.
+        found.extend(
+            (each.lineno, where, ast.unparse(each))
             for target in _targets(node)
             for each in _unpacked(target)
-            if _under(each, names)
-        ]
+            if _under(each, names) or (isinstance(each, ast.Attribute) and _dotted(each) in names)
+        )
+        for child in ast.iter_child_nodes(node):
+            visit(child, scope)
+
+    visit(tree, [])
     return sorted(found)
+
+
+def _all_writes() -> list[tuple[str, int, str, str]]:
+    return [
+        (path.relative_to(SRC).as_posix(), line, where, what)
+        for path in sorted(SRC.rglob("*.py"))
+        for line, where, what in config_writes(path.read_text(encoding="utf-8"))
+    ]
 
 
 def test_nothing_in_salmon_writes_the_config() -> None:
     found = [
-        f"src/salmon/{path.relative_to(SRC).as_posix()}:{line}: {target}"
-        for path in sorted(SRC.rglob("*.py"))
-        for line, target in config_writes(path.read_text(encoding="utf-8"))
+        f"src/salmon/{file}:{line}: {what} (in {where})"
+        for file, line, where, what in _all_writes()
+        if (file, where, what) not in ALLOWED
     ]
     assert found == [], (
         "cfg is the config as loaded, shared by every job of the process: keep what a run decides in the run's own "
         "state (salmon.interaction.assume_defaults() for -yyy) instead of writing it to cfg:\n" + "\n".join(found)
     )
+
+
+def test_every_listed_binding_still_exists() -> None:
+    gone = sorted(set(ALLOWED) - {(file, where, what) for file, _, where, what in _all_writes()})
+    assert gone == [], f"remove these from ALLOWED in tests/test_rule_cfg_is_read_only.py, they are gone: {gone}"
 
 
 def test_the_walk_finds_config_writes() -> None:
@@ -133,5 +169,13 @@ s.cfg.upload.yes_all = True
 object.__setattr__(config.upload, "yes_all", True)
 upload_cfg = config.upload
 upload_cfg.yes_all = True
+red_cfg: object = config.tracker.red
+red_cfg.x = 1
+config.upload.formats.difference_update({"MP3"})
+def load(new):
+    salmon.cfg = new
+    config = new
 """
-    assert [line for line, _ in config_writes(source)] == [4, 5, 6, 7, 8, 10, 10, 11, 12, 15, 16, 18]
+    found = config_writes(source)
+    assert [line for line, _, _ in found] == [4, 5, 6, 7, 8, 10, 10, 11, 12, 15, 16, 18, 20, 21, 23]
+    assert found[-1] == (23, "load", "salmon.cfg")
