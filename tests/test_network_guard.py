@@ -84,6 +84,11 @@ def test_a_curl_cffi_request_through_a_public_proxy_is_refused() -> None:
         asyncio.run(run())
 
 
+def test_a_curl_cffi_proxy_without_a_scheme_is_refused_and_named() -> None:
+    with curl_cffi.Session() as session, pytest.raises(NetworkBlockedError, match=r"203\.0\.113\.4:1080"):
+        session.get("http://127.0.0.1:9/", proxy="203.0.113.4:1080", timeout=1)
+
+
 def test_a_curl_cffi_request_to_loopback_still_works() -> None:
     async def run() -> int:
         async def handle(request: web.Request) -> web.Response:

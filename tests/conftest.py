@@ -132,19 +132,17 @@ def _guarded_curl_request(real: Any) -> Any:
         for target in targets:
             parts = urlsplit(target)
             if not (_network_allowed or _is_local_host(parts.hostname or "")):
-                _refuse(f"{parts.hostname}:{parts.port}")
+                _refuse(f"{parts.hostname}:{parts.port}" if parts.hostname else str(target))
         return real(self, *args, **kwargs)
 
     return request
 
 
-try:
-    import curl_cffi
-except (ImportError, OSError):
-    pass
-else:
-    for _session_class in (curl_cffi.Session, curl_cffi.AsyncSession):
-        _session_class.request = _guarded_curl_request(_session_class.request)  # type: ignore[method-assign]
+# A dependency: if it does not load, the run fails here rather than going on without the guard.
+import curl_cffi  # noqa: E402
+
+for _session_class in (curl_cffi.Session, curl_cffi.AsyncSession):
+    _session_class.request = _guarded_curl_request(_session_class.request)  # type: ignore[method-assign]
 
 
 @pytest.fixture(autouse=True)
