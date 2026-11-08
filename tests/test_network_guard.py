@@ -5,6 +5,7 @@ import socket
 
 import aiohttp
 import conftest
+import curl_cffi
 import pytest
 from aiohttp import web
 from conftest import NetworkBlockedError
@@ -60,6 +61,48 @@ def test_loopback_still_works() -> None:
 
     result = asyncio.run(run())
     assert result == "ok"
+
+
+def test_a_curl_cffi_request_to_a_public_url_is_refused() -> None:
+    # libcurl opens its own sockets, which the socket guard does not see (Bandcamp's browser retry, #985).
+    async def run() -> None:
+        async with curl_cffi.AsyncSession() as session:
+            await session.get("http://198.51.100.7/", timeout=1)
+
+    with pytest.raises(NetworkBlockedError, match=r"198\.51\.100\.7"):
+        asyncio.run(run())
+    with curl_cffi.Session() as session, pytest.raises(NetworkBlockedError, match=r"198\.51\.100\.7"):
+        session.get("http://198.51.100.7/", timeout=1)
+
+
+def test_a_curl_cffi_request_through_a_public_proxy_is_refused() -> None:
+    async def run() -> None:
+        async with curl_cffi.AsyncSession() as session:
+            await session.get("http://127.0.0.1:9/", proxies={"all": "socks5h://203.0.113.4:1080"}, timeout=1)
+
+    with pytest.raises(NetworkBlockedError, match=r"203\.0\.113\.4"):
+        asyncio.run(run())
+
+
+def test_a_curl_cffi_request_to_loopback_still_works() -> None:
+    async def run() -> int:
+        async def handle(request: web.Request) -> web.Response:
+            return web.Response(text="ok")
+
+        app = web.Application()
+        app.router.add_get("/", handle)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        try:
+            await web.TCPSite(runner, "127.0.0.1", 0).start()
+            port = runner.addresses[0][1]
+            async with curl_cffi.AsyncSession() as session:
+                response = await session.get(f"http://127.0.0.1:{port}/", proxies={"all": ""}, timeout=5)
+                return response.status_code
+        finally:
+            await runner.cleanup()
+
+    assert asyncio.run(run()) == 200
 
 
 @pytest.mark.network

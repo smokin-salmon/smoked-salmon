@@ -21,6 +21,7 @@ import socket
 import tempfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import pytest
 from helpers import servers
@@ -77,8 +78,10 @@ def _is_local(sock: socket.socket, address: Any) -> bool:
     host = address[0]
     if isinstance(host, bytes):
         host = host.decode("ascii", "replace")
-    if not isinstance(host, str):
-        return False
+    return isinstance(host, str) and _is_local_host(host)
+
+
+def _is_local_host(host: str) -> bool:
     if host == "localhost":
         return True
     try:
@@ -94,7 +97,10 @@ def _check(sock: socket.socket, address: Any) -> None:
     if _network_allowed or _is_local(sock, address):
         return
     parts = tuple(address) if isinstance(address, tuple) else ()
-    target = ":".join(str(part) for part in parts[:2]) or repr(address)
+    _refuse(":".join(str(part) for part in parts[:2]) or repr(address))
+
+
+def _refuse(target: str) -> None:
     raise NetworkBlockedError(
         f"test tried to connect to {target}, which is not loopback. Give the test a local fake "
         "server, or mark it @pytest.mark.network if it really needs the network."
@@ -113,6 +119,32 @@ def _guarded_connect_ex(self: socket.socket, address, /):
 
 socket.socket.connect = _guarded_connect  # type: ignore[method-assign]
 socket.socket.connect_ex = _guarded_connect_ex  # type: ignore[method-assign]
+
+
+# curl_cffi (Bandcamp's browser retry) connects through libcurl's own sockets, which the guard above does not see.
+# Its requests are refused before they start, by the host they would connect to: the proxy's when one is set, else
+# the URL's.
+def _guarded_curl_request(real: Any) -> Any:
+    def request(self: Any, *args: Any, **kwargs: Any) -> Any:
+        url = kwargs.get("url", args[1] if len(args) > 1 else "")
+        proxies = kwargs.get("proxies") or getattr(self, "proxies", None) or {}
+        targets = [proxy for proxy in (kwargs.get("proxy"), *proxies.values()) if proxy] or [url]
+        for target in targets:
+            parts = urlsplit(target)
+            if not (_network_allowed or _is_local_host(parts.hostname or "")):
+                _refuse(f"{parts.hostname}:{parts.port}")
+        return real(self, *args, **kwargs)
+
+    return request
+
+
+try:
+    import curl_cffi
+except (ImportError, OSError):
+    pass
+else:
+    for _session_class in (curl_cffi.Session, curl_cffi.AsyncSession):
+        _session_class.request = _guarded_curl_request(_session_class.request)  # type: ignore[method-assign]
 
 
 @pytest.fixture(autouse=True)

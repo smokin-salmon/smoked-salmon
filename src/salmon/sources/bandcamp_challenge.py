@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 
 from salmon.errors import ScrapeError
-from salmon.proxy import proxy_url
+from salmon.proxy import curl_url
 
 STILL_CHALLENGED = (
     'Bandcamp sent a check page ("Client Challenge") instead of the release, also when asked again as a browser. '
@@ -19,10 +19,6 @@ STILL_CHALLENGED = (
 CHALLENGED = (
     'Bandcamp sent a check page ("Client Challenge") instead of the release. Use another source, or try again later.'
 )
-
-# Proxy schemes with which curl resolves the site's name itself, each mapped to the one where the proxy does, as
-# salmon's own proxy connectors always have it (salmon.proxy).
-_PROXY_RESOLVES = {"socks5": "socks5h", "socks4": "socks4a"}
 
 
 def is_challenge(soup: BeautifulSoup) -> bool:
@@ -42,7 +38,7 @@ async def retry_as_browser(url: str, params: dict | None, timeout: float) -> Bea
     host = (urlsplit(url).hostname or "").lower()
     if host != "bandcamp.com" and not host.endswith(".bandcamp.com"):
         raise ScrapeError(CHALLENGED)
-    status, data = await _impersonated_get(url, params, _proxy(), timeout)
+    status, data = await _impersonated_get(url, params, curl_url("bandcamp"), timeout)
     if status != 200:
         raise ScrapeError(STILL_CHALLENGED)
     soup = BeautifulSoup(data, "lxml")
@@ -51,16 +47,11 @@ async def retry_as_browser(url: str, params: dict | None, timeout: float) -> Bea
     return soup
 
 
-def _proxy() -> str | None:
-    url = proxy_url("bandcamp")
-    if url is None:
-        return None
-    parts = urlsplit(url)
-    return parts._replace(scheme=_PROXY_RESOLVES.get(parts.scheme, parts.scheme)).geturl()
-
-
 async def _impersonated_get(url: str, params: dict | None, proxy: str | None, timeout: float) -> tuple[int, bytes]:
     """GET `url` impersonating Chrome, without following a redirect; returns the status and body.
+
+    Without `proxy`, it connects directly: libcurl would otherwise take a proxy from the environment (http_proxy,
+    ALL_PROXY), which salmon's other requests ignore.
 
     Raises:
         ScrapeError: If curl_cffi does not load, or the request fails. It names the error's type, never the URL.
@@ -73,7 +64,13 @@ async def _impersonated_get(url: str, params: dict | None, proxy: str | None, ti
     try:
         async with AsyncSession() as session:
             response = await session.get(
-                url, params=params, proxy=proxy, timeout=timeout, allow_redirects=False, impersonate="chrome"
+                url,
+                params=params,
+                # An empty proxy is libcurl's "connect directly"; curl_cffi passes one on only in `proxies`.
+                proxies={"all": proxy or ""},
+                timeout=timeout,
+                allow_redirects=False,
+                impersonate="chrome",
             )
     except (CurlError, TimeoutError) as e:
         raise ScrapeError(f"Bandcamp: Request failed when asked again as a browser ({type(e).__name__}).") from e

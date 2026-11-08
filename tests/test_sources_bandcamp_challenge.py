@@ -165,7 +165,7 @@ def test_a_check_page_is_asked_for_once_more_as_a_browser(first_fetches, retries
         {
             "url": ALBUM_URL,
             "params": {"a": "b"},
-            "proxy": None,
+            "proxies": {"all": ""},
             "timeout": 7,
             "allow_redirects": False,
             "impersonate": "chrome",
@@ -234,7 +234,7 @@ def test_the_retry_goes_through_bandcamps_proxy_which_resolves_names(
 
     _fetch()
 
-    assert [call["proxy"] for call in retries[1]] == [sent]
+    assert [call["proxies"] for call in retries[1]] == [{"all": sent}]
 
 
 def test_the_search_is_asked_for_once_more_as_a_browser(first_fetches, retries) -> None:
@@ -306,3 +306,13 @@ def test_the_real_curl_cffi_returns_the_status_and_body() -> None:
 def test_the_real_curl_cffi_does_not_follow_a_redirect() -> None:
     status, _ = anyio.run(_get_from_a_local_server, "/moved")
     assert status == 302
+
+
+@pytest.mark.parametrize("variable", ["http_proxy", "ALL_PROXY"])
+def test_without_a_proxy_set_the_retry_ignores_the_environments(monkeypatch: pytest.MonkeyPatch, variable: str) -> None:
+    # As aiohttp does for every other request: [proxy] alone chooses. Nothing listens on port 9.
+    for name in ("NO_PROXY", "no_proxy"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(variable, "http://127.0.0.1:9")
+
+    assert anyio.run(_get_from_a_local_server, "/album") == (200, ALBUM)
