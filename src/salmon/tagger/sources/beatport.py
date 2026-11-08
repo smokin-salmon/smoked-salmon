@@ -21,6 +21,9 @@ SPLIT_GENRES = {
     "Reggae / Dancehall / Dub": {"Reggae", "Dancehall", "Dub"},
 }
 
+# Beatport's "Techno (Peak Time / Driving)": the bracket is a sub-category, not part of the genre.
+_BRACKETED_SUBCATEGORY = re.compile(r"\s*\([^()]*\)\s*$")
+
 
 class Scraper(BeatportBase, MetadataMixin):
     def parse_release_title(self, soup):
@@ -39,7 +42,9 @@ class Scraper(BeatportBase, MetadataMixin):
         genres = {"Electronic"}
         try:
             for track in soup["tracks"]:
-                genre_name = track["genre"]["name"]
+                genre_name = _BRACKETED_SUBCATEGORY.sub("", track["genre"]["name"]).strip()
+                if not genre_name:
+                    continue
                 try:
                     genres |= SPLIT_GENRES[genre_name]
                 except KeyError:
