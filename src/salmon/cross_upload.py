@@ -39,6 +39,7 @@ from salmon.common.strings import numeric_id
 from salmon.config.image_hosts import HOST_RULES
 from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import ARTIST_IMPORTANCES, ENCODINGS, FORMATS, SOURCES
+from salmon.containment import is_within
 from salmon.errors import (
     DryRunRefused,
     ImageUploadFailed,
@@ -809,7 +810,7 @@ def _verify_release_files(response: dict[str, Any], folder: Path, target: "BaseG
     actual: dict[str, int] = {}
     for entry in sorted(folder.rglob("*")):
         relative = entry.relative_to(folder).as_posix()
-        if not entry.resolve().is_relative_to(folder):
+        if not is_within(str(entry.resolve()), str(folder)):
             raise CrossUploadRefused(f"{relative} is a link out of the album folder")
         if entry.is_file():
             actual[unicodedata.normalize("NFC", relative)] = entry.stat().st_size

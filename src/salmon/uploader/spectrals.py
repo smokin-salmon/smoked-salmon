@@ -11,7 +11,6 @@ import textwrap
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager
 from functools import partial
-from pathlib import Path
 from subprocess import DEVNULL
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -33,6 +32,7 @@ from salmon import cfg, dryrun, interaction, prepared
 from salmon.common import flush_stdin, get_audio_files
 from salmon.common.files import process_files
 from salmon.common.strings import numeric_id
+from salmon.containment import is_within
 from salmon.errors import (
     AbortAndDeleteFolder,
     ImageUploadFailed,
@@ -295,7 +295,7 @@ class SpectralUploads:
         """Move the spectrals folder out of the album folder, if it is inside it, to where close() deletes it."""
         if self._scratch is not None or not os.path.isdir(self._path):
             return
-        if not Path(self._path).resolve().is_relative_to(Path(self._album_path).resolve()):
+        if not is_within(os.path.realpath(self._path), os.path.realpath(self._album_path)):
             return
         self._scratch = tempfile.mkdtemp(prefix="salmon-spectrals-")
         old_real = os.path.realpath(self._path)

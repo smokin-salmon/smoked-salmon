@@ -17,6 +17,7 @@ from typing import Any
 
 from salmon import cfg
 from salmon.common.constants import AUDIO_EXTENSIONS
+from salmon.containment import is_within
 from salmon.images.files import NotAnImage, check_image
 from salmon.webui.jobs import JobError
 
@@ -70,23 +71,15 @@ def free_space(path: str) -> dict[str, int | None]:
     return {"free_bytes": usage.free, "total_bytes": usage.total}
 
 
-def _inside(path: str, folder: str) -> bool:
-    """Whether the resolved path is the resolved folder or inside it. commonpath: /music-old is not in /music."""
-    try:
-        return os.path.commonpath([path, folder]) == folder
-    except ValueError:  # Different drives on Windows.
-        return False
-
-
 def _same_or_inside(path: str, folder: str) -> bool:
     """Whether the resolved path is the resolved folder or inside it, by the folder itself, however it is spelled.
 
     The same folder in another case on a volume that ignores case, or through a second mount of it, counts. It walks
     up past a root on purpose, as a withheld folder can sit above one. For the withheld folders, where a True refuses;
-    confinement stays with `_inside`, by text, or a second mount of a root would count as inside it. Looks at the disk,
-    so only for a path already confined.
+    confinement stays with `is_within`, by text, or a second mount of a root would count as inside it. Looks at the
+    disk, so only for a path already confined.
     """
-    if _inside(path, folder):
+    if is_within(path, folder):
         return True
     try:
         target = os.stat(folder)
@@ -105,7 +98,7 @@ def _same_or_inside(path: str, folder: str) -> bool:
 
 
 def _within(path: str, found: list[Root]) -> bool:
-    return any(_inside(path, root.path) for root in found)
+    return any(is_within(path, root.path) for root in found)
 
 
 def _resolve(raw: str) -> str:
@@ -122,7 +115,7 @@ def _resolve(raw: str) -> str:
 def _named_in_library(given: str) -> bool:
     """Whether a path, as given (not resolved), names a folder in one of library_dirs."""
     return any(
-        _inside(given, os.path.abspath(entry)) or _inside(given, os.path.realpath(entry))
+        is_within(given, os.path.abspath(entry)) or is_within(given, os.path.realpath(entry))
         for entry in cfg.directory.library_dirs
     )
 
