@@ -16,7 +16,6 @@ tests/test_helpers_servers.py; 3.13 keeps it. The patch changes nothing on a fix
 of 3.13+. Remove it once no Python CI runs has the race (that file's first test then says so).
 """
 
-import sys
 from asyncio import base_events
 from collections.abc import Callable
 from typing import Any
@@ -37,7 +36,7 @@ def original_wakeup() -> Callable[[Any], None]:
 
 def install() -> None:
     global _original_wakeup
-    if sys.version_info < (3, 13) or _original_wakeup is not None:
+    if _original_wakeup is not None:
         return
     _original_wakeup = base_events.Server._wakeup  # type: ignore[attr-defined]
     base_events.Server._wakeup = _wakeup_once  # type: ignore[attr-defined]

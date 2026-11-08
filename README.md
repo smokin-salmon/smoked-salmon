@@ -545,6 +545,12 @@ For **normal installs**:
 uv tool upgrade salmon
 ```
 
+If it says the current Python version does not satisfy `Python>=3.13` (an install made on Python 3.11 or 3.12),
+run this once; uv downloads Python 3.13 if it's missing:
+```bash
+uv tool upgrade salmon --python 3.13
+```
+
 For **manual installs**:
 ```bash
 cd smoked-salmon

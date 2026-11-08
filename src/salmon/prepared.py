@@ -17,11 +17,9 @@ import threading
 from collections.abc import Awaitable, Callable, Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import Any, TypeVar
+from typing import Any
 
 import anyio.to_thread
-
-T = TypeVar("T")
 
 # FLAC metadata blocks a tagger rewrites: PADDING, VORBIS_COMMENT, PICTURE.
 _TAG_BLOCKS = frozenset({1, 4, 6})
@@ -102,7 +100,9 @@ def result(check: str, album: str, path: str) -> Any | None:
     return prepared.get(check, album, path) if prepared is not None else None
 
 
-def reusing(check: str, album: str, compute: Callable[[str, int], Awaitable[T]]) -> Callable[[str, int], Awaitable[T]]:
+def reusing[T](
+    check: str, album: str, compute: Callable[[str, int], Awaitable[T]]
+) -> Callable[[str, int], Awaitable[T]]:
     """`compute`, a process_files function over files of `album`, taking each file's prepared result where there is
     one."""
     prepared = _current.get()

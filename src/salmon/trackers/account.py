@@ -17,7 +17,7 @@ from collections import deque
 from collections.abc import AsyncIterator, Callable, Coroutine
 from contextlib import asynccontextmanager, suppress
 from contextvars import ContextVar
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any
 from weakref import WeakSet
 
 import anyio
@@ -28,7 +28,6 @@ from salmon.errors import RequestFailedError, UnknownOutcomeError
 if TYPE_CHECKING:
     import aiohttp
 
-T = TypeVar("T")
 
 # At most this many requests enter in any window of RATE_LIMIT_PERIOD + RATE_LIMIT_MARGIN seconds.
 RATE_LIMIT_REQUESTS = 5
@@ -211,7 +210,7 @@ def _settle(finished: asyncio.Future[asyncio.Task], task: asyncio.Task) -> None:
         finished.set_result(task)
 
 
-async def run_on_request_loop(
+async def run_on_request_loop[T](
     call: Callable[[], Coroutine[Any, Any, T]], *, cancellable: bool = True, what: str = ""
 ) -> T:
     """Run `call()` on the request loop, in a copy of this context, and return what it returns.
