@@ -147,7 +147,12 @@ async def edit_metadata(
         if not metadata["scene"]:
             await rename_files(path, tags, metadata, auto_rename, spectral_ids, source, tracks_by_file=tracks_by_file)
         await check_folder_structure(
-            path, metadata["scene"], essential_only=essential_only, max_path_length=max_path_length
+            path,
+            metadata["scene"],
+            essential_only=essential_only,
+            max_path_length=max_path_length,
+            # Neither a copy of the album (original) nor a rename out of it: the folder the user gave.
+            album_itself=original is None and os.path.samefile(path, given),
         )
 
         if not skip_integrity_check:

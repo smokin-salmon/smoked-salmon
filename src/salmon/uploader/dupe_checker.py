@@ -356,8 +356,8 @@ async def _prompt_for_recent_upload_results(
             raise click.Abort
         elif group_id.lower().startswith("s") and offer_skip:
             raise SkipTracker
-        elif group_id.lower().startswith("d") and offer_deletion:
-            raise AbortAndDeleteFolder
+        elif group_id.lower() == "d" and offer_deletion:
+            raise AbortAndDeleteFolder(ask_again=True)
         elif group_id.lower().startswith("n") or not group_id.strip():
             click.echo("Uploading to a new torrent group.")
             return None
@@ -744,8 +744,8 @@ async def _prompt_for_group_id(
             raise click.Abort
         elif group_id.lower().startswith("s") and offer_skip:
             raise SkipTracker
-        elif group_id.lower().startswith("d") and offer_deletion:
-            raise AbortAndDeleteFolder
+        elif group_id.lower() == "d" and offer_deletion:
+            raise AbortAndDeleteFolder(ask_again=True)
         elif group_id.lower().startswith("n") or not group_id.strip():
             click.echo("Uploading to a new torrent group.")
             return None
@@ -1125,7 +1125,7 @@ async def _confirm_group_id(
             bold=True,
         )
     while True:
-        resp = (
+        answer = (
             await interaction.prompt(
                 click.style(
                     "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
@@ -1148,12 +1148,13 @@ async def _confirm_group_id(
                     )
                 ),
             )
-        )[0].lower()
+        ).lower()
+        resp = answer[0]
         if resp == "a":
             raise click.Abort
         elif resp == "s" and offer_skip:
             raise SkipTracker
-        elif resp == "d" and offer_deletion:
+        elif answer == "d" and offer_deletion:
             raise AbortAndDeleteFolder
         elif resp == "y":
             return True
