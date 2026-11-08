@@ -623,8 +623,9 @@ async def upload(params: UploadParams) -> dict[str, Any]:
     """What ``salmon up`` runs, its questions asked in the browser.
 
     Returns:
-        The folder, the trackers, each torrent uploaded (none in a dry run), and whether a seedbox copy or a client add
-        failed: the job is done, everything went up, but a torrent may be seeded nowhere.
+        The folder, the trackers, each torrent uploaded (none in a dry run), and whether a seedbox step (a copy, a
+        client add, or setting up the client) failed: the job is done, everything went up, but a torrent may be
+        seeded nowhere.
 
     Raises:
         PartialResult: The run stopped, or went on past a request that may have reached the tracker (an upload, a lossy
@@ -710,8 +711,8 @@ async def cross_upload(params: CrossUploadParams) -> dict[str, Any]:
     is not cross-uploaded, as one that fails a check is not; a job started on that folder later waits for this one.
 
     Returns:
-        SOURCE, TARGET, the torrent IDs, each torrent uploaded (none in a dry run), and whether a seedbox copy or a
-        client add failed, as in ``upload``.
+        SOURCE, TARGET, the torrent IDs, each torrent uploaded (none in a dry run), and whether a seedbox step (a copy,
+        a client add, or setting up the client) failed, as in ``upload``.
 
     Raises:
         PartialResult: The run stopped (a refusal, a failed step, an abort, a cancel), with what it uploaded before.

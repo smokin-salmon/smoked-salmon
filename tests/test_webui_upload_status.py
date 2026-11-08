@@ -68,7 +68,7 @@ class Row:
     dry_run: bool = False
     # The answers to the questions the job asks, in turn; then the default. Starts it with assume_defaults.
     answers: tuple[Any, ...] = ()
-    # The result says a seedbox copy or a client add failed, for the page's warning.
+    # The result says a seedbox step (a copy, a client add, or setting up the client) failed, for the page's warning.
     seedbox_failed: bool = False
 
 

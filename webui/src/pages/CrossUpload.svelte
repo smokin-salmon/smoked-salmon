@@ -261,7 +261,7 @@
       {#if result.uploads.length}
         {#if job.status !== 'done'}<p class="muted">Uploaded before it stopped:</p>{/if}
         {#if result.seedbox_failed}
-          <p><span class="chip warn">A seedbox copy or a client add failed: a torrent may be seeded nowhere. See the log.</span></p>
+          <p><span class="chip warn">A seedbox step failed (a copy, a client add, or the client could not be set up): a torrent may be seeded nowhere. See the log.</span></p>
         {/if}
         <ul class="uploads">
           {#each result.uploads as each (each.url)}
