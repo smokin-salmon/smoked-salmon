@@ -84,9 +84,40 @@ def test_a_curl_cffi_request_through_a_public_proxy_is_refused() -> None:
         asyncio.run(run())
 
 
-def test_a_curl_cffi_proxy_without_a_scheme_is_refused_and_named() -> None:
-    with curl_cffi.Session() as session, pytest.raises(NetworkBlockedError, match=r"203\.0\.113\.4:1080"):
-        session.get("http://127.0.0.1:9/", proxy="203.0.113.4:1080", timeout=1)
+def test_a_curl_cffi_proxy_without_a_scheme_is_refused_and_named_without_its_password() -> None:
+    with curl_cffi.Session() as session, pytest.raises(NetworkBlockedError) as excinfo:
+        session.get("http://127.0.0.1:9/", proxy="user:secret@203.0.113.4:1080", timeout=1)
+    assert "203.0.113.4:1080" in str(excinfo.value)
+    assert "secret" not in str(excinfo.value)
+
+
+@pytest.mark.parametrize("proxy", ["127.0.0.1:9", "localhost:9", "http://[::1]:9"])
+def test_a_curl_cffi_request_through_a_loopback_proxy_is_let_through(proxy: str) -> None:
+    # Nothing listens on port 9: curl fails to connect, which the guard did not stop.
+    async def run() -> None:
+        async with curl_cffi.AsyncSession() as session:
+            await session.get("http://192.0.2.1/", proxy=proxy, timeout=2)
+
+    with pytest.raises(curl_cffi.CurlError):
+        asyncio.run(run())
+
+
+def test_only_the_curl_cffi_proxy_for_the_urls_scheme_is_judged() -> None:
+    proxies: curl_cffi.ProxySpec = {"http": "http://127.0.0.1:9", "https": "http://203.0.113.4:3128"}
+    with curl_cffi.Session() as session, pytest.raises(curl_cffi.CurlError):
+        session.get("http://192.0.2.1/", proxies=proxies, timeout=2)
+    with curl_cffi.Session() as session, pytest.raises(NetworkBlockedError, match=r"203\.0\.113\.4:3128"):
+        session.get("https://192.0.2.1/", proxies=proxies, timeout=2)
+
+
+@pytest.mark.parametrize("variable", ["https_proxy", "HTTPS_PROXY", "ALL_PROXY"])
+def test_a_curl_cffi_request_through_the_environments_proxy_is_judged_by_it(monkeypatch, variable: str) -> None:
+    for name in ("https_proxy", "HTTPS_PROXY", "all_proxy", "ALL_PROXY"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv(variable, "http://203.0.113.4:3128")
+
+    with curl_cffi.Session() as session, pytest.raises(NetworkBlockedError, match=r"203\.0\.113\.4:3128"):
+        session.get("https://127.0.0.1:9/", timeout=1)
 
 
 def test_a_curl_cffi_request_to_loopback_still_works() -> None:

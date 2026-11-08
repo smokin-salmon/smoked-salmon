@@ -23,6 +23,8 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+# A dependency: if it does not load, the run fails here rather than going on without its network guard (below).
+import curl_cffi
 import pytest
 from helpers import servers
 from helpers.shipped_config import shipped_config
@@ -122,24 +124,37 @@ socket.socket.connect_ex = _guarded_connect_ex  # type: ignore[method-assign]
 
 
 # curl_cffi (Bandcamp's browser retry) connects through libcurl's own sockets, which the guard above does not see.
-# Its requests are refused before they start, by the host they would connect to: the proxy's when one is set, else
-# the URL's.
+# A Session or AsyncSession request is refused before it starts, by the host it would connect to first (its websocket
+# and the low-level Curl are not guarded: nothing uses them).
+def _curl_target(session: Any, args: tuple, kwargs: dict[str, Any]) -> str:
+    """The proxy a curl_cffi request goes through, chosen as curl_cffi and libcurl choose it, else its URL."""
+    url = kwargs.get("url", args[1] if len(args) > 1 else "")
+    scheme = urlsplit(url).scheme
+    proxies = {"all": kwargs["proxy"]} if kwargs.get("proxy") else kwargs.get("proxies")
+    if proxies is None:
+        proxies = getattr(session, "proxies", None) or {}
+    proxy = proxies.get(scheme, proxies.get("all"))
+    if proxy is None:
+        # libcurl then takes one from the environment (NO_PROXY left out: the guard refuses rather than misses).
+        upper = [f"{scheme.upper()}_PROXY"] if scheme != "http" else []  # libcurl ignores HTTP_PROXY
+        names = [f"{scheme}_proxy", *upper, "all_proxy", "ALL_PROXY"]
+        proxy = next((os.environ[name] for name in names if os.environ.get(name)), "")
+    return proxy or url
+
+
 def _guarded_curl_request(real: Any) -> Any:
     def request(self: Any, *args: Any, **kwargs: Any) -> Any:
-        url = kwargs.get("url", args[1] if len(args) > 1 else "")
-        proxies = kwargs.get("proxies") or getattr(self, "proxies", None) or {}
-        targets = [proxy for proxy in (kwargs.get("proxy"), *proxies.values()) if proxy] or [url]
-        for target in targets:
-            parts = urlsplit(target)
-            if not (_network_allowed or _is_local_host(parts.hostname or "")):
-                _refuse(f"{parts.hostname}:{parts.port}" if parts.hostname else str(target))
+        if not _network_allowed:
+            target = _curl_target(self, args, kwargs)
+            # libcurl reads a proxy without a scheme as http://.
+            parts = urlsplit(target if "://" in target else f"http://{target}")
+            if not _is_local_host(parts.hostname or ""):
+                # host:port, without the credentials a proxy URL may hold.
+                _refuse(parts.netloc.rpartition("@")[2])
         return real(self, *args, **kwargs)
 
     return request
 
-
-# A dependency: if it does not load, the run fails here rather than going on without the guard.
-import curl_cffi  # noqa: E402
 
 for _session_class in (curl_cffi.Session, curl_cffi.AsyncSession):
     _session_class.request = _guarded_curl_request(_session_class.request)  # type: ignore[method-assign]
