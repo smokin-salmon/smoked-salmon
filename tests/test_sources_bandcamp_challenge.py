@@ -12,6 +12,7 @@ from typing import Any
 import anyio
 import pytest
 from aiohttp import web
+from yarl import URL
 
 from salmon import cfg
 from salmon.config.validations import ProxyCfg, ProxyServicesCfg
@@ -41,9 +42,10 @@ CUSTOM_DOMAIN = (
 
 
 class _Response:
-    def __init__(self, body: bytes):
+    def __init__(self, body: bytes, url: URL):
         self.status = 200
         self._body = body
+        self.url = url
 
     async def __aenter__(self):
         return self
@@ -56,11 +58,15 @@ class _Response:
 
 
 class _Session:
-    """aiohttp.ClientSession's part fetch_page uses, answering every GET with `body`."""
+    """aiohttp.ClientSession's part fetch_page uses, answering every GET with `body`.
 
-    def __init__(self, body: bytes, calls: list[str], connector: Any = None):
+    A URL in `redirects` (with its query) is redirected to the one it maps to, when the GET follows redirects.
+    """
+
+    def __init__(self, body: bytes, calls: list[str], redirects: dict[str, str], connector: Any = None):
         self._body = body
         self._calls = calls
+        self._redirects = redirects
         self._connector = connector
 
     async def __aenter__(self):
@@ -70,9 +76,11 @@ class _Session:
         if self._connector is not None:
             await self._connector.close()
 
-    def get(self, url: str, **_kwargs: Any) -> _Response:
+    def get(self, url: str, params: dict | None = None, allow_redirects: bool = True, **_kwargs: Any) -> _Response:
         self._calls.append(url)
-        return _Response(self._body)
+        asked = str(URL(url).update_query(params or {}))
+        final = self._redirects.get(asked, asked) if allow_redirects else asked
+        return _Response(self._body, URL(final))
 
 
 class _CurlError(Exception):
@@ -113,14 +121,14 @@ def _fake_curl_cffi(answer: tuple[int, bytes] | Exception, calls: list[dict[str,
 
 @pytest.fixture
 def first_fetches(monkeypatch: pytest.MonkeyPatch):
-    """Answer the first fetch with a given body; returns the setter and the URLs fetched."""
+    """Answer the first fetch with a given body, after the given redirects; returns the setter and the URLs fetched."""
     calls: list[str] = []
 
-    def answer(body: bytes) -> None:
+    def answer(body: bytes, redirects: dict[str, str] | None = None) -> None:
         monkeypatch.setattr(
             base.aiohttp,
             "ClientSession",
-            lambda *_args, connector=None, **_kwargs: _Session(body, calls, connector),
+            lambda *_args, connector=None, **_kwargs: _Session(body, calls, redirects or {}, connector),
         )
 
     return answer, calls
@@ -163,8 +171,9 @@ def test_a_check_page_is_asked_for_once_more_as_a_browser(first_fetches, retries
     assert first_fetches[1] == [ALBUM_URL]
     assert retries[1] == [
         {
-            "url": ALBUM_URL,
-            "params": {"a": "b"},
+            # The URL the check page came from carries the query: it is not passed again.
+            "url": f"{ALBUM_URL}?a=b",
+            "params": None,
             "proxies": {"all": ""},
             "timeout": 7,
             "allow_redirects": False,
@@ -238,14 +247,49 @@ def test_the_retry_goes_through_bandcamps_proxy_which_resolves_names(
 
 
 def test_the_search_is_asked_for_once_more_as_a_browser(first_fetches, retries) -> None:
-    first_fetches[0](CHALLENGE)
+    # The search does not follow redirects: the retry asks for the URL it asked for, its query included.
+    first_fetches[0](CHALLENGE, {"https://bandcamp.com/search/?q=variations": "https://elsewhere.bandcamp.com/"})
     retries[0]((200, SEARCH))
 
     _, releases = anyio.run(Searcher().search_releases, "variations", 5)
 
     assert list(releases) == [("adventurousmusic.bandcamp.com", "album", "variations")]
-    assert retries[1][0]["url"] == "https://bandcamp.com/search/"
-    assert retries[1][0]["params"] == {"q": "variations"}
+    retried = [(call["url"], call["params"]) for call in retries[1]]
+    assert retried == [("https://bandcamp.com/search/?q=variations", None)]
+
+
+@pytest.mark.parametrize(
+    "asked",
+    ["http://adventurousmusic.bandcamp.com/album/variations", "https://adventurousmusic.bandcamp.com/album/old-slug"],
+)
+def test_the_retry_asks_for_the_page_a_redirect_led_to(first_fetches, retries, asked: str) -> None:
+    # Asked for again with redirects off, the URL first asked for would only answer with the redirect.
+    first_fetches[0](CHALLENGE, {asked: ALBUM_URL})
+    retries[0]((200, ALBUM))
+
+    assert _title(_fetch(asked)) == "Variations | Adventurous Music"
+    assert [(call["url"], call["params"]) for call in retries[1]] == [(ALBUM_URL, None)]
+
+
+def test_params_a_redirect_dropped_are_passed_again(first_fetches, retries) -> None:
+    old = "https://adventurousmusic.bandcamp.com/album/old-slug"
+    first_fetches[0](CHALLENGE, {f"{old}?a=b&c=d": f"{ALBUM_URL}?a=b"})
+    retries[0]((200, ALBUM))
+
+    _fetch(old, params={"a": "b", "c": "d"})
+
+    assert [(call["url"], call["params"]) for call in retries[1]] == [(f"{ALBUM_URL}?a=b", {"c": "d"})]
+
+
+def test_a_redirect_to_a_custom_domain_is_not_asked_for_again(first_fetches, retries) -> None:
+    first_fetches[0](CHALLENGE, {ALBUM_URL: "https://music.example.org/album/variations"})
+    retries[0]((200, ALBUM))
+
+    with pytest.raises(ScrapeError) as excinfo:
+        _fetch()
+
+    assert str(excinfo.value) == CUSTOM_DOMAIN
+    assert retries[1] == []
 
 
 def test_the_search_names_a_check_page_that_stays(first_fetches, retries) -> None:
@@ -316,3 +360,31 @@ def test_without_a_proxy_set_the_retry_ignores_the_environments(monkeypatch: pyt
     monkeypatch.setenv(variable, "http://127.0.0.1:9")
 
     assert anyio.run(_get_from_a_local_server, "/album") == (200, ALBUM)
+
+
+async def _fetch_page_at_a_local_server(path: str, params: dict) -> tuple[str, str]:
+    async def handler(request: web.Request) -> web.Response:
+        if request.path == "/old-slug":
+            raise web.HTTPMovedPermanently("/album?a=b")
+        return web.Response(body=ALBUM, content_type="text/html")
+
+    app = web.Application()
+    app.router.add_get("/{tail:.*}", handler)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    await web.TCPSite(runner, "127.0.0.1", 0).start()
+    try:
+        port = runner.addresses[0][1]
+        _, final = await base.BaseScraper()._fetch_page_at(f"http://127.0.0.1:{port}{path}", params)
+        return final.path, final.query_string
+    finally:
+        await runner.cleanup()
+
+
+@pytest.mark.parametrize(
+    ("path", "params", "final"),
+    [("/album", {"a": "b"}, ("/album", "a=b")), ("/old-slug", {"a": "b", "c": "d"}, ("/album", "a=b"))],
+)
+def test_aiohttp_gives_the_url_a_redirect_led_to_with_its_query(path: str, params: dict, final: tuple) -> None:
+    # What the fake session above copies: the retry's URL and params rest on it.
+    assert anyio.run(_fetch_page_at_a_local_server, path, params) == final

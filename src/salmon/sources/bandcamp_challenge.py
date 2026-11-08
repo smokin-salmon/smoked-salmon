@@ -27,7 +27,7 @@ def is_challenge(soup: BeautifulSoup) -> bool:
 
 
 async def retry_as_browser(url: str, params: dict | None, timeout: float) -> BeautifulSoup:
-    """Ask once more for `url`, which got the check page, as a browser would.
+    """Ask once more for `url`, the page (after any redirect) that answered with the check page, as a browser would.
 
     Only a page of Bandcamp's own hosts is asked for again: the request skips salmon web's public-address guard
     (salmon.ssrf), which a host Bandcamp does not own needs. A redirect is not followed.

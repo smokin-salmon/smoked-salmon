@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from random import choice
 from string import Formatter
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import aiohttp
 import msgspec
@@ -13,6 +13,9 @@ from salmon import ssrf
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
 from salmon.proxy import session_kwargs
+
+if TYPE_CHECKING:
+    from yarl import URL
 
 HEADERS = {"User-Agent": choice(UAGENTS)}
 # Seconds a fetch_page request may take in all.
@@ -150,6 +153,13 @@ class BaseScraper:
         Raises:
             ScrapeError: If scraping fails.
         """
+        soup, _ = await self._fetch_page_at(url, params, headers, follow_redirects)
+        return soup
+
+    async def _fetch_page_at(
+        self, url: str, params: dict | None = None, headers: dict | None = None, follow_redirects: bool = True
+    ) -> "tuple[BeautifulSoup, URL]":
+        """fetch_page, also returning the URL the page came from: after any redirect, with its query."""
         params = params or {}
         async with (
             self._session(timeout=PAGE_TIMEOUT) as session,
@@ -158,7 +168,7 @@ class BaseScraper:
             if r.status != 200:
                 raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
             data = await r.read()
-            return BeautifulSoup(data, "lxml")
+            return BeautifulSoup(data, "lxml"), r.url
 
     async def fetch_data(
         self,
