@@ -9,6 +9,7 @@ from salmon.config import image_hosts
 from salmon.config.image_hosts import cover_refusal
 from salmon.config.validations import Cfg, ImageUploader
 from salmon.config.validations import ImageKind as Kind
+from salmon.uploader import cover_upload
 
 SHARED_HOST_ERROR = r"only displays on RED/OPS, so it can only be set under \[image\.red\] or \[image\.ops\]"
 
@@ -168,14 +169,14 @@ def test_each_cover_host_gets_its_own_upload_reused_across_trackers(monkeypatch)
         return f"https://{host}/cover.jpg"
 
     monkeypatch.setattr(salmon.uploader.cfg, "image", _image(cover_uploader="imgbox", red={"cover_uploader": "red"}))
-    monkeypatch.setattr(salmon.uploader, "download_cover_if_nonexistent", fake_download)
-    monkeypatch.setattr(salmon.uploader, "upload_cover", fake_upload)
+    monkeypatch.setattr(cover_upload, "download_cover_if_nonexistent", fake_download)
+    monkeypatch.setattr(cover_upload, "upload_cover", fake_upload)
 
     async def run() -> list[str | None]:
         cover_urls: dict[str, str | None] = {}
         results = []
         for tracker in ("OPS", "RED", "DIC", "RED"):
-            url, _ = await salmon.uploader.get_cover_url(tracker, cover_urls, "/release", None, False)
+            url, _ = await cover_upload.get_cover_url(tracker, cover_urls, "/release", None, False)
             results.append(url)
         return results
 

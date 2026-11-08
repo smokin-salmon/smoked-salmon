@@ -61,7 +61,7 @@ from salmon.config.validations import GazelleTrackerSettings, Seedbox
 from salmon.errors import CRCMismatchError
 from salmon.trackers import account, base
 from salmon.trackers.base import BaseGazelleApi
-from salmon.uploader import staging
+from salmon.uploader import staging, upload_checks
 from salmon.uploader.torrent_client import QBittorrentClient
 from salmon.webui import jobs
 from salmon.webui.jobs import UNKNOWN_OUTCOME, JobKind, JobManager
@@ -631,7 +631,7 @@ def test_the_log_check_asks_in_the_browser_and_its_no_drops_the_release(
     async def mismatch(_log_path: str, _album: str) -> None:
         raise CRCMismatchError("track 1")
 
-    monkeypatch.setattr(salmon.uploader, "check_log_cambia", mismatch)
+    monkeypatch.setattr(upload_checks, "check_log_cambia", mismatch)
     album = _album(dirs.downloads / FOLDER)
     (album / "rip.log").write_bytes(b"Exact Audio Copy V1.6 log")
     world = cross_upload_world(monkeypatch, dirs)

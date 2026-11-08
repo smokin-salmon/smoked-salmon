@@ -4,7 +4,7 @@ import importlib
 from typing import Any
 
 import salmon.uploader
-from salmon.uploader import conversion_upload
+from salmon.uploader import conversion_upload, cover_upload, metadata_review, upload_checks
 
 # Not `from salmon.uploader import upload`: that is the function salmon.uploader defines, which hides the module.
 upload = importlib.import_module("salmon.uploader.upload")
@@ -13,15 +13,25 @@ upload = importlib.import_module("salmon.uploader.upload")
 # of them, as it did when they were all salmon.uploader's. Any other name is called from salmon.uploader only; a
 # name salmon.uploader no longer holds fails to patch there, rather than missing the code that calls it.
 CALLED_FROM = {
-    "check_folder_structure": (salmon.uploader, conversion_upload),
+    "check_folder_structure": (metadata_review, conversion_upload),
     "conversion_of": (salmon.uploader, conversion_upload),
-    "gather_audio_info": (salmon.uploader, conversion_upload),
+    "gather_audio_info": (salmon.uploader, metadata_review, conversion_upload),
     "upload_and_report": (salmon.uploader, conversion_upload),
     "convert_folder": (conversion_upload,),
     "downconversion_format": (conversion_upload,),
     "generate_conversion_description": (conversion_upload,),
     "generate_transcode_description": (conversion_upload,),
     "transcode_folder": (conversion_upload,),
+    "check_existing_group": (salmon.uploader, metadata_review),
+    "download_cover_if_nonexistent": (salmon.uploader, cover_upload),
+    "generate_dupe_check_searchstrs": (salmon.uploader, metadata_review),
+    "check_log_cambia": (upload_checks,),
+    "check_tags": (metadata_review,),
+    "gather_tags": (salmon.uploader, metadata_review),
+    "rename_files": (metadata_review,),
+    "rename_folder": (metadata_review,),
+    "review_metadata_with_ai": (metadata_review,),
+    "tag_files": (metadata_review,),
     "prepare_and_upload": (upload,),
     "report_lossy_master": (upload,),
 }

@@ -6,6 +6,7 @@ import pytest
 
 import salmon.uploader as uploader
 from salmon.errors import LogCheckSkipped
+from salmon.uploader import upload_checks
 
 
 def _album_with_a_log(tmp_path) -> str:
@@ -30,13 +31,13 @@ def _check_log_raising(error: BaseException):
     ids=["unreadable audio", "undecodable audio", "failed CRC workers"],
 )
 def test_a_failed_verification_aborts_the_upload(tmp_path, monkeypatch, error) -> None:
-    monkeypatch.setattr(uploader, "check_log_cambia", _check_log_raising(error))
+    monkeypatch.setattr(upload_checks, "check_log_cambia", _check_log_raising(error))
     with pytest.raises(click.Abort):
         anyio.run(uploader._check_logs, _album_with_a_log(tmp_path))
 
 
 def test_a_log_that_cannot_be_checked_is_reported_not_fatal(tmp_path, monkeypatch, capsys) -> None:
-    monkeypatch.setattr(uploader, "check_log_cambia", _check_log_raising(LogCheckSkipped("No audio files found!")))
+    monkeypatch.setattr(upload_checks, "check_log_cambia", _check_log_raising(LogCheckSkipped("No audio files found!")))
     anyio.run(uploader._check_logs, _album_with_a_log(tmp_path))
     out = capsys.readouterr().out
     assert "Log not checked: No audio files found!" in out

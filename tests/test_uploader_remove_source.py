@@ -12,6 +12,7 @@ from salmon import cfg, interaction
 from salmon.converter import conversions
 from salmon.errors import UploadError
 from salmon.tagger import foldername
+from salmon.uploader import metadata_review
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -110,14 +111,14 @@ def test_a_metadata_rerun_removes_only_salmons_own_folder(monkeypatch, album) ->
     async def confirm(*_args, **_kwargs):
         return next(answers)
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
-    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
-    monkeypatch.setattr(uploader, "rename_folder", rename_folder)
-    monkeypatch.setattr(uploader, "rename_files", rename_files)
-    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
-    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
+    monkeypatch.setattr(metadata_review, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(metadata_review, "rename_folder", rename_folder)
+    monkeypatch.setattr(metadata_review, "rename_files", rename_files)
+    monkeypatch.setattr(metadata_review, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "gather_audio_info", lambda *a, **k: {})
     monkeypatch.setattr(interaction, "confirm", confirm)
     metadata = {"scene": False, "genres": []}
 
@@ -154,13 +155,13 @@ def test_a_metadata_rerun_never_replaces_the_source_folder(monkeypatch, tmp_path
     async def confirm(text, *_args, **_kwargs):
         return next(upload_answers) if "upload the torrent" in str(text) else True
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
-    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
-    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
-    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
+    monkeypatch.setattr(metadata_review, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(metadata_review, "rename_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "gather_audio_info", lambda *a, **k: {})
     monkeypatch.setattr(interaction, "confirm", confirm)
     metadata = {"scene": False, "genres": []}
 
@@ -189,14 +190,14 @@ def test_a_metadata_rerun_never_removes_a_folder_in_a_library(monkeypatch, album
     async def confirm(*_args, **_kwargs):
         return next(answers)
 
-    monkeypatch.setattr(uploader, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
-    monkeypatch.setattr(uploader, "tag_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_tags", lambda *a, **k: returns({}))
-    monkeypatch.setattr(uploader, "rename_folder", rename_folder)
-    monkeypatch.setattr(uploader, "rename_files", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "check_folder_structure", lambda *a, **k: returns())
-    monkeypatch.setattr(uploader, "gather_tags", lambda *a, **k: {})
-    monkeypatch.setattr(uploader, "gather_audio_info", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "review_metadata_with_ai", lambda metadata, *a, **k: returns(metadata))
+    monkeypatch.setattr(metadata_review, "tag_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_tags", lambda *a, **k: returns({}))
+    monkeypatch.setattr(metadata_review, "rename_folder", rename_folder)
+    monkeypatch.setattr(metadata_review, "rename_files", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "check_folder_structure", lambda *a, **k: returns())
+    monkeypatch.setattr(metadata_review, "gather_tags", lambda *a, **k: {})
+    monkeypatch.setattr(metadata_review, "gather_audio_info", lambda *a, **k: {})
     monkeypatch.setattr(interaction, "confirm", confirm)
 
     anyio.run(
