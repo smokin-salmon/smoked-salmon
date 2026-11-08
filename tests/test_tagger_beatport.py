@@ -61,3 +61,9 @@ def test_beatport_genres_drop_the_bracketed_sub_category() -> None:
 
     assert genres == {"Electronic", "Techno", "Trance", "Melodic House"}
     assert not any("(" in genre or ")" in genre for genre in genres)
+
+
+def test_beatport_genre_that_is_only_a_bracket_adds_nothing() -> None:
+    soup = make_soup({"genre": {"name": "(Peak Time / Driving)"}}, {"genre": {"name": "Trance (Main Floor)"}})
+
+    assert Scraper().parse_genres(soup) == {"Electronic", "Trance"}

@@ -43,6 +43,8 @@ class Scraper(BeatportBase, MetadataMixin):
         try:
             for track in soup["tracks"]:
                 genre_name = _BRACKETED_SUBCATEGORY.sub("", track["genre"]["name"]).strip()
+                if not genre_name:
+                    continue
                 try:
                     genres |= SPLIT_GENRES[genre_name]
                 except KeyError:
