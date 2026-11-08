@@ -109,8 +109,12 @@ def config_writes(source: str) -> list[tuple[int, str, str]]:
             setter = isinstance(func, ast.Name) and func.id in ("setattr", "delattr")
             setter |= isinstance(func, ast.Attribute) and _dotted(func) in ("object.__setattr__", "object.__delattr__")
             if setter and node.args:
-                rebinds = len(node.args) > 1 and _dotted(node.args[0]) in modules
-                rebinds &= isinstance(node.args[1], ast.Constant) and node.args[1].value == "cfg"
+                rebinds = (
+                    len(node.args) > 1
+                    and _dotted(node.args[0]) in modules
+                    and isinstance(node.args[1], ast.Constant)
+                    and node.args[1].value == "cfg"
+                )
                 if is_config(node.args[0]) or rebinds:
                     found.append((node.lineno, where, ast.unparse(node)))
             elif isinstance(func, ast.Attribute) and func.attr in MUTATING and is_config(func.value):
@@ -184,6 +188,7 @@ def load(new):
     config = new
     setattr(s, "cfg", new)
     setattr(s, "other", new)
+    setattr(*new)
 """
     found = config_writes(source)
     assert [line for line, _, _ in found] == [4, 5, 6, 7, 8, 10, 10, 11, 12, 15, 16, 18, 20, 21, 23, 25]
