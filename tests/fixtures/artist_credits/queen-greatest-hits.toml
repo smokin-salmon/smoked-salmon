@@ -1,0 +1,1088 @@
+album = "Queen, Greatest Hits"
+why = "A one-artist compilation (#971 item 1): the release artist is the band, not 'Various'. Discogs' main release is the US edition with another tracklist, and its parse loses Queen as an artist."
+edition = "EMI 2011 remaster, 17 tracks (Deezer 1007459321 = MusicBrainz b524d296 by barcode); Discogs 1158595 is master 78096's main release: the 1992 Hollywood Records US CD, a different tracklist"
+known_wrong = ["Discogs parse: Queen only as producer (with Mack, Roy Thomas Baker), no main artist, ALBUMARTIST '' and ARTIST '' on every track"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Queen"]
+how_we_know = "Deezer and MusicBrainz agree"
+
+[today.deezer]
+release = ["Queen (main)"]
+tracks = 17
+
+[today.musicbrainz]
+release = ["Queen (main)"]
+tracks = 17
+
+[today.discogs]
+release = ["Queen (producer)", "Mack (producer)", "Roy Thomas Baker (producer)"]
+tracks = 17
+
+[today.qobuz]
+release = ["Queen (main)"]
+tracks = 17
+
+[today.merge]
+release = ["Queen (main)", "Queen (producer)", "Mack (producer)", "Roy Thomas Baker (producer)"]
+tracks = 17
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Bohemian Rhapsody"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Another One Bites The Dust"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Killer Queen"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Fat Bottomed Girls"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Bicycle Race"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["You're My Best Friend"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Don't Stop Me Now"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Save Me"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Crazy Little Thing Called Love"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Somebody To Love"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Now I'm Here"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Good Old-Fashioned Lover Boy"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Play The Game"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Flash"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "15.flac"
+tracknumber = ["15"]
+discnumber = ["1"]
+title = ["Seven Seas of Rhye"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "16.flac"
+tracknumber = ["16"]
+discnumber = ["1"]
+title = ["We Will Rock You"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+[[track]]
+file = "17.flac"
+tracknumber = ["17"]
+discnumber = ["1"]
+title = ["We Are the Champions"]
+artist = ["Queen"]
+album = ["Greatest Hits"]
+albumartist = ["Queen"]
+date = ["2011-01-01"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 1007459321,
+ "title": "Greatest Hits",
+ "upc": "602527594347",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 132,
+    "name": "Pop"
+   }
+  ]
+ },
+ "label": "Columbia",
+ "release_date": "2011-01-01",
+ "tracklist": [
+  {
+   "SNG_ID": "4092338861",
+   "SNG_TITLE": "Bohemian Rhapsody",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBUM71029604",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "4092338871",
+   "SNG_TITLE": "Another One Bites The Dust",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBUM71029605",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338881",
+   "SNG_TITLE": "Killer Queen",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBUM71029606",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338891",
+   "SNG_TITLE": "Fat Bottomed Girls",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBUM71029607",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338901",
+   "SNG_TITLE": "Bicycle Race",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBUM71029608",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338911",
+   "SNG_TITLE": "You're My Best Friend",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBUM71029609",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "4092338921",
+   "SNG_TITLE": "Don't Stop Me Now",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBUM71029610",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338931",
+   "SNG_TITLE": "Save Me",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBUM71029611",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338941",
+   "SNG_TITLE": "Crazy Little Thing Called Love",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBUM71029612",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338951",
+   "SNG_TITLE": "Somebody To Love",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBUM71029613",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338961",
+   "SNG_TITLE": "Now I'm Here",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "GBUM71029620",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338971",
+   "SNG_TITLE": "Good Old-Fashioned Lover Boy",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "GBUM71029614",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338981",
+   "SNG_TITLE": "Play The Game",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "GBUM71029615",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092338991",
+   "SNG_TITLE": "Flash",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "GBUM71029616",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092339001",
+   "SNG_TITLE": "Seven Seas of Rhye",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "15",
+   "ISRC": "GBUM71029617",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092339011",
+   "SNG_TITLE": "We Will Rock You",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "16",
+   "ISRC": "GBUM71029618",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "4092339021",
+   "SNG_TITLE": "We Are the Champions",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Queen"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "17",
+   "ISRC": "GBUM71029619",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="b524d296-a518-4570-9894-f3e03310199d"><title>Greatest Hits</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><release-group type="Compilation"><title>Greatest Hits</title><first-release-date>1981-11-03</first-release-date><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit></release-group><date>2014</date><release-event-list><release-event><date>2014</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>EMI</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Bohemian Rhapsody</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Another One Bites the Dust</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1980-06-24</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>Killer Queen</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1974-10</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Fat Bottomed Girls</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1978-10-13</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Bicycle Race</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1978-10-13</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>You’re My Best Friend</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1975-11-21</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Don’t Stop Me Now</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1978-11-10</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Save Me</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1980-01-25</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Crazy Little Thing Called Love</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1979-10-05</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Somebody to Love</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1976-11</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>Now I’m Here</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1974-11-01</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>Good Old‐Fashioned Lover Boy</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1976-12-10</first-release-date></recording></track><track><position>13</position><number>13</number><recording><title>Play the Game</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1980-05</first-release-date></recording></track><track><position>14</position><number>14</number><recording><title>Flash</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1980</first-release-date></recording></track><track><position>15</position><number>15</number><recording><title>Seven Seas of Rhye</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1974-02-23</first-release-date></recording></track><track><position>16</position><number>16</number><recording><title>We Will Rock You</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1977-10-28</first-release-date></recording></track><track><position>17</position><number>17</number><recording><title>We Are the Champions</title><artist-credit><name-credit><artist><name>Queen</name></artist></name-credit></artist-credit><first-release-date>1977-10-28</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 1158595,
+ "year": 1992,
+ "artists": [
+  {
+   "name": "Queen",
+   "role": "",
+   "id": 81013
+  }
+ ],
+ "labels": [
+  {
+   "name": "Hollywood Records",
+   "catno": "HR-61265-2",
+   "id": 2859
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Compilation"
+   ]
+  }
+ ],
+ "title": "Greatest Hits",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "We Will Rock You",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Mike Stone",
+     "role": "Producer [Assistant]",
+     "id": 94526
+    },
+    {
+     "name": "Brian May",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "2:01"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "We Are The Champions",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Mike Stone",
+     "role": "Producer [Assistant]",
+     "id": 94526
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "3:00"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Another One Bites The Dust",
+   "extraartists": [
+    {
+     "name": "Mack (2)",
+     "role": "Producer",
+     "id": 160129
+    },
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "John Deacon",
+     "role": "Written-By",
+     "id": 268365
+    }
+   ],
+   "duration": "3:32"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Killer Queen",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Roy Thomas Baker",
+     "role": "Producer",
+     "id": 164557
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "2:59"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Somebody To Love",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "4:53"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Fat Bottomed Girls",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Roy Thomas Baker",
+     "role": "Producer",
+     "id": 164557
+    },
+    {
+     "name": "Brian May",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "4:16"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Bicycle Race",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Roy Thomas Baker",
+     "role": "Producer",
+     "id": 164557
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "2:59"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "You're My Best Friend",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Roy Thomas Baker",
+     "role": "Producer",
+     "id": 164557
+    },
+    {
+     "name": "John Deacon",
+     "role": "Written-By",
+     "id": 268365
+    }
+   ],
+   "duration": "2:50"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Crazy Little Thing Called Love",
+   "extraartists": [
+    {
+     "name": "Mack (2)",
+     "role": "Producer",
+     "id": 160129
+    },
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "2:41"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Now I'm Here",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Roy Thomas Baker",
+     "role": "Producer",
+     "id": 164557
+    },
+    {
+     "name": "Brian May",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "4:12"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "title": "Play The Game",
+   "extraartists": [
+    {
+     "name": "Mack (2)",
+     "role": "Producer",
+     "id": 160129
+    },
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "3:31"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "title": "Seven Seas Of Rhye",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Roy Thomas Baker",
+     "role": "Producer",
+     "id": 164557
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "2:47"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "title": "Body Language",
+   "extraartists": [
+    {
+     "name": "Mack (2)",
+     "role": "Producer",
+     "id": 160129
+    },
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "4:29"
+  },
+  {
+   "position": "14",
+   "type_": "track",
+   "title": "Save Me",
+   "extraartists": [
+    {
+     "name": "Mack (2)",
+     "role": "Producer",
+     "id": 160129
+    },
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Brian May",
+     "role": "Written-By",
+     "id": 253217
+    }
+   ],
+   "duration": "3:48"
+  },
+  {
+   "position": "15",
+   "type_": "track",
+   "title": "Don't Stop Me Now",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Roy Thomas Baker",
+     "role": "Producer",
+     "id": 164557
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "3:29"
+  },
+  {
+   "position": "16",
+   "type_": "track",
+   "title": "Good Old Fashioned Lover Boy",
+   "extraartists": [
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "Freddie Mercury",
+     "role": "Written-By",
+     "id": 79949
+    }
+   ],
+   "duration": "2:53"
+  },
+  {
+   "position": "17",
+   "type_": "track",
+   "title": "I Want To Break Free",
+   "extraartists": [
+    {
+     "name": "Mack (2)",
+     "role": "Producer",
+     "id": 160129
+    },
+    {
+     "name": "Queen",
+     "role": "Producer",
+     "id": 81013
+    },
+    {
+     "name": "John Deacon",
+     "role": "Written-By",
+     "id": 268365
+    }
+   ],
+   "duration": "4:18"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Jim Beach (2)",
+   "role": "Management",
+   "id": 1570879
+  },
+  {
+   "name": "Lipsey Meade",
+   "role": "Management [Publicity]",
+   "id": 4105864
+  },
+  {
+   "name": "Scott Riseman",
+   "role": "Management [Publicity]",
+   "id": 4105863
+  },
+  {
+   "name": "Eddy Schreyer",
+   "role": "Mastered By",
+   "id": 255243
+  },
+  {
+   "name": "Brian May",
+   "role": "Performer [Queen Are]",
+   "id": 253217
+  },
+  {
+   "name": "Freddie Mercury",
+   "role": "Performer [Queen Are]",
+   "id": 79949
+  },
+  {
+   "name": "John Deacon",
+   "role": "Performer [Queen Are]",
+   "id": 268365
+  },
+  {
+   "name": "Roger Taylor",
+   "role": "Performer [Queen Are]",
+   "id": 208268
+  },
+  {
+   "name": "Jacky Gunn",
+   "role": "Sleeve Notes",
+   "id": 1868174
+  },
+  {
+   "name": "Jim Jenkins (2)",
+   "role": "Sleeve Notes",
+   "id": 1626833
+  },
+  {
+   "name": "Richard Gray (2)",
+   "role": "Sleeve, Design",
+   "id": 1841631
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "ulyc36js957to",
+ "upc": "0602527594347",
+ "title": "Greatest Hits",
+ "tracks_count": 17,
+ "artist": {
+  "name": "Queen"
+ },
+ "genres_list": [
+  "Pop"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Bohemian Rhapsody",
+    "track_number": 1
+   },
+   {
+    "title": "Another One Bites The Dust",
+    "track_number": 2
+   },
+   {
+    "title": "Killer Queen",
+    "track_number": 3
+   },
+   {
+    "title": "Fat Bottomed Girls",
+    "track_number": 4
+   },
+   {
+    "title": "Bicycle Race",
+    "track_number": 5
+   },
+   {
+    "title": "You're My Best Friend",
+    "track_number": 6
+   },
+   {
+    "title": "Don't Stop Me Now",
+    "track_number": 7
+   },
+   {
+    "title": "Save Me",
+    "track_number": 8
+   },
+   {
+    "title": "Crazy Little Thing Called Love",
+    "track_number": 9
+   },
+   {
+    "title": "Somebody To Love",
+    "track_number": 10
+   },
+   {
+    "title": "Now I'm Here",
+    "track_number": 11
+   },
+   {
+    "title": "Good Old-Fashioned Lover Boy",
+    "track_number": 12
+   },
+   {
+    "title": "Play The Game",
+    "track_number": 13
+   },
+   {
+    "title": "Flash",
+    "track_number": 14
+   },
+   {
+    "title": "Seven Seas Of Rhye",
+    "track_number": 15
+   },
+   {
+    "title": "We Will Rock You",
+    "track_number": 16
+   },
+   {
+    "title": "We Are The Champions",
+    "track_number": 17
+   }
+  ]
+ }
+}
+'''

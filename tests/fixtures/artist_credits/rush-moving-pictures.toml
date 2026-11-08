@@ -1,0 +1,392 @@
+album = "Rush, Moving Pictures"
+why = "Band control: one band, no guests, every store the same. Anything but 'Rush' everywhere is a regression."
+edition = "2011 remaster, 7 tracks (Deezer 942295 = MusicBrainz 715c7e25 by barcode); Discogs 11868041 is the release MusicBrainz links"
+known_wrong = []
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Rush"]
+how_we_know = "Deezer, MusicBrainz and Discogs agree"
+
+[today.deezer]
+release = ["Rush (main)"]
+tracks = 7
+
+[today.musicbrainz]
+release = ["Rush (main)"]
+tracks = 7
+
+[today.discogs]
+release = ["Rush (main)"]
+tracks = 7
+
+[today.qobuz]
+release = ["Rush (main)"]
+tracks = 7
+
+[today.merge]
+release = ["Rush (main)"]
+tracks = 7
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Tom Sawyer"]
+artist = ["Rush"]
+album = ["Moving Pictures (2011 Remaster)"]
+albumartist = ["Rush"]
+date = ["2011-04-19"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Red Barchetta"]
+artist = ["Rush"]
+album = ["Moving Pictures (2011 Remaster)"]
+albumartist = ["Rush"]
+date = ["2011-04-19"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["YYZ"]
+artist = ["Rush"]
+album = ["Moving Pictures (2011 Remaster)"]
+albumartist = ["Rush"]
+date = ["2011-04-19"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Limelight"]
+artist = ["Rush"]
+album = ["Moving Pictures (2011 Remaster)"]
+albumartist = ["Rush"]
+date = ["2011-04-19"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["The Camera Eye"]
+artist = ["Rush"]
+album = ["Moving Pictures (2011 Remaster)"]
+albumartist = ["Rush"]
+date = ["2011-04-19"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Witch Hunt"]
+artist = ["Rush"]
+album = ["Moving Pictures (2011 Remaster)"]
+albumartist = ["Rush"]
+date = ["2011-04-19"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Vital Signs"]
+artist = ["Rush"]
+album = ["Moving Pictures (2011 Remaster)"]
+albumartist = ["Rush"]
+date = ["2011-04-19"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 942295,
+ "title": "Moving Pictures (2011 Remaster)",
+ "upc": "602527636993",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 152,
+    "name": "Rock"
+   }
+  ]
+ },
+ "label": "Mercury Records",
+ "release_date": "2011-04-19",
+ "record_type": "album",
+ "tracklist": [
+  {
+   "SNG_ID": "10303625",
+   "SNG_TITLE": "Tom Sawyer",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rush"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USMR18180103",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "10303626",
+   "SNG_TITLE": "Red Barchetta",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rush"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USMR18180104",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "10303627",
+   "SNG_TITLE": "YYZ",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rush"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USMR18180105",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "10"
+  },
+  {
+   "SNG_ID": "10303628",
+   "SNG_TITLE": "Limelight",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rush"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USMR18180106",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "10303629",
+   "SNG_TITLE": "The Camera Eye",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rush"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USMR18180107",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "10303630",
+   "SNG_TITLE": "Witch Hunt",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rush"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USMR18180108",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "10303631",
+   "SNG_TITLE": "Vital Signs",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Rush"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USMR18180109",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="715c7e25-4e52-428c-8b66-f12dd3f3c914"><title>Moving Pictures</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><release-group type="Album"><title>Moving Pictures</title><first-release-date>1981-02-06</first-release-date><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit></release-group><date>2011-04-05</date><release-event-list><release-event><date>2011-04-05</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Mercury Records</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Tom Sawyer</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Red Barchetta</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>YYZ</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Limelight</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>The Camera Eye</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Witch Hunt</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Vital Signs</title><artist-credit><name-credit><artist><name>Rush</name></artist></name-credit></artist-credit><first-release-date>1981-02-06</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 11868041,
+ "year": 2013,
+ "artists": [
+  {
+   "name": "Rush",
+   "id": 61800
+  }
+ ],
+ "labels": [
+  {
+   "name": "Mercury",
+   "catno": "none",
+   "id": 39357
+  }
+ ],
+ "formats": [
+  {
+   "name": "File",
+   "descriptions": [
+    "FLAC",
+    "Album",
+    "Remastered"
+   ]
+  }
+ ],
+ "title": "Moving Pictures",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Tom Sawyer",
+   "duration": "4:37"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Red Barchetta",
+   "duration": "6:12"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "YYZ",
+   "duration": "4:26"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Limelight",
+   "duration": "4:19"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "The Camera Eye",
+   "duration": "10:59"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Witch Hunt",
+   "duration": "4:46"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Vital Signs",
+   "duration": "4:45"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0060254724385",
+ "upc": "0060254724385",
+ "title": "Moving Pictures",
+ "version": null,
+ "tracks_count": 7,
+ "artist": {
+  "name": "Rush"
+ },
+ "genres_list": [
+  "Rock"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Tom Sawyer",
+    "version": "Album Version",
+    "track_number": 1
+   },
+   {
+    "title": "Red Barchetta",
+    "version": "Album Version",
+    "track_number": 2
+   },
+   {
+    "title": "YYZ",
+    "version": "Album Version",
+    "track_number": 3
+   },
+   {
+    "title": "Limelight",
+    "version": "Album Version",
+    "track_number": 4
+   },
+   {
+    "title": "The Camera Eye",
+    "version": "Album Version",
+    "track_number": 5
+   },
+   {
+    "title": "Witch Hunt",
+    "version": "Album Version",
+    "track_number": 6
+   },
+   {
+    "title": "Vital Signs",
+    "version": "Album Version",
+    "track_number": 7
+   }
+  ]
+ }
+}
+'''

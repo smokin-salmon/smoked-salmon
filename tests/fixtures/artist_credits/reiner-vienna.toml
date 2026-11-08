@@ -1,0 +1,678 @@
+album = "Fritz Reiner, Chicago Symphony Orchestra, Vienna (Strauss, Weber)"
+why = "One conductor and orchestra, four composers on one album (COMPOSER per track). Qobuz lists only Reiner, as main-artist and conductor, and no orchestra."
+edition = "RCA Living Stereo hybrid SACD (Deezer 8298628, MusicBrainz 4d9f6650 with its three layers, Discogs 5831655); Qobuz w6xss4wpaqt9a, UPC 0886445157598, a later issue"
+known_wrong = ["MusicBrainz parse: 30 tracks, the hybrid SACD's three layers counted as three discs", "Qobuz parse: the album lists only Reiner (main-artist, conductor); the orchestra, a main-artist on some tracks only, becomes a guest; Reiner main, not conductor"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+performers = ["Chicago Symphony Orchestra", "Fritz Reiner"]
+how_we_know = "Deezer's contributors and Discogs agree on Fritz Reiner and the Chicago Symphony Orchestra"
+
+[today.deezer]
+release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (main)"]
+tracks = 10
+
+[today.musicbrainz]
+release = ["Chicago Symphony Orchestra (main)", "Fritz Reiner (main)"]
+tracks = 30
+
+[today.discogs]
+release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (main)", "Johann Strauss Jr. (composer)", "Carl Maria von Weber (composer)", "Josef Strauß (composer)", "Fritz Reiner (arranger)", "Richard Strauss (composer)"]
+tracks = 10
+
+[today.qobuz]
+release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (guest)"]
+tracks = 10
+
+[today.merge]
+release = ["Fritz Reiner (main)", "Chicago Symphony Orchestra (main)", "Johann Strauss Jr. (composer)", "Carl Maria von Weber (composer)", "Josef Strauß (composer)", "Fritz Reiner (arranger)", "Richard Strauss (composer)"]
+tracks = 10
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Morning Papers, Op. 279"]
+artist = ["Fritz Reiner"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Emperor Waltz, Op. 437"]
+artist = ["Fritz Reiner", "Chicago Symphony Orchestra"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["On the Beautiful Blue Danube, Op. 314"]
+artist = ["Fritz Reiner"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Invitation to the Dance, Op. 65"]
+artist = ["Fritz Reiner"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Village Swallows, Op. 164"]
+artist = ["Fritz Reiner"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Der Rosenkavalier, Op. 59"]
+artist = ["Fritz Reiner"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Vienna Blood, Op. 354"]
+artist = ["Fritz Reiner", "Chicago Symphony Orchestra"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Roses from the South, Op. 388"]
+artist = ["Fritz Reiner", "Chicago Symphony Orchestra"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["The Gypsy Baron: Treasure Waltz, Op. 418"]
+artist = ["Fritz Reiner", "Chicago Symphony Orchestra"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Thunder and Lightning, Op. 324"]
+artist = ["Fritz Reiner", "Chicago Symphony Orchestra"]
+album = ["Vienna"]
+albumartist = ["Fritz Reiner"]
+date = ["2006-02-07"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 8298628,
+ "title": "Vienna",
+ "upc": "828767161556",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 98,
+    "name": "Classical"
+   },
+   {
+    "id": 186,
+    "name": "Christian"
+   },
+   {
+    "id": 187,
+    "name": "Gospel"
+   }
+  ]
+ },
+ "label": "Living Stereo",
+ "release_date": "2006-02-07",
+ "tracklist": [
+  {
+   "SNG_ID": "82635542",
+   "SNG_TITLE": "Morning Papers, Op. 279",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USBC10510038",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  },
+  {
+   "SNG_ID": "82635544",
+   "SNG_TITLE": "Emperor Waltz, Op. 437",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Chicago Symphony Orchestra"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USBC10510036",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "2"
+  },
+  {
+   "SNG_ID": "82635546",
+   "SNG_TITLE": "On the Beautiful Blue Danube, Op. 314",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USBC10510039",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  },
+  {
+   "SNG_ID": "82635548",
+   "SNG_TITLE": "Invitation to the Dance, Op. 65",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USBC10510037",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "82635550",
+   "SNG_TITLE": "Village Swallows, Op. 164",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USBC10510044",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  },
+  {
+   "SNG_ID": "82635552",
+   "SNG_TITLE": "Der Rosenkavalier, Op. 59",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USBC10510035",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  },
+  {
+   "SNG_ID": "82635554",
+   "SNG_TITLE": "Vienna Blood, Op. 354",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Chicago Symphony Orchestra"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USBC10510043",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  },
+  {
+   "SNG_ID": "82635556",
+   "SNG_TITLE": "Roses from the South, Op. 388",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Chicago Symphony Orchestra"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USBC10510040",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  },
+  {
+   "SNG_ID": "82635558",
+   "SNG_TITLE": "The Gypsy Baron: Treasure Waltz, Op. 418",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Chicago Symphony Orchestra"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USBC10510042",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  },
+  {
+   "SNG_ID": "82635560",
+   "SNG_TITLE": "Thunder and Lightning, Op. 324",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Chicago Symphony Orchestra"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USBC10510041",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "0"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="4d9f6650-b2f5-41f1-a536-a7bdabff85a0"><title>Vienna</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><release-group><title>Vienna</title><first-release-date>1995</first-release-date><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit><name-credit><artist><name>Carl Maria von Weber</name></artist></name-credit><name-credit><artist><name>Richard Strauss</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit></artist-credit></release-group><date>2006-02-07</date><release-event-list><release-event><date>2006-02-07</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>82876-71615-2</catalog-number><label><name>RCA Red Seal</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Morning Papers, op. 279</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>2</position><number>2</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Emperor Waltz, op. 437</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1996</first-release-date></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>On the Beautiful Blue Danube, op. 314</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>4</position><number>4</number><artist-credit><name-credit><artist><name>Carl Maria von Weber</name></artist></name-credit></artist-credit><recording><title>Invitation to the Dance, op. 65</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>2006-02-07</first-release-date></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit><artist><name>Josef Strauss</name></artist></name-credit></artist-credit><recording><title>Village Swallows, op. 164</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit><artist><name>Richard Strauss</name></artist></name-credit></artist-credit><recording><title>Der Rosenkavalier: Waltzes</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1997</first-release-date></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Vienna Blood, op. 354</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>8</position><number>8</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Roses from the South, op. 388</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>9</position><number>9</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Treasure Waltz, op. 418</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>10</position><number>10</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Thunder and Lightning, op. 324</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track></track-list></medium><medium><position>2</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Morning Papers, op. 279</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>2</position><number>2</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Emperor Waltz, op. 437</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1996</first-release-date></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>On the Beautiful Blue Danube, op. 314</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>4</position><number>4</number><artist-credit><name-credit><artist><name>Carl Maria von Weber</name></artist></name-credit></artist-credit><recording><title>Invitation to the Dance, op. 65</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>2006-02-07</first-release-date></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit><artist><name>Josef Strauss</name></artist></name-credit></artist-credit><recording><title>Village Swallows, op. 164</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit><artist><name>Richard Strauss</name></artist></name-credit></artist-credit><recording><title>Der Rosenkavalier: Waltzes</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1997</first-release-date></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Vienna Blood, op. 354</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>8</position><number>8</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Roses from the South, op. 388</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>9</position><number>9</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Treasure Waltz, op. 418</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>10</position><number>10</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Thunder and Lightning, op. 324</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track></track-list></medium><medium><position>3</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Morning Papers, op. 279</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>2</position><number>2</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Emperor Waltz, op. 437</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1996</first-release-date></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>On the Beautiful Blue Danube, op. 314</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>4</position><number>4</number><artist-credit><name-credit><artist><name>Carl Maria von Weber</name></artist></name-credit></artist-credit><recording><title>Invitation to the Dance, op. 65</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>2006-02-07</first-release-date></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit><artist><name>Josef Strauss</name></artist></name-credit></artist-credit><recording><title>Village Swallows, op. 164</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit><artist><name>Richard Strauss</name></artist></name-credit></artist-credit><recording><title>Der Rosenkavalier: Waltzes</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1997</first-release-date></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Vienna Blood, op. 354</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>8</position><number>8</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Roses from the South, op. 388</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>9</position><number>9</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Treasure Waltz, op. 418</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>10</position><number>10</number><artist-credit><name-credit><name>Johann Strauss, Jr.</name><artist><name>Johann Strauss</name></artist></name-credit></artist-credit><recording><title>Thunder and Lightning, op. 324</title><artist-credit><name-credit><artist><name>Chicago Symphony Orchestra</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 5831655,
+ "year": 2006,
+ "artists": [
+  {
+   "name": "Fritz Reiner",
+   "anv": "",
+   "role": "",
+   "id": 406283
+  },
+  {
+   "name": "Chicago Symphony Orchestra",
+   "anv": "",
+   "role": "",
+   "id": 837562
+  }
+ ],
+ "labels": [
+  {
+   "name": "RCA Victor Red Seal",
+   "catno": "82876-71615-2",
+   "id": 89473
+  }
+ ],
+ "formats": [
+  {
+   "name": "SACD",
+   "descriptions": [
+    "Compilation",
+    "Hybrid",
+    "Multichannel",
+    "Reissue",
+    "Remastered"
+   ]
+  }
+ ],
+ "title": "Vienna",
+ "genres": [
+  "Classical"
+ ],
+ "tracklist": [
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "Johann Strauss, Jr. (1825-1899)",
+   "duration": ""
+  },
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Morning Papers, Op. 279",
+   "extraartists": [
+    {
+     "name": "Johann Strauss Jr.",
+     "anv": "",
+     "role": "Composed By",
+     "id": 1259101
+    }
+   ],
+   "duration": "8:10"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Emperor Waltz, Op. 437",
+   "extraartists": [
+    {
+     "name": "Johann Strauss Jr.",
+     "anv": "",
+     "role": "Composed By",
+     "id": 1259101
+    }
+   ],
+   "duration": "7:42"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "On The Beautiful Blue Danube, Op. 314",
+   "extraartists": [
+    {
+     "name": "Johann Strauss Jr.",
+     "anv": "",
+     "role": "Composed By",
+     "id": 1259101
+    }
+   ],
+   "duration": "8:12"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "Carl Maria Von Weber (1786-1826)",
+   "duration": ""
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Invitation To The Dance, Op. 65",
+   "extraartists": [
+    {
+     "name": "Carl Maria von Weber",
+     "anv": "",
+     "role": "Composed By",
+     "id": 620726
+    }
+   ],
+   "duration": "8:57"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "Josef Strauss (1827-1870)",
+   "duration": ""
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Village Swallows, Op. 164",
+   "extraartists": [
+    {
+     "name": "Josef Strauß",
+     "anv": "Josef Strauss",
+     "role": "Composed By",
+     "id": 836585
+    }
+   ],
+   "duration": "7:36"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "Richard Strauss (1864-1949)",
+   "duration": ""
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Der Rosenkavalier: Waltzes",
+   "extraartists": [
+    {
+     "name": "Fritz Reiner",
+     "anv": "",
+     "role": "Arranged By",
+     "id": 406283
+    },
+    {
+     "name": "Richard Strauss",
+     "anv": "",
+     "role": "Composed By",
+     "id": 108439
+    }
+   ],
+   "duration": "8:41"
+  },
+  {
+   "position": "",
+   "type_": "heading",
+   "title": "Johann Strauss, Jr.",
+   "duration": ""
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Vienna Blood, Op. 354",
+   "duration": "8:56"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Roses From The South, Op. 388",
+   "duration": "8:41"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Treasure Waltz, Op. 418",
+   "duration": "8:07"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Thunder And Lightning, Op. 324",
+   "duration": "2:57"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Johann Strauss Jr.",
+   "anv": "",
+   "role": "Composed By",
+   "id": 1259101
+  },
+  {
+   "name": "Fritz Reiner",
+   "anv": "",
+   "role": "Conductor",
+   "id": 406283
+  },
+  {
+   "name": "Dirk Sobotka",
+   "anv": "",
+   "role": "Engineer [DSD]",
+   "id": 658453
+  },
+  {
+   "name": "Mark Donahue",
+   "anv": "",
+   "role": "Engineer [Mastering]",
+   "id": 655561
+  },
+  {
+   "name": "Lewis Layton",
+   "anv": "",
+   "role": "Engineer [Recording]",
+   "id": 905683
+  },
+  {
+   "name": "Joseph Wechsberg",
+   "anv": "",
+   "role": "Liner Notes",
+   "id": 1704304
+  },
+  {
+   "name": "Chicago Symphony Orchestra",
+   "anv": "",
+   "role": "Orchestra",
+   "id": 837562
+  },
+  {
+   "name": "Richard Mohr",
+   "anv": "",
+   "role": "Producer",
+   "id": 884261
+  },
+  {
+   "name": "Daniel Guss",
+   "anv": "",
+   "role": "Reissue Producer",
+   "id": 905684
+  },
+  {
+   "name": "John Newton",
+   "anv": "",
+   "role": "Supervised By [Mastering]",
+   "id": 373577
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "w6xss4wpaqt9a",
+ "upc": "0886445157598",
+ "title": "Vienna",
+ "tracks_count": 10,
+ "artist": {
+  "name": "Fritz Reiner"
+ },
+ "genres_list": [
+  "Classical"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Morning Papers, Op. 279",
+    "track_number": 1,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+   },
+   {
+    "title": "Emperor Waltz, Op. 437",
+    "track_number": 2,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+   },
+   {
+    "title": "On the Beautiful Blue Danube, Op. 314",
+    "track_number": 3,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+   },
+   {
+    "title": "Invitation to the Dance, Op. 65",
+    "track_number": 4,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Carl Maria Von Weber, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+   },
+   {
+    "title": "Village Swallows, Op. 164",
+    "track_number": 5,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, AssociatedPerformer - Josef Strauss, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+   },
+   {
+    "title": "Der Rosenkavalier, Op. 59",
+    "track_number": 6,
+    "performers": "Fritz Reiner, MainArtist, Conductor, Arranger - Chicago Symphony Orchestra, AssociatedPerformer - Richard Strauss, Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer - Tim Schumacher, Coordinator"
+   },
+   {
+    "title": "Vienna Blood, Op. 354",
+    "track_number": 7,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+   },
+   {
+    "title": "Roses from the South, Op. 388",
+    "track_number": 8,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+   },
+   {
+    "title": "The Gypsy Baron: Treasure Waltz, Op. 418",
+    "track_number": 9,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+   },
+   {
+    "title": "Thunder and Lightning, Op. 324",
+    "track_number": 10,
+    "performers": "Fritz Reiner, MainArtist, Conductor - Chicago Symphony Orchestra, MainArtist, AssociatedPerformer - Johann Strauss, Jr., Composer - Richard Mohr, Producer - Lewis Layton, Recording Engineer - Mark Donahue, Mastering Engineer - Dirk Sobotka, Re-Mastering Engineer - John Newton, Re-Mastering Supervisor - Daniel Guss, Reissue Producer"
+   }
+  ]
+ }
+}
+'''

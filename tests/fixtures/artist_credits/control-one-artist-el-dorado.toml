@@ -1,0 +1,566 @@
+album = "Marcus King, El Dorado"
+why = "The control: one artist, every store agreeing; any change that moves it is a regression."
+edition = "Discogs 16764408 is the digital issue under master 1669263."
+known_wrong = []
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Marcus King"]
+how_we_know = "Deezer, MusicBrainz and Qobuz agree (three sources)"
+
+[today.deezer]
+release = ["Marcus King (main)"]
+tracks = 12
+
+[today.musicbrainz]
+release = ["Marcus King (main)"]
+tracks = 12
+
+[today.discogs]
+release = ["Marcus King (main)"]
+tracks = 12
+
+[today.qobuz]
+release = ["Marcus King (main)"]
+tracks = 12
+
+[today.merge]
+release = ["Marcus King (main)"]
+tracks = 12
+
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Young Man’s Dream"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["The Well"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Wildflowers & Wine"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["One Day She’s Here"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Sweet Mariona"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Beautiful Stranger"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Break"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Say You Will"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Turn It Up"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Too Much Whiskey"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Love Song"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["No Pain"]
+artist = ["Marcus King"]
+album = ["El Dorado"]
+albumartist = ["Marcus King"]
+date = ["2020-01-17"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 126485492,
+ "title": "El Dorado",
+ "upc": "888072128347",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 152,
+    "name": "Rock"
+   }
+  ]
+ },
+ "label": "Fantasy",
+ "release_date": "2020-01-17",
+ "tracklist": [
+  {
+   "SNG_ID": "851337292",
+   "SNG_TITLE": "Young Man’s Dream",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USC4R1906976",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "851337302",
+   "SNG_TITLE": "The Well",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USC4R1906988",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "851337312",
+   "SNG_TITLE": "Wildflowers & Wine",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USC4R1906989",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "851337322",
+   "SNG_TITLE": "One Day She’s Here",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USC4R1906990",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "851337332",
+   "SNG_TITLE": "Sweet Mariona",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USC4R1906991",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "851337342",
+   "SNG_TITLE": "Beautiful Stranger",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USC4R1906992",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "851337352",
+   "SNG_TITLE": "Break",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USC4R1906993",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "851337362",
+   "SNG_TITLE": "Say You Will",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USC4R1906994",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "851337372",
+   "SNG_TITLE": "Turn It Up",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USC4R1906995",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "851337382",
+   "SNG_TITLE": "Too Much Whiskey",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USC4R1906996",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "851337392",
+   "SNG_TITLE": "Love Song",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USC4R1906997",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "851337402",
+   "SNG_TITLE": "No Pain",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Marcus King"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USC4R1906998",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="60134dd5-b1f0-40cc-adc8-6a346b0b32a1"><title>El Dorado</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit><date>2020-01-17</date><release-event-list><release-event><date>2020-01-17</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Easy Eye Sound</name></label></label-info><label-info><label><name>Fantasy</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Young Man’s Dream</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><recording><title>The Well</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><recording><title>Wildflowers &amp; Wine</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><recording><title>One Day She’s Here</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>Sweet Mariona</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><recording><title>Beautiful Stranger</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>Break</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Say You Will</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><recording><title>Turn It Up</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><recording><title>Too Much Whiskey</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><recording><title>Love Song</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track><track><position>12</position><number>12</number><recording><title>No Pain</title><artist-credit><name-credit><artist><name>Marcus King</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 16764408,
+ "year": 2020,
+ "artists": [
+  {
+   "name": "Marcus King (2)",
+   "id": 6362532
+  }
+ ],
+ "labels": [
+  {
+   "name": "Fantasy",
+   "catno": "none",
+   "id": 1329
+  }
+ ],
+ "formats": [
+  {
+   "name": "File"
+  }
+ ],
+ "title": "El Dorado",
+ "released": "2020-01-17",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Young Man's Dream",
+   "duration": "3:08"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "The Well",
+   "duration": "2:57"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Wildflowers & Wine",
+   "duration": "4:48"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "One Day She's Here",
+   "duration": "3:47"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Sweet Mariona",
+   "duration": "2:34"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Beautiful Stranger",
+   "duration": "4:07"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Break",
+   "duration": "3:00"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Say You Will",
+   "duration": "3:54"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Turn It Up",
+   "duration": "3:38"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Too Much Whiskey",
+   "duration": "3:54"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "title": "Love Song",
+   "duration": "2:30"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "title": "No Pain",
+   "duration": "3:53"
+  }
+ ]
+}
+'''
+
+qobuz = '''
+{
+ "id": "edxtab347et3b",
+ "upc": "0888072128347",
+ "title": "El Dorado",
+ "tracks_count": 12,
+ "artist": {
+  "name": "Marcus King"
+ },
+ "genres_list": [
+  "Rock"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Young Man’s Dream",
+    "track_number": 1
+   },
+   {
+    "title": "The Well",
+    "track_number": 2
+   },
+   {
+    "title": "Wildflowers & Wine",
+    "track_number": 3
+   },
+   {
+    "title": "One Day She’s Here",
+    "track_number": 4
+   },
+   {
+    "title": "Sweet Mariona",
+    "track_number": 5
+   },
+   {
+    "title": "Beautiful Stranger",
+    "track_number": 6
+   },
+   {
+    "title": "Break",
+    "track_number": 7
+   },
+   {
+    "title": "Say You Will",
+    "track_number": 8
+   },
+   {
+    "title": "Turn It Up",
+    "track_number": 9
+   },
+   {
+    "title": "Too Much Whiskey",
+    "track_number": 10
+   },
+   {
+    "title": "Love Song",
+    "track_number": 11
+   },
+   {
+    "title": "No Pain",
+    "track_number": 12
+   }
+  ]
+ }
+}
+'''

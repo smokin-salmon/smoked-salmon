@@ -1,0 +1,593 @@
+album = "Fritz Reiner, Wiener Philharmoniker: Brahms Hungarian Dances, Dvořák Slavonic Dances"
+why = "Two composers, one orchestra and conductor (Reiner, Wiener Philharmoniker, Sofiensaal June 1960: Decca SXL 2249 / London CS 6198): COMPOSER per work, ARTIST orchestra then conductor. Discogs' parse loses every track."
+edition = "Deezer 579002271: Archipel 2023 remaster of the same 1960 recording, 13 tracks (Brahms and Dvořák only; Decca's own digital, 028948102617, adds Strauss); MusicBrainz 688898bc: Decca Weekend Classics CD 417 696-2 (1988, 028941769626, 13 tracks); Discogs 4899421: the same Decca CD. The original: Discogs master 591895, London CS 6198 (US, Nov 1960), Decca SXL 2249 (UK, 1961)"
+known_wrong = ["Discogs parse: 0 tracks: the tracklist is two index tracks (Hungarian Dances, 8 sub-tracks; Slavonic Dances, 5) and the parser drops sub-tracks", "Deezer parse: ARTIST 'Fritz Reiner & Vienna Philharmonic', conductor before orchestra; Reiner main, not conductor", "Deezer and MusicBrainz parse: no COMPOSER role on any track (Brahms, Dvořák absent)"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+performers = ["Wiener Philharmoniker", "Fritz Reiner"]
+how_we_know = "Deezer, MusicBrainz and Qobuz all credit the orchestra and Reiner"
+
+[right.name_forms]
+"Wiener Philharmoniker" = ["Vienna Philharmonic", "Vienna Philharmonic Orchestra"]
+
+[today.deezer]
+release = ["Fritz Reiner (main)", "Vienna Philharmonic (main)"]
+tracks = 13
+
+[today.musicbrainz]
+release = ["Wiener Philharmoniker (main)", "Fritz Reiner (main)"]
+tracks = 13
+
+[today.discogs]
+release = []
+tracks = 0
+
+[today.qobuz]
+release = ["Fritz Reiner (main)", "Vienna Philharmonic (guest)"]
+tracks = 13
+
+[today.merge]
+release = ["Fritz Reiner (main)", "Vienna Philharmonic (main)", "Wiener Philharmoniker (main)"]
+tracks = 13
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 5, Allegro (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 6, Vivace (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 7, Allegretto (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 12, Presto (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 13, Andantino grazioso (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 19, Allegretto (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 21, Vivace (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 1, Allegro molto (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Slavonic Dances, Op. 46, B. 83: No. 1, Furiant in C Major (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Slavonic Dances, Op. 46, B. 83: No. 3, Polka in A-Flat Major (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Slavonic Dances, Op. 46, B. 83: No. 8, Furiant in G Minor (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Slavonic Dances, Op. 72, B. 147: No. 2, Dumka in E Minor (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Slavonic Dances, Op. 72, B. 147: No. 1, Odzemek in B Major (Remastered 2023)"]
+artist = ["Fritz Reiner", "Vienna Philharmonic"]
+album = ["Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)"]
+albumartist = ["Fritz Reiner"]
+date = ["2011-12-07"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 579002271,
+ "title": "Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) (Remastered 2023)",
+ "upc": "4035122408218",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 98,
+    "name": "Classical"
+   }
+  ]
+ },
+ "label": "Archipel",
+ "release_date": "2011-12-07",
+ "tracklist": [
+  {
+   "SNG_ID": "2769689191",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 5, Allegro",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USB8U2203206",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689201",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 6, Vivace",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USB8U2203207",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689211",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 7, Allegretto",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USB8U2203208",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689221",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 12, Presto",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USB8U2203209",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689231",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 13, Andantino grazioso",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USB8U2203210",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689241",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 19, Allegretto",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USB8U2203211",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689251",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 21, Vivace",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USB8U2203212",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689261",
+   "SNG_TITLE": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 1, Allegro molto",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USB8U2203213",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689271",
+   "SNG_TITLE": "Slavonic Dances, Op. 46, B. 83: No. 1, Furiant in C Major",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USB8U2203214",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689281",
+   "SNG_TITLE": "Slavonic Dances, Op. 46, B. 83: No. 3, Polka in A-Flat Major",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USB8U2203215",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689291",
+   "SNG_TITLE": "Slavonic Dances, Op. 46, B. 83: No. 8, Furiant in G Minor",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USB8U2203216",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689301",
+   "SNG_TITLE": "Slavonic Dances, Op. 72, B. 147: No. 2, Dumka in E Minor",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USB8U2203217",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  },
+  {
+   "SNG_ID": "2769689311",
+   "SNG_TITLE": "Slavonic Dances, Op. 72, B. 147: No. 1, Odzemek in B Major",
+   "VERSION": "(Remastered 2023)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Fritz Reiner",
+     "Vienna Philharmonic"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "USB8U2203218",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "1"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="688898bc-bd01-49e2-be81-d05bb10e0340"><title>Weekend Classics: Slavonic Dances, Hungarian Dances</title><artist-credit><name-credit><name>Dvořák</name><artist><name>Antonín Dvořák</name></artist></name-credit><name-credit><name>Brahms</name><artist><name>Johannes Brahms</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit><date>1988</date><release-event-list><release-event><date>1988</date></release-event></release-event-list><cover-art-archive><front>false</front></cover-art-archive><label-info-list><label-info><catalog-number>417 696-2</catalog-number><label><name>Decca Classics</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 5 in G minor</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><title>Hungarian Dances: no. 6 in D major</title><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 6 in D-flat major</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 7 in A major</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 12 in D minor</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 13 in D major</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 19 in B minor</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 21 in E minor</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Hungarian Dances: no. 1 in G minor</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><title>Slavonic Dances: no. 1 in C major, op.46</title><artist-credit><name-credit><artist><name>Antonín Dvořák</name></artist></name-credit></artist-credit><recording><title>Slavonic Dances, op. 46: no. 1 in C major: Presto</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><title>Slavonic Dances: no. 3 in A flat major, op.46</title><artist-credit><name-credit><artist><name>Antonín Dvořák</name></artist></name-credit></artist-credit><recording><title>Slavonic Dances, op. 46: no. 3 in A-flat major: Poco allegro</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><title>Slavonic Dances: no. 8 in G minor, op.46</title><artist-credit><name-credit><artist><name>Antonín Dvořák</name></artist></name-credit></artist-credit><recording><title>Slavonic Dances, op. 46: no. 8 in G minor: Presto</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>12</position><number>12</number><title>Slavonic Dances: no. 10 in E minor, op.72</title><artist-credit><name-credit><artist><name>Antonín Dvořák</name></artist></name-credit></artist-credit><recording><title>Slavonic Dances, op. 72: no. 2 in E minor: Allegretto grazioso</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track><track><position>13</position><number>13</number><title>Slavonic Dances: no. 9 in B major, op.72</title><artist-credit><name-credit><artist><name>Antonín Dvořák</name></artist></name-credit></artist-credit><recording><title>Slavonic Dances, op. 72: no. 1 in B major: Molto vivace</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Fritz Reiner</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 4899421,
+ "year": 1988,
+ "labels": [
+  {
+   "name": "Decca",
+   "catno": "417 696-2",
+   "id": 5320
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "Hungarian Dances / Slavonic Dances",
+ "genres": [
+  "Classical"
+ ],
+ "tracklist": [
+  {
+   "type_": "index",
+   "title": "Hungarian Dances"
+  },
+  {
+   "type_": "index",
+   "title": "Slavonic Dances"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "h8hthc5tmmkmb",
+ "upc": "4035122408218",
+ "title": "Brahms: 21 Hungarian Dances, WoO 1 - Dvořák: Slavonic Dances, Opp. 46 & 72 (Version for Orchestra) ",
+ "version": "Remastered 2023",
+ "tracks_count": 13,
+ "artist": {
+  "name": "Fritz Reiner"
+ },
+ "genres_list": [
+  "Classical"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 5, Allegro ",
+    "version": "Remastered 2023",
+    "track_number": 1,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 6, Vivace ",
+    "version": "Remastered 2023",
+    "track_number": 2,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 7, Allegretto ",
+    "version": "Remastered 2023",
+    "track_number": 3,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 12, Presto ",
+    "version": "Remastered 2023",
+    "track_number": 4,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 13, Andantino grazioso ",
+    "version": "Remastered 2023",
+    "track_number": 5,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 19, Allegretto ",
+    "version": "Remastered 2023",
+    "track_number": 6,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 21, Vivace ",
+    "version": "Remastered 2023",
+    "track_number": 7,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "21 Hungarian Dances, WoO 1 (Version for Orchestra): No. 1, Allegro molto ",
+    "version": "Remastered 2023",
+    "track_number": 8,
+    "performers": "Johannes Brahms, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "Slavonic Dances, Op. 46, B. 83: No. 1, Furiant in C Major ",
+    "version": "Remastered 2023",
+    "track_number": 9,
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "Slavonic Dances, Op. 46, B. 83: No. 3, Polka in A-Flat Major ",
+    "version": "Remastered 2023",
+    "track_number": 10,
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "Slavonic Dances, Op. 46, B. 83: No. 8, Furiant in G Minor ",
+    "version": "Remastered 2023",
+    "track_number": 11,
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "Slavonic Dances, Op. 72, B. 147: No. 2, Dumka in E Minor ",
+    "version": "Remastered 2023",
+    "track_number": 12,
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Conductor, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   },
+   {
+    "title": "Slavonic Dances, Op. 72, B. 147: No. 1, Odzemek in B Major ",
+    "version": "Remastered 2023",
+    "track_number": 13,
+    "performers": "Antonín Dvorák, Composer - Fritz Reiner, Composer, MainArtist - Vienna Philharmonic, Orchestra, MainArtist"
+   }
+  ]
+ }
+}
+'''

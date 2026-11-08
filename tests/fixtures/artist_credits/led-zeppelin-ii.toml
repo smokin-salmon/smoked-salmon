@@ -1,0 +1,525 @@
+album = "Led Zeppelin, Led Zeppelin II"
+why = "A band whose stores list the members (Discogs: Page, Plant, Jones, Bonham as writers on every track, Page as producer): the members must not become artists."
+edition = "Remaster, 9 tracks (Deezer 1031379282 = MusicBrainz 0d1fc06f by barcode); Discogs 1846223 is master 4170's main release (1969 Atlantic LP), another edition"
+known_wrong = []
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Led Zeppelin"]
+how_we_know = "every store agrees"
+
+[today.deezer]
+release = ["Led Zeppelin (main)"]
+tracks = 9
+
+[today.musicbrainz]
+release = ["Led Zeppelin (main)"]
+tracks = 9
+
+[today.discogs]
+release = ["Led Zeppelin (main)"]
+tracks = 9
+
+[today.qobuz]
+release = ["Led Zeppelin (main)"]
+tracks = 17
+
+[today.merge]
+release = ["Led Zeppelin (main)"]
+tracks = 9
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Whole Lotta Love (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["What Is and What Should Never Be (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["The Lemon Song (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Thank You (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Heartbreaker (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Living Loving Maid (She's Just a Woman) (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Ramble On (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Moby Dick (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Bring It on Home (Remaster)"]
+artist = ["Led Zeppelin"]
+album = ["Led Zeppelin II (Remaster)"]
+albumartist = ["Led Zeppelin"]
+date = ["1969-10-22"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 1031379282,
+ "title": "Led Zeppelin II (Remaster)",
+ "upc": "603497900831",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 152,
+    "name": "Rock"
+   }
+  ]
+ },
+ "label": "Atlantic Records",
+ "release_date": "1969-10-22",
+ "tracklist": [
+  {
+   "SNG_ID": "4159768742",
+   "SNG_TITLE": "Whole Lotta Love",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USAT21300925",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "4159768752",
+   "SNG_TITLE": "What Is and What Should Never Be",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USAT21300926",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "4159768762",
+   "SNG_TITLE": "The Lemon Song",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USAT21300927",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "4159768772",
+   "SNG_TITLE": "Thank You",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USAT21300928",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "4159768782",
+   "SNG_TITLE": "Heartbreaker",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USAT21300929",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "4159768792",
+   "SNG_TITLE": "Living Loving Maid (She's Just a Woman)",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USAT21300930",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "4159768802",
+   "SNG_TITLE": "Ramble On",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USAT21300931",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "4159768812",
+   "SNG_TITLE": "Moby Dick",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USAT21300932",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "4159768822",
+   "SNG_TITLE": "Bring It on Home",
+   "VERSION": "(Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Led Zeppelin"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USAT21300933",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="0d1fc06f-4dcb-45b0-8fae-33deb44f46ed"><title>Led Zeppelin II</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><release-group><title>Led Zeppelin II</title><first-release-date>1969-10-22</first-release-date><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit></release-group><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Atlantic</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Whole Lotta Love</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>What Is and What Should Never Be</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>The Lemon Song</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Thank You</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Heartbreaker</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Living Loving Maid (She’s Just a Woman)</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Ramble On</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Moby Dick</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Bring It On Home</title><artist-credit><name-credit><artist><name>Led Zeppelin</name></artist></name-credit></artist-credit><first-release-date>1969-10-22</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 1846223,
+ "year": 1969,
+ "artists": [
+  {
+   "name": "Led Zeppelin",
+   "id": 34278
+  }
+ ],
+ "labels": [
+  {
+   "name": "Atlantic",
+   "catno": "588198",
+   "id": 681
+  },
+  {
+   "name": "Atlantic",
+   "catno": "588 198",
+   "id": 681
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl"
+  }
+ ],
+ "title": "Led Zeppelin II",
+ "released": "1969-10-22",
+ "genres": [
+  "Rock"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "Whole Lotta Love"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "What Is And What Should Never Be"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "The Lemon Song"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "Thank You"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Heartbreaker"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Livin' Lovin' Maid (She's Just A Woman)"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "Ramble On"
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "Moby Dick"
+  },
+  {
+   "position": "B5",
+   "type_": "track",
+   "title": "Bring It On Home"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0603497920068",
+ "upc": "0603497920068",
+ "title": "Led Zeppelin II (HD Remastered Deluxe Edition)",
+ "version": "Deluxe Edition",
+ "tracks_count": 17,
+ "artist": {
+  "name": "Led Zeppelin"
+ },
+ "genres_list": [
+  "Rock"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Whole Lotta Love ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 1
+   },
+   {
+    "title": "What Is and What Should Never Be ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 2
+   },
+   {
+    "title": "The Lemon Song ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 3
+   },
+   {
+    "title": "Thank You ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 4
+   },
+   {
+    "title": "Heartbreaker ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 5
+   },
+   {
+    "title": "Living Loving Maid (She's Just a Woman) ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 6
+   },
+   {
+    "title": "Ramble On ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 7
+   },
+   {
+    "title": "Moby Dick ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 8
+   },
+   {
+    "title": "Bring It on Home ",
+    "version": "Remaster",
+    "media_number": 1,
+    "track_number": 9
+   },
+   {
+    "title": "Whole Lotta Love ",
+    "version": "Rough Mix with Vocal",
+    "media_number": 2,
+    "track_number": 1
+   },
+   {
+    "title": "What Is and What Should Never Be ",
+    "version": "Rough Mix with Vocal",
+    "media_number": 2,
+    "track_number": 2
+   },
+   {
+    "title": "Thank You ",
+    "version": "Backing Track",
+    "media_number": 2,
+    "track_number": 3
+   },
+   {
+    "title": "Heartbreaker ",
+    "version": "Rough Mix with Vocal",
+    "media_number": 2,
+    "track_number": 4
+   },
+   {
+    "title": "Living Loving Maid (She's Just a Woman) ",
+    "version": "Backing Track",
+    "media_number": 2,
+    "track_number": 5
+   },
+   {
+    "title": "Ramble On ",
+    "version": "Rough Mix with Vocal",
+    "media_number": 2,
+    "track_number": 6
+   },
+   {
+    "title": "Moby Dick ",
+    "version": "Intro / Outro Rough Mix",
+    "media_number": 2,
+    "track_number": 7
+   },
+   {
+    "title": "La La ",
+    "version": "Backing Track",
+    "media_number": 2,
+    "track_number": 8
+   }
+  ]
+ }
+}
+'''

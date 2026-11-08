@@ -1,0 +1,1346 @@
+album = "Kanye West, My Beautiful Dark Twisted Fantasy"
+why = "A rapper's album with up to five featured guests on a track, guests who are also the album's writers and producers."
+edition = "Roc-A-Fella 2010, 13 tracks (Deezer 707965 = MusicBrainz ef748325 by barcode; Discogs 9723759, linked from MusicBrainz). Chosen as the standard edition every store has. Qobuz 0060252747446 is the same UPC less its check digit, the same 13 tracks."
+known_wrong = ["MusicBrainz parse: 'Ye' (the artist's later name) as the main, not the credited 'Kanye West'", "merge: 'Kanye West & Ye' on every track, MusicBrainz's 'Ye' beside the stores' 'Kanye West', whatever the files' tag shape", "merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so every guest is made main and ALBUMARTIST is 'Various'", "merge: Jay-Z main and guest at once in two spellings: 'Kanye West, JAŸ-Z, ... (feat. JAY Z)'"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Kanye West"]
+not_main = ["Kid Cudi", "Raekwon", "Jay-Z", "JAŸ-Z", "Jay‐Z", "Rick Ross", "Nicki Minaj", "Bon Iver", "Pusha T", "CyHi da Prynce", "Prynce Cy Hi", "Swizz Beatz", "RZA", "The RZA", "John Legend"]
+how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Kanye West as the release artist and the others as featured on their tracks"
+open = "'Lost In The World': Qobuz's own title adds '(feat. Justin Vernon)' beside Bon Iver, his band, so the merge writes both; whether to keep one person under two names is not settled"
+
+[today.deezer]
+release = ["Kanye West (main)", "Kid Cudi (guest)", "Raekwon (guest)", "JAY Z (guest)", "Rick Ross (guest)", "Nicki Minaj (guest)", "Bon Iver (guest)", "Pusha T (guest)", "Prynce Cy Hi (guest)", "Swizz Beatz (guest)", "RZA (guest)", "John Legend (guest)"]
+tracks = 13
+
+[today.musicbrainz]
+release = ["Ye (main)", "Kid Cudi (guest)", "Raekwon (guest)", "JAŸ-Z (guest)", "Rick Ross (guest)", "Nicki Minaj (guest)", "Bon Iver (guest)", "Pusha T (guest)", "Cyhi (guest)", "Swizz Beatz (guest)", "RZA (guest)", "John Legend (guest)"]
+tracks = 13
+
+[today.discogs]
+release = ["Kanye West (main)", "No I.D. (producer)", "RZA (producer)", "Kid Cudi (guest)", "Raekwon (guest)", "Mike Dean (producer)", "Symbolyc One (producer)", "Bon Iver (guest)", "Jay-Z (guest)", "Nicki Minaj (guest)", "Rick Ross (guest)", "CyHi Da Prynce (guest)", "Pusha T (guest)", "RZA (guest)", "Swizz Beatz (guest)", "Bink! (producer)", "John Legend (guest)", "Frank E (producer)"]
+tracks = 13
+
+[today.qobuz]
+release = ["Kanye West (main)", "Kid Cudi (guest)", "Raekwon (guest)", "Jay-Z (guest)", "Rick Ross (guest)", "Nicki Minaj (guest)", "Bon Iver (guest)", "Pusha T (guest)", "Prynce Cy Hi (guest)", "Swizz Beatz (guest)", "RZA (guest)", "John Legend (guest)", "Justin Vernon (guest)"]
+tracks = 13
+
+[today.merge]
+release = ["Kanye West (main)", "Ye (main)", "No I.D. (producer)", "RZA (producer)", "Kid Cudi (main)", "Raekwon (main)", "Mike Dean (producer)", "Symbolyc One (producer)", "JAŸ-Z (main)", "Rick Ross (main)", "Nicki Minaj (main)", "Bon Iver (main)", "JAY Z (guest)", "Pusha T (main)", "Prynce Cy Hi (main)", "Swizz Beatz (main)", "RZA (main)", "CyHi Da Prynce (guest)", "Bink! (producer)", "John Legend (main)", "Frank E (producer)", "Justin Vernon (guest)"]
+tracks = 13
+
+[today.output]
+albumartist = "Various"
+tracks = ["Kanye West & Ye | Dark Fantasy", "Kanye West, Kid Cudi, Raekwon, Ye | Gorgeous", "Kanye West & Ye | Power", "Kanye West & Ye | All Of The Lights (Interlude)", "Kanye West & Ye | All Of The Lights", "Kanye West, JAŸ-Z, Rick Ross, Nicki Minaj, Bon Iver, Ye (feat. JAY Z) | Monster", "Kanye West, JAŸ-Z, Pusha T, Prynce Cy Hi, Swizz Beatz, RZA, Ye (feat. JAY Z & CyHi Da Prynce) | So Appalled", "Kanye West, Rick Ross, Ye | Devil In A New Dress", "Kanye West, Pusha T, Ye | Runaway", "Kanye West & Ye | Hell Of A Life", "Kanye West, John Legend, Ye | Blame Game", "Kanye West, Bon Iver, Ye (feat. Justin Vernon) | Lost In The World", "Kanye West & Ye | Who Will Survive In America"]
+
+[today."output-guests-in-title"]
+albumartist = "Various"
+tracks = ["Kanye West & Ye | Dark Fantasy", "Kanye West, Kid Cudi, Raekwon, Ye | Gorgeous", "Kanye West & Ye | Power", "Kanye West & Ye | All Of The Lights (Interlude)", "Kanye West & Ye | All Of The Lights", "Kanye West, JAŸ-Z, Rick Ross, Nicki Minaj, Bon Iver, Ye | Monster (feat. JAY Z)", "Kanye West, JAŸ-Z, Pusha T, Prynce Cy Hi, Swizz Beatz, RZA, Ye | So Appalled (feat. JAY Z & CyHi Da Prynce)", "Kanye West, Rick Ross, Ye | Devil In A New Dress", "Kanye West, Pusha T, Ye | Runaway", "Kanye West & Ye | Hell Of A Life", "Kanye West, John Legend, Ye | Blame Game", "Kanye West, Bon Iver, Ye | Lost In The World (feat. Justin Vernon)", "Kanye West & Ye | Who Will Survive In America"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
+# the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Dark Fantasy"]
+artist = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Gorgeous"]
+artist = ["Kanye West", "Kid Cudi", "Raekwon"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["POWER"]
+artist = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["All Of The Lights (Interlude)"]
+artist = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["All Of The Lights"]
+artist = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Monster"]
+artist = ["Kanye West", "JAŸ-Z", "Rick Ross", "Nicki Minaj", "Bon Iver"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["So Appalled"]
+artist = ["Kanye West", "JAŸ-Z", "Pusha T", "Prynce Cy Hi", "Swizz Beatz", "RZA"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Devil In A New Dress"]
+artist = ["Kanye West", "Rick Ross"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Runaway"]
+artist = ["Kanye West", "Pusha T"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Hell Of A Life"]
+artist = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Blame Game"]
+artist = ["Kanye West", "John Legend"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Lost In The World"]
+artist = ["Kanye West", "Bon Iver"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["Who Will Survive In America"]
+artist = ["Kanye West"]
+album = ["My Beautiful Dark Twisted Fantasy"]
+albumartist = ["Kanye West"]
+date = ["2010-11-22"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 707965,
+ "title": "My Beautiful Dark Twisted Fantasy",
+ "upc": "602527474465",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 116,
+    "name": "Rap/Hip Hop"
+   }
+  ]
+ },
+ "label": "Roc-A-Fella",
+ "release_date": "2010-11-22",
+ "tracklist": [
+  {
+   "SNG_ID": "7667057",
+   "SNG_TITLE": "Dark Fantasy",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USUM71027263",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "7667058",
+   "SNG_TITLE": "Gorgeous",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Kid Cudi",
+     "Raekwon"
+    ],
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USUM71027265",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "7667059",
+   "SNG_TITLE": "POWER",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USUM71018220",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "7667060",
+   "SNG_TITLE": "All Of The Lights (Interlude)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USUM71027297",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "7667061",
+   "SNG_TITLE": "All Of The Lights",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USUM71027273",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "7667062",
+   "SNG_TITLE": "Monster",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "JAY Z",
+     "Rick Ross",
+     "Nicki Minaj",
+     "Bon Iver"
+    ],
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USUM71026158",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "7667063",
+   "SNG_TITLE": "So Appalled",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "JAY Z",
+     "Pusha T",
+     "Prynce Cy Hi",
+     "Swizz Beatz",
+     "RZA"
+    ],
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USUM71027275",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "7667064",
+   "SNG_TITLE": "Devil In A New Dress",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Rick Ross"
+    ],
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USUM71027277",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "7667065",
+   "SNG_TITLE": "Runaway",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Pusha T"
+    ],
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USUM71027402",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "7667066",
+   "SNG_TITLE": "Hell Of A Life",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USUM71027281",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "7667067",
+   "SNG_TITLE": "Blame Game",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "John Legend"
+    ],
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USUM71027287",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "7667068",
+   "SNG_TITLE": "Lost In The World",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Bon Iver"
+    ],
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USUM71027315",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "7667069",
+   "SNG_TITLE": "Who Will Survive In America",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kanye West"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "USUM71027321",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "4"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="ef748325-cb18-46c6-b0fd-7276bd6f4337"><title>My Beautiful Dark Twisted Fantasy</title><artist-credit><name-credit><name>Kanye West</name><artist><name>Ye</name></artist></name-credit></artist-credit><date>2010-11-22</date><release-event-list><release-event><date>2010-11-22</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>B001469502</catalog-number><label><name>Roc‐A‐Fella Records</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Dark Fantasy</title><artist-credit><name-credit><name>Kanye West</name><artist><name>Ye</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><recording><title>Gorgeous</title><artist-credit><name-credit joinphrase=" feat. "><name>Kanye West</name><artist><name>Ye</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Kid Cudi</name></artist></name-credit><name-credit><artist><name>Raekwon</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><recording><title>Power</title><artist-credit><name-credit><name>Kanye West</name><artist><name>Ye</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><recording><title>All of the Lights (interlude)</title><artist-credit><name-credit><name>Kanye West</name><artist><name>Ye</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>All of the Lights</title><artist-credit><name-credit><name>Kanye West</name><artist><name>Ye</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><recording><title>Monster</title><artist-credit><name-credit joinphrase=" feat. "><name>Kanye West</name><artist><name>Ye</name></artist></name-credit><name-credit joinphrase=", "><name>Jay‐Z</name><artist><name>JAŸ-Z</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Rick Ross</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Nicki Minaj</name></artist></name-credit><name-credit><artist><name>Bon Iver</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>So Appalled</title><artist-credit><name-credit joinphrase=" feat. "><name>Kanye West</name><artist><name>Ye</name></artist></name-credit><name-credit joinphrase=", "><name>Jay‐Z</name><artist><name>JAŸ-Z</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Pusha T</name></artist></name-credit><name-credit joinphrase=", "><name>CyHi da Prynce</name><artist><name>Cyhi</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Swizz Beatz</name></artist></name-credit><name-credit><name>The RZA</name><artist><name>RZA</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Devil in a New Dress</title><artist-credit><name-credit joinphrase=" feat. "><name>Kanye West</name><artist><name>Ye</name></artist></name-credit><name-credit><artist><name>Rick Ross</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><recording><title>Runaway</title><artist-credit><name-credit joinphrase=" feat. "><name>Kanye West</name><artist><name>Ye</name></artist></name-credit><name-credit><artist><name>Pusha T</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><recording><title>Hell of a Life</title><artist-credit><name-credit><name>Kanye West</name><artist><name>Ye</name></artist></name-credit></artist-credit></recording></track><track><position>11</position><number>11</number><recording><title>Blame Game</title><artist-credit><name-credit joinphrase=" feat. "><name>Kanye West</name><artist><name>Ye</name></artist></name-credit><name-credit><artist><name>John Legend</name></artist></name-credit></artist-credit></recording></track><track><position>12</position><number>12</number><recording><title>Lost in the World</title><artist-credit><name-credit joinphrase=" feat. "><name>Kanye West</name><artist><name>Ye</name></artist></name-credit><name-credit><artist><name>Bon Iver</name></artist></name-credit></artist-credit></recording></track><track><position>13</position><number>13</number><recording><title>Who Will Survive in America</title><artist-credit><name-credit><name>Kanye West</name><artist><name>Ye</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 9723759,
+ "year": 2010,
+ "artists": [
+  {
+   "name": "Kanye West",
+   "anv": "",
+   "role": "",
+   "id": 137880
+  }
+ ],
+ "labels": [
+  {
+   "name": "Roc-A-Fella Records",
+   "catno": "B001469502",
+   "id": 9433
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "My Beautiful Dark Twisted Fantasy",
+ "genres": [
+  "Hip Hop"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Dark Fantasy",
+   "extraartists": [
+    {
+     "name": "Justin Vernon",
+     "anv": "",
+     "role": "Backing Vocals",
+     "id": 818925
+    },
+    {
+     "name": "Nicki Minaj",
+     "anv": "",
+     "role": "Backing Vocals",
+     "id": 1615988
+    },
+    {
+     "name": "No I.D.",
+     "anv": "",
+     "role": "Producer",
+     "id": 108618
+    },
+    {
+     "name": "RZA",
+     "anv": "The RZA",
+     "role": "Producer",
+     "id": 25495
+    },
+    {
+     "name": "Jeff Bhasker",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 256804
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 101883
+    },
+    {
+     "name": "Amber Rose (3)",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 2021136
+    },
+    {
+     "name": "Teyana Taylor",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1301110
+    }
+   ],
+   "duration": "4:40"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Gorgeous",
+   "extraartists": [
+    {
+     "name": "Tony Williams (3)",
+     "anv": "",
+     "role": "Backing Vocals",
+     "id": 353686
+    },
+    {
+     "name": "Kid Cudi",
+     "anv": "",
+     "role": "Featuring",
+     "id": 1093094
+    },
+    {
+     "name": "Raekwon",
+     "anv": "",
+     "role": "Featuring",
+     "id": 100558
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Producer",
+     "id": 101883
+    },
+    {
+     "name": "No I.D.",
+     "anv": "",
+     "role": "Producer",
+     "id": 108618
+    }
+   ],
+   "duration": "5:57"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Power",
+   "extraartists": [
+    {
+     "name": "Chris Soper",
+     "anv": "",
+     "role": "Handclaps",
+     "id": 784672
+    },
+    {
+     "name": "Ian Allen (7)",
+     "anv": "Ian Allan",
+     "role": "Handclaps",
+     "id": 3148550
+    },
+    {
+     "name": "Uri Djemal",
+     "anv": "",
+     "role": "Handclaps",
+     "id": 2026995
+    },
+    {
+     "name": "Wilson Christopher",
+     "anv": "",
+     "role": "Handclaps",
+     "id": 2026994
+    },
+    {
+     "name": "Symbolyc One",
+     "anv": "S1",
+     "role": "Producer",
+     "id": 190328
+    },
+    {
+     "name": "Jeff Bhasker",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 256804
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 101883
+    },
+    {
+     "name": "Dwele",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 9557
+    },
+    {
+     "name": "Alvin Fields",
+     "anv": "",
+     "role": "Vocals [Chant]",
+     "id": 130176
+    },
+    {
+     "name": "Ken Lewis",
+     "anv": "",
+     "role": "Vocals [Chant]",
+     "id": 51803
+    }
+   ],
+   "duration": "4:52"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "All Of The Lights (Interlude)",
+   "duration": "1:02"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "All Of The Lights",
+   "extraartists": [
+    {
+     "name": "Jeff Bhasker",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 256804
+    },
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "Piano",
+     "id": 57103
+    },
+    {
+     "name": "Alicia Keys",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 38905
+    },
+    {
+     "name": "Alvin Fields",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 130176
+    },
+    {
+     "name": "Charlie Wilson",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 115941
+    },
+    {
+     "name": "Drake",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 151199
+    },
+    {
+     "name": "Elly Jackson",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1290349
+    },
+    {
+     "name": "Elton John",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 57103
+    },
+    {
+     "name": "Fergie (2)",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 566501
+    },
+    {
+     "name": "John Legend",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 182738
+    },
+    {
+     "name": "Ken Lewis",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 51803
+    },
+    {
+     "name": "Kid Cudi",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1093094
+    },
+    {
+     "name": "Rihanna",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 321128
+    },
+    {
+     "name": "Ryan Leslie",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 402679
+    },
+    {
+     "name": "Tony Williams (3)",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 353686
+    }
+   ],
+   "duration": "4:59"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Monster",
+   "extraartists": [
+    {
+     "name": "Bon Iver",
+     "anv": "",
+     "role": "Featuring",
+     "id": 1042739
+    },
+    {
+     "name": "Jay-Z",
+     "anv": "",
+     "role": "Featuring",
+     "id": 21742
+    },
+    {
+     "name": "Nicki Minaj",
+     "anv": "",
+     "role": "Featuring",
+     "id": 1615988
+    },
+    {
+     "name": "Rick Ross",
+     "anv": "",
+     "role": "Featuring",
+     "id": 181022
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 101883
+    },
+    {
+     "name": "Plain Pat",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 231617
+    }
+   ],
+   "duration": "6:18"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "So Appalled",
+   "extraartists": [
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 101883
+    },
+    {
+     "name": "CyHi Da Prynce",
+     "anv": "Prince Cy Hi",
+     "role": "Featuring",
+     "id": 1887511
+    },
+    {
+     "name": "Jay-Z",
+     "anv": "",
+     "role": "Featuring",
+     "id": 21742
+    },
+    {
+     "name": "Pusha T",
+     "anv": "",
+     "role": "Featuring",
+     "id": 158775
+    },
+    {
+     "name": "RZA",
+     "anv": "The RZA",
+     "role": "Featuring",
+     "id": 25495
+    },
+    {
+     "name": "Swizz Beatz",
+     "anv": "",
+     "role": "Featuring",
+     "id": 173279
+    },
+    {
+     "name": "No I.D.",
+     "anv": "",
+     "role": "Producer",
+     "id": 108618
+    }
+   ],
+   "duration": "6:38"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Devil In A New Dress",
+   "extraartists": [
+    {
+     "name": "Rick Ross",
+     "anv": "",
+     "role": "Featuring",
+     "id": 181022
+    },
+    {
+     "name": "Bink!",
+     "anv": "",
+     "role": "Producer",
+     "id": 69998
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 101883
+    }
+   ],
+   "duration": "5:52"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Runaway",
+   "extraartists": [
+    {
+     "name": "Tony Williams (3)",
+     "anv": "",
+     "role": "Backing Vocals",
+     "id": 353686
+    },
+    {
+     "name": "Emile (2)",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 195200
+    },
+    {
+     "name": "Jeff Bhasker",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 256804
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 101883
+    },
+    {
+     "name": "Pusha T",
+     "anv": "",
+     "role": "Featuring",
+     "id": 158775
+    },
+    {
+     "name": "The-Dream",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1008036
+    }
+   ],
+   "duration": "9:08"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Hell Of A Life",
+   "extraartists": [
+    {
+     "name": "Mike Caren",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 207184
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 101883
+    },
+    {
+     "name": "No I.D.",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 108618
+    },
+    {
+     "name": "Teyana Taylor",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1301110
+    },
+    {
+     "name": "The-Dream",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1008036
+    }
+   ],
+   "duration": "5:27"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "title": "Blame Game",
+   "extraartists": [
+    {
+     "name": "John Legend",
+     "anv": "",
+     "role": "Featuring",
+     "id": 182738
+    },
+    {
+     "name": "Frank E (2)",
+     "anv": "DJ Frank E",
+     "role": "Producer",
+     "id": 1195631
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Producer [Additional]",
+     "id": 101883
+    },
+    {
+     "name": "Chris Rock",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 76487
+    },
+    {
+     "name": "Salma Kenas",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 2021139
+    }
+   ],
+   "duration": "7:49"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "title": "Lost In The World",
+   "extraartists": [
+    {
+     "name": "Jeff Bhasker",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 256804
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 101883
+    },
+    {
+     "name": "Bon Iver",
+     "anv": "",
+     "role": "Featuring",
+     "id": 1042739
+    },
+    {
+     "name": "Alicia Keys",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 38905
+    },
+    {
+     "name": "Charlie Wilson",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 115941
+    },
+    {
+     "name": "Elly Jackson",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1290349
+    },
+    {
+     "name": "Kaye Fox",
+     "anv": "Kay Fox",
+     "role": "Vocals [Additional]",
+     "id": 2227809
+    },
+    {
+     "name": "Tony Williams (3)",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 353686
+    },
+    {
+     "name": "Alvin Fields",
+     "anv": "",
+     "role": "Vocals [Chant]",
+     "id": 130176
+    },
+    {
+     "name": "Ken Lewis",
+     "anv": "",
+     "role": "Vocals [Chant]",
+     "id": 51803
+    }
+   ],
+   "duration": "4:16"
+  },
+  {
+   "position": "13",
+   "type_": "track",
+   "title": "Who Will Survive In America",
+   "extraartists": [
+    {
+     "name": "Jeff Bhasker",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 256804
+    },
+    {
+     "name": "Mike Dean",
+     "anv": "",
+     "role": "Co-producer",
+     "id": 101883
+    },
+    {
+     "name": "Alicia Keys",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 38905
+    },
+    {
+     "name": "Charlie Wilson",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 115941
+    },
+    {
+     "name": "Elly Jackson",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 1290349
+    },
+    {
+     "name": "Justin Vernon",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 818925
+    },
+    {
+     "name": "Kaye Fox",
+     "anv": "Kay Fox",
+     "role": "Vocals [Additional]",
+     "id": 2227809
+    },
+    {
+     "name": "Tony Williams (3)",
+     "anv": "",
+     "role": "Vocals [Additional]",
+     "id": 353686
+    },
+    {
+     "name": "Alvin Fields",
+     "anv": "",
+     "role": "Vocals [Chant]",
+     "id": 130176
+    },
+    {
+     "name": "Ken Lewis",
+     "anv": "",
+     "role": "Vocals [Chant]",
+     "id": 51803
+    }
+   ],
+   "duration": "1:38"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Kanye West",
+   "anv": "",
+   "role": "Art Direction",
+   "id": 137880
+  },
+  {
+   "name": "Virgil Abloh",
+   "anv": "",
+   "role": "Art Direction",
+   "id": 2021138
+  },
+  {
+   "name": "George Condo",
+   "anv": "",
+   "role": "Artwork [Paintings]",
+   "id": 1688772
+  },
+  {
+   "name": "JP Robinson",
+   "anv": "",
+   "role": "Coordinator [Artwork]",
+   "id": 2012007
+  },
+  {
+   "name": "Kristen Yiengst",
+   "anv": "",
+   "role": "Coordinator [Artwork]",
+   "id": 1918645
+  },
+  {
+   "name": "Todd Russell",
+   "anv": "",
+   "role": "Coordinator [Artwork]",
+   "id": 1850865
+  },
+  {
+   "name": "M/M (Paris)",
+   "anv": "",
+   "role": "Design [Package], Illustration [Handwritten Titles And Illustrations]",
+   "id": 768003
+  },
+  {
+   "name": "Antonio Reid (2)",
+   "anv": "Antonio \"L.A.\" Reid",
+   "role": "Executive-Producer",
+   "id": 5032901
+  },
+  {
+   "name": "Gee Roberson",
+   "anv": "",
+   "role": "Executive-Producer",
+   "id": 233490
+  },
+  {
+   "name": "Kanye West",
+   "anv": "",
+   "role": "Executive-Producer",
+   "id": 137880
+  },
+  {
+   "name": "Kyambo Joshua",
+   "anv": "Kyambo \"Hip Hop\" Joshua",
+   "role": "Executive-Producer",
+   "id": 2320722
+  },
+  {
+   "name": "Shawn Carter",
+   "anv": "",
+   "role": "Executive-Producer",
+   "id": 447899
+  },
+  {
+   "name": "Vlado Meller",
+   "anv": "",
+   "role": "Mastered By",
+   "id": 189744
+  },
+  {
+   "name": "Fabien Montique",
+   "anv": "",
+   "role": "Photography By",
+   "id": 2433956
+  },
+  {
+   "name": "Kanye West",
+   "anv": "",
+   "role": "Producer",
+   "id": 137880
+  },
+  {
+   "name": "Doug Joswick",
+   "anv": "",
+   "role": "Product Manager [Package Production]",
+   "id": 1938756
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0060252747446",
+ "upc": "0060252747446",
+ "title": "My Beautiful Dark Twisted Fantasy",
+ "version": null,
+ "tracks_count": 13,
+ "artist": {
+  "name": "Kanye West"
+ },
+ "genres_list": [
+  "Hip-Hop/Rap"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Dark Fantasy",
+    "version": "Album Version (Explicit)",
+    "track_number": 1,
+    "performers": "Kanye West, MainArtist, CoProducer, ComposerLyricist - RZA, Producer - No-ID, CoProducer - Jeff Bhasker, CoProducer - Mike Dean, AdditionalProducer, RecordingEngineer, MixingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer, MixingEngineer - Anthony Kilhoffer, RecordingEngineer - Noah Goldstein, RecordingEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Phil Joly, MixingSecondEngineer - Nicki Minaj, BackgroundVocalist - Justin Vernon, BackgroundVocalist, ComposerLyricist - Teyana Taylor, AdditionalVocalist - Amber Rose, AdditionalVocalist - Robert Diggs, ComposerLyricist - Mike Oldfield, ComposerLyricist - JOHN ANDERSON, ComposerLyricist - No I.D., ComposerLyricist - Malik Yusef, ComposerLyricist - Onika Maraj, ComposerLyricist"
+   },
+   {
+    "title": "Gorgeous",
+    "version": "Album Version (Explicit)",
+    "track_number": 2,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Kid Cudi, FeaturedArtist - Raekwon, FeaturedArtist - No-ID, CoProducer - Mike Dean, CoProducer, RecordingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer - Christian Mochizuki, RecordingEngineer, MixingSecondEngineer - Noah Goldstein, RecordingEngineer - Pete Bischoff, MixingSecondEngineer - Phil Joly, MixingSecondEngineer - Ken Lewis, BassVocalist - Tony Williams, BackgroundVocalist - Corey Woods, ComposerLyricist - Scott Mescudi, ComposerLyricist - Gene Clark, ComposerLyricist - Roger McGuinn, ComposerLyricist - No I.D., ComposerLyricist - Malik Yusef, ComposerLyricist"
+   },
+   {
+    "title": "POWER",
+    "version": "Album Version (Explicit)",
+    "track_number": 3,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - S1, Producer - Jeff Bhasker, AdditionalProducer, ComposerLyricist - Mike Dean, AdditionalProducer, RecordingEngineer, BassVocalist, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - MANNY MARROQUIN, MixingEngineer - Dwele, AdditionalVocalist - Alvin Fields, Vocalist - Kenneth Lewis, Vocalist, Engineer - Brent Kolatalo, Engineer - FRANCOIS BERNHEIM, ComposerLyricist - Jean Pierre Lang, ComposerLyricist - Robert Fripp, ComposerLyricist - Michael Giles, ComposerLyricist - Greg Lake, ComposerLyricist - Peter Sinfield, ComposerLyricist - Malik Yusef, ComposerLyricist - N. Perez, ComposerLyricist - Larry Griffin Jr., ComposerLyricist - Ian McDonald, ComposerLyricist - B. Bergman, ComposerLyricist"
+   },
+   {
+    "title": "All Of The Lights (Interlude)",
+    "version": "Album Version (Explicit)",
+    "track_number": 4,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Mike Dean, Producer, MixingEngineer - Phil Joly, RecordingEngineer - Noah Goldstein, RecordingEngineer - Jeff Bhasker, ComposerLyricist - Stacy Ferguson, ComposerLyricist - Malik Yusef, ComposerLyricist - Scott Mescudi, ComposerLyricist - Warren Trotter, ComposerLyricist"
+   },
+   {
+    "title": "All Of The Lights",
+    "version": "Album Version (Explicit)",
+    "track_number": 5,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jeff Bhasker, CoProducer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer - Mike Dean, RecordingEngineer - Noah Goldstein, RecordingEngineer - Marcos Tovar, RecordingEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Phil Joly, MixingSecondEngineer - Elton John, AdditionalVocalist - Ken Lewis, HornArranger, AdditionalVocalist - Rihanna, AdditionalVocalist - Kid Cudi, AdditionalVocalist - Tony Williams, AdditionalVocalist - The-Dream, AdditionalVocalist - Charlie Wilson, AdditionalVocalist - John Legend, AdditionalVocalist - Elly Jackson, AdditionalVocalist - Alicia Keys, AdditionalVocalist - Fergie, AdditionalVocalist - Ryan Leslie, AdditionalVocalist - Alvin Fields, AdditionalVocalist - Drake, AdditionalVocalist - Stacy Ferguson, ComposerLyricist - Malik Yusef, ComposerLyricist - Scott Mescudi, ComposerLyricist - Warren Trotter, ComposerLyricist"
+   },
+   {
+    "title": "Monster",
+    "version": "Album Version (Explicit)",
+    "track_number": 6,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jay-Z, FeaturedArtist - Rick Ross, FeaturedArtist - Nicki Minaj, FeaturedArtist - Bon Iver, FeaturedArtist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - Justin Vernon, BackgroundVocalist, ComposerLyricist - Shawn Carter, ComposerLyricist - Onika Maraj, ComposerLyricist - Patrick Reynolds, ComposerLyricist - Mike Dean, ComposerLyricist - W. Roberts, ComposerLyricist - Malik Yusef, ComposerLyricist - Ben Bronfman, ComposerLyricist - Daniel Lynas, ComposerLyricist - Harley Wertheimer, ComposerLyricist"
+   },
+   {
+    "title": "So Appalled",
+    "version": "Album Version (Explicit)",
+    "track_number": 7,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jay-Z, FeaturedArtist - Pusha T, FeaturedArtist - Prynce Cy Hi, FeaturedArtist - Swizz Beatz, FeaturedArtist - RZA, FeaturedArtist - No-ID, Producer - Mike Dean, CoProducer, RecordingEngineer, MixingEngineer, StringArranger, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - Noah Goldstein, RecordingEngineer - Pete Bischoff, RecordingEngineer, MixingSecondEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Shawn Carter, ComposerLyricist - Terrence Thornton, ComposerLyricist - Cydel Young, ComposerLyricist - Kasseem Dean, ComposerLyricist - Robert Diggs, ComposerLyricist - Manfred Mann, ComposerLyricist - No I.D., ComposerLyricist"
+   },
+   {
+    "title": "Devil In A New Dress",
+    "version": "Album Version (Explicit)",
+    "track_number": 8,
+    "performers": "Kanye West, MainArtist, ComposerLyricist - Rick Ross, FeaturedArtist - Bink, Producer - Mike Dean, AdditionalProducer, RecordingEngineer, MixingEngineer, BassVocalist, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer - Noah Goldstein, RecordingEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Gerry Goffin, ComposerLyricist - Carole King, ComposerLyricist - W. Roberts, ComposerLyricist - R. Harrell, ComposerLyricist - Malik Yusef, ComposerLyricist"
+   },
+   {
+    "title": "Runaway",
+    "version": "Album Version (Explicit)",
+    "track_number": 9,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Pusha T, FeaturedArtist - Emile Haynie, CoProducer, ComposerLyricist - Jeff Bhasker, CoProducer, ComposerLyricist - Mike Dean, CoProducer, RecordingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer - Christian Mochizuci, RecordingSecondEngineer - Noah Goldstein, RecordingSecondEngineer - Cary Clark, MixingSecondEngineer - Tony Williams, BackgroundVocalist - Terrence Thornton, ComposerLyricist - John Roger Branch, ComposerLyricist - Pete Rock, ComposerLyricist - Malik Yusef, ComposerLyricist"
+   },
+   {
+    "title": "Hell Of A Life",
+    "version": "Album Version (Explicit)",
+    "track_number": 10,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Mike Caren, CoProducer, ComposerLyricist - No-ID, CoProducer - Mike Dean, CoProducer, RecordingEngineer, MixingEngineer, ComposerLyricist - Andrew Dawson, RecordingEngineer, MixingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer, DrumProgrammer - Noah Goldstein, RecordingEngineer - Gaylord Holomalia, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Teyana Taylor, AdditionalVocalist - The-Dream, AdditionalVocalist - Ernest Wilson, ComposerLyricist - Sylvester Stewart, ComposerLyricist - Tony Joe White, ComposerLyricist - Terence Butler, ComposerLyricist - Tony Iommi, ComposerLyricist - John Osbourne, ComposerLyricist - William Ward, ComposerLyricist"
+   },
+   {
+    "title": "Blame Game",
+    "version": "Album Version (Explicit)",
+    "track_number": 11,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - John Legend, FeaturedArtist - DJ Frank E, Producer - Mike Dean, AdditionalProducer, MixingEngineer, BassVocalist, ComposerLyricist - Andrew Dawson, RecordingEngineer, MixingEngineer - Noah Goldstein, RecordingEngineer - Phil Joly, RecordingEngineer - Ryan Gilligan, RecordingEngineer - Anthony Kilhoffer, MixingEngineer - Chris Rock, AdditionalVocalist - Salma Kenas, AdditionalVocalist - John Stephens, ComposerLyricist - Khloe Mitchell, ComposerLyricist - Richard James, ComposerLyricist - J. Franks, ComposerLyricist"
+   },
+   {
+    "title": "Lost In The World (feat. Justin Vernon)",
+    "version": "Album Version (Explicit)",
+    "track_number": 12,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Bon Iver, FeaturedArtist - Jeff Bhasker, CoProducer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer, DrumProgrammer - Mike Dean, RecordingEngineer - Noah Goldstein, RecordingEngineer - Alex Graupera, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Justin Vernon, AdditionalVocalist, ComposerLyricist - Charlie Wilson, AdditionalVocalist - Kaye Fox, AdditionalVocalist - Tony Williams, AdditionalVocalist - Alicia Keys, AdditionalVocalist - Elly Jackson, AdditionalVocalist - Ken Lewis, DrumProgrammer, Vocalist - Alvin Fields, Vocalist - Manu Dibango, ComposerLyricist - JAMES BROWN, ComposerLyricist - Gil Scott-Heron, ComposerLyricist - Edwin J. Bocage, ComposerLyricist - Alfred Scramuzza, ComposerLyricist"
+   },
+   {
+    "title": "Who Will Survive In America",
+    "version": "Album Version (Explicit)",
+    "track_number": 13,
+    "performers": "Kanye West, MainArtist, Producer, ComposerLyricist - Jeff Bhasker, CoProducer, ComposerLyricist - Andrew Dawson, RecordingEngineer - Anthony Kilhoffer, RecordingEngineer, MixingEngineer, DrumProgrammer - Mike Dean, RecordingEngineer - Noah Goldstein, RecordingEngineer - Alex Graupera, MixingSecondEngineer - Christian Mochizuki, MixingSecondEngineer - Pete Bischoff, MixingSecondEngineer - Justin Vernon, AdditionalVocalist - Charlie Wilson, AdditionalVocalist - Kaye Fox, AdditionalVocalist - Tony Williams, AdditionalVocalist - Alicia Keys, AdditionalVocalist - Elly Jackson, AdditionalVocalist - Ken Lewis, DrumProgrammer, Vocalist - Alvin Fields, Vocalist - Gil Scott-Heron, ComposerLyricist - Edwin J. Bocage, ComposerLyricist - Alfred Scramuzza, ComposerLyricist"
+   }
+  ]
+ }
+}
+'''

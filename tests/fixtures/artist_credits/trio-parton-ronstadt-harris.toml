@@ -1,0 +1,1135 @@
+album = "Dolly Parton, Linda Ronstadt, Emmylou Harris, Trio"
+why = "Three co-leaders, all main on every track (the shape of #869's Gladiator)."
+edition = "Qobuz 0603497870400 is the 2016 Remaster under another UPC, another edition with the same 11 tracks. Discogs 1832388 is master 14721's main release (1987 LP)."
+known_wrong = ["Qobuz parse: Linda Ronstadt and Emmylou Harris made guests. Qobuz names all three main-artist on the album and MainArtist on every track; the parser takes the album's one `artist` as main and reads every other MainArtist as a guest (the Gladiator shape, #869)"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+how_we_know = "Deezer's contributors, MusicBrainz, Discogs and Qobuz (all three main-artist on the album, MainArtist on every track) agree on the three, in that order"
+
+[today.deezer]
+release = ["Dolly Parton (main)", "Linda Ronstadt (main)", "Emmylou Harris (main)"]
+tracks = 11
+
+[today.musicbrainz]
+release = ["Dolly Parton (main)", "Linda Ronstadt (main)", "Emmylou Harris (main)"]
+tracks = 11
+
+[today.discogs]
+release = ["Dolly Parton (main)", "Linda Ronstadt (main)", "Emmylou Harris (main)", "Avie Lee (arranger)", "Emmylou Harris (arranger)", "John Starling (arranger)"]
+tracks = 11
+
+[today.qobuz]
+release = ["Dolly Parton (main)", "Linda Ronstadt (guest)", "Emmylou Harris (guest)"]
+tracks = 11
+
+[today.merge]
+release = ["Dolly Parton (main)", "Linda Ronstadt (main)", "Emmylou Harris (main)", "Avie Lee (arranger)", "Emmylou Harris (arranger)", "John Starling (arranger)"]
+tracks = 11
+
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["The Pain of Loving You (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Making Plans (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["To Know Him Is to Love Him (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Hobo's Meditation (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Wildflowers (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Telling Me Lies (with Dolly Parton & Emmy Lou Harris) (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["My Dear Companion (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Those Memories of You (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["I've Had Enough (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Rosewood Casket (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["Farther Along (2015 Remaster)"]
+artist = ["Dolly Parton", "Linda Ronstadt", "Emmylou Harris"]
+album = ["Trio (2016 Remaster)"]
+albumartist = ["Dolly Parton"]
+date = ["1987-03-03"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 13995212,
+ "title": "Trio (2016 Remaster)",
+ "upc": "603497886876",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 84,
+    "name": "Country"
+   }
+  ]
+ },
+ "label": "Rhino/Warner Records",
+ "release_date": "1987-03-03",
+ "tracklist": [
+  {
+   "SNG_ID": "131744210",
+   "SNG_TITLE": "The Pain of Loving You",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USWB11506581",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "131744212",
+   "SNG_TITLE": "Making Plans",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USWB11506582",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "131744214",
+   "SNG_TITLE": "To Know Him Is to Love Him",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USWB11506583",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "131744216",
+   "SNG_TITLE": "Hobo's Meditation",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USWB11506584",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "131744218",
+   "SNG_TITLE": "Wildflowers",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USWB11506585",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "131744220",
+   "SNG_TITLE": "Telling Me Lies (with Dolly Parton & Emmy Lou Harris)",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USWB11506586",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "131744222",
+   "SNG_TITLE": "My Dear Companion",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USWB11506587",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "131744224",
+   "SNG_TITLE": "Those Memories of You",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USWB11506588",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  },
+  {
+   "SNG_ID": "131744226",
+   "SNG_TITLE": "I've Had Enough",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USWB11506589",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "131744228",
+   "SNG_TITLE": "Rosewood Casket",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USWB11506590",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "131744230",
+   "SNG_TITLE": "Farther Along",
+   "VERSION": "(2015 Remaster)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Dolly Parton",
+     "Linda Ronstadt",
+     "Emmylou Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USWB11506591",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="405a40e0-8a55-41fd-8486-a9a3b37c3800"><title>Trio</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><release-group><title>Trio</title><first-release-date>1987-03-02</first-release-date><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit></release-group><date>2016-09-09</date><release-event-list><release-event><date>2016-09-09</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Rhino</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>The Pain of Loving You</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Making Plans</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>To Know Him Is to Love Him</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-01</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Hobo’s Meditation</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>Wildflowers</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Telling Me Lies</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>My Dear Companion</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Those Memories of You</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>I’ve Had Enough</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Rosewood Casket</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-03-02</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>Farther Along</title><artist-credit><name-credit><artist><name>Dolly Parton</name></artist></name-credit><name-credit><artist><name>Linda Ronstadt</name></artist></name-credit><name-credit><artist><name>Emmylou Harris</name></artist></name-credit></artist-credit><first-release-date>1987-01</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 1832388,
+ "year": 1987,
+ "artists": [
+  {
+   "name": "Dolly Parton",
+   "anv": "",
+   "role": "",
+   "id": 39776
+  },
+  {
+   "name": "Linda Ronstadt",
+   "anv": "",
+   "role": "",
+   "id": 262943
+  },
+  {
+   "name": "Emmylou Harris",
+   "anv": "",
+   "role": "",
+   "id": 83609
+  }
+ ],
+ "labels": [
+  {
+   "name": "Warner Bros. Records",
+   "catno": "925 491-1",
+   "id": 1000
+  },
+  {
+   "name": "Warner Bros. Records",
+   "catno": "WX 99",
+   "id": 1000
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl"
+  }
+ ],
+ "title": "Trio",
+ "genres": [
+  "Folk, World, & Country"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "The Pain Of Loving You",
+   "extraartists": [
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 427323
+    },
+    {
+     "name": "Emmylou Harris",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 83609
+    },
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Acoustic Guitar [Soloist]",
+     "id": 257414
+    },
+    {
+     "name": "Russ Kunkel",
+     "anv": "",
+     "role": "Drums",
+     "id": 274132
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Mandolin",
+     "id": 273412
+    },
+    {
+     "name": "Steve Fishell",
+     "anv": "",
+     "role": "Pedal Steel Guitar",
+     "id": 557123
+    },
+    {
+     "name": "Dolly Parton",
+     "anv": "Parton",
+     "role": "Written-By",
+     "id": 39776
+    },
+    {
+     "name": "Porter Wagoner",
+     "anv": "Wagoner",
+     "role": "Written-By",
+     "id": 357983
+    }
+   ],
+   "duration": "2:32"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "Making Plans",
+   "extraartists": [
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 427323
+    },
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Acoustic Guitar, Guitar [Highstrung]",
+     "id": 257414
+    },
+    {
+     "name": "Russ Kunkel",
+     "anv": "",
+     "role": "Drums",
+     "id": 274132
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Mandolin",
+     "id": 273412
+    },
+    {
+     "name": "Mark O'Connor",
+     "anv": "",
+     "role": "Viola, Fiddle",
+     "id": 274736
+    },
+    {
+     "name": "Johnny Russell (2)",
+     "anv": "",
+     "role": "Written-By",
+     "id": 768898
+    },
+    {
+     "name": "Voni Morrison",
+     "anv": "",
+     "role": "Written-By",
+     "id": 1387330
+    }
+   ],
+   "duration": "3:36"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "To Know Him Is To Love Him",
+   "extraartists": [
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 427323
+    },
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 257414
+    },
+    {
+     "name": "Russ Kunkel",
+     "anv": "",
+     "role": "Drums",
+     "id": 274132
+    },
+    {
+     "name": "Ry Cooder",
+     "anv": "",
+     "role": "Guitar [Tremolo]",
+     "id": 55080
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Lap Steel Guitar [Kona Hawaiian], Mandolin",
+     "id": 273412
+    },
+    {
+     "name": "Phil Spector",
+     "anv": "",
+     "role": "Written-By",
+     "id": 190767
+    }
+   ],
+   "duration": "3:48"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "Hobo's Meditation",
+   "extraartists": [
+    {
+     "name": "Leland Sklar",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 253978
+    },
+    {
+     "name": "John Starling",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 561466
+    },
+    {
+     "name": "Herb Pedersen",
+     "anv": "Herb Pederson",
+     "role": "Banjo, Arranged By [Vocals]",
+     "id": 271644
+    },
+    {
+     "name": "Steve Fishell",
+     "anv": "",
+     "role": "Dobro",
+     "id": 557123
+    },
+    {
+     "name": "Jimmie Rodgers",
+     "anv": "",
+     "role": "Written-By",
+     "id": 269365
+    }
+   ],
+   "duration": "3:17"
+  },
+  {
+   "position": "A5",
+   "type_": "track",
+   "title": "Wildflowers",
+   "extraartists": [
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 427323
+    },
+    {
+     "name": "Emmylou Harris",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 83609
+    },
+    {
+     "name": "Mark O'Connor",
+     "anv": "",
+     "role": "Acoustic Guitar, Viola",
+     "id": 274736
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Autoharp, Harp [Harpolek]",
+     "id": 273412
+    },
+    {
+     "name": "Russ Kunkel",
+     "anv": "",
+     "role": "Drums",
+     "id": 274132
+    },
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Mandolin",
+     "id": 257414
+    },
+    {
+     "name": "Dolly Parton",
+     "anv": "Parton",
+     "role": "Written-By",
+     "id": 39776
+    }
+   ],
+   "duration": "3:33"
+  },
+  {
+   "position": "A6",
+   "type_": "track",
+   "title": "Telling Me Lies",
+   "extraartists": [
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 257414
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 273412
+    },
+    {
+     "name": "Charles Veal Jr.",
+     "anv": "Charles Veal",
+     "role": "Concertmaster",
+     "id": 298006
+    },
+    {
+     "name": "Russ Kunkel",
+     "anv": "",
+     "role": "Drums",
+     "id": 274132
+    },
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Electric Bass",
+     "id": 427323
+    },
+    {
+     "name": "David Campbell",
+     "anv": "",
+     "role": "Orchestrated By, Conductor",
+     "id": 341947
+    },
+    {
+     "name": "Steve Fishell",
+     "anv": "",
+     "role": "Pedal Steel Guitar",
+     "id": 557123
+    },
+    {
+     "name": "Bill Payne",
+     "anv": "",
+     "role": "Piano, Electric Piano",
+     "id": 264645
+    },
+    {
+     "name": "Betsy Cook",
+     "anv": "",
+     "role": "Written-By",
+     "id": 293928
+    },
+    {
+     "name": "Linda Thompson",
+     "anv": "",
+     "role": "Written-By",
+     "id": 307520
+    }
+   ],
+   "duration": "4:26"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "My Dear Companion",
+   "extraartists": [
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 427323
+    },
+    {
+     "name": "Emmylou Harris",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 83609
+    },
+    {
+     "name": "Mark O'Connor",
+     "anv": "",
+     "role": "Acoustic Guitar [Lead], Viola",
+     "id": 274736
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Autoharp",
+     "id": 273412
+    },
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Mandolin",
+     "id": 257414
+    },
+    {
+     "name": "Jean Ritchie",
+     "anv": "",
+     "role": "Written-By",
+     "id": 476000
+    }
+   ],
+   "duration": "2:55"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Those Memories Of You",
+   "extraartists": [
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 427323
+    },
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Acoustic Guitar [Lead]",
+     "id": 257414
+    },
+    {
+     "name": "Russ Kunkel",
+     "anv": "",
+     "role": "Drums",
+     "id": 274132
+    },
+    {
+     "name": "Mark O'Connor",
+     "anv": "",
+     "role": "Fiddle",
+     "id": 274736
+    },
+    {
+     "name": "Steve Fishell",
+     "anv": "",
+     "role": "Lap Steel Guitar [Kona Hawaiian]",
+     "id": 557123
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Mandolin",
+     "id": 273412
+    },
+    {
+     "name": "John Starling",
+     "anv": "",
+     "role": "Rhythm Guitar [Acoustic]",
+     "id": 561466
+    },
+    {
+     "name": "Alan O'Bryant",
+     "anv": "",
+     "role": "Written-By",
+     "id": 526773
+    }
+   ],
+   "duration": "3:58"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "I've Had Enough",
+   "extraartists": [
+    {
+     "name": "Jodi Burnett",
+     "anv": "",
+     "role": "Cello",
+     "id": 662040
+    },
+    {
+     "name": "Marty Krystall",
+     "anv": "",
+     "role": "Clarinet",
+     "id": 327549
+    },
+    {
+     "name": "Brice Martin",
+     "anv": "",
+     "role": "Flute",
+     "id": 918747
+    },
+    {
+     "name": "David Campbell",
+     "anv": "",
+     "role": "Orchestrated By, Conductor",
+     "id": 341947
+    },
+    {
+     "name": "Bill Payne",
+     "anv": "",
+     "role": "Piano",
+     "id": 264645
+    },
+    {
+     "name": "Dennis Karmazyn",
+     "anv": "",
+     "role": "Soloist, Cello",
+     "id": 378715
+    },
+    {
+     "name": "Ilene Novog",
+     "anv": "Ilene \"Novi\" Novog",
+     "role": "Viola",
+     "id": 314226
+    },
+    {
+     "name": "Kate McGarrigle",
+     "anv": "",
+     "role": "Written-By",
+     "id": 377904
+    }
+   ],
+   "duration": "3:30"
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "Rosewood Casket",
+   "extraartists": [
+    {
+     "name": "Kenny Edwards",
+     "anv": "",
+     "role": "Acoustic Bass [Ferrington]",
+     "id": 427323
+    },
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Acoustic Guitar",
+     "id": 257414
+    },
+    {
+     "name": "Avie Lee",
+     "anv": "Avie Lee Parton",
+     "role": "Arranged By",
+     "id": 572864
+    },
+    {
+     "name": "David Lindley",
+     "anv": "",
+     "role": "Dulcimer",
+     "id": 273412
+    }
+   ],
+   "duration": "2:59"
+  },
+  {
+   "position": "B5",
+   "type_": "track",
+   "title": "Farther Along",
+   "extraartists": [
+    {
+     "name": "Albert Lee",
+     "anv": "",
+     "role": "Acoustic Guitar, Guitar [Highstrung]",
+     "id": 257414
+    },
+    {
+     "name": "Emmylou Harris",
+     "anv": "",
+     "role": "Arranged By",
+     "id": 83609
+    },
+    {
+     "name": "John Starling",
+     "anv": "",
+     "role": "Arranged By",
+     "id": 561466
+    },
+    {
+     "name": "Bill Payne",
+     "anv": "",
+     "role": "Piano, Harmonium, Electric Organ [Hammond]",
+     "id": 264645
+    }
+   ],
+   "duration": "4:10"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "John Kosh",
+   "anv": "Kosh",
+   "role": "Art Direction, Design",
+   "id": 1827035
+  },
+  {
+   "name": "Ron Larson",
+   "anv": "",
+   "role": "Art Direction, Design",
+   "id": 1829953
+  },
+  {
+   "name": "Liza Edwards",
+   "anv": "",
+   "role": "Coordinator [Production Coordination]",
+   "id": 1985094
+  },
+  {
+   "name": "Sharon Rice (2)",
+   "anv": "",
+   "role": "Engineer [Assistant]",
+   "id": 1925629
+  },
+  {
+   "name": "Doug Sax",
+   "anv": "",
+   "role": "Mastered By [Analog & Digital Mastering]",
+   "id": 365860
+  },
+  {
+   "name": "John Starling",
+   "anv": "",
+   "role": "Music Consultant [Musical Consultant], Music Consultant",
+   "id": 561466
+  },
+  {
+   "name": "Robert Blakeman",
+   "anv": "",
+   "role": "Photography By",
+   "id": 2249710
+  },
+  {
+   "name": "George Massenburg",
+   "anv": "",
+   "role": "Producer, Recorded By",
+   "id": 263004
+  }
+ ]
+}
+'''
+
+qobuz = '''
+{
+ "id": "0603497870400",
+ "upc": "0603497870400",
+ "title": "Trio",
+ "version": "2016 Remaster",
+ "tracks_count": 11,
+ "artist": {
+  "name": "Dolly Parton"
+ },
+ "genres_list": [
+  "Country"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "The Pain of Loving You",
+    "version": "2015 Remaster",
+    "track_number": 1,
+    "performers": "Dolly Parton, MainArtist, Vocals, Writer - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Porter Wagoner, Writer"
+   },
+   {
+    "title": "Making Plans",
+    "version": "2015 Remaster",
+    "track_number": 2,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - John Bright Russell, Composer - V. Morrison, Composer"
+   },
+   {
+    "title": "To Know Him Is to Love Him",
+    "version": "2015 Remaster",
+    "track_number": 3,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - PHIL SPECTOR, Writer"
+   },
+   {
+    "title": "Hobo's Meditation",
+    "version": "2015 Remaster",
+    "track_number": 4,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Jimmie Rodgers, Writer"
+   },
+   {
+    "title": "Wildflowers",
+    "version": "2015 Remaster",
+    "track_number": 5,
+    "performers": "Dolly Parton, MainArtist, Vocals, Writer - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer"
+   },
+   {
+    "title": "Telling Me Lies (with Dolly Parton & Emmy Lou Harris)",
+    "version": "2015 Remaster",
+    "track_number": 6,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Betsy Cook, Writer - Linda Thompson, Writer"
+   },
+   {
+    "title": "My Dear Companion",
+    "version": "2015 Remaster",
+    "track_number": 7,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Jean Ritchie, Writer"
+   },
+   {
+    "title": "Those Memories of You",
+    "version": "2015 Remaster",
+    "track_number": 8,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Alan O'Bryant, Writer"
+   },
+   {
+    "title": "I've Had Enough",
+    "version": "2015 Remaster",
+    "track_number": 9,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Kate McGarrigle, Writer"
+   },
+   {
+    "title": "Rosewood Casket",
+    "version": "2015 Remaster",
+    "track_number": 10,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Parton, Adapter - Traditional, Writer"
+   },
+   {
+    "title": "Farther Along",
+    "version": "2015 Remaster",
+    "track_number": 11,
+    "performers": "Dolly Parton, MainArtist, Vocals - Linda Ronstadt, MainArtist, Vocals - Emmylou Harris, MainArtist, Vocals - George Massenburg, Producer - John Boylan, Digital Remastering Masterer - Traditional, Writer"
+   }
+  ]
+ }
+}
+'''

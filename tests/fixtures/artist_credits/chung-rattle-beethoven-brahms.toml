@@ -1,0 +1,386 @@
+album = "Kyung-Wha Chung, Wiener Philharmoniker, Simon Rattle: Beethoven 5, Brahms Violin Concerto"
+why = "A symphony (orchestra + conductor) and a concerto (soloist + orchestra + conductor) on one album; Deezer drops the orchestra and conductor from the concerto, MusicBrainz writes the soloist in Hangul."
+edition = "EMI Classics 2001 (recorded live, Vienna), 7 tracks: Deezer 393087 (digital, UPC 724355716552); MusicBrainz bb465a9d is the CD (724355716521, same catalogue 5 57165); Discogs 8091122 is master 997896's main release"
+known_wrong = ["Discogs parse: 0 tracks", "Deezer parse: concerto tracks 5-7 ARTIST 'Kyung-Wha Chung' alone: orchestra and conductor lost", "both: ALBUMARTIST 'Wiener Philharmoniker, Sir Simon Rattle, Kyung-Wha Chung' (soloist last; conductor as a main); no COMPOSER on any track"]
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+performers = ["Kyung-Wha Chung", "Wiener Philharmoniker", "Simon Rattle"]
+how_we_know = "Deezer, MusicBrainz and Qobuz all credit the soloist, the orchestra and the conductor"
+
+[right.name_forms]
+"Wiener Philharmoniker" = ["Vienna Philharmonic", "Vienna Philharmonic Orchestra"]
+"Simon Rattle" = ["Sir Simon Rattle"]
+
+[today.deezer]
+release = ["Wiener Philharmoniker (main)", "Sir Simon Rattle (main)", "Kyung-Wha Chung (main)"]
+tracks = 7
+
+[today.musicbrainz]
+release = ["Wiener Philharmoniker (main)", "Simon Rattle (main)", "정경화 (main)"]
+tracks = 7
+
+[today.discogs]
+release = []
+tracks = 0
+
+[today.qobuz]
+release = ["Kyung Wha Chung (main)", "Wiener Philharmonic Orchestra (guest)", "Sir Simon Rattle (guest)", "Wiener Philharmoniker (guest)", "Kyung-Wha Chung (guest)"]
+tracks = 7
+
+[today.merge]
+release = ["Wiener Philharmoniker (main)", "Sir Simon Rattle (main)", "Kyung Wha Chung (main)", "Wiener Philharmonic Orchestra (guest)", "Kyung-Wha Chung (main)", "정경화 (main)", "Simon Rattle (main)"]
+tracks = 7
+
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Beethoven: Symphony No. 5 in C Minor, Op. 67: I. Allegro con brio"]
+artist = ["Wiener Philharmoniker", "Sir Simon Rattle"]
+album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
+albumartist = ["Kyung-Wha Chung"]
+date = ["2001-09-03"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Beethoven: Symphony No. 5 in C Minor, Op. 67: II. Andante con moto"]
+artist = ["Wiener Philharmoniker", "Sir Simon Rattle"]
+album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
+albumartist = ["Kyung-Wha Chung"]
+date = ["2001-09-03"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Beethoven: Symphony No. 5 in C Minor, Op. 67: III. Allegro -"]
+artist = ["Wiener Philharmoniker", "Sir Simon Rattle"]
+album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
+albumartist = ["Kyung-Wha Chung"]
+date = ["2001-09-03"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Beethoven: Symphony No. 5 in C Minor, Op. 67: IV. Allegro - Presto"]
+artist = ["Wiener Philharmoniker", "Sir Simon Rattle"]
+album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
+albumartist = ["Kyung-Wha Chung"]
+date = ["2001-09-03"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Brahms: Violin Concerto in D Major, Op. 77: I. Allegro non troppo (Cadenza by Joachim)"]
+artist = ["Kyung-Wha Chung"]
+album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
+albumartist = ["Kyung-Wha Chung"]
+date = ["2001-09-03"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Brahms: Violin Concerto in D Major, Op. 77: II. Adagio"]
+artist = ["Kyung-Wha Chung"]
+album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
+albumartist = ["Kyung-Wha Chung"]
+date = ["2001-09-03"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Brahms: Violin Concerto in D Major, Op. 77: III. Allegro giocoso, ma non troppo vivace (Cadenza by Joachim)"]
+artist = ["Kyung-Wha Chung"]
+album = ["Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77"]
+albumartist = ["Kyung-Wha Chung"]
+date = ["2001-09-03"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 393087,
+ "title": "Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77",
+ "upc": "724355716552",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 98,
+    "name": "Classical"
+   }
+  ]
+ },
+ "label": "Warner Classics",
+ "release_date": "2001-09-03",
+ "record_type": "album",
+ "tracklist": [
+  {
+   "SNG_ID": "4220781",
+   "SNG_TITLE": "Beethoven: Symphony No. 5 in C Minor, Op. 67: I. Allegro con brio",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Wiener Philharmoniker",
+     "Sir Simon Rattle"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBAYC0003486",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "4220782",
+   "SNG_TITLE": "Beethoven: Symphony No. 5 in C Minor, Op. 67: II. Andante con moto",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Wiener Philharmoniker",
+     "Sir Simon Rattle"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBAYC0003487",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "4220784",
+   "SNG_TITLE": "Beethoven: Symphony No. 5 in C Minor, Op. 67: III. Allegro -",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Wiener Philharmoniker",
+     "Sir Simon Rattle"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBAYC0003488",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "4220785",
+   "SNG_TITLE": "Beethoven: Symphony No. 5 in C Minor, Op. 67: IV. Allegro - Presto",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Wiener Philharmoniker",
+     "Sir Simon Rattle"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBAYC0003489",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "4220786",
+   "SNG_TITLE": "Brahms: Violin Concerto in D Major, Op. 77: I. Allegro non troppo (Cadenza by Joachim)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kyung-Wha Chung"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBAYC0003491",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "4220787",
+   "SNG_TITLE": "Brahms: Violin Concerto in D Major, Op. 77: II. Adagio",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kyung-Wha Chung"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBAYC0003492",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "4220788",
+   "SNG_TITLE": "Brahms: Violin Concerto in D Major, Op. 77: III. Allegro giocoso, ma non troppo vivace (Cadenza by Joachim)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Kyung-Wha Chung"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBAYC0003493",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="bb465a9d-e465-451c-ab84-9dbe6e4e6917"><title>Brahms: Violinkonzert / Beethoven: Symphonie 5</title><artist-credit><name-credit><name>Brahms</name><artist><name>Johannes Brahms</name></artist></name-credit><name-credit><name>Beethoven</name><artist><name>Ludwig van Beethoven</name></artist></name-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit><release-group type="Album"><title>Brahms: Violinkonzert / Beethoven: Symphonie 5</title><artist-credit><name-credit><name>Brahms</name><artist><name>Johannes Brahms</name></artist></name-credit><name-credit><name>Beethoven</name><artist><name>Ludwig van Beethoven</name></artist></name-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></release-group><date>2001-09-03</date><release-event-list><release-event><date>2001-09-03</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>7243 5 57165 2 1</catalog-number><label><name>EMI Classics</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony no. 5 in C minor, op. 67: I. Allegro con brio</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony no. 5 in C minor, op. 67: II. Andante con moto</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony no. 5 in C minor, op. 67: III. Allegro -</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><artist-credit><name-credit><artist><name>Ludwig van Beethoven</name></artist></name-credit></artist-credit><recording><title>Symphony No. 5 in C minor, op. 67: IV. Allegro</title><artist-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Concerto for Violin and Orchestra in D major, op. 77: I. Allegro non troppo</title><artist-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Concerto for Violin and Orchestra in D major, op. 77: II. Adagio</title><artist-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><artist-credit><name-credit><artist><name>Johannes Brahms</name></artist></name-credit></artist-credit><recording><title>Concerto for Violin and Orchestra in D major, op. 77: III. Allegro giocoso, ma non troppo vivace - Poco più presto</title><artist-credit><name-credit><name>Kyung-Wha Chung</name><artist><name>정경화</name></artist></name-credit><name-credit><artist><name>Wiener Philharmoniker</name></artist></name-credit><name-credit><artist><name>Simon Rattle</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 8091122,
+ "year": 2001,
+ "labels": [
+  {
+   "name": "EMI Classics",
+   "catno": "7243 5 57165 2 1",
+   "id": 34406
+  },
+  {
+   "name": "EMI Classics",
+   "catno": "5 57165 2",
+   "id": 34406
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "Violinkonzert / Symphonie 5",
+ "genres": [
+  "Classical"
+ ],
+ "tracklist": [
+  {
+   "type_": "index",
+   "title": "Symphonie Nr. 5 C-Moll, Op.67 = Symphony No. 5 In C Minor = Symphonie N° 5 En Ut Mineur"
+  },
+  {
+   "type_": "index",
+   "title": "Violinkonzert D-Dur, Op.77 = Violin Concerto In D = Concerto Pour Violon En Ré Majeur"
+  }
+ ]
+}
+'''
+
+qobuz = '''
+{
+ "id": "0724355716552",
+ "upc": "0724355716552",
+ "title": "Beethoven: Symphony No. 5, Op. 67 & Brahms: Violin Concerto, Op. 77",
+ "tracks_count": 7,
+ "artist": {
+  "name": "Kyung Wha Chung"
+ },
+ "genres_list": [
+  "Classical"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Symphony No. 5 in C Minor, Op. 67: I. Allegro con brio",
+    "track_number": 1,
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "performer": {
+     "name": "Wiener Philharmonic Orchestra"
+    }
+   },
+   {
+    "title": "Symphony No. 5 in C Minor, Op. 67: II. Andante con moto",
+    "track_number": 2,
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "performer": {
+     "name": "Wiener Philharmonic Orchestra"
+    }
+   },
+   {
+    "title": "Symphony No. 5 in C Minor, Op. 67: III. Allegro -",
+    "track_number": 3,
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "performer": {
+     "name": "Wiener Philharmonic Orchestra"
+    }
+   },
+   {
+    "title": "Symphony No. 5 in C Minor, Op. 67: IV. Allegro - Presto",
+    "track_number": 4,
+    "performers": "Ludwig van Beethoven, Composer - Stephen Johns, Producer - Sir Simon Rattle, MainArtist - Wiener Philharmoniker, Orchestra, MainArtist - Mike Clements, Engineer - Simon Rattle, Conductor",
+    "performer": {
+     "name": "Wiener Philharmonic Orchestra"
+    }
+   },
+   {
+    "title": "Violin Concerto in D Major, Op. 77: I. Allegro non troppo (Cadenza by Joachim)",
+    "track_number": 5,
+    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
+    "performer": {
+     "name": "Kyung Wha Chung"
+    }
+   },
+   {
+    "title": "Violin Concerto in D Major, Op. 77: II. Adagio",
+    "track_number": 6,
+    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
+    "performer": {
+     "name": "Kyung Wha Chung"
+    }
+   },
+   {
+    "title": "Violin Concerto in D Major, Op. 77: III. Allegro giocoso, ma non troppo vivace (Cadenza by Joachim)",
+    "track_number": 7,
+    "performers": "Kyung-Wha Chung, Violin, MainArtist - Stephen Johns, Producer - Johannes Brahms, Composer - Sir Simon Rattle, Conductor - Wiener Philharmoniker, Orchestra - Mike Clements, Engineer",
+    "performer": {
+     "name": "Kyung Wha Chung"
+    }
+   }
+  ]
+ }
+}
+'''
