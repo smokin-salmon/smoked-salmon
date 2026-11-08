@@ -12,6 +12,7 @@ from torf import TorfError, Torrent
 
 from salmon import cfg, dryrun
 from salmon.common import UploadFiles, clipboard_copy, re_split
+from salmon.common.files import is_apple_double
 from salmon.common.numbers import tag_number, unreadable_number
 from salmon.common.strings import (
     credit_in_title,
@@ -368,7 +369,7 @@ async def collect_logfiles(path: str) -> list[tuple[str, bytes]]:
     # Not rglob("*.log"), which matches case-sensitively; case_sensitive=False needs Python 3.12.
     async for filepath in anyio.Path(path).rglob("*"):
         # The name, not .suffix: a file named ".log" has no suffix.
-        if filepath.name.lower().endswith(".log") and await filepath.is_file():
+        if filepath.name.lower().endswith(".log") and not is_apple_double(filepath.name) and await filepath.is_file():
             log_files.append((filepath.name, await filepath.read_bytes()))
     return log_files
 

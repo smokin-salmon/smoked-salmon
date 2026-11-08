@@ -14,12 +14,15 @@ from helpers.tagger_tags import _write_mp3
 from helpers.uploader_shortened_conversions import _write_flac
 
 from salmon import cfg, interaction
+from salmon.checks import logs, source
 from salmon.common.files import album_files, get_audio_files
 from salmon.converter import downconverting, transcoding
 from salmon.errors import NoncompliantFolderStructure
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.folderstructure import _check_extensions
 from salmon.tagger.tags import gather_tags
+from salmon.uploader import upload_checks
+from salmon.uploader.upload import collect_logfiles
 
 APPLE_DOUBLE = b"\x00\x05\x16\x07\x00\x02\x00\x00Mac OS X        " + b"\0" * 64
 
@@ -85,6 +88,34 @@ def test_an_album_beside_its_metadata_files_is_read(tmp_path: Path) -> None:
 
     assert list(gather_audio_info(str(album))) == ["01.flac"]
     assert list(gather_tags(str(album))) == ["01.flac"]
+
+
+def test_a_metadata_file_is_no_log_to_upload(tmp_path: Path) -> None:
+    album = _album(tmp_path, "._rip.log")
+    (album / "rip.log").write_bytes(b"log")
+
+    assert anyio.run(collect_logfiles, str(album)) == [("rip.log", b"log")]
+
+
+def test_a_metadata_file_is_no_log_to_score(monkeypatch, tmp_path: Path) -> None:
+    album = _album(tmp_path, "._rip.log")
+    (album / "rip.log").write_bytes(b"log")
+    scored: list[str] = []
+
+    async def score(filepath: str, _path: str) -> None:
+        scored.append(Path(filepath).name)
+
+    monkeypatch.setattr(upload_checks, "check_log_cambia", score)
+
+    anyio.run(upload_checks._check_logs, str(album))
+
+    assert scored == ["rip.log"]
+
+
+def test_a_metadata_file_is_not_a_track_a_log_is_checked_against(tmp_path: Path) -> None:
+    album = _album(tmp_path, "._01.flac")
+
+    assert logs._find_audio_files(str(album)) == [str(album / "01.flac")]
 
 
 # The folder check: what's left in the folder goes in the torrent
@@ -192,6 +223,10 @@ def test_a_transcode_leaves_metadata_files_behind(tmp_path: Path, capsys) -> Non
 
 
 # As before
+
+
+def test_as_before_a_metadata_file_is_no_proof_of_a_cd_rip(tmp_path: Path) -> None:
+    assert source._rip_log(str(_album(tmp_path, "._rip.log"))) is None
 
 
 @pytest.mark.parametrize("name", [".01.flac", "_.flac", "a._b.flac", "..flac"])
