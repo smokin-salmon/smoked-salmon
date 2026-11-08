@@ -3,8 +3,11 @@ import html
 import re
 from itertools import zip_longest
 
+import asyncclick as click
+
 from salmon import cfg
 from salmon.common import parse_copyright
+from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import TidalBase
 from salmon.sources.tidal import credentials_configured
@@ -28,7 +31,18 @@ class Searcher(TidalBase, SearchMixin):
         found_ids, identifiers = set(), set()
         for cc in COUNTRIES:
             tasks.append(self._search_releases_country(searchstr, cc, limit))
-        for rank in zip_longest(*(await asyncio.gather(*tasks))):
+        answered = []
+        for cc, answer in zip(COUNTRIES, await asyncio.gather(*tasks, return_exceptions=True), strict=True):
+            if isinstance(answer, ScrapeError):
+                click.secho(f"Tidal: region {cc} failed: {answer}", fg="yellow")
+            elif isinstance(answer, BaseException):
+                raise answer
+            else:
+                answered.append(answer)
+        if COUNTRIES and not answered:
+            raise ScrapeError("Tidal: every region failed.")
+
+        for rank in zip_longest(*answered):
             for rank_result in rank:
                 if rank_result:
                     cc, rid, result = rank_result

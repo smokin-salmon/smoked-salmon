@@ -2,9 +2,11 @@ import re
 from itertools import zip_longest
 
 import anyio
+import asyncclick as click
 
 from salmon import cfg
 from salmon.common import parse_copyright
+from salmon.errors import ScrapeError
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import AppleMusicBase
 
@@ -27,8 +29,8 @@ class Searcher(AppleMusicBase, SearchMixin):
                         "country": sf,
                     },
                 )
-            except Exception:
-                per_sf[sf] = []
+            except Exception as e:
+                click.secho(f"Apple Music: storefront {sf} failed: {e}", fg="yellow")
                 return
 
             results = []
@@ -57,6 +59,9 @@ class Searcher(AppleMusicBase, SearchMixin):
         async with anyio.create_task_group() as tg:
             for sf in sf_langs:
                 tg.start_soon(_search_one, sf)
+
+        if not per_sf:
+            raise ScrapeError("Apple Music: every storefront failed.")
 
         # Interleave by rank across storefronts, then expand each result to all
         # configured langs for that storefront
