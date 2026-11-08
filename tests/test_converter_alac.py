@@ -1,5 +1,6 @@
 """salmon up on ALAC in .m4a: the tracks become FLACs holding the same samples, tags and cover (#981)."""
 
+import errno
 import hashlib
 import os
 import sys
@@ -465,14 +466,14 @@ def test_a_failed_move_to_a_flac_name_removes_the_flacs_already_moved(monkeypatc
     _write_alac(tmp_path / "01.m4a", 16, 44100, seed=1)
     _write_alac(tmp_path / "02.m4a", 16, 44100, seed=2)
     before = _snapshot(tmp_path)
-    rename = alac.rename_no_clobber
+    move = alac._move_no_clobber
 
-    def refused(old: str, new: str) -> None:
-        if new.endswith("02.flac"):
-            raise PermissionError(13, "Permission denied", new)
-        rename(old, new)
+    def refused(partial: str, target: str) -> None:
+        if target.endswith("02.flac"):
+            raise PermissionError(13, "Permission denied", target)
+        move(partial, target)
 
-    monkeypatch.setattr(alac, "rename_no_clobber", refused)
+    monkeypatch.setattr(alac, "_move_no_clobber", refused)
 
     refusal = _convert(tmp_path, FakeInteraction())
 
@@ -492,6 +493,49 @@ def test_a_partial_flac_left_by_a_stopped_conversion_stops_the_next_one(tmp_path
     assert refusal is not None and leftover in refusal
     assert fake.confirms == []
     assert _snapshot(tmp_path) == before
+
+
+def test_a_partial_flac_left_after_the_alac_went_still_stops_the_run(tmp_path) -> None:
+    (tmp_path / "01.flac").write_bytes(b"flac")
+    leftover = ".salmon-alac-0123456789abcdef0123456789abcdef.part"
+    (tmp_path / leftover).write_bytes(b"half a FLAC")
+
+    refusal = _convert(tmp_path, FakeInteraction())
+
+    assert refusal is not None and leftover in refusal
+
+
+@pytest.mark.parametrize("hard_links", [True, False])
+def test_a_move_never_replaces_a_flac_another_run_put_there(monkeypatch, tmp_path, hard_links) -> None:
+    partial, target = tmp_path / ".salmon-alac-x.part", tmp_path / "01.flac"
+    partial.write_bytes(b"this run's FLAC")
+    target.write_bytes(b"the other run's FLAC")
+    if not hard_links:
+
+        def no_links(_source: str, destination: str) -> None:
+            raise OSError(errno.EPERM, "Operation not permitted", destination)
+
+        monkeypatch.setattr(alac.os, "link", no_links)
+
+    with pytest.raises(FileExistsError):
+        alac._move_no_clobber(str(partial), str(target))
+
+    assert target.read_bytes() == b"the other run's FLAC"
+    assert partial.read_bytes() == b"this run's FLAC"
+
+
+def test_a_move_without_hard_links_claims_the_name_then_replaces_it(monkeypatch, tmp_path) -> None:
+    partial, target = tmp_path / ".salmon-alac-x.part", tmp_path / "01.flac"
+    partial.write_bytes(b"this run's FLAC")
+
+    def no_links(_source: str, destination: str) -> None:
+        raise OSError(errno.EPERM, "Operation not permitted", destination)
+
+    monkeypatch.setattr(alac.os, "link", no_links)
+
+    alac._move_no_clobber(str(partial), str(target))
+
+    assert target.read_bytes() == b"this run's FLAC"
 
 
 def test_a_partial_name_is_short_whatever_the_track_is_called(monkeypatch, tmp_path) -> None:

@@ -6,6 +6,7 @@ same samples as its ALAC before any .m4a is removed.
 """
 
 import contextlib
+import dataclasses
 import hashlib
 import os
 import subprocess
@@ -24,9 +25,8 @@ from mutagen.mp4 import MP4, AtomDataType, MP4Cover, MP4FreeForm, MP4Info
 
 from salmon import cfg, interaction
 from salmon.common.constants import AUDIO_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import album_files, process_files
+from salmon.common.files import album_files, lacks_hard_links, process_files
 from salmon.tagger.cover import get_8kib_padding
-from salmon.tagger.renames import rename_no_clobber
 
 if TYPE_CHECKING:
     import av.audio.frame
@@ -88,10 +88,17 @@ async def convert_alac(album: str, staged: str) -> str | None:
         album: The album folder the user gave.
         staged: The folder the upload works on (see staged_source): the conversion writes there.
     """
-    tracks, others, unreadable = _find_alac(staged)
+    scan = _scan(staged)
+    # Hidden, so nothing else in salmon sees it, but it would go into the torrent: checked with ALAC left or not.
+    if scan.partials:
+        return (
+            f"{album} holds {_named(scan.partials)}, left by a conversion that stopped, or written by one running "
+            f"now: once no other salmon run is converting the album, remove {_it(scan.partials)} and run salmon again."
+        )
+    tracks = scan.tracks
     if not tracks:
         return None
-    if refusal := _refusal(album, staged, tracks, others, unreadable):
+    if refusal := _refusal(album, staged, scan):
         return refusal
     count = f"{len(tracks)} ALAC file{'s' if len(tracks) > 1 else ''}"
     in_place = os.path.samefile(staged, album)
@@ -115,7 +122,7 @@ async def convert_alac(album: str, staged: str) -> str | None:
         if in_place:
             return (
                 f"Converted the ALAC files in {album} to FLAC, but could not remove {', '.join(kept)}: "
-                f"remove {'it' if len(kept) == 1 else 'them'} and run salmon again."
+                f"remove {_it(kept)} and run salmon again."
             )
         # The copy goes when the run ends, its FLACs with it: the album's own .m4a files are the only ones left.
         return (
@@ -136,24 +143,39 @@ def _mp4_info(path: str) -> MP4Info | None:
         return None
 
 
-def _find_alac(folder: str) -> tuple[list[AlacTrack], list[str], list[str]]:
-    """The ALAC tracks under folder, the other audio files' paths in it (FLACs, lossy files), and the .m4a files
-    that cannot be read."""
-    tracks: list[AlacTrack] = []
-    others: list[str] = []
-    unreadable: list[str] = []
-    for path in album_files(folder, AUDIO_EXTENSIONS | LOSSY_EXTENSIONS):
+@dataclass
+class _Scan:
+    """What a folder holds, for the conversion."""
+
+    tracks: list[AlacTrack] = dataclasses.field(default_factory=list)
+    others: list[str] = dataclasses.field(default_factory=list)  # The other audio files (FLACs, lossy files).
+    unreadable: list[str] = dataclasses.field(default_factory=list)  # The .m4a files that cannot be read.
+    partials: list[str] = dataclasses.field(default_factory=list)  # FLACs a conversion was writing (_PARTIAL_PREFIX).
+
+
+def _scan(folder: str) -> _Scan:
+    """The ALAC tracks under folder, and the other files the conversion looks at, named from folder."""
+    scan = _Scan()
+    for path in album_files(folder, AUDIO_EXTENSIONS | LOSSY_EXTENSIONS | {_PARTIAL_SUFFIX}):
         name = os.path.relpath(path, folder)
-        if not path.lower().endswith(".m4a"):
-            others.append(name)
+        if path.lower().endswith(_PARTIAL_SUFFIX):
+            if os.path.basename(path).startswith(_PARTIAL_PREFIX):
+                scan.partials.append(name)
+        elif not path.lower().endswith(".m4a"):
+            scan.others.append(name)
         elif (info := _mp4_info(path)) is None:
-            unreadable.append(name)
+            scan.unreadable.append(name)
         elif info.codec == "alac":
             target = os.path.splitext(path)[0] + ".flac"
-            tracks.append(AlacTrack(path, target, name, info.bits_per_sample, info.sample_rate, info.channels))
+            scan.tracks.append(AlacTrack(path, target, name, info.bits_per_sample, info.sample_rate, info.channels))
         else:
-            others.append(name)
-    return tracks, others, unreadable
+            scan.others.append(name)
+    return scan
+
+
+def _it(names: list[str]) -> str:
+    """ "it" for one name, "them" for more."""
+    return "it" if len(names) == 1 else "them"
 
 
 def _named(names: list[str]) -> str:
@@ -161,8 +183,9 @@ def _named(names: list[str]) -> str:
     return ", ".join(names[:_NAMED]) + (f" and {len(names) - _NAMED} more" if len(names) > _NAMED else "")
 
 
-def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str], unreadable: list[str]) -> str | None:
+def _refusal(album: str, staged: str, scan: _Scan) -> str | None:
     """Why the ALAC files cannot be converted, or None."""
+    tracks, others, unreadable = scan.tracks, scan.others, scan.unreadable
     if cfg.directory.protects(staged):  # Never so: staged_source copies such an album. Kept for other callers.
         return f"Not converting the ALAC files in {staged}: it is or holds a library_dirs entry."
     if unreadable:
@@ -174,16 +197,6 @@ def _refusal(album: str, staged: str, tracks: list[AlacTrack], others: list[str]
         return (
             f"{album} holds ALAC files and lossy files ({_named(lossy)}): salmon converts ALAC to FLAC, and an upload "
             "holds one format. Move the lossy files out of the album and run salmon again."
-        )
-    # Hidden, so nothing else in salmon sees it, but it would go into the torrent.
-    if partials := [
-        os.path.relpath(path, staged)
-        for path in album_files(staged, (_PARTIAL_SUFFIX,))
-        if os.path.basename(path).startswith(_PARTIAL_PREFIX)
-    ]:
-        return (
-            f"{album} holds {_named(partials)}, left by a conversion that stopped, or written by one running now: "
-            "once no other salmon run is converting the album, remove it and run salmon again."
         )
     if odd := next((track for track in tracks if track.bits not in _BIT_DEPTHS), None):
         return f"{odd.name} is {odd.bits}-bit ALAC: salmon converts only 16-bit and 24-bit ALAC to FLAC."
@@ -232,7 +245,7 @@ async def _convert_all(tracks: list[AlacTrack]) -> str | None:
             return error
         return _publish([(track, partials[index]) for index, track in enumerate(tracks)])
     finally:
-        # A published one is at its .flac name already, and its partial name holds nothing.
+        # A moved FLAC is at its .flac name too: only the partial name goes.
         for partial in partials.values():
             _remove(partial)
 
@@ -250,30 +263,55 @@ def _claim_partial(track: AlacTrack) -> str:
 
 
 def _publish(written: list[tuple[AlacTrack, str]]) -> str | None:
-    """Move each verified FLAC from its partial name to its .flac name; why it stopped, if it did.
+    """Move each verified FLAC from its partial name to its .flac name, never over a file (see _move_no_clobber); why
+    it stopped, if it did.
 
-    The move never replaces a file where the volume has hard links (see rename_no_clobber): a FLAC another run of
-    salmon put there since the checks before the question (two uploads of one album at once) stays. After a failure,
-    the FLACs this run moved go.
+    A FLAC another run of salmon put at a .flac name since the checks before the question (two uploads of one album at
+    once) stays. After a failure, the FLACs this run moved go.
     """
     moved: list[str] = []
+    track = written[0][0]
     try:
         for track, partial in written:
-            try:
-                rename_no_clobber(partial, track.target)
-            except FileExistsError:
-                return (
-                    f"{track.flac_name} appeared while salmon converted {track.name}, perhaps from another run on the "
-                    "album. Nothing was converted."
-                )
-            except OSError as error:
-                return f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted."
+            _move_no_clobber(partial, track.target)
             moved.append(track.target)
-        moved = []  # All are in place: none to take back.
-        return None
-    finally:
+    except BaseException as error:
         for target in moved:
             _remove(target)
+        if isinstance(error, FileExistsError):
+            return (
+                f"{track.flac_name} appeared while salmon converted {track.name}, perhaps from another run on the "
+                "album. Nothing was converted."
+            )
+        if isinstance(error, OSError):
+            return f"Could not write {track.flac_name} ({error.strerror}). Nothing was converted."
+        raise
+    return None
+
+
+def _move_no_clobber(partial: str, target: str) -> None:
+    """Give the file at partial the name target too, never replacing a file there; partial's name stays (the caller
+    removes it).
+
+    By a hard link, which fails on a name in use. Where the volume has none (FAT, exFAT, many network shares), target
+    is claimed by creating it, then replaced: a kill between the two leaves it empty, so the next run stops on it.
+
+    Raises:
+        FileExistsError: A file is at target.
+        OSError: The move failed; nothing is left at target.
+    """
+    try:
+        os.link(partial, target)
+        return
+    except OSError as error:
+        if not lacks_hard_links(error):
+            raise
+    os.close(os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+    try:
+        os.replace(partial, target)
+    except BaseException:
+        _remove(target)
+        raise
 
 
 def _remove_sources(tracks: list[AlacTrack]) -> list[str]:

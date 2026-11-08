@@ -10,6 +10,8 @@ import unicodedata
 from collections import Counter
 from collections.abc import Callable, Iterable, Sequence
 
+from salmon.common.files import lacks_hard_links
+
 Rename = tuple[str, str]
 
 
@@ -99,17 +101,7 @@ def plan_renames(renames: Sequence[Rename]) -> tuple[list[Rename], list[str]]:
     return ordered, []
 
 
-# What os.link raises where the volume has no hard links, or no more for the file.
-_NO_HARD_LINKS = frozenset(
-    code
-    for code in (getattr(errno, name, None) for name in ("EPERM", "ENOTSUP", "EOPNOTSUPP", "EMLINK", "ENOSYS"))
-    if code is not None
-)
-# Windows' ERROR_INVALID_FUNCTION, from a FAT or exFAT volume; its errno, EINVAL, means other things elsewhere.
-_WINDOWS_NO_HARD_LINKS = 1
-
-
-def rename_no_clobber(old: str, new: str) -> None:
+def _rename_no_clobber(old: str, new: str) -> None:
     """``os.rename`` by a hard link, which fails on a name in use where a rename replaces the file there.
 
     A folder or a symlink, which have no hard link here, the file itself under another case, and a file on a volume
@@ -121,7 +113,7 @@ def rename_no_clobber(old: str, new: str) -> None:
     try:
         os.link(old, new)
     except OSError as e:
-        if e.errno not in _NO_HARD_LINKS and getattr(e, "winerror", None) != _WINDOWS_NO_HARD_LINKS:
+        if not lacks_hard_links(e):
             raise
         # A volume without hard links (FAT, many network shares): the rename rename_all checked, as before.
         os.rename(old, new)
@@ -147,7 +139,7 @@ def rename_all(renames: Sequence[Rename]) -> None:
     """Rename each pair in turn, its new path checked just before, so a path that already exists is never replaced.
 
     The file itself under another case is not in the way. A file created between the check and the rename is not
-    replaced either: a file is renamed by a hard link, which fails on a name in use (``rename_no_clobber``). A
+    replaced either: a file is renamed by a hard link, which fails on a name in use (``_rename_no_clobber``). A
     folder, a symlink, or a file on a volume without hard links is renamed with os.rename, which can still replace
     what appears at its new name in that moment; nothing else writes into the folder.
 
@@ -158,7 +150,7 @@ def rename_all(renames: Sequence[Rename]) -> None:
         try:
             if os.path.lexists(new) and not _same_entry(old, new):
                 raise FileExistsError(errno.EEXIST, "Another file already has the new name", new)
-            rename_no_clobber(old, new)
+            _rename_no_clobber(old, new)
         except OSError as e:
             raise RenameStopped(e, renames[:done], (old, new), renames[done + 1 :]) from e
 
