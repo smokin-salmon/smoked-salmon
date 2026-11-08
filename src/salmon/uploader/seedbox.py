@@ -356,7 +356,11 @@ class UploadManager:
             if seedbox.trackers and (site_code or "").upper() not in seedbox.trackers:
                 continue
             if seedbox.torrent_client not in self._client_cache:
-                record.note_seedbox_failed()
+                record.note_seedbox_failure(
+                    _seedbox_display_name(seedbox, seedbox_secrets(seedbox)),
+                    "client not set up",
+                    os.path.basename(directory),
+                )
                 continue
             task = (seedbox, directory, task_type, task_folder)
             if task in self.tasks:
@@ -389,6 +393,7 @@ class UploadManager:
                 fg="cyan",
             )
             secrets = seedbox_secrets(seedbox)
+            name = _seedbox_display_name(seedbox, secrets)
             try:
                 outcome = self._outcomes.get((id(seedbox), local_path, task_type, folder))
                 if task_type == "folder":
@@ -397,6 +402,7 @@ class UploadManager:
                         if not succeeded:
                             failed_folders.add((id(seedbox), folder))
                             failed_copies += 1
+                            record.note_seedbox_failure(name, "copy", os.path.basename(local_path))
                         elif outcome:
                             outcome.ok = True
                     elif outcome:
@@ -406,7 +412,7 @@ class UploadManager:
                     if (id(seedbox), folder) in failed_folders:
                         click.secho(
                             redact_secrets(
-                                f"Skipping seed on {_seedbox_display_name(seedbox, secrets)}: "
+                                f"Skipping seed on {name}: "
                                 f"the Rclone upload of {folder} failed, "
                                 f"so {local_path} was not added to the client there. Add it by hand once "
                                 "the files have been copied.",
@@ -415,6 +421,7 @@ class UploadManager:
                             fg="red",
                         )
                         failed_seeds += 1
+                        record.note_seedbox_failure(name, "add skipped (copy failed)", os.path.basename(local_path))
                         continue
                     client = self._client(seedbox)
                     if seedbox.type == "rclone":
@@ -430,10 +437,11 @@ class UploadManager:
                         else seedbox.label,
                         seedbox.add_paused,
                         secrets,
-                        _seedbox_display_name(seedbox, secrets),
+                        name,
                     )
                     if not added:
                         failed_seeds += 1
+                        record.note_seedbox_failure(name, "client add", os.path.basename(local_path))
                     elif outcome:
                         outcome.ok = True
             except Exception as e:
@@ -444,11 +452,12 @@ class UploadManager:
                     # be on the remote.
                     failed_folders.add((id(seedbox), folder))
                     failed_copies += 1
+                    record.note_seedbox_failure(name, "copy", os.path.basename(local_path))
                 elif task_type == "seed":
                     failed_seeds += 1
+                    record.note_seedbox_failure(name, "client add", os.path.basename(local_path))
 
         if failed_copies or failed_seeds:
-            record.note_seedbox_failed()
             parts = []
             if failed_copies:
                 parts.append(f"{failed_copies} {'copy' if failed_copies == 1 else 'copies'}")

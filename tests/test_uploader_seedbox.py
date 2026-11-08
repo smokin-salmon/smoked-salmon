@@ -9,7 +9,7 @@ import pytest
 
 from salmon.common.redaction import redact_command, redact_secrets
 from salmon.config.validations import Seedbox
-from salmon.uploader import seedbox
+from salmon.uploader import record, seedbox
 from salmon.uploader.torrent_client import DelugeClient, QBittorrentClient, TransmissionClient
 
 
@@ -1017,3 +1017,69 @@ def test_rclone_destination_folder_keeps_its_name_without_the_unicode_flag(monke
     anyio.run(seedbox._rclone_upload_folder, Seedbox(url="box", extra_args=["--checksum"]), "/music", f"/tmp/{nfd}")
 
     assert f"box:/music/{nfd}'" in capfd.readouterr().out
+
+
+def test_a_failed_copy_and_its_skipped_seed_are_each_recorded_by_step(monkeypatch, tmp_path) -> None:
+    async def fail(commands: list[str], secrets: list[str]) -> int:
+        return 1
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", name="My Box", url="box", torrent_client="qbittorrent+http://box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+    monkeypatch.setattr(seedbox, "_run_rclone", fail)
+
+    with record.recording() as run:
+        anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    assert [(f["seedbox"], f["step"]) for f in run.seedbox_failures] == [
+        ("My Box", "copy"),
+        ("My Box", "add skipped (copy failed)"),
+    ]
+    assert all(os.path.basename(f["item"]) == f["item"] for f in run.seedbox_failures)
+
+
+def test_a_failure_on_a_seedbox_with_no_name_names_it_without_its_password(monkeypatch, tmp_path) -> None:
+    async def fail(commands: list[str], secrets: list[str]) -> int:
+        return 1
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [
+            Seedbox(
+                type="rclone",
+                url=":sftp,host=box,user=dean,pass=UNIQUESECRET",
+                torrent_client="qbittorrent+http://box:8080",
+            )
+        ],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+    monkeypatch.setattr(seedbox, "_run_rclone", fail)
+
+    with record.recording() as run:
+        anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    assert run.seedbox_failures
+    assert "UNIQUESECRET" not in repr(run.seedbox_failures)
+    assert all(f["seedbox"] for f in run.seedbox_failures)
+
+
+def test_a_copy_that_raises_is_recorded_with_its_skipped_seed(monkeypatch, tmp_path) -> None:
+    async def refuse(commands: list[str], secrets: list[str]) -> int:
+        raise OSError("could not start rclone")
+
+    monkeypatch.setattr(
+        seedbox.cfg,
+        "seedbox",
+        [Seedbox(type="rclone", name="My Box", url="box", torrent_client="qbittorrent+http://box:8080")],
+    )
+    monkeypatch.setattr(seedbox.TorrentClientGenerator, "parse_libtc_url", staticmethod(lambda url: _RecordingClient()))
+    monkeypatch.setattr(seedbox, "_run_rclone", refuse)
+
+    with record.recording() as run:
+        anyio.run(_queue_one_release(tmp_path).execute_upload)
+
+    assert [f["step"] for f in run.seedbox_failures] == ["copy", "add skipped (copy failed)"]

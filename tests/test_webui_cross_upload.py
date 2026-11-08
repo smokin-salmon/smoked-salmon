@@ -470,15 +470,26 @@ def _seedbox_job(monkeypatch: pytest.MonkeyPatch, dirs: SimpleNamespace, setup: 
     return ended[0]
 
 
-@pytest.mark.parametrize("setup", [_client_refuses, _client_raises, _client_never_configured])
+@pytest.mark.parametrize(
+    ("setup", "step"),
+    [
+        (_client_refuses, "client add"),
+        (_client_raises, "client add"),
+        (_client_never_configured, "client not set up"),
+    ],
+)
 def test_a_job_whose_seedbox_failed_stays_done_and_its_result_says_so(
     monkeypatch: pytest.MonkeyPatch,
     dirs: SimpleNamespace,  # noqa: F811
     setup: Callable[..., None],
+    step: str,
 ) -> None:
     job = _seedbox_job(monkeypatch, dirs, setup)
     assert (job.status, len(job.result["uploads"])) == ("done", 1), (job.error, _log(job))
     assert job.result.get("seedbox_failed") is True
+    failures = job.result["seedbox_failures"]
+    assert [(f["seedbox"], f["step"]) for f in failures] == [("box", step)], failures
+    assert all(f["item"] and os.path.basename(f["item"]) == f["item"] for f in failures), failures
 
 
 def test_as_before_a_job_whose_seedbox_took_it_has_no_seedbox_failure(
@@ -488,6 +499,7 @@ def test_as_before_a_job_whose_seedbox_took_it_has_no_seedbox_failure(
     job = _seedbox_job(monkeypatch, dirs, None)
     assert (job.status, len(job.result["uploads"])) == ("done", 1), (job.error, _log(job))
     assert not job.result.get("seedbox_failed")
+    assert job.result["seedbox_failures"] == []
 
 
 # --- Usage rules, inputs --------------------------------------------------------------------------------

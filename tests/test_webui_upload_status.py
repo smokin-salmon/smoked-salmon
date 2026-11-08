@@ -6,6 +6,7 @@ As the cross-upload job: a job that stops says so and lists what went up, and an
 Each row of AS_BEFORE ends as master does; each row of CHANGED ended with another status or result.
 """
 
+import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -70,6 +71,8 @@ class Row:
     answers: tuple[Any, ...] = ()
     # The result says a seedbox step (a copy, a client add, or setting up the client) failed, for the page's warning.
     seedbox_failed: bool = False
+    # The steps its result names (a run queues several folders and torrents), each on the seedbox `box`.
+    seedbox_steps: frozenset[str] = frozenset()
 
 
 V0 = {"conversions": ["V0"]}
@@ -121,9 +124,23 @@ CHANGED = {
         lambda: _cover_on("OPS", click.Abort),
     ),
     # Up, and a seedbox failed: what the CLI exits 3 for. Done, with nothing in the result to say so, on master
-    "seedbox_copy_failed": Row("done", 3, setup=_seedbox(copy_exit=1), seedbox_failed=True),
-    "seedbox_client_add_raises": Row("done", 3, setup=_a_client_add_raises, seedbox_failed=True),
-    "seedbox_never_configured": Row("done", 3, setup=_seedbox(clients=(BAD_CLIENT,)), seedbox_failed=True),
+    "seedbox_copy_failed": Row(
+        "done",
+        3,
+        setup=_seedbox(copy_exit=1),
+        seedbox_failed=True,
+        seedbox_steps=frozenset({"copy", "add skipped (copy failed)"}),
+    ),
+    "seedbox_client_add_raises": Row(
+        "done", 3, setup=_a_client_add_raises, seedbox_failed=True, seedbox_steps=frozenset({"client add"})
+    ),
+    "seedbox_never_configured": Row(
+        "done",
+        3,
+        setup=_seedbox(clients=(BAD_CLIENT,)),
+        seedbox_failed=True,
+        seedbox_steps=frozenset({"client not set up"}),
+    ),
 }
 
 AS_BEFORE = {
@@ -186,6 +203,10 @@ def _check(monkeypatch, roots, row: Row) -> None:  # noqa: F811
         if job.result is not None:
             assert (job.result["folder"], job.result["trackers"]) == ("Album", list(row.trackers))
             assert job.result.get("seedbox_failed", False) is row.seedbox_failed
+            failures = job.result.get("seedbox_failures", [])
+            assert {f["seedbox"] for f in failures} <= {"box"}
+            assert {f["step"] for f in failures} == row.seedbox_steps, failures
+            assert all(f["item"] and os.path.basename(f["item"]) == f["item"] for f in failures), failures
         if row.said is None:
             assert job.error is None
         else:
