@@ -15,6 +15,8 @@ from salmon.errors import ScrapeError
 from salmon.proxy import session_kwargs
 
 HEADERS = {"User-Agent": choice(UAGENTS)}
+# Seconds a fetch_page request may take in all.
+PAGE_TIMEOUT = 7
 
 
 class IdentData(msgspec.Struct, frozen=True):
@@ -150,7 +152,7 @@ class BaseScraper:
         """
         params = params or {}
         async with (
-            self._session(timeout=7) as session,
+            self._session(timeout=PAGE_TIMEOUT) as session,
             session.get(url, params=params, headers=headers or HEADERS, allow_redirects=follow_redirects) as r,
         ):
             if r.status != 200:
