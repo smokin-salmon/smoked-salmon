@@ -1,0 +1,334 @@
+== run ==
+salmon up <tmp>/seeding/Album -t RED -t OPS -s WEB -n -yyy --skip-integrity-check --skip-up --source-url https://store.test/album/1 --dry-run
+exit: 0
+sent: False, complete: True
+remove_local_copies reason: None
+remove_source_folder: final=<tmp>/downloads/.salmon-staging/run-<random>/Artist - Album (2020) [WEB FLAC] original=<tmp>/seeding/Album uploaded=True aborted=False only_here=[]
+waited (s): []
+
+== RED ==
+GET /ajax.php action=index [API key]
+GET /ajax.php action=browse searchstr=artist album [API key]
+GET /ajax.php action=requests search=artist album [API key]
+
+== OPS ==
+GET /ajax.php action=index [API key]
+GET /ajax.php action=browse searchstr=artist album [API key]
+GET /ajax.php action=requests search=artist album [API key]
+
+== images ==
+
+== seedbox ==
+
+== torrent files ==
+
+== files ==
+seeding/Album/01 - one.flac
+seeding/Album/02 - two.flac
+seeding/Album/cover.jpg
+
+== stdout ==
+
+Using tracker: RED
+Using tracker: OPS
+Dry run: the upload runs on a copy of the album and sends nothing. Each upload's form is printed instead.
+
+Processing <tmp>/seeding/Album
+Uploading from WEB.
+
+Copying <tmp>/seeding/Album (0 MB) to <tmp>/downloads/.salmon-staging/run-<random>/Album. A dry run works on a copy, so the source is never modified.
+Unaliased the following tags for 01 - one.flac: year
+Unaliased the following tags for 02 - two.flac: year
+Checking for MQA release (every FLAC file)
+No MQA release detected
+Skipping the RED log check for recent uploads: it needs a session cookie (tracker.red.session), and none is set.
+
+No groups found on RED matching this release.
+Would you like to upload to an existing group?
+Paste a URL or [N]ew group / [a]bort / [d]elete music folder  []: <answered: ''>
+Uploading to a new torrent group.
+
+Renaming folder...
+Old folder name        : Album
+New pending folder name: Artist - Album (2020) [WEB FLAC]
+Hardlinked folder to '<tmp>/downloads/.salmon-staging/run-<random>/Artist - Album (2020) [WEB FLAC]'.
+
+
+Dry run: not uploading the spectrals of 1 track(s) to testhost.
+Dry run: not connecting to the seedboxes' torrent clients.
+
+Using existing cover image found: <tmp>/downloads/.salmon-staging/run-<random>/Artist - Album (2020) [WEB FLAC]/cover.jpg...
+Dry run: not uploading the cover cover.jpg to testhost.
+
+No requests were found on RED (searchstrs: artist album)
+Generating torrent file... done!
+Dry run: not uploading to RED. It would send POST <RED>/ajax.php?action=upload with the API key:
+  file_input: meowmeow.torrent (334 bytes)
+  submit: on
+  type: 0
+  title: Album
+  artists[]: Artist
+  importance[]: 1
+  year: 2020
+  record_label: Label
+  catalogue_number: CAT1
+  releasetype: 1
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: FLAC
+  bitrate: Lossless
+  media: WEB
+  tags: Electronic
+  image: <testhost URL of cover.jpg>
+  album_desc: [b][size=4]Tracklist[/size][/b]
+      [b]01.[/b] One [i](1:00)[/i]
+      [b]02.[/b] Two [i](1:00)[/i]
+      
+      [b]Total length: [/b]2:00
+      
+  release_desc: [hide=Spectrals][b]01. one.flac Full[/b]
+      [img=<testhost URL of 01 Full.png>]
+      [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+      
+      [/hide]
+      [img]https://i.ibb.co/hPnL0dT/cdq.png[/img] [b]16 bit [color=#2E86C1]44.1[/color] kHz[/b]
+      Released on [b]2020-01-01[/b]
+      [b]Source:[/b] [pad=0|3][url=https://store.test/album/1][img]https://i.ibb.co/jd8Ysrm/bandcamp.png[/img] Bandcamp[/url][/pad]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+  auth: [REDACTED]
+  The torrent: Artist - Album (2020) [WEB FLAC], 3 file(s), 2.23 KiB, piece size 16 KiB, source RED
+    01. one.flac  (1.11 KiB)
+    02. two.flac  (1.11 KiB)
+    cover.jpg  (4 bytes)
+Dry run: not reporting the torrent to RED for lossy master approval. The report:
+  Sourced from: https://store.test/album/1
+
+  [hide=Spectrals][b]01. one.flac Full[/b]
+  [img=<testhost URL of 01 Full.png>]
+  [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+
+  [/hide]
+
+Dry run: not copying it to a seedbox or adding it to a torrent client.
+
+Selected formats for downconversion: MP3 320, MP3 V0
+
+Processing: MP3 320
+  Target encoding: 320
+  Generated description: [b]Source:[/b] <RED>/torrents.php?torrentid=<ID of the uploaded torrent>
+[b]Transco...
+Generating torrent file... done!
+Dry run: not uploading to RED. It would send POST <RED>/ajax.php?action=upload with the API key:
+  file_input: meowmeow.torrent (306 bytes)
+  submit: on
+  type: 0
+  groupid: <ID of the group this upload creates>
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: MP3
+  bitrate: 320
+  media: WEB
+  release_desc: [b]Source:[/b] <RED>/torrents.php?torrentid=<ID of the uploaded torrent>
+      [b]Transcode process:[/b] [code]flac -Vdsc -- input.flac | lame -S -h -b 320 --ignore-tag-errors - output.mp3[/code]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+  auth: [REDACTED]
+  The torrent: Artist - Album (2020) [WEB FLAC] [320], 2 file(s), 5.86 KiB, piece size 16 KiB, source RED
+    01. one.mp3  (2.93 KiB)
+    02. two.mp3  (2.93 KiB)
+Dry run: not reporting the torrent to RED for lossy master approval. The report:
+  Sourced from: https://store.test/album/1
+
+  [hide=Spectrals][b]01. one.flac Full[/b]
+  [img=<testhost URL of 01 Full.png>]
+  [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+
+  [/hide]
+
+Dry run: not copying it to a seedbox or adding it to a torrent client.
+  ✓ MP3 320 transcode completed
+
+Processing: MP3 V0
+  Target encoding: V0
+  Generated description: [b]Source:[/b] <RED>/torrents.php?torrentid=<ID of the uploaded torrent>
+[b]Transco...
+Generating torrent file... done!
+Dry run: not uploading to RED. It would send POST <RED>/ajax.php?action=upload with the API key:
+  file_input: meowmeow.torrent (305 bytes)
+  submit: on
+  type: 0
+  groupid: <ID of the group this upload creates>
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: MP3
+  bitrate: V0 (VBR)
+  vbr: on
+  media: WEB
+  release_desc: [b]Source:[/b] <RED>/torrents.php?torrentid=<ID of the uploaded torrent>
+      [b]Transcode process:[/b] [code]flac -Vdsc -- input.flac | lame -S -V 0 --vbr-new --ignore-tag-errors - output.mp3[/code]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+  auth: [REDACTED]
+  The torrent: Artist - Album (2020) [WEB FLAC] [V0], 2 file(s), 3.91 KiB, piece size 16 KiB, source RED
+    01. one.mp3  (1.95 KiB)
+    02. two.mp3  (1.95 KiB)
+Dry run: not reporting the torrent to RED for lossy master approval. The report:
+  Sourced from: https://store.test/album/1
+
+  [hide=Spectrals][b]01. one.flac Full[/b]
+  [img=<testhost URL of 01 Full.png>]
+  [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+
+  [/hide]
+
+Dry run: not copying it to a seedbox or adding it to a torrent client.
+  ✓ MP3 V0 transcode completed
+
+Next tracker: OPS
+Uploading to <OPS>
+Skipping the OPS log check for recent uploads: it needs a session cookie (tracker.ops.session), and none is set.
+
+No groups found on OPS matching this release.
+Would you like to upload to an existing group?
+Paste a URL or [N]ew group / [s]kip this tracker / [a]bort  []: <answered: ''>
+Uploading to a new torrent group.
+
+No requests were found on OPS (searchstrs: artist album)
+Generating torrent file... done!
+Dry run: not uploading to OPS. It would send POST <OPS>/ajax.php?action=upload with the API key:
+  file_input: meowmeow.torrent (337 bytes)
+  submit: on
+  type: 0
+  title: Album
+  artists[]: Artist
+  importance[]: 1
+  year: 2020
+  record_label: Label
+  catalogue_number: CAT1
+  releasetype: 1
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: FLAC
+  bitrate: Lossless
+  media: WEB
+  tags: Electronic
+  image: <testhost URL of cover.jpg>
+  album_desc: [b][size=4]Tracklist[/size][/b]
+      [b]01.[/b] One [i](1:00)[/i]
+      [b]02.[/b] Two [i](1:00)[/i]
+      
+      [b]Total length: [/b]2:00
+      
+  release_desc: [hide=Spectrals][b]01. one.flac Full[/b]
+      [img=<testhost URL of 01 Full.png>]
+      [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+      
+      [/hide]
+      [img]https://i.ibb.co/hPnL0dT/cdq.png[/img] [b]16 bit [color=#2E86C1]44.1[/color] kHz[/b]
+      Released on [b]2020-01-01[/b]
+      [b]Source:[/b] [pad=0|3][url=https://store.test/album/1][img]https://i.ibb.co/jd8Ysrm/bandcamp.png[/img] Bandcamp[/url][/pad]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+  auth: [REDACTED]
+  The torrent: Artist - Album (2020) [WEB FLAC], 3 file(s), 2.23 KiB, piece size 16 KiB, source OPS
+    01. one.flac  (1.11 KiB)
+    02. two.flac  (1.11 KiB)
+    cover.jpg  (4 bytes)
+Dry run: not reporting the torrent to OPS for lossy master approval. The report:
+  Sourced from: https://store.test/album/1
+
+  [hide=Spectrals][b]01. one.flac Full[/b]
+  [img=<testhost URL of 01 Full.png>]
+  [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+
+  [/hide]
+
+Dry run: not copying it to a seedbox or adding it to a torrent client.
+
+Selected formats for downconversion: MP3 320, MP3 V0
+
+Processing: MP3 320
+  Target encoding: 320
+  Generated description: [b]Source:[/b] <OPS>/torrents.php?torrentid=<ID of the uploaded torrent>
+[b]Transco...
+Generating torrent file... done!
+Dry run: not uploading to OPS. It would send POST <OPS>/ajax.php?action=upload with the API key:
+  file_input: meowmeow.torrent (309 bytes)
+  submit: on
+  type: 0
+  groupid: <ID of the group this upload creates>
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: MP3
+  bitrate: 320
+  media: WEB
+  release_desc: [b]Source:[/b] <OPS>/torrents.php?torrentid=<ID of the uploaded torrent>
+      [b]Transcode process:[/b] [code]flac -Vdsc -- input.flac | lame -S -h -b 320 --ignore-tag-errors - output.mp3[/code]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+  auth: [REDACTED]
+  The torrent: Artist - Album (2020) [WEB FLAC] [320], 2 file(s), 5.86 KiB, piece size 16 KiB, source OPS
+    01. one.mp3  (2.93 KiB)
+    02. two.mp3  (2.93 KiB)
+Dry run: not reporting the torrent to OPS for lossy master approval. The report:
+  Sourced from: https://store.test/album/1
+
+  [hide=Spectrals][b]01. one.flac Full[/b]
+  [img=<testhost URL of 01 Full.png>]
+  [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+
+  [/hide]
+
+Dry run: not copying it to a seedbox or adding it to a torrent client.
+  ✓ MP3 320 transcode completed
+
+Processing: MP3 V0
+  Target encoding: V0
+  Generated description: [b]Source:[/b] <OPS>/torrents.php?torrentid=<ID of the uploaded torrent>
+[b]Transco...
+Generating torrent file... done!
+Dry run: not uploading to OPS. It would send POST <OPS>/ajax.php?action=upload with the API key:
+  file_input: meowmeow.torrent (308 bytes)
+  submit: on
+  type: 0
+  groupid: <ID of the group this upload creates>
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: MP3
+  bitrate: V0 (VBR)
+  vbr: on
+  media: WEB
+  release_desc: [b]Source:[/b] <OPS>/torrents.php?torrentid=<ID of the uploaded torrent>
+      [b]Transcode process:[/b] [code]flac -Vdsc -- input.flac | lame -S -V 0 --vbr-new --ignore-tag-errors - output.mp3[/code]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+  auth: [REDACTED]
+  The torrent: Artist - Album (2020) [WEB FLAC] [V0], 2 file(s), 3.91 KiB, piece size 16 KiB, source OPS
+    01. one.mp3  (1.95 KiB)
+    02. two.mp3  (1.95 KiB)
+Dry run: not reporting the torrent to OPS for lossy master approval. The report:
+  Sourced from: https://store.test/album/1
+
+  [hide=Spectrals][b]01. one.flac Full[/b]
+  [img=<testhost URL of 01 Full.png>]
+  [hide=Zoomed][img=<testhost URL of 01 Zoom.png>][/hide]
+
+  [/hide]
+
+Dry run: not copying it to a seedbox or adding it to a torrent client.
+  ✓ MP3 V0 transcode completed
+
+Done uploading this release.
+No upload tasks to execute
+remove_source_dir is on, but <tmp>/seeding/Album is kept: a dry run works on a copy and changes nothing.
+Dry run: done. Nothing was sent, and <tmp>/seeding/Album is unchanged.
+
+== stderr ==
+

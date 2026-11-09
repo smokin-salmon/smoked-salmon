@@ -1,0 +1,47 @@
+== run ==
+salmon up <tmp>/seeding/Album -t RED -t OPS -s WEB -n -yyy --skip-integrity-check --skip-up --source-url https://store.test/album/1
+exit: 1
+sent: False, complete: False
+remove_local_copies reason: not reached
+remove_source_folder: not reached
+waited (s): []
+
+== RED ==
+
+== OPS ==
+
+== images ==
+
+== seedbox ==
+
+== torrent files ==
+
+== files ==
+downloads/Artist - Album (2020) [WEB FLAC]/01. one.flac
+downloads/Artist - Album (2020) [WEB FLAC]/02. two.flac
+downloads/Artist - Album (2020) [WEB FLAC]/cover.jpg
+seeding/Album/01 - one.flac
+seeding/Album/02 - two.flac
+seeding/Album/cover.jpg
+
+== stdout ==
+
+Using tracker: RED
+Using tracker: OPS
+
+Processing <tmp>/seeding/Album
+Uploading from WEB.
+Unaliased the following tags for 01 - one.flac: year
+Unaliased the following tags for 02 - two.flac: year
+Checking for MQA release (every FLAC file)
+No MQA release detected
+
+Renaming folder...
+Old folder name        : Album
+New pending folder name: Artist - Album (2020) [WEB FLAC]
+Hardlinked folder to '<tmp>/downloads/Artist - Album (2020) [WEB FLAC]'.
+
+No dupe search is possible for this title: check the tracker yourself. Not uploading with -yyy (upload.yes_all): give --group-id, or run without -yyy, and with upload.yes_all off.
+
+== stderr ==
+
