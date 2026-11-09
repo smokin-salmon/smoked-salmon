@@ -36,7 +36,7 @@ RED_REFUSES = {"RED": Site(uploads=("refused",))}
 
 
 # Each scenario is a row of #982's table: S2 is "s02...", its variants "s02_...". Where the same scenario runs through
-# salmon web, its CLI row is named here and the web one ends in "_web".
+# salmon web, its CLI row is named here and the web one ends in "_web_job".
 SCENARIOS: dict[str, Scenario] = {
     "s01_two_trackers_ops_offered": Scenario(
         "Two trackers, RED the default, OPS offered, both up", defaults=("RED",), stdin="\nOPS\n\nn\n"

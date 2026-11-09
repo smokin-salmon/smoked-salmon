@@ -539,27 +539,28 @@ def _run_commands(
     exits: list[Any] = []
     out: list[str] = []
     err: list[str] = []
+    keep_reasons: list[str | None] = []
+    removals: list[str] = []
 
     async def run() -> None:
         async with all_serving(world.servers):
             for _ in range(scenario.runs):
                 monkeypatch.setattr(sys, "stdin", _Answers(scenario.stdin))
                 exits.append(await anyio.to_thread.run_sync(_exit_of_main))
+                keep_reasons.append(world.keep_reasons.pop() if world.keep_reasons else "not reached")
+                removals.append(world.removals.pop() if world.removals else "")
                 captured = capsys.readouterr()
                 out.extend(click.unstyle(captured.out).splitlines())
                 err.extend(_stderr_lines(click.unstyle(captured.err)))
 
     anyio.run(run)
     head = [f"salmon {' '.join(argv[1:])}"]
-    for i, (exit_code, run_record) in enumerate(zip(exits, world.records, strict=True)):
+    for i, (exit_code, run_record, keep_reason, removal) in enumerate(
+        zip(exits, world.records, keep_reasons, removals, strict=True)
+    ):
         if scenario.runs > 1:
             head.append(f"--- run {i + 1}")
-        head += _record_lines(
-            run_record,
-            exit_code,
-            world.keep_reasons[i] if i < len(world.keep_reasons) else "not reached",
-            world.removals[i] if i < len(world.removals) else "",
-        )
+        head += _record_lines(run_record, exit_code, keep_reason, removal)
     return head, out, err
 
 
