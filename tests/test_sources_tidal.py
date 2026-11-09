@@ -3,6 +3,7 @@
 import asyncio
 import time
 from collections.abc import Callable
+from copy import deepcopy
 from email.utils import formatdate
 from typing import Any
 
@@ -86,6 +87,8 @@ ALBUM_DOC = {
     "included": [
         _genre("g0", "Electronic"),
         _genre("g1", "Pop"),
+        # A malformed genre resource must not stop the album from being parsed.
+        {"id": "g_bad", "type": "genres"},
         _artist("a1", "Kordz"),
         _artist("a2", "Guest Singer"),
         _artist("a3", "Tiësto"),
@@ -255,8 +258,7 @@ def test_album_is_parsed_into_salmon_metadata_across_item_pages(
     assert data["label"] == "Majestic Casual Records"
     assert data["upc"] == "0617465881222"
     assert data["cover"] == "https://resources.tidal.com/images/a/b/1280x1280.jpg"
-    # The album genre and both tracks' genres, including the second page's.
-    assert data["genres"] == ["Electronic", "Pop", "Rock"]
+    assert data["genres"] == ["Electronic"]
     assert ("Kordz", "main") in data["artists"]
 
     tracks = data["tracks"]
@@ -268,6 +270,18 @@ def test_album_is_parsed_into_salmon_metadata_across_item_pages(
     assert ("Tiësto", "remixer") in connect["artists"]
     # The second page's track keeps its artists.
     assert bonus["artists"] == [("Kordz", "main"), ("Second Page Artist", "guest")]
+
+
+def test_track_genres_are_used_when_the_album_has_none(tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch) -> None:
+    album_doc = deepcopy(ALBUM_DOC)
+    # Tidal leaves the album's genre relationship empty for many releases.
+    album_doc["data"]["relationships"]["genres"] = {"data": []}
+    tidal.routes["albums/75194842"] = _json(album_doc)
+    tidal.routes["albums/75194842/relationships/items"] = _json(ITEMS_PAGE_2)
+
+    data = _run(tidal, monkeypatch, lambda: Scraper().scrape_release(ALBUM_URL))
+
+    assert data["genres"] == ["Pop", "Rock"]
 
 
 def test_item_paging_stops_at_its_cap(tidal: FakeTidal, monkeypatch: pytest.MonkeyPatch) -> None:

@@ -188,7 +188,12 @@ class TidalBase(BaseScraper):
                     cover = max(files, key=lambda f: f.get("meta", {}).get("width", 0))["href"]
                 break
 
-        genres_by_id = {obj["id"]: obj["attributes"]["genreName"] for obj in included if obj["type"] == "genres"}
+        genres_by_id: dict[str, str] = {}
+        for obj in included:
+            if obj["type"] == "genres":
+                name = obj.get("attributes", {}).get("genreName")
+                if name:
+                    genres_by_id[obj["id"]] = name
         tracks = {obj["id"]: obj for obj in included if obj["type"] == "tracks"}
         tracklist = []
         for item in items:
