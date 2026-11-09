@@ -5,7 +5,8 @@ import anyio
 
 from salmon import cfg
 from salmon.common import parse_copyright
-from salmon.search.base import IdentData, SearchMixin
+from salmon.errors import ScrapeError
+from salmon.search.base import IdentData, SearchMixin, say_part_failed
 from salmon.sources import AppleMusicBase
 
 
@@ -27,8 +28,8 @@ class Searcher(AppleMusicBase, SearchMixin):
                         "country": sf,
                     },
                 )
-            except Exception:
-                per_sf[sf] = []
+            except Exception as e:
+                say_part_failed(f"Apple Music: storefront {sf}", e)
                 return
 
             results = []
@@ -57,6 +58,9 @@ class Searcher(AppleMusicBase, SearchMixin):
         async with anyio.create_task_group() as tg:
             for sf in sf_langs:
                 tg.start_soon(_search_one, sf)
+
+        if not per_sf:
+            raise ScrapeError("Apple Music: every storefront failed.")
 
         # Interleave by rank across storefronts, then expand each result to all
         # configured langs for that storefront
