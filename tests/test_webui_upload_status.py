@@ -83,6 +83,8 @@ CHANGED = {
     "mqa": Row("failed", None, STOPPED, fakes=_at("mqa_test", click.Abort)),
     "only_tracker_forbids": Row("failed", None, STOPPED, fakes=lambda: _forbidden_on("RED")),
     "dry_run_stopped": Row("failed", None, STOPPED, dry_run=True, fakes=_at("mqa_test", click.Abort)),
+    # Stopped with nothing up: failed, with the exception for its error, on master
+    "request_search_fails": Row("failed", None, STOPPED, fakes=_at("check_requests", RequestFailedError("no"))),
     # Stopped with something up: done, with it listed, on master
     "red_up_ops_refused": Row("failed", 3, STOPPED, TWO, tracker=lambda: RefusingTracker("OPS")),
     "red_refused_ops_up": Row("failed", 3, STOPPED, TWO, tracker=lambda: RefusingTracker("RED")),

@@ -25,6 +25,16 @@ API_KEY = "API key"
 TLS_CERTIFICATE = "TLS certificate"
 
 
+def print_certificate_hint(error: Exception) -> None:
+    """After the line giving a failure's reason, where to look if it is a certificate failure. Nothing for any other."""
+    if isinstance(error, TLSCertificateError):
+        click.secho(
+            f"Your session cookie and API key are not the cause. Run salmon checkconf -t {error.tracker} to see where"
+            " Python gets its CA certificates.",
+            fg="yellow",
+        )
+
+
 class ConnectionResult(msgspec.Struct, kw_only=True):
     """What the check found for one tracker.
 
