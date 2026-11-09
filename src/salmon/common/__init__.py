@@ -3,7 +3,7 @@ import contextlib
 import platform
 import sys
 import traceback
-from collections.abc import Awaitable
+from collections.abc import Awaitable, Callable
 
 import aiohttp
 import asyncclick as click
@@ -176,12 +176,15 @@ def _format_scrape_error_message(error: BaseException) -> str:
     return error.__class__.__name__
 
 
-async def handle_scrape_errors[ReturnType](task: Awaitable[ReturnType], mute: bool = False) -> ReturnType | None:
+async def handle_scrape_errors[ReturnType](
+    task: Awaitable[ReturnType], mute: bool = False, say: Callable[[str], None] | None = None
+) -> ReturnType | None:
     """Handle errors during scraping tasks.
 
     Args:
         task: The async task to run.
         mute: If True, suppress error messages.
+        say: Given an expected failure's line instead of it being printed.
 
     Returns:
         The task result or None on error.
@@ -190,7 +193,11 @@ async def handle_scrape_errors[ReturnType](task: Awaitable[ReturnType], mute: bo
         return await task
     except (ScrapeError, aiohttp.ClientError, TimeoutError, KeyError) as e:
         if not mute:
-            click.secho(f"Scrape error: {_format_scrape_error_message(e)}", fg="red", bold=True)
+            line = f"Scrape error: {_format_scrape_error_message(e)}"
+            if say:
+                say(line)
+            else:
+                click.secho(line, fg="red", bold=True)
     except Exception as e:
         # Catch any unexpected errors too
         if not mute:

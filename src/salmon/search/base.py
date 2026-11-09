@@ -7,13 +7,13 @@ from typing import Any
 import asyncclick as click
 import msgspec
 
-# Inside each_failed_part_said_once, the line of each storefront or region that failed so far, by what failed.
+# Inside each_failed_part_said_once, the styled line of each store, storefront or region that failed so far, by what.
 _failed_parts: ContextVar[dict[str, str] | None] = ContextVar("failed_search_parts", default=None)
 
 
 @contextmanager
 def each_failed_part_said_once() -> Iterator[None]:
-    """Print each failed storefront or region's line once, when the searches inside have finished."""
+    """Print each failed store, storefront or region's line once, when the searches inside have finished."""
     lines: dict[str, str] = {}
     token = _failed_parts.set(lines)
     try:
@@ -21,17 +21,26 @@ def each_failed_part_said_once() -> Iterator[None]:
     finally:
         _failed_parts.reset(token)
     for line in lines.values():
-        click.secho(line, fg="yellow")
+        click.echo(line)
+
+
+def _say_once(what: str, line: str, **style: Any) -> None:
+    """Print a failure's line, or inside each_failed_part_said_once keep the first one for what failed."""
+    lines = _failed_parts.get()
+    if lines is None:
+        click.secho(line, **style)
+    else:
+        lines.setdefault(what, click.style(line, **style))
 
 
 def say_part_failed(part: str, reason: object) -> None:
     """Say that a store's storefront or region failed, as "Apple Music: storefront jp". The first reason is kept."""
-    line = f"{part} failed: {reason}"
-    lines = _failed_parts.get()
-    if lines is None:
-        click.secho(line, fg="yellow")
-    else:
-        lines.setdefault(part, line)
+    _say_once(part, f"{part} failed: {reason}", fg="yellow")
+
+
+def say_store_failed(store: str, line: str) -> None:
+    """Say that a whole store's search failed, in the line handle_scrape_errors gives. The first is kept."""
+    _say_once(store, line, fg="red", bold=True)
 
 
 class IdentData(msgspec.Struct, frozen=True):

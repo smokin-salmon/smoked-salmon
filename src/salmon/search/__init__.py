@@ -1,6 +1,7 @@
 import asyncio
 import re
 from collections.abc import Callable, Iterable
+from functools import partial
 from itertools import chain, zip_longest
 from operator import itemgetter
 from typing import Any
@@ -26,7 +27,7 @@ from salmon.search import (
     qobuz,
     tidal,
 )
-from salmon.search.base import each_failed_part_said_once
+from salmon.search.base import each_failed_part_said_once, say_store_failed
 
 SEARCHSOURCES = {
     "Bandcamp": bandcamp,
@@ -124,9 +125,9 @@ async def run_metasearch(
     sources = searched_sources() if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
     answers: dict[str, list[Any]] = {}
     tasks = [
-        handle_scrape_errors(s.Searcher().search_releases(search, limit))
+        handle_scrape_errors(s.Searcher().search_releases(search, limit), say=partial(say_store_failed, name))
         for search in searchstrs
-        for s in sources.values()
+        for name, s in sources.items()
     ]
     with each_failed_part_said_once():
         task_responses = await asyncio.gather(*tasks)

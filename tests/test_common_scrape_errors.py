@@ -45,3 +45,15 @@ def test_handle_scrape_errors_keeps_traceback_for_unexpected_failures(monkeypatc
     assert len(messages) == 1
     assert messages[0][1] == {"fg": "red", "bold": True}
     assert messages[0][0].startswith("Unexpected scrape error: boom\nTraceback")
+
+
+def test_as_before_a_muted_failure_says_nothing(monkeypatch) -> None:
+    messages: list[str] = []
+
+    async def raise_error() -> None:
+        raise ScrapeError("down")
+
+    monkeypatch.setattr("salmon.common.click.secho", lambda message, **_kwargs: messages.append(message))
+
+    assert asyncio.run(handle_scrape_errors(raise_error(), mute=True)) is None
+    assert messages == []
