@@ -7,6 +7,7 @@ from typing import Any, cast
 
 import anyio
 import asyncclick as click
+from mutagen import MutagenError
 from tqdm import tqdm
 
 from salmon import cfg
@@ -185,3 +186,30 @@ async def process_files[T](
             await process_all(lambda: pbar.update(1))
 
     return cast("list[T]", results)
+
+
+async def process_tracks[T](
+    files: list[str],
+    process_func: Callable[[str, int], Awaitable[T]],
+    desc: str,
+    on_done: Callable[[], None] | None = None,
+) -> list[T]:
+    """process_files for tracks an encoder works on, whose failure is the user's to act on and not a bug.
+
+    Raises:
+        UploadError: Naming every track that failed, which is only those failing together: the first cancels the
+            others. A full disk or a program not installed is one too. Any other exception stays the task group's.
+    """
+
+    async def named(file: str, idx: int) -> T:
+        try:
+            return await process_func(file, idx)
+        except (OSError, MutagenError) as e:
+            raise UploadError(f"{os.path.basename(file)}: {e}") from e
+
+    try:
+        return await process_files(files, named, desc, on_done)
+    except ExceptionGroup as group:
+        if not all(isinstance(e, UploadError) for e in group.exceptions):
+            raise
+        raise UploadError("\n".join(str(e) for e in group.exceptions)) from group

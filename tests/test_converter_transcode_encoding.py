@@ -147,7 +147,7 @@ def _fake_lame(monkeypatch, failing: frozenset[str] = frozenset()) -> list[str]:
         encoded.append(name)
         _write_mp3(Path(mp3_path))
         if name in failing:
-            raise RuntimeError("lame: No space left on device")
+            raise UploadError("lame: No space left on device")
 
     monkeypatch.setattr(transcoding, "_flac_to_mp3", encode)
     monkeypatch.setattr(cfg.upload, "simultaneous_threads", 1)
@@ -159,7 +159,7 @@ def test_a_track_that_failed_to_encode_leaves_nothing(monkeypatch, tmp_path) -> 
     album = _album(tmp_path)
     _fake_lame(monkeypatch, failing=frozenset({"02. two.flac"}))
 
-    with pytest.raises(ExceptionGroup):
+    with pytest.raises(UploadError):
         _transcode(album, tmp_path)
 
     assert _files_in(_output(album, tmp_path)) == ["01. one.mp3"]
@@ -206,7 +206,7 @@ def test_a_cancelled_track_leaves_nothing(monkeypatch, tmp_path) -> None:
 def test_a_transcode_stopped_partway_is_made_again_not_reused(monkeypatch, tmp_path, capsys) -> None:
     album = _album(tmp_path)
     _fake_lame(monkeypatch, failing=frozenset({"02. two.flac"}))
-    with pytest.raises(ExceptionGroup):
+    with pytest.raises(UploadError):
         _transcode(album, tmp_path)
     encoded = _fake_lame(monkeypatch)
     asked: list[str] = []
@@ -224,7 +224,7 @@ def test_a_transcode_stopped_partway_is_made_again_not_reused(monkeypatch, tmp_p
 def test_a_transcode_stopped_partway_is_refused_with_yyy_not_reused(monkeypatch, tmp_path) -> None:
     album = _album(tmp_path)
     _fake_lame(monkeypatch, failing=frozenset({"02. two.flac"}))
-    with pytest.raises(ExceptionGroup):
+    with pytest.raises(UploadError):
         _transcode(album, tmp_path)
     encoded = _fake_lame(monkeypatch)
 
