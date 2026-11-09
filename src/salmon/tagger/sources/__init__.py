@@ -1,4 +1,5 @@
 from typing import Any
+from urllib.parse import urlsplit
 
 import asyncclick as click
 
@@ -32,6 +33,19 @@ NOT_SHOWN = ("encoding", "media", "encoding_vbr", "source")
 def matching_source(url: str) -> str | None:
     """The name of the metadata source whose scraper takes `url`, as run_metadata picks it; None for none."""
     return next((name for name, source in METASOURCES.items() if source.Scraper.regex.match(url)), None)
+
+
+def without_tracking(url: str) -> str:
+    """A store link as a description publishes it: without its query and fragment, which carry tracking and share
+    IDs. Any other link, or one its store no longer takes without them, is kept as given."""
+    source = matching_source(url)
+    if source is None:
+        return url
+    try:
+        bare = urlsplit(url)._replace(query="", fragment="").geturl()
+    except ValueError:  # An unclosed "[" in the host.
+        return url
+    return bare if matching_source(bare) == source else url
 
 
 def _without_artist_variations(metadata: dict[str, Any]) -> dict[str, Any]:

@@ -26,7 +26,7 @@ from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.combine import _extract_remixers_from_title
 from salmon.tagger.pre_data import parse_artists
-from salmon.tagger.sources import METASOURCES
+from salmon.tagger.sources import METASOURCES, without_tracking
 from salmon.trackers.base import RetryableError
 from salmon.uploader import record
 from salmon.uploader.seedbox import UploadManager, warn_unmatched_normalization
@@ -737,6 +737,7 @@ def generate_t_description(
 
     source = ""
     if source_url is not None:
+        source_url = without_tracking(source_url)
         for name, src in METASOURCES.items():
             if src.Scraper.regex.match(source_url):
                 source = (
@@ -780,12 +781,14 @@ def generate_source_links(metadata_urls: list[str], source_url: str | None = Non
     """
     links: list[str] = []
     unmatched_urls: list[str] = []
-    excluded_urls = {source_url.strip()} if source_url else set()
+    # The source link's, then each one listed: two forms of one store link list it once.
+    shown = {without_tracking(source_url.strip())} if source_url else set()
 
     for url in metadata_urls:
-        normalized_url = url.strip()
-        if normalized_url in excluded_urls:
+        normalized_url = without_tracking(url.strip())
+        if normalized_url in shown:
             continue
+        shown.add(normalized_url)
 
         matched = False
         for name, source in METASOURCES.items():
