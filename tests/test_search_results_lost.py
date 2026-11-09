@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import anyio
+import asyncclick as click
 import pytest
 from aiohttp import web
 
@@ -443,3 +444,65 @@ def test_after_the_searches_a_failed_part_is_said_at_once(capsys: pytest.Capture
     assert capsys.readouterr().out.splitlines() == ["Store: part a failed: held"]
     say_part_failed("Store: part b", "at once")
     assert capsys.readouterr().out.splitlines() == ["Store: part b failed: at once"]
+
+
+@pytest.mark.parametrize("searches", [2, 3])
+def test_a_store_failing_every_search_prints_its_line_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], searches: int
+) -> None:
+    assert _search(monkeypatch, [ScrapeError("down")] * searches) == {}
+    assert capsys.readouterr().out.splitlines() == ["Scrape error: down"]
+
+
+def test_a_store_failing_two_searches_differently_prints_the_first_reason_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _search(monkeypatch, [ScrapeError("first reason"), ScrapeError("second reason")])
+    assert capsys.readouterr().out.splitlines() == ["Scrape error: first reason"]
+
+
+def test_a_store_that_lost_every_storefront_says_so_once_after_them(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fake_apple(monkeypatch, ["us", "jp"], failing=["us", "jp"])
+    _run_store("Apple Music", _searchstrs_for(2))
+    assert capsys.readouterr().out.splitlines() == [
+        "Apple Music: storefront us failed: refused by us",
+        "Apple Music: storefront jp failed: refused by jp",
+        "Scrape error: Apple Music: every storefront failed.",
+    ]
+
+
+def test_two_stores_failing_alike_each_print_their_line_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    class _Searcher:
+        async def search_releases(self, _searchstr: str, _limit: int) -> tuple[str, Any]:
+            raise ScrapeError("timed out")
+
+    monkeypatch.setitem(salmon_search.SEARCHSOURCES, "One", SimpleNamespace(Searcher=_Searcher))
+    monkeypatch.setitem(salmon_search.SEARCHSOURCES, "Two", SimpleNamespace(Searcher=_Searcher))
+    anyio.run(lambda: salmon_search.run_metasearch(["a", "b"], sources={"One": None, "Two": None}, filter=False))
+    assert capsys.readouterr().out.splitlines() == ["Scrape error: timed out", "Scrape error: timed out"]
+
+
+def test_as_before_each_failure_keeps_its_colour(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fake_apple(monkeypatch, ["us"], failing=["us"])
+    monkeypatch.setattr("asyncclick.utils.should_strip_ansi", lambda *_args: False)
+    _run_store("Apple Music", ["one"])
+    assert sorted(capsys.readouterr().out.splitlines()) == sorted(
+        [
+            click.style("Apple Music: storefront us failed: refused by us", fg="yellow"),
+            click.style("Scrape error: Apple Music: every storefront failed.", fg="red", bold=True),
+        ]
+    )
+
+
+def test_as_before_after_the_searches_a_failed_part_is_yellow(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr("asyncclick.utils.should_strip_ansi", lambda *_args: False)
+    say_part_failed("Store: part a", "at once")
+    assert capsys.readouterr().out.splitlines() == [click.style("Store: part a failed: at once", fg="yellow")]
