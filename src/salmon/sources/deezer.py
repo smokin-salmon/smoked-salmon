@@ -42,8 +42,9 @@ async def album_upc(url: str) -> str | None:
 
 
 class DeezerBase(BaseScraper):
-    store = "Deezer"
     """Base scraper for Deezer metadata."""
+
+    store = "Deezer"
 
     proxy_service = "deezer"
     url = "https://api.deezer.com"
