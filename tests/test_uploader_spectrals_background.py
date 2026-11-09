@@ -29,6 +29,7 @@ from test_uploader_group_search import (
 
 import salmon.uploader
 from salmon import cfg
+from salmon.errors import UploadError
 from salmon.uploader import spectrals, upload_checks
 
 pytestmark = pytest.mark.usefixtures("_fast_limiter")
@@ -318,11 +319,11 @@ def test_an_error_in_the_generation_is_raised_at_the_spectral_step(monkeypatch, 
     # The question returns once both runs have started and been let go; the spectral step waits for their failure.
     flow.at_the_group_question = both_started_then_fail
 
-    # As in the foreground: the failed sox runs, grouped by the task group that ran them.
-    with pytest.raises(ExceptionGroup) as raised:
+    # As in the foreground: one error, naming every track that failed.
+    with pytest.raises(UploadError) as raised:
         anyio.run(flow.run_upload, album)
 
-    assert raised.group_contains(subprocess.CalledProcessError, depth=1)
+    assert any(track in str(raised.value) for track in TRACKS)
     assert flow.events == ["checks start", "checks end"]
     assert flow.steps == ["group question", "group answered, sox started 2"]
     assert flow.offered is None

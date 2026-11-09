@@ -1,5 +1,3 @@
-import re
-
 import asyncclick as click
 
 from salmon.search.base import IdentData, SearchMixin
@@ -42,15 +40,6 @@ class Searcher(DiscogsBase, SearchMixin):
             if len(releases) == limit:
                 break
         return "Discogs", releases
-
-
-def sanitize_artist_name(name):
-    """
-    Remove parenthentical number disambiguation bullshit from artist names,
-    as well as the asterisk stuff.
-    """
-    name = re.sub(r" \(\d+\)$", "", name)
-    return re.sub(r"\*+$", "", name)
 
 
 def parse_source(formats):

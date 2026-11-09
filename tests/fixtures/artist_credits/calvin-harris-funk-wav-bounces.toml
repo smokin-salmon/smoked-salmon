@@ -1,0 +1,682 @@
+album = "Calvin Harris, Funk Wav Bounces Vol. 1"
+why = "One producer's album with two or three featured guests on every track: the guests must stay guests, never album artists, and the album never 'Various'."
+edition = "Columbia 2017, 10 tracks (Deezer 43601391 = MusicBrainz 944342c9 by the digital UPC); Discogs 10543288 is the US CD (barcode 889854434229), same tracklist. Chosen as the one edition there is. Qobuz 0886446469607 has the same UPC and the same 10 tracks."
+known_wrong = ["merge: with the files in deemix's default FLAC shape, salmon reads their plain ARTIST values as main and lets the files win over the stores that say guest, so every guest is made main, ALBUMARTIST 'Various' and no 'feat.' in ARTIST or the title, with guests_in_track_title off or on (with salmon's own ARTIST shape, `output-salmon-tags`, ALBUMARTIST is right)"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Calvin Harris"]
+not_main = ["Various Artists", "Frank Ocean", "Migos", "ScHoolboy Q", "PARTYNEXTDOOR", "D.R.A.M.", "Young Thug", "Pharrell Williams", "Ariana Grande", "Future", "Khalid", "Travis Scott", "A-Trak", "Snoop Dogg", "John Legend", "Takeoff", "Nicki Minaj", "Katy Perry", "Big Sean", "Kehlani", "Lil Yachty", "Jessie Reyez"]
+how_we_know = "Deezer, MusicBrainz, Discogs and Qobuz all give Calvin Harris as the only release artist and every other name as featured"
+
+[today.deezer]
+release = ["Frank Ocean (guest)", "Migos (guest)", "Calvin Harris (main)", "ScHoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "D.R.A.M. (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A-Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
+tracks = 10
+
+[today.musicbrainz]
+release = ["Calvin Harris (main)", "Frank Ocean (guest)", "Migos (guest)", "ScHoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "DRAM (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A‐Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
+tracks = 10
+
+[today.discogs]
+release = ["Calvin Harris (main)", "Frank Ocean (guest)", "Migos (guest)", "D.R.A.M. (guest)", "PARTYNEXTDOOR (guest)", "Schoolboy Q (guest)", "Ariana Grande (guest)", "Pharrell Williams (guest)", "Young Thug (guest)", "Future (guest)", "Khalid (guest)", "A-Trak (guest)", "Travis Scott (guest)", "John Legend (guest)", "Snoop Dogg (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Big Sean (guest)", "Katy Perry (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
+tracks = 10
+
+[today.qobuz]
+release = ["Calvin Harris (main)", "Frank Ocean (guest)", "Migos (guest)", "Schoolboy Q (guest)", "PARTYNEXTDOOR (guest)", "D.R.A.M. (guest)", "Young Thug (guest)", "Pharrell Williams (guest)", "Ariana Grande (guest)", "Future (guest)", "Khalid (guest)", "Travis Scott (guest)", "A-Trak (guest)", "Snoop Dogg (guest)", "John Legend (guest)", "Takeoff (guest)", "Nicki Minaj (guest)", "Katy Perry (guest)", "Big Sean (guest)", "Kehlani (guest)", "Lil Yachty (guest)", "Jessie Reyez (guest)"]
+tracks = 10
+
+[today.merge]
+release = ["Calvin Harris (main)", "Frank Ocean (main)", "Migos (main)", "ScHoolboy Q (main)", "PARTYNEXTDOOR (main)", "D.R.A.M. (main)", "Young Thug (main)", "Pharrell Williams (main)", "Ariana Grande (main)", "Future (main)", "Khalid (main)", "Travis Scott (main)", "A-Trak (main)", "Snoop Dogg (main)", "John Legend (main)", "Takeoff (main)", "Nicki Minaj (main)", "Katy Perry (main)", "Big Sean (main)", "Kehlani (main)", "Lil Yachty (main)", "Jessie Reyez (main)"]
+tracks = 10
+
+[today.output]
+albumartist = "Various"
+tracks = ["Calvin Harris, Frank Ocean, Migos | Slide", "Calvin Harris, ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M. | Cash Out", "Calvin Harris, Young Thug, Pharrell Williams, Ariana Grande | Heatstroke", "Calvin Harris, Future, Khalid | Rollin", "Calvin Harris, Travis Scott, A-Trak | Prayers Up", "Calvin Harris, Snoop Dogg, John Legend, Takeoff | Holiday", "Calvin Harris & Nicki Minaj | Skrt On Me", "Calvin Harris, Pharrell Williams, Katy Perry, Big Sean | Feels", "Calvin Harris, Kehlani, Lil Yachty | Faking It", "Calvin Harris & Jessie Reyez | Hard To Love"]
+
+[today."output-guests-in-title"]
+albumartist = "Various"
+tracks = ["Calvin Harris, Frank Ocean, Migos | Slide", "Calvin Harris, ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M. | Cash Out", "Calvin Harris, Young Thug, Pharrell Williams, Ariana Grande | Heatstroke", "Calvin Harris, Future, Khalid | Rollin", "Calvin Harris, Travis Scott, A-Trak | Prayers Up", "Calvin Harris, Snoop Dogg, John Legend, Takeoff | Holiday", "Calvin Harris & Nicki Minaj | Skrt On Me", "Calvin Harris, Pharrell Williams, Katy Perry, Big Sean | Feels", "Calvin Harris, Kehlani, Lil Yachty | Faking It", "Calvin Harris & Jessie Reyez | Hard To Love"]
+
+[today."output-salmon-tags"]
+albumartist = "Calvin Harris"
+tracks = ["Calvin Harris (feat. Frank Ocean & Migos) | Slide", "Calvin Harris (feat. ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M.) | Cash Out", "Calvin Harris (feat. Young Thug, Pharrell Williams, Ariana Grande) | Heatstroke", "Calvin Harris (feat. Future & Khalid) | Rollin", "Calvin Harris (feat. Travis Scott & A-Trak) | Prayers Up", "Calvin Harris (feat. Snoop Dogg, John Legend, Takeoff) | Holiday", "Calvin Harris (feat. Nicki Minaj) | Skrt On Me", "Calvin Harris (feat. Pharrell Williams, Katy Perry, Big Sean) | Feels", "Calvin Harris (feat. Kehlani & Lil Yachty) | Faking It", "Calvin Harris (feat. Jessie Reyez) | Hard To Love"]
+
+# A control for the tag shape: the same files with ARTIST and TITLE as salmon itself writes them
+# (retagger.create_artist_str, guests_in_track_title off), every other tag as in [[track]] below.
+# Stage output-salmon-tags: the merge over these files, written.
+[salmon_tags]
+artist = ["Calvin Harris (feat. Frank Ocean & Migos)", "Calvin Harris (feat. ScHoolboy Q, PARTYNEXTDOOR, D.R.A.M.)", "Calvin Harris (feat. Young Thug, Pharrell Williams, Ariana Grande)", "Calvin Harris (feat. Future & Khalid)", "Calvin Harris (feat. Travis Scott & A-Trak)", "Calvin Harris (feat. Snoop Dogg, John Legend, Takeoff)", "Calvin Harris (feat. Nicki Minaj)", "Calvin Harris (feat. Pharrell Williams, Katy Perry, Big Sean)", "Calvin Harris (feat. Kehlani & Lil Yachty)", "Calvin Harris (feat. Jessie Reyez)"]
+title = ["Slide", "Cash Out", "Heatstroke", "Rollin", "Prayers Up", "Holiday", "Skrt On Me", "Feels", "Faking It", "Hard to Love"]
+
+# The files' tags.
+# Constructed in deemix's default FLAC shape from Deezer data (the case's own deezer fixture), not copied
+# from anyone's files: every name in the track's contributors as its own plain ARTIST value, guests included,
+# the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Slide (feat. Frank Ocean & Migos)"]
+artist = ["Calvin Harris", "Frank Ocean", "Migos"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Cash Out (feat. ScHoolboy Q, PARTYNEXTDOOR & D.R.A.M.)"]
+artist = ["Calvin Harris", "ScHoolboy Q", "PARTYNEXTDOOR", "D.R.A.M."]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Heatstroke (feat. Young Thug, Pharrell Williams & Ariana Grande)"]
+artist = ["Calvin Harris", "Young Thug", "Pharrell Williams", "Ariana Grande"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Rollin (feat. Future & Khalid)"]
+artist = ["Calvin Harris", "Future", "Khalid"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Prayers Up (feat. Travis Scott & A-Trak)"]
+artist = ["Calvin Harris", "Travis Scott", "A-Trak"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Holiday (feat. Snoop Dogg, John Legend & Takeoff)"]
+artist = ["Calvin Harris", "Snoop Dogg", "John Legend", "Takeoff"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Skrt On Me (feat. Nicki Minaj)"]
+artist = ["Calvin Harris", "Nicki Minaj"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Feels (feat. Pharrell Williams, Katy Perry & Big Sean)"]
+artist = ["Calvin Harris", "Pharrell Williams", "Katy Perry", "Big Sean"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Faking It (feat. Kehlani & Lil Yachty)"]
+artist = ["Calvin Harris", "Kehlani", "Lil Yachty"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Hard to Love (feat. Jessie Reyez)"]
+artist = ["Calvin Harris", "Jessie Reyez"]
+album = ["Funk Wav Bounces Vol.1"]
+albumartist = ["Calvin Harris"]
+date = ["2017-06-30"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 43601391,
+ "title": "Funk Wav Bounces Vol.1",
+ "upc": "886446469607",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 113,
+    "name": "Dance"
+   }
+  ]
+ },
+ "label": "Columbia",
+ "release_date": "2017-06-30",
+ "tracklist": [
+  {
+   "SNG_ID": "376480891",
+   "SNG_TITLE": "Slide (feat. Frank Ocean & Migos)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "GBARL1700262",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480901",
+   "SNG_TITLE": "Cash Out (feat. ScHoolboy Q, PARTYNEXTDOOR & D.R.A.M.)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "GBARL1700768",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480911",
+   "SNG_TITLE": "Heatstroke (feat. Young Thug, Pharrell Williams & Ariana Grande)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "GBARL1700589",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480921",
+   "SNG_TITLE": "Rollin (feat. Future & Khalid)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "GBARL1700769",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480931",
+   "SNG_TITLE": "Prayers Up (feat. Travis Scott & A-Trak)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "GBARL1700766",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480941",
+   "SNG_TITLE": "Holiday (feat. Snoop Dogg, John Legend & Takeoff)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "GBARL1700770",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480951",
+   "SNG_TITLE": "Skrt On Me (feat. Nicki Minaj)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "GBARL1700771",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480961",
+   "SNG_TITLE": "Feels (feat. Pharrell Williams, Katy Perry & Big Sean)",
+   "ARTISTS": [
+    {},
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "GBARL1700772",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480971",
+   "SNG_TITLE": "Faking It (feat. Kehlani & Lil Yachty)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "GBARL1700773",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "376480981",
+   "SNG_TITLE": "Hard to Love (feat. Jessie Reyez)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Calvin Harris"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "GBARL1700774",
+   "EXPLICIT_LYRICS": "1",
+   "MEDIA_VERSION": "7"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="944342c9-9749-4837-8713-2d278004f201"><title>Funk Wav Bounces, Vol. 1</title><artist-credit><name-credit><artist><name>Calvin Harris</name></artist></name-credit></artist-credit><date>2017-06-30</date><release-event-list><release-event><date>2017-06-30</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>G010003721460R</catalog-number><label><name>Columbia</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Slide</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Frank Ocean</name></artist></name-credit><name-credit><artist><name>Migos</name></artist></name-credit></artist-credit></recording></track><track><position>2</position><number>2</number><recording><title>Cash Out</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=", "><artist><name>ScHoolboy Q</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>PARTYNEXTDOOR</name></artist></name-credit><name-credit><name>D.R.A.M.</name><artist><name>DRAM</name></artist></name-credit></artist-credit></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Young Thug</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Pharrell Williams</name></artist></name-credit><name-credit><artist><name>Ariana Grande</name></artist></name-credit></artist-credit><recording><title>Heatstroke</title><artist-credit><name-credit joinphrase=" ft. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Young Thug</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Pharrell Williams</name></artist></name-credit><name-credit><artist><name>Ariana Grande</name></artist></name-credit></artist-credit></recording></track><track><position>4</position><number>4</number><recording><title>Rollin</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Future</name></artist></name-credit><name-credit><artist><name>Khalid</name></artist></name-credit></artist-credit></recording></track><track><position>5</position><number>5</number><recording><title>Prayers Up</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Travis Scott</name></artist></name-credit><name-credit><artist><name>A‐Trak</name></artist></name-credit></artist-credit></recording></track><track><position>6</position><number>6</number><recording><title>Holiday</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Snoop Dogg</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>John Legend</name></artist></name-credit><name-credit><artist><name>Takeoff</name></artist></name-credit></artist-credit></recording></track><track><position>7</position><number>7</number><recording><title>Skrt on Me</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit><artist><name>Nicki Minaj</name></artist></name-credit></artist-credit></recording></track><track><position>8</position><number>8</number><recording><title>Feels</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=", "><artist><name>Pharrell Williams</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Katy Perry</name></artist></name-credit><name-credit><artist><name>Big Sean</name></artist></name-credit></artist-credit></recording></track><track><position>9</position><number>9</number><recording><title>Faking It</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Kehlani</name></artist></name-credit><name-credit><artist><name>Lil Yachty</name></artist></name-credit></artist-credit></recording></track><track><position>10</position><number>10</number><recording><title>Hard to Love</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Calvin Harris</name></artist></name-credit><name-credit><artist><name>Jessie Reyez</name></artist></name-credit></artist-credit></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 10543288,
+ "year": 2017,
+ "artists": [
+  {
+   "name": "Calvin Harris",
+   "role": "",
+   "id": 222578
+  }
+ ],
+ "labels": [
+  {
+   "name": "Columbia",
+   "catno": "88985 44342 2",
+   "id": 1866
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "Funk Wav Bounces Vol. 1",
+ "released": "2017-06-30",
+ "genres": [
+  "Electronic",
+  "Funk / Soul"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Slide",
+   "extraartists": [
+    {
+     "name": "Frank Ocean",
+     "role": "Featuring",
+     "id": 2013868
+    },
+    {
+     "name": "Migos",
+     "role": "Featuring",
+     "id": 3232613
+    }
+   ],
+   "duration": "3:50"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Cash Out",
+   "extraartists": [
+    {
+     "name": "D.R.A.M.",
+     "role": "Featuring",
+     "id": 4440880
+    },
+    {
+     "name": "PARTYNEXTDOOR",
+     "role": "Featuring",
+     "id": 3554300
+    },
+    {
+     "name": "Schoolboy Q",
+     "role": "Featuring",
+     "id": 2353545
+    }
+   ],
+   "duration": "3:55"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "Heatstroke",
+   "extraartists": [
+    {
+     "name": "Ariana Grande",
+     "role": "Featuring",
+     "id": 3310737
+    },
+    {
+     "name": "Pharrell Williams",
+     "role": "Featuring",
+     "id": 90037
+    },
+    {
+     "name": "Young Thug (2)",
+     "role": "Featuring",
+     "id": 3243777
+    }
+   ],
+   "duration": "3:49"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Rollin",
+   "extraartists": [
+    {
+     "name": "Future (4)",
+     "role": "Featuring",
+     "id": 221673
+    },
+    {
+     "name": "Khalid (16)",
+     "role": "Featuring",
+     "id": 5779975
+    }
+   ],
+   "duration": "4:32"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Prayers Up",
+   "extraartists": [
+    {
+     "name": "A-Trak",
+     "role": "Featuring",
+     "id": 32143
+    },
+    {
+     "name": "Travis Scott (2)",
+     "role": "Featuring",
+     "id": 2742944
+    }
+   ],
+   "duration": "3:24"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Holiday",
+   "extraartists": [
+    {
+     "name": "John Legend",
+     "role": "Featuring",
+     "id": 182738
+    },
+    {
+     "name": "Snoop Dogg",
+     "role": "Featuring",
+     "id": 132084
+    },
+    {
+     "name": "Takeoff",
+     "role": "Featuring",
+     "id": 3791818
+    }
+   ],
+   "duration": "2:49"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "Skrt On Me",
+   "extraartists": [
+    {
+     "name": "Nicki Minaj",
+     "role": "Featuring",
+     "id": 1615988
+    }
+   ],
+   "duration": "3:48"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "Feels",
+   "extraartists": [
+    {
+     "name": "Big Sean",
+     "role": "Featuring",
+     "id": 1201210
+    },
+    {
+     "name": "Katy Perry",
+     "role": "Featuring",
+     "id": 971243
+    },
+    {
+     "name": "Pharrell Williams",
+     "role": "Featuring",
+     "id": 90037
+    }
+   ],
+   "duration": "3:43"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Faking It",
+   "extraartists": [
+    {
+     "name": "Kehlani",
+     "role": "Featuring",
+     "id": 3415529
+    },
+    {
+     "name": "Lil Yachty",
+     "role": "Featuring",
+     "id": 4938476
+    }
+   ],
+   "duration": "4:00"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Hard To Love",
+   "extraartists": [
+    {
+     "name": "Jessie Reyez",
+     "role": "Featuring",
+     "id": 4418239
+    }
+   ],
+   "duration": "3:50"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Calvin Harris",
+   "role": "Producer",
+   "id": 222578
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0886446469607",
+ "upc": "0886446469607",
+ "title": "Funk Wav Bounces Vol.1",
+ "tracks_count": 10,
+ "artist": {
+  "name": "Calvin Harris"
+ },
+ "genres_list": [
+  "Dance"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Slide",
+    "track_number": 1,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Frank Ocean, AssociatedPerformer, FeaturedArtist, Vocal - Migos, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Frank Ocean & Migos, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Christopher Breaux, Composer, Lyricist - Quavious Marshall, Composer, Lyricist - Dave Kutch, Mastering Engineer - Kiari Cephus, Composer, Lyricist - Daryl McPherson, Recording Engineer - Kirsnick Ball, Composer, Lyricist - Marcos Tovar, Recording Engineer"
+   },
+   {
+    "title": "Cash Out",
+    "track_number": 2,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Schoolboy Q, AssociatedPerformer, FeaturedArtist, Vocal - PARTYNEXTDOOR, AssociatedPerformer, FeaturedArtist, Vocal - D.R.A.M., AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. ScHoolboy Q, PARTYNEXTDOOR & D.R.A.M., AssociatedPerformer - Adam Wiles, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Candice Pillay, Background Vocal - Quincey Hanley, Composer, Lyricist - Roget Chahayed, Organ, Composer, Lyricist - Shelley Massenburg-Smith, Composer, Lyricist - Marcos Tovar, Recording Engineer - David \"Prep\" Hughes, Recording Engineer - Dave Kutch, Mastering Engineer"
+   },
+   {
+    "title": "Heatstroke",
+    "track_number": 3,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Young Thug, AssociatedPerformer, FeaturedArtist, Vocal - Pharrell Williams, AssociatedPerformer, FeaturedArtist, Percussion, Vocal, Composer, Lyricist, Producer - Ariana Grande, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Young Thug, Pharrell Williams & Ariana Grande, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Jeffery Williams, Composer, Lyricist - Starrah, Background Vocal - Brittany Hazzard, Composer, Lyricist - Andrew Coleman, Recording Engineer - Matthew Desrameaux, Assistant Engineer - Dave Kutch, Mastering Engineer"
+   },
+   {
+    "title": "Rollin",
+    "track_number": 4,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Future, AssociatedPerformer, FeaturedArtist, Vocal - Khalid, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Future & Khalid, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Nayvadius Wilburn, Composer, Lyricist - Khalid Robinson, Composer, Lyricist - Seth Firkins, Recording Engineer - Dave Kutch, Mastering Engineer"
+   },
+   {
+    "title": "Prayers Up",
+    "track_number": 5,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Travis Scott, AssociatedPerformer, FeaturedArtist, Vocal - A-Trak, AssociatedPerformer, FeaturedArtist - Calvin Harris feat. Travis Scott & A-Trak, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Jacques Webster, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Blake Harden, Recording Engineer - Marcos Tovar, Recording Engineer - Dave Kutch, Mastering Engineer"
+   },
+   {
+    "title": "Holiday",
+    "track_number": 6,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Snoop Dogg, AssociatedPerformer, FeaturedArtist, Vocal - John Legend, AssociatedPerformer, FeaturedArtist, Vocal - Takeoff, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Snoop Dogg, John Legend & Takeoff, AssociatedPerformer - Adam Wiles, Composer, Lyricist - John Stephens, AssociatedPerformer, Composer, Lyricist - Calvin Broadus, Jr., Composer, Lyricist - Joe Vinyl, Background Vocal - Kirsnick Ball, Composer, Lyricist - Clyde Audio, Orchestra - Quavious Marshall, Composer, Lyricist - Daryl McPherson, Recording Engineer - Kiari Cephus, Composer, Lyricist - Dave Kutch, Mastering Engineer"
+   },
+   {
+    "title": "Skrt On Me",
+    "track_number": 7,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Nicki Minaj, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Nicki Minaj, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Onika Maraj, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Nick Cooper, Producer - Aubry Delaine, Recording Engineer - Nick Valentin, Assistant Engineer - Dave Kutch, Mastering Engineer"
+   },
+   {
+    "title": "Feels",
+    "track_number": 8,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Pharrell Williams, AssociatedPerformer, FeaturedArtist, Vocal, Composer, Lyricist - Katy Perry, AssociatedPerformer, FeaturedArtist, Vocal, Composer, Lyricist - Big Sean, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Pharrell Williams, Katy Perry & Big Sean, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Brittany Hazzard, Composer, Lyricist - Mike Larson, Recording Engineer - Marcos Tovar, Recording Engineer - Gregg Rominiecki, Recording Engineer - Sean Anderson, Composer, Lyricist - Jacob Dennis, Assistant Engineer - Iain Findlay, Assistant Engineer - Dave Kutch, Mastering Engineer"
+   },
+   {
+    "title": "Faking It",
+    "track_number": 9,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer - Kehlani, AssociatedPerformer, FeaturedArtist, Vocal - Lil Yachty, AssociatedPerformer, FeaturedArtist, Vocal - Calvin Harris feat. Kehlani & Lil Yachty, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Jessie Reyez, Background Vocal, Composer, Lyricist - Miles McCollum, Composer, Lyricist - The Joe Vinyl String Orchestra, Strings - Marcos Tovar, Recording Engineer - Thomas Mann, Recording Engineer - Dave Kutch, Mastering Engineer - Louis Bell, Editor"
+   },
+   {
+    "title": "Hard to Love",
+    "track_number": 10,
+    "performers": "Calvin Harris, AssociatedPerformer, MainArtist, Mixing Engineer, Producer, Recording Engineer - Jessie Reyez, AssociatedPerformer, FeaturedArtist, Vocal, Composer, Lyricist - Calvin Harris feat. Jessie Reyez, AssociatedPerformer - Adam Wiles, Composer, Lyricist - Dave Kutch, Mastering Engineer"
+   }
+  ]
+ }
+}
+'''

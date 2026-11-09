@@ -1,4 +1,4 @@
-"""Spectral PNGs are compressed with oxipng where it installs, and left as sox wrote them where it does not (3.14)."""
+"""Spectral PNGs are compressed with oxipng where it installs, and left as sox wrote them where not (3.14 and later)."""
 
 import sys
 import threading

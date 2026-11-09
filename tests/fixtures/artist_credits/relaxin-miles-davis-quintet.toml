@@ -1,0 +1,367 @@
+album = "Relaxin' with the Miles Davis Quintet"
+why = "Leader vs group: the Quintet as the release's artist, the leader in ARTIST, the four sidemen as guests? Every store says 'Miles Davis Quintet' and nothing else."
+edition = "Prestige 2006 RVG remaster, 6 tracks (Deezer 124247 = MusicBrainz 3fb119cb by barcode); Discogs 1510671 is the release MusicBrainz links. Deezer also has a Craft 2026 remaster (888072735644): newest, but chose the RVG CD most libraries hold"
+known_wrong = []
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Miles Davis Quintet"]
+how_we_know = "every store agrees"
+
+[right.name_forms]
+"Miles Davis Quintet" = ["The Miles Davis Quintet"]
+
+[today.deezer]
+release = ["The Miles Davis Quintet (main)"]
+tracks = 6
+
+[today.musicbrainz]
+release = ["Miles Davis Quintet (main)"]
+tracks = 6
+
+[today.discogs]
+release = ["The Miles Davis Quintet (main)"]
+tracks = 6
+
+[today.qobuz]
+release = ["Miles Davis Quintet (main)", "The Miles Davis Quintet (guest)"]
+tracks = 6
+
+[today.merge]
+release = ["The Miles Davis Quintet (main)"]
+tracks = 6
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["If I Were A Bell (Rudy Van Gelder Remaster)"]
+artist = ["Miles Davis"]
+album = ["Relaxin' With The Miles Davis Quintet"]
+albumartist = ["Miles Davis"]
+date = ["2011-03-08"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["You're My Everything (Original Version With False Start)"]
+artist = ["Miles Davis"]
+album = ["Relaxin' With The Miles Davis Quintet"]
+albumartist = ["Miles Davis"]
+date = ["2011-03-08"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["I Could Write A Book"]
+artist = ["Miles Davis"]
+album = ["Relaxin' With The Miles Davis Quintet"]
+albumartist = ["Miles Davis"]
+date = ["2011-03-08"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Oleo (Edited Without False Start)"]
+artist = ["Miles Davis"]
+album = ["Relaxin' With The Miles Davis Quintet"]
+albumartist = ["Miles Davis"]
+date = ["2011-03-08"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["It Could Happen To You"]
+artist = ["Miles Davis"]
+album = ["Relaxin' With The Miles Davis Quintet"]
+albumartist = ["Miles Davis"]
+date = ["2011-03-08"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Woody'N You"]
+artist = ["Miles Davis"]
+album = ["Relaxin' With The Miles Davis Quintet"]
+albumartist = ["Miles Davis"]
+date = ["2011-03-08"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 124247,
+ "title": "Relaxin' With The Miles Davis Quintet",
+ "upc": "025218810425",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 129,
+    "name": "Jazz"
+   }
+  ]
+ },
+ "label": "Prestige",
+ "release_date": "2011-03-08",
+ "record_type": "album",
+ "tracklist": [
+  {
+   "SNG_ID": "1160131",
+   "SNG_TITLE": "If I Were A Bell",
+   "VERSION": "(Rudy Van Gelder Remaster)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Miles Davis Quintet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USFI85800048",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "1160132",
+   "SNG_TITLE": "You're My Everything",
+   "VERSION": "(Original Version With False Start)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Miles Davis Quintet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USFI85800050",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "1160133",
+   "SNG_TITLE": "I Could Write A Book",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Miles Davis Quintet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USFI85800051",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "1160136",
+   "SNG_TITLE": "Oleo",
+   "VERSION": "(Edited Without False Start)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Miles Davis Quintet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USFI85800052",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "1160134",
+   "SNG_TITLE": "It Could Happen To You",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Miles Davis Quintet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USFI85800046",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "1160135",
+   "SNG_TITLE": "Woody'N You",
+   "VERSION": "",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "The Miles Davis Quintet"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USFI85800047",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="3fb119cb-5595-33cf-b192-743c17c7f584"><title>Relaxin' With the Miles Davis Quintet</title><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit><release-group type="Album"><title>Relaxin’ With the Miles Davis Quintet</title><first-release-date>1958</first-release-date><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit></release-group><date>2006-03-21</date><release-event-list><release-event><date>2006-03-21</date></release-event></release-event-list><cover-art-archive><front>false</front></cover-art-archive><label-info-list><label-info><catalog-number>PRCD-8104-2</catalog-number><label><name>Prestige</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>If I Were a Bell</title><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>2</position><number>2</number><title>You're My Everything</title><recording><title>You’re My Everything</title><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>3</position><number>3</number><recording><title>I Could Write a Book</title><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Oleo</title><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>5</position><number>5</number><recording><title>It Could Happen to You</title><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track><track><position>6</position><number>6</number><title>Woody'n You</title><recording><title>Woody’n You</title><artist-credit><name-credit><artist><name>Miles Davis Quintet</name></artist></name-credit></artist-credit><first-release-date>1958</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 1510671,
+ "year": 2006,
+ "artists": [
+  {
+   "name": "The Miles Davis Quintet",
+   "id": 262152
+  }
+ ],
+ "labels": [
+  {
+   "name": "Prestige",
+   "catno": "PRCD-8104-2",
+   "id": 19591
+  },
+  {
+   "name": "Prestige",
+   "catno": "P-7129",
+   "id": 19591
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Album",
+    "Remastered",
+    "Reissue"
+   ]
+  }
+ ],
+ "title": "Relaxin' With The Miles Davis Quintet",
+ "genres": [
+  "Jazz"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "If I Were A Bell",
+   "duration": "8:13"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "You're My Everything",
+   "duration": "5:15"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "I Could Write A Book",
+   "duration": "5:06"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Oleo",
+   "duration": "6:15"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "It Could Happen To You",
+   "duration": "6:34"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Woody'n You",
+   "duration": "4:59"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "wlnrtoh0ejqsa",
+ "upc": "0888072390454",
+ "title": "Relaxin' With The Miles Davis Quintet",
+ "tracks_count": 6,
+ "artist": {
+  "name": "Miles Davis Quintet"
+ },
+ "genres_list": [
+  "Jazz"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "If I Were A Bell",
+    "track_number": 1,
+    "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - FRANK LOESSER, ComposerLyricist"
+   },
+   {
+    "title": "You're My Everything",
+    "track_number": 2,
+    "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Mort Dixon, ComposerLyricist - Harry Warren, ComposerLyricist - Joe Young, ComposerLyricist"
+   },
+   {
+    "title": "I Could Write A Book",
+    "track_number": 3,
+    "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Richard Rodgers, ComposerLyricist - Lorenz Hart, ComposerLyricist"
+   },
+   {
+    "title": "Oleo",
+    "track_number": 4,
+    "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Sonny Rollins, ComposerLyricist"
+   },
+   {
+    "title": "It Could Happen To You",
+    "track_number": 5,
+    "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Jimmy Van Heusen, ComposerLyricist - Johnny Burke, ComposerLyricist"
+   },
+   {
+    "title": "Woody'n You",
+    "track_number": 6,
+    "performers": "The Miles Davis Quintet, MainArtist - Bob Weinstock, Producer - Dizzy Gillespie, ComposerLyricist"
+   }
+  ]
+ }
+}
+'''

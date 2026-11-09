@@ -1,0 +1,2533 @@
+album = "Santana, Supernatural"
+why = "A band album full of one-track featured singers: Deezer and MusicBrainz agree track by track; Discogs adds band members as guests and a 'No Artist' main."
+edition = "Columbia/Legacy remaster, 14 tracks (Deezer 7040992 = MusicBrainz b43f421d by barcode); Discogs 807636 is master 77696's main release (1999 Arista CD); the Legacy Edition (Deezer 8248624, 24 tracks) left out"
+known_wrong = []
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Santana"]
+open = "name forms: Cee-Lo / CeeLo Green, Lauryn Hill / Ms. Lauryn Hill, Mana / Maná (Deezer itself uses both Lauryn Hill forms)"
+how_we_know = "every store names Santana as the main artist"
+
+[today.deezer]
+release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Lauryn Hill (guest)", "Cee-Lo (guest)", "Ms. Lauryn Hill (guest)", "The Product G&B (guest)", "Mana (guest)", "Eagle-Eye Cherry (guest)", "Eric Clapton (guest)"]
+tracks = 14
+
+[today.musicbrainz]
+release = ["Santana (main)", "Dave Matthews (guest)", "Carter Beauford (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Ms. Lauryn Hill (guest)", "CeeLo Green (guest)", "The Product G&B (guest)", "Maná (guest)", "Eagle‐Eye Cherry (guest)", "Eric Clapton (guest)"]
+tracks = 14
+
+[today.discogs]
+release = ["Santana (main)", "Carlos Santana (guest)", "Karl Perazzo (guest)", "Tony Lindsay (guest)", "Dave Matthews (guest)", "Everlast (guest)", "Rob Thomas (guest)", "Lauryn Hill (guest)", "Cee-Lo (guest)", "Lauryn Hill (arranger)", "KC Porter (guest)", "Maná (guest)", "Eagle-Eye Cherry (guest)", "Eric Clapton (guest)", "Jeanie Tracy (guest)", "No Artist (main)"]
+tracks = 15
+
+[today.qobuz]
+release = ["Santana (main)"]
+tracks = 14
+
+[today.merge]
+release = ["Santana (main)", "Dave Matthews (main)", "Carter Beauford (main)", "Everlast (main)", "Rob Thomas (main)", "Ms. Lauryn Hill (guest)", "CeeLo Green (guest)", "The Product G&B (main)", "Maná (main)", "Eagle-Eye Cherry (main)", "Eric Clapton (main)"]
+tracks = 14
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["(Da Le) Yaleo"]
+artist = ["Santana"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Love of My Life (feat. Dave Matthews & Carter Beauford)"]
+artist = ["Santana", "Dave Matthews", "Carter Beauford"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Put Your Lights On (feat. Everlast)"]
+artist = ["Santana", "Everlast"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Africa Bamba"]
+artist = ["Santana"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Smooth (feat. Rob Thomas)"]
+artist = ["Santana", "Rob Thomas"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Do You Like the Way (feat. Lauryn Hill & Cee-Lo)"]
+artist = ["Santana", "Lauryn Hill", "Cee-Lo"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Maria Maria (feat. The Product G&B)"]
+artist = ["Santana", "The Product G&B"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["Migra"]
+artist = ["Santana"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Corazon Espinado (feat. Mana)"]
+artist = ["Santana", "Maná"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Wishing It Was (feat. Eagle-Eye Cherry)"]
+artist = ["Santana", "Eagle-Eye Cherry"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "11.flac"
+tracknumber = ["11"]
+discnumber = ["1"]
+title = ["El Farol"]
+artist = ["Santana"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "12.flac"
+tracknumber = ["12"]
+discnumber = ["1"]
+title = ["Primavera"]
+artist = ["Santana"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "13.flac"
+tracknumber = ["13"]
+discnumber = ["1"]
+title = ["The Calling (feat. Eric Clapton)"]
+artist = ["Santana", "Eric Clapton"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+[[track]]
+file = "14.flac"
+tracknumber = ["14"]
+discnumber = ["1"]
+title = ["Day of Celebration"]
+artist = ["Santana"]
+album = ["Supernatural (Remastered)"]
+albumartist = ["Santana"]
+date = ["1999-06-15"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 7040992,
+ "title": "Supernatural (Remastered)",
+ "upc": "884977514940",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 132,
+    "name": "Pop"
+   }
+  ]
+ },
+ "label": "Columbia/Legacy",
+ "release_date": "1999-06-15",
+ "tracklist": [
+  {
+   "SNG_ID": "71650126",
+   "SNG_TITLE": "(Da Le) Yaleo",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USAR19900029",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "71650127",
+   "SNG_TITLE": "Love of My Life (feat. Dave Matthews & Carter Beauford)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Dave Matthews",
+     "Carter Beauford"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USAR19900030",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "71650130",
+   "SNG_TITLE": "Put Your Lights On (feat. Everlast)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Everlast"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USAR19900031",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "71650133",
+   "SNG_TITLE": "Africa Bamba",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USAR19900032",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "71650135",
+   "SNG_TITLE": "Smooth (feat. Rob Thomas)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Rob Thomas"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USAR19900033",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "71650137",
+   "SNG_TITLE": "Do You Like the Way (feat. Lauryn Hill & Cee-Lo)",
+   "ARTISTS": [
+    {},
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Ms. Lauryn Hill",
+     "Cee-Lo"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USAR19900034",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "71650141",
+   "SNG_TITLE": "Maria Maria (feat. The Product G&B)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "The Product G&B"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USAR19900035",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "71650143",
+   "SNG_TITLE": "Migra",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USAR19900036",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "71650145",
+   "SNG_TITLE": "Corazon Espinado (feat. Mana)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Mana"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USAR19900037",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "71650147",
+   "SNG_TITLE": "Wishing It Was (feat. Eagle-Eye Cherry)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Eagle-Eye Cherry"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USAR19900038",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "71650149",
+   "SNG_TITLE": "El Farol",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "11",
+   "ISRC": "USAR19900039",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "3"
+  },
+  {
+   "SNG_ID": "71650152",
+   "SNG_TITLE": "Primavera",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "12",
+   "ISRC": "USAR19900040",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  },
+  {
+   "SNG_ID": "71650154",
+   "SNG_TITLE": "The Calling (feat. Eric Clapton)",
+   "ARTISTS": [
+    {},
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "featuring": [
+     "Eric Clapton"
+    ],
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "13",
+   "ISRC": "USAR19900041",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "71650156",
+   "SNG_TITLE": "Day of Celebration",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Santana"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "14",
+   "ISRC": "USAR19900042",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="b43f421d-cc80-4729-81d9-a2c267abacc3"><title>Supernatural</title><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit><release-group><title>Supernatural</title><first-release-date>1999-06-15</first-release-date><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit></release-group><date>2010-02-16</date><release-event-list><release-event><date>2010-02-16</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Columbia</name></label></label-info><label-info><label><name>Legacy</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>(Da Le) Yaleo</title><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>2</position><number>2</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Dave Matthews</name></artist></name-credit><name-credit><artist><name>Carter Beauford</name></artist></name-credit></artist-credit><recording><title>Love of My Life</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit joinphrase=" &amp; "><artist><name>Dave Matthews</name></artist></name-credit><name-credit><artist><name>Carter Beauford</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Everlast</name></artist></name-credit></artist-credit><recording><title>Put Your Lights On</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Everlast</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Africa Bamba</title><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>5</position><number>5</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Rob Thomas</name></artist></name-credit></artist-credit><recording><title>Smooth</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Rob Thomas</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>6</position><number>6</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit joinphrase=" &amp; "><name>Lauryn Hill</name><artist><name>Ms. Lauryn Hill</name></artist></name-credit><name-credit><name>Cee‐Lo</name><artist><name>CeeLo Green</name></artist></name-credit></artist-credit><recording><title>Do You Like the Way</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit joinphrase=" &amp; "><name>Lauryn Hill</name><artist><name>Ms. Lauryn Hill</name></artist></name-credit><name-credit><name>Cee‐Lo</name><artist><name>CeeLo Green</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>7</position><number>7</number><title>Maria Maria (radio mix)</title><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>The Product G&amp;B</name></artist></name-credit></artist-credit><recording><title>Maria Maria</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>The Product G&amp;B</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>Migra</title><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>9</position><number>9</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Maná</name></artist></name-credit></artist-credit><recording><title>Corazón espinado</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Maná</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>10</position><number>10</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Eagle‐Eye Cherry</name></artist></name-credit></artist-credit><recording><title>Wishing It Was</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Eagle‐Eye Cherry</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>11</position><number>11</number><recording><title>El farol</title><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>12</position><number>12</number><recording><title>Primavera</title><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>13</position><number>13</number><artist-credit><name-credit joinphrase=" feat. "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Eric Clapton</name></artist></name-credit></artist-credit><recording><title>The Calling</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Santana</name></artist></name-credit><name-credit><artist><name>Eric Clapton</name></artist></name-credit></artist-credit><first-release-date>1999-06-15</first-release-date></recording></track><track><position>14</position><number>14</number><recording><title>Day of Celebration</title><artist-credit><name-credit><artist><name>Santana</name></artist></name-credit></artist-credit><first-release-date>2003</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 807636,
+ "year": 1999,
+ "artists": [
+  {
+   "name": "Santana",
+   "join": "",
+   "role": "",
+   "id": 30724
+  }
+ ],
+ "labels": [
+  {
+   "name": "Arista",
+   "catno": "07822 19080 2",
+   "id": 362
+  },
+  {
+   "name": "BMG",
+   "catno": "07822 19080 2",
+   "id": 1003
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD"
+  }
+ ],
+ "title": "Supernatural",
+ "released": "1999-06-00",
+ "genres": [
+  "Rock",
+  "Latin",
+  "Pop"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "",
+     "role": "",
+     "id": 30724
+    }
+   ],
+   "title": "(Da Le) Yaleo",
+   "extraartists": [
+    {
+     "name": "Billy Johnson",
+     "join": "",
+     "role": "Drums",
+     "id": 330647
+    },
+    {
+     "name": "Glen Kolotkin",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 269429
+    },
+    {
+     "name": "Mike Couzzi",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 114057
+    },
+    {
+     "name": "Jim Gaines",
+     "join": "",
+     "role": "Mixed By",
+     "id": 263000
+    },
+    {
+     "name": "Ben Conrad",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 271143
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 304447
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 79340
+    },
+    {
+     "name": "Jose Abel Figueroa",
+     "join": "",
+     "role": "Trombone",
+     "id": 1720919
+    },
+    {
+     "name": "Mic Gillette",
+     "join": "",
+     "role": "Trombone",
+     "id": 347205
+    },
+    {
+     "name": "Marvin McFadden",
+     "join": "",
+     "role": "Trumpet",
+     "id": 785118
+    },
+    {
+     "name": "Mic Gillette",
+     "join": "",
+     "role": "Trumpet",
+     "id": 347205
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Vocals",
+     "id": 79340
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Vocals",
+     "id": 327996
+    },
+    {
+     "name": "Tony Lindsay",
+     "join": "",
+     "role": "Vocals",
+     "id": 331720
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Written-By",
+     "id": 79340
+    },
+    {
+     "name": "Christian Polloni",
+     "join": "",
+     "role": "Written-By",
+     "id": 853685
+    },
+    {
+     "name": "Shakara Mutela",
+     "join": "",
+     "role": "Written-By",
+     "id": 1719691
+    }
+   ],
+   "duration": "5:51"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "Featuring",
+     "role": "",
+     "id": 30724
+    },
+    {
+     "name": "Dave Matthews",
+     "join": "",
+     "role": "",
+     "id": 169117
+    }
+   ],
+   "title": "Love Of My Life",
+   "extraartists": [
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Congas",
+     "id": 327996
+    },
+    {
+     "name": "Carter Beauford",
+     "join": "",
+     "role": "Drums",
+     "id": 804227
+    },
+    {
+     "name": "Andy Salas",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 406479
+    },
+    {
+     "name": "Dave Dar",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 214896
+    },
+    {
+     "name": "Jim Gaines",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 263000
+    },
+    {
+     "name": "John Seymour",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 256810
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "George Whitty",
+     "join": "",
+     "role": "Keyboards",
+     "id": 298722
+    },
+    {
+     "name": "Dave Matthews",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 169117
+    },
+    {
+     "name": "Jim Gaines",
+     "join": "",
+     "role": "Mixed By",
+     "id": 263000
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 304447
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 79340
+    },
+    {
+     "name": "Stephen Harris",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 115914
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Written-By",
+     "id": 79340
+    },
+    {
+     "name": "Dave Matthews",
+     "join": "",
+     "role": "Written-By",
+     "id": 169117
+    }
+   ],
+   "duration": "5:48"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "Featuring",
+     "role": "",
+     "id": 30724
+    },
+    {
+     "name": "Everlast",
+     "join": "",
+     "role": "",
+     "id": 76490
+    }
+   ],
+   "title": "Put Your Lights On",
+   "extraartists": [
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Congas, Percussion",
+     "id": 79340
+    },
+    {
+     "name": "Michael Anderson (3)",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 438774
+    },
+    {
+     "name": "John Gamble",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 97530
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "Tom Lord-Alge",
+     "join": "",
+     "role": "Mixed By",
+     "id": 232766
+    },
+    {
+     "name": "Femio Hernandez",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 259035
+    },
+    {
+     "name": "Dante Ross",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 97529
+    },
+    {
+     "name": "Dante Ross",
+     "join": "",
+     "role": "Programmed By [Programming]",
+     "id": 97529
+    },
+    {
+     "name": "John Gamble",
+     "join": "",
+     "role": "Programmed By [Programming]",
+     "id": 97530
+    },
+    {
+     "name": "Everlast",
+     "join": "",
+     "role": "Rhythm Guitar, Lead Vocals",
+     "id": 76490
+    },
+    {
+     "name": "Erik Schrody",
+     "join": "",
+     "role": "Written-By",
+     "id": 646291
+    }
+   ],
+   "duration": "4:47"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "",
+     "role": "",
+     "id": 30724
+    }
+   ],
+   "title": "Africa Bamba",
+   "extraartists": [
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 79340
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 327996
+    },
+    {
+     "name": "Tony Lindsay",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 331720
+    },
+    {
+     "name": "Horacio \"El Negro\" Hernandez",
+     "join": "",
+     "role": "Drums",
+     "id": 345715
+    },
+    {
+     "name": "Mike Couzzi",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 114057
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 79340
+    },
+    {
+     "name": "Jim Gaines",
+     "join": "",
+     "role": "Mixed By",
+     "id": 263000
+    },
+    {
+     "name": "Ben Conrad",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 271143
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 79340
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Vocals [Vamp Out Vocal]",
+     "id": 327996
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Written-By",
+     "id": 79340
+    },
+    {
+     "name": "Ismaila Touré",
+     "join": "",
+     "role": "Written-By",
+     "id": 477610
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Written-By",
+     "id": 327996
+    },
+    {
+     "name": "Sixu Tidiane Touré",
+     "join": "",
+     "role": "Written-By",
+     "id": 477608
+    }
+   ],
+   "duration": "4:40"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "Featuring",
+     "role": "",
+     "id": 30724
+    },
+    {
+     "name": "Rob Thomas",
+     "join": "",
+     "role": "",
+     "id": 129218
+    }
+   ],
+   "title": "Smooth",
+   "extraartists": [
+    {
+     "name": "Rodney Holmes",
+     "join": "",
+     "role": "Drums",
+     "id": 491613
+    },
+    {
+     "name": "Rob Thomas",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 129218
+    },
+    {
+     "name": "Rob Thomas",
+     "join": "",
+     "role": "Lyrics By",
+     "id": 129218
+    },
+    {
+     "name": "Stephen Marcussen",
+     "join": "",
+     "role": "Mastered By",
+     "id": 254942
+    },
+    {
+     "name": "David Thoener",
+     "join": "",
+     "role": "Mixed By",
+     "id": 129220
+    },
+    {
+     "name": "Andy Haller",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 455308
+    },
+    {
+     "name": "Itaal Shur",
+     "join": "",
+     "role": "Music By",
+     "id": 36607
+    },
+    {
+     "name": "Rob Thomas",
+     "join": "",
+     "role": "Music By",
+     "id": 129218
+    },
+    {
+     "name": "Matt Serletic",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 129219
+    },
+    {
+     "name": "Mark Dobson (2)",
+     "join": "",
+     "role": "Programmed By [Programming], Edited By [Digital Editing]",
+     "id": 1008513
+    },
+    {
+     "name": "David Thoener",
+     "join": "",
+     "role": "Recorded By",
+     "id": 129220
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Recorded By [Assisted By]",
+     "id": 304447
+    },
+    {
+     "name": "Jeff Cressman",
+     "join": "",
+     "role": "Trombone",
+     "id": 452005
+    },
+    {
+     "name": "Jose Abel Figueroa",
+     "join": "",
+     "role": "Trombone",
+     "id": 1720919
+    },
+    {
+     "name": "Bill Ortiz",
+     "join": "",
+     "role": "Trumpet",
+     "id": 195321
+    },
+    {
+     "name": "Julius Melendez",
+     "join": "",
+     "role": "Trumpet",
+     "id": 804228
+    }
+   ],
+   "duration": "4:56"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "Featuring",
+     "role": "",
+     "id": 30724
+    },
+    {
+     "name": "Lauryn Hill",
+     "join": "&",
+     "role": "",
+     "id": 42627
+    },
+    {
+     "name": "Cee-Lo",
+     "join": "",
+     "role": "",
+     "id": 57770
+    }
+   ],
+   "title": "Do You Like The Way",
+   "extraartists": [
+    {
+     "name": "Lauryn Hill",
+     "join": "",
+     "role": "Arranged By",
+     "id": 42627
+    },
+    {
+     "name": "Lauryn Hill",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 42627
+    },
+    {
+     "name": "Lenesha Randolph",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 331584
+    },
+    {
+     "name": "Tom Barney",
+     "join": "",
+     "role": "Bass",
+     "id": 276063
+    },
+    {
+     "name": "Mario De Arce",
+     "join": "",
+     "role": "Edited By [Pro Tools Editing]",
+     "id": 608645
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Additional]",
+     "id": 304447
+    },
+    {
+     "name": "Jamie Siegel",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 571252
+    },
+    {
+     "name": "Commissioner Gordon",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 134634
+    },
+    {
+     "name": "Tony Prendatt",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 64544
+    },
+    {
+     "name": "Loris Holland",
+     "join": "",
+     "role": "Keyboards",
+     "id": 241276
+    },
+    {
+     "name": "Cee-Lo",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 57770
+    },
+    {
+     "name": "Lauryn Hill",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 42627
+    },
+    {
+     "name": "Warren Riker",
+     "join": "",
+     "role": "Mixed By",
+     "id": 136534
+    },
+    {
+     "name": "Lauryn Hill",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 42627
+    },
+    {
+     "name": "Che Pope",
+     "join": "",
+     "role": "Programmed By [Programming]",
+     "id": 563861
+    },
+    {
+     "name": "Kobie Brown",
+     "join": "",
+     "role": "Programmed By [Programming]",
+     "id": 563879
+    },
+    {
+     "name": "Al Anderson",
+     "join": "",
+     "role": "Rhythm Guitar",
+     "id": 280677
+    },
+    {
+     "name": "Francis Dunnery",
+     "join": "",
+     "role": "Rhythm Guitar",
+     "id": 410158
+    },
+    {
+     "name": "Danny Wilensky",
+     "join": "",
+     "role": "Saxophone, Flute",
+     "id": 373231
+    },
+    {
+     "name": "Steve Turre",
+     "join": "",
+     "role": "Trombone",
+     "id": 174447
+    },
+    {
+     "name": "Earl Gardner",
+     "join": "",
+     "role": "Trumpet, Flugelhorn",
+     "id": 323260
+    },
+    {
+     "name": "Joe Daley",
+     "join": "",
+     "role": "Tuba",
+     "id": 260584
+    },
+    {
+     "name": "Lauryn Hill",
+     "join": "",
+     "role": "Written-By",
+     "id": 42627
+    }
+   ],
+   "duration": "5:52"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "",
+     "role": "",
+     "id": 30724
+    }
+   ],
+   "title": "Maria Maria",
+   "extraartists": [
+    {
+     "name": "Joseph Hébert",
+     "join": "",
+     "role": "Cello",
+     "id": 1019410
+    },
+    {
+     "name": "Chuck Bailey",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 616436
+    },
+    {
+     "name": "Jason Groucott",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 360442
+    },
+    {
+     "name": "Andy Grassi",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 129229
+    },
+    {
+     "name": "Chris Theis",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 201685
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "The Product G&B",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 120190
+    },
+    {
+     "name": "Andy Grassi",
+     "join": "",
+     "role": "Mixed By",
+     "id": 129229
+    },
+    {
+     "name": "Michael McCoy",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 266680
+    },
+    {
+     "name": "Jerry Duplessis",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 60965
+    },
+    {
+     "name": "Wyclef Jean",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 50200
+    },
+    {
+     "name": "Danny Seidenberg",
+     "join": "",
+     "role": "Viola",
+     "id": 516432
+    },
+    {
+     "name": "David Balakrishnan",
+     "join": "",
+     "role": "Viola",
+     "id": 739666
+    },
+    {
+     "name": "Jeremy Cohen",
+     "join": "",
+     "role": "Violin",
+     "id": 424924
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Vocals [Additional Vocal]",
+     "id": 79340
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Vocals [Additional]",
+     "id": 79340
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Written-By",
+     "id": 79340
+    },
+    {
+     "name": "Jerry Duplessis",
+     "join": "",
+     "role": "Written-By",
+     "id": 60965
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Written-By",
+     "id": 327996
+    },
+    {
+     "name": "Raul Rekow",
+     "join": "",
+     "role": "Written-By",
+     "id": 271939
+    },
+    {
+     "name": "Wyclef Jean",
+     "join": "",
+     "role": "Written-By",
+     "id": 50200
+    }
+   ],
+   "duration": "4:21"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "",
+     "role": "",
+     "id": 30724
+    }
+   ],
+   "title": "Migra",
+   "extraartists": [
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Bells [Sleigh]",
+     "id": 79340
+    },
+    {
+     "name": "Rodney Holmes",
+     "join": "",
+     "role": "Drums",
+     "id": 491613
+    },
+    {
+     "name": "Michael Anderson (3)",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 438774
+    },
+    {
+     "name": "Jeff Poe",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 123685
+    },
+    {
+     "name": "Jim Gaines",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 263000
+    },
+    {
+     "name": "John Karpowich",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 581169
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "Jeff Poe",
+     "join": "",
+     "role": "Mixed By",
+     "id": 123685
+    },
+    {
+     "name": "Jeff Poe",
+     "join": "",
+     "role": "Mixed By",
+     "id": 123685
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 79340
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 129224
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Programmed By [Programming], Accordion",
+     "id": 129224
+    },
+    {
+     "name": "Mic Gillette",
+     "join": "",
+     "role": "Trombone",
+     "id": 347205
+    },
+    {
+     "name": "Ramon Flores",
+     "join": "",
+     "role": "Trombone",
+     "id": 728264
+    },
+    {
+     "name": "Jose Abel Figueroa",
+     "join": "",
+     "role": "Trumpet",
+     "id": 1720919
+    },
+    {
+     "name": "Marvin McFadden",
+     "join": "",
+     "role": "Trumpet",
+     "id": 785118
+    },
+    {
+     "name": "Mic Gillette",
+     "join": "",
+     "role": "Trumpet",
+     "id": 347205
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Vocals",
+     "id": 129224
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Vocals",
+     "id": 327996
+    },
+    {
+     "name": "Tony Lindsay",
+     "join": "",
+     "role": "Vocals",
+     "id": 331720
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Written-By",
+     "id": 79340
+    },
+    {
+     "name": "Rachid Taha",
+     "join": "",
+     "role": "Written-By",
+     "id": 17944
+    },
+    {
+     "name": "Tony Lindsay",
+     "join": "",
+     "role": "Written-By",
+     "id": 331720
+    }
+   ],
+   "duration": "5:24"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "Featuring",
+     "role": "",
+     "id": 30724
+    },
+    {
+     "name": "Maná",
+     "join": "",
+     "role": "",
+     "id": 570007
+    }
+   ],
+   "title": "Corazon Espinado",
+   "extraartists": [
+    {
+     "name": "Alex González",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 659310
+    },
+    {
+     "name": "Gonzalo Chomat",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 1159552
+    },
+    {
+     "name": "Juan Calleros",
+     "join": "",
+     "role": "Bass",
+     "id": 659312
+    },
+    {
+     "name": "Alex González",
+     "join": "",
+     "role": "Co-producer",
+     "id": 659310
+    },
+    {
+     "name": "José Quintana",
+     "join": "",
+     "role": "Directed By [Vocal Direction]",
+     "id": 1173179
+    },
+    {
+     "name": "Alex González",
+     "join": "",
+     "role": "Drums",
+     "id": 659310
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Additional Engineering By]",
+     "id": 304447
+    },
+    {
+     "name": "Adam Olmstead",
+     "join": "",
+     "role": "Engineer [Assisted By], Mixed By [Assisted By]",
+     "id": 502205
+    },
+    {
+     "name": "Andy Haller",
+     "join": "",
+     "role": "Engineer [Assisted By], Mixed By [Assisted By]",
+     "id": 455308
+    },
+    {
+     "name": "Claudio Leiva",
+     "join": "",
+     "role": "Engineer [Assisted By], Mixed By [Assisted By]",
+     "id": 1720918
+    },
+    {
+     "name": "Tony Flores",
+     "join": "",
+     "role": "Engineer [Assisted By], Mixed By [Assisted By]",
+     "id": 344395
+    },
+    {
+     "name": "Benny Faccone",
+     "join": "",
+     "role": "Engineer [Engineered By], Mixed By",
+     "id": 129227
+    },
+    {
+     "name": "Alberto Salas",
+     "join": "",
+     "role": "Keyboards",
+     "id": 608184
+    },
+    {
+     "name": "Fher Olvera",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 129223
+    },
+    {
+     "name": "Fher Olvera",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 129223
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 129224
+    },
+    {
+     "name": "Sergio Vallín",
+     "join": "",
+     "role": "Rhythm Guitar",
+     "id": 659313
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Timbales",
+     "id": 327996
+    },
+    {
+     "name": "Fher Olvera",
+     "join": "",
+     "role": "Written-By",
+     "id": 129223
+    }
+   ],
+   "duration": "4:32"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "Featuring",
+     "role": "",
+     "id": 30724
+    },
+    {
+     "name": "Eagle-Eye Cherry",
+     "join": "",
+     "role": "",
+     "id": 74159
+    }
+   ],
+   "title": "Wishing It Was",
+   "extraartists": [
+    {
+     "name": "Chad & Earl",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 517693
+    },
+    {
+     "name": "Art Hodge",
+     "join": "",
+     "role": "Co-producer",
+     "id": 557229
+    },
+    {
+     "name": "Charles Goodan",
+     "join": "",
+     "role": "Co-producer",
+     "id": 557226
+    },
+    {
+     "name": "Rodney Holmes",
+     "join": "",
+     "role": "Drums",
+     "id": 491613
+    },
+    {
+     "name": "Bill Kinsley",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 438147
+    },
+    {
+     "name": "Billy Konkel",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 517697
+    },
+    {
+     "name": "Tracey Brown",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 364858
+    },
+    {
+     "name": "Anton Pukshansky",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 479906
+    },
+    {
+     "name": "David Frazer",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 142011
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "Eagle-Eye Cherry",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 74159
+    },
+    {
+     "name": "T-Ray",
+     "join": "",
+     "role": "Mixed By",
+     "id": 90131
+    },
+    {
+     "name": "Raul Rekow",
+     "join": "",
+     "role": "Percussion",
+     "id": 271939
+    },
+    {
+     "name": "Humberto \"Nengue\" Hernandez",
+     "join": "",
+     "role": "Percussion [Additional]",
+     "id": 7259505
+    },
+    {
+     "name": "T-Ray",
+     "join": "",
+     "role": "Producer [Additional Production]",
+     "id": 90131
+    },
+    {
+     "name": "The Dust Brothers",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 36647
+    },
+    {
+     "name": "John King",
+     "join": "",
+     "role": "Producer [The Dust Brothers]",
+     "id": 16661
+    },
+    {
+     "name": "Mike Simpson",
+     "join": "",
+     "role": "Producer [The Dust Brothers]",
+     "id": 42169
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Rhythm Guitar",
+     "id": 79340
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Timbales",
+     "id": 327996
+    },
+    {
+     "name": "Eagle-Eye Cherry",
+     "join": "",
+     "role": "Written-By",
+     "id": 74159
+    },
+    {
+     "name": "John King",
+     "join": "",
+     "role": "Written-By",
+     "id": 16661
+    },
+    {
+     "name": "Mark Ramos-Nishita",
+     "join": "",
+     "role": "Written-By",
+     "id": 252213
+    },
+    {
+     "name": "Mike Simpson",
+     "join": "",
+     "role": "Written-By",
+     "id": 42169
+    }
+   ],
+   "duration": "4:59"
+  },
+  {
+   "position": "11",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "",
+     "role": "",
+     "id": 30724
+    }
+   ],
+   "title": "El Farol",
+   "extraartists": [
+    {
+     "name": "Gregg Bissonette",
+     "join": "",
+     "role": "Drums",
+     "id": 255889
+    },
+    {
+     "name": "Glen Kolotkin",
+     "join": "",
+     "role": "Engineer",
+     "id": 269429
+    },
+    {
+     "name": "Jeff Poe",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 123685
+    },
+    {
+     "name": "Jim Gaines",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 263000
+    },
+    {
+     "name": "John Karpowich",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 581169
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Keyboards, Programmed By [Programming]",
+     "id": 129224
+    },
+    {
+     "name": "Jeff Poe",
+     "join": "",
+     "role": "Mixed By",
+     "id": 123685
+    },
+    {
+     "name": "JB Eckl",
+     "join": "",
+     "role": "Producer [Associate]",
+     "id": 210633
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 129224
+    },
+    {
+     "name": "Chester Thompson (2)",
+     "join": "",
+     "role": "Programmed By",
+     "id": 367337
+    },
+    {
+     "name": "Raul Pacheco",
+     "join": "",
+     "role": "Rhythm Guitar, Percussion",
+     "id": 347529
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Timbales",
+     "id": 327996
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Written-By",
+     "id": 79340
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Written-By",
+     "id": 129224
+    }
+   ],
+   "duration": "4:49"
+  },
+  {
+   "position": "12",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "",
+     "role": "",
+     "id": 30724
+    }
+   ],
+   "title": "Primavera",
+   "extraartists": [
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 79340
+    },
+    {
+     "name": "Fher Olvera",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 129223
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 129224
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 327996
+    },
+    {
+     "name": "Tony Lindsay",
+     "join": "",
+     "role": "Backing Vocals [Background Vocals]",
+     "id": 331720
+    },
+    {
+     "name": "Mike Porcaro",
+     "join": "",
+     "role": "Bass",
+     "id": 369443
+    },
+    {
+     "name": "Luis Conte",
+     "join": "",
+     "role": "Congas, Percussion",
+     "id": 268297
+    },
+    {
+     "name": "Jimmy Keegan",
+     "join": "",
+     "role": "Drums",
+     "id": 1720920
+    },
+    {
+     "name": "Alvaro Villagra",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 925722
+    },
+    {
+     "name": "Glen Kolotkin",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 269429
+    },
+    {
+     "name": "Jeff Poe",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 123685
+    },
+    {
+     "name": "Jim Gaines",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 263000
+    },
+    {
+     "name": "Jim Scott",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 251633
+    },
+    {
+     "name": "John Karpowich",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 581169
+    },
+    {
+     "name": "Matthew Spindel",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 408368
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Keyboards",
+     "id": 129224
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Lead Vocals",
+     "id": 129224
+    },
+    {
+     "name": "Jeff Poe",
+     "join": "",
+     "role": "Mixed By",
+     "id": 123685
+    },
+    {
+     "name": "JB Eckl",
+     "join": "",
+     "role": "Producer [Associate]",
+     "id": 210633
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 129224
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Programmed By",
+     "id": 129224
+    },
+    {
+     "name": "JB Eckl",
+     "join": "",
+     "role": "Rhythm Guitar",
+     "id": 210633
+    },
+    {
+     "name": "Karl Perazzo",
+     "join": "",
+     "role": "Timbales",
+     "id": 327996
+    },
+    {
+     "name": "Chein Garcia",
+     "join": "",
+     "role": "Translated By [Spanish Translation]",
+     "id": 982237
+    },
+    {
+     "name": "JB Eckl",
+     "join": "",
+     "role": "Written-By",
+     "id": 210633
+    },
+    {
+     "name": "KC Porter",
+     "join": "",
+     "role": "Written-By",
+     "id": 129224
+    }
+   ],
+   "duration": "5:17"
+  },
+  {
+   "position": "13.1",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "Featuring",
+     "role": "",
+     "id": 30724
+    },
+    {
+     "name": "Eric Clapton",
+     "join": "",
+     "role": "",
+     "id": 17827
+    }
+   ],
+   "title": "The Calling",
+   "extraartists": [
+    {
+     "name": "Andre Zweers",
+     "join": "",
+     "role": "Edited By [Pro Tools Editing]",
+     "id": 573457
+    },
+    {
+     "name": "Ben Conrad",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 271143
+    },
+    {
+     "name": "Frank Rinella",
+     "join": "",
+     "role": "Engineer [Assisted By]",
+     "id": 438777
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Engineer [Engineered By]",
+     "id": 304447
+    },
+    {
+     "name": "Eric Clapton",
+     "join": "",
+     "role": "Lead Guitar, Rhythm Guitar",
+     "id": 17827
+    },
+    {
+     "name": "Steve Fontano",
+     "join": "",
+     "role": "Mixed By",
+     "id": 304447
+    },
+    {
+     "name": "Ben Conrad",
+     "join": "",
+     "role": "Mixed By [Assisted By]",
+     "id": 271143
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Percussion",
+     "id": 79340
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Producer [Produced By]",
+     "id": 79340
+    },
+    {
+     "name": "Mike Mani",
+     "join": "",
+     "role": "Programmed By [Programming]",
+     "id": 274352
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Rhythm Guitar",
+     "id": 79340
+    },
+    {
+     "name": "Jeanie Tracy",
+     "join": "",
+     "role": "Vocals",
+     "id": 16797
+    },
+    {
+     "name": "Tony Lindsay",
+     "join": "",
+     "role": "Vocals",
+     "id": 331720
+    },
+    {
+     "name": "Carlos Santana",
+     "join": "",
+     "role": "Written-By",
+     "id": 79340
+    },
+    {
+     "name": "Chester Thompson (2)",
+     "join": "",
+     "role": "Written-By",
+     "id": 367337
+    }
+   ],
+   "duration": "7:43"
+  },
+  {
+   "position": "13.2",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "No Artist",
+     "join": "",
+     "role": "",
+     "id": 118760
+    }
+   ],
+   "title": "(silence)",
+   "duration": "0:17"
+  },
+  {
+   "position": "13.3",
+   "type_": "track",
+   "artists": [
+    {
+     "name": "Santana",
+     "join": "",
+     "role": "",
+     "id": 30724
+    }
+   ],
+   "title": "Day Of Celebration",
+   "duration": "4:28"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Pete Ganbarg",
+   "join": "",
+   "role": "A&R",
+   "id": 963015
+  },
+  {
+   "name": "Carlos Santana",
+   "join": "",
+   "role": "Art Direction",
+   "id": 79340
+  },
+  {
+   "name": "Su. Suttle",
+   "join": "",
+   "role": "Art Direction [Asst.], Graphic Design",
+   "id": 1831821
+  },
+  {
+   "name": "Benny Rietveld",
+   "join": "",
+   "role": "Bass",
+   "id": 327538
+  },
+  {
+   "name": "Raul Rekow",
+   "join": "",
+   "role": "Congas",
+   "id": 271939
+  },
+  {
+   "name": "Carlos Santana",
+   "join": "",
+   "role": "Guitar",
+   "id": 79340
+  },
+  {
+   "name": "Chester Thompson (2)",
+   "join": "",
+   "role": "Keyboards",
+   "id": 367337
+  },
+  {
+   "name": "Carlos Santana",
+   "join": "",
+   "role": "Lead Guitar",
+   "id": 79340
+  },
+  {
+   "name": "Santana Management",
+   "join": "",
+   "role": "Management",
+   "id": 2377472
+  },
+  {
+   "name": "Gregory Digiovine",
+   "join": "",
+   "role": "Management [Digiovine Management]",
+   "id": 1934365
+  },
+  {
+   "name": "Adam Fells",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 4073020
+  },
+  {
+   "name": "Bruce Kuhlman",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 923512
+  },
+  {
+   "name": "Cheryl McHale",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 4517576
+  },
+  {
+   "name": "Jorge Santana",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 501051
+  },
+  {
+   "name": "Kelly McRae (2)",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 3062635
+  },
+  {
+   "name": "Kevin Chisholm",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 923502
+  },
+  {
+   "name": "Kitsaun King",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 4517568
+  },
+  {
+   "name": "Meshelle Mifsud",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 4517573
+  },
+  {
+   "name": "Peggy Nederlof",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 4517569
+  },
+  {
+   "name": "Rita Gentry",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 4073018
+  },
+  {
+   "name": "Stefani Charles",
+   "join": "",
+   "role": "Management [Santana Management]",
+   "id": 4517575
+  },
+  {
+   "name": "Ted Jensen",
+   "join": "",
+   "role": "Mastered By",
+   "id": 259758
+  },
+  {
+   "name": "Benny Rietveld",
+   "join": "",
+   "role": "Musician [Santana]",
+   "id": 327538
+  },
+  {
+   "name": "Carlos Santana",
+   "join": "",
+   "role": "Musician [Santana]",
+   "id": 79340
+  },
+  {
+   "name": "Chester Thompson (2)",
+   "join": "",
+   "role": "Musician [Santana]",
+   "id": 367337
+  },
+  {
+   "name": "Karl Perazzo",
+   "join": "",
+   "role": "Musician [Santana]",
+   "id": 327996
+  },
+  {
+   "name": "Raul Rekow",
+   "join": "",
+   "role": "Musician [Santana]",
+   "id": 271939
+  },
+  {
+   "name": "Rodney Holmes",
+   "join": "",
+   "role": "Musician [Santana]",
+   "id": 491613
+  },
+  {
+   "name": "Tony Lindsay",
+   "join": "",
+   "role": "Musician [Santana]",
+   "id": 331720
+  },
+  {
+   "name": "Karl Perazzo",
+   "join": "",
+   "role": "Percussion",
+   "id": 327996
+  },
+  {
+   "name": "Carlos Santana",
+   "join": "",
+   "role": "Producer [Album Producers]",
+   "id": 79340
+  },
+  {
+   "name": "Clive Davis",
+   "join": "",
+   "role": "Producer [Album Producers]",
+   "id": 233669
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "0884977514940",
+ "upc": "0884977514940",
+ "title": "Supernatural",
+ "version": "Remastered",
+ "tracks_count": 14,
+ "artist": {
+  "name": "Santana"
+ },
+ "genres_list": [
+  "Pop"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "(Da Le) Yaleo",
+    "version": null,
+    "track_number": 1
+   },
+   {
+    "title": "Love of My Life",
+    "version": null,
+    "track_number": 2
+   },
+   {
+    "title": "Put Your Lights On",
+    "version": null,
+    "track_number": 3
+   },
+   {
+    "title": "Africa Bamba",
+    "version": null,
+    "track_number": 4
+   },
+   {
+    "title": "Smooth",
+    "version": null,
+    "track_number": 5
+   },
+   {
+    "title": "Do You Like the Way",
+    "version": null,
+    "track_number": 6
+   },
+   {
+    "title": "Maria Maria",
+    "version": null,
+    "track_number": 7
+   },
+   {
+    "title": "Migra",
+    "version": null,
+    "track_number": 8
+   },
+   {
+    "title": "Corazon Espinado",
+    "version": null,
+    "track_number": 9
+   },
+   {
+    "title": "Wishing It Was",
+    "version": null,
+    "track_number": 10
+   },
+   {
+    "title": "El Farol",
+    "version": null,
+    "track_number": 11
+   },
+   {
+    "title": "Primavera",
+    "version": null,
+    "track_number": 12
+   },
+   {
+    "title": "The Calling",
+    "version": null,
+    "track_number": 13
+   },
+   {
+    "title": "Day of Celebration",
+    "version": null,
+    "track_number": 14
+   }
+  ]
+ }
+}
+'''

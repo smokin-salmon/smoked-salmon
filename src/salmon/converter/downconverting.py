@@ -11,7 +11,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
-from salmon.common.files import get_audio_files, is_apple_double, is_torrent_file, process_files
+from salmon.common.files import get_audio_files, is_apple_double, is_torrent_file, process_tracks
 from salmon.converter.conversions import (
     changed_sources,
     changed_tracks,
@@ -118,13 +118,15 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         # token so the FLAC/bit-depth rewriting below does not have to work around it.
         foldername = drop_resolution_token(foldername, current_token)
 
-    if not format_matches(FLAC_WORD_RE, foldername):
+    appended = not format_matches(FLAC_WORD_RE, foldername)
+    if appended:
         foldername += " [FLAC]"
-    else:
-        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
 
     if sample_rate and bit_depth == 24:
+        # Straight to the "24-NN" token: a "16bit FLAC" step first would leave "16bit" in the name.
         foldername = swap_format_matches(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
+    elif not appended:
+        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
 
     return os.path.join(output_dir or os.path.dirname(path), foldername)
 
@@ -253,13 +255,13 @@ async def _convert_audio_files(
 
         result = await anyio.run_process(command, check=False)
         if result.returncode != 0:
-            err = result.stderr.decode() if result.stderr else ""
+            err = result.stderr.decode(errors="replace") if result.stderr else ""
             if err:
                 click.secho(err, fg="yellow")
-            raise RuntimeError(f"sox conversion failed for {os.path.basename(item.src)} with code {result.returncode}")
+            raise UploadError(f"sox conversion failed for {os.path.basename(item.src)} with code {result.returncode}")
 
     file_paths = [item.src for item in items]
-    await process_files(file_paths, _convert_one, "Converting")
+    await process_tracks(file_paths, _convert_one, "Converting")
 
 
 # ---------------------------------------------------------------------------

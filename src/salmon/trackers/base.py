@@ -53,17 +53,6 @@ class TagRules:
     sixteen_bit_above_48khz: Literal["", "trumpable", "refused"] = ""
 
 
-ARTIST_TYPES = [
-    "main",
-    "guest",
-    "remixer",
-    "composer",
-    "conductor",
-    "djcompiler",
-    "producer",
-    "arranger",
-]
-
 # What _request prints goes here instead while hold_request_messages() is active: a request
 # sent in the background must not print over a prompt the user is answering meanwhile.
 _held_request_messages: ContextVar[list[tuple[str, dict[str, Any]]] | None] = ContextVar(
@@ -1203,17 +1192,6 @@ class BaseGazelleApi:
         click.secho("Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!", fg="red")
         return None
 
-    async def get_request(self, id: int) -> dict:
-        """Get information about a request.
-
-        Args:
-            id: The request ID.
-
-        Returns:
-            The request data.
-        """
-        return await self.api_call("request", params={"id": id})
-
     async def fetch_log(self, page: int) -> str:
         """Fetch a page of the site log.
 
@@ -1226,19 +1204,6 @@ class BaseGazelleApi:
         url = f"{self.base_url}/log.php"
         resp = await self._request("GET", url, params={"page": page})
         return resp.text
-
-    async def fetch_riplog(self, torrentid: int) -> str:
-        """Fetch rip log for a torrent.
-
-        Args:
-            torrentid: The torrent ID.
-
-        Returns:
-            The log text with some content stripped.
-        """
-        url = f"{self.base_url}/torrents.php"
-        resp = await self._request("GET", url, params={"action": "loglist", "torrentid": torrentid})
-        return re.sub(r" ?\([^)]+\)", "", resp.text)
 
     async def get_uploads_from_log(self) -> list:
         """Read the site log's recent pages and return their uploads.

@@ -48,7 +48,7 @@ from helpers.cross_upload import (
     _write_flac,
 )
 from helpers.uploader_fakes import stub_uploader
-from torf import Torrent
+from torf import Torrent, WriteError
 
 import salmon.cross_upload as cross_upload_module
 import salmon.images
@@ -148,6 +148,19 @@ def _within_the_plans_bound(run: Run, target: str = "RED") -> bool:
 
 
 # The budget
+
+
+def test_a_torrent_that_cannot_be_written_stops_the_run_and_says_where(monkeypatch, dirs) -> None:
+    def write(_torrent: Torrent, path: str, **_kwargs: object) -> None:
+        raise WriteError(13, path)
+
+    album = _album(dirs.downloads / FOLDER)
+    monkeypatch.setattr(Torrent, "write", write)
+    run = _cross_upload(monkeypatch, dirs, [str(TORRENT_ID), "-yyy"], input="\n", prepare=_source_has(album))
+
+    assert run.result.exit_code == 1, run.output
+    assert "Stopping: Could not write" in run.output
+    assert not run.target.posts()
 
 
 def test_one_release_sends_what_the_budget_says(monkeypatch, dirs) -> None:

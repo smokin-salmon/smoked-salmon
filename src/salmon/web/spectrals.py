@@ -38,12 +38,3 @@ def set_active_spectrals(spectrals: dict[int, str], frequency_plots: Collection[
     global _active_spectrals, _active_frequency_plots
     _active_spectrals = dict(sorted((k, _sanitize_filename(v)) for k, v in spectrals.items()))
     _active_frequency_plots = frozenset(frequency_plots)
-
-
-def get_active_spectrals() -> dict[int, str]:
-    """Return the currently active spectrals.
-
-    Returns:
-        Mapping of spectral ID to filename.
-    """
-    return _active_spectrals

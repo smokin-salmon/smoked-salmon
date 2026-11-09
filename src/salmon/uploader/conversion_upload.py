@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 import anyio
 import asyncclick as click
-from mutagen import MutagenError
 
 import salmon.trackers
 from salmon import cfg, dryrun
@@ -129,7 +128,7 @@ async def execute_downconversion_tasks(
                     sample_rate=task["target_sample_rate"],
                     output_dir=output_dir,
                 )
-            except UploadError as e:
+            except (UploadError, OSError) as e:
                 click.secho(f"  {e}", fg="red", bold=True)
                 continue
             await anyio.sleep(0.1)
@@ -138,7 +137,7 @@ async def execute_downconversion_tasks(
             # A folder that was already there may hold other files: then it is not this conversion.
             try:
                 converted_info = _by_source_name(new_path, gather_audio_info(new_path))
-            except (UploadError, MutagenError) as e:
+            except UploadError as e:
                 click.secho(f"  Could not read {new_path} ({e}): not uploading it.", fg="red", bold=True)
                 continue
             if converted_info.keys() != track_data.keys():
@@ -202,7 +201,7 @@ async def execute_downconversion_tasks(
             # Execute transcoding
             try:
                 transcoded_path = await transcode_folder(base_path, task["encoding"], output_dir=output_dir)
-            except UploadError as e:
+            except (UploadError, OSError) as e:
                 click.secho(f"  {e}", fg="red", bold=True)
                 continue
             await anyio.sleep(0.1)

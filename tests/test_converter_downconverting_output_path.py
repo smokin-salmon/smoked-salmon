@@ -8,6 +8,8 @@ from salmon.converter import downconverting
 # ("24bit FLAC 24-96"): a 24-bit/96kHz FLAC folder.
 SOURCE_24_96 = "/downloads/Artist - Title (2024) [WEB 24bit FLAC 24-96]"
 SOURCE_NO_TOKEN = "/downloads/Artist - Title (2024) [WEB 24bit FLAC]"
+SOURCE_NO_BIT_DEPTH = "/downloads/Artist - Title (2024) [WEB FLAC]"
+SOURCE_NO_FLAC_WORD = "/downloads/Artist - Title (2024)"
 
 
 def _stub_24_96(monkeypatch) -> None:
@@ -221,3 +223,28 @@ def test_names_without_the_letters_elsewhere_come_out_as_before(
     _stub_24_96(monkeypatch)
 
     assert downconverting._build_output_path(f"/downloads/{source}", bit_depth, sample_rate) == f"/downloads/{expected}"
+
+
+def test_a_24_bit_downconversion_of_a_name_without_24bit_has_no_16bit(monkeypatch) -> None:
+    _stub_24_96(monkeypatch)
+
+    new_path = downconverting._build_output_path(SOURCE_NO_BIT_DEPTH, 24, 48000)
+
+    assert new_path == "/downloads/Artist - Title (2024) [WEB 24-48]"
+
+
+def test_a_16_bit_downconversion_of_a_name_without_24bit_keeps_the_16bit(monkeypatch) -> None:
+    _stub_24_96(monkeypatch)
+
+    assert downconverting._build_output_path(SOURCE_NO_BIT_DEPTH, 16, None) == (
+        "/downloads/Artist - Title (2024) [WEB 16bit FLAC]"
+    )
+
+
+def test_a_24_bit_downconversion_of_a_name_without_a_flac_word_has_no_16bit(monkeypatch) -> None:
+    _stub_24_96(monkeypatch)
+
+    new_path = downconverting._build_output_path(SOURCE_NO_FLAC_WORD, 24, 48000)
+
+    assert new_path == "/downloads/Artist - Title (2024) [24-48]"
+    assert "16bit" not in new_path

@@ -11,7 +11,7 @@ import textwrap
 from collections.abc import AsyncIterator, Awaitable, Callable, Sequence
 from contextlib import asynccontextmanager
 from functools import partial
-from subprocess import DEVNULL
+from subprocess import DEVNULL, CalledProcessError
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -30,7 +30,7 @@ except ImportError:
 
 from salmon import cfg, dryrun, interaction, prepared
 from salmon.common import flush_stdin, get_audio_files
-from salmon.common.files import process_files
+from salmon.common.files import process_files, process_tracks
 from salmon.common.strings import numeric_id
 from salmon.containment import is_within
 from salmon.errors import (
@@ -602,9 +602,18 @@ async def _run_sox(
     Returns:
         The 1-based track number and filename of each file, in files_li's order.
     """
-    return await process_files(
+
+    async def one(file: str, idx: int) -> tuple[int, str]:
+        try:
+            return await _generate_spectral_for_file(path, file, spectrals_path, audio_info, idx)
+        except CalledProcessError as e:
+            # In the error, not printed: this may be running in the background (see spectrals_in_background).
+            reason = (e.stderr or b"").decode(errors="replace").strip() or f"code {e.returncode}"
+            raise UploadError(f"sox could not make the spectrals of {file}: {reason}") from e
+
+    return await process_tracks(
         files_li,
-        lambda file, idx: _generate_spectral_for_file(path, file, spectrals_path, audio_info, idx),
+        one,
         "Generating Spectrals",
         on_done=on_done,
     )

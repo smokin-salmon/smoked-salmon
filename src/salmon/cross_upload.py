@@ -967,7 +967,8 @@ def _track_data(release: Release) -> dict[str, Any]:
     """The files' audio info and tags, read once (read only)."""
     if not release.track_data:
         path = str(release.path)
-        release.track_data = concat_track_data(gather_tags(path), gather_audio_info(path))
+        audio_info = gather_audio_info(path)
+        release.track_data = concat_track_data(gather_tags(path), audio_info)
     return release.track_data
 
 

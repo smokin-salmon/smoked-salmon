@@ -1,0 +1,509 @@
+album = "Bill Evans Trio, Sunday at the Village Vanguard"
+why = "A trio under the leader's name with a famous member: MusicBrainz and Discogs make Scott LaFaro a guest (one track / every track), Deezer doesn't."
+edition = "Original Jazz Classics CD, 10 tracks (Deezer 125746 = MusicBrainz 150e61a6 by barcode); Discogs 1220622 'The Bill Evans Trio Featuring Scott LaFaro' is the release MusicBrainz links"
+known_wrong = []
+files_from = "deezer"
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Bill Evans Trio"]
+how_we_know = "Deezer and MusicBrainz agree on the release artist"
+
+[today.deezer]
+release = ["Bill Evans Trio (main)"]
+tracks = 10
+
+[today.musicbrainz]
+release = ["Bill Evans Trio (main)", "Scott LaFaro (guest)"]
+tracks = 10
+
+[today.discogs]
+release = ["The Bill Evans Trio (main)", "Scott LaFaro (guest)"]
+tracks = 10
+
+[today.qobuz]
+release = ["Bill Evans Trio (main)"]
+tracks = 6
+
+[today.merge]
+release = ["Bill Evans Trio (main)", "Scott LaFaro (guest)"]
+tracks = 10
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Gloria's Step (Live At The Village Vanguard, 1961 / Take 2)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["Gloria's Step (Live At The Village Vanguard, 1961 / Take 3)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["My Man's Gone Now (Live At The Village Vanguard, 1961)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["Solar (Live At The Village Vanguard, 1961)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Alice In Wonderland (Live At The Village Vanguard, 1961 / Take 2)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Alice In Wonderland (Live At The Village Vanguard, 1961 / Take 1)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["All Of You (Live At The Village Vanguard, 1961 / Take 2)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["All Of You (Live At The Village Vanguard, 1961 / Take 3)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "09.flac"
+tracknumber = ["9"]
+discnumber = ["1"]
+title = ["Jade Visions (Live At The Village Vanguard, 1961 / Take 2)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+[[track]]
+file = "10.flac"
+tracknumber = ["10"]
+discnumber = ["1"]
+title = ["Jade Visions (Live At The Village Vanguard, 1961 / Take 1)"]
+artist = ["Bill Evans"]
+album = ["Sunday At The Village Vanguard"]
+albumartist = ["Bill Evans"]
+date = ["2006-05-02"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 125746,
+ "title": "Sunday At The Village Vanguard",
+ "upc": "025218614023",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 129,
+    "name": "Jazz"
+   }
+  ]
+ },
+ "label": "Original Jazz Classics",
+ "release_date": "2006-05-02",
+ "tracklist": [
+  {
+   "SNG_ID": "1176167",
+   "SNG_TITLE": "Gloria's Step",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 2)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USFI86100430",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "1176168",
+   "SNG_TITLE": "Gloria's Step",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 3)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USFI88400097",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  },
+  {
+   "SNG_ID": "1176169",
+   "SNG_TITLE": "My Man's Gone Now",
+   "VERSION": "(Live At The Village Vanguard, 1961)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USFI86100431",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  },
+  {
+   "SNG_ID": "1176170",
+   "SNG_TITLE": "Solar",
+   "VERSION": "(Live At The Village Vanguard, 1961)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USFI86100432",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "1176171",
+   "SNG_TITLE": "Alice In Wonderland",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 2)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USFI86100433",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "1176172",
+   "SNG_TITLE": "Alice In Wonderland",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 1)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USFI88400098",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "8"
+  },
+  {
+   "SNG_ID": "1176173",
+   "SNG_TITLE": "All Of You",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 2)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USFI86100434",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "1176174",
+   "SNG_TITLE": "All Of You",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 3)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USFI88400099",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "1176175",
+   "SNG_TITLE": "Jade Visions",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 2)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "9",
+   "ISRC": "USFI86100435",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "1176176",
+   "SNG_TITLE": "Jade Visions",
+   "VERSION": "(Live At The Village Vanguard, 1961 / Take 1)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Bill Evans Trio"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "10",
+   "ISRC": "USFI88400100",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  }
+ ]
+}
+'''
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="150e61a6-dbf5-4aa3-ae50-0d77838a8183"><title>Sunday at the Village Vanguard</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><release-group type="Live"><title>Sunday at the Village Vanguard</title><first-release-date>1961</first-release-date><artist-credit><name-credit joinphrase=" featuring "><artist><name>Bill Evans Trio</name></artist></name-credit><name-credit><artist><name>Scott LaFaro</name></artist></name-credit></artist-credit></release-group><date>1990-10-25</date><release-event-list><release-event><date>1990-10-25</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><catalog-number>9376</catalog-number><label><name>Riverside</name></label></label-info><label-info><catalog-number>OJCCD-140-2</catalog-number><label><name>Original Jazz Classics</name></label></label-info><label-info><catalog-number>RLP-9376</catalog-number><label><name>Riverside</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Gloria’s Step (take 2)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>Gloria’s Step (take 3)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>3</position><number>3</number><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><recording><title>My Man’s Gone Now</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Bill Evans Trio</name></artist></name-credit><name-credit><artist><name>Scott LaFaro</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>4</position><number>4</number><recording><title>Solar</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1985</first-release-date></recording></track><track><position>5</position><number>5</number><title>Alice in Wonderland (take 2)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><recording><title>Alice in Wonderland</title><artist-credit><name-credit joinphrase=" featuring "><artist><name>Bill Evans Trio</name></artist></name-credit><name-credit><artist><name>Scott LaFaro</name></artist></name-credit></artist-credit><first-release-date>1961</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Alice in Wonderland (take 1)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>All of You (take 2)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1986</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>All of You (take 3)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track><track><position>9</position><number>9</number><recording><title>Jade Visions (take 2)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1986</first-release-date></recording></track><track><position>10</position><number>10</number><recording><title>Jade Visions (take 1)</title><artist-credit><name-credit><artist><name>Bill Evans Trio</name></artist></name-credit></artist-credit><first-release-date>1987</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+discogs = '''
+{
+ "id": 1220622,
+ "year": 0,
+ "artists": [
+  {
+   "name": "The Bill Evans Trio",
+   "anv": "Bill Evans Trio",
+   "join": "Featuring",
+   "id": 301147
+  },
+  {
+   "name": "Scott LaFaro",
+   "anv": "Scott La Faro",
+   "join": "",
+   "id": 272982
+  }
+ ],
+ "labels": [
+  {
+   "name": "Original Jazz Classics",
+   "catno": "OJCCD-140-2",
+   "id": 34231
+  },
+  {
+   "name": "Riverside Records",
+   "catno": "RLP-9376",
+   "id": 34094
+  }
+ ],
+ "formats": [
+  {
+   "name": "CD",
+   "descriptions": [
+    "Album",
+    "Reissue",
+    "Remastered",
+    "Stereo"
+   ]
+  }
+ ],
+ "title": "Sunday At The Village Vanguard",
+ "genres": [
+  "Jazz"
+ ],
+ "tracklist": [
+  {
+   "position": "1",
+   "type_": "track",
+   "title": "Gloria's Step (Take 2)",
+   "duration": "6:10"
+  },
+  {
+   "position": "2",
+   "type_": "track",
+   "title": "Gloria's Step (Take 3)",
+   "duration": "6:48"
+  },
+  {
+   "position": "3",
+   "type_": "track",
+   "title": "My Man's Gone Now",
+   "duration": "6:14"
+  },
+  {
+   "position": "4",
+   "type_": "track",
+   "title": "Solar",
+   "duration": "8:57"
+  },
+  {
+   "position": "5",
+   "type_": "track",
+   "title": "Alice In Wonderland (Take 2)",
+   "duration": "8:32"
+  },
+  {
+   "position": "6",
+   "type_": "track",
+   "title": "Alice In Wonderland (Take 1)",
+   "duration": "6:57"
+  },
+  {
+   "position": "7",
+   "type_": "track",
+   "title": "All Of You (Take 2)",
+   "duration": "8:20"
+  },
+  {
+   "position": "8",
+   "type_": "track",
+   "title": "All Of You (Take 3)",
+   "duration": "8:00"
+  },
+  {
+   "position": "9",
+   "type_": "track",
+   "title": "Jade Visions (Take 2)",
+   "duration": "3:57"
+  },
+  {
+   "position": "10",
+   "type_": "track",
+   "title": "Jade Visions (Take 1)",
+   "duration": "4:06"
+  }
+ ]
+}
+'''
+qobuz = '''
+{
+ "id": "qlrsn75jfkoua",
+ "upc": "0888072475403",
+ "title": "Sunday At The Village Vanguard",
+ "version": "Live At The Village Vanguard / 1961",
+ "tracks_count": 6,
+ "artist": {
+  "name": "Bill Evans Trio"
+ },
+ "genres_list": [
+  "Jazz"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Gloria's Step",
+    "version": "Take 2 / Live At The Village Vanguard / 1961",
+    "track_number": 1
+   },
+   {
+    "title": "My Man's Gone Now",
+    "version": "Live At The Village Vanguard / 1961",
+    "track_number": 2
+   },
+   {
+    "title": "Solar",
+    "version": "Live At The Village Vanguard / 1961",
+    "track_number": 3
+   },
+   {
+    "title": "Alice In Wonderland",
+    "version": "Take 2 / Live At The Village Vanguard / 1961",
+    "track_number": 4
+   },
+   {
+    "title": "All Of You",
+    "version": "Take 2 / Live At The Village Vanguard / 1961",
+    "track_number": 5
+   },
+   {
+    "title": "Jade Visions",
+    "version": "Take 2 / Live At The Village Vanguard / 1961",
+    "track_number": 6
+   }
+  ]
+ }
+}
+'''

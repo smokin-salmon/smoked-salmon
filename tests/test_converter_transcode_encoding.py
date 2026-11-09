@@ -1,14 +1,21 @@
 """What the MP3 encoding step writes, and that a cancel stops it."""
 
 import asyncio
+import os
+from pathlib import Path
 from types import SimpleNamespace
+from typing import Any
 
 import anyio
+import asyncclick as click
 import pytest
 from helpers.tagger_tags import _write_mp3
+from helpers.uploader_shortened_conversions import _write_flac
 from mutagen.id3 import ID3, PictureType
 
-from salmon.converter import transcoding
+from salmon import cfg, interaction
+from salmon.converter import conversions, transcoding
+from salmon.errors import UploadError
 from salmon.tagger.cover import MAX_PICTURES_AND_PADDING
 
 MIB = 1024 * 1024
@@ -106,3 +113,181 @@ def test_a_cancelled_transcode_kills_flac_and_lame(monkeypatch, tmp_path) -> Non
 
     assert [encoder.killed for encoder in spawned] == [True, True]
     assert [encoder.waited for encoder in spawned] == [True, True]
+
+
+# A track reaches its name only complete and tagged
+
+
+def _album(tmp_path: Path, names: tuple[str, ...] = ("01. one", "02. two")) -> Path:
+    album = tmp_path / "source" / "Album [WEB FLAC]"
+    album.mkdir(parents=True)
+    for name in names:
+        _write_flac(album / f"{name}.flac", 44100, 16, title=name)
+    return album
+
+
+def _output(album: Path, tmp_path: Path) -> Path:
+    return Path(transcoding._build_output_path(str(album), "V0", str(tmp_path)))
+
+
+def _transcode(album: Path, tmp_path: Path) -> Path:
+    return Path(anyio.run(lambda: transcoding.transcode_folder(str(album), "V0", output_dir=str(tmp_path))))
+
+
+def _files_in(folder: Path) -> list[str]:
+    return sorted(path.name for path in folder.rglob("*") if path.is_file())
+
+
+def _fake_lame(monkeypatch, failing: frozenset[str] = frozenset()) -> list[str]:
+    """Encode one track at a time, in order, writing a small MP3 at once as lame does. Returns the tracks given."""
+    encoded: list[str] = []
+
+    async def encode(_quality: str, flac_path: str, mp3_path: str) -> None:
+        name = os.path.basename(flac_path)
+        encoded.append(name)
+        _write_mp3(Path(mp3_path))
+        if name in failing:
+            raise UploadError("lame: No space left on device")
+
+    monkeypatch.setattr(transcoding, "_flac_to_mp3", encode)
+    monkeypatch.setattr(cfg.upload, "simultaneous_threads", 1)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [])
+    return encoded
+
+
+def test_a_track_that_failed_to_encode_leaves_nothing(monkeypatch, tmp_path) -> None:
+    album = _album(tmp_path)
+    _fake_lame(monkeypatch, failing=frozenset({"02. two.flac"}))
+
+    with pytest.raises(UploadError):
+        _transcode(album, tmp_path)
+
+    assert _files_in(_output(album, tmp_path)) == ["01. one.mp3"]
+
+
+def test_a_track_whose_tags_failed_leaves_nothing(monkeypatch, tmp_path) -> None:
+    album = _album(tmp_path)
+    _fake_lame(monkeypatch)
+
+    def fail(*_args: Any) -> None:
+        raise ValueError("no tags")
+
+    monkeypatch.setattr(transcoding, "_copy_tags", fail)
+
+    with pytest.raises(ExceptionGroup):
+        _transcode(album, tmp_path)
+
+    assert _files_in(_output(album, tmp_path)) == []
+
+
+def test_a_cancelled_track_leaves_nothing(monkeypatch, tmp_path) -> None:
+    album = _album(tmp_path)
+    _fake_lame(monkeypatch)
+
+    async def run() -> None:
+        started = anyio.Event()
+
+        async def stuck(_quality: str, _flac_path: str, mp3_path: str) -> None:
+            _write_mp3(Path(mp3_path))
+            started.set()
+            await anyio.sleep_forever()
+
+        monkeypatch.setattr(transcoding, "_flac_to_mp3", stuck)
+        async with anyio.create_task_group() as group:
+            group.start_soon(lambda: transcoding.transcode_folder(str(album), "V0", output_dir=str(tmp_path)))
+            await started.wait()
+            group.cancel_scope.cancel()
+
+    anyio.run(run)
+
+    assert _files_in(_output(album, tmp_path)) == []
+
+
+def test_a_transcode_stopped_partway_is_made_again_not_reused(monkeypatch, tmp_path, capsys) -> None:
+    album = _album(tmp_path)
+    _fake_lame(monkeypatch, failing=frozenset({"02. two.flac"}))
+    with pytest.raises(UploadError):
+        _transcode(album, tmp_path)
+    encoded = _fake_lame(monkeypatch)
+    asked: list[str] = []
+    monkeypatch.setattr(click, "confirm", lambda text, **_kwargs: asked.append(text) or True)
+
+    out = _transcode(album, tmp_path)
+
+    assert len(asked) == 1
+    assert encoded == ["01. one.flac", "02. two.flac"]
+    assert _files_in(out) == ["01. one.mp3", "02. two.mp3"]
+    assert conversions.conversion_of(str(out)) is not None
+    assert "already exists" not in capsys.readouterr().out
+
+
+def test_a_transcode_stopped_partway_is_refused_with_yyy_not_reused(monkeypatch, tmp_path) -> None:
+    album = _album(tmp_path)
+    _fake_lame(monkeypatch, failing=frozenset({"02. two.flac"}))
+    with pytest.raises(UploadError):
+        _transcode(album, tmp_path)
+    encoded = _fake_lame(monkeypatch)
+
+    async def run() -> str:
+        with interaction.assuming_defaults(True):
+            return await transcoding.transcode_folder(str(album), "V0", output_dir=str(tmp_path))
+
+    with pytest.raises(UploadError, match="with -yyy"):
+        anyio.run(run)
+
+    assert encoded == []
+
+
+# As before
+
+
+def test_a_finished_track_is_at_its_name_tagged_and_alone(monkeypatch, tmp_path) -> None:
+    album = _album(tmp_path)
+    _fake_lame(monkeypatch)
+
+    out = _transcode(album, tmp_path)
+
+    assert _files_in(out) == ["01. one.mp3", "02. two.mp3"]
+    assert ID3(out / "01. one.mp3")["TIT2"].text == ["01. one"]
+    assert ID3(out / "02. two.mp3")["TIT2"].text == ["02. two"]
+
+
+def test_a_track_with_the_longest_name_a_folder_holds_is_transcoded(monkeypatch, tmp_path) -> None:
+    # 253 bytes as an MP3: anything added to the name would be over the filesystem's 255.
+    name = "x" * 249
+    album = _album(tmp_path, (name,))
+    _fake_lame(monkeypatch)
+
+    out = _transcode(album, tmp_path)
+
+    assert _files_in(out) == [f"{name}.mp3"]
+
+
+def test_what_a_killed_run_left_beside_its_tracks_does_not_count_and_goes_with_the_folder(
+    monkeypatch, tmp_path
+) -> None:
+    album = _album(tmp_path)
+    out = _output(album, tmp_path)
+    _write_mp3(out / "01. one.mp3")
+    (out / ".0123456789abcdef.part").write_bytes(b"cut short")
+    encoded = _fake_lame(monkeypatch)
+    monkeypatch.setattr(click, "confirm", lambda _text, **_kwargs: True)
+
+    _transcode(album, tmp_path)
+
+    assert encoded == ["01. one.flac", "02. two.flac"]
+    assert _files_in(out) == ["01. one.mp3", "02. two.mp3"]
+
+
+def test_a_complete_folder_with_no_record_is_reused(monkeypatch, tmp_path, capsys) -> None:
+    album = _album(tmp_path)
+    _fake_lame(monkeypatch)
+    out = _transcode(album, tmp_path)
+    os.remove(conversions._sidecar(str(out)))
+    encoded = _fake_lame(monkeypatch)
+
+    again = _transcode(album, tmp_path)
+
+    assert again == out
+    assert encoded == []
+    assert f"{out} already exists." in capsys.readouterr().out

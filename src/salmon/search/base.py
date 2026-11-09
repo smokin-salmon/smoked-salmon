@@ -1,8 +1,37 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any
 
 import asyncclick as click
 import msgspec
+
+# Inside each_failed_part_said_once, the line of each storefront or region that failed so far, by what failed.
+_failed_parts: ContextVar[dict[str, str] | None] = ContextVar("failed_search_parts", default=None)
+
+
+@contextmanager
+def each_failed_part_said_once() -> Iterator[None]:
+    """Print each failed storefront or region's line once, when the searches inside have finished."""
+    lines: dict[str, str] = {}
+    token = _failed_parts.set(lines)
+    try:
+        yield
+    finally:
+        _failed_parts.reset(token)
+    for line in lines.values():
+        click.secho(line, fg="yellow")
+
+
+def say_part_failed(part: str, reason: object) -> None:
+    """Say that a store's storefront or region failed, as "Apple Music: storefront jp". The first reason is kept."""
+    line = f"{part} failed: {reason}"
+    lines = _failed_parts.get()
+    if lines is None:
+        click.secho(line, fg="yellow")
+    else:
+        lines.setdefault(part, line)
 
 
 class IdentData(msgspec.Struct, frozen=True):
@@ -13,30 +42,6 @@ class IdentData(msgspec.Struct, frozen=True):
     year: int | str | None
     track_count: int | None
     source: str
-
-
-class ArtistRlsData(msgspec.Struct, frozen=True):
-    """Data structure for artist release search results."""
-
-    url: str
-    quality: str | None
-    year: int | str | None
-    artist: str
-    album: str
-    label: str | None
-    explicit: bool
-
-
-class LabelRlsData(msgspec.Struct, frozen=True):
-    """Data structure for label release search results."""
-
-    url: str
-    quality: str | None
-    year: int | str | None
-    artist: str
-    album: str
-    type: str | None
-    explicit: bool
 
 
 class SearchMixin(ABC):

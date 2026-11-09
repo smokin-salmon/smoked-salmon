@@ -16,23 +16,11 @@ class PickOtherResults(Exception):
     """The user went back from the metadata review to pick other metadata results."""
 
 
-class DownloadError(Exception):
-    pass
-
-
 class UploadError(Exception):
     pass
 
 
-class FilterError(Exception):
-    pass
-
-
 class TrackCombineError(Exception):
-    pass
-
-
-class SourceNotFoundError(Exception):
     pass
 
 
@@ -49,10 +37,6 @@ class InvalidSampleRate(Exception):
 
 
 class GenreNotInWhitelist(Exception):
-    pass
-
-
-class NotAValidInputFile(Exception):
     pass
 
 
@@ -119,10 +103,10 @@ class TLSCertificateError(RequestError):
 
 
 class UploadRefusedError(RequestError):
-    """The tracker's upload form has no value that describes this torrent.
+    """The torrent cannot go to this tracker: no value on its form describes it, or its .torrent cannot be written.
 
-    Raised while the upload form data is built, before the upload request and the authentication
-    it needs, so the torrent is not uploaded to that tracker and other trackers are not affected.
+    Raised before the upload request and the authentication it needs, so the torrent is not uploaded
+    to that tracker and other trackers are not affected.
     Earlier requests to that tracker (group search, request check) may already have been sent.
     """
 

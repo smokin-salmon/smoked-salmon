@@ -16,8 +16,9 @@ import salmon.uploader
 import salmon.webui
 from salmon import cfg
 from salmon.common import commandgroup, tmp_lock
-from salmon.errors import FilterError, LoginError, TLSCertificateError, UploadError
+from salmon.errors import ImageUploadFailed, RequestError, ScrapeError, TLSCertificateError, UploadError
 from salmon.release_notification import show_release_notification
+from salmon.trackers.connection import print_certificate_hint
 from salmon.uploader.record import recording
 
 # Without a lock, clean_tmp_dir keeps what changed more recently than this: a running salmon may own it.
@@ -110,17 +111,13 @@ def _run_command():
         click.echo()
 
         commandgroup(obj={})
-    except (UploadError, FilterError) as e:
-        click.secho(f"There was an error: {e}", fg="red", bold=True)
-        sys.exit(1)
     except TLSCertificateError as e:
-        # Where an upload ends when its first request to the tracker fails on it (the dupe check).
         click.secho(f"There was an error: {e}", fg="red", bold=True)
-        click.secho(
-            f"Your session cookie and API key are not the cause. Run salmon checkconf -t {e.tracker} to see where"
-            " Python gets its CA certificates.",
-            fg="yellow",
-        )
+        print_certificate_hint(e)
+        sys.exit(1)
+    except (UploadError, RequestError, ImageUploadFailed, ScrapeError) as e:
+        # After TLSCertificateError: it is a RequestError too.
+        click.secho(f"There was an error: {e}", fg="red", bold=True)
         sys.exit(1)
     except ImportError as e:
         click.secho(f"You are missing required dependencies: {e}", fg="red")

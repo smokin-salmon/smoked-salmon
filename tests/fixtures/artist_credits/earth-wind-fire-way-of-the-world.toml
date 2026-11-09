@@ -1,0 +1,767 @@
+album = "Earth, Wind & Fire, That's the Way of the World"
+why = "One band whose name holds a comma and an ampersand: a split anywhere makes three artists out of one."
+edition = "Columbia, 8 tracks, as sold digitally (Deezer 1444091 = MusicBrainz 09652847 by barcode); Discogs 502117 is master 99532's main release (1975 LP); Qobuz has the same UPC"
+known_wrong = ["Deezer parse: the band split at its comma and ampersand into Earth, Wind and Fire, three main artists", "Qobuz parse and merge: Maurice White, the band's leader, a guest on the three tracks where Qobuz names him as the performer; written as '(feat. Maurice White)'"]
+files_from = "deezer"
+output = true
+
+[sources]
+deezer = "the public API's album, with `tracklist` the album page's SONGS (as salmon's fetch_data joins them), trimmed to what the parser reads"
+musicbrainz = "ws/2 release XML with salmon's includes, trimmed to what the parser reads"
+discogs = "the public API's release (no token), trimmed to what the parser reads"
+qobuz = "the API's album, credit fields only, in the API's shape, trimmed to what the parser reads"
+tags = "constructed from the store data named in the comment above [[track]], never from anyone's files"
+
+[right]
+release_main = ["Earth, Wind & Fire"]
+how_we_know = "Deezer's album artist, MusicBrainz, Discogs and Qobuz all credit the band as one artist"
+
+[today.deezer]
+release = ["Earth (main)", "Wind (main)", "Fire (main)"]
+tracks = 8
+
+[today.musicbrainz]
+release = ["Earth, Wind & Fire (main)"]
+tracks = 8
+
+[today.discogs]
+release = ["Earth, Wind & Fire (main)", "Larry Dunn (composer)", "Maurice White (composer)", "Philip Bailey (composer)", "Charles Stepney (composer)", "Verdine White (composer)", "Al McKay (composer)", "Louise Anglin (composer)"]
+tracks = 8
+
+[today.qobuz]
+release = ["Earth, Wind & Fire (main)", "Maurice White (guest)"]
+tracks = 8
+
+[today.merge]
+release = ["Earth, Wind & Fire (main)", "Larry Dunn (composer)", "Maurice White (composer)", "Philip Bailey (composer)", "Charles Stepney (composer)", "Verdine White (composer)", "Maurice White (guest)", "Al McKay (composer)", "Louise Anglin (composer)"]
+tracks = 8
+
+[today.output]
+albumartist = "Earth, Wind & Fire"
+tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's The Way Of The World", "Earth, Wind & Fire (feat. Maurice White) | Happy Feelin'", "Earth, Wind & Fire (feat. Maurice White) | All About Love", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire (feat. Maurice White) | Reasons", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See The Light"]
+
+[today."output-guests-in-title"]
+albumartist = "Earth, Wind & Fire"
+tracks = ["Earth, Wind & Fire | Shining Star", "Earth, Wind & Fire | That's The Way Of The World", "Earth, Wind & Fire | Happy Feelin' (feat. Maurice White)", "Earth, Wind & Fire | All About Love (feat. Maurice White)", "Earth, Wind & Fire | Yearnin' Learnin'", "Earth, Wind & Fire | Reasons (feat. Maurice White)", "Earth, Wind & Fire | Africano", "Earth, Wind & Fire | See The Light"]
+
+
+# The files' tags.
+# Constructed from Deezer data, not copied from anyone's files: the case's own
+# deezer fixture, written as a download tagged from that store would be.
+# Shape: deemix's default: every name in the track's ARTISTS as its own ARTIST value, the album artist in ALBUMARTIST, the full release date.
+
+[[track]]
+file = "01.flac"
+tracknumber = ["1"]
+discnumber = ["1"]
+title = ["Shining Star"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+[[track]]
+file = "02.flac"
+tracknumber = ["2"]
+discnumber = ["1"]
+title = ["That's the Way of the World"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+[[track]]
+file = "03.flac"
+tracknumber = ["3"]
+discnumber = ["1"]
+title = ["Happy Feelin'"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+[[track]]
+file = "04.flac"
+tracknumber = ["4"]
+discnumber = ["1"]
+title = ["All About Love (First Impression)"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+[[track]]
+file = "05.flac"
+tracknumber = ["5"]
+discnumber = ["1"]
+title = ["Yearnin' Learnin'"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+[[track]]
+file = "06.flac"
+tracknumber = ["6"]
+discnumber = ["1"]
+title = ["Reasons"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+[[track]]
+file = "07.flac"
+tracknumber = ["7"]
+discnumber = ["1"]
+title = ["Africano"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+[[track]]
+file = "08.flac"
+tracknumber = ["8"]
+discnumber = ["1"]
+title = ["See the Light"]
+artist = ["Earth, Wind & Fire"]
+album = ["That's The Way Of The World"]
+albumartist = ["Earth, Wind & Fire"]
+date = ["1975-03-15"]
+
+# What each store sent, trimmed to what salmon's parser reads.
+[stores]
+deezer = '''
+{
+ "id": 1444091,
+ "title": "That's The Way Of The World",
+ "upc": "074643328029",
+ "cover_xl": "https://example.invalid/cover.jpg",
+ "genres": {
+  "data": [
+   {
+    "id": 165,
+    "name": "R&B"
+   }
+  ]
+ },
+ "label": "Columbia",
+ "release_date": "1975-03-15",
+ "tracklist": [
+  {
+   "SNG_ID": "15636886",
+   "SNG_TITLE": "Shining Star",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "1",
+   "ISRC": "USSM17400660",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "15636830",
+   "SNG_TITLE": "That's the Way of the World",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "2",
+   "ISRC": "USSM17400502",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "15636866",
+   "SNG_TITLE": "Happy Feelin'",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "3",
+   "ISRC": "USSM17400661",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "7"
+  },
+  {
+   "SNG_ID": "15636853",
+   "SNG_TITLE": "All About Love (First Impression)",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "4",
+   "ISRC": "USSM17400662",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "15636854",
+   "SNG_TITLE": "Yearnin' Learnin'",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "5",
+   "ISRC": "USSM17400663",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  },
+  {
+   "SNG_ID": "15636813",
+   "SNG_TITLE": "Reasons",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "6",
+   "ISRC": "USSM17400664",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "4"
+  },
+  {
+   "SNG_ID": "15636877",
+   "SNG_TITLE": "Africano",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "7",
+   "ISRC": "USSM17400665",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "5"
+  },
+  {
+   "SNG_ID": "15636860",
+   "SNG_TITLE": "See the Light",
+   "ARTISTS": [
+    {}
+   ],
+   "SNG_CONTRIBUTORS": {
+    "main_artist": [
+     "Earth, Wind & Fire"
+    ]
+   },
+   "DISK_NUMBER": "1",
+   "TRACK_NUMBER": "8",
+   "ISRC": "USSM17400666",
+   "EXPLICIT_LYRICS": "0",
+   "MEDIA_VERSION": "6"
+  }
+ ]
+}
+'''
+
+musicbrainz = '''
+<?xml version='1.0' encoding='utf-8'?>
+<metadata xmlns="http://musicbrainz.org/ns/mmd-2.0#"><release id="09652847-76db-4f26-b22c-8f74192eb219"><title>That's the Way of the World</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><release-group type="Soundtrack"><title>That’s the Way of the World</title><first-release-date>1975-03</first-release-date><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit></release-group><date>2013</date><release-event-list><release-event><date>2013</date></release-event></release-event-list><cover-art-archive><front>true</front></cover-art-archive><label-info-list><label-info><label><name>Columbia</name></label></label-info></label-info-list><medium-list><medium><position>1</position><track-list><track><position>1</position><number>1</number><recording><title>Shining Star</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-01-21</first-release-date></recording></track><track><position>2</position><number>2</number><recording><title>That’s the Way of the World</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-03</first-release-date></recording></track><track><position>3</position><number>3</number><title>Happy Feelin'</title><recording><title>Happy Feelin’</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1991-09-01</first-release-date></recording></track><track><position>4</position><number>4</number><title>All About Love (First Impression)</title><recording><title>All About Love</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1986</first-release-date></recording></track><track><position>5</position><number>5</number><title>Yearnin' Learnin'</title><recording><title>Yearnin’ Learnin’</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-01-21</first-release-date></recording></track><track><position>6</position><number>6</number><recording><title>Reasons</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-03</first-release-date></recording></track><track><position>7</position><number>7</number><recording><title>Africano</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1975-03</first-release-date></recording></track><track><position>8</position><number>8</number><recording><title>See the Light</title><artist-credit><name-credit><artist><name>Earth, Wind &amp; Fire</name></artist></name-credit></artist-credit><first-release-date>1986</first-release-date></recording></track></track-list></medium></medium-list></release></metadata>
+'''
+
+discogs = '''
+{
+ "id": 502117,
+ "year": 1975,
+ "artists": [
+  {
+   "name": "Earth, Wind & Fire",
+   "anv": "",
+   "role": "",
+   "id": 22164
+  }
+ ],
+ "labels": [
+  {
+   "name": "Columbia",
+   "catno": "PC 33280",
+   "id": 1866
+  }
+ ],
+ "formats": [
+  {
+   "name": "Vinyl"
+  }
+ ],
+ "title": "That's The Way Of The World",
+ "genres": [
+  "Funk / Soul",
+  "Stage & Screen"
+ ],
+ "tracklist": [
+  {
+   "position": "A1",
+   "type_": "track",
+   "title": "Shining Star",
+   "extraartists": [
+    {
+     "name": "Larry Dunn",
+     "anv": "L. Dunn",
+     "role": "Composed By",
+     "id": 98902
+    },
+    {
+     "name": "Maurice White",
+     "anv": "M. White",
+     "role": "Composed By",
+     "id": 195567
+    },
+    {
+     "name": "Philip Bailey",
+     "anv": "P. Bailey",
+     "role": "Composed By",
+     "id": 157277
+    }
+   ],
+   "duration": "2:50"
+  },
+  {
+   "position": "A2",
+   "type_": "track",
+   "title": "That's The Way Of The World",
+   "extraartists": [
+    {
+     "name": "Charles Stepney",
+     "anv": "C. Stepney",
+     "role": "Composed By",
+     "id": 195568
+    },
+    {
+     "name": "Maurice White",
+     "anv": "M. White",
+     "role": "Composed By",
+     "id": 195567
+    },
+    {
+     "name": "Verdine White",
+     "anv": "V. White",
+     "role": "Composed By",
+     "id": 98903
+    }
+   ],
+   "duration": "5:45"
+  },
+  {
+   "position": "A3",
+   "type_": "track",
+   "title": "Happy Feelin'",
+   "extraartists": [
+    {
+     "name": "Al McKay",
+     "anv": "A. McKay",
+     "role": "Composed By",
+     "id": 310689
+    },
+    {
+     "name": "Larry Dunn",
+     "anv": "L. Dunn",
+     "role": "Composed By",
+     "id": 98902
+    },
+    {
+     "name": "Maurice White",
+     "anv": "M. White",
+     "role": "Composed By",
+     "id": 195567
+    },
+    {
+     "name": "Philip Bailey",
+     "anv": "P. Bailey",
+     "role": "Composed By",
+     "id": 157277
+    },
+    {
+     "name": "Verdine White",
+     "anv": "V. White",
+     "role": "Composed By",
+     "id": 98903
+    }
+   ],
+   "duration": "3:16"
+  },
+  {
+   "position": "A4",
+   "type_": "track",
+   "title": "All About Love",
+   "extraartists": [
+    {
+     "name": "Larry Dunn",
+     "anv": "L. Dunn",
+     "role": "Composed By",
+     "id": 98902
+    },
+    {
+     "name": "Maurice White",
+     "anv": "M. White",
+     "role": "Composed By",
+     "id": 195567
+    }
+   ],
+   "duration": "5:30"
+  },
+  {
+   "position": "B1",
+   "type_": "track",
+   "title": "Yearnin' Learnin'",
+   "extraartists": [
+    {
+     "name": "Charles Stepney",
+     "anv": "C. Stepney",
+     "role": "Composed By",
+     "id": 195568
+    },
+    {
+     "name": "Maurice White",
+     "anv": "M. White",
+     "role": "Composed By",
+     "id": 195567
+    },
+    {
+     "name": "Philip Bailey",
+     "anv": "P. Bailey",
+     "role": "Composed By",
+     "id": 157277
+    }
+   ],
+   "duration": "3:41"
+  },
+  {
+   "position": "B2",
+   "type_": "track",
+   "title": "Reasons",
+   "extraartists": [
+    {
+     "name": "Charles Stepney",
+     "anv": "C. Stepney",
+     "role": "Composed By",
+     "id": 195568
+    },
+    {
+     "name": "Maurice White",
+     "anv": "M. White",
+     "role": "Composed By",
+     "id": 195567
+    },
+    {
+     "name": "Philip Bailey",
+     "anv": "P. Bailey",
+     "role": "Composed By",
+     "id": 157277
+    }
+   ],
+   "duration": "4:53"
+  },
+  {
+   "position": "B3",
+   "type_": "track",
+   "title": "Africano",
+   "extraartists": [
+    {
+     "name": "Larry Dunn",
+     "anv": "L. Dunn",
+     "role": "Composed By",
+     "id": 98902
+    },
+    {
+     "name": "Maurice White",
+     "anv": "M. White",
+     "role": "Composed By",
+     "id": 195567
+    }
+   ],
+   "duration": "5:10"
+  },
+  {
+   "position": "B4",
+   "type_": "track",
+   "title": "See The Light",
+   "extraartists": [
+    {
+     "name": "Larry Dunn",
+     "anv": "L. Dunn",
+     "role": "Composed By",
+     "id": 98902
+    },
+    {
+     "name": "Louise Anglin",
+     "anv": "L. Anglin",
+     "role": "Composed By",
+     "id": 1583985
+    },
+    {
+     "name": "Philip Bailey",
+     "anv": "P. Bailey",
+     "role": "Composed By",
+     "id": 157277
+    }
+   ],
+   "duration": "5:30"
+  }
+ ],
+ "extraartists": [
+  {
+   "name": "Charles Stepney",
+   "anv": "",
+   "role": "Arranged By",
+   "id": 195568
+  },
+  {
+   "name": "Earth, Wind & Fire",
+   "anv": "",
+   "role": "Arranged By",
+   "id": 22164
+  },
+  {
+   "name": "Verdine White",
+   "anv": "",
+   "role": "Bass",
+   "id": 98903
+  },
+  {
+   "name": "Charles Stepney",
+   "anv": "",
+   "role": "Co-producer",
+   "id": 195568
+  },
+  {
+   "name": "Philip Bailey",
+   "anv": "",
+   "role": "Congas",
+   "id": 157277
+  },
+  {
+   "name": "Fred White",
+   "anv": "",
+   "role": "Drums",
+   "id": 299677
+  },
+  {
+   "name": "Maurice White",
+   "anv": "",
+   "role": "Drums",
+   "id": 195567
+  },
+  {
+   "name": "Ralph Johnson",
+   "anv": "",
+   "role": "Drums",
+   "id": 399209
+  },
+  {
+   "name": "George Massenburg",
+   "anv": "",
+   "role": "Engineer",
+   "id": 263004
+  },
+  {
+   "name": "Andrew Woolfolk",
+   "anv": "Andrew P. Woolfolk",
+   "role": "Flute, Tenor Saxophone, Soprano Saxophone",
+   "id": 576991
+  },
+  {
+   "name": "Al McKay",
+   "anv": "",
+   "role": "Guitar",
+   "id": 310689
+  },
+  {
+   "name": "Johnny Graham",
+   "anv": "",
+   "role": "Guitar",
+   "id": 441372
+  },
+  {
+   "name": "Maurice White",
+   "anv": "",
+   "role": "Kalimba",
+   "id": 195567
+  },
+  {
+   "name": "Al McKay",
+   "anv": "",
+   "role": "Percussion",
+   "id": 310689
+  },
+  {
+   "name": "Fred White",
+   "anv": "",
+   "role": "Percussion",
+   "id": 299677
+  },
+  {
+   "name": "Maurice White",
+   "anv": "",
+   "role": "Percussion",
+   "id": 195567
+  },
+  {
+   "name": "Philip Bailey",
+   "anv": "",
+   "role": "Percussion",
+   "id": 157277
+  },
+  {
+   "name": "Ralph Johnson",
+   "anv": "",
+   "role": "Percussion",
+   "id": 399209
+  },
+  {
+   "name": "Verdine White",
+   "anv": "",
+   "role": "Percussion",
+   "id": 98903
+  },
+  {
+   "name": "Norman Seeff",
+   "anv": "",
+   "role": "Photography By",
+   "id": 1170513
+  },
+  {
+   "name": "Larry Dunn",
+   "anv": "",
+   "role": "Piano, Organ, Synthesizer [Moog]",
+   "id": 98902
+  },
+  {
+   "name": "Maurice White",
+   "anv": "",
+   "role": "Producer",
+   "id": 195567
+  },
+  {
+   "name": "Maurice White",
+   "anv": "",
+   "role": "Vocals",
+   "id": 195567
+  },
+  {
+   "name": "Philip Bailey",
+   "anv": "",
+   "role": "Vocals",
+   "id": 157277
+  },
+  {
+   "name": "Verdine White",
+   "anv": "",
+   "role": "Vocals",
+   "id": 98903
+  }
+ ]
+}
+'''
+
+qobuz = '''
+{
+ "id": "0074643328029",
+ "upc": "0074643328029",
+ "title": "That's The Way Of The World",
+ "tracks_count": 8,
+ "artist": {
+  "name": "Earth, Wind & Fire"
+ },
+ "genres_list": [
+  "R&B"
+ ],
+ "image": {
+  "large": "https://example.invalid/cover.jpg"
+ },
+ "tracks": {
+  "items": [
+   {
+    "title": "Shining Star",
+    "track_number": 1,
+    "performer": {
+     "name": "Earth, Wind & Fire"
+    }
+   },
+   {
+    "title": "That's the Way of the World",
+    "track_number": 2,
+    "performer": {
+     "name": "Earth, Wind & Fire"
+    }
+   },
+   {
+    "title": "Happy Feelin'",
+    "track_number": 3,
+    "performer": {
+     "name": "Maurice White"
+    }
+   },
+   {
+    "title": "All About Love (First Impression)",
+    "track_number": 4,
+    "performer": {
+     "name": "Maurice White"
+    }
+   },
+   {
+    "title": "Yearnin' Learnin'",
+    "track_number": 5,
+    "performer": {
+     "name": "Earth, Wind & Fire"
+    }
+   },
+   {
+    "title": "Reasons",
+    "track_number": 6,
+    "performer": {
+     "name": "Maurice White"
+    }
+   },
+   {
+    "title": "Africano",
+    "track_number": 7,
+    "performer": {
+     "name": "Earth, Wind & Fire"
+    }
+   },
+   {
+    "title": "See the Light",
+    "track_number": 8,
+    "performer": {
+     "name": "Earth, Wind & Fire"
+    }
+   }
+  ]
+ }
+}
+'''

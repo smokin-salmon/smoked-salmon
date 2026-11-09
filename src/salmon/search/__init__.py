@@ -1,7 +1,8 @@
 import asyncio
 import re
-from collections.abc import Iterable
-from itertools import chain
+from collections.abc import Callable, Iterable
+from itertools import chain, zip_longest
+from operator import itemgetter
 from typing import Any
 
 import asyncclick as click
@@ -25,6 +26,7 @@ from salmon.search import (
     qobuz,
     tidal,
 )
+from salmon.search.base import each_failed_part_said_once
 
 SEARCHSOURCES = {
     "Bandcamp": bandcamp,
@@ -120,13 +122,14 @@ async def run_metasearch(
         Dict mapping source names to search results.
     """
     sources = searched_sources() if not sources else {k: m for k, m in SEARCHSOURCES.items() if k in sources}
-    results: dict[str, Any] = {}
+    answers: dict[str, list[Any]] = {}
     tasks = [
         handle_scrape_errors(s.Searcher().search_releases(search, limit))
         for search in searchstrs
         for s in sources.values()
     ]
-    task_responses = await asyncio.gather(*tasks)
+    with each_failed_part_said_once():
+        task_responses = await asyncio.gather(*tasks)
     for source, result in [r or (None, None) for r in task_responses]:
         if result:
             if filter:
@@ -134,8 +137,31 @@ async def run_metasearch(
             if track_count:
                 result = filter_by_track_count(result, track_count)
         if source:
-            results[source] = result
-    return results
+            answers.setdefault(source, []).append(result)
+    return {source: _merge_answers(source, found) for source, found in answers.items()}
+
+
+# A Tidal result's key holds the region that found it, and two searches can find one release from different regions.
+_SAME_RELEASE: dict[str, Callable[[Any], Any]] = {"Tidal": itemgetter(1)}
+
+
+def _merge_answers(source: str, answers: list[dict[Any, Any] | None]) -> dict[Any, Any] | None:
+    """One store's answers to its searches, each search's best first, so that a list cut to the limit holds some of
+    each. A release found twice keeps the first search's entry.
+
+    An answer is None when the store is inactive and empty when it found nothing: found beats empty.
+    """
+    found = [answer for answer in answers if answer]
+    if not found:
+        return answers[0]  # Empty, or None for an inactive store: the same for every search.
+    release_of = _SAME_RELEASE.get(source, lambda rls_id: rls_id)
+    first_entries: dict[Any, tuple[Any, Any]] = {}
+    for answer in found:
+        for rls_id, release in answer.items():
+            first_entries.setdefault(release_of(rls_id), (rls_id, release))
+    return dict(
+        first_entries[release_of(rls_id)] for rank in zip_longest(*found) for rls_id in rank if rls_id is not None
+    )
 
 
 def filter_results(
