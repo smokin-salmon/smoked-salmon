@@ -26,6 +26,7 @@ from salmon.search import (
     qobuz,
     tidal,
 )
+from salmon.search.base import each_failed_part_said_once
 
 SEARCHSOURCES = {
     "Bandcamp": bandcamp,
@@ -127,7 +128,8 @@ async def run_metasearch(
         for search in searchstrs
         for s in sources.values()
     ]
-    task_responses = await asyncio.gather(*tasks)
+    with each_failed_part_said_once():
+        task_responses = await asyncio.gather(*tasks)
     for source, result in [r or (None, None) for r in task_responses]:
         if result:
             if filter:

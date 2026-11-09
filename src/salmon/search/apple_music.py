@@ -2,12 +2,11 @@ import re
 from itertools import zip_longest
 
 import anyio
-import asyncclick as click
 
 from salmon import cfg
 from salmon.common import parse_copyright
 from salmon.errors import ScrapeError
-from salmon.search.base import IdentData, SearchMixin
+from salmon.search.base import IdentData, SearchMixin, say_part_failed
 from salmon.sources import AppleMusicBase
 
 
@@ -30,7 +29,7 @@ class Searcher(AppleMusicBase, SearchMixin):
                     },
                 )
             except Exception as e:
-                click.secho(f"Apple Music: storefront {sf} failed: {e}", fg="yellow")
+                say_part_failed(f"Apple Music: storefront {sf}", e)
                 return
 
             results = []

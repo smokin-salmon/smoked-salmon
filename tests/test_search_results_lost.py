@@ -18,7 +18,7 @@ from salmon.errors import ScrapeError
 from salmon.search import apple_music as search_apple
 from salmon.search import metas
 from salmon.search import tidal as search_tidal
-from salmon.search.base import IdentData
+from salmon.search.base import IdentData, each_failed_part_said_once, say_part_failed
 from salmon.sources import AppleMusicBase
 from salmon.sources.tidal import TidalBase
 
@@ -349,3 +349,97 @@ def test_as_before_tidal_with_no_regions_finds_nothing(monkeypatch: pytest.Monke
     _fake_tidal(monkeypatch, [], {})
     results = _tidal_search()
     assert results == ("Tidal", {})
+
+
+# Printed once per run of the searches, however many of them a storefront or region failed
+
+
+def _searchstrs_for(count: int) -> list[str]:
+    names = [GETZ, GILBERTO, ("Astrud Gilberto", "main")][:count]
+    searchstrs = make_searchstrs(names, ALBUM)
+    assert len(searchstrs) == count
+    return searchstrs
+
+
+def _run_store(store: str, searchstrs: list[str]) -> dict[str, Any]:
+    return anyio.run(lambda: salmon_search.run_metasearch(searchstrs, sources={store: None}, filter=False))
+
+
+@pytest.mark.parametrize("artists", [2, 3])
+def test_apple_a_storefront_failing_every_search_prints_its_line_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], artists: int
+) -> None:
+    _fake_apple(monkeypatch, ["us", "jp"], failing=["jp"])
+    results = _run_store("Apple Music", _searchstrs_for(artists))
+    assert [key[0] for key in results["Apple Music"]] == ["us"]
+    assert capsys.readouterr().out.splitlines() == ["Apple Music: storefront jp failed: refused by jp"]
+
+
+@pytest.mark.parametrize("artists", [2, 3])
+def test_tidal_a_region_failing_every_search_prints_its_line_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], artists: int
+) -> None:
+    _fake_tidal(monkeypatch, ["DE", "US"], {"DE": ScrapeError("rate limited")})
+    results = _run_store("Tidal", _searchstrs_for(artists))
+    assert [key[0] for key in results["Tidal"]] == ["US"]
+    assert capsys.readouterr().out.splitlines() == ["Tidal: region DE failed: rate limited"]
+
+
+def test_a_storefront_failing_two_searches_differently_prints_the_first_reason_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    reasons = iter(["first reason", "second reason"])
+
+    async def get_json(_self: Any, _url: str, params: dict[str, Any], **_kwargs: Any) -> dict[str, Any]:
+        if params["country"] == "jp":
+            raise ScrapeError(next(reasons))
+        return {"results": [_apple_album("us")]}
+
+    monkeypatch.setattr(AppleMusicBase, "get_json", get_json)
+    monkeypatch.setattr(search_apple, "_get_storefronts_and_langs", lambda: {"us": ["en-US"], "jp": ["ja"]})
+    _run_store("Apple Music", _searchstrs_for(2))
+    assert capsys.readouterr().out.splitlines() == ["Apple Music: storefront jp failed: first reason"]
+
+
+def test_two_stores_each_print_what_failed_of_them(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fake_apple(monkeypatch, ["us", "jp"], failing=["jp"])
+    _fake_tidal(monkeypatch, ["DE", "US"], {"DE": ScrapeError("rate limited")})
+    anyio.run(
+        lambda: salmon_search.run_metasearch(
+            _searchstrs_for(2), sources={"Apple Music": None, "Tidal": None}, filter=False
+        )
+    )
+    assert sorted(capsys.readouterr().out.splitlines()) == [
+        "Apple Music: storefront jp failed: refused by jp",
+        "Tidal: region DE failed: rate limited",
+    ]
+
+
+def test_every_storefront_failing_every_search_prints_each_line_once(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _fake_apple(monkeypatch, ["us", "jp"], failing=["us", "jp"])
+    results = _run_store("Apple Music", _searchstrs_for(2))
+    assert results == {}
+    lines = capsys.readouterr().out.splitlines()
+    assert lines.count("Apple Music: storefront us failed: refused by us") == 1
+    assert lines.count("Apple Music: storefront jp failed: refused by jp") == 1
+
+
+def test_a_later_run_prints_the_line_again(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    _fake_apple(monkeypatch, ["us", "jp"], failing=["jp"])
+    expected = ["Apple Music: storefront jp failed: refused by jp"]
+    for _ in range(2):
+        _run_store("Apple Music", _searchstrs_for(2))
+        assert capsys.readouterr().out.splitlines() == expected
+
+
+def test_after_the_searches_a_failed_part_is_said_at_once(capsys: pytest.CaptureFixture[str]) -> None:
+    with each_failed_part_said_once():
+        say_part_failed("Store: part a", "held")
+        assert capsys.readouterr().out == ""
+    assert capsys.readouterr().out.splitlines() == ["Store: part a failed: held"]
+    say_part_failed("Store: part b", "at once")
+    assert capsys.readouterr().out.splitlines() == ["Store: part b failed: at once"]

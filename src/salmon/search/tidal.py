@@ -3,12 +3,10 @@ import html
 import re
 from itertools import zip_longest
 
-import asyncclick as click
-
 from salmon import cfg
 from salmon.common import parse_copyright
 from salmon.errors import ScrapeError
-from salmon.search.base import IdentData, SearchMixin
+from salmon.search.base import IdentData, SearchMixin, say_part_failed
 from salmon.sources import TidalBase
 from salmon.sources.tidal import credentials_configured
 
@@ -34,7 +32,7 @@ class Searcher(TidalBase, SearchMixin):
         answered = []
         for cc, answer in zip(COUNTRIES, await asyncio.gather(*tasks, return_exceptions=True), strict=True):
             if isinstance(answer, ScrapeError):
-                click.secho(f"Tidal: region {cc} failed: {answer}", fg="yellow")
+                say_part_failed(f"Tidal: region {cc}", answer)
             elif isinstance(answer, BaseException):
                 raise answer
             else:
