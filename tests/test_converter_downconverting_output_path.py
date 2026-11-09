@@ -1,5 +1,7 @@
 """A downconversion output name must not keep a stale {resolution} token from the source name."""
 
+import os
+
 import pytest
 
 from salmon.converter import downconverting
@@ -193,6 +195,19 @@ def test_the_format_word_is_swapped_and_the_names_are_kept(
     _stub_24_96(monkeypatch)
 
     assert downconverting._build_output_path(f"/downloads/{source}", bit_depth, sample_rate) == f"/downloads/{expected}"
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    [
+        ("A - Album (2020) [WEB FLAC]", "A - Album (2020) [WEB 24-48]"),
+        ("A - Album (2020) [WEB 24bit FLAC]", "A - Album (2020) [WEB 24-48]"),
+    ],
+)
+def test_a_24_bit_target_is_not_named_16bit(monkeypatch, source, expected) -> None:
+    _stub_24_96(monkeypatch)
+
+    assert downconverting._build_output_path(f"/downloads/{source}", 24, 48000) == os.path.join("/downloads", expected)
 
 
 @pytest.mark.parametrize(

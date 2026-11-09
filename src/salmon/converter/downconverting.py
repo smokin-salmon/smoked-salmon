@@ -121,7 +121,10 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
     if not format_matches(FLAC_WORD_RE, foldername):
         foldername += " [FLAC]"
     else:
-        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
+        # A 24-bit target is named by its "24-48" token below, so it must not get the "16bit" wording first.
+        foldername = swap_format_matches(
+            FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) or bit_depth == 24 else "16bit FLAC", foldername
+        )
 
     if sample_rate and bit_depth == 24:
         foldername = swap_format_matches(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
