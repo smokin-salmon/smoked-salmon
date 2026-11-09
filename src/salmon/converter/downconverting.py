@@ -118,13 +118,15 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         # token so the FLAC/bit-depth rewriting below does not have to work around it.
         foldername = drop_resolution_token(foldername, current_token)
 
-    if not format_matches(FLAC_WORD_RE, foldername):
+    appended = not format_matches(FLAC_WORD_RE, foldername)
+    if appended:
         foldername += " [FLAC]"
-    else:
-        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
 
     if sample_rate and bit_depth == 24:
+        # Straight to the "24-NN" token: a "16bit FLAC" step first would leave "16bit" in the name.
         foldername = swap_format_matches(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
+    elif not appended:
+        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
 
     return os.path.join(output_dir or os.path.dirname(path), foldername)
 
