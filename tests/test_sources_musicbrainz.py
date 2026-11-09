@@ -106,6 +106,13 @@ def test_a_release_is_fetched_through_the_bounded_read(server) -> None:
     assert len(server.requests) == 1
 
 
+def test_a_release_link_with_a_query_is_fetched_as_its_release(server) -> None:
+    release = anyio.run(musicbrainz_tagger.Scraper().fetch_data, f"{RELEASE_URL}?tab=tracks")
+
+    assert release["title"] == "Album"
+    assert RELEASE_ID in server.requests[0]
+
+
 def test_a_failing_server_gets_two_requests_and_one_sleep(server, sleeps) -> None:
     # 503 every time: musicbrainzngs made 8 requests and slept 56 s, then raised NetworkError past the scrape.
     server.status = 503

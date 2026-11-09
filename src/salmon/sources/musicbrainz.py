@@ -43,7 +43,7 @@ class MusicBrainzBase(BaseScraper):
     store = "MusicBrainz"
     url = site_url = "https://musicbrainz.org"
     release_format = "/release/{rls_id}"
-    regex = re.compile(r"^https?://(?:www\.)?musicbrainz.org/release/([a-f0-9\-]+)$")
+    regex = re.compile(r"^https?://(?:www\.)?musicbrainz.org/release/([a-f0-9\-]+)/?(?=$|[?#])")
 
     async def _call(self, func: Callable[..., Any], *args: Any) -> Any:
         """Run a musicbrainzngs call in a thread, its errors as ScrapeError.
@@ -83,7 +83,7 @@ class MusicBrainzBase(BaseScraper):
             ValueError: If URL is invalid.
             ScrapeError: If the request failed, or MusicBrainz has no such release.
         """
-        match = re.search(r"/release/([a-f0-9\-]+)$", url)
+        match = self.regex.match(url)
         if not match:
             raise ValueError("Invalid MusicBrainz URL.")
         rls_id = match[1]

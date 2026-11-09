@@ -77,7 +77,7 @@ class BeatportBase(BaseScraper):
     site_url = "https://beatport.com"
     search_url = "https://beatport.com/search/releases"
     release_format = "/release/{rls_name}/{rls_id}"
-    regex = re.compile(r"^https?://(?:(?:www|classic)\.)?beatport\.com/release/.+?/(\d+)/?$")
+    regex = re.compile(r"^https?://(?:(?:www|classic)\.)?beatport\.com/release/[^?#]+?/(\d+)/?(?=$|[?#])")
 
     is_json_api = True
 

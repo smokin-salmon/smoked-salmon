@@ -17,7 +17,7 @@ class QobuzBase(BaseScraper):
     url = "https://www.qobuz.com/api.json/0.2"
     site_url = "https://www.qobuz.com"
     regex = re.compile(
-        r"^https?://(?:www\.|play\.|open\.)?qobuz\.com/(?:(?:.+?/)?album/(?:.+?/)?|album/(?:-/)?)([a-zA-Z0-9]+)/?$"
+        r"^https?://(?:www\.|play\.|open\.)?qobuz\.com/(?:(?:[^?#]+?/)?album/(?:[^?#]+?/)?|album/(?:-/)?)([a-zA-Z0-9]+)/?(?=$|[?#])"
     )
     release_format = "/album/get?album_id={rls_id}"
     get_params: dict[str, Any] | None = {}
