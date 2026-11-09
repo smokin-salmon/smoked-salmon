@@ -48,6 +48,13 @@ class Scraper(TidalBase, MetadataMixin):
     def parse_upc(self, soup):
         return soup["upc"]
 
+    def parse_genres(self, soup):
+        """Use the album's genres, falling back to its tracks' only when the album has none."""
+        genres = soup.get("genres") or []
+        if not genres:
+            genres = [genre for track in soup["tracklist"] for genre in track.get("genres") or []]
+        return list(dict.fromkeys(genres))
+
     async def parse_tracks(self, soup):
         album_artists = soup.get("artists") or []
         tracks = defaultdict(dict)
