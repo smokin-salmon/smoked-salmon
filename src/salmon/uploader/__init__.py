@@ -56,6 +56,7 @@ from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
 from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.review import suggest_release_type
 from salmon.tagger.tags import gather_tags, standardize_tags
+from salmon.trackers.connection import print_certificate_hint
 from salmon.uploader import record
 from salmon.uploader.conversion_choice import (
     _applicable_conversions,
@@ -1037,6 +1038,7 @@ async def _upload_staged(  # noqa: C901
                             click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="yellow", bold=True)
                         else:
                             click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                            print_certificate_hint(e)
                         failed_trackers.append(gazelle_site.site_string)
                         remaining_gazelle_sites.remove(tracker)
                         tracker = None
@@ -1177,6 +1179,7 @@ async def _upload_staged(  # noqa: C901
                                 failed_trackers.append(gazelle_site.site_string)
                 except RequestError as e:
                     click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                    print_certificate_hint(e)
                     failed_trackers.append(gazelle_site.site_string)
                     if isinstance(e, UnknownOutcomeError):
                         record.note_unknown_outcome(e)
@@ -1274,12 +1277,14 @@ async def _take_group_search(
         # Skipped like a first tracker that refuses the release, when another can follow.
         if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
             click.secho(f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True)
+            print_certificate_hint(e)
             raise click.exceptions.Exit(1) from None
         click.secho(
             f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
             fg="red",
             bold=True,
         )
+        print_certificate_hint(e)
         search_failed = True
     else:
         group_id = await resolve_existing_group(

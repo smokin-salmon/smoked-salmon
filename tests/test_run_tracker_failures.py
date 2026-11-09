@@ -5,7 +5,7 @@ Through run.main, against the local fake tracker of helpers.uploader_dry_run. Wh
 
 import io
 import sys
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,10 +21,12 @@ from test_run_exit_status import (
     TWO,
     Row,
     _at,
+    _at_ops,
     _cover_on,
     _exit_of_main,
     _main_up_apart,
     _upload_posts,
+    _upload_raises,
     dirs,  # noqa: F401 (a fixture)
     no_waits,  # noqa: F401 (a fixture, autouse)
 )
@@ -33,6 +35,7 @@ from test_uploader_dry_run import image_uploads  # noqa: F401 (a fixture: see im
 import salmon.images
 import salmon.trackers
 from salmon.errors import ImageUploadFailed, RequestFailedError
+from salmon.uploader import dupe_checker
 
 pytestmark = pytest.mark.usefixtures("image_uploads")
 
@@ -115,12 +118,72 @@ def test_request_search_failing_on_a_later_tracker(monkeypatch, capsys, dirs) ->
     assert (code, _upload_posts(tracker)) == (3, 1), out
 
 
-def test_tls_at_the_request_search_is_said_as_at_the_upload(monkeypatch, capsys, dirs) -> None:  # noqa: F811
-    code, out = _up(monkeypatch, capsys, dirs, FakeTracker(), fakes=_at("check_requests", TLS))
+# A failure at the certificate: the same hint wherever it ends a tracker's turn
+
+
+CHECKCONF_HINT = (
+    "Your session cookie and API key are not the cause. Run salmon checkconf -t OPS to see where"
+    " Python gets its CA certificates."
+)
+
+
+def _group_search_on_red_raises(error: Exception) -> Callable[..., None]:
+    def setup(monkeypatch, _album_path: Path) -> None:
+        async def search(gazelle_site: Any, *_args: Any, **_kwargs: Any) -> Any:
+            if gazelle_site.site_code == "RED":
+                raise error
+            return [], None
+
+        monkeypatch.setattr(dupe_checker, "fetch_existing_group_candidates", search)
+
+    return setup
+
+
+# What the run says before the hint, what a certificate failure exits with, and how to make it fail there.
+ENDS_OF_A_TURN: dict[str, tuple[str, int, Callable[[Exception], dict[str, Any]]]] = {
+    "request_search": ("Upload to RED failed: {}", 1, lambda e: {"fakes": _at("check_requests", e)}),
+    "upload_post": ("Upload to RED failed: {}", 1, lambda e: {"setup": _upload_raises(e)}),
+    "group_search_on_a_later_tracker": (
+        "Upload to OPS failed: {}",
+        3,
+        lambda e: {"trackers": TWO, "fakes": _at_ops("check_existing_group", e)},
+    ),
+    "first_group_search_with_none_to_follow": (
+        "Could not search RED for dupes: {}",
+        1,
+        lambda e: {"setup": _group_search_on_red_raises(e)},
+    ),
+    "first_group_search_with_one_to_follow": (
+        "Could not search RED for dupes ({}): skipping it.",
+        3,
+        lambda e: {"trackers": TWO, "setup": _group_search_on_red_raises(e)},
+    ),
+    "only_main_catches_it": ("There was an error: {}", 1, lambda e: {"fakes": _at("recheck_dupe", e)}),
+}
+
+
+@pytest.mark.parametrize("place", ENDS_OF_A_TURN)
+def test_a_certificate_failure_prints_the_hint_once_after_its_reason(monkeypatch, capsys, dirs, place: str) -> None:  # noqa: F811
+    said, exits, failing = ENDS_OF_A_TURN[place]
+
+    code, out = _up(monkeypatch, capsys, dirs, FakeTracker(), **failing(TLS))
 
     assert TRACEBACK not in out, out
-    assert "Upload to RED failed: TLS certificate verification failed" in out, out
-    assert code == 1, out
+    assert code == exits, out
+    assert out.count(CHECKCONF_HINT) == 1, out
+    assert out.index(said.format(TLS)) < out.index(CHECKCONF_HINT), out
+
+
+@pytest.mark.parametrize("place", ENDS_OF_A_TURN)
+def test_as_before_any_other_failure_prints_no_hint(monkeypatch, capsys, dirs, place: str) -> None:  # noqa: F811
+    said, _exits, failing = ENDS_OF_A_TURN[place]
+    error = RequestFailedError("the tracker said no")
+
+    _code, out = _up(monkeypatch, capsys, dirs, FakeTracker(), **failing(error))
+
+    assert TRACEBACK not in out, out
+    assert said.format(error) in out, out
+    assert "checkconf" not in out, out
 
 
 # What only run.main catches
