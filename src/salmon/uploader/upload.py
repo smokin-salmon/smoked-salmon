@@ -436,6 +436,9 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str, normalize: bool 
 
     Returns:
         Tuple of (torrent_path, torrent_object).
+
+    Raises:
+        UploadRefusedError: If the torrent cannot be written: that tracker's upload fails, before the POST.
     """
     click.secho("Generating torrent file...", fg="yellow", nl=False)
     t = Torrent(
@@ -458,7 +461,10 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str, normalize: bool 
         warn_unmatched_normalization(form, gazelle_site.site_code)
         # Reloaded in memory, so dumps no longer validate against disk; never from tpath, a watch folder may take it.
         t = Torrent.read_stream(t.dump(validate=False))
-    t.write(tpath, overwrite=True)
+    try:
+        t.write(tpath, overwrite=True)
+    except (OSError, TorfError) as err:
+        raise UploadRefusedError(f"Could not write {err}") from err
 
     click.secho(" done!", fg="yellow")
     return tpath, t

@@ -40,6 +40,7 @@ async def _check_logs(path: str) -> None:
             try:
                 await check_log_cambia(filepath, path)
             except EditedLogError as e:
+                click.secho("Error: Edited logs detected!", fg="red", bold=True)
                 raise click.Abort() from e
             except CRCMismatchError as e:
                 click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)

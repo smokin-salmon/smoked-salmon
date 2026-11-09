@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import anyio
+import asyncclick as click
 import av
 import av.audio.stream
 import cambia
@@ -26,10 +27,12 @@ from helpers.checks_logs import (
 )
 from mutagen.flac import FLAC
 
+import salmon.checks as checks
 import salmon.uploader as uploader
 from salmon import cfg
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 from salmon.tagger.retagger import rename_files
+from salmon.uploader import upload_checks
 
 
 def _write_files(tmp_path, names: list[str]) -> str:
@@ -866,6 +869,23 @@ def test_a_range_past_sector_0_is_not_verified_by_the_start_of_the_first_file_in
 
     with pytest.raises(LogCheckSkipped, match="not verified"):
         anyio.run(logs.check_log_cambia, log, str(tmp_path))
+
+
+def test_salmon_up_says_a_log_was_edited_as_salmon_check_log_does(tmp_path, monkeypatch, capsys) -> None:
+    async def edited(*_args: object, **_kwargs: object) -> None:
+        raise EditedLogError("Edited logs")
+
+    monkeypatch.setattr(checks, "check_log_cambia", edited)
+    monkeypatch.setattr(upload_checks, "check_log_cambia", edited)
+    (tmp_path / "rip.log").write_text("log")
+
+    anyio.run(checks._check_log, str(tmp_path / "rip.log"), str(tmp_path))
+    said = capsys.readouterr().out.strip()
+    with pytest.raises(click.Abort):
+        anyio.run(upload_checks._check_logs, str(tmp_path))
+
+    assert said == "Error: Edited logs detected!"
+    assert said in capsys.readouterr().out
 
 
 def test_salmon_up_says_a_range_it_can_not_verify_was_not_checked_and_does_not_ask(

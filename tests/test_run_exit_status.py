@@ -41,6 +41,7 @@ from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see images)
 )
 from test_uploader_run_trackers import RefusingTracker
+from torf import Torrent, WriteError
 
 import salmon.run
 import salmon.trackers
@@ -56,6 +57,7 @@ from salmon.errors import (
     UnknownOutcomeError,
     UploadError,
 )
+from salmon.tagger.audio_info import gather_audio_info
 from salmon.trackers import base
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
@@ -283,6 +285,17 @@ def _offered(monkeypatch, _album_path: Path) -> None:
 
 def _with_a_log(_monkeypatch, album_path: Path) -> None:
     (album_path / "rip.log").write_text("not read: check_log_cambia is stubbed")
+
+
+def _a_track_emptied(_monkeypatch, album_path: Path) -> None:
+    (album_path / "01 - one.flac").write_bytes(b"")
+
+
+def _torrents_not_written(monkeypatch, _album_path: Path) -> None:
+    def write(_torrent: Torrent, path: str, **_kwargs: object) -> None:
+        raise WriteError(13, path)
+
+    monkeypatch.setattr(Torrent, "write", write)
 
 
 GOOD_CLIENT = "qbittorrent+http://127.0.0.1:9"
@@ -581,6 +594,14 @@ def _stops_at_ops(*, tracker: Callable[[], FakeTracker], posts: int) -> dict[str
 CHANGED = {
     # Exit 1: nothing reached a tracker, and 0 said it had all gone well
     "upload_error_first_read": Row(1, 0, "unreadable", fakes=_at_sync("gather_audio_info", UploadError("unreadable"))),
+    "broken_track_first_read": Row(
+        1,
+        0,
+        "Could not read audio file: 01 - one.flac (",
+        setup=_a_track_emptied,
+        fakes=lambda: {"gather_audio_info": gather_audio_info},
+    ),
+    "torrent_cannot_be_written": Row(1, 0, "Upload to RED failed: Could not write", setup=_torrents_not_written),
     "upload_error_first_tracker": Row(
         1, 0, "There was an error: stopped", fakes=_at("resolve_cover_url", UploadError("stopped"))
     ),
