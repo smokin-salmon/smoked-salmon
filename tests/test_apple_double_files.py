@@ -222,7 +222,20 @@ def test_a_transcode_leaves_metadata_files_behind(tmp_path: Path, capsys) -> Non
     assert "Skip  ._cover.jpg" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize("module", [transcoding, downconverting])
+def test_a_metadata_file_named_after_a_lossy_file_is_no_lossy_file(module: Any, tmp_path: Path) -> None:
+    module._validate_lossless(str(_album(tmp_path, "._01.mp3")))
+
+
 # As before
+
+
+@pytest.mark.parametrize("module", [transcoding, downconverting])
+def test_as_before_a_lossy_file_stops_a_conversion(module: Any, tmp_path: Path) -> None:
+    album = _album(tmp_path)
+    _write_mp3(album / "02.mp3")
+    with pytest.raises(click.Abort):
+        module._validate_lossless(str(album))
 
 
 def test_as_before_a_metadata_file_is_no_proof_of_a_cd_rip(tmp_path: Path) -> None:

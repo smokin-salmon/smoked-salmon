@@ -150,7 +150,7 @@ def _validate_lossless(path: str) -> None:
     for _root, _, files in os.walk(path):
         for f in files:
             ext = os.path.splitext(f)[1].lower()
-            if ext in LOSSY_EXTENSIONS:
+            if ext in LOSSY_EXTENSIONS and not is_apple_double(f):
                 click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
                 raise click.Abort
 
