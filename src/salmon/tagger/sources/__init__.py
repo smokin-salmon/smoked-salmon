@@ -36,15 +36,19 @@ def matching_source(url: str) -> str | None:
 
 
 def without_tracking(url: str) -> str:
-    """A store link as a description publishes it: without its query and fragment, which carry tracking and share
-    IDs. Any other link, or one its store no longer takes without them, is kept as given."""
+    """A store link without its query and fragment (tracking, share IDs); any other link as given."""
     source = matching_source(url)
     if source is None:
         return url
     try:
-        bare = urlsplit(url)._replace(query="", fragment="").geturl()
+        parts = urlsplit(url)
     except ValueError:  # An unclosed "[" in the host.
         return url
+    host = parts.hostname or ""
+    # Bandcamp's pattern takes any host (artists' own domains), where a query may name the release.
+    if source == "Bandcamp" and host != "bandcamp.com" and not host.endswith(".bandcamp.com"):
+        return url
+    bare = parts._replace(query="", fragment="").geturl()
     return bare if matching_source(bare) == source else url
 
 

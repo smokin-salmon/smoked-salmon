@@ -17,7 +17,7 @@ from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched
 from salmon.search.base import IdentData
 from salmon.sources.deezer import DeezerBase, album_upc
 from salmon.tagger.combine import combine_metadatas
-from salmon.tagger.sources import METASOURCES
+from salmon.tagger.sources import METASOURCES, without_tracking
 from salmon.tagger.sources.base import generate_artists, standardize_genres
 from salmon.tagger.tag_urls import tag_urls
 
@@ -430,7 +430,7 @@ async def _select_choice(
         sources, tasks = [], []
         for r in res.split():
             # Handle starred items first
-            stripped = r[1:] if r.startswith("*") else r
+            stripped = without_tracking(r[1:] if r.startswith("*") else r)
             stripped_lower = stripped.lower()
 
             # Handle URLs (both starred and unstarred)

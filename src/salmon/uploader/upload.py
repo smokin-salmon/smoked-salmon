@@ -737,7 +737,6 @@ def generate_t_description(
 
     source = ""
     if source_url is not None:
-        source_url = without_tracking(source_url)
         for name, src in METASOURCES.items():
             if src.Scraper.regex.match(source_url):
                 source = (
