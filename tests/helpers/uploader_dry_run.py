@@ -221,7 +221,7 @@ def _returning_async(result: Any = None):
 async def _retag(path: str, *_args: Any, **_kwargs: Any) -> None:
     """Stands in for tag_files: rewrites a tag in every FLAC of the folder it is given."""
     for name in os.listdir(path):
-        if name.endswith(".flac"):
+        if name.endswith(".flac") and not name.startswith("._"):
             tagged = FLAC(os.path.join(path, name))
             tagged["album"] = "Album"
             tagged.save()

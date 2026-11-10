@@ -10,6 +10,7 @@ from salmon import interaction
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.checks.logs import check_log_cambia
+from salmon.common.files import is_apple_double
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
 from salmon.uploader.spectrals import prompt_lossy_master
 
@@ -33,7 +34,7 @@ async def _check_logs(path: str) -> None:
 
     for root, _, files in os.walk(path, onerror=_abort_on_scan_error):
         for f in files:
-            if not f.lower().endswith(".log"):
+            if not f.lower().endswith(".log") or is_apple_double(f):
                 continue
             filepath = os.path.join(root, f)
             click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)

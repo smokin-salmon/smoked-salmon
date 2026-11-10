@@ -293,3 +293,14 @@ def test_as_before_delete_on_a_library_album_goes_from_the_copy_only(monkeypatch
 
     _assert_album_sent_without_a_torrent_file(run)
     assert stray.read_bytes() == MADE_UP
+
+
+def test_a_macos_metadata_file_reaches_no_tracker(monkeypatch, dirs) -> None:
+    _library, downloads, torrents = dirs
+    album = _album(downloads / "Album")
+    (album / "._01.flac").write_bytes(b"\x00\x05\x16\x07")
+
+    run = _run_up(monkeypatch, album, torrents, check_folder_structure=_answering("d"))
+
+    assert run.result.exit_code == 0, run.result.output
+    assert not [name for names in _files_sent(run) for name in names if name.startswith("._")]
