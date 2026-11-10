@@ -15,7 +15,7 @@ GET /ajax.php action=index [API key]
 GET /ajax.php action=browse searchstr=artist album [API key]
 GET /ajax.php action=requests search=artist album [API key]
 POST /ajax.php action=upload [API key] -> 500
-  file_input: meowmeow.torrent: infohash 238460406a831751f7fda4147fbb7fee9bd56424, private True, announce flacsfor.me
+  file_input: meowmeow.torrent: infohash <infohash 1>, private True, announce flacsfor.me
   The torrent: Artist - Album (2020) [WEB FLAC], 3 file(s), 2.23 KiB, piece size 16 KiB, source RED
     01. one.flac  (1.11 KiB)
     02. two.flac  (1.11 KiB)
@@ -53,15 +53,15 @@ POST /ajax.php action=upload [API key] -> 500
       Released on [b]2020-01-01[/b]
       [b]Source:[/b] [pad=0|3][url=https://store.test/album/1][img]https://i.ibb.co/jd8Ysrm/bandcamp.png[/img] Bandcamp[/url][/pad]
       [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
-GET /ajax.php action=torrent hash=238460406A831751F7FDA4147FBB7FEE9BD56424 [API key] -> 400
-GET /ajax.php action=torrent hash=238460406A831751F7FDA4147FBB7FEE9BD56424 [API key] -> 400
+GET /ajax.php action=torrent hash=<infohash 1> [API key] -> 400
+GET /ajax.php action=torrent hash=<infohash 1> [API key] -> 400
 
 == OPS ==
 GET /ajax.php action=index [API key]
 GET /ajax.php action=browse searchstr=artist album [API key]
 GET /ajax.php action=requests search=artist album [API key]
 POST /ajax.php action=upload [API key]
-  file_input: meowmeow.torrent: infohash e2b486942f6a0b59e1dfc19ae0867b7ec366b4ca, private True, announce home.opsfet.ch
+  file_input: meowmeow.torrent: infohash <infohash 2>, private True, announce home.opsfet.ch
   The torrent: Artist - Album (2020) [WEB FLAC], 3 file(s), 2.23 KiB, piece size 16 KiB, source OPS
     01. one.flac  (1.11 KiB)
     02. two.flac  (1.11 KiB)
@@ -115,7 +115,7 @@ POST /reportsv2.php action=takereport [no auth] -> 302
 GET /torrents.php torrentid=77 [no auth]
 GET /ajax.php action=torrentgroup id=55 [API key]
 POST /ajax.php action=upload [API key]
-  file_input: meowmeow.torrent: infohash d7c0ebcae609430341f13e1b72b7bef2563f1bdb, private True, announce home.opsfet.ch
+  file_input: meowmeow.torrent: infohash <infohash 3>, private True, announce home.opsfet.ch
   The torrent: Artist - Album (2020) [WEB FLAC] [320], 2 file(s), 5.86 KiB, piece size 16 KiB, source OPS
     01. one.mp3  (2.93 KiB)
     02. two.mp3  (2.93 KiB)
@@ -147,7 +147,7 @@ POST /reportsv2.php action=takereport [no auth] -> 302
   submit: True
 GET /torrents.php torrentid=78 [no auth]
 POST /ajax.php action=upload [API key]
-  file_input: meowmeow.torrent: infohash fdc9ae8281860f9c1d0a7254557f5ca59950d9fb, private True, announce home.opsfet.ch
+  file_input: meowmeow.torrent: infohash <infohash 4>, private True, announce home.opsfet.ch
   The torrent: Artist - Album (2020) [WEB FLAC] [V0], 2 file(s), 3.91 KiB, piece size 16 KiB, source OPS
     01. one.mp3  (1.95 KiB)
     02. two.mp3  (1.95 KiB)
@@ -195,10 +195,10 @@ add <tmp>/torrents/Artist - Album (2020) [WEB FLAC] [320] - OPS.torrent ->
 add <tmp>/torrents/Artist - Album (2020) [WEB FLAC] [V0] - OPS.torrent -> 
 
 == torrent files ==
-Artist - Album (2020) [WEB FLAC] - OPS.torrent: comment <OPS>/torrents.php?torrentid=77, infohash e2b486942f6a0b59e1dfc19ae0867b7ec366b4ca
-Artist - Album (2020) [WEB FLAC] - RED.torrent: comment None, infohash 238460406a831751f7fda4147fbb7fee9bd56424
-Artist - Album (2020) [WEB FLAC] [320] - OPS.torrent: comment <OPS>/torrents.php?torrentid=78, infohash d7c0ebcae609430341f13e1b72b7bef2563f1bdb
-Artist - Album (2020) [WEB FLAC] [V0] - OPS.torrent: comment <OPS>/torrents.php?torrentid=79, infohash fdc9ae8281860f9c1d0a7254557f5ca59950d9fb
+Artist - Album (2020) [WEB FLAC] - OPS.torrent: comment <OPS>/torrents.php?torrentid=77, infohash <infohash 2>
+Artist - Album (2020) [WEB FLAC] - RED.torrent: comment None, infohash <infohash 1>
+Artist - Album (2020) [WEB FLAC] [320] - OPS.torrent: comment <OPS>/torrents.php?torrentid=78, infohash <infohash 3>
+Artist - Album (2020) [WEB FLAC] [V0] - OPS.torrent: comment <OPS>/torrents.php?torrentid=79, infohash <infohash 4>
 
 == files ==
 downloads/Artist - Album (2020) [WEB FLAC] [320]/01. one.mp3

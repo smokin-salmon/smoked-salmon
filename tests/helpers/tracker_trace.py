@@ -464,6 +464,17 @@ def _clean_output(text: str, tmp: Path, world: World) -> str:
     return re.sub(r"(\.salmon-staging/run-|salmon-[a-z-]*-)[a-z0-9_]{6,}", r"\1<random>", text)
 
 
+def _numbered_infohashes(text: str) -> str:
+    """Each infohash as `<infohash N>`, in the order the trace first shows them: a real one moves with any byte of the
+    files, a mutagen bump included. A lookup's upper-case hash takes the number of the torrent it asks about."""
+    numbers: dict[str, int] = {}
+
+    def number(found: re.Match[str]) -> str:
+        return f"<infohash {numbers.setdefault(found[0].lower(), len(numbers) + 1)}>"
+
+    return re.sub(r"\b[0-9a-fA-F]{40}\b", number, text)
+
+
 def _stderr_lines(text: str) -> list[str]:
     """What the run printed to stderr, without its tracebacks' frames: their line numbers move with any change."""
     return [line for line in text.splitlines() if line.strip() and not line.startswith(("  ", "Traceback", "|", "+"))]
@@ -484,7 +495,7 @@ def trace_text(world: World, tmp: Path, torrents: Path, head: list[str], out: li
     text = "".join(
         f"== {name} ==\n" + "".join(f"{line}\n" for line in lines) + "\n" for name, lines in sections.items()
     )
-    return _clean_output(text, tmp, world)
+    return _numbered_infohashes(_clean_output(text, tmp, world))
 
 
 def order_across_trackers(world: World) -> str:
