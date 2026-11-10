@@ -1,0 +1,195 @@
+== run ==
+salmon up <tmp>/seeding/Album -t RED -s WEB -n -yyy --skip-integrity-check --skip-up --source-url https://store.test/album/1 -g 55 --skip-flac-upload
+exit: 0
+sent: True, complete: True
+uploaded: RED MP3 <RED>/torrents.php?torrentid=77
+uploaded: RED MP3 <RED>/torrents.php?torrentid=78
+remove_local_copies reason: None
+remove_source_folder: final=<tmp>/downloads/.salmon-staging/run-<random>/Artist - Album (2020) [WEB FLAC] original=<tmp>/seeding/Album uploaded=True aborted=False only_here=[]
+waited (s): []
+
+== RED ==
+GET /ajax.php action=index [API key]
+GET /ajax.php action=torrentgroup id=55 [API key]
+POST /ajax.php action=upload [API key]
+  file_input: meowmeow.torrent: infohash <infohash 1>, private True, announce flacsfor.me
+  The torrent: Artist - Album (2020) [WEB FLAC] [320], 2 file(s), 5.86 KiB, piece size 16 KiB, source RED
+    01. one.mp3  (2.93 KiB)
+    02. two.mp3  (2.93 KiB)
+  submit: on
+  type: 0
+  groupid: 55
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: MP3
+  bitrate: 320
+  media: WEB
+  release_desc: [b]Source:[/b] <RED>/torrents.php?torrentid=11
+      [b]Transcode process:[/b] [code]flac -Vdsc -- input.flac | lame -S -h -b 320 --ignore-tag-errors - output.mp3[/code]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+POST /reportsv2.php action=takereport [no auth] -> 302
+  torrentid: 77
+  categoryid: 1
+  type: lossywebapproval
+  extra: Sourced from: https://store.test/album/1
+      
+      [hide=Spectrals][b]01. one.flac Full[/b]
+      [img=https://images.test/01_Full.png]
+      [hide=Zoomed][img=https://images.test/01_Zoom.png][/hide]
+      
+      [/hide]
+      
+  submit: True
+GET /torrents.php torrentid=77 [no auth]
+POST /ajax.php action=upload [API key]
+  file_input: meowmeow.torrent: infohash <infohash 2>, private True, announce flacsfor.me
+  The torrent: Artist - Album (2020) [WEB FLAC] [V0], 2 file(s), 3.91 KiB, piece size 16 KiB, source RED
+    01. one.mp3  (1.95 KiB)
+    02. two.mp3  (1.95 KiB)
+  submit: on
+  type: 0
+  groupid: 55
+  remaster: on
+  remaster_year: 2020
+  remaster_record_label: Label
+  remaster_catalogue_number: CAT1
+  format: MP3
+  bitrate: V0 (VBR)
+  vbr: on
+  media: WEB
+  release_desc: [b]Source:[/b] <RED>/torrents.php?torrentid=11
+      [b]Transcode process:[/b] [code]flac -Vdsc -- input.flac | lame -S -V 0 --vbr-new --ignore-tag-errors - output.mp3[/code]
+      [hr]Uploaded with [url=https://github.com/smokin-salmon/smoked-salmon][b]smoked-salmon[/b] v<version>[/url]
+POST /reportsv2.php action=takereport [no auth] -> 302
+  torrentid: 78
+  categoryid: 1
+  type: lossywebapproval
+  extra: Sourced from: https://store.test/album/1
+      
+      [hide=Spectrals][b]01. one.flac Full[/b]
+      [img=https://images.test/01_Full.png]
+      [hide=Zoomed][img=https://images.test/01_Zoom.png][/hide]
+      
+      [/hide]
+      
+  submit: True
+GET /torrents.php torrentid=78 [no auth]
+
+== images ==
+01 Full.png
+01 Zoom.png
+
+== seedbox ==
+login http://127.0.0.1:9
+copy <tmp>/downloads/Artist - Album (2020) [WEB FLAC] [V0] -> box:Artist - Album (2020) [WEB FLAC] [V0]
+copy <tmp>/downloads/Artist - Album (2020) [WEB FLAC] [320] -> box:Artist - Album (2020) [WEB FLAC] [320]
+add <tmp>/torrents/Artist - Album (2020) [WEB FLAC] [320] - RED.torrent -> 
+add <tmp>/torrents/Artist - Album (2020) [WEB FLAC] [V0] - RED.torrent -> 
+
+== torrent files ==
+Artist - Album (2020) [WEB FLAC] [320] - RED.torrent: comment <RED>/torrents.php?torrentid=77, infohash <infohash 1>
+Artist - Album (2020) [WEB FLAC] [V0] - RED.torrent: comment <RED>/torrents.php?torrentid=78, infohash <infohash 2>
+
+== files ==
+downloads/Artist - Album (2020) [WEB FLAC] [320]/01. one.mp3
+downloads/Artist - Album (2020) [WEB FLAC] [320]/02. two.mp3
+downloads/Artist - Album (2020) [WEB FLAC] [V0]/01. one.mp3
+downloads/Artist - Album (2020) [WEB FLAC] [V0]/02. two.mp3
+seeding/Album/01 - one.flac
+seeding/Album/02 - two.flac
+seeding/Album/cover.jpg
+torrents/Artist - Album (2020) [WEB FLAC] [320] - RED.torrent
+torrents/Artist - Album (2020) [WEB FLAC] [V0] - RED.torrent
+
+== stdout ==
+
+Using tracker: RED
+
+Processing <tmp>/seeding/Album
+Uploading from WEB.
+
+Torrents matching source WEB in (Group 55) Artist - Album:
+> 2020 / Label / CAT1 / WEB / FLAC / Lossless
+
+Would you like to continue to upload to this group? [Y/n]: <answered: ''>
+
+Copying <tmp>/seeding/Album (0 MB) to <tmp>/downloads/.salmon-staging/run-<random>/Album. --skip-flac-upload works on a copy, so the source is never modified.
+Unaliased the following tags for 01 - one.flac: year
+Unaliased the following tags for 02 - two.flac: year
+Checking for MQA release (every FLAC file)
+No MQA release detected
+
+Renaming folder...
+Old folder name        : Album
+New pending folder name: Artist - Album (2020) [WEB FLAC]
+Hardlinked folder to '<tmp>/downloads/.salmon-staging/run-<random>/Artist - Album (2020) [WEB FLAC]'.
+
+Uploading spectrals for 01. one.flac...
+Initializing upload managers
+
+Parsing torrent client URL: qbittorrent+http://127.0.0.1:9
+Initializing QBittorrentClient client...
+Configured rclone uploader to box
+
+Using existing cover image found: <tmp>/downloads/.salmon-staging/run-<random>/Artist - Album (2020) [WEB FLAC]/cover.jpg...
+
+Not uploading the FLAC: transcoding from <RED>/torrents.php?torrentid=11
+
+Selected formats for downconversion: MP3 320, MP3 V0
+
+Processing: MP3 320
+  Target encoding: 320
+  Generated description: [b]Source:[/b] <RED>/torrents.php?torrentid=11
+[b]Transcode process:[/b] [code]flac...
+Generating torrent file... done!
+Uploading torrent...
+
+Reported upload for Lossy Master/WEB Approval Request.
+Successfully uploaded <RED>/torrents.php?torrentid=77 (Artist - Album (2020) [WEB FLAC] [320]).
+Add uploading task.
+Preparing upload tasks for: <tmp>/downloads/Artist - Album (2020) [WEB FLAC] [320]
+Added folder transfer task
+Preparing upload tasks for: <tmp>/torrents/Artist - Album (2020) [WEB FLAC] [320] - RED.torrent
+Added seed task
+  ✓ MP3 320 transcode completed
+
+Processing: MP3 V0
+  Target encoding: V0
+  Generated description: [b]Source:[/b] <RED>/torrents.php?torrentid=11
+[b]Transcode process:[/b] [code]flac...
+Generating torrent file... done!
+Uploading torrent...
+
+Reported upload for Lossy Master/WEB Approval Request.
+Successfully uploaded <RED>/torrents.php?torrentid=78 (Artist - Album (2020) [WEB FLAC] [V0]).
+Add uploading task.
+Preparing upload tasks for: <tmp>/downloads/Artist - Album (2020) [WEB FLAC] [V0]
+Added folder transfer task
+Preparing upload tasks for: <tmp>/torrents/Artist - Album (2020) [WEB FLAC] [V0] - RED.torrent
+Added seed task
+  ✓ MP3 V0 transcode completed
+
+Done uploading this release.
+Executing 4 upload tasks
+
+Task 1/4: FOLDER - Artist - Album (2020) [WEB FLAC] [V0]
+Starting Rclone upload to box:
+Executing: rclone copy '<tmp>/downloads/Artist - Album (2020) [WEB FLAC] [V0]' 'box:Artist - Album (2020) [WEB FLAC] [V0]'
+Rclone upload successful: <tmp>/downloads/Artist - Album (2020) [WEB FLAC] [V0] to box:Artist - Album (2020) [WEB FLAC] [V0]
+
+Task 2/4: FOLDER - Artist - Album (2020) [WEB FLAC] [320]
+Starting Rclone upload to box:
+Executing: rclone copy '<tmp>/downloads/Artist - Album (2020) [WEB FLAC] [320]' 'box:Artist - Album (2020) [WEB FLAC] [320]'
+Rclone upload successful: <tmp>/downloads/Artist - Album (2020) [WEB FLAC] [320] to box:Artist - Album (2020) [WEB FLAC] [320]
+
+Task 3/4: SEED - Artist - Album (2020) [WEB FLAC] [320] - RED.torrent
+
+Task 4/4: SEED - Artist - Album (2020) [WEB FLAC] [V0] - RED.torrent
+
+All upload tasks processed
+remove_source_dir is on, but <tmp>/seeding/Album is kept: --skip-flac-upload works on a copy.
+
+== stderr ==
+
