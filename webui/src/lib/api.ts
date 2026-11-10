@@ -1,3 +1,5 @@
+import { t } from './i18n'
+
 const BASE = '/api'
 
 let unauthorizedHandler: (() => void) | null = null
@@ -20,7 +22,7 @@ export class ApiError extends Error {
 async function handle<T>(res: Response): Promise<T> {
   if (res.status === 401) {
     unauthorizedHandler?.()
-    throw new ApiError(401, 'Authentication required.')
+    throw new ApiError(401, "请先登录。")
   }
   if (!res.ok) throw new ApiError(res.status, await errorDetail(res))
   return res.json()
@@ -43,7 +45,7 @@ export async function apiPost<T>(path: string, body: unknown = {}): Promise<T> {
 async function errorDetail(res: Response): Promise<string> {
   try {
     const data = await res.json()
-    if (typeof data.detail === 'string') return data.detail
+    if (typeof data.detail === 'string') return t(data.detail)
     return JSON.stringify(data.detail ?? data)
   } catch {
     return `${res.status} ${res.statusText}`

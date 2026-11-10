@@ -8,6 +8,7 @@ from salmon import cfg
 from salmon.common import handle_scrape_errors
 from salmon.common.strings import artists_or_various
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BeatportBase
 from salmon.sources.beatport import TokenStorage
@@ -41,7 +42,7 @@ class Searcher(BeatportBase, SearchMixin):
                         self.format_result(artists, title, edition, track_count, explicit=explicit),
                     )
             except (KeyError, IndexError) as e:
-                raise ScrapeError("Failed to parse search result item") from e
+                raise ScrapeError(_zh("Failed to parse search result item")) from e
 
             if len(releases) == limit:
                 break
@@ -54,12 +55,12 @@ class Searcher(BeatportBase, SearchMixin):
         try:
             script_tag = soup.find("script", id="__NEXT_DATA__")
             if not script_tag or not script_tag.text:
-                raise ScrapeError("Could not find Next.js data script tag")
+                raise ScrapeError(_zh("Could not find Next.js data script tag"))
 
             try:
                 data = msgspec.json.decode(script_tag.text)
             except msgspec.DecodeError as e:
-                raise ScrapeError("Failed to parse Beatport JSON data") from e
+                raise ScrapeError(_zh("Failed to parse Beatport JSON data")) from e
             search_results = data["props"]["pageProps"]["dehydratedState"]["queries"][0]["state"]["data"]["data"]
             for result in search_results:
                 try:
@@ -78,13 +79,13 @@ class Searcher(BeatportBase, SearchMixin):
                             self.format_result(artists, title, label),
                         )
                 except (KeyError, IndexError) as e:
-                    raise ScrapeError("Failed to parse search result item") from e
+                    raise ScrapeError(_zh("Failed to parse search result item")) from e
 
                 if len(releases) == limit:
                     break
 
         except (KeyError, IndexError) as e:
-            raise ScrapeError("Failed to parse scraped search results") from e
+            raise ScrapeError(_zh("Failed to parse scraped search results")) from e
 
         return "Beatport", releases
 
@@ -97,6 +98,6 @@ class Searcher(BeatportBase, SearchMixin):
             if resp:
                 return resp
             else:
-                click.secho("Beatport API error, falling back to scraper", fg="yellow")
+                click.secho(_zh("Beatport API error, falling back to scraper"), fg="yellow")
 
         return await self.search_releases_scraping(searchstr, limit)

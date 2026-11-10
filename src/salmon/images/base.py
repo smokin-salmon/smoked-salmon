@@ -7,6 +7,7 @@ from typing import Any
 import aiohttp
 
 from salmon import dryrun, proxy
+from salmon.localization import text as _zh
 
 mimetypes.init()
 
@@ -119,5 +120,5 @@ class BaseImageUploader:
         """
         mime_type, _ = mimetypes.guess_type(filename)
         if not mime_type or mime_type.split("/")[0] != "image":
-            raise ValueError(f"Unknown image file type {mime_type}")
-        raise NotImplementedError("Subclasses must implement upload_file")
+            raise ValueError(_zh(f"Unknown image file type {mime_type}"))
+        raise NotImplementedError(_zh("Subclasses must implement upload_file"))

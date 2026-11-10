@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from './i18n'
   import { CHIP, type Row } from './verdicts'
 
   let { rows }: { rows: Row[] } = $props()
@@ -8,12 +9,12 @@
 <ul class="rows">
   {#each rows as row, index (index)}
     <li class="verdict-{row.verdict.toLowerCase()}">
-      <span class="chip {CHIP[row.verdict]}">{row.verdict}</span>
-      <span class="label">{row.check}</span>
-      <span class="detail">{row.detail}</span>
+      <span class="chip {CHIP[row.verdict]}">{t(row.verdict)}</span>
+      <span class="label">{t(row.check)}</span>
+      <span class="detail">{t(row.detail)}</span>
       {#if row.notes.length}
         <ul class="notes">
-          {#each row.notes as note, n (n)}<li>{note}</li>{/each}
+          {#each row.notes as note, n (n)}<li>{t(note)}</li>{/each}
         </ul>
       {/if}
     </li>

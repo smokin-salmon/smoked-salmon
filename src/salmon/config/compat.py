@@ -13,6 +13,8 @@ from typing import Any
 import asyncclick as click
 from packaging.version import InvalidVersion, Version
 
+from salmon.localization import text as _zh
+
 REFUSED_FROM = "0.25.0"
 UPGRADE_PAGE = "https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21"
 
@@ -98,7 +100,7 @@ def warn(config_path: Path, message: str) -> None:
         return
     _warned.add((str(config_path), message))
     config_warnings.append(message)
-    click.secho(message, fg="yellow", err=True)
+    click.secho(_zh(message), fg="yellow", err=True)
 
 
 def placeholder(path: str) -> str | None:
@@ -172,8 +174,10 @@ def _move(raw: dict[str, Any], entry: Moved, value: Any, version: Version | None
     )
     if _get(raw, entry.new) is not _MISSING:
         raise ValueError(
-            f"{entry.old} and {entry.new} are both set: {entry.old} is the old name of {entry.new}, "
-            f"so remove {entry.old}. See {UPGRADE_PAGE}"
+            _zh(
+                f"{entry.old} and {entry.new} are both set: {entry.old} is the old name of {entry.new}, "
+                f"so remove {entry.old}. See {UPGRADE_PAGE}"
+            )
         )
     if _refused(entry.refused_from, version):
         raise ValueError(message)
@@ -187,7 +191,7 @@ def _move(raw: dict[str, Any], entry: Moved, value: Any, version: Version | None
 def _drop_removed(raw: dict[str, Any], entry: Removed, value: Any, config_path: Path) -> None:
     if not entry.did_nothing and value != entry.default:
         # Ignoring it would change what salmon does: refused now, not after a release of warnings.
-        raise ValueError(f"{entry.old} is no longer used: {entry.reason}. Remove it. See {UPGRADE_PAGE}")
+        raise ValueError(_zh(f"{entry.old} is no longer used: {entry.reason}. Remove it. See {UPGRADE_PAGE}"))
     _remove(raw, entry.old)
     warn(config_path, f"{entry.old} is no longer used, remove it: {entry.reason}. See {UPGRADE_PAGE}")
 

@@ -20,6 +20,8 @@ import anyio.to_thread
 import asyncclick as click
 from tqdm import tqdm
 
+from salmon.localization import text as _zh
+
 # pyoxipng 9.1.1 has wheels up to CPython 3.13 only, and building it needs Rust (and MSVC on Windows), so
 # pyproject.toml installs it below 3.14 only and spectrals are left uncompressed on newer Pythons (re-saving them with
 # Pillow made them bigger). Drop the marker and this fallback once pyoxipng ships 3.14 or abi3 wheels.
@@ -85,11 +87,11 @@ async def check_spectrals(
     """
     if format != "FLAC":
         click.secho(
-            "Spectrals are only generated for FLAC files. Skipping...",
+            _zh("Spectrals are only generated for FLAC files. Skipping..."),
             fg="cyan",
         )
         return None, None
-    click.secho("\nChecking lossy master / spectrals...", fg="cyan", bold=True)
+    click.secho(_zh("\nChecking lossy master / spectrals..."), fg="cyan", bold=True)
     generated: dict[int, str] | None = None
     if generation is not None:
         spectrals_path, generated = await generation.result()
@@ -177,15 +179,15 @@ async def print_frequency_analysis(path: str, spectrals_path: str, spectral_ids:
         results = await frequency.generate_frequency_plots(path, get_audio_files(path), plot_paths)
         level, notes = frequency.assess(results)
     except Exception as e:
-        click.secho(f"\nFrequency analysis failed, so it says nothing about this release: {e!r}", fg="yellow")
+        click.secho(_zh(f"\nFrequency analysis failed, so it says nothing about this release: {e!r}"), fg="yellow")
         return False
     heading, colour = FREQUENCY_HEADINGS[level]
-    click.secho(f"\nFrequency analysis: {heading}", fg=colour, bold=True)
+    click.secho(_zh(f"\nFrequency analysis: {heading}"), fg=colour, bold=True)
     for note in notes:
         click.echo(f"  {note}")
     if any(result.image for result in results):
-        click.echo(f'  Averaged spectra: "NN Spectrum.png", next to the spectrals in {spectrals_path}')
-    click.secho("  A measurement, not a verdict: read the spectrals before answering.", fg="cyan")
+        click.echo(_zh(f'  Averaged spectra: "NN Spectrum.png", next to the spectrals in {spectrals_path}'))
+    click.secho(_zh("  A measurement, not a verdict: read the spectrals before answering."), fg="cyan")
     return level == "suspect"
 
 
@@ -221,7 +223,9 @@ async def _delete_spectrals(spectrals_path: str) -> None:
             if not os.path.lexists(spectrals_path):
                 break
             if not made_by_salmon(spectrals_path):
-                click.secho(f"Not deleting {spectrals_path}: it is not a spectrals folder salmon made.", fg="yellow")
+                click.secho(
+                    _zh(f"Not deleting {spectrals_path}: it is not a spectrals folder salmon made."), fg="yellow"
+                )
                 break
             shutil.rmtree(spectrals_path, ignore_errors=not last)
             await anyio.sleep(0.5)
@@ -348,7 +352,7 @@ async def generate_spectrals_ids(
         Dictionary mapping track numbers to filenames.
     """
     if track_ids == (0,):
-        click.secho("Uploading no spectrals...", fg="yellow")
+        click.secho(_zh("Uploading no spectrals..."), fg="yellow")
         return {}
 
     wanted_filenames = get_wanted_filenames(list(audio_info), track_ids)
@@ -409,7 +413,9 @@ class SpectralsInBackground:
         await self._listed.wait()
         if self._total is not None:
             # The progress bar starts where the background work is.
-            with tqdm(total=self._total, initial=self._finished, desc="Generating Spectrals", colour="cyan") as bar:
+            with tqdm(
+                total=self._total, initial=self._finished, desc=_zh("Generating Spectrals"), colour="cyan"
+            ) as bar:
                 self._bar = bar
                 try:
                     await self._done.wait()
@@ -486,7 +492,7 @@ def get_wanted_filenames(filenames, track_ids):
     try:
         return {filenames[i - 1] for i in track_ids}
     except IndexError:
-        raise UploadError("Spectral IDs out of range.") from None
+        raise UploadError(_zh("Spectral IDs out of range.")) from None
 
 
 async def _generate_spectral_for_file(
@@ -609,7 +615,7 @@ async def _run_sox(
         except CalledProcessError as e:
             # In the error, not printed: this may be running in the background (see spectrals_in_background).
             reason = (e.stderr or b"").decode(errors="replace").strip() or f"code {e.returncode}"
-            raise UploadError(f"sox could not make the spectrals of {file}: {reason}") from e
+            raise UploadError(_zh(f"sox could not make the spectrals of {file}: {reason}")) from e
 
     return await process_tracks(
         files_li,
@@ -621,7 +627,7 @@ async def _run_sox(
 
 async def _finish_spectrals(spectrals_path: str, results: list[tuple[int, str]], compress: bool) -> dict[int, str]:
     """Say the spectrals are made, compress them if asked and configured, and give them by spectral ID."""
-    click.secho("Finished generating spectrals.", fg="green")
+    click.secho(_zh("Finished generating spectrals."), fg="green")
     if compress and cfg.upload.compression.compress_spectrals:
         await _compress_spectrals(spectrals_path)
     return dict(sorted(results))
@@ -643,9 +649,11 @@ def _notify_spectrals_not_compressed() -> None:
         return
     _not_compressed_notice_shown = True
     click.secho(
-        "Spectrals are not compressed: oxipng is not available for this Python version. Installing salmon with "
-        '"uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" compresses them, '
-        "and so does installing the oxipng program (winget, scoop, brew, apt, or its GitHub releases).",
+        _zh(
+            "Spectrals are not compressed: oxipng is not available for this Python version. Installing salmon with "
+            '"uv tool install --python 3.13 git+https://github.com/smokin-salmon/smoked-salmon" compresses them, '
+            "and so does installing the oxipng program (winget, scoop, brew, apt, or its GitHub releases)."
+        ),
         fg="yellow",
     )
 
@@ -703,7 +711,7 @@ async def _compress_single_spectral(filepath: str, _idx: int, program: str | Non
     finally:
         with contextlib.suppress(OSError):
             os.remove(tmp_path)
-    click.secho(f"Could not compress {os.path.basename(filepath)} with oxipng; the original is kept.", fg="yellow")
+    click.secho(_zh(f"Could not compress {os.path.basename(filepath)} with oxipng; the original is kept."), fg="yellow")
     return False
 
 
@@ -744,9 +752,9 @@ async def _compress_spectrals(spectrals_path: str, spectral_ids: dict[int, str] 
     )
 
     if any(result is False for result in results):
-        click.secho("Some spectrals could not be compressed.", fg="yellow")
+        click.secho(_zh("Some spectrals could not be compressed."), fg="yellow")
     else:
-        click.secho("Finished compressing spectrals.", fg="green")
+        click.secho(_zh("Finished compressing spectrals."), fg="green")
 
 
 async def compress_chosen_spectrals(spectrals_path: str, spectral_ids: dict[int, str] | None) -> None:
@@ -880,8 +888,10 @@ async def foreign_spectrals_refusal(album: str, staged: str) -> str | None:
         return None
     folder = os.path.join(album, "Spectrals")
     click.secho(
-        f"\n{folder} is not a spectrals folder salmon made: it holds {foreign_entries_text(entries)}. "
-        "It goes into the torrent with the album, and into each conversion the run makes of it.",
+        _zh(
+            f"\n{folder} is not a spectrals folder salmon made: it holds {foreign_entries_text(entries)}. "
+            "It goes into the torrent with the album, and into each conversion the run makes of it."
+        ),
         fg="yellow",
     )
     refusal = f"Not uploading {folder}: move it out of the album and run salmon again."
@@ -895,14 +905,14 @@ async def foreign_spectrals_refusal(album: str, staged: str) -> str | None:
         else f"move it to {destination}"
     )
     answer = await interaction.prompt(
-        click.style(f"m: {where}\nu: upload it with the album\ns: stop\nWhat now?", fg="magenta"),
+        _zh(click.style(_zh(f"m: {where}\nu: upload it with the album\ns: stop\nWhat now?"), fg="magenta")),
         default="s",
         type=click.Choice(["m", "u", "s"], case_sensitive=False),
         show_default=True,
         options=interaction.Options(
             (
-                interaction.Option("m", f"Move it out and go on: {where}"),
-                interaction.Option("u", "Upload it with the album"),
+                interaction.Option("m", _zh(f"Move it out and go on: {where}")),
+                interaction.Option("u", _zh("Upload it with the album")),
                 interaction.Option("s", "Stop", empty=True),
             )
         ),
@@ -918,7 +928,8 @@ async def foreign_spectrals_refusal(album: str, staged: str) -> str | None:
         except OSError as error:
             return f"Could not leave {folder} out of this upload's copy: {error}. Nothing was changed in {album}."
         click.secho(
-            f"Left {folder} out of this upload. The album still holds it, so a later upload asks again.", fg="cyan"
+            _zh(f"Left {folder} out of this upload. The album still holds it, so a later upload asks again."),
+            fg="cyan",
         )
         return None
     return _move_out(album, folder, destination)
@@ -944,7 +955,7 @@ def _move_out(album: str, folder: str, destination: str) -> str | None:
         else:
             where = f"The folder is still at {folder}."
         return f"Could not move {folder} to {destination}: {error}. {where}"
-    click.secho(f"Moved {folder} to {destination}.", fg="cyan")
+    click.secho(_zh(f"Moved {folder} to {destination}."), fg="cyan")
     return None
 
 
@@ -979,14 +990,14 @@ def make_way_for_spectrals(spectrals_path: str) -> None:
     except OSError:
         empty = False
     if not (empty or made_by_salmon(spectrals_path)):
-        raise UploadError(f"Not replacing {spectrals_path} with spectrals: salmon did not make it. Move it away.")
+        raise UploadError(_zh(f"Not replacing {spectrals_path} with spectrals: salmon did not make it. Move it away."))
     try:
         shutil.rmtree(spectrals_path)
     except OSError as error:
         parent = os.path.dirname(spectrals_path)
         name = os.path.relpath(error.filename or spectrals_path, parent)
         raise UploadError(
-            f"Could not remove {name} in {parent} ({error.strerror}): fix its permissions or move it away."
+            _zh(f"Could not remove {name} in {parent} ({error.strerror}): fix its permissions or move it away.")
         ) from error
     drop_specs_claim(spectrals_path)
 
@@ -1003,7 +1014,8 @@ def remove_own_spectrals(album: str) -> None:
         make_way_for_spectrals(in_album)
         if left:
             click.secho(
-                f"Removed the {left} file(s) of a Spectrals folder an earlier run left in the album.", fg="yellow"
+                _zh(f"Removed the {left} file(s) of a Spectrals folder an earlier run left in the album."),
+                fg="yellow",
             )
 
 
@@ -1117,7 +1129,7 @@ async def _open_specs_in_default_viewer(spectrals_path: str) -> str | None:
     if not viewer:
         return "there is no default image viewer"
     first = _spectral_images(spectrals_path)[0]
-    click.secho(f"Opening {first} with {viewer}. All the spectrals are in {spectrals_path}.", fg="cyan")
+    click.secho(_zh(f"Opening {first} with {viewer}. All the spectrals are in {spectrals_path}."), fg="cyan")
     result = await anyio.run_process(
         ["xdg-open", os.path.join(spectrals_path, first)], check=False, stdout=DEVNULL, stderr=DEVNULL
     )
@@ -1128,8 +1140,10 @@ async def _open_specs_in_default_viewer(spectrals_path: str) -> str | None:
 
 def _say_no_viewer(spectrals_path: str, reason: str) -> None:
     click.secho(
-        f"Could not show the spectrals: {reason}. They are in {spectrals_path}. Install feh, set a default "
-        "image viewer, or set native_spectrals_viewer = false to view them in the browser.",
+        _zh(
+            f"Could not show the spectrals: {reason}. They are in {spectrals_path}. Install feh, set a default "
+            "image viewer, or set native_spectrals_viewer = false to view them in the browser."
+        ),
         fg="yellow",
     )
 
@@ -1160,7 +1174,7 @@ def _open_specs_in_windows(spectrals_path):
     png_files = [os.path.join(spectrals_path, f) for f in _spectral_images(spectrals_path)]
 
     if not png_files:
-        click.secho("No PNG files found to display.", fg="yellow")
+        click.secho(_zh("No PNG files found to display."), fg="yellow")
         return
     os.startfile(png_files[0])
 
@@ -1183,21 +1197,25 @@ async def _open_specs_in_web_server(
             port = cfg.upload.spectrals_viewer.port
             if e.errno == errno.EADDRINUSE:
                 click.secho(
-                    f"\nFailed to start web server: port {port} is already in use ({e}). "
-                    "Please check if another process is using this port.",
+                    _zh(
+                        f"\nFailed to start web server: port {port} is already in use ({e}). "
+                        "Please check if another process is using this port."
+                    ),
                     fg="red",
                     bold=True,
                 )
             elif e.errno == errno.EACCES:
                 click.secho(
-                    f"\nFailed to start web server: permission denied for port {port} ({e}). "
-                    "Try using a non-privileged port (>1024).",
+                    _zh(
+                        f"\nFailed to start web server: permission denied for port {port} ({e}). "
+                        "Try using a non-privileged port (>1024)."
+                    ),
                     fg="red",
                     bold=True,
                 )
             else:
                 click.secho(
-                    f"\nFailed to start web server on port {port}: {e!r}",
+                    _zh(f"\nFailed to start web server on port {port}: {e!r}"),
                     fg="red",
                     bold=True,
                 )
@@ -1205,14 +1223,16 @@ async def _open_specs_in_web_server(
         url = f"http://{cfg.upload.spectrals_viewer.effective_host}:{cfg.upload.spectrals_viewer.port}/spectrals"
         await wait_for_enter(
             click.style(
-                f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"
-                f"""{
-                    click.style(
-                        "Press enter once you are finished viewing to continue the uploading process",
-                        fg="magenta",
-                        bold=True,
-                    )
-                }""",
+                _zh(
+                    f"\nSpectrals are available at {click.style(url, fg='blue', underline=True)}\n"
+                    f"""{
+                        click.style(
+                            _zh("Press enter once you are finished viewing to continue the uploading process"),
+                            fg="magenta",
+                            bold=True,
+                        )
+                    }"""
+                ),
                 fg="magenta",
             ),
         )
@@ -1260,7 +1280,8 @@ async def upload_spectrals(
                 await anyio.to_thread.run_sync(check_image, path)
             except (NotAnImage, OSError) as e:
                 click.secho(
-                    f"{os.path.basename(path)} is not a usable image ({e}): no spectrals are uploaded.", fg="red"
+                    _zh(f"{os.path.basename(path)} is not a usable image ({e}): no spectrals are uploaded."),
+                    fg="red",
                 )
                 return None
 
@@ -1271,7 +1292,7 @@ async def upload_spectrals(
     try:
         return await upload_spectral_imgs(spectrals_list, tracker=tracker)
     except ImageUploadFailed as e:
-        click.secho(f"Failed to upload spectral: {e}", fg="red")
+        click.secho(_zh(f"Failed to upload spectral: {e}"), fg="red")
         return None
 
 
@@ -1322,18 +1343,23 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
             _default_spectral_selection(spectral_ids, lossy_master)
             if await interaction.assume_defaults() and not force_prompt_lossy_master
             else await interaction.prompt(
-                click.style(
-                    f"What spectral IDs would you like to upload to {hosts}? "
-                    '(space-separated list of IDs, "0" for none, "*" for all, or "+" for a randomized selection)',
-                    fg="magenta",
+                _zh(
+                    click.style(
+                        _zh(
+                            f"What spectral IDs would you like to upload to {hosts}? "
+                            '(space-separated list of IDs, "0" for none, '
+                            '"*" for all, or "+" for a randomized selection)'
+                        ),
+                        fg="magenta",
+                    )
                 ),
                 default=_default_spectral_selection(spectral_ids, lossy_master),
                 options=interaction.Options(
                     (
                         *(interaction.Option(str(id_), f"{id_:02d} {name}") for id_, name in spectral_ids.items()),
-                        interaction.Option("*", "All", alone=True),
-                        interaction.Option("0", "None", alone=True),
-                        interaction.Option("+", "Random third", alone=True),
+                        interaction.Option("*", _zh("All"), alone=True),
+                        interaction.Option("0", _zh("None"), alone=True),
+                        interaction.Option("+", _zh("Random third"), alone=True),
                     ),
                     several=True,
                 ),
@@ -1348,7 +1374,7 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
         ids = [i.strip() for i in ids.split()]
         if not ids and lossy_master and check_lma:
             click.secho(
-                "This release has been flagged as lossy master, please select at least one spectral.",
+                _zh("This release has been flagged as lossy master, please select at least one spectral."),
                 fg="red",
             )
             continue
@@ -1356,7 +1382,7 @@ async def prompt_spectrals(spectral_ids, lossy_master, check_lma, force_prompt_l
         if all(number in spectral_ids for number in numbers):
             return {number: spectral_ids[number] for number in numbers if number is not None}
         click.secho(
-            f"Invalid IDs. Valid IDs are: {', '.join(str(s) for s in spectral_ids)}.",
+            _zh(f"Invalid IDs. Valid IDs are: {', '.join(str(s) for s in spectral_ids)}."),
             fg="red",
         )
 
@@ -1375,23 +1401,25 @@ async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=Tr
             if await interaction.assume_defaults() and not force_prompt_lossy_master and not marks_found
             else (
                 await interaction.prompt(
-                    click.style(
-                        "\nIs this release lossy mastered? "
-                        + ("[Y]es, [n]o" if marks_found else "[y]es, [N]o")
-                        + ", [r]eopen spectrals, [a]bort"
-                        + (", [d]elete music folder" if offer_deletion else ""),
-                        fg="magenta",
+                    _zh(
+                        click.style(
+                            _zh("\nIs this release lossy mastered? ")
+                            + ("[Y]es, [n]o" if marks_found else "[y]es, [N]o")
+                            + _zh(", [r]eopen spectrals, [a]bort")
+                            + (_zh(", [d]elete music folder") if offer_deletion else ""),
+                            fg="magenta",
+                        )
                     ),
                     type=click.STRING,
                     default="y" if marks_found else "n",
                     options=interaction.Options(
                         (
-                            interaction.Option("y", "Lossy mastered"),
-                            interaction.Option("n", "Not lossy mastered"),
-                            interaction.Option("r", "Reopen spectrals"),
-                            interaction.Option("a", "Abort", action=True),
+                            interaction.Option("y", _zh("Lossy mastered")),
+                            interaction.Option("n", _zh("Not lossy mastered")),
+                            interaction.Option("r", _zh("Reopen spectrals")),
+                            interaction.Option("a", _zh("Abort"), action=True),
                             *(
-                                (interaction.Option("d", "Delete music folder", action=True, danger=True),)
+                                (interaction.Option("d", _zh("Delete music folder"), action=True, danger=True),)
                                 if offer_deletion
                                 else ()
                             ),
@@ -1434,11 +1462,11 @@ async def report_lossy_master(
     """
     comment = _add_spectral_links_to_lossy_comment(comment, source_url, spectral_urls, spectral_ids)
     if source is None:
-        click.secho("Cannot report lossy master without source.", fg="red")
+        click.secho(_zh("Cannot report lossy master without source."), fg="red")
         return
     if dryrun.active():
         dryrun.say(f"not reporting the torrent to {gazelle_site.site_string} for lossy master approval. The report:")
-        click.echo(textwrap.indent(comment, "  "))
+        click.echo(_zh(textwrap.indent(comment, "  ")))
         return
     try:
         await gazelle_site.report_lossy_master(torrent_id, comment, source)
@@ -1446,9 +1474,11 @@ async def report_lossy_master(
         record.note_unknown_outcome(err)
         # The upload itself went through, so the rest of the flow (seeding above all) goes on.
         click.secho(
-            f"\nCould not tell whether {gazelle_site.site_string} took the lossy master report ({err}): it may "
-            f"have been filed. Check {gazelle_site.base_url}/torrents.php?torrentid={torrent_id} before reporting "
-            "it again.",
+            _zh(
+                f"\nCould not tell whether {gazelle_site.site_string} took the lossy master report ({err}): it may "
+                f"have been filed. Check {gazelle_site.base_url}/torrents.php?torrentid={torrent_id} before reporting "
+                "it again."
+            ),
             fg="red",
             bold=True,
         )
@@ -1456,14 +1486,17 @@ async def report_lossy_master(
     except RequestError as err:
         # Not a failed upload: the torrent is up, and the rest of the flow goes on.
         click.secho(
-            f"\n{gazelle_site.site_string} did not take the lossy master report for "
-            f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id} ({err}). Report it by hand with this text:",
+            _zh(
+                f"\n{gazelle_site.site_string} did not take the lossy master report for "
+                f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id} "
+                f"({err}). Report it by hand with this text:"
+            ),
             fg="red",
             bold=True,
         )
-        click.echo(comment)
+        click.echo(_zh(comment))
         return
-    click.secho("\nReported upload for Lossy Master/WEB Approval Request.", fg="cyan")
+    click.secho(_zh("\nReported upload for Lossy Master/WEB Approval Request."), fg="cyan")
 
 
 async def generate_lossy_approval_comment(source_url, filenames, force_prompt_lossy_master=False):
@@ -1473,12 +1506,16 @@ async def generate_lossy_approval_comment(source_url, filenames, force_prompt_lo
             # Without a source URL, an empty comment is refused: yes_all would refuse it forever.
             if await interaction.assume_defaults() and not force_prompt_lossy_master and source_url
             else await interaction.prompt(
-                click.style(
-                    "Do you have a comment for the lossy approval report? It is appropriate to "
-                    "make a note about the source here. Source information from go, gos, and the "
-                    "queue will be included automatically.",
-                    fg="cyan",
-                    bold=True,
+                _zh(
+                    click.style(
+                        _zh(
+                            "Do you have a comment for the lossy approval report? It is appropriate to "
+                            "make a note about the source here. Source information from go, gos, and the "
+                            "queue will be included automatically."
+                        ),
+                        fg="cyan",
+                        bold=True,
+                    )
                 ),
                 default="",
             )
@@ -1486,7 +1523,9 @@ async def generate_lossy_approval_comment(source_url, filenames, force_prompt_lo
         if comment or source_url:
             return comment
         click.secho(
-            "This release was not uploaded with go, gos, or the queue, so you must add a comment about the source.",
+            _zh(
+                "This release was not uploaded with go, gos, or the queue, so you must add a comment about the source."
+            ),
             fg="red",
         )
 
@@ -1579,21 +1618,25 @@ async def post_upload_spectral_check(
         except UnknownOutcomeError as err:
             record.note_unknown_outcome(err)
             click.secho(
-                f"\nCould not tell whether {gazelle_site.site_string} took the description edit for {permalink} "
-                f"({err}): it may not have been updated; check the description before pasting this in "
-                "by hand:",
+                _zh(
+                    f"\nCould not tell whether {gazelle_site.site_string} took the description edit for {permalink} "
+                    f"({err}): it may not have been updated; check the description before pasting this in "
+                    "by hand:"
+                ),
                 fg="red",
                 bold=True,
             )
-            click.echo(spectrals_bbcode)
+            click.echo(_zh(spectrals_bbcode))
         except RequestError as err:
             click.secho(
-                f"\nThe description for {permalink} was not updated on {gazelle_site.site_string} ({err}). "
-                "Paste this in by hand:",
+                _zh(
+                    f"\nThe description for {permalink} was not updated on {gazelle_site.site_string} ({err}). "
+                    "Paste this in by hand:"
+                ),
                 fg="red",
                 bold=True,
             )
-            click.echo(spectrals_bbcode)
+            click.echo(_zh(spectrals_bbcode))
 
     if lossy_master:
         await report_lossy_master(

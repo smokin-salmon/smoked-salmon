@@ -26,3 +26,15 @@ accounts.json
 
 # Throwaway implementation plans (see AGENTS.md)
 docs/plans/
+
+# Local Windows installation, account configuration and runtime data
+/config/
+/logs/
+/music/
+/tools/
+/launch.py
+/salmon.cmd
+/Start-Web.cmd
+/Edit-Config.cmd
+/Check-Install.cmd
+/使用说明.txt

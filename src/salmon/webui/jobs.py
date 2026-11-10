@@ -36,6 +36,7 @@ import msgspec
 
 from salmon import cfg, dryrun, interaction, prepared, ssrf
 from salmon.errors import UnknownOutcomeError
+from salmon.localization import text as _zh
 from salmon.prepared import Prepared
 from salmon.webui import output
 from salmon.webui.egress import Redactor
@@ -111,6 +112,7 @@ class JobError(Exception):
     """
 
     def __init__(self, status: int, detail: str, job_id: str | None = None) -> None:
+        detail = _zh(detail)
         super().__init__(detail)
         self.status = status
         self.detail = detail
@@ -279,13 +281,13 @@ def own_folder(purpose: str) -> str:
     """
     job = _running_job.get()
     if job is None:
-        raise RuntimeError("own_folder() makes a folder for a salmon web job, and no job is running here.")
+        raise RuntimeError(_zh("own_folder() makes a folder for a salmon web job, and no job is running here."))
     folder = os.path.realpath(
         tempfile.mkdtemp(prefix=f"{OWN_FOLDER_PREFIX}{job.id}-{purpose}-", dir=cfg.directory.tmp_dir or None)
     )
     if cfg.directory.protects(folder):
         os.rmdir(folder)
-        raise RuntimeError("A salmon web job's folder would be in a library folder: check tmp_dir.")
+        raise RuntimeError(_zh("A salmon web job's folder would be in a library folder: check tmp_dir."))
     with job._lock:
         job._own_folders.append(folder)
     return folder
@@ -320,7 +322,10 @@ def _remove_own_folders(folders: list[str]) -> None:
         ):
             shutil.rmtree(folder, ignore_errors=True)
         else:
-            print(f"salmon web: left {folder} in place: it is no longer the job's own.", file=output.real_stderr())
+            print(
+                _zh(f"salmon web: left {folder} in place: it is no longer the job's own."),
+                file=output.real_stderr(),
+            )
 
 
 class _JobAsker:
@@ -340,7 +345,7 @@ class _JobAsker:
         try:
             return await asyncio.wait_for(asyncio.wrap_future(answer), QUESTION_TIMEOUT)
         except TimeoutError:
-            click.secho(_no_answer(), fg="red")
+            click.secho(_zh(_no_answer()), fg="red")
             raise NoAnswerError() from None
         finally:
             answer.cancel()
@@ -387,7 +392,7 @@ class JobManager:
                 await self._idle.wait()
         except TimeoutError:
             names = ", ".join(sorted(job.id for job in self._running))
-            print(f"salmon web: stopped while jobs were still running: {names}", file=output.real_stderr())
+            print(_zh(f"salmon web: stopped while jobs were still running: {names}"), file=output.real_stderr())
         if self._preparing is not None:
             self._stop_preparing(self._preparing)
         with suppress(TimeoutError):
@@ -409,14 +414,14 @@ class JobManager:
                 many jobs waiting, or the server stopping.
         """
         if self._stopping:
-            raise JobError(503, "salmon web is stopping.")
+            raise JobError(503, _zh("salmon web is stopping."))
         kind = KINDS.get(kind_name)
         if kind is None:
-            raise JobError(400, f"Unknown job kind: {self._redactor.text(kind_name)}")
+            raise JobError(400, _zh(f"Unknown job kind: {self._redactor.text(kind_name)}"))
         try:
             decoded = msgspec.convert(params, kind.params)
         except msgspec.ValidationError as e:
-            raise JobError(400, self._redactor.text(f"Invalid parameters: {e}")) from None
+            raise JobError(400, self._redactor.text(_zh(f"Invalid parameters: {e}"))) from None
         token = _starting.set(self)
         try:
             decoded = kind.check(decoded, dry_run)
@@ -427,9 +432,9 @@ class JobManager:
         if kind.exclusive:
             for other in self.jobs.values():
                 if other.kind is kind and other.status not in FINISHED:
-                    raise JobError(409, f"A {kind.name} job is {other.status} already: {other.id}.", other.id)
+                    raise JobError(409, _zh(f"A {kind.name} job is {other.status} already: {other.id}."), other.id)
         if len(self._queue) >= MAX_QUEUED_JOBS:
-            raise JobError(429, f"{MAX_QUEUED_JOBS} jobs are already waiting: try again once some have run.")
+            raise JobError(429, _zh(f"{MAX_QUEUED_JOBS} jobs are already waiting: try again once some have run."))
         folder = kind.folder(decoded)
         job = Job(
             kind,
@@ -556,7 +561,7 @@ class JobManager:
                 )
             except OSError as e:
                 # tmp_dir gone or full: the jobs run unprepared, as without preparation.
-                print(f"salmon web: not preparing {job.id}: {e}", file=output.real_stderr())
+                print(_zh(f"salmon web: not preparing {job.id}: {e}"), file=output.real_stderr())
                 return
             if cfg.directory.protects(folder):
                 # The config does not let tmp_dir be in a library: nothing is prepared then.
@@ -596,7 +601,7 @@ class JobManager:
                 pass
             except Exception:
                 # What it made is kept; the job checks the rest, and reports what fails then.
-                print(f"salmon web: preparing {job.id} failed:", file=output.real_stderr())
+                print(_zh(f"salmon web: preparing {job.id} failed:"), file=output.real_stderr())
                 traceback.print_exc(file=output.real_stderr())
 
     def _stop_preparing(self, job: Job) -> None:
@@ -700,7 +705,7 @@ class JobManager:
         if len(leaves) == 1 and isinstance(leaves[0], click.ClickException):
             return "failed", leaves[0].format_message(), result
         # The server's own stderr, never the job's log: a chained error may repeat a request's URL.
-        print(f"salmon web: {job.id} ({job.kind.name}) failed:", file=output.real_stderr())
+        print(_zh(f"salmon web: {job.id} ({job.kind.name}) failed:"), file=output.real_stderr())
         traceback.print_exception(error, file=output.real_stderr())
         return "failed", "; ".join(f"{type(leaf).__name__}: {leaf}" for leaf in leaves), result
 

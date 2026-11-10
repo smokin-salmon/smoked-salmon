@@ -51,6 +51,7 @@ from salmon.errors import (
 )
 from salmon.images import HOSTS, image_host_for_tracker
 from salmon.images import red as red_images
+from salmon.localization import text as _zh
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.tags import gather_tags
@@ -250,35 +251,37 @@ class Release:
     "--path",
     "-p",
     type=click.Path(exists=True, file_okay=False),
-    help="The album folder, if it is not download_directory/<the torrent's folder>. One INPUT only.",
+    help=_zh("The album folder, if it is not download_directory/<the torrent's folder>. One INPUT only."),
 )
 @click.option(
     "--group-id",
     "-g",
     metavar="INTEGER",
     callback=validate_group_id,
-    help="The TARGET group to upload into. One INPUT only.",
+    help=_zh("The TARGET group to upload into. One INPUT only."),
 )
 @click.option(
     "--transcode",
     "transcodes",
     type=click.Choice(TRANSCODES, case_sensitive=False),
     multiple=True,
-    help="Also upload this MP3 transcode of a FLAC; may be given twice.",
+    help=_zh("Also upload this MP3 transcode of a FLAC; may be given twice."),
 )
-@click.option("--downconvert", is_flag=True, help="Also upload the lossless downconversions of a 24-bit FLAC.")
-@click.option("--all", "all_formats", is_flag=True, help="Also upload every conversion `up` would offer.")
+@click.option("--downconvert", is_flag=True, help=_zh("Also upload the lossless downconversions of a 24-bit FLAC."))
+@click.option("--all", "all_formats", is_flag=True, help=_zh("Also upload every conversion `up` would offer."))
 @click.option(
     "--conversions",
     callback=validate_conversions,
-    help="Also upload these conversions of a FLAC, as `salmon up` does: a comma-separated list of "
-    f"{', '.join(CONVERSION_KINDS)}, or none or all. Added to --transcode, --downconvert and --all.",
+    help=_zh(
+        "Also upload these conversions of a FLAC, as `salmon up` does: a comma-separated list of "
+        f"{', '.join(CONVERSION_KINDS)}, or none or all. Added to --transcode, --downconvert and --all."
+    ),
 )
-@click.option("-yyy", is_flag=True, help="Automatically pick the default answer for prompts.")
+@click.option("-yyy", is_flag=True, help=_zh("Automatically pick the default answer for prompts."))
 @click.option(
     "--dry-run",
     is_flag=True,
-    help="Read from both trackers and build every upload, but send nothing: print what each upload would send.",
+    help=_zh("Read from both trackers and build every upload, but send nothing: print what each upload would send."),
 )
 async def cross_upload(
     inputs: tuple[str, ...],
@@ -374,7 +377,7 @@ def _input_item(value: str, source_site: "BaseGazelleApi") -> int | Path:
     with suppress(OSError):
         if path.is_file() and path.suffix.lower() == ".torrent":
             return path
-    raise click.UsageError(f"{value} is not a {source_site.site_string} torrent ID or URL, or a .torrent file.")
+    raise click.UsageError(_zh(f"{value} is not a {source_site.site_string} torrent ID or URL, or a .torrent file."))
 
 
 def torrent_id_of(value: str, source_site: "BaseGazelleApi") -> int:
@@ -389,10 +392,10 @@ def torrent_id_of(value: str, source_site: "BaseGazelleApi") -> int:
         return torrent_id
     parsed = urlparse(value)
     if parsed.hostname != urlparse(source_site.base_url).hostname:
-        raise click.UsageError(f"Expected a torrent URL from {source_site.base_url}, an ID, or a .torrent file.")
+        raise click.UsageError(_zh(f"Expected a torrent URL from {source_site.base_url}, an ID, or a .torrent file."))
     torrent_id = numeric_id(parse_qs(parsed.query).get("torrentid", [""])[0])
     if torrent_id is None:
-        raise click.UsageError("The torrent URL must hold a numeric torrentid.")
+        raise click.UsageError(_zh("The torrent URL must hold a numeric torrentid."))
     return torrent_id
 
 
@@ -413,27 +416,30 @@ async def _run(
     seen: set[int] = set()
     for item in items:
         label = str(item)
-        click.secho(f"\nReading {source.site_string} torrent {label}...", fg="cyan", bold=True)
+        click.secho(_zh(f"\nReading {source.site_string} torrent {label}..."), fg="cyan", bold=True)
         try:
             releases.append(await _prepare(item, source, target, seen, options, claim_folder))
         except (CrossUploadRefused, RequestFailedError, click.Abort) as error:
             # Only this release: SOURCE answered, about it.
             reason = str(error) or "stopped"
-            click.secho(f"Not cross-uploading {label}: {reason}", fg="red", bold=True)
+            click.secho(_zh(f"Not cross-uploading {label}: {reason}"), fg="red", bold=True)
         except RequestError as error:
             # SOURCE itself (a rate limit, an outage, the login, TLS): every later release would fail the same way,
             # after sending its own requests. Nothing has gone to TARGET yet.
             reason = f"{source.site_string} could not be read ({error})"
-            click.secho(f"\nStopping: {reason}.", fg="red", bold=True)
+            click.secho(_zh(f"\nStopping: {reason}."), fg="red", bold=True)
             raise Stopped(reason) from error
 
     if not releases:
-        click.secho("\nNothing to cross-upload.", fg="red")
+        click.secho(_zh("\nNothing to cross-upload."), fg="red")
         raise Stopped("Nothing to cross-upload.")
     _print_plan(releases, source, target, group_id)
     if not await interaction.assume_defaults() and not await interaction.confirm(
-        click.style(
-            f"\nCross-upload {'this' if len(releases) == 1 else 'these'} to {target.site_string}?", fg="magenta"
+        _zh(
+            click.style(
+                _zh(f"\nCross-upload {'this' if len(releases) == 1 else 'these'} to {target.site_string}?"),
+                fg="magenta",
+            )
         ),
         default=True,
     ):
@@ -449,9 +455,9 @@ async def _run(
                 await _upload(release, source, target, seedbox, uploaded, group_id=group_id)
         except (CrossUploadRefused, RequestError, UploadError, click.Abort) as error:
             reason = str(error) or "aborted"
-            click.secho(f"\nStopping: {reason}. Nothing more is uploaded.", fg="red", bold=True)
+            click.secho(_zh(f"\nStopping: {reason}. Nothing more is uploaded."), fg="red", bold=True)
             if uploaded and not dryrun.active():
-                click.secho("Already uploaded:", fg="red")
+                click.secho(_zh("Already uploaded:"), fg="red")
                 for url in uploaded:
                     click.echo(f"  {url}")
             raise Stopped(reason) from error
@@ -857,7 +863,7 @@ def _check_invisible_names(folder: Path, files: Iterable[str], source: "BaseGaze
                 offending.append((f"{folder.name}/{relative}", chars))
     if not offending:
         return
-    click.secho("These names hold invisible or unusual Unicode characters:", fg="red", bold=True)
+    click.secho(_zh("These names hold invisible or unusual Unicode characters:"), fg="red", bold=True)
     for name, chars in offending:
         click.echo(f" >> {show_invisible(name)}")
         for char in chars:
@@ -898,7 +904,7 @@ async def _check_pieces(release: Release, given: Torrent | None, source: "BaseGa
                 return True  # Stops the check
             # A small album is checked within the second, without a progress line.
             if monotonic() - started >= 1:
-                click.echo(f"\rChecking pieces: {done} of {total}", nl=False)
+                click.echo(_zh(f"\rChecking pieces: {done} of {total}"), nl=False)
             return None
 
         torrent.verify(str(release.path), callback=progress, interval=0.5)
@@ -912,9 +918,9 @@ async def _check_pieces(release: Release, given: Torrent | None, source: "BaseGa
     if not differing:
         return
     differ = f"{differing} of {torrent.pieces} pieces differ from the {source.site_string} torrent"
-    click.secho(f"{differ}: is the download complete?", fg="yellow", bold=True)
+    click.secho(_zh(f"{differ}: is the download complete?"), fg="yellow", bold=True)
     if await interaction.assume_defaults() or not await interaction.confirm(
-        click.style("Cross-upload it anyway?", fg="magenta"), default=False
+        _zh(click.style(_zh("Cross-upload it anyway?"), fg="magenta")), default=False
     ):
         raise CrossUploadRefused(differ)
     release.notes.append(f"{differ}: going anyway")
@@ -1092,38 +1098,51 @@ async def _check_lossy_approval(release: Release, source: "BaseGazelleApi", targ
     approved = await _lossy_approval(release, source)
     if approved is None:
         click.secho(
-            f"Could not tell whether {source.site_string} approved torrent {release.torrent['id']} as lossy master or "
-            f"lossy WEB.",
+            _zh(
+                f"Could not tell whether {source.site_string} approved "
+                f"torrent {release.torrent['id']} as lossy master or "
+                f"lossy WEB."
+            ),
             fg="yellow",
         )
         if await interaction.assume_defaults():
             click.secho(
-                f"Not reporting it as lossy on {target.site_string}: check {page}, and if it is approved, report the "
-                f"new torrent on {target.site_string} by hand.",
+                _zh(
+                    f"Not reporting it as lossy on {target.site_string}: "
+                    f"check {page}, and if it is approved, report the "
+                    f"new torrent on {target.site_string} by hand."
+                ),
                 fg="yellow",
             )
             release.notes.append(f"lossy approval unknown on {source.site_string}: no lossy report, check {page}")
             return
         approved = await interaction.confirm(
-            click.style(f"Report it as lossy on {target.site_string} after the upload?", fg="magenta"), default=False
+            _zh(click.style(_zh(f"Report it as lossy on {target.site_string} after the upload?"), fg="magenta")),
+            default=False,
         )
     if not approved:
         return
     spectrals = _shows_spectrals(release.data["release_desc"])
     if not spectrals:
         click.secho(
-            f"The torrent description shows no spectrals, so the lossy report on {target.site_string} should say "
-            "where its staff can check the files.",
+            _zh(
+                f"The torrent description shows no spectrals, so the lossy report on {target.site_string} should say "
+                "where its staff can check the files."
+            ),
             fg="yellow",
         )
     comment = SPECTRALS_COMMENT if spectrals else ""
     if not await interaction.assume_defaults():
         comment = await interaction.prompt(
-            click.style(
-                f"Comment for the lossy report on {target.site_string} (it already links the torrent on "
-                f"{source.site_string})",
-                fg="cyan",
-                bold=True,
+            _zh(
+                click.style(
+                    _zh(
+                        f"Comment for the lossy report on {target.site_string} (it already links the torrent on "
+                        f"{source.site_string})"
+                    ),
+                    fg="cyan",
+                    bold=True,
+                )
             ),
             default=comment,
             show_default=spectrals,
@@ -1225,7 +1244,7 @@ def _searchstrs(data: dict[str, Any]) -> list[str]:
 def _print_plan(
     releases: list[Release], source: "BaseGazelleApi", target: "BaseGazelleApi", group_id: int | None
 ) -> None:
-    click.secho(f"\nThe plan: {source.site_string} to {target.site_string}", fg="cyan", bold=True)
+    click.secho(_zh(f"\nThe plan: {source.site_string} to {target.site_string}"), fg="cyan", bold=True)
     for number, release in enumerate(releases, 1):
         data, torrent = release.data, release.torrent
         artists = ", ".join(data["artists[]"][:3]) + (" ..." if len(data["artists[]"]) > 3 else "")
@@ -1235,13 +1254,13 @@ def _print_plan(
         if str(data["year"]) != str(data["remaster_year"]):
             years = f"group {data['year']}, edition {data['remaster_year']}"
         click.echo(f"{number}. {artists} - {data['title']} ({years}), {data['media']}")
-        click.echo(f"   from {source.base_url}/torrents.php?torrentid={torrent['id']}")
-        click.echo(f"   files: {release.path}")
-        click.echo(f"   uploads: {', '.join(formats)}")
+        click.echo(_zh(f"   from {source.base_url}/torrents.php?torrentid={torrent['id']}"))
+        click.echo(_zh(f"   files: {release.path}"))
+        click.echo(_zh(f"   uploads: {', '.join(formats)}"))
         gets, posts, source_gets = most_requests(release, source, target, group_id)
         images = len({url for _, url in release.rehost})
         if images:
-            click.echo(f"   images to rehost: {images}, each fetched once from {source.site_string}")
+            click.echo(_zh(f"   images to rehost: {images}, each fetched once from {source.site_string}"))
         for note in release.notes:
             click.echo(f"   {note}")
         # The reads of SOURCE done so far are not counted: only the images still to fetch, and the call for its
@@ -1252,11 +1271,14 @@ def _print_plan(
             source_line = f"{images} image GET and {source_gets - images} imgauth GET to {source.site_string}"
         else:
             source_line = f"{images} image GET to {source.site_string}"
-        click.echo(f"   at most {gets} GET and {posts} POST to {target.site_string}, {source_line}")
+        click.echo(_zh(f"   at most {gets} GET and {posts} POST to {target.site_string}, {source_line}"))
     if cfg.upload.torrent_name_normalization not in ("", "none"):
         click.secho(
-            "torrent_name_normalization is not applied: each new torrent names the files as they are on disk, so it "
-            "seeds from them.",
+            _zh(
+                "torrent_name_normalization is not applied: each new "
+                "torrent names the files as they are on disk, so it "
+                "seeds from them."
+            ),
             fg="yellow",
         )
 
@@ -1279,7 +1301,7 @@ async def _upload(
         RequestError, UploadError, click.Abort, CrossUploadRefused: To stop the run.
     """
     data = dict(release.data)
-    click.secho(f"\nCross-uploading {data['title']} to {target.site_string}", fg="cyan", bold=True)
+    click.secho(_zh(f"\nCross-uploading {data['title']} to {target.site_string}"), fg="cyan", bold=True)
     edition = _edition(release)
     if group_id is not None:
         group_id = (
@@ -1300,7 +1322,7 @@ async def _upload(
     torrent_path, torrent = generate_torrent(target, str(release.path), normalize=False)
     files = await compile_files(str(release.path), torrent, {"source": release.torrent["media"]})
     if not dryrun.active():
-        click.secho(f"Uploading {release.path.name} to {target.site_string}...", fg="yellow")
+        click.secho(_zh(f"Uploading {release.path.name} to {target.site_string}..."), fg="yellow")
     torrent_id, group_id = await target.upload(dict(data), files)
     if release.lossy_report is not None:
         # Sent once; a report TARGET does not take is printed for reporting by hand, and the upload stands.
@@ -1311,7 +1333,7 @@ async def _upload(
     uploaded.append(url)
     if seedbox.tasks and release.path.parent != Path(cfg.directory.download_directory).resolve():
         click.secho(
-            f"The files are in {release.path.parent}: check that the seedbox's torrent client seeds from there.",
+            _zh(f"The files are in {release.path.parent}: check that the seedbox's torrent client seeds from there."),
             fg="yellow",
         )
 
@@ -1319,7 +1341,7 @@ async def _upload(
         return
     if not group_id:
         # Conversions sent with no group id would each start a new group beside this one, as in up.
-        click.secho(f"\nNo group id came back for {url}: its conversions are not uploaded.", fg="yellow")
+        click.secho(_zh(f"\nNo group id came back for {url}: its conversions are not uploaded."), fg="yellow")
         return
     await _upload_conversions(
         release, target, group_id, torrent_id, url, existing_group, seedbox, uploaded, flac_uploaded=True
@@ -1406,7 +1428,7 @@ async def _fetch_source_image(url: str, source: "BaseGazelleApi", signature: dic
     shown = _bare(url)
     if not _same_origin(url, source.base_url):
         raise CrossUploadRefused(f"{shown} is not on {source.site_string}'s own site")
-    click.secho(f"Fetching {shown} from {source.site_string}...", fg="yellow")
+    click.secho(_zh(f"Fetching {shown} from {source.site_string}..."), fg="yellow")
     try:
         # Through SOURCE's client: its rate limit, retries and redirect rules, and its credentials only ever
         # go to its own site. A signed URL needs no session cookie: it goes with the API key when there is one.
@@ -1435,7 +1457,7 @@ async def _upload_image(content: bytes, suffix: str, shown: str, target: "BaseGa
     Raises:
         CrossUploadRefused: If the upload fails or the host gives no usable URL.
     """
-    click.secho(f"Rehosting {shown} to {host}...", fg="yellow")
+    click.secho(_zh(f"Rehosting {shown} to {host}..."), fg="yellow")
     with TemporaryDirectory() as directory:
         image_path = Path(directory) / f"image{suffix}"
         await anyio.Path(image_path).write_bytes(content)
@@ -1490,7 +1512,7 @@ async def _upload_conversions(
         formats = {task["name"]: downconversion_format(task) for task in tasks}
         held = held_formats(group, edition, {"id": torrent_id}, formats, uploaded=flac_uploaded)
         for name in sorted(held):
-            click.secho(f"Not uploading {name}: the group already has it in this edition.", fg="yellow")
+            click.secho(_zh(f"Not uploading {name}: the group already has it in this edition."), fg="yellow")
         tasks = [task for task in tasks if task["name"] not in held]
     if not tasks:
         return

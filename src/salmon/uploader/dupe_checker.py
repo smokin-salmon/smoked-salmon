@@ -14,6 +14,7 @@ from salmon import cfg, interaction
 from salmon.common import RE_FEAT, make_searchstrs, normalize_accents, re_strip
 from salmon.common.strings import artist_keys, comparable, numeric_id
 from salmon.errors import AbortAndDeleteFolder, RequestError, SkipTracker
+from salmon.localization import text as _zh
 from salmon.trackers.base import hold_request_messages
 from salmon.uploader.upload import generate_catno
 
@@ -40,8 +41,10 @@ def can_check_site_log(gazelle_site: "BaseGazelleApi") -> bool:
     if gazelle_site.has_session_cookie:
         return True
     click.secho(
-        f"Skipping the {gazelle_site.site_string} log check for recent uploads: it needs a session cookie "
-        f"(tracker.{gazelle_site.site_code.lower()}.session), and none is set.",
+        _zh(
+            f"Skipping the {gazelle_site.site_string} log check for recent uploads: it needs a session cookie "
+            f"(tracker.{gazelle_site.site_code.lower()}.session), and none is set."
+        ),
         fg="yellow",
     )
     return False
@@ -176,14 +179,14 @@ def print_recent_upload_results(gazelle_site: "BaseGazelleApi", recent_uploads: 
     These results can't be used for group selection because the log doesn't give us a group id"""
     if recent_uploads:
         click.secho(
-            f"\nFound similar recent uploads in the {gazelle_site.site_string} log: ",
+            _zh(f"\nFound similar recent uploads in the {gazelle_site.site_string} log: "),
             fg="red",
             nl=False,
         )
-        click.secho(f" (searchstrs: {searchstr})", bold=True)
+        click.secho(_zh(f" (searchstrs: {searchstr})"), bold=True)
         for u in recent_uploads[:5]:
             click.secho(
-                f"{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}",
+                _zh(f"{u[1]} - {u[2]} | {gazelle_site.base_url}/torrents.php?torrentid={u[0]}"),
                 fg="cyan",
             )
 
@@ -191,10 +194,10 @@ def print_recent_upload_results(gazelle_site: "BaseGazelleApi", recent_uploads: 
 def _group_actions(offer_deletion: bool, offer_skip: bool) -> list[interaction.Option]:
     """New group, Skip this tracker, Abort and Delete music folder, as the group questions offer them."""
     return [
-        interaction.Option("n", "New group", action=True, empty=True),
-        *((interaction.Option("s", "Skip this tracker", action=True),) if offer_skip else ()),
-        interaction.Option("a", "Abort", action=True),
-        *((interaction.Option("d", "Delete music folder", action=True, danger=True),) if offer_deletion else ()),
+        interaction.Option("n", _zh("New group"), action=True, empty=True),
+        *((interaction.Option("s", _zh("Skip this tracker"), action=True),) if offer_skip else ()),
+        interaction.Option("a", _zh("Abort"), action=True),
+        *((interaction.Option("d", _zh("Delete music folder"), action=True, danger=True),) if offer_deletion else ()),
     ]
 
 
@@ -234,11 +237,11 @@ def _recent_upload_options(gazelle_site: "BaseGazelleApi", recent_uploads: list[
     return [
         interaction.Option(
             str(number),
-            html.unescape(f"{u[1]} - {u[2]}") if number <= 5 else f"Recent upload {number}",
+            html.unescape(f"{u[1]} - {u[2]}") if number <= 5 else _zh(f"Recent upload {number}"),
             group=group,
             card=interaction.Card(
                 link=f"{gazelle_site.base_url}/torrents.php?torrentid={u[0]}",
-                note="Not an exact group match" if number <= 5 else None,
+                note=_zh("Not an exact group match") if number <= 5 else None,
             ),
         )
         for number, u in enumerate(recent_uploads, 1)
@@ -255,11 +258,11 @@ async def _group_id_of_url(gazelle_site: "BaseGazelleApi", url: str) -> int | No
         torrent_id = numeric_id(query["torrentid"][0].strip())
         if torrent_id and (group_id := await gazelle_site.get_redirect_torrentgroupid(torrent_id)):
             return group_id
-        click.echo("Could not get group ID from torrent ID.")
+        click.echo(_zh("Could not get group ID from torrent ID."))
         return None
     if group_id := numeric_id(query.get("id", [""])[0].strip()):
         return group_id
-    click.echo("Could not find group ID in URL.")
+    click.echo(_zh("Could not find group ID in URL."))
     return None
 
 
@@ -286,15 +289,15 @@ async def _prompt_for_recent_upload_results(
     # First, print the recent uploads if any
     if shown:
         click.secho(
-            f"\nFound similar recent uploads in the {gazelle_site.site_string} log: ",
+            _zh(f"\nFound similar recent uploads in the {gazelle_site.site_string} log: "),
             fg="red",
             nl=False,
         )
-        click.secho(f" (searchstrs: {searchstr})", bold=True)
+        click.secho(_zh(f" (searchstrs: {searchstr})"), bold=True)
         for u_index, u in enumerate(shown):
             click.echo(f" {u_index + 1:02d} >> ", nl=False)  # torrent_id
             click.secho(f"{u[1]} - {u[2]} ", fg="cyan", nl=False)  # artist - title
-            click.echo(f"| {gazelle_site.base_url}/torrents.php?torrentid={u[0]}")
+            click.echo(_zh(f"| {gazelle_site.base_url}/torrents.php?torrentid={u[0]}"))
 
     # Now prompt for user action
     while True:
@@ -311,11 +314,14 @@ async def _prompt_for_recent_upload_results(
         )
 
         group_id = await interaction.prompt(
-            click.style(prompt_text, fg="magenta"),
+            _zh(click.style(prompt_text, fg="magenta")),
             default="",
             options=interaction.Options(
-                (*_recent_upload_options(gazelle_site, recent_uploads), *_group_actions(offer_deletion, offer_skip)),
-                free_text=interaction.FreeText("Group URL or ID", ids=True),
+                (
+                    *_recent_upload_options(gazelle_site, recent_uploads),
+                    *_group_actions(offer_deletion, offer_skip),
+                ),
+                free_text=interaction.FreeText(_zh("Group URL or ID"), ids=True),
             ),
         )
 
@@ -335,14 +341,14 @@ async def _prompt_for_recent_upload_results(
                     result_group_id = await gazelle_site.get_redirect_torrentgroupid(torrent_id)
                     if result_group_id is not None:
                         return result_group_id
-                    click.echo("Could not get group ID from torrent ID.")
+                    click.echo(_zh("Could not get group ID from torrent ID."))
                     continue
                 except Exception:
-                    click.echo("Could not get group ID from torrent ID.")
+                    click.echo(_zh("Could not get group ID from torrent ID."))
                     continue
             else:
                 # Direct group ID input
-                click.echo(f"Interpreting {group_id_num} as a group ID")
+                click.echo(_zh(f"Interpreting {group_id_num} as a group ID"))
                 return group_id_num
 
         # Handle URL input
@@ -359,7 +365,7 @@ async def _prompt_for_recent_upload_results(
         elif group_id.lower().startswith("d") and offer_deletion:
             raise AbortAndDeleteFolder
         elif group_id.lower().startswith("n") or not group_id.strip():
-            click.echo("Uploading to a new torrent group.")
+            click.echo(_zh("Uploading to a new torrent group."))
             return None
 
 
@@ -422,7 +428,7 @@ async def resolve_existing_group(
     elif not results and cfg.upload.requests.check_recent_uploads and can_check_site_log(gazelle_site):
         if recent_uploads == [] and not cfg.upload.requests.confirm_new_group:
             # The search ran and found nothing, and so did the log (None would be a log not read).
-            click.echo(f"No group found on {gazelle_site.site_code}: new group")
+            click.echo(_zh(f"No group found on {gazelle_site.site_code}: new group"))
             return None
         group_id = await _prompt_for_recent_upload_results(
             gazelle_site, recent_uploads or [], " / ".join(searchstrs), offer_deletion, offer_skip
@@ -501,7 +507,7 @@ class GroupCandidatesFetch:
         """
         await self._done.wait()
         for message, styles in self._messages:
-            click.secho(message, **styles)
+            click.secho(_zh(message), **styles)
         self._messages = []
         if self._error is not None:
             raise self._error
@@ -624,17 +630,17 @@ def print_search_results(gazelle_site: "BaseGazelleApi", results: list[dict], se
     """Print all the site search results."""
     if not results:
         click.secho(
-            f"\nNo groups found on {gazelle_site.site_string} matching this release.",
+            _zh(f"\nNo groups found on {gazelle_site.site_string} matching this release."),
             fg="green",
             nl=False,
         )
     else:
         click.secho(
-            f"\nResults matching this release were found on {gazelle_site.site_string}: ",
+            _zh(f"\nResults matching this release were found on {gazelle_site.site_string}: "),
             fg="red",
             nl=False,
         )
-        click.secho(f" (searchstrs: {searchstr})", bold=True)
+        click.secho(_zh(f" (searchstrs: {searchstr})"), bold=True)
         for r_index, r in enumerate(results):
             # Every field read first: a malformed result keeps its number, which the prompt reads, on one line.
             try:
@@ -643,14 +649,14 @@ def print_search_results(gazelle_site: "BaseGazelleApi", results: list[dict], se
             except (KeyError, TypeError):
                 group_id = numeric_id(r.get("groupId")) if isinstance(r, dict) else None
                 link = f" | {gazelle_site.base_url}/torrents.php?id={group_id}" if group_id is not None else ""
-                click.secho(f" {r_index + 1:02d} >> This result could not be read{link}", fg="yellow")
+                click.secho(_zh(f" {r_index + 1:02d} >> This result could not be read{link}"), fg="yellow")
                 continue
             url = f"{gazelle_site.base_url}/torrents.php?id={group_id}"
             # User doesn't get to pick a zero index
             click.echo(f" {r_index + 1:02d} >> {group_id} | ", nl=False)
             click.secho(f"{artist} - {name} ", fg="cyan", nl=False)
             click.secho(f"({year}) [{release_type}] ", fg="yellow", nl=False)
-            click.echo(f"[Tags: {tags}] | {url}")
+            click.echo(_zh(f"[Tags: {tags}] | {url}"))
 
 
 def suggest_group(results: list[dict], release: dict[str, Any] | None) -> str:
@@ -706,17 +712,21 @@ async def _prompt_for_group_id(
     """
     while True:
         group_id = await interaction.prompt(
-            click.style(
-                "\nWould you like to upload to an existing group?\n"
-                f"Paste a URL{', pick from groups found ' if results else ' '}"
-                f"or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
-                f"{'/ [d]elete music folder ' if offer_deletion else ''}",
-                fg="magenta",
+            _zh(
+                click.style(
+                    _zh(
+                        "\nWould you like to upload to an existing group?\n"
+                        f"Paste a URL{', pick from groups found ' if results else ' '}"
+                        f"or [N]ew group / {'[s]kip this tracker / ' if offer_skip else ''}[a]bort "
+                        f"{'/ [d]elete music folder ' if offer_deletion else ''}"
+                    ),
+                    fg="magenta",
+                )
             ),
             default=default,
             options=interaction.Options(
                 (*_search_result_options(gazelle_site, results), *_group_actions(offer_deletion, offer_skip)),
-                free_text=interaction.FreeText("Group URL or ID", ids=True),
+                free_text=interaction.FreeText(_zh("Group URL or ID"), ids=True),
             ),
         )
         raw_input = numeric_id(group_id.strip())
@@ -728,12 +738,13 @@ async def _prompt_for_group_id(
                 group_number = numeric_id(results[list_index].get("groupId"))
                 if group_number is None:
                     click.secho(
-                        f"Result {list_index + 1} has no group ID: pick another, or paste a group URL.", fg="red"
+                        _zh(f"Result {list_index + 1} has no group ID: pick another, or paste a group URL."),
+                        fg="red",
                     )
                     continue
                 return group_number
             else:
-                click.echo(f"Interpreting {raw_input} as a group Id")
+                click.echo(_zh(f"Interpreting {raw_input} as a group Id"))
                 return raw_input
 
         elif group_id.strip().lower().startswith(gazelle_site.base_url + "/torrents.php"):
@@ -747,7 +758,7 @@ async def _prompt_for_group_id(
         elif group_id.lower().startswith("d") and offer_deletion:
             raise AbortAndDeleteFolder
         elif group_id.lower().startswith("n") or not group_id.strip():
-            click.echo("Uploading to a new torrent group.")
+            click.echo(_zh("Uploading to a new torrent group."))
             return None
 
 
@@ -784,8 +795,10 @@ async def recheck_edition(
         group = _group_as_result(await gazelle_site.torrentgroup(group_id))
     except RequestError as err:
         click.secho(
-            f"\nCould not re-check group {group_id} on {gazelle_site.site_string} against the reviewed edition "
-            f"({err}): check it holds no torrent like this one.",
+            _zh(
+                f"\nCould not re-check group {group_id} on {gazelle_site.site_string} against the reviewed edition "
+                f"({err}): check it holds no torrent like this one."
+            ),
             fg="red",
             bold=True,
         )
@@ -793,7 +806,7 @@ async def recheck_edition(
     named = {torrent.get("id") for torrent in held_in_group(group, weighed_against)}
     if all(torrent.get("id") in named for torrent in held_in_group(group, release)):
         return group_id
-    click.secho(f"\nThe reviewed edition is already in group {group_id}:", fg="red", bold=True)
+    click.secho(_zh(f"\nThe reviewed edition is already in group {group_id}:"), fg="red", bold=True)
     # The fetched group's own id, so the row is found and not fetched again.
     confirmed = await _confirm_group_id(gazelle_site, group["groupId"], [group], release=release)
     return group_id if confirmed else None
@@ -822,16 +835,16 @@ async def print_torrents(
             rset = _group_as_result(await gazelle_site.torrentgroup(group_id))
         except RequestError as err:
             # Never "does not exist": a redirect, an oversized answer or any failure raises RequestFailedError too.
-            click.secho(f"Could not fetch group {group_id} from {gazelle_site.site_string}: {err}", fg="red")
+            click.secho(_zh(f"Could not fetch group {group_id} from {gazelle_site.site_string}: {err}"), fg="red")
             raise click.Abort from None
 
     # At this point rset is guaranteed to be non-None
     assert rset is not None
 
-    click.secho(f"\nSelected ID: {rset['groupId']} ", nl=False)
+    click.secho(_zh(f"\nSelected ID: {rset['groupId']} "), nl=False)
     click.secho(f"| {rset['artist']} - {rset['groupName']} ", fg="cyan", nl=False)
     click.secho(f"({rset['groupYear']})", fg="yellow")
-    click.secho("Torrents in this group:", fg="yellow", bold=True)
+    click.secho(_zh("Torrents in this group:"), fg="yellow", bold=True)
     # Pull group-level info once (optional fallback only)
     group_info = rset.get("group", {}) or {}
 
@@ -980,7 +993,9 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
     wanted = f"{release.get('source')} FLAC {release.get('encoding')}"
     if not flacs:
         click.secho(
-            f"\nGroup {group_id} has no {wanted} in this release's edition (year, edition title) to transcode from.",
+            _zh(
+                f"\nGroup {group_id} has no {wanted} in this release's edition (year, edition title) to transcode from."
+            ),
             fg="red",
             bold=True,
         )
@@ -988,20 +1003,27 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
     if len(flacs) == 1:
         return flacs[0]
 
-    click.secho(f"\nGroup {group_id} has several {wanted} torrents in this edition:", fg="yellow", bold=True)
+    click.secho(_zh(f"\nGroup {group_id} has several {wanted} torrents in this edition:"), fg="yellow", bold=True)
     group_info = group.get("group") or {}
     for i, t in enumerate(flacs, 1):
         click.echo(f"{i:02d} >> {describe_torrent(t, group_info)}")
     if await interaction.assume_defaults():
         click.secho(
-            "Not picking the FLAC the transcodes are made from with -yyy (upload.yes_all). Run without it to choose.",
+            _zh(
+                "Not picking the FLAC the transcodes are made from "
+                "with -yyy (upload.yes_all). Run without it to choose."
+            ),
             fg="red",
             bold=True,
         )
         return None
     while True:
         choice = await interaction.prompt(
-            click.style(f"\nWhich one are these transcodes made from? [1-{len(flacs)}] or [a]bort", fg="magenta"),
+            _zh(
+                click.style(
+                    _zh(f"\nWhich one are these transcodes made from? [1-{len(flacs)}] or [a]bort"), fg="magenta"
+                )
+            ),
             default="",
         )
         choice = choice.strip().lower()
@@ -1010,7 +1032,7 @@ async def choose_source_flac(group: dict, release: dict) -> dict | None:
         number = numeric_id(choice)
         if number is not None and 1 <= number <= len(flacs):
             return flacs[number - 1]
-        click.secho(f"Enter a number from 1 to {len(flacs)}, or a to abort.", fg="red")
+        click.secho(_zh(f"Enter a number from 1 to {len(flacs)}, or a to abort."), fg="red")
 
 
 def held_formats(
@@ -1119,29 +1141,35 @@ async def _confirm_group_id(
     for torrent in held:
         note = _catno_note(torrent, rset, release or {})
         click.secho(
-            f"\nDUPE RISK: this edition already has {describe_torrent(torrent, rset.get('group') or {})}{note}; "
-            "the site removes exact duplicates unless this upload trumps it.",
+            _zh(
+                f"\nDUPE RISK: this edition already has {describe_torrent(torrent, rset.get('group') or {})}{note}; "
+                "the site removes exact duplicates unless this upload trumps it."
+            ),
             fg="red",
             bold=True,
         )
     while True:
         resp = (
             await interaction.prompt(
-                click.style(
-                    "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
-                    f"[n]ew group, {'[s]kip this tracker, ' if offer_skip else ''}[a]bort"
-                    f"{', [d]elete music folder' if offer_deletion else ''}",
-                    fg="magenta",
+                _zh(
+                    click.style(
+                        _zh(
+                            "\nAre you sure you would you like to upload this torrent to this group? [Y]es, "
+                            f"[n]ew group, {'[s]kip this tracker, ' if offer_skip else ''}[a]bort"
+                            f"{', [d]elete music folder' if offer_deletion else ''}"
+                        ),
+                        fg="magenta",
+                    )
                 ),
                 default="a" if held else "Y",
                 options=interaction.Options(
                     (
-                        interaction.Option("y", "Upload to this group"),
-                        interaction.Option("n", "New group"),
-                        *((interaction.Option("s", "Skip this tracker", action=True),) if offer_skip else ()),
-                        interaction.Option("a", "Abort", action=True),
+                        interaction.Option("y", _zh("Upload to this group")),
+                        interaction.Option("n", _zh("New group")),
+                        *((interaction.Option("s", _zh("Skip this tracker"), action=True),) if offer_skip else ()),
+                        interaction.Option("a", _zh("Abort"), action=True),
                         *(
-                            (interaction.Option("d", "Delete music folder", action=True, danger=True),)
+                            (interaction.Option("d", _zh("Delete music folder"), action=True, danger=True),)
                             if offer_deletion
                             else ()
                         ),

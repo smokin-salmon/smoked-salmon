@@ -23,6 +23,7 @@ from salmon.converter.conversions import (
     source_of,
 )
 from salmon.errors import InvalidSampleRate, UploadError
+from salmon.localization import text as _zh
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.foldername import (
@@ -187,7 +188,7 @@ def _validate_lossless(path: str) -> None:
     for _root, _, files in os.walk(path):
         for f in files:
             if os.path.splitext(f)[1].lower() in LOSSY_EXTENSIONS:
-                click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
+                click.secho(_zh(f"A lossy file was found in the folder ({f})."), fg="red")
                 raise click.Abort
 
 
@@ -214,11 +215,11 @@ def _copy_extra_files(
             continue
         rel = p.relative_to(src_path)
         if is_torrent_file(p.name) or (essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS):
-            click.secho(f"Skip  {rel}", fg="yellow")
+            click.secho(_zh(f"Skip  {rel}"), fg="yellow")
             continue
         out = dst_path / rel
         out.parent.mkdir(parents=True, exist_ok=True)
-        click.secho(f"Copy  {rel}", fg="cyan")
+        click.secho(_zh(f"Copy  {rel}"), fg="cyan")
         shutil.copy(p, out)
 
 
@@ -255,8 +256,10 @@ async def _convert_audio_files(
         if result.returncode != 0:
             err = result.stderr.decode(errors="replace") if result.stderr else ""
             if err:
-                click.secho(err, fg="yellow")
-            raise UploadError(f"sox conversion failed for {os.path.basename(item.src)} with code {result.returncode}")
+                click.secho(_zh(err), fg="yellow")
+            raise UploadError(
+                _zh(f"sox conversion failed for {os.path.basename(item.src)} with code {result.returncode}")
+            )
 
     file_paths = [item.src for item in items]
     await process_tracks(file_paths, _convert_one, "Converting")
@@ -297,19 +300,26 @@ def _check_finished_conversion(path: str, new_path: str, items: list[ConvertItem
         # Its files carry the tags and pictures the tracks had then: a retag since would go up without them.
         if changed := changed_sources(path, record):
             raise UploadError(
-                f"{new_path} is salmon's conversion of this album at these settings, from before "
-                f"{changed_tracks(changed)}: remove it and run again."
+                _zh(
+                    f"{new_path} is salmon's conversion of this album at these settings, from before "
+                    f"{changed_tracks(changed)}: remove it and run again."
+                )
             )
         missing = missing_files(new_path, record)
         if missing:
             raise UploadError(
-                f"{new_path} is salmon's conversion of this album at these settings, but {', '.join(missing)} "
-                f"{'is' if len(missing) == 1 else 'are'} missing: remove it and run again."
+                _zh(
+                    f"{new_path} is salmon's conversion of this album at these settings, but {', '.join(missing)} "
+                    f"{'is' if len(missing) == 1 else 'are'} missing: remove it and run again."
+                )
             )
         if missing is not None or all(os.path.isfile(item.dst) for item in items):
             return
     raise UploadError(
-        f"{new_path} is incomplete or not salmon's conversion of this album at these settings: remove it and run again."
+        _zh(
+            f"{new_path} is incomplete or not salmon's conversion of "
+            f"this album at these settings: remove it and run again."
+        )
     )
 
 
@@ -349,7 +359,7 @@ async def convert_folder(
     new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
     # Resolved, so a symlink on the way cannot carry the output into a library.
     if cfg.directory.protects(new_path):
-        raise UploadError(f"Not converting into {new_path}: it is in library_dirs, or holds one.")
+        raise UploadError(_zh(f"Not converting into {new_path}: it is in library_dirs, or holds one."))
 
     # Before the tracks are read: one changed while the conversion runs then differs from its record.
     album_files = sorted(get_audio_files(path))
@@ -360,7 +370,7 @@ async def convert_folder(
         # With nothing left to convert, a record still tells an album that lost its last 24-bit track.
         if items or conversion_of(new_path) is not None:
             _check_finished_conversion(path, new_path, items, bit_depth)
-        click.secho(f"{new_path} already exists.", fg="yellow")
+        click.secho(_zh(f"{new_path} already exists."), fg="yellow")
         return sample_rate, new_path
 
     convert_srcs = frozenset(item.src for item in items)

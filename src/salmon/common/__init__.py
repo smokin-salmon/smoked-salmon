@@ -35,6 +35,7 @@ from salmon.common.strings import (
     tagify,
 )
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 
 __all__ = [
     "AliasedCommands",
@@ -150,7 +151,7 @@ def clipboard_copy(text: str) -> None:
     try:
         pyperclip.copy(text)
     except Exception as err:
-        click.secho(f"Could not copy to the clipboard: {err}", fg="yellow")
+        click.secho(_zh(f"Could not copy to the clipboard: {err}"), fg="yellow")
 
 
 def flush_stdin():
@@ -197,7 +198,7 @@ async def handle_scrape_errors[ReturnType](
             if say:
                 say(line)
             else:
-                click.secho(line, fg="red", bold=True)
+                click.secho(_zh(line), fg="red", bold=True)
     except Exception as e:
         # Catch any unexpected errors too
         if not mute:
@@ -206,12 +207,14 @@ async def handle_scrape_errors[ReturnType](
 
             if output.in_job():
                 # A salmon web job's log takes the message only: a chained error may repeat a request's URL.
-                click.secho(f"Unexpected scrape error: {e}", fg="red", bold=True)
-                print("salmon web: unexpected scrape error in a job:", file=output.real_stderr())
+                click.secho(_zh(f"Unexpected scrape error: {e}"), fg="red", bold=True)
+                print(_zh("salmon web: unexpected scrape error in a job:"), file=output.real_stderr())
                 traceback.print_exception(e, file=output.real_stderr())
             else:
                 click.secho(
-                    f"Unexpected scrape error: {e}\n{''.join(traceback.format_exception(e))}", fg="red", bold=True
+                    _zh(f"Unexpected scrape error: {e}\n{''.join(traceback.format_exception(e))}"),
+                    fg="red",
+                    bold=True,
                 )
     return None
 

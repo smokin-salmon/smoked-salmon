@@ -17,6 +17,7 @@ from PIL import Image
 from salmon import cfg
 from salmon.common import get_audio_files
 from salmon.images.files import MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS
+from salmon.localization import text as _zh
 from salmon.proxy import session_kwargs
 from salmon.ssrf import NonPublicAddressError
 
@@ -30,7 +31,7 @@ def get_cover_from_path(path):
     """
     cover = _existing_cover(path)
     if cover is None:
-        click.secho(f"Did not find a cover in path {path}", fg="red")
+        click.secho(_zh(f"Did not find a cover in path {path}"), fg="red")
     return cover
 
 
@@ -55,7 +56,7 @@ def extract_embedded_cover(path: str, only: str | None = None) -> str | None:
     extension, data = embedded
     cover_path = os.path.join(path, f"cover.{extension}")
     _write_whole_file(cover_path, data)
-    click.secho(f"Extracted embedded cover to: {cover_path}", fg="yellow")
+    click.secho(_zh(f"Extracted embedded cover to: {cover_path}"), fg="yellow")
     return cover_path
 
 
@@ -72,11 +73,11 @@ async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tup
     # use local file if matches filter
     cover_path = get_cover_from_path(path)
     if cover_path:
-        click.secho(f"\nUsing existing cover image found: {cover_path}...", fg="yellow")
+        click.secho(_zh(f"\nUsing existing cover image found: {cover_path}..."), fg="yellow")
         return cover_path, False
     # use url provided
     if cover_url:
-        click.secho("\nDownloading Cover Image...", fg="yellow")
+        click.secho(_zh("\nDownloading Cover Image..."), fg="yellow")
         cover_path = await _download_cover(path, cover_url)
         if cover_path:
             return cover_path, True
@@ -84,7 +85,7 @@ async def download_cover_if_nonexistent(path: str, cover_url: str | None) -> tup
     cover_path = extract_embedded_cover(path)
     if cover_path:
         return cover_path, True
-    click.secho("\nNo existing Cover Image found in Source Folder, no Cover Image downloaded", fg="red")
+    click.secho(_zh("\nNo existing Cover Image found in Source Folder, no Cover Image downloaded"), fg="red")
     return None, None
 
 
@@ -162,29 +163,29 @@ async def _download_cover(path: str, cover_url: str) -> str | None:
             session.get(cover_url, headers=headers) as response,
         ):
             if response.status >= 400:
-                click.secho(f"\nFailed to download cover image (ERROR {response.status})", fg="red")
+                click.secho(_zh(f"\nFailed to download cover image (ERROR {response.status})"), fg="red")
                 return None
 
             async for chunk in response.content.iter_chunked(64 * 1024):
                 data += chunk
                 if len(data) > MAX_IMAGE_BYTES:
                     limit = MAX_IMAGE_BYTES // 1024 // 1024
-                    click.secho(f"\nFailed to download cover image (ERROR over {limit} MiB)", fg="red")
+                    click.secho(_zh(f"\nFailed to download cover image (ERROR over {limit} MiB)"), fg="red")
                     return None
     except (aiohttp.ClientError, TimeoutError) as e:
         # By type: an aiohttp error can repeat the URL, and a cover URL can be signed. salmon web's own refusal
         # names only the host.
         reason = str(e) if isinstance(e, NonPublicAddressError) else type(e).__name__
-        click.secho(f"\nFailed to download cover image (ERROR {reason})", fg="red")
+        click.secho(_zh(f"\nFailed to download cover image (ERROR {reason})"), fg="red")
         return None
 
     if not _is_valid_cover(io.BytesIO(data)):
-        click.secho("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])", fg="red")
+        click.secho(_zh("\nFailed to download cover image (ERROR file is not an image [JPEG, PNG])"), fg="red")
         return None
     # Written whole: a download cut off partway would pass for the folder's cover on the next run.
     _write_whole_file(cover_path, bytes(data))
 
-    click.secho(f"Cover image downloaded: {cover_image_filename} ", fg="yellow")
+    click.secho(_zh(f"Cover image downloaded: {cover_image_filename} "), fg="yellow")
     return cover_path
 
 
@@ -216,7 +217,7 @@ def _eight_bit(image: Image.Image) -> Image.Image:
     image = image.convert("I")
     low, high = cast("tuple[int, int]", image.getextrema())
     if low < 0 or high > 65535:
-        raise ValueError(f"pixel values {low}..{high} do not fit 16 bits")
+        raise ValueError(_zh(f"pixel values {low}..{high} do not fit 16 bits"))
     return image.point(lambda v: v / 256).convert("L")
 
 
@@ -234,13 +235,13 @@ def compress_to_target_size(image, target_size):
         file_size = len(buffer.getvalue())
 
         if file_size <= target_size:
-            print(f"Successfully compressed to {humanfriendly.format_size(file_size, binary=True)}")
+            print(_zh(f"Successfully compressed to {humanfriendly.format_size(file_size, binary=True)}"))
             return buffer.getvalue()
 
         quality -= 5
 
         if quality <= 75:
-            print("Quality too low, cannot compress further!")
+            print(_zh("Quality too low, cannot compress further!"))
             break
 
 
@@ -320,7 +321,7 @@ def _write_cover(path: str, saved: tuple[str, bytes]) -> str:
     cover_file = os.path.join(path, f"cover.{extension}")
     # A partial cover file would pass for the folder's cover on the next run.
     _write_whole_file(cover_file, data)
-    click.secho(f"Extracted cover to: {cover_file}", fg="green")
+    click.secho(_zh(f"Extracted cover to: {cover_file}"), fg="green")
     return cover_file
 
 
@@ -354,7 +355,8 @@ def _strip_pictures(path: str, audio: FLAC, cover_file: str | None) -> str | Non
         saved = next((cover for cover in map(_as_cover_file, pictures) if cover is not None), None)
         if pictures and saved is None:
             click.secho(
-                f"Left {audio.filename} as it is: its artwork could not be read as an image to keep it.", fg="red"
+                _zh(f"Left {audio.filename} as it is: its artwork could not be read as an image to keep it."),
+                fg="red",
             )
             return None
         if saved is not None:
@@ -379,22 +381,22 @@ def check_embedded_pictures(path: str) -> None:
     if not oversized:
         return
     click.secho(
-        "\nEmbedded pictures plus padding exceed RED's 1 MiB limit in these files:",
+        _zh("\nEmbedded pictures plus padding exceed RED's 1 MiB limit in these files:"),
         fg="yellow",
         bold=True,
     )
     for filename, size in oversized.items():
         excess = humanfriendly.format_size(size - MAX_PICTURES_AND_PADDING, binary=True)
-        click.secho(f"  {filename}: {humanfriendly.format_size(size, binary=True)} ({excess} over)", fg="yellow")
+        click.secho(_zh(f"  {filename}: {humanfriendly.format_size(size, binary=True)} ({excess} over)"), fg="yellow")
 
     if not cfg.image.strip_oversized_pictures:
-        click.secho("Leaving them as they are: strip_oversized_pictures is off.", fg="yellow")
+        click.secho(_zh("Leaving them as they are: strip_oversized_pictures is off."), fg="yellow")
         return
 
     cover_file = get_cover_from_path(path)
     if cover_file and not _is_valid_cover(cover_file):
         # Not a copy of the artwork: the embedded pictures may be the only one.
-        click.secho(f"Leaving them as they are: {cover_file} could not be read as a JPEG or PNG image.", fg="red")
+        click.secho(_zh(f"Leaving them as they are: {cover_file} could not be read as a JPEG or PNG image."), fg="red")
         return
     if not cover_file:
         # The release's front cover first, whichever file holds it: else a file stripped earlier gives its back cover.
@@ -405,7 +407,7 @@ def check_embedded_pictures(path: str) -> None:
         audio = FLAC(os.path.join(path, filename))
         cover_file = _strip_pictures(path, audio, cover_file)
         stripped += not audio.pictures
-    click.secho(f"Stripped {stripped} file(s) to no embedded pictures and 8 KiB of padding.", fg="green")
+    click.secho(_zh(f"Stripped {stripped} file(s) to no embedded pictures and 8 KiB of padding."), fg="green")
 
 
 def has_flac_without_picture(path: str) -> bool:
@@ -427,7 +429,7 @@ def _prepare_cover(cover_file: str) -> tuple[str, bytes] | None:
         with open(cover_file, "rb") as c:
             data = c.read()
     except OSError as e:
-        click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
+        click.secho(_zh(f"Could not read cover file {cover_file} as an image ({e}); leaving it out."), fg="red")
         return None
 
     max_picture_block_size = MAX_PICTURES_AND_PADDING - humanfriendly.parse_size("8KiB")
@@ -440,18 +442,18 @@ def _prepare_cover(cover_file: str) -> tuple[str, bytes] | None:
         with Image.open(cover_file) as opened:
             # Before decoding: a small file can hold enough pixels to exhaust a worker's memory.
             if opened.width * opened.height > MAX_IMAGE_PIXELS:
-                raise ValueError(f"{opened.width}x{opened.height} is over the limit of {MAX_IMAGE_PIXELS} pixels")
+                raise ValueError(_zh(f"{opened.width}x{opened.height} is over the limit of {MAX_IMAGE_PIXELS} pixels"))
             opened.load()
             mime = opened.get_format_mimetype() or ""
     except (OSError, ValueError, Image.DecompressionBombError) as e:
-        click.secho(f"Could not read cover file {cover_file} as an image ({e}); leaving it out.", fg="red")
+        click.secho(_zh(f"Could not read cover file {cover_file} as an image ({e}); leaving it out."), fg="red")
         return None
     picture.mime = mime
 
     if len(data) <= max_picture_block_size - len(picture.write()):
         return mime, data
 
-    click.secho(f"Resizing oversized cover ({humanfriendly.format_size(len(data), binary=True)})...", fg="yellow")
+    click.secho(_zh(f"Resizing oversized cover ({humanfriendly.format_size(len(data), binary=True)})..."), fg="yellow")
     picture.mime = "image/jpeg"
     try:
         with Image.open(cover_file) as image:
@@ -459,10 +461,10 @@ def _prepare_cover(cover_file: str) -> tuple[str, bytes] | None:
             image = _flatten_to_rgb(image)
             shrunk = compress_to_target_size(image, max_picture_block_size - len(picture.write()))
     except (OSError, ValueError, Image.DecompressionBombError) as e:
-        click.secho(f"Could not convert cover file {cover_file} to a JPEG ({e}); leaving it out.", fg="red")
+        click.secho(_zh(f"Could not convert cover file {cover_file} to a JPEG ({e}); leaving it out."), fg="red")
         return None
     if shrunk is None:
-        click.secho(f"Could not shrink {cover_file} enough to embed it; leaving it out.", fg="red")
+        click.secho(_zh(f"Could not shrink {cover_file} enough to embed it; leaving it out."), fg="red")
         return None
     return "image/jpeg", shrunk
 
@@ -493,7 +495,7 @@ def embed_missing_cover(path: str, cover_file: str | None = None) -> None:
             if cover_file:
                 prepared = _prepare_cover(cover_file)
             else:
-                click.secho("No cover file to embed: FLACs with no picture are left as they are.", fg="yellow")
+                click.secho(_zh("No cover file to embed: FLACs with no picture are left as they are."), fg="yellow")
         if prepared is None:
             continue
 
@@ -502,4 +504,4 @@ def embed_missing_cover(path: str, cover_file: str | None = None) -> None:
         picture.type = PictureType.COVER_FRONT
         audio.add_picture(picture)
         audio.save(padding=get_8kib_padding)
-        click.secho(f"Embedded the cover in {filename}", fg="bright_green")
+        click.secho(_zh(f"Embedded the cover in {filename}"), fg="bright_green")

@@ -14,6 +14,7 @@ import time
 import asyncclick as click
 
 from salmon.config.validations import WEB_TOKEN_MIN_LENGTH
+from salmon.localization import text as _zh
 from salmon.webui.security import is_loopback
 
 ENV_VAR = "SALMON_WEB_TOKEN"
@@ -35,16 +36,18 @@ def resolve_token(host: str, configured: str | None) -> tuple[str, bool]:
     env = os.environ.get(ENV_VAR)
     if env:
         if len(env) < WEB_TOKEN_MIN_LENGTH:
-            raise click.ClickException(f"{ENV_VAR} must be at least {WEB_TOKEN_MIN_LENGTH} characters.")
+            raise click.ClickException(_zh(f"{ENV_VAR} must be at least {WEB_TOKEN_MIN_LENGTH} characters."))
         return env, False
     if configured:
         return configured, False
     if is_loopback(host):
         return secrets.token_urlsafe(32), True
     raise click.ClickException(
-        f"salmon web will not listen on {host} without a token: anyone who reaches it could upload with your "
-        f"tracker accounts. Set {ENV_VAR} or [web] token (at least {WEB_TOKEN_MIN_LENGTH} characters), "
-        "or listen on 127.0.0.1."
+        _zh(
+            f"salmon web will not listen on {host} without a token: anyone who reaches it could upload with your "
+            f"tracker accounts. Set {ENV_VAR} or [web] token (at least {WEB_TOKEN_MIN_LENGTH} characters), "
+            "or listen on 127.0.0.1."
+        )
     )
 
 

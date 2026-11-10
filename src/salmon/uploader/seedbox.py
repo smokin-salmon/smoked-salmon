@@ -17,6 +17,7 @@ from salmon.config.validations import Seedbox
 from salmon.containment import is_within
 from salmon.converter.conversions import forget_conversion
 from salmon.errors import DryRunRefused
+from salmon.localization import text as _zh
 from salmon.uploader import record
 from salmon.uploader.torrent_client import TorrentClient, TorrentClientGenerator
 from salmon.webui import output
@@ -95,15 +96,18 @@ async def _rclone_upload_folder(seedbox: Seedbox, remote_folder: str, path: str)
     remote_path = posixpath.join(remote_folder, folder_name)
     commands = ["rclone", "copy", path, f"{seedbox.url}:{remote_path}", *seedbox.extra_args]
     secrets = seedbox_secrets(seedbox)
-    click.secho(redact_secrets(f"Starting Rclone upload to {seedbox.url}:{remote_folder}", secrets), fg="cyan")
-    click.secho(f"Executing: {redact_command(commands, secrets)}", fg="yellow")
+    click.secho(
+        _zh(redact_secrets(_zh(f"Starting Rclone upload to {seedbox.url}:{remote_folder}"), secrets)), fg="cyan"
+    )
+    click.secho(_zh(f"Executing: {redact_command(commands, secrets)}"), fg="yellow")
     returncode = await _run_rclone(commands, secrets)
     if returncode == 0:
         click.secho(
-            redact_secrets(f"Rclone upload successful: {path} to {seedbox.url}:{remote_path}", secrets), fg="green"
+            _zh(redact_secrets(_zh(f"Rclone upload successful: {path} to {seedbox.url}:{remote_path}"), secrets)),
+            fg="green",
         )
         return True
-    click.secho(f"Rclone upload failed with exit code {returncode}", fg="red")
+    click.secho(_zh(f"Rclone upload failed with exit code {returncode}"), fg="red")
     return False
 
 
@@ -149,7 +153,7 @@ async def _print_rclone_output(stream: anyio.abc.ByteReceiveStream, secrets: lis
 
 def _print_rclone_line(line: bytes, secrets: list[str], err: bool = True) -> None:
     """Print a line rclone wrote, to salmon's stderr (or stdout), with the seedbox's secrets masked."""
-    click.echo(redact_secrets(line.decode(errors="replace").rstrip("\r"), secrets), err=err)
+    click.echo(_zh(redact_secrets(line.decode(errors="replace").rstrip("\r"), secrets)), err=err)
 
 
 async def _add_to_downloader(
@@ -180,12 +184,14 @@ async def _add_to_downloader(
     try:
         added = client.add_to_downloader(shell_path, torrent, is_paused=add_paused, label=label)
     except Exception as e:
-        click.secho(f"Failed to add torrent to client on {seedbox_name}: {redact_secrets(str(e), secrets)}", fg="red")
+        click.secho(
+            _zh(f"Failed to add torrent to client on {seedbox_name}: {redact_secrets(str(e), secrets)}"), fg="red"
+        )
         return False
     if not added:
-        click.secho(f"Torrent was not added to the client on {seedbox_name}", fg="red")
+        click.secho(_zh(f"Torrent was not added to the client on {seedbox_name}"), fg="red")
         return False
-    click.secho("Torrent added to client successfully", fg="green")
+    click.secho(_zh("Torrent added to client successfully"), fg="green")
     return True
 
 
@@ -245,9 +251,11 @@ def warn_unmatched_normalization(form: str, site_code: str) -> None:
             continue
         _warned_normalization.add(id(seedbox))
         click.secho(
-            f"\nWarning: torrent_name_normalization is {form}, but on "
-            f"{_seedbox_display_name(seedbox, seedbox_secrets(seedbox))} {reason}. Its client cannot seed a file "
-            f'whose name is not {form} already: set torrent_name_normalization to "none" unless they all are.',
+            _zh(
+                f"\nWarning: torrent_name_normalization is {form}, but on "
+                f"{_seedbox_display_name(seedbox, seedbox_secrets(seedbox))} {reason}. Its client cannot seed a file "
+                f'whose name is not {form} already: set torrent_name_normalization to "none" unless they all are.'
+            ),
             fg="yellow",
         )
 
@@ -290,7 +298,7 @@ class UploadManager:
                 dryrun.say("not connecting to the seedboxes' torrent clients.")
             return
 
-        click.secho("Initializing upload managers", fg="cyan")
+        click.secho(_zh("Initializing upload managers"), fg="cyan")
         for seedbox in _enabled_seedboxes():
             secrets = seedbox_secrets(seedbox)
             try:
@@ -299,14 +307,17 @@ class UploadManager:
                         seedbox.torrent_client
                     )
                 click.secho(
-                    redact_secrets(f"Configured {seedbox.type} uploader to {seedbox.url}", secrets), fg="yellow"
+                    _zh(redact_secrets(_zh(f"Configured {seedbox.type} uploader to {seedbox.url}"), secrets)),
+                    fg="yellow",
                 )
             except DryRunRefused:
                 # Were the skip above missed, the client's refusal to log in must stop the run, not read as
                 # a seedbox that failed to configure.
                 raise
             except Exception as e:
-                click.secho(f"Failed to configure {seedbox.type} uploader: {redact_secrets(str(e), secrets)}", fg="red")
+                click.secho(
+                    _zh(f"Failed to configure {seedbox.type} uploader: {redact_secrets(str(e), secrets)}"), fg="red"
+                )
 
     def _client(self, seedbox: Seedbox) -> TorrentClient:
         """Look up the cached torrent client for a seedbox entry.
@@ -345,8 +356,8 @@ class UploadManager:
         """
         dryrun.refuse(f"queue {directory} for a seedbox copy or a torrent client")
         if task_type == "seed" and not folder:
-            raise ValueError("A seed task needs the folder its torrent was built from.")
-        click.secho(f"Preparing upload tasks for: {directory}", fg="cyan")
+            raise ValueError(_zh("A seed task needs the folder its torrent was built from."))
+        click.secho(_zh(f"Preparing upload tasks for: {directory}"), fg="cyan")
         task_folder = folder if task_type == "seed" and folder else directory
         torrents = self._folder_torrents.setdefault(task_folder, [])
         if task_type == "seed" and directory not in torrents:
@@ -371,18 +382,18 @@ class UploadManager:
             )
             if task_type == "seed":
                 self.tasks.append(task)
-                click.secho("Added seed task", fg="magenta")
+                click.secho(_zh("Added seed task"), fg="magenta")
             elif task_type == "folder":
                 self.tasks.appendleft(task)
-                click.secho("Added folder transfer task", fg="magenta")
+                click.secho(_zh("Added folder transfer task"), fg="magenta")
 
     async def execute_upload(self) -> None:
         """Execute all queued upload tasks in order (folders first, then seeds)."""
         if not self.tasks:
-            click.secho("No upload tasks to execute", fg="yellow")
+            click.secho(_zh("No upload tasks to execute"), fg="yellow")
             return
 
-        click.secho(f"Executing {len(self.tasks)} upload tasks", fg="cyan")
+        click.secho(_zh(f"Executing {len(self.tasks)} upload tasks"), fg="cyan")
         # Keyed by (id(seedbox), folder): a failed copy of one folder must not skip the seed of a
         # different folder queued for the same seedbox.
         failed_folders: set[tuple[int, str]] = set()
@@ -390,7 +401,7 @@ class UploadManager:
         failed_seeds = 0
         for i, (seedbox, local_path, task_type, folder) in enumerate(self.tasks, 1):
             click.secho(
-                f"\nTask {i}/{len(self.tasks)}: {task_type.upper()} - {os.path.basename(local_path)}",
+                _zh(f"\nTask {i}/{len(self.tasks)}: {task_type.upper()} - {os.path.basename(local_path)}"),
                 fg="cyan",
             )
             secrets = seedbox_secrets(seedbox)
@@ -412,12 +423,16 @@ class UploadManager:
                 elif task_type == "seed":
                     if (id(seedbox), folder) in failed_folders:
                         click.secho(
-                            redact_secrets(
-                                f"Skipping seed on {name}: "
-                                f"the Rclone upload of {folder} failed, "
-                                f"so {local_path} was not added to the client there. Add it by hand once "
-                                "the files have been copied.",
-                                secrets,
+                            _zh(
+                                redact_secrets(
+                                    _zh(
+                                        f"Skipping seed on {name}: "
+                                        f"the Rclone upload of {folder} failed, "
+                                        f"so {local_path} was not added to the client there. Add it by hand once "
+                                        "the files have been copied."
+                                    ),
+                                    secrets,
+                                )
                             ),
                             fg="red",
                         )
@@ -446,7 +461,7 @@ class UploadManager:
                     elif outcome:
                         outcome.ok = True
             except Exception as e:
-                click.secho(f"Critical error during task: {redact_secrets(str(e), secrets)}", fg="red")
+                click.secho(_zh(f"Critical error during task: {redact_secrets(str(e), secrets)}"), fg="red")
                 if task_type == "folder":
                     # A folder task that raised (rclone missing, unexpected I/O error, ...) is a
                     # failed copy too: the seed task must not add a torrent for files that may not
@@ -464,9 +479,9 @@ class UploadManager:
                 parts.append(f"{failed_copies} {'copy' if failed_copies == 1 else 'copies'}")
             if failed_seeds:
                 parts.append(f"{failed_seeds} seed task{'' if failed_seeds == 1 else 's'}")
-            click.secho(f"\n{' and '.join(parts)} failed; see above", fg="red")
+            click.secho(_zh(f"\n{' and '.join(parts)} failed; see above"), fg="red")
         else:
-            click.secho("\nAll upload tasks processed", fg="green")
+            click.secho(_zh("\nAll upload tasks processed"), fg="green")
         self.tasks.clear()
 
     def _kept_reason(self, folder: str) -> str | None:
@@ -521,7 +536,7 @@ class UploadManager:
         for folder in self._folder_torrents:
             reason = keep_because or self._kept_reason(folder)
             if reason:
-                click.secho(f"remove_local_after_copy is on, but {folder} is kept: {reason}.", fg="yellow")
+                click.secho(_zh(f"remove_local_after_copy is on, but {folder} is kept: {reason}."), fg="yellow")
                 continue
             names = sorted(
                 {
@@ -535,16 +550,22 @@ class UploadManager:
             except OSError as e:
                 if os.path.exists(folder):
                     click.secho(
-                        f"remove_local_after_copy is on, but {folder} could not be fully removed and may be "
-                        f"incomplete: {e}.",
+                        _zh(
+                            f"remove_local_after_copy is on, but {folder} could not be fully removed and may be "
+                            f"incomplete: {e}."
+                        ),
                         fg="red",
                     )
                 else:
-                    click.secho(f"remove_local_after_copy: {folder} is gone, but removing it raised: {e}.", fg="red")
+                    click.secho(
+                        _zh(f"remove_local_after_copy: {folder} is gone, but removing it raised: {e}."), fg="red"
+                    )
                 continue
             forget_conversion(folder)
             click.secho(
-                f"Removed {folder} from download_directory: copied to and seeding on {', '.join(names)} "
-                "(remove_local_after_copy).",
+                _zh(
+                    f"Removed {folder} from download_directory: copied to and seeding on {', '.join(names)} "
+                    "(remove_local_after_copy)."
+                ),
                 fg="yellow",
             )

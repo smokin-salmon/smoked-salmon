@@ -19,6 +19,7 @@ from salmon.constants import (
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 from salmon.tagger.audio_info import gather_audio_info
 
 
@@ -49,12 +50,13 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
         auto_rename = True
 
     if check and old_base != new_base:
-        click.secho("\nRenaming folder...", fg="cyan", bold=True)
-        click.echo(f"Old folder name        : {old_base}")
-        click.echo(f"New pending folder name: {new_base}")
+        click.secho(_zh("\nRenaming folder..."), fg="cyan", bold=True)
+        click.echo(_zh(f"Old folder name        : {old_base}"))
+        click.echo(_zh(f"New pending folder name: {new_base}"))
 
         user_rename_choice = await interaction.assume_defaults() or await interaction.confirm(
-            click.style("\nWould you like to replace the original folder name?", fg="magenta"), default=True
+            _zh(click.style(_zh("\nWould you like to replace the original folder name?"), fg="magenta")),
+            default=True,
         )
 
         new_base = (
@@ -62,13 +64,13 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
         )
 
     if not _is_folder_name(new_base):
-        raise UploadError(f"Invalid folder name: {new_base!r}")
+        raise UploadError(_zh(f"Invalid folder name: {new_base!r}"))
 
     new_path = os.path.join(parent or cfg.directory.download_directory, new_base)
     same_location = os.path.isdir(new_path) and os.path.samefile(path, new_path)
     # Checked whether or not new_path exists yet: a symlinked folder on the way can lead into a library.
     if not same_location and cfg.directory.protects(new_path):
-        raise UploadError(f"Not renaming into {new_path}: it is in library_dirs, or holds one.")
+        raise UploadError(_zh(f"Not renaming into {new_path}: it is in library_dirs, or holds one."))
     if os.path.isdir(new_path) and not same_location:
         if (refusal := _replace_refusal(new_path, original, source)) is not None:
             raise UploadError(refusal)
@@ -76,11 +78,15 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
         shared = shares_files(new_path)
         note = " (it shares files with another folder through a hardlink or symlink: a torrent may seed from it)"
         if not check or await interaction.confirm(
-            click.style(
-                f"A folder already exists with the new folder name '{new_path}'{note if shared else ''}, "
-                "would you like to replace it?",
-                fg="magenta",
-                bold=True,
+            _zh(
+                click.style(
+                    _zh(
+                        f"A folder already exists with the new folder name '{new_path}'{note if shared else ''}, "
+                        "would you like to replace it?"
+                    ),
+                    fg="magenta",
+                    bold=True,
+                )
             ),
             # It may be an earlier upload a torrent seeds from, or another album of that name: kept unless told.
             default=False,
@@ -91,11 +97,14 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
             if os.path.lexists(new_path):
                 if not shared and shares_files(new_path):
                     raise UploadError(
-                        f"Not replacing {new_path}: it started sharing files with another folder while you answered."
+                        _zh(
+                            f"Not replacing {new_path}: it started sharing "
+                            f"files with another folder while you answered."
+                        )
                     )
                 shutil.rmtree(new_path)
         else:
-            raise UploadError("New folder name already exists.")
+            raise UploadError(_zh("New folder name already exists."))
     new_path_dirname = os.path.dirname(new_path)
     if not os.path.exists(new_path_dirname):
         os.makedirs(new_path_dirname)
@@ -116,21 +125,21 @@ async def rename_folder(path, metadata, auto_rename, check=True, parent=None, or
 
     same_folder = os.path.exists(path) and os.path.exists(new_path) and os.path.samefile(path, new_path)
     if same_folder:
-        click.secho(f"Skipping copy, same location already for '{new_path}'", fg="yellow")
+        click.secho(_zh(f"Skipping copy, same location already for '{new_path}'"), fg="yellow")
     else:
         if use_hardlinks:
             try:
                 shutil.copytree(path, new_path, copy_function=os.link, dirs_exist_ok=True, ignore=ignore)
-                click.secho(f"Hardlinked folder to '{new_path}'.", fg="yellow")
+                click.secho(_zh(f"Hardlinked folder to '{new_path}'."), fg="yellow")
             except shutil.Error as _:
-                click.secho("Hardlinking didn't work, falling back to non-hardlink copy...", fg="red")
+                click.secho(_zh("Hardlinking didn't work, falling back to non-hardlink copy..."), fg="red")
                 # A partially hardlinked tree makes the plain copy raise SameFileError (#356)
                 shutil.rmtree(new_path, ignore_errors=True)
                 shutil.copytree(path, new_path, dirs_exist_ok=True, ignore=ignore)
-                click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
+                click.secho(_zh(f"Copied folder to '{new_path}'."), fg="yellow")
         else:
             shutil.copytree(path, new_path, dirs_exist_ok=True, ignore=ignore)
-            click.secho(f"Copied folder to '{new_path}'.", fg="yellow")
+            click.secho(_zh(f"Copied folder to '{new_path}'."), fg="yellow")
 
     if carry_specs:
         # Moved, not copied: the source must not keep a spectrals folder the upload never deletes. Also into the same
@@ -335,30 +344,31 @@ async def remove_source_folder(
     if not cfg.upload.formatting.remove_source_dir:
         return
     if original is not None:
-        click.secho(f"remove_source_dir is on, but {original} is kept: {_kept_reason(original)}.", fg="yellow")
+        click.secho(_zh(f"remove_source_dir is on, but {original} is kept: {_kept_reason(original)}."), fg="yellow")
         return
     if final is None or not os.path.isdir(source) or (os.path.isdir(final) and os.path.samefile(source, final)):
         return
     if cfg.directory.protects(source):
-        click.secho(f"Not removing {source}: it is in library_dirs, or holds one.", fg="yellow")
+        click.secho(_zh(f"Not removing {source}: it is in library_dirs, or holds one."), fg="yellow")
         return
     if not uploaded:
-        click.secho(f"remove_source_dir is on, but {source} is kept: nothing was uploaded.", fg="yellow")
+        click.secho(_zh(f"remove_source_dir is on, but {source} is kept: nothing was uploaded."), fg="yellow")
         return
     if aborted:
-        click.secho(f"remove_source_dir is on, but {source} is kept: the run was aborted.", fg="yellow")
+        click.secho(_zh(f"remove_source_dir is on, but {source} is kept: the run was aborted."), fg="yellow")
         return
     if only_here is None:
         only_here = files_only_in(source, final)
     if only_here:
         click.secho(
-            f"remove_source_dir is on, but {source} is kept: it holds files {final} no longer has:", fg="yellow"
+            _zh(f"remove_source_dir is on, but {source} is kept: it holds files {final} no longer has:"),
+            fg="yellow",
         )
         for name in only_here:
             click.echo(f" >> {name}")
         return
     shutil.rmtree(source)
-    click.secho(f"Removed the source folder {source} (remove_source_dir).", fg="yellow")
+    click.secho(_zh(f"Removed the source folder {source} (remove_source_dir)."), fg="yellow")
     # Local: the converter package imports this module. With the folder gone, its conversion record goes too: to
     # the renamed folder, unless remove_local_after_copy has removed that one already.
     from salmon.converter.conversions import carry_conversion, forget_conversion
@@ -506,7 +516,7 @@ async def _edit_folder_interactive(foldername, auto_rename):
     if auto_rename or await interaction.assume_defaults():
         return foldername
     if not await interaction.confirm(
-        click.style("Is the new folder name acceptable? ([n] to edit)", fg="magenta"),
+        _zh(click.style(_zh("Is the new folder name acceptable? ([n] to edit)"), fg="magenta")),
         default=True,
     ):
         newname = await interaction.edit(foldername, editor=cfg.upload.default_editor)
@@ -515,10 +525,12 @@ async def _edit_folder_interactive(foldername, auto_rename):
                 return foldername
             elif re.search(BLACKLISTED_CHARS, newname) or not _is_folder_name(clean_name(newname.replace("\n", ""))):
                 if not await interaction.confirm(
-                    click.style(
-                        "Folder name is empty or contains invalid characters, retry?",
-                        fg="magenta",
-                        bold=True,
+                    _zh(
+                        click.style(
+                            _zh("Folder name is empty or contains invalid characters, retry?"),
+                            fg="magenta",
+                            bold=True,
+                        )
                     ),
                     default=True,
                 ):

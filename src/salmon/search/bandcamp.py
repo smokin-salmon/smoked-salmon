@@ -2,6 +2,7 @@ import re
 from typing import Any
 
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import BandcampBase
 
@@ -57,4 +58,4 @@ class Searcher(BandcampBase, SearchMixin):
             return "Bandcamp", releases
 
         except Exception as e:
-            raise ScrapeError(f"Failed to parse Bandcamp search results: {str(e)}") from e
+            raise ScrapeError(_zh(f"Failed to parse Bandcamp search results: {str(e)}")) from e

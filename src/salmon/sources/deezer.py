@@ -8,6 +8,7 @@ import msgspec
 
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources.base import BaseScraper
 
 HEADERS = {
@@ -30,12 +31,14 @@ async def album_upc(url: str) -> str | None:
     except (ScrapeError, aiohttp.ClientError, msgspec.DecodeError, TimeoutError) as error:
         # The barcode is an optional extra, so a Deezer outage must not stop the upload, but say
         # so: otherwise a blank catalogue number looks like "this release has no barcode".
-        click.secho(f"Could not read the barcode from Deezer ({type(error).__name__}); leaving it blank.", fg="yellow")
+        click.secho(
+            _zh(f"Could not read the barcode from Deezer ({type(error).__name__}); leaving it blank."), fg="yellow"
+        )
         return None
     if isinstance(data, dict) and isinstance(error := data.get("error"), dict):
         # Deezer answers a quota or a lookup it refuses with HTTP 200 and this, not with an error status.
         reason = str(error.get("message") or error.get("type") or "an error")[:100]
-        click.secho(f"Could not read the barcode from Deezer ({reason}); leaving it blank.", fg="yellow")
+        click.secho(_zh(f"Could not read the barcode from Deezer ({reason}); leaving it blank."), fg="yellow")
         return None
     upc = data.get("upc") if isinstance(data, dict) else None
     return str(upc) if upc else None
@@ -73,7 +76,7 @@ class DeezerBase(BaseScraper):
         """
         match = cls.regex.search(url)
         if not match:
-            raise ValueError(f"Invalid Deezer URL: {url}")
+            raise ValueError(_zh(f"Invalid Deezer URL: {url}"))
         return match[2]
 
     async def fetch_data(
@@ -105,9 +108,9 @@ class DeezerBase(BaseScraper):
             data["cover_xl"] = self.get_cover(internal_data)
             return data
         except msgspec.DecodeError as e:
-            raise ScrapeError("Deezer page did not return valid JSON.") from e
+            raise ScrapeError(_zh("Deezer page did not return valid JSON.")) from e
         except (KeyError, ScrapeError) as e:
-            raise ScrapeError(f"Failed to grab metadata for {url}.") from e
+            raise ScrapeError(_zh(f"Failed to grab metadata for {url}.")) from e
 
     async def get_internal_api_data(self, url: str, params: dict | None = None) -> dict:
         """Fetch internal API data from Deezer.
@@ -130,7 +133,7 @@ class DeezerBase(BaseScraper):
             session.get(self.site_url + url, params=(params or {}), headers=HEADERS) as response,
         ):
             if response.status != 200:
-                raise ScrapeError(f"Deezer internal API returned status {response.status}.")
+                raise ScrapeError(_zh(f"Deezer internal API returned status {response.status}."))
             text = await response.text()
 
         r = re.search(
@@ -138,7 +141,7 @@ class DeezerBase(BaseScraper):
             text.replace("\n", ""),
         )
         if not r:
-            raise ScrapeError("Failed to scrape track data.")
+            raise ScrapeError(_zh("Failed to scrape track data."))
         raw = re.sub(r"{(\s*)type\: +\'([^\']+)\'", r'{\1type: "\2"', r[1])
         raw = re.sub("\t+([^:]+): ", r'"\1":', raw)
         return msgspec.json.decode(raw)

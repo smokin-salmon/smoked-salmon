@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { apiGet, apiPost } from '../lib/api'
   import { sourcePreset } from '../lib/sourcePreset.svelte'
   import FolderPicker from '../lib/FolderPicker.svelte'
@@ -50,7 +51,7 @@
         options = answer
       })
       .catch((e) => {
-        error = `Could not load the sources: ${e}`
+        error = `无法加载源： ${e}`
       })
   })
 
@@ -99,12 +100,9 @@
 </script>
 
 <!-- Ported from the fork's tag editor in Tools (chodeus, 0b29d2d5, a18e0e25), on the job of salmon tag. -->
-<h1>Tag</h1>
+<h1>标签整理</h1>
 <p class="lead">
-  What <span class="mono">salmon tag</span> does, here: look up the album's metadata, review it, retag the files and
-  rename them, without uploading. The job asks the questions the command asks, in the same order. No tracker is
-  contacted. An album in <span class="mono">library_dirs</span> is tagged as a copy renamed into
-  <span class="mono">download_directory</span>; the album itself is never changed.
+  执行 <span class="mono">salmon tag</span>，查找并核对专辑元数据，写入标签并重命名文件。运行时会按步骤询问，无需上传到站点。位于 <span class="mono">library_dirs</span> 的专辑会先复制到 <span class="mono">download_directory</span>，再修改副本。
 </p>
 
 {#if !live}
@@ -113,53 +111,53 @@
 
     <div class="grid">
       <label>
-        Source
+        来源介质
         <select bind:value={source} onchange={() => preset.picked()}>
-          <option value="" disabled>Pick one</option>
+          <option value="" disabled>选择一个</option>
           {#each options.sources as each (each)}<option value={each}>{each}</option>{/each}
         </select>
-        {#if preset.reason}<small class="hint muted">{preset.reason}</small>{/if}
-        <small class="hint">The media the files came from (<span class="mono">-s</span>).</small>
+        {#if preset.reason}<small class="hint muted">{t(preset.reason)}</small>{/if}
+        <small class="hint">文件的来源介质（<span class="mono">-s</span>).</small>
       </label>
       <label>
-        Encoding
+        编码
         <select bind:value={encoding}>
-          <option value="">lossless, or ask</option>
+          <option value="">无损，或运行时询问</option>
           {#each options.encodings as each (each)}<option value={each}>{each}</option>{/each}
         </select>
-        <small class="hint">For lossy files only (<span class="mono">-e</span>).</small>
+        <small class="hint">仅适用于有损文件（<span class="mono">-e</span>).</small>
       </label>
     </div>
 
     <div class="opts">
-      <label class="check" title="Rename files and folders without asking first (-n).">
-        <input type="checkbox" bind:checked={autoRename} /> Auto-rename
+      <label class="check" title="在不首先询问的情况下重命名文件和文件夹(-n)。">
+        <input type="checkbox" bind:checked={autoRename} /> 自动重命名
       </label>
       <label
         class="check"
-        title="Take artists, year, label, catalogue number and genres from the scraped sources, not the file tags (-ow)."
+        title="使用抓取结果中的艺术家、年份、厂牌、发行编号和流派覆盖文件标签（-ow）。"
       >
-        <input type="checkbox" bind:checked={overwrite} /> Overwrite metadata
+        <input type="checkbox" bind:checked={overwrite} /> 覆盖元数据
       </label>
       {#if options.ai_review}
       <label
         class="check"
-        title="Skip the manual metadata review before the AI review (--skip-initial-review). Only with upload.ai_review on."
+        title="在AI审查之前跳过手动元数据审查(--skip-initial-review)。仅当 upload.ai_review 打开时。"
       >
-        <input type="checkbox" bind:checked={skipInitialReview} /> Skip initial review
+        <input type="checkbox" bind:checked={skipInitialReview} /> 跳过首次人工核对
       </label>
       <label
         class="check"
-        title="Apply the AI review's edits without asking (--apply-ai-suggestions). Only with upload.ai_review on."
+        title="无需询问即可应用AI审阅的编辑（--apply-ai-suggestions）。仅当 upload.ai_review 打开时。"
       >
-        <input type="checkbox" bind:checked={applyAiSuggestions} /> Apply AI suggestions
+        <input type="checkbox" bind:checked={applyAiSuggestions} /> 应用 AI 修改建议
       </label>
       {/if}
       <button
         class="chip toggle"
         class:on={assumeDefaults}
         aria-pressed={assumeDefaults}
-        title="Answer the yes or no questions with their defaults, as in the terminal; the questions with no default are still asked."
+        title="使用默认值回答是或否问题，如在终端中一样；仍然会问没有默认的问题。"
         onclick={() => (assumeDefaults = !assumeDefaults)}
       >
         -yyy
@@ -167,7 +165,7 @@
     </div>
 
     <div class="row actions">
-      <button class="btn" onclick={start} disabled={!usable || !source || starting}>Tag the album</button>
+      <button class="btn" onclick={start} disabled={!usable || !source || starting}>标记专辑</button>
     </div>
     {#if error}<p class="error">{error}</p>{/if}
   </div>
@@ -176,11 +174,11 @@
 {#if job}
   <div class="card">
     <div class="row head">
-      <h2 class="grow">{job.title}</h2>
+      <h2 class="grow">{t(job.title)}</h2>
       {#if live}
-        <button class="btn small secondary" onclick={cancel}>Cancel</button>
+        <button class="btn small secondary" onclick={cancel}>取消</button>
       {:else}
-        <button class="btn small secondary" onclick={toggleLog}>{showLog ? 'Hide log' : 'Log'}</button>
+        <button class="btn small secondary" onclick={toggleLog}>{showLog ? "隐藏日志" : "日志"}</button>
       {/if}
     </div>
     <JobStatus {job} />

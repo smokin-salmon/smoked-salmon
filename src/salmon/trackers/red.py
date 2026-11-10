@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from salmon import cfg, dryrun
 from salmon.common import UploadFiles
 from salmon.errors import RequestFailedError
+from salmon.localization import text as _zh
 from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
@@ -206,7 +207,7 @@ class RedApi(BaseGazelleApi):
         try:
             r = msgspec.json.decode(resp.text)
             if r.get("status") != "success":
-                raise RequestFailedError(f"RED rejected the image: {r.get('error', 'unknown error')}")
+                raise RequestFailedError(_zh(f"RED rejected the image: {r.get('error', 'unknown error')}"))
             return r["response"]["url"]
         except (msgspec.DecodeError, ValueError, KeyError, TypeError, AttributeError) as e:
-            raise RequestFailedError(f"Failed decoding RED's answer ({resp.status}): {e}") from e
+            raise RequestFailedError(_zh(f"Failed decoding RED's answer ({resp.status}): {e}")) from e

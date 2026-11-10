@@ -15,6 +15,7 @@ from salmon.common import tagify
 from salmon.constants import ENCODINGS, FORMATS
 from salmon.converter.conversions import carry_conversion
 from salmon.errors import InvalidMetadataError, RequestError, UploadError
+from salmon.localization import text as _zh
 from salmon.tagger import metadata_validator_base
 from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
@@ -122,14 +123,14 @@ async def edit_metadata(
             recompress=recompress and not metadata["scene"],
         )
         if tag_messages:
-            click.secho("\nTag notes:", fg="yellow", bold=True)
+            click.secho(_zh("\nTag notes:"), fg="yellow", bold=True)
             for message in tag_messages:
                 click.secho(f"  - {message}", fg="yellow")
         if not metadata["scene"] and recompress:
             try:
                 await recompress_path(path)
             except UploadError as e:
-                raise UploadError(f"{e} Rerun without -c.") from e
+                raise UploadError(_zh(f"{e} Rerun without -c.")) from e
         renamed = await rename_folder(path, metadata, auto_rename, parent=rename_into, original=original, source=given)
         if renamed != path:
             original = None  # A re-run renames the renamed folder, which is no longer the copy of the original.
@@ -156,9 +157,13 @@ async def edit_metadata(
             )
 
         if await interaction.assume_defaults() or await interaction.confirm(
-            click.style("\nWould you like to upload the torrent? (No to re-run metadata section)", fg="magenta"),
+            _zh(
+                click.style(
+                    _zh("\nWould you like to upload the torrent? (No to re-run metadata section)"), fg="magenta"
+                )
+            ),
             default=True,
-            labels=("Upload", "Re-run the metadata step"),
+            labels=("Upload", _zh("Re-run the metadata step")),
         ):
             metadata["tags"] = convert_genres(metadata["genres"])
             break
@@ -191,8 +196,11 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
         # No search string before the review or after it (#931): the group question has not been asked yet.
         if await interaction.assume_defaults():
             click.secho(
-                f"\n{NO_DUPE_SEARCH} Not uploading with -yyy (upload.yes_all): give --group-id, or run without -yyy, "
-                "and with upload.yes_all off.",
+                _zh(
+                    f"\n{NO_DUPE_SEARCH} Not uploading with -yyy "
+                    f"(upload.yes_all): give --group-id, or run without -yyy, "
+                    "and with upload.yes_all off."
+                ),
                 fg="red",
                 bold=True,
             )
@@ -200,7 +208,7 @@ async def recheck_dupe(gazelle_site, searchstrs, metadata):
         return await check_existing_group(gazelle_site, [], our_title=metadata["title"], release=metadata)
     if searchstrs and any(n not in searchstrs for n in new_searchstrs) or not searchstrs and new_searchstrs:
         click.secho(
-            f"\nRechecking for dupes on {gazelle_site.site_string} due to metadata changes...",
+            _zh(f"\nRechecking for dupes on {gazelle_site.site_string} due to metadata changes..."),
             fg="cyan",
             bold=True,
             nl=False,
@@ -222,19 +230,21 @@ async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
     if not searchstrs or not can_check_site_log(gazelle_site):
         return
     # Should really avoid asking if already shown the same releases from the log.
-    click.secho(f"Last Minute Dupe Check on {gazelle_site.site_code}", fg="cyan")
+    click.secho(_zh(f"Last Minute Dupe Check on {gazelle_site.site_code}"), fg="cyan")
     try:
         recent_uploads = await dupe_check_recent_torrents(gazelle_site, searchstrs, our_title)
     except RequestError as e:
-        click.secho(f"Could not read the {gazelle_site.site_string} site log: {e}", fg="red", bold=True)
+        click.secho(_zh(f"Could not read the {gazelle_site.site_string} site log: {e}"), fg="red", bold=True)
         # -yyy takes the question's default, no: the confirm below would wait for an answer.
         if await interaction.assume_defaults():
             raise UploadError(
-                f"Not uploading to {gazelle_site.site_string} without the last-minute dupe check with -yyy "
-                "(upload.yes_all): run again once its site log can be read, or without -yyy to choose."
+                _zh(
+                    f"Not uploading to {gazelle_site.site_string} without the last-minute dupe check with -yyy "
+                    "(upload.yes_all): run again once its site log can be read, or without -yyy to choose."
+                )
             ) from None
         if not await interaction.confirm(
-            click.style("\nUpload without the last-minute dupe check?", fg="red", bold=True),
+            _zh(click.style(_zh("\nUpload without the last-minute dupe check?"), fg="red", bold=True)),
             default=False,
         ):
             raise click.Abort from None
@@ -242,25 +252,27 @@ async def last_min_dupe_check(gazelle_site, searchstrs, our_title=None):
     if recent_uploads:
         print_recent_upload_results(gazelle_site, recent_uploads, " / ".join(searchstrs))
         if not await interaction.confirm(
-            click.style(
-                "\nWould you still like to upload?",
-                fg="red",
-                bold=True,
+            _zh(
+                click.style(
+                    _zh("\nWould you still like to upload?"),
+                    fg="red",
+                    bold=True,
+                )
             ),
             default=False,
         ):
             raise click.Abort
     else:
-        click.secho(f"Nothing found on {gazelle_site.site_code}", fg="green")
+        click.secho(_zh(f"Nothing found on {gazelle_site.site_code}"), fg="green")
 
 
 def metadata_validator(metadata):
     """Validate that the provided metadata is not an issue."""
     metadata = metadata_validator_base(metadata)
     if metadata["format"] not in FORMATS.values():
-        raise InvalidMetadataError(f"{metadata['format']} is not a valid format.")
+        raise InvalidMetadataError(_zh(f"{metadata['format']} is not a valid format."))
     if metadata["encoding"] not in ENCODINGS:
-        raise InvalidMetadataError(f"{metadata['encoding']} is not a valid encoding.")
+        raise InvalidMetadataError(_zh(f"{metadata['encoding']} is not a valid encoding."))
 
     return metadata
 

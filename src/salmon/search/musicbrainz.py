@@ -4,6 +4,7 @@ import musicbrainzngs
 
 from salmon import cfg
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.search.base import IdentData, SearchMixin
 from salmon.sources import MusicBrainzBase
 
@@ -64,7 +65,7 @@ class Searcher(MusicBrainzBase, SearchMixin):
                         ),
                     )
             except (TypeError, IndexError) as e:
-                raise ScrapeError("Failed to parse scraped search results.") from e
+                raise ScrapeError(_zh("Failed to parse scraped search results.")) from e
             if len(releases) == limit:
                 break
         return "MusicBrainz", releases

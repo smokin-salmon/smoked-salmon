@@ -12,6 +12,7 @@ from salmon import interaction, prepared
 from salmon.common.files import album_files, process_files
 from salmon.common.numbers import file_order_key
 from salmon.errors import UpconvertCheckError, UpconvertCheckNotApplicable
+from salmon.localization import text as _zh
 
 
 class UpconvertCheckResult(msgspec.Struct, frozen=True):
@@ -35,18 +36,22 @@ async def upload_upconvert_test(path: str) -> None:
     any_upconverts = await test_upconverted(path)
     if any_upconverts:
         if await interaction.confirm(
-            click.style(
-                "Possible upconverts detected. Would you like to quit uploading?",
-                fg="red",
+            _zh(
+                click.style(
+                    _zh("Possible upconverts detected. Would you like to quit uploading?"),
+                    fg="red",
+                )
             ),
             default=True,
         ):
             raise click.Abort
     elif any_upconverts is False:
         click.secho(
-            click.style(
-                "No upconverts detected (This is not a 100 percent accurate process).",
-                fg="green",
+            _zh(
+                click.style(
+                    _zh("No upconverts detected (This is not a 100 percent accurate process)."),
+                    fg="green",
+                )
             ),
         )
 
@@ -72,7 +77,7 @@ async def test_upconverted(path: str) -> bool | None:
     elif os.path.isdir(path):
         flac_files = album_files(path, [".flac"])
         if not flac_files:
-            click.secho("No FLAC files found to check.", fg="yellow")
+            click.secho(_zh("No FLAC files found to check."), fg="yellow")
         handler = partial(_upconvert_check_handler, skipped=skipped)
 
         async def check(filepath: str, idx: int) -> UpconvertCheckResult | None:
@@ -97,7 +102,9 @@ async def test_upconverted(path: str) -> bool | None:
 def _say_if_all_skipped(skipped: list[str], total: int) -> None:
     """One line, not one per file, when every file was 16bit and so left out of the check."""
     if skipped and len(skipped) == total:
-        click.secho("Nothing to check: the upconvert check skips 16bit FLAC files, and these all are.", fg="yellow")
+        click.secho(
+            _zh("Nothing to check: the upconvert check skips 16bit FLAC files, and these all are."), fg="yellow"
+        )
 
 
 async def _upconvert_check_handler(
@@ -142,7 +149,7 @@ async def check_upconvert(filepath: str) -> UpconvertCheckResult:
         mut = flac.FLAC(filepath)
         bitdepth = mut.info.bits_per_sample
     except MutagenError as e:
-        raise UpconvertCheckError("This is not a FLAC file.") from e
+        raise UpconvertCheckError(_zh("This is not a FLAC file.")) from e
 
     if bitdepth == 16:
         raise UpconvertCheckNotApplicable("This is a 16bit FLAC file.")
@@ -150,9 +157,9 @@ async def check_upconvert(filepath: str) -> UpconvertCheckResult:
     try:
         response = await anyio.run_process(["flac", "-ac", filepath], check=False)
     except FileNotFoundError as e:
-        raise UpconvertCheckError(f"flac binary not found: {e}") from e
+        raise UpconvertCheckError(_zh(f"flac binary not found: {e}")) from e
     if response.returncode != 0:
-        raise UpconvertCheckError(f"File appears to be corrupt: {response.stderr.decode().strip()}")
+        raise UpconvertCheckError(_zh(f"File appears to be corrupt: {response.stderr.decode().strip()}"))
     response_text = response.stdout.decode() if response.stdout else ""
 
     wasted_bits_list: list[int] = []
@@ -162,7 +169,7 @@ async def check_upconvert(filepath: str) -> UpconvertCheckResult:
             wasted_bits_list.append(int(r[1]))
 
     if not wasted_bits_list:
-        raise UpconvertCheckError("Could not determine wasted bits.")
+        raise UpconvertCheckError(_zh("Could not determine wasted bits."))
 
     wasted_bits = math.ceil(sum(wasted_bits_list) / len(wasted_bits_list))
     return UpconvertCheckResult(
@@ -185,7 +192,7 @@ def _display_results(results: list[UpconvertCheckResult]) -> None:
         status = "likely upconverted" if result.is_upconverted else "does not have a high number of wasted bits"
         color = "red" if result.is_upconverted else "green"
         click.secho(
-            f"{os.path.basename(result.filepath)}: {status} (Wasted bits: {result.wasted_bits}/{result.bitdepth})",
+            _zh(f"{os.path.basename(result.filepath)}: {status} (Wasted bits: {result.wasted_bits}/{result.bitdepth})"),
             fg=color,
             bold=result.is_upconverted,
         )

@@ -17,6 +17,7 @@ from salmon.common import (
     re_strip,
 )
 from salmon.common.strings import names_no_artist
+from salmon.localization import text as _zh
 from salmon.search import (
     apple_music,
     bandcamp,
@@ -67,7 +68,7 @@ async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int)
     """Search for releases from metadata providers."""
     search_query = " ".join(searchstr)
     searched = searched_sources()
-    click.secho(f"Searching {', '.join(searched)} (searchstrs: {search_query})", fg="cyan", bold=True)
+    click.secho(_zh(f"Searching {', '.join(searched)} (searchstrs: {search_query})"), fg="cyan", bold=True)
 
     results = await run_metasearch([search_query], limit=limit, track_count=track_count)
     not_found: list[str] = []
@@ -76,7 +77,7 @@ async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int)
     for source in listing_order(results):
         releases = results[source]
         if releases:
-            click.secho(f"\nResults from {store_heading(source)}:", fg="yellow", bold=True)
+            click.secho(_zh(f"\nResults from {store_heading(source)}:"), fg="yellow", bold=True)
             for rls_id, release in releases.items():
                 rls_name = release[0].album
                 url = SEARCHSOURCES[source].Searcher.format_url(rls_id, rls_name)
@@ -89,14 +90,14 @@ async def metas(searchstr: tuple[str, ...], track_count: int | None, limit: int)
 
     click.echo()
     for source in not_found:
-        click.secho(f"No results found from {source}.", fg="red")
+        click.secho(_zh(f"No results found from {source}."), fg="red")
     for source in inactive_sources:
         click.secho(
-            f"{source} is inactive. Update your config.py with the necessary tokens if you want to enable it.",
+            _zh(f"{source} is inactive. Update your config.py with the necessary tokens if you want to enable it."),
             fg="red",
         )
     if source_errors:
-        click.secho(f"Failed to scrape {', '.join(source_errors)}.", fg="red")
+        click.secho(_zh(f"Failed to scrape {', '.join(source_errors)}."), fg="red")
 
 
 async def run_metasearch(

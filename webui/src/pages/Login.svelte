@@ -18,11 +18,11 @@
       if (ok) {
         onLoggedIn()
       } else {
-        error = 'Incorrect token.'
+        error = "访问令牌不正确。"
         token = ''
       }
     } catch (e) {
-      error = `Login failed: ${e}`
+      error = `登录失败： ${e}`
     } finally {
       busy = false
     }
@@ -32,10 +32,10 @@
 <div class="login">
   <form onsubmit={submit}>
     <div class="brand"><span class="fish">🐟</span> salmon<span class="accent">web</span></div>
-    <p>Enter the access token, or open the login link salmon web printed when it started.</p>
+    <p>请输入访问令牌，或打开程序启动窗口中显示的登录链接。</p>
     <!-- svelte-ignore a11y_autofocus -->
-    <input type="password" bind:value={token} placeholder="Access token" autofocus autocomplete="current-password" />
-    <button type="submit" disabled={busy || !token}>{busy ? 'Checking…' : 'Unlock'}</button>
+    <input type="password" bind:value={token} placeholder="访问令牌" autofocus autocomplete="current-password" />
+    <button type="submit" disabled={busy || !token}>{busy ? "检查中…" : "登录"}</button>
     {#if error}<div class="err">{error}</div>{/if}
   </form>
 </div>

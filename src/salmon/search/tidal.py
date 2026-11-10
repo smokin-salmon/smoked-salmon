@@ -6,6 +6,7 @@ from itertools import zip_longest
 from salmon import cfg
 from salmon.common import parse_copyright
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.search.base import IdentData, SearchMixin, say_part_failed
 from salmon.sources import TidalBase
 from salmon.sources.tidal import credentials_configured
@@ -38,7 +39,7 @@ class Searcher(TidalBase, SearchMixin):
             else:
                 answered.append(answer)
         if COUNTRIES and not answered:
-            raise ScrapeError("Tidal: every region failed.")
+            raise ScrapeError(_zh("Tidal: every region failed."))
 
         for rank in zip_longest(*answered):
             for rank_result in rank:

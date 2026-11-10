@@ -24,6 +24,7 @@ import anyio
 import asyncclick as click
 
 from salmon.errors import RequestFailedError, UnknownOutcomeError
+from salmon.localization import text as _zh
 
 if TYPE_CHECKING:
     import aiohttp
@@ -158,7 +159,7 @@ async def requests_on_this_loop() -> AsyncIterator[None]:
     """
     global _request_loop
     if _request_loop is not None:
-        raise RuntimeError("tracker requests already run on another loop")
+        raise RuntimeError(_zh("tracker requests already run on another loop"))
     loop = asyncio.get_running_loop()
     _request_loop = loop
     try:
@@ -202,7 +203,7 @@ def stop_if_cancelled() -> None:
     """
     hand_over = _hand_over.get()
     if hand_over is not None and hand_over.cancel_requested:
-        raise asyncio.CancelledError("cancelled before sending the request again")
+        raise asyncio.CancelledError(_zh("cancelled before sending the request again"))
 
 
 def _settle(finished: asyncio.Future[asyncio.Task], task: asyncio.Task) -> None:
@@ -254,7 +255,7 @@ async def run_on_request_loop[T](
     try:
         loop.call_soon_threadsafe(start)
     except RuntimeError as err:
-        raise RequestFailedError("salmon web is stopping: the request was not sent") from err
+        raise RequestFailedError(_zh("salmon web is stopping: the request was not sent")) from err
 
     cancelled: asyncio.CancelledError | None = None
     try:
@@ -274,15 +275,15 @@ async def run_on_request_loop[T](
         if task.cancelled():
             # Only salmon web stopping cancels a call no one cancelled.
             if hand_over.committed and what:
-                raise UnknownOutcomeError(f"salmon web stopped before {what} was answered")
+                raise UnknownOutcomeError(_zh(f"salmon web stopped before {what} was answered"))
             if hand_over.committed:
-                raise RequestFailedError("salmon web stopped")
-            raise RequestFailedError("salmon web stopped: the request was not sent")
+                raise RequestFailedError(_zh("salmon web stopped"))
+            raise RequestFailedError(_zh("salmon web stopped: the request was not sent"))
         return task.result()
     if not task.cancelled():
         error = task.exception()
         if isinstance(error, UnknownOutcomeError):
             raise error
         if hand_over.committed and what:
-            click.secho(f"Cancelled once {what} had been answered: check the site for what it did.", fg="yellow")
+            click.secho(_zh(f"Cancelled once {what} had been answered: check the site for what it did."), fg="yellow")
     raise cancelled

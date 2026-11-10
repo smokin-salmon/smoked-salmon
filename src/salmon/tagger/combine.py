@@ -11,6 +11,7 @@ from salmon.common import re_strip
 from salmon.common.numbers import natural_key, number_or_text
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
+from salmon.localization import text as _zh
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES
 from salmon.tagger.sources.base import determine_label_type, generate_artists, standardize_genres
@@ -137,7 +138,7 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                         url_sources.add(link_source)
 
     if base is None:
-        raise ValueError("No metadata provided to combine")
+        raise ValueError(_zh("No metadata provided to combine"))
 
     assert base is not None  # Type narrowing for pyright
 
@@ -305,7 +306,7 @@ def _refuse_renumbering_that_loses_a_track(btracks, mtracks, ordered, usable, up
             continue  # The merge raises for a scraped track without a local one.
         slot = _slot(btrack["disc#"], new_num)
         if slot in taken:
-            raise TrackCombineError(f"Disc {slot[0]} track {slot[1]} would hold two local tracks, losing one.")
+            raise TrackCombineError(_zh(f"Disc {slot[0]} track {slot[1]} would hold two local tracks, losing one."))
         taken.add(slot)
 
 
@@ -313,15 +314,17 @@ def _print_pairing(mtracks, ordered, reasons):
     """Show how local files were matched, so a bad pairing is visible before tagging."""
     if not any(r and r != "position" for r in reasons):
         return  # Paired by position only, as before: nothing worth reporting.
-    click.secho("\nMatched local tracks to the metadata source:", fg="yellow", bold=True)
+    click.secho(_zh("\nMatched local tracks to the metadata source:"), fg="yellow", bold=True)
     for mtrack, btrack, why in zip(mtracks, ordered, reasons, strict=False):
         if btrack is None:
-            click.secho(f"  {mtrack['track#']:>3}. {mtrack['title']} -> (no local track)", fg="red")
+            click.secho(_zh(f"  {mtrack['track#']:>3}. {mtrack['title']} -> (no local track)"), fg="red")
             continue
         moved = str(btrack["track#"]) != str(mtrack["track#"])
         click.secho(
-            f"  {mtrack['track#']:>3}. {mtrack['title']} <- {btrack['title']} "
-            f"(was track {btrack['track#']}, matched on {why})",
+            _zh(
+                f"  {mtrack['track#']:>3}. {mtrack['title']} <- {btrack['title']} "
+                f"(was track {btrack['track#']}, matched on {why})"
+            ),
             fg="red" if why == "position" else ("yellow" if moved else "green"),
         )
 
@@ -357,7 +360,7 @@ def combine_tracks(base, meta, update_track_numbers):  # noqa: C901
     ]
     for (disc, num), btrack in zip(scraped, ordered_btracks, strict=True):
         if btrack is None:
-            raise TrackCombineError(f"Disc {disc} track {num} does not exist.")
+            raise TrackCombineError(_zh(f"Disc {disc} track {num} does not exist."))
 
     # Track numbers are applied after the merge loop; renumbering in place can
     # overwrite a base track that hasn't been visited yet once pairing reorders.

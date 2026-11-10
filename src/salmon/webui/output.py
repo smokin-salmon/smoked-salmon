@@ -17,6 +17,8 @@ from typing import TextIO, cast
 
 import asyncclick as click
 
+from salmon.localization import text as _zh
+
 # Where the running job's output goes: (text, whether it was written to stderr).
 Sink = Callable[[str, bool], None]
 
@@ -48,7 +50,7 @@ class _JobStream(io.TextIOBase):
     def write(self, text: str) -> int:
         if not isinstance(cast("object", text), str):
             # As a text stream does: click tries bytes to tell binary streams apart.
-            raise TypeError(f"write() argument must be str, not {type(text).__name__}")
+            raise TypeError(_zh(f"write() argument must be str, not {type(text).__name__}"))
         sink = _sink.get()
         if sink is None:
             return self.real.write(text)

@@ -22,6 +22,7 @@ from numpy.typing import NDArray
 from PIL import Image, ImageDraw
 
 from salmon.common.files import process_files
+from salmon.localization import text as _zh
 
 FFT_SIZE = 8192
 HOP = FFT_SIZE // 2
@@ -322,7 +323,7 @@ def render_plot(
 ) -> None:
     """Draw the curve with a labelled kHz/dB grid, and mark the wall the notes talk about."""
     if sample_rate <= 0:
-        raise ValueError(f"cannot plot a spectrum at {sample_rate} Hz")
+        raise ValueError(_zh(f"cannot plot a spectrum at {sample_rate} Hz"))
     img = Image.new("RGB", (_WIDTH, _HEIGHT), _BG)
     draw = ImageDraw.Draw(img)
     plot_w = _WIDTH - _PAD_L - _PAD_R
@@ -367,7 +368,11 @@ def _analyse_one(album_path: str, filename: str, out_path: str | None) -> Spectr
         return SpectrumResult(file=filename, image="", sample_rate=0, windows=0, error=str(e) or type(e).__name__)
     if not windows:
         return SpectrumResult(
-            file=filename, image="", sample_rate=sample_rate, windows=0, error="too little audio to average a spectrum"
+            file=filename,
+            image="",
+            sample_rate=sample_rate,
+            windows=0,
+            error="too little audio to average a spectrum",
         )
     wall = measure_wall(freqs, db)
     gating = measure_gating(samples, sample_rate)

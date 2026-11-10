@@ -20,6 +20,7 @@ import msgspec
 
 from salmon import interaction
 from salmon.config.validations import Cfg
+from salmon.localization import text as _zh
 
 TRACKERS = ("RED", "OPS", "DIC")
 # DIC does not take API keys (trackers/dic.py): not asked.
@@ -70,10 +71,10 @@ def write_new(dest: Path, text: str) -> None:
 def copy_and_explain(template: Path, dest: Path) -> None:
     """Without a terminal: copy the short config and say what to fill in before salmon can start."""
     write_new(dest, template.read_text(encoding="utf-8"))
-    click.secho(f"Created a config to fill in at {dest}. salmon cannot start until it is edited:", fg="yellow")
-    click.echo("  1. Uncomment the [tracker.<name>] block of each tracker you use and set its session cookie.")
-    click.echo("  2. Set download_directory and dottorrents_dir to folders that exist.")
-    click.echo("  Then run salmon again. In a terminal, salmon asks for these itself when there is no config.")
+    click.secho(_zh(f"Created a config to fill in at {dest}. salmon cannot start until it is edited:"), fg="yellow")
+    click.echo(_zh("  1. Uncomment the [tracker.<name>] block of each tracker you use and set its session cookie."))
+    click.echo(_zh("  2. Set download_directory and dottorrents_dir to folders that exist."))
+    click.echo(_zh("  Then run salmon again. In a terminal, salmon asks for these itself when there is no config."))
 
 
 def _toml_line(key: str, value: str) -> str:
@@ -90,7 +91,7 @@ def _toml_list_line(key: str, values: list[str]) -> str:
 def _replace_once(pattern: str, text: str, replace: Any) -> str:
     new, count = re.subn(pattern, replace, text, count=1, flags=re.MULTILINE)
     if count != 1:
-        raise ValueError(f"The short config no longer matches {pattern!r}: cannot fill it in.")
+        raise ValueError(_zh(f"The short config no longer matches {pattern!r}: cannot fill it in."))
     return new
 
 
@@ -135,41 +136,45 @@ async def ask_folder(key: str, label: str, default: str) -> str:
         if os.path.isdir(path):
             return path
         if os.path.exists(path):
-            click.secho(f"{path} is not a folder.", fg="red")
+            click.secho(_zh(f"{path} is not a folder."), fg="red")
             continue
-        if await interaction.confirm(f"{path} does not exist. Create it?", default=True):
+        if await interaction.confirm(_zh(f"{path} does not exist. Create it?"), default=True):
             try:
                 os.makedirs(path)
             except OSError as e:
-                click.secho(f"Could not create {path}: {e}", fg="red")
+                click.secho(_zh(f"Could not create {path}: {e}"), fg="red")
                 continue
             return path
-        click.secho(f"salmon needs {key} to start: give a folder that exists, or agree to create it.", fg="yellow")
+        click.secho(_zh(f"salmon needs {key} to start: give a folder that exists, or agree to create it."), fg="yellow")
 
 
 async def ask_trackers() -> list[TrackerAnswer]:
     """Ask which trackers, then each one's session cookie (required) and API key (optional)."""
     while True:
-        answer = str(await interaction.prompt(f"Trackers you upload to ({', '.join(TRACKERS)}; separate with commas)"))
+        answer = str(
+            await interaction.prompt(_zh(f"Trackers you upload to ({', '.join(TRACKERS)}; separate with commas)"))
+        )
         codes = list(dict.fromkeys(word.upper() for word in re.split(r"[\s,]+", answer) if word))
         unknown = [code for code in codes if code not in TRACKERS]
         if unknown:
-            click.secho(f"Not a tracker salmon knows: {', '.join(unknown)}.", fg="red")
+            click.secho(_zh(f"Not a tracker salmon knows: {', '.join(unknown)}."), fg="red")
         elif not codes:
-            click.secho("salmon needs at least one tracker.", fg="red")
+            click.secho(_zh("salmon needs at least one tracker."), fg="red")
         else:
             break
 
     trackers: list[TrackerAnswer] = []
     for code in codes:
-        click.echo(f"{code}: the value of the 'session' cookie your browser has for {SITES[code]}, while logged in.")
+        click.echo(
+            _zh(f"{code}: the value of the 'session' cookie your browser has for {SITES[code]}, while logged in.")
+        )
         session = ""
         while not session:
-            session = str(await interaction.prompt(f"{code} session cookie", hide_input=True)).strip()
+            session = str(await interaction.prompt(_zh(f"{code} session cookie"), hide_input=True)).strip()
         api_key = None
         if code in TAKES_API_KEY:
             key = await interaction.prompt(
-                f"{code} API key (Enter to skip)", default="", show_default=False, hide_input=True
+                _zh(f"{code} API key (Enter to skip)"), default="", show_default=False, hide_input=True
             )
             api_key = str(key).strip() or None
         trackers.append(TrackerAnswer(code=code, session=session, api_key=api_key))
@@ -199,36 +204,36 @@ async def run(template: Path, dest: Path) -> int:
     from salmon.config import _parse_config
 
     template_text = template.read_text(encoding="utf-8")
-    click.secho("No config yet: a few questions to write one. Ctrl-C stops without writing anything.", fg="cyan")
+    click.secho(_zh("No config yet: a few questions to write one. Ctrl-C stops without writing anything."), fg="cyan")
     try:
         answers = await ask(template_text)
     except click.Abort:
-        click.secho("\nStopped: no config was written.", fg="yellow")
+        click.secho(_zh("\nStopped: no config was written."), fg="yellow")
         return 1
 
     try:
         write_new(dest, render(template_text, answers))
     except OSError as e:
-        click.secho(f"Could not write {dest}: {e}", fg="red")
+        click.secho(_zh(f"Could not write {dest}: {e}"), fg="red")
         return 1
-    click.secho(f"Config written to {dest}.", fg="green")
+    click.secho(_zh(f"Config written to {dest}."), fg="green")
 
     try:
         cfg = _parse_config(dest)
     except Exception as e:
-        click.secho(f"It does not load: {e}", fg="red")
-        click.secho("Fix it, then run salmon again.", fg="yellow")
+        click.secho(_zh(f"It does not load: {e}"), fg="red")
+        click.secho(_zh("Fix it, then run salmon again."), fg="yellow")
         return 1
 
     codes = [answer.code for answer in answers.trackers]
     try:
-        if await interaction.confirm(f"Check the connection to {', '.join(codes)} now?", default=True):
+        if await interaction.confirm(_zh(f"Check the connection to {', '.join(codes)} now?"), default=True):
             await check_connection(cfg, codes)
     except click.Abort:
         click.echo()
 
     reference = template.parent / "config.reference.toml"
-    click.secho(f"\nYour config is {dest}.", fg="green")
-    click.echo(f"Every other setting is documented in {reference}.")
-    click.secho("Run salmon again.", fg="green")
+    click.secho(_zh(f"\nYour config is {dest}."), fg="green")
+    click.echo(_zh(f"Every other setting is documented in {reference}."))
+    click.secho(_zh("Run salmon again."), fg="green")
     return 0

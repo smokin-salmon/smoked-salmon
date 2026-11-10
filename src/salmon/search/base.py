@@ -7,6 +7,8 @@ from typing import Any
 import asyncclick as click
 import msgspec
 
+from salmon.localization import text as _zh
+
 # Inside each_failed_part_said_once, the styled line of each store, storefront or region that failed so far, by what.
 _failed_parts: ContextVar[dict[str, str] | None] = ContextVar("failed_search_parts", default=None)
 
@@ -21,14 +23,14 @@ def each_failed_part_said_once() -> Iterator[None]:
     finally:
         _failed_parts.reset(token)
     for line in lines.values():
-        click.echo(line)
+        click.echo(_zh(line))
 
 
 def _say_once(what: str, line: str, **style: Any) -> None:
     """Print a failure's line, or inside each_failed_part_said_once keep the first one for what failed."""
     lines = _failed_parts.get()
     if lines is None:
-        click.secho(line, **style)
+        click.secho(_zh(line), **style)
     else:
         lines.setdefault(what, click.style(line, **style))
 

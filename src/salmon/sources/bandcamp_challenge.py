@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 from bs4 import BeautifulSoup
 
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.proxy import curl_url
 
 STILL_CHALLENGED = (
@@ -60,7 +61,9 @@ async def _impersonated_get(url: str, params: dict | None, proxy: str | None, ti
         # Here, so that salmon starts without it.
         from curl_cffi import AsyncSession, CurlError
     except (ImportError, OSError) as e:
-        raise ScrapeError(f"Bandcamp: Could not load curl_cffi to ask again as a browser ({type(e).__name__}).") from e
+        raise ScrapeError(
+            _zh(f"Bandcamp: Could not load curl_cffi to ask again as a browser ({type(e).__name__}).")
+        ) from e
     try:
         async with AsyncSession() as session:
             response = await session.get(
@@ -73,5 +76,5 @@ async def _impersonated_get(url: str, params: dict | None, proxy: str | None, ti
                 impersonate="firefox",
             )
     except (CurlError, TimeoutError) as e:
-        raise ScrapeError(f"Bandcamp: Request failed when asked again as a browser ({type(e).__name__}).") from e
+        raise ScrapeError(_zh(f"Bandcamp: Request failed when asked again as a browser ({type(e).__name__}).")) from e
     return response.status_code, response.content

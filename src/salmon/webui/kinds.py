@@ -61,6 +61,7 @@ from salmon.constants import SOURCES, TAG_ENCODINGS
 from salmon.converter.transcoding import Bitrate
 from salmon.errors import DryRunRefused, ImageUploadFailed, ScrapeError, UnknownOutcomeError
 from salmon.images.files import NotAnImage, check_image
+from salmon.localization import text as _zh
 from salmon.trackers.connection import (
     check_connection,
     print_certificate_failure,
@@ -248,7 +249,7 @@ def _checked_connection_check(params: ConnectionCheckParams, _dry_run: bool) -> 
     except salmon.trackers.UnknownTrackerError as e:
         raise JobError(422, str(e)) from None
     if not trackers:
-        raise JobError(422, "No tracker is configured.")
+        raise JobError(422, _zh("No tracker is configured."))
     return msgspec.structs.replace(params, trackers=trackers)
 
 
@@ -275,20 +276,20 @@ def _checked_upload(params: UploadParams, dry_run: bool) -> UploadParams:
     source = SOURCES.get(params.source.lower())
     if source is None:
         sources = ", ".join(SOURCES.values())
-        raise JobError(400, f"{params.source} is not a valid source. Possible sources are: {sources}")
+        raise JobError(400, _zh(f"{params.source} is not a valid source. Possible sources are: {sources}"))
     # Kept by its name, which the job shows among its parameters.
     encoding = params.encoding.upper() if params.encoding else None
     if encoding is not None and encoding not in TAG_ENCODINGS:
-        raise JobError(400, f"{params.encoding} is not a valid encoding.")
+        raise JobError(400, _zh(f"{params.encoding} is not a valid encoding."))
     trackers: list[str] = []
     for name in params.trackers:
         code = name.strip().upper()
         if code not in salmon.trackers.tracker_list:
-            raise JobError(400, f"{name} is not a tracker in your config.")
+            raise JobError(400, _zh(f"{name} is not a tracker in your config."))
         if code not in trackers:
             trackers.append(code)
     if not trackers:
-        raise JobError(400, "Pick at least one tracker.")
+        raise JobError(400, _zh("Pick at least one tracker."))
     conversions: list[str] | None = None
     if params.conversions is not None:
         try:
@@ -312,15 +313,15 @@ def _checked_tag(params: TagParams, dry_run: bool) -> TagParams:
     """The tag options as the command's callbacks give them, refused where the command refuses them."""
     # The command has none, and tagging writes the files and renames the folder: nothing a dry run could leave out.
     if dry_run:
-        raise JobError(400, "Tag has no dry run: it retags and renames the album.")
+        raise JobError(400, _zh("Tag has no dry run: it retags and renames the album."))
     source = SOURCES.get(params.source.lower())
     if source is None:
         sources = ", ".join(SOURCES.values())
-        raise JobError(400, f"{params.source} is not a valid source. Possible sources are: {sources}")
+        raise JobError(400, _zh(f"{params.source} is not a valid source. Possible sources are: {sources}"))
     # Kept by its name, which the job shows among its parameters.
     encoding = params.encoding.upper() if params.encoding else None
     if encoding is not None and encoding not in TAG_ENCODINGS:
-        raise JobError(400, f"{params.encoding} is not a valid encoding.")
+        raise JobError(400, _zh(f"{params.encoding} is not a valid encoding."))
     return msgspec.structs.replace(params, path=paths.album_folder(params.path), source=source, encoding=encoding)
 
 
@@ -329,7 +330,7 @@ def _checked_conversion(
 ) -> TranscodeParams | DownconvertParams:
     # The commands have no dry run, and a conversion's record is the one thing a dry run would leave out.
     if dry_run:
-        raise JobError(400, "A conversion has no dry run: it writes a new folder and leaves the album as it is.")
+        raise JobError(400, _zh("A conversion has no dry run: it writes a new folder and leaves the album as it is."))
     return msgspec.structs.replace(params, path=paths.album_folder(params.path))
 
 
@@ -338,7 +339,7 @@ def _checked_compress(params: CompressParams, dry_run: bool) -> CompressParams:
     from salmon.commands import compress_refusal
 
     if dry_run:
-        raise JobError(400, "Compress has no dry run: it recompresses the album in place.")
+        raise JobError(400, _zh("Compress has no dry run: it recompresses the album in place."))
     path = paths.album_folder(params.path)
     if (refusal := compress_refusal(path)) is not None:
         raise JobError(403, refusal)
@@ -384,7 +385,7 @@ def _checked_cross_upload(params: CrossUploadParams, _dry_run: bool) -> CrossUpl
     for value in checked.inputs:
         # Anything else would be a .torrent file on the server: never looked for.
         if not is_torrent_reference(value):
-            raise JobError(400, f"{value} is not a {source.site_string} torrent ID or URL.")
+            raise JobError(400, _zh(f"{value} is not a {source.site_string} torrent ID or URL."))
         try:
             ids.append(str(torrent_id_of(value, source)))
         except click.UsageError as e:
@@ -398,11 +399,11 @@ def _checked_descgen(params: DescgenParams, _dry_run: bool) -> DescgenParams:
     refused (422) before any request, naming the URL as the command does."""
     urls = [url.strip() for url in params.urls]
     if not urls:
-        raise JobError(422, "Give at least one release URL.")
+        raise JobError(422, _zh("Give at least one release URL."))
     if len(urls) > MAX_DESCGEN_URLS:
-        raise JobError(422, f"Give at most {MAX_DESCGEN_URLS} release URLs: {len(urls)} were given.")
+        raise JobError(422, _zh(f"Give at most {MAX_DESCGEN_URLS} release URLs: {len(urls)} were given."))
     if any(len(url) > MAX_URL_LENGTH for url in urls):
-        raise JobError(422, f"A release URL is at most {MAX_URL_LENGTH} characters.")
+        raise JobError(422, _zh(f"A release URL is at most {MAX_URL_LENGTH} characters."))
     # Never whether a URL is a folder here: that would tell a browser what exists outside the folders it may see.
     if refusals := descgen_refusals(urls, folders=False):
         raise JobError(422, " ".join(refusals))
@@ -422,26 +423,28 @@ def _image_host(params: ImageUploadParams) -> tuple[str, str | None]:
     from salmon import images
 
     if params.host is not None and params.host not in images.HOSTS:
-        raise JobError(422, f"{params.host} is not a valid image host.")
+        raise JobError(422, _zh(f"{params.host} is not a valid image host."))
     if params.tracker:
         code = params.tracker.strip().upper()
         if code not in salmon.trackers.tracker_list:
-            raise JobError(422, f"{params.tracker} is not a tracker in your config.")
+            raise JobError(422, _zh(f"{params.tracker} is not a tracker in your config."))
         try:
             return images.image_host_for_tracker(code, params.host), code
         except images.ImageHostRefused as e:
             raise JobError(422, str(e)) from None
     host = params.host or cfg.image.image_uploader
     if (reason := display_refusal(host)) is not None:
-        raise JobError(422, f"{host} can't be used without a tracker: {reason}. Name the tracker the images are for.")
+        raise JobError(
+            422, _zh(f"{host} can't be used without a tracker: {reason}. Name the tracker the images are for.")
+        )
     return host, None
 
 
 def _image_count(params: ImageUploadParams) -> None:
     if not params.paths:
-        raise JobError(422, "Pick at least one image.")
+        raise JobError(422, _zh("Pick at least one image."))
     if len(params.paths) > MAX_IMAGE_FILES:
-        raise JobError(422, f"Pick at most {MAX_IMAGE_FILES} images: {len(params.paths)} were picked.")
+        raise JobError(422, _zh(f"Pick at most {MAX_IMAGE_FILES} images: {len(params.paths)} were picked."))
 
 
 def _preflight_images(params: ImageUploadParams) -> None:
@@ -456,7 +459,7 @@ def _checked_images(params: ImageUploadParams, dry_run: bool) -> ImageUploadPara
     seedbox's; ``preflight`` read them), the host and the tracker, as ``salmon images up`` takes them."""
     # Every image host's upload refuses in a dry run.
     if dry_run:
-        raise JobError(400, "An image upload has no dry run: it sends the files to an image host.")
+        raise JobError(400, _zh("An image upload has no dry run: it sends the files to an image host."))
     _image_count(params)
     host, tracker = _image_host(params)
     # Once each, in the order given.
@@ -473,10 +476,10 @@ def _spectrals_host(tracker: str | None) -> tuple[str, str | None]:
     """
     code = tracker.strip().upper() if tracker else None
     if code is not None and code not in salmon.trackers.tracker_list:
-        raise JobError(422, f"{tracker} is not a tracker in your config.")
+        raise JobError(422, _zh(f"{tracker} is not a tracker in your config."))
     host = cfg.image.host_for(code, "specs_uploader")
     if (reason := spectrals_refusal(host, code)) is not None:
-        raise JobError(422, f"{host} can't be used for spectrals: {reason}.")
+        raise JobError(422, _zh(f"{host} can't be used for spectrals: {reason}."))
     return host, code
 
 
@@ -489,15 +492,15 @@ def _spectrals_source(job_id: str) -> tuple[str, dict[int, str]]:
     """
     job = find_job(job_id)
     if job is None or job.kind.name != "spectrals":
-        raise JobError(404, "No such spectrals job.")
+        raise JobError(404, _zh("No such spectrals job."))
     if job.status not in FINISHED:
-        raise JobError(409, "This spectrals job has not finished: answer its question or wait for it to end.")
+        raise JobError(409, _zh("This spectrals job has not finished: answer its question or wait for it to end."))
     folders = own_folders(job)
     tracks = (job.result or {}).get("tracks") if isinstance(job.result, dict) else None
     if job.status != "done" or not tracks:
-        raise JobError(409, "This spectrals job did not make spectrals.")
+        raise JobError(409, _zh("This spectrals job did not make spectrals."))
     if job.spectrals is None or len(folders) != 1:
-        raise JobError(409, "The spectrals of this job were discarded.")
+        raise JobError(409, _zh("The spectrals of this job were discarded."))
     return folders[0], {int(spectral_id): name for spectral_id, name in tracks.items()}
 
 
@@ -516,9 +519,9 @@ def _spectrals_chosen(job_id: str, tracks: dict[int, str], spectral_ids: list[in
 
         return default_spectral_ids(tracks)
     if not spectral_ids:
-        raise JobError(400, "Pick at least one track.")
+        raise JobError(400, _zh("Pick at least one track."))
     if unknown := sorted({number for number in spectral_ids if number not in tracks}):
-        raise JobError(400, f"This job has no track {', '.join(str(number) for number in unknown)}.")
+        raise JobError(400, _zh(f"This job has no track {', '.join(str(number) for number in unknown)}."))
     return sorted(set(spectral_ids))
 
 
@@ -526,7 +529,7 @@ def _checked_spectrals_upload(params: SpectralsUploadParams, _dry_run: bool) -> 
     _folder, tracks = _spectrals_source(params.job_id)
     chosen = _spectrals_chosen(params.job_id, tracks, params.spectral_ids)
     if not chosen:
-        raise JobError(400, "Pick at least one track.")
+        raise JobError(400, _zh("Pick at least one track."))
     _host, tracker = _spectrals_host(params.tracker)
     return msgspec.structs.replace(params, tracker=tracker, spectral_ids=chosen)
 
@@ -650,7 +653,9 @@ async def upload(params: UploadParams) -> dict[str, Any]:
             # Also when the run stops later (an abort, a cancel): what may be on the tracker is what the job says.
             _upload_ended(record, result, err)
     if not record.complete:
-        _upload_ended(record, result, click.ClickException("The run stopped before everything went up: see the log."))
+        _upload_ended(
+            record, result, click.ClickException(_zh("The run stopped before everything went up: see the log."))
+        )
     result["seedbox_failed"] = record.seedbox_failed
     result["seedbox_failures"] = list(record.seedbox_failures)
     return result
@@ -801,10 +806,10 @@ async def descgen(params: DescgenParams) -> dict[str, Any]:
     try:
         description = await build_description(params.urls)
     except ScrapeError as e:
-        raise click.ClickException(f"Scrape failed: {e}") from None
+        raise click.ClickException(_zh(f"Scrape failed: {e}")) from None
     except (aiohttp.ClientError, TimeoutError) as e:
         # aiohttp repeats the request URL: name the error only.
-        raise click.ClickException(f"Scrape failed ({type(e).__name__}).") from None
+        raise click.ClickException(_zh(f"Scrape failed ({type(e).__name__}).")) from None
     return {"description": description}
 
 
@@ -851,12 +856,12 @@ def _spectral_images(folder: str, tracks: dict[int, str]) -> None:
             path = os.path.join(folder, name)
             try:
                 if os.path.realpath(path) != path or not stat.S_ISREG(os.lstat(path).st_mode):
-                    raise click.ClickException(f"{name} is gone from the job's folder, or no longer a plain file.")
+                    raise click.ClickException(_zh(f"{name} is gone from the job's folder, or no longer a plain file."))
                 check_image(path)
             except FileNotFoundError:
-                raise click.ClickException(f"{name} is gone from the job's folder.") from None
+                raise click.ClickException(_zh(f"{name} is gone from the job's folder.")) from None
             except NotAnImage as e:
-                raise click.ClickException(f"{name} is not an image any more ({e}).") from None
+                raise click.ClickException(_zh(f"{name} is not an image any more ({e}).")) from None
 
 
 async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
@@ -878,14 +883,14 @@ async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
     except JobError as e:
         raise click.ClickException(e.detail) from None
     if not chosen:
-        raise click.ClickException("Pick at least one track.")
+        raise click.ClickException(_zh("Pick at least one track."))
     tracks = {number: all_tracks[number] for number in chosen}
     await anyio.to_thread.run_sync(_spectral_images, folder, tracks)
     # After the checks: compressing first would swap a symlink for a plain copy of what it points to, which they pass.
     await compress_chosen_spectrals(folder, tracks)
     uploaded = await upload_spectral_images(folder, tracks, tracker)
     if not uploaded:
-        raise click.ClickException("No spectral was uploaded.")
+        raise click.ClickException(_zh("No spectral was uploaded."))
     filenames = [all_tracks.get(number, "") for number in range(1, max(all_tracks) + 1)]
     return {
         "host": host,
@@ -899,29 +904,29 @@ async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
 
 
 def _title(what: str) -> Callable[[Any], str]:
-    return lambda params: f"{what}: {os.path.basename(params.path)}"
+    return lambda params: f"{_zh(what)}: {os.path.basename(params.path)}"
 
 
 def _checks_title(params: ChecksParams) -> str:
-    against = f" against {', '.join(params.trackers)}" if params.trackers else ""
-    return f"Checks{against}: {os.path.basename(params.path)}"
+    against = f" {_zh('against')} {', '.join(params.trackers)}" if params.trackers else ""
+    return f"{_zh('Checks')}{against}: {os.path.basename(params.path)}"
 
 
 def _cross_upload_title(params: CrossUploadParams) -> str:
-    return f"Cross-upload {params.source} to {params.target}: {', '.join(params.inputs)}"
+    return _zh(f"Cross-upload {params.source} to {params.target}: {', '.join(params.inputs)}")
 
 
 def _transcode_title(params: TranscodeParams) -> str:
-    return f"Transcode {params.bitrate}: {os.path.basename(params.path)}"
+    return f"{_zh('Transcode')} {params.bitrate}: {os.path.basename(params.path)}"
 
 
 def _connection_check_title(params: ConnectionCheckParams) -> str:
-    return f"Connection check: {', '.join(params.trackers)}"
+    return _zh(f"Connection check: {', '.join(params.trackers)}")
 
 
 def _upload_title(params: UploadParams) -> str:
-    where = f" to {', '.join(params.trackers)}" if params.trackers else ""
-    return f"Upload{where}: {os.path.basename(params.path)}"
+    where = f" {_zh('to')} {', '.join(params.trackers)}" if params.trackers else ""
+    return f"{_zh('Upload')}{where}: {os.path.basename(params.path)}"
 
 
 register(
@@ -1020,7 +1025,7 @@ register(
         name="descgen",
         params=DescgenParams,
         run=descgen,
-        title=lambda params: f"Description from {len(params.urls)} URL(s)",
+        title=lambda params: _zh(f"Description from {len(params.urls)} URL(s)"),
         check=_checked_descgen,
     )
 )
@@ -1029,7 +1034,7 @@ register(
         name="images",
         params=ImageUploadParams,
         run=upload_images,
-        title=lambda params: f"Upload {len(params.paths)} image(s) to {params.host or 'the image host'}",
+        title=lambda params: _zh(f"Upload {len(params.paths)} image(s) to {params.host or _zh('the image host')}"),
         check=_checked_images,
         preflight=_preflight_images,
     )
@@ -1040,7 +1045,7 @@ register(
         params=SpectralsUploadParams,
         run=upload_spectrals,
         title=lambda params: (
-            f"Upload spectrals of {params.job_id}" + (f" for {params.tracker}" if params.tracker else "")
+            _zh(f"Upload spectrals of {params.job_id}") + (f" {_zh('for')} {params.tracker}" if params.tracker else "")
         ),
         check=_checked_spectrals_upload,
     )

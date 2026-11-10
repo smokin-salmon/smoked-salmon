@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from './i18n'
   import { tick } from 'svelte'
   import type { Option, Options, Picked, Question } from './jobs.svelte'
 
@@ -113,7 +114,7 @@
 </script>
 
 {#snippet cardBody(o: Option, isDefault: boolean)}
-  <span class="label">{o.label}{isDefault ? ' (default)' : ''}</span>
+  <span class="label">{t(o.label)}{isDefault ? "(默认)" : ''}</span>
   {#if o.card && o.card.fields.length}
     <dl>
       {#each o.card.fields as [name, value], i (i)}
@@ -122,13 +123,13 @@
       {/each}
     </dl>
   {/if}
-  {#if o.card?.note}<span class="note">{o.card.note}</span>{/if}
+  {#if o.card?.note}<span class="note">{t(o.card.note)}</span>{/if}
 {/snippet}
 
 {#snippet cardLink(o: Option)}
   {@const link = webLink(o.card?.link ?? null)}
   {#if link}
-    <a class="link" href={link} target="_blank" rel="noopener noreferrer">Open the page ↗</a>
+    <a class="link" href={link} target="_blank" rel="noopener noreferrer">打开页面↗</a>
   {/if}
 {/snippet}
 
@@ -147,7 +148,7 @@
     {@const plain = group.items.filter((o) => !o.card)}
     <!-- Checkboxes go on cards only when every option has one; otherwise one list, a note under its option. -->
     {@const allCards = plain.length === 0}
-    {#if group.name}<h3 class="group">{group.name}</h3>{/if}
+    {#if group.name}<h3 class="group">{t(group.name)}</h3>{/if}
 
     {#if !options.several}
       {#if carded.length}
@@ -171,10 +172,10 @@
           {#each plain as o (o.key)}
             {#if o.key === preKey}
               <button class="btn" disabled={sending} bind:this={defaultEl} onclick={() => pick(o)}>
-                {o.label} (default)
+                {t(o.label)} (默认)
               </button>
             {:else}
-              <button class="btn secondary" disabled={sending} onclick={() => pick(o)}>{o.label}</button>
+              <button class="btn secondary" disabled={sending} onclick={() => pick(o)}>{t(o.label)}</button>
             {/if}
           {/each}
         </div>
@@ -202,7 +203,7 @@
   {/each}
 
   {#if options.several && shortcuts.length}
-    <div class="segmented" role="group" aria-label="Shortcuts">
+    <div class="segmented" role="group" aria-label="快捷方式">
       {#each shortcuts as o (o.key)}
         <button
           type="button"
@@ -210,7 +211,7 @@
           class:on={alone === o.key}
           aria-pressed={alone === o.key}
           disabled={sending}
-          onclick={() => chooseAlone(o.key)}>{o.label}</button
+          onclick={() => chooseAlone(o.key)}>{t(o.label)}</button
         >
       {/each}
     </div>
@@ -237,7 +238,7 @@
             {/if}
           </div>
         {/each}
-        <button type="button" class="btn small secondary" onclick={() => (rows = [...rows, ''])}>Another URL</button>
+        <button type="button" class="btn small secondary" onclick={() => (rows = [...rows, ''])}>另一个URL</button>
       </div>
     {:else}
       <form
@@ -254,14 +255,14 @@
           bind:value={text}
           placeholder={options.free_text.placeholder}
         />
-        <button class="btn" disabled={sending || text.trim() === ''}>Send</button>
+        <button class="btn" disabled={sending || text.trim() === ''}>发送</button>
       </form>
     {/if}
   {/if}
 
   {#if options.several}
     <div class="row send">
-      <button class="btn" disabled={sending || nothing} onclick={sendSeveral}>Send</button>
+      <button class="btn" disabled={sending || nothing} onclick={sendSeveral}>发送</button>
     </div>
   {/if}
 
@@ -270,11 +271,11 @@
       {#each actions as o (o.key)}
         {#if o.key === preKey}
           <button class="btn secondary" class:danger={o.danger} disabled={sending} bind:this={defaultEl} onclick={() => act(o)}>
-            {armed === o.key ? `Click again to ${o.label.toLowerCase()}` : o.label} (default)
+            {armed === o.key ? `再次点击即可 ${o.label.toLowerCase()}` : o.label} (默认)
           </button>
         {:else}
           <button class="btn secondary" class:danger={o.danger} disabled={sending} onclick={() => act(o)}>
-            {armed === o.key ? `Click again to ${o.label.toLowerCase()}` : o.label}
+            {armed === o.key ? `再次点击即可 ${o.label.toLowerCase()}` : o.label}
           </button>
         {/if}
       {/each}

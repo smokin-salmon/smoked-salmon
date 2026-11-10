@@ -4,6 +4,7 @@ from urllib.parse import urlsplit
 import asyncclick as click
 
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.tagger.sources import (
     apple_music,
     bandcamp,
@@ -83,7 +84,7 @@ async def run_metadata(
     sources = METASOURCES if not sources else {name: source for name, source in METASOURCES.items() if name in sources}
     for name, source in sources.items():
         if source.Scraper.regex.match(url):
-            click.secho(f"Getting metadata from {name}.", fg="cyan")
+            click.secho(_zh(f"Getting metadata from {name}."), fg="cyan")
             metadata = _without_artist_variations(await source.Scraper().scrape_release(url))
             return (metadata, name) if return_source_name else metadata
-    raise ScrapeError("URL did not match a scraper.")
+    raise ScrapeError(_zh("URL did not match a scraper."))

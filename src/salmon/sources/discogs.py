@@ -5,6 +5,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources.base import BaseScraper
 
 
@@ -41,8 +42,8 @@ class DiscogsBase(BaseScraper):
         """
         match = self.regex.match(url)
         if not match:
-            raise ScrapeError("Invalid Discogs URL.")
+            raise ScrapeError(_zh("Invalid Discogs URL."))
         try:
             return await self.get_json(f"/releases/{match[1]}", params=params)
         except msgspec.DecodeError as e:
-            raise ScrapeError("Discogs page did not return valid JSON.") from e
+            raise ScrapeError(_zh("Discogs page did not return valid JSON.")) from e

@@ -9,6 +9,7 @@ import msgspec
 from salmon import cfg
 from salmon.common.urls import parse_retry_after
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources.base import BaseScraper
 
 # Tidal V2 mediaTags, best quality first.
@@ -72,7 +73,7 @@ class TidalBase(BaseScraper):
         if TidalBase._access_token and monotonic() < TidalBase._token_expiry - 60:
             return TidalBase._access_token
         if not credentials_configured():
-            raise ScrapeError("Tidal client_id and client_secret are not set.")
+            raise ScrapeError(_zh("Tidal client_id and client_secret are not set."))
         # Serialize refreshes so a cold cache doesn't fire N concurrent auth POSTs.
         async with cls._token_lock:
             if TidalBase._access_token and monotonic() < TidalBase._token_expiry - 60:
@@ -90,13 +91,13 @@ class TidalBase(BaseScraper):
             ):
                 body = await resp.read()
                 if resp.status != 200:
-                    raise ScrapeError(f"Tidal authentication failed (HTTP {resp.status}).")
+                    raise ScrapeError(_zh(f"Tidal authentication failed (HTTP {resp.status})."))
             try:
                 data = msgspec.json.decode(body)
                 token = data["access_token"]
                 TidalBase._token_expiry = monotonic() + data["expires_in"]
             except (msgspec.DecodeError, KeyError, TypeError) as e:
-                raise ScrapeError(f"Tidal authentication returned an unexpected response: {e}") from e
+                raise ScrapeError(_zh(f"Tidal authentication returned an unexpected response: {e}")) from e
             TidalBase._access_token = token
             return token
 
@@ -152,7 +153,7 @@ class TidalBase(BaseScraper):
     def parse_release_id(cls, url):
         match = cls.regex.search(url)
         if not match:
-            raise ValueError("Invalid Tidal URL.")
+            raise ValueError(_zh("Invalid Tidal URL."))
         return match[2]
 
     @staticmethod
@@ -276,15 +277,19 @@ class TidalBase(BaseScraper):
                     break
                 page = await self.get_json(
                     f"/albums/{album_id}/relationships/items",
-                    params={"countryCode": cc, "include": "items,items.artists,items.genres", "page[cursor]": cursor},
+                    params={
+                        "countryCode": cc,
+                        "include": "items,items.artists,items.genres",
+                        "page[cursor]": cursor,
+                    },
                 )
                 items += page["data"]
                 included += page.get("included", [])
                 cursor = self.next_cursor(page.get("links", {}))
             if cursor:
-                raise ScrapeError(f"Tidal album {album_id} has more than {MAX_PAGES} pages of tracks.")
+                raise ScrapeError(_zh(f"Tidal album {album_id} has more than {MAX_PAGES} pages of tracks."))
             return self._build_soup(album, included, items, cc)
         except msgspec.DecodeError as e:
-            raise ScrapeError("Tidal page did not return valid JSON.") from e
+            raise ScrapeError(_zh("Tidal page did not return valid JSON.")) from e
         except (KeyError, ScrapeError) as e:
-            raise ScrapeError(f"Failed to grab metadata for {url}.") from e
+            raise ScrapeError(_zh(f"Failed to grab metadata for {url}.")) from e

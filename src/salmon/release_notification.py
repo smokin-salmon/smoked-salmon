@@ -7,6 +7,7 @@ from packaging.version import Version
 
 # salmon, not salmon.cfg: the config's own checks read get_version() while salmon is still loading it.
 import salmon
+from salmon.localization import text as _zh
 
 LOCAL_VERSION_FILE = Path(__file__).parent / "data" / "version.toml"
 REMOTE_VERSION_URL = (
@@ -89,10 +90,10 @@ def _get_remote_version_data(url: str) -> VersionData | None:
         if response.status_code == 200:
             return msgspec.toml.decode(response.content, type=VersionData)
         else:
-            click.secho(f"Failed to fetch remote version file. Status code: {response.status_code}", fg="red")
+            click.secho(_zh(f"Failed to fetch remote version file. Status code: {response.status_code}"), fg="red")
             return None
     except requests.RequestException as e:
-        click.secho(f"An error occurred while fetching the remote version file: {e}", fg="red")
+        click.secho(_zh(f"An error occurred while fetching the remote version file: {e}"), fg="red")
         return None
 
 
@@ -111,17 +112,17 @@ def show_release_notification() -> None:
 
     local_version = get_version()
     if not local_version:
-        click.secho("Version file not found.", fg="red")
+        click.secho(_zh("Version file not found."), fg="red")
         return
 
-    click.secho(f"Local Version: {local_version}", fg="yellow")
+    click.secho(_zh(f"Local Version: {local_version}"), fg="yellow")
 
     remote_data = _get_remote_version_data(REMOTE_VERSION_URL)
     if not remote_data:
         return
 
     if Version(remote_data.current) > Version(local_version):
-        click.secho(f"[NOTICE] Update available: v{remote_data.current}\n", fg="green", bold=True)
+        click.secho(_zh(f"[NOTICE] Update available: v{remote_data.current}\n"), fg="green", bold=True)
 
         if verbose:
             changelog = _extract_changelog(remote_data, local_version, remote_data.current)
@@ -131,8 +132,8 @@ def show_release_notification() -> None:
                     click.secho(f"{entry.notes.strip()}\n")
             else:
                 click.secho(
-                    f"Changelog not found between versions ({local_version} -> {remote_data.current}).",
+                    _zh(f"Changelog not found between versions ({local_version} -> {remote_data.current})."),
                     fg="yellow",
                 )
     else:
-        click.secho("No new version available.", fg="green")
+        click.secho(_zh("No new version available."), fg="green")

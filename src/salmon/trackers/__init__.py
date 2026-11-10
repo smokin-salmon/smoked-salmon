@@ -4,6 +4,7 @@ from urllib import parse
 import asyncclick as click
 
 from salmon import cfg, interaction
+from salmon.localization import text as _zh
 from salmon.trackers import dic, ops, red
 from salmon.trackers.base import BaseGazelleApi
 
@@ -38,7 +39,9 @@ def tracker_codes(names: Iterable[str]) -> list[str]:
     codes = list(dict.fromkeys(entry.strip().upper() for item in names for entry in item.split(",") if entry.strip()))
     for code in codes:
         if code not in tracker_list:
-            raise UnknownTrackerError(f"{code} is not a tracker in your config ({', '.join(tracker_list) or 'none'}).")
+            raise UnknownTrackerError(
+                _zh(f"{code} is not a tracker in your config ({', '.join(tracker_list) or 'none'}).")
+            )
     return codes
 
 
@@ -52,21 +55,21 @@ async def choose_tracker(choices):
     while True:
         # Loop until we have chosen a tracker or aborted.
         tracker_input = await interaction.prompt(
-            click.style(f"Your choices are {' , '.join(choices)} or [n]one.", fg="magenta"),
+            _zh(click.style(_zh(f"Your choices are {' , '.join(choices)} or [n]one."), fg="magenta")),
             default=choices[0],
             options=interaction.Options(
-                (*(interaction.Option(choice, choice) for choice in choices), interaction.Option("n", "None"))
+                (*(interaction.Option(choice, choice) for choice in choices), interaction.Option("n", _zh("None")))
             ),
         )
         tracker_input = tracker_input.strip().upper()
         if tracker_input in choices:
-            click.secho(f"Using tracker: {tracker_input}", fg="green")
+            click.secho(_zh(f"Using tracker: {tracker_input}"), fg="green")
             return tracker_input
         # this part allows input of the first letter of the tracker.
         elif tracker_input in [choice[0] for choice in choices]:
             for choice in choices:
                 if tracker_input == choice[0]:
-                    click.secho(f"Using tracker: {choice}", fg="green")
+                    click.secho(_zh(f"Using tracker: {choice}"), fg="green")
                     return choice
         elif tracker_input.lower().startswith("n"):
             return None
@@ -86,12 +89,12 @@ async def choose_tracker_first_time(question="Which tracker would you like to up
     Uses the first default tracker if there is one and the only tracker if there is only one."""
     choices = tracker_list
     if len(choices) == 1:
-        click.secho(f"Using tracker: {choices[0]}")
+        click.secho(_zh(f"Using tracker: {choices[0]}"))
         return choices[0]
     if tracker_cfg.default_trackers:
-        click.secho(f"Using tracker: {tracker_cfg.default_trackers[0]}", fg="green")
+        click.secho(_zh(f"Using tracker: {tracker_cfg.default_trackers[0]}"), fg="green")
         return tracker_cfg.default_trackers[0]
-    click.secho(question, fg="magenta")
+    click.secho(_zh(question), fg="magenta")
     tracker = await choose_tracker(choices)
     return tracker
 
@@ -104,14 +107,14 @@ async def validate_tracker(ctx, param, value):
         if value is None:
             return await choose_tracker_first_time()
         if value.upper() in tracker_list:
-            click.secho(f"Using tracker: {value.upper()}", fg="green")
+            click.secho(_zh(f"Using tracker: {value.upper()}"), fg="green")
             return value.upper()
         else:
-            click.secho(f"{value} is not a tracker in your config.", fg="red")
+            click.secho(_zh(f"{value} is not a tracker in your config."), fg="red")
             return await choose_tracker(tracker_list)
     except AttributeError:
         raise click.BadParameter(
-            "This flag requires a tracker. Possible sources are: " + ", ".join(tracker_list)
+            _zh("This flag requires a tracker. Possible sources are: ") + ", ".join(tracker_list)
         ) from None
 
 
@@ -124,7 +127,7 @@ async def validate_trackers(ctx, param, value):
     """
     entries = [entry.strip() for item in value or () for entry in item.split(",") if entry.strip()]
     if not entries and len(tracker_cfg.default_trackers) > 1:
-        click.secho(f"Using trackers: {', '.join(tracker_cfg.default_trackers)}", fg="green")
+        click.secho(_zh(f"Using trackers: {', '.join(tracker_cfg.default_trackers)}"), fg="green")
         return UnnamedTrackers(tracker_cfg.default_trackers)
     if not entries:
         codes = [await choose_tracker_first_time()]
@@ -132,7 +135,7 @@ async def validate_trackers(ctx, param, value):
         codes = [await validate_tracker(ctx, param, entry) for entry in entries]
     chosen = tuple(dict.fromkeys(code for code in codes if code))
     if not chosen:
-        click.secho("No tracker selected.", fg="red")
+        click.secho(_zh("No tracker selected."), fg="red")
         raise click.Abort
     return chosen if entries else UnnamedTrackers(chosen)
 
@@ -146,11 +149,11 @@ def validate_request(gazelle_site, request):
         if request.lower().startswith(gazelle_site.base_url + "/requests.php"):
             request = parse.parse_qs(parse.urlparse(request).query)["id"][0]
         if not (request.isascii() and request.isdecimal()):
-            raise click.BadParameter("This flag requires a request, either as a url or ID")
+            raise click.BadParameter(_zh("This flag requires a request, either as a url or ID"))
         click.secho(
-            f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}",
+            _zh(f"Attempting to fill {gazelle_site.base_url}/requests.php?action=view&id={request}"),
             fg="green",
         )
         return request
     except (KeyError, AttributeError):
-        raise click.BadParameter("This flag requires a request, either as a url or ID") from None
+        raise click.BadParameter(_zh("This flag requires a request, either as a url or ID")) from None

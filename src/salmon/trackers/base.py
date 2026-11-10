@@ -40,6 +40,7 @@ from salmon.errors import (
     TLSCertificateError,
     UnknownOutcomeError,
 )
+from salmon.localization import text as _zh
 from salmon.trackers import account as accounts
 from salmon.trackers.account import POOL_CONNECTIONS, TrackerAccount, account_for
 
@@ -84,7 +85,7 @@ def _secho(message: str, **styles: Any) -> None:
     """Print a message about a request, or hold it back while hold_request_messages() is active."""
     held = _held_request_messages.get()
     if held is None:
-        click.secho(message, **styles)
+        click.secho(_zh(message), **styles)
     else:
         held.append((message, styles))
 
@@ -261,15 +262,15 @@ def _torrent_edit_fields(page: str, torrent_id: int) -> list[tuple[str, str]]:
         if isinstance(form, Tag) and form.find("input", attrs={"type": "hidden", "name": "action", "value": "takeedit"})
     ]
     if len(forms) != 1:
-        raise RequestError(f"expected one edit form on the page, found {len(forms)}")
+        raise RequestError(_zh(f"expected one edit form on the page, found {len(forms)}"))
     fields = _submitted_fields(forms[0])
     descriptions = [name for name, _ in fields].count("release_desc")
     if descriptions != 1:
-        raise RequestError(f"expected one description field in the edit form, found {descriptions}")
+        raise RequestError(_zh(f"expected one description field in the edit form, found {descriptions}"))
     if ("torrentid", str(torrent_id)) not in fields:
-        raise RequestError(f"the edit form is not for torrent {torrent_id}")
+        raise RequestError(_zh(f"the edit form is not for torrent {torrent_id}"))
     if not dict(fields).get("auth"):
-        raise RequestError("the edit form has no auth field")
+        raise RequestError(_zh("the edit form has no auth field"))
     return fields
 
 
@@ -410,7 +411,7 @@ class _StallBoundBody(aiohttp.payload.Payload):
                 async with asyncio.timeout(self._stall_secs):
                     await writer.write(body[start : start + _SEND_SLICE])
             except TimeoutError:
-                raise TimeoutError(f"sending the request stalled for {self._stall_secs} s") from None
+                raise TimeoutError(_zh(f"sending the request stalled for {self._stall_secs} s")) from None
 
 
 async def _stall_bound_body(data: Any, stall_secs: int) -> _StallBoundBody:
@@ -673,7 +674,7 @@ class BaseGazelleApi:
             RequestFailedError: If the body is larger: the tracker would send the same answer again.
         """
         too_large = RequestFailedError(
-            f"{self.site_string} sent more than {_MAX_BINARY_BODY // (1024 * 1024)} MiB: not reading the rest"
+            _zh(f"{self.site_string} sent more than {_MAX_BINARY_BODY // (1024 * 1024)} MiB: not reading the rest")
         )
         if resp.content_length is not None and resp.content_length > _MAX_BINARY_BODY:
             raise too_large
@@ -737,17 +738,19 @@ class BaseGazelleApi:
         try:
             decoded = msgspec.json.decode(answer.text)
             if decoded.get("status") != "success":
-                raise RequestFailedError(f"{self.site_string} refused its image host's credentials")
+                raise RequestFailedError(_zh(f"{self.site_string} refused its image host's credentials"))
             given = decoded["response"]
             auth = {"h": str(given["h"]), "e": str(int(given["e"])), "u": str(int(given["u"]))}
         except (msgspec.DecodeError, KeyError, TypeError, ValueError, AttributeError) as error:
             raise RequestFailedError(
-                f"{self.site_string} gave no usable credentials for its image host: it may have changed how it "
-                "serves its images"
+                _zh(
+                    f"{self.site_string} gave no usable credentials for its image host: it may have changed how it "
+                    "serves its images"
+                )
             ) from error
         if len(auth["h"]) < 8:
             # Masked by value wherever salmon prints: a shorter one would cut itself out of ordinary text.
-            raise RequestFailedError(f"{self.site_string} gave no usable key for its image host")
+            raise RequestFailedError(_zh(f"{self.site_string} gave no usable key for its image host"))
         # The key is the credential, masked wherever salmon prints. A user id and an expiry are numbers, which
         # masking would cut out of every other number: they are never printed either.
         self._image_auth = auth
@@ -972,7 +975,8 @@ class BaseGazelleApi:
                                 for name, value in redact_tracker_headers(resp.headers.items(), self._secrets()).items()
                             }
                             _secho(
-                                f"[DEBUG] response headers: {msgspec.json.encode(headers_shown).decode()}", fg="cyan"
+                                f"[DEBUG] response headers: {msgspec.json.encode(headers_shown).decode()}",
+                                fg="cyan",
                             )
                             if binary and not text:
                                 body_shown = f"<{len(content)} bytes>"
@@ -988,7 +992,9 @@ class BaseGazelleApi:
                             # redirected it, so a failed later hop leaves its outcome unknown. An
                             # error status the caller expects answers that later hop, not the request.
                             if redirected and not idempotent:
-                                raise UnknownOutcomeError(f"{self.site_string} answered {resp.status} on a later hop")
+                                raise UnknownOutcomeError(
+                                    _zh(f"{self.site_string} answered {resp.status} on a later hop")
+                                )
 
                             error_msg = text
                             with suppress(msgspec.DecodeError, ValueError):
@@ -1074,28 +1080,37 @@ class BaseGazelleApi:
                         if target.path.endswith("/login.php"):
                             if redirected and not idempotent:
                                 # As for an error status on a later hop: the tracker has acted.
-                                raise UnknownOutcomeError(f"{self.site_string} sent a later hop to its login page")
-                            if not idempotent and (target.scheme, target.netloc) != (current.scheme, current.netloc):
+                                raise UnknownOutcomeError(_zh(f"{self.site_string} sent a later hop to its login page"))
+                            if not idempotent and (target.scheme, target.netloc) != (
+                                current.scheme,
+                                current.netloc,
+                            ):
                                 # Another site's login page is no sign the tracker turned the request away.
-                                raise UnknownOutcomeError(f"{self.site_string} redirected the request to another site")
+                                raise UnknownOutcomeError(
+                                    _zh(f"{self.site_string} redirected the request to another site")
+                                )
                             _secho(
                                 f"{self.site_string} sent this request to its login page: your session cookie is "
                                 f"missing or expired. Check tracker.{self.site_code.lower()}.session in your config.",
                                 fg="red",
                                 bold=True,
                             )
-                            raise LoginError(f"{self.site_string} redirected to its login page")
+                            raise LoginError(_zh(f"{self.site_string} redirected to its login page"))
                         if (target.scheme, target.netloc) != (current.scheme, current.netloc):
                             _secho(
                                 f"{self.site_string} redirected to {target.scheme}://{target.netloc}, not following.",
                                 fg="red",
                             )
                             if redirected and not idempotent:
-                                raise UnknownOutcomeError(f"{self.site_string} redirected a later hop to another site")
+                                raise UnknownOutcomeError(
+                                    _zh(f"{self.site_string} redirected a later hop to another site")
+                                )
                             if not idempotent:
                                 # A redirect is an answer: the tracker has acted on the request, whatever it did.
-                                raise UnknownOutcomeError(f"{self.site_string} redirected the request to another site")
-                            raise RequestFailedError(f"{self.site_string} redirected to another site")
+                                raise UnknownOutcomeError(
+                                    _zh(f"{self.site_string} redirected the request to another site")
+                                )
+                            raise RequestFailedError(_zh(f"{self.site_string} redirected to another site"))
 
                         if resp.status == HTTPStatus.SEE_OTHER or (
                             resp.status in (HTTPStatus.MOVED_PERMANENTLY, HTTPStatus.FOUND) and method == "POST"
@@ -1106,7 +1121,7 @@ class BaseGazelleApi:
                             # A 307 or 308 asks for the request to be sent again as it is, body and all.
                             # The tracker may have acted on it already, so it is not sent again.
                             raise UnknownOutcomeError(
-                                f"{self.site_string} asked for the request to be sent again to {target.path}"
+                                _zh(f"{self.site_string} asked for the request to be sent again to {target.path}")
                             )
                         url, params = target._replace(fragment="").geturl(), None
                         redirected = True
@@ -1189,7 +1204,7 @@ class BaseGazelleApi:
         group_id = query.get("id", [None])[0]
         if group_id:
             return int(group_id)
-        click.secho("Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!", fg="red")
+        click.secho(_zh("Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!"), fg="red")
         return None
 
     async def fetch_log(self, page: int) -> str:
@@ -1259,7 +1274,7 @@ class BaseGazelleApi:
 
         try:
             if resp["status"] != "success":
-                raise RequestError(f"API upload failed: {self._excerpt(str(resp.get('error', resp)))}")
+                raise RequestError(_zh(f"API upload failed: {self._excerpt(str(resp.get('error', resp)))}"))
             answer = resp.get("response")
             if not isinstance(answer, dict):
                 answer = {}  # Names no torrent: looked up by its infohash below.
@@ -1268,9 +1283,9 @@ class BaseGazelleApi:
             ):
                 requestId = answer["requestid"] if "requestid" in answer else answer["fillRequest"]["requestId"]
                 if requestId == -1:
-                    click.secho("Request fill failed!", fg="red")
+                    click.secho(_zh("Request fill failed!"), fg="red")
                 else:
-                    click.secho("Filled request: " + self.request_url(requestId), fg="green")
+                    click.secho(_zh(_zh("Filled request: ") + self.request_url(requestId)), fg="green")
             torrent_id = 0
             group_id = 0
             if "torrentid" in answer:
@@ -1280,10 +1295,10 @@ class BaseGazelleApi:
                 torrent_id = answer["torrentId"]
                 group_id = answer.get("groupId")
         except TypeError as err:
-            raise RequestError(f"API upload failed, response: {self._redact(str(resp))}") from err
+            raise RequestError(_zh(f"API upload failed, response: {self._redact(str(resp))}")) from err
         if not torrent_id:
             # A success naming no torrent: found by its infohash, never taken as torrent 0.
-            return await self._find_lost_upload(files, UnknownOutcomeError("its answer named no torrent"))
+            return await self._find_lost_upload(files, UnknownOutcomeError(_zh("its answer named no torrent")))
         # Sent into a known group, the torrent is there whether or not the answer says so.
         return torrent_id, group_id or int(data.get("groupid") or 0)
 
@@ -1318,7 +1333,7 @@ class BaseGazelleApi:
         if self.announce in resp_text:
             match = re.search(r'<p style="color: red; text-align: center;">(.+)<\/p>', resp_text)
             if match:
-                raise RequestError(f"Site upload failed: {self._excerpt(match[1])} ({response.status})")
+                raise RequestError(_zh(f"Site upload failed: {self._excerpt(match[1])} ({response.status})"))
         if "requests.php" in resp_url:
             return await self._request_fill_result(data, files, resp_text, resp_url)
         try:
@@ -1357,13 +1372,15 @@ class BaseGazelleApi:
             reason = self._request_fill_error(resp_text)
             stored = _query_id(query, "torrentid")
             if stored is None:
-                return await self._find_lost_upload(files, UnknownOutcomeError(f"filling the request failed: {reason}"))
+                return await self._find_lost_upload(
+                    files, UnknownOutcomeError(_zh(f"filling the request failed: {reason}"))
+                )
             torrent_id = stored
             request_id = _query_id(query, "requestid")
             where = self.request_url(request_id) if request_id is not None else "the request"
-            click.secho(f"The upload went through, but filling {where} failed: {reason}", fg="red", bold=True)
+            click.secho(_zh(f"The upload went through, but filling {where} failed: {reason}"), fg="red", bold=True)
         else:
-            click.secho(f"Filled request: {self._redact(resp_url)}", fg="green")
+            click.secho(_zh(f"Filled request: {self._redact(resp_url)}"), fg="green")
         if data.get("groupid"):
             # Sent into a known group: no need to ask.
             return torrent_id, int(data["groupid"])
@@ -1371,7 +1388,9 @@ class BaseGazelleApi:
             group_id = await self.get_redirect_torrentgroupid(torrent_id)
         except RequestError as err:
             # The torrent is up: raising would report it failed, and it would go unseeded.
-            click.secho(f"Could not look up the group of torrent {torrent_id}: {self._excerpt(str(err))}", fg="yellow")
+            click.secho(
+                _zh(f"Could not look up the group of torrent {torrent_id}: {self._excerpt(str(err))}"), fg="yellow"
+            )
             return torrent_id, 0
         return torrent_id, group_id or 0
 
@@ -1410,8 +1429,11 @@ class BaseGazelleApi:
                 click.echo(f"      {line}")
         torrent = Torrent.read_stream(files.torrent_data)
         click.echo(
-            f"  The torrent: {torrent.name}, {len(torrent.files)} file(s), {format_size(torrent.size, binary=True)}, "
-            f"piece size {format_size(torrent.piece_size, binary=True)}, source {torrent.source}"
+            _zh(
+                f"  The torrent: {torrent.name}, {len(torrent.files)} "
+                f"file(s), {format_size(torrent.size, binary=True)}, "
+                f"piece size {format_size(torrent.piece_size, binary=True)}, source {torrent.source}"
+            )
         )
         for file in torrent.files:
             # The first part of a path in a torrent of several files is the torrent's name.
@@ -1476,9 +1498,11 @@ class BaseGazelleApi:
             # Uppercase, as Gazelle's API documentation asks for the hash.
             infohash = Torrent.read_stream(files.torrent_data).infohash.upper()
             click.secho(
-                f"Could not tell whether {self.site_string} took the upload ({err}). "
-                f"Waiting {_LOST_UPLOAD_FIRST_WAIT} s for {self.site_string} to finish processing it, "
-                "then looking it up...",
+                _zh(
+                    f"Could not tell whether {self.site_string} took the upload ({err}). "
+                    f"Waiting {_LOST_UPLOAD_FIRST_WAIT} s for {self.site_string} to finish processing it, "
+                    "then looking it up..."
+                ),
                 fg="yellow",
             )
             await asyncio.sleep(_LOST_UPLOAD_FIRST_WAIT)
@@ -1487,8 +1511,10 @@ class BaseGazelleApi:
             except RequestFailedError as not_found:
                 # The tracker answered, without the torrent. Any other failure is not worth another request.
                 click.secho(
-                    f"{self.site_string} does not have it yet ({not_found}). "
-                    f"Waiting {_LOST_UPLOAD_SECOND_WAIT} s more, then looking it up one last time...",
+                    _zh(
+                        f"{self.site_string} does not have it yet ({not_found}). "
+                        f"Waiting {_LOST_UPLOAD_SECOND_WAIT} s more, then looking it up one last time..."
+                    ),
                     fg="yellow",
                 )
                 await asyncio.sleep(_LOST_UPLOAD_SECOND_WAIT)
@@ -1496,19 +1522,25 @@ class BaseGazelleApi:
             torrent_id, group_id = int(found["torrent"]["id"]), int(found["group"]["id"])
         except (RequestError, TorfError, KeyError, TypeError, ValueError) as lookup_err:
             raise UnknownOutcomeError(
-                f"Could not tell whether {self.site_string} took the upload ({self._redact(str(err))}), and looking "
-                f"the torrent up by its infohash did not confirm it ({self._redact(str(lookup_err))}). The upload may "
-                f"still have gone through: check your uploads on {self.site_string} before uploading it again."
+                _zh(
+                    f"Could not tell whether {self.site_string} took the "
+                    f"upload ({self._redact(str(err))}), and looking "
+                    f"the torrent up by its infohash did not confirm it "
+                    f"({self._redact(str(lookup_err))}). The upload may "
+                    f"still have gone through: check your uploads on {self.site_string} before uploading it again."
+                )
             ) from None  # Not chained: the lookup's error may hold a page whose links carry this client's credentials.
         except asyncio.CancelledError:
             # Ctrl-C while waiting: still warn before the user uploads it again.
             click.secho(
-                f"Stopped before finding out. The upload may still have gone through: check your uploads on "
-                f"{self.site_string} before uploading it again.",
+                _zh(
+                    f"Stopped before finding out. The upload may still have gone through: check your uploads on "
+                    f"{self.site_string} before uploading it again."
+                ),
                 fg="yellow",
             )
             raise
-        click.secho(f"Found the upload on {self.site_string}: torrent {torrent_id}.", fg="green")
+        click.secho(_zh(f"Found the upload on {self.site_string}: torrent {torrent_id}."), fg="green")
         return torrent_id, group_id
 
     async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
@@ -1538,7 +1570,7 @@ class BaseGazelleApi:
         resp = await self._request("POST", url, params={"action": "takereport"}, data=data)
         if "torrents.php" in resp.url:
             return True
-        raise RequestError(f"Failed to report the torrent for lossy master, code {resp.status}.")
+        raise RequestError(_zh(f"Failed to report the torrent for lossy master, code {resp.status}."))
 
     async def append_to_torrent_description(self, torrent_id: int, description_addition: str) -> None:
         """Add text to start of torrent description.
@@ -1562,8 +1594,10 @@ class BaseGazelleApi:
             fields = _torrent_edit_fields(page.text, torrent_id)
         except RequestError as err:
             raise RequestError(
-                f"Could not read the edit form of torrent {torrent_id} on {self.site_string} ({err}). "
-                "Nothing was sent: its description is unchanged."
+                _zh(
+                    f"Could not read the edit form of torrent {torrent_id} on {self.site_string} ({err}). "
+                    "Nothing was sent: its description is unchanged."
+                )
             ) from err
         new_data = [(name, description_addition + value if name == "release_desc" else value) for name, value in fields]
         # Every field is the one the form showed, or the description computed above, so sending
@@ -1576,9 +1610,9 @@ class BaseGazelleApi:
         if edit_error and edit_error.parent and edit_error.parent.parent:
             p_tag = edit_error.parent.parent.find("p")
             error_message = p_tag.text if p_tag else "Unknown error"
-            raise RequestError(f"Failed to edit torrent: {error_message}")
+            raise RequestError(_zh(f"Failed to edit torrent: {error_message}"))
         else:
-            click.secho("Added spectrals to the torrent description.", fg="green")
+            click.secho(_zh("Added spectrals to the torrent description."), fg="green")
 
     """The following three parsing functions are part of the gazelle class
     in order that they be easily overwritten in the derivative site classes.
@@ -1604,7 +1638,7 @@ class BaseGazelleApi:
                 group_ids.append(int(group_url[1]))
 
         if not torrent_ids or not group_ids:
-            raise TypeError("Could not parse torrent/group id from group page")
+            raise TypeError(_zh("Could not parse torrent/group id from group page"))
 
         return max(torrent_ids), max(group_ids)
 

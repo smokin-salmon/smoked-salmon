@@ -11,6 +11,7 @@ from deluge_client import DelugeRPCClient
 
 from salmon import dryrun
 from salmon.common.redaction import redact_client_url, redact_secrets, url_secrets
+from salmon.localization import text as _zh
 
 REQUEST_TIMEOUT = 60  # Seconds per socket operation
 
@@ -35,7 +36,7 @@ class TorrentClient:
         # Logging in reaches the client: a dry run neither logs in nor adds anything.
         if dryrun.active():
             dryrun.refuse(f"log into the torrent client at {redact_client_url(url) if url else host or ''}")
-        click.secho(f"Initializing {self.__class__.__name__} client...", fg="cyan")
+        click.secho(_zh(f"Initializing {self.__class__.__name__} client..."), fg="cyan")
         self.client = self.login()
 
     def _redact(self, text: str) -> str:
@@ -68,19 +69,19 @@ def _qbittorrent_add_succeeded(result: object) -> bool:
 class QBittorrentClient(TorrentClient):
     def login(self):
         try:
-            click.secho("Attempting to connect to qBittorrent...", fg="yellow")
+            click.secho(_zh("Attempting to connect to qBittorrent..."), fg="yellow")
             url = str(self.url) if self.url else ""
             qbt_client = qbittorrentapi.Client(host=url, username=self.username, password=self.password)
             qbt_client.auth_log_in()
 
-            click.secho("Successfully connected to qBittorrent", fg="green")
+            click.secho(_zh("Successfully connected to qBittorrent"), fg="green")
             return qbt_client
 
         except qbittorrentapi.LoginFailed:
-            click.secho("INCORRECT QBIT LOGIN CREDENTIALS", fg="red", bold=True)
+            click.secho(_zh("INCORRECT QBIT LOGIN CREDENTIALS"), fg="red", bold=True)
             return None
         except qbittorrentapi.APIConnectionError as e:
-            click.secho(f"APIConnectionError: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"APIConnectionError: {self._redact(str(e))}"), fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> bool:
@@ -88,26 +89,28 @@ class QBittorrentClient(TorrentClient):
             return False
 
         try:
-            click.secho("Adding torrent to qBittorrent...", fg="yellow")
+            click.secho(_zh("Adding torrent to qBittorrent..."), fg="yellow")
             result = self.client.torrents_add(
                 torrent_files=torrent, save_path=remote_folder, is_paused=is_paused, category=label
             )
             if not _qbittorrent_add_succeeded(result):
                 click.secho(
-                    f"Failed to add torrent: qBittorrent returned {self._redact(repr(result))}", fg="red", bold=True
+                    _zh(f"Failed to add torrent: qBittorrent returned {self._redact(repr(result))}"),
+                    fg="red",
+                    bold=True,
                 )
                 return False
-            click.secho("Torrent added successfully", fg="green")
+            click.secho(_zh("Torrent added successfully"), fg="green")
             return True
         except Exception as e:
-            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"Failed to add torrent: {self._redact(str(e))}"), fg="red", bold=True)
             return False
 
 
 class TransmissionClient(TorrentClient):
     def login(self) -> transmission_rpc.Client | None:
         try:
-            click.secho("Attempting to connect to Transmission...", fg="yellow")
+            click.secho(_zh("Attempting to connect to Transmission..."), fg="yellow")
             # Cast to expected types for transmission_rpc.Client
             protocol = "https" if self.scheme == "https" else "http"
             host = str(self.host) if self.host else "localhost"
@@ -120,10 +123,10 @@ class TransmissionClient(TorrentClient):
                 password=self.password,
                 timeout=REQUEST_TIMEOUT,
             )
-            click.secho("Successfully connected to Transmission", fg="green")
+            click.secho(_zh("Successfully connected to Transmission"), fg="green")
             return trt
         except Exception as e:
-            click.secho(f"Connect to Transmission failed: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"Connect to Transmission failed: {self._redact(str(e))}"), fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> bool:
@@ -131,7 +134,7 @@ class TransmissionClient(TorrentClient):
             return False
 
         try:
-            click.secho("Adding torrent to Transmission...", fg="yellow")
+            click.secho(_zh("Adding torrent to Transmission..."), fg="yellow")
             # transmission-rpc's add_torrent returns next(iter(response.values())): a duplicate
             # torrent already in the client comes back as a Torrent object too, the same as a
             # fresh add, so it cannot be told apart here without reaching into its private
@@ -143,32 +146,32 @@ class TransmissionClient(TorrentClient):
                 labels=([label] if label else None),
             )
             if not result:
-                click.secho("Failed to add torrent: Transmission returned no torrent", fg="red", bold=True)
+                click.secho(_zh("Failed to add torrent: Transmission returned no torrent"), fg="red", bold=True)
                 return False
-            click.secho("Torrent added successfully", fg="green")
+            click.secho(_zh("Torrent added successfully"), fg="green")
             return True
         except Exception as e:
-            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"Failed to add torrent: {self._redact(str(e))}"), fg="red", bold=True)
             return False
 
 
 class DelugeClient(TorrentClient):
     def login(self):
         try:
-            click.secho("Attempting to connect to Deluge...", fg="yellow")
+            click.secho(_zh("Attempting to connect to Deluge..."), fg="yellow")
             # Cast to expected types for DelugeRPCClient
             host = str(self.host) if self.host else "localhost"
             port = int(self.port) if self.port else 58846
             de_client = DelugeRPCClient(host=host, port=port, username=self.username, password=self.password)
             de_client.connect()
             if de_client.connected is True:
-                click.secho("Successfully connected to Deluge", fg="green")
+                click.secho(_zh("Successfully connected to Deluge"), fg="green")
                 return de_client
             else:
-                click.secho("Deluge connection failed: Not connected", fg="red", bold=True)
+                click.secho(_zh("Deluge connection failed: Not connected"), fg="red", bold=True)
                 return None
         except Exception as e:
-            click.secho(f"Connect to Deluge failed: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"Connect to Deluge failed: {self._redact(str(e))}"), fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> bool:
@@ -176,7 +179,7 @@ class DelugeClient(TorrentClient):
             return False
 
         try:
-            click.secho("Adding torrent to Deluge...", fg="yellow")
+            click.secho(_zh("Adding torrent to Deluge..."), fg="yellow")
             torrent_id = os.urandom(16).hex()
             result = self.client.call(
                 "core.add_torrent_file",
@@ -186,34 +189,36 @@ class DelugeClient(TorrentClient):
             )
 
             if not result:
-                click.secho("Failed to add torrent: Deluge refused it (already present?)", fg="red", bold=True)
+                click.secho(_zh("Failed to add torrent: Deluge refused it (already present?)"), fg="red", bold=True)
                 return False
 
             # Set label if provided
             if label:
                 try:
-                    click.secho(f"Setting label '{label}' for torrent...", fg="yellow")
+                    click.secho(_zh(f"Setting label '{label}' for torrent..."), fg="yellow")
                     self.client.call("label.set_torrent", result, label)
                 except Exception as label_error:
                     # If setting label failed, try to add the label first
                     if "Unknown Label" in str(label_error) or "label does not exist" in str(label_error).lower():
                         try:
-                            click.secho(f"Creating label '{label}'...", fg="yellow")
+                            click.secho(_zh(f"Creating label '{label}'..."), fg="yellow")
                             self.client.call("label.add", label)
                             # Try setting the label again
                             self.client.call("label.set_torrent", result, label)
-                            click.secho(f"Label '{label}' set successfully", fg="green")
+                            click.secho(_zh(f"Label '{label}' set successfully"), fg="green")
                         except Exception as add_label_error:
-                            click.secho(f"Failed to create/set label: {self._redact(str(add_label_error))}", fg="red")
+                            click.secho(
+                                _zh(f"Failed to create/set label: {self._redact(str(add_label_error))}"), fg="red"
+                            )
                     else:
-                        click.secho(f"Failed to set label: {self._redact(str(label_error))}", fg="red")
+                        click.secho(_zh(f"Failed to set label: {self._redact(str(label_error))}"), fg="red")
                 else:
-                    click.secho(f"Label '{label}' set successfully", fg="green")
+                    click.secho(_zh(f"Label '{label}' set successfully"), fg="green")
 
-            click.secho("Torrent added successfully", fg="green")
+            click.secho(_zh("Torrent added successfully"), fg="green")
             return True
         except Exception as e:
-            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"Failed to add torrent: {self._redact(str(e))}"), fg="red", bold=True)
             return False
 
 
@@ -247,10 +252,10 @@ class RuTorrentClient(TorrentClient):
             url = str(self.url) if self.url else ""
             rt_client = xmlrpc.client.Server(url, transport=_rutorrent_transport(url))
             version = rt_client.system.client_version()
-            click.secho(f"Successfully connected to ruTorrent, version: {version}", fg="green")
+            click.secho(_zh(f"Successfully connected to ruTorrent, version: {version}"), fg="green")
             return rt_client
         except Exception as e:
-            click.secho(f"Connect to ruTorrent failed: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"Connect to ruTorrent failed: {self._redact(str(e))}"), fg="red", bold=True)
             return None
 
     def add_to_downloader(self, remote_folder, torrent, is_paused, label) -> bool:
@@ -262,7 +267,7 @@ class RuTorrentClient(TorrentClient):
             return False
 
         try:
-            click.secho("Adding torrent to ruTorrent...", fg="yellow")
+            click.secho(_zh("Adding torrent to ruTorrent..."), fg="yellow")
             torrent_bin = xmlrpc.client.Binary(torrent)
             commands = [
                 "print=d.hash=",
@@ -275,10 +280,10 @@ class RuTorrentClient(TorrentClient):
             else:
                 self.client.load.raw_start_verbose("", torrent_bin, *commands)
 
-            click.secho("Torrent added successfully", fg="green")
+            click.secho(_zh("Torrent added successfully"), fg="green")
             return True
         except Exception as e:
-            click.secho(f"Failed to add torrent: {self._redact(str(e))}", fg="red", bold=True)
+            click.secho(_zh(f"Failed to add torrent: {self._redact(str(e))}"), fg="red", bold=True)
             return False
 
 
@@ -306,12 +311,14 @@ class TorrentClientGenerator:
         Returns:
             An instance of the appropriate TorrentClient subclass.
         """
-        click.secho(f"\nParsing torrent client URL: {redact_client_url(url)}", fg="cyan")
+        click.secho(_zh(f"\nParsing torrent client URL: {redact_client_url(url)}"), fg="cyan")
         try:
             parsed = urlparse(url)
         except ValueError:
             # urlparse's own message quotes the URL's user:password.
-            raise ValueError("The torrent client URL does not parse: check torrent_client in the config.") from None
+            raise ValueError(
+                _zh("The torrent client URL does not parse: check torrent_client in the config.")
+            ) from None
 
         username: str | None = None
         password: str | None = None

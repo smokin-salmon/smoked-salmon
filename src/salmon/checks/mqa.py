@@ -15,6 +15,8 @@ import av.audio.resampler
 import numpy as np
 from numpy.typing import NDArray
 
+from salmon.localization import text as _zh
+
 # MQA magic syncword: 0xbe0498c88 (36 bits)
 _MAGIC_HEX = 0xBE0498C88
 _MAGIC_BITS = 36
@@ -46,11 +48,11 @@ def _decode_first_second(path: str) -> NDArray[np.int32]:
     try:
         stream = container.streams.audio[0]
         if stream.codec_context.name != "flac":
-            raise ValueError("Not a FLAC file")
+            raise ValueError(_zh("Not a FLAC file"))
 
         sample_rate = stream.rate
         if sample_rate is None:
-            raise ValueError("Cannot determine sample rate")
+            raise ValueError(_zh("Cannot determine sample rate"))
 
         resampler = av.audio.resampler.AudioResampler(format="s32p", layout="stereo")
         target_samples = sample_rate  # 1 second
@@ -73,14 +75,14 @@ def _decode_first_second(path: str) -> NDArray[np.int32]:
                 break
 
         if not collected:
-            raise ValueError("No audio frames decoded")
+            raise ValueError(_zh("No audio frames decoded"))
 
         samples = np.concatenate(collected, axis=0)
     finally:
         container.close()
 
     if samples.shape[1] != 2:
-        raise ValueError("Input must be stereo")
+        raise ValueError(_zh("Input must be stereo"))
 
     return samples
 
@@ -131,7 +133,7 @@ def _check_mqa_sync(path: str) -> bool:
     try:
         samples = _decode_first_second(path)
     except Exception as e:
-        click.secho(f"Failed to decode file: {path}, error: {e}", fg="red")
+        click.secho(_zh(f"Failed to decode file: {path}, error: {e}"), fg="red")
         return False
 
     return _check_mqa_syncword(samples[:, 0], samples[:, 1])

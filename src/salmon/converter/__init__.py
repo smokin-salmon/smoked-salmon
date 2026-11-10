@@ -9,6 +9,7 @@ from salmon.common import commandgroup
 from salmon.common.files import AlbumPath
 from salmon.converter.downconverting import convert_folder
 from salmon.converter.transcoding import Bitrate, transcode_folder
+from salmon.localization import text as _zh
 
 
 @commandgroup.command()
@@ -18,13 +19,13 @@ from salmon.converter.transcoding import Bitrate, transcode_folder
     "-b",
     type=click.Choice(get_args(Bitrate), case_sensitive=False),
     required=True,
-    help=f"Bitrate to transcode to ({', '.join(get_args(Bitrate))})",
+    help=_zh(f"Bitrate to transcode to ({', '.join(get_args(Bitrate))})"),
 )
 @click.option(
     "--essential-only",
     "-eo",
     is_flag=True,
-    help="Only keep music and image files; skip cues, logs and other extra files.",
+    help=_zh("Only keep music and image files; skip cues, logs and other extra files."),
 )
 async def transcode(path: str, bitrate: Bitrate, essential_only: bool) -> None:
     """Transcode a dir of FLACs into "perfect" MP3.
@@ -43,7 +44,7 @@ async def transcode(path: str, bitrate: Bitrate, essential_only: bool) -> None:
     "--essential-only",
     "-eo",
     is_flag=True,
-    help="Only keep music and image files; skip cues, logs and other extra files.",
+    help=_zh("Only keep music and image files; skip cues, logs and other extra files."),
 )
 async def downconv(path: str, essential_only: bool) -> None:
     """Downconvert a dir of 24bit FLACs to 16bit.
@@ -85,7 +86,7 @@ def _output_dir(path: str) -> str | None:
     if not cfg.directory.is_library_path(path):
         return None
     output_dir = os.path.join(cfg.directory.download_directory, *_mirror_parts(Path(os.path.realpath(path)).parent))
-    click.secho(f"{path} is in library_dirs: writing the output into {output_dir}.", fg="yellow")
+    click.secho(_zh(f"{path} is in library_dirs: writing the output into {output_dir}."), fg="yellow")
     return output_dir
 
 

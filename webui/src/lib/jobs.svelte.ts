@@ -197,7 +197,7 @@ class JobStore {
       this.jobs = jobs.map((j) => ({ ...j, log: known.get(j.id)?.log ?? [] }))
       this.loadError = ''
     } catch (e) {
-      this.loadError = `Could not load the jobs: ${e}`
+      this.loadError = `无法加载任务列表：${e}`
     } finally {
       const buffered = this.buffer ?? []
       this.buffer = null

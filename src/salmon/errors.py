@@ -1,3 +1,6 @@
+from salmon.localization import text as _zh
+
+
 class ScrapeError(Exception):
     def __init__(self, message, payload=None):
         self.payload = payload
@@ -95,7 +98,7 @@ class TLSCertificateError(RequestError):
     """
 
     def __init__(self, host: str, reason: str, tracker: str) -> None:
-        super().__init__(f"TLS certificate verification failed for {host}: {reason}")
+        super().__init__(_zh(f"TLS certificate verification failed for {host}: {_zh(reason)}"))
         self.host = host
         self.reason = reason
         # The site code, for salmon checkconf -t.

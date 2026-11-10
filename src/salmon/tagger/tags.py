@@ -7,6 +7,7 @@ from mutagen import flac, mp3, mp4
 
 from salmon import cfg, interaction
 from salmon.common import get_audio_files
+from salmon.localization import text as _zh
 from salmon.tagger.mutation import abort_partial
 from salmon.tagger.tagfile import TAG_FIELDS, TagFile
 
@@ -65,10 +66,10 @@ async def check_tags(path: str) -> dict[str, TagFile]:
     Raises:
         IndexError: If no tracks are found.
     """
-    click.secho("\nChecking tags...", fg="yellow", bold=True)
+    click.secho(_zh("\nChecking tags..."), fg="yellow", bold=True)
     tags = gather_tags(path)
     if not tags:
-        raise IndexError("No tracks were found.")
+        raise IndexError(_zh("No tracks were found."))
 
     check_required_tags(tags)
 
@@ -103,11 +104,11 @@ def check_required_tags(tags):
 
     if offending_files:
         click.secho(
-            "The following files do not contain all the required tags: {}.".format(", ".join(offending_files)),
+            _zh("The following files do not contain all the required tags: {}.").format(", ".join(offending_files)),
             fg="red",
         )
     else:
-        click.secho("Verified that all files contain the required tags.", fg="green")
+        click.secho(_zh("Verified that all files contain the required tags."), fg="green")
 
 
 def is_classical(tag_item) -> bool:
@@ -158,7 +159,7 @@ async def prompt_editor(path: str) -> bool:
         True if the editor was opened, False if tags were accepted.
     """
     if not await interaction.confirm(
-        click.style("\nAre the above tags acceptable? ([n] to open in tag editor)", fg="magenta"),
+        _zh(click.style(_zh("\nAre the above tags acceptable? ([n] to open in tag editor)"), fg="magenta")),
         default=True,
     ):
         await anyio.run_process(["puddletag", path], check=False)
@@ -203,4 +204,4 @@ def standardize_tags(path: str) -> None:
             except Exception as e:
                 abort_partial(f"Standardizing tags on {filename}", done, filename, filenames[index + 1 :], e)
             done.append(filename)
-            click.secho(f"Unaliased the following tags for {filename}: " + ", ".join(found_aliased))
+            click.secho(_zh(_zh(f"Unaliased the following tags for {filename}: ") + ", ".join(found_aliased)))

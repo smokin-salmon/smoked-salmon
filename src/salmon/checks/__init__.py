@@ -10,6 +10,7 @@ from salmon.checks.upconverts import test_upconverted
 from salmon.common import commandgroup
 from salmon.common.files import AlbumPath, album_files, process_files
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
+from salmon.localization import text as _zh
 
 if TYPE_CHECKING:
     from salmon.checks.album import AlbumChecks
@@ -33,7 +34,7 @@ async def log(path: str) -> None:
         await _check_log(path, os.path.dirname(path))
     elif os.path.isdir(path):
         for filepath in album_files(path, [".log"]):
-            click.secho(f"\nScoring {filepath}...", fg="cyan")
+            click.secho(_zh(f"\nScoring {filepath}..."), fg="cyan")
             await _check_log(filepath, path)
 
 
@@ -47,13 +48,13 @@ async def _check_log(path: str, basepath: str) -> None:
     try:
         await check_log_cambia(path, basepath)
     except EditedLogError:
-        click.secho("Error: Edited logs detected!", fg="red", bold=True)
+        click.secho(_zh("Error: Edited logs detected!"), fg="red", bold=True)
     except CRCMismatchError:
-        click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+        click.secho(_zh("Error: CRC mismatch between log and audio files!"), fg="red", bold=True)
     except LogCheckSkipped as e:
-        click.secho(f"Log not checked: {e}", fg="yellow")
+        click.secho(_zh(f"Log not checked: {e}"), fg="yellow")
     except Exception as e:
-        click.secho(f"Error checking log: {e}", fg="red")
+        click.secho(_zh(f"Error checking log: {e}"), fg="red")
 
 
 @check.command()
@@ -87,16 +88,16 @@ async def mqa(path):
 
     if os.path.isfile(path):
         if await check_mqa(path):
-            click.secho("MQA syncword present", fg="red")
+            click.secho(_zh("MQA syncword present"), fg="red")
         else:
-            click.secho("Did not find MQA syncword", fg="green")
+            click.secho(_zh("Did not find MQA syncword"), fg="green")
     elif os.path.isdir(path):
         for filepath in album_files(path, [".mp3", ".flac"]):
-            click.secho(f"\nChecking {filepath}...", fg="cyan")
+            click.secho(_zh(f"\nChecking {filepath}..."), fg="cyan")
             if await check_mqa(filepath):
-                click.secho("MQA syncword present", fg="red")
+                click.secho(_zh("MQA syncword present"), fg="red")
             else:
-                click.secho("Did not find MQA syncword", fg="green")
+                click.secho(_zh("Did not find MQA syncword"), fg="green")
 
 
 _VERDICT_STYLES = {
@@ -125,10 +126,12 @@ def _trackers_option(_ctx, _param, value: tuple[str, ...]) -> list[str]:
     "trackers",
     multiple=True,
     callback=_trackers_option,
-    help="Also search this tracker for a dupe, and check its rules only (RED,OPS or repeated -t). "
-    "Without it, no tracker is contacted and RED's and OPS's rules apply.",
+    help=_zh(
+        "Also search this tracker for a dupe, and check its rules only (RED,OPS or repeated -t). "
+        "Without it, no tracker is contacted and RED's and OPS's rules apply."
+    ),
 )
-@click.option("--report", is_flag=True, help="Also print a plain-text report to paste into a tracker help thread.")
+@click.option("--report", is_flag=True, help=_zh("Also print a plain-text report to paste into a tracker help thread."))
 async def all_checks(path: str, trackers: list[str], report: bool) -> None:
     """Run every check on an album folder and print a verdict for each.
 
@@ -151,22 +154,22 @@ async def all_checks(path: str, trackers: list[str], report: bool) -> None:
 
 def print_album_checks(checks: "AlbumChecks") -> None:
     """Print check all's verdict rows and its summary line."""
-    width = max(len(row.check) for row in checks.rows)
+    width = max(len(_zh(row.check)) for row in checks.rows)
     click.secho(f"\n{checks.folder}", bold=True)
     for row in checks.rows:
-        click.secho(f"  {row.verdict:<5}  ", nl=False, **_VERDICT_STYLES[row.verdict])
-        click.echo(f"{row.check:<{width}}  {row.detail}")
+        click.secho(f"  {_zh(row.verdict):<5}  ", nl=False, **_VERDICT_STYLES[row.verdict])
+        click.echo(f"{_zh(row.check):<{width}}  {_zh(row.detail)}")
         for note in row.notes:
-            click.echo(f"  {'':<5}  {'':<{width}}    {note}")
+            click.echo(f"  {'':<5}  {'':<{width}}    {_zh(note)}")
 
     warnings = sum(row.verdict == "WARN" for row in checks.rows)
     if checks.blocking:
-        click.secho(f"\n{len(checks.blocking)} blocking, {warnings} warning(s).", fg="red", bold=True)
+        click.secho(_zh(f"\n{len(checks.blocking)} blocking, {warnings} warning(s)."), fg="red", bold=True)
     elif warnings:
-        click.secho(f"\nNothing blocking, {warnings} warning(s) to read first.", fg="yellow")
+        click.secho(_zh(f"\nNothing blocking, {warnings} warning(s) to read first."), fg="yellow")
     else:
-        click.secho("\nNothing blocking, no warning.", fg="green")
-    click.echo("Advisory: salmon up runs its own checks.")
+        click.secho(_zh("\nNothing blocking, no warning."), fg="green")
+    click.echo(_zh("Advisory: salmon up runs its own checks."))
 
 
 async def mqa_test(path: str, all_files: bool = True) -> None:
@@ -201,6 +204,6 @@ async def mqa_test(path: str, all_files: bool = True) -> None:
     )
     hits = [filepath for filepath, found in zip(filepaths, detected, strict=True) if found]
     for filepath in hits:
-        click.secho(f"MQA syncword present in '{filepath}'", fg="red", bold=True)
+        click.secho(_zh(f"MQA syncword present in '{filepath}'"), fg="red", bold=True)
     if hits:
         raise click.Abort

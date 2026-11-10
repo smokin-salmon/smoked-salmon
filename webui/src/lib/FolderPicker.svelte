@@ -1,5 +1,6 @@
 <script lang="ts">
   import { tick } from 'svelte'
+  import { t } from './i18n'
   import { ApiError, apiGet } from './api'
 
   /**
@@ -11,7 +12,7 @@
    */
   let {
     value = $bindable(''),
-    empty = 'nothing chosen',
+    empty = "没有选择",
     usable = $bindable(false),
   }: { value: string; empty?: string; usable?: boolean } = $props()
 
@@ -132,7 +133,7 @@
           } else if (e instanceof ApiError && e.status >= 400 && e.status < 500) {
             checked = { value: folder, path: '', line, kind: 'refused' }
           } else {
-            checked = { value: folder, path: '', line: `Could not check this folder: ${line}`, kind: 'failed' }
+            checked = { value: folder, path: '', line: `无法检查此文件夹： ${line}`, kind: 'failed' }
           }
         })
     }, DEBOUNCE_MS)
@@ -242,18 +243,18 @@
       type="text"
       class="mono grow"
       bind:value
-      placeholder="Browse, or type an album folder's path"
-      aria-label="Album folder"
+      placeholder="浏览或输入专辑文件夹的路径"
+      aria-label="专辑文件夹"
     />
-    <button class="btn secondary" disabled={loading} onclick={openBrowser}>Browse</button>
+    <button class="btn secondary" disabled={loading} onclick={openBrowser}>浏览</button>
   </div>
   <p class="small will-use">
     {#if current?.kind === 'refused'}
-      Cannot use: <span class="mono">{value}</span>
+      不能使用： <span class="mono">{value}</span>
     {:else if value && !current}
-      Checking: <span class="mono">{value}</span>
+      检查: <span class="mono">{value}</span>
     {:else}
-      Will use: {#if value}<span class="mono">{shownPath}</span>{:else}<span class="muted">{empty}</span>{/if}
+      将使用： {#if value}<span class="mono">{shownPath}</span>{:else}<span class="muted">{empty}</span>{/if}
     {/if}
   </p>
   <p
@@ -262,7 +263,7 @@
     class:muted={current?.kind !== 'refused'}
     aria-live="polite"
   >
-    {#if current}{current.line}{/if}
+    {#if current}{t(current.line)}{/if}
   </p>
 
   {#if open && listing}
@@ -275,40 +276,40 @@
               class:current={listing.path !== null && within(root.path, listing.path)}
               onclick={() => browse(root.path)}
             >
-              {root.name}{root.library ? ' (library)' : ''}
+              {root.name}{root.library ? "（受保护音乐库）" : ''}
             </button>
           {/each}
         </div>
       {/if}
       {#if listing.missing}
         <p class="muted small missing">
-          There is no folder <span class="mono">{listing.missing}</span>: this is the nearest folder above it.
+          没有文件夹 <span class="mono">{listing.missing}</span>：这是其上方最近的文件夹。
         </p>
       {/if}
       <div class="row here">
-        <span class="mono grow">{listing.path ?? 'Your folders'}</span>
+        <span class="mono grow">{listing.path ?? "您的文件夹"}</span>
         {#if listing.path && listing.audio}
-          <button class="btn small" onclick={() => select(listing!.path!)}>Select this folder</button>
+          <button class="btn small" onclick={() => select(listing!.path!)}>选择该文件夹</button>
         {/if}
         {#if listing.path}
           <span
             class="sorts"
             role="group"
-            aria-label="Sort folders"
-            title="Newest is by when the folder was last changed or copied in"
+            aria-label="对文件夹进行排序"
+            title="最新的是最后一次更改或复制文件夹的时间"
           >
             <button class="sort" class:current={sort === 'newest'} aria-pressed={sort === 'newest'} onclick={() => sortBy('newest')}
-              >Newest</button
+              >最近修改</button
             >
             <button class="sort" class:current={sort === 'name'} aria-pressed={sort === 'name'} onclick={() => sortBy('name')}
-              >Name</button
+              >名称</button
             >
           </span>
         {/if}
-        <button class="btn small secondary" onclick={closeListing}>Close</button>
+        <button class="btn small secondary" onclick={closeListing}>关闭</button>
       </div>
       {#if listing.refused}
-        <p class="small error refused">Cannot select this folder: {listing.refused}</p>
+        <p class="small error refused">无法选择该文件夹： {t(listing.refused)}</p>
       {/if}
       {#if listing.folders.length > 0}
         <input
@@ -317,11 +318,11 @@
           bind:this={filterInput}
           bind:value={filter}
           onkeydown={filterKey}
-          placeholder="Filter these folders"
-          aria-label="Filter folders"
+          placeholder="过滤这些文件夹"
+          aria-label="过滤文件夹"
         />
         {#if filtering}
-          <p class="muted small count">{shown.length} of {listing.folders.length} folders</p>
+          <p class="muted small count">{shown.length} / {listing.folders.length} 文件夹</p>
         {/if}
       {/if}
       <ul>
@@ -333,23 +334,23 @@
         {#each shown as folder (folder.path)}
           <li>
             <button class="nav" onclick={() => browse(folder.path)}>
-              {folder.name}/{#if folder.library}<span class="muted"> (library)</span>{/if}
+              {folder.name}/{#if folder.library}<span class="muted"> （受保护音乐库）</span>{/if}
             </button>
             {#if folder.audio}
-              <span class="chip ok" title="Audio files in it or its disc folders">audio</span>
-              <button class="btn small secondary" onclick={() => select(folder.path)}>Select</button>
+              <span class="chip ok" title="其中或其光盘文件夹中的音频文件">音频</span>
+              <button class="btn small secondary" onclick={() => select(folder.path)}>选择</button>
             {/if}
           </li>
         {:else}
           <li class="muted">
-            {#if filtering}No folder here matches "{filter}".{:else}No folders here.{/if}
+            {#if filtering}这里没有文件夹匹配“{filter}".{:else}这里没有文件夹。{/if}
           </li>
         {/each}
       </ul>
       {#if listing.truncated}
         <p class="muted small">
-          {#if filtering}The filter only covers the first {listing.folders.length} folders listed here{:else}Only the first {listing.folders.length}
-            folders are listed{/if}: type the path to reach another.
+          {#if filtering}筛选仅涵盖前 {listing.folders.length} 个已列出的文件夹{:else}仅显示前 {listing.folders.length}
+            个文件夹{/if}；可输入完整路径访问其他文件夹。
         </p>
       {/if}
     </div>

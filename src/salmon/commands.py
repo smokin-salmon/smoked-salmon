@@ -26,6 +26,7 @@ from salmon.common.strings import numeric_id
 from salmon.config import find_config_path, get_default_config_path, get_user_cfg_path
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 from salmon.sources.tidal import credentials_configured as tidal_credentials_configured
 from salmon.tagger.audio_info import gather_audio_info, recompress_path
 from salmon.tagger.combine import combine_metadatas
@@ -80,12 +81,12 @@ async def specs(path: str, no_delete_specs: bool, format_output: bool) -> None:
 
     if spectral_urls:
         output = format_spectral_urls(list(audio_info.keys()), spectral_urls, format_output)
-        click.secho(output)
+        click.secho(_zh(output))
         if cfg.upload.description.copy_uploaded_url_to_clipboard:
             clipboard_copy(output)
 
     if no_delete_specs:
-        click.secho(f"Spectrals saved to {spath}", fg="green")
+        click.secho(_zh(f"Spectrals saved to {spath}"), fg="green")
 
 
 def _url_host(url: str) -> str:
@@ -156,18 +157,18 @@ async def build_description(urls: Sequence[str]) -> str:
 async def descgen(urls: tuple[str, ...]) -> None:
     """Generate a description from metadata sources."""
     if not urls:
-        click.secho("You must specify at least one URL", fg="red")
+        click.secho(_zh("You must specify at least one URL"), fg="red")
         return
 
     # Checked before any scrape starts, so a bad argument sends no request and ends without a traceback.
     if refusals := descgen_refusals(urls):
         for refusal in refusals:
-            click.secho(refusal, fg="red")
+            click.secho(_zh(refusal), fg="red")
         raise click.exceptions.Exit(1)
 
     description = await build_description(urls)
-    click.secho("\nDescription:\n", fg="yellow", bold=True)
-    click.echo(description)
+    click.secho(_zh("\nDescription:\n"), fg="yellow", bold=True)
+    click.echo(_zh(description))
     if cfg.upload.description.copy_uploaded_url_to_clipboard:
         clipboard_copy(description)
 
@@ -177,12 +178,12 @@ async def descgen(urls: tuple[str, ...]) -> None:
 async def compress(path: str) -> None:
     """Recompress a directory of FLACs to level 8."""
     if (refusal := compress_refusal(path)) is not None:
-        click.secho(refusal, fg="red")
+        click.secho(_zh(refusal), fg="red")
         raise click.Abort
     try:
         await recompress_flacs(path)
     except UploadError as e:
-        click.secho(str(e), fg="red")
+        click.secho(_zh(str(e)), fg="red")
         raise click.exceptions.Exit(1) from e
 
 
@@ -207,7 +208,7 @@ async def recompress_flacs(path: str) -> int:
         raise UploadError(refusal)
     flac_files = [f for f in get_audio_files(path) if f.lower().endswith(".flac")]
     if not flac_files:
-        click.secho("No flacs found to recompress. Skipping...", fg="red")
+        click.secho(_zh("No flacs found to recompress. Skipping..."), fg="red")
         return 0
     await recompress_path(path, files=flac_files)
     return len(flac_files)
@@ -218,12 +219,12 @@ async def recompress_flacs(path: str) -> int:
     "--torrent-id",
     "-i",
     default=None,
-    help="Torrent id or URL, tracker from URL will overule -t flag.",
+    help=_zh("Torrent id or URL, tracker from URL will overule -t flag."),
 )
 @click.option(
     "--tracker",
     "-t",
-    help=f"Tracker choices: ({'/'.join(salmon.trackers.tracker_list)})",
+    help=_zh(f"Tracker choices: ({'/'.join(salmon.trackers.tracker_list)})"),
 )
 @click.argument(
     "path",
@@ -240,13 +241,15 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     """
     torrent_id_input: str = torrent_id or ""
     if not torrent_id_input:
-        click.secho("No torrent id provided.", fg="red")
+        click.secho(_zh("No torrent id provided."), fg="red")
         torrent_id_input = await interaction.prompt(
-            click.style(
-                """Input a torrent id or a URL containing one.
-                Tracker in a URL will override -t flag.""",
-                fg="magenta",
-                bold=True,
+            _zh(
+                click.style(
+                    _zh("""Input a torrent id or a URL containing one.
+                Tracker in a URL will override -t flag."""),
+                    fg="magenta",
+                    bold=True,
+                )
             ),
         )
 
@@ -256,14 +259,14 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
             # this will overide -t tracker
             tracker = salmon.trackers.tracker_url_code_map[base_url]
         else:
-            click.echo("Unrecognised tracker!")
+            click.echo(_zh("Unrecognised tracker!"))
             raise click.Abort
         query = parse.parse_qs(parse.urlparse(torrent_id_input).query)
         torrent_id_int = numeric_id(query.get("torrentid", [""])[0].strip())
     else:
         torrent_id_int = numeric_id(torrent_id_input.strip())
     if torrent_id_int is None:
-        click.echo("Not a valid torrent!")
+        click.echo(_zh("Not a valid torrent!"))
         raise click.Abort
 
     tracker = await salmon.trackers.validate_tracker(None, "tracker", tracker)
@@ -272,7 +275,7 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     path = os.path.join(path, html.unescape(req["torrent"]["filePath"]))
     source_url = None
     source = req["torrent"]["media"]
-    click.echo(f"Generating spectrals for {source} sourced: {path}")
+    click.echo(_zh(f"Generating spectrals for {source} sourced: {path}"))
     track_data = gather_audio_info(path)
     await post_upload_spectral_check(gazelle_site, path, torrent_id_int, None, track_data, source, source_url)
 
@@ -287,7 +290,7 @@ def _backup_config(config_path: str) -> None:
     while os.path.exists(f"{config_path}.bak.{backup_index}"):
         backup_index += 1
     shutil.move(config_path, f"{config_path}.bak.{backup_index}")
-    click.secho(f"Existing config file renamed to config.py.bak.{backup_index}", fg="yellow")
+    click.secho(_zh(f"Existing config file renamed to config.py.bak.{backup_index}"), fg="yellow")
 
 
 @commandgroup.command()
@@ -295,25 +298,25 @@ def _backup_config(config_path: str) -> None:
     "--tracker",
     "-t",
     type=click.Choice(salmon.trackers.tracker_list, case_sensitive=False),
-    help=f"Choices: ({'/'.join(salmon.trackers.tracker_list)})",
+    help=_zh(f"Choices: ({'/'.join(salmon.trackers.tracker_list)})"),
 )
 @click.option(
     "--metadata",
     "-m",
     is_flag=True,
-    help="Test metadata sources connections (Discogs, Tidal, Qobuz).",
+    help=_zh("Test metadata sources connections (Discogs, Tidal, Qobuz)."),
 )
 @click.option(
     "--seedbox",
     "-s",
     is_flag=True,
-    help="Test seedbox connections.",
+    help=_zh("Test seedbox connections."),
 )
 @click.option(
     "--reset",
     "-r",
     is_flag=True,
-    help="Reset the config file to the default template. Will create a backup of the current config file.",
+    help=_zh("Reset the config file to the default template. Will create a backup of the current config file."),
 )
 async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: bool) -> None:
     """Check config and connection to trackers, metadata sources, and seedbox.
@@ -323,10 +326,10 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
     Use the -m flag to test metadata sources connections.
     Use the -s flag to test seedbox connections.
     """
-    click.echo(f"Config file: {find_config_path()}")
+    click.echo(_zh(f"Config file: {find_config_path()}"))
 
     if reset:
-        click.secho("Resetting new config.toml file", fg="cyan", bold=True)
+        click.secho(_zh("Resetting new config.toml file"), fg="cyan", bold=True)
 
         config_path = find_config_path()
         config_template = get_default_config_path()
@@ -335,16 +338,18 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
             _backup_config(str(config_path))
 
         if not os.path.exists(config_template):
-            click.secho("Error: config.default.toml template not found.", fg="red")
+            click.secho(_zh("Error: config.default.toml template not found."), fg="red")
             return
 
         shutil.copy(config_template, config_path)
         click.secho(
-            "A new config.toml file has been created from the template. Please update it with your custom settings.",
+            _zh(
+                "A new config.toml file has been created from the template. Please update it with your custom settings."
+            ),
             fg="green",
         )
         click.echo(
-            f"Every other setting is in {os.path.join(os.path.dirname(config_template), 'config.reference.toml')}."
+            _zh(f"Every other setting is in {os.path.join(os.path.dirname(config_template), 'config.reference.toml')}.")
         )
         return
 
@@ -377,7 +382,7 @@ def _iter_which(deps: list[str]) -> None:
 
 async def _test_metadata_sources() -> None:
     """Test metadata sources connections (Discogs, Tidal, Qobuz)."""
-    click.secho("\n[ Testing Metadata Sources ]", fg="cyan", bold=True)
+    click.secho(_zh("\n[ Testing Metadata Sources ]"), fg="cyan", bold=True)
 
     metadata_sources: dict[str, dict[str, Any]] = {
         "Discogs": {
@@ -398,12 +403,12 @@ async def _test_metadata_sources() -> None:
     }
 
     for source_name, source_info in metadata_sources.items():
-        click.secho(f"\n  Testing {source_name}...", fg="yellow")
+        click.secho(_zh(f"\n  Testing {source_name}..."), fg="yellow")
 
         try:
             # Check if required config is present
             if not source_info["config_check"]():
-                click.secho(f"  ✖ {source_name}: Missing required configuration", fg="red", bold=True)
+                click.secho(_zh(f"  ✖ {source_name}: Missing required configuration"), fg="red", bold=True)
                 continue
 
             # Try to initialize the source class
@@ -412,72 +417,74 @@ async def _test_metadata_sources() -> None:
             # For a basic connection test, try to create soup with a test URL
             try:
                 await source_instance.fetch_data(source_info["test_url"])
-                click.secho(f"  ✔ {source_name}: Connection successful", fg="green", bold=True)
+                click.secho(_zh(f"  ✔ {source_name}: Connection successful"), fg="green", bold=True)
             except Exception as inner_e:
-                click.secho(f"  ✖ {source_name}: Error - {inner_e}", fg="red", bold=True)
+                click.secho(_zh(f"  ✖ {source_name}: Error - {inner_e}"), fg="red", bold=True)
 
         except Exception as e:
-            click.secho(f"  ✖ {source_name}: Failed to initialize - {e}", fg="red", bold=True)
+            click.secho(_zh(f"  ✖ {source_name}: Failed to initialize - {e}"), fg="red", bold=True)
 
-    click.secho("-" * 50, fg="yellow")
+    click.secho(_zh("-" * 50), fg="yellow")
 
 
 async def _test_seedbox_connections() -> None:
     """Test seedbox connections."""
-    click.secho("\n[ Testing Seedbox Connections ]", fg="cyan", bold=True)
+    click.secho(_zh("\n[ Testing Seedbox Connections ]"), fg="cyan", bold=True)
 
     if not cfg.seedbox:
-        click.secho("  No seedboxes configured", fg="yellow")
-        click.secho("-" * 50, fg="yellow")
+        click.secho(_zh("  No seedboxes configured"), fg="yellow")
+        click.secho(_zh("-" * 50), fg="yellow")
         return
 
     for i, seedbox_config in enumerate(cfg.seedbox):
         if not seedbox_config.enabled:
-            click.secho(f"\n  Seedbox {i + 1} ({seedbox_config.name}): Disabled", fg="yellow")
+            click.secho(_zh(f"\n  Seedbox {i + 1} ({seedbox_config.name}): Disabled"), fg="yellow")
             continue
 
-        click.secho(f"\n  Testing Seedbox {i + 1} ({seedbox_config.name})...", fg="yellow")
-        click.secho(f"    Type: {seedbox_config.type}", fg="cyan")
+        click.secho(_zh(f"\n  Testing Seedbox {i + 1} ({seedbox_config.name})..."), fg="yellow")
+        click.secho(_zh(f"    Type: {seedbox_config.type}"), fg="cyan")
         # An rclone remote can be a connection string carrying a password.
         secrets = seedbox_secrets(seedbox_config)
         remote = redact_secrets(seedbox_config.url, secrets)
-        click.secho(f"    URL: {remote}", fg="cyan")
+        click.secho(_zh(f"    URL: {remote}"), fg="cyan")
 
         try:
             # Test the torrent client initialization
             torrent_client = TorrentClientGenerator.parse_libtc_url(seedbox_config.torrent_client)
             if torrent_client.client is None:
-                click.secho("    ✖ Torrent client connection failed", fg="red", bold=True)
+                click.secho(_zh("    ✖ Torrent client connection failed"), fg="red", bold=True)
             else:
-                click.secho("    ✔ Torrent client connection successful", fg="green", bold=True)
+                click.secho(_zh("    ✔ Torrent client connection successful"), fg="green", bold=True)
 
             if seedbox_config.type == "rclone":
                 if shutil.which("rclone"):
-                    click.secho("    ✔ Rclone executable found", fg="green")
+                    click.secho(_zh("    ✔ Rclone executable found"), fg="green")
                     # Test access to the configured remote, not just local config presence.
                     try:
                         with anyio.fail_after(10):
                             result = await anyio.run_process(["rclone", "lsd", f"{seedbox_config.url}:"], check=False)
                         if result.returncode == 0:
-                            click.secho(f"    ✔ Rclone remote '{remote}' is accessible", fg="green", bold=True)
+                            click.secho(_zh(f"    ✔ Rclone remote '{remote}' is accessible"), fg="green", bold=True)
                         else:
                             error = result.stderr.decode(errors="replace").strip() or f"exit code {result.returncode}"
                             click.secho(
-                                f"    ✖ Rclone remote '{remote}' failed: {redact_secrets(error, secrets)}",
+                                _zh(f"    ✖ Rclone remote '{remote}' failed: {redact_secrets(error, secrets)}"),
                                 fg="red",
                                 bold=True,
                             )
                     except Exception as rclone_e:
                         click.secho(
-                            f"    ✖ Rclone test failed: {redact_secrets(str(rclone_e), secrets)}", fg="red", bold=True
+                            _zh(f"    ✖ Rclone test failed: {redact_secrets(str(rclone_e), secrets)}"),
+                            fg="red",
+                            bold=True,
                         )
                 else:
-                    click.secho("    ✖ Rclone executable not found", fg="red", bold=True)
+                    click.secho(_zh("    ✖ Rclone executable not found"), fg="red", bold=True)
 
         except Exception as e:
-            click.secho(f"    ✖ Seedbox test failed: {redact_secrets(str(e), secrets)}", fg="red", bold=True)
+            click.secho(_zh(f"    ✖ Seedbox test failed: {redact_secrets(str(e), secrets)}"), fg="red", bold=True)
 
-    click.secho("-" * 50, fg="yellow")
+    click.secho(_zh("-" * 50), fg="yellow")
 
 
 @commandgroup.command()
@@ -485,14 +492,14 @@ async def health() -> None:
     """Check the status of smoked-salmon's config files and command line dependencies."""
     try:
         config_path = find_config_path()
-        click.echo(f"Config path: {config_path}")
+        click.echo(_zh(f"Config path: {config_path}"))
     except FileNotFoundError:
-        click.secho(f"Could not find config at {get_user_cfg_path()}", fg="red")
+        click.secho(_zh(f"Could not find config at {get_user_cfg_path()}"), fg="red")
 
     click.echo()
 
-    click.secho("Required Dependencies:", fg="cyan")
+    click.secho(_zh("Required Dependencies:"), fg="cyan")
     _iter_which(REQUIRED_TOOLS)
 
-    click.secho("\nOptional Dependencies:", fg="cyan")
+    click.secho(_zh("\nOptional Dependencies:"), fg="cyan")
     _iter_which(OPTIONAL_TOOLS)

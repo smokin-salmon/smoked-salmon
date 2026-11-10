@@ -15,6 +15,7 @@ from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.files import process_files
 from salmon.common.numbers import file_order_key, read_number
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
+from salmon.localization import text as _zh
 from salmon.tagger.tagfile import TagFile
 
 
@@ -42,16 +43,16 @@ def _get_audio_duration_sectors(filepath: str) -> int:
             audio_stream = container.streams.audio[0]
             duration_ts = audio_stream.duration
             if duration_ts is None:
-                raise RuntimeError(f"Cannot determine duration_ts for {filepath}")
+                raise RuntimeError(_zh(f"Cannot determine duration_ts for {filepath}"))
             # time_base converts duration_ts to seconds; then multiply by 75 for sectors
             time_base = audio_stream.time_base
             if time_base is None:
-                raise RuntimeError(f"Cannot determine time_base for {filepath}")
+                raise RuntimeError(_zh(f"Cannot determine time_base for {filepath}"))
             # time_base is a Fraction, so this is exact. Through a float, some lengths come out a sector short, and the
             # range rip's rebuild then adds a silent sector, so its CRC no longer matches the log.
             return int(duration_ts * time_base * 75)
     except (av.FFmpegError, IndexError) as e:
-        raise RuntimeError(f"Error getting duration in sectors for {filepath}: {e}") from e
+        raise RuntimeError(_zh(f"Error getting duration in sectors for {filepath}: {e}")) from e
 
 
 def _iter_pcm_chunks(filepath: str) -> Generator[bytes]:
@@ -81,7 +82,7 @@ def _iter_pcm_chunks(filepath: str) -> Generator[bytes]:
             for resampled_frame in resampler.resample(None):
                 yield resampled_frame.to_ndarray().tobytes()
     except av.FFmpegError as e:
-        raise RuntimeError(f"Error decoding audio from {filepath}: {e}") from e
+        raise RuntimeError(_zh(f"Error decoding audio from {filepath}: {e}")) from e
 
 
 def _crc32_from_chunks(chunks: Iterable[bytes]) -> str:
@@ -157,12 +158,13 @@ def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocE
     sorted_files = _range_files(track_files)
 
     if len(sorted_files) != len(toc_entries):
-        raise ValueError(f"Mismatch: {len(sorted_files)} track files but {len(toc_entries)} TOC entries")
+        raise ValueError(_zh(f"Mismatch: {len(sorted_files)} track files but {len(toc_entries)} TOC entries"))
 
     lead_sectors = _range_lead_sectors(sorted_files[0], toc_entries[0])
     if lead_sectors:
         click.secho(
-            f"Adding {lead_sectors / 75:.2f}s silence before the first track ({lead_sectors} sectors)", fg="yellow"
+            _zh(f"Adding {lead_sectors / 75:.2f}s silence before the first track ({lead_sectors} sectors)"),
+            fg="yellow",
         )
         # 2,352 bytes a sector
         yield b"\x00" * (lead_sectors * 2352)
@@ -181,7 +183,7 @@ def _iter_range_pcm_chunks(track_files: list[str], toc_entries: list[cambia.TocE
 
             if gap_sectors > 0:
                 click.secho(
-                    f"Adding {gap_sectors / 75:.2f}s silence gap ({gap_sectors} sectors, {gap_samples} samples)",
+                    _zh(f"Adding {gap_sectors / 75:.2f}s silence gap ({gap_sectors} sectors, {gap_samples} samples)"),
                     fg="yellow",
                 )
                 # s16le stereo = 4 bytes per sample
@@ -311,20 +313,20 @@ async def check_log_cambia(logpath: str, basepath: str) -> None:
 
     score = log_score(cambia_output)
     if score is None:
-        click.secho("Could not read the log score; checking its CRCs anyway.", fg="yellow")
+        click.secho(_zh("Could not read the log score; checking its CRCs anyway."), fg="yellow")
     elif score < 100:
-        click.secho(f"Log Score: {score} (The torrent will be trumpable)", fg="yellow", bold=True)
+        click.secho(_zh(f"Log Score: {score} (The torrent will be trumpable)"), fg="yellow", bold=True)
     else:
-        click.secho(f"Log Score: {score}", fg="green")
+        click.secho(_zh(f"Log Score: {score}"), fg="green")
 
     integrity = log_checksum(cambia_output)
     if integrity == cambia.Integrity.Mismatch:
-        raise EditedLogError("Edited logs")
+        raise EditedLogError(_zh("Edited logs"))
     elif integrity == cambia.Integrity.Unknown:
-        click.secho("Lacking a valid checksum. The torrent will be marked as trumpable.", fg="yellow")
+        click.secho(_zh("Lacking a valid checksum. The torrent will be marked as trumpable."), fg="yellow")
 
     await verify_log_crcs(cambia_output, logpath, basepath)
-    click.secho("All CRC values match the log file.", fg="green")
+    click.secho(_zh("All CRC values match the log file."), fg="green")
 
 
 def parse_log(logpath: str) -> Any:
@@ -406,7 +408,7 @@ async def verify_log_crcs(cambia_output: Any, logpath: str, basepath: str) -> No
     if not multi_disc:
         files_to_check = await anyio.to_thread.run_sync(_audio_files_of_disc, files_to_check, logpath)
 
-    click.secho("\nVerifying audio file CRC values...", fg="cyan", bold=True)
+    click.secho(_zh("\nVerifying audio file CRC values..."), fg="cyan", bold=True)
     if multi_disc and len(files_to_check) < len(last_copy_hash):
         raise LogCheckSkipped(
             f"Multi-disc log, but only {len(files_to_check)} audio file(s) under {basepath} for "
@@ -440,4 +442,4 @@ async def verify_log_crcs(cambia_output: Any, logpath: str, basepath: str) -> No
         found_crcs = Counter(crc_results)
 
     if expected_crcs - found_crcs:
-        raise CRCMismatchError("CRC Mismatch")
+        raise CRCMismatchError(_zh("CRC Mismatch"))

@@ -66,9 +66,9 @@
 <div class="picker">
   <div class="row">
     <button class="btn secondary" disabled={loading} onclick={() => browse(listing?.path ?? null)}>
-      Browse for images
+      浏览图像
     </button>
-    <span class="muted">{selected.length} of {max} picked</span>
+    <span class="muted">{selected.length} / {max} 已选</span>
   </div>
 
   {#if selected.length}
@@ -77,7 +77,7 @@
         <li>
           <span class="mono grow" title={path}>{name(path)}</span>
           <button class="btn small secondary" onclick={() => (selected = selected.filter((p) => p !== path))}>
-            Remove
+            移除
           </button>
         </li>
       {/each}
@@ -94,14 +94,14 @@
               class:current={listing.path !== null && within(root.path, listing.path)}
               onclick={() => browse(root.path)}
             >
-              {root.name}{root.library ? ' (library)' : ''}
+              {root.name}{root.library ? "（受保护音乐库）" : ''}
             </button>
           {/each}
         </div>
       {/if}
       <div class="row here">
-        <span class="mono grow">{listing.path ?? 'Your folders'}</span>
-        <button class="btn small secondary" onclick={() => (listing = null)}>Close</button>
+        <span class="mono grow">{listing.path ?? "您的文件夹"}</span>
+        <button class="btn small secondary" onclick={() => (listing = null)}>关闭</button>
       </div>
       <ul>
         {#if listing.parent}
@@ -127,11 +127,11 @@
           </li>
         {/each}
         {#if !listing.folders.length && !listing.images.length}
-          <li class="muted">No folders or images here.</li>
+          <li class="muted">这里没有文件夹或图像。</li>
         {/if}
       </ul>
       {#if listing.truncated}
-        <p class="muted small">Only the first entries are listed: this folder holds more.</p>
+        <p class="muted small">仅列出第一个条目：该文件夹包含更多条目。</p>
       {/if}
     </div>
   {/if}

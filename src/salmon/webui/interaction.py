@@ -25,6 +25,7 @@ import msgspec
 from salmon import interaction
 from salmon.common.strings import numeric_id
 from salmon.interaction import Options
+from salmon.localization import text as _zh
 
 # An http:// or https:// URL, in one piece: the only link a card shows, and the only text a typed question takes
 # besides an ID.
@@ -218,7 +219,7 @@ class WebInteraction:
             if refused is not None:
                 # A refusal may quote a typed answer: a hidden one stays out of the question and the log.
                 error = "Error: invalid input" if hide_input else f"Error: {refused}"
-                click.echo(error)
+                click.echo(_zh(error))
                 continue
             if not value:
                 if default is None:
@@ -232,7 +233,7 @@ class WebInteraction:
             except click.UsageError as e:
                 # A converter may quote the answer: a hidden one stays out of the question and the log.
                 error = "Error: invalid input" if hide_input else f"Error: {e.message}"
-                click.echo(error)
+                click.echo(_zh(error))
                 continue
             return result
 
@@ -264,7 +265,7 @@ class WebInteraction:
                 value = default
             else:
                 error = "Error: invalid input"
-                click.echo(error)
+                click.echo(_zh(error))
                 continue
             break
         if abort and not value:

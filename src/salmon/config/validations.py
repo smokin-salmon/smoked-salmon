@@ -5,6 +5,7 @@ from typing import Annotated, Literal, get_args
 import msgspec
 
 from salmon import proxy
+from salmon.localization import text as _zh
 
 from .image_hosts import spectrals_refusal, tracker_only_hosts
 
@@ -72,16 +73,16 @@ class Directory(BaseStruct):
 
     def __post_init__(self):
         if not os.path.isdir(self.dottorrents_dir):
-            raise ValueError("dottorrents_dir is not a valid directory")
+            raise ValueError(_zh("dottorrents_dir is not a valid directory"))
         if self.cross_upload_dottorrents_dir and not os.path.isdir(self.cross_upload_dottorrents_dir):
-            raise ValueError("cross_upload_dottorrents_dir is not a valid directory")
+            raise ValueError(_zh("cross_upload_dottorrents_dir is not a valid directory"))
         if not os.path.isdir(self.download_directory):
-            raise ValueError("download_directory is not a valid directory")
+            raise ValueError(_zh("download_directory is not a valid directory"))
         if self.tmp_dir and not os.path.isdir(self.tmp_dir):
-            raise ValueError("tmp_dir is not a valid directory")
+            raise ValueError(_zh("tmp_dir is not a valid directory"))
         for entry in self.library_dirs:
             if not os.path.isdir(entry):
-                raise ValueError(f"library_dirs entry is not a valid directory: {entry}")
+                raise ValueError(_zh(f"library_dirs entry is not a valid directory: {entry}"))
             # salmon writes and deletes in these, and a copy of a library album would land in the library.
             for name, folder in (
                 ("download_directory", self.download_directory),
@@ -90,11 +91,11 @@ class Directory(BaseStruct):
                 ("tmp_dir", self.tmp_dir),
             ):
                 if folder and _holds(entry, folder):
-                    raise ValueError(f"library_dirs entry {entry} must not contain {name} ({folder})")
+                    raise ValueError(_zh(f"library_dirs entry {entry} must not contain {name} ({folder})"))
             # salmon replaces and deletes folders in these: renamed copies, conversions, spectrals, clean_tmp_dir.
             for name, folder in (("download_directory", self.download_directory), ("tmp_dir", self.tmp_dir)):
                 if folder and _holds(folder, entry):
-                    raise ValueError(f"library_dirs entry {entry} must not be inside {name} ({folder})")
+                    raise ValueError(_zh(f"library_dirs entry {entry} must not be inside {name} ({folder})"))
 
     def library_of(self, path: str) -> str | None:
         """The library_dirs entry path is or is inside, compared resolved and as given, or None."""
@@ -174,25 +175,27 @@ class ImageUploader(BaseStruct):
         selections = self.selections()
         uploader_selections = {host for _, _, host in selections}
         if "ptscreens" in uploader_selections and self.ptscreens_key is None:
-            raise ValueError("PTScreens key not specified")
+            raise ValueError(_zh("PTScreens key not specified"))
         if "oeimg" in uploader_selections and self.oeimg_key is None:
-            raise ValueError("oeimage key not specified")
+            raise ValueError(_zh("oeimage key not specified"))
         if "imgbb" in uploader_selections and self.imgbb_key is None:
-            raise ValueError("imgbb key not specified")
+            raise ValueError(_zh("imgbb key not specified"))
         if "ra" in uploader_selections and self.ra_key is None:
-            raise ValueError("ra key not specified")
+            raise ValueError(_zh("ra key not specified"))
         tracker_only = tracker_only_hosts()
         for setting, kind, host in selections:
             # The tracker a per-tracker setting is for; None for the [image] ones, which every tracker shares.
             tracker = setting.rpartition(".")[0] or None
             if kind == "specs_uploader" and (refusal := spectrals_refusal(host, tracker)) is not None:
-                raise ValueError(f'image.{setting} = "{host}": {refusal}; choose another specs_uploader')
+                raise ValueError(_zh(f'image.{setting} = "{host}": {refusal}; choose another specs_uploader'))
             trackers = tracker_only.get(host)
             if trackers is not None and tracker not in trackers:
                 sections = " or ".join(f"[image.{code}]" for code in trackers)
                 raise ValueError(
-                    f'image.{setting} = "{host}": the {host} image host only displays on '
-                    f"{'/'.join(code.upper() for code in trackers)}, so it can only be set under {sections}"
+                    _zh(
+                        f'image.{setting} = "{host}": the {host} image host only displays on '
+                        f"{'/'.join(code.upper() for code in trackers)}, so it can only be set under {sections}"
+                    )
                 )
 
 
@@ -220,10 +223,10 @@ class BeatportSettings(BaseStruct):
 
 def _check_corrections(kind: str, table: dict, replacements: list[str], one: str) -> None:
     if any(not name.strip() for name in [*table, *replacements]):
-        raise ValueError(f"metadata.corrections.{kind} has an empty name.")
+        raise ValueError(_zh(f"metadata.corrections.{kind} has an empty name."))
     keys = [name.strip().casefold() for name in table]
     if len(set(keys)) < len(keys):
-        raise ValueError(f"metadata.corrections.{kind} names {one} twice, in two cases or spacings.")
+        raise ValueError(_zh(f"metadata.corrections.{kind} names {one} twice, in two cases or spacings."))
 
 
 class Corrections(BaseStruct):
@@ -267,17 +270,17 @@ class Tracker(BaseStruct):
 
     def __post_init__(self):
         if (self.red is None) and (self.ops is None) and (self.dic is None):
-            raise ValueError("You need a tracker session cookie in your config!")
+            raise ValueError(_zh("You need a tracker session cookie in your config!"))
 
         self.default_trackers = list(
             dict.fromkeys(code.strip().upper() for code in self.default_trackers if code.strip())
         )
         for code in self.default_trackers:
             if code not in ("RED", "OPS", "DIC"):
-                raise ValueError(f"tracker.default_trackers names {code}, which is not RED, OPS or DIC.")
+                raise ValueError(_zh(f"tracker.default_trackers names {code}, which is not RED, OPS or DIC."))
             if getattr(self, code.lower()) is None:
                 raise ValueError(
-                    f"tracker.default_trackers names {code}, which has no [tracker.{code.lower()}] in your config."
+                    _zh(f"tracker.default_trackers names {code}, which has no [tracker.{code.lower()}] in your config.")
                 )
 
 
@@ -301,13 +304,13 @@ class Seedbox(BaseStruct):
 
     def __post_init__(self):
         if self.type not in ("local", "rclone"):
-            raise ValueError("Invalid seedbox type specified")
+            raise ValueError(_zh("Invalid seedbox type specified"))
         if self.remove_local_after_copy and self.type != "rclone":
-            raise ValueError(f"seedbox '{self.name}': remove_local_after_copy only applies to rclone seedboxes")
+            raise ValueError(_zh(f"seedbox '{self.name}': remove_local_after_copy only applies to rclone seedboxes"))
         self.trackers = [t.upper() for t in self.trackers]
         unknown = sorted(set(self.trackers) - {"RED", "OPS", "DIC"})
         if unknown:
-            raise ValueError(f"Unknown tracker(s) for seedbox '{self.name}': {', '.join(unknown)}")
+            raise ValueError(_zh(f"Unknown tracker(s) for seedbox '{self.name}': {', '.join(unknown)}"))
 
 
 # The stores salmon searches for metadata, as salmon.search.SEARCHSOURCES names them (a test keeps the two equal).
@@ -326,8 +329,10 @@ def _search_stores(setting: str, names: list[str]) -> list[str]:
         store = known.get(name.strip().lower())
         if store is None:
             raise ValueError(
-                f'upload.search.{setting} names "{name}", which is not a store salmon searches: '
-                f"{', '.join(SEARCH_STORES)}."
+                _zh(
+                    f'upload.search.{setting} names "{name}", which is not a store salmon searches: '
+                    f"{', '.join(SEARCH_STORES)}."
+                )
             )
         if store not in stores:
             stores.append(store)
@@ -350,8 +355,10 @@ class UploadSearch(BaseStruct):
         both = [store for store in self.preferred_sources if store in self.skipped_sources]
         if both:
             raise ValueError(
-                f"upload.search names {', '.join(both)} in both preferred_sources and skipped_sources: keep each "
-                "store in one of them."
+                _zh(
+                    f"upload.search names {', '.join(both)} in both preferred_sources and skipped_sources: keep each "
+                    "store in one of them."
+                )
             )
 
 
@@ -395,7 +402,7 @@ class UploadSpectralsViewer(BaseStruct):
 
     def __post_init__(self):
         if self.port < 1 or self.port > 65535:
-            raise ValueError("Port number is invalid")
+            raise ValueError(_zh("Port number is invalid"))
 
     @property
     def effective_host(self) -> str:
@@ -432,7 +439,7 @@ class UploadAiReview(BaseStruct):
 
     def __post_init__(self):
         if self.enabled and not self.api_key:
-            raise ValueError("upload.ai_review.api_key must be set when AI review is enabled")
+            raise ValueError(_zh("upload.ai_review.api_key must be set when AI review is enabled"))
 
 
 # The conversions salmon up offers after a FLAC, by a name that holds whatever the release's rates are.
@@ -451,9 +458,9 @@ def canonical_conversions(values: Iterable[str]) -> tuple[str, ...]:
     for value in values:
         kind = by_lower.get(value.strip().lower()) if isinstance(value, str) else None
         if kind is None:
-            raise ValueError(f"{value!r} is not a conversion; the choices are {allowed}")
+            raise ValueError(_zh(f"{value!r} is not a conversion; the choices are {allowed}"))
         if kind in kinds:
-            raise ValueError(f"{kind!r} is named twice")
+            raise ValueError(_zh(f"{kind!r} is named twice"))
         kinds.append(kind)
     return tuple(kinds)
 
@@ -511,13 +518,15 @@ class Upload(BaseStruct):
         valid_normalizations = ("", "none", "NFC", "NFD")
         if self.torrent_name_normalization not in valid_normalizations:
             raise ValueError(
-                "upload.torrent_name_normalization must be one of "
-                f"{valid_normalizations}, got {self.torrent_name_normalization!r}"
+                _zh(
+                    "upload.torrent_name_normalization must be one of "
+                    f"{valid_normalizations}, got {self.torrent_name_normalization!r}"
+                )
             )
         try:
             self.conversions = list(canonical_conversions(self.conversions))
         except ValueError as e:
-            raise ValueError(f"upload.conversions: {e}") from None
+            raise ValueError(_zh(f"upload.conversions: {e}")) from None
 
 
 class ProxyServicesCfg(BaseStruct):
@@ -555,8 +564,10 @@ class ProxyCfg(BaseStruct):
             if url and not proxy.is_valid_url(url):
                 # Without the URL itself: it may hold the proxy's password.
                 raise ValueError(
-                    f"proxy.{key} must be scheme://[user:password@]host:port, "
-                    f"with scheme one of {', '.join(proxy.SCHEMES)}"
+                    _zh(
+                        f"proxy.{key} must be scheme://[user:password@]host:port, "
+                        f"with scheme one of {', '.join(proxy.SCHEMES)}"
+                    )
                 )
 
 
@@ -576,16 +587,18 @@ class Web(BaseStruct):
 
     def __post_init__(self):
         if self.port < 1 or self.port > 65535:
-            raise ValueError("web.port must be between 1 and 65535")
+            raise ValueError(_zh("web.port must be between 1 and 65535"))
         if self.token == "":
             self.token = None
         if self.token is not None and len(self.token) < WEB_TOKEN_MIN_LENGTH:
             raise ValueError(
-                f"web.token must be at least {WEB_TOKEN_MIN_LENGTH} characters"
-                ' (python -c "import secrets; print(secrets.token_urlsafe(32))" makes one)'
+                _zh(
+                    f"web.token must be at least {WEB_TOKEN_MIN_LENGTH} characters"
+                    ' (python -c "import secrets; print(secrets.token_urlsafe(32))" makes one)'
+                )
             )
         if self.max_jobs < 1:
-            raise ValueError("web.max_jobs must be at least 1")
+            raise ValueError(_zh("web.max_jobs must be at least 1"))
 
 
 class Cfg(BaseStruct):
@@ -604,16 +617,18 @@ class Cfg(BaseStruct):
         # Uploads to RED's image host authenticate with the RED API key, whichever tracker the image is for.
         red_host_users = [setting for setting, _kind, host in self.image.selections() if host == "red"]
         if red_host_users and not (self.tracker.red and self.tracker.red.api_key):
-            raise ValueError(f'image.{red_host_users[0]} = "red" needs tracker.red.api_key to be set')
+            raise ValueError(_zh(f'image.{red_host_users[0]} = "red" needs tracker.red.api_key to be set'))
         # A tracker's own dottorrents_dir gets .torrent files written with overwrite, as the global one does.
         for code in _TRACKER_CODES:
             settings = getattr(self.tracker, code)
             for key in ("dottorrents_dir", "cross_upload_dottorrents_dir"):
                 folder = getattr(settings, key) if settings else None
                 if key == "cross_upload_dottorrents_dir" and folder and not os.path.isdir(folder):
-                    raise ValueError(f"tracker.{code}.{key} is not a valid directory")
+                    raise ValueError(_zh(f"tracker.{code}.{key} is not a valid directory"))
                 if folder and (library := self.directory.library_of(folder)) is not None:
-                    raise ValueError(f"library_dirs entry {library} must not contain tracker.{code}.{key} ({folder})")
+                    raise ValueError(
+                        _zh(f"library_dirs entry {library} must not contain tracker.{code}.{key} ({folder})")
+                    )
 
     def cross_upload_dottorrents_dir(self, code: str) -> str | None:
         """The folder salmon cross-upload writes tracker `code`'s .torrent files to, or None when none is set for it.

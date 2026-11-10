@@ -9,6 +9,7 @@ from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import (
     RequestError,
 )
+from salmon.localization import text as _zh
 from salmon.trackers.base import BaseGazelleApi, TagRules
 
 
@@ -81,19 +82,25 @@ class OpsApi(BaseGazelleApi):
         new_group = "releasetype" in data and "groupid" not in data
         if new_group and main_artist_count >= 2 and not self._split_prompted:
             self._use_split = await interaction.confirm(
-                click.style(
-                    f"\nThis release has {main_artist_count} main artists. "
-                    "OPS has a 'Split' release type:\n\n"
-                    "An album or EP that includes tracks by two or more separate artists. "
-                    "Unlike a compilation or collaboration, a split generally includes several tracks by each artist. "
-                    "Also unlike a compilation, a split is made up of new material or new performances, "
-                    "not re-packaged tracks from previous albums or singles.\n"
-                    "Split albums and EPs often include the word 'split' in the title or on the packaging. "
-                    "If you aren't sure if an album is a split, check Discogs, MusicBrainz or another reputable "
-                    "source before uploading.\n\n"
-                    "Do you want to set the release type to Split?",
-                    fg="magenta",
-                    bold=True,
+                _zh(
+                    click.style(
+                        _zh(
+                            f"\nThis release has {main_artist_count} main artists. "
+                            "OPS has a 'Split' release type:\n\n"
+                            "An album or EP that includes tracks by two or more separate artists. "
+                            "Unlike a compilation or collaboration, a split "
+                            "generally includes several tracks by each artist. "
+                            "Also unlike a compilation, a split is made up of new material or new performances, "
+                            "not re-packaged tracks from previous albums or singles.\n"
+                            "Split albums and EPs often include the word 'split' in the title or on the packaging. "
+                            "If you aren't sure if an album is a split, "
+                            "check Discogs, MusicBrainz or another reputable "
+                            "source before uploading.\n\n"
+                            "Do you want to set the release type to Split?"
+                        ),
+                        fg="magenta",
+                        bold=True,
+                    )
                 ),
                 default=False,
             )
@@ -115,7 +122,7 @@ class OpsApi(BaseGazelleApi):
             if match:
                 ids.append((int(match[2]), int(match[1])))
         if not ids:
-            raise TypeError("Could not parse torrent/group id from group page: no permalink ids found")
+            raise TypeError(_zh("Could not parse torrent/group id from group page: no permalink ids found"))
         return max(ids)
 
     async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
@@ -148,6 +155,8 @@ class OpsApi(BaseGazelleApi):
         if "torrents.php" in resp.url:
             return True
         raise RequestError(
-            f"Failed to report torrent for lossy master: unexpected redirect to {self._redact(resp.url)} "
-            f"(status {resp.status})"
+            _zh(
+                f"Failed to report torrent for lossy master: unexpected redirect to {self._redact(resp.url)} "
+                f"(status {resp.status})"
+            )
         )

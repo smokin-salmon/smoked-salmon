@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup, NavigableString, Tag
 from salmon import cfg
 from salmon.common import RE_FEAT, parse_copyright, re_split
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources import QobuzBase
 from salmon.tagger.sources.base import MetadataMixin, ends_with_ep, strip_ep_suffix
 
@@ -249,10 +250,10 @@ class Scraper(QobuzBase, MetadataMixin):
         try:
             match = self.regex.match(url)
             if not match:
-                raise ScrapeError(f"Failed to extract release ID from URL: {url}")
+                raise ScrapeError(_zh(f"Failed to extract release ID from URL: {url}"))
             rls_id = match[1]
         except (TypeError, IndexError) as err:
-            raise ScrapeError(f"Failed to extract release ID from URL: {url}") from err
+            raise ScrapeError(_zh(f"Failed to extract release ID from URL: {url}")) from err
 
         if not self.configured():
             # The API needs an account; the public album page does not.
@@ -261,14 +262,14 @@ class Scraper(QobuzBase, MetadataMixin):
         try:
             response = await self.get_json(self.release_format.format(rls_id=rls_id), headers=self.headers)
         except Exception as err:
-            raise ScrapeError(f"Failed to fetch data from Qobuz API: {str(err)}") from err
+            raise ScrapeError(_zh(f"Failed to fetch data from Qobuz API: {str(err)}")) from err
 
         if "error" in response:
-            raise ScrapeError(f"Qobuz API error: {response['error']}")
+            raise ScrapeError(_zh(f"Qobuz API error: {response['error']}"))
 
         # Verify basic required fields exist
         if not response.get("title"):
-            raise ScrapeError("Missing required field 'title' in Qobuz API response")
+            raise ScrapeError(_zh("Missing required field 'title' in Qobuz API response"))
 
         return response
 
@@ -279,9 +280,9 @@ class Scraper(QobuzBase, MetadataMixin):
         try:
             data = page_to_api_shape(soup)
         except ValueError as err:
-            raise ScrapeError(f"Qobuz page carries an invalid release date: {url}") from err
+            raise ScrapeError(_zh(f"Qobuz page carries an invalid release date: {url}")) from err
         if not data.get("title"):
-            raise ScrapeError(f"Qobuz page holds no album data (is it an album URL?): {url}")
+            raise ScrapeError(_zh(f"Qobuz page holds no album data (is it an album URL?): {url}"))
         return data
 
     @classmethod

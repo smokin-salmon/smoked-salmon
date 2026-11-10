@@ -10,6 +10,8 @@ import msgspec.inspect as mi
 import requests
 from platformdirs import user_config_dir
 
+from salmon.localization import text as _zh
+
 from . import compat
 from .validations import Cfg, ImgUploaderLiteral
 
@@ -47,8 +49,10 @@ def get_user_cfg_path() -> Path:
     if not override_path.exists() and legacy_path.exists():
         if not _warned_legacy_config_fallback:
             click.secho(
-                f"{CONFIG_DIR_ENV} is set to {override!r} but {override_path} does not exist; "
-                f"using the existing config at {legacy_path} instead.",
+                _zh(
+                    f"{CONFIG_DIR_ENV} is set to {override!r} but {override_path} does not exist; "
+                    f"using the existing config at {legacy_path} instead."
+                ),
                 fg="yellow",
                 err=True,
             )
@@ -61,8 +65,8 @@ def get_default_config_path() -> Path:
     default_config_path = _PKG_DIR / "data" / "config.default.toml"
 
     if not default_config_path.exists():
-        click.secho(f"Default config file not found at {default_config_path}", fg="yellow")
-        click.secho("Downloading from GitHub...", fg="blue")
+        click.secho(_zh(f"Default config file not found at {default_config_path}"), fg="yellow")
+        click.secho(_zh("Downloading from GitHub..."), fg="blue")
 
         default_config_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -73,13 +77,13 @@ def get_default_config_path() -> Path:
 
             default_config_path.write_text(response.text, encoding="utf-8")
 
-            click.secho(f"Successfully downloaded default config to {default_config_path}", fg="green")
+            click.secho(_zh(f"Successfully downloaded default config to {default_config_path}"), fg="green")
         except requests.exceptions.RequestException as e:
-            click.secho(f"Failed to download default config: {e}", fg="red")
-            raise FileNotFoundError(f"Could not find or download default config file: {e}") from e
+            click.secho(_zh(f"Failed to download default config: {e}"), fg="red")
+            raise FileNotFoundError(_zh(f"Could not find or download default config file: {e}")) from e
         except Exception as e:
-            click.secho(f"Failed to save default config: {e}", fg="red")
-            raise FileNotFoundError(f"Could not save default config file: {e}") from e
+            click.secho(_zh(f"Failed to save default config: {e}"), fg="red")
+            raise FileNotFoundError(_zh(f"Could not save default config file: {e}")) from e
 
     return default_config_path
 
@@ -198,8 +202,10 @@ def _ptpimg_removed_error(e: msgspec.ValidationError) -> Exception:
         return e
     hosts = ", ".join(get_args(ImgUploaderLiteral))
     return ValueError(
-        "ptpimg has shut down and is no longer a supported image host. Choose another one "
-        f"in your config ({hosts}); catbox needs no API key."
+        _zh(
+            "ptpimg has shut down and is no longer a supported image host. Choose another one "
+            f"in your config ({hosts}); catbox needs no API key."
+        )
     )
 
 
@@ -218,7 +224,7 @@ def find_config_path() -> Path:
     elif config_dir_path.exists():
         return config_dir_path
     else:
-        raise FileNotFoundError("Could not find config path")
+        raise FileNotFoundError(_zh("Could not find config path"))
 
 
 # The file setup_config() loaded: salmon web's Dashboard names it next to the warnings that file gave.
@@ -239,13 +245,13 @@ def _first_run(cfg_path: Path) -> NoReturn:
     """No config: ask for one in a terminal, else copy the short file to fill in. Exits either way."""
     from . import first_run
 
-    click.secho(f"No config found at {cfg_path}.", fg="yellow")
+    click.secho(_zh(f"No config found at {cfg_path}."), fg="yellow")
     try:
         template = get_default_config_path()
         if not first_run.is_terminal():
             first_run.copy_and_explain(template, cfg_path)
             sys.exit(1)
     except OSError as e:
-        click.secho(f"Failed to create a config: {e}", fg="red")
+        click.secho(_zh(f"Failed to create a config: {e}"), fg="red")
         sys.exit(1)
     sys.exit(anyio.run(first_run.run, template, cfg_path))

@@ -7,6 +7,7 @@ from salmon import interaction
 from salmon.common import get_audio_files
 from salmon.common.strings import artists_or_various
 from salmon.errors import RequestError, UploadError
+from salmon.localization import text as _zh
 from salmon.uploader.dupe_checker import describe_torrent
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ def print_preassumptions(
         spectrals_after: Check spectrals after upload.
         spectral_url_tracks: The tracks whose spectrals were given by URL (--spectral-url), uploaded already.
     """
-    click.secho(f"\nProcessing {path}", fg="cyan", bold=True)
+    click.secho(_zh(f"\nProcessing {path}"), fg="cyan", bold=True)
     second = []
     if source:
         second.append(f"from {source}")
@@ -46,28 +47,28 @@ def print_preassumptions(
     if lossy is not None:
         second.append(f"with lossy master status as {lossy}")
     if second:
-        click.secho(f"Uploading {' '.join(second)}.", fg="yellow")
+        click.secho(_zh(f"Uploading {' '.join(second)}."), fg="yellow")
     if spectrals:
         if spectrals == (0,):
-            click.secho("Uploading no spectrals.", fg="yellow")
+            click.secho(_zh("Uploading no spectrals."), fg="yellow")
         else:
             click.secho(
-                f"Uploading spectrals {', '.join(str(s) for s in spectrals)}.",
+                _zh(f"Uploading spectrals {', '.join(str(s) for s in spectrals)}."),
                 fg="yellow",
             )
     if spectral_url_tracks:
         click.secho(
-            f"Using the spectrals given by URL for tracks {', '.join(str(s) for s in spectral_url_tracks)}.",
+            _zh(f"Using the spectrals given by URL for tracks {', '.join(str(s) for s in spectral_url_tracks)}."),
             fg="yellow",
         )
     if spectrals_after:
         click.secho(
-            "Assessing spectrals after upload.",
+            _zh("Assessing spectrals after upload."),
             fg="yellow",
         )
 
     if lossy and not spectrals and not spectral_url_tracks:
-        raise UploadError("\nYou cannot report a torrent for lossy master without spectrals.")
+        raise UploadError(_zh("\nYou cannot report a torrent for lossy master without spectrals."))
 
 
 def validate_skip_flac_source(path: str, rls_data: dict[str, Any] | None = None) -> str | None:
@@ -108,7 +109,7 @@ async def confirm_group_upload(gazelle_site: "BaseGazelleApi", group_id: int, so
     """
     group = await print_group_info(gazelle_site, group_id, source)
     await interaction.confirm(
-        click.style("\nWould you like to continue to upload to this group?", fg="magenta"),
+        _zh(click.style(_zh("\nWould you like to continue to upload to this group?"), fg="magenta")),
         default=True,
         abort=True,
     )
@@ -131,17 +132,17 @@ async def print_group_info(gazelle_site: "BaseGazelleApi", group_id: int, source
     try:
         group = await gazelle_site.torrentgroup(group_id)
     except RequestError as err:
-        raise UploadError("Could not get information about torrent group from RED.") from err
+        raise UploadError(_zh("Could not get information about torrent group from RED.")) from err
 
     artists = [a["name"] for a in group["group"]["musicInfo"]["artists"]]
     artists = artists_or_various(artists)
     click.secho(
-        f"\nTorrents matching source {source} in (Group {group_id}) {artists} - {group['group']['name']}:",
+        _zh(f"\nTorrents matching source {source} in (Group {group_id}) {artists} - {group['group']['name']}:"),
         fg="yellow",
         bold=True,
     )
 
     for t in group["torrents"]:
         if t["media"] == source:
-            click.echo(unescape(f"> {describe_torrent(t, group['group'])}"))
+            click.echo(_zh(unescape(f"> {describe_torrent(t, group['group'])}")))
     return group

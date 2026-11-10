@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { apiGet, apiPost } from '../lib/api'
   import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
@@ -65,7 +66,7 @@
         if (!target && answer.trackers.length > 1) target = answer.trackers[1]
       })
       .catch((e) => {
-        error = `Could not load the trackers: ${e}`
+        error = `无法加载站点列表： ${e}`
       })
   })
 
@@ -86,7 +87,7 @@
     error = ''
     const group = parseGroupId(groupId)
     if (group === undefined) {
-      error = `The ${target} group ID must be a number or a torrents.php?id= link.`
+      error = `该 ${target} 群专辑组 ID必须是数字或torrents.php?id=链接。`
       return
     }
     starting = true
@@ -131,69 +132,66 @@
 <!-- Ported from the cross-upload panel of the fork's Tools page (chodeus, 0b29d2d5, 9bfdddc3 and 3c69045a): the
      torrents to copy instead of a folder, the folder only when it is not where the torrent's name says, and the job
      asking what salmon cross-upload asks, in the order it asks it. -->
-<h1>Cross-upload</h1>
+<h1>转种</h1>
 <p class="lead">
-  What <span class="mono">salmon cross-upload</span> does, here: read each torrent from one tracker, check the files
-  on disk against it, show the plan, then upload it to the other tracker with the same questions and the same requests.
-  A dry run reads from both trackers and sends nothing.
+  在网页中执行 <span class="mono">salmon cross-upload</span>：读取来源站点的种子信息，核对本地文件，确认计划后上传到目标站点。模拟运行会读取两个站点的信息，不会提交上传。
 </p>
 
 {#if !live}
   <div class="card">
     <label>
-      Torrents
+      种子
       <input
         type="text"
         class="mono"
         bind:value={inputs}
-        placeholder="torrent IDs or torrent URLs, separated by spaces"
+        placeholder="种子 ID 或种子链接，以空格分隔"
       />
       {#if given.length > options.max_releases}
-        <small class="hint warn">At most {options.max_releases} per job.</small>
+        <small class="hint warn">至多 {options.max_releases} 个种子／任务。</small>
       {:else if showHelp}
         <small class="hint">
-          Each a {source || 'source'} torrent ID or a torrents.php?torrentid= link, at most {options.max_releases}.
+          每项填写 {source || 'source'} torrent ID 或 torrents.php?torrentid= 链接，最多 {options.max_releases}.
         </small>
       {/if}
     </label>
 
     <div class="grid">
       <label>
-        From
+        来源站点
         <select bind:value={source}>
           {#each options.trackers as code (code)}<option value={code}>{code}</option>{/each}
         </select>
-        {#if showHelp}<small class="hint">The tracker the torrents are on (SOURCE_TRACKER).</small>{/if}
+        {#if showHelp}<small class="hint">种子所在的站点(SOURCE_TRACKER)。</small>{/if}
       </label>
       <label>
-        To
+        目标站点
         <select bind:value={target}>
           {#each options.trackers as code (code)}<option value={code}>{code}</option>{/each}
         </select>
-        {#if showHelp}<small class="hint">The tracker to upload them to (TARGET_TRACKER).</small>{/if}
+        {#if showHelp}<small class="hint">将它们上传到的站点（TARGET_TRACKER)。</small>{/if}
       </label>
       <label>
-        Group ID
-        <input type="text" bind:value={groupId} placeholder="find it, or a new group" />
+        专辑组 ID
+        <input type="text" bind:value={groupId} placeholder="自动查找或新建专辑组" />
         {#if showHelp}
-          <small class="hint">Upload into this {target || 'target'} group: an ID or a torrents.php?id= link (-g).</small>
+          <small class="hint">上传至此 {target || 'target'} 组：ID或torrents.php?id=链接（-g)。</small>
         {/if}
       </label>
     </div>
 
     <div class="field folder">
-      <span class="label">Album folder (optional)</span>
-      <FolderPicker bind:value={path} bind:usable empty="the folder each torrent names, in download_directory" />
+      <span class="label">专辑文件夹（可选）</span>
+      <FolderPicker bind:value={path} bind:usable empty="每个 torrent 名称的文件夹，位于 download_directory 中" />
       {#if showHelp}
         <small class="hint">
-          Only when the files are not in download_directory under the torrent's folder name (--path). One torrent
-          only.
+          仅当文件不在 torrent 文件夹名称（--path）下的 download_directory 中时。只有一个种子。
         </small>
       {/if}
     </div>
 
     <div class="field conversions">
-      <span class="label">Conversions</span>
+      <span class="label">转码格式</span>
       <div class="opts">
         {#each options.conversion_kinds as kind (kind)}
           <label class="check">
@@ -204,15 +202,14 @@
       </div>
       {#if showHelp}
         <small class="hint">
-          Also uploaded, into the same group, each made from the files on disk, as salmon up makes them (--conversions).
-          A kind this FLAC cannot give is skipped, and a format the group already has in this edition is left out.
+          同时将本地文件转码并上传到同一专辑组，与 salmon up 的 --conversions 相同。会跳过源 FLAC 无法生成的格式，以及该版本中已存在的格式。
         </small>
       {/if}
     </div>
 
     <div class="row wrap chips">
       <button class="chip toggle" class:on={dryRun} aria-pressed={dryRun} onclick={() => (dryRun = !dryRun)}>
-        dry run
+        模拟运行
       </button>
       <button
         class="chip toggle"
@@ -223,13 +220,12 @@
         -yyy
       </button>
       <label class="check help">
-        <input type="checkbox" bind:checked={showHelp} /> Explain the options
+        <input type="checkbox" bind:checked={showHelp} /> 解释选项
       </label>
     </div>
     {#if showHelp}
       <p class="hint">
-        A dry run sends nothing: each upload's form is printed instead. -yyy answers the yes or no questions with their
-        defaults, as in the terminal; the questions with no default are still asked.
+        模拟运行不发送任何内容：而是打印每个上传的表格。 -yyy 使用默认值回答是或否问题，如终端中所示；仍然会问没有默认的问题。
       </p>
     {/if}
 
@@ -239,7 +235,7 @@
         onclick={start}
         disabled={!given.length || given.length > options.max_releases || !source || !target || (!!path && !usable) || starting}
       >
-        {dryRun ? 'Start the dry run' : 'Start the cross-upload'}
+        {dryRun ? "开始模拟运行" : "开始转种"}
       </button>
     </div>
     {#if error}<p class="error">{error}</p>{/if}
@@ -249,24 +245,24 @@
 {#if job}
   <div class="card">
     <div class="row head">
-      <h2 class="grow">{job.title}</h2>
+      <h2 class="grow">{t(job.title)}</h2>
       {#if live}
-        <button class="btn small secondary" onclick={cancel}>Cancel</button>
+        <button class="btn small secondary" onclick={cancel}>取消</button>
       {:else}
-        <button class="btn small secondary" onclick={toggleLog}>{showLog ? 'Hide log' : 'Log'}</button>
+        <button class="btn small secondary" onclick={toggleLog}>{showLog ? "隐藏日志" : "日志"}</button>
       {/if}
     </div>
     <JobStatus {job} />
 
     {#if result}
       {#if result.uploads.length}
-        {#if job.status !== 'done'}<p class="muted">Uploaded before it stopped:</p>{/if}
+        {#if job.status !== 'done'}<p class="muted">停止前上传：</p>{/if}
         {#if result.seedbox_failed}
-          <p><span class="chip warn">A seedbox step failed (a copy, a client add, or the client could not be set up): a torrent may be seeded nowhere. See the log.</span></p>
+          <p><span class="chip warn">远程做种服务器步骤失败（副本、客户端添加或无法设置客户端）：torrent 可能无处做种。查看日志。</span></p>
           {#if result.seedbox_failures?.length}
             <ul class="uploads">
               {#each result.seedbox_failures as failure}
-                <li class="muted mono">{failure.step} on {failure.seedbox}: {failure.item}</li>
+                <li class="muted mono">{failure.step} 上 {failure.seedbox}: {failure.item}</li>
               {/each}
             </ul>
           {/if}
@@ -281,9 +277,9 @@
           {/each}
         </ul>
       {:else if job.status === 'done' && job.dry_run}
-        <p class="muted">Dry run: nothing was sent. The forms it would have sent are in the log.</p>
+        <p class="muted">模拟运行：没有发送任何内容。它发送的表格在日志中。</p>
       {:else if job.status === 'done'}
-        <p class="muted">Nothing was uploaded.</p>
+        <p class="muted">没有上传任何内容。</p>
       {/if}
     {/if}
 

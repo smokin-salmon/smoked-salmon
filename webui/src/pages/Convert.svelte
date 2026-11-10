@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { apiPost } from '../lib/api'
   import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
@@ -59,34 +60,30 @@
 
 <!-- Ported from the fork's Convert page (chodeus, 0b29d2d5 and a18e0e25), on the jobs of salmon transcode,
      salmon downconv and salmon compress. -->
-<h1>Convert</h1>
+<h1>转码</h1>
 <p class="lead">
-  Transcode an album to MP3 (<span class="mono">salmon transcode</span>), downconvert 24-bit FLACs to 16-bit
-  (<span class="mono">salmon downconv</span>), or recompress FLACs in place (<span class="mono">salmon compress</span>).
-  No tracker is contacted. A conversion writes a new folder beside the album, or for an album in
-  <span class="mono">library_dirs</span> into <span class="mono">download_directory</span>; the album itself is never
-  changed. Recompress changes the album's files, so it is refused for an album in <span class="mono">library_dirs</span>.
+  将专辑转为 MP3（<span class="mono">salmon transcode</span>）、将 24 位 FLAC 降为 16 位（<span class="mono">salmon downconv</span>），或重新压缩 FLAC（<span class="mono">salmon compress</span>）。转码结果保存在专辑旁的新文件夹中；如果原专辑位于 <span class="mono">library_dirs</span>，则保存到 <span class="mono">download_directory</span>。重新压缩会直接修改原文件，因此不允许对媒体库中的专辑执行。
 </p>
 
 <div class="card">
   <FolderPicker bind:value={path} bind:usable />
   <div class="row actions">
-    <select bind:value={bitrate} class="bitrate" aria-label="MP3 bitrate">
+    <select bind:value={bitrate} class="bitrate" aria-label="MP3比特率">
       <option value="V0">MP3 V0</option>
       <option value="320">MP3 320</option>
     </select>
     <label class="row option">
       <input type="checkbox" bind:checked={essentialOnly} />
-      Essential files only (<span class="mono">-eo</span>): audio and images, no cue, log or other extras
+      仅重要文件（<span class="mono">-eo</span>):音频和图像，没有提示、日志或其他附加内容
     </label>
   </div>
   <div class="row actions">
-    <button class="btn" onclick={() => run('transcode')} disabled={!usable || starting}>Transcode</button>
+    <button class="btn" onclick={() => run('transcode')} disabled={!usable || starting}>转码</button>
     <button class="btn secondary" onclick={() => run('downconvert')} disabled={!usable || starting}>
-      Downconvert to 16-bit
+      降位深至 16-bit
     </button>
     <button class="btn secondary" onclick={() => run('compress')} disabled={!usable || starting}>
-      Recompress FLACs in place
+      重新压缩原位置的 FLAC 文件
     </button>
   </div>
   {#if error}<p class="error">{error}</p>{/if}
@@ -95,15 +92,15 @@
 {#if job}
   <div class="card">
     <div class="row head">
-      <h2 class="grow">{job.title}</h2>
-      <button class="btn small secondary" onclick={toggleLog}>{showLog ? 'Hide log' : 'Log'}</button>
+      <h2 class="grow">{t(job.title)}</h2>
+      <button class="btn small secondary" onclick={toggleLog}>{showLog ? "隐藏日志" : "日志"}</button>
     </div>
     <JobStatus {job} />
 
     {#if result?.output}
       <p class="mono muted result">→ {result.output}</p>
     {:else if result && result.recompressed !== undefined}
-      <p class="mono muted result">Recompressed {result.recompressed} FLAC(s) in place.</p>
+      <p class="mono muted result">重新压缩 {result.recompressed} FLAC就位。</p>
     {/if}
 
     {#if showLog || !FINISHED.includes(job.status)}

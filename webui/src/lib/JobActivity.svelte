@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from './i18n'
   import type { Job } from './jobs.svelte'
 
   let { job, logTail = 0 }: { job: Job; logTail?: number } = $props()
@@ -15,10 +16,10 @@
 
 <!-- Ported from the fork's JobActivity (styx-techno, chodeus). -->
 {#if lines.length}
-  <pre class="log" bind:this={logEl}>{#each lines as line (line.n)}<span class:err={line.err}>{line.text}
+  <pre class="log" bind:this={logEl}>{#each lines as line (line.n)}<span class:err={line.err}>{t(line.text)}
 </span>{/each}</pre>
 {:else}
-  <p class="muted">Nothing printed yet.</p>
+  <p class="muted">暂无日志。</p>
 {/if}
 
 <style>

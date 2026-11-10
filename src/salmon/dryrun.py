@@ -18,6 +18,7 @@ from typing import Self
 import asyncclick as click
 
 from salmon.errors import DryRunRefused
+from salmon.localization import text as _zh
 
 _running: ContextVar[bool] = ContextVar("dry_run", default=False)
 # Where an upload in a dry run writes what it would leave behind (torrent files, transcodes).
@@ -60,7 +61,7 @@ def refuse(action: str) -> None:
 
 def say(message: str) -> None:
     """Print what a dry run does instead of a step: "Dry run: " and the message."""
-    click.secho(f"Dry run: {message}", fg="cyan")
+    click.secho(_zh(f"Dry run: {message}"), fg="cyan")
 
 
 @contextmanager
@@ -90,7 +91,7 @@ def scratch_dir() -> str:
     """
     path = _scratch_dir.get()
     if not active() or path is None:
-        raise RuntimeError("no dry run upload with a scratch copy is running")
+        raise RuntimeError(_zh("no dry run upload with a scratch copy is running"))
     return path
 
 

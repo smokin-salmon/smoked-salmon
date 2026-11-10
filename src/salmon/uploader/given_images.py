@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 from salmon.common.strings import numeric_id
 from salmon.config.image_hosts import display_refusal, spectrals_refusal
 from salmon.images import HOSTS, host_of_url
+from salmon.localization import text as _zh
 
 # A track's spectral images: Full, then Zoom.
 MAX_SPECTRAL_URLS = 2
@@ -29,18 +30,18 @@ def parse_spectral_urls(values: Iterable[str]) -> tuple[tuple[int, tuple[str, ..
     for value in values:
         track_text, equals, urls_text = value.partition("=")
         if not equals:
-            raise ValueError(f"{value!r} is not TRACK=URL[,URL]")
+            raise ValueError(_zh(f"{value!r} is not TRACK=URL[,URL]"))
         track_text = track_text.strip()
         track = numeric_id(track_text)
         if not track:
-            raise ValueError(f"{track_text!r} in {value!r} is not a track number")
+            raise ValueError(_zh(f"{track_text!r} in {value!r} is not a track number"))
         if track in parsed:
-            raise ValueError(f"track {track} is given twice")
+            raise ValueError(_zh(f"track {track} is given twice"))
         urls = tuple(url.strip() for url in urls_text.split(","))
         if not all(urls):
-            raise ValueError(f"{value!r} has an empty URL")
+            raise ValueError(_zh(f"{value!r} has an empty URL"))
         if len(urls) > MAX_SPECTRAL_URLS:
-            raise ValueError(f"{value!r} has {len(urls)} URLs: a track takes at most two, Full then Zoom")
+            raise ValueError(_zh(f"{value!r} has {len(urls)} URLs: a track takes at most two, Full then Zoom"))
         parsed[track] = urls
     return tuple(parsed.items())
 

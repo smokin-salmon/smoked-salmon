@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { apiGet, apiPost } from '../lib/api'
   import FolderPicker from '../lib/FolderPicker.svelte'
   import JobActivity from '../lib/JobActivity.svelte'
@@ -30,7 +31,7 @@
   $effect(() => {
     apiGet<{ trackers: string[] }>('/dashboard')
       .then((answer) => (trackers = answer.trackers))
-      .catch((e) => (error = `Could not load the trackers: ${e}`))
+      .catch((e) => (error = `无法加载站点列表： ${e}`))
   })
 
   // Kept in the order the config lists them. Ported from the fork's tracker choice (chodeus, 9bfdddc3).
@@ -66,25 +67,22 @@
       copied = true
       setTimeout(() => (copied = false), 1500)
     } catch (e) {
-      error = `Could not copy the report: ${e}`
+      error = `无法复制报告： ${e}`
     }
   }
 </script>
 
 <!-- Ported from the fork's Checks page (chodeus, 9bfdddc3 and 889cc4f5), on salmon check all's rows. -->
-<h1>Checks</h1>
+<h1>检查</h1>
 <p class="lead">
-  Every check <span class="mono">salmon check all</span> runs on an album folder: source, integrity, MQA, upconverts,
-  rip logs, tags, sample rate, path length, provenance, the frequency analysis and the Do-Not-Upload lists. No tracker
-  is contacted unless you pick one, and nothing in the folder is changed. Advisory only:
-  <span class="mono">salmon up</span> runs its own checks.
+  执行 <span class="mono">salmon check all</span>，检查专辑的来源、完整性、MQA、虚假位深、抓轨日志、标签、采样率、路径长度、出处、频率分析及禁止上传列表。选中站点后还会查重。本页不修改文件；上传流程会另外执行自己的检查。
 </p>
 
 <div class="card">
   <FolderPicker bind:value={path} bind:usable />
   {#if trackers.length}
     <div class="trackers">
-      <span class="label">Search for a dupe on</span>
+      <span class="label">在以下站点查重</span>
       <div class="row wrap">
         {#each trackers as code (code)}
           <button
@@ -97,10 +95,9 @@
       </div>
       <small class="hint">
         {#if chosen.length}
-          Each gets what <span class="mono">salmon up</span>'s dupe search sends: its index call, then one search per
-          search string. Only {chosen.join(' and ')}'s rules apply (-t).
+          各得其所 <span class="mono">salmon up</span>的重复搜索发送：其索引调用，然后每个搜索字符串一次搜索。仅 {chosen.join("和")}的规则适用(-t)。
         {:else}
-          None: no tracker is contacted, and RED's and OPS's rules apply.
+          无：不联系站点，并且适用RED和OPS的规则。
         {/if}
       </small>
     </div>
@@ -108,11 +105,11 @@
   <div class="row actions">
     <label class="row option">
       <input type="checkbox" bind:checked={report} />
-      Also a plain-text report to paste into a help thread
+      还有一个粘贴到帮助线程中的纯文本报告
     </label>
   </div>
   <div class="row actions">
-    <button class="btn" onclick={run} disabled={!usable || starting}>Run checks</button>
+    <button class="btn" onclick={run} disabled={!usable || starting}>运行检查</button>
   </div>
   {#if error}<p class="error">{error}</p>{/if}
 </div>
@@ -120,29 +117,29 @@
 {#if job}
   <div class="card">
     <div class="row head">
-      <h2 class="grow">{job.title}</h2>
-      <button class="btn small secondary" onclick={toggleLog}>{showLog ? 'Hide log' : 'Log'}</button>
+      <h2 class="grow">{t(job.title)}</h2>
+      <button class="btn small secondary" onclick={toggleLog}>{showLog ? "隐藏日志" : "日志"}</button>
     </div>
     <JobStatus {job} />
 
     {#if result}
       <p class="summary">
         {#if result.blocking}
-          <span class="chip err">{result.blocking} blocking</span>
+          <span class="chip err">{result.blocking} 项阻止继续</span>
         {/if}
         {#if result.warnings}
-          <span class="chip warn">{result.warnings} warning(s)</span>
+          <span class="chip warn">{result.warnings} 项警告</span>
         {/if}
         {#if !result.blocking && !result.warnings}
-          <span class="chip ok">Nothing blocking, no warning</span>
+          <span class="chip ok">未发现阻止继续的问题或警告</span>
         {/if}
       </p>
       <VerdictRows rows={result.rows} />
       {#if result.report}
         <details class="report">
-          <summary>Report</summary>
+          <summary>报告</summary>
           <pre class="mono">{result.report}</pre>
-          <button class="btn small secondary" onclick={copyReport}>{copied ? 'Copied' : 'Copy report'}</button>
+          <button class="btn small secondary" onclick={copyReport}>{copied ? "已复制" : "复制报告"}</button>
         </details>
       {/if}
     {/if}

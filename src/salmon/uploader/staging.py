@@ -13,6 +13,7 @@ from salmon.common.files import rewrite_refusal, unreadable_error
 from salmon.containment import is_within
 from salmon.converter.conversions import carry_conversion, copies_of
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 
 # Scratch copies live here, one directory per run, removed when the run ends.
 STAGING_DIR = ".salmon-staging"
@@ -38,7 +39,7 @@ def staged_source(path: str, scratch: bool) -> Iterator[tuple[str, str | None]]:
         UploadError: If path is or holds a library_dirs entry, or the copy does not fit on the disk or fails.
     """
     if (library := cfg.directory.library_inside(path)) is not None:
-        raise UploadError(f"{path} holds the library folder {library}: run salmon on one album folder of it.")
+        raise UploadError(_zh(f"{path} holds the library folder {library}: run salmon on one album folder of it."))
     refusal = rewrite_refusal(path)
     if not scratch and refusal is None:
         yield path, None
@@ -96,17 +97,17 @@ def _copy_into(path: str, into: str, scratch: bool, refusal: str | None) -> str:
     free = shutil.disk_usage(into).free
     if size > free:
         raise UploadError(
-            f"Cannot copy {path} ({size / 1e6:.0f} MB) to {into}: only {free / 1e6:.0f} MB free there. {why}"
+            _zh(f"Cannot copy {path} ({size / 1e6:.0f} MB) to {into}: only {free / 1e6:.0f} MB free there. {why}")
         )
-    click.secho(f"\nCopying {path} ({size / 1e6:.0f} MB) to {dest}. {why}", fg="cyan")
+    click.secho(_zh(f"\nCopying {path} ({size / 1e6:.0f} MB) to {dest}. {why}"), fg="cyan")
     if not scratch:
-        click.secho(f"The renamed copy goes into {cfg.directory.download_directory} and stays there.", fg="cyan")
+        click.secho(_zh(f"The renamed copy goes into {cfg.directory.download_directory} and stays there."), fg="cyan")
     try:
         # A real copy: a hardlink shares the inode, so a later tag write would reach the source. Symlinks are
         # followed (symlinks=False), so the copy holds the files they lead to, never a link to them.
         shutil.copytree(path, dest)
     except OSError as error:
-        raise UploadError(f"Could not copy {path} to {dest}: {error}") from error
+        raise UploadError(_zh(f"Could not copy {path} to {dest}: {error}")) from error
     # The record lives beside the album, not in it, so the copy would otherwise leave it behind.
     with dryrun.writing_into(into):  # A dry run writes the record only into its run directory.
         carry_conversion(path, dest)
@@ -126,9 +127,9 @@ def _remove_scratch_dir(scratch_dir: str, source: str) -> None:
     # Checked on the resolved paths: a symlinked component must not carry the removal out of the root,
     # and neither the source nor a folder holding it is ever removed.
     if os.path.islink(scratch_dir) or os.path.dirname(real) != root or is_within(real_source, real):
-        click.secho(f"Left the scratch copy at {scratch_dir}: it is not a run directory in {root}.", fg="yellow")
+        click.secho(_zh(f"Left the scratch copy at {scratch_dir}: it is not a run directory in {root}."), fg="yellow")
         return
     try:
         shutil.rmtree(real)
     except OSError as error:
-        click.secho(f"Could not remove the scratch copy at {scratch_dir}: {error}", fg="yellow")
+        click.secho(_zh(f"Could not remove the scratch copy at {scratch_dir}: {error}"), fg="yellow")

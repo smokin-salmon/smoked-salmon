@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { apiPost } from '../lib/api'
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
@@ -37,39 +38,38 @@
 </script>
 
 <!-- Ported from the fork's Jobs page (styx-techno, chodeus). -->
-<h1>Jobs</h1>
+<h1>任务</h1>
 <p class="lead">
-  What salmon web runs, and has run since it started. A job that asks something waits here for your answer. At most a
-  few run at once; the others wait their turn.
+  查看本次启动后的全部任务。需要回答的问题会在此等待；达到并行任务上限后，其余任务进入队列。
 </p>
 
 {#if jobStore.loadError}
   <div class="card"><p class="muted">{jobStore.loadError}</p></div>
 {/if}
 {#if cancelError}
-  <div class="card"><p class="muted">Cancel failed: {cancelError}</p></div>
+  <div class="card"><p class="muted">取消失败： {cancelError}</p></div>
 {/if}
 
 {#if jobStore.jobs.length === 0 && !jobStore.loadError}
-  <div class="card"><p class="muted">No jobs yet.</p></div>
+  <div class="card"><p class="muted">暂无任务。</p></div>
 {/if}
 
 {#each jobStore.jobs as job (job.id)}
   <div class="card">
     <div class="row head">
-      <h2 class="grow">{job.title}</h2>
+      <h2 class="grow">{t(job.title)}</h2>
       <span class="muted mono">{job.kind} · {when(job.started_at ?? job.created_at)}</span>
       <button class="btn small secondary" onclick={() => toggle(job.id)}>
-        {opened.includes(job.id) ? 'Hide log' : 'Log'}
+        {opened.includes(job.id) ? "隐藏日志" : "日志"}
       </button>
       {#if !FINISHED.includes(job.status)}
         <button
           class="btn small secondary"
           disabled={cancelling.includes(job.id)}
-          title="A request already sent to a tracker is answered first: the job stops after it."
+          title="已经发送到站点的请求首先被应答：任务在其之后停止。"
           onclick={() => cancel(job)}
         >
-          {cancelling.includes(job.id) ? 'Cancelling…' : 'Cancel'}
+          {cancelling.includes(job.id) ? "正在取消…" : "取消"}
         </button>
       {/if}
     </div>

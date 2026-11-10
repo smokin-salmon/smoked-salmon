@@ -47,16 +47,16 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
-<div class="viewer" role="group" aria-label="Spectral" tabindex="0" bind:this={root} {onkeydown} onclick={() => root?.focus()}>
+<div class="viewer" role="group" aria-label="频谱" tabindex="0" bind:this={root} {onkeydown} onclick={() => root?.focus()}>
   {#if current}
     <a href={current.url} target="_blank" rel="noreferrer" class="image">
       <img src={current.url} alt={current.label} />
     </a>
     <div class="bar">
-      <button class="btn small secondary" disabled={index <= 0} onclick={() => step(-1)}>Previous</button>
+      <button class="btn small secondary" disabled={index <= 0} onclick={() => step(-1)}>上一张</button>
       <span class="label muted mono">{current.label}</span>
       <span class="pos muted">{index + 1} / {images.length}</span>
-      <button class="btn small secondary" disabled={index >= images.length - 1} onclick={() => step(1)}>Next</button>
+      <button class="btn small secondary" disabled={index >= images.length - 1} onclick={() => step(1)}>下一张</button>
     </div>
   {/if}
 </div>

@@ -10,6 +10,7 @@ import asyncclick as click
 from salmon import cfg, dryrun, interaction
 from salmon.config.image_hosts import cover_refusal
 from salmon.images import HOSTS, upload_cover
+from salmon.localization import text as _zh
 from salmon.tagger.cover import download_cover_if_nonexistent
 from salmon.trackers.red import RedApi
 
@@ -56,7 +57,7 @@ async def get_cover_url(
         else:
             cover_urls[host] = await upload_cover(cover_path, host, red_api)
         if is_downloaded and remove_downloaded and cover_path:
-            click.secho("Removing downloaded Cover Image File", fg="yellow")
+            click.secho(_zh("Removing downloaded Cover Image File"), fg="yellow")
             os.remove(cover_path)
         return cover_urls[host], cover_path is not None
     return cover_urls[host], True
@@ -103,19 +104,23 @@ async def _choose_cover_host(tracker: str, default_host: str) -> str:
         forbidden = {host: reason for host in HOSTS if (reason := cover_refusal(host, tracker)) is not None}
         allowed_hosts = [host for host in HOSTS if host not in forbidden]
         host_input: str = await interaction.prompt(
-            click.style(
-                "Which image host would you like to retry the cover upload with? "
-                f"(Options: {', '.join(allowed_hosts)})",
-                fg="magenta",
-                bold=True,
+            _zh(
+                click.style(
+                    _zh(
+                        "Which image host would you like to retry the cover upload with? "
+                        f"(Options: {', '.join(allowed_hosts)})"
+                    ),
+                    fg="magenta",
+                    bold=True,
+                )
             ),
             default=default_host,
         )
         host = host_input.strip().lower()
         if host in forbidden:
-            click.secho(f"{host} can't be used as a cover host for {tracker}: {forbidden[host]}.", fg="red")
+            click.secho(_zh(f"{host} can't be used as a cover host for {tracker}: {forbidden[host]}."), fg="red")
         elif host not in HOSTS:
-            click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
+            click.secho(_zh(f"{host} is an invalid image host. Please choose another one."), fg="red")
         else:
             return host
 
@@ -170,19 +175,24 @@ async def resolve_cover_url(
                 return True, cover_url
 
             click.secho(
-                f"\nNo cover image for this new group on {tracker}: none was found, its download failed, or the upload "
-                f"to {host} failed.",
+                _zh(
+                    f"\nNo cover image for this new group on {tracker}: "
+                    f"none was found, its download failed, or the upload "
+                    f"to {host} failed."
+                ),
                 fg="yellow",
                 bold=True,
             )
             if await interaction.assume_defaults():
                 click.secho(
-                    "Not uploading a new group without a cover image with -yyy (upload.yes_all).", fg="red", bold=True
+                    _zh("Not uploading a new group without a cover image with -yyy (upload.yes_all)."),
+                    fg="red",
+                    bold=True,
                 )
                 return False, None
 
             choice = await interaction.prompt(
-                click.style("Continue without a cover image? [y/N/r]", fg="magenta"),
+                _zh(click.style(_zh("Continue without a cover image? [y/N/r]"), fg="magenta")),
                 default="n",
                 show_default=False,
             )
@@ -191,7 +201,7 @@ async def resolve_cover_url(
                 if cover_found:
                     host = await _choose_cover_host(tracker, default_host)
                 else:
-                    click.secho("Looking for a cover image again...", fg="cyan")
+                    click.secho(_zh("Looking for a cover image again..."), fg="cyan")
             elif choice in ("y", "yes"):
                 return True, None
             else:

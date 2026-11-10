@@ -6,6 +6,7 @@ import anyio
 from salmon import cfg
 from salmon.common import parse_copyright
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.search.base import IdentData, SearchMixin, say_part_failed
 from salmon.sources import AppleMusicBase
 
@@ -60,7 +61,7 @@ class Searcher(AppleMusicBase, SearchMixin):
                 tg.start_soon(_search_one, sf)
 
         if not per_sf:
-            raise ScrapeError("Apple Music: every storefront failed.")
+            raise ScrapeError(_zh("Apple Music: every storefront failed."))
 
         # Interleave by rank across storefronts, then expand each result to all
         # configured langs for that storefront

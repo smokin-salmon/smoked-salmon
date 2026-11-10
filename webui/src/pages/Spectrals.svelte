@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { tick } from 'svelte'
   import { apiPost } from '../lib/api'
   import { copyText } from '../lib/clipboard'
@@ -52,7 +53,7 @@
         options = found
       })
       .catch((e) => {
-        error = `Could not load the options: ${e}`
+        error = `无法加载选项： ${e}`
       })
   })
 
@@ -122,7 +123,7 @@
   }
 
   async function copy(label: string, text: string) {
-    copied = (await copyText(text)) ? `${label} copied` : `Could not copy ${label}: select it and copy by hand`
+    copied = (await copyText(text)) ? `${label} 复制` : `无法复制 ${label}:选择并手动复制`
   }
 
   function imageUrl(job: Job, file: string): string {
@@ -167,17 +168,15 @@
 
 <!-- Ported from the fork's Spectrals page (chodeus, d6ac6372, 0b29d2d5, 9bfdddc3, 1f8e47d8, 18fc08d9): the upload is a
      job of its own, from the images of the spectrals job only. -->
-<h1>Spectrals</h1>
+<h1>频谱</h1>
 <p class="lead">
-  The spectrals of an album and what the frequency analysis measures, as <span class="mono">salmon specs</span> shows
-  them. They are written to a folder of salmon's own, never next to the music, and nothing is uploaded unless you
-  choose to upload them to an image host. Discard them when you are done; salmon also removes them when it stops.
+  生成专辑频谱并查看频率分析结果，对应 <span class="mono">salmon specs</span>。频谱保存在程序的临时目录中；选择上传后才会发送到图床。查看完毕可手动清理，程序停止时也会自动删除。
 </p>
 
 <div class="card">
   <FolderPicker bind:value={path} bind:usable />
   <div class="row actions">
-    <button class="btn" onclick={start} disabled={!usable || starting}>Make spectrals</button>
+    <button class="btn" onclick={start} disabled={!usable || starting}>生成频谱</button>
   </div>
   {#if error}<p class="error">{error}</p>{/if}
 </div>
@@ -185,10 +184,10 @@
 {#each shown as job (job.id)}
   <div class="card">
     <div class="row head">
-      <h2 class="grow">{job.title}</h2>
+      <h2 class="grow">{t(job.title)}</h2>
       {#if FINISHED.includes(job.status) && job.spectrals !== null}
         <button class="btn small secondary" disabled={discarding.includes(job.id)} onclick={() => discard(job)}>
-          Discard these spectrals
+          清除这些频谱
         </button>
       {/if}
     </div>
@@ -212,25 +211,24 @@
     {#if job.status === 'done' && job.spectrals?.length}
       {@const upload = uploadFor[job.id] ? jobStore.get(uploadFor[job.id]) : undefined}
       <div class="upload">
-        <h3>Upload spectrals</h3>
+        <h3>上传频谱</h3>
         <p class="muted">
-          Sends the images of the tracks you tick (not the frequency plots) to the spectrals host of the tracker you
-          pick, as <span class="mono">salmon specs</span> does. The ticks start where it would start: your
-          <span class="mono">default_spectral_ids</span>, else a random third of the tracks.
+          将您勾选的轨迹的图像（不是频率图）发送到您选择的站点的频谱主机，如 <span class="mono">salmon specs</span> 确实如此。勾选项从它开始的地方开始：你的
+          <span class="mono">default_spectral_ids</span>，否则是随机的三分之一曲目。
         </p>
         <fieldset class="tracks">
-          <legend>Tracks to upload</legend>
+          <legend>选择要上传频谱的曲目</legend>
           <div class="row wrap shortcuts">
             <button
               class="btn small secondary"
               onclick={() => (pickedFor = { ...pickedFor, [job.id]: trackList(job).map((t) => t.id) })}
             >
-              All
+              全部
             </button>
             <button class="btn small secondary" onclick={() => (pickedFor = { ...pickedFor, [job.id]: [] })}>
-              None
+              无
             </button>
-            <span class="muted">{picked(job).length} of {trackList(job).length}</span>
+            <span class="muted">{picked(job).length} / {trackList(job).length}</span>
           </div>
           {#each trackList(job) as t (t.id)}
             <label class="track">
@@ -245,13 +243,13 @@
         </fieldset>
         <div class="row wrap">
           <label>
-            For tracker
+            适用站点
             <select bind:value={trackerFor[job.id]}>
-              <option value="">None (the shared setting)</option>
+              <option value="">无（共享设置）</option>
               {#each options?.trackers ?? [] as t (t.code)}<option value={t.code}>{t.code}</option>{/each}
             </select>
           </label>
-          <span class="muted">Host: {hostFor(job)}</span>
+          <span class="muted">图床： {hostFor(job)}</span>
           <button
             class="btn small"
             disabled={uploading.includes(job.id) ||
@@ -259,7 +257,7 @@
               (upload !== undefined && !FINISHED.includes(upload.status))}
             onclick={() => uploadSpectrals(job)}
           >
-            Upload spectrals
+            上传频谱
           </button>
         </div>
         {#if upload}
@@ -267,11 +265,11 @@
           <QuestionPanel job={upload} />
           {#if upload.status === 'done'}
             {@const result = upload.result as SpectralsUploadResult}
-            <p class="muted">Uploaded to {result.host}.</p>
+            <p class="muted">已上传至 {result.host}.</p>
             <pre class="result mono">{result.text}</pre>
             <div class="row wrap">
-              <button class="btn small" onclick={() => copy('The URLs', result.text)}>Copy</button>
-              <button class="btn small secondary" onclick={() => copy('The BBCode', result.bbcode)}>Copy as BBCode</button>
+              <button class="btn small" onclick={() => copy('The URLs', result.text)}>复制</button>
+              <button class="btn small secondary" onclick={() => copy('The BBCode', result.bbcode)}>复制为BBCode</button>
               <span class="muted">{copied}</span>
             </div>
           {:else if !FINISHED.includes(upload.status)}
@@ -282,13 +280,13 @@
     {/if}
   </div>
 {:else}
-  <div class="card"><p class="muted">No spectrals kept.</p></div>
+  <div class="card"><p class="muted">暂无保留的频谱图。</p></div>
 {/each}
 
 {#if lightbox}
   <dialog
     class="lightbox"
-    aria-label="Spectral"
+    aria-label="频谱"
     use:modal
     bind:this={lightboxDialog}
     onclose={closed}
@@ -300,7 +298,7 @@
     }}
   >
     <SpectralViewer images={lightboxImages} bind:index={lightbox.index} bind:root={lightboxViewer} />
-    <button class="btn small secondary close" onclick={closeLightbox}>Close</button>
+    <button class="btn small secondary close" onclick={closeLightbox}>关闭</button>
   </dialog>
 {/if}
 

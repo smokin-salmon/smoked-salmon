@@ -35,6 +35,7 @@ from salmon.constants import (
     BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
+from salmon.localization import text as _zh
 from salmon.tagger.mutation import abort_partial
 from salmon.tagger.pairing import BY_ISRC_OR_TITLE, pair_by_content
 from salmon.tagger.renames import RenameStopped, plan_renames, rename_all
@@ -60,19 +61,19 @@ async def tag_files(path, tags, metadata, auto_rename, *, clear=None):
     Returns each retagged file's track, by filename, or None when the files were not retagged.
     """
     clear = clear or {}
-    click.secho("\nRetagging files...", fg="cyan", bold=True)
+    click.secho(_zh("\nRetagging files..."), fg="cyan", bold=True)
     if not check_whether_to_tag(tags, metadata):
         return None
     album_changes = collect_album_data(metadata)
     try:
         pairs = pair_files_with_tracks(tags, metadata)
     except AmbiguousTrackOrderError as e:
-        click.secho(str(e), fg="red")
-        click.secho("Skipping retagging procedure...", fg="red")
+        click.secho(_zh(str(e)), fg="red")
+        click.secho(_zh("Skipping retagging procedure..."), fg="red")
         return None
     except NumberedTrackMoveError as e:
         if not await _confirm_moves(e.moves):
-            click.secho("Skipping retagging procedure...", fg="red")
+            click.secho(_zh("Skipping retagging procedure..."), fg="red")
             return None
         pairs = pair_files_with_tracks(tags, metadata, move_numbered=True)
     track_changes = _track_changes(pairs)
@@ -81,7 +82,7 @@ async def tag_files(path, tags, metadata, auto_rename, *, clear=None):
         auto_rename
         or await interaction.assume_defaults()
         or await interaction.confirm(
-            click.style("\nWould you like to auto-tag the files with the updated metadata?", fg="magenta"),
+            _zh(click.style(_zh("\nWould you like to auto-tag the files with the updated metadata?"), fg="magenta")),
             default=True,
         )
     ):
@@ -92,17 +93,21 @@ async def tag_files(path, tags, metadata, auto_rename, *, clear=None):
 
 async def _confirm_moves(moves):
     """Ask before giving numbered files other tracks' tags. A run that answers with defaults (-yyy) doesn't."""
-    click.secho("\nThese files carry their own track numbers, but the metadata pairs them with other tracks:", fg="red")
+    click.secho(
+        _zh("\nThese files carry their own track numbers, but the metadata pairs them with other tracks:"), fg="red"
+    )
     for filename, numbered_as, pairs_with, reason in moves:
         click.secho(
-            f"  {filename}: numbered {_track_label(numbered_as)}, "
-            f"would be {_track_label(pairs_with)}. {pairs_with['title']} (matched on {reason})",
+            _zh(
+                f"  {filename}: numbered {_track_label(numbered_as)}, "
+                f"would be {_track_label(pairs_with)}. {pairs_with['title']} (matched on {reason})"
+            ),
             fg="red",
         )
     if await interaction.assume_defaults():
-        click.secho("Not retagging numbered files as other tracks without asking.", fg="red")
+        click.secho(_zh("Not retagging numbered files as other tracks without asking."), fg="red")
         return False
-    return await interaction.confirm(click.style("Retag them as those tracks?", fg="magenta"), default=False)
+    return await interaction.confirm(_zh(click.style(_zh("Retag them as those tracks?"), fg="magenta")), default=False)
 
 
 def _own_number(tagset):
@@ -123,7 +128,7 @@ def check_whether_to_tag(tags, metadata):
     """
     if len(tags) != sum([len(disc) for disc in metadata["tracks"].values()]):
         click.secho(
-            "Number of tracks differed from number of tracks in metadata, skipping retagging procedure...",
+            _zh("Number of tracks differed from number of tracks in metadata, skipping retagging procedure..."),
             fg="red",
         )
         return False
@@ -392,9 +397,11 @@ def _names_distinct(names) -> bool:
 def _ambiguous_tracks() -> AmbiguousTrackOrderError:
     """The error for a retag whose files the tags and folders can't pair with tracks."""
     return AmbiguousTrackOrderError(
-        "Can't tell which file is which track: some files share a disc and track number, or lack one, and "
-        "neither the tags nor a folder per disc sort them out. Fix their DISCNUMBER and TRACKNUMBER tags, or "
-        "put each disc in its own folder, before retagging."
+        _zh(
+            "Can't tell which file is which track: some files share a disc and track number, or lack one, and "
+            "neither the tags nor a folder per disc sort them out. Fix their DISCNUMBER and TRACKNUMBER tags, or "
+            "put each disc in its own folder, before retagging."
+        )
     )
 
 
@@ -448,10 +455,11 @@ def order_tracks_for_files(items, tracks, *, numbered=False, show=True):
 
     file_reasons = _reasons_by_file(pairing, reasons)
     if ordered != tracks and show:
-        click.secho("\nMatched files to the metadata tracklist by content:", fg="yellow", bold=True)
+        click.secho(_zh("\nMatched files to the metadata tracklist by content:"), fg="yellow", bold=True)
         for (filename, _), track, reason in zip(items, ordered, file_reasons, strict=True):
             click.secho(
-                f"  {filename}\n      -> {track['track#']}. {track['title']} (matched on {reason})", fg="yellow"
+                _zh(f"  {filename}\n      -> {track['track#']}. {track['title']} (matched on {reason})"),
+                fg="yellow",
             )
     return ordered, file_reasons
 
@@ -559,7 +567,7 @@ def _ordered_unique(values):
 def print_changes(album_changes, track_changes, a_track, clear=None):
     """Print all the proposed track changes, then all the album data."""
     if any(t for t in track_changes.values()):
-        click.secho("\nProposed tag changes:", fg="yellow", bold=True)
+        click.secho(_zh("\nProposed tag changes:"), fg="yellow", bold=True)
     for filename, changes in track_changes.items():
         if changes:
             click.secho(f"> {filename}", fg="yellow")
@@ -567,7 +575,7 @@ def print_changes(album_changes, track_changes, a_track, clear=None):
                 old, new = _shown(change.old, change.new)
                 click.echo(f"  {change.tag.ljust(20)} ••• {old} {ARROWS} {new}")
 
-    click.secho("\nAlbum tags (applied to all):", fg="yellow", bold=True)
+    click.secho(_zh("\nAlbum tags (applied to all):"), fg="yellow", bold=True)
     for field, value in album_changes.items():
         previous = getattr(a_track, field, None)
         if isinstance(value, list):
@@ -588,7 +596,7 @@ def print_changes(album_changes, track_changes, a_track, clear=None):
     for field, previous in sorted((clear or {}).items()):
         click.echo(
             f"> {click.style(str(field.ljust(13)), bold=True)} ••• {_joined(previous)} "
-            f"{ARROWS} {click.style('(removed)', bold=True)}"
+            f"{ARROWS} {click.style(_zh('(removed)'), bold=True)}"
         )
 
 
@@ -632,7 +640,7 @@ def retag_files(path, album_changes, track_changes, clear=()):
             mut = TagFile(os.path.join(path, filename))
             if mut.mut is None:
                 # Its save() would do nothing, and the file would be listed as changed.
-                raise ValueError("not an audio file mutagen can read")
+                raise ValueError(_zh("not an audio file mutagen can read"))
             for change in changes:
                 if change.tag == "artists" and _is_aac(mut):
                     continue
@@ -651,7 +659,7 @@ def retag_files(path, album_changes, track_changes, clear=()):
             abort_partial(f"Retagging {filename}", done, filename, remaining, e)
         if saved:  # a file save() left as it is (a fragmented M4A) is not changed
             done.append(filename)
-    click.secho("Retagged files.", fg="green")
+    click.secho(_zh("Retagged files."), fg="green")
 
 
 async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=None, tracks_by_file=None):  # noqa: C901
@@ -689,14 +697,16 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
     )
     if several_discs and not single_folder and (unreadable or missing):
         click.secho(
-            "\nNot renaming: these files' disc numbers can't tell their discs apart. Set DISCNUMBER to a plain "
-            "number (1, 2, ...) on each to rename them.",
+            _zh(
+                "\nNot renaming: these files' disc numbers can't tell their discs apart. Set DISCNUMBER to a plain "
+                "number (1, 2, ...) on each to rename them."
+            ),
             fg="red",
         )
         for name, value in unreadable.items():
             click.secho(f"   {name}: {value}", fg="red")
         for name in missing:
-            click.secho(f"   {name}: no disc number", fg="red")
+            click.secho(_zh(f"   {name}: no disc number"), fg="red")
         return
 
     # In one folder, every disc and track number is padded to the width of the largest, so the files sort by
@@ -739,7 +749,7 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
             [(os.path.join(path, filename), os.path.join(path, new_name)) for filename, new_name in to_rename]
         )
         if clashes:
-            click.secho("\nNot renaming: these files would overwrite another file.", fg="red")
+            click.secho(_zh("\nNot renaming: these files would overwrite another file."), fg="red")
             for name in clashes:
                 click.secho(f"   {os.path.relpath(name, path)}", fg="red")
             return
@@ -747,7 +757,7 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
             auto_rename
             or await interaction.assume_defaults()
             or await interaction.confirm(
-                click.style("\nWould you like to rename the files?", fg="magenta"),
+                _zh(click.style(_zh("\nWould you like to rename the files?"), fg="magenta")),
                 default=True,
             )
         ):
@@ -775,7 +785,7 @@ async def rename_files(path, tags, metadata, auto_rename, spectral_ids, source=N
             move_non_audio_files(directory_move_pairs, disc_of_folder)
             delete_empty_folders(path)
     else:
-        click.secho("\nNo file renaming is recommended.", fg="green")
+        click.secho(_zh("\nNo file renaming is recommended."), fg="green")
 
 
 def _rename_or_undo(path: str, renames: list[tuple[str, str]]) -> None:
@@ -801,8 +811,8 @@ def _rename_or_undo(path: str, renames: list[tuple[str, str]]) -> None:
             stopped = RenameStopped(e.error, done, e.failed, renames[len(done) + 1 :])
             raise UploadError(f"{stopped.report(path)}\n{undone}") from e
         if isinstance(e, OSError):
-            raise UploadError(f"Could not update the record of how {path} was converted ({e}).\n{undone}") from e
-        click.secho(undone, fg="red", bold=True)
+            raise UploadError(_zh(f"Could not update the record of how {path} was converted ({e}).\n{undone}")) from e
+        click.secho(_zh(undone), fg="red", bold=True)
         raise
 
 
@@ -826,7 +836,7 @@ def _undo_renames(path: str, done: list[tuple[str, str]]) -> str:
 
 def print_filenames(to_rename):
     """Print all the proposed filename changes."""
-    click.secho("\nProposed filename changes:", fg="yellow", bold=True)
+    click.secho(_zh("\nProposed filename changes:"), fg="yellow", bold=True)
     for filename, new_name in to_rename:
         click.echo(f"   {filename} {ARROWS} {new_name}")
 
@@ -875,7 +885,7 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=
     # Cleaned before the extension is added, so a space left at the end of the name does not sit before the dot
     new_base = clean_name(new_base)
     if not has_visible_chars(new_base):
-        raise UploadError(f"Not naming a file {new_base!r}{ext}: its tags leave nothing visible in file_template.")
+        raise UploadError(_zh(f"Not naming a file {new_base!r}{ext}: its tags leave nothing visible in file_template."))
     return new_base + ext
 
 
@@ -907,7 +917,7 @@ def move_non_audio_files(directory_move_pairs, disc_of_folder=None):
                 new_file = f"{base}.{disc_number}{file_ext}"
             new_path = os.path.join(new_dir, new_file)
             if os.path.lexists(new_path):
-                click.secho(f"Left {old_path} where it is: {new_path} already exists.", fg="yellow")
+                click.secho(_zh(f"Left {old_path} where it is: {new_path} already exists."), fg="yellow")
                 continue
             shutil.move(old_path, new_path)
 

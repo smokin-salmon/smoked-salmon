@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { apiGet, apiPost } from '../lib/api'
   import { sourcePreset } from '../lib/sourcePreset.svelte'
   import FolderPicker from '../lib/FolderPicker.svelte'
@@ -141,49 +142,49 @@
 
   // The options of salmon up a form gives, as the job takes them; their defaults are the command's.
   const FLAGS: { key: string; label: string; help: string }[] = [
-    { key: 'auto_rename', label: 'Auto-rename', help: 'Rename files and folders without asking first (-n).' },
+    { key: 'auto_rename', label: "自动重命名", help: "自动重命名文件和文件夹，无需再次确认（-n）。" },
     {
       key: 'spectrals_after',
-      label: 'Spectrals after upload',
-      help: 'Check, upload and report the spectrals after the torrent is up (-a). Not with a dry run.',
+      label: "上传后的频谱",
+      help: "种子发布后检查、上传并报告频谱（-a）。模拟运行时不执行。",
     },
     {
       key: 'compress',
-      label: 'Recompress FLACs',
-      help: 'Recompress the FLACs to the configured compression level first (-c). The audio is unchanged.',
+      label: "重新压缩 FLAC",
+      help: "先按配置的压缩级别重新压缩 FLAC（-c），音频内容不变。",
     },
     {
       key: 'scene',
-      label: 'Scene release',
-      help: 'Leave the folder and file names, tags and cover as they are (--scene). Not with essential files only.',
+      label: "Scene 发行",
+      help: "保留文件夹名、文件名、标签和封面（--scene）。不能与“仅保留必要文件”同时使用。",
     },
     {
       key: 'essential_only',
-      label: 'Essential files only',
-      help: 'Upload audio, logs, cues and artwork only; leave out nfo, sfv, md5, txt and other extras (-eo).',
+      label: "仅保留必要文件",
+      help: "仅上传音频、抓轨日志、CUE 和封面；排除 nfo、sfv、md5、txt 等附加文件（-eo）。",
     },
     {
       key: 'overwrite',
-      label: 'Overwrite metadata',
-      help: "Take artists, year, label, catalogue number and genres from the scraped sources, not the file tags (-ow).",
+      label: "覆盖元数据",
+      help: "使用抓取结果中的艺术家、年份、厂牌、发行编号和流派覆盖文件标签（-ow）。",
     },
-    { key: 'skip_up', label: 'Skip upconvert check', help: 'Skip the check for 16-bit audio padded to 24-bit (--skip-up).' },
-    { key: 'skip_mqa', label: 'Skip MQA check', help: 'Skip the check for an MQA marker (--skip-mqa).' },
-    { key: 'skip_log_check', label: 'Skip log check', help: 'Skip scoring CD rip logs (--skip-log-check).' },
+    { key: 'skip_up', label: "跳过虚假位深检查", help: "跳过将 16-bit 填充为 24-bit 的虚假位深检查（--skip-up）。" },
+    { key: 'skip_mqa', label: "跳过MQA检查", help: "跳过对MQA标记的检查(--skip-mqa)。" },
+    { key: 'skip_log_check', label: "跳过日志检查", help: "跳过 CD 抓轨日志评分（--skip-log-check）。" },
     {
       key: 'skip_integrity_check',
-      label: 'Skip integrity check',
-      help: 'Skip checking that every audio file decodes (--skip-integrity-check).',
+      label: "跳过完整性检查",
+      help: "跳过音频文件的解码完整性检查（--skip-integrity-check）。",
     },
     {
       key: 'skip_initial_review',
-      label: 'Skip initial review',
-      help: 'Skip the manual metadata review before the AI review (--skip-initial-review).',
+      label: "跳过首次人工核对",
+      help: "在AI审查之前跳过手动元数据审查(--skip-initial-review)。",
     },
     {
       key: 'apply_ai_suggestions',
-      label: 'Apply AI suggestions',
-      help: "Apply the AI review's edits without asking (--apply-ai-suggestions).",
+      label: "应用 AI 修改建议",
+      help: "无需询问即可应用AI审阅的编辑（--apply-ai-suggestions）。",
     },
   ]
 
@@ -199,16 +200,16 @@
   /** The overrides that differ from their default, by their label: what the Overrides summary names. */
   const overridden = $derived.by(() => {
     const set: string[] = []
-    if (mode === 'flac' && groupId.trim()) set.push('group ID')
-    if (!transcodes && request.trim()) set.push('request')
-    if (lossy !== 'ask') set.push('lossy master')
-    if (encoding) set.push('encoding')
-    if (spectrals.trim()) set.push('spectral tracks')
-    if (sourceUrl.trim() && searchAnyway) set.push('search the stores anyway')
+    if (mode === 'flac' && groupId.trim()) set.push("专辑组 ID")
+    if (!transcodes && request.trim()) set.push('求种')
+    if (lossy !== 'ask') set.push("有损母带")
+    if (encoding) set.push('编码')
+    if (spectrals.trim()) set.push("频谱曲目")
+    if (sourceUrl.trim() && searchAnyway) set.push("无论如何都要搜索商店")
     for (const flag of shownFlags) if (flags[flag.key]) set.push(flag.label.toLowerCase())
     return set
   })
-  const summary = $derived(overridden.length ? `Overrides (${overridden.length} set: ${overridden.join(', ')})` : 'Overrides')
+  const summary = $derived(overridden.length ? `本次上传选项（${overridden.length} 项已设置： ${overridden.join(', ')})` : "本次上传选项")
   const canStart = $derived(
     usable &&
       !!source &&
@@ -238,7 +239,7 @@
         chosen = kept && (kept.length === 0 || still.length) ? still : firstVisitTrackers(answer)
       })
       .catch((e) => {
-        error = `Could not load the trackers: ${e}`
+        error = `无法加载站点列表： ${e}`
       })
   })
 
@@ -278,13 +279,13 @@
     const group = parseGroupId(groupId)
     if (group === undefined || (transcodes && group === null)) {
       error = transcodes
-        ? 'Transcodes only needs the group the FLAC is in: a number or a torrents.php?id= link.'
-        : 'The group ID must be a number or a torrents.php?id= link.'
+        ? "转码仅需要FLAC所在的组：数字或torrents.php?id=链接。"
+        : "群专辑组 ID必须是数字或torrents.php?id=链接。"
       return
     }
     const tracks = spectrals.split(/[,\s]+/).filter(Boolean).map(Number)
     if (tracks.some((n) => !Number.isInteger(n) || n < 1)) {
-      error = 'Spectral track numbers are whole numbers from 1.'
+      error = "频谱曲目号是从1开始的整数。"
       return
     }
     saveOptions()
@@ -341,10 +342,9 @@
 
 <!-- Ported from the fork's Upload page (styx-techno 637ee666; chodeus 0b29d2d5, 889cc4f5, 6f846b37), without its
      pre-flight step: the job asks what salmon up asks, in the order it asks it. -->
-<h1>Upload</h1>
+<h1>上传</h1>
 <p class="lead">
-  What <span class="mono">salmon up</span> does, here: the same checks, the same questions as the job reaches them,
-  and the same requests to the tracker. A dry run goes through everything on a copy of the album and sends nothing.
+  在网页中执行 <span class="mono">salmon up</span>：检查专辑、核对元数据，并按步骤确认上传选项。模拟运行会在专辑副本上完成检查并显示上传表单，不会提交上传。
 </p>
 
 {#if !live}
@@ -353,7 +353,7 @@
 
     <div class="grid">
       <div class="field">
-        <span class="label">Trackers, in order</span>
+        <span class="label">上传站点（按顺序）</span>
         <div class="row wrap">
           {#each options.trackers as code (code)}
             <label class="check">
@@ -363,28 +363,28 @@
           {/each}
         </div>
         <small class="hint">
-          Pick at least one. The upload goes to exactly the ticked trackers, in order, and asks about no other (-t).
+          选择至少一个。上传将按顺序准确地发送至已勾选的站点，并且不会询问其他信息 (-t)。
         </small>
       </div>
       <label>
-        Source
+        来源介质
         <select bind:value={source} onchange={() => preset.picked()}>
-          <option value="" disabled>Pick one</option>
+          <option value="" disabled>选择一个</option>
           {#each options.sources as each (each)}<option value={each}>{each}</option>{/each}
         </select>
-        {#if preset.reason}<small class="hint muted">{preset.reason}</small>{/if}
-        {#if showHelp}<small class="hint">The media the files came from (-s).</small>{/if}
+        {#if preset.reason}<small class="hint muted">{t(preset.reason)}</small>{/if}
+        {#if showHelp}<small class="hint">文件来自的介质(-s)。</small>{/if}
       </label>
       <label>
-        Store link
+        发行页面链接
         <input type="text" bind:value={sourceUrl} placeholder="https://" />
         <small class="hint">
-          salmon takes the metadata from this link, and searches the stores only if it cannot read it.{#if showHelp}
+          优先读取此链接中的元数据；无法读取时再搜索其他商店。{#if showHelp}
             (-su -ss){/if}
         </small>
       </label>
       <div class="field">
-        <span class="label">Conversions</span>
+        <span class="label">转码格式</span>
         <div class="row wrap">
           {#each options.conversion_kinds as kind (kind)}
             <label class="check">
@@ -394,36 +394,34 @@
           {/each}
           <label class="check">
             <input type="checkbox" bind:checked={askConversions} />
-            Ask during the run
+            运行时询问
           </label>
         </div>
         <small class="hint">
-          This upload only. The ticked kinds are made after the FLAC without asking; with Ask during the run, salmon asks
-          which once it has searched the group, and upload.conversions is the default answer.{#if showHelp}
-            (--conversions, or none given){/if}
+          仅对本次上传生效。上传 FLAC 后生成勾选的格式；选择“运行时询问”则在搜索专辑组后询问，并使用 upload.conversions 作为默认选项。{#if showHelp}
+            （--conversions，未勾选则运行时询问）{/if}
         </small>
       </div>
     </div>
 
     <div class="field mode">
-      <span class="label">Mode</span>
+      <span class="label">模式</span>
       <label class="check">
         <input type="radio" name="mode" value="flac" bind:group={mode} />
-        Upload the FLAC
+        上传 FLAC
       </label>
       <div class="row wrap">
         <label class="check">
           <input type="radio" name="mode" value="transcodes" bind:group={mode} />
-          Transcodes only, into group
+          仅上传转码版本到专辑组
         </label>
         {#if transcodes}
-          <input type="text" class="inline" bind:value={groupId} placeholder="ID or URL" aria-label="Group ID" />
+          <input type="text" class="inline" bind:value={groupId} placeholder="ID或URL" aria-label="专辑组 ID" />
         {/if}
       </div>
       {#if transcodes}
         <small class="hint">
-          The FLAC is already in that group: only its transcodes are uploaded, to exactly one ticked tracker, not with a request or
-          spectrals after upload (--skip-flac-upload). Tick at least one conversion, or ask during the run.
+          适用于专辑组中已有 FLAC 的情况：只上传转码版本，需选择一个站点（--skip-flac-upload）。请选择至少一种转码格式，或勾选“运行时询问”。此模式不处理求种和上传后频谱。
         </small>
       {/if}
     </div>
@@ -433,39 +431,39 @@
       <div class="grid">
         {#if !transcodes}
           <label>
-            Group ID
-            <input type="text" bind:value={groupId} placeholder="a new group" />
-            {#if showHelp}<small class="hint">Upload into this group: an ID or a torrents.php?id= link (-g).</small>{/if}
+            专辑组 ID
+            <input type="text" bind:value={groupId} placeholder="新建专辑组" />
+            {#if showHelp}<small class="hint">上传到该组：ID或torrents.php?id=链接（-g)。</small>{/if}
           </label>
         {/if}
         {#if !transcodes}
           <label>
-            Request
-            <input type="text" bind:value={request} placeholder="none" />
-            {#if showHelp}<small class="hint">The request to fill: a link or an ID (-r).</small>{/if}
+            求种
+            <input type="text" bind:value={request} placeholder="无" />
+            {#if showHelp}<small class="hint">要完成的求种：填写求种链接或 ID（-r）。</small>{/if}
           </label>
         {/if}
         <label>
-          Lossy master
+          有损母带
           <select bind:value={lossy}>
-            <option value="ask">check, and ask</option>
-            <option value="yes">yes</option>
-            <option value="no">no</option>
+            <option value="ask">检查后询问</option>
+            <option value="yes">是</option>
+            <option value="no">否</option>
           </select>
-          {#if showHelp}<small class="hint">Whether the master is lossy (-l / -L).</small>{/if}
+          {#if showHelp}<small class="hint">母带是否为有损来源（-l / -L）。</small>{/if}
         </label>
         <label>
-          Encoding
+          编码
           <select bind:value={encoding}>
-            <option value="">lossless, or ask</option>
+            <option value="">无损，还是问</option>
             {#each options.encodings as each (each)}<option value={each}>{each}</option>{/each}
           </select>
-          {#if showHelp}<small class="hint">For lossy files only (-e).</small>{/if}
+          {#if showHelp}<small class="hint">仅适用于有损文件（-e)。</small>{/if}
         </label>
         <label>
-          Spectral tracks
-          <input type="text" bind:value={spectrals} placeholder="ask" />
-          {#if showHelp}<small class="hint">The track numbers whose spectrals go in the description, e.g. 1 4 7 (-sp).</small>{/if}
+          频谱曲目
+          <input type="text" bind:value={spectrals} placeholder="运行时询问" />
+          {#if showHelp}<small class="hint">要在描述中展示频谱的曲目编号，例如1 4 7 (-sp)。</small>{/if}
         </label>
       </div>
 
@@ -474,10 +472,10 @@
           <div class="opt">
             <label class="check">
               <input type="checkbox" bind:checked={searchAnyway} />
-              Search the stores anyway
+              无论如何搜索商店
             </label>
             {#if showHelp}
-              <small class="hint">The store link then only goes into the description, as -su alone does.</small>
+              <small class="hint">此时，发行页面链接只写入描述，相当于单独使用 -su。</small>
             {/if}
           </div>
         {/if}
@@ -495,7 +493,7 @@
 
     <div class="row wrap chips">
       <button class="chip toggle" class:on={dryRun} aria-pressed={dryRun} onclick={() => (dryRun = !dryRun)}>
-        dry run
+        模拟运行
       </button>
       <button
         class="chip toggle"
@@ -505,25 +503,20 @@
       >
         -yyy
       </button>
-      <button class="link" onclick={resetOptions}>Reset to defaults</button>
+      <button class="link" onclick={resetOptions}>重置为默认值</button>
       <label class="check help">
-        <input type="checkbox" bind:checked={showHelp} /> Explain the options
+        <input type="checkbox" bind:checked={showHelp} /> 解释选项
       </label>
     </div>
     {#if showHelp}
       <p class="hint">
-        A dry run changes nothing and sends nothing: each upload's form is printed instead. -yyy answers the yes or no
-        questions with their defaults, as in the terminal, and takes the default spectral IDs. It never answers which
-        existing group to upload into (when the group search or the recent-uploads check found something), which
-        metadata result to use, which fields to edit, the source and the encoding when they are not given, and the
-        questions that come up only when something is wrong. With Spectrals after upload on, the lossy master, spectral
-        IDs and lossy approval questions after the upload are still asked.
+        模拟运行会显示原本要提交的上传表单，不会提交上传。-yyy 自动采用是非题及频谱曲目的默认值；专辑组、元数据结果、编辑字段、来源介质、编码和异常处理仍需人工确认。上传后频谱涉及的有损母带、频谱 ID 和审批问题也仍会询问。
       </p>
     {/if}
 
     <div class="row actions">
       <button class="btn" onclick={start} disabled={!canStart}>
-        {dryRun ? 'Start the dry run' : 'Start the upload'}
+        {dryRun ? "开始模拟运行" : "开始上传"}
       </button>
     </div>
     {#if error}<p class="error">{error}</p>{/if}
@@ -533,24 +526,24 @@
 {#if job}
   <div class="card">
     <div class="row head">
-      <h2 class="grow">{job.title}</h2>
+      <h2 class="grow">{t(job.title)}</h2>
       {#if live}
-        <button class="btn small secondary" onclick={cancel}>Cancel</button>
+        <button class="btn small secondary" onclick={cancel}>取消</button>
       {:else}
-        <button class="btn small secondary" onclick={toggleLog}>{showLog ? 'Hide log' : 'Log'}</button>
+        <button class="btn small secondary" onclick={toggleLog}>{showLog ? "隐藏日志" : "日志"}</button>
       {/if}
     </div>
     <JobStatus {job} />
 
     {#if result}
       {#if result.uploads.length}
-        {#if job.status !== 'done'}<p class="muted">Uploaded before it stopped:</p>{/if}
+        {#if job.status !== 'done'}<p class="muted">停止前上传：</p>{/if}
         {#if result.seedbox_failed}
-          <p><span class="chip warn">A seedbox step failed (a copy, a client add, or the client could not be set up): a torrent may be seeded nowhere. See the log.</span></p>
+          <p><span class="chip warn">远程做种服务器步骤失败（副本、客户端添加或无法设置客户端）：torrent 可能无处做种。查看日志。</span></p>
           {#if result.seedbox_failures?.length}
             <ul class="uploads">
               {#each result.seedbox_failures as failure}
-                <li class="muted mono">{failure.step} on {failure.seedbox}: {failure.item}</li>
+                <li class="muted mono">{failure.step} 上 {failure.seedbox}: {failure.item}</li>
               {/each}
             </ul>
           {/if}
@@ -565,9 +558,9 @@
           {/each}
         </ul>
       {:else if job.dry_run}
-        <p class="muted">Dry run: nothing was sent. The forms it would have sent are in the log.</p>
+        <p class="muted">模拟运行已完成，未提交上传。预览表单可在日志中查看。</p>
       {:else}
-        <p class="muted">Nothing was uploaded.</p>
+        <p class="muted">没有上传任何内容。</p>
       {/if}
     {/if}
 

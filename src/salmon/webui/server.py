@@ -34,9 +34,14 @@ from salmon.config.validations import CONVERSION_KINDS
 from salmon.constants import OPTIONAL_TOOLS, REQUIRED_TOOLS, SOURCES, TAG_ENCODINGS
 from salmon.errors import ScrapeError
 from salmon.images.files import MAX_IMAGE_BYTES
+from salmon.localization import text as _zh
 from salmon.release_notification import get_version
 from salmon.trackers import account
-from salmon.webui import kinds, output, paths  # kinds also registers the job kinds (test_webui_server_registers_kinds)
+from salmon.webui import (
+    kinds,
+    output,
+    paths,
+)  # kinds also registers the job kinds (test_webui_server_registers_kinds)
 from salmon.webui.auth import COOKIE_NAME, SESSION_MAX_AGE, Auth, resolve_token
 from salmon.webui.egress import Redactor, config_secrets
 from salmon.webui.interaction import Picked
@@ -109,19 +114,19 @@ async def request_rules(request: web.Request, handler: Handler) -> web.StreamRes
     app = request.app
     host = request.headers.get("Host")
     if not host_allowed(host, app[BIND_HOST], app[ALLOWED_HOSTS]):
-        return _error(403, "This host name is not allowed. Add it to allowed_hosts in the [web] config section.")
+        return _error(403, _zh("This host name is not allowed. Add it to allowed_hosts in the [web] config section."))
     if request.method not in SAFE_METHODS:
         # A cross-site form or a simple fetch cannot send JSON; a preflighted one is refused by the browser.
         if request.content_type != "application/json":
-            return _error(415, "Requests other than GET and HEAD must be sent as application/json.")
+            return _error(415, _zh("Requests other than GET and HEAD must be sent as application/json."))
         if not origin_allowed(request.headers.get("Origin"), host, app[DEV]):
-            return _error(403, "This request comes from another site.")
+            return _error(403, _zh("This request comes from another site."))
     if (
         _is_api(request.path)
         and (request.method, request.path) not in PUBLIC_API
         and not app[AUTH].authenticated(request.headers.get("Authorization"), request.cookies.get(COOKIE_NAME))
     ):
-        return _error(401, "Authentication required.")
+        return _error(401, _zh("Authentication required."))
     return await handler(request)
 
 
@@ -144,10 +149,10 @@ async def login(request: web.Request) -> web.Response:
     try:
         body = msgspec.json.decode(await request.read(), type=LoginRequest)
     except msgspec.MsgspecError:
-        return _error(400, 'Send {"token": "..."}.')
+        return _error(400, _zh('Send {"token": "..."}.'))
     auth = request.app[AUTH]
     if not auth.token_matches(body.token):
-        return _error(401, "Invalid token.")
+        return _error(401, _zh("Invalid token."))
     response = web.json_response({"authenticated": True})
     response.set_cookie(
         COOKIE_NAME,
@@ -178,7 +183,7 @@ async def health(_request: web.Request) -> web.Response:
 
 
 async def api_not_found(_request: web.Request) -> web.Response:
-    return _error(404, "Not found.")
+    return _error(404, _zh("Not found."))
 
 
 def _filtered(request: web.Request, answer: Any, status: int = 200) -> web.Response:
@@ -394,11 +399,11 @@ async def search(request: web.Request) -> web.Response:
     configured limit. One search or lookup at a time; the guard keeps it to public addresses (salmon.ssrf)."""
     query = request.query.get("q", "").strip()
     if not query or len(query) > MAX_QUERY_LENGTH:
-        return _error(422, f"Send ?q= with a search of at most {MAX_QUERY_LENGTH} characters.")
+        return _error(422, _zh(f"Send ?q= with a search of at most {MAX_QUERY_LENGTH} characters."))
     try:
         track_count = _track_count(request.query.get("track_count"))
     except ValueError:
-        return _error(422, "?track_count= must be a number of tracks, from 1 to 999.")
+        return _error(422, _zh("?track_count= must be a number of tracks, from 1 to 999."))
     async with request.app[STORE_LOCK]:
         with ssrf.public_only():
             results = await salmon.search.run_metasearch(
@@ -412,10 +417,10 @@ async def metadata(request: web.Request) -> web.Response:
     no scraper takes is refused before any request. One search or lookup at a time, public addresses only."""
     url = request.query.get("url", "").strip()
     if not url or len(url) > MAX_URL_LENGTH:
-        return _error(422, f"Send ?url= with a release URL of at most {MAX_URL_LENGTH} characters.")
+        return _error(422, _zh(f"Send ?url= with a release URL of at most {MAX_URL_LENGTH} characters."))
     source = salmon.tagger.sources.matching_source(url)
     if source is None:
-        return _error(422, "No metadata source takes this URL.")
+        return _error(422, _zh("No metadata source takes this URL."))
     try:
         async with request.app[STORE_LOCK]:
             with ssrf.public_only():
@@ -468,7 +473,9 @@ async def start_job(request: web.Request) -> web.Response:
     try:
         body = msgspec.json.decode(await request.read(), type=StartJobRequest)
     except msgspec.MsgspecError:
-        return _error(400, 'Send {"kind": "...", "params": {...}}, with "dry_run" and "assume_defaults" if wanted.')
+        return _error(
+            400, _zh('Send {"kind": "...", "params": {...}}, with "dry_run" and "assume_defaults" if wanted.')
+        )
     try:
         await _preflight(body, request.app[REDACTOR])
         job = request.app[JOBS].start(
@@ -489,16 +496,16 @@ async def answer_job(request: web.Request) -> web.Response:
     try:
         body = msgspec.json.decode(await request.read(), type=AnswerRequest)
     except msgspec.MsgspecError:
-        return _error(400, 'Send {"question_id": "...", "value": ...}.')
+        return _error(400, _zh('Send {"question_id": "...", "value": ...}.'))
     if not request.app[JOBS].answer(job.id, body.question_id, body.value):
-        return _error(409, "This job has no such question open: it was answered already, or the job has ended.")
+        return _error(409, _zh("This job has no such question open: it was answered already, or the job has ended."))
     return web.json_response({"answered": body.question_id})
 
 
 async def cancel_job(request: web.Request) -> web.Response:
     job = _job(request)
     if not request.app[JOBS].cancel(job.id):
-        return _error(409, "This job has ended already.")
+        return _error(409, _zh("This job has ended already."))
     return web.json_response({"cancelled": job.id})
 
 
@@ -506,7 +513,7 @@ async def discard_job(request: web.Request) -> web.Response:
     """Delete a finished job's own folder, and the spectrals in it: nothing else."""
     job = _job(request)
     if not await request.app[JOBS].discard(job.id):
-        return _error(409, "This job has not finished: cancel it first, or wait for it to end.")
+        return _error(409, _zh("This job has not finished: cancel it first, or wait for it to end."))
     return web.json_response({"discarded": job.id})
 
 
@@ -516,18 +523,18 @@ async def job_spectral(request: web.Request) -> web.StreamResponse:
     path = (_job(request).spectrals or {}).get(request.match_info["name"])
     # Its folder was resolved when published: a symlink put there since resolves elsewhere.
     if path is None or os.path.realpath(path) != path or not os.path.isfile(path):
-        return _error(404, "No such spectral image.")
+        return _error(404, _zh("No such spectral image."))
     return web.FileResponse(path, headers={"Cache-Control": "no-store"})
 
 
 async def job_events(request: web.Request) -> web.StreamResponse:
     """Every job event, as it happens, over a websocket. Logged in as the API is; from this site only."""
     if not origin_allowed(request.headers.get("Origin"), request.headers.get("Host"), request.app[DEV]):
-        return _error(403, "This connection comes from another site.")
+        return _error(403, _zh("This connection comes from another site."))
     manager = request.app[JOBS]
     subscriber = manager.subscribe()
     if subscriber is None:
-        return _error(503, "Too many connections: close another salmon web tab.")
+        return _error(503, _zh("Too many connections: close another salmon web tab."))
     socket = web.WebSocketResponse(heartbeat=30)
     try:
         await socket.prepare(request)
@@ -658,32 +665,36 @@ async def serve(host: str, port: int, dev: bool = False) -> None:
             try:
                 await web.TCPSite(runner, host, port).start()
             except OSError as e:
-                raise click.ClickException(f"salmon web cannot listen on {host}:{port}: {e.strerror or e}") from e
+                raise click.ClickException(_zh(f"salmon web cannot listen on {host}:{port}: {e.strerror or e}")) from e
             _announce(host, port, token, generated)
             if signals is None:
                 await anyio.sleep_forever()
             else:
                 async for _ in signals:
                     break
-        click.echo("salmon web: stopped.")
+        click.echo(_zh("salmon web: stopped."))
     finally:
         await runner.cleanup()
 
 
 def _announce(host: str, port: int, token: str, generated: bool) -> None:
     if generated:
-        click.secho(f"salmon web: log in at {_url(host, port)}#token={token}", fg="cyan", bold=True)
-        click.echo("A new token is made at each start; set SALMON_WEB_TOKEN or [web] token to keep one.")
+        click.secho(_zh(f"salmon web: log in at {_url(host, port)}#token={token}"), fg="cyan", bold=True)
+        click.echo(_zh("A new token is made at each start; set SALMON_WEB_TOKEN or [web] token to keep one."))
     else:
-        click.secho(f"salmon web: listening on {_url(host, port)}", fg="cyan", bold=True)
-        click.echo("Log in with the token from SALMON_WEB_TOKEN or [web] token.")
+        click.secho(_zh(f"salmon web: listening on {_url(host, port)}"), fg="cyan", bold=True)
+        click.echo(_zh("Log in with the token from SALMON_WEB_TOKEN or [web] token."))
     if not is_loopback(host):
         click.secho(
-            "salmon web serves plain HTTP: the token and the login cookie cross the network in clear. "
-            "Unless you trust this network, reach it through a TLS reverse proxy, an SSH tunnel or a VPN.",
+            _zh(
+                "salmon web serves plain HTTP: the token and the login cookie cross the network in clear. "
+                "Unless you trust this network, reach it through a TLS reverse proxy, an SSH tunnel or a VPN."
+            ),
             fg="yellow",
         )
         click.echo(
-            "Browsers must reach it by a loopback name, its bind address or a name listed in [web] allowed_hosts "
-            "(this machine's LAN name or address, for instance); any other name is refused."
+            _zh(
+                "Browsers must reach it by a loopback name, its bind address or a name listed in [web] allowed_hosts "
+                "(this machine's LAN name or address, for instance); any other name is refused."
+            )
         )

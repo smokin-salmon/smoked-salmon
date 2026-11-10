@@ -25,6 +25,8 @@ import anyio.to_thread
 import asyncclick as click
 from PIL import Image
 
+from salmon.localization import text as _zh
+
 # The query the protocol documents: a one-pixel image the terminal checks without keeping, then a Primary Device
 # Attributes request. Every VT-style terminal answers the second, so a terminal that knows nothing of the first
 # still answers, and the wait ends there.
@@ -347,7 +349,7 @@ async def show_spectrals_in_terminal(spectrals_path: str, all_spectral_ids: dict
     """
     pages = [(sid, rows) for sid in sorted(all_spectral_ids) if any(rows := _page_images(spectrals_path, sid))]
     if not pages:
-        click.secho("No PNG files found to display.", fg="yellow")
+        click.secho(_zh("No PNG files found to display."), fg="yellow")
         return
     fd = sys.stdin.fileno()
     _write(_ALT_SCREEN_ON + _HIDE_CURSOR)

@@ -18,6 +18,7 @@ import msgspec
 
 import salmon.trackers
 from salmon.errors import TLSCertificateError
+from salmon.localization import text as _zh
 from salmon.trackers.base import BaseGazelleApi, request_dumps
 
 SESSION_COOKIE = "session cookie"
@@ -29,8 +30,11 @@ def print_certificate_hint(error: Exception) -> None:
     """After the line giving a failure's reason, where to look if it is a certificate failure. Nothing for any other."""
     if isinstance(error, TLSCertificateError):
         click.secho(
-            f"Your session cookie and API key are not the cause. Run salmon checkconf -t {error.tracker} to see where"
-            " Python gets its CA certificates.",
+            _zh(
+                f"Your session cookie and API key are not the cause. "
+                f"Run salmon checkconf -t {error.tracker} to see where"
+                " Python gets its CA certificates."
+            ),
             fg="yellow",
         )
 
@@ -128,32 +132,34 @@ async def check_connection(
 
 
 def print_tracker_header(code: str) -> None:
-    click.secho(f"\n[ Testing Tracker: {code} ]", fg="cyan", bold=True)
+    click.secho(_zh(f"\n[ Testing Tracker: {code} ]"), fg="cyan", bold=True)
 
 
 def print_session_cookie_header() -> None:
-    click.secho("\n[ Testing Session Cookie ]", fg="cyan", bold=True)
+    click.secho(_zh("\n[ Testing Session Cookie ]"), fg="cyan", bold=True)
 
 
 def print_step(step: str, error: str | None) -> None:
     """The line for one check that ended (see ``check_connection``'s ``on_step``)."""
     if step == SESSION_COOKIE:
         if error is None:
-            click.secho("  ✔ Session cookie OK", fg="green")
+            click.secho(_zh("  ✔ Session cookie OK"), fg="green")
         else:
-            click.secho(f"  ✖ Session cookie check failed: {error}", fg="red", bold=True)
+            click.secho(_zh(f"  ✖ Session cookie check failed: {error}"), fg="red", bold=True)
     elif error is None:
-        click.secho("  ✔ API authentication OK", fg="green")
+        click.secho(_zh("  ✔ API authentication OK"), fg="green")
     else:
-        click.secho(f"  ✖ API authentication failed: {error}", fg="red", bold=True)
+        click.secho(_zh(f"  ✖ API authentication failed: {error}"), fg="red", bold=True)
 
 
 def print_certificate_failure(result: ConnectionResult) -> None:
     """Why nothing was checked, for a result with a ``tls_error``."""
     click.secho(f"  ✖ {result.tls_error}", fg="red", bold=True)
     click.secho(
-        "    This fails before anything is sent: your session cookie and API key are not the cause,"
-        " and were not checked.",
+        _zh(
+            "    This fails before anything is sent: your session cookie and API key are not the cause,"
+            " and were not checked."
+        ),
         fg="red",
     )
 
@@ -161,9 +167,9 @@ def print_certificate_failure(result: ConnectionResult) -> None:
 def print_verdict(result: ConnectionResult) -> None:
     failed = result.failed_checks
     if failed:
-        click.secho(f"\n✖ Error testing {result.tracker} ({', '.join(failed)})", fg="red", bold=True)
+        click.secho(_zh(f"\n✖ Error testing {result.tracker} ({', '.join(failed)})"), fg="red", bold=True)
     else:
-        click.secho(f"\n✔ Successfully checked {result.tracker}", fg="green", bold=True)
+        click.secho(_zh(f"\n✔ Successfully checked {result.tracker}"), fg="green", bold=True)
 
 
 def print_ca_certificates_hint() -> None:
@@ -174,23 +180,27 @@ def print_ca_certificates_hint() -> None:
     """
     paths = ssl.get_default_verify_paths()
     click.secho(
-        "\n  Where Python gets its CA certificates (browsers ignore SSL_CERT_FILE and SSL_CERT_DIR):", fg="yellow"
+        _zh("\n  Where Python gets its CA certificates (browsers ignore SSL_CERT_FILE and SSL_CERT_DIR):"),
+        fg="yellow",
     )
     for env in (paths.openssl_cafile_env, paths.openssl_capath_env):
         value = os.environ.get(env)
-        click.secho(f"    {env}: {'not set' if value is None else value or 'set, but empty'}", fg="yellow")
+        shown = _zh("not set") if value is None else value or _zh("set, but empty")
+        click.secho(f"    {env}: {shown}", fg="yellow")
     # Either one is None when what OpenSSL would load is missing: the variable's path, else the default.
     for label, found, env, default in (
         ("CA file", paths.cafile, paths.openssl_cafile_env, paths.openssl_cafile),
         ("CA directory", paths.capath, paths.openssl_capath_env, paths.openssl_capath),
     ):
         looked_at = os.environ.get(env, default) or "an empty path"
-        click.secho(f"    {label}: {found or f'none, nothing at {looked_at}'}", fg="yellow")
+        click.secho(f"    {_zh(label)}: {found or _zh(f'none, nothing at {looked_at}')}", fg="yellow")
     if sys.platform == "win32":
-        click.secho("    and the Windows certificate store", fg="yellow")
+        click.secho(_zh("    and the Windows certificate store"), fg="yellow")
     click.secho(
-        "  Check the system clock and time zone too: a clock that is off makes a valid certificate look expired or"
-        " not yet valid. It happens in Docker, WSL, on a NAS or a seedbox.",
+        _zh(
+            "  Check the system clock and time zone too: a clock that is off makes a valid certificate look expired or"
+            " not yet valid. It happens in Docker, WSL, on a NAS or a seedbox."
+        ),
         fg="yellow",
     )
 
@@ -215,6 +225,6 @@ async def check_trackers(codes: Sequence[str]) -> list[ConnectionResult]:
                 print_certificate_failure(found)
                 print_ca_certificates_hint()
             print_verdict(found)
-            click.secho("-" * 50, fg="yellow")  # Separator for readability
+            click.secho(_zh("-" * 50), fg="yellow")  # Separator for readability
             results.append(found)
     return results

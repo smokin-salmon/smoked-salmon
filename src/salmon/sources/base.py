@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from salmon import ssrf
 from salmon.constants import UAGENTS
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.proxy import session_kwargs
 
 if TYPE_CHECKING:
@@ -75,7 +76,7 @@ class BaseScraper:
             # Names the host it refused, never the URL.
             raise ScrapeError(f"{name}: {e}") from e
         except (TimeoutError, aiohttp.ClientError) as e:
-            raise ScrapeError(f"{name}: Request failed ({type(e).__name__}).") from e
+            raise ScrapeError(_zh(f"{name}: Request failed ({type(e).__name__}).")) from e
 
     @classmethod
     def format_url(cls, rls_id: Any, rls_name: str | None = None, url: str | None = None) -> str:
@@ -111,7 +112,7 @@ class BaseScraper:
         try:
             return msgspec.json.decode(await resp.read())
         except msgspec.DecodeError as e:
-            raise ScrapeError(f"{self.store or self.__class__.__name__}: Did not receive JSON from API.") from e
+            raise ScrapeError(_zh(f"{self.store or self.__class__.__name__}: Did not receive JSON from API.")) from e
 
     async def get_json(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         """Make async GET request to JSON API.
@@ -166,7 +167,7 @@ class BaseScraper:
             session.get(url, params=params, headers=headers or HEADERS, allow_redirects=follow_redirects) as r,
         ):
             if r.status != 200:
-                raise ScrapeError(f"Failed to successfully scrape page. Status code: {r.status}")
+                raise ScrapeError(_zh(f"Failed to successfully scrape page. Status code: {r.status}"))
             data = await r.read()
             return BeautifulSoup(data, "lxml"), r.url
 

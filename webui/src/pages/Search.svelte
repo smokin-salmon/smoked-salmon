@@ -108,18 +108,16 @@
 
   const STATUS: Record<Source['status'], string> = {
     found: '',
-    none: 'No results.',
-    inactive: 'Inactive: the config has no credentials for it.',
-    failed: 'The search failed.',
+    none: "没有结果。",
+    inactive: "非活动的：配置没有其凭证。",
+    failed: "搜索失败。",
   }
 </script>
 
 <!-- Ported from the fork's Search page (styx-techno, 5f1f55a6; chodeus, 0b29d2d5 and 9bfdddc3). -->
-<h1>Search</h1>
+<h1>搜索</h1>
 <p class="lead">
-  What <span class="mono">salmon metas</span> and <span class="mono">salmon meta</span> do: search every metadata
-  source for a release, then look up the full metadata of a result or of a release URL. Only the stores are contacted,
-  never a tracker.
+  搜索音乐商店中的发行版本，并查看搜索结果或发行页面链接的完整元数据，对应 <span class="mono">salmon metas</span> 和 <span class="mono">salmon meta</span>。本页只访问元数据来源网站。
 </p>
 
 <div class="card">
@@ -130,17 +128,17 @@
       search()
     }}
   >
-    <input type="text" class="grow" bind:value={query} placeholder="Artist and album" maxlength="200" />
+    <input type="text" class="grow" bind:value={query} placeholder="艺术家与专辑" maxlength="200" />
     <input
       type="number"
       class="count"
       bind:value={trackCount}
-      placeholder="Tracks"
+      placeholder="曲目"
       min="1"
       max="999"
-      title="Keep releases with about this many tracks (-t)"
+      title="保留包含大约这么多曲目的版本(-t)"
     />
-    <button class="btn" disabled={searching || !query.trim()}>{searching ? 'Searching…' : 'Search'}</button>
+    <button class="btn" disabled={searching || !query.trim()}>{searching ? "搜索中…" : "搜索"}</button>
   </form>
   <form
     class="row wrap lookup"
@@ -149,14 +147,14 @@
       lookUp(lookupUrl)
     }}
   >
-    <input type="text" class="grow" bind:value={lookupUrl} placeholder="A release URL" maxlength="2000" />
-    <button class="btn secondary" disabled={looking || !lookupUrl.trim()}>Look up</button>
+    <input type="text" class="grow" bind:value={lookupUrl} placeholder="发行页面链接" maxlength="2000" />
+    <button class="btn secondary" disabled={looking || !lookupUrl.trim()}>查询详情</button>
   </form>
   {#if error}<p class="error">{error}</p>{/if}
 </div>
 
 {#if looking}
-  <div class="card"><p class="muted">Looking up {lookupUrl}…</p></div>
+  <div class="card"><p class="muted">正在查询 {lookupUrl}…</p></div>
 {:else if lookupError}
   <div class="card"><p class="error">{lookupError}</p></div>
 {:else if found}
@@ -188,7 +186,7 @@
       </tbody>
     </table>
     <details>
-      <summary>Everything</summary>
+      <summary>全部</summary>
       <pre class="mono">{JSON.stringify(metadata, null, 2)}</pre>
     </details>
   </div>
@@ -197,7 +195,7 @@
 {#if searched}
   {#each searched.sources as source (source.name)}
     <div class="card">
-      <h2>{source.name}{#if source.preferred}&nbsp;<span class="muted">(preferred)</span>{/if}</h2>
+      <h2>{source.name}{#if source.preferred}&nbsp;<span class="muted">（优先）</span>{/if}</h2>
       {#if source.status !== 'found'}
         <p class="muted">{STATUS[source.status]}</p>
       {:else}
@@ -208,10 +206,10 @@
                 <td class="grow">{release.summary}</td>
                 <td class="links">
                   {#if isWebUrl(release.url)}
-                    <a href={release.url} target="_blank" rel="noreferrer noopener">Open</a>
+                    <a href={release.url} target="_blank" rel="noreferrer noopener">打开</a>
                   {/if}
                   <button class="btn small secondary" onclick={() => lookUp(release.url)} disabled={looking}
-                    >Look up</button
+                    >查询详情</button
                   >
                 </td>
               </tr>

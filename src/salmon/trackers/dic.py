@@ -5,6 +5,7 @@ import asyncclick as click
 from salmon import cfg, interaction
 from salmon.common import UploadFiles
 from salmon.errors import UploadRefusedError
+from salmon.localization import text as _zh
 from salmon.trackers.base import BaseGazelleApi, TagRules
 
 # The options of the sample rate field on DIC's upload form, which the form has and requires
@@ -30,7 +31,7 @@ def warn_api_key_ignored() -> None:
     global _api_key_warned
     if cfg.tracker.dic and cfg.tracker.dic.api_key and not _api_key_warned:
         _api_key_warned = True
-        click.secho(API_KEY_IGNORED, fg="yellow")
+        click.secho(_zh(API_KEY_IGNORED), fg="yellow")
 
 
 def _khz(rate: int) -> str:
@@ -85,15 +86,19 @@ class DICApi(BaseGazelleApi):
         if len(rates) != 1:
             found = ", ".join(_khz(rate) for rate in rates) or "none"
             raise UploadRefusedError(
-                f"{self.site_string} takes one sample rate per torrent, and the files of this one have "
-                f"{found}: not uploading it there."
+                _zh(
+                    f"{self.site_string} takes one sample rate per torrent, and the files of this one have "
+                    f"{found}: not uploading it there."
+                )
             )
         rate = rates[0]
         if rate not in SAMPLE_RATES:
             offered = ", ".join(_khz(rate) for rate in SAMPLE_RATES)
             raise UploadRefusedError(
-                f"The files of this torrent are {_khz(rate)}, and {self.site_string}'s upload form has no "
-                f"sample rate option for it (only {offered}): not uploading it there."
+                _zh(
+                    f"The files of this torrent are {_khz(rate)}, and {self.site_string}'s upload form has no "
+                    f"sample rate option for it (only {offered}): not uploading it there."
+                )
             )
         return {"sample_rate": SAMPLE_RATES[rate]}
 
@@ -115,13 +120,17 @@ class DICApi(BaseGazelleApi):
         if not self._marks_prompted:
             # Prompt for mark type
             raw_mark = await interaction.prompt(
-                click.style(
-                    "\n"
-                    "Do you want to mark this torrent as 'Self-purchased' or 'Self-rip'?\n"
-                    "Please note that selecting these marks for a re-posted torrent may result in a warning.\n"
-                    "Self-[p]urchased, Self-[r]ip, [N]one",
-                    fg="magenta",
-                    bold=True,
+                _zh(
+                    click.style(
+                        _zh(
+                            "\n"
+                            "Do you want to mark this torrent as 'Self-purchased' or 'Self-rip'?\n"
+                            "Please note that selecting these marks for a re-posted torrent may result in a warning.\n"
+                            "Self-[p]urchased, Self-[r]ip, [N]one"
+                        ),
+                        fg="magenta",
+                        bold=True,
+                    )
                 ),
                 type=click.STRING,
                 default="N",
@@ -138,10 +147,12 @@ class DICApi(BaseGazelleApi):
             # Prompt for exclusive mark if needed
             if mark in ("p", "r"):
                 raw_excl = await interaction.prompt(
-                    click.style(
-                        "\nDo you want to mark this torrent as 'Exclusive'?\n[E]xclusive, [N]one",
-                        fg="magenta",
-                        bold=True,
+                    _zh(
+                        click.style(
+                            _zh("\nDo you want to mark this torrent as 'Exclusive'?\n[E]xclusive, [N]one"),
+                            fg="magenta",
+                            bold=True,
+                        )
                     ),
                     type=click.STRING,
                     default="N",

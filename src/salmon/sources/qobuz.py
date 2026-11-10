@@ -5,6 +5,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources.base import BaseScraper
 
 _PLACEHOLDER_APP_ID = "app-id"
@@ -46,7 +47,7 @@ class QobuzBase(BaseScraper):
     def require_configured(self) -> None:
         """Raise the ScrapeError the metadata step shows when a Qobuz URL is used without credentials."""
         if not self.configured():
-            raise ScrapeError("Qobuz is inactive: set [metadata.qobuz] app_id and user_auth_token in config.toml")
+            raise ScrapeError(_zh("Qobuz is inactive: set [metadata.qobuz] app_id and user_auth_token in config.toml"))
 
     async def fetch_data(
         self,
@@ -74,10 +75,10 @@ class QobuzBase(BaseScraper):
         try:
             match = self.regex.match(url)
             if not match:
-                raise ScrapeError("Invalid Qobuz URL.")
+                raise ScrapeError(_zh("Invalid Qobuz URL."))
             rls_id = match[1]
             return await self.get_json(self.release_format.format(rls_id=rls_id), params=params, headers=self.headers)
         except msgspec.DecodeError as e:
-            raise ScrapeError("Qobuz page did not return valid JSON.") from e
+            raise ScrapeError(_zh("Qobuz page did not return valid JSON.")) from e
         except (AttributeError, IndexError) as e:
-            raise ScrapeError("Invalid Qobuz URL.") from e
+            raise ScrapeError(_zh("Invalid Qobuz URL.")) from e

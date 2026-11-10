@@ -28,6 +28,7 @@ from salmon.converter.conversions import (
     source_of,
 )
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 from salmon.release_notification import get_version
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.cover import MAX_PICTURES_AND_PADDING
@@ -151,7 +152,7 @@ def _validate_lossless(path: str) -> None:
         for f in files:
             ext = os.path.splitext(f)[1].lower()
             if ext in LOSSY_EXTENSIONS:
-                click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
+                click.secho(_zh(f"A lossy file was found in the folder ({f})."), fg="red")
                 raise click.Abort
 
 
@@ -237,7 +238,7 @@ def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
 
         if invalid_entries:
             details = ", ".join(f"{name}={value!r}" for name, value in invalid_entries)
-            raise UploadError(f"Non-integer total values for {tag}: {details}")
+            raise UploadError(_zh(f"Non-integer total values for {tag}: {details}"))
 
         # Remove total keys
         result = {k: v for k, v in result.items() if k not in used}
@@ -248,7 +249,7 @@ def _prepare_tags(tags: dict[str, list[str]]) -> dict[str, list[str]]:
             nr = result[tag][0].split("/")[0].strip()
             result = {**result, tag: [f"{nr}/{total}"]}
         elif len(tot_vals) > 1:
-            raise UploadError(f"conflicting values of {' and '.join(sorted(used))}")
+            raise UploadError(_zh(f"conflicting values of {' and '.join(sorted(used))}"))
 
     return result
 
@@ -268,9 +269,9 @@ def _parse_flac_tags(flac_path: Path) -> tuple[flac.FLAC, dict[str, list[str]]]:
     fl = flac.FLAC(flac_path)
     tags = fl.tags
     if tags is None:
-        raise ValueError(f"FLAC file has no tags: {flac_path}")
+        raise ValueError(_zh(f"FLAC file has no tags: {flac_path}"))
     if not isinstance(tags, VCFLACDict):
-        raise ValueError(f"FLAC tags are not VCommentDict: {flac_path}")
+        raise ValueError(_zh(f"FLAC tags are not VCommentDict: {flac_path}"))
     return fl, _prepare_tags(tags.as_dict())
 
 
@@ -330,7 +331,7 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
     if not mp3_thing.tags:
         mp3_thing.add_tags()
     if mp3_thing.tags is None:
-        raise ValueError(f"Failed to create tags for MP3 file: {mp3_path}")
+        raise ValueError(_zh(f"Failed to create tags for MP3 file: {mp3_path}"))
 
     for k, v in tag_dict.items():
         mp3_thing.tags.add(_get_id3_frame(k, v))
@@ -373,12 +374,12 @@ def _copy_extra_files(path: str, new_path: str, *, essential_only: bool = False)
             continue
         rel = p.relative_to(src_path)
         if p.suffix.lower() in SKIP_EXTENSIONS or is_torrent_file(p.name):
-            click.secho(f"Skip  {rel}", fg="yellow")
+            click.secho(_zh(f"Skip  {rel}"), fg="yellow")
             continue
         if essential_only and p.suffix.lower() not in IMAGE_EXTENSIONS:
-            click.secho(f"Skip  {rel}", fg="yellow")
+            click.secho(_zh(f"Skip  {rel}"), fg="yellow")
             continue
-        click.secho(f"Copy  {rel}", fg="cyan")
+        click.secho(_zh(f"Copy  {rel}"), fg="cyan")
         out = dst_path / rel
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(p, out)
@@ -454,13 +455,13 @@ async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> Non
     if flac_proc.returncode and not (flac_proc.returncode < 0 and lame_proc.returncode):
         err = flac_err.decode(errors="replace")
         if err:
-            click.secho(err, fg="yellow")
-        raise UploadError(f"FLAC decoding of {track} failed with code {flac_proc.returncode}")
+            click.secho(_zh(err), fg="yellow")
+        raise UploadError(_zh(f"FLAC decoding of {track} failed with code {flac_proc.returncode}"))
 
     if lame_proc.returncode:
         # Its message names at most the temporary file.
         reason = lame_err.decode(errors="replace").strip() or f"code {lame_proc.returncode}"
-        raise UploadError(f"LAME encoding of {track} failed: {reason}")
+        raise UploadError(_zh(f"LAME encoding of {track} failed: {reason}"))
 
 
 async def _transcode_audio_files(
@@ -499,7 +500,7 @@ def _validate_channel_count(items: list[TranscodeItem]) -> None:
     """Refuse a source of more than two channels, before anything is written or a prior output deleted."""
     for item in items:
         if item.flac_obj.info.channels > 2:
-            raise ValueError(f"{item.src} has {item.flac_obj.info.channels} channels. Cannot convert to MP3.")
+            raise ValueError(_zh(f"{item.src} has {item.flac_obj.info.channels} channels. Cannot convert to MP3."))
 
 
 # ---------------------------------------------------------------------------
@@ -526,7 +527,7 @@ async def transcode_folder(
     new_path = _build_output_path(path, bitrate, output_dir)
     # Resolved, so a symlink on the way cannot carry the output, or the removal of an incomplete one, into a library.
     if cfg.directory.protects(new_path):
-        raise UploadError(f"Not transcoding into {new_path}: it is in library_dirs, or holds one.")
+        raise UploadError(_zh(f"Not transcoding into {new_path}: it is in library_dirs, or holds one."))
 
     # Before the tags are read: a track retagged while the transcode runs then differs from its record.
     fingerprints = source_fingerprints(path, get_audio_files(path))
@@ -536,28 +537,32 @@ async def transcode_folder(
 
     if os.path.isdir(new_path):
         if _is_finished_transcode(path, new_path, bitrate):
-            click.secho(f"{new_path} already exists.", fg="yellow")
+            click.secho(_zh(f"{new_path} already exists."), fg="yellow")
             return new_path
         if not items:
-            raise UploadError(f"Refusing to overwrite {new_path}: no expected MP3 output was computed.")
+            raise UploadError(_zh(f"Refusing to overwrite {new_path}: no expected MP3 output was computed."))
         # Not salmon's transcode of this album as far as it can tell, such as an upload made with another file
         # template, which may be seeding: deleted only when the user says so. -yyy takes the default, no.
         if await interaction.assume_defaults():
             raise UploadError(
-                f"Not overwriting {new_path} with -yyy (upload.yes_all): it doesn't match the expected transcode, "
-                "and you may be seeding it. Run without -yyy, and with upload.yes_all off, to choose."
+                _zh(
+                    f"Not overwriting {new_path} with -yyy (upload.yes_all): it doesn't match the expected transcode, "
+                    "and you may be seeding it. Run without -yyy, and with upload.yes_all off, to choose."
+                )
             )
         if not await interaction.confirm(
-            click.style(
-                f"{new_path} exists but doesn't match the expected transcode. Delete it and re-transcode?",
-                fg="magenta",
-                bold=True,
+            _zh(
+                click.style(
+                    _zh(f"{new_path} exists but doesn't match the expected transcode. Delete it and re-transcode?"),
+                    fg="magenta",
+                    bold=True,
+                )
             ),
             default=False,
         ):
-            raise UploadError(f"Not overwriting existing folder {new_path}.")
+            raise UploadError(_zh(f"Not overwriting existing folder {new_path}."))
         click.secho(
-            f"{new_path} exists but appears incomplete, re-transcoding...",
+            _zh(f"{new_path} exists but appears incomplete, re-transcoding..."),
             fg="yellow",
         )
         shutil.rmtree(new_path)
@@ -594,12 +599,14 @@ def _is_finished_transcode(path: str, new_path: str, bitrate: Bitrate) -> bool:
     items = _collect_transcode_items(path, new_path)
     if record is not None:
         if differs := _how_record_differs(record, path, bitrate, {os.path.relpath(item.src, path) for item in items}):
-            raise UploadError(f"{new_path} holds {differs}, not this transcode: remove it and run again.")
+            raise UploadError(_zh(f"{new_path} holds {differs}, not this transcode: remove it and run again."))
         missing = missing_files(new_path, record)
         if missing:
             raise UploadError(
-                f"{new_path} is salmon's transcode of this album at {bitrate}, but {', '.join(missing)} "
-                f"{'is' if len(missing) == 1 else 'are'} missing: remove it and run again."
+                _zh(
+                    f"{new_path} is salmon's transcode of this album at {bitrate}, but {', '.join(missing)} "
+                    f"{'is' if len(missing) == 1 else 'are'} missing: remove it and run again."
+                )
             )
         if missing is not None:
             return True
@@ -610,7 +617,10 @@ def _is_finished_transcode(path: str, new_path: str, bitrate: Bitrate) -> bool:
         return True
     if record is not None:
         raise UploadError(
-            f"{new_path} is incomplete or not salmon's transcode of this album at {bitrate}: remove it and run again."
+            _zh(
+                f"{new_path} is incomplete or not salmon's transcode "
+                f"of this album at {bitrate}: remove it and run again."
+            )
         )
     return False
 

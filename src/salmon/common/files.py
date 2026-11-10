@@ -14,6 +14,7 @@ from salmon import cfg
 from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.numbers import file_order_key
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 
 
 def is_torrent_file(name: str) -> bool:
@@ -79,7 +80,7 @@ def unreadable_error(error: OSError, path: str) -> UploadError:
     name = os.path.relpath(error.filename or path, path)
     where = path if name == os.curdir else f"{name} in {path}"
     return UploadError(
-        f"Could not read {where} ({error.strerror}): fix it or remove it from the album, then run salmon again."
+        _zh(f"Could not read {where} ({error.strerror}): fix it or remove it from the album, then run salmon again.")
     )
 
 

@@ -14,6 +14,7 @@ from salmon import cfg
 from salmon.common import handle_scrape_errors
 from salmon.config import get_user_cfg_path
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources.base import BaseScraper
 
 
@@ -56,7 +57,7 @@ class TokenStorage(msgspec.Struct):
                 self = msgspec.json.decode(file.read_bytes(), type=TokenStorage)
                 return self
             except msgspec.MsgspecError as e:
-                click.secho(f"Error reading token storage: {e}", fg="red")
+                click.secho(_zh(f"Error reading token storage: {e}"), fg="red")
         return None
 
     def get_auth_header(self) -> dict:
@@ -94,15 +95,17 @@ class BeatportBase(BaseScraper):
             try:
                 token_storage = await self.initial_setup()
             except ScrapeError as e:
-                click.secho(f"Beatport login failed: {_sentence(e)} Using the scraper.", fg="yellow")
+                click.secho(_zh(f"Beatport login failed: {_sentence(e)} Using the scraper."), fg="yellow")
                 return None
         if token_storage and token_storage.expires < time() + 10:  # leave some wiggle room
             try:
                 token_storage = await self.refresh_bearer_token(token_storage)
             except ScrapeError as e:
                 click.secho(
-                    f"Beatport token refresh failed: {_sentence(e)} Using the scraper. If this repeats, delete "
-                    f"{TokenStorage._get_storage_file()} so salmon logs in again.",
+                    _zh(
+                        f"Beatport token refresh failed: {_sentence(e)} Using the scraper. If this repeats, delete "
+                        f"{TokenStorage._get_storage_file()} so salmon logs in again."
+                    ),
                     fg="yellow",
                 )
                 return None
@@ -118,7 +121,7 @@ class BeatportBase(BaseScraper):
         try:
             return TokenStorage.from_response(json, client_id)
         except (KeyError, TypeError) as e:
-            raise ScrapeError(f"Beatport: unexpected token response ({type(e).__name__}).") from e
+            raise ScrapeError(_zh(f"Beatport: unexpected token response ({type(e).__name__}).")) from e
 
     async def refresh_bearer_token(self, token_storage: TokenStorage) -> TokenStorage:
         """
@@ -127,7 +130,7 @@ class BeatportBase(BaseScraper):
         :return: new TokenStorage with valid credentials.
         :raises ScrapeError: If the refresh fails.
         """
-        click.secho("Refreshing Beatport token", fg="yellow")
+        click.secho(_zh("Refreshing Beatport token"), fg="yellow")
         headers = token_storage.get_auth_header()
         payload = {
             "client_id": token_storage.client_id,
@@ -156,7 +159,7 @@ class BeatportBase(BaseScraper):
             client_id_matches = client_id_pattern.findall(text)
             if client_id_matches:
                 return client_id_matches[0]
-        raise ScrapeError("Failed to find beatport client ID")
+        raise ScrapeError(_zh("Failed to find beatport client ID"))
 
     async def initial_setup(self) -> TokenStorage | None:
         """
@@ -171,14 +174,14 @@ class BeatportBase(BaseScraper):
 
         # One session from the script fetches on: the login's cookies are what the authorize step is answered with.
         async with self._session() as session:
-            click.secho("Logging into Beatport for the first time", fg="green")
+            click.secho(_zh("Logging into Beatport for the first time"), fg="green")
 
             # Step 1: get client id from the docs. if this ever fails, we want it to fail first
-            click.echo("Fetching Client ID")
+            click.echo(_zh("Fetching Client ID"))
             client_id = await self._get_client_id(session)
 
             # Step 2: login with username / password to set cookies
-            click.secho("Logging in...")
+            click.secho(_zh("Logging in..."))
             payload = {"username": username, "password": password}
             async with session.post(self.url + "/auth/login/", json=payload) as resp:
                 await self.handle_json_response(resp)
@@ -194,17 +197,17 @@ class BeatportBase(BaseScraper):
                     data = await resp.read()
                     soup = BeautifulSoup(data, "lxml")
                     error = (soup.find("body") or soup).get_text("\n")
-                    raise ScrapeError(f"Error during beatport OAuth flow:\n{error}")
+                    raise ScrapeError(_zh(f"Error during beatport OAuth flow:\n{error}"))
                 location = resp.headers.get("location")
             if not location:
                 raise ScrapeError(
-                    f"Error during beatport OAuth flow: status is {resp.status}, but Location header is missing"
+                    _zh(f"Error during beatport OAuth flow: status is {resp.status}, but Location header is missing")
                 )
             parsed = urlsplit(location)
             code = parse_qs(parsed.query).get("code")
             if not code:
                 # The redirect is not repeated: it is a URL, with its query
-                raise ScrapeError("Error during beatport OAuth flow: no authorization code in the redirect")
+                raise ScrapeError(_zh("Error during beatport OAuth flow: no authorization code in the redirect"))
 
             # Step 4: finish code grant flow
             payload = {
@@ -216,7 +219,7 @@ class BeatportBase(BaseScraper):
             async with session.post(self.url + "/auth/o/token/", data=payload) as resp:
                 token_storage = await self._token_storage(resp, client_id)
 
-        click.secho("Done! Salmon will remember this login.", fg="green")
+        click.secho(_zh("Done! Salmon will remember this login."), fg="green")
         return token_storage
 
     async def fetch_data_api(
@@ -225,7 +228,7 @@ class BeatportBase(BaseScraper):
         if not rls_id:
             match = self.regex.match(url)
             if not match:
-                raise ScrapeError("Invalid Beatport URL format")
+                raise ScrapeError(_zh("Invalid Beatport URL format"))
             rls_id = match.group(1)
 
         params = params or {}
@@ -267,28 +270,28 @@ class BeatportBase(BaseScraper):
         try:
             script_tag = soup.find("script", id="__NEXT_DATA__")
             if not script_tag or not script_tag.string:
-                raise ScrapeError("Could not find Next.js data script tag")
+                raise ScrapeError(_zh("Could not find Next.js data script tag"))
 
             data = msgspec.json.decode(str(script_tag.string))
             queries = data["props"]["pageProps"]["dehydratedState"]["queries"]
 
             track_query = next((q for q in queries if q.get("queryKey") and q["queryKey"][0] == "tracks"), None)
             if not track_query:
-                raise ScrapeError("Could not find track data in page")
+                raise ScrapeError(_zh("Could not find track data in page"))
 
             release_query_regex = re.compile(r"release-\d+")
             release_query = next(
                 (q for q in queries if q.get("queryKey") and release_query_regex.match(q["queryKey"][0])), None
             )
             if not release_query:
-                raise ScrapeError("Could not find release data in page")
+                raise ScrapeError(_zh("Could not find release data in page"))
 
             return {"tracks": track_query["state"]["data"]["results"], "release": release_query["state"]["data"]}
 
         except msgspec.DecodeError as e:
-            raise ScrapeError("Failed to parse Beatport JSON data") from e
+            raise ScrapeError(_zh("Failed to parse Beatport JSON data")) from e
         except (KeyError, AttributeError) as e:
-            raise ScrapeError(f"Failed to extract required data from Beatport page: {e}") from e
+            raise ScrapeError(_zh(f"Failed to extract required data from Beatport page: {e}")) from e
 
     async def fetch_data(
         self,
@@ -318,6 +321,6 @@ class BeatportBase(BaseScraper):
             if resp:
                 return resp
             else:
-                click.secho("Beatport API error, falling back to scraper", fg="yellow")
+                click.secho(_zh("Beatport API error, falling back to scraper"), fg="yellow")
 
         return await self.fetch_data_scraping(url, params_dict)

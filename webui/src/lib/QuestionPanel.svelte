@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from './i18n'
   import { tick } from 'svelte'
   import { apiPost } from './api'
   import type { Job, Picked } from './jobs.svelte'
@@ -99,22 +100,22 @@
 {#if job.question}
   {@const q = job.question}
   <div class="question card">
-    <pre class="qtext">{q.text}</pre>
+    <pre class="qtext">{t(q.text)}</pre>
 
     {#if q.kind === 'confirm'}
       <div class="row">
         <button class="btn" disabled={sending} onclick={() => send(true)}>
-          {q.labels?.[0] ?? 'Yes'}{q.default === true ? ' (default)' : ''}
+          {q.labels?.[0] ?? "是"}{q.default === true ? "(默认)" : ''}
         </button>
         <button class="btn secondary" disabled={sending} onclick={() => send(false)}>
-          {q.labels?.[1] ?? 'No'}{q.default === false ? ' (default)' : ''}
+          {q.labels?.[1] ?? "否"}{q.default === false ? "(默认)" : ''}
         </button>
       </div>
     {:else if q.kind === 'edit'}
       <textarea bind:value={editText} rows={Math.min(24, Math.max(6, editText.split('\n').length + 1))}></textarea>
       <div class="row actions">
-        <button class="btn" disabled={sending} onclick={() => send(editText)}>Save</button>
-        <button class="btn secondary" disabled={sending} onclick={() => send(null)}>Leave unchanged</button>
+        <button class="btn" disabled={sending} onclick={() => send(editText)}>保存</button>
+        <button class="btn secondary" disabled={sending} onclick={() => send(null)}>保持不变</button>
       </div>
     {:else if q.kind === 'spectrals'}
       <div class="row views">
@@ -122,12 +123,12 @@
             if (view === 'single') setView('grid')
             else openSingle(index)
           }}>
-          {view === 'single' ? 'Grid' : 'One at a time'}
+          {view === 'single' ? "网格" : "一次一个"}
         </button>
       </div>
       {#if view === 'single'}
         <SpectralViewer images={spectrals} bind:index bind:root={viewer} onenter={() => send(true)} />
-        <p class="muted hint centered">← → to step, Enter for Done</p>
+        <p class="muted hint centered">按 ← → 切换，按回车完成</p>
       {:else}
         <div class="gallery">
           {#each spectrals as image, i (image.url)}
@@ -145,7 +146,7 @@
         </div>
       {/if}
       <div class="row actions done">
-        <button class="btn" disabled={sending} onclick={() => send(true)}>Done</button>
+        <button class="btn" disabled={sending} onclick={() => send(true)}>完成</button>
       </div>
     {:else if q.options}
       <TypedQuestion {q} {sending} {send} />
@@ -165,18 +166,18 @@
         }}
       >
         {#if q.hide_input}
-          <input type="password" class="grow mono" bind:value={text} placeholder="Answer" autocomplete="new-password" />
+          <input type="password" class="grow mono" bind:value={text} placeholder="答复" autocomplete="new-password" />
         {:else}
-          <input type="text" class="grow mono" bind:value={text} placeholder="Answer" />
+          <input type="text" class="grow mono" bind:value={text} placeholder="答复" />
         {/if}
-        <button class="btn" disabled={sending}>Send</button>
+        <button class="btn" disabled={sending}>发送</button>
       </form>
       {#if typeof q.default === 'string'}
-        <p class="muted hint">Empty for the default: <span class="mono">{q.default}</span></p>
+        <p class="muted hint">留空使用默认值： <span class="mono">{q.default}</span></p>
       {/if}
     {/if}
 
-    {#if q.error}<p class="error">{q.error}</p>{/if}
+    {#if q.error}<p class="error">{t(q.error)}</p>{/if}
     {#if sendError}<p class="error">{sendError}</p>{/if}
   </div>
 {/if}

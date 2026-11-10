@@ -11,6 +11,7 @@ from typing import NoReturn
 import asyncclick as click
 
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 
 
 def abort_partial(
@@ -27,11 +28,11 @@ def abort_partial(
     it as unchanged would send someone looking in the wrong place.
     """
     if done:
-        click.secho(f"Already changed: {', '.join(done)}.", fg="yellow")
+        click.secho(_zh(f"Already changed: {', '.join(done)}."), fg="yellow")
     if failed:
-        click.secho(f"May be partially changed: {failed}.", fg="red", bold=True)
+        click.secho(_zh(f"May be partially changed: {failed}."), fg="red", bold=True)
     if remaining:
-        click.secho(f"Not changed: {', '.join(remaining)}.", fg="yellow")
+        click.secho(_zh(f"Not changed: {', '.join(remaining)}."), fg="yellow")
     # An error, not click.Abort: an abort ends an upload quietly, as if the user had said no.
     state = ": the album is now inconsistent, repair it before uploading" if done or failed else ""
-    raise UploadError(f"{operation} failed ({error}){state}.") from error
+    raise UploadError(_zh(f"{operation} failed ({error}){state}.")) from error

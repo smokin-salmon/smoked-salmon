@@ -22,6 +22,7 @@ from salmon.common.strings import (
 )
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import RateLimitedError, TLSCertificateError, UploadRefusedError
+from salmon.localization import text as _zh
 from salmon.release_notification import get_version
 from salmon.sources import SOURCE_ICONS
 from salmon.tagger.combine import _extract_remixers_from_title
@@ -120,7 +121,7 @@ async def prepare_and_upload(
     files = await compile_files(path, torrent_content, metadata)
 
     if not dryrun.active():
-        click.secho("Uploading torrent...", fg="yellow")
+        click.secho(_zh("Uploading torrent..."), fg="yellow")
     # Counts as sent unless it can't have been, so a bug counts. So does a GET that fails first
     # (RedApi.site_page_upload): that only costs a person a look.
     sent = not dryrun.active()
@@ -183,7 +184,7 @@ def _filter_unsupported_artists(
 
     for role, names in dropped_by_role.items():
         click.secho(
-            f"{gazelle_site.site_string} has no {role.title()} role: not crediting {', '.join(names)}",
+            _zh(f"{gazelle_site.site_string} has no {role.title()} role: not crediting {', '.join(names)}"),
             fg="yellow",
         )
 
@@ -412,8 +413,10 @@ def _normalize_torrent_names(t: Torrent, form: Literal["NFC", "NFD"]) -> None:
         path = tuple(fileinfo["path"])
         if path in seen:
             raise UploadRefusedError(
-                f"Two files are both {'/'.join(path)} once {form}-normalized: rename one, "
-                'or set torrent_name_normalization to "none".'
+                _zh(
+                    f"Two files are both {'/'.join(path)} once {form}-normalized: rename one, "
+                    'or set torrent_name_normalization to "none".'
+                )
             )
         seen.add(path)
     # A file whose path is also another file's folder cannot be laid out either.
@@ -421,8 +424,10 @@ def _normalize_torrent_names(t: Torrent, form: Literal["NFC", "NFD"]) -> None:
         for end in range(1, len(path)):
             if path[:end] in seen:
                 raise UploadRefusedError(
-                    f"A file and a folder are both {'/'.join(path[:end])} once {form}-normalized: rename one, "
-                    'or set torrent_name_normalization to "none".'
+                    _zh(
+                        f"A file and a folder are both {'/'.join(path[:end])} once {form}-normalized: rename one, "
+                        'or set torrent_name_normalization to "none".'
+                    )
                 )
 
 
@@ -440,7 +445,7 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str, normalize: bool 
     Raises:
         UploadRefusedError: If the torrent cannot be written: that tracker's upload fails, before the POST.
     """
-    click.secho("Generating torrent file...", fg="yellow", nl=False)
+    click.secho(_zh("Generating torrent file..."), fg="yellow", nl=False)
     t = Torrent(
         path,
         trackers=[gazelle_site.announce],
@@ -464,9 +469,9 @@ def generate_torrent(gazelle_site: "BaseGazelleApi", path: str, normalize: bool 
     try:
         t.write(tpath, overwrite=True)
     except (OSError, TorfError) as err:
-        raise UploadRefusedError(f"Could not write {err}") from err
+        raise UploadRefusedError(_zh(f"Could not write {err}")) from err
 
-    click.secho(" done!", fg="yellow")
+    click.secho(_zh(" done!"), fg="yellow")
     return tpath, t
 
 
@@ -942,7 +947,7 @@ def finish_upload(
 
     # Display success message
     click.secho(
-        f"Successfully uploaded {url} ({os.path.basename(path)}).",
+        _zh(f"Successfully uploaded {url} ({os.path.basename(path)})."),
         fg="green",
         bold=True,
     )
@@ -954,7 +959,7 @@ def finish_upload(
 
     # Add to seedbox upload queue
     if cfg.upload.upload_to_seedbox:
-        click.secho("Add uploading task.", fg="green")
+        click.secho(_zh("Add uploading task."), fg="green")
         is_flac = format.upper() == "FLAC"
         site_code = gazelle_site.site_code
         if copy_folder:
@@ -988,4 +993,4 @@ def _rewrite_torrent(torrent_content: "Torrent", torrent_path: str) -> None:
         if temp is not None:
             with suppress(OSError):
                 os.remove(temp)
-        click.secho(f"Could not add the URL to {torrent_path} ({err}): it seeds without it.", fg="yellow")
+        click.secho(_zh(f"Could not add the URL to {torrent_path} ({err}): it seeds without it."), fg="yellow")

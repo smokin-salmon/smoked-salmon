@@ -29,6 +29,7 @@ import asyncclick as click
 import msgspec
 
 import salmon
+from salmon.localization import text as _zh
 
 
 class Card(msgspec.Struct, frozen=True):
@@ -89,24 +90,24 @@ class Options(msgspec.Struct, frozen=True):
         seen: set[str] = set()
         for option in self.items:
             if not option.key or any(c.isspace() for c in option.key):
-                raise ValueError(f"The key {option.key!r} is empty or holds a space.")
+                raise ValueError(_zh(f"The key {option.key!r} is empty or holds a space."))
             # The default is read against the keys ignoring case, so two keys must differ in more than case.
             if option.key.lower() in seen:
-                raise ValueError(f"The key {option.key!r} appears twice.")
+                raise ValueError(_zh(f"The key {option.key!r} appears twice."))
             seen.add(option.key.lower())
             if option.alone and not self.several:
-                raise ValueError(f"{option.key!r} is alone, which only a question taking several answers has.")
+                raise ValueError(_zh(f"{option.key!r} is alone, which only a question taking several answers has."))
             if option.danger and not option.action:
-                raise ValueError(f"{option.key!r} is danger, which only an action is.")
+                raise ValueError(_zh(f"{option.key!r} is danger, which only an action is."))
             if self.mark is not None and self.mark.prefix and option.key.startswith(self.mark.prefix):
-                raise ValueError(f"The key {option.key!r} starts with the mark's prefix.")
+                raise ValueError(_zh(f"The key {option.key!r} starts with the mark's prefix."))
         if sum(option.empty for option in self.items) > 1:
-            raise ValueError("More than one option is the empty reply.")
+            raise ValueError(_zh("More than one option is the empty reply."))
         if self.mark is not None:
             if not self.several:
-                raise ValueError("A mark goes only on a question taking several answers.")
+                raise ValueError(_zh("A mark goes only on a question taking several answers."))
             if not self.mark.prefix or any(c.isspace() for c in self.mark.prefix):
-                raise ValueError(f"The mark's prefix {self.mark.prefix!r} is empty or holds a space.")
+                raise ValueError(_zh(f"The mark's prefix {self.mark.prefix!r} is empty or holds a space."))
 
 
 class Interaction(Protocol):

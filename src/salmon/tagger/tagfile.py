@@ -8,6 +8,8 @@ from mutagen._vorbis import VCommentDict
 from mutagen.id3 import ID3Tags
 from mutagen.mp4 import MP4Tags
 
+from salmon.localization import text as _zh
+
 TAG_FIELDS = {
     "FLAC": {
         "album": "album",
@@ -90,7 +92,13 @@ def is_fragmented_mp4(path: str | None) -> bool:
         with open(path, "rb") as fh:
             names = [atom.name for atom in mp4.Atoms(fh).atoms]
         return b"moov" not in names or names.count(b"moof") > 1
-    except (mp4.AtomError, mp4.error, struct.error, EOFError, ValueError):  # not OSError: a read failure is no verdict
+    except (
+        mp4.AtomError,
+        mp4.error,
+        struct.error,
+        EOFError,
+        ValueError,
+    ):  # not OSError: a read failure is no verdict
         return True
 
 
@@ -286,7 +294,7 @@ class TagFile:
             try:
                 tags[tag_key] = [(int(value), int(total))]
             except ValueError as e:
-                click.secho("Can't have non-numeric AAC number tags, sorry!")
+                click.secho(_zh("Can't have non-numeric AAC number tags, sorry!"))
                 raise e
         elif key in {"tracktotal", "disctotal"}:
             try:
@@ -296,7 +304,7 @@ class TagFile:
             try:
                 tags[tag_key] = [(int(track), int(value))]
             except ValueError as e:
-                click.secho("Can't have non-numeric AAC number tags, sorry!")
+                click.secho(_zh("Can't have non-numeric AAC number tags, sorry!"))
                 raise e
         else:
             tags[tag_key] = value
@@ -356,8 +364,10 @@ class TagFile:
             return False
         if isinstance(mut, mp4.MP4) and is_fragmented_mp4(mut.filename):
             click.secho(
-                f"Left {mut.filename}'s tags as they are: it is a fragmented M4A, "
-                "and writing tags to one can break its audio.",
+                _zh(
+                    f"Left {mut.filename}'s tags as they are: it is a fragmented M4A, "
+                    "and writing tags to one can break its audio."
+                ),
                 fg="yellow",
             )
             return False

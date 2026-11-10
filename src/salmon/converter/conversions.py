@@ -20,6 +20,7 @@ from mutagen.flac import FLAC, VCFLACDict
 
 from salmon import cfg, dryrun
 from salmon.containment import is_within
+from salmon.localization import text as _zh
 
 # One hidden directory per parent with one file per converted folder: never inside the album, never shared by writers.
 REGISTRY_DIR = ".salmon-conversions"
@@ -76,7 +77,7 @@ def record_conversion(output: str, **facts: Any) -> None:
     record_dir = os.path.dirname(sidecar)
     # Both: the record directory (a symlink may lead it into a library) and its parent, which may hold one.
     if cfg.directory.protects(record_dir) or cfg.directory.protects(os.path.dirname(record_dir)):
-        click.secho(f"Not recording how {os.path.basename(output)} was made: library_dirs is there.", fg="yellow")
+        click.secho(_zh(f"Not recording how {os.path.basename(output)} was made: library_dirs is there."), fg="yellow")
         return
     if dryrun.active() and not _inside_scratch(record_dir):
         return
@@ -109,11 +110,11 @@ def _read(folder: str, *, quiet: bool) -> dict[str, Any] | None:
         return None
     except (json.JSONDecodeError, UnicodeDecodeError):
         if not quiet:
-            click.secho(f"Ignoring an unreadable conversion record for {os.path.basename(folder)}.", fg="yellow")
+            click.secho(_zh(f"Ignoring an unreadable conversion record for {os.path.basename(folder)}."), fg="yellow")
         return None
     if not _usable(data, folder):
         if not quiet:
-            click.secho(f"Ignoring a conversion record that does not fit {os.path.basename(folder)}.", fg="yellow")
+            click.secho(_zh(f"Ignoring a conversion record that does not fit {os.path.basename(folder)}."), fg="yellow")
         return None
     return data
 
@@ -244,7 +245,7 @@ def forget_conversion(folder: str) -> None:
     except FileNotFoundError:
         pass
     except OSError as e:
-        click.secho(f"Could not remove the conversion record {sidecar}: {e}", fg="yellow")
+        click.secho(_zh(f"Could not remove the conversion record {sidecar}: {e}"), fg="yellow")
 
 
 def _usable(data: Any, folder: str) -> bool:

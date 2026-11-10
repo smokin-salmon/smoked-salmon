@@ -8,6 +8,7 @@ import musicbrainzngs
 from musicbrainzngs import musicbrainz as mb_module
 
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 
 from .base import BaseScraper
 
@@ -57,8 +58,10 @@ class MusicBrainzBase(BaseScraper):
             return await anyio.to_thread.run_sync(func, *args)
         except mb_module.WebServiceError as e:
             if isinstance(e.cause, HTTPError) and e.cause.code == 404:
-                raise ScrapeError(f"{self.store or self.__class__.__name__}: Not found.") from e
-            raise ScrapeError(f"{self.store or self.__class__.__name__}: Request failed ({type(e).__name__}).") from e
+                raise ScrapeError(_zh(f"{self.store or self.__class__.__name__}: Not found.")) from e
+            raise ScrapeError(
+                _zh(f"{self.store or self.__class__.__name__}: Request failed ({type(e).__name__}).")
+            ) from e
 
     async def fetch_data(
         self,
@@ -85,7 +88,7 @@ class MusicBrainzBase(BaseScraper):
         """
         match = self.regex.match(url)
         if not match:
-            raise ValueError("Invalid MusicBrainz URL.")
+            raise ValueError(_zh("Invalid MusicBrainz URL."))
         rls_id = match[1]
         return (
             await self._call(

@@ -16,6 +16,7 @@ from salmon.constants import (
     ESSENTIAL_EXTENSIONS,
 )
 from salmon.errors import NoncompliantFolderStructure
+from salmon.localization import text as _zh
 from salmon.tagger.renames import RenameStopped, name_key, rename_recorded
 
 # Used when no tracker is known yet (e.g. `salmon tag`), and as the fallback for trackers whose
@@ -49,7 +50,7 @@ async def check_folder_structure(
         click.Abort: If the user aborts, or if a scene release has structural issues.
     """
     while True:
-        click.secho("\nChecking folder structure...", fg="cyan", bold=True)
+        click.secho(_zh("\nChecking folder structure..."), fg="cyan", bold=True)
         try:
             await _check_illegal_folders(path)
             await _check_invisible_characters(path, scene)
@@ -61,22 +62,28 @@ async def check_folder_structure(
         except NoncompliantFolderStructure:
             if scene:
                 click.secho(
-                    "The folder structure is not compliant with the upload rules. "
-                    "As this is a scene release, you need to manually descene it before upload.",
+                    _zh(
+                        "The folder structure is not compliant with the upload rules. "
+                        "As this is a scene release, you need to manually descene it before upload."
+                    ),
                     fg="red",
                     bold=True,
                 )
                 raise click.Abort() from None
             if await interaction.assume_defaults():
                 # Nobody is there to fix the folder by hand.
-                click.secho("-yyy: aborting, as the folder needs fixing by hand.", fg="red", bold=True)
+                click.secho(_zh("-yyy: aborting, as the folder needs fixing by hand."), fg="red", bold=True)
                 raise click.Abort() from None
             await interaction.confirm(
-                click.style(
-                    "You need to manually fix the issues present in the upload's folder? "
-                    "Send a [Y] once you have done so, or a [N] to abort.",
-                    fg="magenta",
-                    bold=True,
+                _zh(
+                    click.style(
+                        _zh(
+                            "You need to manually fix the issues present in the upload's folder? "
+                            "Send a [Y] once you have done so, or a [N] to abort."
+                        ),
+                        fg="magenta",
+                        bold=True,
+                    )
                 ),
                 default=False,
                 abort=True,
@@ -101,12 +108,12 @@ async def _check_illegal_folders(path: str) -> None:
                 target_dir = os.path.join(root, dirname)
                 if await interaction.assume_defaults():
                     shutil.rmtree(target_dir)
-                    click.secho(f"-yyy: deleted {target_dir}", fg="yellow")
+                    click.secho(_zh(f"-yyy: deleted {target_dir}"), fg="yellow")
                     continue
                 while True:
                     resp = (
                         await interaction.prompt(
-                            f"Dirname {target_dir} is illegal. [D]elete, [A]bort, or [C]ontinue?",
+                            _zh(f"Dirname {target_dir} is illegal. [D]elete, [A]bort, or [C]ontinue?"),
                             default="D",
                         )
                     ).lower()
@@ -151,9 +158,9 @@ async def _check_invisible_characters(path: str, scene: bool) -> None:
     root_chars = invisible_chars(folder_name)
 
     if not offending and not root_chars:
-        return click.secho("No names hold invisible Unicode characters.", fg="green")
+        return click.secho(_zh("No names hold invisible Unicode characters."), fg="green")
 
-    click.secho("The following names hold invisible or unusual Unicode characters:", fg="red", bold=True)
+    click.secho(_zh("The following names hold invisible or unusual Unicode characters:"), fg="red", bold=True)
     listing = [(shown, chars) for _, shown, chars in offending]
     if root_chars:
         listing.append((folder_name, root_chars))
@@ -165,7 +172,7 @@ async def _check_invisible_characters(path: str, scene: bool) -> None:
         raise NoncompliantFolderStructure
     if root_chars:
         click.secho(
-            "The release folder's own name cannot be renamed here. Run again and accept the proposed folder name.",
+            _zh("The release folder's own name cannot be renamed here. Run again and accept the proposed folder name."),
             fg="red",
             bold=True,
         )
@@ -175,10 +182,10 @@ async def _check_invisible_characters(path: str, scene: bool) -> None:
     taken: set[str] = set()
     for old, new in renames:
         if new == old:
-            click.secho(f"Cannot rename {old}: nothing would be left of its name.", fg="red", bold=True)
+            click.secho(_zh(f"Cannot rename {old}: nothing would be left of its name."), fg="red", bold=True)
             raise NoncompliantFolderStructure
         if os.path.lexists(new) or new in taken:
-            click.secho(f"Cannot rename {old}: {new} already exists.", fg="red", bold=True)
+            click.secho(_zh(f"Cannot rename {old}: {new} already exists."), fg="red", bold=True)
             raise NoncompliantFolderStructure
         taken.add(new)
     await _confirm_rename()
@@ -192,10 +199,10 @@ async def _confirm_rename() -> None:
         NoncompliantFolderStructure: If the user declines the rename.
     """
     if await interaction.assume_defaults():
-        click.secho("-yyy: renaming them to the names without those characters.", fg="yellow")
+        click.secho(_zh("-yyy: renaming them to the names without those characters."), fg="yellow")
         return
     if not await interaction.confirm(
-        click.style("Rename them to the names without those characters?", fg="magenta"), default=True
+        _zh(click.style(_zh("Rename them to the names without those characters?"), fg="magenta")), default=True
     ):
         raise NoncompliantFolderStructure
 
@@ -246,9 +253,9 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
     root_chars = _forbidden_characters(folder_name)
 
     if not offending and not root_chars:
-        return click.secho("No names hold characters a tracker refuses.", fg="green")
+        return click.secho(_zh("No names hold characters a tracker refuses."), fg="green")
 
-    click.secho("The following names hold characters a tracker refuses:", fg="red", bold=True)
+    click.secho(_zh("The following names hold characters a tracker refuses:"), fg="red", bold=True)
     listing = [(shown, chars) for _, shown, chars in offending]
     if root_chars:
         listing.append((folder_name, root_chars))
@@ -260,7 +267,10 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
         raise NoncompliantFolderStructure
     if root_chars:
         click.secho(
-            "Rename the release folder without these characters (or remove them from folder_template), then run again.",
+            _zh(
+                "Rename the release folder without these characters "
+                "(or remove them from folder_template), then run again."
+            ),
             fg="red",
             bold=True,
         )
@@ -273,10 +283,10 @@ async def _check_forbidden_characters(path: str, scene: bool) -> None:
     taken: set[str] = set()
     for old, new in renames:
         if not has_visible_chars(os.path.basename(new)):
-            click.secho(f"Cannot rename {old}: nothing visible would be left of its name.", fg="red", bold=True)
+            click.secho(_zh(f"Cannot rename {old}: nothing visible would be left of its name."), fg="red", bold=True)
             raise NoncompliantFolderStructure
         if os.path.lexists(new) or new in taken:
-            click.secho(f"Cannot rename {old}: {new} already exists.", fg="red", bold=True)
+            click.secho(_zh(f"Cannot rename {old}: {new} already exists."), fg="red", bold=True)
             raise NoncompliantFolderStructure
         taken.add(new)
     await _confirm_rename()
@@ -307,7 +317,7 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
     for root, _, files in os.walk(path):
         subfolder_len = len(in_torrent_path(folder_name, os.path.relpath(root, path)))
         if subfolder_len > max_path_length:
-            click.secho(f"A subfolder has a path length >{max_path_length} characters.", fg="red")
+            click.secho(_zh(f"A subfolder has a path length >{max_path_length} characters."), fg="red")
             raise NoncompliantFolderStructure
         for f in files:
             filepath = os.path.join(root, f)
@@ -319,15 +329,17 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
                     really_offending_files.append(filepath)
 
     if scene and (offending_files or really_offending_files):
-        click.secho(f"The following files exceed {max_path_length} characters in length.", fg="red", bold=True)
+        click.secho(_zh(f"The following files exceed {max_path_length} characters in length."), fg="red", bold=True)
         for f in offending_files + really_offending_files:
             click.echo(f" >> {f}")
         raise NoncompliantFolderStructure
 
     if really_offending_files:
         click.secho(
-            f"The following files exceed {max_path_length} characters in length, but cannot "
-            "be safely truncated (more than 70 characters above the limit):",
+            _zh(
+                f"The following files exceed {max_path_length} characters in length, but cannot "
+                "be safely truncated (more than 70 characters above the limit):"
+            ),
             fg="red",
             bold=True,
         )
@@ -336,9 +348,9 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
         raise NoncompliantFolderStructure
 
     if not offending_files:
-        return click.secho(f"No paths exceed {max_path_length} characters in length.", fg="green")
+        return click.secho(_zh(f"No paths exceed {max_path_length} characters in length."), fg="green")
 
-    click.secho(f"The following exceed {max_path_length} characters in length, truncating...", fg="red")
+    click.secho(_zh(f"The following exceed {max_path_length} characters in length, truncating..."), fg="red")
     renames = []
     key = name_key(offending_files)
     planned = set()
@@ -358,7 +370,10 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
             mark = f"~{counter}"
             if kept - len(mark) < 1:
                 click.secho(
-                    f"{filepath} cannot be shortened to {max_path_length} characters under a name no other file has.",
+                    _zh(
+                        f"{filepath} cannot be shortened to {max_path_length} "
+                        f"characters under a name no other file has."
+                    ),
                     fg="red",
                     bold=True,
                 )
@@ -368,8 +383,10 @@ def _check_path_lengths(path: str, scene: bool, max_path_length: int) -> None:
         # At least one character of the name stays: "...flac" alone has no extension, and the track is lost.
         if kept < 1 or new_relative_len > max_path_length:
             click.secho(
-                f"{filepath} cannot be shortened to {max_path_length} characters: its "
-                "folder path leaves no room for its name.",
+                _zh(
+                    f"{filepath} cannot be shortened to {max_path_length} characters: its "
+                    "folder path leaves no room for its name."
+                ),
                 fg="red",
                 bold=True,
             )
@@ -388,7 +405,7 @@ def _rename_or_stop(path: str, renames: list[tuple[str, str]]) -> None:
     try:
         rename_recorded(path, renames)
     except RenameStopped as e:
-        click.secho(e.report(path), fg="red", bold=True)
+        click.secho(_zh(e.report(path)), fg="red", bold=True)
         raise NoncompliantFolderStructure from e
     for _, new in renames:
         click.echo(f" >> {new}")
@@ -409,9 +426,9 @@ def _check_zero_len_folder(path: str) -> None:
     """
     for item in Path(path).rglob("*"):
         if not item.name.strip():
-            click.secho("A zero length folder exists in this directory.", fg="red")
+            click.secho(_zh("A zero length folder exists in this directory."), fg="red")
             raise NoncompliantFolderStructure
-    click.secho("No zero length folders were found.", fg="green")
+    click.secho(_zh("No zero length folders were found."), fg="green")
 
 
 async def _check_extensions(path: str, scene: bool, *, essential_only: bool = False) -> None:
@@ -451,7 +468,7 @@ async def _check_extensions(path: str, scene: bool, *, essential_only: bool = Fa
                     await _handle_bad_extension(os.path.join(root, fln))
 
     if scene and offending_files:
-        click.secho("The following files have invalid extensions:", fg="red", bold=True)
+        click.secho(_zh("The following files have invalid extensions:"), fg="red", bold=True)
         for filepath in offending_files:
             click.echo(f" >> {filepath}")
         raise NoncompliantFolderStructure
@@ -459,7 +476,7 @@ async def _check_extensions(path: str, scene: bool, *, essential_only: bool = Fa
     if len([li for li in [mp3, flac, aac] if li]) > 1:
         await _handle_multiple_audio_exts()
     else:
-        click.secho("File extensions have been validated.", fg="green")
+        click.secho(_zh("File extensions have been validated."), fg="green")
 
 
 async def _handle_bad_extension(filepath: str) -> None:
@@ -477,7 +494,7 @@ async def _handle_bad_extension(filepath: str) -> None:
     """
     if await interaction.assume_defaults():
         os.remove(filepath)
-        return click.secho(f"-yyy: deleted {filepath}", fg="yellow")
+        return click.secho(_zh(f"-yyy: deleted {filepath}"), fg="yellow")
     may_stay = not is_torrent_file(filepath)
     question = (
         f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?"
@@ -485,7 +502,7 @@ async def _handle_bad_extension(filepath: str) -> None:
         else f"{filepath} is a .torrent file, which can't stay in an album. [D]elete or [a]bort?"
     )
     while True:
-        resp = (await interaction.prompt(question, default="D")).lower()
+        resp = (await interaction.prompt(_zh(question), default="D")).lower()
         if resp[0].lower() == "d":
             return os.remove(filepath)
         elif resp[0].lower() == "a":
@@ -504,12 +521,12 @@ async def _handle_multiple_audio_exts() -> None:
         click.Abort: If the user chooses to abort.
     """
     if await interaction.assume_defaults():
-        click.secho("-yyy: aborting, as there are multiple audio codecs in this folder.", fg="red", bold=True)
+        click.secho(_zh("-yyy: aborting, as there are multiple audio codecs in this folder."), fg="red", bold=True)
         raise click.Abort
     while True:
         resp = (
             await interaction.prompt(
-                "There are multiple audio codecs in this folder. [A]bort or [c]ontinue?",
+                _zh("There are multiple audio codecs in this folder. [A]bort or [c]ontinue?"),
                 default="A",
             )
         ).lower()

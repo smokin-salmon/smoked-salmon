@@ -7,6 +7,7 @@ import humanfriendly
 from salmon import cfg, interaction
 from salmon.common.strings import numeric_id
 from salmon.errors import RequestError
+from salmon.localization import text as _zh
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -65,18 +66,18 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
     """
     if not results:
         click.secho(
-            f"\nNo requests were found on {gazelle_site.site_string}",
+            _zh(f"\nNo requests were found on {gazelle_site.site_string}"),
             fg="green",
             nl=False,
         )
-        click.secho(f" (searchstrs: {searchstr})", bold=True)
+        click.secho(_zh(f" (searchstrs: {searchstr})"), bold=True)
     else:
         click.secho(
-            f"\nRequests were found on {gazelle_site.site_string}: ",
+            _zh(f"\nRequests were found on {gazelle_site.site_string}: "),
             fg="green",
             nl=False,
         )
-        click.secho(f" (searchstrs: {searchstr})", bold=True)
+        click.secho(_zh(f" (searchstrs: {searchstr})"), bold=True)
         for r_index, r in enumerate(results):
             # Every field read first: a malformed result keeps its number, which the prompt reads, on one line.
             try:
@@ -93,14 +94,14 @@ def print_request_results(gazelle_site: "BaseGazelleApi", results: list[dict[str
             except (KeyError, TypeError, IndexError):
                 request_id = numeric_id(r.get("requestId")) if isinstance(r, dict) else None
                 link = f" | {gazelle_site.request_url(request_id)}" if request_id is not None else ""
-                click.secho(f" {r_index + 1:02d} >> This request could not be read{link}", fg="yellow")
+                click.secho(_zh(f" {r_index + 1:02d} >> This request could not be read{link}"), fg="yellow")
                 continue
             # User doesn't get to pick a zero index
             click.echo(f" {r_index + 1:02d} >> {url} | ", nl=False)
             click.secho(f"{r['artist']}", fg="cyan", nl=False)
             click.secho(f" - {title} ", fg="cyan", nl=False)
             click.secho(f"({year}) [{release_type}] ", fg="yellow")
-            click.secho(f"Requirements: {bitrates} / ", nl=False)
+            click.secho(_zh(f"Requirements: {bitrates} / "), nl=False)
             click.secho(f"{formats} / ", nl=False)
             click.secho(f"{media} / ")
 
@@ -123,7 +124,11 @@ def _request_options(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any
             artists = r["artists"][0]
             artist = "Various Artists" if len(artists) > 3 else " ".join(a["name"] for a in artists)
             requirements = " / ".join(" or ".join(r[key]) for key in ("bitrateList", "formatList", "mediaList"))
-            fields = [("Year", str(r["year"])), ("Release type", str(r["releaseType"])), ("Requirements", requirements)]
+            fields = [
+                ("Year", str(r["year"])),
+                ("Release type", str(r["releaseType"])),
+                ("Requirements", requirements),
+            ]
             if "bounty" in r:
                 fields.append(("Bounty", humanfriendly.format_size(r["bounty"], binary=True)))
             label, card = f"{artist} - {r['title']}", interaction.Card(tuple(fields), link=link)
@@ -140,8 +145,8 @@ def _print_request_details(gazelle_site: "BaseGazelleApi", req: dict[str, Any]) 
         gazelle_site: The tracker API instance.
         req: Request detail dict from the API.
     """
-    click.secho("\nSelected Request:")
-    click.secho(gazelle_site.request_url(req["requestId"]))
+    click.secho(_zh("\nSelected Request:"))
+    click.secho(_zh(gazelle_site.request_url(req["requestId"])))
     click.secho(f" {req['artist']}", fg="cyan", nl=False)
     click.secho(f" - {req['title']} ", fg="cyan", nl=False)
     click.secho(f"({req['year']})", fg="yellow")
@@ -154,10 +159,10 @@ def _print_request_details(gazelle_site: "BaseGazelleApi", req: dict[str, Any]) 
         bounty = req["bounty"]
 
     bounty_str = humanfriendly.format_size(bounty, binary=True)
-    click.secho(bounty_str, fg="cyan")
+    click.secho(_zh(bounty_str), fg="cyan")
 
-    click.secho(f"Allowed Bitrate: {' | '.join(req['bitrateList'])}")
-    click.secho(f"Allowed Formats: {' | '.join(req['formatList'])}")
+    click.secho(_zh(f"Allowed Bitrate: {' | '.join(req['bitrateList'])}"))
+    click.secho(_zh(f"Allowed Formats: {' | '.join(req['formatList'])}"))
     if "CD" in req["mediaList"]:
         req["mediaList"].remove("CD")
         if req.get("logCue"):
@@ -173,9 +178,9 @@ def _print_request_details(gazelle_site: "BaseGazelleApi", req: dict[str, Any]) 
             if req.get("needLogChecksum"):
                 cd_parts.append("Checksum")
             req["mediaList"].append(" + ".join(cd_parts))
-    click.secho(f"Allowed   Media: {' | '.join(req['mediaList'])}")
+    click.secho(_zh(f"Allowed   Media: {' | '.join(req['mediaList'])}"))
     click.secho(
-        "Description:",
+        _zh("Description:"),
         fg="cyan",
     )
     description = req["bbDescription"].splitlines(True)
@@ -187,7 +192,7 @@ def _print_request_details(gazelle_site: "BaseGazelleApi", req: dict[str, Any]) 
         description = "".join(description[:line_limit]) + f"...{num_lines - line_limit} more lines..."
     else:
         description = "".join(description)
-    click.echo(description)
+    click.echo(_zh(description))
 
 
 async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[dict[str, Any]]) -> int | None:
@@ -201,12 +206,12 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
         The selected request ID, or None if the user declines.
     """
     options = interaction.Options(
-        (*_request_options(gazelle_site, results), interaction.Option("n", "Don't fill")),
-        free_text=interaction.FreeText("Request URL or ID", ids=True),
+        (*_request_options(gazelle_site, results), interaction.Option("n", _zh("Don't fill"))),
+        free_text=interaction.FreeText(_zh("Request URL or ID"), ids=True),
     )
     while True:
         request_id = await interaction.prompt(
-            click.style("\nFill a request? Choose from results, paste a url, or do[n]t.", fg="magenta"),
+            _zh(click.style(_zh("\nFill a request? Choose from results, paste a url, or do[n]t."), fg="magenta")),
             default="N",
             options=options,
         )
@@ -218,24 +223,25 @@ async def _prompt_for_request_id(gazelle_site: "BaseGazelleApi", results: list[d
                 request_number = numeric_id(results[list_index].get("requestId"))
                 if request_number is None:
                     click.secho(
-                        f"Result {list_index + 1} has no request ID: pick another, or paste a request URL.", fg="red"
+                        _zh(f"Result {list_index + 1} has no request ID: pick another, or paste a request URL."),
+                        fg="red",
                     )
                     continue
                 return request_number
             else:
-                click.echo(f"Interpreting {raw_input} as a request id")
+                click.echo(_zh(f"Interpreting {raw_input} as a request id"))
                 return raw_input
 
         elif request_id.strip().lower().startswith(gazelle_site.base_url + "/requests.php"):
             parsed_id = parse.parse_qs(parse.urlparse(request_id).query).get("id", [""])[0]
             if parsed_id.isascii() and parsed_id.isdecimal():
                 return int(parsed_id)
-            click.secho("That URL names no request: paste a request's URL, its ID, or [n]o.", fg="red")
+            click.secho(_zh("That URL names no request: paste a request's URL, its ID, or [n]o."), fg="red")
         elif request_id.lower().startswith("n") or not request_id.strip():
-            click.echo("Not filling a request")
+            click.echo(_zh("Not filling a request"))
             return None
         else:
-            click.secho(f"'{request_id.strip()}' is not a request: paste its URL, its ID, or [n]o.", fg="red")
+            click.secho(_zh(f"'{request_id.strip()}' is not a request: paste its URL, its ID, or [n]o."), fg="red")
 
 
 async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | int) -> bool:
@@ -258,7 +264,7 @@ async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | 
                 req["artist"] += a["name"] + " "
     except RequestError as err:
         # Never "does not exist": a redirect, an oversized answer or any failure raises RequestFailedError too.
-        click.secho(f"Could not fetch request {request_id} from {gazelle_site.site_string}: {err}", fg="red")
+        click.secho(_zh(f"Could not fetch request {request_id} from {gazelle_site.site_string}: {err}"), fg="red")
         raise click.Abort from None
     _print_request_details(gazelle_site, req)
     if await interaction.assume_defaults():
@@ -267,15 +273,20 @@ async def _confirm_request_id(gazelle_site: "BaseGazelleApi", request_id: str | 
     while True:
         resp = (
             await interaction.prompt(
-                click.style("\nAre you sure you would you like to fill this request [Y]es, [n]o", fg="magenta"),
+                _zh(
+                    click.style(_zh("\nAre you sure you would you like to fill this request [Y]es, [n]o"), fg="magenta")
+                ),
                 default="Y",
                 options=interaction.Options(
-                    (interaction.Option("y", "Fill this request"), interaction.Option("n", "Don't fill it"))
+                    (
+                        interaction.Option("y", _zh("Fill this request")),
+                        interaction.Option("n", _zh("Don't fill it")),
+                    )
                 ),
             )
         )[0].lower()
         if resp == "y":
             return True
         elif resp == "n":
-            click.secho("Not filling this request", fg="red")
+            click.secho(_zh("Not filling this request"), fg="red")
             return False

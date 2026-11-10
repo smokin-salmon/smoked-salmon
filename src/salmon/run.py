@@ -17,6 +17,7 @@ import salmon.webui
 from salmon import cfg
 from salmon.common import commandgroup, tmp_lock
 from salmon.errors import ImageUploadFailed, RequestError, ScrapeError, TLSCertificateError, UploadError
+from salmon.localization import text as _zh
 from salmon.release_notification import show_release_notification
 from salmon.trackers.connection import print_certificate_hint
 from salmon.uploader.record import recording
@@ -34,7 +35,7 @@ def _remove(item_path: str) -> bool:
             shutil.rmtree(item_path)
         return True
     except Exception as e:
-        click.secho(f"Failed to remove {item_path}: {e}", fg="yellow")
+        click.secho(_zh(f"Failed to remove {item_path}: {e}"), fg="yellow")
         return False
 
 
@@ -48,12 +49,14 @@ def cleanup_tmp_dir():
     if not clean:
         return
     if claim is tmp_lock.Claim.SHARED:
-        click.secho("Another salmon is running: not cleaning tmp_dir.", fg="yellow")
+        click.secho(_zh("Another salmon is running: not cleaning tmp_dir."), fg="yellow")
         return
     if claim is tmp_lock.Claim.UNLOCKED:
         click.secho(
-            "Cannot lock tmp_dir to see whether another salmon is running: cleaning only what has not changed in"
-            " the last 24 hours.",
+            _zh(
+                "Cannot lock tmp_dir to see whether another salmon is running: cleaning only what has not changed in"
+                " the last 24 hours."
+            ),
             fg="yellow",
         )
     cutoff = time.time() - STALE_SECONDS
@@ -68,21 +71,21 @@ def cleanup_tmp_dir():
                     if tmp_lock.newest_change(item_path) > cutoff:
                         continue
                 except OSError as e:
-                    click.secho(f"Failed to remove {item_path}: {e}", fg="yellow")
+                    click.secho(_zh(f"Failed to remove {item_path}: {e}"), fg="yellow")
                     failed += 1
                     continue
             if not _remove(item_path):
                 failed += 1
         if failed:
             entries = "entry" if failed == 1 else "entries"
-            click.secho(f"Cleaned temporary directory partly: {failed} {entries} left in {tmp_dir}", fg="yellow")
+            click.secho(_zh(f"Cleaned temporary directory partly: {failed} {entries} left in {tmp_dir}"), fg="yellow")
         else:
-            click.secho(f"Cleaned temporary directory: {tmp_dir}", fg="green")
+            click.secho(_zh(f"Cleaned temporary directory: {tmp_dir}"), fg="green")
     except Exception as e:
-        click.secho(f"Failed to clean temporary directory: {e}", fg="yellow")
+        click.secho(_zh(f"Failed to clean temporary directory: {e}"), fg="yellow")
     finally:
         if claim is tmp_lock.Claim.ALONE and not tmp_lock.share():
-            click.secho("Lost the lock on tmp_dir: another salmon may clean it while this one runs.", fg="yellow")
+            click.secho(_zh("Lost the lock on tmp_dir: another salmon may clean it while this one runs."), fg="yellow")
 
 
 def main():
@@ -110,17 +113,20 @@ def _run_command():
         show_release_notification()
         click.echo()
 
+        from salmon.localization import localize_help
+
+        localize_help(commandgroup)
         commandgroup(obj={})
     except TLSCertificateError as e:
-        click.secho(f"There was an error: {e}", fg="red", bold=True)
+        click.secho(_zh(f"There was an error: {e}"), fg="red", bold=True)
         print_certificate_hint(e)
         sys.exit(1)
     except (UploadError, RequestError, ImageUploadFailed, ScrapeError) as e:
         # After TLSCertificateError: it is a RequestError too.
-        click.secho(f"There was an error: {e}", fg="red", bold=True)
+        click.secho(_zh(f"There was an error: {e}"), fg="red", bold=True)
         sys.exit(1)
     except ImportError as e:
-        click.secho(f"You are missing required dependencies: {e}", fg="red")
+        click.secho(_zh(f"You are missing required dependencies: {e}"), fg="red")
         sys.exit(1)
 
 

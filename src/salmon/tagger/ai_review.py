@@ -15,6 +15,7 @@ from bs4 import BeautifulSoup
 from salmon import cfg, interaction
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.errors import InvalidMetadataError
+from salmon.localization import text as _zh
 from salmon.proxy import session_kwargs
 from salmon.tagger.sources.base import standardize_genres
 
@@ -340,7 +341,7 @@ def _style_ai_progress(text: str) -> str:
 def _emit_ai_progress(text: str) -> None:
     styled = _style_ai_progress(text)
     if styled:
-        click.echo(styled, color=True)
+        click.echo(_zh(styled), color=True)
 
 
 def _emit_ai_progress_lines(lines: list[str]) -> None:
@@ -408,8 +409,10 @@ async def _poll_response(
         current = await client.responses.retrieve(response_id)
 
     raise RuntimeError(
-        f"Timed out waiting for AI metadata review to finish after {timeout_seconds}s. "
-        "Increase upload.ai_review.timeout_seconds or keep background mode enabled."
+        _zh(
+            f"Timed out waiting for AI metadata review to finish after {timeout_seconds}s. "
+            "Increase upload.ai_review.timeout_seconds or keep background mode enabled."
+        )
     )
 
 
@@ -867,15 +870,15 @@ async def _request_ai_review_chat(
 
     content = chat_response.choices[0].message.content
     if not content:
-        raise RuntimeError("AI metadata review returned an empty response")
+        raise RuntimeError(_zh("AI metadata review returned an empty response"))
 
     try:
         review = msgspec.json.decode(content)
     except msgspec.DecodeError as exc:
-        raise RuntimeError(f"AI metadata review returned invalid JSON: {exc}") from exc
+        raise RuntimeError(_zh(f"AI metadata review returned invalid JSON: {exc}")) from exc
 
     if not isinstance(review, dict):
-        raise RuntimeError("AI metadata review returned an unexpected response shape")
+        raise RuntimeError(_zh("AI metadata review returned an unexpected response shape"))
 
     review["_opened_page_urls"] = []
     return review, None
@@ -909,37 +912,39 @@ async def _request_ai_review(
             async with asyncio.timeout(ai_cfg.timeout_seconds):
                 response = await client.responses.create(**payload)
     except openai.NotFoundError:
-        click.secho("Responses API not supported, falling back to Chat Completions.", fg="yellow")
+        click.secho(_zh("Responses API not supported, falling back to Chat Completions."), fg="yellow")
         return await _request_ai_review_chat(
             client, metadata, _tag_baseline, source_url, user_instruction, ai_cfg.timeout_seconds
         )
     except TimeoutError as exc:
         raise RuntimeError(
-            f"Timed out after {ai_cfg.timeout_seconds}s while submitting the AI metadata review request. "
-            "Background mode is recommended for long-running reviews."
+            _zh(
+                f"Timed out after {ai_cfg.timeout_seconds}s while submitting the AI metadata review request. "
+                "Background mode is recommended for long-running reviews."
+            )
         ) from exc
     except openai.APIError as exc:
-        raise RuntimeError(f"OpenAI API error: {exc.message}") from exc
+        raise RuntimeError(_zh(f"OpenAI API error: {exc.message}")) from exc
 
     if response.status in ("queued", "in_progress"):
         response = await _poll_response(client, response, ai_cfg.timeout_seconds)
     if response.status in ("failed", "cancelled", "incomplete"):
-        raise RuntimeError(f"AI metadata review did not complete successfully (status: {response.status})")
+        raise RuntimeError(_zh(f"AI metadata review did not complete successfully (status: {response.status})"))
 
     if response.error:
-        raise RuntimeError(f"OpenAI API error: {response.error.message}")
+        raise RuntimeError(_zh(f"OpenAI API error: {response.error.message}"))
 
     output_text = _extract_output_text(response)
     if not output_text:
-        raise RuntimeError("AI metadata review returned an empty response")
+        raise RuntimeError(_zh("AI metadata review returned an empty response"))
 
     try:
         review = msgspec.json.decode(output_text)
     except msgspec.DecodeError as exc:
-        raise RuntimeError(f"AI metadata review returned invalid JSON: {exc}") from exc
+        raise RuntimeError(_zh(f"AI metadata review returned invalid JSON: {exc}")) from exc
 
     if not isinstance(review, dict):
-        raise RuntimeError("AI metadata review returned an unexpected response shape")
+        raise RuntimeError(_zh("AI metadata review returned an unexpected response shape"))
 
     review["_opened_page_urls"] = sorted(_extract_opened_page_urls(response))
     return review, response.id
@@ -997,7 +1002,7 @@ def _normalize_artist_tuples(values: Any) -> list[tuple[str, str]]:
 def _iter_review_metadata(review: dict[str, Any]):
     result_metadata = review.get("metadata", {})
     if not isinstance(result_metadata, dict):
-        raise ValueError("AI metadata payload is invalid")
+        raise ValueError(_zh("AI metadata payload is invalid"))
 
     for field in TOP_LEVEL_PATCH_FIELDS:
         if field in result_metadata:
@@ -1131,10 +1136,10 @@ async def _apply_ai_review(
         updated_metadata = apply_ai_metadata_result(metadata, sanitized_review, source_url)
         validator(updated_metadata)
     except Exception as exc:
-        click.secho(f"AI suggestions were rejected: {exc}", fg="red")
+        click.secho(_zh(f"AI suggestions were rejected: {exc}"), fg="red")
         return None
 
-    click.secho("Applied AI metadata suggestions.", fg="green")
+    click.secho(_zh("Applied AI metadata suggestions."), fg="green")
     return updated_metadata
 
 
@@ -1182,7 +1187,7 @@ async def review_metadata_with_ai(  # noqa: C901
         await interaction.assume_defaults()
         or apply_suggestions
         or await interaction.confirm(
-            click.style("\nRun AI metadata review?", fg="magenta"),
+            _zh(click.style(_zh("\nRun AI metadata review?"), fg="magenta")),
             default=None,
         )
     )
@@ -1194,7 +1199,7 @@ async def review_metadata_with_ai(  # noqa: C901
     user_instruction = None
 
     while True:
-        click.secho("\nRunning AI metadata review...", fg="cyan", bold=True)
+        click.secho(_zh("\nRunning AI metadata review..."), fg="cyan", bold=True)
         try:
             ai_anchor_url = _choose_ai_anchor_url(current_metadata, source_url)
             review, previous_response_id = await _request_ai_review(
@@ -1205,10 +1210,10 @@ async def review_metadata_with_ai(  # noqa: C901
                 previous_response_id,
             )
         except asyncio.CancelledError:
-            click.secho("\nAI metadata review aborted by user.", fg="yellow")
+            click.secho(_zh("\nAI metadata review aborted by user."), fg="yellow")
             raise click.Abort() from None
         except Exception as exc:
-            click.secho(f"AI metadata review failed: {exc}", fg="red")
+            click.secho(_zh(f"AI metadata review failed: {exc}"), fg="red")
             return await _finalize_manual_review(current_metadata, validator, manual_review)
 
         review, guardrail_warnings = await _apply_ai_review_guardrails(current_metadata, review, source_url)
@@ -1216,25 +1221,25 @@ async def review_metadata_with_ai(  # noqa: C901
         summary = review.get("summary")
         if isinstance(summary, str) and summary.strip():
             click.echo(
-                "\n" + click.style("AI summary:", fg="yellow") + f" {summary.strip()}",
+                _zh("\n" + click.style(_zh("AI summary:"), fg="yellow") + f" {summary.strip()}"),
                 color=True,
             )
 
         for warning in guardrail_warnings:
-            click.secho(f"AI guardrail: {warning}", fg="yellow")
+            click.secho(_zh(f"AI guardrail: {warning}"), fg="yellow")
 
         if diff_lines:
-            click.secho("\nAI suggested metadata updates:", fg="yellow", bold=True)
+            click.secho(_zh("\nAI suggested metadata updates:"), fg="yellow", bold=True)
             for line in diff_lines:
                 click.echo(f"> {line}")
         else:
-            click.secho("\nAI did not suggest metadata changes.", fg="yellow")
+            click.secho(_zh("\nAI did not suggest metadata changes."), fg="yellow")
 
         citations = format_ai_review_citations(review)
         if citations and citations != ["No citations were returned."]:
-            click.secho("\nAI citations:", fg="yellow", bold=True)
+            click.secho(_zh("\nAI citations:"), fg="yellow", bold=True)
             for line in citations:
-                click.echo(line)
+                click.echo(_zh(line))
 
         if not diff_lines:
             return await _finalize_manual_review(current_metadata, validator, manual_review)
@@ -1252,9 +1257,11 @@ async def review_metadata_with_ai(  # noqa: C901
 
         while True:
             choice = await interaction.prompt(
-                click.style(
-                    "\n[a]pply suggestions, [k]eep original, [p]rompt model and rerun",
-                    fg="magenta",
+                _zh(
+                    click.style(
+                        _zh("\n[a]pply suggestions, [k]eep original, [p]rompt model and rerun"),
+                        fg="magenta",
+                    )
                 ),
                 type=click.STRING,
             )
@@ -1262,7 +1269,7 @@ async def review_metadata_with_ai(  # noqa: C901
 
             if choice == "p":
                 user_instruction = await interaction.prompt(
-                    click.style("What should the model change or prioritize?", fg="magenta"),
+                    _zh(click.style(_zh("What should the model change or prioritize?"), fg="magenta")),
                     type=click.STRING,
                 )
                 break
@@ -1272,7 +1279,7 @@ async def review_metadata_with_ai(  # noqa: C901
 
             if choice == "a":
                 if not diff_lines:
-                    click.secho("There are no AI changes to apply.", fg="yellow")
+                    click.secho(_zh("There are no AI changes to apply."), fg="yellow")
                     continue
 
                 applied_metadata = await _apply_ai_review(
@@ -1285,4 +1292,4 @@ async def review_metadata_with_ai(  # noqa: C901
                     return await _run_manual_review(applied_metadata, validator, manual_review)
                 continue
 
-            click.secho(f"{choice} is not a valid AI review option.", fg="red")
+            click.secho(_zh(f"{choice} is not a valid AI review option."), fg="red")

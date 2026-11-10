@@ -11,6 +11,7 @@ from salmon.common import RE_USELESS_VERSION, re_split, split_genre
 from salmon.common.numbers import file_order_key, number_text, read_number
 from salmon.common.strings import strip_numbered_suffixes
 from salmon.constants import FORMATS, TAG_ENCODINGS
+from salmon.localization import text as _zh
 from salmon.tagger.tags import is_classical
 
 _RE_FEAT_START = re.compile(r" [\(\[\{]?(?:f(?:ea)?t(?:uring)?\.?|with\.) ", flags=re.IGNORECASE)
@@ -133,7 +134,7 @@ async def parse_encoding(format_, audio_info, supplied_encoding, prompt_encoding
         return supplied_encoding
     if prompt_encoding:
         return await _prompt_encoding()
-    click.secho("An encoding must be specified if the files are not lossless.", fg="red")
+    click.secho(_zh("An encoding must be specified if the files are not lossless."), fg="red")
     raise click.Abort
 
 
@@ -244,12 +245,14 @@ def _parse_role_names(role_value):
 
 
 async def _prompt_encoding():
-    click.echo(f"\nValid encodings: {', '.join(TAG_ENCODINGS.keys())}")
+    click.echo(_zh(f"\nValid encodings: {', '.join(TAG_ENCODINGS.keys())}"))
     while True:
-        enc = await interaction.prompt(click.style("What is the encoding of this release? [a]bort", fg="magenta"))
+        enc = await interaction.prompt(
+            _zh(click.style(_zh("What is the encoding of this release? [a]bort"), fg="magenta"))
+        )
         try:
             return TAG_ENCODINGS[enc.upper()]
         except KeyError:
             if enc.lower().startswith("a"):
                 raise click.Abort from None
-            click.secho(f"{enc} is not a valid encoding.", fg="red")
+            click.secho(_zh(f"{enc} is not a valid encoding."), fg="red")

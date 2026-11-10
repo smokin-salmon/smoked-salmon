@@ -13,6 +13,7 @@ from salmon import cfg, interaction
 from salmon.checks.source import is_store_url
 from salmon.common import handle_scrape_errors, make_searchstrs, re_strip
 from salmon.common.strings import artist_keys, comparable, names_no_artist, numeric_id
+from salmon.localization import text as _zh
 from salmon.search import SEARCHSOURCES, listing_order, run_metasearch, searched_sources, store_heading
 from salmon.search.base import IdentData
 from salmon.sources.deezer import DeezerBase, album_upc
@@ -56,16 +57,16 @@ async def get_metadata(
     Returns:
         Tuple of (metadata dict, source URL or None).
     """
-    click.secho("\nChecking metadata...", fg="cyan", bold=True)
+    click.secho(_zh("\nChecking metadata..."), fg="cyan", bold=True)
     if not rls_data:
-        raise ValueError("rls_data cannot be None")
+        raise ValueError(_zh("rls_data cannot be None"))
     if skip_search:
         scraped = await _metadata_from_source_url(skip_search_url, rls_data)
         if scraped is not None:
             metadata, source_url = scraped
             return await _finish_metadata(metadata, path), source_url
     searchstrs = make_searchstrs(rls_data["artists"], rls_data["title"])
-    click.secho(f"Searching for '{searchstrs}' releases...")
+    click.secho(_zh(f"Searching for '{searchstrs}' releases..."))
     artists_list = [a for a, _ in rls_data["artists"]]
     album_title = rls_data["title"]
     if search is None:
@@ -98,11 +99,11 @@ def _explain_default(default: str | None, choices: dict[int, tuple[str, str]]) -
     """Say where each part of the pre-typed metadata answer came from."""
     for part in (default or "").split():
         if part.startswith("*"):
-            click.secho(f"Pre-typed {part}: the store page in the files' tags, starred as the source.", fg="cyan")
+            click.secho(_zh(f"Pre-typed {part}: the store page in the files' tags, starred as the source."), fg="cyan")
         elif part.isdecimal() and int(part) in choices:
             source = choices[int(part)][0]
             click.secho(
-                f"Pre-typed {part}: the {source} result matching the files' artist, title and track count.",
+                _zh(f"Pre-typed {part}: the {source} result matching the files' artist, title and track count."),
                 fg="cyan",
             )
 
@@ -122,13 +123,13 @@ async def _metadata_from_source_url(url: str | None, rls_data: dict[str, Any]) -
     """
     url = (url or "").strip()
     if not url:
-        click.secho("--skip-search needs --source-url: searching the stores anyway.", fg="yellow")
+        click.secho(_zh("--skip-search needs --source-url: searching the stores anyway."), fg="yellow")
         return None
     name = _metasource_of(url)
     if name is None:
-        click.secho(f"--skip-search: no metadata source scrapes {url}: searching the stores anyway.", fg="yellow")
+        click.secho(_zh(f"--skip-search: no metadata source scrapes {url}: searching the stores anyway."), fg="yellow")
         return None
-    click.secho(f"Skipping the search: taking the metadata from {url}", fg="cyan")
+    click.secho(_zh(f"Skipping the search: taking the metadata from {url}"), fg="cyan")
     rls_data.setdefault("urls", [])
     added = url not in rls_data["urls"]
     if added:
@@ -137,7 +138,7 @@ async def _metadata_from_source_url(url: str | None, rls_data: dict[str, Any]) -
     if not scraped:
         if added:
             rls_data["urls"].remove(url)
-        click.secho("Could not take the metadata from that URL: searching the stores instead.", fg="yellow")
+        click.secho(_zh("Could not take the metadata from that URL: searching the stores instead."), fg="yellow")
         return None
     return _combine_scraped([name], [scraped], rls_data, url), url
 
@@ -209,7 +210,7 @@ def _print_search_results(results, rls_data=None):
     for source in listing_order(results):
         releases = results[source]
         if releases:
-            click.secho(f"\nResults for {store_heading(source)}:", fg="yellow", bold=True)
+            click.secho(_zh(f"\nResults for {store_heading(source)}:"), fg="yellow", bold=True)
             not_found.remove(source)
             shown = dict(islice(releases.items(), cfg.upload.search.limit))
             for rls_id, release in shown.items():
@@ -224,14 +225,14 @@ def _print_search_results(results, rls_data=None):
     if not_found:
         click.echo()
         for source in not_found:
-            click.echo(f"No results found from {source}.")
+            click.echo(_zh(f"No results found from {source}."))
 
     if inactive_sources:
         for source in inactive_sources:
-            click.echo(f"{source} is inactive. Add its credentials to config.toml to enable it.")
+            click.echo(_zh(f"{source} is inactive. Add its credentials to config.toml to enable it."))
     if source_errors:
         click.echo()
-        click.secho(f"Failed to scrape {', '.join(source_errors)}.", fg="red")
+        click.secho(_zh(f"Failed to scrape {', '.join(source_errors)}."), fg="red")
 
     return choices
 
@@ -364,12 +365,12 @@ def _choice_options(choices: dict[int, tuple[str, str]]) -> interaction.Options:
         link = searcher.Searcher.format_url(rls_id) if searcher is not None else None
         card = interaction.Card(tuple(fields), link=link)
         items.append(interaction.Option(str(choice_id), label, group=store_heading(source), card=card))
-    items += [interaction.Option("m", "Manual", action=True), interaction.Option("a", "Abort", action=True)]
+    items += [interaction.Option("m", "Manual", action=True), interaction.Option("a", _zh("Abort"), action=True)]
     return interaction.Options(
         tuple(items),
         several=True,
-        free_text=interaction.FreeText("Store URL"),
-        mark=interaction.Mark("*", "The store the files came from (WEB)"),
+        free_text=interaction.FreeText(_zh("Store URL")),
+        mark=interaction.Mark("*", _zh("The store the files came from (WEB)")),
     )
 
 
@@ -400,11 +401,15 @@ async def _select_choice(
         urls = list(rls_data["urls"])
         if choices:
             res = await interaction.prompt(
-                click.style(
-                    "\nWhich metadata results would you like to use? Type result numbers and/or paste URLs, "
-                    'separated by spaces; all of them are combined. Put "*" before the one the files came from '
-                    "(the WEB store). Or [m]anual / [a]bort.",
-                    fg="magenta",
+                _zh(
+                    click.style(
+                        _zh(
+                            "\nWhich metadata results would you like to use? Type result numbers and/or paste URLs, "
+                            'separated by spaces; all of them are combined. Put "*" before the one the files came from '
+                            "(the WEB store). Or [m]anual / [a]bort."
+                        ),
+                        fg="magenta",
+                    )
                 ),
                 type=click.STRING,
                 default=default,
@@ -412,10 +417,15 @@ async def _select_choice(
             )
         else:
             res = await interaction.prompt(
-                click.style(
-                    "\nNo metadata results were found. Paste URLs separated by spaces (all of them are combined), "
-                    'with "*" before the one the files came from (the WEB store). Or [m]anual / [a]bort.',
-                    fg="magenta",
+                _zh(
+                    click.style(
+                        _zh(
+                            "\nNo metadata results were found. Paste URLs "
+                            "separated by spaces (all of them are combined), "
+                            'with "*" before the one the files came from (the WEB store). Or [m]anual / [a]bort.'
+                        ),
+                        fg="magenta",
+                    )
                 ),
                 type=click.STRING,
                 default=default,
@@ -494,7 +504,7 @@ async def _get_manual_metadata(rls_data):
             return metadata_dict
         except (TypeError, msgspec.DecodeError):
             await interaction.confirm(
-                click.style("Metadata is not a valid JSON file, retry?", fg="magenta", bold=True),
+                _zh(click.style(_zh("Metadata is not a valid JSON file, retry?"), fg="magenta", bold=True)),
                 default=True,
                 abort=True,
             )
@@ -502,22 +512,22 @@ async def _get_manual_metadata(rls_data):
 
 def _print_metadata(metadata, metadata_name="Pending"):
     """Print the metadata that is a part of the new metadata."""
-    click.secho(f"\n{metadata_name} metadata:", fg="yellow", bold=True)
-    click.echo(f"> TRACK COUNT   : {sum(len(d.values()) for d in metadata['tracks'].values())}")
-    click.echo("> ARTISTS:")
+    click.secho(_zh(f"\n{metadata_name} metadata:"), fg="yellow", bold=True)
+    click.echo(_zh(f"> TRACK COUNT   : {sum(len(d.values()) for d in metadata['tracks'].values())}"))
+    click.echo(_zh("> ARTISTS:"))
     for artist in metadata["artists"]:
         click.echo(f">>>  {artist[0]} [{artist[1]}]")
-    click.echo(f"> TITLE         : {metadata['title']}")
-    click.echo(f"> GROUP YEAR    : {metadata['group_year']}")
-    click.echo(f"> YEAR          : {metadata['year']}")
-    click.echo(f"> EDITION TITLE : {metadata['edition_title']}")
-    click.echo(f"> LABEL         : {metadata['label']}")
-    click.echo(f"> CATNO         : {metadata['catno']}")
-    click.echo(f"> UPC           : {metadata['upc']}")
-    click.echo(f"> GENRES        : {'; '.join(metadata['genres'])}")
-    click.echo(f"> RELEASE TYPE  : {metadata['rls_type']}")
-    click.echo(f"> COMMENT       : {metadata['comment']}")
-    click.echo("> URLS:")
+    click.echo(_zh(f"> TITLE         : {metadata['title']}"))
+    click.echo(_zh(f"> GROUP YEAR    : {metadata['group_year']}"))
+    click.echo(_zh(f"> YEAR          : {metadata['year']}"))
+    click.echo(_zh(f"> EDITION TITLE : {metadata['edition_title']}"))
+    click.echo(_zh(f"> LABEL         : {metadata['label']}"))
+    click.echo(_zh(f"> CATNO         : {metadata['catno']}"))
+    click.echo(_zh(f"> UPC           : {metadata['upc']}"))
+    click.echo(_zh(f"> GENRES        : {'; '.join(metadata['genres'])}"))
+    click.echo(_zh(f"> RELEASE TYPE  : {metadata['rls_type']}"))
+    click.echo(_zh(f"> COMMENT       : {metadata['comment']}"))
+    click.echo(_zh("> URLS:"))
     for url in metadata["urls"]:
         click.echo(f">>> {url}")
 

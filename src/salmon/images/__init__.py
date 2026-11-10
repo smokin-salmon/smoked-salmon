@@ -10,6 +10,7 @@ from salmon.config.image_hosts import cover_refusal, spectrals_refusal
 from salmon.errors import ImageUploadFailed
 from salmon.images import catbox, imgbb, imgbox, oeimg, ptscreens, ra, red
 from salmon.images.base import BaseImageUploader
+from salmon.localization import text as _zh
 from salmon.trackers.red import RedApi
 
 HOSTS = {
@@ -63,7 +64,7 @@ def validate_image_host(ctx: click.Context, param: click.Parameter, value: str |
         click.BadParameter: If the image host is invalid.
     """
     if value is not None and value not in HOSTS:
-        raise click.BadParameter(f"{value} is not a valid image host")
+        raise click.BadParameter(_zh(f"{value} is not a valid image host"))
     return value
 
 
@@ -99,7 +100,7 @@ def validate_tracker(ctx: click.Context, param: click.Parameter, value: str | No
 
     if value.upper() not in trackers.tracker_list:
         configured = ", ".join(trackers.tracker_list) or "none"
-        raise click.BadParameter(f"{value} is not a tracker in your config (configured: {configured})")
+        raise click.BadParameter(_zh(f"{value} is not a tracker in your config (configured: {configured})"))
     return value.upper()
 
 
@@ -119,8 +120,10 @@ async def images() -> None:
     "--image-host",
     "-i",
     help=(
-        "The image host to upload to. With --tracker, defaults to that tracker's image_uploader; "
-        "otherwise [image] image_uploader"
+        _zh(
+            "The image host to upload to. With --tracker, defaults to that tracker's image_uploader; "
+            "otherwise [image] image_uploader"
+        )
     ),
     default=None,
     callback=validate_image_host,
@@ -128,7 +131,7 @@ async def images() -> None:
 @click.option(
     "--tracker",
     "-t",
-    help="The tracker the images are for: its image_uploader is the default host, and the host must display there",
+    help=_zh("The tracker the images are for: its image_uploader is the default host, and the host must display there"),
     default=None,
     callback=validate_tracker,
 )
@@ -162,15 +165,15 @@ async def upload_images(filepaths: tuple, image_host, copy_to_clipboard: bool = 
             on_failure=lambda _index, error: failures.append(error),
         )
     except ValueError as error:
-        click.secho(f"Image Upload Failed. {error}", fg="red")
+        click.secho(_zh(f"Image Upload Failed. {error}"), fg="red")
         raise ImageUploadFailed("Failed to upload image") from error
     if failures:
-        click.secho(f"Image Upload Failed. {failures[0]}", fg="red")
+        click.secho(_zh(f"Image Upload Failed. {failures[0]}"), fg="red")
         raise ImageUploadFailed("Failed to upload image") from failures[0]
 
     urls = [group[0] for group in results if group is not None]
     for url in urls:
-        click.secho(url)
+        click.secho(_zh(url))
     if copy_to_clipboard and cfg.upload.description.copy_uploaded_url_to_clipboard:
         clipboard_copy("\n".join(urls))
     return urls
@@ -251,21 +254,21 @@ async def upload_cover(cover_path: str | None, host: str | None = None, red_api:
         The uploaded image URL, or None if upload failed.
     """
     if not cover_path:
-        click.secho("\nNo Cover Image Path was provided to upload...", fg="red", nl=False)
+        click.secho(_zh("\nNo Cover Image Path was provided to upload..."), fg="red", nl=False)
         return None
     host = host or cfg.image.cover_uploader
-    click.secho(f"Uploading cover to {host}...", fg="yellow", nl=False)
+    click.secho(_zh(f"Uploading cover to {host}..."), fg="yellow", nl=False)
     try:
         uploader = red.ImageUploader(red_api) if host == "red" else HOSTS[host].ImageUploader()
         url, _ = await uploader.upload_file(cover_path)
         # A host can return without raising and still hand back nothing usable; treat that as a failure too.
         if not url:
-            click.secho(" failed :( host returned no URL", fg="red")
+            click.secho(_zh(" failed :( host returned no URL"), fg="red")
             return None
-        click.secho(f" done! {url}", fg="yellow")
+        click.secho(_zh(f" done! {url}"), fg="yellow")
         return url
     except (ImageUploadFailed, ValueError) as error:
-        click.secho(f" failed :( {error}", fg="red")
+        click.secho(_zh(f" failed :( {error}"), fg="red")
         return None
 
 
@@ -288,10 +291,10 @@ async def upload_spectrals(spectrals, uploader=None, successful=None, tracker: s
     pending = [(sid, filename, paths) for sid, filename, paths in spectrals if sid not in successful]
 
     def on_start(index: int) -> None:
-        click.secho(f"Uploading spectrals for {pending[index][1]}...", fg="yellow")
+        click.secho(_zh(f"Uploading spectrals for {pending[index][1]}..."), fg="yellow")
 
     def on_failure(index: int, error: ImageUploadFailed) -> None:
-        click.secho(f"Failed to upload spectrals for {pending[index][1]}: {error}", fg="red")
+        click.secho(_zh(f"Failed to upload spectrals for {pending[index][1]}: {error}"), fg="red")
 
     results = await _upload_groups(uploader.ImageUploader(), [paths for _, _, paths in pending], on_start, on_failure)
 
@@ -324,22 +327,26 @@ async def _handle_failed_spectrals(spectrals, successful, tracker: str | None = 
         forbidden = {host: reason for host in HOSTS if (reason := spectrals_refusal(host, tracker)) is not None}
         allowed_hosts = [host for host in HOSTS if host not in forbidden]
         host_input: str = await interaction.prompt(
-            click.style(
-                "Some spectrals failed to upload. Which image host would you like to retry "
-                f"with, or {SKIP} to go on without them? (Options: {', '.join(allowed_hosts)}, {SKIP})",
-                fg="magenta",
-                bold=True,
+            _zh(
+                click.style(
+                    _zh(
+                        "Some spectrals failed to upload. Which image host would you like to retry "
+                        f"with, or {SKIP} to go on without them? (Options: {', '.join(allowed_hosts)}, {SKIP})"
+                    ),
+                    fg="magenta",
+                    bold=True,
+                )
             ),
             default=cfg.image.host_for(tracker, "specs_uploader"),
         )
         host = host_input.lower()
         if host == SKIP:
             left_out = [filename for sid, filename, _ in spectrals if sid not in successful]
-            click.secho(f"Going on without the spectrals of: {', '.join(left_out)}.", fg="yellow")
+            click.secho(_zh(f"Going on without the spectrals of: {', '.join(left_out)}."), fg="yellow")
             return {}
         if host in forbidden:
-            click.secho(f"{host} can't be used for spectrals: {forbidden[host]}.", fg="red")
+            click.secho(_zh(f"{host} can't be used for spectrals: {forbidden[host]}."), fg="red")
         elif host not in HOSTS:
-            click.secho(f"{host} is an invalid image host. Please choose another one.", fg="red")
+            click.secho(_zh(f"{host} is an invalid image host. Please choose another one."), fg="red")
         else:
             return await upload_spectrals(spectrals, uploader=HOSTS[host], successful=successful, tracker=tracker)

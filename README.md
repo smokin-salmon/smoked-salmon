@@ -2,6 +2,8 @@
 
 # 🐟 smoked-salmon  
 
+[简体中文版本与使用说明](README.zh-CN.md)
+
 A simple tool to take the work out of uploading on Gazelle-based trackers. It generates spectrals, gathers metadata, allows re-tagging/renaming files, and automates the upload process.
 
 ## 🌟 Features  

@@ -17,6 +17,7 @@ from typing import Any
 import msgspec
 
 from salmon.constants import ARTIST_IMPORTANCES, SOURCES
+from salmon.localization import text as _zh
 
 LISTS_DIR = Path(__file__).parents[1] / "data" / "do_not_upload"
 # The file of each tracker that has a list.
@@ -45,17 +46,17 @@ class Entry(msgspec.Struct, forbid_unknown_fields=True, frozen=True):
 
     def __post_init__(self) -> None:
         if not self.note.strip():
-            raise ValueError("an entry needs a note saying why")
+            raise ValueError(_zh("an entry needs a note saying why"))
         names = {"artist": self.artist, "album": self.album, "label": self.label}
         if not any(names.values()):
-            raise ValueError("an entry needs an artist, an album or a label")
+            raise ValueError(_zh("an entry needs an artist, an album or a label"))
         for key, value in names.items():
             if value and not _words(value):
-                raise ValueError(f"the {key} {value!r} has no word to match")
+                raise ValueError(_zh(f"the {key} {value!r} has no word to match"))
         if self.label and (self.artist or self.album):
-            raise ValueError("a label entry names no artist or album")
+            raise ValueError(_zh("a label entry names no artist or album"))
         if self.media and self.media not in SOURCES.values():
-            raise ValueError(f"the media {self.media!r} is none of {', '.join(SOURCES.values())}")
+            raise ValueError(_zh(f"the media {self.media!r} is none of {', '.join(SOURCES.values())}"))
 
     def matches(self, release: "Candidate") -> bool:
         """Whether the release is this entry's: the artist is one of its main artists exactly ("Viper" is not
@@ -130,7 +131,7 @@ def load_list(tracker: str) -> list[Entry]:
     entries = msgspec.toml.decode((LISTS_DIR / LISTS[tracker]).read_bytes(), type=_List).entry
     if not entries:
         # An emptied or truncated file must not read as a list that forbids nothing.
-        raise msgspec.ValidationError(f"{LISTS[tracker]} has no entries")
+        raise msgspec.ValidationError(_zh(f"{LISTS[tracker]} has no entries"))
     return entries
 
 

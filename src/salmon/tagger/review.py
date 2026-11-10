@@ -9,6 +9,7 @@ from salmon import cfg, interaction
 from salmon.common import normalize_accents
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError, PickOtherResults
+from salmon.localization import text as _zh
 from salmon.tagger.metadata import _print_metadata
 from salmon.tagger.sources.base import generate_artists, standardize_genres
 
@@ -33,21 +34,21 @@ _DEFERRED_PRE_AI_METADATA_ERRORS = {
 # The answers to "Are there any metadata fields you would like to edit?", for salmon web.
 _FIELDS_TO_EDIT = interaction.Options(
     (
-        interaction.Option("a", "Artists"),
-        interaction.Option("l", "Artist aliases"),
-        interaction.Option("t", "Title"),
+        interaction.Option("a", _zh("Artists")),
+        interaction.Option("l", _zh("Artist aliases")),
+        interaction.Option("t", _zh("Title")),
         interaction.Option("g", "Genres"),
-        interaction.Option("r", "Release type"),
+        interaction.Option("r", _zh("Release type")),
         interaction.Option("y", "Years"),
-        interaction.Option("e", "Edition info"),
+        interaction.Option("e", _zh("Edition info")),
         interaction.Option("c", "Comment"),
-        interaction.Option("k", "Tracks"),
+        interaction.Option("k", _zh("Tracks")),
         interaction.Option("u", "URLs"),
         interaction.Option("n", "Nothing"),
     )
 )
 # The answer to it that goes back to the metadata results, when the review offers that.
-_BACK_TO_RESULTS = interaction.Option("b", "Back to the metadata results", action=True)
+_BACK_TO_RESULTS = interaction.Option("b", _zh("Back to the metadata results"), action=True)
 
 
 async def review_metadata(
@@ -89,12 +90,16 @@ async def review_metadata(
     while True:
         _print_metadata(metadata)
         r = await interaction.prompt(
-            click.style(
-                "\nAre there any metadata fields you would like to edit? [a]rtists, "
-                "artist a[L]iases (rename or split an artist on every track), [t]itle, [g]enres, "
-                "[r]elease type, [y]ears, [e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing"
-                + (", [b]ack to the metadata results" if offer_other_results else ""),
-                fg="magenta",
+            _zh(
+                click.style(
+                    _zh(
+                        "\nAre there any metadata fields you would like to edit? [a]rtists, "
+                        "artist a[L]iases (rename or split an artist on every track), [t]itle, [g]enres, "
+                        "[r]elease type, [y]ears, [e]dition info, [c]omment, trac[k]s, [u]rls, [n]othing"
+                    )
+                    + (_zh(", [b]ack to the metadata results") if offer_other_results else ""),
+                    fg="magenta",
+                )
             ),
             options=fields_to_edit,
         )
@@ -106,14 +111,14 @@ async def review_metadata(
                 break_ = True
             elif r_let == "b" and offer_other_results:
                 if metadata == picked or await interaction.confirm(
-                    click.style("Going back drops the changes made since the pick. Go back?", fg="magenta"),
+                    _zh(click.style(_zh("Going back drops the changes made since the pick. Go back?"), fg="magenta")),
                     default=False,
                 ):
                     raise PickOtherResults from None
                 continue
             else:
                 hint = " The artist aliases key is the letter L." if r_let == "1" else ""
-                click.secho(f"{r_let} is not a valid editing option.{hint}", fg="red")
+                click.secho(_zh(f"{r_let} is not a valid editing option.{hint}"), fg="red")
                 continue
         try:
             validator(metadata)
@@ -123,7 +128,7 @@ async def review_metadata(
                     break
                 continue
             await interaction.confirm(
-                click.style(str(e) + " Revisit metadata step?", fg="magenta"),
+                _zh(click.style(str(e) + _zh(" Revisit metadata step?"), fg="magenta")),
                 default=True,
                 abort=True,
             )
@@ -144,7 +149,7 @@ async def _check_for_empty_genre_list(metadata):
     if not metadata["genres"]:
         # Use secho instead of prompt since we just want to display a message
         click.secho(
-            "\nNo genres were found for this release, but one must be added. Opening the genre editor.",
+            _zh("\nNo genres were found for this release, but one must be added. Opening the genre editor."),
             fg="magenta",
         )
         await _edit_genres(metadata)
@@ -165,12 +170,12 @@ def _warn_classical_genre(metadata: dict) -> None:
         return
 
     click.secho(
-        "\n==================== CLASSICAL MUSIC WARNING ====================",
+        _zh("\n==================== CLASSICAL MUSIC WARNING ===================="),
         fg="yellow",
         bold=True,
     )
     click.secho(
-        f"""\
+        _zh(f"""\
 Detected classical genre(s): {", ".join(sorted(detected))}
 
 Salmon is NOT currently suited for uploading classical music.
@@ -202,7 +207,7 @@ If you choose to continue, please verify the following manually:
 [Upload]    Use the Composer field for composer(s), Conductor for
             conductor(s), Main Artist for performer(s) on the form.
 
-For full rules, see the tracker's Classical Tagging Guide.""",
+For full rules, see the tracker's Classical Tagging Guide."""),
         fg="yellow",
     )
     click.secho(
@@ -214,9 +219,11 @@ For full rules, see the tracker's Classical Tagging Guide.""",
 
 async def _edit_artists(metadata):
     click.secho(
-        "One artist per line as: Name (role). This changes the release's artists, and carries to the tracks a role "
-        "changed for another, a role deleted from an artist still listed, and a new order; to rename or split an "
-        "artist on every track, use artist a[L]iases instead.",
+        _zh(
+            "One artist per line as: Name (role). This changes the release's artists, and carries to the tracks a role "
+            "changed for another, a role deleted from an artist still listed, and a new order; to rename or split an "
+            "artist on every track, use artist a[L]iases instead."
+        ),
         fg="cyan",
     )
     artist_text = "\n".join(f"{a} ({i})" for a, i in metadata["artists"])
@@ -231,20 +238,20 @@ async def _edit_artists(metadata):
                 name, role = artist_line.rsplit(" ", 1)
                 role_match = re.search(r"\((.+)\)", role)
                 if not role_match:
-                    raise ValueError(f"Invalid role format: {role}")
+                    raise ValueError(_zh(f"Invalid role format: {role}"))
                 role = role_match[1].lower()
                 # Stripped, as "Dree Low " would match no track credit and read as Dree Low gone from the list.
                 tuples_artists_list.append((name.strip(), role))
         except ValueError as e:  # All the parsing above raises; the tracks are changed only after it.
             await interaction.confirm(
-                click.style(f"The artists text is invalid ({e}), retry?", fg="red"),
+                _zh(click.style(_zh(f"The artists text is invalid ({e}), retry?"), fg="red")),
                 default=True,
                 abort=True,
             )
             continue
         # The lines as typed, a line given twice included: _role_changes pairs each name's lines one to one.
         for line in _carry_artist_edit(metadata["artists"], tuples_artists_list, metadata["tracks"]):
-            click.secho(line, fg="yellow")
+            click.secho(_zh(line), fg="yellow")
         metadata["artists"] = list(dict.fromkeys(tuples_artists_list))
         return
 
@@ -414,7 +421,7 @@ async def _alias_artists(metadata):
             break
         except (IndexError, ValueError):
             await interaction.confirm(
-                click.style("Invalid artist list. Retry?", fg="red"),
+                _zh(click.style(_zh("Invalid artist list. Retry?"), fg="red")),
                 default=True,
                 abort=True,
             )
@@ -482,7 +489,12 @@ async def _edit_release_type(metadata, default: str | None = None):
         rtype = (
             (
                 await interaction.prompt(
-                    click.style("\nWhich release type corresponds to this release? (case insensitive)", fg="magenta"),
+                    _zh(
+                        click.style(
+                            _zh("\nWhich release type corresponds to this release? (case insensitive)"),
+                            fg="magenta",
+                        )
+                    ),
                     type=click.STRING,
                     default=default,
                 )
@@ -493,13 +505,13 @@ async def _edit_release_type(metadata, default: str | None = None):
         if rtype in types:
             metadata["rls_type"] = types[rtype]
             return
-        click.secho(f"{rtype} is not a valid release type.", fg="red")
+        click.secho(_zh(f"{rtype} is not a valid release type."), fg="red")
 
 
 def _print_release_types():
     types = RELEASE_TYPES.keys()
     longest = max(len(r) for i, r in enumerate(types) if i % 2 == 0)
-    click.secho("\nRelease Types:", fg="yellow", bold=True)
+    click.secho(_zh("\nRelease Types:"), fg="yellow", bold=True)
     for i, rtype in enumerate(types):
         click.echo(f"  {rtype.ljust(longest)}", nl=False)
         if i % 2 == 1:
@@ -524,15 +536,17 @@ async def _edit_years(metadata):
             year_match = re.match(r"Year *: *(\d{4})", year_line)
             group_year_match = re.match(r"Group Year *: *(\d{4})", group_year_line)
             if not year_match or not group_year_match:
-                raise ValueError("Invalid year format")
+                raise ValueError(_zh("Invalid year format"))
             metadata["year"] = year_match[1]
             metadata["group_year"] = group_year_match[1]
             return
         except (TypeError, KeyError, ValueError):
             await interaction.confirm(
-                click.style(
-                    "Invalid values or formatting in the years file. Retry?",
-                    fg="magenta",
+                _zh(
+                    click.style(
+                        _zh("Invalid values or formatting in the years file. Retry?"),
+                        fg="magenta",
+                    )
                 ),
                 default=True,
                 abort=True,
@@ -544,7 +558,7 @@ async def _edit_genres(metadata):
     if genres:
         standardized = standardize_genres([g.strip() for g in genres.split("\n") if g.strip()])
         if not standardized:
-            click.secho("Those genres normalize to nothing; keeping the previous ones.", fg="red")
+            click.secho(_zh("Those genres normalize to nothing; keeping the previous ones."), fg="red")
             return
         metadata["genres"] = standardized
 
@@ -573,7 +587,7 @@ async def _edit_edition_info(metadata):
             edition_match = re.match(r"Edition Title *: *(.*)", title_line)
             upc_match = re.match(r"UPC *: *(.*)", upc_line)
             if not label_match or not catno_match or not edition_match or not upc_match:
-                raise ValueError("Invalid format")
+                raise ValueError(_zh("Invalid format"))
             metadata["label"] = label_match[1] or None
             metadata["catno"] = catno_match[1] or None
             metadata["edition_title"] = edition_match[1] or None
@@ -581,9 +595,11 @@ async def _edit_edition_info(metadata):
             return
         except (TypeError, KeyError, ValueError):
             await interaction.confirm(
-                click.style(
-                    "Invalid values or formatting in the editions file. Retry?",
-                    fg="magenta",
+                _zh(
+                    click.style(
+                        _zh("Invalid values or formatting in the editions file. Retry?"),
+                        fg="magenta",
+                    )
                 ),
                 default=True,
                 abort=True,
@@ -614,7 +630,7 @@ async def _edit_tracks(metadata):
             edits = _parse_edited_tracks(text_tracks, metadata["tracks"])
         except ValueError as e:
             await interaction.confirm(
-                click.style(f"The tracks file is invalid ({e}), retry?", fg="red"),
+                _zh(click.style(_zh(f"The tracks file is invalid ({e}), retry?"), fg="red")),
                 default=True,
                 abort=True,
             )
@@ -666,32 +682,36 @@ def _parse_edited_tracks(text, tracks):
     seen: set[tuple[str, str]] = set()
     for block in filter(None, blocks):
         if len(block) < 3:
-            raise ValueError(f"line {block[0][0]}: a track needs a Disc/Track line, a Title line and an Artists line")
+            raise ValueError(
+                _zh(f"line {block[0][0]}: a track needs a Disc/Track line, a Title line and an Artists line")
+            )
         (id_no, ident), (title_no, title), (artists_no, artists_header) = block[:3]
         r_ident = re.fullmatch(r"Disc ([^ ]+) Track ([^ ]+)", ident)
         if not r_ident:
-            raise ValueError(f'line {id_no}: "{ident}" is not a "Disc X Track Y" line')
+            raise ValueError(_zh(f'line {id_no}: "{ident}" is not a "Disc X Track Y" line'))
         discnum, tracknum = r_ident[1], r_ident[2]
         if tracknum not in tracks.get(discnum, {}):
             raise ValueError(
-                f'line {id_no}: "Disc {discnum} Track {tracknum}" is not a track of this release: the Disc/Track '
-                "lines can't be changed, only the titles and artists under them."
+                _zh(
+                    f'line {id_no}: "Disc {discnum} Track {tracknum}" is not a track of this release: the Disc/Track '
+                    "lines can't be changed, only the titles and artists under them."
+                )
             )
         if (discnum, tracknum) in seen:
-            raise ValueError(f'line {id_no}: "Disc {discnum} Track {tracknum}" is named twice')
+            raise ValueError(_zh(f'line {id_no}: "Disc {discnum} Track {tracknum}" is named twice'))
         seen.add((discnum, tracknum))
         title_match = re.fullmatch(r"Title *: *(.+)", title)
         if not title_match:
-            raise ValueError(f'line {title_no}: "{title}" is not a "Title: ..." line')
+            raise ValueError(_zh(f'line {title_no}: "{title}" is not a "Title: ..." line'))
         if not re.fullmatch(r"Artists *:", artists_header):
-            raise ValueError(f'line {artists_no}: "{artists_header}" is not the "Artists:" line')
+            raise ValueError(_zh(f'line {artists_no}: "{artists_header}" is not the "Artists:" line'))
         artists = []
         for artist_no, artist_line in block[3:]:
             name_part, _, role_part = artist_line.rpartition(" ")
             role_match = re.fullmatch(r"\((.+)\)", role_part)
             name_match = re.fullmatch(r"> *(.+)", name_part)
             if not role_match or not name_match:
-                raise ValueError(f'line {artist_no}: "{artist_line}" is not an artist line like "> Name (role)"')
+                raise ValueError(_zh(f'line {artist_no}: "{artist_line}" is not an artist line like "> Name (role)"'))
             artists.append((name_match[1], role_match[1].lower()))
         edits.append((discnum, tracknum, title_match[1], artists))
     return edits

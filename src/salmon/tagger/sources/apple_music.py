@@ -3,6 +3,7 @@ from collections import defaultdict
 
 from salmon.common import RE_FEAT, parse_copyright
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources import AppleMusicBase
 from salmon.tagger.sources.base import MetadataMixin
 
@@ -19,10 +20,10 @@ class Scraper(AppleMusicBase, MetadataMixin):
         try:
             title = soup["album"].get("name", "").strip()
             if not title:
-                raise ScrapeError("No album name found in Apple Music API response")
+                raise ScrapeError(_zh("No album name found in Apple Music API response"))
             return RE_FEAT.sub("", title)
         except (TypeError, KeyError) as e:
-            raise ScrapeError("Failed to parse release title from Apple Music API") from e
+            raise ScrapeError(_zh("Failed to parse release title from Apple Music API")) from e
 
     def parse_cover_url(self, soup):
         """Parse cover URL from amp-api album artwork.
@@ -37,7 +38,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 return None
             return url_template.replace("{w}x{h}", "5000x5000")
         except (TypeError, KeyError) as e:
-            raise ScrapeError("Could not parse cover URL from Apple Music API") from e
+            raise ScrapeError(_zh("Could not parse cover URL from Apple Music API")) from e
 
     def parse_genres(self, soup):
         """Parse genres from amp-api album genreNames list."""
@@ -54,7 +55,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                     genres.add(genre)
             return genres
         except (TypeError, KeyError) as e:
-            raise ScrapeError("Could not parse genres from Apple Music API") from e
+            raise ScrapeError(_zh("Could not parse genres from Apple Music API")) from e
 
     def parse_release_year(self, soup):
         """Parse release year from amp-api album releaseDate."""
@@ -64,9 +65,9 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 year_match = re.search(r"(\d{4})", release_date)
                 if year_match:
                     return int(year_match.group(1))
-            raise ScrapeError("No valid release date found in Apple Music API response")
+            raise ScrapeError(_zh("No valid release date found in Apple Music API response"))
         except (TypeError, ValueError) as e:
-            raise ScrapeError("Could not parse release year from Apple Music API") from e
+            raise ScrapeError(_zh("Could not parse release year from Apple Music API")) from e
 
     def parse_release_type(self, soup):
         """Parse release type from amp-api album attributes.
@@ -95,7 +96,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 return "EP"
             return "Album"
         except (TypeError, KeyError) as e:
-            raise ScrapeError("Could not parse release type from Apple Music API") from e
+            raise ScrapeError(_zh("Could not parse release type from Apple Music API")) from e
 
     def parse_release_date(self, soup):
         """Parse full release date (YYYY-MM-DD) from amp-api album attributes."""
@@ -121,7 +122,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 return parse_copyright(copyright_text)
             return attrs.get("artistName", "Unknown")
         except (TypeError, KeyError) as e:
-            raise ScrapeError("Could not parse record label from Apple Music API") from e
+            raise ScrapeError(_zh("Could not parse record label from Apple Music API")) from e
 
     def parse_upc(self, soup):
         """Parse UPC from amp-api album attributes."""
@@ -146,7 +147,7 @@ class Scraper(AppleMusicBase, MetadataMixin):
         try:
             track_list = soup.get("tracks", [])
             if not track_list:
-                raise ScrapeError("No tracks found in Apple Music API response")
+                raise ScrapeError(_zh("No tracks found in Apple Music API response"))
 
             for item in track_list:
                 # Skip music-video or other non-song entries
@@ -185,12 +186,12 @@ class Scraper(AppleMusicBase, MetadataMixin):
                 )
 
             if not tracks:
-                raise ScrapeError("No valid song tracks found in Apple Music API response")
+                raise ScrapeError(_zh("No valid song tracks found in Apple Music API response"))
 
             return dict(tracks)
 
         except (TypeError, KeyError, ValueError) as e:
-            raise ScrapeError("Could not parse tracks from Apple Music API") from e
+            raise ScrapeError(_zh("Could not parse tracks from Apple Music API")) from e
 
 
 def _parse_guest_artists(artist_string: str) -> list[str]:

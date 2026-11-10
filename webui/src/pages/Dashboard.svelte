@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../lib/i18n'
   import { apiGet, apiPost } from '../lib/api'
   import { FINISHED, QUEUED, jobStore, type Job } from '../lib/jobs.svelte'
 
@@ -101,8 +102,8 @@
   function problems(check: TrackerCheck): string[] {
     if (check.tls_error) return [check.tls_error]
     return [
-      check.cookie_error ? `Session cookie: ${check.cookie_error}` : '',
-      check.key_error ? `API key: ${check.key_error}` : '',
+      check.cookie_error ? `Session Cookie： ${check.cookie_error}` : '',
+      check.key_error ? `API 密钥： ${check.key_error}` : '',
     ].filter(Boolean)
   }
 
@@ -119,37 +120,37 @@
 {#snippet usage(space: Space)}
   {@const used = usedPercent(space)}
   {#if used === null}
-    <span class="chip">usage unavailable</span>
+    <span class="chip">无法获取容量</span>
   {:else}
-    <div class="disk" title="{formatBytes(space.free_bytes ?? 0)} free of {formatBytes(space.total_bytes ?? 0)}">
+    <div class="disk" title="{formatBytes(space.free_bytes ?? 0)} 可用，总容量 {formatBytes(space.total_bytes ?? 0)}">
       <div class="disk-bar">
         <div class="disk-fill {used >= 90 ? 'err' : used >= 75 ? 'warn' : ''}" style="width: {used}%"></div>
       </div>
-      <span class="muted">{formatBytes(space.free_bytes ?? 0)} free</span>
+      <span class="muted">{formatBytes(space.free_bytes ?? 0)} 可用</span>
     </div>
   {/if}
 {/snippet}
 
-<h1>Dashboard</h1>
-<p class="lead">What this salmon is set up with, and what it is doing.</p>
+<h1>概览</h1>
+<p class="lead">查看当前配置、站点连接及任务状态。</p>
 
 {#if error}
-  <div class="card"><p class="muted">Could not load the overview: {error}</p></div>
+  <div class="card"><p class="muted">无法加载概述： {error}</p></div>
 {:else if !overview}
-  <p class="muted">Loading…</p>
+  <p class="muted">加载中…</p>
 {:else}
   {#if overview.config_warnings.length}
     <div class="card">
-      <h2>Config warnings</h2>
+      <h2>配置警告</h2>
       {#each overview.config_warnings as line (line)}
         <p class="small warning">
-          {#each parts(line) as part, i (i)}{#if part.href}<a href={part.href} target="_blank" rel="noopener noreferrer"
+          {#each parts(t(line)) as part, i (i)}{#if part.href}<a href={part.href} target="_blank" rel="noopener noreferrer"
                 >{part.text}</a
               >{:else}{part.text}{/if}{/each}
         </p>
       {/each}
       {#if overview.config_path}
-        <p class="muted small">Config file: <span class="mono">{overview.config_path}</span></p>
+        <p class="muted small">配置文件： <span class="mono">{overview.config_path}</span></p>
       {/if}
     </div>
   {/if}
@@ -157,49 +158,48 @@
   <div class="tiles">
     <div class="tile {running ? 'run' : ''}">
       <span class="figure">{running}<span class="of">/{overview.max_jobs}</span></span>
-      <span class="muted">jobs running</span>
+      <span class="muted">个任务正在运行</span>
     </div>
     <a class="tile {waiting ? 'warn' : ''}" href="#/jobs">
       <span class="figure">{waiting}</span>
-      <span class="muted">waiting for an answer</span>
+      <span class="muted">等待回答</span>
     </a>
     <div class="tile">
       <span class="figure">{queued}</span>
-      <span class="muted">waiting their turn</span>
+      <span class="muted">排队等待</span>
     </div>
     <div class="tile">
       <span class="figure">{finished}</span>
-      <span class="muted">finished</span>
+      <span class="muted">已完成</span>
     </div>
   </div>
 
   <div class="card">
     <h2>smoked-salmon {overview.version ?? ''}</h2>
     <p class="row wrap">
-      Trackers:
+      站点：
       {#each overview.trackers as tracker (tracker)}
         <span class="chip ok">{tracker}</span>
       {:else}
-        <span class="chip err">none configured</span>
+        <span class="chip err">未配置</span>
       {/each}
     </p>
   </div>
 
   <div class="card">
     <div class="row">
-      <h2 class="grow">Tracker connections</h2>
+      <h2 class="grow">站点连接</h2>
       <button class="btn small" onclick={checkConnections} disabled={!overview.trackers.length || starting || !!checking}>
-        {checking ? 'Checking…' : 'Check connections'}
+        {checking ? "检查中…" : "检查连接"}
       </button>
     </div>
     <p class="muted small">
-      Sends each tracker above the requests <span class="mono">salmon checkconf -t</span> sends: your session cookie,
-      then your API key if you set one. Only when you press the button.
+      点击后，对上述站点执行与 <span class="mono">salmon checkconf -t</span> 相同的检查：先验证 Session，再验证已设置的 API 密钥。仅在点击按钮后发送请求。
     </p>
     {#if checkError}<p class="err-text small">{checkError}</p>{/if}
     {#if lastRun && lastRun.status !== 'done'}
       <p class="err-text small">
-        The last check {lastRun.status === 'cancelled' ? 'was cancelled' : `did not finish: ${lastRun.error ?? lastRun.status}`}
+        上次检查 {lastRun.status === 'cancelled' ? "已取消" : `未完成： ${lastRun.error ?? lastRun.status}`}
       </p>
     {/if}
     {#if checks.length}
@@ -209,35 +209,35 @@
             <tr>
               <td class="mono">{check.tracker}</td>
               <td>
-                {#if check.cookie === 'ok'}<span class="chip ok">session ok</span>
-                {:else if check.cookie === 'failed'}<span class="chip err">session failed</span>
-                {:else}<span class="chip">session not checked</span>{/if}
+                {#if check.cookie === 'ok'}<span class="chip ok">Session 正常</span>
+                {:else if check.cookie === 'failed'}<span class="chip err">Session 验证失败</span>
+                {:else}<span class="chip">尚未验证 Session</span>{/if}
               </td>
               <td>
-                {#if check.key === 'ok'}<span class="chip ok">API key ok</span>
-                {:else if check.key === 'failed'}<span class="chip err">API key failed</span>
-                {:else if check.key === 'not_set'}<span class="chip">no API key</span>
-                {:else}<span class="chip">API key not checked</span>{/if}
+                {#if check.key === 'ok'}<span class="chip ok">API 密钥正常</span>
+                {:else if check.key === 'failed'}<span class="chip err">API 密钥验证失败</span>
+                {:else if check.key === 'not_set'}<span class="chip">未设置 API 密钥</span>
+                {:else}<span class="chip">尚未验证 API 密钥</span>{/if}
               </td>
               <td class="muted small">
-                {#if check.tls_error}<span class="chip err">TLS certificate</span>{/if}
+                {#if check.tls_error}<span class="chip err">TLS 证书</span>{/if}
                 {when(check.checked_at)}
               </td>
             </tr>
             {#each problems(check) as line (line)}
-              <tr><td></td><td colspan="3" class="muted small problem">{line}</td></tr>
+              <tr><td></td><td colspan="3" class="muted small problem">{t(line)}</td></tr>
             {/each}
           {/each}
         </tbody>
       </table>
     {:else if !checking && !lastRun}
-      <p class="muted small">Not checked yet.</p>
+      <p class="muted small">尚未检查。</p>
     {/if}
   </div>
 
   <div class="card">
-    <h2>Folders</h2>
-    <p class="muted small">The folders the browser lists and jobs may work in. Library albums are never changed.</p>
+    <h2>文件夹</h2>
+    <p class="muted small">网页可浏览、任务可操作的文件夹。受保护音乐库中的原始专辑不会被修改。</p>
     <table>
       <tbody>
         {#each overview.roots as root (root.path)}
@@ -249,7 +249,7 @@
         {/each}
         {#if overview.tmp}
           <tr>
-            <td>tmp_dir</td>
+            <td>临时目录</td>
             <td class="mono">{overview.tmp.name}</td>
             <td>{@render usage(overview.tmp)}</td>
           </tr>
@@ -259,23 +259,23 @@
   </div>
 
   <div class="card">
-    <h2>Tools</h2>
+    <h2>工具</h2>
     <p class="muted small">
-      {missing ? `${missing} required tool${missing === 1 ? '' : 's'} not found on PATH.` : 'All required tools are on PATH.'}
-      The same check as <span class="mono">salmon health</span>.
+      {missing ? `未找到 ${missing} 个必需工具，请检查安装及 PATH 设置。` : "全部必需工具均可调用。"}
+      检查方式同 <span class="mono">salmon health</span>.
     </p>
     <table>
       <tbody>
         {#each Object.entries(overview.tools.required) as [name, found] (name)}
           <tr>
             <td class="mono">{name}</td>
-            <td><span class="chip {found ? 'ok' : 'err'}">{found ? 'found' : 'missing'}</span></td>
+            <td><span class="chip {found ? 'ok' : 'err'}">{found ? "已找到" : "缺失"}</span></td>
           </tr>
         {/each}
         {#each Object.entries(overview.tools.optional) as [name, found] (name)}
           <tr>
-            <td class="mono">{name} <span class="muted">(optional)</span></td>
-            <td><span class="chip {found ? 'ok' : ''}">{found ? 'found' : 'missing'}</span></td>
+            <td class="mono">{name} <span class="muted">(可选)</span></td>
+            <td><span class="chip {found ? 'ok' : ''}">{found ? "已找到" : "缺失"}</span></td>
           </tr>
         {/each}
       </tbody>

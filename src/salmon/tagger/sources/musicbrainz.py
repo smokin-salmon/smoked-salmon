@@ -7,6 +7,7 @@ from musicbrainzngs import musicbrainz as mb_module
 
 from salmon.common import RE_FEAT_JOIN
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources import MusicBrainzBase
 from salmon.tagger.sources.base import MetadataMixin
 
@@ -39,7 +40,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
                 return None
             except (mb_module.WebServiceError, ValueError) as e:
                 # No cover rather than no release. ValueError: a 200 whose body is not the JSON image list.
-                click.secho(f"Cover Art Archive request failed ({type(e).__name__}): no cover.", fg="yellow")
+                click.secho(_zh(f"Cover Art Archive request failed ({type(e).__name__}): no cover."), fg="yellow")
                 return None
 
             for image in r["images"]:
@@ -114,7 +115,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
                         title=track["recording"]["title"],
                     )
                 except (ValueError, IndexError) as e:
-                    raise ScrapeError("Could not parse tracks.") from e
+                    raise ScrapeError(_zh("Could not parse tracks.")) from e
         return dict(tracks)
 
 

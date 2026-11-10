@@ -11,6 +11,7 @@ from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.checks.logs import check_log_cambia
 from salmon.errors import CRCMismatchError, EditedLogError, LogCheckSkipped
+from salmon.localization import text as _zh
 from salmon.uploader.spectrals import prompt_lossy_master
 
 
@@ -24,11 +25,11 @@ async def _check_logs(path: str) -> None:
         click.Abort: If a log was edited, the audio could not be verified, or the user declines to
             continue after a CRC mismatch.
     """
-    click.secho("\nChecking logs", fg="green")
+    click.secho(_zh("\nChecking logs"), fg="green")
 
     def _abort_on_scan_error(error: OSError) -> None:
         # os.walk would otherwise skip the folder, and its log, silently.
-        click.secho(f"Could not scan {error.filename} for logs: {error}", fg="red")
+        click.secho(_zh(f"Could not scan {error.filename} for logs: {error}"), fg="red")
         raise click.Abort() from error
 
     for root, _, files in os.walk(path, onerror=_abort_on_scan_error):
@@ -36,27 +37,29 @@ async def _check_logs(path: str) -> None:
             if not f.lower().endswith(".log"):
                 continue
             filepath = os.path.join(root, f)
-            click.secho(f"\nScoring {filepath}...", fg="cyan", bold=True)
+            click.secho(_zh(f"\nScoring {filepath}..."), fg="cyan", bold=True)
             try:
                 await check_log_cambia(filepath, path)
             except EditedLogError as e:
-                click.secho("Error: Edited logs detected!", fg="red", bold=True)
+                click.secho(_zh("Error: Edited logs detected!"), fg="red", bold=True)
                 raise click.Abort() from e
             except CRCMismatchError as e:
-                click.secho("Error: CRC mismatch between log and audio files!", fg="red", bold=True)
+                click.secho(_zh("Error: CRC mismatch between log and audio files!"), fg="red", bold=True)
                 if not await interaction.confirm(
-                    click.style(
-                        "Log file CRC does not match audio files. Do you want to continue upload anyway?",
-                        fg="magenta",
+                    _zh(
+                        click.style(
+                            _zh("Log file CRC does not match audio files. Do you want to continue upload anyway?"),
+                            fg="magenta",
+                        )
                     ),
                     default=False,
                 ):
                     raise click.Abort() from e
             except LogCheckSkipped as e:
-                click.secho(f"Log not checked: {e}", fg="yellow")
+                click.secho(_zh(f"Log not checked: {e}"), fg="yellow")
             except Exception as e:
                 # Any other failure is one while verifying the audio, which must not pass as verified.
-                click.secho(f"Could not verify the audio against {filepath}: {e}", fg="red")
+                click.secho(_zh(f"Could not verify the audio against {filepath}: {e}"), fg="red")
                 raise click.Abort() from e
 
 
@@ -71,9 +74,9 @@ def _do_not_upload_refusal(tracker: str, release: dict[str, Any], said: str | No
     """
     reason = do_not_upload_reason(tracker, Candidate.from_metadata(release))
     if reason is not None and reason != said:
-        click.secho(f"\nNot uploading to {tracker}: {reason}", fg="red", bold=True)
+        click.secho(_zh(f"\nNot uploading to {tracker}: {reason}"), fg="red", bold=True)
     elif reason is None and said is not None:
-        click.secho(f"\nAs reviewed, the release is not on {tracker}'s Do-Not-Upload list.", fg="yellow")
+        click.secho(_zh(f"\nAs reviewed, the release is not on {tracker}'s Do-Not-Upload list."), fg="yellow")
     return reason
 
 
@@ -88,7 +91,7 @@ def _sixteen_bit_refusal(tracker: str, audio_info: dict[str, Any]) -> bool:
     if notice is None:
         return False
     if rule == "refused":
-        click.secho(f"\nNot uploading to {tracker}: {notice}", fg="red", bold=True)
+        click.secho(_zh(f"\nNot uploading to {tracker}: {notice}"), fg="red", bold=True)
         return True
     click.secho(f"\n{notice}", fg="yellow")
     return False
@@ -102,10 +105,10 @@ def _warn_about_provenance(provenance: dict[str, Any]) -> None:
     nothing when no marker contradicts the audio.
     """
     if not provenance["files"]:
-        click.secho("\nTag markers not checked: the tags could not be read.", fg="yellow")
+        click.secho(_zh("\nTag markers not checked: the tags could not be read."), fg="yellow")
         return
     if contradictions := provenance["contradictions"]:
-        click.secho("\nTag markers the audio contradicts:", fg="yellow", bold=True)
+        click.secho(_zh("\nTag markers the audio contradicts:"), fg="yellow", bold=True)
         for note in contradictions:
             click.secho(f"  - {note}", fg="yellow")
 
@@ -115,9 +118,9 @@ async def _lossy_master_without_spectrals(lossy: bool | None, format: str) -> bo
 
     Asked as check_spectrals asks it, unless --lossy or --not-lossy said; only a FLAC is asked about.
     """
-    click.secho("\nSpectrals given by URL (--spectral-url): none are made, shown or uploaded.", fg="cyan")
+    click.secho(_zh("\nSpectrals given by URL (--spectral-url): none are made, shown or uploaded."), fg="cyan")
     if lossy is not None or format != "FLAC":
         return bool(lossy)
     while (answer := await prompt_lossy_master()) is None:
-        click.secho("There are no spectrals to reopen: they were given by URL.", fg="yellow")
+        click.secho(_zh("There are no spectrals to reopen: they were given by URL."), fg="yellow")
     return answer

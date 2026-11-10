@@ -31,9 +31,9 @@
     const linkToken = takeTokenFromUrl()
     if (linkToken) {
       try {
-        if (!(await login(linkToken))) loginError = 'The login link holds an old or wrong token.'
+        if (!(await login(linkToken))) loginError = "登录链接中的令牌已失效或不正确。"
       } catch (e) {
-        loginError = `Login failed: ${e}`
+        loginError = `登录失败： ${e}`
       }
     }
     await refreshAuth()
@@ -65,7 +65,7 @@
 </script>
 
 {#if authed === null}
-  <div class="booting">Loading…</div>
+  <div class="booting">加载中…</div>
 {:else if !authed}
   <Login onLoggedIn={refreshAuth} initialError={loginError} />
 {:else}
@@ -74,22 +74,22 @@
     <div class="brand">
       <img class="logo" src={logo} alt="" width="24" height="24" /> salmon<span class="accent">web</span>
     </div>
-    <a href="#/dashboard" class:active={router.page === 'dashboard'}>Dashboard</a>
-    <a href="#/upload" class:active={router.page === 'upload'}>Upload</a>
-    <a href="#/cross-upload" class:active={router.page === 'cross-upload'}>Cross-upload</a>
-    <a href="#/spectrals" class:active={router.page === 'spectrals'}>Spectrals</a>
-    <a href="#/checks" class:active={router.page === 'checks'}>Checks</a>
-    <a href="#/tag" class:active={router.page === 'tag'}>Tag</a>
-    <a href="#/convert" class:active={router.page === 'convert'}>Convert</a>
-    <a href="#/search" class:active={router.page === 'search'}>Search</a>
-    <a href="#/tools" class:active={router.page === 'tools'}>Tools</a>
+    <a href="#/dashboard" class:active={router.page === 'dashboard'}>概览</a>
+    <a href="#/upload" class:active={router.page === 'upload'}>上传</a>
+    <a href="#/cross-upload" class:active={router.page === 'cross-upload'}>转种</a>
+    <a href="#/spectrals" class:active={router.page === 'spectrals'}>频谱</a>
+    <a href="#/checks" class:active={router.page === 'checks'}>检查</a>
+    <a href="#/tag" class:active={router.page === 'tag'}>标签整理</a>
+    <a href="#/convert" class:active={router.page === 'convert'}>转码</a>
+    <a href="#/search" class:active={router.page === 'search'}>搜索</a>
+    <a href="#/tools" class:active={router.page === 'tools'}>工具</a>
     <a href="#/jobs" class:active={router.page === 'jobs'}>
-      Jobs
+      任务
       {#if active > 0}<span class="chip {asking ? 'warn' : 'run'}">{active}</span>{/if}
     </a>
     <div class="spacer"></div>
-    <span class="chip {jobStore.connected ? 'ok' : 'err'}">{jobStore.connected ? 'connected' : 'disconnected'}</span>
-    <button class="btn secondary small" onclick={signOut}>Log out</button>
+    <span class="chip {jobStore.connected ? 'ok' : 'err'}">{jobStore.connected ? "已连接" : "已断开连接"}</span>
+    <button class="btn secondary small" onclick={signOut}>退出登录</button>
   </nav>
 
   <main>

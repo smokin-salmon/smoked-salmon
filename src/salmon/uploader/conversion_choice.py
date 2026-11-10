@@ -6,6 +6,7 @@ import asyncclick as click
 
 from salmon import cfg, interaction
 from salmon.config.validations import CONVERSION_KINDS, canonical_conversions
+from salmon.localization import text as _zh
 from salmon.uploader.dupe_checker import (
     held_formats,
 )
@@ -27,7 +28,7 @@ def validate_conversions(ctx, param, value: str | None) -> tuple[str, ...] | Non
     try:
         return canonical_conversions(entry.strip() for entry in value.split(","))
     except ValueError as e:
-        raise click.BadParameter(f"{e}, or use none or all.") from None
+        raise click.BadParameter(_zh(f"{e}, or use none or all.")) from None
 
 
 def get_downconversion_options(rls_data, track_data, quiet: bool = False):
@@ -52,7 +53,9 @@ def get_downconversion_options(rls_data, track_data, quiet: bool = False):
     rates = sorted({track["sample rate"] for track in track_data.values()})
     if len(rates) > 1 and not quiet and rls_data["encoding"] == "24bit Lossless":
         listed = ", ".join(f"{rate / 1000:g}" for rate in rates)
-        click.secho(f"No lossless downconversion: the files have different sample rates ({listed} kHz).", fg="yellow")
+        click.secho(
+            _zh(f"No lossless downconversion: the files have different sample rates ({listed} kHz)."), fg="yellow"
+        )
 
     return [option for option, _reason in _conversion_verdicts(rls_data, track_data).values() if option is not None]
 
@@ -188,7 +191,9 @@ def _unavailable_reason(kind: str, rls_data, track_data) -> str:
 def _warn_held_conversions(held: set[str] | frozenset[str]) -> None:
     for name in sorted(held):
         click.secho(
-            f"\nDUPE RISK: this edition already has {name}; the site removes exact duplicates.", fg="red", bold=True
+            _zh(f"\nDUPE RISK: this edition already has {name}; the site removes exact duplicates."),
+            fg="red",
+            bold=True,
         )
 
 
@@ -220,11 +225,11 @@ async def choose_conversions(
     if not _applicable_conversions(options, conversions):
         kinds = cfg.upload.conversions if conversions is None else conversions
         if kinds:
-            click.secho("\nNo conversion made for this upload:", fg="yellow")
+            click.secho(_zh("\nNo conversion made for this upload:"), fg="yellow")
             for kind in kinds:
                 click.secho(f"  {kind}: {_unavailable_reason(kind, rls_data, track_data)}", fg="yellow")
         else:
-            click.secho("\nNo conversions selected for this upload.", fg="yellow")
+            click.secho(_zh("\nNo conversions selected for this upload."), fg="yellow")
         return []
     if conversions is not None:
         _warn_held_conversions(held)
@@ -233,7 +238,7 @@ async def choose_conversions(
         ask_first
         and not await interaction.assume_defaults()
         and not await interaction.confirm(
-            click.style("\nWould you like to check downconversion options?", fg="magenta"),
+            _zh(click.style(_zh("\nWould you like to check downconversion options?"), fg="magenta")),
             default=bool(wanted_conversions(options, held, conversions)),
         )
     ):
@@ -265,7 +270,7 @@ async def prompt_downconversion_choice(
     if await interaction.assume_defaults():
         return wanted
 
-    click.secho("\nDownconversion Options", fg="cyan", bold=True)
+    click.secho(_zh("\nDownconversion Options"), fg="cyan", bold=True)
 
     # Get current format info for display
     encoding = rls_data["encoding"]
@@ -277,17 +282,19 @@ async def prompt_downconversion_choice(
     else:
         current_format = encoding
 
-    click.secho(f"Current format: {current_format}", fg="yellow")
+    click.secho(_zh(f"Current format: {current_format}"), fg="yellow")
     kinds = cfg.upload.conversions if conversions is None else conversions
     if left_out := [option["name"] for option in options if conversion_kind(option) not in kinds]:
-        click.secho(f"Not selected by default (upload.conversions / --conversions): {', '.join(left_out)}", fg="yellow")
-    click.secho("Available downconversion formats:", fg="green")
+        click.secho(
+            _zh(f"Not selected by default (upload.conversions / --conversions): {', '.join(left_out)}"), fg="yellow"
+        )
+    click.secho(_zh("Available downconversion formats:"), fg="green")
 
     for i, option in enumerate(options, 1):
         click.secho(f"  {i}. {option['name']}", fg="white")
 
-    click.secho("  0. Skip downconversion", fg="white")
-    click.secho("  *. All formats", fg="white")
+    click.secho(_zh("  0. Skip downconversion"), fg="white")
+    click.secho(_zh("  *. All formats"), fg="white")
     if len(wanted) == len(options):
         default = "*"
     else:
@@ -298,8 +305,11 @@ async def prompt_downconversion_choice(
     while True:
         try:
             choices = await interaction.prompt(
-                click.style(
-                    '\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)', fg="magenta"
+                _zh(
+                    click.style(
+                        _zh('\nSelect formats to convert (space-separated list of IDs, "0" for none, "*" for all)'),
+                        fg="magenta",
+                    )
                 ),
                 default=default,
                 options=interaction.Options(
@@ -309,15 +319,15 @@ async def prompt_downconversion_choice(
                                 str(i),
                                 option["name"],
                                 card=(
-                                    interaction.Card(note="DUPE RISK: this edition already has it")
+                                    interaction.Card(note=_zh("DUPE RISK: this edition already has it"))
                                     if option["name"] in held
                                     else None
                                 ),
                             )
                             for i, option in enumerate(options, 1)
                         ),
-                        interaction.Option("*", "All formats", alone=True),
-                        interaction.Option("0", "None", alone=True),
+                        interaction.Option("*", _zh("All formats"), alone=True),
+                        interaction.Option("0", _zh("None"), alone=True),
                     ),
                     several=True,
                 ),
@@ -337,7 +347,8 @@ async def prompt_downconversion_choice(
             invalid_choices = [x for x in choice_nums if x < 1 or x > len(options)]
             if invalid_choices:
                 click.secho(
-                    f"Invalid choices: {invalid_choices}. Please enter numbers between 1-{len(options)}.", fg="red"
+                    _zh(f"Invalid choices: {invalid_choices}. Please enter numbers between 1-{len(options)}."),
+                    fg="red",
                 )
                 continue
 
@@ -347,14 +358,14 @@ async def prompt_downconversion_choice(
             # Confirm selection
             if selected_tasks:
                 display_names = [task["name"] for task in selected_tasks]
-                click.secho(f"\nSelected formats: {', '.join(display_names)}", fg="green")
-                if await interaction.confirm(click.style("Confirm selection?", fg="magenta"), default=True):
+                click.secho(_zh(f"\nSelected formats: {', '.join(display_names)}"), fg="green")
+                if await interaction.confirm(_zh(click.style(_zh("Confirm selection?"), fg="magenta")), default=True):
                     break
             else:
                 break
 
         except (ValueError, IndexError):
-            click.secho("Invalid input format, please enter numeric options", fg="red")
+            click.secho(_zh("Invalid input format, please enter numeric options"), fg="red")
             continue
 
     return selected_tasks

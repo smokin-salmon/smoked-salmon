@@ -11,6 +11,7 @@ import msgspec
 from salmon import cfg, interaction, prepared
 from salmon.common.files import album_files, process_files, rewrite_refusal
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 
 # What the integrity check decodes, with flac and mp3val.
 _INTEGRITY_EXTENSIONS = (".mp3", ".flac")
@@ -141,17 +142,17 @@ def format_integrity(result: IntegrityResult) -> str:
     if integrities:
         if result.concerns:
             return click.style(
-                f"Passed integrity check, with {len(result.concerns)} note(s):\n" + "\n".join(result.concerns),
+                _zh(f"Passed integrity check, with {len(result.concerns)} note(s):\n") + "\n".join(result.concerns),
                 fg="yellow",
             )
-        return click.style("Passed integrity check", fg="green")
+        return click.style(_zh("Passed integrity check"), fg="green")
     else:
         # A missing checksum and a file that will not decode both fail the check, but only the second
         # means the audio is suspect: say which in the headline.
         if result.md5_unset and not result.decode_failures:
-            output = click.style("Integrity check not passed: no MD5 signature stored", fg="red", bold=True)
+            output = click.style(_zh("Integrity check not passed: no MD5 signature stored"), fg="red", bold=True)
         else:
-            output = click.style("Failed integrity check", fg="red", bold=True)
+            output = click.style(_zh("Failed integrity check"), fg="red", bold=True)
         if result.md5_unset:
             output += "\n\n" + click.style(_describe_md5_unset(result.md5_unset, result.checked), fg="yellow")
         if integrities_out:
@@ -172,27 +173,29 @@ async def handle_integrity_check(path: str) -> None:
     refusal = rewrite_refusal(path)
     if os.path.isfile(path):
         if not any(path.lower().endswith(ext) for ext in [".flac", ".mp3"]):
-            click.secho(f"File '{path}' is not a FLAC or MP3 file.", fg="red", bold=True)
+            click.secho(_zh(f"File '{path}' is not a FLAC or MP3 file."), fg="red", bold=True)
             return
 
         result = await check_integrity(path)
-        click.echo(format_integrity(result))
+        click.echo(_zh(format_integrity(result)))
 
         if not result.passed and refusal is not None:
             _no_sanitize(path, refusal)
         elif (
             not result.passed
             and path.lower().endswith(".flac")
-            and await interaction.confirm(click.style(f"\n{sanitize_prompt(result)}", fg="magenta"))
+            and await interaction.confirm(_zh(click.style(f"\n{sanitize_prompt(result)}", fg="magenta")))
         ):
             await sanitize_and_verify(path)
     elif os.path.isdir(path):
         result = await check_integrity(path)
-        click.echo(format_integrity(result))
+        click.echo(_zh(format_integrity(result)))
 
         if not result.passed and refusal is not None:
             _no_sanitize(path, refusal)
-        elif not result.passed and await interaction.confirm(click.style(f"\n{sanitize_prompt(result)}", fg="magenta")):
+        elif not result.passed and await interaction.confirm(
+            _zh(click.style(f"\n{sanitize_prompt(result)}", fg="magenta"))
+        ):
             await sanitize_and_verify(path)
     else:
         raise click.Abort
@@ -200,7 +203,9 @@ async def handle_integrity_check(path: str) -> None:
 
 def _no_sanitize(path: str, refusal: str) -> None:
     click.secho(
-        f"\nNot offering to sanitize {path}: {refusal}, and sanitizing rewrites files. salmon up sanitizes a copy.",
+        _zh(
+            f"\nNot offering to sanitize {path}: {refusal}, and sanitizing rewrites files. salmon up sanitizes a copy."
+        ),
         fg="yellow",
     )
 
@@ -219,29 +224,33 @@ async def resolve_integrity_for_upload(path: str, *, scene: bool, assume_yes: bo
     Raises:
         click.Abort: If a scene release fails the check, or a file does not decode.
     """
-    click.secho("\nChecking integrity of audio files...", fg="cyan", bold=True)
+    click.secho(_zh("\nChecking integrity of audio files..."), fg="cyan", bold=True)
     result = await check_integrity(path)
-    click.echo(format_integrity(result))
+    click.echo(_zh(format_integrity(result)))
     if result.passed:
         return result
 
     if scene:
         click.secho(
-            "Some files failed the integrity check, and this is a scene release. "
-            "You need to sanitize and de-scene before uploading. Aborting.",
+            _zh(
+                "Some files failed the integrity check, and this is a scene release. "
+                "You need to sanitize and de-scene before uploading. Aborting."
+            ),
             fg="red",
             bold=True,
         )
         raise click.Abort()
 
-    if assume_yes or await interaction.confirm(click.style(f"\n{sanitize_prompt(result)}", fg="magenta"), default=True):
+    if assume_yes or await interaction.confirm(
+        _zh(click.style(f"\n{sanitize_prompt(result)}", fg="magenta")), default=True
+    ):
         result = await sanitize_and_verify(path)
 
     # Declining to sanitize is not consent to upload files that do not decode, and yes_all takes the
     # default answer, not "upload anything".
     if result.decode_failures:
         click.secho(
-            f"{len(result.decode_failures)} file(s) do not decode: {', '.join(result.decode_failures)}. Aborting.",
+            _zh(f"{len(result.decode_failures)} file(s) do not decode: {', '.join(result.decode_failures)}. Aborting."),
             fg="red",
             bold=True,
         )
@@ -260,17 +269,17 @@ async def sanitize_and_verify(path: str) -> IntegrityResult:
     Returns:
         The re-check's result.
     """
-    click.secho("\nSanitizing files...", fg="cyan", bold=True)
+    click.secho(_zh("\nSanitizing files..."), fg="cyan", bold=True)
     reported_ok = await sanitize_integrity(path)
-    click.secho("\nChecking integrity again...", fg="cyan", bold=True)
+    click.secho(_zh("\nChecking integrity again..."), fg="cyan", bold=True)
     result = await check_integrity(path)
-    click.echo(format_integrity(result))
+    click.echo(_zh(format_integrity(result)))
     if not result.passed:
-        click.secho("Sanitization did not clear the integrity check.", fg="red", bold=True)
+        click.secho(_zh("Sanitization did not clear the integrity check."), fg="red", bold=True)
     elif not reported_ok:
-        click.secho("A file reported a sanitization error, but the check now passes.", fg="yellow")
+        click.secho(_zh("A file reported a sanitization error, but the check now passes."), fg="yellow")
     else:
-        click.secho("Sanitization complete", fg="green")
+        click.secho(_zh("Sanitization complete"), fg="green")
     return result
 
 
@@ -300,7 +309,7 @@ async def check_integrity(path: str, _: int | None = None, *, files: list[str] |
         else:
             audio_files = [os.path.join(path, f) for f in files if f.lower().endswith(_INTEGRITY_EXTENSIONS)]
         if not audio_files:
-            click.secho("No audio files found in directory", fg="red", bold=True)
+            click.secho(_zh("No audio files found in directory"), fg="red", bold=True)
             raise click.Abort
         results = await process_files(audio_files, check_integrity, "Checking audio files")
         concerns: list[str] = []
@@ -343,7 +352,7 @@ async def _check_flac_integrity(path: str) -> IntegrityResult:
     except Exception as e:
         return IntegrityResult(
             False,
-            click.style(f"{name}: could not run flac ({e})", fg="red", bold=True),
+            click.style(_zh(f"{name}: could not run flac ({e})"), fg="red", bold=True),
             decode_failures=(name,),
             checked=1,
         )
@@ -389,7 +398,7 @@ async def _check_mp3_integrity(path: str) -> IntegrityResult:
     except Exception as e:
         return IntegrityResult(
             False,
-            click.style(f"{name}: could not run mp3val ({e})", fg="red", bold=True),
+            click.style(_zh(f"{name}: could not run mp3val ({e})"), fg="red", bold=True),
             decode_failures=(name,),
             checked=1,
         )
@@ -497,7 +506,7 @@ def _save_embedded_cover(folder: str, only: str | None = None) -> bool:
     try:
         extract_embedded_cover(folder, only)
     except OSError as e:
-        click.secho(f"Not sanitizing {folder}: its embedded cover could not be saved ({e}).", fg="red", bold=True)
+        click.secho(_zh(f"Not sanitizing {folder}: its embedded cover could not be saved ({e})."), fg="red", bold=True)
         return False
     return True
 
@@ -536,7 +545,7 @@ def _restore_backup(path: str, backup_path: str, moved: bool) -> None:
     try:
         os.replace(backup_path, path)
     except OSError as e:
-        raise UploadError(f"Could not put {path} back ({e}): the original is at {backup_path}.") from None
+        raise UploadError(_zh(f"Could not put {path} back ({e}): the original is at {backup_path}.")) from None
 
 
 async def _sanitize_flac(path: str) -> bool:
@@ -552,7 +561,7 @@ async def _sanitize_flac(path: str) -> bool:
         backup_path = _reserve_backup_path(path)
     except OSError as e:
         # This file's failure, not the folder's: raised, it would stop the others being sanitized.
-        click.secho(f"Failed to sanitize {path}: no backup name could be claimed ({e})", fg="red", bold=True)
+        click.secho(_zh(f"Failed to sanitize {path}: no backup name could be claimed ({e})"), fg="red", bold=True)
         return False
     moved = False
     try:
@@ -566,23 +575,23 @@ async def _sanitize_flac(path: str) -> bool:
         if result.returncode != 0:
             stderr_text = result.stderr.decode() if result.stderr else ""
             stdout_text = result.stdout.decode() if result.stdout else ""
-            raise Exception(f"FLAC encoding failed:\n{stdout_text}\n{stderr_text}")
+            raise Exception(_zh(f"FLAC encoding failed:\n{stdout_text}\n{stderr_text}"))
         result = await anyio.run_process(
             ["metaflac", "--dont-use-padding", "--remove", "--block-type=PADDING,PICTURE", path],
             check=False,
         )
         if result.returncode != 0:
-            raise Exception("Failed to remove FLAC metadata blocks")
+            raise Exception(_zh("Failed to remove FLAC metadata blocks"))
         result = await anyio.run_process(
             ["metaflac", "--add-padding=8192", path],
             check=False,
         )
         if result.returncode != 0:
-            raise Exception("Failed to add FLAC padding")
+            raise Exception(_zh("Failed to add FLAC padding"))
         os.remove(backup_path)
         return True
     except Exception as e:
-        click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
+        click.secho(_zh(f"Failed to sanitize {path}, {e}"), fg="red", bold=True)
         # Put the original back whichever step failed. flac deletes its output when the re-encode fails, so
         # without this the file is gone from the release and the check after sanitizing passes without it.
         _restore_backup(path, backup_path, moved)
@@ -592,7 +601,7 @@ async def _sanitize_flac(path: str) -> bool:
         try:
             _restore_backup(path, backup_path, moved)
         except UploadError as e:
-            click.secho(str(e), fg="red", bold=True)
+            click.secho(_zh(str(e)), fg="red", bold=True)
         raise
 
 
@@ -612,7 +621,7 @@ async def _sanitize_mp3(path: str) -> bool:
         handle, work = tempfile.mkstemp(dir=os.path.dirname(path) or ".", prefix=".salmon-sanitize-", suffix=".mp3")
     except OSError as e:
         # This file's failure, not the folder's: raised, it would stop the others being sanitized.
-        click.secho(f"Failed to sanitize {path}: no working copy could be made ({e})", fg="red", bold=True)
+        click.secho(_zh(f"Failed to sanitize {path}: no working copy could be made ({e})"), fg="red", bold=True)
         return False
     os.close(handle)
     try:
@@ -621,11 +630,11 @@ async def _sanitize_mp3(path: str) -> bool:
         result = await anyio.run_process(["mp3val", "-f", "-si", "-nb", "-t", work], check=False)
         if result.returncode != 0:
             stderr_text = result.stderr.decode() if result.stderr else ""
-            raise Exception(f"mp3val failed with return code {result.returncode}: {stderr_text}")
+            raise Exception(_zh(f"mp3val failed with return code {result.returncode}: {stderr_text}"))
         os.replace(work, path)
         return True
     except Exception as e:
-        click.secho(f"Failed to sanitize {path}, {e}", fg="red", bold=True)
+        click.secho(_zh(f"Failed to sanitize {path}, {e}"), fg="red", bold=True)
         return False
     finally:
         # The copy, unless it became path, and the backup mp3val makes of it while it rewrites it.

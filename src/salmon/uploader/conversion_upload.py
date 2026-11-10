@@ -11,6 +11,7 @@ from salmon.converter.conversions import conversion_of, recorded_files
 from salmon.converter.downconverting import convert_folder, generate_conversion_description
 from salmon.converter.transcoding import generate_transcode_description, transcode_folder
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.folderstructure import check_folder_structure
 from salmon.trackers.base import TagRules
@@ -117,7 +118,7 @@ async def execute_downconversion_tasks(
     )
 
     for task in selected_tasks:
-        click.secho(f"\nProcessing: {task['name']}", fg="cyan", bold=True)
+        click.secho(_zh(f"\nProcessing: {task['name']}"), fg="cyan", bold=True)
 
         if task["action"] == "downconvert":
             # Execute downconversion
@@ -138,11 +139,11 @@ async def execute_downconversion_tasks(
             try:
                 converted_info = _by_source_name(new_path, gather_audio_info(new_path))
             except UploadError as e:
-                click.secho(f"  Could not read {new_path} ({e}): not uploading it.", fg="red", bold=True)
+                click.secho(_zh(f"  Could not read {new_path} ({e}): not uploading it."), fg="red", bold=True)
                 continue
             if converted_info.keys() != track_data.keys():
                 click.secho(
-                    f"  {new_path} does not hold the same audio files as the source: not uploading it.",
+                    _zh(f"  {new_path} does not hold the same audio files as the source: not uploading it."),
                     fg="red",
                     bold=True,
                 )
@@ -153,8 +154,10 @@ async def execute_downconversion_tasks(
             if found != [expected]:
                 found_formats = ", ".join(f"{bits} bit {rate / 1000:g} kHz" for bits, rate in found)
                 click.secho(
-                    f"  {new_path} holds {found_formats} files, not {expected[0]} bit {expected[1] / 1000:g} kHz: "
-                    "not uploading it.",
+                    _zh(
+                        f"  {new_path} holds {found_formats} files, not {expected[0]} bit {expected[1] / 1000:g} kHz: "
+                        "not uploading it."
+                    ),
                     fg="red",
                     bold=True,
                 )
@@ -167,7 +170,7 @@ async def execute_downconversion_tasks(
 
             # Generate description for conversion
             description = generate_conversion_description(base_url, sample_rate, task["target_bitdepth"])
-            click.secho(f"  Generated description: {description[:100]}...", fg="blue")
+            click.secho(_zh(f"  Generated description: {description[:100]}..."), fg="blue")
             await check_folder_structure(new_path, conversion_metadata["scene"], max_path_length=max_path_length)
 
             # Upload the converted version
@@ -192,11 +195,11 @@ async def execute_downconversion_tasks(
             )
             uploaded.append(new_url)
 
-            click.secho(f"  ✓ {task['name']} conversion completed", fg="green")
+            click.secho(_zh(f"  ✓ {task['name']} conversion completed"), fg="green")
 
         elif task["action"] == "transcode":
             # Call transcode function
-            click.secho(f"  Target encoding: {task['encoding']}", fg="white")
+            click.secho(_zh(f"  Target encoding: {task['encoding']}"), fg="white")
 
             # Execute transcoding
             try:
@@ -213,7 +216,7 @@ async def execute_downconversion_tasks(
 
             # Generate description for transcode
             description = generate_transcode_description(base_url, task["encoding"])
-            click.secho(f"  Generated description: {description[:100]}...", fg="blue")
+            click.secho(_zh(f"  Generated description: {description[:100]}..."), fg="blue")
             await check_folder_structure(transcoded_path, transcode_metadata["scene"], max_path_length=max_path_length)
 
             # Upload the transcoded version
@@ -238,4 +241,4 @@ async def execute_downconversion_tasks(
             )
             uploaded.append(new_url)
 
-            click.secho(f"  ✓ {task['name']} transcode completed", fg="green")
+            click.secho(_zh(f"  ✓ {task['name']} transcode completed"), fg="green")

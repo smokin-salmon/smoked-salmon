@@ -36,6 +36,7 @@ from salmon.errors import (
     SkipTracker,
     UnknownOutcomeError,
 )
+from salmon.localization import text as _zh
 from salmon.tagger import (
     validate_encoding,
     validate_source,
@@ -137,7 +138,7 @@ def validate_group_id(ctx, param, value: str | None) -> int | None:
         return None
     group_id = numeric_id(value.strip())
     if not group_id:
-        raise click.BadParameter(f"{value!r} is not a group ID: give a number above 0, in the digits 0-9.")
+        raise click.BadParameter(_zh(f"{value!r} is not a group ID: give a number above 0, in the digits 0-9."))
     return group_id
 
 
@@ -149,52 +150,52 @@ def validate_group_id(ctx, param, value: str | None) -> int | None:
     metavar="INTEGER",
     default=None,
     callback=validate_group_id,
-    help="Group ID to upload torrent to",
+    help=_zh("Group ID to upload torrent to"),
 )
 @click.option(
     "--skip-flac-upload",
     is_flag=True,
-    help="The FLAC is already in --group-id: do not upload it, only upload transcodes of it into that group.",
+    help=_zh("The FLAC is already in --group-id: do not upload it, only upload transcodes of it into that group."),
 )
 @click.option(
     "--source",
     "-s",
     type=click.STRING,
     callback=validate_source,
-    help=f"Source of files ({'/'.join(SOURCES.values())})",
+    help=_zh(f"Source of files ({'/'.join(SOURCES.values())})"),
 )
 @click.option(
     "--lossy/--not-lossy",
     "-l/-L",
     default=None,
-    help="Whether or not the files are lossy mastered",
+    help=_zh("Whether or not the files are lossy mastered"),
 )
 @click.option(
     "--spectrals",
     "-sp",
     type=click.INT,
     multiple=True,
-    help="Track numbers of spectrals to include in torrent description",
+    help=_zh("Track numbers of spectrals to include in torrent description"),
 )
 @click.option(
     "--overwrite",
     "-ow",
     is_flag=True,
-    help="Whether or not to use the original metadata.",
+    help=_zh("Whether or not to use the original metadata."),
 )
 @click.option(
     "--encoding",
     "-e",
     type=click.STRING,
     callback=validate_encoding,
-    help="You must specify one of the following encodings if files aren't lossless: "
+    help=_zh("You must specify one of the following encodings if files aren't lossless: ")
     + ", ".join(list(TAG_ENCODINGS.keys())),
 )
 @click.option(
     "--compress",
     "-c",
     is_flag=True,
-    help="Recompress flacs to the configured compression level before uploading.",
+    help=_zh("Recompress flacs to the configured compression level before uploading."),
 )
 @click.option(
     "--tracker",
@@ -202,23 +203,28 @@ def validate_group_id(ctx, param, value: str | None) -> int | None:
     "trackers",
     multiple=True,
     callback=salmon.trackers.validate_trackers,
-    help=f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)}). Name one, or several comma-separated or "
-    "with -t repeated, to upload to exactly those, in that order, without being asked for another tracker. Without -t, "
-    "salmon uses tracker.default_trackers in order, then offers the other trackers only if "
-    "upload.multi_tracker_upload is on; with no list, it asks which tracker.",
+    help=_zh(
+        f"Uploading Choices: ({'/'.join(salmon.trackers.tracker_list)}). Name one, or several comma-separated or "
+        "with -t repeated, to upload to exactly those, in that order, "
+        "without being asked for another tracker. Without -t, "
+        "salmon uses tracker.default_trackers in order, then offers the other trackers only if "
+        "upload.multi_tracker_upload is on; with no list, it asks which tracker."
+    ),
 )
-@click.option("--request", "-r", default=None, help="Pass a request URL or ID")
+@click.option("--request", "-r", default=None, help=_zh("Pass a request URL or ID"))
 @click.option(
     "--spectrals-after",
     "-a",
     is_flag=True,
-    help="Assess / upload / report spectrals after torrent upload",
+    help=_zh("Assess / upload / report spectrals after torrent upload"),
 )
 @click.option(
     "--cover-url",
     default=None,
-    help="The URL of the cover, uploaded already to one of salmon's image hosts: used for every new group of the "
-    "run instead of uploading the cover. Every tracker of the run must show that host's images.",
+    help=_zh(
+        "The URL of the cover, uploaded already to one of salmon's image hosts: used for every new group of the "
+        "run instead of uploading the cover. Every tracker of the run must show that host's images."
+    ),
 )
 @click.option(
     "--spectral-url",
@@ -226,79 +232,87 @@ def validate_group_id(ctx, param, value: str | None) -> int | None:
     multiple=True,
     callback=validate_spectral_urls,
     metavar="TRACK=URL[,URL]",
-    help="A track's spectrals, uploaded already to one of salmon's image hosts: the Full image's URL, then the "
-    "Zoom one's. TRACK is numbered as --spectrals numbers tracks. Repeat it for each track, in the order the "
-    "description shows them. salmon then makes, shows and uploads no spectrals; it still asks whether the release is "
-    "lossy mastered, unless --lossy or --not-lossy says.",
+    help=_zh(
+        "A track's spectrals, uploaded already to one of salmon's image hosts: the Full image's URL, then the "
+        "Zoom one's. TRACK is numbered as --spectrals numbers tracks. Repeat it for each track, in the order the "
+        "description shows them. salmon then makes, shows and "
+        "uploads no spectrals; it still asks whether the release is "
+        "lossy mastered, unless --lossy or --not-lossy says."
+    ),
 )
 @click.option(
     "--auto-rename",
     "-n",
     is_flag=True,
-    help="Rename files and folders automatically",
+    help=_zh("Rename files and folders automatically"),
 )
 @click.option(
     "--skip-up",
     is_flag=True,
-    help="Skip check for 24 bit upconversion",
+    help=_zh("Skip check for 24 bit upconversion"),
 )
-@click.option("--scene", is_flag=True, help="Is this a scene release (default: False)")
+@click.option("--scene", is_flag=True, help=_zh("Is this a scene release (default: False)"))
 @click.option(
     "--source-url",
     "-su",
     default=None,
-    help="For WEB uploads provide the source of the album to be added in release description",
+    help=_zh("For WEB uploads provide the source of the album to be added in release description"),
 )
 @click.option(
     "--skip-search",
     is_flag=True,
-    help="With --source-url naming a store salmon scrapes, take the metadata from that URL without searching "
-    "the stores.",
+    help=_zh(
+        "With --source-url naming a store salmon scrapes, take the metadata from that URL without searching the stores."
+    ),
 )
 @click.option(
     "--skip-initial-review",
     is_flag=True,
-    help="Skip the initial manual metadata review before AI review.",
+    help=_zh("Skip the initial manual metadata review before AI review."),
 )
 @click.option(
     "--apply-ai-suggestions",
     is_flag=True,
-    help="Automatically apply AI review suggestions when AI review is enabled.",
+    help=_zh("Automatically apply AI review suggestions when AI review is enabled."),
 )
-@click.option("-yyy", is_flag=True, help="Automatically pick the default answer for prompt")
+@click.option("-yyy", is_flag=True, help=_zh("Automatically pick the default answer for prompt"))
 @click.option(
     "--skip-mqa",
     is_flag=True,
-    help="Skip the check for an MQA marker",
+    help=_zh("Skip the check for an MQA marker"),
 )
 @click.option(
     "--skip-log-check",
     is_flag=True,
-    help="Skip checking CD logs",
+    help=_zh("Skip checking CD logs"),
 )
 @click.option(
     "--skip-integrity-check",
     is_flag=True,
-    help="Skip integrity check of audio files",
+    help=_zh("Skip integrity check of audio files"),
 )
 @click.option(
     "--essential-only",
     "-eo",
     is_flag=True,
-    help="Only keep essential files; strip nfo, sfv, md5, txt, and other extras.",
+    help=_zh("Only keep essential files; strip nfo, sfv, md5, txt, and other extras."),
 )
 @click.option(
     "--conversions",
     callback=validate_conversions,
-    help="Makes these conversions after the FLAC, without asking: a comma-separated list of "
-    f"{', '.join(CONVERSION_KINDS)}, or none, or all. Overrides upload.conversions for this run.",
+    help=_zh(
+        "Makes these conversions after the FLAC, without asking: a comma-separated list of "
+        f"{', '.join(CONVERSION_KINDS)}, or none, or all. Overrides upload.conversions for this run."
+    ),
 )
 @click.option(
     "--dry-run",
     is_flag=True,
-    help="Go through the whole upload on a copy of the album and send nothing: print what each upload would "
-    "send instead. Nothing is posted to a tracker or uploaded to an image host, copied to a seedbox or added "
-    "to a torrent client.",
+    help=_zh(
+        "Go through the whole upload on a copy of the album and send nothing: print what each upload would "
+        "send instead. Nothing is posted to a tracker or uploaded to an image host, copied to a seedbox or added "
+        "to a torrent client."
+    ),
 )
 async def up(
     path: str,
@@ -689,7 +703,9 @@ def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> s
     """The conversion note for a folder a converter made, worded as the in-run conversion upload's."""
     if not conversion:
         return None
-    click.secho(f"\nThis folder was converted from {conversion.get('source')}; describing the conversion.", fg="cyan")
+    click.secho(
+        _zh(f"\nThis folder was converted from {conversion.get('source')}; describing the conversion."), fg="cyan"
+    )
     if conversion.get("kind") == "transcode":
         return transcode_note(url or "", cast("Bitrate", conversion.get("bitrate")))
     return conversion_note(url or "", conversion.get("sample_rate"), cast("BitDepth", conversion.get("bit_depth", 16)))
@@ -924,7 +940,7 @@ async def _upload_staged(  # noqa: C901
             if not scene:
                 await _prepare_pictures(path, metadata, remove_downloaded_cover_image)
     except click.Abort:
-        return click.secho("\nAborting upload...", fg="red")
+        return click.secho(_zh("\nAborting upload..."), fg="red")
     except AbortAndDeleteFolder:
         return _delete_after_abort(path, source_folder, original, flac_group)
 
@@ -956,7 +972,7 @@ async def _upload_staged(  # noqa: C901
             remaining_gazelle_sites.remove(tracker)
             if request_id is not None:
                 # --request names a request of this tracker: another tracker's request with that ID is another one.
-                click.secho(f"\nNot filling request {request_id}: it is {tracker}'s.", fg="yellow")
+                click.secho(_zh(f"\nNot filling request {request_id}: it is {tracker}'s."), fg="yellow")
                 request_id = None
             tracker = None
         torrent_id = None
@@ -982,18 +998,19 @@ async def _upload_staged(  # noqa: C901
                         break
                     if next_named := next((code for code in remaining_gazelle_sites if code in (trackers or ())), None):
                         tracker = next_named
-                        click.secho(f"\nNext tracker: {tracker}", fg="magenta")
+                        click.secho(_zh(f"\nNext tracker: {tracker}"), fg="magenta")
                     else:
-                        click.secho("\nWould you like to upload to another tracker? ", fg="magenta", nl=False)
+                        click.secho(_zh("\nWould you like to upload to another tracker? "), fg="magenta", nl=False)
                         tracker = await salmon.trackers.choose_tracker(remaining_gazelle_sites)
                     if not tracker:
-                        click.secho("\nDone with this release.", fg="green")
+                        click.secho(_zh("\nDone with this release."), fg="green")
                         break
                     # A request is of the tracker it was given or found for, whatever became of that tracker's turn.
                     if request_id is not None:
                         if request_id == requested:
                             click.secho(
-                                f"\nNot filling request {request_id}: it is {gazelle_site.site_code}'s.", fg="yellow"
+                                _zh(f"\nNot filling request {request_id}: it is {gazelle_site.site_code}'s."),
+                                fg="yellow",
                             )
                         request_id = None
                     gazelle_site = salmon.trackers.get_class(tracker)()
@@ -1009,8 +1026,10 @@ async def _upload_staged(  # noqa: C901
                     if not searchstrs and await interaction.assume_defaults():
                         # As recheck_dupe for the first tracker (#931): with -yyy, nobody checks the tracker by hand.
                         click.secho(
-                            f"\n{NO_DUPE_SEARCH} Not uploading to {gazelle_site.site_string} with -yyy "
-                            "(upload.yes_all): run without -yyy, and with upload.yes_all off, to choose its group.",
+                            _zh(
+                                f"\n{NO_DUPE_SEARCH} Not uploading to {gazelle_site.site_string} with -yyy "
+                                "(upload.yes_all): run without -yyy, and with upload.yes_all off, to choose its group."
+                            ),
                             fg="red",
                             bold=True,
                         )
@@ -1019,7 +1038,7 @@ async def _upload_staged(  # noqa: C901
                         tracker = None
                         continue
 
-                    click.secho(f"Uploading to {gazelle_site.base_url}", fg="cyan", bold=True)
+                    click.secho(_zh(f"Uploading to {gazelle_site.base_url}"), fg="cyan", bold=True)
                     # A torrent already seeds from the folder: never offer to delete it. Once one is up, a tracker
                     # can be skipped (one that already has the release, say) and the run still finishes.
                     # Matched on the reviewed metadata: the review may have changed the artists, title or year.
@@ -1036,9 +1055,11 @@ async def _upload_staged(  # noqa: C901
                         # Like a failed upload: skip this tracker, and offer the next one.
                         if isinstance(e, SkipTracker):
                             chose_to_skip += 1
-                            click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="yellow", bold=True)
+                            click.secho(
+                                _zh(f"\nSkipping upload to {gazelle_site.site_string}."), fg="yellow", bold=True
+                            )
                         else:
-                            click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                            click.secho(_zh(f"\nUpload to {gazelle_site.site_string} failed: {e}"), fg="red", bold=True)
                             print_certificate_hint(e)
                         failed_trackers.append(gazelle_site.site_string)
                         remaining_gazelle_sites.remove(tracker)
@@ -1061,7 +1082,7 @@ async def _upload_staged(  # noqa: C901
                 )
                 if not proceed:
                     # Like a failed upload: skip this tracker, and offer the next one.
-                    click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="red", bold=True)
+                    click.secho(_zh(f"\nSkipping upload to {gazelle_site.site_string}."), fg="red", bold=True)
                     failed_trackers.append(gazelle_site.site_string)
                     tracker = None
                     if not remaining_gazelle_sites or not go_on:
@@ -1078,7 +1099,7 @@ async def _upload_staged(  # noqa: C901
 
                     held: set[str] = set()
                     if flac_url and source_flac is not None:
-                        click.secho(f"\nNot uploading the FLAC: transcoding from {flac_url}", fg="yellow")
+                        click.secho(_zh(f"\nNot uploading the FLAC: transcoding from {flac_url}"), fg="yellow")
                         url = flac_url
                         held = _held_conversions(flac_group or {}, metadata, source_flac, rls_data, track_data)
                     else:
@@ -1108,7 +1129,8 @@ async def _upload_staged(  # noqa: C901
                         if not group_id:
                             # Conversions sent with no group id would each start a new group beside this one.
                             click.secho(
-                                f"\nNo group id came back for {url}: no conversions are offered for it.", fg="yellow"
+                                _zh(f"\nNo group id came back for {url}: no conversions are offered for it."),
+                                fg="yellow",
                             )
                             if _applicable_conversions(
                                 get_downconversion_options(rls_data, track_data, quiet=True), conversions
@@ -1125,7 +1147,12 @@ async def _upload_staged(  # noqa: C901
                             # Once, on the first torrent up, whether or not the run goes on to another tracker.
                             # Its transcodes, and the later trackers' uploads, then carry what it found.
                             spectrals_after = False
-                            lossy_master, lossy_comment, spectral_urls, spectral_ids = await post_upload_spectral_check(
+                            (
+                                lossy_master,
+                                lossy_comment,
+                                spectral_urls,
+                                spectral_ids,
+                            ) = await post_upload_spectral_check(
                                 gazelle_site,
                                 path,
                                 torrent_id,
@@ -1148,7 +1175,7 @@ async def _upload_staged(  # noqa: C901
                         if selected_tasks:
                             display_names = [task["name"] for task in selected_tasks]
                             click.secho(
-                                f"\nSelected formats for downconversion: {', '.join(display_names)}",
+                                _zh(f"\nSelected formats for downconversion: {', '.join(display_names)}"),
                                 fg="green",
                                 bold=True,
                             )
@@ -1179,7 +1206,7 @@ async def _upload_staged(  # noqa: C901
                             if len(uploaded) - before < len(selected_tasks):
                                 failed_trackers.append(gazelle_site.site_string)
                 except RequestError as e:
-                    click.secho(f"\nUpload to {gazelle_site.site_string} failed: {e}", fg="red", bold=True)
+                    click.secho(_zh(f"\nUpload to {gazelle_site.site_string} failed: {e}"), fg="red", bold=True)
                     print_certificate_hint(e)
                     failed_trackers.append(gazelle_site.site_string)
                     if isinstance(e, UnknownOutcomeError):
@@ -1187,7 +1214,7 @@ async def _upload_staged(  # noqa: C901
 
                 tracker = None
                 if flac_url or not remaining_gazelle_sites or not go_on:
-                    click.secho("\nDone uploading this release.", fg="green")
+                    click.secho(_zh("\nDone uploading this release."), fg="green")
                     break
             finished = True
 
@@ -1196,7 +1223,7 @@ async def _upload_staged(  # noqa: C901
                 raise
             # What is up stays up and is seeded below: the run only stops offering more.
             aborted = True
-            click.secho("\nAborting: nothing more is uploaded. Already uploaded:", fg="red")
+            click.secho(_zh("\nAborting: nothing more is uploaded. Already uploaded:"), fg="red")
             for line in uploaded:
                 click.echo(f"  {line}")
         finally:
@@ -1233,14 +1260,18 @@ async def _check_files(
     if not skip_mqa:
         all_files = cfg.upload.mqa_check_all_tracks
         checked = "every FLAC file" if all_files else "first FLAC file only"
-        click.secho(f"Checking for MQA release ({checked})", fg="cyan", bold=True)
+        click.secho(_zh(f"Checking for MQA release ({checked})"), fg="cyan", bold=True)
         await mqa_test(path, all_files=all_files)
-        click.secho("No MQA release detected", fg="green")
+        click.secho(_zh("No MQA release detected"), fg="green")
 
     if rls_data["encoding"] == "24bit Lossless" and not skip_up:
         if not await interaction.assume_defaults():
             if await interaction.confirm(
-                click.style("\n24bit detected. Do you want to check whether might be upconverted?", fg="magenta"),
+                _zh(
+                    click.style(
+                        _zh("\n24bit detected. Do you want to check whether might be upconverted?"), fg="magenta"
+                    )
+                ),
                 default=True,
             ):
                 await upload_upconvert_test(path)
@@ -1277,11 +1308,11 @@ async def _take_group_search(
     except RequestError as e:
         # Skipped like a first tracker that refuses the release, when another can follow.
         if not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
-            click.secho(f"\nCould not search {gazelle_site.site_string} for dupes: {e}", fg="red", bold=True)
+            click.secho(_zh(f"\nCould not search {gazelle_site.site_string} for dupes: {e}"), fg="red", bold=True)
             print_certificate_hint(e)
             raise click.exceptions.Exit(1) from None
         click.secho(
-            f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it.",
+            _zh(f"\nCould not search {gazelle_site.site_string} for dupes ({e}): skipping it."),
             fg="red",
             bold=True,
         )
@@ -1377,7 +1408,7 @@ async def _review_until_confirmed(
         # Each pick's starred URL replaces the run's --source-url; a pick with none keeps the run's.
         source_url = run_source_url if picked_source_url is None else picked_source_url
         if picked_source_url is not None:
-            click.secho(f"New Source URL: {source_url}", fg="yellow")
+            click.secho(_zh(f"New Source URL: {source_url}"), fg="yellow")
         try:
             path, metadata, tags, audio_info = await edit_metadata(
                 path,
@@ -1427,27 +1458,30 @@ def _delete_after_abort(path: str, source_folder: str, original: str | None, fla
     """Delete the folder an aborted run worked on, as the user asked, unless it must be kept."""
     if dryrun.active():
         dryrun.say("not deleting the music folder.")
-        return click.secho("\nAborting upload...", fg="red")
+        return click.secho(_zh("\nAborting upload..."), fg="red")
     if flac_group is not None:
         click.secho(
-            "\nNot deleting the music folder: with --skip-flac-upload the source is never modified.",
+            _zh("\nNot deleting the music folder: with --skip-flac-upload the source is never modified."),
             fg="yellow",
             bold=True,
         )
-        return click.secho("\nAborting upload...", fg="red")
+        return click.secho(_zh("\nAborting upload..."), fg="red")
     if cfg.directory.protects(path):
-        click.secho(f"\nNot deleting {path}: it is in library_dirs, or holds one.", fg="yellow", bold=True)
-        return click.secho("\nAborting upload...", fg="red")
+        click.secho(_zh(f"\nNot deleting {path}: it is in library_dirs, or holds one."), fg="yellow", bold=True)
+        return click.secho(_zh("\nAborting upload..."), fg="red")
     if original is not None:
         click.secho(
-            f"\nDeleting the copy the upload worked on. {original} is kept.",
+            _zh(f"\nDeleting the copy the upload worked on. {original} is kept."),
             fg="yellow",
             bold=True,
         )
     elif cfg.upload.formatting.remove_source_dir and path != source_folder and os.path.isdir(source_folder):
         # The answer deletes the renamed folder only: the source is removed when a run ends, and this one aborts
         click.secho(
-            f"\nremove_source_dir is on, but {source_folder} is kept: remove it yourself if you meant the album too.",
+            _zh(
+                f"\nremove_source_dir is on, but {source_folder} is "
+                f"kept: remove it yourself if you meant the album too."
+            ),
             fg="yellow",
         )
     if platform.system() == "Windows" and cfg.upload.windows_use_recycle_bin:
@@ -1455,23 +1489,23 @@ def _delete_after_abort(path: str, source_folder: str, original: str | None, fla
             import send2trash
 
             send2trash.send2trash(path)
-            return click.secho("\nMoved folder to recycle bin, aborting upload...", fg="red")
+            return click.secho(_zh("\nMoved folder to recycle bin, aborting upload..."), fg="red")
         except Exception as e:
-            click.secho(f"\nError moving folder to recycle bin: {e}", fg="red")
-            return click.secho("\nAborting upload...", fg="red")
+            click.secho(_zh(f"\nError moving folder to recycle bin: {e}"), fg="red")
+            return click.secho(_zh("\nAborting upload..."), fg="red")
     else:
         shutil.rmtree(path)
-        return click.secho("\nDeleted folder, aborting upload...", fg="red")
+        return click.secho(_zh("\nDeleted folder, aborting upload..."), fg="red")
 
 
 async def _prompt_source(detected: DetectedSource | None = None) -> str:
     """Ask for the release's media source. An empty answer takes the detected one, when there is one."""
-    click.echo(f"\nValid sources: {', '.join(SOURCES.values())}")
+    click.echo(_zh(f"\nValid sources: {', '.join(SOURCES.values())}"))
     if detected:
-        click.secho(f"The files say {detected.source}: {detected.reason}.", fg="cyan")
+        click.secho(_zh(f"The files say {detected.source}: {detected.reason}."), fg="cyan")
     while True:
         sauce = await interaction.prompt(
-            click.style("What is the source of this release? [a]bort", fg="magenta"),
+            _zh(click.style(_zh("What is the source of this release? [a]bort"), fg="magenta")),
             default=detected.source if detected else "",
         )
         try:
@@ -1479,4 +1513,4 @@ async def _prompt_source(detected: DetectedSource | None = None) -> str:
         except KeyError:
             if sauce.lower().startswith("a"):
                 raise click.Abort from None
-            click.secho(f"{sauce} is not a valid source.", fg="red")
+            click.secho(_zh(f"{sauce} is not a valid source."), fg="red")

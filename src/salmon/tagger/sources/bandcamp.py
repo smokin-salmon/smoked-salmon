@@ -6,6 +6,7 @@ from datetime import datetime
 from salmon.common import RE_FEAT, fetch_genre, re_split
 from salmon.common.strings import comparable, names_no_artist
 from salmon.errors import GenreNotInWhitelist, ScrapeError
+from salmon.localization import text as _zh
 from salmon.sources import BandcampBase
 from salmon.tagger.sources.base import MetadataMixin
 
@@ -22,13 +23,13 @@ class Scraper(BandcampBase, MetadataMixin):
         try:
             return resolve_release_context(soup)["title"]
         except (TypeError, IndexError) as e:
-            raise ScrapeError("Failed to parse scraped title.") from e
+            raise ScrapeError(_zh("Failed to parse scraped title.")) from e
 
     def parse_cover_url(self, soup):
         try:
             return soup.select("#tralbumArt img")[0]["src"]
         except (TypeError, IndexError) as e:
-            raise ScrapeError("Could not parse cover URL.") from e
+            raise ScrapeError(_zh("Could not parse cover URL.")) from e
 
     def parse_genres(self, soup):
         genres = set()
@@ -38,17 +39,17 @@ class Scraper(BandcampBase, MetadataMixin):
                     genres |= fetch_genre(a.string)
             return genres
         except TypeError as e:
-            raise ScrapeError("Could not parse genres.") from e
+            raise ScrapeError(_zh("Could not parse genres.")) from e
 
     def parse_release_year(self, soup):
         try:
             date = self.parse_release_date(soup)
             match = re.search(r"(\d{4})", date) if date else None
             if not match:
-                raise ScrapeError("Could not parse release year.")
+                raise ScrapeError(_zh("Could not parse release year."))
             return int(match[1])
         except TypeError as e:
-            raise ScrapeError("Could not parse release year.") from e
+            raise ScrapeError(_zh("Could not parse release year.")) from e
 
     def parse_release_date(self, soup):
         try:
@@ -57,11 +58,11 @@ class Scraper(BandcampBase, MetadataMixin):
                 soup.select(".tralbumData.tralbum-credits")[0].text,
             )
             if not match:
-                raise ScrapeError("Could not parse release date.")
+                raise ScrapeError(_zh("Could not parse release date."))
             date = match[1]
             return datetime.strptime(date, "%B %d, %Y").strftime("%Y-%m-%d")
         except (TypeError, IndexError, ValueError) as e:
-            raise ScrapeError("Could not parse release date.") from e
+            raise ScrapeError(_zh("Could not parse release date.")) from e
 
     def parse_release_label(self, soup):
         try:
@@ -70,7 +71,7 @@ class Scraper(BandcampBase, MetadataMixin):
             if label and comparable(context["artist"]) != comparable(label):
                 return label
         except IndexError as e:
-            raise ScrapeError("Could not parse record label.") from e
+            raise ScrapeError(_zh("Could not parse record label.")) from e
 
     def parse_release_catno(self, soup):
         context = resolve_release_context(soup)
@@ -113,7 +114,7 @@ class Scraper(BandcampBase, MetadataMixin):
                         title=parse_title(title, strip_artist_prefix=strip_artist_prefix),
                     )
                 except (ValueError, IndexError, TypeError) as e:
-                    raise ScrapeError("Could not parse tracks.") from e
+                    raise ScrapeError(_zh("Could not parse tracks.")) from e
         else:
             tracks["1"]["1"] = self.generate_track(
                 trackno=1,
@@ -128,7 +129,7 @@ def parse_raw_release_title(soup):
     try:
         return soup.select("#name-section .trackTitle")[0].string.strip()
     except (TypeError, IndexError) as e:
-        raise ScrapeError("Failed to parse scraped title.") from e
+        raise ScrapeError(_zh("Failed to parse scraped title.")) from e
 
 
 def parse_page_artist(soup):
@@ -230,7 +231,7 @@ def extract_track_title(track):
             text = child.get_text(strip=True)
             if text:
                 return text
-    raise ScrapeError("Could not parse track title.")
+    raise ScrapeError(_zh("Could not parse track title."))
 
 
 def parse_artists(artist, title, release_title=None):

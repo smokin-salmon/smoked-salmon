@@ -37,6 +37,7 @@ from salmon.errors import (
     UpconvertCheckError,
     UpconvertCheckNotApplicable,
 )
+from salmon.localization import text as _zh
 from salmon.tagger.pre_data import construct_artists_li, parse_format, parse_title
 from salmon.tagger.tagfile import TagFile
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs, get_search_results
@@ -281,7 +282,7 @@ async def check_album(path: str, trackers: list[str]) -> AlbumChecks:
     # Listed once, leaving out what can't be read (the Folders row names it): every check reads these files.
     audio_files = get_audio_files(path, skip_unreadable=True)
     if not audio_files:
-        raise click.ClickException(f"No audio file in {os.path.basename(path)}.")
+        raise click.ClickException(_zh(f"No audio file in {os.path.basename(path)}."))
     audio_info = await anyio.to_thread.run_sync(_audio_info, path, audio_files)
     detected: DetectedSource | None = await anyio.to_thread.run_sync(detect_source, path, audio_files)
     source = detected.source if detected else None

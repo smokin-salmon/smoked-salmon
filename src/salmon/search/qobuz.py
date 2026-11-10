@@ -2,6 +2,7 @@ import re
 from typing import Any
 
 from salmon.errors import ScrapeError
+from salmon.localization import text as _zh
 from salmon.search.base import (
     IdentData,
     SearchMixin,
@@ -70,7 +71,7 @@ class Searcher(QobuzBase, SearchMixin):
 
             return "Qobuz", releases
         except Exception as e:
-            raise ScrapeError(f"Failed to retrieve or parse Qobuz search results: {str(e)}") from e
+            raise ScrapeError(_zh(f"Failed to retrieve or parse Qobuz search results: {str(e)}")) from e
 
     @staticmethod
     def _parse_year(date):

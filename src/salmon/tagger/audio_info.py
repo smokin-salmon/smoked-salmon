@@ -8,6 +8,7 @@ from mutagen.mp4 import MP4Info
 from salmon.common import get_audio_files
 from salmon.common.files import CompressResult, compress, process_files
 from salmon.errors import UploadError
+from salmon.localization import text as _zh
 
 
 def gather_audio_info(path):
@@ -17,16 +18,16 @@ def gather_audio_info(path):
     """
     files = get_audio_files(path)
     if not files:
-        raise UploadError("No audio files found.")
+        raise UploadError(_zh("No audio files found."))
 
     audio_info = {}
     for filename in files:
         try:
             mut = MutagenFile(os.path.join(path, filename))
         except MutagenError as e:
-            raise UploadError(f"Could not read audio file: {filename} ({e})") from e
+            raise UploadError(_zh(f"Could not read audio file: {filename} ({e})")) from e
         if mut is None:
-            raise UploadError(f"Could not read audio file: {filename}")
+            raise UploadError(_zh(f"Could not read audio file: {filename}"))
         audio_info[filename] = _parse_audio_info(mut.info)
     return audio_info
 
@@ -52,7 +53,7 @@ def check_hybrid(tags):
         t["precision"] == first_tag["precision"] and t["sample rate"] == first_tag["sample rate"] for t in tags.values()
     ):
         click.secho(
-            "Release has mixed bit depths / sample rates. Flagging as hybrid.",
+            _zh("Release has mixed bit depths / sample rates. Flagging as hybrid."),
             fg="yellow",
         )
         return True
@@ -77,7 +78,7 @@ async def recompress_path(path: str, files: list[str] | None = None) -> None:
     if files is None:
         files = get_audio_files(path)
         if not files or not all(f.lower().endswith(".flac") for f in files):
-            return click.secho("No flacs found to recompress. Skipping...", fg="red")
+            return click.secho(_zh("No flacs found to recompress. Skipping..."), fg="red")
     filepaths = [os.path.join(path, filename) for filename in files]
 
     async def _compress_one(filepath: str, _idx: int) -> CompressResult:
@@ -87,5 +88,5 @@ async def recompress_path(path: str, files: list[str] | None = None) -> None:
     failures = [result for result in results if not result.success]
     if failures:
         for failure in failures:
-            click.secho(f"Failed to recompress {failure.filepath}: {failure.error}", fg="red")
-        raise UploadError(f"Failed to recompress {len(failures)} file(s).")
+            click.secho(_zh(f"Failed to recompress {failure.filepath}: {failure.error}"), fg="red")
+        raise UploadError(_zh(f"Failed to recompress {len(failures)} file(s)."))

@@ -15,6 +15,7 @@ import aiohttp
 from aiohttp_socks import ProxyConnectionError, ProxyConnector, ProxyError, ProxyTimeoutError
 
 from salmon import ssrf
+from salmon.localization import text as _zh
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -30,7 +31,13 @@ if TYPE_CHECKING:
 # socks4 works as SOCKS4A, and socks5 as socks5h.
 SCHEMES = {"http": "http", "socks4": "socks4", "socks4a": "socks4", "socks5": "socks5", "socks5h": "socks5"}
 # The same schemes as libcurl knows them, where the proxy resolves hostnames too (see curl_url).
-CURL_SCHEMES = {"http": "http", "socks4": "socks4a", "socks4a": "socks4a", "socks5": "socks5h", "socks5h": "socks5h"}
+CURL_SCHEMES = {
+    "http": "http",
+    "socks4": "socks4a",
+    "socks4a": "socks4a",
+    "socks5": "socks5h",
+    "socks5h": "socks5h",
+}
 
 
 def is_valid_url(url: str) -> bool:
@@ -131,7 +138,7 @@ class _ProxyConnector(ProxyConnector):
                 *args, addr_infos=addr_infos, req=req, timeout=timeout, client_error=client_error, **kwargs
             )
         except (ProxyTimeoutError, TimeoutError) as exc:
-            raise aiohttp.ConnectionTimeoutError(f"proxy: {exc}") from exc
+            raise aiohttp.ConnectionTimeoutError(_zh(f"proxy: {exc}")) from exc
         except ssl.CertificateError as exc:
             raise aiohttp.ClientConnectorCertificateError(req.connection_key, exc) from exc
         except ssl.SSLError as exc:

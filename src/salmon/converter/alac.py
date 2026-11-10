@@ -26,6 +26,7 @@ from mutagen.mp4 import MP4, AtomDataType, MP4Cover, MP4FreeForm, MP4Info
 from salmon import cfg, interaction
 from salmon.common.constants import AUDIO_EXTENSIONS, LOSSY_EXTENSIONS
 from salmon.common.files import album_files, process_files
+from salmon.localization import text as _zh
 from salmon.tagger.cover import get_8kib_padding
 
 if TYPE_CHECKING:
@@ -104,13 +105,16 @@ async def convert_alac(album: str, staged: str) -> str | None:
     in_place = os.path.samefile(staged, album)
     where = f"in {album}" if in_place else "in the copy salmon works on"
     click.secho(
-        f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads {_it(tracks)} as FLAC, with the same "
-        f"samples, bit depth, sample rate and channels. It keeps these tags: {_KEPT_FIELDS}, and the first cover if "
-        f"it is a JPEG or PNG; it drops the others. Each .m4a {where} is replaced by its .flac.",
+        _zh(
+            f"\n{album} holds {count} (Apple Lossless in .m4a). salmon uploads {_it(tracks)} as FLAC, with the same "
+            f"samples, bit depth, sample rate and channels. It keeps "
+            f"these tags: {_KEPT_FIELDS}, and the first cover if "
+            f"it is a JPEG or PNG; it drops the others. Each .m4a {where} is replaced by its .flac."
+        ),
         fg="yellow",
     )
     if not await interaction.assume_defaults() and not await interaction.confirm(
-        click.style(f"Convert the {count} to FLAC for the upload?", fg="magenta"),
+        _zh(click.style(_zh(f"Convert the {count} to FLAC for the upload?"), fg="magenta")),
         default=True,
         labels=("Convert", "Stop"),
     ):
@@ -130,7 +134,7 @@ async def convert_alac(album: str, staged: str) -> str | None:
             f"into {cfg.directory.download_directory}, then run salmon again."
         )
     depths = " and ".join(f"{bits}-bit" for bits in sorted({track.bits for track in tracks}))
-    click.secho(f"Converted {count} to {depths} FLAC.", fg="green")
+    click.secho(_zh(f"Converted {count} to {depths} FLAC."), fg="green")
     return None
 
 
@@ -276,7 +280,7 @@ def _claim_partial(track: AlacTrack) -> str:
         with open(partial, "xb"):
             pass
     except OSError as error:
-        raise ConversionError(f"could not write next to it ({error.strerror})") from error
+        raise ConversionError(_zh(f"could not write next to it ({error.strerror})")) from error
     return partial
 
 
@@ -333,7 +337,7 @@ def _remove(path: str) -> None:
     except FileNotFoundError:
         pass
     except OSError as error:
-        click.secho(f"Could not remove {path}: {error}", fg="yellow")
+        click.secho(_zh(f"Could not remove {path}: {error}"), fg="yellow")
 
 
 def _convert(track: AlacTrack, partial: str) -> None:
@@ -348,17 +352,20 @@ def _convert(track: AlacTrack, partial: str) -> None:
         _copy_tags(track.source, partial)
         info = FLAC(partial).info
     except (MutagenError, OSError) as error:
-        raise ConversionError(f"could not tag its FLAC ({error})") from error
+        raise ConversionError(_zh(f"could not tag its FLAC ({error})")) from error
     if (info.bits_per_sample, info.sample_rate, info.channels) != (track.bits, track.sample_rate, track.channels):
         raise ConversionError(
-            f"its FLAC is {info.bits_per_sample}-bit {info.sample_rate} Hz, {info.channels} channels, where the ALAC "
-            f"is {track.bits}-bit {track.sample_rate} Hz, {track.channels} channels"
+            _zh(
+                f"its FLAC is {info.bits_per_sample}-bit {info.sample_rate} "
+                f"Hz, {info.channels} channels, where the ALAC "
+                f"is {track.bits}-bit {track.sample_rate} Hz, {track.channels} channels"
+            )
         )
     check = hashlib.sha256()
     for chunk in _pcm_chunks(partial, track.bits, track.channels):
         check.update(chunk)
     if check.digest() != digest:
-        raise ConversionError("its FLAC does not decode to the same samples")
+        raise ConversionError(_zh("its FLAC does not decode to the same samples"))
 
 
 def _encode(track: AlacTrack, partial: str) -> bytes:
@@ -388,7 +395,7 @@ def _encode(track: AlacTrack, partial: str) -> bytes:
         try:
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=messages)
         except OSError as error:
-            raise ConversionError(f"could not run flac ({error})") from error
+            raise ConversionError(_zh(f"could not run flac ({error})")) from error
         stdin = cast("IO[bytes]", process.stdin)
         stopped = False
         try:
@@ -433,7 +440,7 @@ def _pcm_chunks(path: str, bits: int, channels: int) -> Iterator[bytes]:
                     continue
                 yield _packed(frame, bits, channels)
     except (av.FFmpegError, IndexError) as error:
-        raise ConversionError(f"could not decode {os.path.basename(path)} ({error})") from error
+        raise ConversionError(_zh(f"could not decode {os.path.basename(path)} ({error})")) from error
 
 
 def _packed(frame: "av.audio.frame.AudioFrame", bits: int, channels: int) -> bytes:
@@ -441,7 +448,7 @@ def _packed(frame: "av.audio.frame.AudioFrame", bits: int, channels: int) -> byt
     import numpy as np
 
     if frame.layout.nb_channels != channels:
-        raise ConversionError(f"decodes to {frame.layout.nb_channels} channels, not {channels}")
+        raise ConversionError(_zh(f"decodes to {frame.layout.nb_channels} channels, not {channels}"))
     samples = frame.to_ndarray()
     # Planar: one row per channel. Packed: one row, the channels already interleaved.
     interleaved = samples.T.reshape(-1) if frame.format.is_planar else samples.reshape(-1)
@@ -451,10 +458,10 @@ def _packed(frame: "av.audio.frame.AudioFrame", bits: int, channels: int) -> byt
     if name == "s32" and bits == 24:
         wide = interleaved.astype(np.int32)
         if np.any(wide & 0xFF):
-            raise ConversionError("holds more than 24 bits per sample")
+            raise ConversionError(_zh("holds more than 24 bits per sample"))
         # Each sample shifted back down, written as its low three bytes, little-endian.
         return (wide >> 8).astype("<i4").view(np.uint8).reshape(-1, 4)[:, :3].tobytes()
-    raise ConversionError(f"decodes to {frame.format.name} samples, not {bits}-bit")
+    raise ConversionError(_zh(f"decodes to {frame.format.name} samples, not {bits}-bit"))
 
 
 def _copy_tags(source: str, target: str) -> None:

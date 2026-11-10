@@ -19,6 +19,7 @@ from salmon.constants import (
     TAG_ENCODINGS,
 )
 from salmon.errors import InvalidMetadataError, ScrapeError
+from salmon.localization import text as _zh
 from salmon.tagger.ai_review import review_metadata_with_ai
 from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.cover import download_cover_if_nonexistent
@@ -36,10 +37,10 @@ def validate_source(ctx, param, value):
     try:
         return SOURCES[value.lower()]
     except KeyError:
-        raise click.BadParameter(f"{value} is not a valid source.") from None
+        raise click.BadParameter(_zh(f"{value} is not a valid source.")) from None
     except AttributeError:
         raise click.BadParameter(
-            "You must provide a source. Possible sources are: " + ", ".join(SOURCES.values())
+            _zh("You must provide a source. Possible sources are: ") + ", ".join(SOURCES.values())
         ) from None
 
 
@@ -62,7 +63,7 @@ def validate_encoding(ctx, param, value):
     try:
         return TAG_ENCODINGS[value.upper()]
     except KeyError:
-        raise click.BadParameter(f"{value} is not a valid encoding.") from None
+        raise click.BadParameter(_zh(f"{value} is not a valid encoding.")) from None
 
 
 @commandgroup.command()
@@ -72,36 +73,37 @@ def validate_encoding(ctx, param, value):
     "-s",
     type=click.STRING,
     callback=validate_source,
-    help=f"Source of files ({'/'.join(SOURCES.values())})",
+    help=_zh(f"Source of files ({'/'.join(SOURCES.values())})"),
 )
 @click.option(
     "--encoding",
     "-e",
     type=click.STRING,
     callback=validate_encoding,
-    help="You must specify one of the following encodings if files aren't lossless: " + ", ".join(TAG_ENCODINGS.keys()),
+    help=_zh("You must specify one of the following encodings if files aren't lossless: ")
+    + ", ".join(TAG_ENCODINGS.keys()),
 )
 @click.option(
     "--overwrite",
     "-ow",
     is_flag=True,
-    help="Whether or not to use the original metadata.",
+    help=_zh("Whether or not to use the original metadata."),
 )
 @click.option(
     "--auto-rename",
     "-n",
     is_flag=True,
-    help="Rename files and folders automatically",
+    help=_zh("Rename files and folders automatically"),
 )
 @click.option(
     "--skip-initial-review",
     is_flag=True,
-    help="Skip the initial manual metadata review before AI review.",
+    help=_zh("Skip the initial manual metadata review before AI review."),
 )
 @click.option(
     "--apply-ai-suggestions",
     is_flag=True,
-    help="Automatically apply AI review suggestions when AI review is enabled.",
+    help=_zh("Automatically apply AI review suggestions when AI review is enabled."),
 )
 async def tag(
     path: str,
@@ -169,7 +171,7 @@ async def run_tag(options: TagOptions) -> str:
     # Imported here: salmon.uploader imports this module.
     from salmon.uploader.staging import staged_source
 
-    click.secho(f"\nProcessing {options.path}", fg="cyan", bold=True)
+    click.secho(_zh(f"\nProcessing {options.path}"), fg="cyan", bold=True)
     with staged_source(options.path, scratch=False) as (path, rename_into):
         staged = path
         original = options.path if staged != options.path else None
@@ -205,7 +207,7 @@ async def run_tag(options: TagOptions) -> str:
         await rename_files(path, tags, metadata, options.auto_rename, None, tracks_by_file=tracks_by_file)
         await check_folder_structure(path, scene=False)
         await remove_source_folder(staged, path, original)
-        click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
+        click.secho(_zh(f"\nProcessed {path}"), fg="cyan", bold=True)
         return path
 
 
@@ -215,7 +217,7 @@ async def run_tag(options: TagOptions) -> str:
     "--output",
     "-o",
     type=click.Path(dir_okay=False, writable=True),
-    help="Save metadata as JSON to this file.",
+    help=_zh("Save metadata as JSON to this file."),
 )
 async def meta(url: str, output: str | None = None) -> None:
     """Scrape metadata from release link.
@@ -242,12 +244,12 @@ async def meta(url: str, output: str | None = None) -> None:
                 if output_path.exists():
                     shutil.copymode(output_path, temp_path)
                 os.replace(temp_path, output_path)
-            click.secho(f"Metadata saved to {output}", fg="green")
+            click.secho(_zh(f"Metadata saved to {output}"), fg="green")
         else:
             click.echo()
             pprint(metadata)
     except ScrapeError as e:
-        click.secho(f"Scrape failed: {e}", fg="red")
+        click.secho(_zh(f"Scrape failed: {e}"), fg="red")
         raise click.exceptions.Exit(1) from None
 
 
@@ -255,10 +257,10 @@ def metadata_validator_base(metadata):
     """Validate that the provided metadata is not an issue."""
     artist_importances = set(i for _, i in metadata["artists"])
     if "main" not in artist_importances:
-        raise InvalidMetadataError("You must have at least one main artist.")
+        raise InvalidMetadataError(_zh("You must have at least one main artist."))
     for track in chain.from_iterable([d.values() for d in metadata["tracks"].values()]):
         if "main" not in set(i for _, i in track["artists"]):
-            raise InvalidMetadataError("You must have at least one main artist per track.")
+            raise InvalidMetadataError(_zh("You must have at least one main artist per track."))
     if not all(i in ARTIST_IMPORTANCES for i in artist_importances):
         raise InvalidMetadataError(
             "Invalid artist importance detected: {}.".format(
@@ -268,23 +270,25 @@ def metadata_validator_base(metadata):
     try:
         metadata["year"] = int(metadata["year"])
     except (ValueError, TypeError):
-        raise InvalidMetadataError("Year is not an integer.") from None
+        raise InvalidMetadataError(_zh("Year is not an integer.")) from None
     if metadata["rls_type"] not in RELEASE_TYPES:
-        raise InvalidMetadataError("Invalid release type.")
+        raise InvalidMetadataError(_zh("Invalid release type."))
     if not metadata["genres"]:
-        raise InvalidMetadataError("You must specify at least one genre.")
+        raise InvalidMetadataError(_zh("You must specify at least one genre."))
     if metadata["source"] == "CD" and metadata["year"] < 1982:
-        raise InvalidMetadataError("You cannot have a CD upload from before 1982.")
+        raise InvalidMetadataError(_zh("You cannot have a CD upload from before 1982."))
     if metadata["source"] not in SOURCES.values():
-        raise InvalidMetadataError(f"{metadata['source']} is not a valid source.")
+        raise InvalidMetadataError(_zh(f"{metadata['source']} is not a valid source."))
     if metadata["label"] and (len(metadata["label"]) < 2 or len(metadata["label"]) > 80):
-        raise InvalidMetadataError("Label must be over 2 and under 80 characters.")
+        raise InvalidMetadataError(_zh("Label must be over 2 and under 80 characters."))
     if metadata["label"] is not None and "records dk" in metadata["label"].lower():
         raise InvalidMetadataError(
-            "Records DK is not a label. It's a platform for releasing albums. "
-            "Please change the label (e.g Self Released)"
+            _zh(
+                "Records DK is not a label. It's a platform for releasing albums. "
+                "Please change the label (e.g Self Released)"
+            )
         )
     if metadata["catno"] and (len(metadata["catno"]) < 2 or len(metadata["catno"]) > 80):
-        raise InvalidMetadataError("Catno must be over 2 and under 80 characters.")
+        raise InvalidMetadataError(_zh("Catno must be over 2 and under 80 characters."))
 
     return metadata
