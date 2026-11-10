@@ -51,7 +51,8 @@ async def check_folder_structure(
             this check allows. Defaults to the value used before this was per-tracker.
         album_itself: Whether path is the album the user gave, not a renamed copy or a conversion: a file
             deleted from it is gone. Under -yyy the extension check then names such files and stops instead
-            of deleting them, and its question defaults to abort. A .torrent or macOS metadata file still goes.
+            of deleting them, and its question defaults to abort. A .torrent or macOS metadata file still goes,
+            except from a scene release, which reports it as it reports any other.
 
     Raises:
         click.Abort: If the user aborts, if a scene release has structural issues, or under -yyy
@@ -438,7 +439,8 @@ async def _check_extensions(
             offending files at once rather than prompting per-file.
         essential_only: If True, only essential extensions are allowed.
         album_itself: Whether path is the album the user gave: -yyy reports its files instead of
-            deleting them, and the question defaults to abort. A .torrent or macOS metadata file still goes.
+            deleting them, and the question defaults to abort. A .torrent or macOS metadata file still goes,
+            except from a scene release, which reports it as it reports any other.
 
     Raises:
         NoncompliantFolderStructure: If scene release, or the album itself under -yyy,
