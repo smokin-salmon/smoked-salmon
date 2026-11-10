@@ -1,5 +1,6 @@
 """Helpers of tests/test_uploader_dry_run.py that other test modules use too."""
 
+import copy
 import hashlib
 import os
 import struct
@@ -43,7 +44,8 @@ AUTHKEY = "authkey-0123456789"
 PASSKEY = "passkey-9876543210"
 
 
-API_KEYS = {"RED": "red-api-key", "OPS": "ops-api-key"}
+# DIC takes no API key: it goes by its session cookie.
+API_KEYS = {"RED": "red-api-key", "OPS": "ops-api-key", "DIC": ""}
 
 
 GROUP_ID = 55
@@ -67,6 +69,16 @@ class Sent:
     path: str
     query: dict[str, str]
     fields: list[tuple[str, Any]]
+
+
+async def _form_fields(request: web.Request) -> list[tuple[str, Any]]:
+    """The form of a POST, in the order sent: a file part as (file name, content). Empty for anything else."""
+    if request.method != "POST":
+        return []
+    return [
+        (name, (value.filename, value.file.read()) if isinstance(value, web.FileField) else value)
+        for name, value in (await request.post()).items()
+    ]
 
 
 def _success(response: dict[str, Any]) -> web.Response:
@@ -107,12 +119,12 @@ class FakeTracker:
         self._group_torrents = group_torrents
 
     async def _handle(self, request: web.Request) -> web.StreamResponse:
-        fields: list[tuple[str, Any]] = []
-        if request.method == "POST":
-            for name, value in (await request.post()).items():
-                is_file = isinstance(value, web.FileField)
-                fields.append((name, (value.filename, value.file.read()) if is_file else value))
+        fields = await _form_fields(request)
         self.sent.append(Sent(request.method, request.path, dict(request.query), fields))
+        return self._usual_answer(request, fields)
+
+    def _usual_answer(self, request: web.Request, fields: list[tuple[str, Any]]) -> web.StreamResponse:
+        """The answer to a request whose form was `fields`: what a tracker gives when nothing goes wrong."""
         action = request.query.get("action")
         if request.path == "/ajax.php" and action == "index":
             return _success({"authkey": AUTHKEY, "passkey": PASSKEY})
@@ -305,6 +317,32 @@ def _run_up(
     return Run(anyio.run(run), tracker, queued, logins)
 
 
+# The release `fake_upload_world` has the metadata step find, and what its review gives back. Copied for each run.
+RLS_DATA: dict[str, Any] = {
+    "format": "FLAC",
+    "encoding": "Lossless",
+    "artists": [("Artist", "main")],
+    "title": "Album",
+    "catno": "CAT1",
+}
+METADATA: dict[str, Any] = {
+    **RLS_DATA,
+    "source": "WEB",
+    "year": 2020,
+    "group_year": 2020,
+    "date": "2020-01-01",
+    "label": "Label",
+    "rls_type": "Album",
+    "edition_title": None,
+    "encoding_vbr": False,
+    "scene": False,
+    "cover": None,
+    "comment": None,
+    "urls": [],
+    "genres": ["Electronic"],
+}
+
+
 def fake_upload_world(
     monkeypatch,
     torrents: Path,
@@ -319,29 +357,8 @@ def fake_upload_world(
     Returns:
         The fake tracker (not serving yet), the seedbox tasks the run queues, and the torrent client logins.
     """
-    rls_data = {
-        "format": "FLAC",
-        "encoding": "Lossless",
-        "artists": [("Artist", "main")],
-        "title": "Album",
-        "catno": "CAT1",
-    }
-    metadata = {
-        **rls_data,
-        "source": "WEB",
-        "year": 2020,
-        "group_year": 2020,
-        "date": "2020-01-01",
-        "label": "Label",
-        "rls_type": "Album",
-        "edition_title": None,
-        "encoding_vbr": False,
-        "scene": False,
-        "cover": None,
-        "comment": None,
-        "urls": [],
-        "genres": ["Electronic"],
-    }
+    rls_data = copy.deepcopy(RLS_DATA)
+    metadata = copy.deepcopy(METADATA)
     track_data = {"01. one.flac": _track(1, "One"), "02. two.flac": _track(2, "Two")}
     stub_uploader(
         monkeypatch,
