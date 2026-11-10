@@ -55,6 +55,7 @@ from salmon.tagger.foldername import files_only_in, remove_source_folder
 from salmon.tagger.metadata import MetadataSearch, get_metadata, pick_metadata
 from salmon.tagger.pre_data import construct_rls_data
 from salmon.tagger.review import suggest_release_type
+from salmon.tagger.sources import without_tracking
 from salmon.tagger.tags import gather_tags, standardize_tags
 from salmon.trackers.connection import print_certificate_hint
 from salmon.uploader import record
@@ -514,7 +515,7 @@ async def run_up(options: UpOptions) -> None:
         group = await confirm_group_upload(gazelle_site, options.group_id, options.source)
         if options.skip_flac_upload:
             flac_group = group
-    source_url = options.source_url.strip() if options.source_url else options.source_url
+    source_url = without_tracking(options.source_url.strip()) if options.source_url else options.source_url
     await upload(
         gazelle_site,
         path,

@@ -1,4 +1,5 @@
 from typing import Any
+from urllib.parse import urlsplit
 
 import asyncclick as click
 
@@ -32,6 +33,23 @@ NOT_SHOWN = ("encoding", "media", "encoding_vbr", "source")
 def matching_source(url: str) -> str | None:
     """The name of the metadata source whose scraper takes `url`, as run_metadata picks it; None for none."""
     return next((name for name, source in METASOURCES.items() if source.Scraper.regex.match(url)), None)
+
+
+def without_tracking(url: str) -> str:
+    """A store link without its query and fragment (tracking, share IDs); any other link as given."""
+    source = matching_source(url)
+    if source is None:
+        return url
+    try:
+        parts = urlsplit(url)
+    except ValueError:  # An unclosed "[" in the host.
+        return url
+    host = parts.hostname or ""
+    # Bandcamp's pattern takes any host (artists' own domains), where a query may name the release.
+    if source == "Bandcamp" and host != "bandcamp.com" and not host.endswith(".bandcamp.com"):
+        return url
+    bare = parts._replace(query="", fragment="").geturl()
+    return bare if matching_source(bare) == source else url
 
 
 def _without_artist_variations(metadata: dict[str, Any]) -> dict[str, Any]:
