@@ -35,7 +35,7 @@ from salmon.errors import RequestError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
-from salmon.uploader import conversion_choice
+from salmon.uploader import conversion_choice, tracker_run
 from salmon.uploader import spectrals as spectrals_module
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.upload import _rewrite_torrent
@@ -90,7 +90,7 @@ def _checks(monkeypatch) -> list[tuple[str, int]]:
         checks.append((gazelle_site.site_code, torrent_id))
         return await real(gazelle_site, path, torrent_id, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "post_upload_spectral_check", recording)
+    monkeypatch.setattr(tracker_run, "post_upload_spectral_check", recording)
     # The check's spectrals, as helpers.uploader_dry_run makes them: a lossy master, track 1's spectrals.
     monkeypatch.setattr(spectrals_module, "check_spectrals", _lossy_with_spectrals)
     return checks
@@ -201,7 +201,7 @@ def test_when_the_first_upload_fails_the_next_trackers_upload_gets_the_check(mon
     _downloads, torrents = dirs
     _trackers(monkeypatch, "RED", "OPS")
     checks, edits = _checks(monkeypatch), _description_edits(monkeypatch)
-    upload_and_report = salmon.uploader.upload_and_report
+    upload_and_report = tracker_run.upload_and_report
 
     async def red_fails(gazelle_site, *args, **kwargs) -> Any:
         if gazelle_site.site_code == "RED":
@@ -373,7 +373,7 @@ def test_the_check_after_the_upload_does_not_offer_to_delete_the_folder_and_abor
     async def no_viewer(*_args: Any) -> None:
         pass
 
-    monkeypatch.setattr(salmon.uploader, "post_upload_spectral_check", recording)
+    monkeypatch.setattr(tracker_run, "post_upload_spectral_check", recording)
     # The real check and its lossy master prompt, on spectrals made up without sox.
     monkeypatch.setattr(spectrals_module, "generate_spectrals_all", generate_spectrals_all)
     monkeypatch.setattr(interaction, "show_spectrals", no_viewer)
@@ -619,7 +619,7 @@ def test_a_failed_tracker_upload_keeps_the_local_copies(monkeypatch, tmp_path, d
     removals = _removals(monkeypatch)
     _checks(monkeypatch)
     _description_edits(monkeypatch)
-    upload_and_report = salmon.uploader.upload_and_report
+    upload_and_report = tracker_run.upload_and_report
 
     async def ops_fails(gazelle_site, *args, **kwargs) -> Any:
         if gazelle_site.site_code == "OPS":
@@ -671,14 +671,14 @@ def test_a_skipped_tracker_keeps_the_local_copies(monkeypatch, tmp_path, dirs) -
     removals = _removals(monkeypatch)
     _checks(monkeypatch)
     _description_edits(monkeypatch)
-    resolve_cover_url = salmon.uploader.resolve_cover_url
+    resolve_cover_url = tracker_run.resolve_cover_url
 
     async def ops_has_no_cover(gazelle_site, *args, **kwargs) -> Any:
         if gazelle_site.site_code == "OPS":
             return False, None
         return await resolve_cover_url(gazelle_site, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "resolve_cover_url", ops_has_no_cover)
+    monkeypatch.setattr(tracker_run, "resolve_cover_url", ops_has_no_cover)
     run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, args=("-a",), input="\nOPS\n\n\n")
     assert run.result.exit_code == 0, run.result.output
     assert "Skipping upload to OPS." in run.result.output

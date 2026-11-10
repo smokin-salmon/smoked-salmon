@@ -22,13 +22,13 @@ from test_uploader_dry_run import (
     image_uploads,  # noqa: F401 (a fixture: see the tests that use it)
 )
 
-import salmon.uploader as uploader
 from salmon import cfg, dryrun, interaction
 from salmon.converter import conversions, downconv
 from salmon.converter import downconverting as dc
 from salmon.converter import transcoding as tc
 from salmon.errors import UploadError
 from salmon.tagger import foldername
+from salmon.uploader import tracker_run
 from salmon.uploader.upload import generate_t_description
 
 DOWNCONVERT = {"source": "/x/src", "kind": "downconvert", "bit_depth": 16, "sample_rate": 44100}
@@ -347,13 +347,13 @@ def test_conversion_note_is_the_in_run_description_without_specifics_and_footer(
     transcode = {"source": "/x", "kind": "transcode", "bitrate": "V0"}
     footer = "[hr]Uploaded with"
 
-    note = uploader.converted_from_note(DOWNCONVERT, url)
+    note = tracker_run.converted_from_note(DOWNCONVERT, url)
     assert note is not None and note in dc.generate_conversion_description(url, 44100, 16)
     assert footer not in note and "Encode Specifics" not in note
-    transcode_from_note = uploader.converted_from_note(transcode, url)
+    transcode_from_note = tracker_run.converted_from_note(transcode, url)
     assert transcode_from_note == tc.transcode_note(url, "V0")
     assert tc.generate_transcode_description(url, "V0").startswith(tc.transcode_note(url, "V0") + footer)
-    no_note = uploader.converted_from_note(None, url)
+    no_note = tracker_run.converted_from_note(None, url)
     assert no_note is None
 
 

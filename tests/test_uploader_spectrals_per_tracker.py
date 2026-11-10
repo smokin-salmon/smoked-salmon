@@ -29,6 +29,7 @@ from salmon import cfg, dryrun
 from salmon.config.validations import ImageUploader, TrackerImageSettings
 from salmon.images.base import BaseImageUploader
 from salmon.uploader import spectrals as spectrals_module
+from salmon.uploader import tracker_run
 from salmon.uploader.spectrals import SpectralUploads, get_spectrals_path, specs_hosts_text
 
 SPECTRALS = ["01 Full.png", "01 Zoom.png"]
@@ -124,7 +125,7 @@ def _has_any(text: str, urls: list[str]) -> bool:
 def _album_listings(monkeypatch) -> list[list[str]]:
     """Record what the album folder holds each time a torrent is uploaded from it."""
     listings: list[list[str]] = []
-    upload_and_report = salmon.uploader.upload_and_report
+    upload_and_report = tracker_run.upload_and_report
 
     async def recording(gazelle_site, path, *args, **kwargs) -> Any:
         listings.append(sorted(os.listdir(path)))
@@ -396,7 +397,7 @@ def test_an_albums_own_spectrals_folder_survives_the_upload_and_goes_into_the_re
     monkeypatch.setattr(salmon.uploader, "foreign_spectrals_refusal", _returning_async(None))
     before = _entries(album)
     images_at_upload: list[list[Path]] = []
-    upload_and_report = salmon.uploader.upload_and_report
+    upload_and_report = tracker_run.upload_and_report
 
     async def recording(gazelle_site, path, *args, **kwargs) -> Any:
         images_at_upload.append(list(Path(path).rglob("*.png")))
