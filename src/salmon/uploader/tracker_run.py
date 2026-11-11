@@ -75,8 +75,8 @@ class Turn(enum.Enum):
     """How a tracker's turn ended, for the loop to choose what comes next."""
 
     ENDED = enum.auto()  # Ran to its end, whether or not anything went up: the loop may say it is done
-    NO_COVER = enum.auto()  # Refused at the cover: skipped, and nothing was sent
-    NO_SPECTRALS = enum.auto()  # Not uploaded without the spectrals that failed: skipped, and nothing was sent
+    # Refused at the cover, or without the spectrals that failed: skipped, and nothing was sent
+    SKIPPED = enum.auto()
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -120,17 +120,19 @@ async def upload_to_tracker(
         # Like a failed upload: skip this tracker, and offer the next one.
         click.secho(f"\nSkipping upload to {gazelle_site.site_string}.", fg="red", bold=True)
         run.failed_trackers.append(gazelle_site.site_string)
-        return Turn.NO_COVER
+        return Turn.SKIPPED
 
     if not run.spectrals_after:
         # Uploaded to this tracker's specs host, unless a tracker using the same host already did.
         try:
-            run.spectral_urls = await run.spectral_uploads.urls_for_upload(gazelle_site, run.spectral_ids)
+            run.spectral_urls = await run.spectral_uploads.urls_for_upload(
+                gazelle_site, run.spectral_ids, lossy_master=run.lossy_master
+            )
         except SpectralsDeclined as declined:
             # Like a refused upload: this tracker is skipped, and the next one offered (#1019).
             _say_declined(declined, run.uploaded)
             run.failed_trackers.append(gazelle_site.site_string)
-            return Turn.NO_SPECTRALS
+            return Turn.SKIPPED
 
     try:
         if not release.flac_url and not run.request_id and cfg.upload.requests.check_requests:

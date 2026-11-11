@@ -282,7 +282,7 @@ Uploading to a new torrent group.
 Failed to upload spectral: imgbox is down
 
 The spectrals could not be uploaded to imgbox. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
-Upload to OPS without spectrals? [y/N]: <answered: 'n'>
+Upload to OPS, and send its lossy master report, without spectrals? [y/N]: <answered: 'n'>
 
 Not uploading to OPS without its spectrals.
 Already uploaded, and still up:

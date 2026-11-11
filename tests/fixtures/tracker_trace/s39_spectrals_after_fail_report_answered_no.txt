@@ -287,7 +287,7 @@ Do you have a comment for the lossy approval report? It is appropriate to make a
 
 01 Full.png is not a usable image (it is cut short): no spectrals are uploaded.
 
-The spectrals could not be uploaded to testhost. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
+The spectrals could not be uploaded: a spectral is not a usable image. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
 <RED>/torrents.php?torrentid=77 is up without its spectrals: add them later with salmon checkspecs -i <RED>/torrents.php?torrentid=77 "<tmp>/downloads"
 Send the lossy master report to RED without spectrals? [y/N]: <answered: 'n'>
 No lossy master report was sent to RED, for this upload or its conversions: report them by hand once the spectrals are up.
@@ -343,8 +343,8 @@ Would you like to upload to an existing group?
 Paste a URL or [N]ew group / [s]kip this tracker / [a]bort  []: <answered: ''>
 Uploading to a new torrent group.
 
-The spectrals could not be uploaded to testhost. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
-Upload to OPS without spectrals? [y/N]: <answered: 'y'>
+The spectrals could not be uploaded: a spectral is not a usable image. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
+Upload to OPS, and send its lossy master report, without spectrals? [y/N]: <answered: 'y'>
 
 No requests were found on OPS (searchstrs: artist album)
 Generating torrent file... done!
@@ -437,7 +437,7 @@ Task 9/9: SEED - Artist - Album (2020) [WEB FLAC] [V0] - OPS.torrent
 
 All upload tasks processed
 
-The spectrals are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals: they could not be uploaded to testhost.
+The spectrals are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals: a spectral is not a usable image.
 Removed the source folder <tmp>/seeding/Album (remove_source_dir).
 
 == stderr ==

@@ -292,7 +292,7 @@ Do you have a comment for the lossy approval report? It is appropriate to make a
 Failed to upload spectral: imgbox is down
 
 The spectrals could not be uploaded to imgbox. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
-Upload to RED without spectrals? [y/N]: <answered: 'y'>
+Upload to RED, and send its lossy master report, without spectrals? [y/N]: <answered: 'y'>
 Initializing upload managers
 
 Parsing torrent client URL: qbittorrent+http://127.0.0.1:9
@@ -374,7 +374,7 @@ Paste a URL or [N]ew group / [s]kip this tracker / [a]bort  []: <answered: ''>
 Uploading to a new torrent group.
 
 The spectrals could not be uploaded to imgbox. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
-Upload to OPS without spectrals? [y/N]: <answered: 'y'>
+Upload to OPS, and send its lossy master report, without spectrals? [y/N]: <answered: 'y'>
 
 No requests were found on OPS (searchstrs: artist album)
 Generating torrent file... done!

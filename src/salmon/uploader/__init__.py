@@ -916,7 +916,9 @@ async def _upload_staged(  # noqa: C901
 
             if not first_listed:
                 try:
-                    spectral_urls = await spectral_uploads.urls_for_upload(gazelle_site, spectral_ids)
+                    spectral_urls = await spectral_uploads.urls_for_upload(
+                        gazelle_site, spectral_ids, lossy_master=lossy_master
+                    )
                 except SpectralsDeclined as declined:
                     # Before anything is sent to the first tracker: the run stops as an abort does (#1019).
                     click.secho(f"\n{declined}", fg="red", bold=True)
@@ -1051,7 +1053,7 @@ async def _upload_staged(  # noqa: C901
 
                 turn = await upload_to_tracker(release, gazelle_site, group_id, run)
                 tracker = None
-                if turn is not Turn.ENDED:
+                if turn is Turn.SKIPPED:
                     if not remaining_gazelle_sites or not go_on:
                         break
                     continue

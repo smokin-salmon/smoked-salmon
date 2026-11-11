@@ -210,7 +210,7 @@ async def handle_spectrals_upload_and_deletion(
     except SpectralsNotUploaded as failure:
         # Kept for another try (#1019): a later salmon up on the album removes them by their files.
         drop_specs_claim(spectrals_path)
-        click.secho(f"{failure} They are kept in {spectrals_path}.", fg="yellow")
+        click.secho(str(SpectralsNotUploaded(failure.host, spectrals_path)), fg="yellow")
         return None
     if delete_spectrals:
         await _delete_spectrals(spectrals_path)
@@ -250,10 +250,13 @@ def specs_hosts_text(trackers: Sequence[str]) -> str:
 class SpectralsNotUploaded(Exception):
     """A tracker's spectrals could not be uploaded to its specs host, in this call or earlier in the run."""
 
-    def __init__(self, host: str, kept: str | None = None) -> None:
-        """Say which host failed, and where the spectrals are kept, if that is known and they are."""
+    def __init__(self, host: str | None, kept: str | None = None) -> None:
+        """Say which host failed (None: no host can take them, as a spectral is not a usable image), and where the
+        spectrals are kept, if that is known and they are."""
+        why = f" to {host}" if host is not None else ": a spectral is not a usable image"
         where = f" They are kept in {kept}." if kept is not None else ""
-        super().__init__(f"The spectrals could not be uploaded to {host}.{where}")
+        super().__init__(f"The spectrals could not be uploaded{why}.{where}")
+        self.host = host
 
 
 class SpectralsDeclined(Exception):
@@ -285,6 +288,7 @@ class SpectralUploads:
         self._hosts = {cfg.image.host_for(tracker, "specs_uploader") for tracker in self._trackers}
         self._urls: dict[str, dict[int, list[str]] | None] = {}
         self._failed: set[str] = set()  # The hosts the spectrals could not be uploaded to
+        self._unusable = False  # A spectral is not a usable image: no host can take them
         # The trackers the user chose to upload to without the spectrals that failed, and those they chose not to.
         self._without: set[str] = set()
         self._declined: set[str] = set()
@@ -318,8 +322,12 @@ class SpectralUploads:
         if host not in self._urls and host not in self._failed:
             try:
                 self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker)
-            except SpectralsNotUploaded:
+            except SpectralsNotUploaded as failure:
                 self._failed.add(host)
+                if failure.host is None:
+                    # The same files go to every host: none is tried.
+                    self._unusable = True
+                    self._failed |= self._hosts
                 # Kept for the user, and out of any torrent the run goes on to make.
                 self._keep_out_of_album()
             else:
@@ -329,14 +337,14 @@ class SpectralUploads:
                     self._keep_out_of_album()
         if host in self._failed:
             # A dry run's spectrals go with its run directory.
-            raise SpectralsNotUploaded(host, None if dryrun.active() else self._path)
+            raise SpectralsNotUploaded(None if self._unusable else host, None if dryrun.active() else self._path)
         return self._urls[host]
 
     async def urls_for_upload(
-        self, gazelle_site: "BaseGazelleApi", spectral_ids: dict[int, str] | None
+        self, gazelle_site: "BaseGazelleApi", spectral_ids: dict[int, str] | None, *, lossy_master: bool
     ) -> dict[int, list[str]] | None:
         """Get the spectral URLs for an upload to a tracker (see urls_for), or, when they failed, ask whether to upload
-        without them: see go_on_without.
+        without them: see go_on_without. For a lossy master, the question says its report goes without them too.
 
         Raises:
             SpectralsDeclined: They failed, and the user did not choose to upload without them. Nothing was sent to the
@@ -346,7 +354,8 @@ class SpectralUploads:
             return await self.urls_for(gazelle_site.site_code, spectral_ids)
         except SpectralsNotUploaded as failure:
             click.secho(f"\n{failure}", fg="red", bold=True)
-            question = f"Upload to {gazelle_site.site_string} without spectrals?"
+            report = ", and send its lossy master report," if lossy_master else ""
+            question = f"Upload to {gazelle_site.site_string}{report} without spectrals?"
             if await self.go_on_without(gazelle_site.site_code, question):
                 return None
             raise SpectralsDeclined(f"Not uploading to {gazelle_site.site_string} without its spectrals.") from failure
@@ -392,9 +401,8 @@ class SpectralUploads:
                 # Kept for the user: a later run on the album finds them by their files, not by this claim.
                 drop_specs_claim(self._path)
                 hosts = ", ".join(sorted(self._failed))
-                click.secho(
-                    f"\nThe spectrals are kept in {self._path}: they could not be uploaded to {hosts}.", fg="yellow"
-                )
+                why = "a spectral is not a usable image" if self._unusable else f"they could not be uploaded to {hosts}"
+                click.secho(f"\nThe spectrals are kept in {self._path}: {why}.", fg="yellow")
             return
         await _delete_spectrals(self._path)
         if self._scratch is not None:
@@ -1356,7 +1364,7 @@ async def upload_spectrals(
                 click.secho(
                     f"{os.path.basename(path)} is not a usable image ({e}): no spectrals are uploaded.", fg="red"
                 )
-                raise SpectralsNotUploaded(cfg.image.host_for(tracker, "specs_uploader")) from e
+                raise SpectralsNotUploaded(None) from e
 
     if dryrun.active():
         host = cfg.image.host_for(tracker, "specs_uploader")

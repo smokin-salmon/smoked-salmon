@@ -5,6 +5,7 @@ The image hosts are fakes: nothing is sent anywhere.
 
 import os
 import tempfile
+from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, cast
@@ -14,6 +15,7 @@ import pytest
 
 import salmon.images
 from salmon import cfg, dryrun, interaction
+from salmon.config.validations import ImageUploader, TrackerImageSettings
 from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 from salmon.images.files import NotAnImage
@@ -135,8 +137,8 @@ def test_the_first_trackers_turn_is_not_asked_again_after_a_yes(monkeypatch, tmp
 
     monkeypatch.setattr(interaction, "confirm", yes)
     uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
-    first = anyio.run(uploads.urls_for_upload, RED, IDS)
-    again = anyio.run(uploads.urls_for_upload, RED, IDS)
+    first = anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False))
+    again = anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False))
 
     assert (first, again) == (None, None)
     assert len(asked) == 1
@@ -157,7 +159,7 @@ def test_no_is_the_default_and_the_answer_with_yyy(monkeypatch, tmp_path, scratc
     uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
 
     with pytest.raises(SpectralsDeclined, match="Not uploading to RED without its spectrals"):
-        anyio.run(uploads.urls_for_upload, RED, IDS)
+        anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False))
 
     assert asked == ([] if yes_all else [False])
     assert uploads.declined("RED")
@@ -178,3 +180,41 @@ def test_a_dry_run_keeps_nothing(monkeypatch, tmp_path, scratch, tries) -> None:
     assert "kept" not in str(failure)
     assert not os.path.exists(get_spectrals_path(str(album)))
     assert [path for path in scratch.rglob("*") if path.is_file()] == []
+
+
+def test_a_lossy_masters_question_says_its_report_goes_without_them_too(monkeypatch, tmp_path, scratch, tries) -> None:
+    asked: list[str] = []
+
+    async def no(text: str, **_kwargs) -> bool:
+        asked.append(text)
+        return False
+
+    monkeypatch.setattr(interaction, "confirm", no)
+    uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
+
+    with pytest.raises(SpectralsDeclined):
+        anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=True))
+
+    assert "Upload to RED, and send its lossy master report, without spectrals?" in asked[0]
+
+
+def test_an_unusable_spectral_is_checked_once_and_blamed_on_no_host(monkeypatch, tmp_path, scratch, capsys) -> None:
+    checked: list[str] = []
+
+    def refused(path: str) -> str:
+        checked.append(os.path.basename(path))
+        raise NotAnImage("it is cut short")
+
+    monkeypatch.setattr(spectrals, "check_image", refused)
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [])
+    overrides = {"ops": TrackerImageSettings(specs_uploader="imgbox")}
+    monkeypatch.setattr(cfg, "image", ImageUploader(cover_uploader="catbox", specs_uploader="catbox", **overrides))  # pyright: ignore[reportArgumentType]
+    uploads = SpectralUploads(str(_album(tmp_path)), ["RED", "OPS"])
+
+    failures = [str(_fail(uploads, "RED")), str(_fail(uploads, "OPS"))]
+    anyio.run(uploads.close)
+
+    assert checked == ["01 Full.png"]
+    assert all(f.startswith("The spectrals could not be uploaded: a spectral is not a usable image.") for f in failures)
+    assert "a spectral is not a usable image." in capsys.readouterr().out.splitlines()[-1]

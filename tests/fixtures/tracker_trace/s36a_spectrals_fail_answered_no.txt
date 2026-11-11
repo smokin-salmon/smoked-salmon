@@ -59,12 +59,12 @@ Do you have a comment for the lossy approval report? It is appropriate to make a
 
 01 Full.png is not a usable image (it is cut short): no spectrals are uploaded.
 
-The spectrals could not be uploaded to testhost. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
-Upload to RED without spectrals? [y/N]: <answered: 'n'>
+The spectrals could not be uploaded: a spectral is not a usable image. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
+Upload to RED, and send its lossy master report, without spectrals? [y/N]: <answered: 'n'>
 
 Not uploading to RED without its spectrals.
 
-The spectrals are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals: they could not be uploaded to testhost.
+The spectrals are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals: a spectral is not a usable image.
 
 == stderr ==
 Aborted!
