@@ -302,6 +302,10 @@
 [upload.formatting]
 # templates for folder and file naming
 # folder_template = "{artists} - {title} ({year}) [{source} {format}]"
+# Fields: {artists}, {title}, {year} (the edition's), {group_year} (the original release's), {source}, {format},
+# {resolution} (below), {label}, {catno}, {edition_title}, {upc}. A field the release has no value for is left out
+# with the brackets around it, e.g. "... [{source} {format}] [{catno}]" names a release without a catalogue number
+# "... [CD FLAC]". A literal brace is doubled: "{{{catno}}}" gives "{82876 88125 2}".
 # {resolution} adds "24-96" / "16-48" for lossless files that are not 16bit/44.1kHz (blank for
 # lossy files, for 16/44.1, and for a release with mixed bit depths or sample rates), e.g. a
 # FLAC-only folder_template of "[{source} FLAC {resolution}]"; pair it with {source} rather
