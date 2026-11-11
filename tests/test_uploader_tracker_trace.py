@@ -14,7 +14,10 @@ import difflib
 import itertools
 import os
 import re
+import tempfile
+from contextlib import asynccontextmanager
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -32,8 +35,12 @@ from helpers.tracker_trace import (
 from helpers.uploader_dry_run import METADATA, RLS_DATA, _lossy_with_spectrals, _returning_async, _transcode
 from test_run_exit_status import _forbidden_on, dirs  # noqa: F401 (dirs is a fixture)
 
+import salmon.images
 from salmon import cfg
-from salmon.errors import UploadError
+from salmon.config.validations import TrackerImageSettings
+from salmon.errors import ImageUploadFailed, UploadError
+from salmon.images.base import BaseImageUploader
+from salmon.images.files import NotAnImage
 from salmon.uploader import spectrals
 
 TRACES = Path(__file__).parent / "fixtures" / "tracker_trace"
@@ -90,6 +97,56 @@ def _spectrals_found_after_the_upload(monkeypatch, _album_path: Path) -> None:
     monkeypatch.setattr(spectrals, "check_spectrals", _lossy_with_spectrals)
 
 
+def _kept_in_the_test(monkeypatch, album: Path) -> None:
+    """The system temporary directory, where a run keeps the spectrals it moved out of the album, inside the test's."""
+    folder = album.parent.parent / "system-tmp"
+    folder.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(folder))
+
+
+def _unusable_spectrals(monkeypatch, album: Path) -> None:
+    """A spectral the image check refuses: none is uploaded, to any host."""
+    _kept_in_the_test(monkeypatch, album)
+
+    def refused(path: str) -> str:
+        raise NotAnImage("it is cut short")
+
+    monkeypatch.setattr(spectrals, "check_image", refused)
+
+
+def _specs_host_down_for(*codes: str, at: str = "connect"):
+    """The trackers given take their spectrals to imgbox, which is down: it fails before any upload ("connect"), or
+    fails each image ("upload"), which asks for another host."""
+
+    class Down(BaseImageUploader):
+        @asynccontextmanager
+        async def connections(self, limit: int):
+            if at == "connect":
+                raise ImageUploadFailed("imgbox is down")
+            yield
+
+        async def upload_file(self, filename: str) -> tuple[str, None]:
+            raise ImageUploadFailed(f"{os.path.basename(filename)}: imgbox is down")
+
+    def setup(monkeypatch, album: Path) -> None:
+        _kept_in_the_test(monkeypatch, album)
+        monkeypatch.setitem(salmon.images.HOSTS, "imgbox", SimpleNamespace(ImageUploader=Down))
+        for code in codes:
+            monkeypatch.setattr(cfg.image, code.lower(), TrackerImageSettings(specs_uploader="imgbox"))
+
+    return setup
+
+
+def _spectrals_after_unusable(monkeypatch, album: Path) -> None:
+    _spectrals_found_after_the_upload(monkeypatch, album)
+    _unusable_spectrals(monkeypatch, album)
+
+
+# A new group, the folder name kept, the upload confirmed, no lossy report comment: RED's questions before its
+# spectrals are uploaded.
+BEFORE_SPECTRALS = "\n\n\n\n"
+# Check the conversions, and make them all.
+CONVERSIONS = "\n\n"
 # Each scenario is a row of #982's table: S2 is "s02...", its variants "s02_...". Where the same scenario runs through
 # salmon web, its CLI row is named here and the web one ends in "_web_job".
 SCENARIOS: dict[str, Scenario] = {
@@ -267,6 +324,42 @@ SCENARIOS: dict[str, Scenario] = {
         args=("--spectrals-after",),
         sites=RED_REFUSES,
         setup=_spectrals_found_after_the_upload,
+    ),
+    # #1019: the spectrals could not be uploaded.
+    "s36a_spectrals_fail_answered_no": Scenario(
+        "RED's spectrals are not usable images, upload without them answered n: nothing sent, the folder kept",
+        yes_all=False,
+        stdin=BEFORE_SPECTRALS + "n\n",
+        setup=_unusable_spectrals,
+    ),
+    "s36b_spectrals_fail_yyy": Scenario(
+        "RED's spectrals are not usable images, -yyy: nothing sent, nothing asked, the folder kept",
+        setup=_unusable_spectrals,
+    ),
+    "s37_second_host_fails_answered_no": Scenario(
+        "OPS's specs host is down, upload without them answered n: RED up, OPS skipped as failed",
+        yes_all=False,
+        stdin=BEFORE_SPECTRALS + CONVERSIONS + "\n" + "n\n",
+        setup=_specs_host_down_for("OPS"),
+    ),
+    "s38_shared_host_fails_answered_yes": Scenario(
+        "RED and OPS share a specs host that is down: tried once, each asked, both answered y",
+        yes_all=False,
+        stdin=BEFORE_SPECTRALS + "y\n" + CONVERSIONS + "\n" + "y\n" + ANY_STDIN,
+        setup=_specs_host_down_for("RED", "OPS"),
+    ),
+    "s39_spectrals_after_fail_report_answered_no": Scenario(
+        "--spectrals-after, lossy master, spectrals not usable: no report on RED; OPS asked, answered y",
+        yes_all=False,
+        args=("--spectrals-after",),
+        stdin=BEFORE_SPECTRALS + "n\n" + CONVERSIONS + "\n" + "y\n" + ANY_STDIN,
+        setup=_spectrals_after_unusable,
+    ),
+    "s40_skipped_at_host_question": Scenario(
+        "The specs host fails each image, skip answered at its host question: no new question, both up",
+        yes_all=False,
+        stdin=BEFORE_SPECTRALS + "skip\n" + ANY_STDIN,
+        setup=_specs_host_down_for("RED", "OPS", at="upload"),
     ),
 }
 

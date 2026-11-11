@@ -202,9 +202,16 @@ async def handle_spectrals_upload_and_deletion(
         delete_spectrals: Whether to delete local spectral files.
 
     Returns:
-        Dict mapping spectral IDs to uploaded URLs.
+        Dict mapping spectral IDs to uploaded URLs. When they could not be uploaded, the folder is kept, whatever
+        delete_spectrals says.
     """
-    spectral_urls = await upload_spectrals(spectrals_path, spectral_ids)
+    try:
+        spectral_urls = await upload_spectrals(spectrals_path, spectral_ids)
+    except SpectralsNotUploaded as failure:
+        # Kept for another try (#1019): a later salmon up on the album removes them by their files.
+        drop_specs_claim(spectrals_path)
+        click.secho(f"{failure} They are kept in {spectrals_path}.", fg="yellow")
+        return None
     if delete_spectrals:
         await _delete_spectrals(spectrals_path)
     return spectral_urls
@@ -240,13 +247,28 @@ def specs_hosts_text(trackers: Sequence[str]) -> str:
     return ", ".join(f"{host} ({'/'.join(codes)})" for host, codes in trackers_by_host.items())
 
 
+class SpectralsNotUploaded(Exception):
+    """A tracker's spectrals could not be uploaded to its specs host, in this call or earlier in the run."""
+
+    def __init__(self, host: str, kept: str | None = None) -> None:
+        """Say which host failed, and where the spectrals are kept, if that is known and they are."""
+        where = f" They are kept in {kept}." if kept is not None else ""
+        super().__init__(f"The spectrals could not be uploaded to {host}.{where}")
+        self.host = host
+
+
+class SpectralsDeclined(Exception):
+    """The spectrals could not be uploaded, and the user chose not to upload to the tracker without them."""
+
+
 class SpectralUploads:
     """A release's spectrals in an upload run, uploaded once per image host and reused by the trackers sharing it.
 
     A tracker's spectrals go to its specs host: image.<tracker>.specs_uploader, else image.specs_uploader.
     Once every tracker the run may upload to has its upload, the spectral files are deleted. Until then,
     they are kept, outside the album folder so that no torrent made from it holds them, and close()
-    deletes them.
+    deletes them. A host they could not be uploaded to is not tried again in the run, and the files are kept
+    for the user to upload later (#1019).
     """
 
     def __init__(self, album_path: str, trackers: Sequence[str], given: dict[int, list[str]] | None = None) -> None:
@@ -263,6 +285,10 @@ class SpectralUploads:
         self._trackers = list(trackers)
         self._hosts = {cfg.image.host_for(tracker, "specs_uploader") for tracker in self._trackers}
         self._urls: dict[str, dict[int, list[str]] | None] = {}
+        self._failed: set[str] = set()  # The hosts the spectrals could not be uploaded to
+        # The trackers the user chose to upload to without the spectrals that failed, and those they chose not to.
+        self._without: set[str] = set()
+        self._declined: set[str] = set()
         self._scratch: str | None = None
         self._given = given
 
@@ -278,18 +304,71 @@ class SpectralUploads:
             spectral_ids: The spectrals to upload, by track ID.
 
         Returns:
-            The URLs of each spectral by track ID, or None if there are none: see upload_spectrals.
+            The URLs of each spectral by track ID, or None if there are none: see upload_spectrals. None too for a
+            tracker the user chose to upload to without them (see go_on_without).
+
+        Raises:
+            SpectralsNotUploaded: They could not be uploaded to the tracker's host, now or earlier in the run: the host
+                is not tried again.
         """
         if self._given is not None:
             return {sid: list(urls) for sid, urls in self._given.items()}
+        if tracker in self._without:
+            return None
         host = cfg.image.host_for(tracker, "specs_uploader")
-        if host not in self._urls:
-            self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker)
-            if not spectral_ids or self._hosts <= self._urls.keys():
-                await self.close()
-            else:
+        if host not in self._urls and host not in self._failed:
+            try:
+                self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker)
+            except SpectralsNotUploaded:
+                self._failed.add(host)
+                # Kept for the user, and out of any torrent the run goes on to make.
                 self._keep_out_of_album()
+            else:
+                if not spectral_ids or self._hosts <= self._urls.keys():
+                    await self.close()
+                else:
+                    self._keep_out_of_album()
+        if host in self._failed:
+            # A dry run's spectrals go with its run directory.
+            raise SpectralsNotUploaded(host, None if dryrun.active() else self._path)
         return self._urls[host]
+
+    async def urls_for_upload(
+        self, gazelle_site: "BaseGazelleApi", spectral_ids: dict[int, str] | None
+    ) -> dict[int, list[str]] | None:
+        """Get the spectral URLs for an upload to a tracker (see urls_for), or, when they failed, ask whether to upload
+        without them: see go_on_without.
+
+        Raises:
+            SpectralsDeclined: They failed, and the user did not choose to upload without them. Nothing was sent to the
+                tracker.
+        """
+        try:
+            return await self.urls_for(gazelle_site.site_code, spectral_ids)
+        except SpectralsNotUploaded as failure:
+            click.secho(f"\n{failure}", fg="red", bold=True)
+            question = f"Upload to {gazelle_site.site_string} without spectrals?"
+            if await self.go_on_without(gazelle_site.site_code, question):
+                return None
+            raise SpectralsDeclined(f"Not uploading to {gazelle_site.site_string} without its spectrals.") from failure
+
+    async def go_on_without(self, tracker: str, question: str) -> bool:
+        """Ask a question about going on without the spectrals that failed for a tracker: no is the default, and the
+        answer with -yyy.
+
+        A yes holds for the rest of the run: urls_for then gives the tracker None. A no makes declined() true for it.
+        """
+        if not await interaction.assume_defaults() and await interaction.confirm(
+            click.style(question, fg="magenta", bold=True), default=False
+        ):
+            self._without.add(tracker)
+            return True
+        self._declined.add(tracker)
+        return False
+
+    def declined(self, tracker: str) -> bool:
+        """Whether the user chose not to send this tracker anything without the spectrals that failed for it."""
+        return tracker in self._declined
 
     def _keep_out_of_album(self) -> None:
         """Move the spectrals folder out of the album folder, if it is inside it, to where close() deletes it."""
@@ -303,9 +382,19 @@ class SpectralUploads:
         carry_specs_claim(old_real, self._path)
 
     async def close(self) -> None:
-        """Delete the spectral files, if they are still there. With spectrals given by URL, the run made none."""
+        """Delete the spectral files, if they are still there, unless they failed for a host: then they are kept, and
+        close() says where. With spectrals given by URL, the run made none."""
         if self._given is not None:
             # What is at the spectrals path now is not this run's: a folder there may be in a torrent seeding.
+            return
+        if self._failed and not dryrun.active():
+            if os.path.isdir(self._path):
+                # Kept for the user: a later run on the album finds them by their files, not by this claim.
+                drop_specs_claim(self._path)
+                hosts = ", ".join(sorted(self._failed))
+                click.secho(
+                    f"\nThe spectrals are kept in {self._path}: they could not be uploaded to {hosts}.", fg="yellow"
+                )
             return
         await _delete_spectrals(self._path)
         if self._scratch is not None:
@@ -1235,8 +1324,13 @@ async def upload_spectrals(
             uploads them to the shared specs_uploader.
 
     Returns:
-        Dict mapping spectral IDs to uploaded URLs, or None. A dry run uploads nothing: the URLs are what stands
-        in for them.
+        Dict mapping spectral IDs to uploaded URLs, or None when there are none to upload. A dry run uploads nothing:
+        the URLs are what stands in for them. The user may choose to go on without some of them, or all of them (an
+        empty dict), at the host question.
+
+    Raises:
+        SpectralsNotUploaded: A spectral is not a usable image, or the host failed with no host question to ask.
+            What went wrong is printed.
     """
     if not spectral_ids:
         return None
@@ -1262,7 +1356,7 @@ async def upload_spectrals(
                 click.secho(
                     f"{os.path.basename(path)} is not a usable image ({e}): no spectrals are uploaded.", fg="red"
                 )
-                return None
+                raise SpectralsNotUploaded(cfg.image.host_for(tracker, "specs_uploader")) from e
 
     if dryrun.active():
         host = cfg.image.host_for(tracker, "specs_uploader")
@@ -1272,7 +1366,7 @@ async def upload_spectrals(
         return await upload_spectral_imgs(spectrals_list, tracker=tracker)
     except ImageUploadFailed as e:
         click.secho(f"Failed to upload spectral: {e}", fg="red")
-        return None
+        raise SpectralsNotUploaded(cfg.image.host_for(tracker, "specs_uploader")) from e
 
 
 def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool | None) -> str:
@@ -1515,6 +1609,40 @@ def make_spectral_bbcode(spectral_ids, spectral_urls):
     return bbcode
 
 
+async def _go_on_after_failed_spectrals(
+    gazelle_site: "BaseGazelleApi",
+    album: str,
+    torrent_id: int,
+    failure: SpectralsNotUploaded,
+    lossy_master: bool,
+    uploads: SpectralUploads,
+) -> bool:
+    """After the upload, the spectrals failed: say how to add them later, and whether to send the lossy master report
+    without them, which the user is asked (no by default, and with -yyy). Nothing is added to the description.
+
+    Returns:
+        Whether to send the lossy master report: False with no report to send.
+    """
+    click.secho(f"\n{failure}", fg="red", bold=True)
+    permalink = f"{gazelle_site.base_url}/torrents.php?torrentid={torrent_id}"
+    folder = os.path.dirname(os.path.abspath(album))
+    click.secho(
+        f'{permalink} is up without its spectrals: add them later with salmon checkspecs -i {permalink} "{folder}"',
+        fg="yellow",
+    )
+    if not lossy_master:
+        return False
+    question = f"Send the lossy master report to {gazelle_site.site_string} without spectrals?"
+    if await uploads.go_on_without(gazelle_site.site_code, question):
+        return True
+    click.secho(
+        f"No lossy master report was sent to {gazelle_site.site_string}, for this upload or its conversions: "
+        "report them by hand once the spectrals are up.",
+        fg="yellow",
+    )
+    return False
+
+
 async def post_upload_spectral_check(
     gazelle_site: "BaseGazelleApi",
     path: str,
@@ -1570,7 +1698,14 @@ async def post_upload_spectral_check(
         )
         click.echo()
 
-    spectral_urls = await uploads.urls_for(gazelle_site.site_code, spectral_ids)
+    try:
+        spectral_urls = await uploads.urls_for(gazelle_site.site_code, spectral_ids)
+    except SpectralsNotUploaded as failure:
+        if not await _go_on_after_failed_spectrals(
+            gazelle_site, path, torrent_id, failure, bool(lossy_master), uploads
+        ):
+            return bool(lossy_master), lossy_comment, None, spectral_ids
+        spectral_urls = None
 
     if spectral_urls:
         spectrals_bbcode = make_spectral_bbcode(spectral_ids, spectral_urls)

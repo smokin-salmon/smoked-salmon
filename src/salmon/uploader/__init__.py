@@ -68,6 +68,7 @@ from salmon.uploader.metadata_review import edit_metadata, last_min_dupe_check, 
 from salmon.uploader.preassumptions import confirm_group_upload, print_preassumptions, validate_skip_flac_source
 from salmon.uploader.seedbox import UploadManager
 from salmon.uploader.spectrals import (
+    SpectralsDeclined,
     SpectralUploads,
     check_spectrals,
     foreign_spectrals_refusal,
@@ -914,7 +915,12 @@ async def _upload_staged(  # noqa: C901
                 click.echo()
 
             if not first_listed:
-                spectral_urls = await spectral_uploads.urls_for(gazelle_site.site_code, spectral_ids)
+                try:
+                    spectral_urls = await spectral_uploads.urls_for_upload(gazelle_site, spectral_ids)
+                except SpectralsDeclined as declined:
+                    # Before anything is sent to the first tracker: the run stops as an abort does (#1019).
+                    click.secho(f"\n{declined}", fg="red", bold=True)
+                    raise click.Abort from declined
         if cfg.upload.requests.last_minute_dupe_check and not first_listed:
             await last_min_dupe_check(gazelle_site, searchstrs, our_title)
 
@@ -1045,7 +1051,7 @@ async def _upload_staged(  # noqa: C901
 
                 turn = await upload_to_tracker(release, gazelle_site, group_id, run)
                 tracker = None
-                if turn is Turn.NO_COVER:
+                if turn is not Turn.ENDED:
                     if not remaining_gazelle_sites or not go_on:
                         break
                     continue

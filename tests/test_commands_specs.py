@@ -5,6 +5,8 @@ recorder. No tracker or host is contacted.
 """
 
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
@@ -21,6 +23,7 @@ from helpers.uploader_frequency import (
 import salmon.images
 from salmon import cfg, interaction
 from salmon.commands import specs
+from salmon.errors import ImageUploadFailed
 from salmon.images.base import BaseImageUploader
 from salmon.uploader import frequency, spectrals
 from salmon.uploader.spectrals import get_spectrals_path
@@ -104,6 +107,32 @@ def test_specs_uploads_the_spectrals_and_none_of_the_plots(album, image_uploads,
     # The plots are there to be uploaded, and are not.
     assert "01 Spectrum.png" in in_folder
     assert sorted(image_uploads) == ["01 Full.png", "01 Zoom.png", "02 Full.png", "02 Zoom.png"]
+
+
+def test_specs_keeps_the_spectrals_it_could_not_upload(album, monkeypatch, capsys) -> None:
+    class Down(BaseImageUploader):
+        async def upload_file(self, filename: str) -> tuple[str, None]:
+            raise AssertionError("no upload starts")
+
+        @asynccontextmanager
+        async def connections(self, limit: int) -> AsyncIterator[None]:
+            raise ImageUploadFailed("the host is down")
+            yield
+
+    monkeypatch.setitem(salmon.images.HOSTS, "testhost", SimpleNamespace(ImageUploader=Down))
+    monkeypatch.setattr(cfg.image, "specs_uploader", "testhost")
+
+    run_specs(album)
+
+    folder = get_spectrals_path(album)
+    assert sorted(f for f in os.listdir(folder) if f.endswith(("Full.png", "Zoom.png"))) == [
+        "01 Full.png",
+        "01 Zoom.png",
+        "02 Full.png",
+        "02 Zoom.png",
+    ]
+    out = capsys.readouterr().out
+    assert f"The spectrals could not be uploaded to testhost. They are kept in {folder}." in out
 
 
 def test_specs_leaves_nothing_behind_when_it_deletes_the_spectrals(album, image_uploads, monkeypatch) -> None:

@@ -33,7 +33,10 @@ def _upload(monkeypatch, tmp_path: Path, *, dry: bool = False):
     monkeypatch.setattr(sp, "upload_spectral_imgs", host)
 
     async def go():
-        return await sp.upload_spectrals(str(tmp_path), {1: "01 a.flac"})
+        try:
+            return await sp.upload_spectrals(str(tmp_path), {1: "01 a.flac"})
+        except sp.SpectralsNotUploaded as failure:
+            return failure
 
     if dry:
         with dryrun.mode():
@@ -50,7 +53,7 @@ def test_a_truncated_spectral_refuses_the_whole_upload(monkeypatch, tmp_path, ca
 
     result, received = _upload(monkeypatch, tmp_path, dry=dry)
 
-    assert result is None
+    assert isinstance(result, sp.SpectralsNotUploaded)
     assert received == []
     out = capsys.readouterr().out
     assert "01 Zoom.png is not a usable image (" in out
@@ -63,7 +66,7 @@ def test_a_missing_spectral_refuses_the_upload(monkeypatch, tmp_path, capsys) ->
 
     result, received = _upload(monkeypatch, tmp_path)
 
-    assert result is None
+    assert isinstance(result, sp.SpectralsNotUploaded)
     assert received == []
     assert "01 Full.png is not a usable image" in capsys.readouterr().out
 

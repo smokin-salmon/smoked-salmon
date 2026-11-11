@@ -23,7 +23,7 @@ from salmon.uploader.cover_upload import resolve_cover_url
 from salmon.uploader.dupe_checker import print_torrents
 from salmon.uploader.request_checker import check_requests
 from salmon.uploader.seedbox import UploadManager
-from salmon.uploader.spectrals import SpectralUploads, post_upload_spectral_check
+from salmon.uploader.spectrals import SpectralsDeclined, SpectralUploads, post_upload_spectral_check
 from salmon.uploader.upload import upload_and_report
 
 if TYPE_CHECKING:
@@ -76,6 +76,7 @@ class Turn(enum.Enum):
 
     ENDED = enum.auto()  # Ran to its end, whether or not anything went up: the loop may say it is done
     NO_COVER = enum.auto()  # Refused at the cover: skipped, and nothing was sent
+    NO_SPECTRALS = enum.auto()  # Not uploaded without the spectrals that failed: skipped, and nothing was sent
 
 
 def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> str | None:
@@ -86,6 +87,15 @@ def converted_from_note(conversion: dict[str, Any] | None, url: str | None) -> s
     if conversion.get("kind") == "transcode":
         return transcode_note(url or "", cast("Bitrate", conversion.get("bitrate")))
     return conversion_note(url or "", conversion.get("sample_rate"), cast("BitDepth", conversion.get("bit_depth", 16)))
+
+
+def _say_declined(declined: SpectralsDeclined, uploaded: list[str]) -> None:
+    """Say a tracker is skipped for want of its spectrals, and what the run uploaded already, which stays up."""
+    click.secho(f"\n{declined}", fg="red", bold=True)
+    if uploaded:
+        click.secho("Already uploaded, and still up:", fg="yellow")
+        for line in uploaded:
+            click.echo(f"  {line}")
 
 
 async def upload_to_tracker(
@@ -114,7 +124,13 @@ async def upload_to_tracker(
 
     if not run.spectrals_after:
         # Uploaded to this tracker's specs host, unless a tracker using the same host already did.
-        run.spectral_urls = await run.spectral_uploads.urls_for(gazelle_site.site_code, run.spectral_ids)
+        try:
+            run.spectral_urls = await run.spectral_uploads.urls_for_upload(gazelle_site, run.spectral_ids)
+        except SpectralsDeclined as declined:
+            # Like a refused upload: this tracker is skipped, and the next one offered (#1019).
+            _say_declined(declined, run.uploaded)
+            run.failed_trackers.append(gazelle_site.site_string)
+            return Turn.NO_SPECTRALS
 
     try:
         if not release.flac_url and not run.request_id and cfg.upload.requests.check_requests:
@@ -228,7 +244,8 @@ async def upload_to_tracker(
                     cover_url,
                     release.track_data,
                     release.hybrid,
-                    run.lossy_master,
+                    # Not reported without the spectrals the user would not report the FLAC without.
+                    run.lossy_master and not run.spectral_uploads.declined(gazelle_site.site_code),
                     run.spectral_urls,
                     run.spectral_ids,
                     run.lossy_comment,
