@@ -254,7 +254,6 @@ class SpectralsNotUploaded(Exception):
         """Say which host failed, and where the spectrals are kept, if that is known and they are."""
         where = f" They are kept in {kept}." if kept is not None else ""
         super().__init__(f"The spectrals could not be uploaded to {host}.{where}")
-        self.host = host
 
 
 class SpectralsDeclined(Exception):
@@ -371,7 +370,8 @@ class SpectralUploads:
         return tracker in self._declined
 
     def _keep_out_of_album(self) -> None:
-        """Move the spectrals folder out of the album folder, if it is inside it, to where close() deletes it."""
+        """Move the spectrals folder out of the album folder, if it is inside it, to where close() deletes it (or keeps
+        it, after a failure)."""
         if self._scratch is not None or not os.path.isdir(self._path):
             return
         if not is_within(os.path.realpath(self._path), os.path.realpath(self._album_path)):

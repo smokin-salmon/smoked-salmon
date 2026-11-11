@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
 SPECTRALS = ("01 Full.png", "01 Zoom.png")
 # Only its code and name are read.
-RED = cast("BaseGazelleApi", cast(object, SimpleNamespace(site_code="RED", site_string="RED")))
+RED = cast("BaseGazelleApi", cast("object", SimpleNamespace(site_code="RED", site_string="RED")))
 IDS = {1: "01. one.flac"}
 
 
