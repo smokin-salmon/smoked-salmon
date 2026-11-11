@@ -36,6 +36,7 @@ from helpers.checks_logs import (
     _patch_file_crcs,
 )
 from helpers.checks_mqa import _write_flac
+from helpers.dsd import write_dsf
 from mutagen.flac import FLAC
 
 import salmon.checks.album as album_checks
@@ -366,6 +367,30 @@ def test_an_aac_album_is_lossy_and_gets_no_frequency_analysis(tmp_path):
     assert _rows(result.output)["Frequency analysis"] == "INFO"
     assert "No lossless file" in result.output
     assert "1. Lossless or lossy\n   Lossy." in result.output
+
+
+@pytest.mark.usefixtures("no_tracker")
+def test_a_dsd_album_is_lossless_at_a_standard_rate_and_blocked_for_ops_alone(tmp_path):
+    album = tmp_path / "Artist - Album (2020) [WEB DSD64]"
+    album.mkdir()
+    for number in (1, 2):
+        tags = {"TPE1": "Artist", "TALB": "Album", "TIT2": f"Track {number}", "TRCK": str(number), "TDRC": "2020"}
+        write_dsf(album / f"{number:02d} Track {number}.dsf", tags=tags)
+    result = _run(str(album), "--report")
+    # Without -t, RED's and OPS's rules apply: OPS takes no DSD.
+    assert result.exit_code == 1, result.output
+    rows = _rows(result.output)
+    assert [rows[check] for check in ("Integrity", "Sample rate", "DSD (RED)", "DSD (OPS)")] == [
+        "OK",
+        "OK",
+        "OK",
+        "BLOCK",
+    ]
+    assert "Standard: DSD64." in result.output
+    assert "OPS does not take DSD." in result.output
+    assert "No lossless file" not in result.output
+    assert "1. Lossless or lossy\n   Lossless (DSD64)." in result.output
+    assert "DSD64 / 2.8224 MHz stereo" in result.output
 
 
 @pytest.mark.usefixtures("no_tracker")

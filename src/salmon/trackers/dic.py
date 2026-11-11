@@ -40,7 +40,8 @@ def _khz(rate: int) -> str:
 class DICApi(BaseGazelleApi):
     # DIC's upload form has no Arranger role (unconfirmed whether it ever will).
     unsupported_artist_roles = frozenset({"arranger"})
-    # Path limit unconfirmed for DIC; kept at the same value as before this was per-tracker.
+    # Path limit unconfirmed for DIC; kept at the same value as before this was per-tracker. Whether it takes DSD is
+    # not known either (takes_dsd None): salmon sends it none.
     TAG_RULES = TagRules(max_path_length=180)
 
     def __init__(self):

@@ -35,6 +35,7 @@ from salmon import cfg, dryrun, interaction
 from salmon.checks.do_not_upload import Candidate, do_not_upload_reason
 from salmon.checks.high_rate import sixteen_bit_notice
 from salmon.common import commandgroup, invisible_chars, show_invisible
+from salmon.common.dsd import dsd_refusal
 from salmon.common.strings import numeric_id
 from salmon.config.image_hosts import HOST_RULES
 from salmon.config.validations import CONVERSION_KINDS
@@ -566,6 +567,8 @@ def _check_torrent(response: dict[str, Any], source: "BaseGazelleApi", target: "
         raise CrossUploadRefused(f"salmon does not know {target.site_string} has the media {media!r}")
     if format_ not in FORMATS.values() or encoding not in ENCODINGS:
         raise CrossUploadRefused(f"salmon does not cross-upload {format_} {encoding}")
+    if format_ == "DSD" and (reason := dsd_refusal(target.site_string, target.TAG_RULES.takes_dsd)):
+        raise CrossUploadRefused(reason)
 
     on_source = f"on {source.site_string}"
     notes = []

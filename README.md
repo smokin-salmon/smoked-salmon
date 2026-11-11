@@ -25,6 +25,7 @@ A simple tool to take the work out of uploading on Gazelle-based trackers. It ge
 - **Description generation** – Edition description generation (tracklist, sources, available streaming platforms, encoding details...).
 - **Down-convert and Transcode** – Can downconvert 24-bit flac files to 16-bit, and transcode to mp3.
 - **Multi-Format Upload** – Automatically transcodes and uploads multiple formats (FLAC 16-bit, MP3, etc.) in a single workflow.
+- **DSD** – Reads, tags, renames and checks DSD albums (`.dsf` and `.dff`), and makes their spectrals from their audio decoded to PCM. `salmon up` uploads them as they are, as DSD64 to DSD512, to RED only: OPS takes no DSD, and DIC is not known to, so salmon refuses DSD for them, `cross-upload` included. A DSD album gets no transcodes.
 - **Torrent Client Injection** – Can inject generated torrent files into torrent clients (qBittorrent, Transmission, Deluge, ruTorrent).
 - **Remote Seeding** – Can transfer files to multiple remote locations via rclone and inject torrents into remote torrent clients for automatic seeding.
 - **Update Notifications** – Informs users when a new version is available.

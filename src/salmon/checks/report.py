@@ -8,13 +8,15 @@ the config: no credential, no tracker URL.
 from typing import Any
 
 from salmon.checks.album import AlbumChecks
+from salmon.common.dsd import rate_text, track_dsd_encoding
 
 
 def _format_line(info: dict[str, Any]) -> str:
     precision = info.get("precision")
     rate = info.get("sample rate")
-    depth = f"{precision}-bit" if precision else "lossy"
-    khz = f"{rate / 1000:g} kHz" if rate else "unknown rate"
+    dsd = track_dsd_encoding(info)
+    depth = dsd or (f"{precision}-bit" if precision else "lossy")
+    khz = rate_text(rate) if dsd and rate else f"{rate / 1000:g} kHz" if rate else "unknown rate"
     channels = {1: "mono", 2: "stereo"}.get(info.get("channels") or 0) or (
         f"{info['channels']}ch" if info.get("channels") else "unknown channels"
     )
@@ -30,9 +32,16 @@ def build_report(checks: AlbumChecks) -> str:
 
     audio_info, provenance = checks.audio_info, checks.provenance
     lines = [checks.folder, "", "1. Lossless or lossy"]
-    depths = sorted({info["precision"] for info in audio_info.values() if info.get("precision")})
+    # DSD by its rate, DSD64, not as 1-bit.
+    depths = sorted(
+        {
+            track_dsd_encoding(info) or f"{info['precision']}-bit"
+            for info in audio_info.values()
+            if info.get("precision")
+        }
+    )
     if depths:
-        lines.append(f"   Lossless ({', '.join(f'{depth}-bit' for depth in depths)}).")
+        lines.append(f"   Lossless ({', '.join(depths)}).")
     else:
         lines.append("   Lossy.")
     lines += [f"   Claim the audio contradicts: {note}" for note in provenance.get("contradictions", [])]

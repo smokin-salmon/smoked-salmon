@@ -64,6 +64,10 @@ ENCODINGS = {
     "320",
     "V0 (VBR)",
     "V2 (VBR)",
+    "DSD64",
+    "DSD128",
+    "DSD256",
+    "DSD512",
 }  # Fuck the esoteric and Other, no support found here.
 
 TAG_ENCODINGS = {
@@ -82,6 +86,8 @@ FORMATS = {
     ".flac": "FLAC",
     ".m4a": "AAC",
     ".mp3": "MP3",
+    ".dsf": "DSD",
+    ".dff": "DSD",
 }
 
 UAGENTS = [
@@ -375,6 +381,8 @@ ALLOWED_EXTENSIONS = {
     ".accurip",
     ".chm",
     ".cue",
+    ".dff",
+    ".dsf",
     ".dts",
     ".flac",
     ".gif",
@@ -403,6 +411,8 @@ ESSENTIAL_EXTENSIONS = {
     ".ac3",
     ".accurip",
     ".cue",
+    ".dff",
+    ".dsf",
     ".dts",
     ".flac",
     ".gif",

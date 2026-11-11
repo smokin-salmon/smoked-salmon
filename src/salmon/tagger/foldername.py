@@ -218,6 +218,8 @@ def resolution_token(audio_info):
     (bit_depth,), (sample_rate,) = bits, rates
     if not bit_depth or not sample_rate or (bit_depth == 16 and sample_rate == 44100):
         return ""
+    if bit_depth == 1:
+        return ""  # DSD: its format names the rate, DSD64, not "1-2822.4".
     return f"{bit_depth}-{sample_rate / 1000:g}"
 
 
@@ -491,6 +493,9 @@ def _fix_format(metadata, keys):
             sub_metadata["format"] = f"AAC {enc}"
             if metadata["encoding_vbr"]:
                 sub_metadata["format"] += " (VBR)"
+        elif metadata["format"] == "DSD":
+            # Its encoding names the format and the rate: DSD256.
+            sub_metadata["format"] = metadata["encoding"] or "DSD"
     return sub_metadata
 
 

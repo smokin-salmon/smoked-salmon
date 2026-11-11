@@ -66,7 +66,7 @@ def _no_v0_on_the_second_tracker() -> dict[str, Any]:
 
 
 def _sixteen_bit_refused_by(site_code: str) -> dict[str, Any]:
-    return {"_sixteen_bit_refusal": lambda tracker, *_args, **_kwargs: tracker == site_code}
+    return {"_files_refusal": lambda tracker, *_args, **_kwargs: tracker == site_code}
 
 
 def _no_cover(_monkeypatch, album: Path) -> None:
