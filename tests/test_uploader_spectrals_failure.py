@@ -5,10 +5,9 @@ The image hosts are fakes: nothing is sent anywhere.
 
 import os
 import tempfile
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from pathlib import Path
 from types import SimpleNamespace
+from typing import TYPE_CHECKING, cast
 
 import anyio
 import pytest
@@ -28,7 +27,12 @@ from salmon.uploader.spectrals import (
     made_by_salmon,
 )
 
+if TYPE_CHECKING:
+    from salmon.trackers.base import BaseGazelleApi
+
 SPECTRALS = ("01 Full.png", "01 Zoom.png")
+# Only its code and name are read.
+RED = cast("BaseGazelleApi", cast(object, SimpleNamespace(site_code="RED", site_string="RED")))
 IDS = {1: "01. one.flac"}
 
 
@@ -46,17 +50,11 @@ def tries(monkeypatch) -> list[str]:
     """A specs host that is down: each try at it is noted."""
     noted: list[str] = []
 
-    class Down(BaseImageUploader):
-        async def upload_file(self, filename: str) -> tuple[str, None]:
-            raise AssertionError("no upload starts")
+    def down() -> BaseImageUploader:
+        noted.append("tried")
+        raise ImageUploadFailed("the host is down")
 
-        @asynccontextmanager
-        async def connections(self, limit: int) -> AsyncIterator[None]:
-            noted.append("tried")
-            raise ImageUploadFailed("the host is down")
-            yield
-
-    monkeypatch.setitem(salmon.images.HOSTS, "testhost", SimpleNamespace(ImageUploader=Down))
+    monkeypatch.setitem(salmon.images.HOSTS, "testhost", SimpleNamespace(ImageUploader=down))
     monkeypatch.setattr(cfg.image, "specs_uploader", "testhost")
     monkeypatch.setattr(cfg.directory, "tmp_dir", None)
     monkeypatch.setattr(cfg.directory, "library_dirs", [])
@@ -137,10 +135,8 @@ def test_the_first_trackers_turn_is_not_asked_again_after_a_yes(monkeypatch, tmp
 
     monkeypatch.setattr(interaction, "confirm", yes)
     uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
-    site = SimpleNamespace(site_code="RED", site_string="RED")
-
-    first = anyio.run(uploads.urls_for_upload, site, IDS)
-    again = anyio.run(uploads.urls_for_upload, site, IDS)
+    first = anyio.run(uploads.urls_for_upload, RED, IDS)
+    again = anyio.run(uploads.urls_for_upload, RED, IDS)
 
     assert (first, again) == (None, None)
     assert len(asked) == 1
@@ -161,7 +157,7 @@ def test_no_is_the_default_and_the_answer_with_yyy(monkeypatch, tmp_path, scratc
     uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
 
     with pytest.raises(SpectralsDeclined, match="Not uploading to RED without its spectrals"):
-        anyio.run(uploads.urls_for_upload, SimpleNamespace(site_code="RED", site_string="RED"), IDS)
+        anyio.run(uploads.urls_for_upload, RED, IDS)
 
     assert asked == ([] if yes_all else [False])
     assert uploads.declined("RED")

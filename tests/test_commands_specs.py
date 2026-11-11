@@ -5,8 +5,6 @@ recorder. No tracker or host is contacted.
 """
 
 import os
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
@@ -110,16 +108,10 @@ def test_specs_uploads_the_spectrals_and_none_of_the_plots(album, image_uploads,
 
 
 def test_specs_keeps_the_spectrals_it_could_not_upload(album, monkeypatch, capsys) -> None:
-    class Down(BaseImageUploader):
-        async def upload_file(self, filename: str) -> tuple[str, None]:
-            raise AssertionError("no upload starts")
+    def down() -> BaseImageUploader:
+        raise ImageUploadFailed("the host is down")
 
-        @asynccontextmanager
-        async def connections(self, limit: int) -> AsyncIterator[None]:
-            raise ImageUploadFailed("the host is down")
-            yield
-
-    monkeypatch.setitem(salmon.images.HOSTS, "testhost", SimpleNamespace(ImageUploader=Down))
+    monkeypatch.setitem(salmon.images.HOSTS, "testhost", SimpleNamespace(ImageUploader=down))
     monkeypatch.setattr(cfg.image, "specs_uploader", "testhost")
 
     run_specs(album)
