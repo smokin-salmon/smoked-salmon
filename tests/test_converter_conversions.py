@@ -309,6 +309,7 @@ def _stub_transcode(monkeypatch, out, items):
     monkeypatch.setattr(tc, "_build_output_path", lambda *_a: str(out))
     monkeypatch.setattr(tc, "_collect_transcode_items", lambda *_a: items)
     monkeypatch.setattr(tc, "_copy_extra_files", lambda *_a, **_k: None)
+    monkeypatch.setattr(tc, "_warn_if_no_cover", lambda *_a: None)
     monkeypatch.setattr(tc, "_transcode_audio_files", no_transcode)
 
 
@@ -623,6 +624,7 @@ def test_parallel_conversions_keep_each_others_records(tmp_path, monkeypatch) ->
         tc, "_collect_transcode_items", lambda path, new: [SimpleNamespace(src=f"{path}/01.flac", dst=f"{new}/01.mp3")]
     )
     monkeypatch.setattr(tc, "_copy_extra_files", lambda *_a, **_k: None)
+    monkeypatch.setattr(tc, "_warn_if_no_cover", lambda *_a: None)
     monkeypatch.setattr(tc, "_transcode_audio_files", no_transcode)
 
     async def run() -> None:
