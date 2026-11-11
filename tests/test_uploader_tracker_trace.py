@@ -361,6 +361,10 @@ SCENARIOS: dict[str, Scenario] = {
         stdin=BEFORE_SPECTRALS + "skip\n" + ANY_STDIN,
         setup=_specs_host_down_for("RED", "OPS", at="upload"),
     ),
+    "s41_host_fails_each_image_yyy": Scenario(
+        "The specs host fails each image, -yyy: no host question, nothing sent, the folder kept",
+        setup=_specs_host_down_for("RED", "OPS", at="upload"),
+    ),
 }
 
 

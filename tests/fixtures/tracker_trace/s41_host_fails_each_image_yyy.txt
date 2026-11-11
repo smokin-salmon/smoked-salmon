@@ -1,0 +1,67 @@
+== run ==
+salmon up <tmp>/seeding/Album -t RED -t OPS -s WEB -n -yyy --skip-integrity-check --skip-up --source-url https://store.test/album/1
+exit: 1
+sent: False, complete: False
+remove_local_copies reason: not reached
+remove_source_folder: not reached
+waited (s): []
+
+== RED ==
+GET /ajax.php action=index [API key]
+GET /ajax.php action=browse searchstr=artist album [API key]
+
+== OPS ==
+
+== images ==
+
+== seedbox ==
+
+== torrent files ==
+
+== files ==
+downloads/Artist - Album (2020) [WEB FLAC]/01. one.flac
+downloads/Artist - Album (2020) [WEB FLAC]/02. two.flac
+downloads/Artist - Album (2020) [WEB FLAC]/cover.jpg
+seeding/Album/01 - one.flac
+seeding/Album/02 - two.flac
+seeding/Album/cover.jpg
+system-tmp/salmon-spectrals-<random>/Spectrals/01 Full.png
+system-tmp/salmon-spectrals-<random>/Spectrals/01 Zoom.png
+
+== stdout ==
+
+Using tracker: RED
+Using tracker: OPS
+
+Processing <tmp>/seeding/Album
+Uploading from WEB.
+Unaliased the following tags for 01 - one.flac: year
+Unaliased the following tags for 02 - two.flac: year
+Checking for MQA release (every FLAC file)
+No MQA release detected
+Skipping the RED log check for recent uploads: it needs a session cookie (tracker.red.session), and none is set.
+
+No groups found on RED matching this release.
+Would you like to upload to an existing group?
+Paste a URL or [N]ew group / [a]bort / [d]elete music folder  []: <answered: ''>
+Uploading to a new torrent group.
+
+Renaming folder...
+Old folder name        : Album
+New pending folder name: Artist - Album (2020) [WEB FLAC]
+Hardlinked folder to '<tmp>/downloads/Artist - Album (2020) [WEB FLAC]'.
+
+
+Uploading spectrals for 01. one.flac...
+Failed to upload spectrals for 01. one.flac: 01 Full.png: imgbox is down
+Failed to upload spectral: some spectrals failed to upload, and -yyy (upload.yes_all) asks for no other host
+
+The spectrals could not be uploaded to imgbox. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
+
+Not uploading to RED without its spectrals.
+
+The spectrals are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals: they could not be uploaded to imgbox.
+
+== stderr ==
+Aborted!
+

@@ -316,7 +316,12 @@ async def _handle_failed_spectrals(spectrals, successful, tracker: str | None = 
 
     Returns:
         Dictionary of the URLs of the spectrals uploaded from here on: none on "skip".
+
+    Raises:
+        ImageUploadFailed: With -yyy, which asks nothing: the run stops with the spectrals kept (#1019).
     """
+    if await interaction.assume_defaults():
+        raise ImageUploadFailed("some spectrals failed to upload, and -yyy (upload.yes_all) asks for no other host")
     while True:
         # Recomputed every iteration (not cached at import time) so it always reflects the
         # rules in salmon.config.image_hosts, the single source shared with config validation

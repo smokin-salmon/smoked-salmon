@@ -218,3 +218,25 @@ def test_an_unusable_spectral_is_checked_once_and_blamed_on_no_host(monkeypatch,
     assert checked == ["01 Full.png"]
     assert all(f.startswith("The spectrals could not be uploaded: a spectral is not a usable image.") for f in failures)
     assert "a spectral is not a usable image." in capsys.readouterr().out.splitlines()[-1]
+
+
+def test_with_yyy_a_host_failing_an_image_stops_without_the_host_question(monkeypatch, tmp_path, scratch) -> None:
+    class FailsEachImage(BaseImageUploader):
+        async def upload_file(self, filename: str) -> tuple[str, None]:
+            raise ImageUploadFailed("the host is down")
+
+    async def no_question(*_args, **_kwargs) -> str:
+        raise AssertionError("-yyy asks for no other host")
+
+    monkeypatch.setitem(salmon.images.HOSTS, "testhost", SimpleNamespace(ImageUploader=FailsEachImage))
+    monkeypatch.setattr(cfg.image, "specs_uploader", "testhost")
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [])
+    monkeypatch.setattr(cfg.upload, "yes_all", True)
+    monkeypatch.setattr(interaction, "prompt", no_question)
+    uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
+
+    with pytest.raises(SpectralsDeclined):
+        anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False))
+
+    assert sorted(os.listdir(next(scratch.glob("salmon-spectrals-*/Spectrals")))) == sorted(SPECTRALS)
