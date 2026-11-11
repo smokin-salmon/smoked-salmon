@@ -357,9 +357,11 @@ def _copy_tags(tag_dict: dict[str, list[str]], flac_obj: flac.FLAC, mp3_path: Pa
 
 
 def _copy_extra_files(path: str, new_path: str, *, essential_only: bool = False) -> None:
-    """Copy non-audio files to the output directory.
+    """Copy the album's top-level non-audio files to the output directory.
 
-    By default all non-FLAC files are copied except those in SKIP_EXTENSIONS, .torrent files and macOS metadata files.
+    By default all non-FLAC files at the top level are copied except those in SKIP_EXTENSIONS, .torrent files and
+    macOS metadata files. Nothing from a subfolder is copied (artwork scans, say): the MP3s keep the cover embedded in
+    the FLACs, and the audio in disc folders is transcoded, not copied.
     When essential_only is True, only image files (matching IMAGE_EXTENSIONS) are kept.
 
     Args:
@@ -374,6 +376,9 @@ def _copy_extra_files(path: str, new_path: str, *, essential_only: bool = False)
         if not p.is_file() or p.suffix.lower() == ".flac":
             continue
         rel = p.relative_to(src_path)
+        if len(rel.parts) > 1:
+            click.secho(f"Skip  {rel}", fg="yellow")
+            continue
         if p.suffix.lower() in SKIP_EXTENSIONS or is_torrent_file(p.name) or is_apple_double(p.name):
             click.secho(f"Skip  {rel}", fg="yellow")
             continue
@@ -384,6 +389,19 @@ def _copy_extra_files(path: str, new_path: str, *, essential_only: bool = False)
         out = dst_path / rel
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(p, out)
+
+
+def _warn_if_no_cover(new_path: str, items: list[TranscodeItem]) -> None:
+    """Say so when the MP3s will have no cover: no image at the output's top level and no picture in any FLAC."""
+    out = Path(new_path)
+    has_image = out.is_dir() and any(
+        p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS - {".pdf"} and not is_apple_double(p.name)
+        for p in out.iterdir()
+    )
+    if not has_image and not any(item.flac_obj.pictures for item in items):
+        click.secho(
+            "No cover: the album has no image at its top level and no FLAC has an embedded picture.", fg="yellow"
+        )
 
 
 async def _flac_to_mp3(lame_qual: Bitrate, flac_path: str, mp3_path: str) -> None:
@@ -565,6 +583,7 @@ async def transcode_folder(
         shutil.rmtree(new_path)
 
     _copy_extra_files(path, new_path, essential_only=essential_only)
+    _warn_if_no_cover(new_path, items)
     await _transcode_audio_files(items, bitrate)
 
     if items:

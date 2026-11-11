@@ -8,8 +8,10 @@ from typing import Any
 
 import anyio
 import pytest
+from helpers.uploader_shortened_conversions import _write_flac
 from mutagen import flac
 
+from salmon.converter import downconverting as dc
 from salmon.converter import transcoding as tc
 from salmon.errors import UploadError
 
@@ -139,3 +141,92 @@ def test_an_unreadable_total_names_the_file(tmp_path) -> None:
         tc._collect_transcode_items(str(source), str(tmp_path / "out"))
 
     assert str(raised.value) == f"{track}: Non-integer total values for tracknumber: tracktotal='abc'"
+
+
+# --- Extra files: a lossy conversion copies the top level only (#1030) ---------------------------------------------
+
+
+def _tree(folder: Path) -> list[str]:
+    return sorted(p.relative_to(folder).as_posix() for p in folder.rglob("*") if p.is_file())
+
+
+def _scans_album(tmp_path: Path) -> Path:
+    album = tmp_path / "src"
+    (album / "Scans").mkdir(parents=True)
+    (album / "01.flac").write_bytes(b"fLaC")
+    for name in ("cover.jpg", "info.txt", "Scans/01.jpg"):
+        (album / name).write_bytes(b"x")
+    return album
+
+
+def test_a_transcode_copies_top_level_extras_and_no_subfolder(tmp_path: Path, capsys) -> None:
+    album, out = _scans_album(tmp_path), tmp_path / "out"
+
+    tc._copy_extra_files(str(album), str(out))
+
+    assert _tree(out) == ["cover.jpg", "info.txt"]
+    assert "Skip  Scans/01.jpg" in capsys.readouterr().out
+
+
+def test_essential_only_still_drops_a_top_level_text_file(tmp_path: Path) -> None:
+    album, out = _scans_album(tmp_path), tmp_path / "out"
+
+    tc._copy_extra_files(str(album), str(out), essential_only=True)
+
+    assert _tree(out) == ["cover.jpg"]
+
+
+def test_a_downconversion_still_keeps_subfolder_extras(tmp_path: Path) -> None:
+    album, out = _scans_album(tmp_path), tmp_path / "out"
+
+    dc._copy_extra_files(str(album), str(out), frozenset({str(album / "01.flac")}))
+
+    assert _tree(out) == ["Scans/01.jpg", "cover.jpg", "info.txt"]
+
+
+def test_disc_folders_still_get_their_mp3s_and_no_loose_files(tmp_path: Path) -> None:
+    album = tmp_path / "src"
+    for cd in ("CD1", "CD2"):
+        (album / cd).mkdir(parents=True)
+        _write_flac(album / cd / "01.flac", 44100, 16, title="One", artist="A", album="B", tracknumber="1")
+    (album / "CD1" / "folder.jpg").write_bytes(b"x")
+    out = tmp_path / "out"
+
+    items = tc._collect_transcode_items(str(album), str(out))
+    tc._copy_extra_files(str(album), str(out))
+
+    assert sorted(Path(i.dst).relative_to(out).as_posix() for i in items) == ["CD1/01.mp3", "CD2/01.mp3"]
+    assert not out.exists()
+
+
+def _flac_item(tmp_path: Path, *, picture: bool) -> Any:
+    fake: Any = SimpleNamespace(pictures=[object()] if picture else [])
+    return tc.TranscodeItem(src=str(tmp_path / "01.flac"), dst=str(tmp_path / "01.mp3"), tags={}, flac_obj=fake)
+
+
+def test_no_cover_is_said_when_nothing_holds_one(tmp_path: Path, capsys) -> None:
+    out = tmp_path / "out"
+    out.mkdir()
+
+    tc._warn_if_no_cover(str(out), [_flac_item(tmp_path, picture=False)])
+
+    assert "No cover" in capsys.readouterr().out
+
+
+def test_no_cover_is_not_said_with_an_embedded_picture(tmp_path: Path, capsys) -> None:
+    out = tmp_path / "out"
+    out.mkdir()
+
+    tc._warn_if_no_cover(str(out), [_flac_item(tmp_path, picture=True)])
+
+    assert "No cover" not in capsys.readouterr().out
+
+
+def test_no_cover_is_not_said_with_a_top_level_image(tmp_path: Path, capsys) -> None:
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "cover.jpg").write_bytes(b"x")
+
+    tc._warn_if_no_cover(str(out), [_flac_item(tmp_path, picture=False)])
+
+    assert "No cover" not in capsys.readouterr().out

@@ -196,9 +196,11 @@ def test_as_before_a_conversion_copies_a_name_that_only_looks_like_one(tmp_path:
     transcoding._copy_extra_files(str(source), str(output / "t"))
     downconverting._copy_extra_files(str(source), str(output / "d"), converted)
 
-    for copy in (output / "t", output / "d"):
-        assert (copy / name).read_bytes() == MADE_UP
-        assert (copy / "CD1" / name).read_bytes() == MADE_UP
+    assert (output / "t" / name).read_bytes() == MADE_UP
+    assert (output / "d" / name).read_bytes() == MADE_UP
+    # A transcode copies nothing from a subfolder (#1030); a downconversion still does.
+    assert not (output / "t" / "CD1").exists()
+    assert (output / "d" / "CD1" / name).read_bytes() == MADE_UP
 
 
 def test_as_before_a_transcode_still_skips_what_it_skipped(tmp_path: Path) -> None:
