@@ -261,5 +261,7 @@ def test_a_run_that_asks_still_offers_another_host(monkeypatch, tmp_path, scratc
     uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
 
     # A skip at the host question goes on without them, and is not asked about again.
-    assert anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False)) == {}
+    urls = anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False))
+
+    assert urls == {}
     assert len(asked) == 1
