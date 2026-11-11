@@ -196,7 +196,7 @@ def test_disc_folders_still_get_their_mp3s_and_no_loose_files(tmp_path: Path) ->
     tc._copy_extra_files(str(album), str(out))
 
     assert sorted(Path(i.dst).relative_to(out).as_posix() for i in items) == ["CD1/01.mp3", "CD2/01.mp3"]
-    assert not out.exists() or _tree(out) == []
+    assert not out.exists()
 
 
 def _flac_item(tmp_path: Path, *, picture: bool) -> Any:

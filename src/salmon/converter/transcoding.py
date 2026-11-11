@@ -395,7 +395,8 @@ def _warn_if_no_cover(new_path: str, items: list[TranscodeItem]) -> None:
     """Say so when the MP3s will have no cover: no image at the output's top level and no picture in any FLAC."""
     out = Path(new_path)
     has_image = out.is_dir() and any(
-        p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS and not is_apple_double(p.name) for p in out.iterdir()
+        p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS - {".pdf"} and not is_apple_double(p.name)
+        for p in out.iterdir()
     )
     if not has_image and not any(item.flac_obj.pictures for item in items):
         click.secho(
