@@ -8,6 +8,7 @@ import asyncclick as click
 
 from salmon import cfg, interaction
 from salmon.common import RE_USELESS_VERSION, re_split, split_genre
+from salmon.common.dsd import rate_text, release_dsd_encoding
 from salmon.common.numbers import file_order_key, number_text, read_number
 from salmon.common.strings import strip_numbered_suffixes
 from salmon.constants import FORMATS, TAG_ENCODINGS
@@ -116,7 +117,9 @@ def parse_format(filename):
 
 
 async def parse_encoding(format_, audio_info, supplied_encoding, prompt_encoding, hybrid=False):
-    """Get the encoding from the FLAC files, otherwise require the user to specify it."""
+    """Get the encoding from the FLAC or DSD files, otherwise require the user to specify it."""
+    if format_ == "DSD":
+        return _dsd_encoding(audio_info), False
     if format_ == "FLAC":
         if hybrid:
             is_24bit = any(trackinfo["precision"] == 24 for trackinfo in audio_info.values())
@@ -134,6 +137,21 @@ async def parse_encoding(format_, audio_info, supplied_encoding, prompt_encoding
     if prompt_encoding:
         return await _prompt_encoding()
     click.secho("An encoding must be specified if the files are not lossless.", fg="red")
+    raise click.Abort
+
+
+def _dsd_encoding(audio_info):
+    """The DSD rate every track has, as the encoding: DSD64 to DSD512.
+
+    Raises:
+        click.Abort: If the tracks have more than one rate, or one no tracker names: a torrent has one encoding.
+    """
+    if encoding := release_dsd_encoding(audio_info):
+        return encoding
+    rates = ", ".join(rate_text(rate) for rate in sorted({track["sample rate"] for track in audio_info.values()}))
+    click.secho(
+        f"The DSD files are at {rates}: salmon uploads DSD of one rate, DSD64, DSD128, DSD256 or DSD512.", fg="red"
+    )
     raise click.Abort
 
 

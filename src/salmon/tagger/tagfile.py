@@ -3,10 +3,13 @@ from typing import Any
 
 import asyncclick as click
 from mutagen import File as MutagenFile
-from mutagen import flac, id3, mp3, mp4
+from mutagen import dsdiff, dsf, flac, id3, mp3, mp4
 from mutagen._vorbis import VCommentDict
 from mutagen.id3 import ID3Tags
 from mutagen.mp4 import MP4Tags
+
+# The files whose tags are ID3, read and written through TAG_FIELDS["MP3"]: MP3, and DSD's two containers (#919).
+ID3_FILES = (mp3.MP3, dsf.DSF, dsdiff.DSDIFF)
 
 TAG_FIELDS = {
     "FLAC": {
@@ -95,7 +98,7 @@ def is_fragmented_mp4(path: str | None) -> bool:
 
 
 class TagFile:
-    mut: flac.FLAC | mp3.MP3 | mp4.MP4 | None
+    mut: flac.FLAC | mp3.MP3 | dsf.DSF | dsdiff.DSDIFF | mp4.MP4 | None
 
     def __init__(self, filepath: str) -> None:
         super().__setattr__("mut", MutagenFile(filepath))
@@ -111,7 +114,7 @@ class TagFile:
                 if attr in {"artist", "artists", "remixer", "genre"}:
                     return values
                 return "; ".join(values) or None
-            elif isinstance(mut, mp3.MP3):
+            elif isinstance(mut, ID3_FILES):
                 if attr == "comment":
                     return self._mp3_comment()
                 field = TAG_FIELDS["MP3"][attr][0]
@@ -211,7 +214,7 @@ class TagFile:
                     # Vorbis comment names are case-insensitive; the spec recommends uppercase.
                     # Mutagen keeps the case it is given, so a lowercase map name would replace ARTIST with artist.
                     raw_tags[TAG_FIELDS["FLAC"][key].upper()] = value
-            elif isinstance(mut, mp3.MP3):
+            elif isinstance(mut, ID3_FILES):
                 self.set_mp3_tag(key, value)
             elif isinstance(mut, mp4.MP4):
                 self.set_aac_tag(key, value)
@@ -220,10 +223,12 @@ class TagFile:
 
     def set_mp3_tag(self, key: str, value: Any) -> None:
         mut = self.mut
-        if mut is None or not isinstance(mut, mp3.MP3):
+        if mut is None or not isinstance(mut, ID3_FILES):
             return
-        if not mut.tags:
-            mut.tags = id3.ID3()
+        if mut.tags is None:
+            # add_tags, not ID3(): a DSF's or DSDIFF's tag has a save of its own, and a plain ID3 would be written at
+            # the start of the file, before its header.
+            mut.add_tags()
         tags = mut.tags
         if not isinstance(tags, id3.ID3):
             return
@@ -306,7 +311,7 @@ class TagFile:
         mut = self.mut
         if isinstance(mut, flac.FLAC):
             return key in TAG_FIELDS["FLAC"]
-        if isinstance(mut, mp3.MP3):
+        if isinstance(mut, ID3_FILES):
             return key in TAG_FIELDS["MP3"]
         if isinstance(mut, mp4.MP4):
             return key in TAG_FIELDS["AAC"]
@@ -324,7 +329,7 @@ class TagFile:
                     name = TAG_FIELDS["FLAC"][key]
                     if name in raw_tags:  # Vorbis comment names are case-insensitive
                         del raw_tags[name]
-            elif isinstance(mut, mp3.MP3):
+            elif isinstance(mut, ID3_FILES):
                 tags = mut.tags
                 if not isinstance(tags, id3.ID3):
                     return

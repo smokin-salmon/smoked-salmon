@@ -1,6 +1,7 @@
 import contextlib
 import errno
 import hashlib
+import math
 import os
 import platform
 import random
@@ -30,6 +31,7 @@ except ImportError:
 
 from salmon import cfg, dryrun, interaction, prepared
 from salmon.common import flush_stdin, get_audio_files
+from salmon.common.dsd import is_dsd
 from salmon.common.files import process_files, process_tracks
 from salmon.common.strings import numeric_id
 from salmon.containment import is_within
@@ -43,10 +45,14 @@ from salmon.errors import (
 from salmon.images import upload_spectrals as upload_spectral_imgs
 from salmon.images.files import NotAnImage, check_image
 from salmon.uploader import record, terminal_images
+from salmon.uploader.dsd_pcm import run_sox_on_dsd
 from salmon.web import create_app_async, spectrals
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
+
+# The release formats spectrals are made for: the lossless ones, whose spectrals can show a lossy master.
+SPECTRAL_FORMATS = frozenset({"FLAC", "DSD"})
 
 
 async def check_spectrals(
@@ -83,9 +89,9 @@ async def check_spectrals(
     Returns:
         Tuple of (lossy_master, spectral_ids).
     """
-    if format != "FLAC":
+    if format not in SPECTRAL_FORMATS:
         click.secho(
-            "Spectrals are only generated for FLAC files. Skipping...",
+            "Spectrals are only generated for FLAC and DSD files. Skipping...",
             fg="cyan",
         )
         return None, None
@@ -449,13 +455,13 @@ async def spectrals_in_background(
         path: The album folder.
         audio_info: Its audio file information.
         spectral_ids: The spectral IDs given to check_spectrals, or () for all.
-        format: The release's format: spectrals are only made for FLAC.
+        format: The release's format: spectrals are only made for SPECTRAL_FORMATS.
 
     Yields:
         The running generation, to pass to check_spectrals, or None if check_spectrals makes none for these
         arguments.
     """
-    if format != "FLAC" or spectral_ids == (0,):
+    if format not in SPECTRAL_FORMATS or spectral_ids == (0,):
         yield None
         return
     generation = SpectralsInBackground(path, audio_info, spectral_ids)
@@ -519,50 +525,70 @@ async def _generate_spectral_for_file(
         except OSError:
             pass  # The preparation's images are gone: made again below.
 
-    # Run the process for generating the spectrals
-    await anyio.run_process(
-        [
-            "sox",
-            "--multi-threaded",
+    if is_dsd(filename):
+        await run_sox_on_dsd(
             os.path.join(path, filename),
-            "--buffer",
-            "128000",
-            "-n",
-            "remix",
-            "1",
-            "spectrogram",
-            "-x",
-            "2000",
-            "-y",
-            "513",
-            "-z",
-            "120",
-            "-w",
-            "Kaiser",
-            "-o",
-            full_spectral_path,
-            "remix",
-            "1",
-            "spectrogram",
-            "-x",
-            "500",
-            "-y",
-            "1025",
-            "-z",
-            "120",
-            "-w",
-            "Kaiser",
-            "-S",
-            str(zoom_startpoint),
-            "-d",
-            "0:02",
-            "-o",
-            zoom_spectral_path,
-        ],
-        check=True,  # Raise error if process fails
-    )
+            partial(_spectrogram_arguments, full_spectral_path, zoom_spectral_path, zoom_startpoint),
+        )
+    else:
+        await anyio.run_process(
+            [
+                "sox",
+                "--multi-threaded",
+                os.path.join(path, filename),
+                *_spectrogram_arguments(full_spectral_path, zoom_spectral_path, zoom_startpoint),
+            ],
+            check=True,  # Raise error if process fails
+        )
 
     return (idx + 1, filename)  # Return the filename to track progress
+
+
+def _spectrogram_arguments(
+    full_spectral_path: str, zoom_spectral_path: str, zoom_startpoint: int, length: float | None = None
+) -> list[str]:
+    """What sox is given after the audio: the full spectral of the left channel, and two seconds of it zoomed.
+
+    length, in seconds, is given for audio sox reads from a pipe, whose length it cannot know: without it, the full
+    spectral would show the first 20 seconds (2000 pixels at sox's 100 a second). Rounded up, so none is cut off.
+    """
+    fit = ["-d", f"{math.ceil(length * 1000) / 1000:.3f}"] if length else []
+    return [
+        "--buffer",
+        "128000",
+        "-n",
+        "remix",
+        "1",
+        "spectrogram",
+        "-x",
+        "2000",
+        *fit,
+        "-y",
+        "513",
+        "-z",
+        "120",
+        "-w",
+        "Kaiser",
+        "-o",
+        full_spectral_path,
+        "remix",
+        "1",
+        "spectrogram",
+        "-x",
+        "500",
+        "-y",
+        "1025",
+        "-z",
+        "120",
+        "-w",
+        "Kaiser",
+        "-S",
+        str(zoom_startpoint),
+        "-d",
+        "0:02",
+        "-o",
+        zoom_spectral_path,
+    ]
 
 
 async def _generate_spectrals(

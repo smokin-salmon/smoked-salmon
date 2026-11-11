@@ -13,6 +13,7 @@ from torf import TorfError, Torrent
 
 from salmon import cfg, dryrun
 from salmon.common import UploadFiles, clipboard_copy, re_split
+from salmon.common.dsd import track_dsd_encoding
 from salmon.common.files import is_apple_double
 from salmon.common.numbers import tag_number, unreadable_number
 from salmon.common.strings import (
@@ -711,9 +712,14 @@ def generate_t_description(
                 else "https://i.ibb.co/4R16Ktwx/hires.png"
             )
             prefix = f"[img]{icon_url}[/img]" if cfg.upload.description.icons_in_descriptions else "Encode Specifics:"
-            encode_specifics = (
-                f"{prefix} [b]{track['precision']} bit [color=#2E86C1]{sample_rate:.01f}[/color] kHz[/b]\n"
-            )
+            if dsd := track_dsd_encoding(track):
+                # "DSD64 2.8224 MHz", not "1 bit 2822.4 kHz".
+                mhz = f"{track['sample rate'] / 1_000_000:g}"
+                encode_specifics = f"{prefix} [b]{dsd} [color=#2E86C1]{mhz}[/color] MHz[/b]\n"
+            else:
+                encode_specifics = (
+                    f"{prefix} [b]{track['precision']} bit [color=#2E86C1]{sample_rate:.01f}[/color] kHz[/b]\n"
+                )
         else:
             encode_specifics = f"Encode Specifics: {sample_rate:.01f} kHz\n"
     else:

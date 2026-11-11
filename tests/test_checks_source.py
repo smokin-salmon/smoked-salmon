@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 import anyio
 import pytest
+from helpers.dsd import write_dsf
 from mutagen.flac import FLAC
 from mutagen.id3 import COMM, TMED, TRCK, TXXX, WXXX
 from mutagen.mp3 import MP3
@@ -560,6 +561,14 @@ def test_above_cd_quality_rules_out_a_cd_name(tmp_path) -> None:
     album = _named(tmp_path, "Artist - Title [CD FLAC]", bits=24, rate=96000)
 
     assert detect_source(album) is None
+
+
+def test_dsd_rules_out_a_cd_name(tmp_path) -> None:
+    album = tmp_path / "Artist - Title [CD DSD]"
+    album.mkdir()
+    write_dsf(album / "01.dsf")
+
+    assert detect_source(str(album)) is None
 
 
 def test_vinyl_sides_rule_out_what_the_name_says(tmp_path) -> None:

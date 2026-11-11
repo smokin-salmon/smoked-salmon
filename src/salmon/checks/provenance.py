@@ -10,6 +10,8 @@ on a 16bit file, a CD ripper on a 96 kHz file) is worth a look before uploading.
 import re
 from typing import Any
 
+from mutagen.dsdiff import DSDIFFInfo
+from mutagen.dsf import DSFInfo
 from mutagen.flac import StreamInfo as FlacStreamInfo
 
 from salmon.tagger.tag_urls import field_name, tag_texts, tag_url_fields
@@ -51,8 +53,11 @@ _CD_RATE = 44100
 
 
 def lossless_depth(info: Any) -> int | None:
-    """The bit depth of a FLAC or ALAC file; None for a lossy one, whose depth says nothing about its source."""
-    if isinstance(info, FlacStreamInfo) or getattr(info, "codec", None) == "alac":
+    """The bit depth of a FLAC, ALAC or DSD file (1); None for a lossy one, whose depth says nothing about its
+    source."""
+    if isinstance(info, DSFInfo):
+        return 1  # DSD is 1-bit, though a DSF stored most significant bit first says 8 (tagger.audio_info.bit_rate).
+    if isinstance(info, (FlacStreamInfo, DSDIFFInfo)) or getattr(info, "codec", None) == "alac":
         return getattr(info, "bits_per_sample", None) or None
     return None
 

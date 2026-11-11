@@ -103,8 +103,8 @@ from salmon.uploader.upload import (
 from salmon.uploader.upload_checks import (
     _check_logs,
     _do_not_upload_refusal,
+    _files_refusal,
     _lossy_master_without_spectrals,
-    _sixteen_bit_refusal,
     _warn_about_provenance,
 )
 
@@ -815,19 +815,19 @@ async def _upload_staged(  # noqa: C901
     # review may change the names: the list is checked again after it.
     tags_refusal = _do_not_upload_refusal(gazelle_site.site_code, rls_data)
     # The files never change in the review. With --skip-flac-upload only transcodes go up: no FLAC to refuse.
-    rate_refused = flac_group is None and _sixteen_bit_refusal(gazelle_site.site_code, audio_info)
+    files_refused = flac_group is None and _files_refusal(gazelle_site.site_code, rls_data, audio_info)
     if group_id is None:
         # Left empty for a listed release: if the review takes it off the list, recheck_dupe then searches.
         searchstrs = dupe_searchstrs = (
             []
-            if tags_refusal or rate_refused
+            if tags_refusal or files_refused
             else generate_dupe_check_searchstrs(rls_data["artists"], rls_data["title"], rls_data["catno"])
         )
 
     source_folder = path  # The folder the run started from: the metadata step renames path into a new folder
     search_failed = False
     try:
-        if rate_refused and not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
+        if files_refused and not _another_can_follow(gazelle_site.site_code, flac_group, reachable):
             # Nothing the checks or the review change could let these files go up. Exit(1), not Abort: the run
             # failed, and _upload_staged ends an Abort as a user's no.
             raise click.exceptions.Exit(1)
@@ -901,7 +901,7 @@ async def _upload_staged(  # noqa: C901
             # Before anything is made or sent for the first tracker: its group, spectrals, cover and upload.
             first_listed = (
                 search_failed
-                or rate_refused
+                or files_refused
                 or _do_not_upload_refusal(gazelle_site.site_code, metadata, said=tags_refusal) is not None
             )
             if not group_id and not first_listed:
@@ -999,7 +999,7 @@ async def _upload_staged(  # noqa: C901
                     gazelle_site = salmon.trackers.get_class(tracker)()
                     # Before its dupe check, which may ask which group to upload into.
                     if _do_not_upload_refusal(tracker, metadata) is not None or (
-                        flac_group is None and _sixteen_bit_refusal(tracker, audio_info)
+                        flac_group is None and _files_refusal(tracker, metadata, audio_info)
                     ):
                         failed_trackers.append(gazelle_site.site_string)
                         remaining_gazelle_sites.remove(tracker)
