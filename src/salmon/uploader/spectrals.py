@@ -380,6 +380,10 @@ class SpectralUploads:
         """Whether the user chose not to send this tracker anything without the spectrals that failed for it."""
         return tracker in self._declined
 
+    def any_declined(self) -> bool:
+        """Whether the user chose, for any tracker, not to send something without the spectrals that failed for it."""
+        return bool(self._declined)
+
     def _keep_out_of_album(self) -> None:
         """Move the spectrals folder out of the album folder, if it is inside it, to where close() deletes it (or keeps
         it, after a failure)."""

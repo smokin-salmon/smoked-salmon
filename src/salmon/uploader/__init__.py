@@ -1086,7 +1086,13 @@ async def _upload_staged(  # noqa: C901
                 run.seedbox_uploader.remove_local_copies()
     finally:
         await spectral_uploads.close()
-    record.note_complete(finished and len(run.failed_trackers) == chose_to_skip and not record.has_unknown_outcome())
+    # A lossy master report declined without its spectrals is still owed to the tracker: the run is not complete.
+    record.note_complete(
+        finished
+        and len(run.failed_trackers) == chose_to_skip
+        and not record.has_unknown_outcome()
+        and not spectral_uploads.any_declined()
+    )
     return path, bool(run.uploaded), aborted, only_here
 
 

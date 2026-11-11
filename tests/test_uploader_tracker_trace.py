@@ -414,3 +414,11 @@ def test_trace_of_a_web_job(monkeypatch, dirs, name: str) -> None:  # noqa: F811
 
 def test_every_trace_file_has_a_scenario() -> None:
     assert {path.stem for path in TRACES.glob("*.txt")} == set(SCENARIOS)
+
+
+def test_a_lossy_report_declined_without_spectrals_leaves_the_run_incomplete(monkeypatch, capsys, dirs) -> None:  # noqa: F811
+    _trace, world = run_scenario(monkeypatch, capsys, SCENARIOS["s39_spectrals_after_fail_report_answered_no"], dirs)
+
+    [run] = world.records
+    assert run.complete is False
+    assert run.exit_status(0) == 3

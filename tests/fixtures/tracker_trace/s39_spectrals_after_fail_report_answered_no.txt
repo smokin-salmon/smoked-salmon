@@ -1,7 +1,7 @@
 == run ==
 salmon up <tmp>/seeding/Album -t RED -t OPS -s WEB -n --skip-integrity-check --skip-up --source-url https://store.test/album/1 --spectrals-after
-exit: 0
-sent: True, complete: True
+exit: 3
+sent: True, complete: False
 uploaded: RED FLAC <RED>/torrents.php?torrentid=77
 uploaded: RED MP3 <RED>/torrents.php?torrentid=78
 uploaded: RED MP3 <RED>/torrents.php?torrentid=79
