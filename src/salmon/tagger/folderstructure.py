@@ -24,7 +24,12 @@ DEFAULT_MAX_PATH_LENGTH = 180
 
 
 async def check_folder_structure(
-    path: str, scene: bool, *, essential_only: bool = False, max_path_length: int = DEFAULT_MAX_PATH_LENGTH
+    path: str,
+    scene: bool,
+    *,
+    essential_only: bool = False,
+    max_path_length: int = DEFAULT_MAX_PATH_LENGTH,
+    album_itself: bool = False,
 ) -> None:
     """Run through every filesystem check that causes uploads to violate the rules
     or be rejected on the upload form.
@@ -44,9 +49,14 @@ async def check_folder_structure(
             files like nfo, sfv, md5, txt, etc. are flagged for removal.
         max_path_length: The longest in-torrent path (folder, sub-folders and file name)
             this check allows. Defaults to the value used before this was per-tracker.
+        album_itself: Whether path is the album the user gave, not a renamed copy or a conversion: a file
+            deleted from it is gone. Under -yyy the extension check then names such files and stops instead
+            of deleting them, and its question defaults to abort. A .torrent or macOS metadata file still goes,
+            except from a scene release, which reports it as it reports any other.
 
     Raises:
-        click.Abort: If the user aborts, or if a scene release has structural issues.
+        click.Abort: If the user aborts, if a scene release has structural issues, or under -yyy
+            if album_itself and the extension check names files it would have deleted.
     """
     while True:
         click.secho("\nChecking folder structure...", fg="cyan", bold=True)
@@ -56,7 +66,7 @@ async def check_folder_structure(
             await _check_forbidden_characters(path, scene)
             _check_path_lengths(path, scene, max_path_length)
             _check_zero_len_folder(path)
-            await _check_extensions(path, scene, essential_only=essential_only)
+            await _check_extensions(path, scene, essential_only=essential_only, album_itself=album_itself)
             return
         except NoncompliantFolderStructure:
             if scene:
@@ -414,26 +424,32 @@ def _check_zero_len_folder(path: str) -> None:
     click.secho("No zero length folders were found.", fg="green")
 
 
-async def _check_extensions(path: str, scene: bool, *, essential_only: bool = False) -> None:
+async def _check_extensions(
+    path: str, scene: bool, *, essential_only: bool = False, album_itself: bool = False
+) -> None:
     """Validate that all file extensions within the release folder are permitted.
 
     Files with disallowed extensions are either handled interactively (non-scene)
-    or collected and reported as a group before raising (scene). Also warns when
-    multiple audio codecs are present in the same folder.
+    or collected and reported as a group before raising (scene, and -yyy on the
+    album itself). Also warns when multiple audio codecs are present in the same folder.
 
     Args:
         path: Absolute path to the release folder being checked.
         scene: Whether the release is a scene release. Scene releases report all
             offending files at once rather than prompting per-file.
         essential_only: If True, only essential extensions are allowed.
+        album_itself: Whether path is the album the user gave: -yyy reports its files instead of
+            deleting them, and the question defaults to abort. A .torrent or macOS metadata file still goes,
+            except from a scene release, which reports it as it reports any other.
 
     Raises:
-        NoncompliantFolderStructure: If scene release contains files with invalid
-            extensions.
+        NoncompliantFolderStructure: If scene release, or the album itself under -yyy,
+            contains files with invalid extensions.
         click.Abort: If the user aborts during interactive extension handling.
     """
     mp3, aac, flac = [], [], []
-    offending_files = []  # Collect offending files for scene releases
+    offending_files = []  # Collect offending files for scene releases, and for -yyy on the album itself
+    stop_instead = album_itself and await interaction.assume_defaults()
     effective_extensions = ESSENTIAL_EXTENSIONS if essential_only else ALLOWED_EXTENSIONS
     for root, _, files in os.walk(path):
         for fln in files:
@@ -446,12 +462,12 @@ async def _check_extensions(path: str, scene: bool, *, essential_only: bool = Fa
             elif ext == ".m4a":
                 aac.append(fln)
             elif ext not in effective_extensions:
-                if scene:
+                if scene or (stop_instead and not is_torrent_file(fln) and not is_apple_double(fln)):
                     offending_files.append(os.path.join(root, fln))
                 else:
-                    await _handle_bad_extension(os.path.join(root, fln))
+                    await _handle_bad_extension(os.path.join(root, fln), album_itself=album_itself)
 
-    if scene and offending_files:
+    if offending_files:
         click.secho("The following files have invalid extensions:", fg="red", bold=True)
         for filepath in offending_files:
             click.echo(f" >> {filepath}")
@@ -463,7 +479,7 @@ async def _check_extensions(path: str, scene: bool, *, essential_only: bool = Fa
         click.secho("File extensions have been validated.", fg="green")
 
 
-async def _handle_bad_extension(filepath: str) -> None:
+async def _handle_bad_extension(filepath: str, *, album_itself: bool = False) -> None:
     """Interactively handle a file with a disallowed extension.
 
     Prompts the user to delete the file, abort the upload, or continue without
@@ -472,6 +488,8 @@ async def _handle_bad_extension(filepath: str) -> None:
 
     Args:
         filepath: Absolute path to the offending file.
+        album_itself: Whether the file is in the album the user gave, where deleting it loses the
+            only copy: the answer defaults to abort, except for a file that can't stay.
 
     Raises:
         click.Abort: If the user chooses to abort.
@@ -481,13 +499,15 @@ async def _handle_bad_extension(filepath: str) -> None:
         return click.secho(f"-yyy: deleted {filepath}", fg="yellow")
     unwanted = "a .torrent file" if is_torrent_file(filepath) else "a macOS metadata file"
     may_stay = not is_torrent_file(filepath) and not is_apple_double(filepath)
+    abort_first = album_itself and may_stay
+    choices = "[d]elete, [A]bort, or [c]ontinue?" if abort_first else "[D]elete, [a]bort, or [c]ontinue?"
     question = (
-        f"{filepath} does not have an approved file extension. [D]elete, [a]bort, or [c]ontinue?"
+        f"{filepath} does not have an approved file extension. {choices}"
         if may_stay
         else f"{filepath} is {unwanted}, which can't stay in an album. [D]elete or [a]bort?"
     )
     while True:
-        resp = (await interaction.prompt(question, default="D")).lower()
+        resp = (await interaction.prompt(question, default="A" if abort_first else "D")).lower()
         if resp[0].lower() == "d":
             return os.remove(filepath)
         elif resp[0].lower() == "a":

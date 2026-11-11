@@ -1370,7 +1370,7 @@ async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=Tr
     """
     while True:
         flush_stdin()
-        r = (
+        answer = (
             "n"
             if await interaction.assume_defaults() and not force_prompt_lossy_master and not marks_found
             else (
@@ -1398,8 +1398,9 @@ async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=Tr
                         )
                     ),
                 )
-            )[0].lower()
+            ).lower()
         )
+        r = answer[0]
         if r == "y":
             return True
         elif r == "n":
@@ -1408,7 +1409,7 @@ async def prompt_lossy_master(force_prompt_lossy_master=False, offer_deletion=Tr
             return None
         elif r == "a":
             raise click.Abort
-        elif r == "d" and offer_deletion:
+        elif answer == "d" and offer_deletion:
             raise AbortAndDeleteFolder
 
 

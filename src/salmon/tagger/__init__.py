@@ -203,7 +203,7 @@ async def run_tag(options: TagOptions) -> str:
             original=original,
         )
         await rename_files(path, tags, metadata, options.auto_rename, None, tracks_by_file=tracks_by_file)
-        await check_folder_structure(path, scene=False)
+        await check_folder_structure(path, scene=False, album_itself=os.path.samefile(path, staged))
         await remove_source_folder(staged, path, original)
         click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
         return path

@@ -925,8 +925,8 @@ async def _upload_staged(  # noqa: C901
                 await _prepare_pictures(path, metadata, remove_downloaded_cover_image)
     except click.Abort:
         return click.secho("\nAborting upload...", fg="red")
-    except AbortAndDeleteFolder:
-        return _delete_after_abort(path, source_folder, original, flac_group)
+    except AbortAndDeleteFolder as deletion:
+        return await _delete_after_abort(path, source_folder, original, flac_group, ask_again=deletion.ask_again)
 
     # Uploaded once per specs host; the files are deleted once no tracker of the run can need them.
     spectral_uploads = SpectralUploads(
@@ -1423,8 +1423,13 @@ async def _prepare_pictures(path: str, metadata: dict[str, Any], remove_download
             os.remove(cover_path)
 
 
-def _delete_after_abort(path: str, source_folder: str, original: str | None, flac_group: dict[str, Any] | None) -> None:
-    """Delete the folder an aborted run worked on, as the user asked, unless it must be kept."""
+async def _delete_after_abort(
+    path: str, source_folder: str, original: str | None, flac_group: dict[str, Any] | None, *, ask_again: bool = False
+) -> None:
+    """Delete the folder an aborted run worked on, as the user asked, unless it must be kept.
+
+    `ask_again` asks once more on the terminal, naming the folder; a no ends the run with the folder kept.
+    """
     if dryrun.active():
         dryrun.say("not deleting the music folder.")
         return click.secho("\nAborting upload...", fg="red")
@@ -1437,6 +1442,15 @@ def _delete_after_abort(path: str, source_folder: str, original: str | None, fla
         return click.secho("\nAborting upload...", fg="red")
     if cfg.directory.protects(path):
         click.secho(f"\nNot deleting {path}: it is in library_dirs, or holds one.", fg="yellow", bold=True)
+        return click.secho("\nAborting upload...", fg="red")
+    # salmon web arms the option in the browser before sending it. -yyy asks too: someone typed the d.
+    if (
+        ask_again
+        and interaction.answered_in_terminal()
+        and not await interaction.confirm(
+            click.style(f"\nDelete {path} and everything in it?", fg="magenta", bold=True), default=False
+        )
+    ):
         return click.secho("\nAborting upload...", fg="red")
     if original is not None:
         click.secho(
