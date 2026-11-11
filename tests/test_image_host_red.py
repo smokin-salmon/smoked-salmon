@@ -22,6 +22,7 @@ from salmon.images import red, upload_cover
 from salmon.trackers.base import BaseGazelleApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
+from salmon.uploader import cover_upload
 
 API_KEY = "red-api-key"
 USER_AGENT = "salmon-test-agent"
@@ -131,7 +132,7 @@ def test_a_cover_for_red_goes_up_through_the_runs_client(monkeypatch, release, l
         try:
             # The group search, earlier in the run.
             await api.api_call("browse", {"searchstr": "artist album"})
-            result = await salmon.uploader.resolve_cover_url(api, None, {}, str(release), None, False)
+            result = await cover_upload.resolve_cover_url(api, None, {}, str(release), None, False)
             assert clients == [api]
             return result
         finally:
@@ -157,7 +158,7 @@ def test_a_cover_for_ops_goes_up_through_one_red_client_of_its_own(monkeypatch, 
     async def run() -> tuple[tuple[bool, str | None], list[RedApi]]:
         clients = _point_red_at(monkeypatch, await fake.start())
         try:
-            return await salmon.uploader.resolve_cover_url(OpsApi(), None, {}, str(release), None, False), clients
+            return await cover_upload.resolve_cover_url(OpsApi(), None, {}, str(release), None, False), clients
         finally:
             await fake.runner.cleanup()
 

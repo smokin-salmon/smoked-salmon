@@ -36,7 +36,7 @@ from salmon.tagger import metadata as metadata_mod
 from salmon.tagger import review
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
-from salmon.uploader import dupe_checker
+from salmon.uploader import dupe_checker, tracker_run
 
 # Covers and spectrals go to the fake image host.
 pytestmark = pytest.mark.usefixtures("image_uploads")
@@ -600,7 +600,7 @@ def dirs(monkeypatch, tmp_path) -> tuple[Path, Path]:
 def _uploads_by_tracker(monkeypatch) -> list[str]:
     """Record the tracker of each upload (its transcodes count apart), which runs as it does in salmon."""
     sites: list[str] = []
-    real = salmon.uploader.upload_and_report
+    real = tracker_run.upload_and_report
 
     async def recording(gazelle_site, *args: Any, **kwargs: Any) -> Any:
         if not sites or sites[-1] != gazelle_site.site_code:
@@ -679,14 +679,14 @@ def test_a_skipped_named_tracker_moves_on_to_the_next(monkeypatch, tmp_path, dir
     _downloads, torrents = dirs
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
     sites = _uploads_by_tracker(monkeypatch)
-    real = salmon.uploader.resolve_cover_url
+    real = tracker_run.resolve_cover_url
 
     async def no_cover_on_red(gazelle_site, *args: Any, **kwargs: Any) -> tuple[bool, str | None]:
         if gazelle_site.site_code == "RED":
             return False, None
         return await real(gazelle_site, *args, **kwargs)
 
-    monkeypatch.setattr(salmon.uploader, "resolve_cover_url", no_cover_on_red)
+    monkeypatch.setattr(tracker_run, "resolve_cover_url", no_cover_on_red)
 
     run = _run_up(monkeypatch, _album(tmp_path / "Album"), torrents, trackers=("RED", "OPS"), input="\n\n")
 
@@ -700,7 +700,7 @@ def test_a_failed_named_tracker_moves_on_to_the_next(monkeypatch, tmp_path, dirs
     _downloads, torrents = dirs
     monkeypatch.setattr(salmon.trackers, "tracker_list", ["RED", "OPS"])
     sites = _uploads_by_tracker(monkeypatch)
-    recording = salmon.uploader.upload_and_report
+    recording = tracker_run.upload_and_report
 
     async def red_fails(gazelle_site, *args: Any, **kwargs: Any) -> Any:
         if gazelle_site.site_code == "RED":
