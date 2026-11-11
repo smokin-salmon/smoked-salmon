@@ -38,6 +38,7 @@ from salmon.errors import (
     UpconvertCheckError,
     UpconvertCheckNotApplicable,
 )
+from salmon.tagger.audio_info import bit_rate
 from salmon.tagger.pre_data import construct_artists_li, parse_format, parse_title
 from salmon.tagger.tagfile import TagFile
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs, get_search_results
@@ -79,7 +80,7 @@ def _audio_info(path: str, files: list[str]) -> dict[str, dict[str, Any]]:
         info[filename] = {
             "channels": stream.channels,
             "sample rate": stream.sample_rate,
-            "bit rate": stream.bitrate,
+            "bit rate": bit_rate(stream),
             "precision": lossless_depth(stream),
         }
     return info

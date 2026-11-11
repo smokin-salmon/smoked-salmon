@@ -4,6 +4,7 @@ What can be found is a file shorter than its headers say, the damage of a downlo
 or its tags, are missing.
 """
 
+import math
 import os
 import struct
 from typing import IO
@@ -15,6 +16,8 @@ from mutagen.dsf import DSF
 # DSF: the "DSD " chunk (its size, the file's, and where the ID3 tag starts), then "fmt ", then "data".
 _DSF_HEADER = struct.Struct("<4sQQQ")
 _DSF_CHUNK = struct.Struct("<4sQ")
+# The "fmt " chunk's fields: version, format, channel type, channels, rate, bits per sample, samples, block size.
+_DSF_FORMAT = struct.Struct("<IIIIIIQI")
 # DSDIFF: an "FRM8" chunk of form "DSD " holds every other chunk; each is an ID, a size, and its data, padded to even.
 _DFF_FORM = struct.Struct(">4sQ4s")
 _DFF_CHUNK = struct.Struct(">4sQ")
@@ -56,6 +59,7 @@ def _dsf_damage(handle: IO[bytes], head: bytes, size: int) -> str | None:
         return _short(size, total_size, "header")
     # "fmt " follows the DSD chunk, and "data" follows "fmt ".
     offset = header_size
+    chunks: dict[bytes, tuple[int, int]] = {}
     for expected in (b"fmt ", b"data"):
         handle.seek(offset)
         chunk = handle.read(_DSF_CHUNK.size)
@@ -66,9 +70,27 @@ def _dsf_damage(handle: IO[bytes], head: bytes, size: int) -> str | None:
             return f"it has no {expected.decode().strip()} chunk where its header says"
         if offset + chunk_size > size:
             return _short(size, offset + chunk_size, f"{expected.decode().strip()} chunk")
+        chunks[expected] = (offset, chunk_size)
         offset += chunk_size
     if metadata_at and metadata_at >= size:
         return _short(size, metadata_at + 1, "tag")
+    return _dsf_samples_damage(handle, chunks[b"fmt "], chunks[b"data"][1])
+
+
+def _dsf_samples_damage(handle: IO[bytes], fmt: tuple[int, int], data_size: int) -> str | None:
+    """Whether the data chunk is too small for the samples the fmt chunk counts: a bit each, every channel's in
+    blocks of its own, the last padded. A file whose headers were made to fit it after it was cut short."""
+    fmt_at, fmt_size = fmt
+    if fmt_size < _DSF_CHUNK.size + _DSF_FORMAT.size:
+        return _short(fmt_size, _DSF_CHUNK.size + _DSF_FORMAT.size, "fmt chunk")
+    handle.seek(fmt_at + _DSF_CHUNK.size)
+    _, _, _, channels, _, _, samples, _ = _DSF_FORMAT.unpack(handle.read(_DSF_FORMAT.size))
+    if not channels:
+        return "its fmt chunk names no channel"
+    held = (data_size - _DSF_CHUNK.size) // channels
+    needed = math.ceil(samples / 8)
+    if held < needed:
+        return f"it is cut short: its data holds {held} bytes a channel, where its {samples} samples need {needed}"
     return None
 
 

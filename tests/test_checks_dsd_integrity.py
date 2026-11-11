@@ -2,6 +2,7 @@
 stops the upload, and is never offered to sanitizing, which re-encodes only FLAC and MP3 files."""
 
 import importlib
+import struct
 
 import anyio
 import asyncclick as click
@@ -48,6 +49,21 @@ def test_a_cut_dsd_file_is_damaged(tmp_path, write, cut: int, found: str) -> Non
     # A positive cut takes that many bytes off the end; a negative one keeps that many from the start.
     path = _cut(write(tmp_path / f"01.{write.__name__[-3:]}", tags=TAGS), cut)
     assert found in (dsd_damage(str(path)) or "")
+
+
+def test_a_dsf_whose_data_is_too_small_for_its_samples_is_damaged(tmp_path) -> None:
+    # Cut short, then its headers made to fit what is left: only the sample count in its fmt chunk still tells.
+    path = write_dsf(tmp_path / "01.dsf", seconds=1.0)
+    data = path.read_bytes()
+    data_size = struct.unpack_from("<Q", data, 84)[0]
+    kept = data_size - 2 * 4096 * 20
+    cut = bytearray(data[:80] + struct.pack("<4sQ", b"data", kept) + data[92 : 80 + kept])
+    struct.pack_into("<Q", cut, 12, len(cut))
+    path.write_bytes(bytes(cut))
+
+    assert dsd_damage(str(path)) == (
+        "it is cut short: its data holds 274432 bytes a channel, where its 2822400 samples need 352800"
+    )
 
 
 def test_a_file_named_dsf_that_is_none_is_damaged(tmp_path) -> None:

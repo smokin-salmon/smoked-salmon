@@ -9,6 +9,9 @@ from helpers.dsd import DSD64, DSD128, write_dff, write_dsf
 from mutagen import File as MutagenFile
 from test_folderstructure_yes_all import _check_under_yyy, _names
 
+import salmon.checks.album as album_checks
+from salmon.common.dsd import release_dsd_encoding
+from salmon.tagger.audio_info import gather_audio_info
 from salmon.tagger.foldername import _fix_format, resolution_token
 from salmon.tagger.pre_data import parse_encoding, parse_format
 from salmon.tagger.tagfile import TagFile
@@ -82,6 +85,16 @@ def test_a_dsd_release_is_format_dsd_with_its_rate_as_encoding() -> None:
     assert parse_format("01 - One.DSF") == parse_format("01.dff") == "DSD"
     # Whatever -e said: the files say it.
     assert anyio.run(parse_encoding, "DSD", audio_info, ["320", False], True) == ("DSD128", False)
+
+
+def test_a_dsf_stored_most_significant_bit_first_is_1_bit_dsd_too(tmp_path) -> None:
+    # Its header says 8 bits per sample; mutagen takes that as the depth, and counts it in the bitrate.
+    write_dsf(tmp_path / "01.dsf", msb_first=True)
+    write_dsf(tmp_path / "02.dsf")
+
+    for audio_info in (gather_audio_info(str(tmp_path)), album_checks._audio_info(str(tmp_path), ["01.dsf", "02.dsf"])):
+        assert [(info["precision"], info["bit rate"]) for info in audio_info.values()] == [(1, DSD64 * 2)] * 2
+        assert release_dsd_encoding(audio_info) == "DSD64"
 
 
 def test_a_dsd_release_of_two_rates_stops(capsys) -> None:

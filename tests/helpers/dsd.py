@@ -23,13 +23,25 @@ _DSF_BLOCK = 4096
 
 
 def write_dsf(
-    path: Path, *, rate: int = DSD64, channels: int = 2, seconds: float = 0.2, tags: dict[str, str] | None = None
+    path: Path,
+    *,
+    rate: int = DSD64,
+    channels: int = 2,
+    seconds: float = 0.2,
+    tags: dict[str, str] | None = None,
+    msb_first: bool = False,
 ) -> Path:
-    """Write a DSF file of `seconds` of DSD silence, with these ID3 frames (TIT2: "Title") if any; give its path."""
+    """Write a DSF file of `seconds` of DSD silence, with these ID3 frames (TIT2: "Title") if any; give its path.
+
+    msb_first stores the bits most significant first, which a DSF's header says as 8 bits per sample, not 1.
+    """
     samples = round(rate * seconds)
     blocks = max(1, math.ceil(samples / 8 / _DSF_BLOCK))
     data = bytes([_IDLE]) * (blocks * _DSF_BLOCK * channels)
-    fmt = struct.pack("<4sQIIIIIIQII", b"fmt ", 52, 1, 0, _channel_type(channels), channels, rate, 1, samples, 4096, 0)
+    bits = 8 if msb_first else 1
+    fmt = struct.pack(
+        "<4sQIIIIIIQII", b"fmt ", 52, 1, 0, _channel_type(channels), channels, rate, bits, samples, 4096, 0
+    )
     data_chunk = struct.pack("<4sQ", b"data", 12 + len(data)) + data
     total = 28 + len(fmt) + len(data_chunk)
     path.write_bytes(struct.pack("<4sQQQ", b"DSD ", 28, total, 0) + fmt + data_chunk)
