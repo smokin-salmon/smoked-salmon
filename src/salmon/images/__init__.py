@@ -269,7 +269,9 @@ async def upload_cover(cover_path: str | None, host: str | None = None, red_api:
         return None
 
 
-async def upload_spectrals(spectrals, uploader=None, successful=None, tracker: str | None = None) -> dict:
+async def upload_spectrals(
+    spectrals, uploader=None, successful=None, tracker: str | None = None, ask_host: bool = True
+) -> dict:
     """Upload spectral images to image host.
 
     Args:
@@ -277,6 +279,7 @@ async def upload_spectrals(spectrals, uploader=None, successful=None, tracker: s
         uploader: The image host module to use. Defaults to the tracker's specs host.
         successful: Set of already successful spec_ids.
         tracker: The site code (e.g. "RED") of the tracker the spectrals are for, or None if they are not for one.
+        ask_host: Whether to ask for another host when some fail. Without it, the ones that failed are left out.
 
     Returns:
         Dictionary mapping spec_id to list of URLs.
@@ -300,7 +303,7 @@ async def upload_spectrals(spectrals, uploader=None, successful=None, tracker: s
         if urls is not None:
             response[sid] = urls
             successful.add(sid)
-    if len(response) < len(pending):
+    if len(response) < len(pending) and ask_host:
         retry_result = await _handle_failed_spectrals(spectrals, successful, tracker)
         return {**response, **retry_result}
     return response
@@ -316,12 +319,7 @@ async def _handle_failed_spectrals(spectrals, successful, tracker: str | None = 
 
     Returns:
         Dictionary of the URLs of the spectrals uploaded from here on: none on "skip".
-
-    Raises:
-        ImageUploadFailed: With -yyy, which asks nothing: the run stops with the spectrals kept (#1019).
     """
-    if await interaction.assume_defaults():
-        raise ImageUploadFailed("some spectrals failed to upload, and -yyy (upload.yes_all) asks for no other host")
     while True:
         # Recomputed every iteration (not cached at import time) so it always reflects the
         # rules in salmon.config.image_hosts, the single source shared with config validation

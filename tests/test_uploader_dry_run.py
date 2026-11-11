@@ -277,7 +277,9 @@ def test_an_image_upload_with_no_skip_stops_the_dry_run_before_it_is_sent(monkey
     library, downloads, torrents = dirs
     album = _album(library / "Album")
 
-    async def spectrals_with_no_skip(spectrals_path: str, spectral_ids: dict[int, str], tracker: str) -> Any:
+    async def spectrals_with_no_skip(
+        spectrals_path: str, spectral_ids: dict[int, str], tracker: str, **_kw: Any
+    ) -> Any:
         # A step someone added without a dry run skip.
         paths = (os.path.join(spectrals_path, "01 Full.png"), os.path.join(spectrals_path, "01 Zoom.png"))
         return await salmon.images.upload_spectrals([(1, spectral_ids[1], paths)], tracker=tracker)

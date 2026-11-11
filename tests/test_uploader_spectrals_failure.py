@@ -232,11 +232,34 @@ def test_with_yyy_a_host_failing_an_image_stops_without_the_host_question(monkey
     monkeypatch.setattr(cfg.image, "specs_uploader", "testhost")
     monkeypatch.setattr(cfg.directory, "tmp_dir", None)
     monkeypatch.setattr(cfg.directory, "library_dirs", [])
-    monkeypatch.setattr(cfg.upload, "yes_all", True)
     monkeypatch.setattr(interaction, "prompt", no_question)
     uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
 
-    with pytest.raises(SpectralsDeclined):
+    # As -yyy sets it.
+    with interaction.assuming_defaults(), pytest.raises(SpectralsDeclined):
         anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False))
 
     assert sorted(os.listdir(next(scratch.glob("salmon-spectrals-*/Spectrals")))) == sorted(SPECTRALS)
+
+
+def test_a_run_that_asks_still_offers_another_host(monkeypatch, tmp_path, scratch) -> None:
+    class FailsEachImage(BaseImageUploader):
+        async def upload_file(self, filename: str) -> tuple[str, None]:
+            raise ImageUploadFailed("the host is down")
+
+    asked: list[str] = []
+
+    async def skip(text: str, **_kwargs) -> str:
+        asked.append(text)
+        return "skip"
+
+    monkeypatch.setitem(salmon.images.HOSTS, "testhost", SimpleNamespace(ImageUploader=FailsEachImage))
+    monkeypatch.setattr(cfg.image, "specs_uploader", "testhost")
+    monkeypatch.setattr(cfg.directory, "tmp_dir", None)
+    monkeypatch.setattr(cfg.directory, "library_dirs", [])
+    monkeypatch.setattr(interaction, "prompt", skip)
+    uploads = SpectralUploads(str(_album(tmp_path)), ["RED"])
+
+    # A skip at the host question goes on without them, and is not asked about again.
+    assert anyio.run(partial(uploads.urls_for_upload, RED, IDS, lossy_master=False)) == {}
+    assert len(asked) == 1

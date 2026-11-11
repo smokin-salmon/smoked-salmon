@@ -321,7 +321,9 @@ class SpectralUploads:
         host = cfg.image.host_for(tracker, "specs_uploader")
         if host not in self._urls and host not in self._failed:
             try:
-                self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker)
+                # A run that answers with defaults (-yyy) asks for no other host: it stops, the spectrals kept.
+                ask_host = not await interaction.assume_defaults()
+                self._urls[host] = await upload_spectrals(self._path, spectral_ids, tracker, ask_host=ask_host)
             except SpectralsNotUploaded as failure:
                 self._failed.add(host)
                 if failure.host is None:
@@ -1322,6 +1324,8 @@ async def upload_spectrals(
     spectrals_path: str,
     spectral_ids: dict[int, str] | None,
     tracker: str | None = None,
+    *,
+    ask_host: bool = True,
 ) -> dict[int, list[str]] | None:
     """Upload spectral images to image host.
 
@@ -1330,6 +1334,7 @@ async def upload_spectrals(
         spectral_ids: Dict mapping spectral IDs to filenames.
         tracker: The site code of the tracker the spectrals are for, whose specs host they go to. None
             uploads them to the shared specs_uploader.
+        ask_host: Whether to ask for another host when the host fails some of them. Without it, that is a failure.
 
     Returns:
         Dict mapping spectral IDs to uploaded URLs, or None when there are none to upload. A dry run uploads nothing:
@@ -1337,8 +1342,8 @@ async def upload_spectrals(
         empty dict), at the host question.
 
     Raises:
-        SpectralsNotUploaded: A spectral is not a usable image, or the host failed with no host question to ask.
-            What went wrong is printed.
+        SpectralsNotUploaded: A spectral is not a usable image, or the host failed with no host question to ask
+            (or ask_host off). What went wrong is printed.
     """
     if not spectral_ids:
         return None
@@ -1366,15 +1371,19 @@ async def upload_spectrals(
                 )
                 raise SpectralsNotUploaded(None) from e
 
+    host = cfg.image.host_for(tracker, "specs_uploader")
     if dryrun.active():
-        host = cfg.image.host_for(tracker, "specs_uploader")
         dryrun.say(f"not uploading the spectrals of {len(spectrals_list)} track(s) to {host}.")
         return {sid: [dryrun.image_url(path, host) for path in paths] for sid, _filename, paths in spectrals_list}
     try:
-        return await upload_spectral_imgs(spectrals_list, tracker=tracker)
+        urls = await upload_spectral_imgs(spectrals_list, tracker=tracker, ask_host=ask_host)
     except ImageUploadFailed as e:
         click.secho(f"Failed to upload spectral: {e}", fg="red")
-        raise SpectralsNotUploaded(cfg.image.host_for(tracker, "specs_uploader")) from e
+        raise SpectralsNotUploaded(host) from e
+    if not ask_host and len(urls) < len(spectrals_list):
+        click.secho("Not asking for another host: this run answers its questions with their defaults.", fg="red")
+        raise SpectralsNotUploaded(host)
+    return urls
 
 
 def _default_spectral_selection(spectral_ids: dict[int, str], lossy_master: bool | None) -> str:

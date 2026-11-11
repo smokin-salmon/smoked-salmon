@@ -154,7 +154,7 @@ def test_spectrals_checked_after_upload_are_compressed_before_they_are_uploaded(
     _pick(monkeypatch, "2 4")
     compressed_when_uploaded: list[str] = []
 
-    async def upload(_spectrals_path, _spectral_ids, _tracker) -> None:
+    async def upload(_spectrals_path, _spectral_ids, _tracker, **_kwargs) -> None:
         compressed_when_uploaded.extend(compressed)
 
     monkeypatch.setattr(spectrals, "upload_spectrals", upload)
@@ -216,7 +216,7 @@ def test_a_failed_description_edit_still_prints_the_bbcode_and_reports_lossy_mas
 
     monkeypatch.setattr(spectrals, "prompt_lossy_master", lossy)
 
-    async def upload(_spectrals_path, spectral_ids, _tracker) -> dict[int, list[str]]:
+    async def upload(_spectrals_path, spectral_ids, _tracker, **_kwargs) -> dict[int, list[str]]:
         return {spec_id: [f"{spec_id}-full.png", f"{spec_id}-zoom.png"] for spec_id in spectral_ids}
 
     monkeypatch.setattr(spectrals, "upload_spectrals", upload)

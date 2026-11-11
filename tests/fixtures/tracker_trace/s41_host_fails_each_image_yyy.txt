@@ -54,7 +54,7 @@ Hardlinked folder to '<tmp>/downloads/Artist - Album (2020) [WEB FLAC]'.
 
 Uploading spectrals for 01. one.flac...
 Failed to upload spectrals for 01. one.flac: 01 Full.png: imgbox is down
-Failed to upload spectral: some spectrals failed to upload, and -yyy (upload.yes_all) asks for no other host
+Not asking for another host: this run answers its questions with their defaults.
 
 The spectrals could not be uploaded to imgbox. They are kept in <tmp>/system-tmp/salmon-spectrals-<random>/Spectrals.
 

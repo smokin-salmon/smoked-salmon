@@ -26,7 +26,7 @@ def _write(tmp_path: Path, broken: str | None) -> None:
 def _upload(monkeypatch, tmp_path: Path, *, dry: bool = False):
     received: list[str] = []
 
-    async def host(spectrals_list, tracker=None):
+    async def host(spectrals_list, tracker=None, **_kwargs):
         received.extend(path for _sid, _filename, paths in spectrals_list for path in paths)
         return {sid: [f"https://img.example/{Path(p).name}" for p in paths] for sid, _f, paths in spectrals_list}
 
