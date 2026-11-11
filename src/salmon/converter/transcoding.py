@@ -15,6 +15,7 @@ from mutagen.id3 import APIC, ID3, TXXX, Frames
 
 from salmon import cfg, interaction
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
+from salmon.common.dsd import DSD_EXTENSIONS
 from salmon.common.files import get_audio_files, is_apple_double, is_torrent_file, process_tracks
 from salmon.common.numbers import file_order_key
 from salmon.converter.conversions import (
@@ -139,19 +140,23 @@ def _bracket_between(foldername: str, flac: re.Match[str], lossless: re.Match[st
 
 
 def _validate_lossless(path: str) -> None:
-    """Validate that a folder contains only lossless audio files.
+    """Validate that a folder contains only lossless audio files, and no DSD: only FLAC is transcoded, and another
+    audio file would be copied into the output as it is.
 
     Args:
         path: Path to the directory to validate.
 
     Raises:
-        click.Abort: If a lossy file is found in the folder.
+        click.Abort: If a lossy or DSD file is found in the folder.
     """
     for _root, _, files in os.walk(path):
         for f in files:
             ext = os.path.splitext(f)[1].lower()
             if ext in LOSSY_EXTENSIONS and not is_apple_double(f):
                 click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
+                raise click.Abort
+            if ext in DSD_EXTENSIONS and not is_apple_double(f):
+                click.secho(f"A DSD file was found in the folder ({f}): salmon transcodes FLAC only.", fg="red")
                 raise click.Abort
 
 
