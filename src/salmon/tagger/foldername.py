@@ -10,7 +10,7 @@ from string import Formatter
 import asyncclick as click
 
 from salmon import cfg, dryrun, interaction
-from salmon.common import clean_name, has_visible_chars, strip_template_keys
+from salmon.common import clean_name, has_visible_chars
 from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.files import shares_files
 from salmon.common.strings import artists_or_various
@@ -434,24 +434,24 @@ def generate_folder_name(metadata):
     keys = [fn for _, fn, _, _ in Formatter().parse(template) if fn]
     for k in keys.copy():
         if not metadata.get(k):
-            template = _strip_blank_resolution(template) if k == "resolution" else strip_template_keys(template, k)
+            template = _strip_blank_field(template, k)
             keys.remove(k)
     sub_metadata = _fix_format(metadata, keys)
     return clean_name(template.format(**{k: _sub_illegal_characters(sub_metadata[k]) for k in keys}))
 
 
-def _strip_blank_resolution(template):
+def _strip_blank_field(template, key):
     """
-    Drop a blank {resolution} token from the template.
+    Drop a blank field's placeholder from the template.
 
-    strip_template_keys assumes a token owns the whole bracket around it, which is right for a
-    token alone in its brackets but wrong for "[{source} FLAC {resolution}]": it would eat the
-    closing bracket and leave "FLAC" hanging open. Here only the placeholder (and one adjacent
-    separator space) goes; the bracket comes with it only if nothing else was left inside.
-    A placeholder can carry a format spec, as in "{resolution:>5}"; that goes too, or it would
-    survive into template.format() with no "resolution" key left to fill it.
+    Only the placeholder (and the whitespace before it) goes, so "[{source} {catno}]" without a
+    catalogue number stays "[CD]" and does not leave a bracket hanging open. A bracket pair left
+    empty goes with it, so "({year})" or "[{catno}]" vanish whole. A placeholder can carry a
+    conversion and a format spec, as in "{resolution:>5}"; that goes too, or it would survive
+    into template.format() with no such key left to fill it.
     """
-    template = re.sub(r"\s*\{resolution(?::[^}]*)?\}", "", template)
+    template = re.sub(r"\s*\{" + re.escape(key) + r"(?:![rsa])?(?::[^}]*)?\}", "", template)
+    template = re.sub(r"([\[(])\s+", r"\1", template)
     template = re.sub(r"[\[{(]\s*[\]})]", "", template)
     template = re.sub(r"\s+", " ", template).strip()
     return re.sub(r" *- *$", "", template)

@@ -95,3 +95,37 @@ def test_the_new_folder_name_is_accepted_without_asking_under_yyy(monkeypatch, a
 
     assert result == "New name"
     assert len(asked) == (0 if assume else 1)
+
+
+_NO_CATNO = {
+    "artists": [("A", "main")],
+    "title": "T",
+    "year": 2020,
+    "source": "CD",
+    "format": "FLAC",
+    "encoding": "Lossless",
+    "catno": "",
+}
+
+
+@pytest.mark.parametrize(
+    ("template", "expected"),
+    [
+        ("{artists} - {title} [{source} {catno}]", "A - T [CD]"),
+        ("{artists} - {title} [{catno} {source}]", "A - T [CD]"),
+        ("{artists} - {title} [{source} {format}] [{catno}]", "A - T [CD FLAC]"),
+        ("{artists} - {title} [{source} {catno:>8}]", "A - T [CD]"),
+        ("{artists} - {title} ({year}) [{catno}]", "A - T (2020)"),
+    ],
+    ids=["catno-last", "catno-first", "own-group", "format-spec", "own-group-after-year"],
+)
+def test_an_empty_field_leaves_its_group_closed(monkeypatch, template, expected) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "folder_template", template)
+
+    assert foldername.generate_folder_name(dict(_NO_CATNO)) == expected
+
+
+def test_an_empty_year_drops_its_whole_group(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "folder_template", "{artists} - {title} ({year})")
+
+    assert foldername.generate_folder_name({**_NO_CATNO, "year": ""}) == "A - T"
