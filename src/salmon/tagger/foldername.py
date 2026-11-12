@@ -451,7 +451,7 @@ def _strip_blank_field(template, key):
     conversion and a format spec, as in "{resolution:>5}"; that goes too, or it would survive
     into template.format() with no such key left to fill it.
     """
-    template = re.sub(r"\s*(?:\{\{)*\{" + re.escape(key) + r"(?:![rsa])?(?::[^}]*)?\}(?:\}\})*", "", template)
+    template = re.sub(r"\s*(?<!\{)(?:\{\{)*\{" + re.escape(key) + r"(?:![rsa])?(?::[^}]*)?\}(?:\}\})*", "", template)
     template = re.sub(r"([\[(])\s+", r"\1", template)
     template = re.sub(r"[\[(]\s*[\])]", "", template)
     template = re.sub(r"\s+", " ", template).strip()

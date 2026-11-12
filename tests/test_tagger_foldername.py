@@ -117,8 +117,17 @@ _NO_CATNO = {
         ("{artists} - {title} [{source} {catno:>8}]", "A - T [CD]"),
         ("{artists} - {title} ({year}) [{catno}]", "A - T (2020)"),
         ("{artists} - {title} {{{catno}}}", "A - T"),
+        ("{artists} - {title} {{catno}} [{catno}]", "A - T {catno}"),
     ],
-    ids=["catno-last", "catno-first", "own-group", "format-spec", "own-group-after-year", "literal-braces"],
+    ids=[
+        "catno-last",
+        "catno-first",
+        "own-group",
+        "format-spec",
+        "own-group-after-year",
+        "literal-braces",
+        "literal-field-name",
+    ],
 )
 def test_an_empty_field_leaves_its_group_closed(monkeypatch, template, expected) -> None:
     monkeypatch.setattr(cfg.upload.formatting, "folder_template", template)
