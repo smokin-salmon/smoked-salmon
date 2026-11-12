@@ -345,7 +345,7 @@ def test_the_plots_are_never_uploaded(monkeypatch, tmp_path):
         (tmp_path / name).write_bytes(b"png")
     uploaded: list[str] = []
 
-    async def upload(spectrals_list, tracker=None):
+    async def upload(spectrals_list, tracker=None, **_kwargs):
         uploaded.extend(path for _sid, _filename, paths in spectrals_list for path in paths)
         return {}
 
