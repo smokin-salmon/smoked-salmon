@@ -446,13 +446,14 @@ def _strip_blank_field(template, key):
 
     Only the placeholder (and the whitespace before it) goes, so "[{source} {catno}]" without a
     catalogue number stays "[CD]" and does not leave a bracket hanging open. A bracket pair left
-    empty goes with it, so "({year})" or "[{catno}]" vanish whole. A placeholder can carry a
+    empty goes with it (so "({year})" or "[{catno}]" vanishes whole), as do the doubled
+    braces of a literal pair around it. A placeholder can carry a
     conversion and a format spec, as in "{resolution:>5}"; that goes too, or it would survive
     into template.format() with no such key left to fill it.
     """
-    template = re.sub(r"\s*\{" + re.escape(key) + r"(?:![rsa])?(?::[^}]*)?\}", "", template)
+    template = re.sub(r"\s*(?:\{\{)*\{" + re.escape(key) + r"(?:![rsa])?(?::[^}]*)?\}(?:\}\})*", "", template)
     template = re.sub(r"([\[(])\s+", r"\1", template)
-    template = re.sub(r"[\[{(]\s*[\]})]", "", template)
+    template = re.sub(r"[\[(]\s*[\])]", "", template)
     template = re.sub(r"\s+", " ", template).strip()
     return re.sub(r" *- *$", "", template)
 
