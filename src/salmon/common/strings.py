@@ -208,12 +208,6 @@ def less_uppers(one, two):
     return one if one_count >= two_count else two
 
 
-def strip_template_keys(template, key):
-    """Strip all unused brackets from the folder name."""
-    folder = re.sub(r" *[\[{\(]*{" + key + r"}[\]}\)]* *", " ", template).strip()
-    return re.sub(r" *- *$", "", folder)
-
-
 def fetch_genre(genre: str) -> set[str]:
     """Fetch standardized genre from whitelist.
 
