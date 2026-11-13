@@ -96,6 +96,12 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         except (KeyError, IndexError):
             return None
 
+    def parse_upc(self, soup):
+        try:
+            return soup["barcode"]
+        except (KeyError, IndexError):
+            return None
+
     def parse_release_type(self, soup):
         try:
             return RELEASE_TYPES[soup["release-group"]["type"]]
@@ -107,10 +113,19 @@ class Scraper(MusicBrainzBase, MetadataMixin):
         for disc in soup["medium-list"]:
             for track in disc["track-list"]:
                 try:
+                    artists = parse_artists(track["recording"]["artist-credit"])
+                    credited_remixers = []
+                    if "artist-relation-list" in track["recording"]:
+                        for relation in track["recording"]["artist-relation-list"]:
+                            if relation["type"] == "remixer":
+                                credited_remixers.append(relation["artist"]["name"])
+                                artists.append((relation["artist"]["name"], "remixer"))
+
                     tracks[str(disc["position"])][str(track["number"])] = self.generate_track(
                         trackno=track["number"],
                         discno=disc["position"],
-                        artists=parse_artists(track["recording"]["artist-credit"]),
+                        artists=artists,
+                        credited_remixers=credited_remixers,
                         title=track["recording"]["title"],
                     )
                 except (ValueError, IndexError) as e:
