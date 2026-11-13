@@ -25,21 +25,41 @@ from salmon.webui import output
 _MIN_MASKED_PATH = 4
 
 
-def _path_override(extra_args: list[str]) -> str | None:
-    """The last --sftp-path-override value in extra_args, as rclone reads it; None without one."""
-    override = None
+def _flag_uses(extra_args: list[str], takes_value: dict[str, bool]) -> list[list[str]]:
+    """Each use of a flag in takes_value, as its arguments: "--flag=value", "--flag value" or a lone "--flag"."""
+    uses: list[list[str]] = []
     i = 0
     while i < len(extra_args):
-        name, equals, value = extra_args[i].partition("=")
+        name, equals, _value = extra_args[i].partition("=")
         i += 1
-        if name == "--sftp-path-override":
-            if equals:
-                override = value
-            else:
-                # The next argument is this flag's value, whatever it looks like.
-                override = extra_args[i] if i < len(extra_args) else None
-                i += 1
-    return override
+        if name not in takes_value:
+            continue
+        uses.append([extra_args[i - 1]])
+        if takes_value[name] and not equals and i < len(extra_args):
+            # The next argument is this flag's value, whatever it looks like.
+            uses[-1].append(extra_args[i])
+            i += 1
+    return uses
+
+
+def _path_override(extra_args: list[str]) -> str | None:
+    """The last --sftp-path-override value in extra_args, as rclone reads it; None without one."""
+    uses = _flag_uses(extra_args, {"--sftp-path-override": True})
+    if not uses:
+        return None
+    if len(uses[-1]) == 2:
+        return uses[-1][1]
+    _name, equals, value = uses[-1][0].partition("=")
+    return value if equals else None
+
+
+# The flags that choose rclone's config file and how it opens it, and whether each takes the next argument.
+_CONFIG_FLAGS = {"--config": True, "--password-command": True, "--ask-password": False}
+
+
+def config_args(extra_args: list[str]) -> list[str]:
+    """The extra_args that choose rclone's config file and how it opens it, in their order, values included."""
+    return [arg for use in _flag_uses(extra_args, _CONFIG_FLAGS) for arg in use]
 
 
 def _resolve_shell_path(remote_folder: str, extra_args: list[str]) -> str:
@@ -212,7 +232,7 @@ _warned_normalization: set[int] = set()
 
 def _normalizes_to_nfc(seedbox: Seedbox) -> bool:
     """Whether rclone makes the names it copies NFC: the last such flag in extra_args, else its variable."""
-    flags = [arg.partition("=") for arg in seedbox.extra_args if arg.partition("=")[0] == _UNICODE_FLAG]
+    flags = [use[0].partition("=") for use in _flag_uses(seedbox.extra_args, {_UNICODE_FLAG: False})]
     if not flags:
         # salmon starts rclone with its own environment.
         return os.environ.get(_UNICODE_ENV, "") in _GO_TRUE

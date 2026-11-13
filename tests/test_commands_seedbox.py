@@ -4,7 +4,11 @@ Never touches a real torrent client, rclone binary or remote: the torrent client
 `anyio.run_process` are monkeypatched throughout.
 """
 
+import shutil
+import subprocess
+
 import anyio
+import pytest
 import qbittorrentapi
 
 import salmon.commands as commands_module
@@ -60,7 +64,7 @@ def test_rclone_lsd_success_reports_accessible(monkeypatch, capsys) -> None:
         stdout = b""
         stderr = b""
 
-    async def fake_run_process(cmd, check=True):
+    async def fake_run_process(cmd, check=True, **_kwargs):
         assert cmd[:2] == ["rclone", "lsd"]
         return FakeResult()
 
@@ -81,7 +85,7 @@ def test_rclone_lsd_failure_reports_failed_with_stderr(monkeypatch, capsys) -> N
         stdout = b""
         stderr = b"directory not found"
 
-    async def fake_run_process(cmd, check=True):
+    async def fake_run_process(cmd, check=True, **_kwargs):
         return FakeResult()
 
     monkeypatch.setattr(commands_module.anyio, "run_process", fake_run_process)
@@ -109,7 +113,7 @@ def test_a_credential_bearing_remote_is_not_printed(monkeypatch, capsys) -> None
         stdout = b""
         stderr = b""
 
-    async def fake_run_process(cmd, check=True):
+    async def fake_run_process(cmd, check=True, **_kwargs):
         return FakeResult()
 
     monkeypatch.setattr(commands_module.anyio, "run_process", fake_run_process)
@@ -171,7 +175,7 @@ def test_rclone_failure_output_never_contains_the_password(monkeypatch, capsys) 
             b"couldn't connect to sftp://dean:hunter2@box\nauthentication failed for hunter2"
         )
 
-    async def fake_run_process(cmd, check=True):
+    async def fake_run_process(cmd, check=True, **_kwargs):
         return FakeResult()
 
     monkeypatch.setattr(commands_module.anyio, "run_process", fake_run_process)
@@ -189,7 +193,7 @@ def test_a_failed_probe_never_repeats_a_configured_secret(monkeypatch, capsys) -
     monkeypatch.setattr(QBittorrentClient, "login", lambda self: object())
     monkeypatch.setattr(commands_module.shutil, "which", lambda name: "/usr/bin/rclone")
 
-    async def fake_run_process(cmd, check=True):
+    async def fake_run_process(cmd, check=True, **_kwargs):
         raise OSError("rclone refused hunter2")
 
     monkeypatch.setattr(commands_module.anyio, "run_process", fake_run_process)
@@ -219,3 +223,109 @@ def test_the_qobuz_connection_test_skips_the_shipped_placeholders(monkeypatch, c
     out = capsys.readouterr().out
     assert asked == []
     assert "Qobuz: Missing required configuration" in out
+
+
+def _rclone_seedbox(monkeypatch, **overrides) -> list[tuple[list[str], object]]:
+    """An rclone seedbox whose lsd succeeds; give back each command run and the stdin it was given."""
+    monkeypatch.setattr(cfg, "seedbox", [_seedbox(**overrides)])
+    monkeypatch.setattr(QBittorrentClient, "login", lambda self: object())
+    monkeypatch.setattr(commands_module.shutil, "which", lambda name: "/usr/bin/rclone")
+    ran: list[tuple[list[str], object]] = []
+
+    async def fake_run_process(cmd, check=True, **kwargs):
+        ran.append((list(cmd), kwargs.get("stdin")))
+        return subprocess.CompletedProcess(cmd, 0, b"", b"")
+
+    monkeypatch.setattr(commands_module.anyio, "run_process", fake_run_process)
+    return ran
+
+
+def test_the_rclone_check_reads_the_config_uploads_read(monkeypatch, capsys) -> None:
+    ran = _rclone_seedbox(monkeypatch, extra_args=["--checksum", "--config", "/box/rclone.conf", "-q"])
+
+    _run_seedbox_check()
+
+    # No terminal: a config password prompt would wait there unseen.
+    assert ran == [(["rclone", "lsd", "myremote:", "--config", "/box/rclone.conf"], subprocess.DEVNULL)]
+    assert "✔ Rclone remote 'myremote' is accessible" in capsys.readouterr().out
+
+
+def test_extra_args_choosing_no_config_leave_the_check_as_it_was(monkeypatch) -> None:
+    ran = _rclone_seedbox(monkeypatch, extra_args=["--checksum", "-P", "--sftp-path-override", "@/volume3"])
+
+    _run_seedbox_check()
+
+    assert ran == [(["rclone", "lsd", "myremote:"], subprocess.DEVNULL)]
+
+
+def test_a_check_that_runs_out_of_time_says_so(monkeypatch, capsys) -> None:
+    _rclone_seedbox(monkeypatch, extra_args=["--config", "/box/rclone.conf", "--password-command", "pinentry-wait"])
+    monkeypatch.setattr(commands_module, "_RCLONE_CHECK_SECONDS", 0.05)
+
+    async def never_answers(cmd, check=True, **_kwargs):
+        await anyio.sleep_forever()
+
+    monkeypatch.setattr(commands_module.anyio, "run_process", never_answers)
+
+    _run_seedbox_check()
+
+    assert "✖ Rclone remote 'myremote' check timed out after 0.05 seconds" in capsys.readouterr().out
+
+
+def _real_rclone(monkeypatch, tmp_path, url: str, extra_args: list[str]) -> None:
+    """Run the check through the real rclone binary, on a memory remote "box" only tmp_path's config names."""
+    (tmp_path / "rclone.conf").write_text("[box]\ntype = memory\n")
+    monkeypatch.setenv("RCLONE_CONFIG", str(tmp_path / "no-such.conf"))
+    monkeypatch.setenv("RCLONE_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setattr(cfg, "seedbox", [_seedbox(url=url, extra_args=extra_args)])
+    monkeypatch.setattr(QBittorrentClient, "login", lambda self: object())
+    _run_seedbox_check()
+
+
+@pytest.mark.skipif(shutil.which("rclone") is None, reason="needs the rclone binary")
+def test_real_rclone_reaches_a_remote_only_the_extra_args_config_names(monkeypatch, capsys, tmp_path) -> None:
+    report = tmp_path / "combined.txt"
+    conf = str(tmp_path / "rclone.conf")
+    _real_rclone(monkeypatch, tmp_path, "box", ["-q", "--combined", str(report), "--max-depth", "5", "--config", conf])
+
+    assert "✔ Rclone remote 'box' is accessible" in capsys.readouterr().out
+    assert not report.exists()
+
+
+@pytest.mark.skipif(shutil.which("rclone") is None, reason="needs the rclone binary")
+def test_real_rclone_failure_is_shown_when_extra_args_hold_logging_flags(monkeypatch, capsys, tmp_path) -> None:
+    log = tmp_path / "rclone.log"
+    conf = str(tmp_path / "rclone.conf")
+    _real_rclone(monkeypatch, tmp_path, "nosuch", ["-q", "--log-file", str(log), "--config", conf])
+
+    out = capsys.readouterr().out
+    assert "✖ Rclone remote 'nosuch' failed: " in out
+    assert "failed: exit code" not in out
+    assert not log.exists()
+
+
+# rclone.conf holding [box] type = memory, encrypted with the password "pw-for-test".
+_ENCRYPTED_CONF = (
+    "# Encrypted rclone configuration File\n\nRCLONE_ENCRYPT_V0:\n"
+    "0/QW/BBzruHrQi0UBrH0Hj/W+fpb9FwHOos+imgHLomnsbz9rBV7wLRbePc4wFs/gHsziwHkzgvLg2v2Gg==\n"
+)
+
+
+@pytest.mark.skipif(shutil.which("rclone") is None, reason="needs the rclone binary")
+def test_real_rclone_encrypted_config_without_its_password_fails_at_once(monkeypatch, capsys, tmp_path) -> None:
+    conf = tmp_path / "encrypted.conf"
+    conf.write_text(_ENCRYPTED_CONF)
+    _real_rclone(monkeypatch, tmp_path, "box", ["--config", str(conf)])
+
+    out = capsys.readouterr().out
+    assert "✖ Rclone remote 'box' failed: " in out
+    assert "timed out" not in out
+
+
+@pytest.mark.skipif(shutil.which("rclone") is None, reason="needs the rclone binary")
+def test_real_rclone_opens_an_encrypted_config_with_its_password_command(monkeypatch, capsys, tmp_path) -> None:
+    conf = tmp_path / "encrypted.conf"
+    conf.write_text(_ENCRYPTED_CONF)
+    _real_rclone(monkeypatch, tmp_path, "box", ["--config", str(conf), "--password-command", "echo pw-for-test"])
+
+    assert "✔ Rclone remote 'box' is accessible" in capsys.readouterr().out
