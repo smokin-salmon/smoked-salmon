@@ -365,6 +365,8 @@ def test_an_unreadable_m4a_beside_alac_is_named_as_unreadable_not_lossy(tmp_path
 
 def test_two_alac_files_converting_to_one_name_stop_naming_both(tmp_path) -> None:
     _write_alac(tmp_path / "01.m4a", 16, 44100, seed=1)
+    if (tmp_path / "01.M4A").exists():
+        pytest.skip("this filesystem is case-insensitive")
     _write_alac(tmp_path / "01.M4A", 16, 44100, seed=2)
     before = _snapshot(tmp_path)
 
