@@ -4,6 +4,7 @@ Never touches a real torrent client, rclone binary or remote: the torrent client
 `anyio.run_process` are monkeypatched throughout.
 """
 
+import os
 import shutil
 import subprocess
 
@@ -277,6 +278,9 @@ def test_a_check_that_runs_out_of_time_says_so(monkeypatch, capsys) -> None:
 def _real_rclone(monkeypatch, tmp_path, url: str, extra_args: list[str]) -> None:
     """Run the check through the real rclone binary, on a memory remote "box" only tmp_path's config names."""
     (tmp_path / "rclone.conf").write_text("[box]\ntype = memory\n")
+    # rclone reads any flag or remote setting from an RCLONE_* variable: none of the developer's may reach it.
+    for name in [name for name in os.environ if name.startswith(("RCLONE_", "_RCLONE_"))]:
+        monkeypatch.delenv(name)
     monkeypatch.setenv("RCLONE_CONFIG", str(tmp_path / "no-such.conf"))
     monkeypatch.setenv("RCLONE_CACHE_DIR", str(tmp_path / "cache"))
     monkeypatch.setattr(cfg, "seedbox", [_seedbox(url=url, extra_args=extra_args)])
