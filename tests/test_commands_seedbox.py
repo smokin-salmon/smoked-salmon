@@ -247,7 +247,8 @@ def test_the_rclone_check_reads_the_config_uploads_read(monkeypatch, capsys) -> 
 
     # No terminal: a config password prompt would wait there unseen.
     assert ran == [(["rclone", "lsd", "myremote:", "--config", "/box/rclone.conf"], subprocess.DEVNULL)]
-    assert "✔ Rclone remote 'myremote' is accessible" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "✔ Rclone remote 'myremote' is accessible" in out
 
 
 def test_extra_args_choosing_no_config_leave_the_check_as_it_was(monkeypatch) -> None:
@@ -269,7 +270,8 @@ def test_a_check_that_runs_out_of_time_says_so(monkeypatch, capsys) -> None:
 
     _run_seedbox_check()
 
-    assert "✖ Rclone remote 'myremote' check timed out after 0.05 seconds" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "✖ Rclone remote 'myremote' check timed out after 0.05 seconds" in out
 
 
 def _real_rclone(monkeypatch, tmp_path, url: str, extra_args: list[str]) -> None:
@@ -288,7 +290,8 @@ def test_real_rclone_reaches_a_remote_only_the_extra_args_config_names(monkeypat
     conf = str(tmp_path / "rclone.conf")
     _real_rclone(monkeypatch, tmp_path, "box", ["-q", "--combined", str(report), "--max-depth", "5", "--config", conf])
 
-    assert "✔ Rclone remote 'box' is accessible" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "✔ Rclone remote 'box' is accessible" in out
     assert not report.exists()
 
 
@@ -328,4 +331,5 @@ def test_real_rclone_opens_an_encrypted_config_with_its_password_command(monkeyp
     conf.write_text(_ENCRYPTED_CONF)
     _real_rclone(monkeypatch, tmp_path, "box", ["--config", str(conf), "--password-command", "echo pw-for-test"])
 
-    assert "✔ Rclone remote 'box' is accessible" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "✔ Rclone remote 'box' is accessible" in out
