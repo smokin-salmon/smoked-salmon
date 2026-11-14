@@ -123,6 +123,27 @@ def test_path_override_is_the_last_one_in_either_form(extra_args, expected) -> N
     assert seedbox._path_override(extra_args) == expected
 
 
+@pytest.mark.parametrize(
+    ("extra_args", "expected"),
+    [
+        ([], []),
+        # config.reference.toml's example: nothing in it chooses the config, so the check runs as before.
+        (["--checksum", "-P", "--sftp-path-override", "@/volume3"], []),
+        (["--checksum", "--config", "/box/rclone.conf"], ["--config", "/box/rclone.conf"]),
+        (["--config=/box/rclone.conf", "-P"], ["--config=/box/rclone.conf"]),
+        (
+            ["--password-command", "pass show rclone", "-q", "--ask-password=false"],
+            ["--password-command", "pass show rclone", "--ask-password=false"],
+        ),
+        (["--ask-password", "--config", "/box/rclone.conf"], ["--ask-password", "--config", "/box/rclone.conf"]),
+        (["--combined", "/logs/c.txt", "--max-depth", "5", "--log-file", "/logs/r.log", "-q"], []),
+        (["-P", "--config"], ["--config"]),
+    ],
+)
+def test_config_args_are_the_flags_that_choose_and_open_the_config(extra_args, expected) -> None:
+    assert seedbox.config_args(extra_args) == expected
+
+
 def test_a_path_override_with_no_value_is_no_override() -> None:
     extra_args = ["-P", "--sftp-path-override"]
 

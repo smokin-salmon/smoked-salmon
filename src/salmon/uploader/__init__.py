@@ -1274,7 +1274,9 @@ async def _review_until_confirmed(
                 original=original,
                 max_path_length=max_path_length,
                 rls_type_hint=suggest_release_type(
-                    rls_data.get("title"), [info.get("duration") or 0 for info in audio_info.values()]
+                    rls_data.get("title"),
+                    [info.get("duration") or 0 for info in audio_info.values()],
+                    album_folder=original or path,
                 ),
                 offer_other_results=metadata_search.results is not None,
             )
