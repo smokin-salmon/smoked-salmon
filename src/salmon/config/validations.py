@@ -498,6 +498,9 @@ class Upload(BaseStruct):
     # "" or "none" (default) keeps names as on disk; "NFC" / "NFD" must be the form of the files the client seeds.
     torrent_name_normalization: str = ""
 
+    # salmon up adds the group year's decade ("1990s") to the tags, unless they would then pass 200 bytes.
+    add_decade_tag: bool = False
+
     # TODO: take these out of the upload struct!
     search: UploadSearch = msgspec.field(default_factory=UploadSearch)
     formatting: UploadFormatting = msgspec.field(default_factory=UploadFormatting)

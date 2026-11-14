@@ -284,6 +284,10 @@
 # set), so this must match the copied files.
 # torrent_name_normalization = ""
 
+# salmon up adds the group year's decade ("1990s") to the tags, unless they would then pass the 200 bytes
+# Gazelle takes for a new group's tags. Cross-uploads copy the source group's tags as they are.
+# add_decade_tag = false
+
 [upload.search]
 # limit = 3
 # excluded_labels = ["edm comps"]
