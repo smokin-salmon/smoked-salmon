@@ -602,3 +602,7 @@ submission. Include links to existing spectrals in `--comment` when appropriate.
 If a submission's outcome is uncertain, check the torrent before retrying to
 avoid filing the same report twice.
 
+In `salmon web`, open **Tools → Lossy approval report**. Enter a torrent ID or
+permalink and source information, then choose **Prepare report**. Missing details
+and submission confirmation appear in the job's browser prompts. **Print only**
+produces a report you can copy without contacting the tracker.
