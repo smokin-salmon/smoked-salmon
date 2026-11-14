@@ -82,11 +82,15 @@ def test_convert_genres_adds_no_decade_for_a_year_that_is_not_four_digits(monkey
 def test_the_decade_is_left_out_past_200_bytes_of_tags(monkeypatch, capsys):
     monkeypatch.setattr(cfg.upload, "add_decade_tag", True)
     # Two-byte letters: the limit is bytes, not characters.
-    assert convert_genres(["é" * 97], 1994) == "é" * 97 + ",1990s"
-    assert capsys.readouterr().out == ""
-    assert convert_genres(["é" * 97 + "x"], 1994) == "é" * 97 + "x"
-    out = capsys.readouterr().out
-    assert "Not adding the 1990s tag: a new group's tags take at most 200 bytes." in out
+    two_bytes = "\u00e9"
+    fits = convert_genres([two_bytes * 97], 1994)
+    fits_out = capsys.readouterr().out
+    too_long = convert_genres([two_bytes * 97 + "x"], 1994)
+    too_long_out = capsys.readouterr().out
+    assert fits == two_bytes * 97 + ",1990s"
+    assert fits_out == ""
+    assert too_long == two_bytes * 97 + "x"
+    assert "Not adding the 1990s tag: a new group's tags take at most 200 bytes." in too_long_out
 
 
 def test_the_upload_tags_carry_the_group_years_decade(monkeypatch, tmp_path):
