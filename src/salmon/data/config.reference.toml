@@ -284,8 +284,8 @@
 # set), so this must match the copied files.
 # torrent_name_normalization = ""
 
-# Add the group year's decade ("1990s") to the upload's tags. It is left out when the tags would then be longer
-# than the 200 bytes OPS takes for a new group.
+# salmon up adds the group year's decade ("1990s") to the tags, unless they would then pass the 200 bytes
+# Gazelle takes for a new group's tags. Cross-uploads copy the source group's tags as they are.
 # add_decade_tag = false
 
 [upload.search]

@@ -270,7 +270,7 @@ def metadata_validator(metadata):
     return metadata
 
 
-# OPS refuses a new group's tags past this many bytes (upload_handle.php).
+# Gazelle's upload_handle.php refuses a new group's tags past this many bytes (strlen): OPS's and What.CD's.
 _MAX_TAGS_BYTES = 200
 
 
@@ -282,7 +282,7 @@ def convert_genres(genres, year: str | int | None = None):
         return ",".join(tags)
     if len(",".join([*tags, decade]).encode()) > _MAX_TAGS_BYTES:
         click.secho(
-            f"Not adding the {decade} tag: the tags would pass the {_MAX_TAGS_BYTES} bytes OPS takes.", fg="yellow"
+            f"Not adding the {decade} tag: a new group's tags take at most {_MAX_TAGS_BYTES} bytes.", fg="yellow"
         )
         return ",".join(tags)
     return ",".join([*tags, decade])
