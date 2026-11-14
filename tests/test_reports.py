@@ -8,7 +8,7 @@ from salmon.reports import report
 
 
 def run(*args, input=""):
-    return anyio.run(partial(CliRunner().invoke, report, ["lossy", *args], input=input))
+    return anyio.run(partial(CliRunner().invoke, report, list(args), input=input))
 
 
 @pytest.mark.parametrize(
@@ -115,7 +115,6 @@ def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome)
             result = await CliRunner().invoke(
                 report,
                 [
-                    "lossy",
                     "123",
                     "--tracker",
                     tracker,
@@ -143,3 +142,11 @@ def test_submission_local_tracker(monkeypatch, tracker, kind, expected, outcome)
             await server.cleanup()
 
     anyio.run(scenario)
+
+
+@pytest.mark.parametrize("host", ["REDACTED.SH", "Orpheus.Network"])
+def test_permalink_hostname_is_case_insensitive(host):
+    from salmon.reports import parse_target
+
+    expected = "RED" if host == "REDACTED.SH" else "OPS"
+    assert parse_target(f"https://{host}/torrents.php?torrentid=123", None) == (123, expected)

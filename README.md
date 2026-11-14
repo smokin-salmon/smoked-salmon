@@ -581,15 +581,15 @@ For bug reports and feature requests, use GitHub Issues. Or use the forums.
 
 ### Request lossy approval after uploading
 
-Use `salmon report lossy` to request Lossy Master/WEB approval for an existing
+Use `salmon report` to request Lossy Master/WEB approval for an existing
 RED or OPS torrent when the upload-time report failed or was skipped. No local
 audio files are required. Supply a positive torrent ID and `--tracker`, or a
 tracker permalink containing `torrentid` (a group-only URL is not sufficient).
 
 ```bash
-salmon report lossy 12345 --tracker RED --type web
-salmon report lossy 'https://orpheus.network/torrents.php?torrentid=12345'
-salmon report lossy 12345 --tracker RED --type master \
+salmon report 12345 --tracker RED --type web
+salmon report 'https://orpheus.network/torrents.php?torrentid=12345'
+salmon report 12345 --tracker RED --type master \
   --comment 'Source and evidence for this request' \
   --source-url 'https://example.org/album' --dry-run
 ```

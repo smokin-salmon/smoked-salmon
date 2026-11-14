@@ -32,3 +32,13 @@ def test_report_job_uses_browser_confirmation(monkeypatch):
     )
     assert "Evidence" in result["text"]
     assert asked == [("Submit this approval report?", {"default": False})]
+
+
+def test_optional_source_does_not_prompt_again(capsys):
+    async def scenario():
+        with dryrun.mode(True):
+            return await lossy_report(LossyReportParams(target="123", tracker="OPS", comment="Evidence"))
+
+    result = anyio.run(scenario)
+    assert "Evidence" in result["text"]
+    assert "Source URL (optional)" not in capsys.readouterr().out

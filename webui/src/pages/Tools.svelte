@@ -5,7 +5,7 @@
   import JobActivity from '../lib/JobActivity.svelte'
   import JobStatus from '../lib/JobStatus.svelte'
   import { FINISHED, jobStore, type Job } from '../lib/jobs.svelte'
-  import { loadToolsOptions, type DescgenResult, type ImageUploadResult, type ToolsOptions } from '../lib/tools'
+  import { loadToolsOptions, reportTrackerFromTarget, type DescgenResult, type ImageUploadResult, type ToolsOptions } from '../lib/tools'
 
   let options = $state<ToolsOptions | null>(null)
   let optionsError = $state('')
@@ -19,6 +19,7 @@
   let reportStarting = $state(false)
   let reportError = $state('')
   let reportJobId = $state<string | null>(null)
+  const effectiveReportTracker = $derived(reportTracker || reportTrackerFromTarget(reportTarget))
   const reportJob = $derived(reportJobId ? jobStore.get(reportJobId) : undefined)
 
   async function prepareReport() {
@@ -33,7 +34,7 @@
           tracker: reportTracker || null,
           report_type: reportType || null,
           comment: reportComment || null,
-          source_url: reportSource || null,
+          source_url: reportSource.trim(),
         },
       })
       reportJobId = job.id
@@ -141,19 +142,19 @@
   <h2>Lossy approval report</h2>
   <p class="muted">Request approval for an existing torrent without local audio. Review the report before confirming submission.</p>
   <div class="row options">
-    <label>Torrent ID or permalink<input bind:value={reportTarget} placeholder="12345 or https://…" /></label>
+    <label>Torrent ID or permalink<input type="text" class="mono" bind:value={reportTarget} placeholder="12345 or https://…" /></label>
     <label>Tracker<select bind:value={reportTracker}>
       <option value="">From permalink or ask</option>
       {#each (options?.trackers ?? []).filter((t) => ['RED', 'OPS'].includes(t.code)) as t (t.code)}
         <option value={t.code}>{t.code}</option>
       {/each}
     </select></label>
-    {#if reportTracker !== 'OPS' && !reportTarget.startsWith('https://orpheus.network/')}
+    {#if effectiveReportTracker !== 'OPS'}
       <label>RED report type<select bind:value={reportType}>
         <option value="">Ask</option><option value="master">Lossy Master</option><option value="web">Lossy WEB</option>
       </select></label>
     {/if}
-    <label>Source URL<input bind:value={reportSource} placeholder="https://…" /></label>
+    <label>Source URL (optional)<input type="text" class="mono" bind:value={reportSource} placeholder="https://…" /></label>
   </div>
   <label>Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
   <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>

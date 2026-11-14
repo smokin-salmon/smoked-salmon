@@ -14,7 +14,7 @@ class LossyReportParams(msgspec.Struct, forbid_unknown_fields=True):
     tracker: Literal["RED", "OPS"] | None = None
     report_type: Literal["master", "web"] | None = None
     comment: str | None = None
-    source_url: str | None = None
+    source_url: str | None = ""
 
 
 async def lossy_report(params: LossyReportParams) -> dict[str, str]:

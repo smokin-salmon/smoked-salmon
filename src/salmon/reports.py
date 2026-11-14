@@ -17,7 +17,7 @@ def parse_target(target: str, tracker: str | None) -> tuple[int, str | None]:
     if "://" in value:
         try:
             url = urlsplit(value)
-            code = trackers.tracker_url_code_map.get(url.netloc)
+            code = trackers.tracker_url_code_map.get(url.netloc.lower())
             ids = parse_qs(url.query, keep_blank_values=True).get("torrentid", [])
             if url.scheme not in ("http", "https") or code not in ("RED", "OPS"):
                 raise ValueError
@@ -34,19 +34,14 @@ def parse_target(target: str, tracker: str | None) -> tuple[int, str | None]:
     return torrent_id, tracker
 
 
-@commandgroup.group()
-async def report() -> None:
-    """Submit reports for existing torrents."""
-
-
-@report.command()
+@commandgroup.command()
 @click.argument("target")
 @click.option("--type", "report_type", type=click.Choice(["master", "web"]))
 @click.option("--tracker", type=click.Choice(["RED", "OPS"], case_sensitive=False))
 @click.option("--comment", help="Source information and evidence for the approval request.")
 @click.option("--source-url", help="Release source URL.")
 @click.option("--dry-run", "--print-only", is_flag=True, help="Print the report without contacting the tracker.")
-async def lossy(
+async def report(
     target: str,
     report_type: str | None,
     tracker: str | None,
