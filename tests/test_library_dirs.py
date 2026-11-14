@@ -608,6 +608,43 @@ def test_tag_works_on_a_copy_renamed_into_download_directory(monkeypatch, dirs) 
     assert (one["album"], one["date"]) == (["Album"], ["2020"])
 
 
+def _recording_type_hints(hints: list[Any]):
+    """Stands in for review_metadata_with_ai: records the release type prompt's default."""
+
+    async def review_with_ai(metadata, _tag_baseline, _source_url, _validator, manual_review, **_kw):
+        hints.append(manual_review.keywords["rls_type_hint"])
+        return metadata
+
+    return review_with_ai
+
+
+@pytest.mark.parametrize("in_library", [True, False])
+def test_up_defaults_the_release_type_to_the_album_folders_parent(monkeypatch, tmp_path, dirs, in_library) -> None:
+    library, _downloads = dirs
+    album = _album((library if in_library else tmp_path / "elsewhere") / "Artist" / "EP" / "Album")
+    before = _snapshot(album)
+    hints: list[Any] = []
+
+    result, _uploads, _transcodes = _run_up(monkeypatch, album, review_metadata_with_ai=_recording_type_hints(hints))
+
+    assert result.exit_code == 0, result.output
+    # A library album is worked on as a copy outside its Artist/Type/Album layout, this one elsewhere in place.
+    assert (_snapshot(album) == before) == in_library
+    assert hints == ["EP"]
+
+
+def test_tag_defaults_the_release_type_to_a_library_albums_parent(monkeypatch, dirs) -> None:
+    library, downloads = dirs
+    album = _album(library / "Artist" / "Single" / "Album")
+    hints: list[Any] = []
+
+    result = _run_tag(monkeypatch, album, review_metadata_with_ai=_recording_type_hints(hints))
+
+    assert result.exit_code == 0, result.output
+    assert set(os.listdir(downloads)) == {staging.STAGING_DIR, RENAMED}
+    assert hints == ["Single"]
+
+
 def test_compress_refuses_a_library_album(monkeypatch, dirs) -> None:
     library, _downloads = dirs
     album = _album(library / "Album")
