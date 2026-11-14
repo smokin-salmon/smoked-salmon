@@ -299,6 +299,31 @@ def test_the_release_type_follows_the_track_count(title, durations, expected) ->
     assert review.suggest_release_type(title, durations) == expected
 
 
+@pytest.mark.parametrize(
+    ("album_folder", "expected"),
+    [
+        # Lidarr's {Album Type} folders and salmon's other release types, in any case, with or without a slash.
+        ("/music/Artist/EP/(2022) Album", "EP"),
+        ("/music/Artist/single/Album", "Single"),
+        ("/music/Artist/Live album/Album/", "Live album"),
+        ("Artist/Mixtape/Album", "Mixtape"),
+        # No parent that names a release type: the 12 files make an album.
+        ("/music/Artist/Broadcast/Album", "Album"),
+        ("/downloads/Album", "Album"),
+        ("", "Album"),
+        # A placeholder, not a type anyone chose.
+        ("/music/Unknown/Album", "Album"),
+    ],
+)
+def test_the_library_folder_names_the_release_type_before_the_files(album_folder, expected) -> None:
+    assert review.suggest_release_type("Album", [200] * 12, album_folder=album_folder) == expected
+
+
+@pytest.mark.parametrize(("title", "expected"), [("Foo EP", None), ("Foo (Single)", "Single")])
+def test_a_title_naming_another_type_clears_the_folders_type_too(title, expected) -> None:
+    assert review.suggest_release_type(title, [200] * 12, album_folder="/music/Artist/Single/Foo") == expected
+
+
 def test_the_release_type_prompt_offers_the_hint(monkeypatch) -> None:
     defaults = _prompts(monkeypatch, "")
     metadata = {"rls_type": None}
