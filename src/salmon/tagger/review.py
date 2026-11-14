@@ -451,11 +451,7 @@ _RELEASE_TYPE_BY_NAME = {name.lower(): name for name in RELEASE_TYPES}
 
 
 def suggest_release_type(title: str | None, durations: Sequence[float], album_folder: str | None = None) -> str | None:
-    """The release type prompt's default: the type folder the album sits in, else the files' count and length.
-
-    1 to 3 tracks are a single, 4 to 6 an EP, more an album; past 30 minutes in all, an album, and a
-    single with a track past 10 minutes, an EP. A title that names another type ("... EP", "(Single)")
-    contradicts either: then there is no default.
+    """The release type prompt's default: the album's type folder or the files' type, unless the title names another.
 
     Args:
         title: The release title from the tags.
@@ -477,11 +473,12 @@ def _release_type_of_folder(album_folder: str | None) -> str | None:
         return None
     parent = os.path.basename(os.path.dirname(os.path.abspath(album_folder)))
     rls_type = _RELEASE_TYPE_BY_NAME.get(parent.lower())
-    # Where untagged rips go: no type anyone chose.
+    # "Unknown" is a placeholder, not a type anyone chose.
     return None if rls_type == "Unknown" else rls_type
 
 
 def _release_type_of_files(durations: Sequence[float]) -> str | None:
+    """The release type the files' track count and length imply, by the thresholds above."""
     if not durations:
         return None
     if sum(durations) >= _ALBUM_MIN_SECONDS or len(durations) > _EP_MAX_TRACKS:
