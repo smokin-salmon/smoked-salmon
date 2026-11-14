@@ -8,7 +8,80 @@ from salmon import interaction, trackers
 from salmon.common import commandgroup
 from salmon.common.strings import numeric_id
 from salmon.errors import RequestError, UnknownOutcomeError
+from salmon.trackers.base import BaseGazelleApi
+from salmon.uploader.dupe_checker import _site_edition
 from salmon.uploader.spectrals import _add_spectral_links_to_lossy_comment, generate_lossy_approval_comment
+
+MAX_REPORTS = 20
+
+
+async def related_report_targets(client: BaseGazelleApi, torrent_id: int) -> list[int]:
+    """Two lookups find the target uploader's same-edition/media torrents, without per-torrent requests."""
+    found = await client.api_call("torrent", params={"id": torrent_id})
+    target = found.get("torrent")
+    info = found.get("group")
+    if not isinstance(target, dict) or not isinstance(info, dict):
+        raise RequestError("The tracker did not return the torrent and its group. No reports sent.")
+    group_id = numeric_id(info.get("id"))
+    uploader = numeric_id(target.get("userId"))
+    media = target.get("media")
+    if (
+        not group_id
+        or group_id <= 0
+        or not uploader
+        or uploader <= 0
+        or not isinstance(media, str)
+        or not media.strip()
+    ):
+        raise RequestError("Cannot identify the torrent's group, uploader or media. No reports sent.")
+    group = await client.torrentgroup(group_id)
+    rows = group.get("torrents")
+    group_info = group.get("group")
+    if not isinstance(rows, list) or not isinstance(group_info, dict) or numeric_id(group_info.get("id")) != group_id:
+        raise RequestError("The tracker did not return the expected torrent group. No reports sent.")
+    edition = _site_edition(target, group)
+    matches: set[int] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            raise RequestError("The tracker returned an invalid torrent entry. No reports sent.")
+        candidate = numeric_id(row.get("id"))
+        if (
+            candidate is not None
+            and candidate > 0
+            and numeric_id(row.get("userId")) == uploader
+            and row.get("media") == media
+            and _site_edition(row, group) == edition
+        ):
+            matches.add(candidate)
+    if torrent_id not in matches:
+        raise RequestError("The target is missing or changed in its torrent group. No reports sent.")
+    if len(matches) > MAX_REPORTS:
+        raise RequestError(
+            f"Found {len(matches)} matching torrents; the limit is {MAX_REPORTS}. Report manually instead."
+        )
+    return [torrent_id, *sorted(matches - {torrent_id})]
+
+
+async def submit_reports(client: BaseGazelleApi, targets: list[int], text: str, source: str) -> None:
+    """Send the confirmed batch sequentially, stopping on the first failure without replaying any report."""
+    completed: list[int] = []
+    for index, torrent_id in enumerate(targets):
+        try:
+            await client.report_lossy_master(torrent_id, text, source)
+        except RequestError as err:
+            already = ", ".join(map(str, completed)) or "none"
+            remaining = ", ".join(map(str, targets[index + 1 :])) or "none"
+            reason = (
+                f"The report for torrent {torrent_id} may have been submitted. Check it before trying again."
+                if isinstance(err, UnknownOutcomeError)
+                else f"Could not submit the report for torrent {torrent_id}."
+            )
+            raise click.ClickException(
+                f"{reason}\nAlready reported: {already}\nNot attempted: {remaining}\n"
+                f"Do not rerun the batch; check these torrents and report any remaining ones manually.\n{err}"
+            ) from err
+        completed.append(torrent_id)
+        click.echo(f"Reported torrent {torrent_id} for Lossy Master/WEB Approval Request.")
 
 
 def parse_target(target: str, tracker: str | None) -> tuple[int, str | None]:
@@ -49,7 +122,7 @@ async def report(
     source_url: str | None,
     dry_run: bool,
 ) -> None:
-    """Request lossy master/WEB approval for a torrent ID or permalink. No local audio is needed."""
+    """Request lossy approval for a torrent and its uploader's same-edition transcodes. No local audio is needed."""
     await run_lossy_report(target, report_type, tracker, comment, source_url, dry_run)
 
 
@@ -82,19 +155,20 @@ async def run_lossy_report(
     label = "WEB" if tracker == "RED" and report_type == "web" else "Master"
     click.echo(f"{tracker} torrent {torrent_id}: Lossy {label} Approval")
     click.echo(text)
-    if dry_run or not await interaction.confirm("Submit this approval report?", default=False):
+    if dry_run:
+        click.echo("Print only: related torrents were not looked up. Report matching transcodes manually too.")
+        return text
+    if not await interaction.confirm("Look up this uploader's same-edition torrents for approval?", default=False):
         return text
     client = trackers.get_class(tracker)()
     try:
         await client.ensure_authenticated()
-        await client.report_lossy_master(torrent_id, text, "WEB" if report_type == "web" else "CD")
-    except UnknownOutcomeError as err:
-        raise click.ClickException(
-            f"The report may have been submitted. Check the torrent before trying again: {err}"
-        ) from err
+        targets = await related_report_targets(client, torrent_id)
+        click.echo(f"Torrents to report on {tracker}: {', '.join(map(str, targets))}")
+        if await interaction.confirm(f"Submit this approval report for all {len(targets)} torrents?", default=False):
+            await submit_reports(client, targets, text, "WEB" if report_type == "web" else "CD")
     except RequestError as err:
         raise click.ClickException(f"Could not submit the report: {err}") from err
     finally:
         await client.close()
-    click.echo("Reported torrent for Lossy Master/WEB Approval Request.")
     return text

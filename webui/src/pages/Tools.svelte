@@ -140,7 +140,7 @@
 
 <div class="card">
   <h2>Lossy approval report</h2>
-  <p class="muted">Request approval for an existing torrent without local audio. Review the report before confirming submission.</p>
+  <p class="muted">Request approval for an existing torrent and its uploader's same-edition transcodes without local audio. Review the matching torrent IDs before confirming submission (at most 20 reports).</p>
   <div class="row options">
     <label>Torrent ID or permalink<input type="text" class="mono" bind:value={reportTarget} placeholder="12345 or https://…" /></label>
     <label>Tracker<select bind:value={reportTracker}>

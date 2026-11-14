@@ -596,13 +596,24 @@ salmon report 12345 --tracker RED --type master \
 
 Missing source information is prompted for. RED also prompts for `--type` when
 omitted; OPS always uses its single lossy approval category. The command shows
-the report and asks for confirmation before submitting. `--dry-run` (also
+the report, then offers to look up the target's group. It includes torrents uploaded
+by the **target torrent's uploader** in the same edition and media source, across
+formats and encodings. Other uploaders and editions are excluded. This is based
+on tracker metadata, not proof of which files were transcoded from which.
+It lists the selected IDs and asks for confirmation before submitting a separate
+report for each. Discovery uses two API lookups, and batches over 20 torrents are
+refused before any reports are sent. If the uploader is hidden or the group cannot
+be identified, use manual reporting instead.
+
+`--dry-run` (also
 `--print-only`) prints the report without contacting the tracker, for manual
-submission. Include links to existing spectrals in `--comment` when appropriate.
-If a submission's outcome is uncertain, check the torrent before retrying to
-avoid filing the same report twice.
+submission; it cannot discover matching transcodes. Include links to existing
+spectrals in `--comment` when appropriate. A submission failure stops the batch
+and lists reports already sent and IDs not attempted. If an outcome is uncertain,
+check that torrent first. Do not rerun the batch: submit any remaining reports
+manually to avoid duplicates.
 
 In `salmon web`, open **Tools → Lossy approval report**. Enter a torrent ID or
 permalink and source information, then choose **Prepare report**. Missing details
-and submission confirmation appear in the job's browser prompts. **Print only**
+and the same batch preview and confirmations appear in the job's browser prompts. **Print only**
 produces a report you can copy without contacting the tracker.
