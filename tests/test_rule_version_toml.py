@@ -19,5 +19,6 @@ def test_the_version_the_changelog_and_the_package_agree() -> None:
     assert data["current"] == newest == package, (
         f"version.toml current = {data['current']!r}, its newest [[changelog]] entry = {newest!r}, pyproject.toml "
         f"version = {package!r}: only the release workflow changes these "
-        "(docs/ci-and-releases.md, Releases). Revert the change to them; release notes go in the GitHub release's description."
+        "(docs/ci-and-releases.md, Releases). Revert the change to them; "
+        "release notes go in the GitHub release's description."
     )
