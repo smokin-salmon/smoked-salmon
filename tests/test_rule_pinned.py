@@ -8,8 +8,9 @@ the same way, with the SHA its release tag points to.
 """
 
 import re
+from pathlib import Path
 
-from helpers.workflows import LOCAL_ACTIONS, ROOT, WORKFLOWS
+from helpers.workflows import LOCAL_ACTIONS, ROOT, WORKFLOWS, Block, jobs, steps_using
 
 _USES = re.compile(r"^\s*(?:-\s+)?uses:\s*(?P<ref>\S+)(?P<rest>.*)$")
 _PINNED_ACTION = re.compile(r"^[\w.-]+/[\w./-]+@[0-9a-f]{40}$")
@@ -103,6 +104,56 @@ def test_every_base_image_of_the_dockerfile_is_pinned_to_a_tag_and_a_digest() ->
     assert re.search(r"^FROM\s", dockerfile, re.MULTILINE), "the Dockerfile has no FROM line"
     found = [f"Dockerfile:{line}: {image}" for line, image in unpinned_bases(dockerfile)]
     assert found == [], "pin each base image by tag and digest (`FROM name:tag@sha256:<digest>`):\n" + "\n".join(found)
+
+
+_UV_VERSION = "version: ${{ steps.uv.outputs.version }}"
+_UV_IMAGE = re.compile(r"^FROM ghcr\.io/astral-sh/uv:\d+\.\d+\.\d+@sha256:[0-9a-f]{64}(\s|$)", re.MULTILINE)
+
+
+def uv_without_pinned_version(step: Block, job_lines: list[str], step_offset: int) -> bool:
+    """Whether a setup-uv step lacks the Dockerfile's version, or its job has no earlier step `id: uv`."""
+    earlier = [line.strip() for line in job_lines[:step_offset]]
+    return _UV_VERSION not in [line.strip() for line in step.lines] or "id: uv" not in earlier
+
+
+def _unpinned_uv_steps(path: Path) -> list[int]:
+    found = []
+    steps = steps_using(path, "astral-sh/setup-uv")
+    blocks = jobs(path) or [Block(path, 1, path.read_text(encoding="utf-8").splitlines())]
+    for step in steps:
+        job = next((j for j in blocks if j.first <= step.first < j.first + len(j.lines)), blocks[0])
+        if uv_without_pinned_version(step, job.lines, step.first - job.first):
+            found.append(step.first)
+    return found
+
+
+def test_ci_installs_the_uv_the_dockerfile_pins() -> None:
+    found = [
+        f"{path.relative_to(ROOT)}:{line}" for path in [*WORKFLOWS, *LOCAL_ACTIONS] for line in _unpinned_uv_steps(path)
+    ]
+    assert found == [], (
+        "install in CI the uv the Dockerfile pins: add the step `Read the pinned uv version from the Dockerfile` "
+        f"(`id: uv`, as in .github/workflows/lint.yml) before setup-uv, and give setup-uv `with: {_UV_VERSION}`:\n"
+        + "\n".join(found)
+    )
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    assert _UV_IMAGE.search(dockerfile), (
+        "the Dockerfile has no `FROM ghcr.io/astral-sh/uv:X.Y.Z@sha256:<digest>` line, which CI reads for its uv"
+    )
+
+
+def test_the_uv_check_finds_a_step_without_the_version(tmp_path: Path) -> None:
+    sha = "68559e99cc807c1eb7e9238fd43a15bba460eec2"
+    good = (
+        "jobs:\n  a:\n    steps:\n      - name: Read\n        id: uv\n        run: x\n"
+        f"      - uses: astral-sh/setup-uv@{sha} # v10.3.3\n        with:\n          {_UV_VERSION}\n"
+    )
+    no_version = good.replace(f"          {_UV_VERSION}\n", "          enable-cache: true\n")
+    no_step = good.replace("        id: uv\n", "        id: other\n")
+    for name, text, expected in (("good", good, 0), ("no_version", no_version, 1), ("no_step", no_step, 1)):
+        path = tmp_path / f"{name}.yml"
+        path.write_text(text, encoding="utf-8")
+        assert len(_unpinned_uv_steps(path)) == expected, name
 
 
 def test_the_checks_find_what_is_not_pinned() -> None:
