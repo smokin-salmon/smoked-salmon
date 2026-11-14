@@ -275,7 +275,7 @@ _MAX_TAGS_BYTES = 200
 
 
 def convert_genres(genres, year: str | int | None = None):
-    """Convert the weirdly spaced genres to RED-compliant genres, and add year's decade if add_decade_tag asks it."""
+    """Convert the weirdly spaced genres to RED-compliant genres, with add_decade_tag year's decade if it fits."""
     tags = [t for t in (tagify(g) for g in genres) if t]
     decade = _decade_tag(year) if cfg.upload.add_decade_tag else None
     if not decade or decade in tags:
@@ -289,7 +289,7 @@ def convert_genres(genres, year: str | int | None = None):
 
 
 def _decade_tag(year: str | int | None) -> str | None:
-    """The decade of a four-digit year ("1990s"), or None for any other value."""
+    """The decade of a year from 1000 to 9999 ("1990s"), or None for any other value."""
     if year is None:
         return None
     try:
