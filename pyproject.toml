@@ -54,7 +54,7 @@ dev = [
     "basedpyright>=1.40.2",
     "pytest>=9.2.0",
     "pytest-xdist>=3.8.0",
-    "ruff>=0.17.3",
+    "ruff>=0.17.4",
 ]
 
 [tool.ruff]
