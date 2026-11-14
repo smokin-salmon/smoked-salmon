@@ -110,3 +110,4 @@ knowledge_base:
       - "AGENTS.md"
       - "CONTRIBUTING.md"
       - "docs/adr/*.md"
+      - "docs/ci-and-releases.md"
