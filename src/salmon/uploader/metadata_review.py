@@ -165,7 +165,7 @@ async def edit_metadata(
             default=True,
             labels=("Upload", "Re-run the metadata step"),
         ):
-            metadata["tags"] = convert_genres(metadata["genres"])
+            metadata["tags"] = convert_genres(metadata["genres"], metadata.get("group_year"))
             break
 
         # Refresh tags to accomodate differences in file structure.
@@ -270,6 +270,30 @@ def metadata_validator(metadata):
     return metadata
 
 
-def convert_genres(genres):
-    """Convert the weirdly spaced genres to RED-compliant genres."""
-    return ",".join(t for t in (tagify(g) for g in genres) if t)
+# OPS refuses a new group's tags past this many bytes (upload_handle.php).
+_MAX_TAGS_BYTES = 200
+
+
+def convert_genres(genres, year: str | int | None = None):
+    """Convert the weirdly spaced genres to RED-compliant genres, and add year's decade if add_decade_tag asks it."""
+    tags = [t for t in (tagify(g) for g in genres) if t]
+    decade = _decade_tag(year) if cfg.upload.add_decade_tag else None
+    if not decade or decade in tags:
+        return ",".join(tags)
+    if len(",".join([*tags, decade]).encode()) > _MAX_TAGS_BYTES:
+        click.secho(
+            f"Not adding the {decade} tag: the tags would pass the {_MAX_TAGS_BYTES} bytes OPS takes.", fg="yellow"
+        )
+        return ",".join(tags)
+    return ",".join([*tags, decade])
+
+
+def _decade_tag(year: str | int | None) -> str | None:
+    """The decade of a four-digit year ("1990s"), or None for any other value."""
+    if year is None:
+        return None
+    try:
+        number = int(year)
+    except (TypeError, ValueError):
+        return None
+    return f"{number // 10 * 10}s" if 1000 <= number <= 9999 else None

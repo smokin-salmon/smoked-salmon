@@ -1,15 +1,19 @@
 """Genre standardization: splitting combined genres without breaking whitelisted ones."""
 
 import json
+from functools import partial
 
 import anyio
+from helpers.interaction_typed_sites import ask, edit_metadata_stubs
 
 import salmon.tagger.metadata as metadata_module
+from salmon import cfg
 from salmon.common import split_genre
 from salmon.tagger.ai_review import apply_ai_metadata_result
 from salmon.tagger.pre_data import split_genres
 from salmon.tagger.sources import beatport, qobuz
 from salmon.tagger.sources.base import standardize_genres
+from salmon.uploader import metadata_review
 from salmon.uploader.metadata_review import convert_genres
 
 
@@ -54,6 +58,56 @@ def test_convert_genres_spells_out_ampersands():
 def test_convert_genres_collapses_slashes_and_runs():
     assert convert_genres(["Dance / Pop"]) == "Dance.Pop"
     assert convert_genres(["Electronica / Downtempo"]) == "Electronica.Downtempo"
+
+
+def test_convert_genres_adds_no_decade_by_default():
+    assert convert_genres(["House"], 1994) == "House"
+
+
+def test_convert_genres_adds_the_decade_of_the_year_with_add_decade_tag(monkeypatch):
+    monkeypatch.setattr(cfg.upload, "add_decade_tag", True)
+    assert convert_genres(["House"], 1994) == "House,1990s"
+    assert convert_genres(["Disco"], "1979") == "Disco,1970s"
+    assert convert_genres(["House"], 2000) == "House,2000s"
+    assert convert_genres([], 2026) == "2020s"
+    assert convert_genres(["House", "1990s"], 1994) == "House,1990s"
+
+
+def test_convert_genres_adds_no_decade_for_a_year_that_is_not_four_digits(monkeypatch):
+    monkeypatch.setattr(cfg.upload, "add_decade_tag", True)
+    for year in (None, "", "not a year", "19 94", 999, 10000):
+        assert convert_genres(["House"], year) == "House"
+
+
+def test_the_decade_is_left_out_past_the_200_bytes_ops_takes(monkeypatch, capsys):
+    monkeypatch.setattr(cfg.upload, "add_decade_tag", True)
+    # Two bytes each: 97 and ",1990s" are 200 bytes. One more letter is 201 bytes, though only 104 characters.
+    assert convert_genres(["é" * 97], 1994) == "é" * 97 + ",1990s"
+    assert capsys.readouterr().out == ""
+    assert convert_genres(["é" * 97 + "x"], 1994) == "é" * 97 + "x"
+    out = capsys.readouterr().out
+    assert "Not adding the 1990s tag: the tags would pass the 200 bytes OPS takes." in out
+
+
+def test_the_upload_tags_carry_the_group_years_decade(monkeypatch, tmp_path):
+    monkeypatch.setattr(cfg.upload, "add_decade_tag", True)
+    edit_metadata_stubs(monkeypatch)
+    metadata = {"scene": False, "genres": ["Pop"], "group_year": "1994"}
+    site = partial(
+        metadata_review.edit_metadata,
+        str(tmp_path),
+        {},
+        metadata,
+        None,
+        "WEB",
+        {},
+        False,
+        False,
+        None,
+        skip_integrity_check=True,
+    )
+    result, _terminal, _described = ask(monkeypatch, site, [], yyy=True)
+    assert result[1]["tags"] == "Pop,1990s"
 
 
 def test_split_genre_never_splits_on_an_ampersand():

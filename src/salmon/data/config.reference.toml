@@ -284,6 +284,10 @@
 # set), so this must match the copied files.
 # torrent_name_normalization = ""
 
+# Add the group year's decade ("1990s") to the upload's tags. It is left out when the tags would then be longer
+# than the 200 bytes OPS takes for a new group.
+# add_decade_tag = false
+
 [upload.search]
 # limit = 3
 # excluded_labels = ["edm comps"]
