@@ -113,7 +113,15 @@ _UV_IMAGE = re.compile(r"^FROM ghcr\.io/astral-sh/uv:\d+\.\d+\.\d+@sha256:[0-9a-
 def uv_without_pinned_version(step: Block, job_lines: list[str], step_offset: int) -> bool:
     """Whether a setup-uv step lacks the Dockerfile's version, or its job has no earlier step `id: uv`."""
     earlier = [line.strip() for line in job_lines[:step_offset]]
-    return _UV_VERSION not in [line.strip() for line in step.lines] or "id: uv" not in earlier
+    if _UV_VERSION not in [line.strip() for line in step.lines] or "id: uv" not in earlier:
+        return True
+    # The step with `id: uv` must read the Dockerfile's uv tag and expose it as the `version` output.
+    reader = "\n".join(earlier[earlier.index("id: uv") :])
+    return (
+        "astral-sh" not in reader
+        or "Dockerfile" not in reader
+        or 'echo "version=$version" >> "$GITHUB_OUTPUT"' not in reader
+    )
 
 
 def _unpinned_uv_steps(path: Path) -> list[int]:
@@ -145,12 +153,20 @@ def test_ci_installs_the_uv_the_dockerfile_pins() -> None:
 def test_the_uv_check_finds_a_step_without_the_version(tmp_path: Path) -> None:
     sha = "68559e99cc807c1eb7e9238fd43a15bba460eec2"
     good = (
-        "jobs:\n  a:\n    steps:\n      - name: Read\n        id: uv\n        run: x\n"
+        "jobs:\n  a:\n    steps:\n      - name: Read\n        id: uv\n        run: |\n"
+        "          version=$(sed -n s/astral-sh/p Dockerfile)\n"
+        '          echo "version=$version" >> "$GITHUB_OUTPUT"\n'
         f"      - uses: astral-sh/setup-uv@{sha} # v10.3.3\n        with:\n          {_UV_VERSION}\n"
     )
     no_version = good.replace(f"          {_UV_VERSION}\n", "          enable-cache: true\n")
+    no_reader = good.replace("s/astral-sh/p", "s/other/p")
     no_step = good.replace("        id: uv\n", "        id: other\n")
-    for name, text, expected in (("good", good, 0), ("no_version", no_version, 1), ("no_step", no_step, 1)):
+    for name, text, expected in (
+        ("good", good, 0),
+        ("no_version", no_version, 1),
+        ("no_step", no_step, 1),
+        ("no_reader", no_reader, 1),
+    ):
         path = tmp_path / f"{name}.yml"
         path.write_text(text, encoding="utf-8")
         assert len(_unpinned_uv_steps(path)) == expected, name
