@@ -109,6 +109,7 @@ def test_only_the_job_kinds_of_v1_are_exposed() -> None:
         "descgen",
         "images",
         "spectrals_upload",
+        "lossy_report",
     }
     _with_app(test)
 

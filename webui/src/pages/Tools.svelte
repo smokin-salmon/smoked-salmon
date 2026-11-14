@@ -10,6 +10,41 @@
   let options = $state<ToolsOptions | null>(null)
   let optionsError = $state('')
 
+  let reportTarget = $state('')
+  let reportTracker = $state('')
+  let reportType = $state('')
+  let reportComment = $state('')
+  let reportSource = $state('')
+  let reportDryRun = $state(false)
+  let reportStarting = $state(false)
+  let reportError = $state('')
+  let reportJobId = $state<string | null>(null)
+  const reportJob = $derived(reportJobId ? jobStore.get(reportJobId) : undefined)
+
+  async function prepareReport() {
+    reportStarting = true
+    reportError = ''
+    try {
+      const job = await apiPost<Job>('/jobs', {
+        kind: 'lossy_report',
+        dry_run: reportDryRun,
+        params: {
+          target: reportTarget,
+          tracker: reportTracker || null,
+          report_type: reportType || null,
+          comment: reportComment || null,
+          source_url: reportSource || null,
+        },
+      })
+      reportJobId = job.id
+      void jobStore.show(job.id)
+    } catch (e) {
+      reportError = String(e)
+    } finally {
+      reportStarting = false
+    }
+  }
+
   // Description generator
   let descUrls = $state('')
   let descJobId = $state<string | null>(null)
@@ -97,10 +132,45 @@
 <h1>Tools</h1>
 <p class="lead">
   Build a tracklist description from store URLs, as <span class="mono">salmon descgen</span> does, and upload images,
-  as <span class="mono">salmon images up</span> does.
+  as <span class="mono">salmon images up</span> does. Request lossy approval for existing torrents.
 </p>
 
 {#if optionsError}<div class="card"><p class="error">{optionsError}</p></div>{/if}
+
+<div class="card">
+  <h2>Lossy approval report</h2>
+  <p class="muted">Request approval for an existing torrent without local audio. Review the report before confirming submission.</p>
+  <div class="row options">
+    <label>Torrent ID or permalink<input bind:value={reportTarget} placeholder="12345 or https://…" /></label>
+    <label>Tracker<select bind:value={reportTracker}>
+      <option value="">From permalink or ask</option>
+      {#each (options?.trackers ?? []).filter((t) => ['RED', 'OPS'].includes(t.code)) as t (t.code)}
+        <option value={t.code}>{t.code}</option>
+      {/each}
+    </select></label>
+    {#if reportTracker !== 'OPS' && !reportTarget.startsWith('https://orpheus.network/')}
+      <label>RED report type<select bind:value={reportType}>
+        <option value="">Ask</option><option value="master">Lossy Master</option><option value="web">Lossy WEB</option>
+      </select></label>
+    {/if}
+    <label>Source URL<input bind:value={reportSource} placeholder="https://…" /></label>
+  </div>
+  <label>Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
+  <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>
+  <div class="row actions"><button class="btn" onclick={prepareReport}
+    disabled={!reportTarget.trim() || reportStarting || (reportJob && !FINISHED.includes(reportJob.status))}>Prepare report</button></div>
+  {#if reportError}<p class="error">{reportError}</p>{/if}
+  {#if reportJob}
+    <JobStatus job={reportJob} />
+    <JobActivity job={reportJob} />
+    {#if reportJob.status === 'done'}
+      {@const text = (reportJob.result as { text: string }).text}
+      <pre class="result mono">{text}</pre>
+      <button class="btn small" onclick={() => copy('Report', text)}>Copy report</button>
+      <span class="muted">{copied}</span>
+    {/if}
+  {/if}
+</div>
 
 <div class="card">
   <h2>Description generator</h2>

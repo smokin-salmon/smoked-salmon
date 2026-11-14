@@ -578,3 +578,31 @@ For bug reports and feature requests, use GitHub Issues. Or use the forums.
 * Originally created by [ligh7s](https://github.com/ligh7s/smoked-salmon). Huge thanks!
 * Further development & maintenance by elghoto, xmoforf, miandru, redusys, kyokomiki and others. Keeping the dream alive.
 * Docker image build workflow and update notification mechanisms heavily inspired from the awesome work of Audionut on his [Upload Assistant tool](https://github.com/Audionut/Upload-Assistant) !
+
+### Request lossy approval after uploading
+
+Use `salmon report lossy` to request Lossy Master/WEB approval for an existing
+RED or OPS torrent when the upload-time report failed or was skipped. No local
+audio files are required. Supply a positive torrent ID and `--tracker`, or a
+tracker permalink containing `torrentid` (a group-only URL is not sufficient).
+
+```bash
+salmon report lossy 12345 --tracker RED --type web
+salmon report lossy 'https://orpheus.network/torrents.php?torrentid=12345'
+salmon report lossy 12345 --tracker RED --type master \
+  --comment 'Source and evidence for this request' \
+  --source-url 'https://example.org/album' --dry-run
+```
+
+Missing source information is prompted for. RED also prompts for `--type` when
+omitted; OPS always uses its single lossy approval category. The command shows
+the report and asks for confirmation before submitting. `--dry-run` (also
+`--print-only`) prints the report without contacting the tracker, for manual
+submission. Include links to existing spectrals in `--comment` when appropriate.
+If a submission's outcome is uncertain, check the torrent before retrying to
+avoid filing the same report twice.
+
+In `salmon web`, open **Tools → Lossy approval report**. Enter a torrent ID or
+permalink and source information, then choose **Prepare report**. Missing details
+and submission confirmation appear in the job's browser prompts. **Print only**
+produces a report you can copy without contacting the tracker.
