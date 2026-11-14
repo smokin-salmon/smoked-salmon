@@ -10,6 +10,7 @@ import salmon.commands
 import salmon.converter
 import salmon.cross_upload
 import salmon.images
+import salmon.reports
 import salmon.search
 import salmon.tagger
 import salmon.uploader
