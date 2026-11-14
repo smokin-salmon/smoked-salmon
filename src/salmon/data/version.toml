@@ -1,4 +1,164 @@
-current = "0.23.0"
+current = "0.24.0"
+
+[[changelog]]
+version = "0.24.0"
+date = "2026-11-14"
+notes = """
+
+This release is about salmon telling you what went wrong, and never losing your files on the way. Dozens of errors that ended in a traceback now end with a message naming the file, track or tracker and what to do; `salmon up` exits with a code that says whether a retry is safe; and the questions that can delete an album ask more carefully. It also converts ALAC albums to FLAC for upload, handles the `._` files macOS leaves on shared drives, and now needs Python 3.13. The config key names 0.21.0 moved still work in 0.24.0, with a warning: **from 0.25.0 they stop salmon**, so rename them now (see [Upgrading to 0.21](https://github.com/smokin-salmon/smoked-salmon/wiki/Upgrading-to-0.21)).
+
+## ⚠️ Behaviour changes
+
+- **salmon needs Python 3.13 or later.** Docker users and `uv sync` installs need nothing. A `uv tool` install made on Python 3.11 or 3.12 fails to upgrade with uv's "does not satisfy Python>=3.13" error: run `uv tool upgrade salmon --python 3.13` once.
+- **`salmon up` exits non-zero after an error.** `0`: everything it set out to upload went up. `1`: no tracker can have taken an upload, so a retry is safe. `3`: a tracker may have taken one (a torrent is up, an upload was refused, or the outcome is unknown, or a seedbox copy failed): do not retry the whole run or delete the album. Other commands exit 1 after "There was an error" or a missing dependency. A script that retries until salmon exits 0 should stop on 3. Thanks @statelycurmudgeon
+- **A salmon web upload job that stops now ends as failed,** listing what it uploaded before it stopped, as the cross-upload job does. Thanks @statelycurmudgeon
+- **When the spectrals can't be uploaded, salmon stops before uploading without them, and keeps the spectrals folder.** It asks "Upload to RED without spectrals?" (default no) for each tracker; for a lossy master, the question covers the lossy master report too. Under `-yyy` that tracker gets nothing, where before the torrent went up without spectrals. Answer yes to upload as before.
+- **Deleting an album needs `d` itself at the group questions,** and the terminal then asks once more, default no, naming the folder. Before, any answer starting with "d" (`dupe of 1234`) deleted the album. Under `-yyy`, a file with an extension salmon does not upload, in the album folder itself, now stops the run and is named instead of being deleted silently: remove it first. The same goes for the `.nfo` and `.txt` files `--essential-only` strips. Thanks @statelycurmudgeon
+- **Lossy conversions (V0, 320) copy only the album's top-level extra files.** Files in subfolders, such as artwork scans, are left out and each is named on a `Skip` line. The MP3s keep their embedded cover; if there is none and no top-level image either, salmon says so. FLAC downconversions are unchanged.
+- **A `.torrent` file in an album folder can't go into an upload.** At the file extension question it can only be deleted or the run stopped, and conversions leave it out. Thanks @statelycurmudgeon
+
+## ✨ New Features & Improvements
+
+- **ALAC albums are converted to FLAC for upload.** `salmon up` on ALAC tracks in `.m4a` files used to take them as AAC. It now offers to convert them to FLAC (default yes, automatic under `-yyy`), checks the conversion, keeps the tags and cover, and uploads a FLAC torrent. A library album is converted in a copy. Albums mixing ALAC with lossy files stop and name them. Thanks @cy1der for the report
+- **Cross-uploads can have their own .torrent folder and client label:** `cross_upload_dottorrents_dir` in `[directory]` or a `[tracker.<code>]` section, and `cross_upload_label` in a `[[seedbox]]`. Both are unset by default, which changes nothing.
+- **`[upload] add_decade_tag`**, off by default, adds the group year's decade ("1990s") to a new upload's tags. Thanks @chodeus
+- **The release type question defaults to the type the album's parent folder names** ("EP", "Single", "Live album"), as an Artist/Type/Album library such as Lidarr's has. Under `-yyy` that default is taken. Thanks @chodeus
+- **The metadata search keeps every artist's results.** An album with two or three main artists is searched once per artist, and each store's results are now merged instead of the last search replacing the others. A failing Apple Music storefront or Tidal region is named once, and the others are kept. A store that fails every search prints its error once per run. Thanks @statelycurmudgeon
+- **Tidal releases get genre tags** from their tracks when the album has none. Thanks @SubhrajyotiSen
+- **Bandcamp's "Client Challenge" page:** when Bandcamp answers with its browser check, salmon retries once as a browser, and says so if the check stays. Thanks @gnsfujiwara for the report
+- **salmon web's folder picker** shows which folder Start will use and how many audio files it holds, or why it can't be used, and Start stays off until then. A folder whose audio is only deeper down is refused with a hint to pick the album folder. Thanks @statelycurmudgeon
+- **salmon web warns on a finished upload or cross-upload job when a seedbox copy or client add failed,** listing each failed step, the seedbox and the folder. Thanks @statelycurmudgeon
+- **The tracklist leaves out the artist on a one-artist compilation, anthology or DJ mix** when every track credits only the album's artists, and on a band's album when the tracks credit its members. Thanks @statelycurmudgeon
+- **`salmon check all` names what it could not check:** folders it could not read and links that lead nowhere, instead of passing them over. Thanks @statelycurmudgeon
+- **`salmon checkconf --seedbox` reads the rclone config** that a seedbox's `extra_args` names (`--config`, `--password-command`, `--ask-password`). Thanks @chodeus
+- **`config.reference.toml` lists the fields `folder_template` accepts,** such as `{catno}`, `{label}` and `{edition_title}`.
+
+## 🐛 Bug Fixes
+
+- **Errors that ended in a traceback now say what went wrong.**
+  - An album holding a file or folder salmon can't read, a broken link, or a leftover `Spectrals` folder it can't remove: salmon names it and says what to do. Thanks @statelycurmudgeon
+  - A failed encoder (`flac`, `lame`, `sox`, or a full disk) ends that conversion with a line naming the track, and the other conversions go on. A broken track, a `.torrent` that can't be written and an edited log each get a message. Thanks @statelycurmudgeon
+  - A tracker that fails at the request search, or at another step nothing checked, ends the run with its reason. Thanks @statelycurmudgeon
+  - A metadata source that can't be read prints its error and asks the question again, instead of ending the run (a URL) or going on from the tags alone (a number). Thanks @statelycurmudgeon
+  - A group or torrent ID that isn't a number, typed or in a pasted link, is refused and asked again. Thanks @statelycurmudgeon
+  - An empty FLAC total tag no longer stops a transcode, and a wrong one says which. Thanks @X6M-Work, and @statelycurmudgeon for the report
+- **Files.**
+  - macOS `._` files (left beside each file copied to an exFAT or SMB drive) are no longer read as tracks, so they no longer crash a run, and salmon web no longer counts them as audio. Thanks @statelycurmudgeon
+  - `remove_source_dir` keeps the source folder when it holds files the renamed folder no longer has, and names them. Thanks @statelycurmudgeon
+  - A transcode stopped partway (Ctrl-C, a failed track, a full disk) is no longer taken for finished on the next run. Thanks @statelycurmudgeon
+  - salmon's own leftover `Spectrals` folder is kept out of the torrent on every route, not only some. Thanks @statelycurmudgeon
+  - Every step orders an album's files the same way, so a spectral number, the tracklist and the conversions refer to the same track. Thanks @statelycurmudgeon
+  - A corrupt spectral image is refused before anything is uploaded, and one that fails compression is uploaded uncompressed, as when oxipng fails.
+- **Names and tags.**
+  - A conversion's folder name keeps "FLAC" and "Lossless" in the artist or title ("Roberta Flack" stayed "Roberta MP3 V0k"). A 24-bit downconversion of a source without "24bit" in its name is named `24-48`, not `16bit 24-48`. Thanks @statelycurmudgeon
+  - A `folder_template` field with no value keeps the bracket group it shares closed: `[{source} {catno}]` with no catalogue number gives `[CD]`, not `[CD`.
+  - With `guests_in_track_title` on, a title that already credits its guests with `(with C)` or `(vs. C)` gets no extra `(feat. C)`, and `salmon descgen` keeps a track's guest. Thanks @statelycurmudgeon
+  - Beatport genres drop their bracketed sub-category (`Techno (Peak Time / Driving)` is `Techno`), and a genre is never split inside brackets.
+  - The Self-Released and "various" checks match whole words and names, not text inside a name. Thanks @statelycurmudgeon
+  - Beatport, Qobuz and MusicBrainz links with a query or fragment (`?utm_source=...`, `#tracks`) are read as their release. Thanks @chodeus
+- **Logs.** A range rip's log check no longer reports a false CRC mismatch on a track one sector short, or on a rip whose first track starts past sector 0. Thanks @statelycurmudgeon
+- **Seedboxes.** A ruTorrent server that accepts the connection and never answers no longer hangs salmon. Thanks @statelycurmudgeon
+
+## 🔒 Tracker & Security Improvements
+
+- **Store links reach the tracker without their tracking query** (`?utm_source=...`, Bandcamp's `?from=`, `#tracks`), in the description, the conversion note and the lossy report. A share ID can point back to whoever copied the link. Thanks @chodeus
+- **No empty dupe search is sent:** a title that cleans to nothing (a Various Artists "(Remastered Edition)") no longer searches the tracker for an empty string, and under `-yyy` the run stops when no search is possible. Thanks @statelycurmudgeon
+- **macOS `._` files, `.torrent` files and salmon's leftover spectrals never reach a tracker** in an upload. Thanks @statelycurmudgeon
+- **salmon web matches the folders it withholds by the folder itself,** so the same folder under another spelling is withheld too. Thanks @statelycurmudgeon
+
+## What's Changed
+* Fail lint on a stale noqa by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/934
+* Read a track's length in sectors exactly, for a range rip's CRC by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/936
+* Keep a track's guest in descgen with guests_in_track_title on by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/939
+* Refuse a typed or pasted number that isn't one by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/938
+* Match labels and title words by whole words and names (#924) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/930
+* Say what salmon check all could not look at by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/941
+* Move the track and disc number readers to common/numbers.py (#904 item 6) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/942
+* Make salmon up exit non-zero after an error by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/949
+* Keep .torrent files out of uploads, match withheld folders by the folder by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/948
+* Run the tests in parallel, and fail a run that reports a warning by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/951
+* Treat a corrupt spectral PNG and a failing oxipng alike, refuse unreadable spectrals by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/953
+* Keep salmon's leftover Spectrals out of the torrent on every salmon up route by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/955
+* End a web upload job that stopped as failed, with its uploads listed by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/954
+* Ban isdigit() in src by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/957
+* Use one test of what counts as a credit in a title (#947) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/959
+* One order for an album's files by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/956
+* Say what salmon up could not read or remove, not a traceback (#950) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/958
+* Keep a server stopped as a client connects from failing the tests by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/966
+* Bump astral-sh/setup-uv from 10.3.2 to 10.3.3 in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/972
+* Bump astral-sh/uv from 0.13.6 to 0.13.7 in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/974
+* Update uv-build requirement from <0.14.0,>=0.13.5 to >=0.13.6,<0.14.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/977
+* Bump the dev-tools group with 2 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/973
+* Bump the minor-and-patch group with 2 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/976
+* salmon web's folder picker: one rule for an album folder, Start uses only what was chosen by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/965
+* Give salmon cross-upload its own .torrent folder and client label by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/962
+* Bump svelte from 5.57.2 to 5.57.3 in /webui in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/975
+* Send no empty dupe search, and stop under -yyy when none is possible (#931) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/978
+* Keep the source folder when it holds files the renamed folder no longer has (#967) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/979
+* Ask the metadata question again when a source fails (#968 part 1) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/983
+* Fix FLAC total tag parsing and raise UploadError on invalid values (#970) by @X6M-Work in https://github.com/smokin-salmon/smoked-salmon/pull/987
+* Rebuild a range rip that starts past sector 0 (#937) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/964
+* Time the shared rate limit test at the limiter, not at the fake tracker by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/989
+* Warn on a done web upload or cross-upload job when a seedbox failed by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/963
+* Keep FLAC and Lossless in names when naming a conversion by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/961
+* Drop Beatport's bracketed genre sub-category, and never split inside brackets by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/993
+* Name each failed seedbox step in the web warning by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/994
+* Turn AGENTS.md's never rules into tests by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/990
+* Move cover, upload checks and metadata review out of uploader/__init__.py (#904 item 1) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/991
+* Retry Bandcamp's check page once as a browser, and say so when it stays by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/995
+* Impersonate Firefox in Bandcamp's retry by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/996
+* Say which Pythons still have the asyncio race, so the race test keeps passing once 3.14 is fixed by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/997
+* List an album's files with one helper, and stop on a folder that can't be read (#904 item 4) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/998
+* Answer "is this path inside that folder" in one place (#904 item 5) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1003
+* Convert ALAC in .m4a to FLAC at salmon up by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1002
+* Require Python 3.13, the version CI tests and the Docker image runs by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/999
+* Test on Python 3.15 instead of 3.14 by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1000
+* Write a transcode's MP3 under its name only once it is finished and tagged by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1004
+* Remove code nothing calls, and declare packaging by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1006
+* Add the artist-credit casebook: what salmon gives today for 29 albums (#869 step 1) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/992
+* Give ruTorrent a timeout, so a silent server can't hang the run by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1011
+* Build the group description's tracklist in one place (#904 item 7) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1012
+* On release details, list a one-artist compilation bare, and a band whose members are in ARTISTS by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1013
+* End a failed encoder's conversion with an error naming the track by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1016
+* Explain a broken track, an unwritable .torrent and an edited log by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1017
+* End a tracker or host failure with its reason, not a traceback by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1015
+* Keep what each store found in a search and name what failed by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1014
+* Name a 24-bit downconversion without 16bit by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1022
+* Make DeezerBase's docstring its first statement by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1024
+* Print a failing store's Scrape error line once per run by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1025
+* Parse Tidal genres from album and track relationships by @SubhrajyotiSen in https://github.com/smokin-salmon/smoked-salmon/pull/986
+* Read a Beatport, Qobuz or MusicBrainz link with a query or fragment as its release by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/1027
+* Publish a store link without its tracking query and fragment by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/1028
+* Keep macOS's ._ files from crashing a run or reaching a tracker by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1007
+* Add a harness that traces what each tracker sees during salmon up by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1023
+* Trace the rest of #982's scenarios by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1031
+* Ask before deleting a folder, and keep files in the album itself by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1033
+* Move one tracker's turn out of the upload loop (#904 item 2) by @statelycurmudgeon in https://github.com/smokin-salmon/smoked-salmon/pull/1032
+* Keep macOS ._ files from counting as audio in salmon web's folder check by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1037
+* Leave subfolder extras out of lossy conversions by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1039
+* Document the fields folder_template accepts by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1040
+* Stop before uploading without the spectrals that could not be uploaded, and keep them by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1038
+* Keep a group closed when a folder_template field in it has no value by @redusys in https://github.com/smokin-salmon/smoked-salmon/pull/1042
+* Read the rclone config a seedbox's extra_args names in salmon checkconf by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/1050
+* Skip the two tests that cannot pass on macOS by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/1051
+* Add the group year's decade to the upload's tags with add_decade_tag by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/1058
+* Default the release type to the one an album's Artist/Type/Album folder names by @chodeus in https://github.com/smokin-salmon/smoked-salmon/pull/1060
+* Bump docker/login-action from 4.7.0 to 4.8.0 in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1044
+* Bump astral-sh/uv from 0.13.7 to 0.13.8 in the minor-and-patch group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1045
+* Update uv-build requirement from <0.14.0,>=0.13.6 to >=0.13.7,<0.14.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1049
+* Bump the minor-and-patch group with 5 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1047
+* Bump soupsieve from 2.10 to 4.0 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1063
+* Bump av from 18.1.0 to 19.0.2 by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1048
+* Bump ruff from 0.17.3 to 0.17.4 in the dev-tools group by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1043
+* Bump the minor-and-patch group in /webui with 2 updates by @dependabot[bot] in https://github.com/smokin-salmon/smoked-salmon/pull/1046
+
+## New Contributors
+* @X6M-Work made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/987
+* @SubhrajyotiSen made their first contribution in https://github.com/smokin-salmon/smoked-salmon/pull/986
+
+**Full Changelog**: https://github.com/smokin-salmon/smoked-salmon/compare/0.23.0...0.24.0
+
+"""
 
 [[changelog]]
 version = "0.23.0"
