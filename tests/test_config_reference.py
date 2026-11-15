@@ -4,6 +4,8 @@ The reference file is kept in sync with the schema here: every key is in it, com
 uncommenting all of them gives a config that loads.
 """
 
+import errno
+import os
 import re
 from pathlib import Path
 
@@ -223,3 +225,59 @@ def test_checkconf_reset_leaves_the_config_alone_when_the_template_cannot_be_cop
     assert "Error" in output
     assert path.read_text(encoding="utf-8") == "mine"
     assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml", "template"]
+
+
+def test_checkconf_reset_leaves_a_config_toml_new_of_the_users_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    draft = tmp_path / "config.toml.new"
+    draft.write_text("draft", encoding="utf-8")
+
+    exception, _, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert exception is None
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+    assert draft.read_text(encoding="utf-8") == "draft"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml", "config.toml.new"]
+
+
+def test_checkconf_reset_that_fails_leaves_a_config_toml_new_of_the_users_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    draft = tmp_path / "config.toml.new"
+    draft.write_text("draft", encoding="utf-8")
+    monkeypatch.setattr(salmon.config, "_PKG_DIR", tmp_path / "broken-install" / "salmon")
+
+    exception, exit_code, _ = _reset(monkeypatch, path)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert draft.read_text(encoding="utf-8") == "draft"
+    assert path.read_text(encoding="utf-8") == "mine"
+
+
+def test_checkconf_reset_puts_the_config_back_when_the_new_one_cannot_take_its_place(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace = os.replace
+
+    def refuse_the_new_config(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        # The old config moves to its backup and back; only the new file is refused its place.
+        if Path(dst) == path and ".bak." not in Path(src).name:
+            raise OSError(errno.EACCES, "Permission denied")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", refuse_the_new_config)
+
+    exception, exit_code, output = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert "Permission denied" in output
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]

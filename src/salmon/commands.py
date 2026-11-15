@@ -3,6 +3,7 @@ import html
 import os
 import shutil
 import subprocess
+import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -281,14 +282,40 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     await post_upload_spectral_check(gazelle_site, path, torrent_id_int, None, track_data, source, source_url)
 
 
-def _backup_config(config_path: Path) -> None:
-    """Rename the config to the first free `<name>.bak.N` beside it, and say where it went."""
+def _backup_config(config_path: Path) -> Path:
+    """Rename the config to the first free `<name>.bak.N` beside it, say where it went, and return that path."""
     backup_index = 1
     while (backup := config_path.with_name(f"{config_path.name}.bak.{backup_index}")).exists():
         backup_index += 1
     # A rename, not shutil.move: where renaming is refused, move would copy the config and then fail to remove it.
     os.replace(config_path, backup)
     click.secho(f"Existing config file renamed to {backup}", fg="yellow")
+    return backup
+
+
+def _reset_config(config_path: Path) -> Path:
+    """Replace the config with the short template, keeping the old one as a backup. Returns the template's path.
+
+    The template is copied beside the config, under a name of its own, before the old config moves; if the copy
+    then cannot take its place, the old config is put back. A reset that fails (OSError) leaves the config as it was.
+    """
+    template = get_default_config_path()
+    handle, name = tempfile.mkstemp(dir=config_path.parent, prefix=f"{config_path.name}.", suffix=".new")
+    os.close(handle)
+    staged = Path(name)
+    backup = None
+    try:
+        shutil.copy(template, staged)
+        if config_path.exists():
+            backup = _backup_config(config_path)
+        os.replace(staged, config_path)
+    except OSError:
+        staged.unlink(missing_ok=True)
+        if backup:
+            os.replace(backup, config_path)
+            click.secho(f"The config is back at {config_path}", fg="yellow")
+        raise
+    return template
 
 
 @commandgroup.command()
@@ -329,17 +356,9 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
     if reset:
         click.secho("Resetting new config.toml file", fg="cyan", bold=True)
 
-        config_path = find_config_path()
-        new_config = config_path.with_name(f"{config_path.name}.new")
         try:
-            config_template = get_default_config_path()
-            # Copied beside the config before the old one moves: a reset that cannot finish leaves the config in place.
-            shutil.copy(config_template, new_config)
-            if config_path.exists():
-                _backup_config(config_path)
-            os.replace(new_config, config_path)
+            config_template = _reset_config(find_config_path())
         except OSError as e:
-            new_config.unlink(missing_ok=True)
             click.secho(f"Error: {e}", fg="red")
             raise click.exceptions.Exit(1) from e
 
