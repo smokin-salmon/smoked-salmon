@@ -35,7 +35,7 @@ new test reaches for first:
 - **No `async def test_`.** The project does not mark or configure async tests, so such a test does not run
   properly. Wrap the coroutine: `anyio.run(partial(fn, ...))`.
 - **At most 5 requests per fake account in a test**, unless the limiter is patched. The rate limiter really waits:
-  a 6th request inside 10.5 s sleeps, and the test times out.
+  a 6th request inside 10.5 s waits for the window, and the test runs about 10 s slower.
 - **A warning fails the run** (`max_warnings = 0`). Fix the code that warns.
 - **`cfg` changes only through `monkeypatch.setattr`**, so it is undone after the test.
 
