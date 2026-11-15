@@ -36,7 +36,7 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          if ! printf '%s' "$TAG" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if [[ ! $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "The release tag must be X.Y.Z (three dot-separated integers, no 'v', no suffix), got '$TAG'." >&2
             echo "Nothing was changed. Delete the release and its tag, then publish it again with a tag like 0.25.0." >&2
             exit 1
@@ -153,7 +153,7 @@ jobs:
       # this release, stops the run here, before anything is pushed. Also passes on a re-run that skipped the bump.
       - name: Check the bumped version.toml
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
-        run: uv run python .github/scripts/check-release-version.py
+        run: uv run --no-dev python .github/scripts/check-release-version.py
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
