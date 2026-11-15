@@ -37,22 +37,22 @@ BASE = "https://tracker.test"
 URL = f"{BASE}/torrents.php"
 
 
-class RedirectSite(FakeGazelleSite):
+class GroupLookupSite(FakeGazelleSite):
     """A tracker that answers every torrent ID with a group, and notes what it was asked."""
 
     base_url = BASE
     site_string = "RED"
 
     def __init__(self) -> None:
-        self.redirected: list[Any] = []
+        self.looked_up: list[Any] = []
 
-    async def get_redirect_torrentgroupid(self, torrent_id: int) -> int | None:
-        self.redirected.append(torrent_id)
+    async def torrent_group_id(self, torrent_id: int) -> int | None:
+        self.looked_up.append(torrent_id)
         return 1000 + torrent_id
 
 
-def _site(site: RedirectSite | None = None) -> tuple[RedirectSite, "BaseGazelleApi"]:
-    site = site or RedirectSite()
+def _site(site: GroupLookupSite | None = None) -> tuple[GroupLookupSite, "BaseGazelleApi"]:
+    site = site or GroupLookupSite()
     return site, cast("BaseGazelleApi", cast("object", site))
 
 
@@ -136,7 +136,7 @@ def test_a_group_urls_torrentid_is_not_sent_unless_its_a_number(monkeypatch, cap
 
     assert group is None
     assert len(asked) == 2
-    assert fake.redirected == []
+    assert fake.looked_up == []
     assert "Could not get group ID from torrent ID." in capsys.readouterr().out
 
 
@@ -148,7 +148,7 @@ def test_a_bad_id_beside_a_torrentid_asks_again_and_sends_nothing(monkeypatch, c
 
     assert group is None
     assert len(asked) == 2
-    assert fake.redirected == []
+    assert fake.looked_up == []
     assert "Could not find group ID in URL." in capsys.readouterr().out
 
 
@@ -161,7 +161,7 @@ def test_a_group_urls_torrentid_is_sent_as_a_number(monkeypatch, prompt, value: 
     group = anyio.run(prompt, site)
 
     assert group == 1007
-    assert fake.redirected == [7]
+    assert fake.looked_up == [7]
 
 
 @pytest.mark.parametrize(("query", "group"), [("id=5&torrentid=7", 5), ("id=%205", 5)])
@@ -172,7 +172,7 @@ def test_a_group_urls_id_is_read_as_before(monkeypatch, query: str, group: int) 
     picked = anyio.run(_prompt_for_group_id, site, [], False)
 
     assert picked == group
-    assert fake.redirected == []
+    assert fake.looked_up == []
 
 
 def test_a_group_url_with_neither_asks_again_as_before(monkeypatch, capsys) -> None:
@@ -185,12 +185,12 @@ def test_a_group_url_with_neither_asks_again_as_before(monkeypatch, capsys) -> N
     assert "Could not find group ID in URL." in capsys.readouterr().out
 
 
-class NoGroupSite(RedirectSite):
+class NoGroupSite(GroupLookupSite):
     def __init__(self, answer: int | None) -> None:
         super().__init__()
         self.answer = answer
 
-    async def get_redirect_torrentgroupid(self, torrent_id: int) -> int | None:
+    async def torrent_group_id(self, torrent_id: int) -> int | None:
         return self.answer
 
 

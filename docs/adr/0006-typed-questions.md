@@ -23,7 +23,7 @@ What constrains the design:
   patching asyncclick's `prompt` or `confirm`: they check the text and the default they are given and
   return what a user would type.
 - **The parsers do work.** #7's parser turns a pasted `torrentid=` URL into a group with a tracker request
-  (`get_redirect_torrentgroupid`), reads a number above the list as a group ID, and reads `0` as the first
+  (`torrent_group_id`), reads a number above the list as a group ID, and reads `0` as the first
   recent upload. #11's `+` draws a random third. #12 scrapes each pick and URL it is given. Each loop re-asks
   on its own errors.
 - **Free text collides with keys.** In #7, when deletion is offered, any reply that starts with `d` deletes
