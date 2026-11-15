@@ -82,7 +82,7 @@ FAILURE = {"status": "failure", "error": "bad parameters"}
     ids=["failure status", "failure status with HTTP 400", "HTTP error", "not JSON"],
 )
 def test_a_lookup_the_tracker_refuses_names_no_group(capsys, answer: Any, reason: str) -> None:
-    # A missing torrent may come any of these ways (RED's is not known): each is None, with the reason.
+    # Any refusal is None, with the reason: RED's answer for a missing torrent is not known.
     group_id, sent = _look_up(answer)
     out = capsys.readouterr().out
     assert group_id is None
