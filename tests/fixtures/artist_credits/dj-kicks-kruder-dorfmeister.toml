@@ -1,7 +1,7 @@
 album = "Kruder & Dorfmeister, DJ-Kicks"
 why = "A DJ mix: the DJs' name is the release's artist on every store and each track is by someone else."
 edition = "Studio !K7, 17 tracks, as sold digitally (Deezer 1127108 = MusicBrainz aa2eae9d by barcode); Discogs 2951 is master 252625's main release; Qobuz has the same UPC"
-known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "Deezer parse: Kruder & Dorfmeister split in two", "merge: 'Soundtrack', 'full length' and 'Rude Boy Fandango' read as remixers from the words of a mix's name"]
+known_wrong = ["Deezer, MusicBrainz and Discogs parses and the merge: each track's artist a main of the release", "Qobuz parse: each track's artist a guest of the DJs", "merge: the DJs written in ARTIST on every track they didn't make, with ALBUMARTIST 'Various'", "Deezer parse: Kruder & Dorfmeister split in two", "merge: 'full length' read as a remixer from the words of a remix's name"]
 files_from = "deezer"
 output = true
 
@@ -33,7 +33,7 @@ release = ["Kruder & Dorfmeister (main)", "Herbaliser (guest)", "Small World (gu
 tracks = 17
 
 [today.merge]
-release = ["Kruder & Dorfmeister (main)", "The Herbaliser (main)", "Small World (main)", "Soundtrack (remixer)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Big Brothers Dubbing You Full On - Dub Tractor (remixer)", "full length (remixer)", "Hardfloor (main)", "Thievery Corporation (main)", "Beanfield (main)", "Sapien (main)", "Rude Boy Fandango (remixer)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
+release = ["Kruder & Dorfmeister (main)", "The Herbaliser (main)", "Small World (main)", "Tango (main)", "The Lab Rats (main)", "Statik Sound System (main)", "JMJ (main)", "Flytronix (main)", "Aquasky (main)", "James Bong (main)", "Big Brothers Dubbing You Full On - Dub Tractor (remixer)", "full length (remixer)", "Hardfloor (main)", "Thievery Corporation (main)", "Beanfield (main)", "Sapien (main)", "Shantel (main)", "Karma (main)", "Showroom Recordings (main)"]
 tracks = 17
 
 [today.output]
