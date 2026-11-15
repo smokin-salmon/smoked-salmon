@@ -29,10 +29,11 @@ title, a body, a commit message, a PR's branch name): it goes through `env:` and
 
 Every workflow that builds the image scans it with `.github/actions/scan-image` (Trivy): fixable
 HIGH and CRITICAL vulnerabilities are listed in the job summary, and a fixable CRITICAL fails the
-job. `build-alpha.yml` and `docker-image.yml` build both arches into a registry local to the job,
-scan that image, then copy the scanned digest to ghcr.io, so the published image is the one scanned,
-never a rebuild. An allowlist entry goes in `.trivyignore` with a `# reason` line above it and an
-`exp:YYYY-MM-DD` end date on it; the scan action refuses entries without both.
+job. `build-alpha.yml` and `docker-image.yml` build both arches into a registry local to the job and
+scan that image (`.github/actions/build-scan`), then copy the scanned digest to ghcr.io
+(`.github/actions/push-scanned`), so the published image is the one scanned, never a rebuild. An
+allowlist entry goes in `.trivyignore` with a `# reason` line above it and an `exp:YYYY-MM-DD` end
+date on it; the scan action refuses entries without both.
 
 ## Releases
 
