@@ -62,9 +62,9 @@ installed on this repository only, a bypass actor of the `master` ruleset), mint
 the scan, from the repository variable `RELEASE_APP_CLIENT_ID` (the App's Client ID) and the
 repository secret `RELEASE_APP_PRIVATE_KEY`. To rotate its key, generate a new private key in the
 App's settings (organization settings, Developer settings, GitHub Apps), store it with
-`gh secret set RELEASE_APP_PRIVATE_KEY < key.pem`, then delete the old key there. Without a valid
-key the run stops at step 3, before anything is pushed: `master`, the tag and ghcr.io are unchanged,
-and the failed run can be re-run once the secret is fixed.
+`gh secret set RELEASE_APP_PRIVATE_KEY < key.pem`, then delete the old key there. Step 3 pushes
+`master` and the moved tag in one atomic push, so without a valid key, or if the push is refused,
+`master`, the tag and ghcr.io are unchanged, and the failed run can be re-run once that is fixed.
 
 `release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
 new version exists, so that bump commit is the release announcement, and the release description

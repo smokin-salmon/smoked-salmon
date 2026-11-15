@@ -46,7 +46,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # Ensures we get all history for tag retrieval and pushing
+          fetch-depth: 0 # All history and tags, for the version bump commit and the tag move
           persist-credentials: false
 
       - name: Get release version or branch name
@@ -218,7 +218,8 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
 
-      - name: Commit and push version update (only on release)
+      # One atomic push: master and the moved tag both land, or neither does.
+      - name: Commit the version update, move the tag and push both (only on release)
         env:
           APP_TOKEN: ${{ steps.app-token.outputs.token }}
           REPO: ${{ github.repository }}
@@ -231,17 +232,9 @@ jobs:
             echo "master already has the $VERSION bump"
           else
             git commit -m "Update version.toml/pyproject.toml to $VERSION with changelog"
-            git push "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" master
           fi
-
-      - name: Move tag to version bump commit and push (only on release)
-        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
-        env:
-          APP_TOKEN: ${{ steps.app-token.outputs.token }}
-          REPO: ${{ github.repository }}
-        run: |
           git tag -f "$VERSION"
-          git push "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" "refs/tags/$VERSION" --force
+          git push --atomic "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" master "+refs/tags/$VERSION"
 
       - name: Log in to the Container registry
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
