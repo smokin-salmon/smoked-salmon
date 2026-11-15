@@ -15,8 +15,9 @@ How the merge works today. Salmon credits an artist on a track as a name and a r
 read first and become the *base*. Each store is then merged into it, one at a time: the store of the
 URL the user chose first, then the rest in `PREFERENCES` order. A store's credit is added to a track
 unless the base already has that name in that role. After the last store, `filter_artists` keeps one
-main or guest per name on each track, the first, which is the files'. In `descgen` and salmon web's
-description page there are no files, and the first store becomes the base.
+main or guest per name on each track, the first in the list: the files' when the files credit that name,
+else the first store's that does. In `descgen` and salmon web's description page there are no files, and
+the first store becomes the base.
 
 Three root causes show up in the casebook:
 
@@ -84,11 +85,11 @@ runtime.
 
 ```python
 class Claim(msgspec.Struct, frozen=True):
-    source: Source      # a METASOURCES name, or "files"
+    source: Source  # a METASOURCES name, or "files"
     name: str
-    credited_as: str    # the name exactly as this source printed it
-    role: Role | None   # None: the source's role maps to none of the eight
-    assumed: bool       # the role is a guess, not data the source gave
+    credited_as: str  # the name exactly as this source printed it
+    role: Role | None  # None: the source's role maps to none of the eight
+    assumed: bool  # the role is a guess, not data the source gave
 ```
 
 A role is *assumed* when salmon guessed it, and *stated* when the source gave it as data. A plain ARTIST
