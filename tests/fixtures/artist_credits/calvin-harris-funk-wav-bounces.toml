@@ -36,6 +36,7 @@ tracks = 10
 [today.merge]
 release = ["Calvin Harris (main)", "Frank Ocean (main)", "Migos (main)", "ScHoolboy Q (main)", "PARTYNEXTDOOR (main)", "D.R.A.M. (main)", "Young Thug (main)", "Pharrell Williams (main)", "Ariana Grande (main)", "Future (main)", "Khalid (main)", "Travis Scott (main)", "A-Trak (main)", "Snoop Dogg (main)", "John Legend (main)", "Takeoff (main)", "Nicki Minaj (main)", "Katy Perry (main)", "Big Sean (main)", "Kehlani (main)", "Lil Yachty (main)", "Jessie Reyez (main)"]
 tracks = 10
+credits = ["1.1: Calvin Harris (main), Frank Ocean (main), Migos (main)", "1.2: Calvin Harris (main), ScHoolboy Q (main), PARTYNEXTDOOR (main), D.R.A.M. (main)", "1.3: Calvin Harris (main), Young Thug (main), Pharrell Williams (main), Ariana Grande (main)", "1.4: Calvin Harris (main), Future (main), Khalid (main)", "1.5: Calvin Harris (main), Travis Scott (main), A-Trak (main)", "1.6: Calvin Harris (main), Snoop Dogg (main), John Legend (main), Takeoff (main)", "1.7: Calvin Harris (main), Nicki Minaj (main)", "1.8: Calvin Harris (main), Pharrell Williams (main), Katy Perry (main), Big Sean (main)", "1.9: Calvin Harris (main), Kehlani (main), Lil Yachty (main)", "1.10: Calvin Harris (main), Jessie Reyez (main)"]
 
 [today.output]
 albumartist = "Various"

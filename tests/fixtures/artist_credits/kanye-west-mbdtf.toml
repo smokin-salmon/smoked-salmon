@@ -37,6 +37,7 @@ tracks = 13
 [today.merge]
 release = ["Kanye West (main)", "Ye (main)", "No I.D. (producer)", "RZA (producer)", "Kid Cudi (main)", "Raekwon (main)", "Mike Dean (producer)", "Symbolyc One (producer)", "JAŸ-Z (main)", "Rick Ross (main)", "Nicki Minaj (main)", "Bon Iver (main)", "JAY Z (guest)", "Pusha T (main)", "Prynce Cy Hi (main)", "Swizz Beatz (main)", "RZA (main)", "CyHi Da Prynce (guest)", "Bink! (producer)", "John Legend (main)", "Frank E (producer)", "Justin Vernon (guest)"]
 tracks = 13
+credits = ["1.1: Kanye West (main), Ye (main), No I.D. (producer), RZA (producer)", "1.2: Kanye West (main), Kid Cudi (main), Raekwon (main), Ye (main), Mike Dean (producer), No I.D. (producer)", "1.3: Kanye West (main), Ye (main), Symbolyc One (producer)", "1.4: Kanye West (main), Ye (main)", "1.5: Kanye West (main), Ye (main)", "1.6: Kanye West (main), JAŸ-Z (main), Rick Ross (main), Nicki Minaj (main), Bon Iver (main), JAY Z (guest), Ye (main)", "1.7: Kanye West (main), JAŸ-Z (main), Pusha T (main), Prynce Cy Hi (main), Swizz Beatz (main), RZA (main), JAY Z (guest), Ye (main), CyHi Da Prynce (guest), No I.D. (producer)", "1.8: Kanye West (main), Rick Ross (main), Ye (main), Bink! (producer)", "1.9: Kanye West (main), Pusha T (main), Ye (main)", "1.10: Kanye West (main), Ye (main)", "1.11: Kanye West (main), John Legend (main), Ye (main), Frank E (producer)", "1.12: Kanye West (main), Bon Iver (main), Justin Vernon (guest), Ye (main)", "1.13: Kanye West (main), Ye (main)"]
 
 [today.output]
 albumartist = "Various"

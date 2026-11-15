@@ -38,6 +38,7 @@ tracks = 7
 [today.merge]
 release = ["Wiener Philharmoniker (main)", "Sir Simon Rattle (main)", "Kyung Wha Chung (main)", "Wiener Philharmonic Orchestra (guest)", "Kyung-Wha Chung (main)", "정경화 (main)", "Simon Rattle (main)"]
 tracks = 7
+credits = ["1.1: Wiener Philharmoniker (main), Sir Simon Rattle (main), Kyung Wha Chung (main), Wiener Philharmonic Orchestra (guest)", "1.2: Wiener Philharmoniker (main), Sir Simon Rattle (main), Kyung Wha Chung (main), Wiener Philharmonic Orchestra (guest)", "1.3: Wiener Philharmoniker (main), Sir Simon Rattle (main), Kyung Wha Chung (main), Wiener Philharmonic Orchestra (guest)", "1.4: Wiener Philharmoniker (main), Sir Simon Rattle (main), Kyung Wha Chung (main), Wiener Philharmonic Orchestra (guest)", "1.5: Kyung-Wha Chung (main), 정경화 (main), Wiener Philharmoniker (main), Simon Rattle (main)", "1.6: Kyung-Wha Chung (main), 정경화 (main), Wiener Philharmoniker (main), Simon Rattle (main)", "1.7: Kyung-Wha Chung (main), 정경화 (main), Wiener Philharmoniker (main), Simon Rattle (main)"]
 
 
 # The files' tags.
