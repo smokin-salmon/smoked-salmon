@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from salmon import cfg
-from salmon.uploader.upload import generate_description, generate_source_links
+from salmon.uploader.description import generate_description, generate_source_links
 
 HEADING = "[b][size=4]Tracklist[/size][/b]\n"
 

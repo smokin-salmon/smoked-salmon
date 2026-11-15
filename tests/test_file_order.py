@@ -32,7 +32,8 @@ from salmon.tagger.pre_data import create_track_list
 from salmon.tagger.tags import gather_tags
 from salmon.trackers import base
 from salmon.uploader import preparation, spectrals
-from salmon.uploader.upload import concat_track_data, generate_description, generate_t_description
+from salmon.uploader.description import generate_description, generate_t_description
+from salmon.uploader.upload import concat_track_data
 
 FLAT = ["1.flac", "2.flac", "10.flac"]
 DASHED = ["1-1.flac", "1-2.flac", "1-10.flac"]
