@@ -144,13 +144,13 @@ Read [docs/ci-and-releases.md](docs/ci-and-releases.md) before touching the `Doc
   a GitHub release, never by bumping versions by hand: its workflow makes that commit, which is what tells every
   user a new version exists.
 - Everything CI and the image run is pinned: each `uses:` to a full commit SHA with its version in a comment,
-  images by tag and digest, Python packages and the dev tools by `uv.lock` (`tests/test_rule_pinned.py`).
+  images by tag and digest, Python packages and the dev tools by `uv.lock`, and uv in CI by the Dockerfile's uv
+  image tag (`tests/test_rule_pinned.py`).
 - A `pull_request` workflow declares its permissions, none of them `write`, logs in to no registry, and each
   checkout in it sets `persist-credentials: false` (`tests/test_rule_pull_request_workflows.py`). No script
   interpolates a value an outsider writes: it goes through `env:` and is read as `"$VALUE"`
   (`tests/test_rule_workflow_untrusted_input.py`).
 - An image change gets a smoke check in `.github/docker-smoke.sh` that fails before it.
-
 ## Scratch work
 
 Implementation plans and other throwaway notes go in `docs/plans/`, which is gitignored. Anything
