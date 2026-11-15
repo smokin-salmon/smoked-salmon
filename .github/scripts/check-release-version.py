@@ -47,7 +47,7 @@ def main() -> int:
             print(problem, file=sys.stderr)
             return 1
         os.environ["XDG_CONFIG_HOME"] = tmp
-        os.environ.pop("SALMON_CONFIG_DIR", None)
+        os.environ["SALMON_CONFIG_DIR"] = str(Path(tmp) / "smoked-salmon")  # beats a repo-root config.toml
 
         import msgspec
 

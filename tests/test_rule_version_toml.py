@@ -70,7 +70,8 @@ def run_check(version: str, version_file: Path) -> subprocess.CompletedProcess[s
 def test_the_release_check_accepts_a_file_at_the_tag(tmp_path: Path) -> None:
     path = tmp_path / "version.toml"
     path.write_text('current = "0.25.0"\n[[changelog]]\nversion = "0.25.0"\ndate = "2026-01-01"\nnotes = "n"\n')
-    assert run_check("0.25.0", path).returncode == 0
+    result = run_check("0.25.0", path)
+    assert result.returncode == 0, result.stderr
 
 
 def test_the_release_check_refuses_what_clients_could_not_use(tmp_path: Path) -> None:
@@ -85,4 +86,5 @@ def test_the_release_check_refuses_what_clients_could_not_use(tmp_path: Path) ->
     for name, (tag, text) in cases.items():
         path = tmp_path / "version.toml"
         path.write_text(text)
-        assert run_check(tag, path).returncode == 1, name
+        result = run_check(tag, path)
+        assert result.returncode == 1, name
