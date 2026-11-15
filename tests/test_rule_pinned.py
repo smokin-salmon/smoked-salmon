@@ -1,4 +1,4 @@
-"""Everything CI and the image run is pinned (AGENTS.md, Docker image; #579).
+"""Everything CI and the image run is pinned (docs/ci-and-releases.md, Docker image; #579).
 
 Each action a workflow or a composite action of this repo uses is pinned to a full commit SHA with its version in
 a comment (a `docker://` one to a digest), each container image a workflow runs (`image:`, `container:`) to a
