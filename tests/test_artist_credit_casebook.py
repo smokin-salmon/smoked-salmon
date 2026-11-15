@@ -8,6 +8,7 @@ Stages, each recorded as the release's artists ("name (role)") and its track cou
 - <store>: `Scraper().scrape_release(url)`, its fetch replaced by the stored response.
 - merge: every store's parse through `_combine_scraped` over the files' release data (`construct_rls_data` on the
   tags), with the files' own store as the chosen URL, then `remove_various_artists`: `salmon up` with every source.
+  Also each track's credits, as "disc.track: name (role), ...", so a change on one track is seen.
 - output, output-guests-in-title (a case with `output = true`, and the constructed title cases): what is written
   from the merge, with cfg.upload.formatting.guests_in_track_title off and on: ALBUMARTIST, and per track
   "ARTIST | TITLE", with "| REMIXER ..." when one is written.
@@ -163,9 +164,16 @@ def written(meta: dict[str, Any], guests_in_title: bool, monkeypatch: pytest.Mon
     return {"albumartist": _generate_album_artist(meta["artists"]), "tracks": lines}
 
 
-def summary(meta: dict[str, Any]) -> dict[str, Any]:
+def summary(meta: dict[str, Any], per_track: bool = False) -> dict[str, Any]:
     tracks = sum(len(disc) for disc in meta["tracks"].values())
-    return {"release": [f"{name} ({role})" for name, role in meta["artists"]], "tracks": tracks}
+    got = {"release": [f"{name} ({role})" for name, role in meta["artists"]], "tracks": tracks}
+    if per_track:
+        got["credits"] = [
+            f"{d}.{t}: " + ", ".join(f"{name} ({role})" for name, role in track["artists"])
+            for d, disc in sorted(meta["tracks"].items(), key=lambda item: int(item[0]))
+            for t, track in sorted(disc.items(), key=lambda item: int(item[0]))
+        ]
+    return got
 
 
 def judge(right: dict[str, Any], today: dict[str, Any]) -> list[str] | None:
@@ -242,8 +250,10 @@ def test_today(case: Path, stage: str, monkeypatch: pytest.MonkeyPatch) -> None:
     elif stage in OUTPUTS:
         meta = constructed(record) if record.get("constructed") else merge(record, monkeypatch)
         got = written(meta, OUTPUTS[stage], monkeypatch)
+    elif stage == "merge":
+        got = summary(merge(record, monkeypatch), per_track=True)
     else:
-        got = summary(merge(record, monkeypatch) if stage == "merge" else parse(record, stage, monkeypatch))
+        got = summary(parse(record, stage, monkeypatch))
     want = record["today"].get(stage)
     shown = "\n".join(f"{key} = {json.dumps(value, ensure_ascii=False)}" for key, value in got.items())
     update = f"today changed: if the change is meant, set [today.{stage}] in {case.name} to:\n{shown}"
