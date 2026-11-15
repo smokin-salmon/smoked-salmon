@@ -65,6 +65,9 @@ App's settings (organization settings, Developer settings, GitHub Apps), store i
 `gh secret set RELEASE_APP_PRIVATE_KEY < key.pem`, then delete the old key there. Step 3 pushes
 `master` and the moved tag in one atomic push, so without a valid key, or if the push is refused,
 `master`, the tag and ghcr.io are unchanged, and the failed run can be re-run once that is fixed.
+The App cannot change workflows: a re-run whose tag move would carry changes to `.github/workflows/`
+(a fix merged after the release was published) may be refused. Then delete the release and its tag
+and publish it again from `master`.
 
 `release_notification.py` fetches `version.toml` **from `master` on GitHub** to tell every user a
 new version exists, so that bump commit is the release announcement, and the release description
