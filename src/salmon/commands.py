@@ -294,12 +294,12 @@ def _backup_config(config_path: Path) -> Path:
         backup = config_path.with_name(f"{config_path.name}.bak.{backup_index}")
         try:
             # 0o600 until the config's own mode is copied: it holds API keys and cookies.
-            fd = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o600)
+            dst = open(backup, "xb", opener=lambda path, flags: os.open(path, flags, 0o600))  # noqa: SIM115
         except FileExistsError:
             backup_index += 1
             continue
         try:
-            with os.fdopen(fd, "wb") as dst, config_path.open("rb") as src:
+            with dst, config_path.open("rb") as src:
                 shutil.copyfileobj(src, dst)
             shutil.copymode(config_path, backup)
         except BaseException:
@@ -312,9 +312,10 @@ def _backup_config(config_path: Path) -> Path:
 def _reset_config(config_path: Path) -> Path:
     """Replace the config with the short template, keeping a copy of the old one. Returns the template's path.
 
-    The template is copied beside the config under a name of its own and the old config is copied to its backup; only
-    then does the template take the config's place, in one step (os.replace). The config is never missing: a reset
-    that fails or is stopped leaves it as it was, and removes the files it had written.
+    The template is copied beside the config under a name of its own (readable by its owner only: it is about to hold
+    API keys) and the old config is copied to its backup; only then does the template take the config's place, in one
+    step (os.replace). The config is never missing: a reset that fails or is stopped before the swap leaves it as it
+    was and removes the files it wrote; one stopped after the swap keeps the backup.
     """
     template = get_default_config_path()
     handle, name = tempfile.mkstemp(dir=config_path.parent, prefix=f"{config_path.name}.", suffix=".new")
@@ -322,15 +323,18 @@ def _reset_config(config_path: Path) -> Path:
     staged = Path(name)
     backup = None
     try:
-        shutil.copy(template, staged)
+        shutil.copyfile(template, staged)  # keeps mkstemp's 0o600, not the template's mode
         if config_path.exists():
             backup = _backup_config(config_path)
         os.replace(staged, config_path)
     except BaseException:
-        for leftover in (staged, backup):
-            if leftover:
-                with contextlib.suppress(OSError):
-                    leftover.unlink(missing_ok=True)
+        # Read from the disk, not from how far the code got: os.replace consumes the staged file, so a staged file
+        # still there means the old config is still in place and its backup is a spare copy.
+        if staged.exists():
+            for leftover in (backup, staged):
+                if leftover:
+                    with contextlib.suppress(OSError):
+                        leftover.unlink(missing_ok=True)
         raise
     if backup:
         click.secho(f"The old config is saved as {backup}", fg="yellow")

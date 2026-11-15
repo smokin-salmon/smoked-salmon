@@ -268,8 +268,7 @@ def test_checkconf_reset_keeps_the_config_when_the_new_one_cannot_take_its_place
     real_replace = os.replace
 
     def refuse_the_new_config(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
-        # Only the new file is refused its place.
-        if Path(dst) == path and ".bak." not in Path(src).name:
+        if Path(dst) == path:
             raise OSError(errno.EACCES, "Permission denied")
         real_replace(src, dst)
 
@@ -292,7 +291,7 @@ def test_checkconf_reset_keeps_the_config_even_when_the_new_file_cannot_be_remov
     real_replace, real_unlink = os.replace, Path.unlink
 
     def refuse_the_new_config(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
-        if Path(dst) == path and ".bak." not in Path(src).name:
+        if Path(dst) == path:
             raise OSError(errno.EACCES, "Permission denied")
         real_replace(src, dst)
 
@@ -309,6 +308,7 @@ def test_checkconf_reset_keeps_the_config_even_when_the_new_file_cannot_be_remov
     assert isinstance(exception, SystemExit), repr(exception)
     assert exit_code == 1
     assert path.read_text(encoding="utf-8") == "mine"
+    assert not list(tmp_path.glob("*.bak.*"))
 
 
 def test_checkconf_reset_whose_backup_message_cannot_be_printed_loses_nothing(
@@ -343,7 +343,7 @@ def test_checkconf_reset_stopped_part_way_leaves_the_config_in_place(
     real_replace = os.replace
 
     def interrupted(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
-        if Path(dst) == path and ".bak." not in Path(src).name:
+        if Path(dst) == path:
             raise KeyboardInterrupt
         real_replace(src, dst)
 
@@ -352,11 +352,33 @@ def test_checkconf_reset_stopped_part_way_leaves_the_config_in_place(
     _reset(monkeypatch, path, DEFAULT_CONFIG)
 
     assert path.read_text(encoding="utf-8") == "mine"
-    assert not list(tmp_path.glob("*.new"))
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+
+
+def test_checkconf_reset_stopped_right_after_the_swap_keeps_the_backup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The new config is in place when Ctrl-C lands: the backup is now the only copy of the old one."""
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace = os.replace
+
+    def interrupted_after(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        real_replace(src, dst)
+        if Path(dst) == path:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(os, "replace", interrupted_after)
+
+    _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+    assert (tmp_path / "config.toml.bak.1").read_text(encoding="utf-8") == "mine"
 
 
 def test_checkconf_reset_never_overwrites_a_backup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """A backup name taken after it was found free (two resets at once) is skipped, not overwritten."""
+    """A backup name taken after it was found free (two resets at once) is skipped, not overwritten. exists() is made
+    to lie about it: a check-then-rename backup would overwrite it."""
     path = tmp_path / "config.toml"
     path.write_text("mine", encoding="utf-8")
     taken = tmp_path / "config.toml.bak.1"
@@ -381,3 +403,17 @@ def test_checkconf_reset_backup_is_readable_by_the_owner_only_as_the_config_was(
     _reset(monkeypatch, path, DEFAULT_CONFIG)
 
     assert (tmp_path / "config.toml.bak.1").stat().st_mode & 0o777 == 0o600
+
+
+def test_checkconf_reset_new_config_is_readable_by_its_owner_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """It is about to hold API keys and cookies, whatever mode the shipped template has."""
+    path = tmp_path / "config.toml"
+    template = tmp_path / "template.toml"
+    template.write_bytes(DEFAULT_CONFIG.read_bytes())
+    template.chmod(0o644)
+
+    _reset(monkeypatch, path, template)
+
+    assert path.stat().st_mode & 0o777 == 0o600
