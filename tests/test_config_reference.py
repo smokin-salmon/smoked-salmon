@@ -8,6 +8,7 @@ import errno
 import os
 import re
 from pathlib import Path
+from typing import Any
 
 import anyio
 import msgspec
@@ -279,5 +280,54 @@ def test_checkconf_reset_puts_the_config_back_when_the_new_one_cannot_take_its_p
     assert isinstance(exception, SystemExit), repr(exception)
     assert exit_code == 1
     assert "Permission denied" in output
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+
+
+def test_checkconf_reset_puts_the_config_back_even_when_the_new_file_cannot_be_removed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace, real_unlink = os.replace, Path.unlink
+
+    def refuse_the_new_config(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        if Path(dst) == path and ".bak." not in Path(src).name:
+            raise OSError(errno.EACCES, "Permission denied")
+        real_replace(src, dst)
+
+    def keep_the_new_file(self: Path, missing_ok: bool = False) -> None:
+        if self.name.endswith(".new"):
+            raise OSError(errno.EACCES, "Permission denied")
+        real_unlink(self, missing_ok=missing_ok)
+
+    monkeypatch.setattr(os, "replace", refuse_the_new_config)
+    monkeypatch.setattr(Path, "unlink", keep_the_new_file)
+
+    exception, exit_code, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert path.read_text(encoding="utf-8") == "mine"
+
+
+def test_checkconf_reset_puts_the_config_back_when_the_backup_message_cannot_be_printed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_secho = salmon.commands.click.secho
+
+    def closed_terminal(message: object = None, *args: Any, **kwargs: Any) -> None:
+        if "renamed to" in str(message):
+            raise OSError(errno.EPIPE, "Broken pipe")
+        real_secho(message, *args, **kwargs)
+
+    monkeypatch.setattr(salmon.commands.click, "secho", closed_terminal)
+
+    exception, exit_code, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
     assert path.read_text(encoding="utf-8") == "mine"
     assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]

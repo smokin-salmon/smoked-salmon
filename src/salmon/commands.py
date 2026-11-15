@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import html
 import os
 import shutil
@@ -283,13 +284,12 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
 
 
 def _backup_config(config_path: Path) -> Path:
-    """Rename the config to the first free `<name>.bak.N` beside it, say where it went, and return that path."""
+    """Rename the config to the first free `<name>.bak.N` beside it, and return that path."""
     backup_index = 1
     while (backup := config_path.with_name(f"{config_path.name}.bak.{backup_index}")).exists():
         backup_index += 1
     # A rename, not shutil.move: where renaming is refused, move would copy the config and then fail to remove it.
     os.replace(config_path, backup)
-    click.secho(f"Existing config file renamed to {backup}", fg="yellow")
     return backup
 
 
@@ -308,12 +308,15 @@ def _reset_config(config_path: Path) -> Path:
         shutil.copy(template, staged)
         if config_path.exists():
             backup = _backup_config(config_path)
+            click.secho(f"Existing config file renamed to {backup}", fg="yellow")
         os.replace(staged, config_path)
     except OSError:
-        staged.unlink(missing_ok=True)
+        # The old config first: a leftover staged file must not keep it at its backup name.
         if backup:
             os.replace(backup, config_path)
             click.secho(f"The config is back at {config_path}", fg="yellow")
+        with contextlib.suppress(OSError):
+            staged.unlink(missing_ok=True)
         raise
     return template
 
