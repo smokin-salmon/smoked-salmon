@@ -34,8 +34,14 @@ runs:
         TAGS: ${{ inputs.tags }}
       run: |
         set -euo pipefail
-        sort -u <<< "$TAGS" | while IFS= read -r tag; do
+        pushed=0
+        while IFS= read -r tag; do
           [ -n "$tag" ] || continue
           skopeo copy --all --preserve-digests --src-tls-verify=false "docker://$SOURCE" "docker://$tag"
           echo "pushed $tag (${SOURCE#*@})"
-        done
+          pushed=$((pushed + 1))
+        done < <(sort -u <<< "$TAGS")
+        if [ "$pushed" -eq 0 ]; then
+          echo "No tag to push $SOURCE to: the tags input is empty." >&2
+          exit 1
+        fi
