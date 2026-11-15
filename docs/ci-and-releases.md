@@ -37,11 +37,14 @@ never a rebuild. An allowlist entry goes in `.trivyignore` with a `# reason` lin
 ## Releases
 
 A release is cut by publishing a GitHub release (tag `X.Y.Z`), never by bumping versions by hand.
-Publishing it runs `.github/workflows/docker-image.yml`, which:
+Publishing it runs `.github/workflows/docker-image.yml`, which first refuses a tag that is not `X.Y.Z`
+(three integers, no `v`, no suffix) before anything else runs: delete the release and its tag, then publish it again
+with a tag like `0.25.0`. It then:
 
 1. checks out `master` (not the tagged commit), sets `current` in `src/salmon/data/version.toml`,
    adds a `[[changelog]]` entry whose notes are the release's description, sets `version` in
-   `pyproject.toml` and refreshes `uv.lock`, without committing yet;
+   `pyproject.toml` and refreshes `uv.lock`, without committing yet, then decodes the bumped `version.toml` the way
+   clients do (`.github/scripts/check-release-version.py`) and stops if `current` or the newest entry is not the tag;
 2. builds the Docker image from that tree for both arches and scans it (see Docker image above);
 3. commits the three files to `master` as github-actions and moves the tag onto that commit;
 4. pushes the scanned image to ghcr.io as `X.Y.Z` and `latest`.

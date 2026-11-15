@@ -8,6 +8,9 @@ together, so they always agree on master; a PR that changes one of them alone do
 
 import tomllib
 from pathlib import Path
+from typing import get_type_hints
+
+from salmon.release_notification import ChangelogEntry, VersionData
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -22,3 +25,21 @@ def test_the_version_the_changelog_and_the_package_agree() -> None:
         "(docs/ci-and-releases.md, Releases). Revert the change to them; "
         "release notes go in the GitHub release's description."
     )
+
+
+# Every installed salmon decodes master's version.toml into these (release_notification.py). A field renamed or removed
+# there makes older clients fail to read the file, so the update check goes blind for them. Adding a field is fine.
+CLIENT_FIELDS = {
+    "VersionData": {"current": str, "changelog": list[ChangelogEntry]},
+    "ChangelogEntry": {"version": str, "notes": str, "date": str},
+}
+
+
+def test_the_version_file_keeps_the_fields_older_clients_read() -> None:
+    for struct in (VersionData, ChangelogEntry):
+        have = get_type_hints(struct)
+        for name, expected in CLIENT_FIELDS[struct.__name__].items():
+            assert have.get(name) == expected, (
+                f"{struct.__name__}.{name} is now {have.get(name)!r}, it was {expected!r}: older clients decode "
+                "version.toml with this and would stop reading it. Keep the field as it is (adding one is fine)."
+            )
