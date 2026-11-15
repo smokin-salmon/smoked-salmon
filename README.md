@@ -415,7 +415,7 @@ The pages:
 * **Convert** – transcode, downconvert and compress.
 * **Tag** – `salmon tag`.
 * **Search** – look up an album in the stores and read its metadata.
-* **Tools** – the description generator (`salmon descgen`) and image uploads (`salmon images up`).
+* **Tools** – the description generator (`salmon descgen`), image uploads (`salmon images up`), and approval reports for existing RED/OPS torrents and matching transcodes (`salmon report`). Reports show the selected torrent IDs and ask for confirmation before submission; print-only mode stays offline.
 * **Cross-upload** – `salmon cross-upload`, from torrent IDs or URLs.
 * **Jobs** – every job with its live log, the questions it waits on, and a cancel button.
 
