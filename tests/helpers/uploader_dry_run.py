@@ -3,7 +3,6 @@
 import copy
 import hashlib
 import os
-import struct
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
@@ -25,6 +24,7 @@ import salmon.tagger.foldername
 import salmon.trackers
 import salmon.uploader
 import salmon.uploader.spectrals
+from helpers.album_files import write_flac
 from helpers.uploader_fakes import stub_uploader
 from salmon import cfg
 from salmon.config.validations import Seedbox
@@ -181,15 +181,9 @@ def _client(cls: type[BaseGazelleApi], tracker: FakeTracker, torrents: Path) -> 
     return site
 
 
-def _write_flac(path: Path, **tags: str) -> None:
+def _write_flac(path: Path, **tags: Any) -> None:
     """Write a FLAC file with no audio: a STREAMINFO block and the given tags."""
-    streaminfo = struct.pack(">HH", 4096, 4096) + bytes(6)
-    streaminfo += ((44100 << 44) | (1 << 41) | (15 << 36)).to_bytes(8, "big") + bytes(16)
-    path.write_bytes(b"fLaC" + bytes([0x80]) + len(streaminfo).to_bytes(3, "big") + streaminfo)
-    tagged = FLAC(path)
-    for key, value in tags.items():
-        tagged[key] = value
-    tagged.save()
+    write_flac(path, **tags)
 
 
 def _album(folder: Path) -> Path:
