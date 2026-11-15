@@ -29,6 +29,19 @@ jobs:
     # before anything leaves this job. The bump commit on master is what tells users a new version
     # exists (release_notification.py), so it is pushed only once there is a scanned image to ship.
     steps:
+      # The tag is written into version.toml, which every installed salmon reads from master: refuse
+      # anything but X.Y.Z (no v, no suffix) before anything else runs.
+      - name: Refuse a release tag that is not X.Y.Z
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [[ ! $TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "The release tag must be X.Y.Z (three dot-separated integers, no 'v', no suffix), got '$TAG'." >&2
+            echo "Nothing was changed. Delete the release and its tag, then publish it again with a tag like 0.25.0." >&2
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -135,6 +148,12 @@ jobs:
           uv lock
         env:
           RELEASE_NOTES: ${{ env.RELEASE_NOTES }}
+
+      # Clients decode version.toml with VersionData; a file they cannot read, or one that does not name
+      # this release, stops the run here, before anything is pushed. Also passes on a re-run that skipped the bump.
+      - name: Check the bumped version.toml
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        run: uv run --no-dev python .github/scripts/check-release-version.py
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
