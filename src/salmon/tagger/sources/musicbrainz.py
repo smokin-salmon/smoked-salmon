@@ -97,10 +97,7 @@ class Scraper(MusicBrainzBase, MetadataMixin):
             return None
 
     def parse_upc(self, soup):
-        try:
-            return soup["barcode"]
-        except (KeyError, IndexError):
-            return None
+        return soup.get("barcode") or None
 
     def parse_release_type(self, soup):
         try:
