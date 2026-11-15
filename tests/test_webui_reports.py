@@ -42,3 +42,40 @@ def test_optional_source_does_not_prompt_again(capsys):
     result = anyio.run(scenario)
     assert "Evidence" in result["text"]
     assert "Source URL (optional)" not in capsys.readouterr().out
+
+
+def test_uncertain_report_keeps_batch_recovery_details():
+    import asyncclick as click
+
+    from salmon.errors import UnknownOutcomeError
+    from salmon.reports import submit_reports
+    from salmon.trackers.red import RedApi
+    from salmon.webui.egress import Redactor
+    from salmon.webui.jobs import KINDS, Job, JobManager
+
+    class Client(RedApi):
+        async def report_lossy_master(self, torrent_id: int, comment: str, source: str) -> bool:
+            if torrent_id == 124:
+                raise UnknownOutcomeError("Connection closed")
+            assert torrent_id == 123, "The batch must stop after the uncertain report"
+            return True
+
+    async def scenario():
+        params = LossyReportParams(target="123")
+        job = Job(KINDS["lossy_report"], params, {}, "Report", None, False, False)
+        manager = JobManager(1, Redactor([]))
+        try:
+            await submit_reports(Client(), [123, 124, 125], "Evidence", "WEB")
+        except (click.ClickException, UnknownOutcomeError) as error:
+            status, message, result = manager._outcome(job, error)
+        else:
+            raise AssertionError("Expected an uncertain submission")
+        assert status == "unknown_outcome"
+        assert result is None
+        assert message is not None
+        assert "124 may have been submitted" in message
+        assert "Already reported: 123" in message
+        assert "Not attempted: 125" in message
+        assert "Do not rerun the batch" in message
+
+    anyio.run(scenario)

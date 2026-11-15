@@ -76,10 +76,14 @@ async def submit_reports(client: BaseGazelleApi, targets: list[int], text: str, 
                 if isinstance(err, UnknownOutcomeError)
                 else f"Could not submit the report for torrent {torrent_id}."
             )
-            raise click.ClickException(
+            message = (
                 f"{reason}\nAlready reported: {already}\nNot attempted: {remaining}\n"
                 f"Do not rerun the batch; check these torrents and report any remaining ones manually.\n{err}"
-            ) from err
+            )
+            if isinstance(err, UnknownOutcomeError):
+                # The web job displays this exception's text, not a ClickException wrapping it.
+                raise UnknownOutcomeError(message) from err
+            raise click.ClickException(message) from err
         completed.append(torrent_id)
         click.echo(f"Reported torrent {torrent_id} for Lossy Master/WEB Approval Request.")
 
