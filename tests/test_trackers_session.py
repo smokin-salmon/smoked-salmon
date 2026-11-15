@@ -435,6 +435,16 @@ def test_an_api_answer_that_is_a_whole_page_fails_with_an_excerpt() -> None:
     assert message.startswith("<html>xxx") and message.endswith(" [...]") and len(message) < 600
 
 
+@pytest.mark.parametrize(
+    "body",
+    ['{"status": "success"}', '{"status": "success", "response": null}', '{"status": "success", "response": [1]}'],
+    ids=["no response", "null", "a list"],
+)
+def test_an_api_success_with_no_response_object_fails_with_its_text(body: str) -> None:
+    # A RequestError, which every caller catches, rather than a TypeError where it reads the answer.
+    assert anyio.run(_api_call_answered, body) == f"the answer holds no response object: {body}"
+
+
 @pytest.mark.parametrize("body", ['{"status": "failure"}', '["a", "b"]', '"nope"', "42"])
 def test_error_answer_without_an_error_key_keeps_the_body_as_message(body: str) -> None:
     assert anyio.run(_failed_with, body, 400) == body

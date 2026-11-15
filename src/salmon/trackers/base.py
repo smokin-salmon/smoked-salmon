@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import partial
 from http import HTTPStatus
-from typing import Any, Literal, cast
+from typing import Any, Literal
 from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
 
 import aiohttp
@@ -1142,7 +1142,7 @@ class BaseGazelleApi:
 
         Raises:
             LoginError: If authentication fails.
-            RequestFailedError: If the request fails.
+            RequestFailedError: If the request fails, or the answer holds no response object.
             RetryableError: If network error persists after retries.
         """
         url = self.base_url + "/ajax.php"
@@ -1160,7 +1160,10 @@ class BaseGazelleApi:
 
         if resp_json.get("status") != "success":
             raise RequestFailedError(self._excerpt(str(resp_json.get("error", resp.text))))
-        return cast("dict", resp_json["response"])
+        # Every action salmon calls answers with an object: anything else fails here, not in each caller.
+        if not isinstance(response := resp_json.get("response"), dict):
+            raise RequestFailedError(f"the answer holds no response object: {self._excerpt(resp.text)}")
+        return response
 
     async def torrentgroup(self, group_id: int) -> dict:
         """Get information about a torrent group.
@@ -1185,7 +1188,7 @@ class BaseGazelleApi:
             # Kept broad: a missing torrent may come as a failure status or an HTTP error (RED's is not known).
             click.secho(f"Could not look up the group of torrent {torrent_id} on {self.site_string}: {err}", fg="red")
             return None
-        group = response.get("group") if isinstance(response, dict) else None
+        group = response.get("group")
         if group_id := numeric_id(group.get("id") if isinstance(group, dict) else None):
             return group_id
         click.secho(f"{self.site_string}'s answer for torrent {torrent_id} names no group.", fg="red")

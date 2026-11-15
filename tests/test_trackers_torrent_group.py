@@ -78,11 +78,14 @@ FAILURE = {"status": "failure", "error": "bad parameters"}
         (web.HTTPBadRequest(text=json.dumps(FAILURE), content_type="application/json"), "bad parameters"),
         (web.HTTPNotFound(text="<html>404</html>"), "<html>404</html>"),
         ("<html>Down for maintenance</html>", "Down for maintenance"),
+        ({"status": "success"}, "the answer holds no response object"),
+        ({"status": "success", "response": None}, "the answer holds no response object"),
+        ({"status": "success", "response": [2]}, "the answer holds no response object"),
     ],
-    ids=["failure status", "failure status with HTTP 400", "HTTP error", "not JSON"],
+    ids=["failure status", "failure status with HTTP 400", "HTTP error", "not JSON", "no answer", "null", "a list"],
 )
-def test_a_lookup_the_tracker_refuses_names_no_group(capsys, answer: Any, reason: str) -> None:
-    # Any refusal is None, with the reason: RED's answer for a missing torrent is not known.
+def test_a_failed_lookup_names_no_group(capsys, answer: Any, reason: str) -> None:
+    # Any failed lookup is None, with the reason: RED's answer for a missing torrent is not known.
     group_id, sent = _look_up(answer)
     out = capsys.readouterr().out
     assert group_id is None
@@ -92,12 +95,17 @@ def test_a_lookup_the_tracker_refuses_names_no_group(capsys, answer: Any, reason
 
 
 @pytest.mark.parametrize(
-    "response",
-    [{"torrent": {"id": 7}}, {"group": {"id": 0}}, {"group": {"id": "two"}}, {"group": [2]}, [2]],
-    ids=["no group", "group 0", "id not a number", "group not an object", "answer not an object"],
+    "answer",
+    [
+        {"status": "success", "response": {"torrent": {"id": 7}}},
+        {"status": "success", "response": {"group": {"id": 0}}},
+        {"status": "success", "response": {"group": {"id": "two"}}},
+        {"status": "success", "response": {"group": [2]}},
+    ],
+    ids=["no group", "group 0", "id not a number", "group not an object"],
 )
-def test_an_answer_without_a_group_id_names_no_group(capsys, response: Any) -> None:
-    group_id, sent = _look_up({"status": "success", "response": response})
+def test_an_answer_without_a_group_id_names_no_group(capsys, answer: dict) -> None:
+    group_id, sent = _look_up(answer)
     out = capsys.readouterr().out
     assert group_id is None
     assert len(sent) == 1
