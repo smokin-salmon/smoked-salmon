@@ -19,6 +19,7 @@ from typing import Any
 import anyio.to_thread
 
 from salmon import cfg
+from salmon.common.dsd import is_dsd
 from salmon.common.files import album_files, get_audio_files, process_files
 from salmon.errors import UpconvertCheckError, UpconvertCheckNotApplicable
 from salmon.prepared import Prepared, audio_key
@@ -129,14 +130,14 @@ async def _prepare_spectrals_of_album(prepared: Prepared, spectral_ids: tuple[in
 
 
 async def prepare_spectrals(prepared: Prepared, audio_info: dict[str, Any], spectral_ids: tuple[int, ...] = ()) -> None:
-    """The spectral images of each FLAC file the upload makes them of, in the preparation's folder."""
+    """The spectral images of each FLAC or DSD file the upload makes them of, in the preparation's folder."""
     album = prepared.album
     if spectral_ids:
         wanted = spectrals.get_wanted_filenames(list(audio_info), spectral_ids)
         files = [name for name in get_audio_files(album) if name in wanted]
     else:
         files = get_audio_files(album)
-    files = [name for name in files if name.lower().endswith(".flac") and name in audio_info]
+    files = [name for name in files if (name.lower().endswith(".flac") or is_dsd(name)) and name in audio_info]
 
     async def make(name: str, index: int) -> None:
         path = os.path.join(album, name)

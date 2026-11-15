@@ -3,12 +3,12 @@ import os
 import anyio
 import asyncclick as click
 from mutagen import File as MutagenFile
-from mutagen import flac, mp3, mp4
+from mutagen import flac, mp4
 
 from salmon import cfg, interaction
 from salmon.common import get_audio_files
 from salmon.tagger.mutation import abort_partial
-from salmon.tagger.tagfile import TAG_FIELDS, TagFile
+from salmon.tagger.tagfile import ID3_FILES, TAG_FIELDS, TagFile
 
 TAG_PRINT_ORDER = [
     "title",
@@ -130,7 +130,7 @@ def print_a_tag(tag_item: TagFile) -> None:
     mut = tag_item.mut
     if isinstance(mut, flac.FLAC):
         fields = TAG_FIELDS["FLAC"]
-    elif isinstance(mut, mp3.MP3):
+    elif isinstance(mut, ID3_FILES):
         fields = TAG_FIELDS["MP3"]
     elif isinstance(mut, mp4.MP4):
         fields = TAG_FIELDS["AAC"]

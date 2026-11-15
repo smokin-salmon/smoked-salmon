@@ -11,6 +11,7 @@ import msgspec
 
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
+from salmon.common.dsd import DSD_EXTENSIONS
 from salmon.common.files import get_audio_files, is_apple_double, is_torrent_file, process_tracks
 from salmon.converter.conversions import (
     changed_sources,
@@ -176,18 +177,23 @@ def _collect_convert_items(
 
 
 def _validate_lossless(path: str) -> None:
-    """Validate that a folder contains no lossy audio files.
+    """Validate that a folder contains no lossy audio files, and no DSD: only FLAC is converted, and another audio
+    file would be copied into the output as it is.
 
     Args:
         path: Path to the directory to validate.
 
     Raises:
-        click.Abort: If a lossy file is found.
+        click.Abort: If a lossy or DSD file is found.
     """
     for _root, _, files in os.walk(path):
         for f in files:
-            if os.path.splitext(f)[1].lower() in LOSSY_EXTENSIONS and not is_apple_double(f):
+            ext = os.path.splitext(f)[1].lower()
+            if ext in LOSSY_EXTENSIONS and not is_apple_double(f):
                 click.secho(f"A lossy file was found in the folder ({f}).", fg="red")
+                raise click.Abort
+            if ext in DSD_EXTENSIONS and not is_apple_double(f):
+                click.secho(f"A DSD file was found in the folder ({f}): salmon converts FLAC only.", fg="red")
                 raise click.Abort
 
 

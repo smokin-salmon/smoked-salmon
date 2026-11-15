@@ -8,6 +8,7 @@ import asyncclick as click
 from salmon import cfg, interaction
 from salmon.checks.tag_rules import in_torrent_path
 from salmon.common import clean_name, has_visible_chars, invisible_chars, show_invisible
+from salmon.common.dsd import DSD_EXTENSIONS
 from salmon.common.files import is_apple_double, is_torrent_file
 from salmon.constants import (
     ALLOWED_EXTENSIONS,
@@ -447,7 +448,7 @@ async def _check_extensions(
             contains files with invalid extensions.
         click.Abort: If the user aborts during interactive extension handling.
     """
-    mp3, aac, flac = [], [], []
+    mp3, aac, flac, dsd = [], [], [], []
     offending_files = []  # Collect offending files for scene releases, and for -yyy on the album itself
     stop_instead = album_itself and await interaction.assume_defaults()
     effective_extensions = ESSENTIAL_EXTENSIONS if essential_only else ALLOWED_EXTENSIONS
@@ -461,6 +462,8 @@ async def _check_extensions(
                 flac.append(fln)
             elif ext == ".m4a":
                 aac.append(fln)
+            elif ext in DSD_EXTENSIONS:
+                dsd.append(fln)
             elif ext not in effective_extensions:
                 if scene or (stop_instead and not is_torrent_file(fln) and not is_apple_double(fln)):
                     offending_files.append(os.path.join(root, fln))
@@ -473,7 +476,7 @@ async def _check_extensions(
             click.echo(f" >> {filepath}")
         raise NoncompliantFolderStructure
 
-    if len([li for li in [mp3, flac, aac] if li]) > 1:
+    if len([li for li in [mp3, flac, aac, dsd] if li]) > 1:
         await _handle_multiple_audio_exts()
     else:
         click.secho("File extensions have been validated.", fg="green")

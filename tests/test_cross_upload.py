@@ -1273,6 +1273,21 @@ def test_a_media_salmon_cannot_map_stops_the_release() -> None:
         cross_upload_module._check_torrent(response, OpsApi(), RedApi())
 
 
+@pytest.mark.parametrize(
+    ("target", "reason"),
+    [(OpsApi, "OPS does not take DSD"), (DICApi, "salmon does not know whether DICMusic takes DSD")],
+    ids=["OPS takes none", "DIC not known"],
+)
+def test_a_dsd_torrent_is_refused_for_a_tracker_that_does_not_take_dsd(target, reason: str) -> None:
+    response = _fixture("red-torrent-cd-log.json")
+    response["torrent"].update(media="WEB", format="DSD", encoding="DSD256")
+    # Before any request to TARGET: _prepare checks the torrent first.
+    with pytest.raises(CrossUploadRefused, match=reason):
+        cross_upload_module._check_torrent(response, RedApi(), target())
+    # RED takes it, from another tracker.
+    cross_upload_module._check_torrent(response, target(), RedApi())
+
+
 def _change_torrent(**changes: Any) -> Callable[[dict[str, Any]], None]:
     return lambda response: response["torrent"].update(changes)
 

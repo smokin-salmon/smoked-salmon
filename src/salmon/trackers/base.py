@@ -51,6 +51,8 @@ class TagRules:
     max_path_length: int = 180
     # What the tracker does with a 16-bit file above 48 kHz: "trumpable", "refused", or "" when not known.
     sixteen_bit_above_48khz: Literal["", "trumpable", "refused"] = ""
+    # Whether the tracker takes DSD (.dsf, .dff) as it is, as the format DSD: None when not known, and then refused.
+    takes_dsd: bool | None = None
 
 
 # What _request prints goes here instead while hold_request_messages() is active: a request

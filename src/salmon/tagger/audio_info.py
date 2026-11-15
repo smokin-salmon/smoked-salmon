@@ -1,8 +1,10 @@
 import os
+from typing import Any
 
 import asyncclick as click
 from mutagen import File as MutagenFile
 from mutagen import MutagenError
+from mutagen.dsf import DSFInfo
 from mutagen.mp4 import MP4Info
 
 from salmon.common import get_audio_files
@@ -36,13 +38,23 @@ def _parse_audio_info(streaminfo):
     if isinstance(streaminfo, MP4Info) and streaminfo.codec != "alac":
         # mutagen gives AAC the sample entry's 16 bits: a lossy file has no bit depth.
         precision = None
+    elif isinstance(streaminfo, DSFInfo):
+        precision = 1  # See bit_rate: DSD is 1-bit, whichever order a DSF stores its bits in.
     return {
         "channels": streaminfo.channels,
         "sample rate": streaminfo.sample_rate,
-        "bit rate": streaminfo.bitrate,
+        "bit rate": bit_rate(streaminfo),
         "precision": precision,
         "duration": int(streaminfo.length),
     }
+
+
+def bit_rate(streaminfo: Any) -> int:
+    """The stream's bitrate. A DSF's is its rate times its channels: its header gives 8 bits per sample when it stores
+    its bits most significant first, and mutagen counts them, as if DSD were 8-bit."""
+    if isinstance(streaminfo, DSFInfo):
+        return streaminfo.sample_rate * streaminfo.channels
+    return streaminfo.bitrate
 
 
 def check_hybrid(tags):
