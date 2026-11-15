@@ -184,3 +184,11 @@ def test_check_reports_the_release_folder_name_and_ends_in_an_abort(tmp_path, mo
     assert asked == []
     out = capsys.readouterr().out
     assert "Artist: Album [WEB FLAC]" in out
+
+
+def test_substitute_turns_a_subtitle_colon_into_a_dash(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "fullwidth_replacements", False)
+    monkeypatch.setattr(cfg.upload.formatting, "colon_as_dash", True)
+
+    assert _substitute_forbidden_characters("a: b") == "a - b"
+    assert _substitute_forbidden_characters("a:b") == f"a{cfg.upload.formatting.blacklisted_substitution}b"

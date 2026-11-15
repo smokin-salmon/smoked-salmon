@@ -5,15 +5,15 @@ from pathlib import Path
 
 import asyncclick as click
 
-from salmon import cfg, interaction
+from salmon import interaction
 from salmon.checks.tag_rules import in_torrent_path
 from salmon.common import clean_name, has_visible_chars, invisible_chars, show_invisible
 from salmon.common.dsd import DSD_EXTENSIONS
 from salmon.common.files import is_apple_double, is_torrent_file
+from salmon.common.strings import substitute_forbidden_characters
 from salmon.constants import (
     ALLOWED_EXTENSIONS,
     BLACKLISTED_CHARS,
-    BLACKLISTED_FULLWIDTH_REPLACEMENTS,
     ESSENTIAL_EXTENSIONS,
 )
 from salmon.errors import NoncompliantFolderStructure
@@ -218,10 +218,7 @@ def _forbidden_characters(name: str) -> list[str]:
 
 def _substitute_forbidden_characters(name: str) -> str:
     """Replace the forbidden characters in *name* the same way generated folder and file names are."""
-    if cfg.upload.formatting.fullwidth_replacements:
-        for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
-            name = name.replace(char, sub)
-    return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, name)
+    return substitute_forbidden_characters(name)
 
 
 async def _check_forbidden_characters(path: str, scene: bool) -> None:

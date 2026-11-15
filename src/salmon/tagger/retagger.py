@@ -28,11 +28,10 @@ from salmon.common.strings import (
     credit_in_title,
     join_artists,
     reaches_various_threshold,
+    substitute_forbidden_characters,
 )
 from salmon.constants import (
     ARROWS,
-    BLACKLISTED_CHARS,
-    BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import AmbiguousTrackOrderError, NumberedTrackMoveError, UploadError
 from salmon.tagger.mutation import abort_partial
@@ -867,11 +866,11 @@ def generate_file_name(tags, ext, multiple_artists, trackno_or=None, *, various=
         template_keys["artist"] = cfg.upload.formatting.various_artist_word
     if "tracknumber" in keys and trackno_or is not None:
         template_keys["tracknumber"] = trackno_or
+    # Each value on its own, so a colon rule never reads the template's own " - " as part of a subtitle
+    template_keys = {k: substitute_forbidden_characters(str(v)) for k, v in template_keys.items()}
     new_base = template.format(**template_keys)
-    if cfg.upload.formatting.fullwidth_replacements:
-        for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
-            new_base = new_base.replace(char, sub)
-    new_base = re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, new_base)
+    # What the template itself holds: no colon rule, which would read its " - " as part of a subtitle
+    new_base = substitute_forbidden_characters(new_base, subtitle_colon=False)
     # Cleaned before the extension is added, so a space left at the end of the name does not sit before the dot
     new_base = clean_name(new_base)
     if not has_visible_chars(new_base):
