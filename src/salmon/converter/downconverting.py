@@ -8,6 +8,8 @@ from typing import Any, Literal
 import anyio
 import asyncclick as click
 import msgspec
+from mutagen import MutagenError
+from mutagen.flac import FLAC
 
 from salmon import cfg
 from salmon.common.constants import IMAGE_EXTENSIONS, LOSSY_EXTENSIONS
@@ -77,7 +79,14 @@ def _resolve_sample_rate(sample_rate: int) -> int:
     raise InvalidSampleRate
 
 
-def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, output_dir: str | None = None) -> str:
+def _build_output_path(
+    path: str,
+    bit_depth: BitDepth,
+    sample_rate: int | None,
+    output_dir: str | None = None,
+    *,
+    says_bit_depth: bool = False,
+) -> str:
     """Generate the output directory path based on source path and conversion params.
 
     Args:
@@ -85,6 +94,8 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         bit_depth: Target bit depth.
         sample_rate: Target sample rate, or None.
         output_dir: Directory the output goes into; the source's own directory by default.
+        says_bit_depth: Name a "24bit FLAC" source's conversion "16bit FLAC", not "FLAC": for when "FLAC" is the
+            album's own name.
 
     Returns:
         The output directory path string.
@@ -127,7 +138,9 @@ def _build_output_path(path: str, bit_depth: BitDepth, sample_rate: int | None, 
         # Straight to the "24-NN" token: a "16bit FLAC" step first would leave "16bit" in the name.
         foldername = swap_format_matches(FLAC_WORD_RE, f"24-{sample_rate / 1000:.0f}", foldername)
     elif not appended:
-        foldername = swap_format_matches(FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) else "16bit FLAC", foldername)
+        foldername = swap_format_matches(
+            FLAC_WORD_RE, lambda m: "FLAC" if m.group(1) and not says_bit_depth else "16bit FLAC", foldername
+        )
 
     return os.path.join(output_dir or os.path.dirname(path), foldername)
 
@@ -333,6 +346,42 @@ def _records_these_files(
     return converted <= recorded.keys() and all(os.path.isfile(os.path.join(path, source)) for source in recorded)
 
 
+def _audio_of(folder: str) -> list[tuple[int, int, int, int]] | None:
+    """The audio of folder's tracks as their STREAMINFO gives it (MD5, length, rate, depth), whatever their names and
+    tags, sorted; None for a folder without tracks, or with one whose audio cannot be told so."""
+    audio = []
+    for name in get_audio_files(folder):
+        try:
+            info = FLAC(os.path.join(folder, name)).info
+        except (OSError, MutagenError):
+            return None
+        if not info.md5_signature:  # Left unset by the encoder: the audio cannot be told apart.
+            return None
+        audio.append((info.md5_signature, info.total_samples, info.sample_rate, info.bits_per_sample))
+    return sorted(audio) or None
+
+
+def _output_path_of_its_own(path: str, bit_depth: BitDepth, sample_rate: int | None, output_dir: str | None) -> str:
+    """The conversion's output path, which _build_output_path gives unless the album itself, or a copy of it, is there.
+
+    An album named "[WEB FLAC]" and renamed "[WEB 24bit FLAC]" has its old name for its 16-bit one, and the rename
+    copies it: the album (or a dry run's copy of it) is still there, under the name. The conversion says "16bit FLAC".
+
+    Raises:
+        UploadError: The album, or a copy of it, is under that name too.
+    """
+    new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
+    if not os.path.isdir(new_path) or (album := _audio_of(path)) is None or _audio_of(new_path) != album:
+        return new_path
+    named = _build_output_path(path, bit_depth, sample_rate, output_dir, says_bit_depth=True)
+    if named == new_path or (os.path.isdir(named) and _audio_of(named) == album):
+        raise UploadError(
+            f"{named} is this album (or a copy of it), not a conversion: its {bit_depth}-bit conversion would take "
+            "that name. Rename the album folder and run again."
+        )
+    return named
+
+
 async def convert_folder(
     path: str,
     bit_depth: BitDepth = 16,
@@ -354,7 +403,7 @@ async def convert_folder(
         Tuple of (final_sample_rate, new_folder_path).
     """
     _validate_lossless(path)
-    new_path = _build_output_path(path, bit_depth, sample_rate, output_dir)
+    new_path = _output_path_of_its_own(path, bit_depth, sample_rate, output_dir)
     # Resolved, so a symlink on the way cannot carry the output into a library.
     if cfg.directory.protects(new_path):
         raise UploadError(f"Not converting into {new_path}: it is in library_dirs, or holds one.")
