@@ -187,7 +187,8 @@ def test_a_second_run_finds_the_conversion_under_the_16bit_name(tmp_path, capsys
     _rate, path = anyio.run(dc.convert_folder, str(source), 16, None)
 
     assert path == str(tmp_path / SIXTEEN)
-    assert f"{tmp_path / SIXTEEN} already exists." in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert f"{tmp_path / SIXTEEN} already exists." in out
     assert conversions.conversion_of(path) is not None
 
 
@@ -201,7 +202,8 @@ def test_a_later_run_finds_the_conversion_once_the_album_has_gone_from_its_old_n
     _rate, path = anyio.run(dc.convert_folder, str(source), 16, None)
 
     assert path == str(tmp_path / SIXTEEN)
-    assert f"{tmp_path / SIXTEEN} already exists." in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert f"{tmp_path / SIXTEEN} already exists." in out
     assert not (tmp_path / ORIGINAL).exists()
 
 
