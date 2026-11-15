@@ -32,8 +32,8 @@ new test reaches for first:
 - **Loopback only.** `tests/conftest.py` refuses every other connection with `NetworkBlockedError`. A tracker is
   always a local fake, never a live one. A test that really needs the network is marked `@pytest.mark.network` (CI
   deselects it); never for a tracker.
-- **No `async def test_`.** There is no async test plugin, so such a test does not run properly. Wrap the coroutine:
-  `anyio.run(partial(fn, ...))`.
+- **No `async def test_`.** The project does not mark or configure async tests, so such a test does not run
+  properly. Wrap the coroutine: `anyio.run(partial(fn, ...))`.
 - **At most 5 requests per fake account in a test**, unless the limiter is patched. The rate limiter really waits:
   a 6th request inside 10.5 s sleeps, and the test times out.
 - **A warning fails the run** (`max_warnings = 0`). Fix the code that warns.
