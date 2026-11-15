@@ -1,7 +1,7 @@
 album = "Nirvana, Nevermind (Super Deluxe Edition)"
 why = "A deluxe edition full of versions (demos, rough mixes, live, BBC sessions): no remixer may be read from a version."
 edition = "Qobuz has no Super Deluxe Edition under this UPC: 0060253749865 is the 13-track standard Nevermind, another edition. Discogs 8199204 is the 2011 2-CD Deluxe Edition, 41 tracks. Their tracks merge with their matches among the 70."
-known_wrong = ["merge: 'Devonshire' read as a remixer from the 'Devonshire Mixes' versions"]
+known_wrong = []
 files_from = "deezer"
 
 [sources]
@@ -33,7 +33,7 @@ release = ["Nirvana (main)"]
 tracks = 13
 
 [today.merge]
-release = ["Nirvana (main)", "Devonshire (remixer)"]
+release = ["Nirvana (main)"]
 tracks = 70
 
 
