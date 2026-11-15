@@ -28,6 +28,7 @@ def album(folder: Path, *, tracks: int = 2, tags: dict[str, str] | None = None, 
 
     `cover=True` also writes a `cover.jpg`. Returns `folder`.
     """
+    folder.mkdir(parents=True, exist_ok=True)
     for number in range(1, tracks + 1):
         track_tags: dict[str, Any] = {**(tags or {}), "TRACKNUMBER": str(number)}
         write_flac(folder / f"{number:02d}.flac", **track_tags)

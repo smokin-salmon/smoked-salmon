@@ -38,3 +38,11 @@ def test_album_writes_a_cover_only_when_asked(tmp_path: Path) -> None:
     assert not (without / "cover.jpg").exists()
     assert (with_cover / "cover.jpg").read_bytes() == b"jpeg"
     assert len(list(with_cover.glob("*.flac"))) == 2
+
+
+def test_an_empty_album_is_still_a_folder_and_can_hold_a_cover(tmp_path: Path) -> None:
+    bare = album(tmp_path / "bare", tracks=0)
+    covered = album(tmp_path / "covered", tracks=0, cover=True)
+
+    assert list(bare.iterdir()) == []
+    assert [p.name for p in covered.iterdir()] == ["cover.jpg"]
