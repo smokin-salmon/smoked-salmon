@@ -47,10 +47,10 @@ def dirs(monkeypatch, tmp_path) -> tuple[Path, Path]:
     return downloads, torrents
 
 
-def _album_24(folder: Path, audio: bytes = b"album") -> Path:
-    """A 24-bit 48 kHz album of two tagged tracks and a cover; `audio` sets what the tracks' audio is."""
+def _album_24(folder: Path, audio: bytes = b"album", rate: int = 48000) -> Path:
+    """A 24-bit album of two tagged tracks and a cover; `audio` sets what the tracks' audio is."""
     for name in NAMES:
-        _write_flac(folder / name, 48000, 24, md5=hashlib.md5(audio + name.encode()).digest())
+        _write_flac(folder / name, rate, 24, md5=hashlib.md5(audio + name.encode()).digest())
         tagged = FLAC(folder / name)
         tagged["title"] = name
         tagged.save()
@@ -152,12 +152,12 @@ def test_a_dry_run_converts_beside_its_copy_of_the_album(monkeypatch, tmp_path, 
     assert {path.name for path in downloads.iterdir()} == {STAGING_DIR, *([ORIGINAL] if where == "downloads" else [])}
 
 
-def _source_beside(tmp_path: Path, *names: str) -> Path:
-    """A 24-bit album named RENAMED_24 and a copy of it under each of names, all in tmp_path.
+def _source_beside(tmp_path: Path, *names: str, source_name: str = RENAMED_24, rate: int = 48000) -> Path:
+    """A 24-bit album named source_name and a copy of it under each of names, all in tmp_path.
 
     Each copy's tracks have other names and tags, as the album's had before salmon renamed and retagged them.
     """
-    source = _album_24(tmp_path / RENAMED_24)
+    source = _album_24(tmp_path / source_name, rate=rate)
     for name in names:
         copied = Path(shutil.copytree(source, tmp_path / name))
         for track in NAMES:
@@ -192,6 +192,31 @@ def test_a_second_run_finds_the_conversion_under_the_16bit_name(tmp_path, capsys
 
 
 @pytest.mark.usefixtures("dirs")
+def test_a_later_run_finds_the_conversion_once_the_album_has_gone_from_its_old_name(tmp_path, capsys) -> None:
+    source = _source_beside(tmp_path, ORIGINAL)
+    anyio.run(dc.convert_folder, str(source), 16, None)
+    # remove_source_dir, or the user, removes the album the run started from.
+    shutil.rmtree(tmp_path / ORIGINAL)
+
+    _rate, path = anyio.run(dc.convert_folder, str(source), 16, None)
+
+    assert path == str(tmp_path / SIXTEEN)
+    assert f"{tmp_path / SIXTEEN} already exists." in capsys.readouterr().out
+    assert not (tmp_path / ORIGINAL).exists()
+
+
+@pytest.mark.usefixtures("dirs")
+def test_a_resolution_name_says_the_16bit_token_it_would_leave_out(tmp_path) -> None:
+    # "[{source} FLAC {resolution}]": 16/44.1 has no token, so its name is the album's, "[WEB FLAC]", before the rename.
+    source = _source_beside(tmp_path, ORIGINAL, source_name="Artist - Album (2020) [WEB FLAC 24-44.1]", rate=44100)
+
+    _rate, path = anyio.run(dc.convert_folder, str(source), 16, None)
+
+    assert path == str(tmp_path / "Artist - Album (2020) [WEB FLAC 16-44.1]")
+    assert _tracks(Path(path)) == {(16, 44100)}
+
+
+@pytest.mark.usefixtures("dirs")
 def test_another_album_under_the_name_is_still_refused(tmp_path) -> None:
     source = _album_24(tmp_path / RENAMED_24)
     _album_24(tmp_path / ORIGINAL, audio=b"another album")
@@ -214,7 +239,7 @@ def test_a_name_the_album_holds_either_way_is_refused_as_the_album(tmp_path) -> 
         anyio.run(dc.convert_folder, str(source), 16, None)
 
     assert str(error.value) == (
-        f"{tmp_path / SIXTEEN} is this album (or a copy of it), not a conversion: its 16-bit conversion would take "
-        "that name. Rename the album folder and run again."
+        f"{tmp_path / SIXTEEN} holds this album, or a copy of it, under the name its 16-bit conversion would take: "
+        "move or rename that folder, or give the album another name, and run again."
     )
     assert _tracks(tmp_path / SIXTEEN) == {(24, 48000)}

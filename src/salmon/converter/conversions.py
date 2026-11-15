@@ -152,6 +152,23 @@ def changed_tracks(changed: Sequence[str]) -> str:
     return f"{len(changed)} of its tracks changed or were renamed"
 
 
+def _stream(info: Any) -> tuple[int, int, int, int]:
+    """What a FLAC's STREAMINFO says of its audio: its MD5 (0 when unset), length, sample rate and bit depth."""
+    return info.md5_signature, info.total_samples, info.sample_rate, info.bits_per_sample
+
+
+def audio_identity(path: str) -> tuple[int, int, int, int] | None:
+    """A FLAC's audio as its STREAMINFO tells it (see _stream), whatever its name and tags.
+
+    None for a file that cannot be read, or whose encoder left the MD5 unset: its audio cannot be told apart then.
+    """
+    try:
+        stream = _stream(FLAC(path).info)
+    except (OSError, MutagenError):
+        return None
+    return stream if stream[0] else None
+
+
 def _fingerprint(path: str) -> str:
     """What a conversion takes from a FLAC: its audio (STREAMINFO's MD5, sample rate and depth), tags and pictures.
 
@@ -161,10 +178,9 @@ def _fingerprint(path: str) -> str:
     """
     try:
         audio = FLAC(path)
-        info = audio.info
-        md5 = info.md5_signature
+        md5, total_samples, sample_rate, bits = _stream(audio.info)
         # The MD5 covers the samples, not their rate, nor their depth past 16 bits (17 to 24 pack alike).
-        digest = hashlib.sha256(f"{md5:032x} {info.total_samples} {info.sample_rate} {info.bits_per_sample}".encode())
+        digest = hashlib.sha256(f"{md5:032x} {total_samples} {sample_rate} {bits}".encode())
         if not md5:
             # FLAC lets the encoder leave the MD5 unset: the file itself stands for its audio then.
             with open(path, "rb") as fh:

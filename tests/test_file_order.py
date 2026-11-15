@@ -351,7 +351,7 @@ def test_as_before_a_conversion_record_stays_in_text_order(tmp_path, monkeypatch
         return None
 
     monkeypatch.setattr(downconverting, "_validate_lossless", lambda _path: None)
-    monkeypatch.setattr(downconverting, "_build_output_path", lambda *_: str(out))
+    monkeypatch.setattr(downconverting, "_build_output_path", lambda *_a, **_k: str(out))
     monkeypatch.setattr(downconverting, "_collect_convert_items", lambda *_: items)
     monkeypatch.setattr(downconverting, "_copy_extra_files", lambda *_, **__: None)
     monkeypatch.setattr(downconverting, "_convert_audio_files", no_conversion)
