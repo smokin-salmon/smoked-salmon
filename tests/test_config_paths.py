@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+import pytest
+import requests
+
 import salmon.config as config
 
 
@@ -109,3 +112,29 @@ def test_repo_root_config_wins_without_config_dir_env(monkeypatch, tmp_path) -> 
 
     path = config.find_config_path()
     assert path == root_config
+
+
+def test_a_missing_default_config_is_reported_not_downloaded(monkeypatch, tmp_path) -> None:
+    # config.default.toml ships in the package. An install without it is broken: salmon says so, and neither
+    # fetches master's copy (which may not match the installed version) nor writes into the package folder.
+    pkg_dir = _fake_pkg_dir(tmp_path)
+    monkeypatch.setattr(config, "_PKG_DIR", pkg_dir)
+    fetched: list[str] = []
+
+    class Response:
+        text = "[directory]\n"
+
+        def raise_for_status(self) -> None:
+            pass
+
+    def get(url: str, **kwargs: object) -> Response:
+        fetched.append(url)
+        return Response()
+
+    monkeypatch.setattr(requests, "get", get)
+
+    with pytest.raises(FileNotFoundError, match=r"config\.default\.toml"):
+        config.get_default_config_path()
+
+    assert fetched == []
+    assert not pkg_dir.exists()

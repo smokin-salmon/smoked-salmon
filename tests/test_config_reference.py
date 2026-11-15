@@ -20,6 +20,7 @@ from helpers.shipped_config import (
 )
 
 import salmon.commands
+import salmon.config
 from salmon.commands import checkconf
 from salmon.config import Cfg, _parse_config, _schema_keys, _table_members, compat, unknown_keys
 
@@ -163,3 +164,23 @@ def test_checkconf_reset_copies_the_short_template_and_names_the_reference(
     output = anyio.run(run)
     assert path.read_text(encoding="utf-8") == DEFAULT_CONFIG.read_text(encoding="utf-8")
     assert str(REFERENCE_CONFIG) in output
+
+
+def test_checkconf_reset_without_the_template_leaves_the_config_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    monkeypatch.setattr(salmon.commands, "find_config_path", lambda: path)
+    monkeypatch.setattr(salmon.config, "_PKG_DIR", tmp_path / "broken-install" / "salmon")
+
+    async def run() -> tuple[BaseException | None, int, str]:
+        result = await CliRunner().invoke(checkconf, ["--reset"])
+        return result.exception, result.exit_code, result.output
+
+    exception, exit_code, output = anyio.run(run)
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert "config.default.toml" in output
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]

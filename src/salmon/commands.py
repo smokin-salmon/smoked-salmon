@@ -332,14 +332,14 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
         click.secho("Resetting new config.toml file", fg="cyan", bold=True)
 
         config_path = find_config_path()
-        config_template = get_default_config_path()
+        try:
+            config_template = get_default_config_path()
+        except FileNotFoundError as e:
+            click.secho(f"Error: {e}", fg="red")
+            raise click.exceptions.Exit(1) from e
 
         if os.path.exists(config_path):
             _backup_config(str(config_path))
-
-        if not os.path.exists(config_template):
-            click.secho("Error: config.default.toml template not found.", fg="red")
-            return
 
         shutil.copy(config_template, config_path)
         click.secho(
