@@ -13,8 +13,9 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    # The job's own token only reads the repository; the version bump is pushed with the release App's token.
     permissions:
-      contents: write
+      contents: read
       packages: write
 
     # A registry that lives only as long as this job. The image is built into it, scanned there, and
@@ -46,7 +47,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # Ensures we get all history for tag retrieval and pushing
-          token: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+          persist-credentials: false
 
       - name: Get release version or branch name
         id: get_version_or_branch
@@ -206,9 +207,21 @@ jobs:
           image-ref: localhost:5000/smoked-salmon@${{ steps.build.outputs.digest }}
           platform: linux/arm64
 
+      # The release App may push to master. Its token is minted only here, after the build and the scan,
+      # and scoped to this repository's contents.
+      - name: Get the release App's token (only on release)
+        id: app-token
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
       - name: Commit and push version update (only on release)
         env:
-          PAT_TOKEN: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: |
           git config --global user.name "github-actions[bot]"
@@ -218,14 +231,17 @@ jobs:
             echo "master already has the $VERSION bump"
           else
             git commit -m "Update version.toml/pyproject.toml to $VERSION with changelog"
-            git push origin master
+            git push "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" master
           fi
 
       - name: Move tag to version bump commit and push (only on release)
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        env:
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
         run: |
           git tag -f "$VERSION"
-          git push origin "refs/tags/$VERSION" --force
+          git push "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" "refs/tags/$VERSION" --force
 
       - name: Log in to the Container registry
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
