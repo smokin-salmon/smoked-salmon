@@ -381,7 +381,7 @@ def _track_list(on: list[tuple[str, str]]) -> str:
 
 
 def _artist_key(name: str) -> str:
-    """An artist's name as generate_artists matches it (_generate_artist_pool_lower_case), in any case and with any
+    """An artist's name as generate_artists matches it (artist_spellings), in any case and with any
     accents: trac[k]s respells a name by this key, so a match by any other key would miss or merge names."""
     return cast("str", normalize_accents(name.lower()))  # One string in, one out.
 
