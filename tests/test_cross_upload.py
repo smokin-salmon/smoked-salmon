@@ -76,8 +76,9 @@ from salmon.trackers.base import LOG_MAX_PAGES, BaseGazelleApi
 from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
+from salmon.uploader.description import upload_footer
 from salmon.uploader.dupe_checker import generate_dupe_check_searchstrs
-from salmon.uploader.upload import generate_torrent, upload_footer
+from salmon.uploader.upload import generate_torrent
 
 GROUP_ID = 500002
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64

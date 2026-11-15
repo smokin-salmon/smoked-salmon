@@ -67,6 +67,7 @@ from salmon.uploader.conversion_choice import (
 )
 from salmon.uploader.conversion_upload import execute_downconversion_tasks
 from salmon.uploader.cover_upload import red_api_for_covers
+from salmon.uploader.description import generate_description
 from salmon.uploader.dupe_checker import (
     NO_DUPE_SEARCH,
     _confirm_group_id,
@@ -81,7 +82,6 @@ from salmon.uploader.upload import (
     compile_files,
     concat_track_data,
     finish_upload,
-    generate_description,
     generate_torrent,
 )
 from salmon.uploader.upload_checks import _check_logs

@@ -29,7 +29,7 @@ from salmon.converter import transcoding as tc
 from salmon.errors import UploadError
 from salmon.tagger import foldername
 from salmon.uploader import tracker_run
-from salmon.uploader.upload import generate_t_description
+from salmon.uploader.description import generate_t_description
 
 DOWNCONVERT = {"source": "/x/src", "kind": "downconvert", "bit_depth": 16, "sample_rate": 44100}
 
