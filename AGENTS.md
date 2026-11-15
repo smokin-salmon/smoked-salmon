@@ -151,6 +151,7 @@ Read [docs/ci-and-releases.md](docs/ci-and-releases.md) before touching the `Doc
   interpolates a value an outsider writes: it goes through `env:` and is read as `"$VALUE"`
   (`tests/test_rule_workflow_untrusted_input.py`).
 - An image change gets a smoke check in `.github/docker-smoke.sh` that fails before it.
+
 ## Scratch work
 
 Implementation plans and other throwaway notes go in `docs/plans/`, which is gitignored. Anything
