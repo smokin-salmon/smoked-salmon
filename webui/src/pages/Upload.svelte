@@ -315,8 +315,17 @@
       jobId = started.id
       showLog = false
       // A real upload has taken the folder and may move or remove it: the next one starts with nothing chosen,
-      // unless another was typed meanwhile. A dry run leaves it, to be run for real.
-      if (!dryRun && path === sent) path = ''
+      // unless another was typed meanwhile. The fields that describe that album go with it, so the next one
+      // doesn't take its store link, group or request. A dry run leaves them all, to be run for real.
+      if (!dryRun && path === sent) {
+        path = ''
+        sourceUrl = ''
+        searchAnyway = false
+        groupId = ''
+        request = ''
+        spectrals = ''
+        lossy = 'ask'
+      }
     } catch (e) {
       error = String(e)
     } finally {
