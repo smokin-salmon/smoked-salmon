@@ -334,7 +334,7 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
         config_path = find_config_path()
         try:
             config_template = get_default_config_path()
-        except FileNotFoundError as e:
+        except OSError as e:
             click.secho(f"Error: {e}", fg="red")
             raise click.exceptions.Exit(1) from e
 

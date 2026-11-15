@@ -60,7 +60,10 @@ def get_default_config_path() -> Path:
     """The short config a new user starts from. It ships in the package: without it the install is broken."""
     default_config_path = _PKG_DIR / "data" / "config.default.toml"
     if not default_config_path.is_file():
-        raise FileNotFoundError(f"{default_config_path} is missing: reinstall smoked-salmon")
+        raise FileNotFoundError(
+            f"{default_config_path} is missing. It ships with smoked-salmon: reinstall it, or restore the file in a"
+            " git checkout."
+        )
     return default_config_path
 
 
