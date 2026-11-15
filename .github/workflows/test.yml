@@ -6,6 +6,11 @@ on:
       - master
   pull_request:
 
+# A new push to a PR cancels the run of its previous commit. Runs on master always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   pytest:
     runs-on: ubuntu-latest
