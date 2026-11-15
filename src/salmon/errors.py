@@ -5,7 +5,14 @@ class ScrapeError(Exception):
 
 
 class AbortAndDeleteFolder(Exception):
-    pass
+    """The user chose to delete the music folder.
+
+    With `ask_again`, `_delete_after_abort` asks once more on the terminal before deleting it.
+    """
+
+    def __init__(self, *, ask_again: bool = False) -> None:
+        super().__init__()
+        self.ask_again = ask_again
 
 
 class SkipTracker(Exception):

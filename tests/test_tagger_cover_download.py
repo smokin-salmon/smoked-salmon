@@ -12,7 +12,6 @@ from mutagen.flac import FLAC, Picture
 from mutagen.id3 import PictureType
 from PIL import Image
 
-import salmon.uploader
 from salmon import interaction
 from salmon.tagger import cover
 from salmon.trackers.red import RedApi
@@ -143,7 +142,7 @@ def test_embedded_cover_is_removed_after_upload_through_resolve_cover_url(tmp_pa
 
     monkeypatch.setattr(cover_upload, "upload_cover", fake_upload_cover)
 
-    result = anyio.run(salmon.uploader.resolve_cover_url, RedApi(), None, {}, str(tmp_path), None, True)
+    result = anyio.run(cover_upload.resolve_cover_url, RedApi(), None, {}, str(tmp_path), None, True)
 
     assert result == (True, "https://catbox/uploaded.jpg")
     assert not (tmp_path / "cover.jpg").exists()
@@ -280,7 +279,7 @@ def test_the_no_cover_message_for_a_new_group_names_a_failed_download(tmp_path, 
 
     with interaction.assuming_defaults():
         result = anyio.run(
-            salmon.uploader.resolve_cover_url, RedApi(), None, {}, str(tmp_path), "https://store/cover.jpg", True
+            cover_upload.resolve_cover_url, RedApi(), None, {}, str(tmp_path), "https://store/cover.jpg", True
         )
 
     assert result == (False, None)

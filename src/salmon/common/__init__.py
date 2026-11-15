@@ -31,7 +31,6 @@ from salmon.common.strings import (
     normalize_accents,
     show_invisible,
     split_genre,
-    strip_template_keys,
     tagify,
 )
 from salmon.errors import ScrapeError
@@ -56,7 +55,6 @@ __all__ = [
     "normalize_accents",
     "show_invisible",
     "split_genre",
-    "strip_template_keys",
     "tagify",
     "ScrapeError",
     "commandgroup",

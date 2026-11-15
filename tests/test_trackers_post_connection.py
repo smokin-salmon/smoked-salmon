@@ -11,6 +11,7 @@ import asyncio
 import gc
 import json
 import socket
+import sys
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -405,6 +406,7 @@ def test_a_post_the_tracker_stops_reading_is_an_unknown_outcome() -> None:
 
 
 @pytest.mark.skipif(base._TCP_NOTSENT_LOWAT is None, reason="the kernel keeps its whole send buffer here")
+@pytest.mark.skipif(sys.platform == "darwin", reason="over loopback, TCP_NOTSENT_LOWAT made no difference on macOS")
 def test_a_slow_but_moving_post_goes_through() -> None:
     async def body(_tracker: FakeTracker, api: FakeApi) -> None:
         # 640 KiB/s, as a slow uplink: sending takes several times the timeout, but never stops for as long as it.

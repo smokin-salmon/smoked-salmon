@@ -1,3 +1,4 @@
+import os
 import re
 from collections import defaultdict
 from collections.abc import Sequence
@@ -445,28 +446,19 @@ _ALBUM_MIN_SECONDS = 30 * 60
 _SINGLE_TRACK_MAX_SECONDS = 10 * 60
 _TITLE_SAYS_EP = re.compile(r"\bE\.?P\b\.?", re.IGNORECASE)
 _TITLE_SAYS_SINGLE = re.compile(r"\bsingle\b", re.IGNORECASE)
+# A release type by its name in any case: what the prompt takes, and a library folder names.
+_RELEASE_TYPE_BY_NAME = {name.lower(): name for name in RELEASE_TYPES}
 
 
-def suggest_release_type(title: str | None, durations: Sequence[float]) -> str | None:
-    """The release type the files' track count and length imply, as the release type prompt's default.
-
-    1 to 3 tracks are a single, 4 to 6 an EP, more an album; past 30 minutes in all, an album, and a
-    single with a track past 10 minutes, an EP. A title that names another type ("... EP", "(Single)")
-    contradicts it: then there is no default.
+def suggest_release_type(title: str | None, durations: Sequence[float], album_folder: str | None = None) -> str | None:
+    """The release type prompt's default: the album's type folder or the files' type, unless the title names another.
 
     Args:
         title: The release title from the tags.
         durations: Each audio file's length in seconds; unknown lengths are 0.
+        album_folder: The album folder the user gave (not a copy staged elsewhere), or None.
     """
-    if not durations:
-        return None
-    total = sum(durations)
-    if total >= _ALBUM_MIN_SECONDS or len(durations) > _EP_MAX_TRACKS:
-        rls_type = "Album"
-    elif len(durations) > _SINGLE_MAX_TRACKS or max(durations) > _SINGLE_TRACK_MAX_SECONDS:
-        rls_type = "EP"
-    else:
-        rls_type = "Single"
+    rls_type = _release_type_of_folder(album_folder) or _release_type_of_files(durations)
     title = title or ""
     if _TITLE_SAYS_EP.search(title) and rls_type != "EP":
         return None
@@ -475,9 +467,29 @@ def suggest_release_type(title: str | None, durations: Sequence[float]) -> str |
     return rls_type
 
 
+def _release_type_of_folder(album_folder: str | None) -> str | None:
+    """The release type an Artist/Type/Album library names in the album folder's parent, in any case."""
+    if not album_folder:
+        return None
+    parent = os.path.basename(os.path.dirname(os.path.abspath(album_folder)))
+    rls_type = _RELEASE_TYPE_BY_NAME.get(parent.lower())
+    # "Unknown" is a placeholder, not a type anyone chose.
+    return None if rls_type == "Unknown" else rls_type
+
+
+def _release_type_of_files(durations: Sequence[float]) -> str | None:
+    """The release type the files' track count and length imply, by the thresholds above."""
+    if not durations:
+        return None
+    if sum(durations) >= _ALBUM_MIN_SECONDS or len(durations) > _EP_MAX_TRACKS:
+        return "Album"
+    if len(durations) > _SINGLE_MAX_TRACKS or max(durations) > _SINGLE_TRACK_MAX_SECONDS:
+        return "EP"
+    return "Single"
+
+
 async def _edit_release_type(metadata, default: str | None = None):
     _print_release_types()
-    types = {r.lower(): r for r in RELEASE_TYPES}
     while True:
         rtype = (
             (
@@ -490,8 +502,8 @@ async def _edit_release_type(metadata, default: str | None = None):
             .strip()
             .lower()
         )
-        if rtype in types:
-            metadata["rls_type"] = types[rtype]
+        if rtype in _RELEASE_TYPE_BY_NAME:
+            metadata["rls_type"] = _RELEASE_TYPE_BY_NAME[rtype]
             return
         click.secho(f"{rtype} is not a valid release type.", fg="red")
 

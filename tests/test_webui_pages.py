@@ -266,6 +266,40 @@ def test_only_a_regular_file_counts_as_an_albums_audio(roots: Roots) -> None:
     assert refused.value.status == 422
 
 
+def test_a_macos_metadata_file_is_not_an_albums_audio(roots: Roots) -> None:
+    only = roots.downloads / "Only"
+    only.mkdir()
+    (only / "._01.flac").write_bytes(b"x")
+    disc = roots.downloads / "Disc" / "CD1"
+    disc.mkdir(parents=True)
+    (disc / "._01.flac").write_bytes(b"x")
+    deeper = roots.downloads / "Deeper" / "Store" / "Album"
+    deeper.mkdir(parents=True)
+    (deeper / "._01.flac").write_bytes(b"x")
+
+    for folder in (only, disc.parent, roots.downloads / "Deeper"):
+        assert not paths.holds_audio(str(folder))
+        with pytest.raises(paths.PathRefused) as refused:
+            paths.album_folder(str(folder))
+        assert refused.value.status == 422
+        assert refused.value.detail == "No audio file (FLAC, MP3, M4A) in this folder or its disc folders."
+
+
+def test_a_folder_with_audio_and_its_macos_metadata_file_is_still_an_album(roots: Roots) -> None:
+    album = roots.downloads / "Album"
+    album.mkdir()
+    (album / "01.flac").write_bytes(b"x")
+    (album / "._01.flac").write_bytes(b"x")
+    box = roots.downloads / "Box"
+    (box / "CD1").mkdir(parents=True)
+    (box / "CD1" / "01.flac").write_bytes(b"x")
+    (box / "CD1" / "._01.flac").write_bytes(b"x")
+
+    for folder in (album, box):
+        assert paths.holds_audio(str(folder))
+        assert paths.album_folder(str(folder)) == str(folder)
+
+
 @pytest.mark.parametrize("kind", ["spectrals", "checks"])
 def test_a_job_refuses_a_folder_whose_audio_is_two_levels_down_and_says_why(roots: Roots, kind: str) -> None:
     _album(roots.downloads / "incoming" / "Store" / "Album")

@@ -187,7 +187,10 @@ async def run_tag(options: TagOptions) -> str:
             rls_data,
             source_url,
             metadata_validator_base,
-            functools.partial(review_metadata, rls_type_hint=suggest_release_type(rls_data.get("title"), durations)),
+            functools.partial(
+                review_metadata,
+                rls_type_hint=suggest_release_type(rls_data.get("title"), durations, album_folder=options.path),
+            ),
             skip_initial_review=options.skip_initial_review,
             apply_suggestions=options.apply_ai_suggestions,
         )
@@ -203,7 +206,7 @@ async def run_tag(options: TagOptions) -> str:
             original=original,
         )
         await rename_files(path, tags, metadata, options.auto_rename, None, tracks_by_file=tracks_by_file)
-        await check_folder_structure(path, scene=False)
+        await check_folder_structure(path, scene=False, album_itself=os.path.samefile(path, staged))
         await remove_source_folder(staged, path, original)
         click.secho(f"\nProcessed {path}", fg="cyan", bold=True)
         return path

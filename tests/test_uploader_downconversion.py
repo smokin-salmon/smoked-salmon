@@ -13,7 +13,7 @@ from helpers.uploader_fakes import stub_uploader
 import salmon.trackers
 import salmon.uploader as uploader
 from salmon.errors import UploadError
-from salmon.uploader import conversion_upload
+from salmon.uploader import conversion_choice, conversion_upload
 
 if TYPE_CHECKING:
     from salmon.trackers.base import BaseGazelleApi
@@ -101,7 +101,7 @@ class FakeUploadManager:
 def _downconversion_tasks() -> list[dict[str, Any]]:
     return [
         option
-        for option in uploader.get_downconversion_options(_metadata(), _track_data())
+        for option in conversion_choice.get_downconversion_options(_metadata(), _track_data())
         if option["action"] == "downconvert"
     ]
 
@@ -304,7 +304,7 @@ def _run_up(monkeypatch, tmp_path: Path, broken, track_data, convert_folder=None
 
 @pytest.mark.parametrize("rates", [(96000, 44100), (192000, 44100), (96000, 48000)])
 def test_a_release_with_mixed_sample_rates_gets_only_the_transcodes(capsys, rates: tuple[int, ...]) -> None:
-    options = uploader.get_downconversion_options(_metadata(), _track_data(*rates))
+    options = conversion_choice.get_downconversion_options(_metadata(), _track_data(*rates))
 
     assert [option["name"] for option in options] == ["MP3 320", "MP3 V0"]
     listed = ", ".join(f"{rate / 1000:g}" for rate in sorted(rates))
@@ -317,7 +317,7 @@ def test_a_release_with_mixed_sample_rates_gets_only_the_transcodes(capsys, rate
     [(96000, ["16bit 48.0 kHz"]), (192000, ["24bit 96.0 kHz", "16bit 48.0 kHz"])],
 )
 def test_a_release_at_one_sample_rate_still_gets_its_downconversions(capsys, rate: int, names: list[str]) -> None:
-    options = uploader.get_downconversion_options(_metadata(), _track_data(rate, rate))
+    options = conversion_choice.get_downconversion_options(_metadata(), _track_data(rate, rate))
 
     assert [o["name"] for o in options if o["action"] == "downconvert"] == names
     assert [o["name"] for o in options if o["action"] == "transcode"] == ["MP3 320", "MP3 V0"]

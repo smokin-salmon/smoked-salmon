@@ -18,6 +18,7 @@ import salmon.checks.provenance
 import salmon.trackers
 import salmon.uploader
 from salmon import cfg
+from salmon.uploader import tracker_run
 
 # Covers and spectrals go to the fake image host.
 pytestmark = pytest.mark.usefixtures("image_uploads")
@@ -106,7 +107,7 @@ def test_up_says_when_the_markers_could_not_be_read_and_uploads(monkeypatch, tmp
 def test_up_weighs_no_markers_on_a_salmon_conversion(monkeypatch, tmp_path, torrents) -> None:
     album = _album(tmp_path / "Album", comment="24bit")
     monkeypatch.setattr(salmon.uploader, "conversion_of", lambda _path: {"source": "Album [24-96]"})
-    monkeypatch.setattr(salmon.uploader, "converted_from_note", lambda *_args: None)
+    monkeypatch.setattr(tracker_run, "converted_from_note", lambda *_args: None)
 
     run = _run_up(monkeypatch, album, torrents, input=ANSWERS, yes_all=False)
 

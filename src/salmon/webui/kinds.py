@@ -868,7 +868,7 @@ async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
         The host and the tracker, each track's URLs, and the text ``salmon specs`` prints (plain, and as BBCode).
     """
     from salmon.commands import format_spectral_urls
-    from salmon.uploader.spectrals import compress_chosen_spectrals
+    from salmon.uploader.spectrals import SpectralsNotUploaded, compress_chosen_spectrals
     from salmon.uploader.spectrals import upload_spectrals as upload_spectral_images
 
     try:
@@ -883,7 +883,10 @@ async def upload_spectrals(params: SpectralsUploadParams) -> dict[str, Any]:
     await anyio.to_thread.run_sync(_spectral_images, folder, tracks)
     # After the checks: compressing first would swap a symlink for a plain copy of what it points to, which they pass.
     await compress_chosen_spectrals(folder, tracks)
-    uploaded = await upload_spectral_images(folder, tracks, tracker)
+    try:
+        uploaded = await upload_spectral_images(folder, tracks, tracker)
+    except SpectralsNotUploaded:
+        uploaded = None  # What went wrong is in the job's log.
     if not uploaded:
         raise click.ClickException("No spectral was uploaded.")
     filenames = [all_tracks.get(number, "") for number in range(1, max(all_tracks) + 1)]

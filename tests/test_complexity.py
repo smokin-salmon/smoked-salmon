@@ -29,7 +29,7 @@ ALLOWED = {
     ("src/salmon/tagger/combine.py", "combine_tracks"): 22,
     ("src/salmon/tagger/retagger.py", "rename_files"): 21,
     ("src/salmon/trackers/base.py", "_send"): 33,
-    ("src/salmon/uploader/__init__.py", "_upload_staged"): 49,
+    ("src/salmon/uploader/__init__.py", "_upload_staged"): 40,
     # The fake tracker server: one branch per endpoint it answers.
     ("tests/helpers/cross_upload.py", "_handle"): 23,
 }

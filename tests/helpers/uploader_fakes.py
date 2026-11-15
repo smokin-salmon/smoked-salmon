@@ -4,7 +4,7 @@ import importlib
 from typing import Any
 
 import salmon.uploader
-from salmon.uploader import conversion_upload, cover_upload, metadata_review, upload_checks
+from salmon.uploader import conversion_upload, cover_upload, metadata_review, tracker_run, upload_checks
 
 # Not `from salmon.uploader import upload`: that is the function salmon.uploader defines, which hides the module.
 upload = importlib.import_module("salmon.uploader.upload")
@@ -16,7 +16,12 @@ CALLED_FROM = {
     "check_folder_structure": (metadata_review, conversion_upload),
     "conversion_of": (salmon.uploader, conversion_upload),
     "gather_audio_info": (salmon.uploader, metadata_review, conversion_upload),
-    "upload_and_report": (salmon.uploader, conversion_upload),
+    "upload_and_report": (tracker_run, conversion_upload),
+    "check_requests": (tracker_run,),
+    "resolve_cover_url": (tracker_run,),
+    "print_torrents": (tracker_run,),
+    "post_upload_spectral_check": (tracker_run,),
+    "execute_downconversion_tasks": (tracker_run,),
     "convert_folder": (conversion_upload,),
     "downconversion_format": (conversion_upload,),
     "generate_conversion_description": (conversion_upload,),

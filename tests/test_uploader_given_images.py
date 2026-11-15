@@ -394,7 +394,7 @@ def test_a_cover_url_is_not_needed_for_an_existing_group(monkeypatch) -> None:
     site: Any = SimpleNamespace(site_code="RED")
 
     # remove_downloaded: the group branch looks for no cover file.
-    result = anyio.run(salmon.uploader.resolve_cover_url, site, 55, {}, "/album", None, True, COVER)
+    result = anyio.run(cover_upload.resolve_cover_url, site, 55, {}, "/album", None, True, COVER)
 
     assert result == (True, None)
 

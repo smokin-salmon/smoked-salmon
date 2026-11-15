@@ -57,7 +57,7 @@ the test run never reads a developer's config.
 | `src/salmon/data/config.reference.toml` | Documents every key, commented out with its default; a test keeps it in sync with the schema |
 | `src/salmon/data/version.toml` | Version and changelog. **See Releases below before touching it** |
 | `src/salmon/trackers/` | Tracker API clients. `base.py` (`BaseGazelleApi`) does all tracker HTTP |
-| `src/salmon/uploader/` | The upload flow (`__init__.py`; a torrent's upload in `upload.py`, its conversions' in `conversion_upload.py`; the cover in `cover_upload.py`, the checks before upload in `upload_checks.py`, the metadata review in `metadata_review.py`), dupe/request checks, spectrals, seedbox, torrent clients |
+| `src/salmon/uploader/` | The upload flow (`__init__.py`; one tracker's turn in `tracker_run.py`, a torrent's upload in `upload.py`, its conversions' in `conversion_upload.py`; the cover in `cover_upload.py`, the checks before upload in `upload_checks.py`, the metadata review in `metadata_review.py`), dupe/request checks, spectrals, seedbox, torrent clients |
 | `src/salmon/sources/` | Shared HTTP scraper per store (Qobuz, Tidal, Apple Music, Bandcamp, ...) |
 | `src/salmon/search/` | Store search, built on `sources/` |
 | `src/salmon/tagger/` | Metadata gathering, review, retagging, renaming; `tagger/sources/` parses store metadata |
@@ -144,7 +144,8 @@ it and where its `SHA256SUMS` are.
 
 Everything CI and the image run is pinned: each `uses:` to a full commit SHA with its version in a
 comment, the `Dockerfile`'s base and uv images by tag and digest, Python packages and the dev tools
-(ruff, pytest, basedpyright) by `uv.lock`.
+(ruff, pytest, basedpyright) by `uv.lock`, and uv itself in CI by the Dockerfile's uv image tag, which each
+job reads.
 Dependabot (`.github/dependabot.yml`) proposes every update to them as a PR, except the job-local
 `registry:3` service in the publishing workflows, whose digest is bumped by hand. Pin a new action or
 image the same way, checking that the SHA is the commit its release tag points to

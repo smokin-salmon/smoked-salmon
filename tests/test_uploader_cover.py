@@ -43,7 +43,7 @@ def _answers(monkeypatch, *answers: str) -> list[str]:
 
 
 def _resolve(group_id: int | None = None) -> tuple[bool, str | None]:
-    return anyio.run(salmon.uploader.resolve_cover_url, RedApi(), group_id, {}, "/release", None, False)
+    return anyio.run(cover_upload.resolve_cover_url, RedApi(), group_id, {}, "/release", None, False)
 
 
 def test_yes_all_does_not_upload_a_new_group_without_a_cover(monkeypatch, capsys) -> None:
@@ -131,7 +131,7 @@ def test_retry_does_not_upload_again_to_a_host_that_has_the_cover(monkeypatch) -
     async def run() -> list[tuple[bool, str | None]]:
         cover_urls: dict[str, str | None] = {}
         return [
-            await salmon.uploader.resolve_cover_url(site, None, cover_urls, "/release", None, False)
+            await cover_upload.resolve_cover_url(site, None, cover_urls, "/release", None, False)
             for site in (OpsApi(), RedApi())
         ]
 
@@ -199,7 +199,7 @@ def test_dic_cover_retry_does_not_offer_red_and_refuses_it_if_typed(monkeypatch)
     monkeypatch.setattr(cover_upload, "upload_cover", fake_upload)
     asked = _answers(monkeypatch, "r", "red", "imgbox")
 
-    result = anyio.run(salmon.uploader.resolve_cover_url, DICApi(), None, {}, "/release", None, False)
+    result = anyio.run(cover_upload.resolve_cover_url, DICApi(), None, {}, "/release", None, False)
 
     assert result == (True, "https://imgbox/cover.jpg")
     assert "red" not in uploads
@@ -224,7 +224,7 @@ def test_retry_to_red_host_for_ops_uses_a_red_client(monkeypatch) -> None:
     monkeypatch.setattr(cover_upload, "upload_cover", fake_upload)
     _answers(monkeypatch, "r", "red")
 
-    result = anyio.run(salmon.uploader.resolve_cover_url, OpsApi(), None, {}, "/release", None, False)
+    result = anyio.run(cover_upload.resolve_cover_url, OpsApi(), None, {}, "/release", None, False)
 
     assert result == (True, "https://red/cover.jpg")
     assert len(seen_red_apis) == 1

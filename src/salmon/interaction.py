@@ -274,6 +274,11 @@ def current() -> Interaction:
     return _current.get()
 
 
+def answered_in_terminal() -> bool:
+    """Whether the terminal answers this context's questions. salmon web arms a danger option in the browser itself."""
+    return isinstance(current(), TerminalInteraction)
+
+
 async def prompt(
     text: str,
     *,

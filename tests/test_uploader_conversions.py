@@ -63,7 +63,7 @@ def _interactive(monkeypatch) -> None:
 
 def test_a_task_is_named_by_its_kind_whatever_the_rates() -> None:
     tracks = {"01.flac": {"sample rate": 192000}}
-    options = uploader.get_downconversion_options(RELEASE_24BIT, tracks)
+    options = conversion_choice.get_downconversion_options(RELEASE_24BIT, tracks)
 
     assert [option["name"] for option in options] == ["24bit 96.0 kHz", "16bit 48.0 kHz", "MP3 320", "MP3 V0"]
     assert [conversion_choice.conversion_kind(option) for option in options] == ["24bit", "16bit", "320", "V0"]
@@ -73,7 +73,7 @@ def test_a_task_is_named_by_its_kind_whatever_the_rates() -> None:
 
 
 def _offered() -> list[dict[str, Any]]:
-    return uploader.get_downconversion_options(RELEASE_24BIT, TRACKS_24BIT_48K, quiet=True)
+    return conversion_choice.get_downconversion_options(RELEASE_24BIT, TRACKS_24BIT_48K, quiet=True)
 
 
 def _prompt_yyy(held: frozenset[str] = frozenset(), conversions: tuple[str, ...] | None = None) -> list[str]:

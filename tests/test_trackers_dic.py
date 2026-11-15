@@ -9,13 +9,12 @@ import anyio
 import pytest
 from aiohttp import web
 
-import salmon.uploader as uploader
 from salmon import cfg
 from salmon.errors import RequestError, UploadRefusedError
 from salmon.trackers.dic import DICApi
 from salmon.trackers.ops import OpsApi
 from salmon.trackers.red import RedApi
-from salmon.uploader import conversion_upload
+from salmon.uploader import conversion_choice, conversion_upload
 from salmon.uploader.upload import compile_data_existing_group, compile_data_new_group, prepare_and_upload
 
 if TYPE_CHECKING:
@@ -159,7 +158,7 @@ def test_unlisted_sample_rate_stops_the_upload_before_any_request() -> None:
 
 
 def test_a_refused_upload_only_stops_that_tracker() -> None:
-    # The tracker loop in _upload_staged catches RequestError per tracker and offers the next one.
+    # upload_to_tracker catches RequestError, ending that turn, and the loop offers the next tracker.
     assert issubclass(UploadRefusedError, RequestError)
 
 
@@ -199,7 +198,7 @@ def _downconvert_24bit(monkeypatch, tmp_path: Path, converted_names) -> list[dic
     monkeypatch.setattr(conversion_upload, "upload_and_report", upload_and_report)
     [task] = [
         option
-        for option in uploader.get_downconversion_options(_metadata(), source_track_data)
+        for option in conversion_choice.get_downconversion_options(_metadata(), source_track_data)
         if option["action"] == "downconvert" and option["target_bitdepth"] == 24
     ]
 

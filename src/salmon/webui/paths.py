@@ -17,6 +17,7 @@ from typing import Any
 
 from salmon import cfg
 from salmon.common.constants import AUDIO_EXTENSIONS
+from salmon.common.files import is_apple_double
 from salmon.containment import is_within
 from salmon.images.files import NotAnImage, check_image
 from salmon.webui.jobs import JobError
@@ -121,7 +122,7 @@ def _named_in_library(given: str) -> bool:
 
 
 def _is_audio(name: str) -> bool:
-    return os.path.splitext(name.lower())[1] in AUDIO_EXTENSIONS
+    return os.path.splitext(name.lower())[1] in AUDIO_EXTENSIONS and not is_apple_double(name)
 
 
 def _is_link(entry: os.DirEntry[str]) -> bool:

@@ -2,6 +2,7 @@ import asyncio
 import html
 import os
 import shutil
+import subprocess
 from collections.abc import Sequence
 from typing import Any
 from urllib import parse
@@ -34,7 +35,7 @@ from salmon.tagger.retagger import append_guests_to_track_titles, create_artist_
 from salmon.tagger.sources import METASOURCES, run_metadata
 from salmon.tagger.sources.base import generate_artists
 from salmon.trackers.connection import check_trackers
-from salmon.uploader.seedbox import seedbox_secrets
+from salmon.uploader.seedbox import config_args, seedbox_secrets
 from salmon.uploader.spectrals import (
     check_spectrals,
     get_spectrals_path,
@@ -48,6 +49,8 @@ from salmon.uploader.upload import (
     listed_bare,
     tracklist_description,
 )
+
+_RCLONE_CHECK_SECONDS = 10
 
 
 def format_spectral_urls(filenames: list[str], spectral_urls: dict[int, list[str]], bbcode: bool) -> str:
@@ -456,9 +459,19 @@ async def _test_seedbox_connections() -> None:
                     click.secho("    ✔ Rclone executable found", fg="green")
                     # Test access to the configured remote, not just local config presence.
                     try:
-                        with anyio.fail_after(10):
-                            result = await anyio.run_process(["rclone", "lsd", f"{seedbox_config.url}:"], check=False)
-                        if result.returncode == 0:
+                        result = None
+                        with anyio.move_on_after(_RCLONE_CHECK_SECONDS):
+                            # Only the config flags: some others hide lsd's error or break it (--log-file, --combined).
+                            lsd = ["rclone", "lsd", f"{seedbox_config.url}:", *config_args(seedbox_config.extra_args)]
+                            # No terminal: a config password prompt, which nobody sees here, fails at once.
+                            result = await anyio.run_process(lsd, stdin=subprocess.DEVNULL, check=False)
+                        if result is None:
+                            click.secho(
+                                f"    ✖ Rclone remote '{remote}' check timed out after {_RCLONE_CHECK_SECONDS} seconds",
+                                fg="red",
+                                bold=True,
+                            )
+                        elif result.returncode == 0:
                             click.secho(f"    ✔ Rclone remote '{remote}' is accessible", fg="green", bold=True)
                         else:
                             error = result.stderr.decode(errors="replace").strip() or f"exit code {result.returncode}"
