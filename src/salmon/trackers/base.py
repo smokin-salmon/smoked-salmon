@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import partial
 from http import HTTPStatus
-from typing import Any, Literal, cast
+from typing import Any, Literal
 from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
 
 import aiohttp
@@ -30,6 +30,7 @@ from torf import TorfError, Torrent
 from salmon import cfg, dryrun, proxy
 from salmon.common import UploadFiles
 from salmon.common.redaction import redact_tracker_headers, redact_tracker_text
+from salmon.common.strings import numeric_id
 from salmon.common.urls import parse_retry_after
 from salmon.constants import RELEASE_TYPES
 from salmon.errors import (
@@ -1143,7 +1144,7 @@ class BaseGazelleApi:
 
         Raises:
             LoginError: If authentication fails.
-            RequestFailedError: If the request fails.
+            RequestFailedError: If the request fails, or the answer holds no response object.
             RetryableError: If network error persists after retries.
         """
         url = self.base_url + "/ajax.php"
@@ -1161,7 +1162,10 @@ class BaseGazelleApi:
 
         if resp_json.get("status") != "success":
             raise RequestFailedError(self._excerpt(str(resp_json.get("error", resp.text))))
-        return cast("dict", resp_json["response"])
+        # Every action salmon calls answers with an object: anything else fails here, not in each caller.
+        if not isinstance(response := resp_json.get("response"), dict):
+            raise RequestFailedError(f"the answer holds no response object: {self._excerpt(resp.text)}")
+        return response
 
     async def torrentgroup(self, group_id: int) -> dict:
         """Get information about a torrent group.
@@ -1174,24 +1178,22 @@ class BaseGazelleApi:
         """
         return await self.api_call("torrentgroup", params={"id": group_id})
 
-    async def get_redirect_torrentgroupid(self, torrentid: int) -> int | None:
-        """Get torrent group ID from torrent ID via redirect.
+    async def torrent_group_id(self, torrent_id: int) -> int | None:
+        """The group of a torrent, from one API lookup; None, having said why, if the tracker refuses or names none.
 
-        Args:
-            torrentid: The torrent ID.
-
-        Returns:
-            The torrent group ID as int, or None if not found.
+        Raises:
+            RequestError: If the tracker gives no answer, or turns the session away (no connection, login, rate limit).
         """
-        url = self.base_url + "/torrents.php"
-        # _request raises a timeout as a RequestError, after its retries.
-        resp = await self._request("GET", url, params={"torrentid": torrentid}, timeout_secs=5)
-        parsed = urlparse(resp.url)
-        query = parse_qs(parsed.query)
-        group_id = query.get("id", [None])[0]
-        if group_id:
-            return int(group_id)
-        click.secho("Couldn't retrieve torrent_group_id from torrent_id, no Redirect found!", fg="red")
+        try:
+            response = await self.api_call("torrent", params={"id": torrent_id})
+        except RequestFailedError as err:
+            # Kept broad: a missing torrent may come as a failure status or an HTTP error (RED's is not known).
+            click.secho(f"Could not look up the group of torrent {torrent_id} on {self.site_string}: {err}", fg="red")
+            return None
+        group = response.get("group")
+        if group_id := numeric_id(group.get("id") if isinstance(group, dict) else None):
+            return group_id
+        click.secho(f"{self.site_string}'s answer for torrent {torrent_id} names no group.", fg="red")
         return None
 
     async def fetch_log(self, page: int) -> str:
@@ -1370,7 +1372,7 @@ class BaseGazelleApi:
             # Sent into a known group: no need to ask.
             return torrent_id, int(data["groupid"])
         try:
-            group_id = await self.get_redirect_torrentgroupid(torrent_id)
+            group_id = await self.torrent_group_id(torrent_id)
         except RequestError as err:
             # The torrent is up: raising would report it failed, and it would go unseeded.
             click.secho(f"Could not look up the group of torrent {torrent_id}: {self._excerpt(str(err))}", fg="yellow")

@@ -92,7 +92,7 @@ def _not_found() -> web.Response:
 class FakeTracker:
     """Answers upload.php as `upload` says and requests.php as `fill` says; records each request it gets."""
 
-    def __init__(self, upload: str = "fill", fill: str = "filled", group_lookup: str = "redirect") -> None:
+    def __init__(self, upload: str = "fill", fill: str = "filled", group_lookup: str = "found") -> None:
         self.upload = upload
         self.fill = fill
         self.group_lookup = group_lookup
@@ -126,13 +126,13 @@ class FakeTracker:
             if self.upload == "fill-without-torrentid":
                 return web.Response(text="<html><body>A request page salmon cannot read</body></html>")
             return web.Response(text=_filled_request_page(TORRENT_ID), content_type="text/html")
-        if request.path == "/torrents.php" and "id" in request.query:
-            return web.Response(text="<html>the group page</html>", content_type="text/html")
-        if request.path == "/torrents.php":
-            if self.group_lookup == "redirect":
-                raise web.HTTPFound(f"/torrents.php?id={GROUP_ID}&torrentid={request.query['torrentid']}")
-            if self.group_lookup == "no-redirect":
-                return web.Response(text="<html>no such torrent</html>", content_type="text/html")
+        if request.path == "/ajax.php" and request.query.get("action") == "torrent" and "id" in request.query:
+            if self.group_lookup == "found":
+                return _found(int(request.query["id"]), GROUP_ID)
+            if self.group_lookup == "not-found":
+                return _not_found()
+            if self.group_lookup == "login":
+                raise web.HTTPFound("/login.php")
             return web.Response(status=404, text="<html>404</html>", content_type="text/html")
         if request.path == "/ajax.php" and request.query.get("action") == "torrent":
             return self.lookups.pop(0)
@@ -173,12 +173,11 @@ def test_a_fill_the_tracker_refuses_keeps_the_upload_and_names_the_request(
     ids = anyio.run(_upload, tracker, files, {"type": 0})
 
     assert ids == (TORRENT_ID, GROUP_ID)
-    # The upload, the fill it redirects to, then the group of the torrent: the hop to it, and its page.
+    # The upload, the fill it redirects to, then the group of the torrent, from the API.
     assert tracker.hits == [
         ("POST", "/upload.php"),
         ("GET", TAKEFILL),
-        ("GET", f"/torrents.php?torrentid={TORRENT_ID}"),
-        ("GET", f"/torrents.php?id={GROUP_ID}&torrentid={TORRENT_ID}"),
+        ("GET", f"/ajax.php?action=torrent&id={TORRENT_ID}"),
     ]
     printed = capsys.readouterr()
     # The request's own page, not the fill's URL, which carries the authkey.
@@ -199,16 +198,23 @@ def test_a_fill_into_a_known_group_does_not_look_the_group_up(
     ids = anyio.run(_upload, tracker, files, {"type": 0, "groupid": GROUP_ID})
 
     assert ids == (TORRENT_ID, GROUP_ID)
-    assert ("GET", f"/torrents.php?torrentid={TORRENT_ID}") not in tracker.hits
+    assert ("GET", f"/ajax.php?action=torrent&id={TORRENT_ID}") not in tracker.hits
     # The upload and the fill's hops only: two when the fill is refused, three when it goes through.
     assert len(tracker.hits) == (3 if fill == "filled" else 2)
     printed = capsys.readouterr()
     assert AUTHKEY not in printed.out + printed.err
 
 
-@pytest.mark.parametrize("group_lookup", ["fails", "no-redirect"])
+@pytest.mark.parametrize(
+    ("group_lookup", "said"),
+    [
+        ("not-found", f"Could not look up the group of torrent {TORRENT_ID} on RED: bad parameters"),
+        ("fails", f"Could not look up the group of torrent {TORRENT_ID} on RED: "),
+        ("login", f"Could not look up the group of torrent {TORRENT_ID}: "),
+    ],
+)
 def test_a_filled_request_whose_group_lookup_fails_is_still_an_upload(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str], group_lookup: str
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], group_lookup: str, said: str
 ) -> None:
     tracker = FakeTracker(fill="filled", group_lookup=group_lookup)
     files, _ = _upload_files(tmp_path)
@@ -222,14 +228,11 @@ def test_a_filled_request_whose_group_lookup_fails_is_still_an_upload(
         ("POST", "/upload.php"),
         ("GET", TAKEFILL),
         ("GET", f"/requests.php?action=view&id={REQUEST_ID}"),
-        ("GET", f"/torrents.php?torrentid={TORRENT_ID}"),
+        ("GET", f"/ajax.php?action=torrent&id={TORRENT_ID}"),
     ]
     out = capsys.readouterr().out
     assert "Filled request: " in out
-    if group_lookup == "fails":
-        assert f"Could not look up the group of torrent {TORRENT_ID}: " in out
-    else:
-        assert "no Redirect found" in out
+    assert said in out
 
 
 def test_a_fill_page_that_names_no_torrent_is_looked_up_by_infohash(tmp_path: Path) -> None:

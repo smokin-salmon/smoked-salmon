@@ -269,10 +269,10 @@ class LogSite(FakeGazelleSite):
     has_session_cookie = True
 
     def __init__(self) -> None:
-        self.redirected: list[int] = []
+        self.looked_up: list[int] = []
 
-    async def get_redirect_torrentgroupid(self, torrent_id: int) -> int:
-        self.redirected.append(torrent_id)
+    async def torrent_group_id(self, torrent_id: int) -> int:
+        self.looked_up.append(torrent_id)
         return 1000 + torrent_id
 
 

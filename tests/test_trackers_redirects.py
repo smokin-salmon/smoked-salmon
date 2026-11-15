@@ -82,7 +82,8 @@ async def _redirect_hops_take_a_rate_limiter_slot() -> None:
     runner, url = await _serve(torrents=torrents)
     api = FakeApi(url)
     try:
-        assert await api.get_redirect_torrentgroupid(1) == 2
+        resp = await api._request("GET", url + "/torrents.php", params={"torrentid": 1})
+        assert resp.text == "group page"
         assert hits == ["/torrents.php?torrentid=1", "/torrents.php?id=2&torrentid=1"]
         assert api.limiter.slots == len(hits)
     finally:

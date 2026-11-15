@@ -276,10 +276,10 @@ RECENT_UPLOADS = [(31, "Artist", "Album"), (32, "Other", "Thing &amp; More")]
 
 
 def recent_site() -> Any:
-    async def redirect(torrent_id: Any) -> int:
+    async def group_of(torrent_id: Any) -> int:
         return int(torrent_id) + 1000
 
-    return SimpleNamespace(site_string="RED", base_url="https://red.test", get_redirect_torrentgroupid=redirect)
+    return SimpleNamespace(site_string="RED", base_url="https://red.test", torrent_group_id=group_of)
 
 
 def search_group(
