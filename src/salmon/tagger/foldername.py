@@ -13,10 +13,9 @@ from salmon import cfg, dryrun, interaction
 from salmon.common import clean_name, has_visible_chars
 from salmon.common.constants import AUDIO_EXTENSIONS
 from salmon.common.files import shares_files
-from salmon.common.strings import artists_or_various
+from salmon.common.strings import artists_or_various, substitute_forbidden_characters
 from salmon.constants import (
     BLACKLISTED_CHARS,
-    BLACKLISTED_FULLWIDTH_REPLACEMENTS,
 )
 from salmon.errors import UploadError
 from salmon.tagger.audio_info import gather_audio_info
@@ -467,10 +466,7 @@ def _compile_artist_str(artist_data):
 
 
 def _sub_illegal_characters(stri):
-    if cfg.upload.formatting.fullwidth_replacements:
-        for char, sub in BLACKLISTED_FULLWIDTH_REPLACEMENTS.items():
-            stri = str(stri).replace(char, sub)
-    return re.sub(BLACKLISTED_CHARS, cfg.upload.formatting.blacklisted_substitution, str(stri))
+    return substitute_forbidden_characters(str(stri))
 
 
 def _fix_format(metadata, keys):
