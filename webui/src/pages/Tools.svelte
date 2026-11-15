@@ -138,7 +138,7 @@
 <p class="muted">
   These tools contact external services when you run them: the description generator fetches store pages,
   and image upload sends the selected images to the chosen host. Approval reports contact the selected tracker
-  only after you confirm the lookup, then ask for confirmation of the torrent IDs before submitting reports.
+  only after you confirm the lookup, then ask for confirmation of the eligible FLAC before submitting reports.
   Print only makes no tracker requests. No local audio is changed by these tools.
 </p>
 
@@ -146,13 +146,7 @@
 
 <div class="card">
   <h2>Lossy approval report</h2>
-  <p class="muted">Request approval for an existing torrent and its uploader's same-edition transcodes without local audio. Review the matching torrent IDs before confirming submission (at most 20 reports).</p>
-  <p class="muted">
-    RED and OPS only. Use a torrent ID or a permalink containing <span class="mono">torrentid</span>,
-    not a group-only link. Matching uses the target torrent's uploader, edition and media source;
-    it cannot prove which files were transcoded from which. Hidden uploaders cannot be matched.
-    This submits an approval request for staff review; it does not approve the torrents automatically.
-  </p>
+  <p class="muted">Temporary conservative safeguard for RED and OPS: submit only the explicitly selected FLAC uploaded by your authenticated account. Lossy transcodes and other matching editions are not automatically reported. Unverifiable ownership or source metadata prevents submission. These restrictions are not confirmed tracker rules.</p>
   <div class="row options">
     <label>Torrent ID or permalink<input type="text" class="mono" bind:value={reportTarget} placeholder="12345 or https://…" /></label>
     <label>Tracker<select bind:value={reportTracker}>
@@ -171,7 +165,7 @@
   <label>Comment and evidence<textarea rows="3" bind:value={reportComment} placeholder="Source information and links to existing spectrals"></textarea></label>
   <p class="muted">Provide source information or a source URL. Include links to existing spectrals when appropriate; this tool does not generate spectrals. Missing details are requested in the job's prompts.</p>
   <label><input type="checkbox" bind:checked={reportDryRun} /> Print only (no tracker requests)</label>
-  <p class="muted">Print only prepares text to copy for manual reporting. It does not look up or list matching transcodes.</p>
+  <p class="muted">Print only prepares text to copy for manual reporting. It cannot verify ownership or FLAC eligibility.</p>
   <p class="muted">If a report fails, the batch stops and the job lists completed and unattempted IDs. Check any uncertain submission on the tracker and finish manually; running the batch again can file duplicate reports.</p>
   <div class="row actions"><button class="btn" onclick={prepareReport}
     disabled={!reportTarget.trim() || reportStarting || (reportJob && !FINISHED.includes(reportJob.status))}>Prepare report</button></div>

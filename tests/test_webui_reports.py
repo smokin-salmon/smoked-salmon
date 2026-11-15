@@ -31,7 +31,7 @@ def test_report_job_uses_browser_confirmation(monkeypatch):
         LossyReportParams(target="123", tracker="RED", report_type="web", comment="Evidence", source_url=""),
     )
     assert "Evidence" in result["text"]
-    assert asked == [("Look up this uploader's same-edition torrents for approval?", {"default": False})]
+    assert asked == [("Verify this FLAC belongs to your authenticated account?", {"default": False})]
 
 
 def test_optional_source_does_not_prompt_again(capsys):

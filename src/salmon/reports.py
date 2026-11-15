@@ -3,67 +3,57 @@
 from urllib.parse import parse_qs, urlsplit
 
 import asyncclick as click
+import msgspec
 
 from salmon import interaction, trackers
 from salmon.common import commandgroup
 from salmon.common.strings import numeric_id
 from salmon.errors import RequestError, UnknownOutcomeError
 from salmon.trackers.base import BaseGazelleApi
-from salmon.uploader.dupe_checker import _site_edition
 from salmon.uploader.spectrals import _add_spectral_links_to_lossy_comment, generate_lossy_approval_comment
 
 MAX_REPORTS = 20
 
 
 async def related_report_targets(client: BaseGazelleApi, torrent_id: int) -> list[int]:
-    """Two lookups find the target uploader's same-edition/media torrents, without per-torrent requests."""
+    """Verify only the explicitly selected FLAC; metadata similarity is not provenance."""
+    # Reports use cookie authentication. Verify that account, not a possibly different API-key account.
+    response = await client._request(
+        "GET", client.base_url + "/ajax.php", params={"action": "index"}, prefer_api_key=False
+    )
+    account = {}
+    try:
+        account = msgspec.json.decode(response.text)
+        user_id = numeric_id(account["response"]["id"]) if account["status"] == "success" else None
+    except (ValueError, KeyError, TypeError):
+        user_id = None
+    if user_id is None or user_id <= 0:
+        raise RequestError("Cannot verify the authenticated reporting account. No reports sent.")
+    cookie_authkey = account["response"].get("authkey")
+    if not cookie_authkey or cookie_authkey != client.authkey:
+        raise RequestError("Cookie and API credentials could not be verified as the same account. No reports sent.")
     found = await client.api_call("torrent", params={"id": torrent_id})
     target = found.get("torrent")
-    info = found.get("group")
-    if not isinstance(target, dict) or not isinstance(info, dict):
-        raise RequestError("The tracker did not return the torrent and its group. No reports sent.")
-    group_id = numeric_id(info.get("id"))
+    group = found.get("group")
+    if not isinstance(target, dict) or numeric_id(target.get("id")) != torrent_id:
+        raise RequestError("Cannot identify the selected torrent unambiguously. No reports sent.")
+    if target.get("format") != "FLAC":
+        raise RequestError("Only an explicitly selected FLAC is eligible; lossy transcodes are not reported.")
     uploader = numeric_id(target.get("userId"))
+    if uploader is None or uploader <= 0 or uploader != user_id:
+        raise RequestError("Only verified uploads of the authenticated user can be reported. No reports sent.")
+    group_id = numeric_id(group.get("id")) if isinstance(group, dict) else None
     media = target.get("media")
-    if (
-        not group_id
-        or group_id <= 0
-        or not uploader
-        or uploader <= 0
-        or not isinstance(media, str)
-        or not media.strip()
-    ):
-        raise RequestError("Cannot identify the torrent's group, uploader or media. No reports sent.")
-    group = await client.torrentgroup(group_id)
-    rows = group.get("torrents")
-    group_info = group.get("group")
-    if not isinstance(rows, list) or not isinstance(group_info, dict) or numeric_id(group_info.get("id")) != group_id:
-        raise RequestError("The tracker did not return the expected torrent group. No reports sent.")
-    edition = _site_edition(target, group)
-    matches: set[int] = set()
-    for row in rows:
-        if not isinstance(row, dict):
-            raise RequestError("The tracker returned an invalid torrent entry. No reports sent.")
-        candidate = numeric_id(row.get("id"))
-        if (
-            candidate is not None
-            and candidate > 0
-            and numeric_id(row.get("userId")) == uploader
-            and row.get("media") == media
-            and _site_edition(row, group) == edition
-        ):
-            matches.add(candidate)
-    if torrent_id not in matches:
-        raise RequestError("The target is missing or changed in its torrent group. No reports sent.")
-    if len(matches) > MAX_REPORTS:
-        raise RequestError(
-            f"Found {len(matches)} matching torrents; the limit is {MAX_REPORTS}. Report manually instead."
-        )
-    return [torrent_id, *sorted(matches - {torrent_id})]
+    if group_id is None or group_id <= 0 or not isinstance(media, str) or not media.strip():
+        raise RequestError("Cannot verify the FLAC source metadata. No reports sent.")
+    return [torrent_id]
 
 
 async def submit_reports(client: BaseGazelleApi, targets: list[int], text: str, source: str) -> None:
     """Send the confirmed batch sequentially, stopping on the first failure without replaying any report."""
+    targets = list(dict.fromkeys(targets))
+    if len(targets) > MAX_REPORTS:
+        raise click.ClickException("Too many report targets; no reports sent.")
     completed: list[int] = []
     for index, torrent_id in enumerate(targets):
         try:
@@ -126,7 +116,12 @@ async def report(
     source_url: str | None,
     dry_run: bool,
 ) -> None:
-    """Request lossy approval for a torrent and its uploader's same-edition transcodes. No local audio is needed."""
+    """Request lossy approval for your verified FLAC upload.
+
+    Temporary safeguard, not confirmed tracker rules: only your authenticated account's
+    explicitly selected FLAC is eligible. Transcodes are not automatically reported.
+    Unverifiable ownership or source metadata prevents submission.
+    """
     await run_lossy_report(target, report_type, tracker, comment, source_url, dry_run)
 
 
@@ -160,9 +155,9 @@ async def run_lossy_report(
     click.echo(f"{tracker} torrent {torrent_id}: Lossy {label} Approval")
     click.echo(text)
     if dry_run:
-        click.echo("Print only: related torrents were not looked up. Report matching transcodes manually too.")
+        click.echo("Print only: FLAC eligibility and authenticated ownership were not verified; nothing was submitted.")
         return text
-    if not await interaction.confirm("Look up this uploader's same-edition torrents for approval?", default=False):
+    if not await interaction.confirm("Verify this FLAC belongs to your authenticated account?", default=False):
         return text
     client = trackers.get_class(tracker)()
     try:

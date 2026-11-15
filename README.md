@@ -415,7 +415,7 @@ The pages:
 * **Convert** – transcode, downconvert and compress.
 * **Tag** – `salmon tag`.
 * **Search** – look up an album in the stores and read its metadata.
-* **Tools** – the description generator (`salmon descgen`), image uploads (`salmon images up`), and approval reports for existing RED/OPS torrents and matching transcodes (`salmon report`). Reports show the selected torrent IDs and ask for confirmation before submission; print-only mode stays offline.
+* **Tools** – the description generator (`salmon descgen`), image uploads (`salmon images up`), and approval reports for eligible self-uploaded RED/OPS FLAC torrents (`salmon report`). Reports show the selected torrent IDs and ask for confirmation before submission; print-only mode stays offline.
 * **Cross-upload** – `salmon cross-upload`, from torrent IDs or URLs.
 * **Jobs** – every job with its live log, the questions it waits on, and a cancel button.
 
@@ -594,26 +594,10 @@ salmon report 12345 --tracker RED --type master \
   --source-url 'https://example.org/album' --dry-run
 ```
 
-Missing source information is prompted for. RED also prompts for `--type` when
-omitted; OPS always uses its single lossy approval category. The command shows
-the report, then offers to look up the target's group. It includes torrents uploaded
-by the **target torrent's uploader** in the same edition and media source, across
-formats and encodings. Other uploaders and editions are excluded. This is based
-on tracker metadata, not proof of which files were transcoded from which.
-It lists the selected IDs and asks for confirmation before submitting a separate
-report for each. Discovery uses two API lookups, and batches over 20 torrents are
-refused before any reports are sent. If the uploader is hidden or the group cannot
-be identified, use manual reporting instead.
+Missing source information is prompted for. RED supports master and WEB approval; OPS uses its single category.
 
-`--dry-run` (also
-`--print-only`) prints the report without contacting the tracker, for manual
-submission; it cannot discover matching transcodes. Include links to existing
-spectrals in `--comment` when appropriate. A submission failure stops the batch
-and lists reports already sent and IDs not attempted. If an outcome is uncertain,
-check that torrent first. Do not rerun the batch: submit any remaining reports
-manually to avoid duplicates.
+As a temporary conservative safeguard, automatic submission requires an explicitly selected FLAC owned by the authenticated reporting account. MP3 and other formats are rejected; metadata matches are never used to infer a common original master or automatically report other torrents. Hidden or unverifiable ownership, a mismatched torrent ID, or missing source metadata prevents submission. Select the original FLAC explicitly; if it cannot be identified, report manually instead. These restrictions are not confirmed tracker rules.
 
-In `salmon web`, open **Tools → Lossy approval report**. Enter a torrent ID or
-permalink and source information, then choose **Prepare report**. Missing details
-and the same batch preview and confirmations appear in the job's browser prompts. **Print only**
-produces a report you can copy without contacting the tracker.
+The cookie-authenticated index endpoint identifies the account used for report submission, independently of any API-key account. Requests continue through the shared tracker limiter (five requests per 10.5 seconds). The defensive 20-ID cap and sequential submission remain; the command selects only one eligible FLAC. Uncertain outcomes stop submission and retain recovery details without retrying.
+
+Print-only/dry-run remains offline and cannot verify eligibility. The same checks and confirmation apply to **Tools → Lossy approval report**. The existing upload-time reporting workflow is unchanged.
