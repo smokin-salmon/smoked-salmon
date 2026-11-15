@@ -149,21 +149,32 @@ def test_the_suite_config_is_the_short_template_with_three_fake_trackers(tmp_pat
     ]
 
 
+def _reset(
+    monkeypatch: pytest.MonkeyPatch, path: Path, template: Path | None = None
+) -> tuple[BaseException | None, int, str]:
+    """Run `checkconf --reset` on the config at `path`, with `template` as the short config if one is given."""
+    monkeypatch.setattr(salmon.commands, "find_config_path", lambda: path)
+    if template:
+        monkeypatch.setattr(salmon.commands, "get_default_config_path", lambda: template)
+
+    async def run() -> tuple[BaseException | None, int, str]:
+        result = await CliRunner().invoke(checkconf, ["--reset"])
+        return result.exception, result.exit_code, result.output
+
+    return anyio.run(run)
+
+
 def test_checkconf_reset_copies_the_short_template_and_names_the_reference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     path = tmp_path / "config.toml"
-    monkeypatch.setattr(salmon.commands, "find_config_path", lambda: path)
-    monkeypatch.setattr(salmon.commands, "get_default_config_path", lambda: DEFAULT_CONFIG)
 
-    async def run() -> str:
-        result = await CliRunner().invoke(checkconf, ["--reset"])
-        assert result.exception is None
-        return result.output
+    exception, _, output = _reset(monkeypatch, path, DEFAULT_CONFIG)
 
-    output = anyio.run(run)
-    assert path.read_text(encoding="utf-8") == DEFAULT_CONFIG.read_text(encoding="utf-8")
+    assert exception is None
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
     assert str(REFERENCE_CONFIG) in output
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
 
 
 def test_checkconf_reset_without_the_template_leaves_the_config_alone(
@@ -171,16 +182,44 @@ def test_checkconf_reset_without_the_template_leaves_the_config_alone(
 ) -> None:
     path = tmp_path / "config.toml"
     path.write_text("mine", encoding="utf-8")
-    monkeypatch.setattr(salmon.commands, "find_config_path", lambda: path)
     monkeypatch.setattr(salmon.config, "_PKG_DIR", tmp_path / "broken-install" / "salmon")
 
-    async def run() -> tuple[BaseException | None, int, str]:
-        result = await CliRunner().invoke(checkconf, ["--reset"])
-        return result.exception, result.exit_code, result.output
+    exception, exit_code, output = _reset(monkeypatch, path)
 
-    exception, exit_code, output = anyio.run(run)
     assert isinstance(exception, SystemExit), repr(exception)
     assert exit_code == 1
     assert "config.default.toml" in output
     assert path.read_text(encoding="utf-8") == "mine"
     assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+
+
+def test_checkconf_reset_says_where_the_old_config_went(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    (tmp_path / "config.toml.bak.1").write_text("older", encoding="utf-8")
+
+    exception, _, output = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert exception is None
+    backup = tmp_path / "config.toml.bak.2"
+    assert backup.read_text(encoding="utf-8") == "mine"
+    assert str(backup) in output
+    assert (tmp_path / "config.toml.bak.1").read_text(encoding="utf-8") == "older"
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+
+
+def test_checkconf_reset_leaves_the_config_alone_when_the_template_cannot_be_copied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    not_a_file = tmp_path / "template"
+    not_a_file.mkdir()
+
+    exception, exit_code, output = _reset(monkeypatch, path, not_a_file)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert "Error" in output
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml", "template"]

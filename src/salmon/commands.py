@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 from urllib import parse
 
@@ -280,17 +281,14 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     await post_upload_spectral_check(gazelle_site, path, torrent_id_int, None, track_data, source, source_url)
 
 
-def _backup_config(config_path: str) -> None:
-    """Backup existing config file with incremental suffix.
-
-    Args:
-        config_path: Path to the config file to backup.
-    """
+def _backup_config(config_path: Path) -> None:
+    """Rename the config to the first free `<name>.bak.N` beside it, and say where it went."""
     backup_index = 1
-    while os.path.exists(f"{config_path}.bak.{backup_index}"):
+    while (backup := config_path.with_name(f"{config_path.name}.bak.{backup_index}")).exists():
         backup_index += 1
-    shutil.move(config_path, f"{config_path}.bak.{backup_index}")
-    click.secho(f"Existing config file renamed to config.py.bak.{backup_index}", fg="yellow")
+    # A rename, not shutil.move: where renaming is refused, move would copy the config and then fail to remove it.
+    os.replace(config_path, backup)
+    click.secho(f"Existing config file renamed to {backup}", fg="yellow")
 
 
 @commandgroup.command()
@@ -332,16 +330,19 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
         click.secho("Resetting new config.toml file", fg="cyan", bold=True)
 
         config_path = find_config_path()
+        new_config = config_path.with_name(f"{config_path.name}.new")
         try:
             config_template = get_default_config_path()
+            # Copied beside the config before the old one moves: a reset that cannot finish leaves the config in place.
+            shutil.copy(config_template, new_config)
+            if config_path.exists():
+                _backup_config(config_path)
+            os.replace(new_config, config_path)
         except OSError as e:
+            new_config.unlink(missing_ok=True)
             click.secho(f"Error: {e}", fg="red")
             raise click.exceptions.Exit(1) from e
 
-        if os.path.exists(config_path):
-            _backup_config(str(config_path))
-
-        shutil.copy(config_template, config_path)
         click.secho(
             "A new config.toml file has been created from the template. Please update it with your custom settings.",
             fg="green",
