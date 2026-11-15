@@ -371,3 +371,11 @@ def test_a_title_with_a_subtitle_colon_gets_a_dash_in_its_file_name(monkeypatch)
     tags = SimpleNamespace(tracknumber="1", title="Song: Part Two")
 
     assert generate_file_name(tags, ".flac", multiple_artists=False) == "01. Song - Part Two.flac"
+
+
+def test_fullwidth_replacements_still_apply_to_the_characters_of_the_file_template_itself(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "file_template", "{tracknumber}. {title}: live")
+    monkeypatch.setattr(cfg.upload.formatting, "fullwidth_replacements", True)
+    tags = SimpleNamespace(tracknumber="1", title="Song")
+
+    assert generate_file_name(tags, ".flac", multiple_artists=False) == "01. Song： live.flac"
