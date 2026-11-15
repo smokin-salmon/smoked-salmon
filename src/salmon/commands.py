@@ -284,20 +284,37 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
 
 
 def _backup_config(config_path: Path) -> Path:
-    """Rename the config to the first free `<name>.bak.N` beside it, and return that path."""
+    """Copy the config to the first free `<name>.bak.N` beside it, with its permissions, and return that path.
+
+    The config stays where it is. A backup name is created exclusively: one taken meanwhile (another reset at the same
+    time) is skipped, never overwritten.
+    """
     backup_index = 1
-    while (backup := config_path.with_name(f"{config_path.name}.bak.{backup_index}")).exists():
-        backup_index += 1
-    # A rename, not shutil.move: where renaming is refused, move would copy the config and then fail to remove it.
-    os.replace(config_path, backup)
-    return backup
+    while True:
+        backup = config_path.with_name(f"{config_path.name}.bak.{backup_index}")
+        try:
+            # 0o600 until the config's own mode is copied: it holds API keys and cookies.
+            fd = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0), 0o600)
+        except FileExistsError:
+            backup_index += 1
+            continue
+        try:
+            with os.fdopen(fd, "wb") as dst, config_path.open("rb") as src:
+                shutil.copyfileobj(src, dst)
+            shutil.copymode(config_path, backup)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                backup.unlink(missing_ok=True)
+            raise
+        return backup
 
 
 def _reset_config(config_path: Path) -> Path:
-    """Replace the config with the short template, keeping the old one as a backup. Returns the template's path.
+    """Replace the config with the short template, keeping a copy of the old one. Returns the template's path.
 
-    The template is copied beside the config, under a name of its own, before the old config moves; if the copy
-    then cannot take its place, the old config is put back. A reset that fails (OSError) leaves the config as it was.
+    The template is copied beside the config under a name of its own and the old config is copied to its backup; only
+    then does the template take the config's place, in one step (os.replace). The config is never missing: a reset
+    that fails or is stopped leaves it as it was, and removes the files it had written.
     """
     template = get_default_config_path()
     handle, name = tempfile.mkstemp(dir=config_path.parent, prefix=f"{config_path.name}.", suffix=".new")
@@ -308,16 +325,15 @@ def _reset_config(config_path: Path) -> Path:
         shutil.copy(template, staged)
         if config_path.exists():
             backup = _backup_config(config_path)
-            click.secho(f"Existing config file renamed to {backup}", fg="yellow")
         os.replace(staged, config_path)
-    except OSError:
-        # The old config first: a leftover staged file must not keep it at its backup name.
-        if backup:
-            os.replace(backup, config_path)
-            click.secho(f"The config is back at {config_path}", fg="yellow")
-        with contextlib.suppress(OSError):
-            staged.unlink(missing_ok=True)
+    except BaseException:
+        for leftover in (staged, backup):
+            if leftover:
+                with contextlib.suppress(OSError):
+                    leftover.unlink(missing_ok=True)
         raise
+    if backup:
+        click.secho(f"The old config is saved as {backup}", fg="yellow")
     return template
 
 

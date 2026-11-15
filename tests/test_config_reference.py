@@ -260,7 +260,7 @@ def test_checkconf_reset_that_fails_leaves_a_config_toml_new_of_the_users_alone(
     assert path.read_text(encoding="utf-8") == "mine"
 
 
-def test_checkconf_reset_puts_the_config_back_when_the_new_one_cannot_take_its_place(
+def test_checkconf_reset_keeps_the_config_when_the_new_one_cannot_take_its_place(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     path = tmp_path / "config.toml"
@@ -268,7 +268,7 @@ def test_checkconf_reset_puts_the_config_back_when_the_new_one_cannot_take_its_p
     real_replace = os.replace
 
     def refuse_the_new_config(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
-        # The old config moves to its backup and back; only the new file is refused its place.
+        # Only the new file is refused its place.
         if Path(dst) == path and ".bak." not in Path(src).name:
             raise OSError(errno.EACCES, "Permission denied")
         real_replace(src, dst)
@@ -284,7 +284,7 @@ def test_checkconf_reset_puts_the_config_back_when_the_new_one_cannot_take_its_p
     assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
 
 
-def test_checkconf_reset_puts_the_config_back_even_when_the_new_file_cannot_be_removed(
+def test_checkconf_reset_keeps_the_config_even_when_the_new_file_cannot_be_removed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     path = tmp_path / "config.toml"
@@ -311,7 +311,7 @@ def test_checkconf_reset_puts_the_config_back_even_when_the_new_file_cannot_be_r
     assert path.read_text(encoding="utf-8") == "mine"
 
 
-def test_checkconf_reset_puts_the_config_back_when_the_backup_message_cannot_be_printed(
+def test_checkconf_reset_whose_backup_message_cannot_be_printed_loses_nothing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     path = tmp_path / "config.toml"
@@ -319,7 +319,7 @@ def test_checkconf_reset_puts_the_config_back_when_the_backup_message_cannot_be_
     real_secho = salmon.commands.click.secho
 
     def closed_terminal(message: object = None, *args: Any, **kwargs: Any) -> None:
-        if "renamed to" in str(message):
+        if "saved as" in str(message):
             raise OSError(errno.EPIPE, "Broken pipe")
         real_secho(message, *args, **kwargs)
 
@@ -329,5 +329,55 @@ def test_checkconf_reset_puts_the_config_back_when_the_backup_message_cannot_be_
 
     assert isinstance(exception, SystemExit), repr(exception)
     assert exit_code == 1
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+    assert (tmp_path / "config.toml.bak.1").read_text(encoding="utf-8") == "mine"
+    assert not list(tmp_path.glob("*.new"))
+
+
+def test_checkconf_reset_stopped_part_way_leaves_the_config_in_place(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Ctrl-C (or any error that is not an OSError) between the backup and the swap: the config is still there."""
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace = os.replace
+
+    def interrupted(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        if Path(dst) == path and ".bak." not in Path(src).name:
+            raise KeyboardInterrupt
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", interrupted)
+
+    _reset(monkeypatch, path, DEFAULT_CONFIG)
+
     assert path.read_text(encoding="utf-8") == "mine"
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+    assert not list(tmp_path.glob("*.new"))
+
+
+def test_checkconf_reset_never_overwrites_a_backup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A backup name taken after it was found free (two resets at once) is skipped, not overwritten."""
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    taken = tmp_path / "config.toml.bak.1"
+    taken.write_text("older", encoding="utf-8")
+    real_exists = Path.exists
+    monkeypatch.setattr(Path, "exists", lambda self, **kw: False if self == taken else real_exists(self, **kw))
+
+    exception, _, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert exception is None
+    assert taken.read_text(encoding="utf-8") == "older"
+    assert (tmp_path / "config.toml.bak.2").read_text(encoding="utf-8") == "mine"
+
+
+def test_checkconf_reset_backup_is_readable_by_the_owner_only_as_the_config_was(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    path.chmod(0o600)
+
+    _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert (tmp_path / "config.toml.bak.1").stat().st_mode & 0o777 == 0o600
