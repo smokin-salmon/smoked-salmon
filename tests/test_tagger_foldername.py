@@ -152,3 +152,12 @@ def test_a_subtitle_colon_in_the_title_becomes_a_dash_in_the_folder_name(monkeyp
     monkeypatch.setattr(cfg.upload.formatting, "colon_as_dash", False)
 
     assert foldername.generate_folder_name(dict(release)) == "VA - Tin Cup_ The Movie Soundtrack"
+
+
+def test_a_colon_ending_an_artist_name_is_not_a_subtitle_before_the_joining_ampersand(monkeypatch) -> None:
+    monkeypatch.setattr(cfg.upload.formatting, "folder_template", "{artists} - {title}")
+    monkeypatch.setattr(cfg.upload.formatting, "colon_as_dash", True)
+    monkeypatch.setattr(cfg.upload.formatting, "fullwidth_replacements", False)
+    release = {**_NO_CATNO, "artists": [(":Wumpscut:", "main"), ("Other Artist", "main")]}
+
+    assert foldername.generate_folder_name(dict(release)) == "_Wumpscut_ & Other Artist - T"

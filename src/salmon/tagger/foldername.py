@@ -462,7 +462,7 @@ def _strip_blank_field(template, key):
 def _compile_artist_str(artist_data):
     """Create a string to represent the main artists of the release, as the album artist tag has it."""
     # This needed more than various_artist_threshold main artists, one more than ALBUMARTIST
-    return artists_or_various(a[0] for a in artist_data if a[1] == "main")
+    return artists_or_various(substitute_forbidden_characters(a[0]) for a in artist_data if a[1] == "main")
 
 
 def _sub_illegal_characters(stri):
