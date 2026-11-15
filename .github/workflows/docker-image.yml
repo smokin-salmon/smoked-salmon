@@ -13,8 +13,9 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+    # The job's own token only reads the repository; the version bump is pushed with the release App's token.
     permissions:
-      contents: write
+      contents: read
       packages: write
 
     # A registry that lives only as long as this job. The image is built into it, scanned there, and
@@ -45,8 +46,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0 # Ensures we get all history for tag retrieval and pushing
-          token: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+          fetch-depth: 0 # All history and tags, for the version bump commit and the tag move
+          persist-credentials: false
 
       - name: Get release version or branch name
         id: get_version_or_branch
@@ -179,9 +180,22 @@ jobs:
         with:
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Commit and push version update (only on release)
+      # The release App may push to master. Its token is minted only here, after the build and the scan,
+      # and scoped to this repository's contents.
+      - name: Get the release App's token (only on release)
+        id: app-token
+        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      # One atomic push: master and the moved tag both land, or neither does.
+      - name: Commit the version update, move the tag and push both (only on release)
         env:
-          PAT_TOKEN: ${{ secrets.BUMP_VERSION_TOKEN_ACTION }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPO: ${{ github.repository }}
         if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
         run: |
           git config --global user.name "github-actions[bot]"
@@ -191,14 +205,9 @@ jobs:
             echo "master already has the $VERSION bump"
           else
             git commit -m "Update version.toml/pyproject.toml to $VERSION with changelog"
-            git push origin master
           fi
-
-      - name: Move tag to version bump commit and push (only on release)
-        if: github.event_name == 'release' && env.UPDATE_VERSION == 'true'
-        run: |
           git tag -f "$VERSION"
-          git push origin "refs/tags/$VERSION" --force
+          git push --atomic "https://x-access-token:${APP_TOKEN}@github.com/${REPO}.git" master "+refs/tags/$VERSION"
 
       - name: Push the scanned image
         uses: ./.github/actions/push-scanned
