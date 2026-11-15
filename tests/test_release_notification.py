@@ -27,7 +27,7 @@ def run_health(monkeypatch, capsys):
     """Run `salmon health` through main with GitHub answering `content`; return (exit code, output)."""
 
     def run(content: bytes):
-        monkeypatch.setattr(cfg.upload, "update_notification", True, raising=False)
+        monkeypatch.setattr(cfg.upload, "update_notification", True)
         monkeypatch.setattr(requests, "get", lambda url, timeout=None: Answer(content))
         monkeypatch.setattr("sys.argv", ["salmon", "health"])
         with pytest.raises(SystemExit) as ended:

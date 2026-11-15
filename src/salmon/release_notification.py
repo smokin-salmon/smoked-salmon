@@ -111,6 +111,7 @@ def show_release_notification() -> None:
 
 
 def _show_release_notification() -> None:
+    """Does the check show_release_notification guards: compare versions and print the notice."""
     notify = salmon.cfg.upload.update_notification
     verbose = salmon.cfg.upload.update_notification_verbose
 
