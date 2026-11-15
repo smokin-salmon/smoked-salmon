@@ -110,7 +110,8 @@ Several rules in this file have a test, named next to the rule (`tests/test_rule
   Changes to existing keys follow [ADR 0005](docs/adr/0005-config-compatibility.md): renaming,
   moving or removing a key needs an entry in its old-key table, never a silent change; a changed
   default is a breaking change, with a release-notes line that keeps the old behaviour.
-- Every bug fix comes with a test that fails without the fix.
+- Every bug fix comes with a test that fails without the fix. How to write a test, the shared helpers and the size
+  guideline are in [tests/README.md](tests/README.md).
 - **Never change or delete a user's album in place when it may be in `library_dirs`.** Steps that
   retag, rename, sanitize or delete work on the folder `staged_source` (`uploader/staging.py`)
   returns, which is a real copy for `--skip-flac-upload` and for library albums. A new command or
