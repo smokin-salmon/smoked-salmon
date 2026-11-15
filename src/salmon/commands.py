@@ -1,9 +1,12 @@
 import asyncio
+import contextlib
 import html
 import os
 import shutil
 import subprocess
+import tempfile
 from collections.abc import Sequence
+from pathlib import Path
 from typing import Any
 from urllib import parse
 
@@ -280,17 +283,62 @@ async def checkspecs(tracker: str | None, torrent_id: str | None, path: str) -> 
     await post_upload_spectral_check(gazelle_site, path, torrent_id_int, None, track_data, source, source_url)
 
 
-def _backup_config(config_path: str) -> None:
-    """Backup existing config file with incremental suffix.
+def _backup_config(config_path: Path) -> Path:
+    """Copy the config to the first free `<name>.bak.N` beside it, with its permissions, and return that path.
 
-    Args:
-        config_path: Path to the config file to backup.
+    The config stays where it is. A backup name is created exclusively: one taken meanwhile (another reset at the same
+    time) is skipped, never overwritten.
     """
     backup_index = 1
-    while os.path.exists(f"{config_path}.bak.{backup_index}"):
-        backup_index += 1
-    shutil.move(config_path, f"{config_path}.bak.{backup_index}")
-    click.secho(f"Existing config file renamed to config.py.bak.{backup_index}", fg="yellow")
+    while True:
+        backup = config_path.with_name(f"{config_path.name}.bak.{backup_index}")
+        try:
+            # 0o600 until the config's own mode is copied: it holds API keys and cookies.
+            dst = open(backup, "xb", opener=lambda path, flags: os.open(path, flags, 0o600))  # noqa: SIM115
+        except FileExistsError:
+            backup_index += 1
+            continue
+        try:
+            with dst, config_path.open("rb") as src:
+                shutil.copyfileobj(src, dst)
+            shutil.copymode(config_path, backup)
+        except BaseException:
+            with contextlib.suppress(OSError):
+                backup.unlink(missing_ok=True)
+            raise
+        return backup
+
+
+def _reset_config(config_path: Path) -> Path:
+    """Replace the config with the short template, keeping a copy of the old one. Returns the template's path.
+
+    The template is copied beside the config under a name of its own (readable by its owner only: it is about to hold
+    API keys) and the old config is copied to its backup; only then does the template take the config's place, in one
+    step (os.replace). The config is never missing: a reset that fails or is stopped before the swap leaves it as it
+    was and removes the files it wrote; one stopped after the swap keeps the backup.
+    """
+    template = get_default_config_path()
+    handle, name = tempfile.mkstemp(dir=config_path.parent, prefix=f"{config_path.name}.", suffix=".new")
+    os.close(handle)
+    staged = Path(name)
+    backup = None
+    try:
+        shutil.copyfile(template, staged)  # keeps mkstemp's 0o600, not the template's mode
+        if config_path.exists():
+            backup = _backup_config(config_path)
+        os.replace(staged, config_path)
+    except BaseException:
+        # Read from the disk, not from how far the code got: os.replace consumes the staged file, so a staged file
+        # still there means the old config is still in place and its backup is a spare copy.
+        if staged.exists():
+            for leftover in (backup, staged):
+                if leftover:
+                    with contextlib.suppress(OSError):
+                        leftover.unlink(missing_ok=True)
+        raise
+    if backup:
+        click.secho(f"The old config is saved as {backup}", fg="yellow")
+    return template
 
 
 @commandgroup.command()
@@ -331,17 +379,12 @@ async def checkconf(tracker: str | None, metadata: bool, seedbox: bool, reset: b
     if reset:
         click.secho("Resetting new config.toml file", fg="cyan", bold=True)
 
-        config_path = find_config_path()
-        config_template = get_default_config_path()
+        try:
+            config_template = _reset_config(find_config_path())
+        except OSError as e:
+            click.secho(f"Error: {e}", fg="red")
+            raise click.exceptions.Exit(1) from e
 
-        if os.path.exists(config_path):
-            _backup_config(str(config_path))
-
-        if not os.path.exists(config_template):
-            click.secho("Error: config.default.toml template not found.", fg="red")
-            return
-
-        shutil.copy(config_template, config_path)
         click.secho(
             "A new config.toml file has been created from the template. Please update it with your custom settings.",
             fg="green",

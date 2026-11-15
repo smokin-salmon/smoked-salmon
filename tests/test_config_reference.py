@@ -4,8 +4,11 @@ The reference file is kept in sync with the schema here: every key is in it, com
 uncommenting all of them gives a config that loads.
 """
 
+import errno
+import os
 import re
 from pathlib import Path
+from typing import Any
 
 import anyio
 import msgspec
@@ -20,6 +23,7 @@ from helpers.shipped_config import (
 )
 
 import salmon.commands
+import salmon.config
 from salmon.commands import checkconf
 from salmon.config import Cfg, _parse_config, _schema_keys, _table_members, compat, unknown_keys
 
@@ -148,18 +152,268 @@ def test_the_suite_config_is_the_short_template_with_three_fake_trackers(tmp_pat
     ]
 
 
+def _reset(
+    monkeypatch: pytest.MonkeyPatch, path: Path, template: Path | None = None
+) -> tuple[BaseException | None, int, str]:
+    """Run `checkconf --reset` on the config at `path`, with `template` as the short config if one is given."""
+    monkeypatch.setattr(salmon.commands, "find_config_path", lambda: path)
+    if template:
+        monkeypatch.setattr(salmon.commands, "get_default_config_path", lambda: template)
+
+    async def run() -> tuple[BaseException | None, int, str]:
+        result = await CliRunner().invoke(checkconf, ["--reset"])
+        return result.exception, result.exit_code, result.output
+
+    return anyio.run(run)
+
+
 def test_checkconf_reset_copies_the_short_template_and_names_the_reference(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     path = tmp_path / "config.toml"
-    monkeypatch.setattr(salmon.commands, "find_config_path", lambda: path)
-    monkeypatch.setattr(salmon.commands, "get_default_config_path", lambda: DEFAULT_CONFIG)
 
-    async def run() -> str:
-        result = await CliRunner().invoke(checkconf, ["--reset"])
-        assert result.exception is None
-        return result.output
+    exception, _, output = _reset(monkeypatch, path, DEFAULT_CONFIG)
 
-    output = anyio.run(run)
-    assert path.read_text(encoding="utf-8") == DEFAULT_CONFIG.read_text(encoding="utf-8")
+    assert exception is None
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
     assert str(REFERENCE_CONFIG) in output
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+
+
+def test_checkconf_reset_without_the_template_leaves_the_config_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    monkeypatch.setattr(salmon.config, "_PKG_DIR", tmp_path / "broken-install" / "salmon")
+
+    exception, exit_code, output = _reset(monkeypatch, path)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert "config.default.toml" in output
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+
+
+def test_checkconf_reset_says_where_the_old_config_went(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    (tmp_path / "config.toml.bak.1").write_text("older", encoding="utf-8")
+
+    exception, _, output = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert exception is None
+    backup = tmp_path / "config.toml.bak.2"
+    assert backup.read_text(encoding="utf-8") == "mine"
+    assert str(backup) in output
+    assert (tmp_path / "config.toml.bak.1").read_text(encoding="utf-8") == "older"
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+
+
+def test_checkconf_reset_leaves_the_config_alone_when_the_template_cannot_be_copied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    not_a_file = tmp_path / "template"
+    not_a_file.mkdir()
+
+    exception, exit_code, output = _reset(monkeypatch, path, not_a_file)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert "Error" in output
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml", "template"]
+
+
+def test_checkconf_reset_leaves_a_config_toml_new_of_the_users_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    draft = tmp_path / "config.toml.new"
+    draft.write_text("draft", encoding="utf-8")
+
+    exception, _, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert exception is None
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+    assert draft.read_text(encoding="utf-8") == "draft"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml", "config.toml.new"]
+
+
+def test_checkconf_reset_that_fails_leaves_a_config_toml_new_of_the_users_alone(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    draft = tmp_path / "config.toml.new"
+    draft.write_text("draft", encoding="utf-8")
+    monkeypatch.setattr(salmon.config, "_PKG_DIR", tmp_path / "broken-install" / "salmon")
+
+    exception, exit_code, _ = _reset(monkeypatch, path)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert draft.read_text(encoding="utf-8") == "draft"
+    assert path.read_text(encoding="utf-8") == "mine"
+
+
+def test_checkconf_reset_keeps_the_config_when_the_new_one_cannot_take_its_place(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace = os.replace
+
+    def refuse_the_new_config(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        if Path(dst) == path:
+            raise OSError(errno.EACCES, "Permission denied")
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", refuse_the_new_config)
+
+    exception, exit_code, output = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert "Permission denied" in output
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+
+
+def test_checkconf_reset_keeps_the_config_even_when_the_new_file_cannot_be_removed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace, real_unlink = os.replace, Path.unlink
+
+    def refuse_the_new_config(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        if Path(dst) == path:
+            raise OSError(errno.EACCES, "Permission denied")
+        real_replace(src, dst)
+
+    def keep_the_new_file(self: Path, missing_ok: bool = False) -> None:
+        if self.name.endswith(".new"):
+            raise OSError(errno.EACCES, "Permission denied")
+        real_unlink(self, missing_ok=missing_ok)
+
+    monkeypatch.setattr(os, "replace", refuse_the_new_config)
+    monkeypatch.setattr(Path, "unlink", keep_the_new_file)
+
+    exception, exit_code, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert not list(tmp_path.glob("*.bak.*"))
+
+
+def test_checkconf_reset_whose_backup_message_cannot_be_printed_loses_nothing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_secho = salmon.commands.click.secho
+
+    def closed_terminal(message: object = None, *args: Any, **kwargs: Any) -> None:
+        if "saved as" in str(message):
+            raise OSError(errno.EPIPE, "Broken pipe")
+        real_secho(message, *args, **kwargs)
+
+    monkeypatch.setattr(salmon.commands.click, "secho", closed_terminal)
+
+    exception, exit_code, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert isinstance(exception, SystemExit), repr(exception)
+    assert exit_code == 1
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+    assert (tmp_path / "config.toml.bak.1").read_text(encoding="utf-8") == "mine"
+    assert not list(tmp_path.glob("*.new"))
+
+
+def test_checkconf_reset_stopped_part_way_leaves_the_config_in_place(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Ctrl-C (or any error that is not an OSError) between the backup and the swap: the config is still there."""
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace = os.replace
+
+    def interrupted(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        if Path(dst) == path:
+            raise KeyboardInterrupt
+        real_replace(src, dst)
+
+    monkeypatch.setattr(os, "replace", interrupted)
+
+    _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert path.read_text(encoding="utf-8") == "mine"
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["config.toml"]
+
+
+def test_checkconf_reset_stopped_right_after_the_swap_keeps_the_backup(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The new config is in place when Ctrl-C lands: the backup is now the only copy of the old one."""
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    real_replace = os.replace
+
+    def interrupted_after(src: str | os.PathLike[str], dst: str | os.PathLike[str]) -> None:
+        real_replace(src, dst)
+        if Path(dst) == path:
+            raise KeyboardInterrupt
+
+    monkeypatch.setattr(os, "replace", interrupted_after)
+
+    _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert path.read_bytes() == DEFAULT_CONFIG.read_bytes()
+    assert (tmp_path / "config.toml.bak.1").read_text(encoding="utf-8") == "mine"
+
+
+def test_checkconf_reset_never_overwrites_a_backup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A backup name taken after it was found free (two resets at once) is skipped, not overwritten. exists() is made
+    to lie about it: a check-then-rename backup would overwrite it."""
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    taken = tmp_path / "config.toml.bak.1"
+    taken.write_text("older", encoding="utf-8")
+    real_exists = Path.exists
+    monkeypatch.setattr(Path, "exists", lambda self, **kw: False if self == taken else real_exists(self, **kw))
+
+    exception, _, _ = _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert exception is None
+    assert taken.read_text(encoding="utf-8") == "older"
+    assert (tmp_path / "config.toml.bak.2").read_text(encoding="utf-8") == "mine"
+
+
+def test_checkconf_reset_backup_is_readable_by_the_owner_only_as_the_config_was(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text("mine", encoding="utf-8")
+    path.chmod(0o600)
+
+    _reset(monkeypatch, path, DEFAULT_CONFIG)
+
+    assert (tmp_path / "config.toml.bak.1").stat().st_mode & 0o777 == 0o600
+
+
+def test_checkconf_reset_new_config_is_readable_by_its_owner_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """It is about to hold API keys and cookies, whatever mode the shipped template has."""
+    path = tmp_path / "config.toml"
+    template = tmp_path / "template.toml"
+    template.write_bytes(DEFAULT_CONFIG.read_bytes())
+    template.chmod(0o644)
+
+    _reset(monkeypatch, path, template)
+
+    assert path.stat().st_mode & 0o777 == 0o600
