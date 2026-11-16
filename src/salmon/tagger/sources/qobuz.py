@@ -379,7 +379,7 @@ class Scraper(QobuzBase, MetadataMixin):
         tracks = defaultdict(dict)
         album_mains = _album_mains(soup)
         featured = _album_featured(soup, album_mains)
-        album_names = {_key(name) for name in [*album_mains, *_album_listed(soup)]}
+        album_names = {_key(name) for name in [*album_mains, *(name for name, _ in _album_artists(soup))]}
         extra = EXTRA_ROLES["classical"] if _is_classical(soup) else frozenset()
 
         track_items = safe_get(soup, ["tracks", "items"], [])
@@ -532,17 +532,10 @@ def _key(name: str) -> str:
 def _album_mains(album: dict[str, Any]) -> list[str]:
     """The album's main artists: its `artist`, then each other `artists[]` main-artist, in the spelling `artists[]`
     gives them (Getz/Gilberto's "João Gilberto", which the performers line writes "Joao")."""
-    listed = [
-        name
-        for entry in _album_artists(album)
-        if "main-artist" in (entry.get("roles") or []) and (name := str(entry.get("name") or "").strip())
-    ]
+    listed = [name for name, roles in _album_artists(album) if "main-artist" in roles]
     first = str(safe_get(album, ["artist", "name"]) or "").strip()
-    mains: dict[str, str] = {}
-    for name in [first, *listed] if first else listed:
-        mains.setdefault(_key(name), name)
-    spelled = {_key(name): name for name in reversed(listed)}
-    return [spelled.get(key, name) for key, name in mains.items()]
+    spelled = {_key(name): name for name in [first, *reversed(listed)] if name}
+    return [spelled[key] for key in dict.fromkeys(_key(name) for name in [first, *listed] if name)]
 
 
 def _album_featured(album: dict[str, Any], album_mains: list[str]) -> list[str]:
@@ -550,21 +543,19 @@ def _album_featured(album: dict[str, Any], album_mains: list[str]) -> list[str]:
     mains = {_key(name) for name in album_mains}
     return [
         name
-        for entry in _album_artists(album)
-        if (name := str(entry.get("name") or "").strip())
-        and _key(name) not in mains
-        and any("feat" in str(role).lower() for role in entry.get("roles") or [])
+        for name, roles in _album_artists(album)
+        if _key(name) not in mains and any("feat" in str(role).lower() for role in roles)
     ]
 
 
-def _album_listed(album: dict[str, Any]) -> list[str]:
-    """Every name `artists[]` lists, whatever its role (an orchestra, a conductor)."""
-    return [name for entry in _album_artists(album) if (name := str(entry.get("name") or "").strip())]
-
-
-def _album_artists(album: dict[str, Any]) -> list[dict[str, Any]]:
+def _album_artists(album: dict[str, Any]) -> list[tuple[str, list[str]]]:
+    """Each name `artists[]` lists, whatever its role (an orchestra, a conductor), with its roles."""
     artists = album.get("artists")
-    return [entry for entry in artists if isinstance(entry, dict)] if isinstance(artists, list) else []
+    return [
+        (name, entry.get("roles") or [])
+        for entry in (artists if isinstance(artists, list) else [])
+        if isinstance(entry, dict) and (name := str(entry.get("name") or "").strip())
+    ]
 
 
 def _is_classical(album: dict[str, Any]) -> bool:
@@ -574,20 +565,17 @@ def _is_classical(album: dict[str, Any]) -> bool:
     return any(is_classical_genre(genre) for genre in standardize_genres(genres))
 
 
-def _performers(line: str, known: set[str]) -> list[tuple[str, list[Role | None]]]:
-    """Each name in a performers line, "A, Role, Role - B, Role", with the roles of its words; an entry with no mapped
-    role credits no one.
+def _performers(line: str, known: set[str]) -> list[Credit]:
+    """Each credit a performers line ("A, Role, Role - B, Role") gives in a role salmon maps, in order.
 
     A name is the entry's first part, as master read it: Qobuz's other words are an open list ("Harpsichord",
     "Guitar (acoustic)"). It runs on over commas only to a name Qobuz gives elsewhere as a name (`known`: the album's
     artists and the track's performer), as "Earth, Wind & Fire", or over suffixes, as "Sammy Davis, Jr.".
     """
-    entries = []
+    credits: list[Credit] = []
     for entry in line.split(" - "):
         parts = entry.split(",")
-        first = next((i for i, part in enumerate(parts) if i and ROLE_WORDS.get(comparable(part))), None)
-        if first is None:
-            continue
+        first = next((i for i, part in enumerate(parts) if i and ROLE_WORDS.get(comparable(part))), len(parts))
         size = next(
             (
                 k
@@ -597,8 +585,8 @@ def _performers(line: str, known: set[str]) -> list[tuple[str, list[Role | None]
             1,
         )
         if name := ",".join(parts[:size]).strip(" ,"):
-            entries.append((name, [ROLE_WORDS.get(comparable(part)) for part in parts[size:]]))
-    return entries
+            credits.extend((name, role) for part in parts[size:] if (role := ROLE_WORDS.get(comparable(part))))
+    return credits
 
 
 def _track_credits(
@@ -635,16 +623,15 @@ def _track_credits(
     if performer:
         as_main(performer)
     line_composers: list[str] = []
-    on_line: set[str] = set()  # the names the performers line gives, by _key
-    for name, roles in _performers(track.get("performers") or "", known):
+    on_line: set[str] = set()  # the names the performers line credits in a role salmon maps, by _key
+    for name, role in _performers(track.get("performers") or "", known):
         on_line.add(_key(name))
-        for role in dict.fromkeys(roles):
-            if role == "main":
-                as_main(name)
-            elif role == "composer":
-                line_composers.append(name)
-            elif role in READ_ROLES or role in extra:
-                read.append((name, role, False))
+        if role == "main":
+            as_main(name)
+        elif role == "composer":
+            line_composers.append(name)
+        elif role in READ_ROLES or role in extra:
+            read.append((name, role, False))
 
     mains = [name for key, name in album.items() if key in named]
     features_album = any(role == "guest" and not assumed and _key(name) in album for name, role, assumed in read)
@@ -669,10 +656,8 @@ def _track_credits(
 def _credits_and_guesses(claims: list[tuple[str, Role, bool]]) -> tuple[list[Credit], list[Credit]]:
     """Each credit once, every artist under the first spelling of their name, and the credits only guessed."""
     spelling: dict[str, str] = {}
-    for name, _, _ in claims:
-        spelling.setdefault(_key(name), name)
     credits: dict[Credit, bool] = {}  # each credit: whether only guessed
     for name, role, assumed in claims:
-        credit = (spelling[_key(name)], role)
+        credit = (spelling.setdefault(_key(name), name), role)
         credits[credit] = credits.get(credit, True) and assumed
     return list(credits), [credit for credit, guessed in credits.items() if guessed]

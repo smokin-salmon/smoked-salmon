@@ -15,12 +15,7 @@ from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES, without_merge_only_keys
-from salmon.tagger.sources.base import (
-    artist_spellings,
-    determine_label_type,
-    generate_artists,
-    standardize_genres,
-)
+from salmon.tagger.sources.base import artist_spellings, determine_label_type, generate_artists, standardize_genres
 
 PREFERENCES = [
     "Tidal",
@@ -413,7 +408,7 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
             btrack["artists"] = list(btrack["artists"])
             before = list(btrack["artists"])  # what this store's credits are matched against, as base_artists
             variations = {(v["name"], v["role"]): v["anv"] for v in track.get("artist_variations", [])}
-            own = None if claims is None else claims.setdefault(id(btrack), _claims_of_track(btrack, base_source))
+            own = None if claims is None else claims.setdefault(id(btrack), _claims_of(btrack, base_source))
             if own is not None:
                 own += _store_claims(track["artists"], variations, before, store, track.get("assumed_artists", ()))
             for a in track["artists"]:
@@ -467,28 +462,20 @@ def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):
     return base
 
 
-def _assumed(source):
-    """Whether a source's roles count as assumed: a store's until its own step-3 PR reads them (its scraper
-    states_credits), while the files' plain ARTIST counts as stated until step 4 (ADR 0007)."""
-    return source != "files" and not METASOURCES[source].Scraper.states_credits
+def _assumed(source, credit, guesses):
+    """Whether a source's credit counts as assumed: every credit of a store until its own step-3 PR reads them (its
+    scraper states_credits), or one among `guesses`, the credits the source marked by the name and role it gave them (a
+    stating store's assumed_artists). The files' plain ARTIST counts as stated until step 4 (ADR 0007)."""
+    return (source != "files" and not METASOURCES[source].Scraper.states_credits) or credit in guesses
 
 
-def _is_assumed(credit, source, guesses):
-    """Whether a source's credit is a guess: all of the source's are, or it is among `guesses`, the credits the source
-    marked by the name and role it gave them (a stating store's assumed_artists)."""
-    return _assumed(source) or credit in guesses
-
-
-def _claims_of(credits, source, guessed=()):
-    guesses = {tuple(guess) for guess in guessed}
-    return [
-        Claim(source, name, name, role, assumed=_is_assumed((name, role), source, guesses)) for name, role in credits
-    ]
-
-
-def _claims_of_track(track, source):
+def _claims_of(track, source):
     """A track's claims from its own credits and marks: the base's, or a scrape's used alone."""
-    return _claims_of(track["artists"], source, track.get("assumed_artists", ()))
+    guesses = {tuple(guess) for guess in track.get("assumed_artists", ())}
+    return [
+        Claim(source, name, name, role, assumed=_assumed(source, (name, role), guesses))
+        for name, role in track["artists"]
+    ]
 
 
 def _store_claims(credits, variations, base_credits, source, guessed):
@@ -501,7 +488,7 @@ def _store_claims(credits, variations, base_credits, source, guessed):
     for name, role in credits:
         anv = variations.get((name, role))
         matched = named.get((comparable(name), role)) or (anv and named.get((comparable(anv), role))) or name
-        claims.append(Claim(source, matched, anv or name, role, assumed=_is_assumed((name, role), source, guesses)))
+        claims.append(Claim(source, matched, anv or name, role, assumed=_assumed(source, (name, role), guesses)))
     return claims
 
 
@@ -517,7 +504,7 @@ def _decide_credits(tracks, claims, base_source):
     for disc, disc_tracks in tracks.items():
         for num, track in disc_tracks.items():
             kept = {tuple(credit) for credit in track["artists"]}
-            own = claims.get(id(track)) or _claims_of_track(track, base_source)
+            own = claims.get(id(track)) or _claims_of(track, base_source)
             by_track[disc, num] = [
                 msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
                 for claim in own

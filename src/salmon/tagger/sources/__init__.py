@@ -57,15 +57,12 @@ def without_tracking(url: str) -> str:
 MERGE_ONLY_KEYS = ("artist_variations", "assumed_artists")
 
 
-def without_merge_only_keys(metadata: dict[str, Any]) -> dict[str, Any]:
-    """Drop what a scraper keeps beside each track for the merge alone (MERGE_ONLY_KEYS).
-
-    Whoever shows or uses a scrape on its own has no other source to weigh it against, so it should not see it."""
+def without_merge_only_keys(metadata: dict[str, Any]) -> None:
+    """Drop MERGE_ONLY_KEYS from each track."""
     for disc in metadata["tracks"].values():
         for track in disc.values():
             for key in MERGE_ONLY_KEYS:
                 track.pop(key, None)
-    return metadata
 
 
 async def run_metadata(

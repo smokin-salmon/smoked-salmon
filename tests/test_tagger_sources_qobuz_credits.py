@@ -366,14 +366,15 @@ def test_an_album_featured_artist_is_stated_where_the_track_s_line_names_them_an
     data = album(
         track("Alice, MainArtist - Bob, FeaturedArtist"),
         track("Alice, MainArtist - Bob, Vocals, Composer"),
+        track("Alice, MainArtist - Bob, Vocals"),
         track("Alice, MainArtist"),
         artists=[*mains("Alice"), {"name": "Bob", "roles": ["featured-artist"]}],
     )
 
     got = parsed(data)
 
-    assert [t["artists"] for t in got] == [[("Alice", "main"), ("Bob", "guest")]] * 3
-    assert [t["assumed_artists"] for t in got] == [[], [], [("Bob", "guest")]]
+    assert [t["artists"] for t in got] == [[("Alice", "main"), ("Bob", "guest")]] * 4
+    assert [t["assumed_artists"] for t in got] == [[], [], [("Bob", "guest")], [("Bob", "guest")]]
 
 
 # Composers (ruling 1)

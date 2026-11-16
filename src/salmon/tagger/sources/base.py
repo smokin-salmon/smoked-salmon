@@ -1,6 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable
+from copy import deepcopy
 from itertools import chain
 from typing import Any
 
@@ -70,14 +71,10 @@ class MetadataMixin(ABC):
             data["url"] = self.format_url(rls_id=rls_id, rls_name=data["title"])
         data["urls"] = [data["url"]]
         if self.states_credits:
-            # The tracks' credits left as the parser read them, for the merge to decide, and their titles as the store
-            # gives them, remixes included; the release's credits, which the release type and the label are read from
-            # below, decided and respelled as for any other store.
-            # generate_artists replaces each track's credits: on a copy of each track, the tracks keep theirs.
-            copied = {
-                disc: {num: dict(track) for num, track in tracks.items()} for disc, tracks in data["tracks"].items()
-            }
-            data["artists"] = generate_artists(copied)[0]
+            # The tracks' credits stay as read, for the merge to decide, and their titles as the store gives them,
+            # remixes included; the release's credits, which the type and label are read from below, are built as for
+            # any other store.
+            data["artists"] = generate_artists(deepcopy(data["tracks"]))[0]
         else:
             data["artists"], data["tracks"] = generate_artists(data["tracks"])
             data["tracks"] = append_remixers_to_track_titles(data["tracks"])
