@@ -4,16 +4,18 @@ from collections import defaultdict
 from itertools import chain
 
 import asyncclick as click
+import msgspec
 from unidecode import unidecode
 
 from salmon import cfg
-from salmon.common import re_strip
+from salmon.common import normalize_accents, re_strip
+from salmon.common.credits import Claim, resolve_credits
 from salmon.common.numbers import natural_key, number_or_text
 from salmon.common.strings import comparable
 from salmon.errors import TrackCombineError
 from salmon.tagger.pairing import pair_by_content
 from salmon.tagger.sources import METASOURCES
-from salmon.tagger.sources.base import determine_label_type, generate_artists, standardize_genres
+from salmon.tagger.sources.base import artist_spellings, determine_label_type, generate_artists, standardize_genres
 
 PREFERENCES = [
     "Tidal",
@@ -57,11 +59,15 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
     ordered_preferences = ([source] if source in PREFERENCES else []) + [p for p in PREFERENCES if p != source]
 
     from_preferred_source = True
+    # Who the base's credits come from: the files, or with none the first store (descgen, salmon web).
+    base_source = "files" if base is not None else None
+    claims = {}  # each base track's claims, by id(track), for _decide_credits
 
     for pref in ordered_preferences:
         for metadata in sources[pref]:
             if base is None:
                 base = metadata
+                base_source = pref
                 if base.get("url", False):
                     link_source = get_source_from_link(base["url"])
                     if link_source:
@@ -82,7 +88,9 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
                     base["edition_title"] = metadata["edition_title"]
 
             with contextlib.suppress(TrackCombineError):
-                base["tracks"] = combine_tracks(base["tracks"], metadata["tracks"], from_preferred_source)
+                base["tracks"] = combine_tracks(
+                    base["tracks"], metadata["tracks"], from_preferred_source, claims, (base_source, pref)
+                )
 
             if (
                 (not base["catno"] or not base["label"])
@@ -151,6 +159,8 @@ def combine_metadatas(*metadatas, base=None, source_url=None):  # noqa: C901
         for track in disc.values():
             track.pop("artist_variations", None)
 
+    decisions = _decide_credits(base["tracks"], claims, base_source)
+    _print_disputes(decisions)
     _correct_artists(base["tracks"])
     base["artists"], base["tracks"] = generate_artists(base["tracks"])
     base["genres"] = standardize_genres(_correct_genres(base["genres"]))
@@ -326,8 +336,13 @@ def _print_pairing(mtracks, ordered, reasons):
         )
 
 
-def combine_tracks(base, meta, update_track_numbers):  # noqa: C901
-    """Combine the metadata for the tracks of two different sources."""
+def combine_tracks(base, meta, update_track_numbers, claims=None, sources=None):  # noqa: C901
+    """Combine the metadata for the tracks of two different sources.
+
+    With `claims` (a dict) and `sources` (the base's and the store's names), every source's claims about each base
+    track's artists are added to `claims`, by id(track), for `_decide_credits` once the last store is merged.
+    """
+    base_source, store = sources or (None, None)
     # Track dictionaries reflect discovery order, so sort discs and tracks naturally before pairing.
     btracks_sorted = [
         [track for _, track in _sorted_naturally(disc.items())] for _, disc in _sorted_naturally(base.items())
@@ -393,7 +408,11 @@ def combine_tracks(base, meta, update_track_numbers):  # noqa: C901
 
             base_artists = {(comparable(a[0]), a[1]) for a in btrack["artists"]}
             btrack["artists"] = list(btrack["artists"])
+            before = list(btrack["artists"])  # what this store's credits are matched against, as base_artists
             variations = {(v["name"], v["role"]): v["anv"] for v in track.get("artist_variations", [])}
+            own = None if claims is None else claims.setdefault(id(btrack), _claims_of(btrack["artists"], base_source))
+            if own is not None:
+                own += _store_claims(track["artists"], variations, before, store, _assumed(store))
             for a in track["artists"]:
                 if (comparable(a[0]), a[1]) in base_artists:
                     continue
@@ -410,6 +429,8 @@ def combine_tracks(base, meta, update_track_numbers):  # noqa: C901
                 for remixer in remixers:
                     if (comparable(remixer[0]), remixer[1]) not in base_artists:
                         btrack["artists"].append(remixer)
+                if own is not None:
+                    own += _store_claims(remixers, {}, before, store, assumed=True)
 
             btrack["artists"] = check_for_artist_fragments(btrack["artists"])
             btrack["credited_remixers"] = list(
@@ -441,6 +462,72 @@ def combine_tracks(base, meta, update_track_numbers):  # noqa: C901
         btrack["track#"] = new_num
         base[disc_no][new_num] = btrack
     return base
+
+
+def _assumed(source):
+    """Whether a source's roles count as assumed: a store's until its own step-3 PR reads them, while the files'
+    plain ARTIST counts as stated until step 4 (ADR 0007)."""
+    return source != "files"
+
+
+def _claims_of(credits, source):
+    return [Claim(source, name, name, role, assumed=_assumed(source)) for name, role in credits]
+
+
+def _store_claims(credits, variations, base_credits, source, assumed):
+    """A store's credits on a base track as claims, each named as the base already names that artist in that role
+    (the merge's match: `comparable`, or Discogs' credited name), so a match is one name to decide on."""
+    named = {(comparable(name), role): name for name, role in base_credits}
+    claims = []
+    for name, role in credits:
+        anv = variations.get((name, role))
+        matched = named.get((comparable(name), role)) or (anv and named.get((comparable(anv), role))) or name
+        claims.append(Claim(source, matched, anv or name, role, assumed=assumed))
+    return claims
+
+
+def _decide_credits(tracks, claims, base_source):
+    """Decide each track's credits from its claims (ADR 0007), in place, and return the reasons.
+
+    Each name first takes the spelling generate_artists gives it, so deciding never changes a spelling. A claim whose
+    credit the merge dropped (a fragment of another name) is left out.
+    """
+    spellings = artist_spellings(tracks)
+    by_track = {}
+    for disc, disc_tracks in tracks.items():
+        for num, track in disc_tracks.items():
+            kept = {tuple(credit) for credit in track["artists"]}
+            own = claims.get(id(track)) or _claims_of(track["artists"], base_source)
+            by_track[disc, num] = [
+                msgspec.structs.replace(claim, name=spellings[normalize_accents(claim.name.lower())])
+                for claim in own
+                if (claim.name, claim.role) in kept
+            ]
+    decided = resolve_credits(by_track)
+    for (disc, num), credits in decided.items():
+        tracks[disc][num]["artists"] = [credit for credit, _ in credits]
+    return [decision for credits in decided.values() for decision in credits]
+
+
+def _print_disputes(decisions):
+    """Show the credits the sources disagreed on, as the merge kept them: one line per set of names the same sources
+    dispute, not one per track."""
+    disputes = {}
+    for (name, role), reason in decisions:
+        if reason.disputed_by:
+            disputes.setdefault((reason.from_sources[0], role), {}).setdefault(name, {}).update(
+                dict.fromkeys(reason.disputed_by)
+            )
+    for (source, role), names in disputes.items():
+        owner, others = ("the files'", "stores") if source == "files" else (f"{source}'s", "other stores")
+        other = "guest" if role == "main" else "main"
+        click.secho(f"\nKept {owner} {role} where {others} say {other}:", fg="yellow", bold=True)
+        lines = {}
+        for name, sources in names.items():
+            lines.setdefault(tuple(sorted(sources)), []).append(name)
+        for sources, line_names in lines.items():
+            at = ", ".join("the files" if source == "files" else source for source in sources)
+            click.secho(f"  {', '.join(line_names)} ({other} at {at})", fg="yellow")
 
 
 def check_for_artist_fragments(artists):
