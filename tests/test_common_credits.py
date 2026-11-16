@@ -6,7 +6,7 @@ from typing import get_args
 import pytest
 from test_artist_credit_casebook import CASES, _record, files, parse
 
-from salmon.common.credits import Claim, ReleaseMetadata, Role, Source, TrackMetadata, resolve_credits
+from salmon.common.credits import Claim, ReleaseMetadata, Role, RoleWords, Source, TrackMetadata, resolve_credits
 from salmon.constants import ARTIST_IMPORTANCES
 from salmon.tagger.pre_data import EMPTY_METADATA
 from salmon.tagger.sources import METASOURCES
@@ -115,3 +115,29 @@ def test_the_types_name_the_keys_salmon_builds(monkeypatch: pytest.MonkeyPatch) 
     release_keys = ReleaseMetadata.__required_keys__ | ReleaseMetadata.__optional_keys__
     assert release_keys == {key for release in releases for key in release} | {*EMPTY_METADATA, "tags"}
     assert ReleaseMetadata.__required_keys__ == set.intersection(*(set(release) for release in releases))
+
+
+WORDS = RoleWords({"MainArtist": "main", "FeaturedArtist": "guest", "MixingEngineer": None, "Violin": None})
+
+
+def test_a_role_word_matches_whatever_its_case_and_spacing() -> None:
+    assert [WORDS.role_of(word) for word in ("MainArtist", "Main Artist", "mainartist", "Featured-Artist")] == [
+        "main",
+        "main",
+        "main",
+        "guest",
+    ]
+
+
+def test_a_role_word_salmon_does_not_map_is_known_but_has_no_role() -> None:
+    assert "Mixing Engineer" in WORDS
+    assert WORDS.role_of("Mixing Engineer") is None
+
+
+def test_part_of_a_name_is_not_a_role_word() -> None:
+    assert [word in WORDS for word in ("Wind & Fire", "Jr.", "1st Violin", "")] == [False, False, False, False]
+    assert WORDS.role_of("Jr.") is None
+
+
+def test_words_that_differ_by_a_digit_are_two_words() -> None:
+    assert "Violin 2" not in RoleWords({"Violin 1": None})

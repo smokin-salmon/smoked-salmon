@@ -85,6 +85,28 @@ class ReleaseMetadata(TypedDict):
     tags: NotRequired[str]  # added when the metadata is confirmed
 
 
+class RoleWords:
+    """A store's words for its credits' roles, each to one of the eight or to None (a word salmon doesn't map).
+
+    Words match whatever their case, spacing and punctuation: Qobuz's "Main Artist" is its "MainArtist".
+    """
+
+    def __init__(self, words: Mapping[str, Role | None]) -> None:
+        self._roles: dict[str, Role | None] = {_fold(word): role for word, role in words.items()}
+
+    def __contains__(self, word: str) -> bool:
+        """Whether the word is one of the store's role words, mapped or not."""
+        return _fold(word) in self._roles
+
+    def role_of(self, word: str) -> Role | None:
+        """The word's role; None for a word salmon doesn't map or the store doesn't use."""
+        return self._roles.get(_fold(word))
+
+
+def _fold(word: str) -> str:
+    return "".join(char for char in word.casefold() if char.isalnum())
+
+
 class Claim(msgspec.Struct, frozen=True):
     """What one source said about one artist on one track."""
 
