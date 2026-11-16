@@ -6,6 +6,7 @@ from helpers.interaction_typed_sites import ask, review_metadata
 import salmon.tagger.review as review
 from salmon.tagger.pre_data import construct_track_artists
 from salmon.tagger.retagger import create_artist_str, create_composer_str, create_track_changes
+from salmon.tagger.sources.base import standardize_genres
 from salmon.tagger.tags import check_required_tags
 
 
@@ -202,3 +203,25 @@ def test_as_before_a_genre_spelled_with_a_space_makes_a_track_classical() -> Non
     track = SimpleNamespace(artist="Quartet", conductor=None, composer="Haydn", genre="Chamber Music")
 
     assert construct_track_artists(track) == [("Quartet", "main"), ("Haydn", "composer")]
+
+
+def test_a_file_tagged_in_french_as_classique_is_classical() -> None:
+    track = SimpleNamespace(artist="Quartet", conductor=None, composer="Haydn", genre="Classique")
+
+    assert construct_track_artists(track) == [("Quartet", "main"), ("Haydn", "composer")]
+
+
+def test_the_review_warns_about_classique(monkeypatch, capsys) -> None:
+    out = _review_output(monkeypatch, capsys, ["Classique"])
+
+    assert "CLASSICAL MUSIC WARNING" in out
+
+
+def test_qobuz_s_french_classique_is_the_classical_genre() -> None:
+    assert standardize_genres(["Classique"]) == ["Classical"]
+
+
+def test_as_before_rock_classique_is_not_classical() -> None:
+    track = SimpleNamespace(artist="Band", conductor=None, composer="Writer", genre="Rock classique")
+
+    assert construct_track_artists(track) == [("Band", "main")]
