@@ -12,16 +12,8 @@ from salmon.constants import RELEASE_TYPES
 from salmon.errors import InvalidMetadataError, PickOtherResults
 from salmon.tagger.metadata import _print_metadata
 from salmon.tagger.sources.base import generate_artists, standardize_genres
+from salmon.tagger.tags import is_classical_genre
 
-_CLASSICAL_GENRES = {
-    "classical",
-    "baroque",
-    "chambermusic",
-    "choral",
-    "modernclassical",
-    "orchestral",
-    "opera",
-}
 _DEFERRED_PRE_AI_METADATA_ERRORS = {
     "Invalid release type.",
     "You must specify at least one genre.",
@@ -161,7 +153,7 @@ def _warn_classical_genre(metadata: dict) -> None:
     Args:
         metadata: The release metadata dictionary.
     """
-    detected = {g for g in metadata["genres"] if g.lower() in _CLASSICAL_GENRES}
+    detected = {g for g in metadata["genres"] if is_classical_genre(g)}
     if not detected:
         return
 

@@ -117,7 +117,12 @@ def is_classical(tag_item) -> bool:
         return False
     if isinstance(genres, str):
         genres = [genres]
-    return any(str(genre).strip().lower().replace(" ", "") in CLASSICAL_GENRES for genre in genres)
+    return any(is_classical_genre(str(genre)) for genre in genres)
+
+
+def is_classical_genre(genre: str) -> bool:
+    """Whether a genre, from a tag or a store, is a classical one ("Chamber Music" as "chambermusic")."""
+    return genre.strip().lower().replace(" ", "") in CLASSICAL_GENRES
 
 
 def print_a_tag(tag_item: TagFile) -> None:
