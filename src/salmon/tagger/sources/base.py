@@ -18,8 +18,10 @@ class MetadataMixin(ABC):
     fetch_page: Callable  # HTML path: BaseScraper.fetch_page
     fetch_data: Callable  # JSON path: defined on JSON source bases
 
-    # Whether the parser reads the store's credits as it states them (ADR 0007, step 3), with the ones it guessed in
-    # each track's "assumed_artists". Its tracks' credits are then left as read, for the merge to decide.
+    # Whether the parser reads the store's credits as it states them (ADR 0007, step 3). Its tracks' credits are then
+    # left as read, for the merge to decide, and any credit not marked a guess counts as the store's word. So the
+    # parser marks every credit it guessed in the track's "assumed_artists", gives each name and role once on a track,
+    # and writes each name as the store gives it, its guess marked under the same spelling.
     states_credits: bool = False
 
     async def scrape_release_from_id(self, rls_id: str) -> dict[str, Any]:

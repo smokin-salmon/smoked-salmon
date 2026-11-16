@@ -4,7 +4,7 @@ that builds the metadata they describe."""
 from typing import get_args
 
 import pytest
-from test_artist_credit_casebook import CASES, _record, files, parse
+from test_artist_credit_casebook import CASES, STORES, _cases, _record, _stores, files, parse
 
 from salmon.common.credits import Claim, ReleaseMetadata, Role, Source, TrackMetadata, resolve_credits
 from salmon.constants import ARTIST_IMPORTANCES
@@ -116,3 +116,21 @@ def test_the_types_name_the_keys_salmon_builds(monkeypatch: pytest.MonkeyPatch) 
     release_keys = ReleaseMetadata.__required_keys__ | ReleaseMetadata.__optional_keys__
     assert release_keys == {key for release in releases for key in release} | {*EMPTY_METADATA, "tags"}
     assert ReleaseMetadata.__required_keys__ == set.intersection(*(set(release) for release in releases))
+
+
+@pytest.mark.parametrize("store", [store for store, name in STORES.items() if METASOURCES[name].Scraper.states_credits])
+def test_a_stating_store_s_scrape_does_what_states_credits_asks(store: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    """On every case the store has: each track marks its guesses, each guess is one of the track's credits as
+    written, and no credit is given twice."""
+    records = [record for record in map(_record, _cases()) if store in _stores(record)]
+    tracks = [
+        (record["album"], track)
+        for record in records
+        for disc in parse(record, store, monkeypatch)["tracks"].values()
+        for track in disc.values()
+    ]
+
+    assert records
+    for album, track in tracks:
+        assert set(track["assumed_artists"]) <= set(track["artists"]), album
+        assert len(set(track["artists"])) == len(track["artists"]), album
