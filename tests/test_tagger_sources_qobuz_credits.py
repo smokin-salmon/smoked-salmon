@@ -224,6 +224,23 @@ def test_as_before_the_album_s_artist_is_main_on_a_track_that_names_no_one() -> 
     assert got == [[("Alice", "main")], [("Alice", "main")]]
 
 
+def test_the_album_s_artist_on_a_track_that_names_no_one_is_stated() -> None:
+    data = album(track())
+
+    assert guessed(data) == [[]]
+
+
+def test_the_album_s_artists_on_a_track_that_names_only_others_are_assumed() -> None:
+    """DJ-Kicks and a compilation: each track names its own artists, none of them the album's. The album's credit
+    stands in for the track's main, but Qobuz didn't say so: salmon did."""
+    data = album(track("Bob, MainArtist"), artist="Various Artists", artists=mains("Various Artists"))
+
+    first = parsed(data)[0]
+
+    assert first["artists"] == [("Various Artists", "main"), ("Bob", "guest")]
+    assert first["assumed_artists"] == [("Various Artists", "main"), ("Bob", "guest")]
+
+
 def test_an_album_main_is_credited_under_the_album_s_spelling() -> None:
     """Getz/Gilberto: the album's "João Gilberto" is "Joao Gilberto" in the performers; Sigur Rós has a trailing
     space and no accent there."""
@@ -262,7 +279,7 @@ def test_one_artist_in_two_spellings_is_credited_once_on_a_track() -> None:
     first = parsed(data)[0]
 
     assert first["artists"] == [("Alice", "main"), ("Kyung-Wha Chung", "guest")]
-    assert first["assumed_artists"] == [("Kyung-Wha Chung", "guest")]
+    assert first["assumed_artists"] == [("Alice", "main"), ("Kyung-Wha Chung", "guest")]
 
 
 def test_a_main_artist_named_with_a_featured_credit_gives_the_main_and_assumed_guests() -> None:

@@ -607,22 +607,26 @@ def _track_credits(
     """A track's credits as Qobuz states them, and those of them that are salmon's guesses (ADR 0007).
 
     Stated: the album's main artists the track names, as its performer or a MainArtist in its performers line, or
-    every one of them when it names none; the line's guests, remixers and conductors; the album's featured artists;
-    and on a classical release the track's composer. Guessed: a MainArtist the album doesn't list as main, and a guest
-    read from "feat." in a performer's name or in the title, both guests by salmon's reading. Nothing is decided here:
-    one name may hold two roles, for the merge to weigh.
+    every one of them when it names no one; the line's guests, remixers and conductors; the album's featured artists;
+    and on a classical release the track's composer. Guessed: a MainArtist the album doesn't list as main, a guest
+    read from "feat." in a performer's name or in the title, both guests by salmon's reading, and the album's main
+    artists on a track that names only others. Nothing is decided here: one name may hold two roles, for the merge to
+    weigh.
     """
     album = {_key(name): name for name in album_mains}
     named: set[str] = set()
+    others = False  # whether the track names a main artist the album doesn't list as one
     read: list[tuple[str, Role, bool]] = []  # (name, role, assumed), in the order Qobuz gives them
 
     def as_main(name: str) -> None:
+        nonlocal others
         lead = RE_FEAT.sub("", name).strip()
         if _key(lead) in album:
             named.add(_key(lead))
         elif not any(_key(part) in album for part in re_split(lead)):
             # A joint name holding an album main ("Nas & Damian Marley") is the album's credit: it names no one else.
             read.append((lead, "guest", True))
+            others = True
         read.extend((guest, "guest", True) for guest in guests_from_title(name))
 
     performer = str(safe_get(track, ["performer", "name"]) or "").strip()
@@ -639,8 +643,11 @@ def _track_credits(
             elif role == "composer":
                 line_composers.append(name)
 
-    mains = [name for key, name in album.items() if key in named] or album_mains
-    claims: list[tuple[str, Role, bool]] = [(name, "main", False) for name in mains]
+    mains = [name for key, name in album.items() if key in named]
+    # A track naming none of the album's mains gets them all: as Qobuz's word if it names no one, else as a guess.
+    claims: list[tuple[str, Role, bool]] = [(name, "main", False) for name in mains] or [
+        (name, "main", others) for name in album_mains
+    ]
     claims.extend(read)
     claims.extend((guest, "guest", False) for guest in featured)
     claims.extend((guest, "guest", True) for guest in guests_from_title(track.get("title") or ""))
